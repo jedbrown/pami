@@ -1,0 +1,5 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= geometry protocols pgasp2p
+SOURCES		= 
+DEVICENAME	= 
+include @abs_top_builddir@/Build.rules

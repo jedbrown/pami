@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =
+lapi-""-COLLECTIVESIFACE_SOURCES=ll_multisend.cc hl_collectives.cc
+DEVICENAME     = lapi-""-COLLECTIVESIFACE
+include @abs_top_builddir@/Build.rules

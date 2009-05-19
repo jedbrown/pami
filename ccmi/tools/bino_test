@@ -1,0 +1,31 @@
+#!/bin/bash
+# begin_generated_IBM_copyright_prolog                             
+#                                                                  
+# This is an automatically generated copyright prolog.             
+# After initializing,  DO NOT MODIFY OR MOVE                       
+# ---------------------------------------------------------------- 
+# IBM Confidential                                                 
+#                                                                  
+# Licensed Machine Code Source Materials                           
+#                                                                  
+# Product(s):                                                      
+#     Blue Gene/P Licensed Machine Code                            
+#                                                                  
+# (C) Copyright IBM Corp.  2007, 2007                              
+#                                                                  
+# The Source code for this program is not published  or otherwise  
+# divested of its trade secrets,  irrespective of what has been    
+# deposited with the U.S. Copyright Office.                        
+#  --------------------------------------------------------------- 
+#                                                                  
+# end_generated_IBM_copyright_prolog                               
+
+for t in m d; do
+	for a in reduce broadcast allreduce barrier; do
+		for n in 4 5 6 7 8 9 10 11 12 13 14 15 16; do
+			./sched_test -V --binomial --${a} 0 0 ${n} | \
+				./sched_verify -${t} ${*}
+			if [[ $? -ne 0 ]]; then exit 1; fi
+		done
+	done
+done

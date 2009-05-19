@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= p2p interface/lapiunix ccmi
+NOTBUILT        =
+include @abs_top_builddir@/Build.rules
+
+

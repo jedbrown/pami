@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        = 
+lapi-""-COMMONSMPCOLLECTIVES_SOURCES=smp_barrier.c  smp_fence.c  smp_thread.c  smp_thread_stub.c
+DEVICENAME     = lapi-""-COMMONSMPCOLLECTIVES
+include @abs_top_builddir@/Build.rules

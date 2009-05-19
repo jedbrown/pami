@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-CCMIBINOMIALTREE_SOURCES=BinomialTree.cc
+DEVICENAME     = lapi-""-CCMIBINOMIALTREE
+include @abs_top_builddir@/Build.rules

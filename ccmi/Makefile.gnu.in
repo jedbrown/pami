@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= schedule executor adaptor adaptor/pgasp2p
+NOTBUILT        =
+include @abs_top_builddir@/Build.rules
+
+

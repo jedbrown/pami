@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-SMPCOLLECTIVES_SOURCES=smpcoll_c_intf.cc  smpcoll_commsplit.cc  smpcoll_communicator.cc
+DEVICENAME     = lapi-""-SMPCOLLECTIVES
+include @abs_top_builddir@/Build.rules

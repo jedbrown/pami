@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= lapi
+NOTBUILT        = svd.c cpubind.c  
+lapi-""-TSPCOMMONCOLLECTIVES_SOURCES=fatalerror.c  registry.c   update.c tsp_nodes.c
+DEVICENAME     = lapi-""-TSPCOMMONCOLLECTIVES
+include @abs_top_builddir@/Build.rules

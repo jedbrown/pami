@@ -1,0 +1,118 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file logging/LogMgr.h
+ * \brief ???
+ */
+
+#ifndef __ccmi_logging_logmgr__
+#define __ccmi_logging_logmgr__
+
+#include  <stdio.h>
+#include  <stdlib.h>
+#include  "../adaptor/ccmi_internal.h"
+#include  "../adaptor/Mapping.h"
+
+namespace CCMI
+{
+  namespace Logging
+  {
+
+#define  NTIMERS            16
+#define  ENABLE_PROFILING   0
+
+    class LogMgr
+    {
+    public:
+      inline LogMgr ()
+      {
+        reset ();
+      } 
+
+      inline void reset ()
+      {
+#if ENABLE_PROFILING
+        for(int count = 0; count < NTIMERS; count ++)
+        {
+          _start [count] = 0;     
+          _count [count] = 0;    
+          _sum [count] = 0;
+        }
+
+        _curIndex = 0;
+#endif
+      }
+
+      inline unsigned registerEvent (const char *event_name)
+      {
+#if ENABLE_PROFILING
+        CCMI_assert (_curIndex < NTIMERS);
+
+        strncpy(_logHandle[_curIndex], event_name, 256);
+        _curIndex ++;
+        return _curIndex - 1;
+#else
+
+        return 0;
+#endif
+      }
+
+      inline void startCounter (int id)
+      {
+#if ENABLE_PROFILING
+        _start[id] =  (unsigned long long) CCMI_GetTimebase();
+#endif
+      }
+
+      inline void stopCounter (int id, int n=1)
+      {
+#if ENABLE_PROFILING
+        _sum[id] += (unsigned)( (unsigned long long) CCMI_GetTimebase() -_start[id]);
+        _count[id] += n;
+#endif
+      }
+
+      void   dumpTimers(FILE *fp, Mapping *map)
+      {
+#if ENABLE_PROFILING
+        for(int idx = 0; idx < NTIMERS; idx ++)
+        {
+          if(_count [idx] > 0)
+            fprintf (fp, 
+                     "%d: Event %s has overhead of %d cycles over %d calls\n", 
+                     map->rank(),
+                     _logHandle[idx], (unsigned)(_sum[idx]/_count[idx]),  
+                     _count[idx]);
+        }
+#endif
+      }
+
+      static void setLogMgr (LogMgr *l)
+      {
+        _staticLogMgr = l;
+      }
+      static LogMgr *getLogMgr ()
+      {
+        return _staticLogMgr;
+      }
+
+    private:
+      char                    _logHandle [NTIMERS][256];
+      unsigned long long      _start [NTIMERS];
+      unsigned long long      _sum   [NTIMERS];
+      unsigned                _count [NTIMERS];     
+      unsigned                _curIndex;
+
+
+      static LogMgr *_staticLogMgr;
+    };
+  };
+};
+
+#endif

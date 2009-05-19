@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-CCMIMSEND_SOURCES=multisend.cc regTable.cc
+DEVICENAME     = lapi-""-CCMIMSEND
+include @abs_top_builddir@/Build.rules

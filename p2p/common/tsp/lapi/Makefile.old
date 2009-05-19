@@ -1,0 +1,83 @@
+# * ************************************************************************* *
+# *                            IBM Confidential                               *
+# *                          OCO Source Materials                             *
+# *                      IBM XL UPC Alpha Edition, V0.9                       *
+# *                                                                           *
+# *                      Copyright IBM Corp. 2005, 2007.                      *
+# *                                                                           *
+# * The source code for this program is not published or otherwise divested   *
+# * of its trade secrets, irrespective of what has been deposited with the    *
+# * U.S. Copyright Office.                                                    *
+# * ************************************************************************* *
+
+default: build install
+
+include ../../Make.rules
+
+OBJS		+= lapi_setup.o lapi_pool.o lapi_amsend.o lapi_barrier.o
+OBJS		+= lapi_dget.o lapi_get.o lapi_getv.o 
+OBJS		+= lapi_dput.o lapi_put.o lapi_putv.o
+OBJS            += lapi_update.o
+
+# ------------------------------ object list -------------------------------
+
+include ../distrib.mk
+include ../../smp/smp.mk
+include ../../hbrd/hbrd.mk
+include ../../../upcrt/src/upcrt.mk
+include ../../../cafrt/src/cafrt.mk
+include ../../../coll/tspcoll/tspcoll.mk
+include ../../../coll/smpcoll/smpcoll.mk
+include ../../../coll/hbrdcoll/hbrdcoll.mk
+-include ../../../x10rt/src/x10rt.mk
+
+ifeq (${CELL},yes)
+include ../../accel/cell/src/ppu/cell_ppu.mk
+include ../../accel/cell/src/spu/cell_spu.mk
+endif
+
+ifeq (${CUDA},yes)
+include ../../accel/cuda/src/cuda.mk
+endif
+
+ifeq (${BLD64BIT},1)
+  OBJS_64 = ${OBJS:%.o=%_64.o}
+endif
+
+# ---------------------------------------------------------------------------
+
+INC          	+= -I ../../include
+CFLAGS 		+= ${INC}
+CXXFLAGS 	+= ${INC}
+
+# ---------------------------------------------------------------------------
+
+build: $(LIBRARY)
+install:: $(LIBRARY)
+	@-${MKDIR} -p ${PGASRT_INSTALL_LIB}
+	@${CP} $(LIBRARY) $(PGASRT_INSTALL_LIB)/$(LIBRARY)
+	@-${CP} ${DYNLIB} $(PGASRT_INSTALL_LIB)/$(LIBRARY)
+
+$(LIBRARY): $(OBJS) ${OBJS_64}
+	${AR} ${ARFLAGS}  -cr $(LIBRARY) $(OBJS) ${OBJS_64}
+
+${DYNLIB}: ${OBJS} ${OBJS_64}
+	${MKSHLIB} -o $@ ${OBJS} ${OBJS_64}
+
+clean:; ${RM} core  $(LIBRARY) ${DYNLIB} $(OBJS) ${OBJS_64} .depend.mak
+distclean: clean 
+
+%_64.o: %.c
+	$(CC) $(CFLAGS) -c -q64 -o $@ $<
+
+%_64.o: %.cc
+	$(CXX) $(CXXFLAGS) -c -q64 -o $@ $<
+
+
+# ---------------------------------------------------------------------------
+# dependencies
+# ---------------------------------------------------------------------------
+depend:
+	makedepend -f- -- $(CFLAGS) -- $(SRCS) > .depend.mak
+
+-include depend.mak

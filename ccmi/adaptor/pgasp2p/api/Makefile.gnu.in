@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-CCMIAPI_SOURCES=API.cc Mapping.cc
+DEVICENAME     = lapi-""-CCMIAPI
+include @abs_top_builddir@/Build.rules

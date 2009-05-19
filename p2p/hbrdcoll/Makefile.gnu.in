@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-HBRCOLLECTIVES_SOURCES=hbrdcoll_c_intf.cc  hbrdcoll_communicator.cc  hbrdcoll_communicator_impl.cc
+DEVICENAME     = lapi-""-HBRCOLLECTIVES
+include @abs_top_builddir@/Build.rules

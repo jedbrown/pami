@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		=
+NOTBUILT        = 
+lapi-""-COLLECTIVES_SOURCES=Many2Many.cc  MultiCast.cc  MultiCombine.cc MultiSync.cc
+DEVICENAME     = lapi-""-COLLECTIVES
+include @abs_top_builddir@/Build.rules

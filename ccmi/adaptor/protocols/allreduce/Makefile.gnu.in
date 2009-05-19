@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-CCMIREDUCEFUNCTIONS_SOURCES=ReduceFunctions.cc
+DEVICENAME     = lapi-""-CCMIREDUCEFUNCTIONS
+include @abs_top_builddir@/Build.rules

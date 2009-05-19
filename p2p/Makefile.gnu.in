@@ -1,0 +1,4 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= hbrdcoll smpcoll tspcoll common/tsp common/smp common/hbrd multi
+NOTBUILT        = 
+include @abs_top_builddir@/Build.rules

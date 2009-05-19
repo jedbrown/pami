@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-CCMIGEOMETRY_SOURCES=geometry.cc
+DEVICENAME     = lapi-""-CCMIGEOMETRY
+include @abs_top_builddir@/Build.rules

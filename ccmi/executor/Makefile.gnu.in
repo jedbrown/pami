@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =                  
+lapi-""-CCMIALLREDUCESTATE_SOURCES=AllreduceState.cc
+DEVICENAME     = lapi-""-CCMIALLREDUCESTATE
+include @abs_top_builddir@/Build.rules

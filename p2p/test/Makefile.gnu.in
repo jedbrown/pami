@@ -1,0 +1,36 @@
+VPATH		= @srcdir@
+SUBDIRS         = eager rendezvous
+NOTBUILT        = testing_framework.${EXTENSION}
+APPS            = hbrdcoll_alltests.${EXTENSION} hbrdcoll_block.${EXTENSION}      \
+		  smpcoll_ar_test.${EXTENSION}   smpcoll_split.${EXTENSION}       \
+		  tspcoll_alltests.${EXTENSION}  tspcoll_bcasttest.${EXTENSION}   \
+		  tspcoll_split.${EXTENSION}     hbrdcoll_ar_test.${EXTENSION}    \
+		  smpcoll_alltests.${EXTENSION}  smpcoll_block.${EXTENSION}       \
+		  tspcoll_ar_latency.${EXTENSION} \
+		  tspcoll_block.${EXTENSION}
+
+include @abs_top_builddir@/Build.rules
+
+#%.${EXTENSION}: %.cc
+#	${CXX_CROSS} ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS}
+#%.${EXTENSION}: %.cpp
+#	${CXX_CROSS} ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS}
+
+%.${EXTENSION}: %.c
+	cp ${CRT1} .
+	cp ${CRTI} .
+	cp ${CRTN} .
+#	${CXX_CROSS} -I${INSTALL_DIR}/include -I@srcdir@/../common/include ${CXXFLAGS_CROSS} -c $< -o $@.o ${LDFLAGS_CROSS} -L${_BOSDEPS_USR_LIB_} -L@abs_top_builddir@ -llapi 
+	${CXX_CROSS} -I${INSTALL_DIR}/include -I@srcdir@/../common/include ${CXXFLAGS_CROSS} -c $< -o $@.o
+	rm `basename ${CRT1}`
+	rm `basename ${CRTI}`
+	rm `basename ${CRTN}`
+
+
+%.${EXTENSION}: %.cc
+	${CXX_CROSS} -I${INSTALL_DIR}/include -I../common/include ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS} -L${INSTALL_DIR}/lib -llapi 
+%.${EXTENSION}: %.cpp
+	${CXX_CROSS} -I${INSTALL_DIR}/include -I../common/include ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS} -L${INSTALL_DIR}/lib -llapi
+
+
+default: ${APPS}
