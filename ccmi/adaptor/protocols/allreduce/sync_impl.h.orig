@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/sync_impl.h
+ * \file collectives/bgp/protocols/allreduce/sync_impl.h
  * \brief CCMI composite template implementations
  */
 
-#ifndef __ccmi_adaptor_sync_impl_h__
-#define __ccmi_adaptor_sync_impl_h__
+#ifndef __ccmi_collectives_sync_impl_h__
+#define __ccmi_collectives_sync_impl_h__
 
 #include "../allreduce/CompositeT.h"
 #include "../allreduce/FactoryT.h"
@@ -85,61 +85,6 @@ namespace CCMI
       template<> void ShortBinomial::Composite::create_schedule(CCMI::Mapping * map,Geometry * geometry)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
-      };
-
-      // class Ring::Composite and Ring::Factory
-      ///
-      /// \brief Ring allreduce protocol
-      ///
-      /// Use the RingSchedule
-      /// 
-      namespace Ring
-      {
-        typedef CompositeT 
-        <CCMI::Schedule::RingSchedule,CCMI::Executor::PipelinedAllreduce> Composite;      
-        // Specify the static name in the class (for debug)
-        template<> const char* Composite::name="Ring";
-
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Ring::Composite> Factory;      
-      };
-      // Specializations for Ring templates.
-      ///
-      /// \brief Ring allreduce protocol specializations
-      /// Implement the correct analyze and schedule ctor.
-      /// Implement the factory getOneColor
-      /// 
-      template<> bool Ring::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void Ring::Composite::create_schedule(CCMI::Mapping * map,Geometry * geometry)
-      {
-        new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
-      };
-
-      // class RingReduce::Composite and RingReduce::Factory
-      ///
-      /// \brief Ring reduce protocol
-      ///
-      /// Use the OneColorRectRedSched with the ring subschedule
-      /// 
-      namespace RingReduce
-      {
-        typedef CompositeT 
-        <CCMI::Schedule::RingSchedule,CCMI::Executor::Allreduce> Composite;      //? pipelined or not?
-        // Specify the static name in the class (for debug)
-        template<> const char* Composite::name="RingReduce";
-
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RingReduce::Composite> Factory;      
-      };
-      // Specializations for Ring templates.
-      ///
-      /// \brief Ring reduce protocol specializations
-      /// Implement the correct analyze and schedule ctor.
-      /// Implement the factory getOneColor
-      template<> bool RingReduce::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void RingReduce::Composite::create_schedule(CCMI::Mapping * map,Geometry * geometry)
-      {
-        new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
       };
 
     };

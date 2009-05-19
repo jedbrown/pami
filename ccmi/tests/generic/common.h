@@ -258,7 +258,7 @@ void allocate_buffers()
 void print_performance(double latency_time, double bandwidth_time)
 {
   TRACE_TEST_VERBOSE((stderr,"%s:%s\n", argv0,__PRETTY_FUNCTION__));
-  if(!latency_time)
+  if(latency_time == 0.0)
   {
     if(rank == 0) printf("%32.32s \t\tNP\t       \t\tBandWidth\tbytes\n", argv0);
     if(rank == 0) printf("%32.32s \t\t        \tbytes/cycle\n", argv0);
@@ -268,11 +268,11 @@ void print_performance(double latency_time, double bandwidth_time)
                          ((double)bytes * repetitions)/bandwidth_time,
                          bytes );
   }
-  else if(!bandwidth_time)
+  else if(bandwidth_time == 0.0)
   {
     if(rank == 0) printf("%32.32s \t\tNP\tLatency\t\t         \t     \n", argv0);
     if(rank == 0) printf("%32.32s \t\t(cycles)\t           \n", argv0);
-    if(rank == 0) printf("%32.32s \t\t%d\t%6.6lld\t\t     \t\t     \n", argv0,
+    if(rank == 0) printf("%32.32s \t\t%d\t%g\t\t     \t\t     \n", argv0,
                          size,
                          latency_time/repetitions
                          //((double)bytes * repetitions)/bandwidth_time,
@@ -282,11 +282,11 @@ void print_performance(double latency_time, double bandwidth_time)
   else
   {
     if(rank == 0) printf("%32.32s \t\tNP\tLatency\t\tBandWidth\tbytes\n", argv0);
-    if(rank == 0) printf("%32.32s \t\t(cycles)\tbytes/cycle\n", argv0);
-    if(rank == 0) printf("%32.32s \t\t%d\t%6.6lld\t\t%5.3f\t\t%d\n", argv0,
+    if(rank == 0) printf("%32.32s \t\t\t(us)\t\tMB/s\n", argv0);
+    if(rank == 0) printf("%32.32s \t\t%d\t%5.3g\t\t%5.3g\t\t%d\n", argv0,
                          size,
-                         latency_time/repetitions, 
-                         ((double)bytes * repetitions)/bandwidth_time,
+                         latency_time*1e6/repetitions, 
+                         ((double)bytes * repetitions * 1e-6)/bandwidth_time,
                          bytes );
   }
 }

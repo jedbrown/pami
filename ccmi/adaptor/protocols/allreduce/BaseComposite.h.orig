@@ -7,14 +7,14 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/BaseComposite.h
+ * \file collectives/bgp/protocols/allreduce/BaseComposite.h
  * \brief CCMI base composite adaptor for allreduce with factory and 
  * restart support
  */
 
 
-#ifndef __ccmi_adaptor_allreduce_basecomposite_h__
-#define __ccmi_adaptor_allreduce_basecomposite_h__
+#ifndef __ccmi_collectives_allreduce_basecomposite_h__
+#define __ccmi_collectives_allreduce_basecomposite_h__
 
 #include "../../../interfaces/Composite.h"
 #include "../ProtocolFactory.h"
@@ -47,7 +47,8 @@ namespace CCMI
         }
 
         ///
-        /// \brief At this level we only support single color collectives
+        /// \brief At this level we only support single color
+        /// collectives
         ///
         virtual unsigned restart   ( CCMI_CollectiveRequest_t  * request,
                                      CCMI_Callback_t           & cb_done,

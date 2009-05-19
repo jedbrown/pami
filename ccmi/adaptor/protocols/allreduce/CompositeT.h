@@ -60,7 +60,7 @@ namespace CCMI
                     ProtocolFactory           * factory,
                     int                         root = -1) :
         CCMI::Adaptor::Allreduce::Composite( flags, geometry->getBarrierExecutor(), factory, cb_done),
-        _executor(map, cmgr, consistency, geometry->comm(), 0)//geometry->getAllreduceIteration())        
+        _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())        
         {
           create_schedule(map, geometry);
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::CompositeT() ALERT\n",(int)this,name));

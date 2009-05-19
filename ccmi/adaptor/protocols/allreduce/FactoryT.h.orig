@@ -7,13 +7,13 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/FactoryT.h
+ * \file collectives/bgp/protocols/allreduce/FactoryT.h
  * \brief  CCMI factory for sync [all]reduce compositeT 
  * \todo should the mapping be a template parameter?  Mapping vs Mapping 
   */
 
-#ifndef __ccmi_adaptor_allreduce_factoryt_h__
-#define __ccmi_adaptor_allreduce_factoryt_h__
+#ifndef __ccmi_collectives_allreduce_factoryt_h__
+#define __ccmi_collectives_allreduce_factoryt_h__
 
 #include "./Factory.h"
 

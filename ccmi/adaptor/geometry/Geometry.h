@@ -38,13 +38,14 @@ namespace CCMI
 
       /// \brief [All]reduce composite/executors stored in the geometry for
       /// async callbacks
-      CCMI::Executor::Composite      * _allreduce;
+      CCMI::Executor::Composite      * _allreduce[2];
 
       /// \brief Persistent storage for [all]reduce composites.    
       /// Saved for the life of the geometry and freed when the
       // geometry is destroyed.  
-      CCMI_Executor_t                  * _allreduce_storage;
+      CCMI_Executor_t                  * _allreduce_storage[2];
 
+      unsigned                         _allreduce_iteration;
       unsigned                         * _permutation;
       int                              _myidx;      
       
@@ -53,6 +54,13 @@ namespace CCMI
 
       static unsigned           _ccmi_cached_geometry_comm;
       static CCMI_Geometry_t  * _ccmi_cached_geometry;
+      inline unsigned incrementAllreduceIteration()
+      {
+        _allreduce_iteration ^= 1;//_allreduce_async_mode; // "increment" with defined mode
+        // fprintf(stderr, "Geometry::incrementAllreduceIteration() %#X\n",_allreduce_iteration);
+        return _allreduce_iteration;
+      }
+
 
     public:
 
@@ -121,31 +129,58 @@ namespace CCMI
         _local_barrier_exec = bar;
       }
 
+      inline unsigned getAllreduceIteration()
+      {
+        return _allreduce_iteration;
+      }
+
       inline CCMI_Executor_t  *getAllreduceCompositeStorage () 
       {
-        if(_allreduce_storage == NULL)
-          _allreduce_storage = (CCMI_Executor_t *) CCMI_Alloc (sizeof (CCMI_Executor_t));
-        return _allreduce_storage; 
+        if(_allreduce_storage[_allreduce_iteration] == NULL)
+          _allreduce_storage[_allreduce_iteration] = (CCMI_Executor_t *) CCMI_Alloc (sizeof (CCMI_Executor_t));
+        return _allreduce_storage[_allreduce_iteration]; 
+      }
+
+      inline CCMI_Executor_t  *getAllreduceCompositeStorage(unsigned i) 
+      {
+        if(_allreduce_storage[i] == NULL)
+          _allreduce_storage[i] = (CCMI_Executor_t *) CCMI_Alloc (sizeof (CCMI_Executor_t));
+        return _allreduce_storage[i]; 
       }
 
       inline CCMI::Executor::Composite *getAllreduceComposite()
       {
         // returns current iteration and increments the iteration value
         //fprintf(stderr, "Geometry::getAllreduceComposite(%#X)\n",_allreduce_iteration);
-        return _allreduce;
+        return _allreduce[_allreduce_iteration];
+      }
+
+      inline CCMI::Executor::Composite *getAllreduceComposite(unsigned i)
+      {
+        //fprintf(stderr, "Geometry::getAllreduceComposite(unsigned i:%#X)\n",i);
+        return _allreduce[i];
       }
 
       inline void  setAllreduceComposite(CCMI::Executor::Composite *c)
       {
         //fprintf(stderr, "Geometry::setAllreduceComposite(%#X) %#.8X\n",_allreduce_iteration,(int)c);
-        _allreduce = c;
+        _allreduce[_allreduce_iteration] = c;
+        // When setting a non-null composite, increment our iteration.
+        // The assumption is the caller is using this 'c' now and we should
+        // setup for the next one to be used/ctor'd.
+        if(c) incrementAllreduceIteration();
+      }
+
+      inline void  setAllreduceComposite(CCMI::Executor::Composite *c, unsigned i)
+      {
+        //fprintf(stderr, "Geometry::setAllreduceComposite(unsigned i:%#X) %#.8X\n",i,(int)c);
+        _allreduce[i] = c;
       }
       inline void freeAllocations ()
       {
         //int i;
 	//            fprintf(stderr,"Geometry::freeAllocations(), _allreduce %#X, _allreduce_storage %#X\n",
 	//                    (int)_allreduce, (int)_allreduce_storage);	
-
 	if(_asyncBcastPostQueue)
 	  free (_asyncBcastPostQueue);
 	_asyncBcastPostQueue = NULL;
@@ -153,16 +188,20 @@ namespace CCMI
 	if(_asyncBcastUnexpQueue)
 	  free (_asyncBcastUnexpQueue);
 	_asyncBcastUnexpQueue = NULL;
-          if(_allreduce)
+        for(int i=0; i < 2; ++i)
+        {
+
+          if(_allreduce[i])
           {
-            _allreduce->~Composite();
-            _allreduce = NULL;
+            _allreduce[i]->~Composite();
+            _allreduce[i] = NULL;
           }
-          if(_allreduce_storage)
+          if(_allreduce_storage[i])
           {
-            CCMI_Free (_allreduce_storage);
-            _allreduce_storage = NULL;
+            CCMI_Free (_allreduce_storage[i]);
+            _allreduce_storage[i] = NULL;
           }
+      }
       }
 
       inline void setGlobalContext(bool context)

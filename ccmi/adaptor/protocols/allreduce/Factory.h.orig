@@ -7,13 +7,13 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/Factory.h
+ * \file collectives/bgp/protocols/allreduce/Factory.h
  * \brief CCMI factory for [all]reduce composite
  */
 
 
-#ifndef __ccmi_adaptor_allreduce_factory_h__
-#define __ccmi_adaptor_allreduce_factory_h__
+#ifndef __ccmi_collectives_allreduce_factory_h__
+#define __ccmi_collectives_allreduce_factory_h__
 
 #include "./Composite.h"
 #include "../../geometry/Geometry.h"
@@ -152,7 +152,7 @@ namespace CCMI
                                                unsigned color)
         {
           CCMI::Executor::Composite *composite = 
-          ((Geometry *)_cb_geometry(comm))->getAllreduceComposite(color);
+          ((Geometry *)_cb_geometry(comm))->getAllreduceComposite();
           CCMI::Executor::AllreduceBase *executor = (composite)?
                                               (CCMI::Executor::AllreduceBase *) composite->getExecutor (0):
                                               (CCMI::Executor::AllreduceBase *)NULL;

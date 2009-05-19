@@ -22,7 +22,7 @@ inline void barrier_advance ()
                consistency);
   while(!done)
   {
-    CCMI_Messager_advance();
+    CCMI_Generic_adaptor_advance();
   }
   return;
 }

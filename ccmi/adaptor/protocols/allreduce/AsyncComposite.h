@@ -7,34 +7,22 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file collectives/bgp/protocols/allreduce/Composite.h
+ * \file ccmi/adaptor/protocols/allreduce/AsyncComposite.h
  * \brief CCMI composite adaptor for allreduce with barrier support
  */
 
+#ifndef __ccmi_adaptor_allreduce_async_composite_h__
+#define __ccmi_adaptor_allreduce_async_composite_h__
 
-#ifndef __ccmi_collectives_allreduce_composite_h__
-#define __ccmi_collectives_allreduce_composite_h__
-
-#include "./BaseComposite.h"
+#include "protocols/allreduce/Composite.h"
 //  #include "Geometry.h"
-#include "../../../executor/Barrier.h"
-#include "../../../executor/AllreduceBase.h"
-
+#include "executor/Barrier.h"
+#include "executor/AllreduceBase.h"
 
 namespace CCMI
 {
   namespace Adaptor
   {
-    /// \brief Default for reuse_storage_limit is currently MAXINT/2G-1
-#define CCMI_DEFAULT_REUSE_STORAGE_LIMIT ((unsigned)2*1024*1024*1024 - 1)
-    /// \brief configuration flags/options for creating the factory
-    typedef struct 
-    {
-/*      unsigned reuse_storage:1;  // save allocated storage across calls
-      unsigned reserved:31; */
-      unsigned reuse_storage_limit; // save allocated storage up to this limit
-      unsigned pipeline_override;
-    } ConfigFlags;
 
     namespace Allreduce
     {
@@ -43,20 +31,14 @@ namespace CCMI
       extern void getReduceFunction(CCMI_Dt, CCMI_Op, unsigned, 
                                     unsigned&, CCMI_ReduceFunc&) __attribute__((noinline));
 
-      //-- Composite
-      /// \brief The Composite for the Allreduce (and reduce)
-      /// kernel executor.
+      //-- AsyncComposite
+      /// \brief The Async Composite for the Allreduce kernel executor.
       /// 
       /// It does common initialization for all subclasses (protocols)
       /// such as mapping the operator and datatype to a function and
       /// calling various setXXX() functions in the kernel executor.
       /// 
-      /// It also adds support for an optional barrier to synchronize
-      /// the kernel executor.  It coordinates the barrier done
-      /// callback and the [all]reduce done callback to call the
-      /// client done callback.
-      /// 
-      class Composite : public BaseComposite
+      class AsyncComposite : public BaseComposite
       {
       protected:
         ///
@@ -65,6 +47,17 @@ namespace CCMI
         /// whether subclasses are using the barrier or not.
         ///
         int                             _doneCountdown;
+
+        /// \brief The asynchronous state of the operation.  
+        /// Idle/Done - no operation in progress
+        /// Started - a local operation has started
+        /// Queueing - a unexpected/asynchronous message arrived before 
+        /// a local operation has started
+        int                             _asyncState;
+        static const int                _isIdle     = 0;
+        static const int                _isStarted  = 1;
+        static const int                _isQueueing = 2;
+        static const int                _isDone     = 3;
 
         ///
         /// \brief Configuration flags
@@ -78,49 +71,82 @@ namespace CCMI
         void               (* _myClientFunction)(void *, CCMI_Error_t *);
         void                * _myClientData;
       public:
-        Composite () : 
+
+#ifdef CCMI_DEBUG 
+        unsigned                          _count;
+        CCMI_Dt                           _dt;
+        CCMI_Op                           _op;
+        unsigned                          _iteration;
+        unsigned                          _root;
+#endif // CCMI_DEBUG
+
+        inline void setDone()
+        {
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setDone()\n",(int)this));_asyncState = _isDone;
+        }
+        inline void setIdle()
+        {
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setIdle()\n",(int)this));_asyncState = _isIdle;
+        }
+        inline void setStarted()
+        {
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setStarted()\n",(int)this));_asyncState = _isStarted;
+        }
+        inline void setQueueing()
+        {
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setQueueing()\n",(int)this));_asyncState = _isQueueing;
+        }
+        inline bool isDone()
+        {
+          return _asyncState == _isDone;
+        }
+        inline bool isIdle()
+        {
+          return(_asyncState == _isIdle) || (_asyncState == _isDone);
+        }
+        inline bool isStarted()
+        {
+          return _asyncState == _isStarted;
+        }
+        inline bool isQueueing()
+        {
+          return _asyncState == _isQueueing;
+        }
+
+        AsyncComposite () : 
         BaseComposite (NULL), 
-        _doneCountdown(1)  // default to just a composite done needed
+        _doneCountdown(1),  // default to just a composite done needed
+        _asyncState(_isIdle)
         {
           CCMI_abort();
         }
 
-        Composite ( ConfigFlags                       flags,
-                    CCMI::Executor::Executor      * barrier,
-                    ProtocolFactory                 * factory,
-                    CCMI_Callback_t                   cb_done):
+        AsyncComposite ( ConfigFlags                       flags,
+                         ProtocolFactory                 * factory,
+                         CCMI_Callback_t                   cb_done):
 
         BaseComposite (factory),
         _doneCountdown(1),  // default to just a composite done needed
+        _asyncState(_isIdle),
         _flags(flags),
         _myClientFunction (cb_done.function), 
         _myClientData (cb_done.clientdata)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::Composite::ctor() ALERT:\n",(int)this));
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::ctor() flags(%#X) barrier(%#X) factory(%#X)\n",(int)this,
-                         *(unsigned*)&flags, (int) barrier, (int) factory));
-          if(barrier)
-            initializeBarrier ((CCMI::Executor::Barrier *) barrier);
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::ctor() ALERT:\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::ctor() flags(%#X) factory(%#X)\n",(int)this,
+                         *(unsigned*)&flags, (int) factory));
         }
 
         /// Default Destructor
-        virtual ~Composite()
+        virtual ~AsyncComposite()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::Composite::dtor() ALERT:\n",(int)this));
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::dtor()\n",(int)this));
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::dtor() ALERT:\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::dtor()\n",(int)this));
         }
 
         void operator delete (void *p)
         {
           CCMI_assert (0);
-        }
-
-        void initializeBarrier (CCMI::Executor::Barrier *barrier)
-        {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::initializeBarrier barrier(%#X,%#X)\n",(int)this,(int)barrier,(int)this));
-          addBarrier (barrier); 
-          //Setup barrier
-          _barrier->setDoneCallback (cb_barrierDone, this);
         }
 
         ///
@@ -140,7 +166,7 @@ namespace CCMI
                           void                            * cd = NULL
                         )
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::initialize()\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::initialize()\n",(int)this));
           allreduce->setSendState(request);
           allreduce->setRoot( root );    
           allreduce->setDataInfo(srcbuf, dstbuf);
@@ -184,7 +210,7 @@ namespace CCMI
 
         unsigned computePipelineWidth (unsigned count, unsigned sizeOfType, unsigned min_pwidth)
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::computePipelineWidth() count %#X, size %#X, min %#X\n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::computePipelineWidth() count %#X, size %#X, min %#X\n",(int)this,
                          count, sizeOfType, min_pwidth));
           unsigned pwidth = min_pwidth;
 
@@ -197,7 +223,7 @@ namespace CCMI
           else if(count * sizeOfType > 16 * pwidth)
             pwidth *= 4;
 
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::computePipelineWidth() pwidth %#X\n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::computePipelineWidth() pwidth %#X\n",(int)this,
                          pwidth));
           return pwidth;      
         }
@@ -215,7 +241,7 @@ namespace CCMI
                                      CCMI_Op                     op,
                                      int                         root=-1) 
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::restart()\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::restart()\n",(int)this));
           _myClientFunction = cb_done.function;
           _myClientData     = cb_done.clientdata;
 
@@ -225,111 +251,104 @@ namespace CCMI
 
           initialize (allreduce, request, srcbuf, dstbuf, 
                       count, dtype, op, root);    
+          if(isIdle())
+          {
+            allreduce->reset();
+          }
+          else
+          {
+            // We have a dstbuf now, need to reset that much but not full reset()
+            allreduce->resetDstBuf();
+#ifdef CCMI_DEBUG
+            TRACE_ADAPTOR((stderr,"count %#X == %#X\n",count,_count));
+            TRACE_ADAPTOR((stderr,"dtype %#X == %#X\n",dtype,_dt));
+            TRACE_ADAPTOR((stderr,"op %#X == %#X\n",op,_op));
+            //TRACE_ADAPTOR((stderr,"iter %#X == %#X\n",iteration,_iteration));
+            TRACE_ADAPTOR((stderr,"root %#X == %#X\n",root,_root));
+#endif
+          }
+          if(isDone()) setIdle();
           allreduce->setConsistency(consistency);
-          allreduce->reset();
-          //allreduce->resetReceives ();
 
           _doneCountdown = 1; // default to just a composite done needed
 
-          if(_barrier)
+          allreduce->start();
+
+          if(!isDone()) setStarted();
+
+          return CCMI_SUCCESS;
+        }
+
+        ///
+        /// \brief At this level we only support single color collectives
+        ///
+        virtual unsigned restartAsync ( CCMI::Executor::AllreduceBase * allreduce,
+                                        unsigned                    count,
+                                        CCMI_Dt                     dtype,
+                                        CCMI_Op                     op,
+                                        int                         root=-1) 
+        {
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::restartAsync() ALERT:\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::restartAsync()\n",(int)this));
+
+          initialize (allreduce,(CCMI_CollectiveRequest_t  *) NULL, NULL, NULL,
+                      count, dtype, op, root);    
+          if(isIdle())
           {
-            // reset barrier since it may be been used between calls
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::reset barrier(%#X,%#X)\n",(int)this,(int)_barrier,(int)this));
-            _barrier->setDoneCallback (cb_barrierDone, this);
-            startBarrier (consistency);
+            allreduce->reset();
           }
+
+          _doneCountdown = 1; // default to just a composite done needed
+
+          setQueueing();
 
           return CCMI_SUCCESS;
         }
 
         virtual void start()
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::start()\n",(int)this));
+          CCMI_assert(_asyncState != _isStarted);
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::start()\n",(int)this));
+          setStarted();
           getExecutor(0)->start();
         }
 
         void done()
         {
           _doneCountdown --;
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::done() "
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::done() "
                          "_doneCountdown:%#X %#X/%#X \n",(int)this,
                          _doneCountdown,(int)_myClientFunction,  
                          (int)_myClientData));
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
           {
+            setDone();
             if(_myClientFunction) (*_myClientFunction) (_myClientData, NULL);
             ((CCMI::Executor::AllreduceBase *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::DONE() \n",
+            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::DONE() \n",
                            (int)this));
           }
         }
 
         ///
         /// \brief The default done call back to be called when
-        /// barrier finishes
-        ///
-        /// Start the [all]reduce now.
-        /// 
-        /// It means the is done, but the client done isn't called
-        /// until both the composite and (optional) barrier are done.
-        /// 
-        static void cb_barrierDone(void *me, CCMI_Error_t *err)
-        {
-
-          TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::Composite::cb_barrierDone()\n",
-                         (int)me));
-
-          Composite *composite = (Composite *) me;
-          CCMI::Executor::AllreduceBase *allreduce = 
-          (CCMI::Executor::AllreduceBase *) composite->getExecutor(0);
-          allreduce->start();
-          composite->done();
-          TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::Composite::cb_barrierDone() 2\n",
-                         (int)me));
-        }
-
-        ///
-        /// \brief The default done call back to be called when
         /// [all]reduce finishes
         ///
-        /// It means this composite (and kernel executor) is done, but
-        /// the client done isn't called until both the composite and
-        /// (optional) barrier are done.
+        /// It means this composite (and kernel executor) is done
         /// 
         static void cb_compositeDone(void *me, CCMI_Error_t *err)
         {
           TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::Composite::cb_compositeDone()\n",
+                         "<%#.8X>Allreduce::AsyncComposite::cb_compositeDone()\n",
                          (int)me));
-          Composite *composite = (Composite *) me;
+          AsyncComposite *composite = (AsyncComposite *) me;
           composite->done();
           TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::Composite::cb_compositeDone() 2\n",
+                         "<%#.8X>Allreduce::AsyncComposite::cb_compositeDone() 2\n",
                          (int)me));
         }
 
-        ///
-        /// \brief Setup and start the (optional) barrier.  It's done callback
-        /// will start the [all]reduce.
-        ///
-        void startBarrier(CCMI_Consistency             consistency)
-        {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::startBarrier() barrier(%#X)\n",
-                         (int)this,(int)_barrier));
-          CCMI_assert_debug (_barrier != NULL);
-
-          // We need to account for this barrier calling done in
-          // addition to the allreduce calling done, so increment
-          // countdown
-          _doneCountdown++;
-
-          _barrier->setConsistency (consistency);
-          _barrier->start();
-        }
-
-      };  //-- Composite
+      };  //-- AsyncComposite
     };
   };
 }; // namespace CCMI::Adaptor::Allreduce

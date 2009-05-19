@@ -13,6 +13,7 @@ CCMI::Adaptor::Geometry::Geometry (CCMI::Mapping *mapping,
 				   unsigned nranks,
 				   unsigned comm,
 				   bool globalcontext):
+_allreduce_iteration(0),
 _asyncBcastPostQueue(NULL),
 _asyncBcastUnexpQueue(NULL)
 {

@@ -7,15 +7,20 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file perf/ccmi/collectives/binomialallreduce.cc
- * \brief performance test
+ * \file tests/generic/ringallreduce2.cc
+ * \brief allreduce for different counts
  */
 
+//#define TRACE_TEST_VERBOSE(x) fprintf x
 //#define TRACE_TEST(x) fprintf x
+#define STRICT_CHECKING 1
+
 #include "allreduce.h"
 
 int main(int argc, char **argv)
 {
+
+  int ret = 0;
 
   setup(argc, argv);
 
@@ -23,31 +28,22 @@ int main(int argc, char **argv)
 
   initialize(CCMI_BINOMIAL_BARRIER_PROTOCOL,
              CCMI_BINOMIAL_BARRIER_PROTOCOL,
-             CCMI_BINOMIAL_ALLREDUCE_PROTOCOL); // protocol to test
+             CCMI_RING_ALLREDUCE_PROTOCOL); // protocol to test
 
   allocate_buffers();
 
-  if(rank == 0) TRACE_TEST((stdout,"%s:  Allreduce begin performance runs\n", argv0));
+  // Simple functional run:
+  // 
+  // Try different counts: 1, 2, 4, 8 ... count
+  for(unsigned i = 1; i <= count; i*=2)
+  {
+    setBuffers(srcbuf, dstbuf, i);
+    if(rank == 0) TRACE_TEST((stderr, "allreduce size %d\n", i));
+    allreduce_advance(srcbuf,dstbuf,i);
+    ret += checkBuffers(srcbuf, dstbuf, i);
+  }
 
-  // Performance run latency (count = 1);
-  int i;
-  double t, latencyt = 0, bandwidtht = 0;
-  double tbstart, tbfinish;
-
-  for(i = 0; i < warmup_repetitions; i++) allreduce_advance (srcbuf,dstbuf,1);
-  t = MPI_Wtime();
-  for(i = 0; i < repetitions; i++) allreduce_advance (srcbuf,dstbuf,1);
-  latencyt = MPI_Wtime() - t;
-
-  // Performance run bandwidth
-  for(i = 0; i < warmup_repetitions; i++) allreduce_advance (srcbuf,dstbuf,count);
-  t = MPI_Wtime();
-  for(i = 0; i < repetitions; i++) allreduce_advance (srcbuf,dstbuf,count);
-  bandwidtht = MPI_Wtime() - t;
-
-  print_performance(latencyt, bandwidtht);
-
-  cleanup();
+  cleanup(ret);
 
   return 0;
 }

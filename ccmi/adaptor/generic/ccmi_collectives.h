@@ -374,7 +374,9 @@ extern "C"
 
   typedef enum
     {
-      CCMI_BINOMIAL_BROADCAST_PROTOCOL,   /**< Torus binom broadcast. */
+      CCMI_BINOMIAL_BROADCAST_PROTOCOL,   /**< Binomial broadcast. */
+      CCMI_RING_BROADCAST_PROTOCOL,   /**< Ring broadcast. */
+      CCMI_ASYNCBINOMIAL_BROADCAST_PROTOCOL,   /**< Async Binomial broadcast. */
       CCMI_NUM_BROADCAST_PROTOCOLS,
     }
   CCMI_Broadcast_Protocol;
@@ -456,8 +458,8 @@ extern "C"
 
   typedef enum
     {
-      CCMI_BINOMIAL_ALLREDUCE_PROTOCOL,         /**< Binomial allreduce. */
-      CCMI_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL,   /**< Binomial short allreduce. */
+      CCMI_RING_ALLREDUCE_PROTOCOL, /**< Rectangle/ring allreduce. */
+      CCMI_ASYNC_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL,   /**< Binomial short async allreduce. */
       CCMI_NUM_ALLREDUCE_PROTOCOLS
     }
   CCMI_Allreduce_Protocol;
@@ -532,6 +534,96 @@ extern "C"
                       unsigned          count,
                       CCMI_Dt           dt,
                       CCMI_Op           op);
+
+  /* ********************************************************************* */
+  /*                                                                       */
+  /*      Reduce                                                           */
+  /*                                                                       */
+  /* ********************************************************************* */
+
+
+  /**
+   * \brief Reduce protocol implementations.
+   */
+
+  typedef enum
+    {
+      CCMI_RING_REDUCE_PROTOCOL,  /**<  rectangle/ring reduce. */
+      CCMI_NUM_REDUCE_PROTOCOLS
+    }
+  CCMI_Reduce_Protocol;
+
+  /**
+   * \brief Reduce configuration.
+   */
+
+  typedef struct
+  {
+    CCMI_Reduce_Protocol protocol;    /**< The reduce protocol implementation to register. */
+    CCMI_mapIdToGeometry cb_geometry; /**< Callback to get the geometry when the async packet arrives. **/
+    unsigned reuse_storage:1;         /**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
+    unsigned reserved:31;             /**< Reserved for future use. */
+  }
+  CCMI_Reduce_Configuration_t;
+
+
+  /**
+   * \brief Register the reduce protocol implementation
+   *        specified by the reduce configuration.
+   *
+   * \warning After registering the protocol information it is illegal to
+   *          deallocate the registration object.
+   *
+   * \param[out] registration  Opaque memory to maintain registration information.
+   * \param[in]  configuration Reduce configuration information.
+   *
+   * \retval     0            Success
+   *
+   * \see CCMI_Reduce
+   */
+
+  int CCMI_Reduce_register (CCMI_CollectiveProtocol_t   * registration,
+                            CCMI_Reduce_Configuration_t * configuration);
+
+  /**
+   * \brief Create and post a non-blocking reduce operation.
+   *
+   * The reduce operation ...
+   *
+   * \warning Until the message callback is invoked, it is illegal to send it
+   *          again, reset it, touch the attached buffers, or deallocate the
+   *          request object.
+   *
+   * \param[in]  registration Protocol registration.
+   * \param[in]  request      Opaque memory to maintain internal message state.
+   * \param[in]  cb_done      Callback to invoke when message is complete.
+   * \param[in]  consistency  Required consistency level.
+   * \param[in]  geometry     Geometry to use for this collective operation.
+   *                          \c NULL indicates the global geometry.
+   * \param[in]  root         Rank of the reduce root node.
+   * \param[in]  sbuffer      Source buffer.
+   * \param[in]  rbuffer      Receive buffer.
+   * \param[in]  count        Number of elements to reduce.
+   * \param[in]  dt           Element data type
+   * \param[in]  op           Reduce operation
+   *
+   * \retval     0            Success
+   *
+   * \see CCMI_Reduce_register
+   *
+   * \todo doxygen
+   */
+  int CCMI_Reduce (CCMI_CollectiveProtocol_t * registration,
+                   CCMI_CollectiveRequest_t  * request,
+                   CCMI_Callback_t   cb_done,
+                   CCMI_Consistency  consistency,
+                   CCMI_Geometry_t * geometry,
+                   int               root,
+                   char            * sbuffer,
+                   char            * rbuffer,
+                   unsigned          count,
+                   CCMI_Dt           dt,
+                   CCMI_Op           op);
 
 
 #ifdef __cplusplus
