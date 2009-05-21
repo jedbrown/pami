@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -44,6 +45,14 @@ hl_broadcast_t  _xfer_broadcast =
 	0
     };
 
+HL_Geometry_t *cb_geometry (int comm)
+{
+    if(comm == 0)
+	return &HL_World_Geometry;
+    else
+	assert(0);
+}
+
 static double timer()
 {
     struct timeval tv;
@@ -68,7 +77,6 @@ void init__barriers ()
   HL_Barrier_Configuration_t barrier_config;
   barrier_config.cfg_type    = HL_CFG_BARRIER;
   barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  barrier_config.cb_geometry = NULL;
   HL_register(&_g_barrier,
 	      (HL_CollectiveConfiguration_t*)&barrier_config,
 	      0);
@@ -80,7 +88,6 @@ void init__broadcasts ()
   HL_Broadcast_Configuration_t broadcast_config;
   broadcast_config.cfg_type    = HL_CFG_BROADCAST;
   broadcast_config.protocol    = HL_DEFAULT_BROADCAST_PROTOCOL;
-  broadcast_config.cb_geometry = NULL;
   HL_register(&_g_broadcast,
 	      (HL_CollectiveConfiguration_t*)&broadcast_config,
 	      0);
@@ -118,7 +125,7 @@ int main(int argc, char*argv[])
   char buf[BUFSIZE];
   char rbuf[BUFSIZE];
 
-  HL_Collectives_initialize(argc,argv);
+  HL_Collectives_initialize(argc,argv,cb_geometry);
   init__barriers();
   int rank = HL_Rank();
   int i,j,root = 0;

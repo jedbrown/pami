@@ -4,17 +4,19 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "../interface/hl_collectives.h"
-
+#include <assert.h>
 
 #define BUFSIZE 4194304
 
 void cb_barrier (void * clientdata);
 void cb_broadcast (void * clientdata);
+HL_Geometry_t *cb_geometry (int comm);
 // Global Geometry Object
 HL_Geometry_t           _g_geometry_top;
 HL_Geometry_t           _g_geometry_bottom;
 HL_Geometry_range_t     _g_range_top;
 HL_Geometry_range_t     _g_range_bottom;
+HL_mapIdToGeometry      _g_geometry_map = cb_geometry;
 // Barrier Data
 
 HL_CollectiveProtocol_t _g_barrier;
@@ -57,6 +59,19 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
+HL_Geometry_t *cb_geometry (int comm)
+{
+    if(comm == 0)
+	return &HL_World_Geometry;
+    else if(comm == 1)
+	return &_g_geometry_bottom;
+    else if(comm == 2)
+	return &_g_geometry_top;
+    else
+	assert(0);
+
+}
+
 void cb_barrier (void * clientdata)
 {
   int * active = (int *) clientdata;
@@ -71,15 +86,17 @@ void cb_broadcast (void * clientdata)
 
 void init__geometry (HL_Geometry_t       *geometry,
 		     HL_Geometry_range_t *range,
-		     int                  lo, 
-		     int                  hi)
+		     int                  lo,
+		     int                  hi,
+		     int                  id)
 {
     range->lo = lo;
     range->hi = hi;
     HL_Geometry_initialize (geometry,               // Geometry Object
-                            0,                      // Global id
+                            id,                     // Global id
                             range,                  // List of rank slices
                             1);                     // Count of slices
+
 }
 
 void init__barriers ()
@@ -87,7 +104,6 @@ void init__barriers ()
   HL_Barrier_Configuration_t barrier_config;
   barrier_config.cfg_type    = HL_CFG_BARRIER;
   barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  barrier_config.cb_geometry = NULL;
   HL_register(&_g_barrier,
 	      (HL_CollectiveConfiguration_t*)&barrier_config,
 	      0);
@@ -99,7 +115,6 @@ void init__broadcasts ()
   HL_Broadcast_Configuration_t broadcast_config;
   broadcast_config.cfg_type    = HL_CFG_BROADCAST;
   broadcast_config.protocol    = HL_DEFAULT_BROADCAST_PROTOCOL;
-  broadcast_config.cb_geometry = NULL;
   HL_register(&_g_broadcast,
 	      (HL_CollectiveConfiguration_t*)&broadcast_config,
 	      0);
@@ -139,13 +154,13 @@ int main(int argc, char*argv[])
 {
   double tf,ti,usec;
   char buf[BUFSIZE];
-  char rbuf[BUFSIZE];  
-  HL_Collectives_initialize(argc,argv);
+  char rbuf[BUFSIZE];
+  HL_Collectives_initialize(argc,argv,cb_geometry);
   int rank = HL_Rank();
   int sz   = HL_Size();
   int half = sz/2;
   int set[2];
-  
+
   if(rank == 0)
       printf("Initializing Barriers\n");
   init__barriers();
@@ -158,13 +173,13 @@ int main(int argc, char*argv[])
   if(rank == 0)
       printf("Initializing Top Geometry\n");
 
-  init__geometry(&_g_geometry_bottom,&_g_range_bottom,0, half-1);
+  init__geometry(&_g_geometry_bottom,&_g_range_bottom,0, half-1, 1);
 
   if(rank == 0)
       printf("Initializing Bottom Geometry\n");
 
-  init__geometry(&_g_geometry_top,&_g_range_top,half, sz-1);
- 
+  init__geometry(&_g_geometry_top,&_g_range_top,half, sz-1, 2);
+
   if(rank>=0 && rank<=half-1)
       {
 	  set[0]=1;
@@ -176,12 +191,17 @@ int main(int argc, char*argv[])
 	  set[1]=1;
       }
 
-  
-  /* 
+
+  /*
      After creating a geometry, you have to barrier on
-     a "parent" geometry that contains all the nodes 
+     a "parent" geometry that contains all the nodes
      in the geometry.
   */
+  if(rank == 0)
+      fprintf(stderr, "Testing World Geometry\n");
+  _barrier(&HL_World_Geometry);
+  if(rank == 0)
+      fprintf(stderr, "Done\n");
   _barrier(&HL_World_Geometry);
 
   HL_Geometry_t *geometries [] = {&_g_geometry_bottom, &_g_geometry_top};

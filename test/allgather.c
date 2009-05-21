@@ -3,6 +3,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <assert.h>
 #include "../interface/hl_collectives.h"
 
 
@@ -45,6 +46,14 @@ hl_allgather_t  _xfer_allgather =
 	0
     };
 
+HL_Geometry_t *cb_geometry (int comm)
+{
+    if(comm == 0)
+	return &HL_World_Geometry;
+    else
+	assert(0);
+}
+
 static double timer()
 {
     struct timeval tv;
@@ -70,7 +79,6 @@ void init__barriers ()
   HL_Barrier_Configuration_t barrier_config;
   barrier_config.cfg_type    = HL_CFG_BARRIER;
   barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  barrier_config.cb_geometry = NULL;
   HL_register(&_g_barrier,
 	      (HL_CollectiveConfiguration_t*)&barrier_config,
 	      0);
@@ -82,7 +90,6 @@ void init__allgathers ()
   HL_Allgather_Configuration_t allgather_config;
   allgather_config.cfg_type    = HL_CFG_ALLGATHER;
   allgather_config.protocol    = HL_DEFAULT_ALLGATHER_PROTOCOL;
-  allgather_config.cb_geometry = NULL;
   HL_register(&_g_allgather,
 	      (HL_CollectiveConfiguration_t*)&allgather_config,
 	      0);
@@ -115,7 +122,7 @@ void _allgather (char            * src,
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
-  HL_Collectives_initialize(argc,argv);
+  HL_Collectives_initialize(argc,argv,cb_geometry);
   init__barriers();
   int rank  = HL_Rank();
   int sz    = HL_Size();

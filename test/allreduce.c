@@ -3,6 +3,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <assert.h>
 #include "../interface/hl_collectives.h"
 
 
@@ -161,6 +162,14 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
+HL_Geometry_t *cb_geometry (int comm)
+{
+    if(comm == 0)
+	return &HL_World_Geometry;
+    else
+	assert(0);
+}
+
 void cb_barrier (void * clientdata)
 {
   int * active = (int *) clientdata;
@@ -178,7 +187,6 @@ void init__barriers ()
   HL_Barrier_Configuration_t barrier_config;
   barrier_config.cfg_type    = HL_CFG_BARRIER;
   barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  barrier_config.cb_geometry = NULL;
   HL_register(&_g_barrier,
 	      (HL_CollectiveConfiguration_t*)&barrier_config,
 	      0);
@@ -190,7 +198,6 @@ void init__allreduces ()
   HL_Allreduce_Configuration_t allreduce_config;
   allreduce_config.cfg_type    = HL_CFG_ALLREDUCE;
   allreduce_config.protocol    = HL_DEFAULT_ALLREDUCE_PROTOCOL;
-  allreduce_config.cb_geometry = NULL;
   HL_register(&_g_allreduce,
 	      (HL_CollectiveConfiguration_t*)&allreduce_config,
 	      0);
@@ -231,7 +238,7 @@ int main(int argc, char*argv[])
   char rbuf[MAXBUFSIZE];
   int  op, dt;
 
-  HL_Collectives_initialize(argc,argv);
+  HL_Collectives_initialize(argc,argv,cb_geometry);
   init__barriers();
   int rank = HL_Rank();
   int i,j,root = 0;

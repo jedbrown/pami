@@ -84,6 +84,7 @@ namespace CCMI
 						    unsigned        * pipewidth,
 						    CCMI_Callback_t * cb_done);
 
+	    static int _g_regId = TEST_NUM;
 
 	    class  MulticastImpl :
 	        public CCMI::MultiSend::MulticastInterface,
@@ -93,11 +94,11 @@ namespace CCMI
 		    int _regId;
 		    MulticastImpl () : MulticastInterface (), Message()
 			{
-//			    fprintf(stderr, "Registering handler!\n");
-			    __pgasrt_tsp_amsend_reg (TEST_NUM, amsend_headerhandler);
-//			    fprintf(stderr, "Adding %p to reg table\n", this);
-			    _g_regtable.add(TEST_NUM,(void*)this);
-			    _regId = TEST_NUM;
+			    _regId = _g_regId;
+//			    fprintf(stderr, "registering new mcast iface\n");
+			    __pgasrt_tsp_amsend_reg (_regId, amsend_headerhandler);
+			    _g_regtable.add(_regId,(void*)this);
+			    _g_regId++;
 
 			}
 			virtual ~MulticastImpl () {}
@@ -109,6 +110,7 @@ namespace CCMI
 
 			inline void initialize (Adaptor *adaptor)
 			    {
+//				fprintf(stderr, "registering message\n");
 				adaptor->registerMessage (static_cast<CCMI::Adaptor::Message *>(this));
 			    }
 
@@ -160,8 +162,8 @@ namespace CCMI
 				    assert (hints[count] == CCMI_PT_TO_PT_SUBTASK);
 //				    _g_amheader._hdr.handler   = (__pgasrt_AMHeaderHandler_t)TEST_NUM;
 				    _g_amheader._hdr.handler   = amsend_headerhandler;
-				    _g_amheader._hdr.headerlen = sizeof (_g_amheader);
-//				    fprintf(stderr, "issuing send to %d\n", ranks[count]);
+				    _g_amheader._hdr.headerlen = sizeof (_g_amheader);				    
+//				    fprintf(stderr, "sending to %d\n", _g_amheader._peer);
 				    r = __pgasrt_tsp_amsend (ranks[count],
 							     &_g_amheader._hdr,
 							     (__pgasrt_local_addr_t)buf,
@@ -209,7 +211,7 @@ namespace CCMI
 			}
 
 			virtual void advance ()
-			{
+			{ 
 			    __pgasrt_tsp_wait(NULL);
 			}
 		public:
@@ -276,18 +278,18 @@ namespace CCMI
 
 	    void comphandler (void * unused, void *arg)
 	    {
-		fprintf(stderr, "Completion Handler!  arg=%p\n", arg);
+//		fprintf(stderr, "Completion Handler!  arg=%p\n", arg);
 		comp_data *cd = (comp_data*) arg;
 		for (unsigned count = 0; count < cd->_recvlen; count += cd->_pwidth)
 		    {
-			fprintf(stderr, "Deliver callback to user count=%p of %p arg=%p\n", 
-				count,
-				cd->_recvlen,
-				arg);
+//			fprintf(stderr, "Deliver callback to user count=%p of %p arg=%p\n", 
+//				count,
+//				cd->_recvlen,
+//				arg);
 			if (cd->_cb_done.function)
 			    cd->_cb_done.function (cd->_cb_done.clientdata, NULL);
 		    }
-		fprintf (stderr, "Done with comphandler\n");
+//		fprintf (stderr, "Done with comphandler\n");
 	    }
 	};
     };

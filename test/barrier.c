@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -27,7 +28,6 @@ void init__barriers ()
   HL_Barrier_Configuration_t barrier_config;
   barrier_config.cfg_type    = HL_CFG_BARRIER;
   barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  barrier_config.cb_geometry = NULL;
   HL_register(&_g_barrier,
 	      (HL_CollectiveConfiguration_t*)&barrier_config,
 	      0);
@@ -45,6 +45,13 @@ hl_barrier_t  _xfer =
 	&HL_World_Geometry
     };
 
+HL_Geometry_t *cb_geometry (int comm)
+{
+    if(comm == 0)
+	return &HL_World_Geometry;
+    else
+	assert(0);
+}
 
 void _barrier ()
 {
@@ -57,26 +64,31 @@ void _barrier ()
 
 int main(int argc, char*argv[])
 {
-  double tf,ti,usec;
-  HL_Collectives_initialize(argc,argv);
+  double tf,ti,usec;  
+  HL_Collectives_initialize(argc,argv,cb_geometry);
+  int r = HL_Rank();
   init__barriers();
 
-  fprintf(stderr, "Test Barrier 1\n");
+  if(!r)
+      fprintf(stderr, "Test Barrier 1\n");
   _barrier();
-  fprintf(stderr, "Test Barrier 2\n");
+  if(!r)
+      fprintf(stderr, "Test Barrier 2\n");
   _barrier();
   _barrier();
 
-  fprintf(stderr, "Test Barrier Performance\n");
-  int niter=1000;
+  if(!r)
+      fprintf(stderr, "Test Barrier Performance\n");
+  int niter=10000;
   _barrier();
   ti=timer();
   for(int i=0; i<niter; i++)
       _barrier();
   tf=timer();
   usec = tf - ti;
-  sleep(1);
-  fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
+  
+  if(!r)
+      fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
 
   HL_Collectives_finalize();
   return 0;

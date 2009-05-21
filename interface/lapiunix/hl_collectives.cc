@@ -4,9 +4,25 @@
 #include "../../p2p/tspcoll/Communicator.h"
 #include <stdio.h>
 
+// Includes for CCMI
+#include "../../ccmi/adaptor/ccmi_internal.h"
+#include "../../ccmi/adaptor/ccmi_util.h"
+#include "../../ccmi/adaptor/pgasp2p/multisend/multisend_impl.h"
+#include "../../ccmi/adaptor/geometry/Geometry.h"
+#include "../../ccmi/logging/LogMgr.h"
+#include "../../ccmi/adaptor/ccmi_debug.h"
+#include "../../ccmi/adaptor/protocols/barrier/barrier_impl.h"
+#include "../../ccmi/adaptor/pgasp2p/api/mapping_impl.h" // ? why
+
+#include <unistd.h>
+
+#define USE_CCMI
 using namespace std;
 
 #define MAX_REGISTRATIONS_PER_TABLE 16
+
+extern CCMI::Adaptor::Adaptor  * _g_generic_adaptor;
+extern CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
 
 extern "C"
 {
@@ -64,28 +80,48 @@ extern "C"
 	HL_CollectiveProtocol_t *entries[MAX_REGISTRATIONS_PER_TABLE];
     }HL_proto_table;
 
+    CCMI_Geometry_t      *getGeometry (int comm);
+
     HL_Geometry_t         HL_World_Geometry;
     HL_Geometry_range_t   world_range;
+    HL_mapIdToGeometry    cb_geometry_map;
 
-    int HL_Collectives_initialize(int argc, char*argv[])
+
+    int HL_Collectives_initialize(int argc, 
+				  char*argv[], 
+				  HL_mapIdToGeometry cb_map)
     {
+	// Set up pgasrt P2P Collectives
 	__pgasrt_tsp_setup         (1, &argc, &argv);
 
+	cb_geometry_map = cb_map;
+
+	// Set up CCMI collectives
+	if(_g_generic_adaptor == NULL)
+	    {
+		void * buf = CCMI_Alloc(sizeof (CCMI::Adaptor::Adaptor));
+		if(buf)
+		    _g_generic_adaptor = new (buf) CCMI::Adaptor::Adaptor();
+		int size = _g_generic_adaptor->mapping()->size();
+		int nbarrier = 16;
+	    }
+	CCMI::Logging::LogMgr::setLogMgr (_g_generic_adaptor->getLogMgr ());
 
 	world_range.lo       = 0;
 	world_range.hi       = HL_Size()-1;
-	HL_Geometry_initialize(&HL_World_Geometry, 
+	HL_Geometry_initialize(&HL_World_Geometry,
 			       HL_World_Geometry_id,
 			       &world_range,
 			       1);
 	__pgasrt_tsp_barrier       ();
-	return 0;
 
+	return HL_SUCCESS;
     }
 
     int HL_Poll()
     {
-	__pgasrt_tsp_wait(NULL);
+	_g_generic_adaptor->advance();
+//	__pgasrt_tsp_wait(NULL);
 	return 0;
     }
 
@@ -102,6 +138,11 @@ extern "C"
     int HL_Collectives_finalize()
     {
 	__pgasrt_tsp_finish();
+
+//	FILE *fp = fopen ("log", "a");
+//	_g_generic_adaptor->getLogMgr()->dumpTimers(fp, _g_generic_adaptor->mapping());
+	free (_g_generic_adaptor);
+//	fclose (fp);
 	return 0;
     }
 
@@ -233,22 +274,94 @@ extern "C"
     }
 
 
+    class geometry_internal
+    {
+    public:
+	geometry_internal(int                  my_rank,
+			  unsigned             slice_count,
+			  HL_Geometry_range_t *rank_slices,
+			  int                  nranks,
+			  unsigned            *ranks,
+			  unsigned             id,
+			  CCMI_mapIdToGeometry cb_geometry):
+	    _ccmi_geometry(_g_generic_adaptor->mapping(),
+			   ranks, nranks,id,0),
+	    _minfo(),
+	    _barrier_factory(static_cast<CCMI::MultiSend::MulticastInterface *>(&_minfo),
+			     _g_generic_adaptor->mapping(),
+			     cb_geometry),
+	    _pgasrt_comm(my_rank, (int)slice_count,(TSPColl::Range*)rank_slices),
+	    _ranklist(ranks)
+
+	{
+	    _minfo.initialize (_g_generic_adaptor);
+	    CCMI::Executor::Executor *exe = NULL;
+	    exe = _barrier_factory.generate(&_barrier_executors[0], &_ccmi_geometry);
+	    _ccmi_geometry.setBarrierExecutor(exe);
+	    exe = _barrier_factory.generate(&_barrier_executors[1], &_ccmi_geometry);
+	    _ccmi_geometry.setLocalBarrierExecutor(exe);
+	    _pgasrt_comm.setup();
+	}
+	CCMI::Adaptor::Geometry                              _ccmi_geometry;
+	CCMI_Executor_t                                      _barrier_executors[2];
+	CCMI::Adaptor::Generic::MulticastImpl::MulticastImpl _minfo;
+	CCMI::Adaptor::Barrier::BinomialBarrierFactory       _barrier_factory;
+	TSPColl::RangedComm                                  _pgasrt_comm;
+	unsigned                                            *_ranklist;
+    };
+
+    CCMI_Geometry_t *getGeometry (int comm) 
+    {
+#if 0
+	void              *g_ptr = &HL_World_Geometry;
+	geometry_internal *ptr   = (geometry_internal *)g_ptr;
+	return (CCMI_Geometry_t *)&ptr->_ccmi_geometry;
+#endif
+	// This is OK because _ccmi_geometry is the first data item in the class
+	// If both pgasrt and ccmi are delivering this callback, we 
+	// need to implement the geometry lookup for the right class.
+	return (CCMI_Geometry_t *)&HL_World_Geometry;
+    }
+
+
     int HL_Geometry_initialize (HL_Geometry_t            * geometry,
 				unsigned                   id,
 				HL_Geometry_range_t      * rank_slices,
 				unsigned                   slice_count)
     {
-	TSPColl::Communicator * tspcoll  
-	    = new (geometry) TSPColl::RangedComm(__pgasrt_tsp_myID(),
-						 slice_count,
-						 (TSPColl::Range*)rank_slices);
-	tspcoll->setup();
+	unsigned i;
+	// Set up a CCMI geometry
+	// Step 1:  Build a rank list
+	// \todo:  add a ranged communicator to CCMI
+	int nranks = 0;
+	for(i=0; i<slice_count; i++)
+	    nranks+=rank_slices[i].hi-rank_slices[i].lo+1;
+	unsigned int *ranks = (unsigned int *)malloc(nranks*sizeof(*ranks));
+
+	int k = 0;
+	for(i=0; i<slice_count; i++)
+	    {
+		int range = rank_slices[i].hi-rank_slices[i].lo+1;
+		int j     = 0;
+		for(j=0;j<range;j++,k++)
+		    ranks[k] = rank_slices[i].lo + j;
+	    }
+	assert(sizeof(*geometry) >= sizeof(geometry_internal));
+	new(geometry)geometry_internal(__pgasrt_tsp_myID(),
+				       slice_count,
+				       rank_slices,
+				       nranks,
+				       ranks,
+				       id,
+				       (CCMI_mapIdToGeometry)cb_geometry_map);
 	return HL_SUCCESS;
     }
 
 
     int HL_Geometry_finalize(HL_Geometry_t *geometry)
     {
+	geometry_internal *g = (geometry_internal*)geometry;
+	free(g->_ranklist);
 	return HL_SUCCESS;
     }
 
@@ -270,7 +383,8 @@ extern "C"
 	    case HL_XFER_BROADCAST:
 		{
 		    hl_broadcast_t        * parms   = &cmd->xfer_broadcast;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    int p_root                      = tspcoll->virtrankof(parms->root);
 		    tspcoll->ibcast(p_root, parms->src, parms->dst, parms->bytes,
 				    (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
@@ -280,7 +394,8 @@ extern "C"
 	    case HL_XFER_ALLGATHER:
 		{
 		    hl_allgather_t        * parms   = &cmd->xfer_allgather;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->iallgather(parms->src, parms->dst, parms->bytes,
 					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
@@ -289,7 +404,8 @@ extern "C"
 	    case HL_XFER_ALLGATHERV:
 		{
 		    hl_allgatherv_t        * parms   = &cmd->xfer_allgatherv;
-		    TSPColl::Communicator  * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->iallgatherv(parms->src, parms->dst, parms->lengths,
 					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
@@ -298,7 +414,8 @@ extern "C"
 	    case HL_XFER_SCATTER:
 		{
 		    hl_scatter_t          * parms   = &cmd->xfer_scatter;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    int p_root = tspcoll->virtrankof(parms->root);
 		    tspcoll->iscatter(p_root,parms->src, parms->dst, parms->bytes,
 					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
@@ -308,7 +425,8 @@ extern "C"
 	    case HL_XFER_SCATTERV:
 		{
 		    hl_scatterv_t         * parms   = &cmd->xfer_scatterv;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    int p_root = tspcoll->virtrankof(parms->root);
 		    tspcoll->iscatterv(p_root, parms->src, parms->dst, parms->lengths,
 				       (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
@@ -318,7 +436,8 @@ extern "C"
 	    case HL_XFER_ALLREDUCE:
 		{
 		    hl_allreduce_t        * parms   = &cmd->xfer_allreduce;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->iallreduce(parms->src,           // source buffer
 					parms->dst,           // dst buffer
 					(__pgasrt_ops_t)LL_to_PGAS_op[parms->op], // op
@@ -332,14 +451,25 @@ extern "C"
 	    case HL_XFER_ALLTOALLV:
 		{
 		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		}
 		break;
 	    case HL_XFER_BARRIER:
 		{
 		    hl_barrier_t          * parms   = &cmd->xfer_barrier;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)parms->geometry;
+		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+#ifdef USE_CCMI
+		    CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
+		    CCMI::Executor::Executor  *_c_bar         = _c_geometry->getBarrierExecutor();
+		    _c_bar->setDoneCallback    ((void (*)(void*, CCMI_Error_t*))parms->cb_done.function, parms->cb_done.clientdata);
+		    _c_bar->setConsistency ((CCMI_Consistency) 0);
+		    _c_bar->start();
+		    return HL_SUCCESS;
+#else
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->ibarrier((void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
+#endif
 		    return HL_SUCCESS;
 		}
 		break;

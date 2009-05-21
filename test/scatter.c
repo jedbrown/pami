@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -50,6 +51,14 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
+HL_Geometry_t *cb_geometry (int comm)
+{
+    if(comm == 0)
+	return &HL_World_Geometry;
+    else
+	assert(0);
+}
+
 void cb_barrier (void * clientdata)
 {
   int * active = (int *) clientdata;
@@ -67,7 +76,6 @@ void init__barriers ()
   HL_Barrier_Configuration_t barrier_config;
   barrier_config.cfg_type    = HL_CFG_BARRIER;
   barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  barrier_config.cb_geometry = NULL;
   HL_register(&_g_barrier,
 	      (HL_CollectiveConfiguration_t*)&barrier_config,
 	      0);
@@ -79,7 +87,6 @@ void init__scatters ()
   HL_Scatter_Configuration_t scatter_config;
   scatter_config.cfg_type    = HL_CFG_SCATTER;
   scatter_config.protocol    = HL_DEFAULT_SCATTER_PROTOCOL;
-  scatter_config.cb_geometry = NULL;
   HL_register(&_g_scatter,
 	      (HL_CollectiveConfiguration_t*)&scatter_config,
 	      0);
@@ -115,7 +122,7 @@ int main(int argc, char*argv[])
 {
   double tf,ti,usec;
 
-  HL_Collectives_initialize(argc,argv);
+  HL_Collectives_initialize(argc,argv,cb_geometry);
   init__barriers();
   int i,j,root = 0;
   int rank     = HL_Rank();

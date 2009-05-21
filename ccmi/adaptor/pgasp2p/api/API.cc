@@ -434,6 +434,8 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
   //Also check for change in protocols
   if(allreduce != NULL  &&  allreduce->getFactory() == factory)
   {
+//      fprintf(stderr, "allreduce restart\n");
+
     unsigned status =  allreduce->restart((CCMI_CollectiveRequest_t*)request,
                                           *(CCMI_Callback_t *)&cb_done,
                                           (CCMI_Consistency)consistency,
@@ -442,8 +444,10 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
                                           count,
                                           (CCMI_Dt)dtype,
                                           (CCMI_Op)op);
+
     if(status == CCMI_SUCCESS)
     {
+//      fprintf(stderr, "allreducecomposite\n");
       geometry->setAllreduceComposite(allreduce);
       TRACE_ADAPTOR((stderr, "<%#.8X>CCMI_Allreduce::ALERT: restart successful with status %#X\n", 
                  (int) allreduce, status));
@@ -459,7 +463,6 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
     geometry->setAllreduceComposite(NULL);
     allreduce->~BaseComposite();
   }
-
   //fprintf(stderr, "CCMI_Allreduce::ALERT: generate executor %#X with factory %#X\n",(int) allreduce,(int)factory);
   void *ptr =factory->generate((CCMI_CollectiveRequest_t*)request,
                                *(CCMI_Callback_t *) &cb_done,

@@ -160,7 +160,7 @@ extern "C"
      *
      * \todo     Need to adjust size to optimal level (currently 2048 bytes).
      */
-    typedef Quad  HL_Geometry_t [32];
+    typedef Quad  HL_Geometry_t [512];
     typedef struct 
     {
 	size_t lo;
@@ -219,35 +219,30 @@ extern "C"
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_mapIdToGeometry      cb_geometry;       /**< Callback to get the geometry when the async packet arrives. **/
         HL_Broadcast_Protocol_t protocol;          /**< The broadcast protocol implementation to register. */
     }HL_Broadcast_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_mapIdToGeometry      cb_geometry;       /**< Callback to get the geometry when the async packet arrives. **/
         HL_Allgather_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
     }HL_Allgather_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_mapIdToGeometry      cb_geometry;       /**< Callback to get the geometry when the async packet arrives. **/
         HL_Allgatherv_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
     }HL_Allgatherv_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_mapIdToGeometry      cb_geometry;       /**< Callback to get the geometry when the async packet arrives. **/
         HL_Scatter_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
     }HL_Scatter_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_mapIdToGeometry      cb_geometry;       /**< Callback to get the geometry when the async packet arrives. **/
         HL_Scatterv_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
     }HL_Scatterv_Configuration_t;
 
@@ -256,7 +251,6 @@ extern "C"
         hl_config_t                cfg_type;
         HL_AsyncBroadcast_Protocol_t protocol;     /**< The asynchronous broadcast protocol implementation to register. */
         HL_RecvAsyncBroadcast      cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
-        HL_mapIdToGeometry         cb_geometry;  /**< Callback to get the geometry when the async bcast packet arrives **/
         unsigned                   isBuffered;   /**< Should the broadcast buffer unexpected incoming broadcast messages
                                                     as opposed to calling cb_recv to allocate a buffer for the message*/
     }HL_AsyncBroadcast_Configuration_t;
@@ -265,7 +259,6 @@ extern "C"
     {
         hl_config_t           cfg_type;
         HL_Allreduce_Protocol_t protocol;       /**< The allreduce protocol implementation to register. */
-        HL_mapIdToGeometry    cb_geometry;    /**< Callback to get the geometry when the async packet arrives **/
         unsigned              reuse_storage:1;/**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
         unsigned              reserved:31;    /**< Currently unused */
     }HL_Allreduce_Configuration_t;
@@ -274,7 +267,6 @@ extern "C"
     {
         hl_config_t        cfg_type;
         HL_Reduce_Protocol_t protocol;       /**< The reduce protocol implementation to register. */
-        HL_mapIdToGeometry cb_geometry;    /**< Callback to get the geometry when the async packet arrives. **/
         unsigned           reuse_storage:1;/**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
         unsigned           reserved:31;    /**< Reserved for future use. */
     }HL_Reduce_Configuration_t;
@@ -283,16 +275,12 @@ extern "C"
     {
         hl_config_t           cfg_type;
         HL_Barrier_Protocol_t protocol;    /**< The barrier protocol implementation to register. */
-        HL_mapIdToGeometry    cb_geometry; /**< This function is used to look-up the associated
-                                              geometry when doing a barrier */
     }HL_Barrier_Configuration_t;
 
     typedef struct
     {
         hl_config_t           cfg_type;
         HL_Barrier_Protocol_t protocol;    /**< The barrier protocol implementation to register. */
-        HL_mapIdToGeometry    cb_geometry; /**< This function is used to look-up the associated
-                                              geometry when doing a barrier */
     }HL_Alltoallv_Configuration_t;
 
     typedef union
@@ -311,7 +299,7 @@ extern "C"
     }   HL_CollectiveConfiguration_t;
 
 
-    int HL_Collectives_initialize(int argc, char*argv[]);
+    int HL_Collectives_initialize(int argc, char*argv[], HL_mapIdToGeometry cb_map);
     int HL_Collectives_finalize();
     /* Rename  to CollectiveRegistration_T , doxygen with Storage variable storage, others*/
     int HL_register(HL_CollectiveProtocol_t      *registration,

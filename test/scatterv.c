@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -51,6 +52,14 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
+HL_Geometry_t *cb_geometry (int comm)
+{
+    if(comm == 0)
+	return &HL_World_Geometry;
+    else
+	assert(0);
+}
+
 void cb_barrier (void * clientdata)
 {
   int * active = (int *) clientdata;
@@ -69,7 +78,6 @@ void init__barriers ()
   HL_Barrier_Configuration_t barrier_config;
   barrier_config.cfg_type    = HL_CFG_BARRIER;
   barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  barrier_config.cb_geometry = NULL;
   HL_register(&_g_barrier,
 	      (HL_CollectiveConfiguration_t*)&barrier_config,
 	      0);
@@ -81,7 +89,6 @@ void init__scattervs ()
   HL_Scatterv_Configuration_t scatterv_config;
   scatterv_config.cfg_type    = HL_CFG_SCATTERV;
   scatterv_config.protocol    = HL_DEFAULT_SCATTERV_PROTOCOL;
-  scatterv_config.cb_geometry = NULL;
   HL_register(&_g_scatterv,
 	      (HL_CollectiveConfiguration_t*)&scatterv_config,
 	      0);
@@ -116,7 +123,7 @@ void _scatterv (int         root,
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
-  HL_Collectives_initialize(argc,argv);
+  HL_Collectives_initialize(argc,argv,cb_geometry);
   init__barriers();
   int     rank    = HL_Rank();
   int     sz      = HL_Size();
