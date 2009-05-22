@@ -1,0 +1,8 @@
+VPATH		        = @abs_srcdir@
+SUBDIRS		        = common
+lapi-""-MATH_SOURCES	= FloatUtil.cc				\
+			  fp32.cc fp64.cc fp128.cc		\
+	  		  int8.cc int16.cc int32.cc int64.cc	\
+			  uint8.cc uint16.cc uint32.cc uint64.cc
+DEVICENAME	        = lapi-""-MATH
+include @abs_top_builddir@/Build.rules

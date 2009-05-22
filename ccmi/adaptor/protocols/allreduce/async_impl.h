@@ -14,14 +14,14 @@
 #ifndef __ccmi_adaptor_async_impl_h__
 #define __ccmi_adaptor_async_impl_h__
 
-#include "protocols/allreduce/AsyncCompositeT.h"
-#include "protocols/allreduce/AsyncFactoryT.h"
+#include "./AsyncCompositeT.h"
+#include "./AsyncFactoryT.h"
 
-#include "executor/AllreduceBase.h"
+#include "../../../executor/AllreduceBase.h"
 
-#include "schedule/BinomialTree.h"
+#include "../../../schedule/BinomialTree.h"
 
-#include "connmgr/RankBasedConnMgr.h"
+#include "../../../connmgr/RankBasedConnMgr.h"
 
 namespace CCMI
 {

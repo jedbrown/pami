@@ -12,6 +12,8 @@
 #include "../../ccmi/logging/LogMgr.h"
 #include "../../ccmi/adaptor/ccmi_debug.h"
 #include "../../ccmi/adaptor/protocols/barrier/barrier_impl.h"
+#include "../../ccmi/adaptor/protocols/allreduce/sync_impl.h"
+#include "../../ccmi/adaptor/protocols/allreduce/async_impl.h"
 #include "../../ccmi/adaptor/pgasp2p/api/mapping_impl.h" // ? why
 
 #include <unistd.h>
@@ -21,8 +23,8 @@ using namespace std;
 
 #define MAX_REGISTRATIONS_PER_TABLE 16
 
-extern CCMI::Adaptor::Adaptor  * _g_generic_adaptor;
-extern CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
+CCMI::Adaptor::Adaptor  * _g_generic_adaptor;
+CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
 
 extern "C"
 {
@@ -73,6 +75,53 @@ extern "C"
 	 -1,                   // LL_DT_COUNT
 	};
 
+    int LL_to_CCMI_op[] =
+	{CCMI_UNDEFINED_OP,        // LL_UNDEFINED_OP
+	 CCMI_NOOP,                // LL_NOOP
+	 CCMI_MAX,                 // LL_MAX,
+	 CCMI_MIN,                 // LL_MIN,
+	 CCMI_SUM,                 // LL_SUM,
+	 CCMI_PROD,                // LL_PROD,
+	 CCMI_LAND,                // LL_LAND,
+	 CCMI_LOR,                 // LL_LOR,
+	 CCMI_LXOR,                // LL_LXOR,
+	 CCMI_BAND,                // LL_BAND,
+	 CCMI_BOR,                 // LL_BOR,
+	 CCMI_BXOR,                // LL_BXOR,
+	 CCMI_MAXLOC,              // LL_MAXLOC,
+	 CCMI_MINLOC,              // LL_MINLOC,
+	 CCMI_USERDEFINED_OP,      // LL_USERDEFINED_OP,
+	 CCMI_OP_COUNT             // LL_OP_COUNT
+	};
+    int LL_to_CCMI_dt[] =
+	{
+	 /* Standard/Primative DT's */
+	 CCMI_UNDEFINED_DT,        // LL_UNDEFINED_DT = 0,
+	 CCMI_SIGNED_CHAR,         // LL_SIGNED_CHAR,
+	 CCMI_UNSIGNED_CHAR,       // LL_UNSIGNED_CHAR,
+	 CCMI_SIGNED_SHORT,        // LL_SIGNED_SHORT,
+	 CCMI_UNSIGNED_SHORT,      // LL_UNSIGNED_SHORT,
+	 CCMI_SIGNED_INT,          // LL_SIGNED_INT,
+	 CCMI_UNSIGNED_INT,        // LL_UNSIGNED_INT,
+	 CCMI_SIGNED_LONG_LONG,    // LL_SIGNED_LONG_LONG,
+	 CCMI_UNSIGNED_LONG_LONG,  // LL_UNSIGNED_LONG_LONG,
+	 CCMI_FLOAT,               // LL_FLOAT,
+	 CCMI_DOUBLE,              // LL_DOUBLE,
+	 CCMI_LONG_DOUBLE,         // LL_LONG_DOUBLE,
+	 CCMI_LOGICAL,             // LL_LOGICAL,
+	 CCMI_SINGLE_COMPLEX,      // LL_SINGLE_COMPLEX,
+	 CCMI_DOUBLE_COMPLEX,      // LL_DOUBLE_COMPLEX,
+	 /* Max/Minloc DT's */
+	 CCMI_LOC_2INT,            // LL_LOC_2INT,
+	 CCMI_LOC_SHORT_INT,       // LL_LOC_SHORT_INT,
+	 CCMI_LOC_FLOAT_INT,       // LL_LOC_FLOAT_INT,
+	 CCMI_LOC_DOUBLE_INT,      // LL_LOC_DOUBLE_INT,
+	 CCMI_LOC_2FLOAT,          // LL_LOC_2FLOAT,
+	 CCMI_LOC_2DOUBLE,         // LL_LOC_2DOUBLE,
+	 CCMI_USERDEFINED_DT,      // LL_USERDEFINED_DT,
+	 -1
+	};
+
 
     typedef struct
     {
@@ -87,8 +136,8 @@ extern "C"
     HL_mapIdToGeometry    cb_geometry_map;
 
 
-    int HL_Collectives_initialize(int argc, 
-				  char*argv[], 
+    int HL_Collectives_initialize(int argc,
+				  char*argv[],
 				  HL_mapIdToGeometry cb_map)
     {
 	// Set up pgasrt P2P Collectives
@@ -230,7 +279,36 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_ALLREDUCE_PROTOCOL:
-			    return HL_SUCCESS;
+			    {
+#ifdef USE_CCMI
+				CCMI::Adaptor::ConfigFlags flags;
+				flags.reuse_storage_limit = ((unsigned)2*1024*1024*1024 - 1);
+				flags.pipeline_override   = 0;
+
+				typedef struct
+				{
+				    CCMI::Adaptor::Allreduce::Binomial::Factory    allreduce_registration;
+				    CCMI::Adaptor::Generic::MulticastImpl                         minfo;
+				} SyncBinomialRegistration;
+
+				CCMI_assert (sizeof (SyncBinomialRegistration) <=
+					     sizeof (CCMI_CollectiveProtocol_t));
+
+				SyncBinomialRegistration *treg =
+				    (SyncBinomialRegistration *) registration;
+
+				new (& treg->minfo, sizeof(treg->minfo))
+				    CCMI::Adaptor::Generic::MulticastImpl();
+
+				new (& treg->allreduce_registration, sizeof(treg->allreduce_registration))
+				    CCMI::Adaptor::Allreduce::Binomial::Factory
+				    (_g_generic_adaptor->mapping(), & treg->minfo, (CCMI_mapIdToGeometry)cb_geometry_map, flags);
+
+				treg->minfo.initialize(_g_generic_adaptor);
+#endif
+
+				return HL_SUCCESS;
+			    }
 			    break;
 			default:
 			    return HL_UNIMPL;
@@ -310,7 +388,7 @@ extern "C"
 	unsigned                                            *_ranklist;
     };
 
-    CCMI_Geometry_t *getGeometry (int comm) 
+    CCMI_Geometry_t *getGeometry (int comm)
     {
 #if 0
 	void              *g_ptr = &HL_World_Geometry;
@@ -318,7 +396,7 @@ extern "C"
 	return (CCMI_Geometry_t *)&ptr->_ccmi_geometry;
 #endif
 	// This is OK because _ccmi_geometry is the first data item in the class
-	// If both pgasrt and ccmi are delivering this callback, we 
+	// If both pgasrt and ccmi are delivering this callback, we
 	// need to implement the geometry lookup for the right class.
 	return (CCMI_Geometry_t *)&HL_World_Geometry;
     }
@@ -437,6 +515,60 @@ extern "C"
 		{
 		    hl_allreduce_t        * parms   = &cmd->xfer_allreduce;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+#ifdef USE_CCMI
+		    {
+			CCMI::Adaptor::Geometry   *_c_geometry =
+			    (CCMI::Adaptor::Geometry *)
+			    &g->_ccmi_geometry;
+
+			CCMI::Adaptor::Allreduce::BaseComposite * allreduce =
+			    (CCMI::Adaptor::Allreduce::BaseComposite *)
+			    _c_geometry->getAllreduceComposite();
+
+			CCMI::Adaptor::Allreduce::Factory *factory =
+			    (CCMI::Adaptor::Allreduce::Factory *)
+			    parms->registration;
+
+			//Also check for change in protocols
+			if(allreduce != NULL  &&  allreduce->getFactory() == factory)
+			    {
+				unsigned status =  allreduce->restart((CCMI_CollectiveRequest_t*)parms->request,
+								      *(CCMI_Callback_t *)&parms->cb_done,
+								      (CCMI_Consistency)0,
+								      parms->src,
+								      parms->dst,
+								      parms->count,
+								      (CCMI_Dt)LL_to_CCMI_dt[parms->dt],
+								      (CCMI_Op)LL_to_CCMI_op[parms->op]);
+				if(status == CCMI_SUCCESS)
+				    {
+					_c_geometry->setAllreduceComposite(allreduce);
+					return status;
+				    }
+			    }
+
+			if(allreduce != NULL) // Different factory?  Cleanup old executor.
+			    {
+				_c_geometry->setAllreduceComposite(NULL);
+				allreduce->~BaseComposite();
+			    }
+			void *ptr =factory->generate((CCMI_CollectiveRequest_t*)parms->request,
+						     *(CCMI_Callback_t *) &parms->cb_done,
+						     (CCMI_Consistency)0,
+						     _c_geometry,
+						     parms->src,
+						     parms->dst,
+						     parms->count,
+						     (CCMI_Dt)LL_to_CCMI_dt[parms->dt],
+						     (CCMI_Op)LL_to_CCMI_op[parms->op]);
+			if(ptr == NULL)
+			    {
+				return HL_UNIMPL;
+			    }
+
+			return HL_SUCCESS;
+		    }
+#else
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->iallreduce(parms->src,           // source buffer
 					parms->dst,           // dst buffer
@@ -445,6 +577,7 @@ extern "C"
 					parms->count,             // type
 					(void (*)(void*))parms->cb_done.function,
 					parms->cb_done.clientdata);
+#endif
 		    return HL_SUCCESS;
 		}
 		break;

@@ -14,6 +14,7 @@
 #include "../../ccmi_util.h"  // need this first to define throw() before stdlib.h is included (for xlC -noeh)
 #include "../../ccmi_internal.h"
 #include "../../../executor/AllreduceBase.h"
+#include "../../../../math/math_coremath.h"
 //#include "protocols/allreduce/Factory.h"
 
 namespace CCMI
@@ -128,7 +129,6 @@ namespace CCMI
             sizeOfType = sizeof(unsigned int);
             func = (CCMI_ReduceFunc) int_sum;
             break;
-/*
           case CCMI_SIGNED_LONG_LONG:
             sizeOfType = sizeof(long long);
             func = (CCMI_ReduceFunc) Core_int64_sum;
@@ -174,13 +174,13 @@ namespace CCMI
             sizeOfType = sizeof(unsigned char);
             func = (CCMI_ReduceFunc) Core_uint8_sum;
             break;
-*/          default:
+          default:
             fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                     dtype, op, count);
             CCMI_abort();
           }
           break;
-/*        case CCMI_MAX:
+        case CCMI_MAX:
           switch(dtype)
           {
           case CCMI_SIGNED_INT:
@@ -706,7 +706,7 @@ namespace CCMI
             CCMI_abort();
           }
           break;
-*/        default:
+        default:
           fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                   dtype, op, count);
           CCMI_abort();

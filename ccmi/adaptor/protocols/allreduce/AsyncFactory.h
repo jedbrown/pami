@@ -15,9 +15,9 @@
 #ifndef __ccmi_adaptor_allreduce_async_factory_h__
 #define __ccmi_adaptor_allreduce_async_factory_h__
 
-#include "protocols/allreduce/AsyncComposite.h"
-#include "Geometry.h"
-#include "protocols/ProtocolFactory.h"
+#include "./AsyncComposite.h"
+#include "../../geometry/Geometry.h"
+#include "../ProtocolFactory.h"
 
 namespace CCMI
 {

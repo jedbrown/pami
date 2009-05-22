@@ -14,10 +14,10 @@
 #ifndef __ccmi_adaptor_allreduce_async_composite_h__
 #define __ccmi_adaptor_allreduce_async_composite_h__
 
-#include "protocols/allreduce/Composite.h"
+#include "./Composite.h"
 //  #include "Geometry.h"
-#include "executor/Barrier.h"
-#include "executor/AllreduceBase.h"
+#include "../../../executor/Barrier.h"
+#include "../../../executor/AllreduceBase.h"
 
 namespace CCMI
 {

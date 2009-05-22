@@ -17,7 +17,7 @@
 #ifndef __ccmi_adaptor_allreduce_asyncfactoryt_h__
 #define __ccmi_adaptor_allreduce_asyncfactoryt_h__
 
-#include "protocols/allreduce/AsyncFactory.h"
+#include "./AsyncFactory.h"
 
 namespace CCMI
 {
