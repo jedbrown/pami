@@ -90,13 +90,6 @@ extern "C"
 
     typedef enum
     {
-        HL_ASYNCBROADCAST_BINOMIAL_PROTOCOL,
-        HL_ASYNCBROADCAST_RECTANGLE_PROTOCOL,
-        HL_NUM_ASYNCBROADCAST_PROTOCOLS
-    }HL_AsyncBroadcast_Protocol_t;
-
-    typedef enum
-    {
 	HL_DEFAULT_ALLREDUCE_PROTOCOL,
         HL_TREE_ALLREDUCE_PROTOCOL,                 /**< Tree allreduce. */
         HL_BINOMIAL_ALLREDUCE_PROTOCOL,             /**< binomial allreduce. */
@@ -125,7 +118,13 @@ extern "C"
         HL_NUM_REDUCE_PROTOCOLS
     }HL_Reduce_Protocol_t;
 
-    /*  add alltoall */
+    typedef enum
+    {
+	HL_DEFAULT_ALLTOALL_PROTOCOL,
+        HL_ALLTOALL_PROTOCOL,       /**< Alltoall. */
+        HL_IPC_ALLTOALL_PROTOCOL,   /**< IPC Alltoall. */
+        HL_NUM_ALLTOALL_PROTOCOLS
+    }HL_Alltoall_Protocol_t;
 
     typedef enum
     {
@@ -134,6 +133,26 @@ extern "C"
         HL_IPC_ALLTOALLV_PROTOCOL,   /**< IPC Alltoallv. */
         HL_NUM_ALLTOALLV_PROTOCOLS
     }HL_Alltoallv_Protocol_t;
+
+    typedef enum
+    {
+	HL_DEFAULT_AMBROADCAST_PROTOCOL
+    }HL_AMBroadcast_Protocol_t;
+
+    typedef enum
+    {
+	HL_DEFAULT_AMSCATTER_PROTOCOL
+    }HL_AMScatter_Protocol_t;
+
+    typedef enum
+    {
+	HL_DEFAULT_AMGATHER_PROTOCOL
+    }HL_AMGather_Protocol_t;
+
+    typedef enum
+    {
+	HL_DEFAULT_AMREDUCE_PROTOCOL
+    }HL_AMReduce_Protocol_t;
 
 
     typedef enum
@@ -146,6 +165,7 @@ extern "C"
 	    HL_CFG_SCATTER,
 	    HL_CFG_SCATTERV,
 	    HL_CFG_BARRIER,
+	    HL_CFG_ALLTOALL,
 	    HL_CFG_ALLTOALLV,
 	    HL_CFG_COUNT
 	}hl_config_t;
@@ -161,7 +181,7 @@ extern "C"
      * \todo     Need to adjust size to optimal level (currently 2048 bytes).
      */
     typedef Quad  HL_Geometry_t [512];
-    typedef struct 
+    typedef struct
     {
 	size_t lo;
 	size_t hi;
@@ -179,6 +199,7 @@ extern "C"
      *  between geometry id's and geometry structures.
      */
     typedef HL_Geometry_t * (*HL_mapIdToGeometry) (int comm);
+    typedef Quad          HL_AMHeader_t[8];
 
 
     /**
@@ -186,14 +207,31 @@ extern "C"
      *
      * \todo doxygen
      */
-    typedef void * (*HL_RecvAsyncBroadcast) (unsigned           root,
-                                             unsigned           comm,
-                                             const unsigned     sndlen,
-                                             unsigned         * rcvlen,
-                                             char            ** rcvbuf,
-                                             HL_Callback_t    * const cb_info);
+    typedef void * (*HL_RecvAMBroadcast) (unsigned           root,
+					  unsigned           comm,
+					  const unsigned     sndlen,
+					  unsigned         * rcvlen,
+					  char            ** rcvbuf,
+					  HL_Callback_t    * const cb_info);
 
-
+    typedef void * (*HL_RecvAMScatter) (unsigned           root,
+					unsigned           comm,
+					const unsigned     sndlen,
+					unsigned         * rcvlen,
+					char            ** rcvbuf,
+					HL_Callback_t    * const cb_info);
+    typedef void * (*HL_RecvAMGather) (unsigned           root,
+				       unsigned           comm,
+				       const unsigned     sndlen,
+				       unsigned         * rcvlen,
+				       char            ** rcvbuf,
+				       HL_Callback_t    * const cb_info);
+    typedef void * (*HL_RecvAMReduce) (unsigned           root,
+				       unsigned           comm,
+				       const unsigned     sndlen,
+				       unsigned         * rcvlen,
+				       char            ** rcvbuf,
+				       HL_Callback_t    * const cb_info);
 
     /* ************************************************************************* */
     /* **************    Configuration Objects  ******************************** */
@@ -202,17 +240,16 @@ extern "C"
      * \brief Configuration Objects for collectives
      *        Use these to set the algorithm types
      *        Register the protocol implementation
-     *        specified by the asynchronous broadcast configuration.
      *
      * \warning After registering the protocol information it is illegal to
      *          deallocate the registration object.
      *
      * \param[out] registration  Opaque memory to maintain registration information.
-     * \param[in]  configuration Asynchronous broadcast configuration information.
+     * \param[in]  configuration broadcast configuration information.
      *
      * \retval     0            Success
      *
-     * \see HL_AsyncBroadcast
+     * \see HL_Broadcast
      */
     /*  Clear up mapId to geometry!!!! */
 
@@ -248,15 +285,6 @@ extern "C"
 
     typedef struct
     {
-        hl_config_t                cfg_type;
-        HL_AsyncBroadcast_Protocol_t protocol;     /**< The asynchronous broadcast protocol implementation to register. */
-        HL_RecvAsyncBroadcast      cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
-        unsigned                   isBuffered;   /**< Should the broadcast buffer unexpected incoming broadcast messages
-                                                    as opposed to calling cb_recv to allocate a buffer for the message*/
-    }HL_AsyncBroadcast_Configuration_t;
-
-    typedef struct
-    {
         hl_config_t           cfg_type;
         HL_Allreduce_Protocol_t protocol;       /**< The allreduce protocol implementation to register. */
         unsigned              reuse_storage:1;/**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
@@ -279,22 +307,60 @@ extern "C"
 
     typedef struct
     {
-        hl_config_t           cfg_type;
-        HL_Barrier_Protocol_t protocol;    /**< The barrier protocol implementation to register. */
+        hl_config_t             cfg_type;
+        HL_Alltoall_Protocol_t  protocol;    /**< The alltoall protocol implementation to register. */
+    }HL_Alltoall_Configuration_t;
+
+    typedef struct
+    {
+        hl_config_t             cfg_type;
+        HL_Alltoallv_Protocol_t protocol;    /**< The alltoallv protocol implementation to register. */
     }HL_Alltoallv_Configuration_t;
+
+    typedef struct
+    {
+        hl_config_t               cfg_type;
+        HL_RecvAMBroadcast        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        HL_AMBroadcast_Protocol_t protocol;     /**< The AMBroad protocol implementation to register. */
+    }HL_AMBroadcast_Configuration_t;
+
+    typedef struct
+    {
+        hl_config_t             cfg_type;
+        HL_RecvAMScatter        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        HL_AMScatter_Protocol_t protocol;     /**< The AMScatter protocol implementation to register. */
+    }HL_AMScatter_Configuration_t;
+
+    typedef struct
+    {
+        hl_config_t             cfg_type;
+        HL_RecvAMGather         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        HL_AMGather_Protocol_t  protocol;     /**< The AMGather protocol implementation to register. */
+    }HL_AMGather_Configuration_t;
+
+    typedef struct
+    {
+        hl_config_t             cfg_type;
+        HL_RecvAMReduce         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        HL_AMReduce_Protocol_t  protocol;     /**< The AMReduce protocol implementation to register. */
+    }HL_AMReduce_Configuration_t;
 
     typedef union
     {
         hl_config_t                       cfg_type;
         HL_Reduce_Configuration_t         cfg_reduce;
         HL_Allreduce_Configuration_t      cfg_allreduce;
-        HL_AsyncBroadcast_Configuration_t cfg_asyncbroadcast;
         HL_Allgather_Configuration_t      cfg_allgather;
         HL_Allgatherv_Configuration_t     cfg_allgatherv;
         HL_Scatter_Configuration_t        cfg_scatter;
         HL_Scatterv_Configuration_t       cfg_scatterv;
         HL_Broadcast_Configuration_t      cfg_broadcast;
+        HL_Alltoall_Configuration_t       cfg_alltoall;
         HL_Alltoallv_Configuration_t      cfg_alltoallv;
+        HL_AMBroadcast_Configuration_t    cfg_ambroadcast;
+        HL_AMScatter_Configuration_t      cfg_amscatter;
+        HL_AMGather_Configuration_t       cfg_amgather;
+        HL_AMReduce_Configuration_t       cfg_amreduce;
         HL_Barrier_Configuration_t        cfg_barrier;
     }   HL_CollectiveConfiguration_t;
 
@@ -305,8 +371,6 @@ extern "C"
     int HL_register(HL_CollectiveProtocol_t      *registration,
                     HL_CollectiveConfiguration_t *HL_CollectiveConfiguration_t,
 		    int                           key);
-
-
 
     /* ************************************************************************* */
     /* ********* Transfer Types, used by geometry and xfer routines ************ */
@@ -321,7 +385,12 @@ extern "C"
             HL_XFER_SCATTER,
             HL_XFER_SCATTERV,
             HL_XFER_BARRIER,
+            HL_XFER_ALLTOALL,
             HL_XFER_ALLTOALLV,
+            HL_XFER_AMBROADCAST,
+            HL_XFER_AMSCATTER,
+            HL_XFER_AMGATHER,
+            HL_XFER_AMREDUCE,
             HL_XFER_COUNT
         }hl_xfer_type_t;
 
@@ -349,7 +418,7 @@ extern "C"
      *
      * \param[in]     geometry   An input geometry to be analyzed.
      * \param[in/out] protocol   A list of protocol pointers to be checked for this geometry
-     *                           pointers will be set to NULL for invalid protocols on 
+     *                           pointers will be set to NULL for invalid protocols on
      *                           this geometry.
      * \param[in/out] num        number of protocols in the list in/requested, out/actual
      * \retval        HL_SUCCESS The protocol will run on the current geometry
@@ -374,6 +443,50 @@ extern "C"
      * \brief Create and post a non-blocking alltoall vector operation.
      *
      * The alltoallv operation ...
+     *
+     * \warning Until the message callback is invoked, it is illegal to send it
+     *          again, reset it, touch the attached buffers, or deallocate the
+     *          request object.
+     *
+     * \param[in]  registration Protocol registration.
+     * \param[in]  request      Opaque memory to maintain internal message state.
+     * \param[in]  cb_done      Callback to invoke when message is complete.
+     * \param[in]  geometry     Geometry to use for this collective operation.
+     *                          \c NULL indicates the global geometry.
+     * \param[in]  sndbuf      The base address of the buffers containing data to be sent
+     * \param[in]  sndlens     How much data to send to each node
+     * \param[in]  sdispls     Where to find the data in sndbuf
+     * \param[out] rcvbuf      The base address of the buffer for data reception
+     * \param[in]  rcvlens     How much data to receive from each node
+     * \param[in]  rdispls     Where to put the data in rcvbuf
+     * \param[in]  sndcounters ???
+     * \param[in]  rcvcounters ???
+     *
+     * \retval     0            Success
+     *
+     * \todo doxygen
+     */
+    typedef struct
+    {
+        hl_xfer_type_t             xfer_type;
+        HL_CollectiveProtocol_t  * registration;
+        HL_CollectiveRequest_t   * request;
+        HL_Callback_t              cb_done;
+        HL_Geometry_t            * geometry;
+        char                     * sndbuf;
+        unsigned                 * sndlens;
+        unsigned                 * sdispls;
+        char                     * rcvbuf;
+        unsigned                 * rcvlens;
+        unsigned                 * rdispls;
+        unsigned                 * sndcounters;
+        unsigned                 * rcvcounters;
+    }hl_alltoallv_t;
+
+    /**
+     * \brief Create and post a non-blocking alltoall operation.
+     * \todo:  FIX THIS TO NOT BE THE SAME AS ALLTOALL
+     * The alltoall operation ...
      *
      * \warning Until the message callback is invoked, it is illegal to send it
      *          again, reset it, touch the attached buffers, or deallocate the
@@ -623,41 +736,6 @@ extern "C"
         size_t                   * lengths;
     }hl_scatterv_t;
 
-
-    /**
-     * \brief Create and post a non-blocking asynchronous broadcast operation.
-     *
-     * The asynchronous broadcast operation ...
-     *
-     * \warning Until the message callback is invoked, it is illegal to send it
-     *          again, reset it, touch the attached buffers, or deallocate the
-     *          request object.
-     *
-     * \param[in]  registration Protocol registration.
-     * \param[in]  request      Opaque memory to maintain internal message state.
-     * \param[in]  cb_done      Callback to invoke when message is complete.
-     * \param[in]  geometry     Geometry to use for this collective operation.
-     *                          \c NULL indicates the global geometry.
-     * \param[in]  root         Rank of the node performing the broadcast.
-     * \param[in]  src          Source buffer to broadcast.
-     * \param[in]  bytes        Number of bytes to broadcast.
-     *
-     * \retval     0            Success
-     *
-     * \todo doxygen
-     */
-    typedef struct
-    {
-        hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
-        unsigned                   root;
-        char                     * src;
-        unsigned                   bytes;
-    }hl_async_broadcast_t;
-
     /**
      * \brief Create and post a non-blocking allreduce operation.
      *
@@ -699,13 +777,10 @@ extern "C"
 
     /**
      * \brief Create and post a non-blocking barrier operation.
-     *
      * The barrier operation ...
-     *
      * \param   geometry     Geometry to use for this collective operation.
      *                       \c NULL indicates the global geometry.
      * \param[in]  cb_done      Callback to invoke when message is complete.
-     *
      * \retval  0            Success
      *
      * \see HL_Barrier_register
@@ -721,11 +796,171 @@ extern "C"
         HL_Geometry_t           * geometry;
     }hl_barrier_t;
 
+    /**
+     * \brief Create and post a non-blocking active message broadcast operation.
+     * The Active Message broadcast operation ...
+     *
+     * This differs from AMSend in only one particular: it takes geometry/team 
+     * as an argument. The semantics are as follows: the included header and data 
+     * are broadcast to every place in the team. The completion handler is invoked 
+     * on the sender side as soon as send buffers can be reused. On the receive 
+     * side the usual two-phase reception protocol is executed: a header handler
+     * determines the address to which to deposit the data and sets the address 
+     * of a receive completion hander to be invoked once the data has arrived.
+     *
+     * \warning Until the message callback is invoked, it is illegal to send it
+     *          again, reset it, touch the attached buffers, or deallocate the
+     *          request object.
+     *
+     * \param[in]  registration Protocol registration.
+     * \param[in]  request      Opaque memory to maintain internal message state.
+     * \param[in]  cb_done      Callback to invoke when message is complete.
+     * \param[in]  geometry     Geometry to use for this collective operation.
+     *                          \c NULL indicates the global geometry.
+     * \param[in]  header       metadata to send to destination in the header
+     * \param[in]  src          Source buffer to broadcast.
+     * \param[in]  bytes        Number of bytes to broadcast.
+     *
+     * \retval     0            Success
+     *
+     * \todo doxygen
+     */
+    typedef struct
+    {
+        hl_xfer_type_t             xfer_type;
+        HL_CollectiveProtocol_t  * registration;
+        HL_CollectiveRequest_t   * request;
+        HL_Callback_t              cb_done;
+        HL_Geometry_t            * geometry;
+	HL_AMHeader_t            * header;
+        char                     * src;
+        unsigned                   bytes;
+    }hl_ambroadcast_t;
+
+    /**
+     * \brief Create and post a non-blocking active message scatter operation.
+     * The Active Message scatter operation ...
+     *
+     * This is slightly more complicated than an AMBroadcast, because it allows
+     * different headers and data buffers to be sent to everyone in the team.
+     *
+     * \warning Until the message callback is invoked, it is illegal to send it
+     *          again, reset it, touch the attached buffers, or deallocate the
+     *          request object.
+     *
+     * \param[in]  registration Protocol registration.
+     * \param[in]  request      Opaque memory to maintain internal message state.
+     * \param[in]  cb_done      Callback to invoke when message is complete.
+     * \param[in]  geometry     Geometry to use for this collective operation.
+     *                          \c NULL indicates the global geometry.
+     * \param[in]  headers      array of  metadata to send to destination
+     * \param[in]  src          Source buffers to scatter.
+     * \param[in]  srclengths   Number of bytes to scatter per destination.
+     *
+     * \retval     0            Success
+     *
+     * \todo doxygen
+     */
+    typedef struct
+    {
+        hl_xfer_type_t             xfer_type;
+        HL_CollectiveProtocol_t  * registration;
+        HL_CollectiveRequest_t   * request;
+        HL_Callback_t              cb_done;
+        HL_Geometry_t            * geometry;
+	HL_AMHeader_t            * headers;
+        char                     * src;
+	size_t                     srclengths;
+    }hl_amscatter_t;
+
+    /**
+     * \brief Create and post a non-blocking active message gather operation.
+     * The Active Message gather operation ...
+     *
+     * This is the reverse of amscatter. It works as follows. The header only, 
+     * no data, is broadcast to the team. Each place in the team executes the 
+     * header handler and points to a data buffer in local space. A reverse transfer 
+     * then takes place (the buffer is sent from the receiver back to the sender, 
+     * and deposited in one of the buffers provided as part of the original call 
+     * (the "data" parameter). 
+     *
+     * \warning Until the message callback is invoked, it is illegal to send it
+     *          again, reset it, touch the attached buffers, or deallocate the
+     *          request object.
+     *
+     * \param[in]  registration Protocol registration.
+     * \param[in]  request      Opaque memory to maintain internal message state.
+     * \param[in]  cb_done      Callback to invoke when message is complete.
+     * \param[in]  geometry     Geometry to use for this collective operation.
+     *                          \c NULL indicates the global geometry.
+     * \param[in]  headers      array of metadata to send to destination
+     * \param[in]  src          Source buffers to gather.
+     * \param[in]  srclengths   Number of bytes to scatter per destination.
+     *
+     * \retval     0            Success
+     *
+     * \todo doxygen
+     */
+    typedef struct
+    {
+        hl_xfer_type_t             xfer_type;
+        HL_CollectiveProtocol_t  * registration;
+        HL_CollectiveRequest_t   * request;
+        HL_Callback_t              cb_done;
+        HL_Geometry_t            * geometry;
+	HL_AMHeader_t            * headers;
+        char                     * src;
+	size_t                     srclengths;
+    }hl_amgather_t;
+
+    /**
+     * \brief Create and post a non-blocking active message reduce operation.
+     * The Active Message reduce operation ...
+     *
+     * This is fairly straightforward given how amgather works. Instead of 
+     * collecting the data without processing, all buffers are reduced using the 
+     * operation and data type provided by the sender. The final reduced data is 
+     * deposited in the original buffer provided by the initiator. On the receive 
+     * side the algorithm has the right to change the buffers provided by the header
+     * handler (this may avoid having the implementor allocate more memory for 
+     * internal buffering)
+     *
+     * \warning Until the message callback is invoked, it is illegal to send it
+     *          again, reset it, touch the attached buffers, or deallocate the
+     *          request object.
+     *
+     * \param[in]  registration Protocol registration.
+     * \param[in]  request      Opaque memory to maintain internal message state.
+     * \param[in]  cb_done      Callback to invoke when message is complete.
+     * \param[in]  geometry     Geometry to use for this collective operation.
+     *                          \c NULL indicates the global geometry.
+     * \param[in]  headers      metadata to send to destinations in the header
+     * \param[in]  src          Source buffers to reduce.
+     * \param[in]  srclengths   Number of bytes to scatter per destination.
+     *
+     * \retval     0            Success
+     *
+     * \todo doxygen
+     */
+    typedef struct
+    {
+        hl_xfer_type_t             xfer_type;
+        HL_CollectiveProtocol_t  * registration;
+        HL_CollectiveRequest_t   * request;
+        HL_Callback_t              cb_done;
+        HL_Geometry_t            * geometry;
+	HL_AMHeader_t            * headers;
+        char                     * src;
+	unsigned                   count;
+	HL_Dt                      dt;
+        HL_Op                      op;
+    }hl_amreduce_t;
+
+
     typedef union
     {
 	hl_xfer_type_t        xfer_type;
         hl_allreduce_t        xfer_allreduce;
-        hl_async_broadcast_t  xfer_async_broadcast;
         hl_broadcast_t        xfer_broadcast;
         hl_reduce_t           xfer_reduce;
         hl_allgather_t        xfer_allgather;
@@ -733,6 +968,11 @@ extern "C"
         hl_scatter_t          xfer_scatter;
         hl_scatterv_t         xfer_scatterv;
         hl_alltoall_t         xfer_alltoall;
+        hl_alltoallv_t        xfer_alltoallv;
+	hl_ambroadcast_t      xfer_ambroadcast;
+	hl_amscatter_t        xfer_amscatter;
+	hl_amgather_t         xfer_amgather;
+	hl_amreduce_t         xfer_amreduce;
 	hl_barrier_t          xfer_barrier;
     }hl_xfer_t;
 

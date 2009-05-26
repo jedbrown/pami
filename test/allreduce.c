@@ -304,6 +304,7 @@ int main(int argc, char*argv[])
 
   bool** validTable=
   alloc2DContig(op_count,dt_count);
+#ifdef FULL_TEST
   for(i=0;i<op_count;i++)
       for(j=0;j<dt_count;j++)
 	  validTable[i][j]=true;
@@ -331,7 +332,14 @@ int main(int argc, char*argv[])
   for(i=OP_MAXLOC; i<=OP_MINLOC; i++)
       for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
 	  validTable[i][j]=true;
+#else
+  for(i=0;i<op_count;i++)
+      for(j=0;j<dt_count;j++)
+	  validTable[i][j]=false;
 
+  validTable[OP_SUM][DT_SIGNED_INT]=true;
+
+#endif
 
 #if 1
   if (rank == root)
