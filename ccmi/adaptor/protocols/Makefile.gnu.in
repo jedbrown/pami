@@ -1,5 +1,0 @@
-VPATH		= @abs_srcdir@
-SUBDIRS		=  allreduce barrier
-SOURCES		= 
-DEVICENAME	= 
-include @abs_top_builddir@/Build.rules

@@ -1,5 +1,5 @@
 VPATH		= @abs_srcdir@
-SUBDIRS		= 
+SUBDIRS		= api common multisend
 NOTBUILT        =
 lapi-""-COLLECTIVESIFACE_SOURCES=ll_multisend.cc hl_collectives.cc
 DEVICENAME     = lapi-""-COLLECTIVESIFACE

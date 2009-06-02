@@ -1,5 +1,0 @@
-VPATH		= @abs_srcdir@
-SUBDIRS		= api multisend
-SOURCES		= 
-DEVICENAME	= 
-include @abs_top_builddir@/Build.rules

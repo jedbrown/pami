@@ -1,6 +1,4 @@
 VPATH		= @abs_srcdir@
-SUBDIRS		= algorithms interface math test util
+SUBDIRS		= hbrd include smp tsp
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules
-
-

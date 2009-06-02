@@ -1,20 +1,20 @@
 #include "../hl_collectives.h"
 #include "../include/lapi.h"
-#include "../../p2p/common/include/pgasrt.h"
-#include "../../p2p/tspcoll/Communicator.h"
 #include <stdio.h>
 
 // Includes for CCMI
-#include "../../ccmi/adaptor/ccmi_internal.h"
-#include "../../ccmi/adaptor/ccmi_util.h"
-#include "../../ccmi/adaptor/pgasp2p/multisend/multisend_impl.h"
-#include "../../ccmi/adaptor/geometry/Geometry.h"
-#include "../../ccmi/logging/LogMgr.h"
-#include "../../ccmi/adaptor/ccmi_debug.h"
-#include "../../ccmi/adaptor/protocols/barrier/barrier_impl.h"
-#include "../../ccmi/adaptor/protocols/allreduce/sync_impl.h"
-#include "../../ccmi/adaptor/protocols/allreduce/async_impl.h"
-#include "../../ccmi/adaptor/pgasp2p/api/mapping_impl.h" // ? why
+#include "collectives/interface/ccmi_internal.h"
+#include "collectives/util/ccmi_util.h"
+#include "collectives/interface/lapiunix/multisend/multisend_impl.h"
+#include "collectives/interface/Geometry.h"
+#include "collectives/util/logging/LogMgr.h"
+#include "collectives/util/ccmi_debug.h"
+#include "collectives/algorithms/protocols/barrier/barrier_impl.h"
+#include "collectives/algorithms/protocols/allreduce/sync_impl.h"
+#include "collectives/algorithms/protocols/allreduce/async_impl.h"
+#include "collectives/interface/lapiunix/api/mapping_impl.h" // ? why
+#include "collectives/algorithms/protocols/tspcoll/Communicator.h"
+
 
 #include <unistd.h>
 

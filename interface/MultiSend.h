@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __multisend_h__
-#define   __multisend_h__
+#ifndef   __new_multisend_h__
+#define   __new_multisend_h__
 
 //#include "ll.h"
 
@@ -77,16 +77,19 @@ namespace LL
 	class MulticastFactory : public MultisendProtocolFactory {
         protected:
         public:
-            MulticastFactory(lapi_handle_t ctxt,LL_Result &status);
-	    LL_Result generate(LL_Multicast_t *mcast_info);
+            MulticastFactory(lapi_handle_t ctxt,LL_Result &status):
+		MultisendProtocolFactory(ctxt,status)
+		{}
+	    LL_Result generate(LL_Multicast_t *mcast_info){}
 	    map<int, vector<void*>* > _conn_map;
         };  //-- MulticombineFactory
 
         class MultisyncFactory : public MultisendProtocolFactory
 	{
         public:
-            MultisyncFactory(lapi_handle_t ctxt,LL_Result &status);
-	    LL_Result generate(LL_Multisync_t *msync_info);
+            MultisyncFactory(lapi_handle_t ctxt,LL_Result &status):
+		MultisendProtocolFactory(ctxt,status){}
+	    LL_Result generate(LL_Multisync_t *msync_info){}
 	    //virtual unsigned getId() = 0;
 	    map<int, vector<void*>* > _conn_map;
 	    map<int, vector<void*>* > _early_conn_map;
@@ -101,7 +104,7 @@ namespace LL
                 {
                     //status = LL_SUCCESS;
                 }
-                LL_Result generate(LL_Multicombine_t *mcomb_info);
+                LL_Result generate(LL_Multicombine_t *mcomb_info){}
         };  //-- MulticombineFactory
 
 
@@ -150,7 +153,7 @@ namespace LL
                     _m2m_arg     =  arg;
                 }
 
-                LL_Result generate  (LL_Manytomany_t *m2m_info);
+                LL_Result generate  (LL_Manytomany_t *m2m_info){}
 
                 ///
                 /// \brief Post a many-to-many receive

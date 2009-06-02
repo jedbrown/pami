@@ -1,5 +1,5 @@
-#include "../ll_multisend.h"
-#include "../MultiSend.h"
+#include "collectives/interface/ll_multisend.h"
+#include "collectives/interface/MultiSend.h"
 
 // placeholder until we find where to get the ctxt from
 lapi_handle_t   _g_ctxt;
