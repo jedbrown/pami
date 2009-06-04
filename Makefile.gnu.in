@@ -1,5 +1,5 @@
 VPATH		= @abs_srcdir@
-SUBDIRS		= algorithms interface math test util
+SUBDIRS		= algorithms interface math util
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules
 

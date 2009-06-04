@@ -1,6 +1,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
 NOTBUILT        = 
-lapi-""-COMMONHBRDCOLLECTIVES_SOURCES=hbrd_amsend.c  hbrd_barrier.c  hbrd_start.c
-DEVICENAME     = lapi-""-COMMONHBRDCOLLECTIVES
+@LIBNAME@-""-COMMONHBRDCOLLECTIVES_SOURCES=hbrd_amsend.c  hbrd_barrier.c  hbrd_start.c
+DEVICENAME     = @LIBNAME@-""-COMMONHBRDCOLLECTIVES
 include @abs_top_builddir@/Build.rules

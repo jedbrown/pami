@@ -1,6 +1,6 @@
 VPATH		= @abs_srcdir@
-SUBDIRS		= lapiunix
+SUBDIRS		= @TARGET@
 NOTBUILT        =
-lapi-""-COLLECTIVESGEOM_SOURCES=geometry.cc
-DEVICENAME     = lapi-""-COLLECTIVESGEOM
+@LIBNAME@-""-COLLECTIVESGEOM_SOURCES=geometry.cc
+DEVICENAME     = @LIBNAME@-""-COLLECTIVESGEOM
 include @abs_top_builddir@/Build.rules

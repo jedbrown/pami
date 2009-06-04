@@ -2,9 +2,9 @@
 #ifndef  __ccmi_adaptor_bcast_queue_elem__
 #define  __ccmi_adaptor_bcast_queue_elem__
 
-#include "queue/Queue.h"
-#include "interfaces/Composite.h"
-#include "adaptor/ccmi_util.h"
+#include "collectives/util/queue/Queue.h"
+#include "collectives/algorithms/composite/Composite.h"
+#include "collectives/util/ccmi_util.h"
 
 #ifndef TRACE_ERR
   #define TRACE_ERR(x)

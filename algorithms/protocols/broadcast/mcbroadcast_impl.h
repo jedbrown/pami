@@ -2,9 +2,9 @@
 #ifndef   __ccmi_adaptor_mc_broadcast_impl__
 #define   __ccmi_adaptor_mc_broadcast_impl__
 
-#include "schedule/BinomialTree.h"
-#include "schedule/RingSchedule.h"
-#include "MultiColorCompositeT.h"
+#include "collectives/algorithms/schedule/BinomialTree.h"
+#include "collectives/algorithms/schedule/RingSchedule.h"
+#include "collectives/algorithms/protocols/broadcast/MultiColorCompositeT.h"
 
 namespace CCMI
 {

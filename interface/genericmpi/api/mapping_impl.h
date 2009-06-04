@@ -4,7 +4,7 @@
 
 
 #include "mpi.h"
-#include "adaptor/Mapping.h"
+#include "collectives/interface/Mapping.h"
 
 inline CCMI::Mapping::Mapping (void *pers)
 {

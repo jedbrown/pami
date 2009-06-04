@@ -19,10 +19,10 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 
-#ifndef __multisend_h__
-#define __multisend_h__
+#ifndef __generic_multisend_h__
+#define __generic_multisend_h__
 
-#include "ccmi_internal.h"
+#include "collectives/interface/ccmi_internal.h"
 
 
 typedef CCMIQuad CCMI_Register_t[32];

@@ -2,13 +2,13 @@
 #ifndef __ccmi_adaptor_multicolor_sync_composite_h__
 #define __ccmi_adaptor_multicolor_sync_composite_h__
 
-#include "executor/Broadcast.h"
-#include "interfaces/Composite.h"
-#include "connmgr/SimpleConnMgr.h"
-#include "connmgr/RankBasedConnMgr.h"
-#include "Geometry.h"
-#include "protocols/broadcast/BroadcastFactory.h"
-#include "schedule/Rectangle.h"
+#include "collectives/algorithms/executor/Broadcast.h"
+#include "collectives/algorithms/composite/Composite.h"
+#include "collectives/algorithms/connmgr/SimpleConnMgr.h"
+#include "collectives/algorithms/connmgr/RankBasedConnMgr.h"
+#include "collectives/interface/Geometry.h"
+#include "collectives/algorithms/protocols/broadcast/BroadcastFactory.h"
+#include "collectives/algorithms/schedule/Rectangle.h"
 
 namespace CCMI
 {

@@ -19,7 +19,6 @@
 #include "ll_multisend.h"
 #include "./Topology.h"
 #include "./PipeWorkQueue.h"
-#include "../include/lapi.h"
 #include <map>
 #include <vector>
 
@@ -38,7 +37,7 @@ namespace LL
 		    _replRole = replRole;
 		}
         public:
-            MultisendProtocolFactory(lapi_handle_t ctxt, LL_Result &status):
+            MultisendProtocolFactory(void* ctxt, LL_Result &status):
                 _numRoles(0),
                 _replRole(-1),
 		_ctxt(ctxt)
@@ -61,7 +60,7 @@ namespace LL
         protected:
                 int           _numRoles;
                 int           _replRole;
-		lapi_handle_t _ctxt;
+		void* _ctxt;
 		int           _currHndlr;
 
         }; //-- MultisendProtocolFactory
@@ -77,7 +76,7 @@ namespace LL
 	class MulticastFactory : public MultisendProtocolFactory {
         protected:
         public:
-            MulticastFactory(lapi_handle_t ctxt,LL_Result &status):
+            MulticastFactory(void* ctxt,LL_Result &status):
 		MultisendProtocolFactory(ctxt,status)
 		{}
 	    LL_Result generate(LL_Multicast_t *mcast_info){}
@@ -87,7 +86,7 @@ namespace LL
         class MultisyncFactory : public MultisendProtocolFactory
 	{
         public:
-            MultisyncFactory(lapi_handle_t ctxt,LL_Result &status):
+            MultisyncFactory(void* ctxt,LL_Result &status):
 		MultisendProtocolFactory(ctxt,status){}
 	    LL_Result generate(LL_Multisync_t *msync_info){}
 	    //virtual unsigned getId() = 0;
@@ -99,7 +98,7 @@ namespace LL
         class MulticombineFactory : public MultisendProtocolFactory {
         protected:
         public:
-            MulticombineFactory(lapi_handle_t ctxt,LL_Result &status) :
+            MulticombineFactory(void* ctxt,LL_Result &status) :
                 MultisendProtocolFactory(ctxt,status)
                 {
                     //status = LL_SUCCESS;
@@ -126,7 +125,7 @@ namespace LL
 
             /// \brief Constructor
 
-            inline ManyToManyFactory (lapi_handle_t ctxt,
+            inline ManyToManyFactory (void* ctxt,
 				      unsigned      nconn,
                                       LL_Result    &status):
 		MultisendProtocolFactory(ctxt,status),

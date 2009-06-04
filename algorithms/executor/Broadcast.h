@@ -16,10 +16,10 @@
 
 //#define TRACE_ERR(x)  fprintf x
 
-#include "interfaces/Schedule.h"
-#include "interfaces/Executor.h"
-#include "interfaces/MultiSend.h"
-#include "interfaces/ConnectionManager.h"
+#include "collectives/algorithms/schedule/Schedule.h"
+#include "collectives/algorithms/executor/Executor.h"
+#include "collectives/interface/MultiSendOld.h"
+#include "collectives/algorithms/connmgr/ConnectionManager.h"
 
 #define MAX_PARALLEL 20
 

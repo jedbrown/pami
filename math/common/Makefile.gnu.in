@@ -1,4 +1,4 @@
 VPATH		                = @abs_srcdir@
-lapi-""-MATHMEMCPY_SOURCES	= Memcpy.cc
-DEVICENAME	                = lapi-""-MATHMEMCPY
+@LIBNAME@-""-MATHMEMCPY_SOURCES	= Memcpy.cc
+DEVICENAME	                = @LIBNAME@-""-MATHMEMCPY
 include @abs_top_builddir@/Build.rules

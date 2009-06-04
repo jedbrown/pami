@@ -2,11 +2,11 @@
 #ifndef __ccmi_adaptor_async_composite_t_h__
 #define __ccmi_adaptor_async_composite_t_h__
 
-#include "executor/Broadcast.h"
-#include "geometry/Geometry.h"
-#include "connmgr/RankBasedConnMgr.h"
-#include "protocols/broadcast/BroadcastFactory.h"
-#include "protocols/broadcast/ExecutorPool.h"
+#include "collectives/algorithms/executor/Broadcast.h"
+#include "collectives/interface/Geometry.h"
+#include "collectives/algorithms/connmgr/RankBasedConnMgr.h"
+#include "collectives/algorithms/protocols/broadcast/BroadcastFactory.h"
+#include "collectives/algorithms/protocols/broadcast/ExecutorPool.h"
 
 namespace CCMI
 {

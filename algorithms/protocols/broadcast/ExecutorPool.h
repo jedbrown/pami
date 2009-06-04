@@ -1,8 +1,8 @@
 #ifndef  __ccmi_adaptor_executor_pool__
 #define  __ccmi_adaptor_executor_pool__
 
-#include "queue/Queue.h"
-#include "protocols/broadcast/BcastQueueElem.h"
+#include "collectives/util/queue/Queue.h"
+#include "collectives/algorithms/protocols/broadcast/BcastQueueElem.h"
 
 #define MAX_PREALLOCATED_BYTES      256
 #define MAX_NUM_PREALLOCATED        64

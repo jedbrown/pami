@@ -9,8 +9,8 @@
 #include <mpi.h>
 #include <assert.h>
 
-#include <interfaces/MultiSend.h>
-#include <Adaptor.h>
+#include "collectives/interface/MultiSendOld.h"
+#include "collectives/interface/genericmpi/Adaptor.h"
 
 namespace CCMI {
   namespace Adaptor {

@@ -15,7 +15,7 @@
 #define   __basic_ccmi_util_types_h__
 
 //#define throw() // Needed for xlC -noeh processing
-#include <config.h>
+//#include <config.h>
 
 #include <stdio.h>
 #include <assert.h>

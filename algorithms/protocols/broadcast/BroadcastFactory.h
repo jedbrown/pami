@@ -2,12 +2,12 @@
 #ifndef __ccmi_adaptor_bcast_h__
 #define __ccmi_adaptor_bcast_h__
 
-#include "executor/Broadcast.h"
-#include "interfaces/Composite.h"
-#include "connmgr/SimpleConnMgr.h"
-#include "connmgr/RankBasedConnMgr.h"
-#include "Geometry.h"
-#include "protocols/ProtocolFactory.h"
+#include "collectives/algorithms/executor/Broadcast.h"
+#include "collectives/algorithms/composite/Composite.h"
+#include "collectives/algorithms/connmgr/SimpleConnMgr.h"
+#include "collectives/algorithms/connmgr/RankBasedConnMgr.h"
+#include "collectives/interface/Geometry.h"
+#include "collectives/algorithms/protocols/ProtocolFactory.h"
 
 namespace CCMI
 {

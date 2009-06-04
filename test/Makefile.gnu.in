@@ -5,26 +5,23 @@ APPS            = barrier.${EXTENSION} bcast.${EXTENSION} bcast_subcomm.${EXTENS
 
 include @abs_top_builddir@/Build.rules
 
-#%.${EXTENSION}: %.cc
-#	${CXX_CROSS} ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS}
-#%.${EXTENSION}: %.cpp
-#	${CXX_CROSS} ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS}
+#%.${EXTENSION}: %.c
+#	cp ${CRT1} .
+#	cp ${CRTI} .
+#	cp ${CRTN} .
+#	${CXX_CROSS} -I${INSTALL_DIR}/include -I@srcdir@/../common/include ${CXXFLAGS_CROSS} -c $< -o $@.o ${LDFLAGS_CROSS} -L${_BOSDEPS_USR_LIB_} -L@abs_top_builddir@ -llapi 
+#	${CXX_CROSS} -I${INSTALL_DIR}/include -I@srcdir@/../common/include ${CXXFLAGS_CROSS} -c $< -o $@.o
+#	rm `basename ${CRT1}`
+#	rm `basename ${CRTI}`
+#	rm `basename ${CRTN}`
+
 
 %.${EXTENSION}: %.c
-	cp ${CRT1} .
-	cp ${CRTI} .
-	cp ${CRTN} .
-#	${CXX_CROSS} -I${INSTALL_DIR}/include -I@srcdir@/../common/include ${CXXFLAGS_CROSS} -c $< -o $@.o ${LDFLAGS_CROSS} -L${_BOSDEPS_USR_LIB_} -L@abs_top_builddir@ -llapi 
-	${CXX_CROSS} -I${INSTALL_DIR}/include -I@srcdir@/../common/include ${CXXFLAGS_CROSS} -c $< -o $@.o
-	rm `basename ${CRT1}`
-	rm `basename ${CRTI}`
-	rm `basename ${CRTN}`
-
-
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib
 %.${EXTENSION}: %.cc
-	${CXX_CROSS} -I${INSTALL_DIR}/include -I../common/include ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS} -L${INSTALL_DIR}/lib -llapi 
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib
 %.${EXTENSION}: %.cpp
-	${CXX_CROSS} -I${INSTALL_DIR}/include -I../common/include ${CXXFLAGS_CROSS} $< -o $@ ${LDFLAGS_CROSS} -L${INSTALL_DIR}/lib -llapi
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib
 
 
 default: ${APPS}
