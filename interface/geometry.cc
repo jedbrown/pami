@@ -2,7 +2,6 @@
 #include "Geometry.h"
 #include "collectives/algorithms/executor/Executor.h"
 #include "collectives/algorithms/protocols/barrier/BarrierFactory.h"
-
 #include <stdlib.h>
 
 unsigned          CCMI::Adaptor::Geometry::_ccmi_cached_geometry_comm;

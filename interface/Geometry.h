@@ -6,7 +6,6 @@
 #include "collectives/interface/ccmi_internal.h"
 #include "collectives/interface/Mapping.h"
 #include "collectives/algorithms/executor/Executor.h"
-#include "collectives/interface/Adaptor.h"
 #include "collectives/algorithms/composite/Composite.h"
 #include "collectives/util/queue/Queue.h"
 #include "collectives/util/queue/MatchQueue.h"

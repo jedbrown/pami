@@ -7,7 +7,7 @@
 #define   __mpi_multisend_impl_h__
 #include <assert.h>
 #include "collectives/interface/MultiSendOld.h"
-#include "collectives/interface/Adaptor.h"
+#include "collectives/interface/lapiunix/Adaptor.h"
 #include "./regTable.h"
 #include "collectives/interface/lapiunix/common/include/pgasrt.h"
 
