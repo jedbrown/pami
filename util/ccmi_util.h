@@ -21,7 +21,6 @@
 #include <assert.h>
 #include <string.h>
 
-
 #define TRACE_ERR(x)     //fprintf x
 #define MEMCPY           memcpy
 #define MEMSET           memset
