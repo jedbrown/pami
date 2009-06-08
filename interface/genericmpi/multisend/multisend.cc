@@ -18,6 +18,10 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
+#ifndef OMPI_SKIP_MPICXX
+#define OMPI_SKIP_MPICXX
+#endif
+
 #include "mpi.h"
 #include <stdlib.h>
 #include <assert.h>

@@ -6,8 +6,8 @@
 #include <assert.h>
 #include "../interface/hl_collectives.h"
 
-
-#define COUNT      1048576
+#define FULL_TEST  
+#define COUNT      16384
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
 #define NITERBW    10
@@ -295,7 +295,7 @@ int main(int argc, char*argv[])
   char rbuf[MAXBUFSIZE];
   int  op, dt;
 
-  HL_Collectives_initialize(argc,argv,cb_geometry);
+  HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   init__allreduces();
   int rank = HL_Rank();
@@ -379,7 +379,7 @@ int main(int argc, char*argv[])
 				  {
 				      printf("  %11lld %16lld %14.1f %12.2f\n",
 					     dataSent,
-					     0,
+					     0.0f,
 					     (double)1e6*(double)dataSent/(double)usec,
 					     usec);
 				      fflush(stdout);

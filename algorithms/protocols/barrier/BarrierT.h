@@ -95,7 +95,7 @@ namespace CCMI
         (CCMI_Executor_t           * request,
          Geometry                  * geometry)  
         {
-          return new (request, sizeof (CCMI_Executor_t))
+          return new (request)//, sizeof (CCMI_Executor_t))
           T ((CCMI::Mapping *)_mapping, _mcastInterface, geometry);
         }
 

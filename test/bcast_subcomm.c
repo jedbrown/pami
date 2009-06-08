@@ -155,7 +155,7 @@ int main(int argc, char*argv[])
   double tf,ti,usec;
   char buf[BUFSIZE];
   char rbuf[BUFSIZE];
-  HL_Collectives_initialize(argc,argv,cb_geometry);
+  HL_Collectives_initialize(&argc,&argv,cb_geometry);
   int rank = HL_Rank();
   int sz   = HL_Size();
   int half = sz/2;

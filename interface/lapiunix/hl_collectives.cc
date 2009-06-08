@@ -136,12 +136,12 @@ extern "C"
     HL_mapIdToGeometry    cb_geometry_map;
 
 
-    int HL_Collectives_initialize(int argc,
-				  char*argv[],
+    int HL_Collectives_initialize(int *argc,
+				  char***argv,
 				  HL_mapIdToGeometry cb_map)
     {
 	// Set up pgasrt P2P Collectives
-	__pgasrt_tsp_setup         (1, &argc, &argv);
+	__pgasrt_tsp_setup         (1, argc, argv);
 
 	cb_geometry_map = cb_map;
 

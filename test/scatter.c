@@ -122,7 +122,7 @@ int main(int argc, char*argv[])
 {
   double tf,ti,usec;
 
-  HL_Collectives_initialize(argc,argv,cb_geometry);
+  HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   int i,j,root = 0;
   int rank     = HL_Rank();

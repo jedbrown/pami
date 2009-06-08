@@ -37,6 +37,8 @@ typedef unsigned axii_t[NUM_AXIS];
 #include "./RingSchedule.h"
 #include "collectives/interface/TorusMapping.h"
 #include "collectives/algorithms/schedule/Schedule.h"
+#include <new>
+
 
 namespace CCMI
 {
@@ -452,6 +454,7 @@ namespace CCMI
         _startsend = PHASE_NONE;
       }
 
+#if 0
       /**
        * \brief \e new operator for in-place construction of object
        *
@@ -466,7 +469,6 @@ namespace CCMI
         CCMI_assert(size >= sizeof(OneColorRectangle));
         return addr;
       }
-
       /**
        * \brief \e delete operator for destruction of object
        *
@@ -479,6 +481,7 @@ namespace CCMI
       {
         CCMI_abort();
       }
+#endif
 
       /*
        * Interface Functions
@@ -1294,12 +1297,12 @@ namespace CCMI
 
         if(_subScheduleType == Binomial)
         {
-          _subschedule[axis] = new (&_subschedule_storage[axis],sizeof(_subschedule_storage[axis]))
+          _subschedule[axis] = new (&_subschedule_storage[axis]) //,sizeof(_subschedule_storage[axis]))
                                BinomialTreeSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
         else
         {
-          _subschedule[axis] = new (&_subschedule_storage[axis],sizeof(_subschedule_storage[axis]))
+          _subschedule[axis] = new (&_subschedule_storage[axis]) //sizeof(_subschedule_storage[axis]))
                                RingSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
 

@@ -123,7 +123,7 @@ void _scatterv (int         root,
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
-  HL_Collectives_initialize(argc,argv,cb_geometry);
+  HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   int     rank    = HL_Rank();
   int     sz      = HL_Size();

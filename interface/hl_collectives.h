@@ -365,7 +365,7 @@ extern "C"
     }   HL_CollectiveConfiguration_t;
 
 
-    int HL_Collectives_initialize(int argc, char*argv[], HL_mapIdToGeometry cb_map);
+    int HL_Collectives_initialize(int *argc, char***argv, HL_mapIdToGeometry cb_map);
     int HL_Collectives_finalize();
     /* Rename  to CollectiveRegistration_T , doxygen with Storage variable storage, others*/
     int HL_register(HL_CollectiveProtocol_t      *registration,

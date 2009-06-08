@@ -65,7 +65,7 @@ void _barrier ()
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;  
-  HL_Collectives_initialize(argc,argv,cb_geometry);
+  HL_Collectives_initialize(&argc,&argv,cb_geometry);
   int r = HL_Rank();
   init__barriers();
 

@@ -125,7 +125,7 @@ int main(int argc, char*argv[])
   char buf[BUFSIZE];
   char rbuf[BUFSIZE];
 
-  HL_Collectives_initialize(argc,argv,cb_geometry);
+  HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   int rank = HL_Rank();
   int i,j,root = 0;

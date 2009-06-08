@@ -12,12 +12,13 @@
 #include "collectives/algorithms/protocols/allreduce/sync_impl.h"
 #include "collectives/algorithms/protocols/allreduce/async_impl.h"
 #include "collectives/interface/genericmpi/api/mapping_impl.h" // ? why
-#include "collectives/algorithms/protocols/tspcoll/Communicator.h"
+//#include "collectives/algorithms/protocols/tspcoll/Communicator.h"
+
+#include <mpi.h>
 
 
 #include <unistd.h>
 
-#define USE_CCMI
 using namespace std;
 
 #define MAX_REGISTRATIONS_PER_TABLE 16
@@ -27,53 +28,6 @@ CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
 
 extern "C"
 {
-    int LL_to_PGAS_op[] =
-	{-1,              // LL_UNDEFINED_OP
-	 -1,              // LL_NOOP
-	 PGASRT_OP_MAX,   // LL_MAX,
-	 PGASRT_OP_MIN,   // LL_MIN,
-	 PGASRT_OP_ADD,   // LL_SUM,
-	 PGASRT_OP_MUL,   // LL_PROD,
-	 -1,              // LL_LAND,
-	 -1,              // LL_LOR,
-	 -1,              // LL_LXOR,
-	 PGASRT_OP_AND,   // LL_BAND,
-	 PGASRT_OP_OR,    // LL_BOR,
-	 PGASRT_OP_XOR,   // LL_BXOR,
-	 -1,              // LL_MAXLOC,
-	 -1,              // LL_MINLOC,
-	 -1,              // LL_USERDEFINED_OP,
-	 -1              // LL_OP_COUNT
-	};
-    int LL_to_PGAS_dt[] =
-	{
-	 /* Standard/Primative DT's */
-	 -1,                   // LL_UNDEFINED_DT = 0,
-	 PGASRT_DT_chr,        // LL_SIGNED_CHAR,
-	 PGASRT_DT_byte,       // LL_UNSIGNED_CHAR,
-	 PGASRT_DT_srt,        // LL_SIGNED_SHORT,
-	 PGASRT_DT_hwrd,       // LL_UNSIGNED_SHORT,
-	 PGASRT_DT_int,        // LL_SIGNED_INT,
-	 PGASRT_DT_word,       // LL_UNSIGNED_INT,
-	 PGASRT_DT_llg,        // LL_SIGNED_LONG_LONG,
-	 PGASRT_DT_dwrd,       // LL_UNSIGNED_LONG_LONG,
-	 PGASRT_DT_flt,        // LL_FLOAT,
-	 PGASRT_DT_dbl,        // LL_DOUBLE,
-	 -1,                   // LL_LONG_DOUBLE,
-	 -1,                   // LL_LOGICAL,
-	 -1,                   // LL_SINGLE_COMPLEX,
-	 -1,                   // LL_DOUBLE_COMPLEX,
-	 /* Max/Minloc DT's */
-	 -1,                   // LL_LOC_2INT,
-	 -1,                   // LL_LOC_SHORT_INT,
-	 -1,                   // LL_LOC_FLOAT_INT,
-	 -1,                   // LL_LOC_DOUBLE_INT,
-	 -1,                   // LL_LOC_2FLOAT,
-	 -1,                   // LL_LOC_2DOUBLE,
-	 -1,                   // LL_USERDEFINED_DT,
-	 -1,                   // LL_DT_COUNT
-	};
-
     int LL_to_CCMI_op[] =
 	{CCMI_UNDEFINED_OP,        // LL_UNDEFINED_OP
 	 CCMI_NOOP,                // LL_NOOP
@@ -135,13 +89,13 @@ extern "C"
     HL_mapIdToGeometry    cb_geometry_map;
 
 
-    int HL_Collectives_initialize(int argc,
-				  char*argv[],
+    int HL_Collectives_initialize(int *argc,
+				  char***argv,
 				  HL_mapIdToGeometry cb_map)
     {
 	// Set up pgasrt P2P Collectives
-	__pgasrt_tsp_setup         (1, &argc, &argv);
-
+      //	__pgasrt_tsp_setup         (1, &argc, &argv);
+      MPI_Init(argc, argv);
 	cb_geometry_map = cb_map;
 
 	// Set up CCMI collectives
@@ -161,7 +115,7 @@ extern "C"
 			       HL_World_Geometry_id,
 			       &world_range,
 			       1);
-	__pgasrt_tsp_barrier       ();
+	//	__pgasrt_tsp_barrier       ();
 
 	return HL_SUCCESS;
     }
@@ -175,22 +129,25 @@ extern "C"
 
     int HL_Rank()
     {
-	return __pgasrt_tsp_myID();
+      return _g_generic_adaptor->mapping()->rank();
+      //	return __pgasrt_tsp_myID();
     }
 
     int HL_Size()
     {
-	return __pgasrt_tsp_numnodes();
+      return _g_generic_adaptor->mapping()->size();
+      //	return __pgasrt_tsp_numnodes();
     }
 
     int HL_Collectives_finalize()
     {
-	__pgasrt_tsp_finish();
+      //	__pgasrt_tsp_finish();
 
 //	FILE *fp = fopen ("log", "a");
 //	_g_generic_adaptor->getLogMgr()->dumpTimers(fp, _g_generic_adaptor->mapping());
 	free (_g_generic_adaptor);
 //	fclose (fp);
+	MPI_Finalize();
 	return 0;
     }
 
@@ -279,7 +236,6 @@ extern "C"
 			{
 			case HL_DEFAULT_ALLREDUCE_PROTOCOL:
 			    {
-#ifdef USE_CCMI
 				CCMI::Adaptor::ConfigFlags flags;
 				flags.reuse_storage_limit = ((unsigned)2*1024*1024*1024 - 1);
 				flags.pipeline_override   = 0;
@@ -296,16 +252,14 @@ extern "C"
 				SyncBinomialRegistration *treg =
 				    (SyncBinomialRegistration *) registration;
 
-				new (& treg->minfo, sizeof(treg->minfo))
+				new (& treg->minfo)//, sizeof(treg->minfo))
 				    CCMI::Adaptor::Generic::MulticastImpl();
 
-				new (& treg->allreduce_registration, sizeof(treg->allreduce_registration))
+				new (& treg->allreduce_registration)//, sizeof(treg->allreduce_registration))
 				    CCMI::Adaptor::Allreduce::Binomial::Factory
 				    (_g_generic_adaptor->mapping(), & treg->minfo, (CCMI_mapIdToGeometry)cb_geometry_map, flags);
 
 				treg->minfo.initialize(_g_generic_adaptor);
-#endif
-
 				return HL_SUCCESS;
 			    }
 			    break;
@@ -367,7 +321,6 @@ extern "C"
 	    _barrier_factory(static_cast<CCMI::MultiSend::MulticastInterface *>(&_minfo),
 			     _g_generic_adaptor->mapping(),
 			     cb_geometry),
-	    _pgasrt_comm(my_rank, (int)slice_count,(TSPColl::Range*)rank_slices),
 	    _ranklist(ranks)
 
 	{
@@ -377,13 +330,11 @@ extern "C"
 	    _ccmi_geometry.setBarrierExecutor(exe);
 	    exe = _barrier_factory.generate(&_barrier_executors[1], &_ccmi_geometry);
 	    _ccmi_geometry.setLocalBarrierExecutor(exe);
-	    _pgasrt_comm.setup();
 	}
 	CCMI::Adaptor::Geometry                              _ccmi_geometry;
 	CCMI_Executor_t                                      _barrier_executors[2];
 	CCMI::Adaptor::Generic::MulticastImpl::MulticastImpl _minfo;
 	CCMI::Adaptor::Barrier::BinomialBarrierFactory       _barrier_factory;
-	TSPColl::RangedComm                                  _pgasrt_comm;
 	unsigned                                            *_ranklist;
     };
 
@@ -424,7 +375,7 @@ extern "C"
 		    ranks[k] = rank_slices[i].lo + j;
 	    }
 	assert(sizeof(*geometry) >= sizeof(geometry_internal));
-	new(geometry)geometry_internal(__pgasrt_tsp_myID(),
+	new(geometry)geometry_internal(_g_generic_adaptor->mapping()->rank(),
 				       slice_count,
 				       rank_slices,
 				       nranks,
@@ -461,10 +412,6 @@ extern "C"
 		{
 		    hl_broadcast_t        * parms   = &cmd->xfer_broadcast;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    int p_root                      = tspcoll->virtrankof(parms->root);
-		    tspcoll->ibcast(p_root, parms->src, parms->dst, parms->bytes,
-				    (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -472,9 +419,6 @@ extern "C"
 		{
 		    hl_allgather_t        * parms   = &cmd->xfer_allgather;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    tspcoll->iallgather(parms->src, parms->dst, parms->bytes,
-					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -482,9 +426,6 @@ extern "C"
 		{
 		    hl_allgatherv_t        * parms   = &cmd->xfer_allgatherv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    tspcoll->iallgatherv(parms->src, parms->dst, parms->lengths,
-					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -492,10 +433,6 @@ extern "C"
 		{
 		    hl_scatter_t          * parms   = &cmd->xfer_scatter;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    int p_root = tspcoll->virtrankof(parms->root);
-		    tspcoll->iscatter(p_root,parms->src, parms->dst, parms->bytes,
-					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -503,10 +440,6 @@ extern "C"
 		{
 		    hl_scatterv_t         * parms   = &cmd->xfer_scatterv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    int p_root = tspcoll->virtrankof(parms->root);
-		    tspcoll->iscatterv(p_root, parms->src, parms->dst, parms->lengths,
-				       (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -514,7 +447,6 @@ extern "C"
 		{
 		    hl_allreduce_t        * parms   = &cmd->xfer_allreduce;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-#ifdef USE_CCMI
 		    {
 			CCMI::Adaptor::Geometry   *_c_geometry =
 			    (CCMI::Adaptor::Geometry *)
@@ -567,41 +499,23 @@ extern "C"
 
 			return HL_SUCCESS;
 		    }
-#else
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    tspcoll->iallreduce(parms->src,           // source buffer
-					parms->dst,           // dst buffer
-					(__pgasrt_ops_t)LL_to_PGAS_op[parms->op], // op
-					(__pgasrt_dtypes_t)LL_to_PGAS_dt[parms->dt], // dt
-					parms->count,             // type
-					(void (*)(void*))parms->cb_done.function,
-					parms->cb_done.clientdata);
-#endif
-		    return HL_SUCCESS;
 		}
 		break;
 	    case HL_XFER_ALLTOALLV:
 		{
 		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		}
 		break;
 	    case HL_XFER_BARRIER:
 		{
 		    hl_barrier_t          * parms   = &cmd->xfer_barrier;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
-#ifdef USE_CCMI
 		    CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
 		    CCMI::Executor::Executor  *_c_bar         = _c_geometry->getBarrierExecutor();
 		    _c_bar->setDoneCallback    ((void (*)(void*, CCMI_Error_t*))parms->cb_done.function, parms->cb_done.clientdata);
 		    _c_bar->setConsistency ((CCMI_Consistency) 0);
 		    _c_bar->start();
-		    return HL_SUCCESS;
-#else
-		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    tspcoll->ibarrier((void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
-#endif
 		    return HL_SUCCESS;
 		}
 		break;

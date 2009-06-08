@@ -84,7 +84,7 @@ namespace CCMI
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
 
           COMPOSITE *allreduce = 
-          new (c_request, sizeof(CCMI_Executor_t))
+	  new (c_request)//, sizeof(CCMI_Executor_t))
           COMPOSITE(request,
                     (CCMI::Mapping *)_mapping, &_sconnmgr, cb_done,
                     consistency, _minterface, geometry,

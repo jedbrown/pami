@@ -1,6 +1,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
 NOTBUILT        =                  
-@LIBNAME@-""-CCMIMSEND_SOURCES=multisend.cc
+@LIBNAME@-""-CCMIMSEND_SOURCES=multisend.cc Table.cc
 DEVICENAME     = @LIBNAME@-""-CCMIMSEND
 include @abs_top_builddir@/Build.rules
