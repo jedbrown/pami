@@ -25,6 +25,7 @@
 #include "../../ccmi_internal.h"
 #include "multisend_impl.h"
 #include "multisend.h"
+#include <new>
 
 extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration, 
 					     CCMI_RecvMultiSend   cb_recv, 

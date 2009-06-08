@@ -297,10 +297,10 @@ extern "C"
 				SyncBinomialRegistration *treg =
 				    (SyncBinomialRegistration *) registration;
 
-				new (& treg->minfo, sizeof(treg->minfo))
+				new (& treg->minfo)//, sizeof(treg->minfo))
 				    CCMI::Adaptor::Generic::MulticastImpl();
 
-				new (& treg->allreduce_registration, sizeof(treg->allreduce_registration))
+				new (& treg->allreduce_registration)//, sizeof(treg->allreduce_registration))
 				    CCMI::Adaptor::Allreduce::Binomial::Factory
 				    (_g_generic_adaptor->mapping(), & treg->minfo, (CCMI_mapIdToGeometry)cb_geometry_map, flags);
 
