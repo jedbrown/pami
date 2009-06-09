@@ -333,7 +333,7 @@ extern "C"
 	}
 	CCMI::Adaptor::Geometry                              _ccmi_geometry;
 	CCMI_Executor_t                                      _barrier_executors[2];
-	CCMI::Adaptor::Generic::MulticastImpl::MulticastImpl _minfo;
+	CCMI::Adaptor::Generic::MulticastImpl                _minfo;
 	CCMI::Adaptor::Barrier::BinomialBarrierFactory       _barrier_factory;
 	unsigned                                            *_ranklist;
     };

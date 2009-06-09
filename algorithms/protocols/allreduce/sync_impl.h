@@ -44,7 +44,7 @@ namespace CCMI
         typedef CompositeT 
         <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce> Composite;      
         // Specify the static name in the class (for debug)
-        template<> const char* Composite::name="Binomial";
+        //template<> const char* Composite::name="Binomial";
 
         typedef FactoryT 
         <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::Composite> Factory;      
@@ -71,7 +71,7 @@ namespace CCMI
         typedef CompositeT 
         <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase> Composite;      
         // Specify the static name in the class (for debug)
-        template<> const char* Composite::name="ShortBinomial";
+        //template<> const char* Composite::name="ShortBinomial";
 
         typedef FactoryT 
         <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::Composite> Factory;      
@@ -98,7 +98,7 @@ namespace CCMI
         typedef CompositeT 
         <CCMI::Schedule::RingSchedule,CCMI::Executor::PipelinedAllreduce> Composite;      
         // Specify the static name in the class (for debug)
-        template<> const char* Composite::name="Ring";
+      //  template<> const char* Composite::name="Ring";
 
         typedef FactoryT 
         <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Ring::Composite> Factory;      
@@ -126,7 +126,7 @@ namespace CCMI
         typedef CompositeT 
         <CCMI::Schedule::RingSchedule,CCMI::Executor::Allreduce> Composite;      //? pipelined or not?
         // Specify the static name in the class (for debug)
-        template<> const char* Composite::name="RingReduce";
+        //template<> const char* Composite::name="RingReduce";
 
         typedef FactoryT 
         <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RingReduce::Composite> Factory;      

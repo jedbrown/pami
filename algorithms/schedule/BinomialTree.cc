@@ -14,7 +14,7 @@
  */
 
 #include "./BinomialTree.h"
-
+#include <new>
 /**
  * \brief Setup binomial schedule context
  *

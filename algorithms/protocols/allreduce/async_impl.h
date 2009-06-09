@@ -41,7 +41,7 @@ namespace CCMI
         typedef AsyncCompositeT 
         <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase> AsyncComposite;      
         // Specify the static name in the class (for debug)
-        template<> const char* AsyncComposite::name="ShortBinomial";
+        //template<> const char* AsyncComposite::name="ShortBinomial";
 
         typedef AsyncFactoryT 
         <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::AsyncComposite> AsyncFactory;      
