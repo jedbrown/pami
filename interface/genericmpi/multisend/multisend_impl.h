@@ -6,6 +6,10 @@
 #ifndef   __mpi_multisend_impl_h__
 #define   __mpi_multisend_impl_h__
 
+#ifndef MPICH_IGNORE_CXX_SEEK
+#define MPICH_IGNORE_CXX_SEEK
+#endif
+
 #ifndef OMPI_SKIP_MPICXX
 #define OMPI_SKIP_MPICXX
 #endif
