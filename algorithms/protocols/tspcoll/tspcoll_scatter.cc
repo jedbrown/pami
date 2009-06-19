@@ -11,9 +11,7 @@
 /* ************************************************************************* */
 
 #include "./Scatter.h"
-
-
-// #define DEBUG_SCATTER 1
+//#define DEBUG_SCATTER 1
 #undef TRACE
 #ifdef DEBUG_SCATTER
 #define TRACE(x)  fprintf x;
@@ -21,18 +19,10 @@
 #define TRACE(x)
 #endif
 
-/* **************************************************************** */
-/* **************************************************************** */
-
-void TSPColl::Scatter::amsend_reg (void)
-{
-  __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLSCATTER,Scatter::cb_incoming);
-}
 
 /* **************************************************************** */
 /*                 Scatterv constructor                             */
 /* **************************************************************** */
-
 TSPColl::Scatter::Scatter (Communicator * comm, NBTag tag, 
 			   int instID, int tagoff):
   NBColl (comm, tag, instID, NULL, NULL)
@@ -46,9 +36,6 @@ TSPColl::Scatter::Scatter (Communicator * comm, NBTag tag,
   _isroot          = false;
 
   {
-    _header.hdr.handler   = (__pgasrt_AMHeaderHandler_t )
-      PGASRT_TSP_AMSEND_COLLSCATTER;
-    _header.hdr.headerlen = sizeof (struct scatter_header);
     _header.tag           = tag;
     _header.id            = instID;
     _header.tagoff        = tagoff;
@@ -59,11 +46,10 @@ TSPColl::Scatter::Scatter (Communicator * comm, NBTag tag,
 /* **************************************************************** */
 /*               reset the scatterv routine                         */
 /* **************************************************************** */
-
 void TSPColl::Scatter::
 reset (int root, const void * sbuf, void * rbuf, size_t length)
 {
-  _isroot = (root == _comm->rank());
+  _isroot = (root == this->_comm->rank());
   _rbuf   = rbuf;
   _sbuf   = (const char *)sbuf;
   _length = length;
@@ -74,34 +60,58 @@ reset (int root, const void * sbuf, void * rbuf, size_t length)
 /* **************************************************************** */
 /*              kick the scatter routine                            */
 /* **************************************************************** */
-
-void TSPColl::Scatter::kick()
+void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
+  _mcast_iface = mcast_iface;
+  TRACE((stderr, "SCATTER KICK START\n"));
   if (!_isroot) return;
-  for (int i=0; i < _comm->size(); i++)
-    if (i == _comm->rank()) 
+  for (int i=0; i < this->_comm->size(); i++)
+    if (i == this->_comm->rank()) 
       { 
 	memcpy (_rbuf, _sbuf+i*_length, _length); 
 	cb_senddone (&_header);
       }
     else
-      __pgasrt_tsp_amsend (_comm->absrankof (i),
-			   (__pgasrt_AMHeader_t *)&_header,
-			   (__pgasrt_local_addr_t) _sbuf + i * _length, 
-			   _length,
-			   cb_senddone, &_header);
+      {
+#if 0
+      __pgasrt_tsp_amsend (this->_comm->absrankof (i),
+			   (__pgasrt_AMHeader_t *)&this->_header,
+			   (__pgasrt_local_addr_t) this->_sbuf + i * this->_length, 
+			   this->_length,
+			   cb_senddone, &this->_header);
+#endif
+      unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
+      unsigned        ranks   = this->_comm->absrankof (i);
+      CCMI_Callback_t cb_done;
+      cb_done.function        = (void (*)(void*, CCMI_Error_t*))cb_senddone;
+      cb_done.clientdata      = &this->_header;
+      void * r = NULL;
+      TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
+	     this->_sbuf, &this->_header,this->_header.tag, this->_header.id));
+
+      mcast_iface->send (&_req,
+			 &cb_done,
+			 CCMI_MATCH_CONSISTENCY,
+			 (CCMIQuad*)&this->_header,
+			 CCMIQuad_sizeof(this->_header),
+			 0,
+			 (char*)(this->_sbuf + i * this->_length),
+			 (unsigned)this->_length,
+			 &hints,
+			 &ranks,
+			 1);
+      }
 }
 
 /* **************************************************************** */
 /*               send completion in scatter                         */
 /* **************************************************************** */
-
 void TSPColl::Scatter::cb_senddone (void * arg)
 {
   Scatter * self = ((struct scatter_header *)arg)->self;
   /* LOCK */
-  TRACE((stderr, "%d: SCATTER SDONE ctr=%d cplt=%d sidx=%d\n",
-	 PGASRT_MYNODE, self->_counter, self->_complete, self->_sendidx));
+  TRACE((stderr, "SCATTER SDONE ctr=%d cplt=%d sidx=%d\n",
+	 self->_counter, self->_complete, self->_sendidx));
   if (++(self->_sendidx) < self->_comm->size()) return;
   self->_sendidx = 0;
   self->_complete++;
@@ -112,82 +122,124 @@ void TSPColl::Scatter::cb_senddone (void * arg)
 /* **************************************************************** */
 /*               reset the scatterv routine                         */
 /* **************************************************************** */
-
 void TSPColl::Scatterv::
 reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 {
-  _isroot = (root == _comm->rank());
-  _rbuf   = rbuf;
-  _sbuf   = (const char *)sbuf;
-  _lengths = lengths;
-  _length  = 0;
-  _counter++;
-  _sendidx = 0;
-  TRACE((stderr, "%d: SCATTERV RESET ctr=%d this=%p sbuf=%p rbuf=%p\n",
-	 PGASRT_MYNODE, _counter, this, sbuf, rbuf));
+  this->_isroot = (root == this->_comm->rank());
+  this->_rbuf   = rbuf;
+  this->_sbuf   = (const char *)sbuf;
+  this->_lengths = lengths;
+  this->_length  = 0;
+  this->_counter++;
+  this->_sendidx = 0;
+  TRACE((stderr, "SCATTERV RESET ctr=%d this=%p sbuf=%p rbuf=%p\n",
+	 this->_counter, this, sbuf, rbuf));
 }
 
 /* **************************************************************** */
 /*             kick the scatterv routine                            */
 /* **************************************************************** */
-
-void TSPColl::Scatterv::kick()
+void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
-  if (!_isroot) return;
-  assert (_lengths != NULL && _sbuf != NULL);
-  TRACE((stderr, "%d: SCATTERV KICK ctr=%d cplt=%d\n",
-	 PGASRT_MYNODE, _counter, _complete));
+  _mcast_iface = mcast_iface;
+  if (!this->_isroot) return;
+  assert (this->_lengths != NULL && this->_sbuf != NULL);
+  TRACE((stderr, "SCATTERV KICK ctr=%d cplt=%d\n",
+	 this->_counter, this->_complete));
 
-  for (int i=0; i < _comm->size(); i++)
+  for (int i=0; i < this->_comm->size(); i++)
     {
-      const char * s = _sbuf; for (int j=0; j<i; j++) s += _lengths[j];
-      TRACE((stderr, "%d: SCATTERV SEND ctr=%d cplt=%d (%d/%d) len=%d "
+      const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
+      TRACE((stderr, "SCATTERV SEND ctr=%d cplt=%d (%d/%d) len=%d "
 	     "s=%p 0x%02x 0x%02x 0x%02x\n", 
-	     PGASRT_MYNODE, _counter, _complete, i, _comm->size(), _lengths[i],
+	     this->_counter, this->_complete, i, this->_comm->size(), this->_lengths[i],
 	     s, s[0], s[1], s[2]));
       
-      if (i == _comm->rank()) 
+      if (i == this->_comm->rank()) 
 	{
-	  memcpy (_rbuf, s, _lengths[i]);
-	  cb_senddone (&_header);
+	  memcpy (this->_rbuf, s, this->_lengths[i]);
+	  cb_senddone (&this->_header);
 	}
       else
-	__pgasrt_tsp_amsend (_comm->absrankof (i),
-			     (__pgasrt_AMHeader_t *) &_header,
+	{
+#if 0
+	__pgasrt_tsp_amsend (this->_comm->absrankof (i),
+			     (__pgasrt_AMHeader_t *) &this->_header,
 			     (__pgasrt_local_addr_t) s,
-			     _lengths[i],
-			     cb_senddone, &_header);
+			     this->_lengths[i],
+			     this->cb_senddone, &this->_header);
+#endif
+	unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
+	unsigned        ranks   = this->_comm->absrankof (i);
+	CCMI_Callback_t cb_done;
+	cb_done.function        = (void (*)(void*, CCMI_Error_t*))this->cb_senddone;
+	cb_done.clientdata      = &this->_header;
+	void * r = NULL;
+	mcast_iface->send (&_req,
+			   &cb_done,
+			   CCMI_MATCH_CONSISTENCY,
+			   (CCMIQuad*)&this->_header,
+			   CCMIQuad_sizeof(this->_header),
+			   0,
+			   (char*)(s),
+			   (unsigned)this->_lengths[i],
+			   &hints,
+			   &ranks,
+			   1);
+	}
     }
 }
 
 /* **************************************************************** */
 /*            incoming active message                               */
 /* **************************************************************** */
-
-__pgasrt_local_addr_t TSPColl::Scatter::
-cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
-	     void (** completionHandler)(void *, void *),
-	     void ** arg)
+//__pgasrt_local_addr_t TSPColl::Scatter::
+//cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
+//	     void (** completionHandler)(void *, void *),
+//	     void ** arg)
+CCMI_Request_t * TSPColl::Scatter::cb_incoming(const CCMIQuad  * hdr,
+					       unsigned          count,
+					       unsigned          peer,
+					       unsigned          sndlen,
+					       unsigned          conn_id,
+					       void            * arg,
+					       unsigned        * rcvlen,
+					       char           ** rcvbuf,
+					       unsigned        * pipewidth,
+					       CCMI_Callback_t * cb_done)
 {
   struct scatter_header * header = (struct scatter_header *) hdr;
   void * base0 =  NBCollManager::instance()->find (header->tag, header->id);
   if (base0 == NULL)
-    __pgasrt_fatalerror (-1, "%d: Scatter/v: <%d,%d> is undefined",
-                         PGASRT_MYNODE, header->tag, header->id);
+    CCMI_FATALERROR (-1, "Scatter/v: <%d,%d> is undefined",
+		     header->tag, header->id);
   Scatter * s = (Scatter * ) ((char *)base0 + header->tagoff);
-  TRACE((stderr, "%d: SCATTERV: <%d,%d> INCOMING base=%p ptr=%p\n", 
-	 PGASRT_MYNODE, header->tag, header->id, base0, s));
-  *completionHandler = &Scatter::cb_recvcomplete;
-  *arg = s;
-  assert (s->_rbuf != NULL);
-  return (__pgasrt_local_addr_t) s->_rbuf;
+  TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING base=%p ptr=%p\n", 
+	 header->tag, header->id, base0, s));
+
+    // multisend stuff
+  *rcvbuf             = (char*)s->_rbuf;
+  *rcvlen             = sndlen;
+  *pipewidth          = sndlen;
+  cb_done->function   = (void (*)(void*, CCMI_Error_t*))&Scatter::cb_recvcomplete;
+  cb_done->clientdata = s;
+  
+  TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING RETURING base=%p ptr=%p\n", 
+	 header->tag, header->id, base0, s));
+  
+
+  return &s->_rreq;
+
+  //  *completionHandler = &Scatter::cb_recvcomplete;
+  //  *arg = s;
+  //  assert (s->_rbuf != NULL);
+  //  return (__pgasrt_local_addr_t) s->_rbuf;
 }
 
 /* **************************************************************** */
 /*           active message reception complete                      */
 /* **************************************************************** */
-
-void TSPColl::Scatter::cb_recvcomplete (void * unused, void * arg)
+void TSPColl::Scatter::cb_recvcomplete (void *arg, CCMI_Error_t*err)
 {
   Scatter * s = (Scatter *) arg;
   s->_complete++;

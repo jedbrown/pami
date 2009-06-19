@@ -124,12 +124,11 @@ int main(int argc, char*argv[])
   double tf,ti,usec;
   HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
+  init__allgathers();
   int rank  = HL_Rank();
   int sz    = HL_Size();
   char *buf = (char*)malloc(BUFSIZE*sz);
   char *rbuf= (char*)malloc(BUFSIZE*sz);
-
-
   int i,j,root = 0;
 #if 1
   if (rank == root)
@@ -147,7 +146,7 @@ int main(int argc, char*argv[])
 	  ti = timer();
 	  for (j=0; j<niter; j++)
 	      {
-		  _allgather (buf,rbuf, i);
+		_allgather (buf,rbuf, i);
 	      }
 	  tf = timer();
 	  _barrier ();
@@ -158,7 +157,7 @@ int main(int argc, char*argv[])
 
 		  printf("  %11lld %16lld %14.1f %12.2f\n",
 			 dataSent,
-			 0,
+			 0LL,
 			 (double)1e6*(double)dataSent/(double)usec,
 			 usec);
 //		  fprintf(stderr,"allgather: time=%f usec\n", usec/(double)niter);

@@ -124,6 +124,7 @@ int main(int argc, char*argv[])
 
   HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
+  init__scatters ();
   int i,j,root = 0;
   int rank     = HL_Rank();
   int sz       = HL_Size();
@@ -147,7 +148,7 @@ int main(int argc, char*argv[])
 	  ti = timer();
 	  for (j=0; j<niter; j++)
 	      {
-		  _scatter (root, buf,rbuf, i);
+		_scatter (root, buf,rbuf, i);
 	      }
 	  tf = timer();
 	  _barrier ();
@@ -158,7 +159,7 @@ int main(int argc, char*argv[])
 
 		  printf("  %11lld %16lld %14.1f %12.2f\n",
 			 dataSent,
-			 0,
+			 0LL,
 			 (double)1e6*(double)dataSent/(double)usec,
 			 usec);
 //		  fprintf(stderr,"scatter: time=%f usec\n", usec/(double)niter);

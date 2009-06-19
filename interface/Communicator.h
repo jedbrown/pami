@@ -13,22 +13,21 @@
 #ifndef __tspcoll_basecomm_h__
 #define __tspcoll_basecomm_h__
 
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
+#include "collectives/util/ccmi_debug.h"
+#include "collectives/interface/MultiSendOld.h"
 
 namespace TSPColl
 {
-
   class NBColl; /* any non-blocking collective */
 
   /* ******************************************************************* */
   /*           Communicator base class                                   */
   /* ******************************************************************* */
-
   class Communicator
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
-    Communicator (int r=PGASRT_MYNODE, int s=PGASRT_NODES);
+    Communicator (int r, int s);
     // virtual ~Communicator () { }
     virtual void setup () ;
 
@@ -58,118 +57,80 @@ namespace TSPColl
     /* collectives          */
     /* -------------------- */
 
-    virtual NBColl * ibarrier    (void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     barrier     (void (*cb_complete)(void *)=NULL, void *arg=NULL);
-
-    virtual NBColl * iallgather  (const void *s, void *d, size_t l,
+    virtual NBColl * ibarrier    (CCMI::MultiSend::MulticastInterface *mcast_iface,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     allgather   (const void *s, void *d, size_t l,
+    virtual void     barrier     (CCMI::MultiSend::MulticastInterface *mcast_iface,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iallgatherv (const void *s, void *d, size_t *l,
+    virtual NBColl * iallgather  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  const void *s, void *d, size_t l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     allgatherv  (const void *s, void *d, size_t *l,
-				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-
-    virtual NBColl * ibcast      (int root, const void *s, void *d, size_t l,
-				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     bcast       (int root, const void *s, void *d, size_t l,
+    virtual void     allgather   (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  const void *s, void *d, size_t l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iallreduce  (const void        * s,
+    virtual NBColl * iallgatherv (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  const void *s, void *d, size_t *l,
+				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
+    virtual void     allgatherv  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  const void *s, void *d, size_t *l,
+				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
+
+    virtual NBColl * ibcast      (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  int root, const void *s, void *d, size_t l,
+				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
+    virtual void     bcast       (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  int root, const void *s, void *d, size_t l,
+				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
+
+    virtual NBColl * iallreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  const void        * s,
 				  void              * d, 
-				  __pgasrt_ops_t      op,
-				  __pgasrt_dtypes_t   dtype, 
+				  CCMI_Op             op,
+				  CCMI_Dt             dtype, 
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     allreduce   (const void        * s, 
+    virtual void     allreduce   (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				  const void        * s, 
 				  void              * d, 
-				  __pgasrt_ops_t      op,
-				  __pgasrt_dtypes_t   dtype, 
+				  CCMI_Op             op,
+				  CCMI_Dt             dtype, 
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iscatter   (int root, const void *s, void *d, size_t l,
+    virtual NBColl * iscatter   (CCMI::MultiSend::MulticastInterface *info_barrier,
+				 CCMI::MultiSend::MulticastInterface *info_scatter,
+				 int root, const void *s, void *d, size_t l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     scatter    (int root, const void *s, void *d, size_t l,
+    virtual void     scatter    (CCMI::MultiSend::MulticastInterface *info_barrier,
+				 CCMI::MultiSend::MulticastInterface *info_scatter,
+				 int root, const void *s, void *d, size_t l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iscatterv  (int root, const void *s, void *d, size_t *l,
+    virtual NBColl * iscatterv  (CCMI::MultiSend::MulticastInterface *info_barrier,
+				 CCMI::MultiSend::MulticastInterface *info_scatter,
+				 int root, const void *s, void *d, size_t *l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     scatterv   (int root, const void *s, void *d, size_t *l,
+    virtual void     scatterv   (CCMI::MultiSend::MulticastInterface *info_barrier,
+				 CCMI::MultiSend::MulticastInterface *info_scatter,
+				 int root, const void *s, void *d, size_t *l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual void     gather     (int root, const void *s, void *d, size_t l);
-    virtual void     gatherv    (int root, const void *s, void *d, size_t *l);
+    virtual void     gather     (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				 int root, const void *s, void *d, size_t l);
+    virtual void     gatherv    (CCMI::MultiSend::MulticastInterface *mcast_iface,
+				 int root, const void *s, void *d, size_t *l);
 
     virtual void     nbwait     (NBColl *);
     
   protected:  
-    int _rank, _size;
-
     NBColl * _barrier;
     NBColl * _allgather;
     NBColl * _allgatherv;
     NBColl * _bcast, *_bcast2;
     NBColl * _sar, * _lar;
     NBColl * _sct, * _sctv;
-  };
-    
-  /* ******************************************************************* */
-  /*                      enumerated communicator                        */
-  /* ******************************************************************* */
-
-  class EnumComm: public Communicator
-  {
-  public:
-    void * operator new (size_t, void * addr) { return addr; }
-    EnumComm (int rank, int size, int proclist[]);
-    virtual int  absrankof (int rank) const { return _proclist[rank]; }
-    
-  protected:  
-    int * _proclist; /* list of absolute (node) ranks */
-  };
-
-  /* ******************************************************************* */
-  /*                      ranged communicator                            */
-  /* ******************************************************************* */
-
-  class Range
-  {
-  public:
-      size_t _lo;
-      size_t _hi;
-  };
-
-  class RangedComm: public Communicator
-  {
-  public:
-    void * operator new (size_t, void * addr) { return addr; }
-    RangedComm (int rank, int numranges, Range rangelist[]);
-    virtual int  absrankof (int rank) const;
-    virtual int  virtrankof (int rank) const;
-  protected:
-    int     _numranges;
-    Range * _rangelist; /* list of absolute (node) ranks */
-  };
-
-
-
-  /* ******************************************************************* */
-  /*                     blocked communicator                            */
-  /* ******************************************************************* */
-
-  class BC_Comm: public Communicator
-  {
-  public:
-    void * operator new (size_t, void * addr) { return addr; }
-    BC_Comm (int BF, int ncomms);
-
-    virtual int  absrankof  (int rank) const;
-    virtual int  virtrankof (int rank) const;
-
-  protected:
-    int _BF, _ncomms, _mycomm;
+    int _rank, _size;
   };
 }
 

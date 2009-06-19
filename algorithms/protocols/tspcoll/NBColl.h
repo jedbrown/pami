@@ -13,13 +13,12 @@
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
 
-//#include "pgasrt.h"
-
+#include "collectives/interface/MultiSendOld.h"
 
 namespace TSPColl
 {
   class Communicator;
-
+  typedef unsigned char *           __pgasrt_local_addr_t;
   /* *********************************************************** */
   /* *********************************************************** */
 
@@ -42,7 +41,6 @@ namespace TSPColl
   /* *********************************************************** */
   /*        a generic non-blocking transport collective          */
   /* *********************************************************** */
-
   class NBColl
   {
   public:
@@ -50,11 +48,10 @@ namespace TSPColl
 	    void (*cb_complete)(void *), void *arg);
 
   public:
-    virtual void kick   () { } /* force progress */
+    virtual void  kick  (CCMI::MultiSend::MulticastInterface *mcast_iface) {};
     virtual bool isdone () const { return false; } /* check completion */
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }
-
     virtual void setComplete (void (*cb_complete)(void *), void *arg);
 
   protected:
@@ -68,7 +65,6 @@ namespace TSPColl
   /* *********************************************************** */
   /*    A factory for generating non-blocking coll. instances    */
   /* *********************************************************** */
-
   class NBCollFactory
   {
   public:
@@ -99,7 +95,6 @@ namespace TSPColl
   /*   Managing non-blocking collectives at runtime.             */
   /* The manager is a singleton.                                 */
   /* *********************************************************** */
-
   class NBCollManager
   {
   public:
@@ -112,6 +107,7 @@ namespace TSPColl
 
     NBColl * find (NBTag tag, int id); /* find an existing instance */
     NBColl * allocate (Communicator *, NBTag tag);
+    void     multisend_reg (NBTag tag,CCMI::MultiSend::MulticastInterface *mcast_iface);
 
   private:
     /* ------------ */

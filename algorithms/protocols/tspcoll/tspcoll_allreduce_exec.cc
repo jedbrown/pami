@@ -10,7 +10,6 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
 #include "Allreduce.h"
 
 /* ************************************************************************* */
@@ -308,7 +307,7 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
       }
     default: break;
     } /* switch (op) */
-  __pgasrt_fatalerror(-1, "Invalid op/type [%d/%d]", optype, dtype);
+  CCMI_FATALERROR (-1, "Invalid op/type [%d/%d]", optype, dtype);
   return NULL;
 }
 

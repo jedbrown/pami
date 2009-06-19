@@ -16,14 +16,6 @@
 //#define TRACE(x) fprintf x
 #define TRACE(x)
 
-/* **************************************************************** */
-/*                  Gatherv registry                                */
-/* **************************************************************** */
-
-void TSPColl::Gather::amsend_reg (void)
-{
-  __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_GATHER, Gather::cb_incoming);
-}
 
 /* **************************************************************** */
 /*                 Gatherv constructor                             */
@@ -85,7 +77,7 @@ reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 /*              kick the scatter routine                            */
 /* **************************************************************** */
 
-void TSPColl::Gather::kick()
+void TSPColl::Gather::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
   Communicator * comm = TSPColl::_commlist[_commID];
 
@@ -99,10 +91,28 @@ void TSPColl::Gather::kick()
     }
   else
     {
+#if 0
       __pgasrt_tsp_amsend (comm->absrankof (_root),
 			   (__pgasrt_AMHeader_t *)&_header,
 			   (__pgasrt_local_addr_t) _sbuf, _length,
 			   cb_senddone, (void *) this);
+#endif
+      unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
+      unsigned        ranks   = comm->absrankof (_root);
+      CCMI_Callback_t cb_done;
+      cb_done.function        = cb_senddone;
+      cb_done.clientdata      = this;
+      void * r = mcast_iface->send (&_req,
+				    cb_done,
+				    CCMI_MATCH_CONSISTENCY,
+				    & _header,
+				    _counter,
+				    _sbuf,
+				    _length,
+				    &hints,
+				    &ranks,
+				    1);
+      
     }
 }
 
@@ -128,7 +138,7 @@ cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
   struct gather_header * header = (struct gather_header *) hdr;
   void * base0 = TagList::find (header->tag, header->id);
   if (base0 == NULL)
-    __pgasrt_fatalerror (-1, "%d: Gather/v: <%d,%d> is undefined",
+    CCMI_FATALERROR (-1, "%d: Gather/v: <%d,%d> is undefined",
                          PGASRT_MYNODE, header->tag, header->id);
   Gather * g = (Gather * ) ((char *)base0 + header->tagoff);
   *completionHandler = &Gather::cb_recvcomplete;

@@ -27,7 +27,6 @@
 /* ************************************************************************* */
 /*                       start a long allreduce                              */
 /* ************************************************************************* */
-
 TSPColl::Allreduce::Long::
 Long (Communicator * comm, NBTag tag, int instID, int offset) :
   CollExchange (comm, tag, instID, offset, false)
@@ -35,9 +34,9 @@ Long (Communicator * comm, NBTag tag, int instID, int offset) :
   _tmpbuf = NULL;
   _dbuf = NULL;
   _nelems = 0;
-  for (_logMaxBF = 0; (1<<(_logMaxBF+1)) <= _comm->size(); _logMaxBF++) ;
+  for (_logMaxBF = 0; (1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
   int maxBF  = 1<<_logMaxBF;
-  int nonBF  = _comm->size() - maxBF;
+  int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
 
   /* -------------------------------------------- */
@@ -48,22 +47,22 @@ Long (Communicator * comm, NBTag tag, int instID, int offset) :
     {
       /* send permission chits to potential senders */
 
-      unsigned rdest = _comm->absrankof (_comm->rank() + maxBF);
-      _dest    [phase] = (_comm->rank() <  nonBF) ? rdest : -1;
-      _sbuf    [phase] = (_comm->rank() <  nonBF) ? &_dummy : NULL;
-      _rbuf    [phase] = (_comm->rank() >= maxBF) ? &_dummy : NULL;
-      _cb_recv2[phase] = NULL;
-      _sbufln  [phase] = 1;
+      unsigned rdest = this->_comm->absrankof (this->_comm->rank() + maxBF);
+      this->_dest    [phase] = (this->_comm->rank() <  nonBF) ? rdest : -1;
+      this->_sbuf    [phase] = (this->_comm->rank() <  nonBF) ? &_dummy : NULL;
+      this->_rbuf    [phase] = (this->_comm->rank() >= maxBF) ? &_dummy : NULL;
+      this->_cb_recv2[phase] = NULL;
+      this->_sbufln  [phase] = 1;
       phase ++;
 
       /* send data */
 
-      rdest = _comm->absrankof (_comm->rank() - maxBF);
-      _dest    [phase] = (_comm->rank() >= maxBF) ? rdest : -1;
-      _sbuf    [phase] = NULL; /* send buffer not available */
-      _rbuf    [phase] = NULL; /* receive buffer not available */
-      _cb_recv2[phase] = (_comm->rank() < nonBF)  ? cb_allreduce : NULL;
-      _sbufln  [phase] = 0;    /* data length not available */
+      rdest = this->_comm->absrankof (this->_comm->rank() - maxBF);
+      this->_dest    [phase] = (this->_comm->rank() >= maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = NULL; /* send buffer not available */
+      this->_rbuf    [phase] = NULL; /* receive buffer not available */
+      this->_cb_recv2[phase] = (this->_comm->rank() < nonBF)  ? cb_allreduce : NULL;
+      this->_sbufln  [phase] = 0;    /* data length not available */
       phase ++;
     }
 
@@ -75,21 +74,21 @@ Long (Communicator * comm, NBTag tag, int instID, int offset) :
     {
       /* send permission chits to senders */
 
-      unsigned rdest   = _comm->absrankof (_comm->rank() ^ (1<<i));
-      _dest    [phase] = (_comm->rank() < maxBF) ? rdest : -1;
-      _sbuf    [phase] = (_comm->rank() < maxBF) ? &_dummy : NULL;
-      _rbuf    [phase] = (_comm->rank() < maxBF) ? &_dummy : NULL;
-      _cb_recv2[phase] = NULL;
-      _sbufln  [phase] = 1;
+      unsigned rdest   = this->_comm->absrankof (this->_comm->rank() ^ (1<<i));
+      this->_dest    [phase] = (this->_comm->rank() < maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = (this->_comm->rank() < maxBF) ? &_dummy : NULL;
+      this->_rbuf    [phase] = (this->_comm->rank() < maxBF) ? &_dummy : NULL;
+      this->_cb_recv2[phase] = NULL;
+      this->_sbufln  [phase] = 1;
       phase ++;
 
       /* send data */
 
-      _dest    [phase] = (_comm->rank() < maxBF) ? rdest : -1;
-      _sbuf    [phase] = NULL; /* send buffer not available */
-      _rbuf    [phase] = NULL; /* receive buffer not available */
-      _cb_recv2[phase] = (_comm->rank() < maxBF) ? cb_allreduce : NULL;
-      _sbufln  [phase] = 0;    /* data length not available */
+      this->_dest    [phase] = (this->_comm->rank() < maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = NULL; /* send buffer not available */
+      this->_rbuf    [phase] = NULL; /* receive buffer not available */
+      this->_cb_recv2[phase] = (this->_comm->rank() < maxBF) ? cb_allreduce : NULL;
+      this->_sbufln  [phase] = 0;    /* data length not available */
       phase ++;
     }
 
@@ -101,49 +100,49 @@ Long (Communicator * comm, NBTag tag, int instID, int offset) :
     {
       /* send permission slips */
 
-      unsigned rdest = _comm->absrankof (_comm->rank() - maxBF);
-      _dest    [phase] = (_comm->rank() >= maxBF) ? rdest : -1;
-      _sbuf    [phase] = (_comm->rank() >= maxBF) ? &_dummy : NULL;
-      _rbuf    [phase] = (_comm->rank() < nonBF)  ? &_dummy : NULL;
-      _cb_recv2[phase] = NULL;
-      _sbufln  [phase] = 1;
+      unsigned rdest = this->_comm->absrankof (this->_comm->rank() - maxBF);
+      this->_dest    [phase] = (this->_comm->rank() >= maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = (this->_comm->rank() >= maxBF) ? &_dummy : NULL;
+      this->_rbuf    [phase] = (this->_comm->rank() < nonBF)  ? &_dummy : NULL;
+      this->_cb_recv2[phase] = NULL;
+      this->_sbufln  [phase] = 1;
       phase ++;
 
       /* send data */
 
-      rdest   = _comm->absrankof (_comm->rank() + maxBF);
-      _dest    [phase] = (_comm->rank() < nonBF)  ? rdest : -1;
-      _sbuf    [phase] = NULL; /* send buffer not available */
-      _rbuf    [phase] = NULL; /* receive buffer not available */
-      _cb_recv2[phase] = NULL;
-      _sbufln  [phase] = 0; /* data length not available */
+      rdest   = this->_comm->absrankof (this->_comm->rank() + maxBF);
+      this->_dest    [phase] = (this->_comm->rank() < nonBF)  ? rdest : -1;
+      this->_sbuf    [phase] = NULL; /* send buffer not available */
+      this->_rbuf    [phase] = NULL; /* receive buffer not available */
+      this->_cb_recv2[phase] = NULL;
+      this->_sbufln  [phase] = 0; /* data length not available */
       phase ++;
     }
 
-  _numphases    = phase;
-  _phase        = _numphases;
-  _sendcomplete = _numphases;
+  this->_numphases    = phase;
+  this->_phase        = this->_numphases;
+  this->_sendcomplete = this->_numphases;
 }
 
 /* ************************************************************************* */
 /*                     allreduce executor                                    */
 /* ************************************************************************* */
-
 void TSPColl::Allreduce::Long::
 cb_allreduce (CollExchange *coll, unsigned phase)
 {
   TSPColl::Allreduce::Long * ar = (TSPColl::Allreduce::Long *) coll;
-  ar->_cb_allreduce (ar->_dbuf, ar->_tmpbuf, ar->_nelems);
+  void * inputs[] = {ar->_dbuf, ar->_tmpbuf};
+  //  ar->_cb_allreduce (ar->_dbuf, ar->_tmpbuf, ar->_nelems);
+  ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
 }
 
 /* ************************************************************************* */
 /*                      start a long allreduce operation                     */
 /* ************************************************************************* */
-
 void TSPColl::Allreduce::Long::reset (const void         * sbuf, 
 				      void               * dbuf, 
-				      __pgasrt_ops_t       op,
-				      __pgasrt_dtypes_t    dt,
+				      CCMI_Op              op,
+				      CCMI_Dt              dt,
 				      unsigned             nelems)
 {
   assert (sbuf != NULL);
@@ -155,10 +154,12 @@ void TSPColl::Allreduce::Long::reset (const void         * sbuf,
 
   _dbuf   = dbuf;
   _nelems = nelems;
-  size_t datawidth = datawidthof (dt);
+  //  size_t datawidth = datawidthof (dt);
+  unsigned datawidth;
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, nelems, datawidth,_cb_allreduce);
   if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
   if (_tmpbuf) free (_tmpbuf); _tmpbuf = malloc (nelems * datawidth);
-  if (!_tmpbuf) __pgasrt_fatalerror (-1, "Allreduce: memory allocation error");
+  if (!_tmpbuf) CCMI_FATALERROR (-1, "Allreduce: memory allocation error");
 
   /* --------------------------------------------------- */
   /*  set source and destination buffers and node ids    */
@@ -166,37 +167,37 @@ void TSPColl::Allreduce::Long::reset (const void         * sbuf,
   /* --------------------------------------------------- */
 
   int maxBF  = 1<<_logMaxBF;
-  int nonBF  = _comm->size() - maxBF;
+  int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
 
   if (nonBF > 0)   /* phase 0: gather buffers from ranks > n2prev */
     {
       phase ++;
-      _sbuf    [phase] = (_comm->rank() >= maxBF) ? _dbuf : NULL;
-      _rbuf    [phase] = (_comm->rank() < nonBF)  ? _tmpbuf : NULL;
-      _sbufln  [phase] = nelems * datawidth;
+      this->_sbuf    [phase] = (this->_comm->rank() >= maxBF) ? _dbuf : NULL;
+      this->_rbuf    [phase] = (this->_comm->rank() < nonBF)  ? _tmpbuf : NULL;
+      this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
   
   for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       phase ++;
-      _sbuf    [phase] = (_comm->rank() < maxBF) ? _dbuf : NULL;
-      _rbuf    [phase] = (_comm->rank() < maxBF) ? _tmpbuf : NULL;
-      _sbufln  [phase] = nelems * datawidth;
+      this->_sbuf    [phase] = (this->_comm->rank() < maxBF) ? _dbuf : NULL;
+      this->_rbuf    [phase] = (this->_comm->rank() < maxBF) ? _tmpbuf : NULL;
+      this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
   
   if (nonBF > 0)   /*  last phase: collect results */
     {
       phase ++;
-      _sbuf    [phase] = (_comm->rank() < nonBF)  ? _dbuf  : NULL;
-      _rbuf    [phase] = (_comm->rank() >= maxBF) ? _dbuf  : NULL;
-      _sbufln  [phase] = nelems * datawidth;
+      this->_sbuf    [phase] = (this->_comm->rank() < nonBF)  ? _dbuf  : NULL;
+      this->_rbuf    [phase] = (this->_comm->rank() >= maxBF) ? _dbuf  : NULL;
+      this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
 
-  assert (phase == _numphases);
-  _cb_allreduce = getcallback (op, dt);
+  assert (phase == this->_numphases);
+  //  _cb_allreduce = getcallback (op, dt);
   TSPColl::CollExchange::reset();
 }

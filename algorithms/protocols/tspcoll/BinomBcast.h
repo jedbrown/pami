@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "./CollExchange.h"
-#include "./Communicator.h"
+#include "collectives/interface/Communicator.h"
 
 /* *********************************************************************** */
 /*                      binomial broadcast class                           */
@@ -40,58 +40,56 @@ namespace TSPColl
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-
 inline TSPColl::BinomBcast::
 BinomBcast(Communicator * comm, NBTag tag, int instID, int tagoff) :
 	       CollExchange(comm, tag, instID, tagoff, false)
 {
-  _numphases = -1; for (int n=2*_comm->size()-1; n>0; n>>=1) _numphases++;
-  for (int i=0; i< _numphases; i++)
+  this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
+  for (int i=0; i< this->_numphases; i++)
     {
-      int destindex = (_comm->rank()+2*_comm->size()-(1<<i))%_comm->size();
-      _dest[i] = _comm->absrankof(destindex);
-      _sbuf[i] = &_dummy;
-      _rbuf[i] = &_dummy;
-      _sbufln[i] = 1;
+      int destindex = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      this->_dest[i] = this->_comm->absrankof(destindex);
+      this->_sbuf[i] = &_dummy;
+      this->_rbuf[i] = &_dummy;
+      this->_sbufln[i] = 1;
     }
-  _numphases   *= 2;
-  _phase        = _numphases;
-  _sendcomplete = _numphases;
+  this->_numphases   *= 2;
+  this->_phase        = this->_numphases;
+  this->_sendcomplete = this->_numphases;
 }
 
 /* ********************************************************************** */
 /*                    start a new binomial broadcast                      */
 /* ********************************************************************** */
-
 inline void TSPColl::BinomBcast::
 reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
 {
-  if (rootindex >= _comm->size())
-    __pgasrt_fatalerror (-1, "Invalid root index in BinomBcast");
+  if (rootindex >= this->_comm->size())
+    CCMI_FATALERROR (-1, "Invalid root index in BinomBcast");
 
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  if (rootindex == _comm->rank() && sbuf != buf)
+  if (rootindex == this->_comm->rank() && sbuf != buf)
     memcpy (buf, sbuf, nbytes);
 
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  int myrelrank = (_comm->rank() + _comm->size() - rootindex) % _comm->size();
-  for (int i=0, phase=_numphases/2; i<_numphases/2; i++, phase++)
+  int myrelrank = (this->_comm->rank() + this->_comm->size() - rootindex) % this->_comm->size();
+  for (int i=0, phase=this->_numphases/2; i<this->_numphases/2; i++, phase++)
     {
-      int  dist       = 1<<(_numphases/2-1-i);
-      int  sendmask   = (1<<(_numphases/2-i))-1;
+      int  dist       = 1<<(this->_numphases/2-1-i);
+      int  sendmask   = (1<<(this->_numphases/2-i))-1;
       int  destrelrank= myrelrank + dist;
       int  srcrelrank = myrelrank - dist;
-      bool dosend     = ((myrelrank&sendmask)==0)&&(destrelrank<_comm->size());
+      bool dosend     = ((myrelrank&sendmask)==0)&&(destrelrank<this->_comm->size());
       bool dorecv     = ((srcrelrank&sendmask)==0)&&(srcrelrank>=0);
-      int  destindex  = (destrelrank + rootindex)%_comm->size();
-      _dest[phase]    = _comm->absrankof(destindex);
-      _sbuf[phase]    = dosend ? buf : NULL;
-      _sbufln[phase]  = dosend ? nbytes : 0;
-      _rbuf[phase]    = dorecv ? buf : NULL;
+      int  destindex  = (destrelrank + rootindex)%this->_comm->size();
+      this->_dest[phase]    = this->_comm->absrankof(destindex);
+      this->_sbuf[phase]    = dosend ? buf : NULL;
+      this->_sbufln[phase]  = dosend ? nbytes : 0;
+      this->_rbuf[phase]    = dorecv ? buf : NULL;
     }
 
   CollExchange::reset();

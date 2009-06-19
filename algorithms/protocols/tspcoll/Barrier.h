@@ -14,7 +14,7 @@
 #define __tspcoll_barrier_h__
 
 #include "./CollExchange.h"
-#include "./Communicator.h"
+#include "collectives/interface/Communicator.h"
 
 #undef TRACE
 //#define DEBUG_TSPCOLL_BARRIER 1
@@ -52,20 +52,20 @@ Barrier (Communicator * comm, NBTag tag, int instID, int offset) :
   TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n", 
 	 PGASRT_MYNODE, _comm->rank(), _comm->size()));
   
-  _numphases = -1; for (int n=2*_comm->size()-1; n>0; n>>=1) _numphases++;
-  _sendcomplete = _numphases;
-  _phase        = _numphases;
+  this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
+  this->_sendcomplete = this->_numphases;
+  this->_phase        = this->_numphases;
   
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
 
-  for (int i=0; i<_numphases; i++)
+  for (int i=0; i<this->_numphases; i++)
     {
-      _dest[i]      = comm->absrankof((_comm->rank() + (1<<i))%_comm->size());
-      _sbuf[i]      = &_dummy;
-      _sbufln[i]    = 1;
-      _rbuf[i]      = &_dummy;
+      this->_dest[i]      = comm->absrankof((this->_comm->rank() + (1<<i))%this->_comm->size());
+      this->_sbuf[i]      = &_dummy;
+      this->_sbufln[i]    = 1;
+      this->_rbuf[i]      = &_dummy;
     }
 
 }

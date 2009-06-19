@@ -11,7 +11,7 @@
 /* ************************************************************************* */
 
 #include "./Allreduce.h"
-#include "./Communicator.h"
+#include "collectives/interface/Communicator.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,16 +28,15 @@
 /* ************************************************************************* */
 /*                      start a short allreduce                              */
 /* ************************************************************************* */
-
 TSPColl::Allreduce::Short::
 Short (Communicator * comm, NBTag tag, int instID, int offset) :
-  CollExchange (comm, tag, instID, offset, false)
+       CollExchange (comm, tag, instID, offset, false)
 {
   _dbuf   = NULL;
   _nelems = 0;
-  for (_logMaxBF = 0; (1<<(_logMaxBF+1)) <= _comm->size(); _logMaxBF++) ;
+  for (_logMaxBF = 0; (1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
   int maxBF  = 1<<_logMaxBF;
-  int nonBF  = _comm->size() - maxBF;
+  int nonBF  = this->_comm->size() - maxBF;
   int phase=0;
 
   /* -------------------------------------------- */
@@ -47,13 +46,13 @@ Short (Communicator * comm, NBTag tag, int instID, int offset) :
   if (nonBF > 0)
     {
       unsigned rdest = comm->absrankof (comm->rank() - maxBF);
-      _dest    [phase] = (comm->rank() >= maxBF) ? rdest : -1;
-      _sbuf    [phase] = NULL;    /* unknown */
-      _rbuf    [phase] = (comm->rank() < nonBF)  ? _phasebuf[phase][0] : NULL;
-      _cb_recv1[phase] = (comm->rank() < nonBF)  ? cb_switchbuf : NULL;
-      _cb_recv2[phase] = (comm->rank() < nonBF)  ? cb_allreduce : NULL;
-      _sbufln  [phase] = 0;       /* unknown */
-      _bufctr  [phase] = 0;
+      this->_dest    [phase] = (comm->rank() >= maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = NULL;    /* unknown */
+      this->_rbuf    [phase] = (comm->rank() < nonBF)  ? _phasebuf[phase][0] : NULL;
+      this->_cb_recv1[phase] = (comm->rank() < nonBF)  ? cb_switchbuf : NULL;
+      this->_cb_recv2[phase] = (comm->rank() < nonBF)  ? cb_allreduce : NULL;
+      this->_sbufln  [phase] = 0;       /* unknown */
+      this->_bufctr  [phase] = 0;
       phase ++;
     }
   
@@ -64,13 +63,13 @@ Short (Communicator * comm, NBTag tag, int instID, int offset) :
   for (int i=0; i<_logMaxBF; i++)
     {
       unsigned rdest   = comm->absrankof (comm->rank() ^ (1<<i));
-      _dest    [phase] = (comm->rank() < maxBF) ? rdest : -1;
-      _sbuf    [phase] = NULL;     /* unknown */
-      _rbuf    [phase] = (comm->rank() < maxBF) ? _phasebuf[phase][0] : NULL;
-      _cb_recv1[phase] = (comm->rank() < maxBF) ? cb_switchbuf : NULL;
-      _cb_recv2[phase] = (comm->rank() < maxBF) ? cb_allreduce : NULL;
-      _sbufln  [phase] = 0;        /* unknown */
-      _bufctr  [phase] = 0;
+      this->_dest    [phase] = (comm->rank() < maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = NULL;     /* unknown */
+      this->_rbuf    [phase] = (comm->rank() < maxBF) ? _phasebuf[phase][0] : NULL;
+      this->_cb_recv1[phase] = (comm->rank() < maxBF) ? cb_switchbuf : NULL;
+      this->_cb_recv2[phase] = (comm->rank() < maxBF) ? cb_allreduce : NULL;
+      this->_sbufln  [phase] = 0;        /* unknown */
+      this->_bufctr  [phase] = 0;
       phase ++;
     }
   
@@ -81,33 +80,35 @@ Short (Communicator * comm, NBTag tag, int instID, int offset) :
   if (nonBF > 0)
     {
       unsigned rdest   = comm->absrankof (comm->rank() + maxBF);
-      _dest    [phase] = (comm->rank() < nonBF)  ? rdest : -1;
-      _sbuf    [phase] = NULL;     /* unknown */
-      _rbuf    [phase] = NULL;     /* unknown */
-      _cb_recv1[phase] = NULL;
-      _cb_recv2[phase] = NULL;
-      _sbufln  [phase] = 0;        /* unknown */
-      _bufctr  [phase] = 0;
+      this->_dest    [phase] = (comm->rank() < nonBF)  ? rdest : -1;
+      this->_sbuf    [phase] = NULL;     /* unknown */
+      this->_rbuf    [phase] = NULL;     /* unknown */
+      this->_cb_recv1[phase] = NULL;
+      this->_cb_recv2[phase] = NULL;
+      this->_sbufln  [phase] = 0;        /* unknown */
+      this->_bufctr  [phase] = 0;
       phase ++;
     }
 
-  _numphases    = phase;
-  _phase        = _numphases;
-  _sendcomplete = _numphases;
+  this->_numphases    = phase;
+  this->_phase        = this->_numphases;
+  this->_sendcomplete = this->_numphases;
 }
 
 /* ************************************************************************* */
 /*                     allreduce executor                                    */
 /* ************************************************************************* */
-
 void TSPColl::Allreduce::Short::
 cb_allreduce (CollExchange *coll, unsigned phase)
 {
   TSPColl::Allreduce::Short * ar = (TSPColl::Allreduce::Short *) coll;
   int c = (ar->_counter+1) & 1;
-  ar->_cb_allreduce (ar->_dbuf, ar->_phasebuf[phase][c], ar->_nelems);
-}
+  void * inputs[] = {ar->_dbuf, ar->_phasebuf[phase][c]};
+  //  ar->_cb_allreduce (ar->_dbuf, ar->_phasebuf[phase][c], ar->_nelems);
+  ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
 
+
+}
 void TSPColl::Allreduce::Short::
 cb_switchbuf (CollExchange * coll, unsigned phase)
 {
@@ -119,11 +120,10 @@ cb_switchbuf (CollExchange * coll, unsigned phase)
 /* ************************************************************************* */
 /*                     start an allreduce operation                          */
 /* ************************************************************************* */
-
 void TSPColl::Allreduce::Short::reset (const void         * sbuf,
 				       void               * dbuf,
-				       __pgasrt_ops_t       op,
-				       __pgasrt_dtypes_t    dt,
+				       CCMI_Op              op,
+				       CCMI_Dt              dt,
 				       unsigned             nelems)
 {
   assert (sbuf != NULL);
@@ -134,13 +134,15 @@ void TSPColl::Allreduce::Short::reset (const void         * sbuf,
   /* --------------------------------------------------- */
 
   _dbuf   = dbuf;
-  _nelems = nelems;
-  size_t datawidth = datawidthof (dt);
+  _nelems = nelems;  
+  unsigned datawidth;
+  //  size_t datawidth = datawidthof (dt);
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, nelems, datawidth,_cb_allreduce);
   assert (nelems * datawidth < sizeof(PhaseBufType));
   if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
 
   int maxBF = 1<<_logMaxBF; /* largest power of 2 that fits into comm */
-  int nonBF = _comm->size() - maxBF; /* comm->size() - largest power of 2 */
+  int nonBF = this->_comm->size() - maxBF; /* comm->size() - largest power of 2 */
 
   /* -------------------------------------------- */
   /* phase 0: gather buffers from ranks > n2prev  */
@@ -149,8 +151,8 @@ void TSPColl::Allreduce::Short::reset (const void         * sbuf,
   int phase=0;
   if (nonBF > 0)   /* phase 0: gather buffers from ranks > n2prev */
     {
-      _sbuf    [phase] = (_comm->rank() >= maxBF) ? dbuf  : NULL;
-      _sbufln  [phase] = nelems * datawidth;
+      this->_sbuf    [phase] = (this->_comm->rank() >= maxBF) ? dbuf  : NULL;
+      this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
   
@@ -160,8 +162,8 @@ void TSPColl::Allreduce::Short::reset (const void         * sbuf,
 
   for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
-      _sbuf    [phase] = (_comm->rank() < maxBF) ? dbuf  : NULL;
-      _sbufln  [phase] = nelems * datawidth;
+      this->_sbuf    [phase] = (this->_comm->rank() < maxBF) ? dbuf  : NULL;
+      this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
   
@@ -172,21 +174,21 @@ void TSPColl::Allreduce::Short::reset (const void         * sbuf,
 
   if (nonBF > 0)   /*  last phase: collect results */
     {
-      _sbuf    [phase] = (_comm->rank() < nonBF)  ? dbuf  : NULL;
-      _rbuf    [phase] = (_comm->rank() >= maxBF) ? dbuf  : NULL;
-      _sbufln  [phase] = nelems * datawidth;
+      this->_sbuf    [phase] = (this->_comm->rank() < nonBF)  ? dbuf  : NULL;
+      this->_rbuf    [phase] = (this->_comm->rank() >= maxBF) ? dbuf  : NULL;
+      this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
 
-  assert (phase == _numphases);
+  assert (phase == this->_numphases);
 
 #ifdef DEBUG_ALLREDUCE
   printf ("%d: ", comm->rank());
-  for (int i=0; i<_numphases; i++)
-    printf ("[%d %s] ", _dest[i], _rbuf[i]? "Y" : "N");
+  for (int i=0; i<this->_numphases; i++)
+    printf ("[%d %s] ", this->_dest[i], this->_rbuf[i]? "Y" : "N");
   printf ("\n");
 #endif
 
-  _cb_allreduce = getcallback (op, dt);
+  //  _cb_allreduce = getcallback (op, dt);
   TSPColl::CollExchange::reset();
 }

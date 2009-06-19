@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "./CollExchange.h"
-#include "./Communicator.h"
+#include "collectives/interface/Communicator.h"
 
 /* *********************************************************************** */
 /*                     Allgather (Bruck's algorithm)                       */
@@ -41,73 +41,71 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                   Allgather constructor                                 */
 /* *********************************************************************** */
-
 inline TSPColl::Allgatherv::Allgatherv (Communicator * comm, NBTag tag, 
 					int instID, int off):
 	       CollExchange (comm, tag, instID, off, false)
 {
-  _numphases = -1; for (int n=2*_comm->size()-1; n>0; n>>=1) _numphases++;
-  for (int i=0; i< _numphases; i++)
+  this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
+  for (int i=0; i< this->_numphases; i++)
     {
-      int destindex = (_comm->rank()+2*_comm->size()-(1<<i))%_comm->size();
-      _dest[i] = _comm->absrankof(destindex);
-      _sbuf[i] = &_dummy;
-      _rbuf[i] = &_dummy;
-      _sbufln[i] = 1;
+      int destindex = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      this->_dest[i] = this->_comm->absrankof(destindex);
+      this->_sbuf[i] = &_dummy;
+      this->_rbuf[i] = &_dummy;
+      this->_sbufln[i] = 1;
     }
-  _numphases   *= 3;
-  _phase        = _numphases;
-  _sendcomplete = _numphases;
+  this->_numphases   *= 3;
+  this->_phase        = this->_numphases;
+  this->_sendcomplete = this->_numphases;
 }
 
 /* **************************************************************** */
 /*              start a new allgather operation                     */
 /* **************************************************************** */
-
 inline void TSPColl::
 Allgatherv::reset (const void *sbuf, void *rbuf, size_t * lengths)
 {
   size_t allsumbytes= 0;
-  for(int i=0;i<_comm->size();i++) 
+  for(int i=0;i<this->_comm->size();i++) 
     allsumbytes+=lengths[i];
 
   size_t mysumbytes = 0; 
-  for(int i=0;i<_comm->rank();i++)
+  for(int i=0;i<this->_comm->rank();i++)
     mysumbytes +=lengths[i];
 
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
 
-  memcpy ((char *)rbuf + mysumbytes, sbuf, lengths[_comm->rank()]);
+  memcpy ((char *)rbuf + mysumbytes, sbuf, lengths[this->_comm->rank()]);
 
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
 
-  for (int i=0, phase=_numphases/3; i<_numphases/3; i++, phase+=2)
+  for (int i=0, phase=this->_numphases/3; i<this->_numphases/3; i++, phase+=2)
     {
-      int destindex = (_comm->rank()+2*_comm->size()-(1<<i))%_comm->size();
-      _dest[phase]   =  _comm->absrankof (destindex);
-      _dest[phase+1]   = _dest[phase];
-      _sbuf[phase]   = (char *)rbuf + mysumbytes;
-      _sbuf[phase+1]   = (char *)rbuf;
+      int destindex = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      this->_dest[phase]   =  this->_comm->absrankof (destindex);
+      this->_dest[phase+1]   =this->_dest[phase];
+      this->_sbuf[phase]   = (char *)rbuf + mysumbytes;
+      this->_sbuf[phase+1]   = (char *)rbuf;
 
       size_t phasesumbytes=0; 
       for (int n=0; n < (1<<i); n++) 
-	phasesumbytes += lengths[(_comm->rank()+n)%_comm->size()];
+	phasesumbytes += lengths[(this->_comm->rank()+n)%this->_comm->size()];
 
-      _rbuf[phase]   = (char *)rbuf+ ((mysumbytes + phasesumbytes) % allsumbytes);
-      _rbuf[phase+1]   = (char *)rbuf;
+      this->_rbuf[phase]   = (char *)rbuf+ ((mysumbytes + phasesumbytes) % allsumbytes);
+      this->_rbuf[phase+1]   = (char *)rbuf;
       if (mysumbytes + phasesumbytes >= allsumbytes)
  	{
-	  _sbufln[phase] = allsumbytes - mysumbytes;
-	  _sbufln[phase+1] = mysumbytes + phasesumbytes - allsumbytes;
+	  this->_sbufln[phase] = allsumbytes - mysumbytes;
+	  this->_sbufln[phase+1] = mysumbytes + phasesumbytes - allsumbytes;
 	}
       else
 	{
-	  _sbufln[phase] = phasesumbytes;
-	  _sbufln[phase+1] = 0;
+	  this->_sbufln[phase] = phasesumbytes;
+	  this->_sbufln[phase+1] = 0;
 	}
     }
 

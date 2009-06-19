@@ -21,7 +21,7 @@
 #include "./Scatter.h"
 #include "./Allgatherv.h"
 #include "./Barrier.h"
-
+#include "collectives/interface/MultiSendOld.h"
 // #define DEBUG_SCBCAST 1
 #undef TRACE
 #ifdef DEBUG_SCBCAST
@@ -42,11 +42,13 @@ namespace TSPColl
     void * operator new (size_t, void * addr) { return addr; }
     ScBcast (Communicator * comm, NBTag tag, int instID, int tagoff);
     void reset (int root, const void * sbuf, void *buf, size_t);
-    virtual void kick (void);
+    virtual void kick (CCMI::MultiSend::MulticastInterface *mcast_iface);
     virtual bool isdone (void) const;
-
+    static void amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface);
+  protected:
+    CCMI::MultiSend::MulticastInterface *_mcast_iface;
   private:
-    size_t   * _lengths;
+    size_t     *_lengths;
     Scatterv   _scatterv;
     Barrier    _barrier;
     Barrier    _barrier2;
@@ -66,7 +68,6 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                    broadcast constructor                                */
 /* *********************************************************************** */
-
 inline TSPColl::ScBcast::
 ScBcast(Communicator * comm, NBTag tag, int instID, int tagoff) :
                NBColl (comm, tag, instID, NULL, NULL),
@@ -105,18 +106,18 @@ inline void TSPColl::ScBcast::
 reset (int root, const void * sbuf, void *rbuf, size_t len)
 {
   int myoffset = -1;
-  size_t pernodelen = CEIL (len, _comm->size());
-  for (int i=0, current = 0; i<_comm->size(); i++) 
+  size_t pernodelen = CEIL (len, this->_comm->size());
+  for (int i=0, current = 0; i<this->_comm->size(); i++) 
     {
-      if (_comm->rank() == i) myoffset = current;
+      if (this->_comm->rank() == i) myoffset = current;
       current += (_lengths[i] = MIN (pernodelen, len - current));
     }
 
   assert (myoffset != -1);
   TRACE((stderr, "%d: SCBCAST reset (root=%d sbuf=%p rbuf=%p len=%d)\n",
 	 PGASRT_MYNODE, root, sbuf, rbuf, len));
-  _scatterv.reset (root, sbuf, (char *)rbuf + myoffset, _lengths);
-  _allgatherv.reset ((char *)rbuf + myoffset, rbuf, _lengths);
+  _scatterv.reset (root, sbuf, (char *)rbuf + myoffset, this->_lengths);
+  _allgatherv.reset ((char *)rbuf + myoffset, rbuf, this->_lengths);
   _barrier.reset ();
   _barrier2.reset();
   _barrier3.reset();
@@ -125,51 +126,47 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
 /* *********************************************************************** */
 /*              start the broadcast rolling                                */
 /* *********************************************************************** */
-
-inline void TSPColl::ScBcast::kick (void)
+inline void TSPColl::ScBcast::kick (CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
   TRACE((stderr, "%d: SCBCAST kick\n", PGASRT_MYNODE));
-  _barrier.kick();
+  _mcast_iface = mcast_iface;
+  _barrier.kick(mcast_iface);
 }
 
 /* *********************************************************************** */
 /*               first phase is complete: start allgather                  */
 /* *********************************************************************** */
-
 inline void TSPColl::ScBcast::scattercomplete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST scattercomplete\n", PGASRT_MYNODE));
   assert (self != NULL);
   // self->_barrier2.kick();
-  self->_allgatherv.kick();
+  self->_allgatherv.kick(self->_mcast_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-
 inline void TSPColl::ScBcast::barriercomplete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barriercomplete\n", PGASRT_MYNODE));
   assert (self != NULL);
-  self->_scatterv.kick();
+  self->_scatterv.kick(self->_mcast_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-
 inline void TSPColl::ScBcast::barrier2complete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barrier2complete\n", PGASRT_MYNODE));
   assert (self != NULL);
-  self->_allgatherv.kick();
+  self->_allgatherv.kick(self->_mcast_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-
 inline void TSPColl::ScBcast::barrier3complete(void *arg)
 {
   TRACE((stderr, "%d: SCBCAST barrier3complete\n", PGASRT_MYNODE));
@@ -178,22 +175,27 @@ inline void TSPColl::ScBcast::barrier3complete(void *arg)
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-
 inline void TSPColl::ScBcast::allgathervcomplete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST agvcomplete\n", PGASRT_MYNODE));
   assert (self != NULL);
-  // self->_barrier3.kick();
+  // self->_barrier3.kick(_mcast_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-
 inline bool TSPColl::ScBcast::isdone (void) const
 {
   return _allgatherv.isdone();
   // return _barrier3.isdone();
+}
+
+inline void TSPColl::ScBcast::amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface)
+{
+  assert(0);
+  //  mcast_iface->setCallback(cb_incoming, NULL);
+  // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }
 
 #endif

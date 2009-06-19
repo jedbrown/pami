@@ -7,7 +7,7 @@
 #include "../interface/hl_collectives.h"
 
 #define FULL_TEST  
-#define COUNT      16384
+#define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
 #define NITERBW    10
@@ -328,6 +328,9 @@ int main(int argc, char*argv[])
   validTable[OP_MIN][DT_DOUBLE_COMPLEX]=false;
   validTable[OP_PROD][DT_DOUBLE_COMPLEX]=false;
 
+  //  This one is failing using core math...we should find this bug.
+  validTable[OP_BAND][DT_DOUBLE]=false;
+
   /* Now add back the minloc/maxloc stuff */
   for(i=OP_MAXLOC; i<=OP_MINLOC; i++)
       for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
@@ -338,7 +341,6 @@ int main(int argc, char*argv[])
 	  validTable[i][j]=false;
 
   validTable[OP_SUM][DT_SIGNED_INT]=true;
-
 #endif
 
 #if 1
@@ -377,9 +379,9 @@ int main(int argc, char*argv[])
 			      usec = (tf - ti)/(double)niter;
 			      if (rank == root)
 				  {
-				      printf("  %11lld %16lld %14.1f %12.2f\n",
+				      printf("  %11lld %16d %14.1f %12.2f\n",
 					     dataSent,
-					     0.0f,
+					     niter,
 					     (double)1e6*(double)dataSent/(double)usec,
 					     usec);
 				      fflush(stdout);

@@ -13,7 +13,8 @@
 #ifndef __tspcoll_collbase_h__
 #define __tspcoll_collbase_h__
 
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
+#include "collectives/util/ccmi_debug.h"
+#include "collectives/interface/MultiSendOld.h"
 #include "NBColl.h"
 
 #include <assert.h>
@@ -33,22 +34,23 @@
 /* *********************************************************************** */
 /*  Base class for implementing a non-blocking collective using amsends.   */
 /* *********************************************************************** */
+#define MAX_PHASES 64
+
 namespace TSPColl
 {
   class CollExchange: public NBColl
   {
   protected:
-    static const int MAX_PHASES=64;
+    //    static const int MAX_PHASES=64;
     typedef void (* cb_Coll_t) (CollExchange *, unsigned);
     
   public:  
     /* ------------------------------ */
     /*  public API                    */
     /* ------------------------------ */
-    virtual void  kick             (void);
+    virtual void  kick             (CCMI::MultiSend::MulticastInterface *mcast_iface);
     virtual bool  isdone           () const;
-    static void   amsend_reg       (void);
-
+    static void   amsend_reg       (CCMI::MultiSend::MulticastInterface *mcast_iface);
   protected:
 
     CollExchange                   (Communicator *, NBTag, 
@@ -64,20 +66,32 @@ namespace TSPColl
     /*  local functions               */
     /* ------------------------------ */
     
-    void          send                     (int phase);
-    static 
-      __pgasrt_local_addr_t cb_incoming    (const __pgasrt_AMHeader_t * hdr,
-					    void (**)(void *, void *),
-					    void ** arg);
-    static void   cb_recvcomplete          (void *, void * arg);
+    void          send                     (int phase,CCMI::MultiSend::MulticastInterface *mcast_iface);
+    static inline CCMI_Request_t * cb_incoming(const CCMIQuad  * hdr,
+					       unsigned          count,
+					       unsigned          peer,
+					       unsigned          sndlen,
+					       unsigned          conn_id,
+					       void            * arg,
+					       unsigned        * rcvlen,
+					       char           ** rcvbuf,
+					       unsigned        * pipewidth,
+					       CCMI_Callback_t * cb_done);
+      //      static       CCMI::MultiSend::CCMI_RecvMulticast_t cb_incoming;
+    
+    static void   cb_recvcomplete (void * arg, CCMI_Error_t* arg);
+      //    static void   cb_recvcomplete          (void *, void * arg);
     static void   cb_senddone              (void *);
     
   protected:
-    
     /* ------------------------------ */
     /* static: set by constructor     */
     /* ------------------------------ */
+    CCMI_Request_t                       _req;
+    CCMI_Request_t                       _rreq;
     
+    CCMI::MultiSend::MulticastInterface *_mcast_iface;
+
     int          _numphases;
 
     /* ------------------------------ */
@@ -112,7 +126,6 @@ namespace TSPColl
     
     struct AMHeader
     {
-      __pgasrt_AMHeader_t hdr;
       NBTag               tag;
       int                 id;
       int                 offset;
@@ -143,19 +156,22 @@ namespace TSPColl
 /*                  register collexchange                                  */
 /* *********************************************************************** */
 
-inline void TSPColl::CollExchange::amsend_reg  (void)
+inline void TSPColl::CollExchange::amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
-  __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
+  
+  mcast_iface->setCallback(cb_incoming, NULL);
+  // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }
+
+
 
 /* *********************************************************************** */
 /*                  CollExchange constructor                               */
 /* *********************************************************************** */
-
 inline TSPColl::CollExchange::
 CollExchange (Communicator * comm, NBTag tag, int id, int offset, 
 	      bool strict, void (*cb_complete)(void *), void *arg):
-	       NBColl (comm, tag, id, cb_complete, arg), _strict(strict)
+              NBColl (comm, tag, id, cb_complete, arg), _strict(strict)
 {
   _counter         = 0;
   _numphases       = -100 * tag;
@@ -171,9 +187,6 @@ CollExchange (Communicator * comm, NBTag tag, int id, int offset,
       _cmplt[i].base           = this;
       _cbcomplete[i]           = 0;
       _recvcomplete[i]         = 0;
-      _header[i].hdr.handler   = (__pgasrt_AMHeaderHandler_t)
-	PGASRT_TSP_AMSEND_COLLEXCHANGE;
-      _header[i].hdr.headerlen = sizeof (struct AMHeader);
       _header[i].tag           = tag;
       _header[i].id            = id;
       _header[i].offset        = offset;
@@ -198,10 +211,10 @@ inline void TSPColl::CollExchange::reset()
 /* *********************************************************************** */
 /*                   kick the state machine (make progress)                */
 /* *********************************************************************** */
-
-inline void TSPColl::CollExchange::kick()
+inline void TSPColl::CollExchange::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
   /* continued ATOMIC (code should be entered with mutex already locked */
+  _mcast_iface = mcast_iface;
   for (; _phase < _numphases; _phase++)
     {
       /* ---------------------------------------------------- */
@@ -215,7 +228,7 @@ inline void TSPColl::CollExchange::kick()
 	    { 
 	      int phase = _phase;
 	      MUTEX_UNLOCK(&_mutex);
-	      send(phase); 
+	      send(phase,mcast_iface); 
 	      return; 
 	    } 
 	  else
@@ -257,8 +270,8 @@ inline void TSPColl::CollExchange::kick()
 
       if (_cb_recv2[_phase] == NULL) /* no cb */
 	{
-	  TRACE((stderr, "%d: NOCB tag=%d ctr=%d phase=%d\n",
-		 PGASRT_MYNODE, _tag, _counter, _phase));
+	  TRACE((stderr, "NOCB tag=%d ctr=%d phase=%d\n",
+		 _tag, _counter, _phase));
 	  _cbcomplete[_phase]++;
 	  continue;
 	}
@@ -273,18 +286,18 @@ inline void TSPColl::CollExchange::kick()
       /* run callback */
       /* ------------ */
 
-      TRACE((stderr, "%d: CBCK tag=%d ctr=%d phase=%d\n",
-	     PGASRT_MYNODE, _tag, _counter, _phase));
+      TRACE((stderr, "CBCK tag=%d ctr=%d phase=%d\n",
+	     _tag, _counter, _phase));
       _cb_recv2[_phase] (this, _phase); 
       _cbcomplete[_phase]++;
     }
 
-  TRACE((stderr, "%d: FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d\n",
-	 PGASRT_MYNODE, _tag, _counter, 
+  TRACE((stderr, "FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d\n",
+	 _tag, _counter, 
 	 _phase, _numphases, _sendcomplete));
 
-  if (_cb_complete) 
-    if (_phase == _numphases) { _phase++; _cb_complete (_arg); }
+  if (this->_cb_complete) 
+    if (_phase == _numphases) { _phase++; _cb_complete (this->_arg); }
 
  the_end:
   ;
@@ -295,7 +308,6 @@ inline void TSPColl::CollExchange::kick()
 /* *********************************************************************** */
 /*    advance the progress engine                                          */
 /* *********************************************************************** */
-
 inline bool TSPColl::CollExchange::isdone() const
 {
   return (_phase >= _numphases && _sendcomplete >= _numphases);
@@ -304,29 +316,53 @@ inline bool TSPColl::CollExchange::isdone() const
 /* *********************************************************************** */
 /*                     send an active message                              */
 /* *********************************************************************** */
-
-inline void TSPColl::CollExchange::send (int phase)
+inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
-  TRACE((stderr, "%d: SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d\n",
-	 PGASRT_MYNODE,  _tag, _counter, phase, 
-	 _dest[phase], _sbufln[phase]));
-  
+  TRACE((stderr, "SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d, mcast_iface=%p\n",
+	 _tag, _counter, phase, 
+	 _dest[phase], _sbufln[phase],mcast_iface));
   _header[phase].counter = _counter;
   assert (_dest[phase] != -1);
-  
+ #if 0 
   void * r = __pgasrt_tsp_amsend (_dest[phase],
 				  & _header[phase].hdr,
 				  (__pgasrt_local_addr_t) _sbuf[phase],
 				  _sbufln[phase],
 				  CollExchange::cb_senddone,
 				  &_cmplt[phase]);
+#endif
+  unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
+  unsigned        ranks   = _dest[phase];
+  CCMI_Callback_t cb_done;
+  cb_done.function   = (void (*)(void*, CCMI_Error_t*))CollExchange::cb_senddone;
+  cb_done.clientdata = &_cmplt[phase];
+  void *r = NULL;
+  TRACE((stderr, "SEND MCAST_IFACE %p: tag=%d id=%d,hdr=%p count=%d\n", 
+	 ((int*)mcast_iface)[0],
+	 _header[phase].tag,
+	 _header[phase].id,
+	 &_header[phase],
+	 CCMIQuad_sizeof(_header[phase])));
+
+  mcast_iface->send (&_req,
+		     &cb_done,
+		     CCMI_MATCH_CONSISTENCY,
+		     (CCMIQuad*)& _header[phase],
+		     CCMIQuad_sizeof(_header[phase]),
+		     0,
+		     (char*)_sbuf[phase],
+		     (unsigned)_sbufln[phase],
+		     &hints,
+		     &ranks,
+		     1);
+  TRACE((stderr, "SEND finished\n"));
+
   assert (r == NULL);
 }
 
 /* *********************************************************************** */
 /*                             send complete                               */
 /* *********************************************************************** */
-
 inline void TSPColl::CollExchange::cb_senddone (void * arg)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
@@ -334,34 +370,39 @@ inline void TSPColl::CollExchange::cb_senddone (void * arg)
   /* BEGIN ATOMIC */
   base->_sendcomplete++;
   TRACE((stderr, 
-	 "%d: SENT tag=%d ctr=%d phase=%d/%d tgt=%d nbyt=%d cplt=%d\n",
-	 PGASRT_MYNODE, 
+	 "SENT tag=%d ctr=%d phase=%d/%d tgt=%d nbyt=%d cplt=%d\n",
 	 base->_tag, base->_counter, 
 	 base->_phase, base->_numphases,
 	 base->_dest[base->_phase], base->_sbufln[base->_phase],
 	 base->_sendcomplete));
-  base->kick();
+  base->kick(base->_mcast_iface);
 }
 
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
+inline CCMI_Request_t * TSPColl::CollExchange::cb_incoming(const CCMIQuad  * hdr,
+							   unsigned          count,
+							   unsigned          peer,
+							   unsigned          sndlen,
+							   unsigned          conn_id,
+							   void            * arg,
+							   unsigned        * rcvlen,
+							   char           ** rcvbuf,
+							   unsigned        * pipewidth,
+							   CCMI_Callback_t * cb_done)
 
-inline __pgasrt_local_addr_t TSPColl::CollExchange::
-cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
-	     void (** completionHandler)(void *, void *),
-	     void ** arg)
 {
   struct AMHeader * header = (struct AMHeader *) hdr;
   void * base0 = NBCollManager::instance()->find (header->tag, header->id);
   if (base0 == NULL)
-    __pgasrt_fatalerror (-1, "%d: incoming: cannot find coll=<%d,%d>",
-			 PGASRT_MYNODE, header->tag, header->id);
+    CCMI_FATALERROR (-1, "incoming: cannot find coll=<%d,%d>",
+		     header->tag, header->id);
   
   CollExchange * b = (CollExchange * ) ((char *)base0 + header->offset);
-  TRACE((stderr, "%d: INC  tag=%d id=%d ctr=%d phase=%d nphases=%d "
+  TRACE((stderr, "INC  tag=%d id=%d ctr=%d phase=%d nphases=%d "
 	 "msgctr=%d msgphase=%d\n",
-	 PGASRT_MYNODE, header->tag, header->id, b->_counter, 
+	 header->tag, header->id, b->_counter, 
 	 b->_phase, b->_numphases, 
 	 header->counter, header->phase));
 
@@ -374,19 +415,27 @@ cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
     }
   
   b->_cmplt[header->phase].counter = header->counter;
-  *completionHandler = &CollExchange::cb_recvcomplete;
-  *arg = &b->_cmplt[header->phase];
-  __pgasrt_local_addr_t z = (__pgasrt_local_addr_t) b->_rbuf[header->phase];
-  if (z == NULL) b->internalerror (header, __LINE__);
-  return z;
+
+  // multisend stuff
+  *rcvbuf             = (char*)b->_rbuf[header->phase];
+  *rcvlen             = sndlen;
+  *pipewidth          = sndlen;
+  cb_done->function   = CollExchange::cb_recvcomplete;
+  cb_done->clientdata = &b->_cmplt[header->phase];
+  
+  //  *completionHandler = &CollExchange::cb_recvcomplete;
+  //  *arg = &b->_cmplt[header->phase];
+  //  __pgasrt_local_addr_t z = (__pgasrt_local_addr_t) b->_rbuf[header->phase];
+  //  if (z == NULL) b->internalerror (header, __LINE__);
+  //  return z;
+  return &b->_rreq;
 }
 
 /* *********************************************************************** */
 /*                  active message reception complete                      */
 /* *********************************************************************** */
-
 inline void 
-TSPColl::CollExchange::cb_recvcomplete (void * unused, void * arg)
+TSPColl::CollExchange::cb_recvcomplete (void * arg, CCMI_Error_t* error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;
@@ -397,34 +446,33 @@ TSPColl::CollExchange::cb_recvcomplete (void * unused, void * arg)
   /* BEGIN ATOMIC */
   MUTEX_LOCK(&base->_mutex);
   base->_recvcomplete[phase]++;
-  TRACE((stderr, "%d: IN_D tag=%d ctr=%d phase=%d msgphase=%d cplt=%d\n",
-	 PGASRT_MYNODE, base->_tag, 
+  TRACE((stderr, "IN_D tag=%d ctr=%d phase=%d msgphase=%d cplt=%d\n",
+	 base->_tag, 
 	 base->_counter, base->_phase, phase, base->_recvcomplete[phase]));
   if (base->_cb_recv1[phase]) base->_cb_recv1[phase](base, phase);
-  base->kick();
+  base->kick(base->_mcast_iface);
 }
 
 /* *********************************************************************** */
 /*      something bad happened. We print the state as best as we can.      */
 /* *********************************************************************** */
-
 inline void 
 TSPColl::CollExchange::internalerror (AMHeader * header, int lineno)
 {
   if (header)
-    fprintf (stderr, "%d: CollExchange internal: line=%d "
+    fprintf (stderr, "CollExchange internal: line=%d "
 	     "tag=%d id=%d phase=%d/%d ctr=%d "
 	     "header: tag=%d id=%d phase=%d ctr=%d\n",
-	     PGASRT_MYNODE, lineno,
-             _tag, _instID, 
+	     lineno,
+             NBColl::_tag, NBColl::_instID, 
 	     _phase, _numphases, _counter,
 	     header->tag, header->id, header->phase,
 	     header->counter);
   else
-    fprintf (stderr, "%d: CollExchange internal: line=%d "
+    fprintf (stderr, "CollExchange internal: line=%d "
 	     "tag=%d id=%d phase=%d/%d ctr=%d\n",
-	     PGASRT_MYNODE, lineno,
-	     _tag, _instID,
+	     lineno,
+	     NBColl::_tag, NBColl::_instID,
 	     _phase, _numphases, _counter);
   abort();
 }

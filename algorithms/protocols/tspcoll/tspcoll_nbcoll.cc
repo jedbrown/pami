@@ -10,7 +10,6 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
 #include "NBColl.h"
 #include "Barrier.h"
 #include "Allgather.h"
@@ -29,7 +28,6 @@
 /* ************************************************************************ */
 /*                 non-blocking collective constructor                      */
 /* ************************************************************************ */
-
 TSPColl::NBColl::NBColl (Communicator * comm, NBTag tag, int instID,
 			 void (*cb_complete)(void *), void *arg):
   _comm (comm), _tag (tag), _instID (instID),
@@ -39,7 +37,6 @@ TSPColl::NBColl::NBColl (Communicator * comm, NBTag tag, int instID,
 
 /* ************************************************************************ */
 /* ************************************************************************ */
-
 void TSPColl::NBColl::setComplete (void (*cb_complete)(void *), void *arg)
 {
   _cb_complete = cb_complete;
@@ -49,18 +46,76 @@ void TSPColl::NBColl::setComplete (void (*cb_complete)(void *), void *arg)
 /* ************************************************************************ */
 /*                    initialize the factory                                */
 /* ************************************************************************ */
-
 void TSPColl::NBCollFactory::initialize ()
 {
-  TSPColl::CollExchange::amsend_reg ();
-  TSPColl::Scatter::amsend_reg ();
+  // TSPColl::CollExchange::amsend_reg ();
+  // TSPColl::Scatter::amsend_reg ();
   // TSPColl::Gather::amsend_reg ();
 }
+
+void
+TSPColl::NBCollManager::multisend_reg (NBTag tag,CCMI::MultiSend::MulticastInterface *mcast_iface)
+{
+  switch (tag)
+    {
+    case BarrierTag:
+      {
+	TSPColl::Barrier::amsend_reg(mcast_iface);
+	break;
+      }
+    case AllgatherTag:
+      {
+	TSPColl::Allgather::amsend_reg(mcast_iface);
+	break;
+      }
+    case AllgathervTag:
+      {
+	TSPColl::Allgatherv::amsend_reg(mcast_iface);
+	break;
+      }
+    case BcastTag:
+      {
+	TSPColl::BinomBcast::amsend_reg(mcast_iface);
+	break;
+      }
+    case BcastTag2:
+      {
+	TSPColl::ScBcast::amsend_reg(mcast_iface);
+	break;
+      }
+    case ShortAllreduceTag:
+      {
+	TSPColl::Allreduce::Short::amsend_reg(mcast_iface);
+	break;
+      }
+    case LongAllreduceTag:
+      {
+	TSPColl::Allreduce::Long::amsend_reg(mcast_iface);
+	break;
+      }
+    case ScatterTag:
+      {
+	TSPColl::Scatter::amsend_reg(mcast_iface);
+	break;
+      }
+    case ScattervTag:
+      {
+	TSPColl::Scatterv::amsend_reg(mcast_iface);
+	break;
+      }
+    case GatherTag:
+    case GathervTag:
+    default:
+      {
+	assert (0);
+      }
+    }
+}
+
 
 /* ************************************************************************ */
 /*                     Collective factory                                   */
 /* ************************************************************************ */
-
 TSPColl::NBColl * 
 TSPColl::NBCollFactory::create (Communicator * comm, NBTag tag, int instID)
 {
@@ -153,8 +208,7 @@ TSPColl::NBCollFactory::create (Communicator * comm, NBTag tag, int instID)
 /* ************************************************************************ */
 
 #define MAXOF(a,b) (((a)>(b))?(a):(b))
-
-template<class T>
+template <class T>
 T & TSPColl::Vector<T>::operator[](int idx)
 {
   assert (idx >= 0);
@@ -163,19 +217,17 @@ T & TSPColl::Vector<T>::operator[](int idx)
       int oldmax = _max;
       _max = MAXOF((2*_max+1),idx+1);
       _v = (T*) realloc (_v, _max * sizeof(T*));
-      if (_v == NULL) __pgasrt_fatalerror(-1, "Memory error");
+      if (_v == NULL) CCMI_FATALERROR(-1, "Memory error");
       memset (_v + oldmax, 0, sizeof(T) * (_max - oldmax));
     }
   if (idx>=_size) _size = idx+1;
   return _v[idx];
 }
-
 TSPColl::NBCollManager * TSPColl::NBCollManager::_instance = NULL;
 
 /* ************************************************************************ */
 /*          NBColl life cycle manager: singleton initializer                */
 /* ************************************************************************ */
-
 void TSPColl::NBCollManager::initialize (void)
 {
   _instance = (NBCollManager *)malloc (sizeof(NBCollManager));
@@ -183,7 +235,6 @@ void TSPColl::NBCollManager::initialize (void)
   new (_instance) NBCollManager();
   NBCollFactory::initialize();
 }
-
 TSPColl::NBCollManager * TSPColl::NBCollManager::instance()
 {
   if (_instance==NULL) initialize();
@@ -193,7 +244,6 @@ TSPColl::NBCollManager * TSPColl::NBCollManager::instance()
 /* ************************************************************************ */
 /*           NBColl life cycle manager: constructor                         */
 /* ************************************************************************ */
-
 TSPColl::NBCollManager::NBCollManager (void)
 {
   for (int i=0; i<MAXTAG; i++)
@@ -206,7 +256,6 @@ TSPColl::NBCollManager::NBCollManager (void)
 /* ************************************************************************ */
 /*              find an instance                                            */
 /* ************************************************************************ */
-
 TSPColl::NBColl * 
 TSPColl::NBCollManager::find (NBTag tag, int id)
 {
@@ -217,7 +266,6 @@ TSPColl::NBCollManager::find (NBTag tag, int id)
 /* ************************************************************************ */
 /*            reserve an instance or create a new one                       */
 /* ************************************************************************ */
-
 TSPColl::NBColl * 
 TSPColl::NBCollManager::allocate (Communicator * comm, NBTag tag)
 {

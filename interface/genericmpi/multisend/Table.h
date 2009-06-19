@@ -16,7 +16,8 @@ namespace CCMI
     {
       
       struct MsgHeader {
-	CCMIQuad    _info;
+	CCMIQuad    _info[2];
+	int         _info_count;
 	int         _size;
 	int         _conn;
 	MPI_Request*_req;

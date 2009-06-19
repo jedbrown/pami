@@ -10,7 +10,7 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "./Communicator.h"
+#include "collectives/interface/Communicator.h"
 
 #include <stdio.h>
 #include <assert.h>

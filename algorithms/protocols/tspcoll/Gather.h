@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "./Communicator.h"
+#include "collectives/interface/Communicator.h"
 #include "./Barrier.h"
 
 /* **************************************************************** */
@@ -36,9 +36,6 @@ namespace TSPColl
     void reset   (int root, const void * sbuf, void * rbuf, size_t length);
     virtual void kick    (void);
     virtual bool isdone  (void) const { return _complete >= _counter; }
-
-    static void amsend_reg (void);
-    
   protected:
     const void    * _sbuf;         /* send buffer    */
     void          * _rbuf;         /* receive buffer */

@@ -12,13 +12,13 @@
 #include "collectives/algorithms/protocols/allreduce/sync_impl.h"
 #include "collectives/algorithms/protocols/allreduce/async_impl.h"
 #include "collectives/interface/genericmpi/api/mapping_impl.h" // ? why
-//#include "collectives/algorithms/protocols/tspcoll/Communicator.h"
-
-#include <mpi.h>
+#include "collectives/interface/genericmpi/GenericComm.h"
+#include "collectives/algorithms/protocols/tspcoll/NBColl.h"
 
 
 #include <unistd.h>
 
+//#define USE_CCMI
 using namespace std;
 
 #define MAX_REGISTRATIONS_PER_TABLE 16
@@ -28,6 +28,53 @@ CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
 
 extern "C"
 {
+    int LL_to_PGAS_op[] =
+	{-1,              // LL_UNDEFINED_OP
+	 -1,              // LL_NOOP
+	 PGASRT_OP_MAX,   // LL_MAX,
+	 PGASRT_OP_MIN,   // LL_MIN,
+	 PGASRT_OP_ADD,   // LL_SUM,
+	 PGASRT_OP_MUL,   // LL_PROD,
+	 -1,              // LL_LAND,
+	 -1,              // LL_LOR,
+	 -1,              // LL_LXOR,
+	 PGASRT_OP_AND,   // LL_BAND,
+	 PGASRT_OP_OR,    // LL_BOR,
+	 PGASRT_OP_XOR,   // LL_BXOR,
+	 -1,              // LL_MAXLOC,
+	 -1,              // LL_MINLOC,
+	 -1,              // LL_USERDEFINED_OP,
+	 -1              // LL_OP_COUNT
+	};
+    int LL_to_PGAS_dt[] =
+	{
+	 /* Standard/Primative DT's */
+	 -1,                   // LL_UNDEFINED_DT = 0,
+	 PGASRT_DT_chr,        // LL_SIGNED_CHAR,
+	 PGASRT_DT_byte,       // LL_UNSIGNED_CHAR,
+	 PGASRT_DT_srt,        // LL_SIGNED_SHORT,
+	 PGASRT_DT_hwrd,       // LL_UNSIGNED_SHORT,
+	 PGASRT_DT_int,        // LL_SIGNED_INT,
+	 PGASRT_DT_word,       // LL_UNSIGNED_INT,
+	 PGASRT_DT_llg,        // LL_SIGNED_LONG_LONG,
+	 PGASRT_DT_dwrd,       // LL_UNSIGNED_LONG_LONG,
+	 PGASRT_DT_flt,        // LL_FLOAT,
+	 PGASRT_DT_dbl,        // LL_DOUBLE,
+	 -1,                   // LL_LONG_DOUBLE,
+	 -1,                   // LL_LOGICAL,
+	 -1,                   // LL_SINGLE_COMPLEX,
+	 -1,                   // LL_DOUBLE_COMPLEX,
+	 /* Max/Minloc DT's */
+	 -1,                   // LL_LOC_2INT,
+	 -1,                   // LL_LOC_SHORT_INT,
+	 -1,                   // LL_LOC_FLOAT_INT,
+	 -1,                   // LL_LOC_DOUBLE_INT,
+	 -1,                   // LL_LOC_2FLOAT,
+	 -1,                   // LL_LOC_2DOUBLE,
+	 -1,                   // LL_USERDEFINED_DT,
+	 -1,                   // LL_DT_COUNT
+	};
+
     int LL_to_CCMI_op[] =
 	{CCMI_UNDEFINED_OP,        // LL_UNDEFINED_OP
 	 CCMI_NOOP,                // LL_NOOP
@@ -93,10 +140,11 @@ extern "C"
 				  char***argv,
 				  HL_mapIdToGeometry cb_map)
     {
-	// Set up pgasrt P2P Collectives
-      //	__pgasrt_tsp_setup         (1, &argc, &argv);
       MPI_Init(argc, argv);
-	cb_geometry_map = cb_map;
+      // Set up pgasrt P2P Collectives
+      //	__pgasrt_tsp_setup         (1, argc, argv);
+      
+      cb_geometry_map = cb_map;
 
 	// Set up CCMI collectives
 	if(_g_generic_adaptor == NULL)
@@ -111,12 +159,13 @@ extern "C"
 
 	world_range.lo       = 0;
 	world_range.hi       = HL_Size()-1;
+	//	TSPColl::NBCollManager::instance();
 	HL_Geometry_initialize(&HL_World_Geometry,
 			       HL_World_Geometry_id,
 			       &world_range,
 			       1);
 	//	__pgasrt_tsp_barrier       ();
-
+	MPI_Barrier(MPI_COMM_WORLD);
 	return HL_SUCCESS;
     }
 
@@ -129,14 +178,12 @@ extern "C"
 
     int HL_Rank()
     {
-      return _g_generic_adaptor->mapping()->rank();
-      //	return __pgasrt_tsp_myID();
+	return _g_generic_adaptor->mapping()->rank();
     }
 
     int HL_Size()
     {
-      return _g_generic_adaptor->mapping()->size();
-      //	return __pgasrt_tsp_numnodes();
+	return _g_generic_adaptor->mapping()->size();
     }
 
     int HL_Collectives_finalize()
@@ -146,8 +193,8 @@ extern "C"
 //	FILE *fp = fopen ("log", "a");
 //	_g_generic_adaptor->getLogMgr()->dumpTimers(fp, _g_generic_adaptor->mapping());
 	free (_g_generic_adaptor);
-//	fclose (fp);
 	MPI_Finalize();
+//	fclose (fp);
 	return 0;
     }
 
@@ -165,8 +212,15 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_BROADCAST_PROTOCOL:
+			  {
+			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
+			    minfo->initialize(_g_generic_adaptor);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BcastTag, minfo);		    
 			    return HL_SUCCESS;
 			    break;
+			  }
 			default:
 			    return HL_UNIMPL;
 			    break;
@@ -179,8 +233,14 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_ALLGATHER_PROTOCOL:
+			  {
+			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    minfo->initialize(_g_generic_adaptor);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::AllgatherTag, minfo);			    
 			    return HL_SUCCESS;
 			    break;
+			  }
 			default:
 			    return HL_UNIMPL;
 			    break;
@@ -193,8 +253,15 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_ALLGATHERV_PROTOCOL:
+			  {
+			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
+			    minfo->initialize(_g_generic_adaptor);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::AllgathervTag, minfo);			    
 			    return HL_SUCCESS;
 			    break;
+			  }
 			default:
 			    return HL_UNIMPL;
 			    break;
@@ -207,8 +274,23 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_SCATTER_PROTOCOL:
+			  {
+			    typedef struct scatter_info
+			    {
+			      CCMI::Adaptor::Generic::MulticastImpl barrier;
+			      CCMI::Adaptor::Generic::MulticastImpl scatter;
+			    }scatter_info;
+			    COMPILE_TIME_ASSERT(sizeof(scatter_info) < sizeof (*registration));
+			    scatter_info *scinfo = (scatter_info *) registration;
+			    new(&scinfo->barrier) CCMI::Adaptor::Generic::MulticastImpl();
+			    new(&scinfo->scatter) CCMI::Adaptor::Generic::MulticastImpl();
+			    scinfo->barrier.initialize(_g_generic_adaptor);
+			    scinfo->scatter.initialize(_g_generic_adaptor);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, &scinfo->barrier);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::ScatterTag, &scinfo->scatter);
 			    return HL_SUCCESS;
 			    break;
+			  }
 			default:
 			    return HL_UNIMPL;
 			    break;
@@ -221,8 +303,23 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_SCATTERV_PROTOCOL:
+			  {
+			    typedef struct scatterv_info
+			    {
+			      CCMI::Adaptor::Generic::MulticastImpl barrier;
+			      CCMI::Adaptor::Generic::MulticastImpl scatterv;
+			    }scatterv_info;
+			    COMPILE_TIME_ASSERT(sizeof(scatterv_info) < sizeof (*registration));
+			    scatterv_info *scinfo = (scatterv_info *) registration;
+			    new(&scinfo->barrier) CCMI::Adaptor::Generic::MulticastImpl();
+			    new(&scinfo->scatterv) CCMI::Adaptor::Generic::MulticastImpl();
+			    scinfo->barrier.initialize(_g_generic_adaptor);
+			    scinfo->scatterv.initialize(_g_generic_adaptor);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, &scinfo->barrier);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::ScattervTag, &scinfo->scatterv);
 			    return HL_SUCCESS;
 			    break;
+			  }
 			default:
 			    return HL_UNIMPL;
 			    break;
@@ -236,6 +333,7 @@ extern "C"
 			{
 			case HL_DEFAULT_ALLREDUCE_PROTOCOL:
 			    {
+#ifdef USE_CCMI
 				CCMI::Adaptor::ConfigFlags flags;
 				flags.reuse_storage_limit = ((unsigned)2*1024*1024*1024 - 1);
 				flags.pipeline_override   = 0;
@@ -254,12 +352,19 @@ extern "C"
 
 				new (& treg->minfo)//, sizeof(treg->minfo))
 				    CCMI::Adaptor::Generic::MulticastImpl();
-
+				
 				new (& treg->allreduce_registration)//, sizeof(treg->allreduce_registration))
 				    CCMI::Adaptor::Allreduce::Binomial::Factory
 				    (_g_generic_adaptor->mapping(), & treg->minfo, (CCMI_mapIdToGeometry)cb_geometry_map, flags);
 
 				treg->minfo.initialize(_g_generic_adaptor);
+#else
+				CCMI::Adaptor::Generic::MulticastImpl *minfo = 
+				  new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+				minfo->initialize(_g_generic_adaptor);
+				TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::ShortAllreduceTag, minfo);
+#endif
+
 				return HL_SUCCESS;
 			    }
 			    break;
@@ -289,8 +394,15 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_BARRIER_PROTOCOL:
+			  {
+			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
+			    minfo->initialize(_g_generic_adaptor);
+			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, minfo);		    
 			    return HL_SUCCESS;
 			    break;
+			  }
 			default:
 			    return HL_UNIMPL;
 			    break;
@@ -321,6 +433,7 @@ extern "C"
 	    _barrier_factory(static_cast<CCMI::MultiSend::MulticastInterface *>(&_minfo),
 			     _g_generic_adaptor->mapping(),
 			     cb_geometry),
+	    _pgasrt_comm(my_rank, (int)slice_count,(TSPColl::Range*)rank_slices),
 	    _ranklist(ranks)
 
 	{
@@ -330,21 +443,21 @@ extern "C"
 	    _ccmi_geometry.setBarrierExecutor(exe);
 	    exe = _barrier_factory.generate(&_barrier_executors[1], &_ccmi_geometry);
 	    _ccmi_geometry.setLocalBarrierExecutor(exe);
+	    _pgasrt_comm.setup();
 	}
 	CCMI::Adaptor::Geometry                              _ccmi_geometry;
 	CCMI_Executor_t                                      _barrier_executors[2];
 	CCMI::Adaptor::Generic::MulticastImpl                _minfo;
 	CCMI::Adaptor::Barrier::BinomialBarrierFactory       _barrier_factory;
+        TSPColl::RangedComm                                  _pgasrt_comm;
 	unsigned                                            *_ranklist;
     };
 
     CCMI_Geometry_t *getGeometry (int comm)
     {
-#if 0
 	void              *g_ptr = &HL_World_Geometry;
 	geometry_internal *ptr   = (geometry_internal *)g_ptr;
 	return (CCMI_Geometry_t *)&ptr->_ccmi_geometry;
-#endif
 	// This is OK because _ccmi_geometry is the first data item in the class
 	// If both pgasrt and ccmi are delivering this callback, we
 	// need to implement the geometry lookup for the right class.
@@ -412,6 +525,12 @@ extern "C"
 		{
 		    hl_broadcast_t        * parms   = &cmd->xfer_broadcast;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
+		    int p_root                      = tspcoll->virtrankof(parms->root);
+		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    tspcoll->ibcast(minfo, p_root, parms->src, parms->dst, parms->bytes,
+				    (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -419,6 +538,11 @@ extern "C"
 		{
 		    hl_allgather_t        * parms   = &cmd->xfer_allgather;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
+		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    tspcoll->iallgather(minfo,parms->src, parms->dst, parms->bytes,
+					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -426,20 +550,47 @@ extern "C"
 		{
 		    hl_allgatherv_t        * parms   = &cmd->xfer_allgatherv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
+		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    tspcoll->iallgatherv(minfo,parms->src, parms->dst, parms->lengths,
+					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
 	    case HL_XFER_SCATTER:
 		{
+		    typedef struct scatter_info
+		    {
+		      CCMI::Adaptor::Generic::MulticastImpl barrier;
+		      CCMI::Adaptor::Generic::MulticastImpl scatter;
+		    }scatter_info;
 		    hl_scatter_t          * parms   = &cmd->xfer_scatter;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
+		    scatter_info          * scinfo  = (scatter_info*)parms->registration;
+		    int                     p_root  = tspcoll->virtrankof(parms->root);
+		    tspcoll->iscatter(&scinfo->barrier, &scinfo->scatter,
+				      p_root,parms->src, parms->dst, parms->bytes,
+				      (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
 	    case HL_XFER_SCATTERV:
 		{
+		    typedef struct scatterv_info
+		    {
+		      CCMI::Adaptor::Generic::MulticastImpl barrier;
+		      CCMI::Adaptor::Generic::MulticastImpl scatterv;
+		    }scatterv_info;
 		    hl_scatterv_t         * parms   = &cmd->xfer_scatterv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
+		    scatterv_info         * scinfo  = (scatterv_info*)parms->registration;
+		    int                     p_root  = tspcoll->virtrankof(parms->root);
+		    tspcoll->iscatterv(&scinfo->barrier, &scinfo->scatterv,
+				       p_root, parms->src, parms->dst, parms->lengths,
+				       (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return HL_SUCCESS;
 		}
 		break;
@@ -447,6 +598,7 @@ extern "C"
 		{
 		    hl_allreduce_t        * parms   = &cmd->xfer_allreduce;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+#ifdef USE_CCMI
 		    {
 			CCMI::Adaptor::Geometry   *_c_geometry =
 			    (CCMI::Adaptor::Geometry *)
@@ -499,23 +651,46 @@ extern "C"
 
 			return HL_SUCCESS;
 		    }
+#else
+		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
+		    tspcoll->iallreduce(minfo,
+					parms->src,           // source buffer
+					parms->dst,           // dst buffer
+					(CCMI_Op)LL_to_CCMI_op[parms->op], // op
+					(CCMI_Dt)LL_to_CCMI_dt[parms->dt], // dt
+					parms->count,             // type
+					(void (*)(void*))parms->cb_done.function,
+					parms->cb_done.clientdata);
+#endif
+		    return HL_SUCCESS;
 		}
 		break;
 	    case HL_XFER_ALLTOALLV:
 		{
 		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		}
 		break;
 	    case HL_XFER_BARRIER:
 		{
 		    hl_barrier_t          * parms   = &cmd->xfer_barrier;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
+#ifdef USE_CCMI
 		    CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
 		    CCMI::Executor::Executor  *_c_bar         = _c_geometry->getBarrierExecutor();
 		    _c_bar->setDoneCallback    ((void (*)(void*, CCMI_Error_t*))parms->cb_done.function, parms->cb_done.clientdata);
 		    _c_bar->setConsistency ((CCMI_Consistency) 0);
 		    _c_bar->start();
+		    return HL_SUCCESS;
+#else
+		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;		    
+		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
+		    tspcoll->ibarrier(minfo,(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
+#endif
 		    return HL_SUCCESS;
 		}
 		break;

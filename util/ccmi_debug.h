@@ -14,6 +14,10 @@
 #ifndef __adaptor_ccmi_debug_h__
 #define __adaptor_ccmi_debug_h__
 
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+
 //#define TRACE_MSG(x) fprintf x
 #ifndef TRACE_MSG
   #define TRACE_MSG(x)
@@ -31,7 +35,7 @@
   #undef TRACE_BUF
 //  #define TRACE_BUF(x) fprintf x
   #ifndef TRACE_BUF
-    #define TRACE_BUF(x) 
+    #define TRACE_BUF(x)
   #endif
 
   #define TRACE_DATA(x) CCMI_ADAPTOR_DEBUG_trace_data x
@@ -43,7 +47,7 @@ inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer
   if(!buffer) return;
   for(unsigned i = 0; i < nChunks; i++)
   {
-    TRACE_BUF((stderr, 
+    TRACE_BUF((stderr,
                "<%#.8X>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
                (int)buffer+(i*32),
                *(int*)(buffer+(i*32)+0),
@@ -59,7 +63,7 @@ inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer
   if(size % 32)
   {
     unsigned lastChunk = nChunks * 32;
-    TRACE_BUF((stderr, 
+    TRACE_BUF((stderr,
                "<%#.8X>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
                (int)buffer+lastChunk,
                lastChunk+0<size?*(int*)(buffer+lastChunk+0):0xDEADDEAD,
@@ -121,6 +125,24 @@ inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer
 #ifndef TRACE_ADAPTOR
   #define TRACE_ADAPTOR(x)
 #endif
+
+
+
+static inline void CCMI_FATALERROR (int errcode, const char * strg, ...)
+{
+    char buffer[120];
+    va_list ap;
+    va_start(ap, strg);
+    vsnprintf (buffer, 119, strg, ap);
+    va_end(ap);
+    if (errcode==0) errcode=-1;
+    fprintf(stderr, "Collective Runtime Error %d: %s\n",errcode,buffer);
+
+    // char * z = 0;
+    // *z = 0xFF;
+    exit(1);
+}
+
 
 
 #endif //__adaptor_ccmi_debug_h__

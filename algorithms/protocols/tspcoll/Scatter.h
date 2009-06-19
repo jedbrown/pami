@@ -19,15 +19,14 @@
 #include <stdlib.h>
 
 #include "./NBColl.h"
-#include "./Communicator.h"
-
+#include "collectives/interface/Communicator.h"
+#include "collectives/interface/MultiSendOld.h"
 /* **************************************************************** */
 /*                      Scatter                                     */
 /* **************************************************************** */
 
 namespace TSPColl
 {
-
   class Scatter: public NBColl
   {
   protected:
@@ -37,12 +36,13 @@ namespace TSPColl
     void * operator new (size_t, void * addr)    { return addr; }
     Scatter      (Communicator * comm, NBTag tag, int instID, int tagoff);
     void reset   (int root, const void * sbuf, void * rbuf, size_t length);
-    virtual void kick    (void);
+    virtual void kick    (CCMI::MultiSend::MulticastInterface *mcast_iface);
     virtual bool isdone  (void) const { return _complete >= _counter; }
-
-    static void amsend_reg (void);
-    
+    static void amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface);
   protected:
+    CCMI_Request_t                       _req;
+    CCMI_Request_t                       _rreq;
+    CCMI::MultiSend::MulticastInterface *_mcast_iface;
     const char    * _sbuf;         /* send buffer    */
     void          * _rbuf;         /* receive buffer */
     size_t          _length;       /* msg length     */
@@ -54,7 +54,6 @@ namespace TSPColl
     
     struct scatter_header
     {
-      __pgasrt_AMHeader_t hdr;
       NBTag               tag;
       int                 id;
       int                 tagoff;
@@ -64,15 +63,25 @@ namespace TSPColl
     _header;
     
   protected:
-    static __pgasrt_local_addr_t 
-      cb_incoming (const struct __pgasrt_AMHeader_t *,
-		   void (**)(void *,void *), void **);
-    static void cb_recvcomplete (void * unused, void * arg);
+    static  CCMI_Request_t * cb_incoming(const CCMIQuad  * hdr,
+					 unsigned          count,
+					 unsigned          peer,
+					 unsigned          sndlen,
+					 unsigned          conn_id,
+					 void            * arg,
+					 unsigned        * rcvlen,
+					 char           ** rcvbuf,
+					 unsigned        * pipewidth,
+					 CCMI_Callback_t * cb_done);
+    static void cb_recvcomplete (void *arg, CCMI_Error_t*err);
     static void cb_senddone (void *);
   };
 };
 
-
+inline void TSPColl::Scatter::amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface)
+    {
+      mcast_iface->setCallback(TSPColl::Scatter::cb_incoming, NULL);
+    }
 /* **************************************************************** */
 /*                    Scatterv                                      */
 /* **************************************************************** */
@@ -84,9 +93,9 @@ namespace TSPColl
   public:
     void * operator new (size_t, void * addr)    { return addr; }
     Scatterv (Communicator * comm, NBTag tag, int instID, int tagoff):
-    Scatter (comm, tag, instID, tagoff), _lengths(0) { }
+              Scatter (comm, tag, instID, tagoff), _lengths(0) { }
     void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
-    virtual void kick (void);
+    virtual void kick (CCMI::MultiSend::MulticastInterface *mcast_iface);
   protected:
     size_t * _lengths;  
   };

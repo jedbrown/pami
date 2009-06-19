@@ -7,7 +7,7 @@
 #include "../interface/hl_collectives.h"
 
 
-#define BUFSIZE 4194304
+#define BUFSIZE 524288
 
 void cb_barrier (void * clientdata);
 void cb_broadcast (void * clientdata);
@@ -127,6 +127,7 @@ int main(int argc, char*argv[])
 
   HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
+  init__broadcasts();
   int rank = HL_Rank();
   int i,j,root = 0;
 #if 1
@@ -156,7 +157,7 @@ int main(int argc, char*argv[])
 		  
 		  printf("  %11lld %16lld %14.1f %12.2f\n",
 			 dataSent,
-			 0,
+			 0LL,
 			 (double)1e6*(double)dataSent/(double)usec,
 			 usec);
 //		  fprintf(stderr,"broadcast: time=%f usec\n", usec/(double)niter);

@@ -122,6 +122,7 @@ int main(int argc, char*argv[])
   double tf,ti,usec;
   HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
+  init__allgathervs();
   int     rank    = HL_Rank();
   int     sz      = HL_Size();
   size_t *lengths = (size_t*)malloc(sz*sizeof(size_t));
@@ -160,7 +161,7 @@ int main(int argc, char*argv[])
 		  
 		  printf("  %11lld %16lld %14.1f %12.2f\n",
 			 dataSent,
-			 0,
+			 0LL,
 			 (double)1e6*(double)dataSent/(double)usec,
 			 usec);
 //		  fprintf(stderr,"allgatherv: time=%f usec\n", usec/(double)niter);

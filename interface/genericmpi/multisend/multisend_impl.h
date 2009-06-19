@@ -78,6 +78,7 @@ namespace CCMI {
 			 const CCMI_Callback_t  * cb_done,
 			 CCMI_Consistency         consistency,
 			 const CCMIQuad         * info,
+			 unsigned                 info_count,
 			 unsigned                 connection_id,
 			 const char             * buf,
 			 unsigned                 size,
@@ -94,10 +95,18 @@ namespace CCMI {
 
 	    assert( hdr != NULL );
 
+	    hdr->_info_count = info_count;
 	    hdr->_size = size;
 	    hdr->_conn = connection_id;
 	    if ( info )
-	      memcpy (&hdr->_info, info, sizeof (CCMIQuad));
+	      {
+		memcpy (&hdr->_info[0], info, info_count * sizeof (CCMIQuad));
+		if(info_count > 2)
+		  {
+		    fprintf(stderr, "FIX:  The generic adaptor only supports up to 2 quads\n");
+		    assert(0);
+		  }
+	      }
 	    memcpy (hdr->buffer(), buf, size);
 
 	    int rc = -1;
@@ -137,6 +146,7 @@ namespace CCMI {
 				      mcastinfo->consistency,
 				      mcastinfo->msginfo,
 				      mcastinfo->connection_id,
+				      mcastinfo->count,
 				      mcastinfo->src,
 				      mcastinfo->bytes,
 				      (unsigned *)mcastinfo->opcodes,
@@ -191,33 +201,38 @@ namespace CCMI {
 	  int rc = MPI_Iprobe (MPI_ANY_SOURCE, (unsigned)this, MPI_COMM_WORLD, &flag, &sts);
 	  assert (rc == MPI_SUCCESS);
 
-	  if (flag) {
-	    int nbytes = 0;
-	    MPI_Get_count(&sts, MPI_BYTE, &nbytes);
-	    MsgHeader *msg = (MsgHeader *) malloc (nbytes);
-	    int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, MPI_COMM_WORLD,&sts);
+	  if (flag) 
+	    {
+	      int nbytes = 0;
+	      MPI_Get_count(&sts, MPI_BYTE, &nbytes);
+	      MsgHeader *msg = (MsgHeader *) malloc (nbytes);
+	      int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, MPI_COMM_WORLD,&sts);
 
-	    assert (rc == MPI_SUCCESS);
+	      assert (rc == MPI_SUCCESS);
 
-			TRACE_ADVANCE((stderr, "<%#.8X>CCMI::Adaptor::Generic::MulticastImpl::advance() received message\n", (int)this));
+	      TRACE_ADVANCE((stderr, "<%#.8X>CCMI::Adaptor::Generic::MulticastImpl::advance() received message\n", (int)this));
 
-	    unsigned         rcvlen;
-	    char           * rcvbuf;
-	    unsigned         pwidth;
-	    CCMI_Callback_t  cb_done;
+	      unsigned         rcvlen;
+	      char           * rcvbuf;
+	      unsigned         pwidth;
+	      CCMI_Callback_t  cb_done;
 
-	    _cb_async_head (&msg->_info, 1, sts.MPI_SOURCE, msg->_size, msg->_conn,
-			    _async_arg, &rcvlen, &rcvbuf, &pwidth, &cb_done);
+	      _cb_async_head (&msg->_info[0], msg->_info_count, sts.MPI_SOURCE, msg->_size, msg->_conn,
+			      _async_arg, &rcvlen, &rcvbuf, &pwidth, &cb_done);
 
-	    if (rcvlen)
-	      memcpy (rcvbuf, msg->buffer(), rcvlen);
+	      if (rcvlen)
+		memcpy (rcvbuf, msg->buffer(), rcvlen);
 
-	    for (unsigned count = 0; count < rcvlen; count += pwidth)
-	      if (cb_done.function)
-		cb_done.function (cb_done.clientdata, NULL);
+	      if(pwidth == 0 && rcvlen == 0)
+		if (cb_done.function)
+		  cb_done.function (cb_done.clientdata, NULL);
 
-	    free (msg);
-	  }
+	      for (unsigned count = 0; count < rcvlen; count += pwidth)
+		if (cb_done.function)
+		  cb_done.function (cb_done.clientdata, NULL);
+
+	      free (msg);
+	    }
 
 	  //	  printf ("After advance\n");
 	}

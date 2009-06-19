@@ -10,7 +10,7 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "./Communicator.h"
+#include "collectives/interface/Communicator.h"
 
 struct Split 
 { 
@@ -27,7 +27,7 @@ int TSPColl::Communicator::split (int color, int rank, int * proclist)
 
   Split * dstbuf = (Split *) malloc (sizeof(Split) * this->size());
   Split   sndbuf(color, rank, this->absrankof(this->rank()));
-  if (!dstbuf) __pgasrt_fatalerror (-1, "comm_split: allocation error");
+  if (!dstbuf) CCMI_FATALERROR (-1, "comm_split: allocation error");
 
   /* -------------------------------------------------------------- */
   /*      allgather (localbuffer, tempbuffer, 3 * sizeof(int))      */
@@ -56,7 +56,7 @@ int TSPColl::Communicator::split (int color, int rank, int * proclist)
 
   for (int i=0; i<commsize; i++) 
     if (proclist[i] == -1) 
-      __pgasrt_fatalerror (-1, "SPLIT: Invalid new communicator");
+        CCMI_FATALERROR (-1, "SPLIT: Invalid new communicator");
 
   return commsize;
 }

@@ -16,7 +16,6 @@
 
 //#define throw() // Needed for xlC -noeh processing
 //#include <config.h>
-
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -38,6 +37,8 @@
   #define CCMI_assert(x)       assert(x)
   #define CCMI_assert_debug(x) assert(x)
 #endif
+
+#define CCMIQuad_sizeof(x)  ((sizeof(x)+15)>>4)
 
 /**
  * \brief Creates a compile error if the condition is false.
