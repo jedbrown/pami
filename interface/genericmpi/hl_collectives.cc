@@ -28,53 +28,6 @@ CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
 
 extern "C"
 {
-    int LL_to_PGAS_op[] =
-	{-1,              // LL_UNDEFINED_OP
-	 -1,              // LL_NOOP
-	 PGASRT_OP_MAX,   // LL_MAX,
-	 PGASRT_OP_MIN,   // LL_MIN,
-	 PGASRT_OP_ADD,   // LL_SUM,
-	 PGASRT_OP_MUL,   // LL_PROD,
-	 -1,              // LL_LAND,
-	 -1,              // LL_LOR,
-	 -1,              // LL_LXOR,
-	 PGASRT_OP_AND,   // LL_BAND,
-	 PGASRT_OP_OR,    // LL_BOR,
-	 PGASRT_OP_XOR,   // LL_BXOR,
-	 -1,              // LL_MAXLOC,
-	 -1,              // LL_MINLOC,
-	 -1,              // LL_USERDEFINED_OP,
-	 -1              // LL_OP_COUNT
-	};
-    int LL_to_PGAS_dt[] =
-	{
-	 /* Standard/Primative DT's */
-	 -1,                   // LL_UNDEFINED_DT = 0,
-	 PGASRT_DT_chr,        // LL_SIGNED_CHAR,
-	 PGASRT_DT_byte,       // LL_UNSIGNED_CHAR,
-	 PGASRT_DT_srt,        // LL_SIGNED_SHORT,
-	 PGASRT_DT_hwrd,       // LL_UNSIGNED_SHORT,
-	 PGASRT_DT_int,        // LL_SIGNED_INT,
-	 PGASRT_DT_word,       // LL_UNSIGNED_INT,
-	 PGASRT_DT_llg,        // LL_SIGNED_LONG_LONG,
-	 PGASRT_DT_dwrd,       // LL_UNSIGNED_LONG_LONG,
-	 PGASRT_DT_flt,        // LL_FLOAT,
-	 PGASRT_DT_dbl,        // LL_DOUBLE,
-	 -1,                   // LL_LONG_DOUBLE,
-	 -1,                   // LL_LOGICAL,
-	 -1,                   // LL_SINGLE_COMPLEX,
-	 -1,                   // LL_DOUBLE_COMPLEX,
-	 /* Max/Minloc DT's */
-	 -1,                   // LL_LOC_2INT,
-	 -1,                   // LL_LOC_SHORT_INT,
-	 -1,                   // LL_LOC_FLOAT_INT,
-	 -1,                   // LL_LOC_DOUBLE_INT,
-	 -1,                   // LL_LOC_2FLOAT,
-	 -1,                   // LL_LOC_2DOUBLE,
-	 -1,                   // LL_USERDEFINED_DT,
-	 -1,                   // LL_DT_COUNT
-	};
-
     int LL_to_CCMI_op[] =
 	{CCMI_UNDEFINED_OP,        // LL_UNDEFINED_OP
 	 CCMI_NOOP,                // LL_NOOP
