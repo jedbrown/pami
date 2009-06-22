@@ -40,7 +40,7 @@ namespace TSPColl
     virtual bool isdone  (void) const { return _complete >= _counter; }
     static void amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface);
   protected:
-    CCMI_Request_t                       _req;
+    CCMI_Request_t                       *_req;
     CCMI_Request_t                       _rreq;
     CCMI::MultiSend::MulticastInterface *_mcast_iface;
     const char    * _sbuf;         /* send buffer    */

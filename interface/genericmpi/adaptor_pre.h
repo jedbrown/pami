@@ -17,6 +17,50 @@
 
 #include "ccmi_collectives.h"
 
+#ifdef __PGASRT_DISTRIBUTED /* pure distributed - no pthreads library */
+#define DECL_STATIC_MUTEX(x)    int x = 0
+#define DECL_MUTEX(x)           int x
+#define MUTEX_INIT(x)           { (*(x)) = 0; }
+#define MUTEX_TRYLOCK(x)        ((*(x)) > 0 ? 1 : (((*x)=1),0))
+#define MUTEX_LOCK(x) { while ((*(x)) > 0) __pgasrt_tsp_wait(NULL); (*(x))=1; }
+#define MUTEX_UNLOCK(x)         { (*(x))=0; }
+#define MUTEX_DESTROY(x)        { }
+#define DECL_RW_MUTEX(x)
+#define RDLOCK(x)
+#define WRLOCK(x)
+#define RWUNLOCK(x)
+
+#else /* shared memory & hybrid */
+
+#include <pthread.h>
+
+#define DECL_STATIC_MUTEX(x) \
+static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
+#define DECL_MUTEX(x)    pthread_mutex_t x
+#define MUTEX_INIT(x)    pthread_mutex_init(x,NULL)
+#define MUTEX_TRYLOCK(x) pthread_mutex_trylock(x)
+#define MUTEX_LOCK(x)    pthread_mutex_lock(x)
+#define MUTEX_UNLOCK(x)  pthread_mutex_unlock(x)
+#define MUTEX_DESTROY(x) pthread_mutex_destroy(x)
+
+#if (_XOPEN_SOURCE - 0) >= 500
+#define DECL_RW_MUTEX(x) \
+static pthread_rwlock_t x = PTHREAD_RWLOCK_INITIALIZER
+#define RDLOCK(x)        pthread_rwlock_rdlock(x)
+#define WRLOCK(x)        pthread_rwlock_wrlock(x)
+#define RWUNLOCK(x)      pthread_rwlock_unlock(x)
+#else
+#define DECL_RW_MUTEX(x) \
+static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
+#define RDLOCK(x)        pthread_mutex_lock(x)
+#define WRLOCK(x)        pthread_mutex_lock(x)
+#define RWUNLOCK(x)      pthread_mutex_unlock(x)
+#endif
+
+#endif
+
+
+
 #define ThreadID() 0
 
     /// The pipeline width must be a multiple of 240 (DMA) and 256 (Tree)

@@ -14,6 +14,15 @@
 extern CCMI::Adaptor::Adaptor  * _g_generic_adaptor;
 
 #define TEST_NUM 1
+//#define DEBUG_MSEND 1
+
+#undef TRACE
+
+#ifdef DEBUG_MSEND
+#define TRACE(x)  fprintf x;
+#else
+#define TRACE(x)
+#endif
 
 namespace CCMI
 {
@@ -36,19 +45,22 @@ namespace CCMI
 	    };
 	    static void send_comp_handler(void* input)
 		{
-//		    fprintf(stderr, "Send Done Handler %p\n", input);
+		    _g_generic_adaptor->lock();
+		    TRACE((stderr, "Send Done Handler %p\n", input));
 		    send_info *si = (send_info*) input;
 		    si->_numsends++;
-//		    fprintf(stderr, "Done Handler:  numsends=%d totalsends=%d\n", si->_numsends, si->_totalsends);
+		    TRACE((stderr, "Done Handler:  numsends=%d totalsends=%d\n", si->_numsends, si->_totalsends));
+		    assert(si->_numsends <= si->_totalsends);
 		    if(si->_totalsends == si->_numsends)
 			{
 			    if (si->_user_cb_done.function)
 				{
-//				    fprintf(stderr, "Delivering User Callback!!\n");
+				    TRACE((stderr, "Delivering User Callback!!\n"));
 				    si->_user_cb_done.function(si->_user_cb_done.clientdata, NULL);
 				}
 			}
-//		    fprintf(stderr, "Send Completion handler done!\n");
+		    TRACE((stderr, "Send Completion handler done!\n"));
+		    _g_generic_adaptor->unlock();
 		}
 
             /**
@@ -59,7 +71,8 @@ namespace CCMI
 	    static struct amheader
 	    {
 		__pgasrt_AMHeader_t   _hdr;
-		CCMIQuad              _info;
+		CCMIQuad              _info[2];
+		int                   _info_count;
 		int                   _size;
 		int                   _peer;
 		int                   _conn;
@@ -95,9 +108,12 @@ namespace CCMI
 		    MulticastImpl () : MulticastInterface (), Message()
 			{
 			    _regId = _g_regId;
-//			    fprintf(stderr, "registering new mcast iface\n");
+			    TRACE((stderr, "registering new mcast iface, id=%d cd=%p\n", _regId, this));
 			    __pgasrt_tsp_amsend_reg (_regId, amsend_headerhandler);
 			    _g_regtable.add(_regId,(void*)this);
+			    void *ok = _g_regtable.get(_regId);
+			    assert(ok == this);
+			    TRACE((stderr, "registration OK\n"));
 			    _g_regId++;
 
 			}
@@ -110,7 +126,7 @@ namespace CCMI
 
 			inline void initialize (Adaptor *adaptor)
 			    {
-//				fprintf(stderr, "registering message\n");
+				TRACE((stderr, "registering message\n"));
 				adaptor->registerMessage (static_cast<CCMI::Adaptor::Message *>(this));
 			    }
 
@@ -132,6 +148,7 @@ namespace CCMI
 					 const CCMI_Callback_t  * cb_done,
 					 CCMI_Consistency         consistency,
 					 const CCMIQuad         * info,
+					 unsigned                 info_count,
 					 unsigned                 connection_id,
 					 const char             * buf,
 					 unsigned                 size,
@@ -142,16 +159,24 @@ namespace CCMI
 					 CCMI_Dt                  dtype = CCMI_UNDEFINED_DT )
 
 			{
+			    _g_generic_adaptor->lock();
 			    void *r           = NULL;
 			    int rc            = -1;
+			    _g_amheader._info_count = info_count;
 			    _g_amheader._size = size;
 			    _g_amheader._peer =  _g_generic_adaptor->mapping()->rank();
 			    _g_amheader._conn = connection_id;
 			    _g_amheader._regid= _regId;
-			    
-			    if ( info )
-				memcpy (&_g_amheader._info, info, sizeof (CCMIQuad));
 
+			    if ( info )
+				{
+				    if(info_count > 2)
+					{
+					    fprintf(stderr, "FIX:  The lapiunix adaptor only supports up to 2 quads\n");
+					    assert(0);
+					}
+				    memcpy (&_g_amheader._info[0],& info[0], info_count *sizeof (CCMIQuad));
+				}
 			    send_info *si                 = (send_info*)request;
 			    si->_totalsends               = nranks;
 			    si->_numsends                 = 0;
@@ -162,17 +187,19 @@ namespace CCMI
 				    assert (hints[count] == CCMI_PT_TO_PT_SUBTASK);
 //				    _g_amheader._hdr.handler   = (__pgasrt_AMHeaderHandler_t)TEST_NUM;
 				    _g_amheader._hdr.handler   = amsend_headerhandler;
-				    _g_amheader._hdr.headerlen = sizeof (_g_amheader);				    
-//				    fprintf(stderr, "sending to %d\n", _g_amheader._peer);
+				    _g_amheader._hdr.headerlen = sizeof (_g_amheader);
+				    TRACE((stderr, "sending to %d\n", _g_amheader._peer));
 				    r = __pgasrt_tsp_amsend (ranks[count],
 							     &_g_amheader._hdr,
 							     (__pgasrt_local_addr_t)buf,
 							     size,
 							     send_comp_handler,
 							     (void*)si);
-//				    fprintf(stderr, "send complete to %d\n", _g_amheader._peer);
+				    TRACE((stderr, "%d send complete to %d\n", _g_amheader._peer,
+					   ranks[count]));
 				}
-//			    fprintf(stderr, "sends complete\n");
+			    TRACE((stderr, "sends complete\n"));
+			    _g_generic_adaptor->unlock();
 			    return rc;
 			}
 
@@ -182,6 +209,7 @@ namespace CCMI
 							&mcastinfo->cb_done,
 							mcastinfo->consistency,
 							mcastinfo->msginfo,
+							mcastinfo->count,
 							mcastinfo->connection_id,
 							mcastinfo->src,
 							mcastinfo->bytes,
@@ -211,8 +239,8 @@ namespace CCMI
 			}
 
 			virtual void advance ()
-			{ 
-			    __pgasrt_tsp_wait(NULL);
+			{
+
 			}
 		public:
 			void * getAsyncArg() {return this->MulticastInterface::_async_arg;}
@@ -234,33 +262,42 @@ namespace CCMI
 				      void (** compHandler) (void *, void *),
 				      void ** arg)
 	    {
+		_g_generic_adaptor->lock();
 		amheader       * msg = (amheader*)header;
-//		fprintf(stderr, "Received a new Message=%p!\n", msg);
+		TRACE((stderr, "Received a new Message=%p!\n", msg));
 		unsigned         rcvlen;
 		char           * rcvbuf;
 		unsigned         pwidth;
 		CCMI_Callback_t  cb_done;
 		MulticastImpl *  mi = (MulticastImpl*)_g_regtable.get(msg->_regid);
-//		fprintf(stderr, "cb_async: mi=%p peer=%d sz=%d conn=%d AA=%p \n", 
-//			mi, msg->_peer, msg->_size, msg->_conn, mi->getAsyncArg());
+		TRACE((stderr, "cb_async: regid=%d mi=%p micount=%d peer=%d sz=%d conn=%d AA=%p\n",
+		       msg->_regid,mi, msg->_peer, msg->_info_count,msg->_size, msg->_conn, mi->getAsyncArg()));
 		CCMI_Request_t * req=
-		    mi->_cb_async_head(&msg->_info,
-				    1,
-				    msg->_peer,
-				    msg->_size,
-				    msg->_conn,
-				    mi->getAsyncArg(),
-				    &rcvlen,
-				    &rcvbuf,
-				    &pwidth,
-				    &cb_done);
-//		fprintf(stderr, "Delevered  Callback to user rcvlen=%d buf=%p req=%p!\n", rcvlen, rcvbuf, req);
-
+		    mi->_cb_async_head(&msg->_info[0],
+				       msg->_info_count,
+				       msg->_peer,
+				       msg->_size,
+				       msg->_conn,
+				       mi->getAsyncArg(),
+				       &rcvlen,
+				       &rcvbuf,
+				       &pwidth,
+				       &cb_done);
+		      TRACE((stderr, "Delivered  Callback to user rcvlen=%d buf=%p req=%p!\n", rcvlen, rcvbuf, req));
+		
 
 		if(rcvlen == 0)
 		    {
+			CCMI_Request_t tmpreq;
+			comp_data * cd = (comp_data*)&tmpreq;
+			cd->_cb_done   = cb_done;
+			cd->_recvlen   = rcvlen;
+			cd->_pwidth    = pwidth;
 			* compHandler  = NULL;
 			* arg          = NULL;
+			TRACE((stderr, "0 byte message!\n"));
+			comphandler(NULL, (void*)&tmpreq);
+			_g_generic_adaptor->unlock();
 			return (__pgasrt_local_addr_t) NULL;
 		    }
 		else
@@ -271,29 +308,37 @@ namespace CCMI
 			cd->_pwidth    = pwidth;
 			* compHandler  = comphandler;
 			* arg          = (void*)cd;
-//			fprintf(stderr, "New Message incoming arg=%p, cd=%p\n", arg, cd);
+			TRACE((stderr, "New Message incoming arg=%p, cd=%p\n", arg, cd));
+			_g_generic_adaptor->unlock();
 			return (__pgasrt_local_addr_t) rcvbuf;
 		    }
 	    }
 
 	    void comphandler (void * unused, void *arg)
 	    {
-//		fprintf(stderr, "Completion Handler!  arg=%p\n", arg);
+		_g_generic_adaptor->lock();
 		comp_data *cd = (comp_data*) arg;
-		for (unsigned count = 0; count < cd->_recvlen; count += cd->_pwidth)
+		TRACE((stderr, "Completion Handler:  arg=%p, pwidth=%d rlen=%d\n", arg,cd->_pwidth, cd->_recvlen));
+		if(cd->_pwidth == 0 && cd->_recvlen ==0)
 		    {
-//			fprintf(stderr, "Deliver callback to user count=%p of %p arg=%p\n", 
-//				count,
-//				cd->_recvlen,
-//				arg);
 			if (cd->_cb_done.function)
 			    cd->_cb_done.function (cd->_cb_done.clientdata, NULL);
 		    }
-//		fprintf (stderr, "Done with comphandler\n");
+		for (unsigned count = 0; count < cd->_recvlen; count += cd->_pwidth)
+		    {
+			TRACE((stderr, "Deliver recv done callback to user count=%p of %p arg=%p\n",
+				count,
+				cd->_recvlen,
+			       arg))
+			if (cd->_cb_done.function)
+			    cd->_cb_done.function (cd->_cb_done.clientdata, NULL);
+		    }
+		_g_generic_adaptor->unlock();
+		TRACE((stderr, "Done with send comphandler\n"));
 	    }
 	};
     };
 };
 
-
+#undef TRACE
 #endif

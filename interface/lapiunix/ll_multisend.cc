@@ -2,7 +2,7 @@
 #include "collectives/interface/MultiSend.h"
 
 // placeholder until we find where to get the ctxt from
-void*   _g_ctxt;
+void *   _g_ctxt;
 
 #ifdef __cplusplus
 extern "C"

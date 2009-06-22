@@ -79,7 +79,7 @@ namespace TSPColl
 					       CCMI_Callback_t * cb_done);
       //      static       CCMI::MultiSend::CCMI_RecvMulticast_t cb_incoming;
     
-    static void   cb_recvcomplete (void * arg, CCMI_Error_t* arg);
+    static void   cb_recvcomplete (void * arg, CCMI_Error_t* error);
       //    static void   cb_recvcomplete          (void *, void * arg);
     static void   cb_senddone              (void *);
     
@@ -87,8 +87,8 @@ namespace TSPColl
     /* ------------------------------ */
     /* static: set by constructor     */
     /* ------------------------------ */
-    CCMI_Request_t                       _req;
-    CCMI_Request_t                       _rreq;
+    CCMI_Request_t                       _req[MAX_PHASES];
+    CCMI_Request_t                       _rreq[MAX_PHASES];
     
     CCMI::MultiSend::MulticastInterface *_mcast_iface;
 
@@ -292,13 +292,21 @@ inline void TSPColl::CollExchange::kick(CCMI::MultiSend::MulticastInterface *mca
       _cbcomplete[_phase]++;
     }
 
-  TRACE((stderr, "FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d\n",
+  TRACE((stderr, "FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d cb_complete=%p\n",
 	 _tag, _counter, 
-	 _phase, _numphases, _sendcomplete));
+	 _phase, _numphases, 
+	 _sendcomplete,
+	 this->_cb_complete));
 
   if (this->_cb_complete) 
-    if (_phase == _numphases) { _phase++; _cb_complete (this->_arg); }
-
+      if (_phase == _numphases) 
+	  { 
+	      _phase++; 
+	      TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
+		     this->_cb_complete, this->_arg));
+	      this->_cb_complete (this->_arg); 
+	  }
+  
  the_end:
   ;
   /* END ATOMIC */
@@ -310,6 +318,8 @@ inline void TSPColl::CollExchange::kick(CCMI::MultiSend::MulticastInterface *mca
 /* *********************************************************************** */
 inline bool TSPColl::CollExchange::isdone() const
 {
+    TRACE((stderr, "Is done:  _phase=%d sendcomplete=%d, numphase=%d\n",
+	   _phase, _sendcomplete, _numphases));
   return (_phase >= _numphases && _sendcomplete >= _numphases);
 }
 
@@ -344,7 +354,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::MulticastIn
 	 &_header[phase],
 	 CCMIQuad_sizeof(_header[phase])));
 
-  mcast_iface->send (&_req,
+  mcast_iface->send (&_req[phase],
 		     &cb_done,
 		     CCMI_MATCH_CONSISTENCY,
 		     (CCMIQuad*)& _header[phase],
@@ -428,7 +438,7 @@ inline CCMI_Request_t * TSPColl::CollExchange::cb_incoming(const CCMIQuad  * hdr
   //  __pgasrt_local_addr_t z = (__pgasrt_local_addr_t) b->_rbuf[header->phase];
   //  if (z == NULL) b->internalerror (header, __LINE__);
   //  return z;
-  return &b->_rreq;
+  return &b->_rreq[header->phase];
 }
 
 /* *********************************************************************** */

@@ -64,7 +64,8 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 {
   _mcast_iface = mcast_iface;
   TRACE((stderr, "SCATTER KICK START\n"));
-  if (!_isroot) return;
+  if (!_isroot) return;  
+  _req = (CCMI_Request_t*) malloc(this->_comm->size()*sizeof(CCMI_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
     if (i == this->_comm->rank()) 
       { 
@@ -72,14 +73,7 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 	cb_senddone (&_header);
       }
     else
-      {
-#if 0
-      __pgasrt_tsp_amsend (this->_comm->absrankof (i),
-			   (__pgasrt_AMHeader_t *)&this->_header,
-			   (__pgasrt_local_addr_t) this->_sbuf + i * this->_length, 
-			   this->_length,
-			   cb_senddone, &this->_header);
-#endif
+      {	  
       unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = this->_comm->absrankof (i);
       CCMI_Callback_t cb_done;
@@ -88,8 +82,7 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
       void * r = NULL;
       TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
 	     this->_sbuf, &this->_header,this->_header.tag, this->_header.id));
-
-      mcast_iface->send (&_req,
+      mcast_iface->send (&_req[i],
 			 &cb_done,
 			 CCMI_MATCH_CONSISTENCY,
 			 (CCMIQuad*)&this->_header,
@@ -116,7 +109,11 @@ void TSPColl::Scatter::cb_senddone (void * arg)
   self->_sendidx = 0;
   self->_complete++;
   /* UNLOCK */
-  if (self->_cb_complete) self->_cb_complete (self->_arg);
+  if (self->_cb_complete) 
+      {
+	  free(self->_req);
+	  self->_cb_complete (self->_arg);
+      }
 }
 
 /* **************************************************************** */
@@ -147,6 +144,7 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
   TRACE((stderr, "SCATTERV KICK ctr=%d cplt=%d\n",
 	 this->_counter, this->_complete));
 
+  _req = (CCMI_Request_t*) malloc(this->_comm->size()*sizeof(CCMI_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
     {
       const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
@@ -175,7 +173,7 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 	cb_done.function        = (void (*)(void*, CCMI_Error_t*))this->cb_senddone;
 	cb_done.clientdata      = &this->_header;
 	void * r = NULL;
-	mcast_iface->send (&_req,
+	mcast_iface->send (&_req[i],
 			   &cb_done,
 			   CCMI_MATCH_CONSISTENCY,
 			   (CCMIQuad*)&this->_header,
