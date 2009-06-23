@@ -58,22 +58,6 @@ xmi_result_t XMI_Advance (xmi_context_t * context);
 /* ************************************************************************* */
 /* ************************************************************************* */
 
-typedef struct xmi_metadata
-{
-  void     * source;    /**< Are there alignment requirements for metadata? */
-  size_t     bytes;
-  uint64_t   options;   /**< bitmask? Options may include for whether to checksum the metadata or not... */
-} xmi_metadata_t;
-
-
-typedef struct xmi_recv
-{
-  void            * destination; /**< Destination recv buffer address */
-  size_t            bytes;       /**< Number of bytes to receive */
-  xmi_callback_fn   callback;    /**< Callback function to invoke when the recv is complete */
-  void            * clientdata;  /**< Callback function clientdata */
-} xmi_recv_t;
-
 
 typedef void (*xmi_callback_fn) (void * clientdata);
 
@@ -82,6 +66,21 @@ typedef struct xmi_callback
   xmi_callback_fn   fn;  /**< Callback function pointer */
   void            * arg; /**< Callback function parameter */
 } xmi_callback_t;
+
+typedef struct xmi_metadata
+{
+  void     * source;    /**< Are there alignment requirements for metadata? */
+  size_t     bytes;
+  uint64_t   options;   /**< bitmask? Options may include for whether to checksum the metadata or not... */
+} xmi_metadata_t;
+
+typedef struct xmi_recv
+{
+  void            * destination; /**< Destination recv buffer address */
+  size_t            bytes;       /**< Number of bytes to receive */
+  xmi_callback_fn   callback;    /**< Callback function to invoke when the recv is complete */
+  void            * clientdata;  /**< Callback function clientdata */
+} xmi_recv_t;
 
 /**
  * \brief Dispatch function signature for latency optimized receives.
@@ -110,6 +109,25 @@ typedef void (*xmi_recv_async_fn) (void                 * clientdata,
                                    size_t                 bytes,
                                    xmi_recv_t           * recv);
 
+/**
+ * \brief Initialize the dispatch functions for a dispatch id.
+ *
+ * This is a local, non-collective operation. There is no communication
+ * between ranks.
+ *
+ * \param[in] context    XMI application context
+ * \param[in] dispatch   Dispatch identifier to initialize
+ * \param[in] fn1        Synchronous receive dispatch function
+ * \param[in] fn2        Asynchronous receive dispatch function
+ * \param[in] clientdata Dispatch function clientdata
+ *
+ */
+xmi_result_t XMI_Send_init (xmi_context_t     * context,
+                            xmi_dispatch_t      dispatch,
+                            xmi_recv_fn         fn1,
+                            xmi_recv_async_fn   fn2,
+                            void              * clientdata);
+
 typedef struct xmi_send
 {
   xmi_callback_t    callback;  /**< Transfer completion callback */
@@ -120,7 +138,7 @@ typedef struct xmi_send
 } xmi_send_t;
 
 /**
- * \param[in]  context    XMI context
+ * \param[in]  context    XMI application context
  * \param[in]  parameters XMI send parameters
  */
 xmi_result_t XMI_Send (xmi_context_t * context,
@@ -143,8 +161,9 @@ xmi_result_t XMI_Send (xmi_context_t * context,
  *
  * \todo Define configuration attriutes (interrupt mode, send/recv buffer space, etc)
  *
- * \param[in]     context       Pointer to an initialized XMI context, If
- *                              \c NULL then the default configuration is returned
+ * \param[in]     context       Pointer to an initialized XMI application.
+ *                              context. If \c NULL then the default
+ *                              configuration is returned
  * \param[in,out] configuration Pointer to the configuration structure to update
  */
 xmi_result_t XMI_Configuration (xmi_context_t       * context,
