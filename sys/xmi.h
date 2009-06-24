@@ -59,7 +59,7 @@ xmi_result_t XMI_Advance (xmi_context_t * context);
 /* ************************************************************************* */
 
 
-typedef void (*xmi_callback_fn) (void * clientdata);
+typedef void (*xmi_callback_fn) (void * arg, xmi_error_t error);
 
 typedef struct xmi_callback
 {
@@ -83,20 +83,6 @@ typedef struct xmi_recv
 } xmi_recv_t;
 
 /**
- * \brief Dispatch function signature for latency optimized receives.
- *
- * \param[in]  clientdata Registered clientdata
- * \param[in]  metadata   Metadata from the origin rank for this transfer
- * \param[in]  bytes      Number of incoming bytes for this transfer
- * \param[in]  source     System source buffer address to be copied into application buffer
- */
-typedef void (*xmi_recv_fn) (void                 * clientdata,
-                             const xmi_metadata_t * metadata,
-                             size_t                 bytes,
-                             const void           * source);
-
-
-/**
  * \brief Dispatch function signature for asynchronous receives.
  *
  * \param[in]  clientdata Registered clientdata
@@ -108,6 +94,19 @@ typedef void (*xmi_recv_async_fn) (void                 * clientdata,
                                    const xmi_metadata_t * metadata,
                                    size_t                 bytes,
                                    xmi_recv_t           * recv);
+
+/**
+ * \brief Dispatch function signature for latency optimized receives.
+ *
+ * \param[in]  clientdata Registered clientdata
+ * \param[in]  metadata   Metadata from the origin rank for this transfer
+ * \param[in]  bytes      Number of incoming bytes for this transfer
+ * \param[in]  source     System source buffer address to be copied into application buffer
+ */
+typedef void (*xmi_recv_fn) (void                 * clientdata,
+                             const xmi_metadata_t * metadata,
+                             size_t                 bytes,
+                             const void           * source);
 
 /**
  * \brief Initialize the dispatch functions for a dispatch id.
@@ -122,20 +121,22 @@ typedef void (*xmi_recv_async_fn) (void                 * clientdata,
  * \param[in] clientdata Dispatch function clientdata
  *
  */
-xmi_result_t XMI_Send_init (xmi_context_t     * context,
-                            xmi_dispatch_t      dispatch,
-                            xmi_recv_fn         fn1,
-                            xmi_recv_async_fn   fn2,
-                            void              * clientdata);
+xmi_result_t XMI_Address_init (xmi_context_t     * context,
+                               xmi_dispatch_t      dispatch,
+                               xmi_recv_async_fn   fn1,
+                               xmi_recv_fn         fn2,
+                               void              * clientdata);
 
 typedef struct xmi_send
 {
-  xmi_callback_t    callback;  /**< Transfer completion callback */
+  xmi_callback_t    local;     /**< Transfer event callback, Source data buffer has been sent and may be reused */
+  xmi_callback_t    remote;    /**< Transfer event callback, Source data buffer has been received */
   size_t            rank;      /**< Global rank of the remote process */
   void            * source;    /**< Source data buffer address */
   size_t            bytes;     /**< Number of bytes to transfer from the source data buffer */
   xmi_dispatch_t    dispatch;  /**< Dispatch identifier for this transfer */
   xmi_metadata_t    metadata;  /**< Application metadata information */
+  xmi_hint_t        hints;     /**< Send hints which may be ignored by the runtime. */
 } xmi_send_t;
 
 /**
