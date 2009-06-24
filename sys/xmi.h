@@ -134,6 +134,7 @@ typedef struct xmi_send
   size_t            rank;      /**< Global rank of the remote process */
   void            * source;    /**< Source data buffer address */
   size_t            bytes;     /**< Number of bytes to transfer from the source data buffer */
+  xmi_dispatch_t    dispatch;  /**< Dispatch identifier for this transfer */
   xmi_metadata_t    metadata;  /**< Application metadata information */
 } xmi_send_t;
 
