@@ -50,9 +50,6 @@
 #define DOUBLE_POS_INF_VALUE  (0x7FF0000000000000ull)
 #define DOUBLE_NEG_INF_VALUE  (0xFFF0000000000000ull)
 #define DOUBLE_IGNORE_LSB(u)  ( (*(uint64_t*)&(u)) & (0xFFFFFFFFFFFFFFFEull))
-#define TREE_DOUBLE_EXP_NAN     (DOUBLE_EXP_MAX+2)
-#define TREE_DOUBLE_EXP_POS_INF (DOUBLE_EXP_MAX+1)
-#define TREE_DOUBLE_EXP_NEG_INF (DOUBLE_EXP_MAX+0)
 
 /* ********************************************************* */
 /* FLOAT_MACROS                                             */
@@ -80,71 +77,14 @@
 #define FLOAT_IGNORE_LSB(u)  ( (*(uint32_t*)&(u)) & 0xFFFFFFFE)
 #define FLOAT_IGNORE_MANTISSA(u)  ( (*(uint32_t*)&(u)) & ~FLOAT_BITS_MANTISSA)
 #define FLOAT_ZERO(u) ((u&~FLOAT_BITS_SIGN)==0)
-#define TREE_FLOAT_EXP_NAN     (FLOAT_EXP_MAX+2)
-#define TREE_FLOAT_EXP_POS_INF (FLOAT_EXP_MAX+1)
-#define TREE_FLOAT_EXP_NEG_INF (FLOAT_EXP_MAX+0)
-
-/* ********************************************************* */
-/* Per-element to/from tree macros                           */
-/* see bglsw/sysbringup/tree/lib/src/use/BGL_TreeReduction.c */
-/* ********************************************************* */
-/* ************************************************************** */
-/* MAX: MPI_FLOAT to tree */
-/* For MAX of 32-bit float, use this routine to convert operands entering tree. */
-/* ************************************************************** */
-#define MAX_FLOAT_TOTREE(u) ( FLOAT_NAN((u)) ? ((u)|FLOAT_BITS_SIGN) : \
-                              ( FLOAT_SIGN((u)) ? (FLOAT_BITS_EXP - ((u)^FLOAT_BITS_SIGN)) : \
-                                (u)^FLOAT_BITS_SIGN ) )
-/* *********************** */
-/* MAX: MPI_DOUBLE to tree */
-/* *********************** */
-#define MAX_DOUBLE_TOTREE(u) ( DOUBLE_NAN((u)) ? ((u)|DOUBLE_BITS_SIGN) : \
-                              ( DOUBLE_SIGN((u)) ? (DOUBLE_BITS_EXP - ((u)^DOUBLE_BITS_SIGN)) : \
-                                (u)^DOUBLE_BITS_SIGN ) )
-/* ************************************************************** */
-/* MAX: MPI_FLOAT from tree */
-/* For MAX of 32-bit float, use this routine to convert results leaving tree. */
-/* ************************************************************** */
-#define MAX_FLOAT_FRTREE(u) ( FLOAT_NAN((u)) ? (u) : \
-                                ( !FLOAT_SIGN((u)) ? (FLOAT_BITS_EXP - ((u)^FLOAT_BITS_SIGN)) : \
-                                  (u)^FLOAT_BITS_SIGN ) )
-/* ************************* */
-/* MAX: MPI_DOUBLE from tree */
-/* ************************* */
-#define MAX_DOUBLE_FRTREE(u) ( DOUBLE_NAN((u)) ? (u) : \
-                                 ( !DOUBLE_SIGN((u)) ? (DOUBLE_BITS_EXP - ((u)^DOUBLE_BITS_SIGN)) : \
-                                   (u)^DOUBLE_BITS_SIGN ) )
-/* ************************************************************** */
-/* MIN: MPI_FLOAT to tree */
-/* For MIN of 32-bit float, use this routine to convert operands entering tree. */
-/* ************************************************************** */
-#define MIN_FLOAT_TOTREE(u) ( FLOAT_NAN((u)) ? ((u)|FLOAT_BITS_SIGN) : \
-                              ( !FLOAT_SIGN((u)) ? (FLOAT_BITS_EXP - (u)) : (u) ) )
-/* *********************** */
-/* MIN: MPI_DOUBLE to tree */
-/* *********************** */
-#define MIN_DOUBLE_TOTREE(u) ( DOUBLE_NAN((u)) ? ((u)|DOUBLE_BITS_SIGN) : \
-                              ( !DOUBLE_SIGN((u)) ? (DOUBLE_BITS_EXP - (u)) : (u) ) )
-/* ************************************************************** */
-/* MIN: MPI_FLOAT from tree */
-/* For MIN of 32-bit float, use this routine to convert results leaving tree. */
-/* ************************************************************** */
-#define MIN_FLOAT_FRTREE(u) ( FLOAT_NAN((u)) ? (u) : \
-                                ( !FLOAT_SIGN((u)) ? (FLOAT_BITS_EXP - (u)) : (u) ) )
-/* ************************* */
-/* MIN: MPI_DOUBLE from tree */
-/* ************************* */
-#define MIN_DOUBLE_FRTREE(u) ( DOUBLE_NAN((u)) ? (u) : \
-                                 ( !DOUBLE_SIGN((u)) ? (DOUBLE_BITS_EXP - (u)) : (u) ) )
 
 #define ADD_OP_T  uint32_t
 #define ADD_OP2_T uint64_t
 #define OP_FFFF  (0xFFFFFFFFu)
 #define OP_10000 (0x100000000ull)
-#define BGLERR_SUCCESS 0
-#define BGL_TR_BAD_OPERAND (0x0000800000000000ull)
-#define BGL_TR_HUMUNGOUS   (0x0000000040000000ull)
-#define PKTWORDS 32
+
+#define BGL_TR_HUMUNGOUS	(0x0000000040000000ull)
+#define BGL_TR_BAD_OPERAND	(0x0000800000000000ull)
 
 /* ***********************************/
 /* XXX replace with cntlz instruction*/

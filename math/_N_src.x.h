@@ -17,8 +17,8 @@
 #ifdef OP
 #ifdef TYPE
 
-MATH_assert_debug(nsrc <= MATH_MAX_NSRC);
-MATH_assert_debug(nsrc >= 2);
+CM_assert_debug(nsrc <= MATH_MAX_NSRC);
+CM_assert_debug(nsrc >= 2);
 register int n = 0, m;
 TYPE buf0[MATH_MAX_NSRC];
 register TYPE rbuffer0;

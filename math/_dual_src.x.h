@@ -15,7 +15,7 @@
 #ifdef OP
 #ifdef TYPE
 
-MATH_assert_debug(nsrc == 2);
+CM_assert_debug(nsrc == 2);
 register int n=0;
 TYPE *s0 = (TYPE *)srcs[0];
 TYPE *s1 = (TYPE *)srcs[1];

@@ -15,7 +15,7 @@
 #ifdef OP
 #ifdef TYPE
 
-MATH_assert_debug(nsrc == 4);
+CM_assert_debug(nsrc == 4);
 register int n=0;
 #ifndef NOT_UNROLLED_LOOP
 register TYPE rbuffer0, rbuffer1, rbuffer2, rbuffer3;

@@ -11,7 +11,7 @@
  * \brief Optimized math routines for 128 bit floating point operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "dcmf_bg_math.h"
+#include "math_coremath.h"
 #include "FloatUtil.h"
 #include "Util.h"
 #include "ppc450d/internal_o.h"

@@ -12,7 +12,7 @@
  * \brief Default C math routines for 128 bit floating point operations.
  */
 
-#include "math_bg_math.h"
+#include "math_coremath.h"
 #include "internal.h"
 
 void _core_fp128_max(long double *dst, const long double **srcs, int nsrc, int count) {

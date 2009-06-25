@@ -8,25 +8,26 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file math/common/dcmf_optimath.h
+ * \file math/common/math_optimath.h
  * \brief Optimized math routines
  *
  * This file describes any optimized math routines and facilitates
- * plugging them into the core math routine inlines in dcmf_coremath.h
+ * plugging them into the core math routine inlines in math_coremath.h
  *
  * Ordinarely, this file should not be included directly. Only
- * dcmf_coremath.h should appear in source code #include's.
+ * math_coremath.h should appear in source code #include's.
  *
- * Caution, this file should not be changed after building the DCMF
+ * Caution, this file is exported to the distro and used in application compiles.
+ * It should not be changed after building the messaging
  * libraries.  Application compiles should see the same file as was
  * used for building the product.
  */
 
-#ifndef _dcmf_optimath_h_
-#define _dcmf_optimath_h_
+#ifndef _math_optimath_h_
+#define _math_optimath_h_
 
 /**
- * \fn void OPTIMATH_NSRC(DCMF_Dt dt, DCMF_Op op, int nsrc, coremath func)
+ * \fn void OPTIMATH_NSRC(CM_Dt dt, CM_Op op, int nsrc, coremath func)
  * \brief Macro used to generate code to call optimized math functions
  * \param dt	Datatype of math to perform
  * \param op	Math operation to perform
@@ -36,7 +37,7 @@
  */
 
 /**
- * \fn void OPTIMATH_UNARY(DCMF_Dt dt, DCMF_Op op, coremath1 func)
+ * \fn void OPTIMATH_UNARY(CM_Dt dt, CM_Op op, coremath1 func)
  * \brief Macro used to generate code to call optimized math functions
  * \param dt	Datatype of math to perform
  * \param op	Math operation to perform
@@ -171,14 +172,14 @@ extern void _core_fp128_sum(long double *dst, const long double **srcs, int nsrc
  *	...
  *
  * Where "N" is the number of input buffers, "<type>" is the datatype,
- * "<oper>" is the operand mnemonic, "dt" is the DCMF datatype, and "op"
- * is the DCMF operand.  Additionally, there must be a prototype
+ * "<oper>" is the operand mnemonic, "dt" is the datatype, and "op"
+ * is the operand.  Additionally, there must be a prototype
  * declaration for the optimized routine(s). More than one statement
  * may be present in the macro.
  *
  * Don't forget the backslashes at the end of each line.
  *
- * The code in dcmf_coremath.h that uses these will
+ * The code in math_coremath.h that uses these will
  * be (note: no semicolon after macro):
  *
  * #define OPTIMATH_NSRC(dt,op,n,f) case n: \
@@ -194,18 +195,18 @@ extern void _core_fp128_sum(long double *dst, const long double **srcs, int nsrc
  *	}
  * }
  *
- * These defines will also be used in dcmf_dat.c to build a table
+ * These defines will also be used in xxxx_dat.c to build a table
  * of optimized routines, by datatype, operand, and number of inputs.
  * (Note, nsrc will always be at least 2)
  *
  * #define OPTIMATH_NSRC(dt,op,n,f)	[dt][op][n-2] = f,
  *
- * void *dcmf_op_funcs[ndt][nop][nin] = {
+ * void *math_op_funcs[ndt][nop][nin] = {
  * OPTIMIZED_<type>_<oper>
  * ...
  * };
  *
- * This table is accessed by using the DCMF_OP_FUNCS(dt,op,n) macro
+ * This table is accessed by using the MATH_OP_FUNCS(dt,op,n) macro
  * (inline).
  */
 #define OPTIMIZED_int8_band
@@ -313,63 +314,4 @@ extern void _core_fp128_sum(long double *dst, const long double **srcs, int nsrc
 #define OPTIMIZED_fp128_prod
 #define OPTIMIZED_fp128_sum
 
-/**
- * The simple, unary, routines.
- *
- * \param[out] dst	Results buffer pointer
- * \param[in] src	Source buffer pointer
- * \param[in] count	Number of elements to process
- *
- * If a particular routine has an optimized version,
- * then the corresponding define here will have
- * statements added in the form:
- *
- *	OPTIMATH_UNARY(dt,op,_core_<type>_<oper>_o)
- *
- * Where "<type>" is the datatype,
- * "<oper>" is the operand mnemonic, "dt" is the DCMF datatype, and "op"
- * is the DCMF operand.  Additionally, there must be a prototype
- * declaration for the optimized routine. Only one statement
- * may be present in the macro.
- *
- * The code in dcmf_bg_math.h that uses these will
- * be (note: no semicolon after macro):
- *
- * #define OPTIMATH_UNARY(dt,op,f) case 1: \
- *					f(dst, src, count); \
- *					break;
- *
- * inline void Core_<type>_<oper>(params...) {
- * 	switch(1) {
- *	OPTIMIZED_<type>_<oper>
- *	default:
- *		_core_<type>_<oper>(params...);
- *		break;
- *	}
- * }
- *
- * These defines will also be used in dcmf_bg_dat.c to build a table
- * of optimized routines, by datatype, operand, and number of inputs.
- * (Note, nsrc will always be at least 2) For unary routines the third
- * subscript will be either "0" (unoptimized) or "1" (optimized, if present).
- *
- * #define OPTIMATH_UNARY(dt,op,f)	[dt][op][1] = f,
- *
- * void *dcmf_pre_op_funcs[ndt][nop][2] = {
- * OPTIMIZED_<type>_<oper>
- * ...
- * [dt][op][0] = _core_<type>_<oper>,	// unoptimized
- * };
- *
- * This table is accessed by using the DCMF_PRE_OP_FUNCS(dt,op,n) macro
- * where "n" is a flag indicating whether optimized or unoptimized routine
- * is to be selected.
- * 
- * Similar tables/functions exist for POST and MARSHALL routines.
- *
- * NOTE: Currently there are no general-purpose "unary" math routines.
- * There are some used by the collective network kept in a un-published
- * interface file.
- */
-
-#endif /* _dcmf_optimath_h_ */
+#endif /* _math_optimath_h_ */

@@ -11,7 +11,7 @@
  * \brief Optimized math routines for unsigned 64 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "dcmf_bg_math.h"
+#include "math_coremath.h"
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
@@ -304,50 +304,6 @@ void _core_uint64_sum2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
   return;
 }
 
-void _core_uint64_not_o(uint64_t *dst, const uint64_t *src, int count) {
-  _core_uint32_not_o((uint32_t *)dst, (const uint32_t *)src, count<<1);
-}
-
-void _core_uint64_pre_min_o(uint64_t *dst, const uint64_t *src, int count) {
-  _core_uint64_not_o(dst, src, count);
-}
-
-void _core_uint64_post_min_o(uint64_t *dst, const uint64_t *src, int count) {
-  _core_uint64_not_o(dst, src, count);
-}
-
-void _core_uint64_min_unmarshall_o(uint64_t *dst, const uint64_t *src, int count) {
-  _core_uint64_not_o(dst, src, count);
-}
-
-void _core_uint64_band_marshall2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint64_band2(dst, srcs, nsrc, count);
-}
-
-void _core_uint64_bor_marshall2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint64_bor2(dst, srcs, nsrc, count);
-}
-
-void _core_uint64_bxor_marshall2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint64_bxor2(dst, srcs, nsrc, count);
-}
-
-void _core_uint64_land_marshall2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint64_land2(dst, srcs, nsrc, count);
-}
-
-void _core_uint64_lor_marshall2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint64_lor2(dst, srcs, nsrc, count);
-}
-
-void _core_uint64_lxor_marshall2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint64_lxor2(dst, srcs, nsrc, count);
-}
-
-void _core_uint64_sum_marshall2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint64_sum2(dst, srcs, nsrc, count);
-}
-
 void _core_uint64_max2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
@@ -371,24 +327,6 @@ void _core_uint64_prod2(uint64_t *dst, const uint64_t **srcs, int nsrc, int coun
 
 #define TYPE uint64_t
 #include "_dual_src.x.h"
-#undef TYPE
-#undef OP
-}
-
-void _core_uint64_conv_o(uint64_t *dst, const uint64_t *src, int count) {
-#define OP(a) ((a)-(0x8000000000000000ULL))
-
-#define TYPE uint64_t 
-#include "_single_src.x.h"
-#undef TYPE
-#undef OP
-}
-
-void _core_uint64_conv_not_o(uint64_t *dst, const uint64_t *src, int count) {
-#define OP(a) (~((a)-(0x8000000000000000ULL)))
-
-#define TYPE uint64_t
-#include "_single_src.x.h"
 #undef TYPE
 #undef OP
 }

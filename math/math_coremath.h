@@ -20,7 +20,8 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <assert.h>
+#include "collectives/interface/cm_types.h"
+
 /** \brief The maximum number of sources based on the number of cores */
 #define MATH_MAX_NSRC	4
 
@@ -31,80 +32,6 @@
 #ifndef MIN
 #define MIN(a,b) (((a)>(b))?(b):(a))   /*!< Minimum macro */
 #endif
-
-#if ASSERT_LEVEL==0                                                                                                                  
-#define ASSERT_ABORT                                                                                                                 
-#define MATH_abort()         assert(0)                                                                                               
-#define MATH_assert(x)                                                                                                               
-#define MATH_assert_debug(x)                                                                                                         
-#elif ASSERT_LEVEL==1                                                                                                                
-#define ASSERT_PROD                                                                                                                  
-#define MATH_abort()         assert(0)                                                                                               
-#define MATH_assert(x)       assert(x)                                                                                               
-#define MATH_assert_debug(x)                                                                                                         
-#else /* ASSERT_LEVEL==2 */                                                                                                          
-#define MATH_abort()         assert(0)                                                                                               
-#define MATH_assert(x)       assert(x)                                                                                               
-#define MATH_assert_debug(x) assert(x)                                                                                               
-#endif
-
-/**
- * \brief Message layer operation types
- */
-typedef enum
-    {
-	MATH_UNDEFINED_OP = 0,
-	MATH_NOOP,
-	MATH_MAX,
-	MATH_MIN,
-	MATH_SUM,
-	MATH_PROD,
-	MATH_LAND,
-	MATH_LOR,
-	MATH_LXOR,
-	MATH_BAND,
-	MATH_BOR,
-	MATH_BXOR,
-	MATH_MAXLOC,
-	MATH_MINLOC,
-	MATH_USERDEFINED_OP,
-	MATH_OP_COUNT
-    }
-MATH_Op;
-
-/**
- * \brief Message layer data types
- */
-
-typedef enum
-    {
-	/* Standard/Primative DT's */
-	MATH_UNDEFINED_DT = 0,
-	MATH_SIGNED_CHAR,
-	MATH_UNSIGNED_CHAR,
-	MATH_SIGNED_SHORT,
-	MATH_UNSIGNED_SHORT,
-	MATH_SIGNED_INT,
-	MATH_UNSIGNED_INT,
-	MATH_SIGNED_LONG_LONG,
-	MATH_UNSIGNED_LONG_LONG,
-	MATH_FLOAT,
-	MATH_DOUBLE,
-	MATH_LONG_DOUBLE,
-	MATH_LOGICAL,
-	MATH_SINGLE_COMPLEX,
-	MATH_DOUBLE_COMPLEX,
-	/* Max/Minloc DT's */
-	MATH_LOC_2INT,
-	MATH_LOC_SHORT_INT,
-	MATH_LOC_FLOAT_INT,
-	MATH_LOC_DOUBLE_INT,
-	MATH_LOC_2FLOAT,
-	MATH_LOC_2DOUBLE,
-	MATH_USERDEFINED_DT,
-	MATH_DT_COUNT
-    }
-MATH_Dt;
 
 /**
  * \brief MAXLOC and MINLOC operation element type for signed 16-bit and signed 32-bit data.
@@ -222,7 +149,7 @@ typedef void (*coremath)  (void *dst, void **srcs, int nsrc, int count);
  * datatype "dt", operand "op", and number of inputs "n", taking
  * into account conbinations that are not optimized.
  */
-extern void *math_op_funcs[MATH_OP_COUNT][MATH_DT_COUNT][MATH_MAX_NSRC];
+extern void *math_op_funcs[CM_OP_COUNT][CM_DT_COUNT][MATH_MAX_NSRC];
 
 /**
  * \brief Return best math routine for datatype, operand, and number inputs.
@@ -236,7 +163,7 @@ extern void *math_op_funcs[MATH_OP_COUNT][MATH_DT_COUNT][MATH_MAX_NSRC];
  * \param nsrc	Number of input buffers
  * \return	Pointer to coremath function
  */
-static inline coremath MATH_OP_FUNCS(MATH_Dt dt, MATH_Op op, int nsrc) {
+static inline coremath MATH_OP_FUNCS(CM_Dt dt, CM_Op op, int nsrc) {
 	/* assert(nsrc >= 2); */
 	int n = nsrc - 1;
 	return (coremath)(math_op_funcs[op][dt][n] ?

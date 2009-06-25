@@ -8,30 +8,31 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file math/ppc450d/dcmf_optimath.h
+ * \file math/ppc450d/math_optimath.h
  * \brief Optimized math routines
  *
  * This file describes any optimized math routines and facilitates
- * plugging them into the core math routine inlines in dcmf_coremath.h
+ * plugging them into the core math routine inlines in math_coremath.h
  *
  * Ordinarely, this file should not be included directly. Only
- * dcmf_coremath.h should appear in source code #include's.
+ * math_coremath.h should appear in source code #include's.
  *
  * This file ends up being included in all cases, i.e. users that
- * include dcmf_coremath.h as well as those that use dcmf_bg_math.h.
+ * include math_coremath.h as well as those that use xxxx_bg_math.h.
  *
- * The define DCMF_NO_OPTIMATH is used to turn off all optimized math
+ * The define MATH_NO_OPTIMATH is used to turn off all optimized math
  * functions, using only the default, generic, N-way math.
  *
- * Caution, this file should not be changed after building the DCMF
+ * Caution, this file is exported to the distro and used by app compiles.
+ * It should not be changed after building the messaging
  * libraries.  Application compiles should see the same file as was
  * used for building the product.
  */
 
-#ifndef _dcmf_optimath_h_
-#define _dcmf_optimath_h_
+#ifndef _math_optimath_h_
+#define _math_optimath_h_
 
-#undef DCMF_NO_OPTIMATH
+#undef MATH_NO_OPTIMATH
 
 #if defined(__cplusplus)
 extern "C" {
@@ -286,14 +287,14 @@ extern void _core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, int c
  *	...
  *
  * Where "N" is the number of input buffers, "<type>" is the datatype,
- * "<oper>" is the operand mnemonic, "dt" is the DCMF datatype, and "op"
- * is the DCMF operand.  Additionally, there must be a prototype
+ * "<oper>" is the operand mnemonic, "dt" is the datatype, and "op"
+ * is the operand.  Additionally, there must be a prototype
  * declaration for the optimized routine(s). More than one statement
  * may be present in the macro.
  *
  * Don't forget the backslashes at the end of each line.
  *
- * The code in dcmf_coremath.h that uses these will
+ * The code in math_coremath.h that uses these will
  * be (note: no semicolon after macro):
  *
  * #define OPTIMATH_NSRC(dt,op,n,f) case n: \
@@ -309,246 +310,246 @@ extern void _core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, int c
  *	}
  * }
  *
- * These defines will also be used in dcmf_dat.c to build a table
+ * These defines will also be used in xxxx_dat.c to build a table
  * of optimized routines, by datatype, operand, and number of inputs.
  * (Note, nsrc will always be at least 2)
  *
  * #define OPTIMATH_NSRC(dt,op,n,f)	[dt][op][n-2] = f,
  *
- * void *dcmf_op_funcs[ndt][nop][nin] = {
+ * void *math_op_funcs[ndt][nop][nin] = {
  * OPTIMIZED_<type>_<oper>
  * ...
  * };
  *
- * This table is accessed by using the DCMF_OP_FUNCS(dt,op,n) macro
+ * This table is accessed by using the MATH_OP_FUNCS(dt,op,n) macro
  * (inline).
  */
 #define OPTIMIZED_int8_band	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_BAND,2,_core_int8_band2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_BAND,2,_core_int8_band2)
 #define OPTIMIZED_int8_bor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_BOR,2,_core_int8_bor2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_BOR,2,_core_int8_bor2)
 #define OPTIMIZED_int8_bxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_BXOR,2,_core_int8_bxor2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_BXOR,2,_core_int8_bxor2)
 #define OPTIMIZED_int8_land	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_LAND,2,_core_int8_land2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_LAND,2,_core_int8_land2)
 #define OPTIMIZED_int8_lor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_LOR,2,_core_int8_lor2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_LOR,2,_core_int8_lor2)
 #define OPTIMIZED_int8_lxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_LXOR,2,_core_int8_lxor2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_LXOR,2,_core_int8_lxor2)
 #define OPTIMIZED_int8_max	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_MAX,2,_core_int8_max2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_MAX,2,_core_int8_max2)
 #define OPTIMIZED_int8_min	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_MIN,2,_core_int8_min2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_MIN,2,_core_int8_min2)
 #define OPTIMIZED_int8_prod	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_PROD,2,_core_int8_prod2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_PROD,2,_core_int8_prod2)
 #define OPTIMIZED_int8_sum	\
-	OPTIMATH_NSRC(DCMF_SIGNED_CHAR,DCMF_SUM,2,_core_int8_sum2)
+	OPTIMATH_NSRC(CM_SIGNED_CHAR,CM_SUM,2,_core_int8_sum2)
 #define OPTIMIZED_uint8_band	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_BAND,2,_core_uint8_band2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_BAND,2,_core_uint8_band2)
 #define OPTIMIZED_uint8_bor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_BOR,2,_core_uint8_bor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_BOR,2,_core_uint8_bor2)
 #define OPTIMIZED_uint8_bxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_BXOR,2,_core_uint8_bxor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_BXOR,2,_core_uint8_bxor2)
 #define OPTIMIZED_uint8_land	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_LAND,2,_core_uint8_land2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_LAND,2,_core_uint8_land2)
 #define OPTIMIZED_uint8_lor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_LOR,2,_core_uint8_lor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_LOR,2,_core_uint8_lor2)
 #define OPTIMIZED_uint8_lxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_LXOR,2,_core_uint8_lxor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_LXOR,2,_core_uint8_lxor2)
 #define OPTIMIZED_uint8_max	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_MAX,2,_core_uint8_max2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_MAX,2,_core_uint8_max2)
 #define OPTIMIZED_uint8_min	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_MIN,2,_core_uint8_min2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_MIN,2,_core_uint8_min2)
 #define OPTIMIZED_uint8_prod	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_PROD,2,_core_uint8_prod2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_PROD,2,_core_uint8_prod2)
 #define OPTIMIZED_uint8_sum	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_CHAR,DCMF_SUM,2,_core_uint8_sum2)
+	OPTIMATH_NSRC(CM_UNSIGNED_CHAR,CM_SUM,2,_core_uint8_sum2)
 #define OPTIMIZED_int16_band	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_BAND,2,_core_int16_band2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_BAND,2,_core_int16_band2)
 #define OPTIMIZED_int16_bor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_BOR,2,_core_int16_bor2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_BOR,2,_core_int16_bor2)
 #define OPTIMIZED_int16_bxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_BXOR,2,_core_int16_bxor2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_BXOR,2,_core_int16_bxor2)
 #define OPTIMIZED_int16_land	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_LAND,2,_core_int16_land2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_LAND,2,_core_int16_land2)
 #define OPTIMIZED_int16_lor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_LOR,2,_core_int16_lor2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_LOR,2,_core_int16_lor2)
 #define OPTIMIZED_int16_lxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_LXOR,2,_core_int16_lxor2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_LXOR,2,_core_int16_lxor2)
 #define OPTIMIZED_int16_max	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_MAX,2,_core_int16_max2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_MAX,2,_core_int16_max2)
 #define OPTIMIZED_int16_min	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_MIN,2,_core_int16_min2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_MIN,2,_core_int16_min2)
 #define OPTIMIZED_int16_prod	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_PROD,2,_core_int16_prod2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_PROD,2,_core_int16_prod2)
 #define OPTIMIZED_int16_sum	\
-	OPTIMATH_NSRC(DCMF_SIGNED_SHORT,DCMF_SUM,2,_core_int16_sum2)
+	OPTIMATH_NSRC(CM_SIGNED_SHORT,CM_SUM,2,_core_int16_sum2)
 #define OPTIMIZED_int16_int32_maxloc	\
-	OPTIMATH_NSRC(DCMF_LOC_SHORT_INT,DCMF_MAXLOC,2,_core_int16_int32_maxloc2)
+	OPTIMATH_NSRC(CM_LOC_SHORT_INT,CM_MAXLOC,2,_core_int16_int32_maxloc2)
 #define OPTIMIZED_int16_int32_minloc	\
-	OPTIMATH_NSRC(DCMF_LOC_SHORT_INT,DCMF_MINLOC,2,_core_int16_int32_minloc2)
+	OPTIMATH_NSRC(CM_LOC_SHORT_INT,CM_MINLOC,2,_core_int16_int32_minloc2)
 #define OPTIMIZED_uint16_band	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_BAND,2,_core_uint16_band2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_BAND,2,_core_uint16_band2)
 #define OPTIMIZED_uint16_bor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_BOR,2,_core_uint16_bor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_BOR,2,_core_uint16_bor2)
 #define OPTIMIZED_uint16_bxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_BXOR,2,_core_uint16_bxor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_BXOR,2,_core_uint16_bxor2)
 #define OPTIMIZED_uint16_land	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_LAND,2,_core_uint16_land2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_LAND,2,_core_uint16_land2)
 #define OPTIMIZED_uint16_lor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_LOR,2,_core_uint16_lor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_LOR,2,_core_uint16_lor2)
 #define OPTIMIZED_uint16_lxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_LXOR,2,_core_uint16_lxor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_LXOR,2,_core_uint16_lxor2)
 #define OPTIMIZED_uint16_max	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_MAX,2,_core_uint16_max2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_MAX,2,_core_uint16_max2)
 #define OPTIMIZED_uint16_min	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_MIN,2,_core_uint16_min2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_MIN,2,_core_uint16_min2)
 #define OPTIMIZED_uint16_prod	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_PROD,2,_core_uint16_prod2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_PROD,2,_core_uint16_prod2)
 #define OPTIMIZED_uint16_sum	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_SHORT,DCMF_SUM,2,_core_uint16_sum2)
+	OPTIMATH_NSRC(CM_UNSIGNED_SHORT,CM_SUM,2,_core_uint16_sum2)
 #define OPTIMIZED_int32_band	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_BAND,2,_core_int32_band2)\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_BAND,4,_core_int32_band4)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_BAND,2,_core_int32_band2)\
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_BAND,4,_core_int32_band4)
 #define OPTIMIZED_int32_bor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_BOR,2,_core_int32_bor2)\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_BOR,4,_core_int32_bor4)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_BOR,2,_core_int32_bor2)\
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_BOR,4,_core_int32_bor4)
 #define OPTIMIZED_int32_bxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_BXOR,2,_core_int32_bxor2)\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_BXOR,4,_core_int32_bxor4)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_BXOR,2,_core_int32_bxor2)\
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_BXOR,4,_core_int32_bxor4)
 #define OPTIMIZED_int32_land	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_LAND,2,_core_int32_land2)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_LAND,2,_core_int32_land2)
 #define OPTIMIZED_int32_lor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_LOR,2,_core_int32_lor2)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_LOR,2,_core_int32_lor2)
 #define OPTIMIZED_int32_lxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_LXOR,2,_core_int32_lxor2)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_LXOR,2,_core_int32_lxor2)
 #define OPTIMIZED_int32_max	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_MAX,2,_core_int32_max2) \
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_MAX,4,_core_int32_max4)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_MAX,2,_core_int32_max2) \
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_MAX,4,_core_int32_max4)
 #define OPTIMIZED_int32_min	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_MIN,2,_core_int32_min2) \
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_MIN,4,_core_int32_min4)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_MIN,2,_core_int32_min2) \
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_MIN,4,_core_int32_min4)
 #define OPTIMIZED_int32_prod	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_PROD,2,_core_int32_prod2)\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_PROD,4,_core_int32_prod4)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_PROD,2,_core_int32_prod2)\
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_PROD,4,_core_int32_prod4)
 #define OPTIMIZED_int32_sum	\
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_SUM,2,_core_int32_sum2) \
-	OPTIMATH_NSRC(DCMF_SIGNED_INT,DCMF_SUM,4,_core_int32_sum4)
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_SUM,2,_core_int32_sum2) \
+	OPTIMATH_NSRC(CM_SIGNED_INT,CM_SUM,4,_core_int32_sum4)
 #define OPTIMIZED_int32_int32_maxloc	\
-	OPTIMATH_NSRC(DCMF_LOC_2INT,DCMF_MAXLOC,2,_core_int32_int32_maxloc2)
+	OPTIMATH_NSRC(CM_LOC_2INT,CM_MAXLOC,2,_core_int32_int32_maxloc2)
 #define OPTIMIZED_int32_int32_minloc	\
-	OPTIMATH_NSRC(DCMF_LOC_2INT,DCMF_MINLOC,2,_core_int32_int32_minloc2)
+	OPTIMATH_NSRC(CM_LOC_2INT,CM_MINLOC,2,_core_int32_int32_minloc2)
 #define OPTIMIZED_uint32_band	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_BAND,2,_core_uint32_band2)\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_BAND,4,_core_uint32_band4)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_BAND,2,_core_uint32_band2)\
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_BAND,4,_core_uint32_band4)
 #define OPTIMIZED_uint32_bor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_BOR,2,_core_uint32_bor2) \
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_BOR,4,_core_uint32_bor4)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_BOR,2,_core_uint32_bor2) \
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_BOR,4,_core_uint32_bor4)
 #define OPTIMIZED_uint32_bxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_BXOR,2,_core_uint32_bxor2)\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_BXOR,4,_core_uint32_bxor4)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_BXOR,2,_core_uint32_bxor2)\
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_BXOR,4,_core_uint32_bxor4)
 #define OPTIMIZED_uint32_land	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_LAND,2,_core_uint32_land2)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_LAND,2,_core_uint32_land2)
 #define OPTIMIZED_uint32_lor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_LOR,2,_core_uint32_lor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_LOR,2,_core_uint32_lor2)
 #define OPTIMIZED_uint32_lxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_LXOR,2,_core_uint32_lxor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_LXOR,2,_core_uint32_lxor2)
 #define OPTIMIZED_uint32_max	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_MAX,2,_core_uint32_max2) \
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_MAX,4,_core_uint32_max4)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_MAX,2,_core_uint32_max2) \
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_MAX,4,_core_uint32_max4)
 #define OPTIMIZED_uint32_min	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_MIN,2,_core_uint32_min2) \
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_MIN,4,_core_uint32_min4)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_MIN,2,_core_uint32_min2) \
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_MIN,4,_core_uint32_min4)
 #define OPTIMIZED_uint32_prod	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_PROD,2,_core_uint32_prod2)\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_PROD,4,_core_uint32_prod4)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_PROD,2,_core_uint32_prod2)\
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_PROD,4,_core_uint32_prod4)
 #define OPTIMIZED_uint32_sum	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_SUM,2,_core_uint32_sum2) \
-	OPTIMATH_NSRC(DCMF_UNSIGNED_INT,DCMF_SUM,4,_core_uint32_sum4)
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_SUM,2,_core_uint32_sum2) \
+	OPTIMATH_NSRC(CM_UNSIGNED_INT,CM_SUM,4,_core_uint32_sum4)
 #define OPTIMIZED_int64_band	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_BAND,2,_core_int64_band2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_BAND,2,_core_int64_band2)
 #define OPTIMIZED_int64_bor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_BOR,2,_core_int64_bor2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_BOR,2,_core_int64_bor2)
 #define OPTIMIZED_int64_bxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_BXOR,2,_core_int64_bxor2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_BXOR,2,_core_int64_bxor2)
 #define OPTIMIZED_int64_land	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_LAND,2,_core_int64_land2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_LAND,2,_core_int64_land2)
 #define OPTIMIZED_int64_lor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_LOR,2,_core_int64_lor2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_LOR,2,_core_int64_lor2)
 #define OPTIMIZED_int64_lxor	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_LXOR,2,_core_int64_lxor2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_LXOR,2,_core_int64_lxor2)
 #define OPTIMIZED_int64_max	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_MAX,2,_core_int64_max2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_MAX,2,_core_int64_max2)
 #define OPTIMIZED_int64_min	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_MIN,2,_core_int64_min2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_MIN,2,_core_int64_min2)
 #define OPTIMIZED_int64_prod	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_PROD,2,_core_int64_prod2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_PROD,2,_core_int64_prod2)
 #define OPTIMIZED_int64_sum	\
-	OPTIMATH_NSRC(DCMF_SIGNED_LONG_LONG,DCMF_SUM,2,_core_int64_sum2)
+	OPTIMATH_NSRC(CM_SIGNED_LONG_LONG,CM_SUM,2,_core_int64_sum2)
 #define OPTIMIZED_uint64_band	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_BAND,2,_core_uint64_band2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_BAND,2,_core_uint64_band2)
 #define OPTIMIZED_uint64_bor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_BOR,2,_core_uint64_bor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_BOR,2,_core_uint64_bor2)
 #define OPTIMIZED_uint64_bxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_BXOR,2,_core_uint64_bxor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_BXOR,2,_core_uint64_bxor2)
 #define OPTIMIZED_uint64_land	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_LAND,2,_core_uint64_land2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_LAND,2,_core_uint64_land2)
 #define OPTIMIZED_uint64_lor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_LOR,2,_core_uint64_lor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_LOR,2,_core_uint64_lor2)
 #define OPTIMIZED_uint64_lxor	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_LXOR,2,_core_uint64_lxor2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_LXOR,2,_core_uint64_lxor2)
 #define OPTIMIZED_uint64_max	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_MAX,2,_core_uint64_max2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_MAX,2,_core_uint64_max2)
 #define OPTIMIZED_uint64_min	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_MIN,2,_core_uint64_min2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_MIN,2,_core_uint64_min2)
 #define OPTIMIZED_uint64_prod	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_PROD,2,_core_uint64_prod2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_PROD,2,_core_uint64_prod2)
 #define OPTIMIZED_uint64_sum	\
-	OPTIMATH_NSRC(DCMF_UNSIGNED_LONG_LONG,DCMF_SUM,2,_core_uint64_sum2)
+	OPTIMATH_NSRC(CM_UNSIGNED_LONG_LONG,CM_SUM,2,_core_uint64_sum2)
 #define OPTIMIZED_fp32_max	\
-	OPTIMATH_NSRC(DCMF_FLOAT,DCMF_MAX,2,_core_fp32_max2)
+	OPTIMATH_NSRC(CM_FLOAT,CM_MAX,2,_core_fp32_max2)
 #define OPTIMIZED_fp32_min	\
-	OPTIMATH_NSRC(DCMF_FLOAT,DCMF_MIN,2,_core_fp32_min2)
+	OPTIMATH_NSRC(CM_FLOAT,CM_MIN,2,_core_fp32_min2)
 #define OPTIMIZED_fp32_prod	\
-	OPTIMATH_NSRC(DCMF_FLOAT,DCMF_PROD,2,_core_fp32_prod2)
+	OPTIMATH_NSRC(CM_FLOAT,CM_PROD,2,_core_fp32_prod2)
 #define OPTIMIZED_fp32_sum	\
-	OPTIMATH_NSRC(DCMF_FLOAT,DCMF_SUM,2,_core_fp32_sum2)
+	OPTIMATH_NSRC(CM_FLOAT,CM_SUM,2,_core_fp32_sum2)
 #define OPTIMIZED_fp32_int32_maxloc	\
-	OPTIMATH_NSRC(DCMF_LOC_FLOAT_INT,DCMF_MAXLOC,2,_core_fp32_int32_maxloc2)
+	OPTIMATH_NSRC(CM_LOC_FLOAT_INT,CM_MAXLOC,2,_core_fp32_int32_maxloc2)
 #define OPTIMIZED_fp32_fp32_maxloc	\
-	OPTIMATH_NSRC(DCMF_LOC_2FLOAT,DCMF_MAXLOC,2,_core_fp32_fp32_maxloc2)
+	OPTIMATH_NSRC(CM_LOC_2FLOAT,CM_MAXLOC,2,_core_fp32_fp32_maxloc2)
 #define OPTIMIZED_fp32_int32_minloc	\
-	OPTIMATH_NSRC(DCMF_LOC_FLOAT_INT,DCMF_MINLOC,2,_core_fp32_int32_minloc2)
+	OPTIMATH_NSRC(CM_LOC_FLOAT_INT,CM_MINLOC,2,_core_fp32_int32_minloc2)
 #define OPTIMIZED_fp32_fp32_minloc	\
-	OPTIMATH_NSRC(DCMF_LOC_2FLOAT,DCMF_MINLOC,2,_core_fp32_fp32_minloc2)
+	OPTIMATH_NSRC(CM_LOC_2FLOAT,CM_MINLOC,2,_core_fp32_fp32_minloc2)
 #define OPTIMIZED_fp64_max	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_MAX,2,_core_fp64_max2)	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_MAX,4,_core_fp64_max4)
+	OPTIMATH_NSRC(CM_DOUBLE,CM_MAX,2,_core_fp64_max2)	\
+	OPTIMATH_NSRC(CM_DOUBLE,CM_MAX,4,_core_fp64_max4)
 #define OPTIMIZED_fp64_min	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_MIN,2,_core_fp64_min2)	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_MIN,4,_core_fp64_min4)
+	OPTIMATH_NSRC(CM_DOUBLE,CM_MIN,2,_core_fp64_min2)	\
+	OPTIMATH_NSRC(CM_DOUBLE,CM_MIN,4,_core_fp64_min4)
 #define OPTIMIZED_fp64_prod	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_PROD,2,_core_fp64_prod2)	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_PROD,4,_core_fp64_prod4)
+	OPTIMATH_NSRC(CM_DOUBLE,CM_PROD,2,_core_fp64_prod2)	\
+	OPTIMATH_NSRC(CM_DOUBLE,CM_PROD,4,_core_fp64_prod4)
 #define OPTIMIZED_fp64_sum	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_SUM,2,_core_fp64_sum2)	\
-	OPTIMATH_NSRC(DCMF_DOUBLE,DCMF_SUM,4,_core_fp64_sum4)
+	OPTIMATH_NSRC(CM_DOUBLE,CM_SUM,2,_core_fp64_sum2)	\
+	OPTIMATH_NSRC(CM_DOUBLE,CM_SUM,4,_core_fp64_sum4)
 #define OPTIMIZED_fp64_int32_maxloc	\
-	OPTIMATH_NSRC(DCMF_LOC_DOUBLE_INT,DCMF_MAXLOC,2,_core_fp64_int32_maxloc2)
+	OPTIMATH_NSRC(CM_LOC_DOUBLE_INT,CM_MAXLOC,2,_core_fp64_int32_maxloc2)
 #define OPTIMIZED_fp64_fp64_maxloc	\
-	OPTIMATH_NSRC(DCMF_LOC_2DOUBLE,DCMF_MAXLOC,2,_core_fp64_fp64_maxloc2)
+	OPTIMATH_NSRC(CM_LOC_2DOUBLE,CM_MAXLOC,2,_core_fp64_fp64_maxloc2)
 #define OPTIMIZED_fp64_int32_minloc	\
-	OPTIMATH_NSRC(DCMF_LOC_DOUBLE_INT,DCMF_MINLOC,2,_core_fp64_int32_minloc2)
+	OPTIMATH_NSRC(CM_LOC_DOUBLE_INT,CM_MINLOC,2,_core_fp64_int32_minloc2)
 #define OPTIMIZED_fp64_fp64_minloc	\
-	OPTIMATH_NSRC(DCMF_LOC_2DOUBLE,DCMF_MINLOC,2,_core_fp64_fp64_minloc2)
+	OPTIMATH_NSRC(CM_LOC_2DOUBLE,CM_MINLOC,2,_core_fp64_fp64_minloc2)
 #define OPTIMIZED_fp128_max	\
-	OPTIMATH_NSRC(DCMF_LONG_DOUBLE,DCMF_MAX,2,_core_fp128_max2)
+	OPTIMATH_NSRC(CM_LONG_DOUBLE,CM_MAX,2,_core_fp128_max2)
 #define OPTIMIZED_fp128_min	\
-	OPTIMATH_NSRC(DCMF_LONG_DOUBLE,DCMF_MIN,2,_core_fp128_min2)
+	OPTIMATH_NSRC(CM_LONG_DOUBLE,CM_MIN,2,_core_fp128_min2)
 #define OPTIMIZED_fp128_prod	\
-	OPTIMATH_NSRC(DCMF_LONG_DOUBLE,DCMF_PROD,2,_core_fp128_prod2)
+	OPTIMATH_NSRC(CM_LONG_DOUBLE,CM_PROD,2,_core_fp128_prod2)
 #define OPTIMIZED_fp128_sum	\
-	OPTIMATH_NSRC(DCMF_LONG_DOUBLE,DCMF_SUM,2,_core_fp128_sum2)
+	OPTIMATH_NSRC(CM_LONG_DOUBLE,CM_SUM,2,_core_fp128_sum2)
 
 /**
  * The simple, unary, routines.
@@ -564,12 +565,12 @@ extern void _core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, int c
  *	OPTIMATH_UNARY(dt,op,_core_<type>_<oper>_o)
  *
  * Where "<type>" is the datatype,
- * "<oper>" is the operand mnemonic, "dt" is the DCMF datatype, and "op"
- * is the DCMF operand.  Additionally, there must be a prototype
+ * "<oper>" is the operand mnemonic, "dt" is the datatype, and "op"
+ * is the operand.  Additionally, there must be a prototype
  * declaration for the optimized routine. Only one statement
  * may be present in the macro.
  *
- * The code in dcmf_bg_math.h that uses these will
+ * The code in xxxx_bg_math.h that uses these will
  * be (note: no semicolon after macro):
  *
  * #define OPTIMATH_UNARY(dt,op,f) case 1: \
@@ -588,4 +589,4 @@ extern void _core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, int c
  * At present there are no general purpose unary functions.
  */
 
-#endif /* _dcmf_optimath_h_ */
+#endif /* _math_optimath_h_ */
