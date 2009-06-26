@@ -78,8 +78,7 @@ typedef struct xmi_recv
 {
   void            * destination; /**< Destination recv buffer address */
   size_t            bytes;       /**< Number of bytes to receive */
-  xmi_callback_fn   callback;    /**< Callback function to invoke when the recv is complete */
-  void            * clientdata;  /**< Callback function clientdata */
+  xmi_callback_t    callback;    /**< Callback to invoke when the recv is complete */
 } xmi_recv_t;
 
 /**
@@ -108,6 +107,13 @@ typedef void (*xmi_recv_fn) (void                 * clientdata,
                              size_t                 bytes,
                              const void           * source);
 
+typedef enum
+{
+  XMI_OPTION_RDMA = 0x01,
+  XMI_OPTION_SMP  = 0x02
+} xmi_option_t;
+
+
 /**
  * \brief Initialize the dispatch functions for a dispatch id.
  *
@@ -119,13 +125,15 @@ typedef void (*xmi_recv_fn) (void                 * clientdata,
  * \param[in] fn1        Synchronous receive dispatch function
  * \param[in] fn2        Asynchronous receive dispatch function
  * \param[in] clientdata Dispatch function clientdata
+ * \param[in] options    Dispatch registration options - bitmask?
  *
  */
 xmi_result_t XMI_Address_init (xmi_context_t     * context,
                                xmi_dispatch_t      dispatch,
                                xmi_recv_async_fn   fn1,
                                xmi_recv_fn         fn2,
-                               void              * clientdata);
+                               void              * clientdata,
+                               xmi_option_t        options);
 
 typedef struct xmi_send
 {
