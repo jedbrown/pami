@@ -82,30 +82,19 @@ typedef struct xmi_recv
 } xmi_recv_t;
 
 /**
- * \brief Dispatch function signature for asynchronous receives.
+ * \brief Dispatch function signature for receives.
  *
  * \param[in]  clientdata Registered clientdata
  * \param[in]  metadata   Metadata from the origin rank for this transfer
  * \param[in]  bytes      Number of incoming bytes for this transfer
+ * \param[in]  source     System source buffer address to be copied into application buffer, may be \c NULL
  * \param[out] recv       Async receive information
- */
-typedef void (*xmi_recv_async_fn) (void                 * clientdata,
-                                   const xmi_metadata_t * metadata,
-                                   size_t                 bytes,
-                                   xmi_recv_t           * recv);
-
-/**
- * \brief Dispatch function signature for latency optimized receives.
- *
- * \param[in]  clientdata Registered clientdata
- * \param[in]  metadata   Metadata from the origin rank for this transfer
- * \param[in]  bytes      Number of incoming bytes for this transfer
- * \param[in]  source     System source buffer address to be copied into application buffer
  */
 typedef void (*xmi_recv_fn) (void                 * clientdata,
                              const xmi_metadata_t * metadata,
                              size_t                 bytes,
-                             const void           * source);
+                             const void           * source,
+                             xmi_recv_t           * recv);
 
 typedef enum
 {
@@ -128,16 +117,14 @@ typedef enum
  * \param[in] options    Dispatch registration options - bitmask?
  *
  */
-xmi_result_t XMI_Address_init (xmi_context_t     * context,
+xmi_result_t XMI_Dispatch_set (xmi_context_t     * context,
                                xmi_dispatch_t      dispatch,
-                               xmi_recv_async_fn   fn1,
-                               xmi_recv_fn         fn2,
+                               xmi_recv_fn         fn,
                                void              * clientdata,
                                xmi_option_t        options);
 
-typedef struct xmi_send
+typedef struct xmi_send_packet
 {
-  xmi_callback_t    local;     /**< Transfer event callback, Source data buffer has been sent and may be reused */
   xmi_callback_t    remote;    /**< Transfer event callback, Source data buffer has been received */
   size_t            rank;      /**< Global rank of the remote process */
   void            * source;    /**< Source data buffer address */
@@ -145,7 +132,23 @@ typedef struct xmi_send
   xmi_dispatch_t    dispatch;  /**< Dispatch identifier for this transfer */
   xmi_metadata_t    metadata;  /**< Application metadata information */
   xmi_hint_t        hints;     /**< Send hints which may be ignored by the runtime. */
+} xmi_send_packet_t;
+
+typedef struct xmi_send
+{
+  xmi_callback_t     local;    /**< Transfer event callback, Source data buffer has been sent and may be reused */
+  xmi_send_packet_t  send;     /**< Common send parameters */
 } xmi_send_t;
+
+/**
+ * Send a single packet. The source buffer is immediately available for reuse
+ * upon the return of this function.
+ *
+ * \param[in]  context    XMI application context
+ * \param[in]  parameters XMI latency send parameters
+ */
+xmi_result_t XMI_Send_packet (xmi_context_t     * context,
+                              xmi_send_packet_t * parameters);
 
 /**
  * \param[in]  context    XMI application context
