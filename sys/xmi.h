@@ -85,12 +85,14 @@ typedef struct xmi_recv
  * \brief Dispatch function signature for receives.
  *
  * \param[in]  clientdata Registered clientdata
+ * \param[in]  rank       Global rank of the sender
  * \param[in]  metadata   Metadata from the origin rank for this transfer
  * \param[in]  bytes      Number of incoming bytes for this transfer
  * \param[in]  source     System source buffer address to be copied into application buffer, may be \c NULL
  * \param[out] recv       Async receive information
  */
 typedef void (*xmi_recv_fn) (void                 * clientdata,
+                             size_t                 rank,
                              const xmi_metadata_t * metadata,
                              size_t                 bytes,
                              const void           * source,
@@ -111,8 +113,7 @@ typedef enum
  *
  * \param[in] context    XMI application context
  * \param[in] dispatch   Dispatch identifier to initialize
- * \param[in] fn1        Synchronous receive dispatch function
- * \param[in] fn2        Asynchronous receive dispatch function
+ * \param[in] fn         Dispatch receive function
  * \param[in] clientdata Dispatch function clientdata
  * \param[in] options    Dispatch registration options - bitmask?
  *
@@ -151,6 +152,10 @@ xmi_result_t XMI_Send_packet (xmi_context_t     * context,
                               xmi_send_packet_t * parameters);
 
 /**
+ * \brief Send a source data buffer to a remote rank.
+ *
+ * \example xmi_send.h
+ *
  * \param[in]  context    XMI application context
  * \param[in]  parameters XMI send parameters
  */
