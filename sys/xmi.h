@@ -5,6 +5,8 @@
 #ifndef __xmi_h__
 #define __xmi_h__
 
+// Test commit:  remove me
+
 /**
  * \todo Define common return type.
  *
