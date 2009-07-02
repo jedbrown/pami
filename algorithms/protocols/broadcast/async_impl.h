@@ -18,7 +18,8 @@ namespace CCMI
                                                      CCMI::Mapping             * map,
                                                      Geometry                  * g)
       {
-        new (buf, size) T (map, g->nranks(), g->ranks());
+	//        new (buf, size) T (map, g->nranks(), g->ranks());
+        new (buf) T (map, g->nranks(), g->ranks());
       }
 
       typedef AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule, 

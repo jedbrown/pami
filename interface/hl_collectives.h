@@ -167,6 +167,10 @@ extern "C"
 	    HL_CFG_BARRIER,
 	    HL_CFG_ALLTOALL,
 	    HL_CFG_ALLTOALLV,
+	    HL_CFG_AMBROADCAST,
+	    HL_CFG_AMSCATTER,
+	    HL_CFG_AMGATHER,
+	    HL_CFG_AMREDUCE,
 	    HL_CFG_COUNT
 	}hl_config_t;
 

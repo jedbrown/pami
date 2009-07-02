@@ -14,11 +14,11 @@
 #include "collectives/interface/lapiunix/api/mapping_impl.h" // ? why
 #include "collectives/interface/lapiunix/GenericComm.h"
 #include "collectives/algorithms/protocols/tspcoll/NBColl.h"
-
+#include "collectives/algorithms/protocols/broadcast/async_impl.h"
 
 #include <unistd.h>
 
-//#define USE_CCMI
+#define USE_CCMI
 using namespace std;
 
 #define MAX_REGISTRATIONS_PER_TABLE 16
@@ -360,13 +360,85 @@ extern "C"
 			}
 		}
 		break;
+	    case HL_CFG_AMBROADCAST:
+		{
+		    HL_AMBroadcast_Configuration_t *cfg   = (HL_AMBroadcast_Configuration_t *)config;
+		    switch(cfg->protocol)
+			{
+			case HL_DEFAULT_AMBROADCAST_PROTOCOL:
+			  {
+			    typedef struct
+			    {
+			      CCMI::Adaptor::Broadcast::AsyncBinomialFactory    bcast_registration;
+			      CCMI::Adaptor::Generic::MulticastImpl             minfo;
+			    } AsyncBinomialRegistration;
+			    CCMI_assert (sizeof (AsyncBinomialRegistration) <=
+					 sizeof (CCMI_CollectiveProtocol_t));
+			    AsyncBinomialRegistration *treg =
+			      (AsyncBinomialRegistration *) registration;
+			    new (& treg->minfo) CCMI::Adaptor::Generic::MulticastImpl();
+			    CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
+			      new (& treg->bcast_registration)
+			      CCMI::Adaptor::Broadcast::AsyncBinomialFactory
+			      (_g_generic_adaptor->mapping(), & treg->minfo, _g_generic_adaptor->mapping()->size()); 
+			    factory->setAsyncInfo(false,
+						  (CCMI_RecvAsyncBroadcast)cfg->cb_recv,
+						  (CCMI_mapIdToGeometry)cb_geometry_map);
+			    treg->minfo.initialize (_g_generic_adaptor);
+			    return HL_SUCCESS;
+			    break;
+			  }
+			default:
+			    return HL_UNIMPL;
+			    break;
+			}
+		}
+	    case HL_CFG_AMSCATTER:
+		{
+		    HL_AMScatter_Configuration_t *cfg   = (HL_AMScatter_Configuration_t *)config;
+		    switch(cfg->protocol)
+			{
+			case HL_DEFAULT_AMSCATTER_PROTOCOL:
+			    return HL_SUCCESS;
+			    break;
+			default:
+			    return HL_UNIMPL;
+			    break;
+			}
+		}
+	    case HL_CFG_AMGATHER:
+		{
+		    HL_AMGather_Configuration_t *cfg   = (HL_AMGather_Configuration_t *)config;
+		    switch(cfg->protocol)
+			{
+			case HL_DEFAULT_AMGATHER_PROTOCOL:
+			    return HL_SUCCESS;
+			    break;
+			default:
+			    return HL_UNIMPL;
+			    break;
+			}
+		}
+	    case HL_CFG_AMREDUCE:
+		{
+		    HL_AMReduce_Configuration_t *cfg   = (HL_AMReduce_Configuration_t *)config;
+		    switch(cfg->protocol)
+			{
+			case HL_DEFAULT_AMREDUCE_PROTOCOL:
+			    return HL_SUCCESS;
+			    break;
+			default:
+			    return HL_UNIMPL;
+			    break;
+			}
+		}
+
 	    default:
 		return HL_UNIMPL;
 		break;
 	    }
 	return HL_SUCCESS;
     }
-
 
     class geometry_internal
     {
@@ -645,6 +717,55 @@ extern "C"
 		    return HL_SUCCESS;
 		}
 		break;
+	    case HL_XFER_AMBROADCAST:
+	      {
+#ifdef USE_CCMI
+		hl_ambroadcast_t          * parms   = &cmd->xfer_ambroadcast;
+		geometry_internal         * g       = (geometry_internal*)parms->geometry;
+		CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
+		CCMI::Adaptor::Broadcast::BroadcastFactory *factory =
+		  (CCMI::Adaptor::Broadcast::BroadcastFactory *) parms->registration;
+		CCMI_assert (((CCMI::Adaptor::Geometry *) geometry)->getBarrierExecutor() != NULL);
+		if(parms->bytes == 0)
+		  {
+		    parms->cb_done.function(parms->cb_done.clientdata, NULL);
+		  }
+		else
+		  {
+		    CCMI_Callback_t cb_done_ccmi;
+		    cb_done_ccmi.function   = (void (*)(void*, CCMI_Error_t*))parms->cb_done.function;
+		    cb_done_ccmi.clientdata = parms->cb_done.clientdata;
+		    factory->generate(parms->request, 
+				      sizeof(CCMI_CollectiveRequest_t), 
+				      cb_done_ccmi,
+				      (CCMI_Consistency)0,
+				      _c_geometry,
+				      _g_generic_adaptor->mapping()->rank(), //root
+				      parms->src,
+				      parms->bytes);
+		  }
+
+  return CCMI_SUCCESS;
+		
+#endif
+		return HL_SUCCESS;
+	      }
+	      break;
+	    case HL_XFER_AMSCATTER:
+	      {
+		return HL_SUCCESS;
+	      }
+	      break;
+            case HL_XFER_AMGATHER:
+	      {
+		return HL_SUCCESS;
+	      }
+	      break;
+            case HL_XFER_AMREDUCE:
+	      {
+		return HL_SUCCESS;
+	      }
+	      break;
 	    default:
 		return HL_UNIMPL;
 		break;

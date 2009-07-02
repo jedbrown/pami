@@ -1,7 +1,7 @@
 VPATH		= @srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = barrier.${EXTENSION} bcast.${EXTENSION} bcast_subcomm.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} scatter.${EXTENSION} scatterv.${EXTENSION}
+APPS            = barrier.${EXTENSION} bcast.${EXTENSION} bcast_subcomm.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} scatter.${EXTENSION} scatterv.${EXTENSION} ambcast.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 

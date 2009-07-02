@@ -157,7 +157,8 @@ namespace CCMI
 
           if(_mapping->rank() == root)
           {
-            a_bcast = new (request_buf, rsize)
+	    //            a_bcast = new (request_buf, rsize)
+            a_bcast = new (request_buf)
                       T ( _mapping, &_rbconnmgr,
                           cb_done, consistency, _minterface,
                           geometry, root, src, bytes, &_execpool );
@@ -190,7 +191,8 @@ namespace CCMI
               cb_exec_done.clientdata = request_buf; //point to the executor
 
               //Create a new composite and post it to posted queue
-              a_bcast = new (request_buf, rsize)
+	      //              a_bcast = new (request_buf, rsize)
+              a_bcast = new (request_buf)
                         T (_mapping, &_rbconnmgr,
                            cb_exec_done, consistency, _minterface,
                            geometry, root, src, bytes, &_execpool);
@@ -238,7 +240,8 @@ namespace CCMI
             cb_exec_done.function = unexpected_done;
             cb_exec_done.clientdata = exec_request;
 
-            bcast = new (exec_request, sizeof(CCMI_Executor_t))
+	    //            bcast = new (exec_request, sizeof(CCMI_Executor_t))
+            bcast = new (exec_request)
                     T (factory->_mapping, &factory->_rbconnmgr,
                        cb_exec_done, CCMI_MATCH_CONSISTENCY, factory->_minterface,
                        geometry, cdata->_root, unexpbuf, sndlen, &factory->_execpool); 
@@ -319,7 +322,8 @@ namespace CCMI
 
           *pipewidth = sndlen+1;
 
-          T *bcast = new (request, sizeof(CCMI_Executor_t))
+	  //          T *bcast = new (request, sizeof(CCMI_Executor_t))
+          T *bcast = new (request)
                      T (factory->_mapping, &factory->_rbconnmgr,
                         cb_client_done, CCMI_MATCH_CONSISTENCY, factory->_minterface,
                         geometry, cdata->_root, *rcvbuf, *rcvlen, &factory->_execpool);  
