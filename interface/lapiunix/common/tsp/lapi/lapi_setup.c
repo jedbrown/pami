@@ -73,9 +73,6 @@ void *___pgasrt_tsp_setup (unsigned local_threads,
   CHECK_NULL(lapi_info,(lapi_info_t *)malloc(sizeof(lapi_info_t)));
   memset(lapi_info, 0, sizeof(lapi_info_t));
 
-  CHECK_NULL(extend_info,(lapi_extend_t *)malloc(sizeof(lapi_extend_t)));
-  memset(extend_info, 0, sizeof(lapi_extend_t));
-
   /* ------------------------------------------------------------ */
   /* collect UDP hostnames and ports into udp_info data structure */
   /* ------------------------------------------------------------ */
@@ -98,16 +95,22 @@ void *___pgasrt_tsp_setup (unsigned local_threads,
 	  udp_info[i].ip_addr = inet_addr(ip);
 	  udp_info[i].port_no = port;
 	}
+      /* ------------------------------------------------------------ */
+      /*        link up udp_info, extend_info and lapi_info           */
+      /* ------------------------------------------------------------ */
+      CHECK_NULL(extend_info,(lapi_extend_t *)malloc(sizeof(lapi_extend_t)));
+      memset(extend_info, 0, sizeof(lapi_extend_t));
+      extend_info->add_udp_addrs = udp_info;
+      extend_info->num_udp_addr  = num_tasks;
+      extend_info->udp_hndlr     = 0;
+      lapi_info->add_info        = extend_info;
     }
+  else
+      {
+	  lapi_info->add_info        = NULL;
+      }
 
-  /* ------------------------------------------------------------ */
-  /*        link up udp_info, extend_info and lapi_info           */
-  /* ------------------------------------------------------------ */
 
-  extend_info->add_udp_addrs = udp_info;
-  extend_info->num_udp_addr  = num_tasks;
-  extend_info->udp_hndlr     = 0;
-  lapi_info->add_info        = extend_info;
 
   /* ------------------------------------------------------------ */
   /*                call LAPI_Init                                */
@@ -120,7 +123,7 @@ void *___pgasrt_tsp_setup (unsigned local_threads,
 			       (int *)&__pgasrt_lapi_mynode)));
   CALL_AND_CHECK_RC((LAPI_Qenv(__pgasrt_lapi_handle,NUM_TASKS,
 			       (int *)&__pgasrt_lapi_nodes)));
-  
+  free(lapi_info);
   /* ------------------------------------------------------------ */
   /*              create handles for callbacks                    */
   /* ------------------------------------------------------------ */
