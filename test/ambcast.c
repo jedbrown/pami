@@ -53,23 +53,27 @@ void cb_ambcast_done (void * clientdata, LL_Error_t*err)
   free(clientdata);
 }
 
+typedef struct ambcast_unexpected_t
+{
+  HL_CollectiveRequest_t  req;
+  void                   *buf;
+};
+
 
 void * cb_bcast_recv(unsigned           root,
 		     unsigned           comm,
 		     const unsigned     sndlen,
 		     unsigned         * rcvlen,
 		     char            ** rcvbuf,
-		     HL_Callback_t    * const cb_info)
+		     HL_Callback_t    * const cb_done)
 {
-  *rcvlen = sndlen;
-  *rcvbuf = _g_recv_buffer;
-  cb_info->function   = cb_ambcast_done;
-
-  HL_CollectiveRequest_t *req = (HL_CollectiveRequest_t *)malloc(sizeof(HL_CollectiveRequest_t));
-  cb_info->clientdata = req;
-
-
-  return (void*)req;
+  *rcvlen                        = sndlen;
+  *rcvbuf                        = _g_recv_buffer;
+  cb_done->function              = cb_ambcast_done;
+  ambcast_unexpected_t  *reqdata = (ambcast_unexpected_t*)malloc(sizeof(ambcast_unexpected_t)+sndlen);
+  reqdata->buf                   = &reqdata[1];
+  cb_done->clientdata            = reqdata;
+  return (void*)&reqdata->req;
 }
 
 
@@ -139,8 +143,6 @@ void _broadcast (char            * src,
     _xfer_broadcast.src   = src;
     _xfer_broadcast.bytes = bytes;
     HL_Xfer (NULL, (hl_xfer_t*)&_xfer_broadcast);
-    while (_g_broadcast_active)
-	HL_Poll();
 }
 
 
@@ -155,8 +157,8 @@ int main(int argc, char*argv[])
   HL_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   init__broadcasts();
-  int rank = HL_Rank();
-  int i,j,root = 0;
+  unsigned     rank = HL_Rank();
+  unsigned i,j,root = 0;
 #if 1
   if (rank == root)
     {
@@ -168,7 +170,7 @@ int main(int argc, char*argv[])
   for(i=1; i<=BUFSIZE; i*=2)
     {
       long long dataSent = i;
-      int          niter = NITER;
+      unsigned     niter = NITER;
 
       if(rank==root)
 	{
@@ -178,6 +180,9 @@ int main(int argc, char*argv[])
 	    {
 	      _broadcast (buf, i);
 	    }
+	  while (_g_broadcast_active)
+	    HL_Poll();
+
 	  _barrier();
 	  tf = timer();
 	  usec = (tf - ti)/(double)niter;
@@ -190,7 +195,6 @@ int main(int argc, char*argv[])
 	}
       else
 	{
-	  unsigned niter = NITER;
 	  while(_g_total_broadcasts < niter)
 	    HL_Poll();
 	  _g_total_broadcasts = 0;
