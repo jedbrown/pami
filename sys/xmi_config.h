@@ -34,6 +34,7 @@ typedef enum {
                         //     key and value are shallow-copied for update
 } xmi_attribute_t;
 
+#define XMI_EXT_ATTR 1000 // starting value for extended attributes
 #include <xmi_ext.h>    // platform-specific
 
 typedef struct {

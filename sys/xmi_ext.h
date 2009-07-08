@@ -10,7 +10,9 @@ typedef struct {
 } xmi_coordinates_t;
 
 typedef enum {
-    XMI_COORDINATES,    //  O: xmi_coordinates_t: coordinates of this task
+    // Attribute        // Init / Query / Update 
+    XMI_COORDINATES     // Q : xmi_coordinates_t: coordinates of this task
+        = XMI_EXT_ATTR,    
 } xmi_attribute_ext_t;
 
 #endif
