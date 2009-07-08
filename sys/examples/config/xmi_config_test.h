@@ -3,12 +3,29 @@
 
 xmi_context_t  context;
 
+void Init()
+{
+    char             protocol_name[] = "MPI";
+    xmi_bool_t       reliability = 0;
+    xmi_intr_mask_t  intr_mask = 0;
+    xmi_config_t  config[] = {
+        { XMI_PROTOCOL_NAME,  protocol_name },
+        { XMI_RELIABILITY,    &reliability  },
+        { XMI_RECV_INTR_MASK, &intr_mask    },
+    };
+
+    int num_configs = sizeof(config)/sizeof(config[0]);
+    int rc = XMI_Init(&context, num_configs, config);
+    if (rc) 
+        printf("XMI_Init returned %d due to %s\n", rc, XMI_Last_error());
+}
+
 /*
  * \brief Update config
  */
 void Update()
 {
-    unsigned int  intr_mask = 2;
+    xmi_intr_mask_t  intr_mask = 2;
     XMI_Config_update(context, XMI_RECV_INTR_MASK, &intr_mask);
 
     xmi_user_config_t  config;

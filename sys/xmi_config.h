@@ -19,7 +19,9 @@ typedef struct {
  * This enum contains ALL possible attributes for all hardware
  */
 typedef enum {
-    // Attribute        // Query / Update
+    // Attribute        // Init / Query / Update 
+    XMI_PROTOCOL_NAME=1,// IQ: char *: name of the protocol 
+    XMI_RELIABILITY,    // IQ: xmi_bool_t: guaranteed reliability
     XMI_ATTRIBUTES,     // Q : xmi_attribute_t[]: attributes on the platform
                         //     terminated with NULL
     XMI_TASK_ID,        // Q : xmi_task_t: ID of this task
@@ -33,6 +35,15 @@ typedef enum {
 } xmi_attribute_t;
 
 #include <xmi_ext.h>    // platform-specific
+
+typedef struct {
+    xmi_attribute_t  attr;
+    void *           value;
+} xmi_config_t;
+
+xmi_result_t XMI_Init(xmi_context_t *context, 
+                      int num_configs, xmi_config_t config[]);
+char * XMI_Last_error();
 
 /*
  * Query the value of an attribute
