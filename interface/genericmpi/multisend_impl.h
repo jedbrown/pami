@@ -107,7 +107,7 @@ namespace CCMI
           {
             TRACE_ADVANCE((stderr, "<%#.8X>CCMI::Adaptor::Generic::MulticastImpl::send() %d byte to %d\n", (int)this, hdr->totalsize(),ranks[count]));
             assert (hints[count] == CCMI_PT_TO_PT_SUBTASK); 
-            rc = MPI_Send (hdr, hdr->totalsize(), MPI_CHAR, ranks[count], (unsigned)this, MPI_COMM_WORLD);
+            rc = MPI_Send (hdr, hdr->totalsize(), MPI_CHAR, ranks[count], (unsigned long)this, MPI_COMM_WORLD);
             assert (rc == MPI_SUCCESS);
           }
 
@@ -153,7 +153,7 @@ namespace CCMI
           TRACE_FLOW((stderr, "<%#.8X>CCMI::Adaptor::Generic::MulticastImpl::advance()\n", (int)this));
           int flag = 0;
           MPI_Status sts;
-          int rc = MPI_Iprobe (MPI_ANY_SOURCE, (unsigned)this, MPI_COMM_WORLD, &flag, &sts);
+          int rc = MPI_Iprobe (MPI_ANY_SOURCE, (unsigned long)this, MPI_COMM_WORLD, &flag, &sts);
           assert (rc == MPI_SUCCESS);
 
           if(flag)

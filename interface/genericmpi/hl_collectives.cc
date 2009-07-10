@@ -15,6 +15,7 @@
 #include "collectives/interface/genericmpi/GenericComm.h"
 #include "collectives/algorithms/protocols/tspcoll/NBColl.h"
 #include "collectives/algorithms/protocols/broadcast/async_impl.h"
+#include "collectives/algorithms/protocols/alltoall/Alltoall.h"
 
 #include <unistd.h>
 
@@ -327,6 +328,48 @@ extern "C"
 			}
 		}
 		break;
+
+	    case HL_CFG_ALLTOALL:
+		{
+		    HL_Alltoall_Configuration_t *cfg   = (HL_Alltoall_Configuration_t *)config;
+		    switch(cfg->protocol)
+			{
+			case HL_DEFAULT_ALLTOALL_PROTOCOL:
+			  {
+			    typedef struct
+			    {
+			      CCMI::Adaptor::Alltoall::Factory       alltoall_registration;
+			      CCMI::Adaptor::Generic::ManytomanyImpl minfo;
+			    } AlltoallRegistration;
+			    
+			    CCMI_assert( sizeof(AlltoallRegistration) <=
+					 sizeof(CCMI_CollectiveProtocol_t) );
+			    
+			    CCMI_assert( sizeof(CCMI_CollectiveRequest_t) <=
+					 sizeof(HL_CollectiveRequest_t) );
+			    
+			    AlltoallRegistration * treg = 
+			      (AlltoallRegistration *) registration;
+			    
+			    new ( & treg->minfo ) 
+			      CCMI::Adaptor::Generic::ManytomanyImpl();
+			    new ( & treg->alltoall_registration ) 
+			      CCMI::Adaptor::Alltoall::Factory(& treg->minfo,
+							       _g_generic_adaptor->mapping() );
+			    
+			    treg->minfo.initialize(_g_generic_adaptor);
+			  
+			    return HL_SUCCESS;
+			  }
+			  break;
+			default:
+			    return HL_UNIMPL;
+			    break;
+			}
+		}
+		break;
+
+
 	    case HL_CFG_ALLTOALLV:
 		{
 		    HL_Alltoallv_Configuration_t *cfg   = (HL_Alltoallv_Configuration_t *)config;
@@ -699,6 +742,37 @@ extern "C"
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		}
 		break;
+
+	    case HL_XFER_ALLTOALL:
+		{
+		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
+
+geometry_internal         * g       = (geometry_internal*)parms->geometry;
+		CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
+
+		    CCMI::Adaptor::Alltoall::Factory *factory =
+		      (CCMI::Adaptor::Alltoall::Factory *)parms->registration;
+
+		    CCMI_Callback_t cb_done_ccmi;
+		    cb_done_ccmi.function   = (void (*)(void*, CCMI_Error_t*))parms->cb_done.function;
+		    cb_done_ccmi.clientdata = parms->cb_done.clientdata;
+
+		    factory->generate((CCMI_CollectiveRequest_t *)parms->request,
+				      cb_done_ccmi,
+				      (CCMI_Consistency)0,
+				      _c_geometry,
+				      parms->sndbuf,
+				      parms->sndlens,
+				      parms->sdispls,
+				      parms->rcvbuf,
+				      parms->rcvlens,
+				      parms->rdispls,
+				      parms->sndcounters,
+				      parms->rcvcounters);
+		}
+		break;
+		
+
 	    case HL_XFER_BARRIER:
 		{
 		    hl_barrier_t          * parms   = &cmd->xfer_barrier;

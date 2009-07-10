@@ -77,7 +77,7 @@ namespace CCMI
       CCMI_Op             op;      
       CCMI_Dt             dt;           
       unsigned            flags;             
-
+    
       CCMI_Multicast_t () 
       {
         registration   = NULL;      
@@ -341,18 +341,20 @@ namespace CCMI
     /// \brief Message passing interface suitable for alltoall
     /// communiction
     ///
+
+
     class ManytomanyInterface
     {
     protected:
 
-      manytomany_recv     _cb_m2m_head;
+      manytomany_recv     _cb_async_head;
       void              * _async_arg;
 
     public:
       /// \brief Constructor
       inline ManytomanyInterface ()
       {
-        _cb_m2m_head = NULL;
+        _cb_async_head = NULL;
         _async_arg = NULL;
       }
 
@@ -372,7 +374,7 @@ namespace CCMI
       inline void setCallback (manytomany_recv cb_recv, void *arg)
       {
         TRACE_INIT((stderr, "<%#.8X>CCMI::MultiSend::ManytomanyInterface::setCallback() %#.8X %#.8X\n", (int)this,(int)cb_recv,(int)arg));
-        _cb_m2m_head    =  cb_recv;
+        _cb_async_head    =  cb_recv;
         _async_arg      =  arg;
       }
 
@@ -426,6 +428,11 @@ namespace CCMI
                              unsigned                 myindex) = 0;
 
     };  //-- ManytomanyInterface
+
+
+
+
+
   };  //-- Multisend namespace
 };  //-- CCMI
 
