@@ -19,6 +19,7 @@ typedef void *        xmi_data_type_t;
 typedef xmi_size_t (*xmi_data_callback_t) (
     xmi_context_t        context,      /* IN: XMI context */
     void               * cookie,       /* IN: callback cookie */
+    xmi_size_t           offset,       /* IN: starting data offset */
     void               * pipe_addr,    /* IN: address of XMI pipe buffer */
     xmi_size_t           pipe_size);   /* IN: size of XMI pipe buffer */
 
@@ -27,7 +28,8 @@ typedef xmi_size_t (*xmi_data_callback_t) (
  */
 typedef void (*xmi_event_callback_t) (
     xmi_context_t        context,      /* IN: XMI context */
-    void               * cookie);      /* IN: callback cookie */
+    void               * cookie,       /* IN: callback cookie */
+    xmi_error_t          error);       /* IN: non-fatal error */
 
 /*
  * Hints for sending a message
