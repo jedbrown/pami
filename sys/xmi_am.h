@@ -29,7 +29,7 @@ typedef xmi_size_t (*xmi_data_callback_t) (
 typedef void (*xmi_event_callback_t) (
     xmi_context_t        context,      /* IN: XMI context */
     void               * cookie,       /* IN: callback cookie */
-    xmi_error_t          error);       /* IN: non-fatal error */
+    xmi_result_t         result);      /* IN: asynchronous result */
 
 /*
  * Hints for sending a message
