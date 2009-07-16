@@ -7,16 +7,17 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interfaces/Schedule.h
+ * \file algorithms/schedule/Schedule.h
  * \brief ???
  */
 
 #ifndef  __schedule_h__
 #define  __schedule_h__
 
-#include "collectives/util/ccmi_util.h"
-#include "collectives/interface/Mapping.h"
-#include "collectives/interface/ccmi_internal.h"
+#include "util/ccmi_util.h"
+#include "interface/CollectiveMapping.h"
+#include "interface/ccmi_internal.h"
+#include "util/ccmi_debug.h"
 
 /*-------------------------------------------------*/
 /*     Basic utility classes collectives           */

@@ -13,7 +13,7 @@
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
 
-#include "collectives/interface/MultiSendOld.h"
+#include "interface/MultiSendOld.h"
 
 namespace TSPColl
 {

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/Rectangle.h
+ * \file algorithms/schedule/Rectangle.h
  * The Rectangle Schedule
  *
  * \todo This needs to be modified to use SpraySchedule instead of
@@ -33,12 +33,10 @@
 /** \brief Type which holds a set of coordinates (axii - X,Y,Z,T) */
 typedef unsigned axii_t[NUM_AXIS];
 
+#include "Schedule.h"
 #include "./BinomialTree.h"
 #include "./RingSchedule.h"
-#include "collectives/interface/TorusMapping.h"
-#include "collectives/algorithms/schedule/Schedule.h"
-#include <new>
-
+#include "interface/TorusCollectiveMapping.h"
 
 namespace CCMI
 {
@@ -242,26 +240,26 @@ namespace CCMI
 /**
  * \brief Get rank of given coords (axii_t)
  *
- * \param[in] map	Mapping to use
+ * \param[in] map	CollectiveMapping to use
  * \param[in] x		Coordinates to convert into rank
  * \return	nothing
  */
-    static inline unsigned coord2rank(TorusMapping *map, axii_t x)
+    static inline unsigned coord2rank(TorusCollectiveMapping *map, axii_t x)
     {
       unsigned rank = CCMI_UNDEFINED_RANK;
-      CCMI_Result rc = map->Torus2Rank(x, &rank);
-      return(rc == CCMI_SUCCESS ? rank : CCMI_UNDEFINED_RANK);
+      CM_Result rc = map->Torus2Rank(x, &rank);
+      return(rc == CM_SUCCESS ? rank : CCMI_UNDEFINED_RANK);
     }
 
 /**
  * \brief Get coords (axii_t) of given rank
  *
- * \param[in] map	Mapping to use
+ * \param[in] map	CollectiveMapping to use
  * \param[in] rank	Rank to convert
  * \param[out] x	Coordinates to return
  * \return	nothing
  */
-    static inline void rank2coord(TorusMapping *map, unsigned rank, axii_t x)
+    static inline void rank2coord(TorusCollectiveMapping *map, unsigned rank, axii_t x)
     {
       map->Rank2Torus(&(x[0]), rank);
     }
@@ -271,11 +269,11 @@ namespace CCMI
  *
  * This is an optimization of rank2coord(map, map->rank(), x);
  *
- * \param[in] map	Mapping to use
+ * \param[in] map	CollectiveMapping to use
  * \param[out] x	Coordinates to return
  * \return	nothing
  */
-    static inline void get_my_coord(TorusMapping *map, axii_t x)
+    static inline void get_my_coord(TorusCollectiveMapping *map, axii_t x)
     {
       x[CCMI_X_DIM] = map->GetCoord(CCMI_X_DIM);
       x[CCMI_Y_DIM] = map->GetCoord(CCMI_Y_DIM);
@@ -437,12 +435,12 @@ namespace CCMI
        * and 'rect'. Simply stores these values, as no other
        * initialization makes sense until root node is known.
        *
-       * \param[in] mapping	Mapping is use on the partition
+       * \param[in] mapping	CollectiveMapping is use on the partition
        * \param[in] color	Primary axis (color).
        * \param[in] rect	Rectangle descriptor
        * \return
        */
-      inline OneColorRectangle(TorusMapping *mapping, Color color,
+      inline OneColorRectangle(TorusCollectiveMapping *mapping, Color color,
                                const Rectangle &rect) : Schedule()
       {
         _color = color;
@@ -454,7 +452,6 @@ namespace CCMI
         _startsend = PHASE_NONE;
       }
 
-#if 0
       /**
        * \brief \e new operator for in-place construction of object
        *
@@ -469,6 +466,7 @@ namespace CCMI
         CCMI_assert(size >= sizeof(OneColorRectangle));
         return addr;
       }
+
       /**
        * \brief \e delete operator for destruction of object
        *
@@ -481,7 +479,6 @@ namespace CCMI
       {
         CCMI_abort();
       }
-#endif
 
       /*
        * Interface Functions
@@ -591,7 +588,7 @@ namespace CCMI
       Color _color;   /** \brief color to use (pri axis) */
       unsigned _op;   /** \brief operation, BROADCAST_OP... */
       const axis_rect *_rect; /** \brief pointer to rectangle structure */
-      CCMI::TorusMapping *_mapping; /** \brief saved pointer to mapping
+      CCMI::TorusCollectiveMapping *_mapping; /** \brief saved pointer to mapping
                * for this partition */
       unsigned _startrecv;  /** \brief Starting recv phase for this node */
       unsigned _startsend;  /** \brief Starting send phase for this node */
@@ -967,7 +964,7 @@ namespace CCMI
        * \param[in] color	The color to use for this schedule
        * \param[in] rect	The rectangle info for this geom
        */
-      inline OneColorRectBcastSched(TorusMapping *mapping, Color color,
+      inline OneColorRectBcastSched(TorusCollectiveMapping *mapping, Color color,
                                     const Rectangle &rect) :
       OneColorRectangle(mapping, color, rect)
       {
@@ -1297,12 +1294,12 @@ namespace CCMI
 
         if(_subScheduleType == Binomial)
         {
-          _subschedule[axis] = new (&_subschedule_storage[axis]) //,sizeof(_subschedule_storage[axis]))
+          _subschedule[axis] = new (&_subschedule_storage[axis],sizeof(_subschedule_storage[axis]))
                                BinomialTreeSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
         else
         {
-          _subschedule[axis] = new (&_subschedule_storage[axis]) //sizeof(_subschedule_storage[axis]))
+          _subschedule[axis] = new (&_subschedule_storage[axis],sizeof(_subschedule_storage[axis]))
                                RingSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
 
@@ -1314,7 +1311,7 @@ namespace CCMI
        * \param[in] nranks	number of ranks on the axis
        * \return	number of phases
        */
-      unsigned getMaxPhases(Mapping *mapping, unsigned nranks)
+      unsigned getMaxPhases(CollectiveMapping *mapping, unsigned nranks)
       {
         // These are static functions so we need to class them based on type
         if(_subScheduleType == Binomial)
@@ -1454,11 +1451,11 @@ namespace CCMI
        *
        * Calls One Color Rectangle constructor and inits variables.
        *
-       * \param[in] mapping	Torus Mapping for geometry
+       * \param[in] mapping	Torus CollectiveMapping for geometry
        * \param[in] color	Color of schedule
        * \param[in] rect	Rectangle of geom
        */
-      inline OneColorRectRedSched(TorusMapping *mapping, Color color,
+      inline OneColorRectRedSched(TorusCollectiveMapping *mapping, Color color,
                                   const Rectangle &rect, Subschedule subschedule=Binomial) :
       OneColorRectangle(mapping, color, rect),
       _subScheduleType(subschedule),
@@ -1643,7 +1640,7 @@ namespace CCMI
        * \param[in] color	Color of schedule
        * \param[in] rect	Rectangle of geom
        */
-      inline OneColorRectAllredSched(TorusMapping *mapping,
+      inline OneColorRectAllredSched(TorusCollectiveMapping *mapping,
                                      Color color, const Rectangle &rect, 
                                      CCMI::Schedule::OneColorRectRedSched::Subschedule subschedule=CCMI::Schedule::OneColorRectRedSched::Binomial) :
       OneColorRectangle(mapping, color, rect)

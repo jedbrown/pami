@@ -19,13 +19,13 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 
-#ifndef __generic_multisend_h__
-#define __generic_multisend_h__
+#ifndef __mpi_multisend_h__
+#define __mpi_multisend_h__
 
-#include "collectives/interface/ccmi_internal.h"
+#include "interface/ccmi_internal.h"
 
 
-typedef CCMIQuad CCMI_Register_t[32];
+typedef CMQuad CCMI_Register_t[32];
 
 #ifdef __cplusplus
 extern "C"
@@ -35,7 +35,7 @@ extern "C"
 
   
   
-  typedef CCMI_Request_t * (*CCMI_RecvMultiSend) (const CCMIQuad    * info,
+  typedef CCMI_Request_t * (*CCMI_RecvMultiSend) (const CMQuad    * info,
 						  unsigned            count,
 						  unsigned            peer,
 						  unsigned            sndlen,
@@ -44,7 +44,7 @@ extern "C"
 						  unsigned          * rcvlen,
 						  char             ** rcvbuf,
 						  unsigned          * pipewidth,
-						  CCMI_Callback_t   * cb_done);
+						  CM_Callback_t   * cb_done);
   
 
   int Multisend_multicast_register ( CCMI_Register_t    * registration, 
@@ -54,7 +54,7 @@ extern "C"
   
   int MultiSend_multicast (CCMI_Register_t   * registration,
 			   CCMI_Request_t    * request,
-			   CCMI_Callback_t     cb_done,
+			   CM_Callback_t     cb_done,
 			   CCMI_Consistency    consistency,
 			   unsigned            connection_id,
 			   unsigned            bytes,
@@ -62,7 +62,7 @@ extern "C"
 			   unsigned            nranks,
 			   unsigned          * rank,
 			   unsigned          * hints,
-			   const CCMIQuad    * msginfo );
+			   const CMQuad    * msginfo );
 
 
   int Multisend_advance ( CCMI_Register_t * registration );

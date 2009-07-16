@@ -14,7 +14,7 @@
 #define __tspcoll_Allreduce_h__
 
 #include "./CollExchange.h"
-#include "collectives/interface/Communicator.h"
+#include "interface/Communicator.h"
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
       extern void getReduceFunction(CCMI_Dt, CCMI_Op, unsigned, 

@@ -7,32 +7,35 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file adaptor/Mapping.h
+ * \file interface/CollectiveMapping.h
  * \brief Define a mapping which must be implemented in the 
  * adaptor. 
  */
 
+
 #ifndef   __collective_engine_mapping__
 #define   __collective_engine_mapping__
 
-#include "collectives/util/ccmi_util.h"
+#include "util/ccmi_util.h"
 
 namespace CCMI
 {
-  class Mapping
+  class CollectiveMapping
   {
+  public:
   protected:
+
     void           *  _personality;
     unsigned          _rank;
     unsigned          _size;
 
   public:
 
-    Mapping ()
+    CollectiveMapping ():
+      _personality(NULL),
+      _rank(0),
+      _size(0)
     {
-      _rank        = 0;
-      _size        = 0;
-      _personality = 0;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -40,7 +43,7 @@ namespace CCMI
     /// Implement this in the adaptor
     /// \return new instance
     //////////////////////////////////////////////////////////////////
-    Mapping (void * personality);
+    CollectiveMapping (void * personality);
 
     //////////////////////////////////////////////////////////////////
     /// \brief Returns the mapped rank
@@ -59,7 +62,7 @@ namespace CCMI
     {
       return _size;
     }
-  };  //- Mapping
+  };  //- CollectiveMapping
 };  //- CCMI
 
 #endif

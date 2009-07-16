@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "./CollExchange.h"
-#include "collectives/interface/Communicator.h"
+#include "interface/Communicator.h"
 //#define DEBUG_ALLGATHER 1
 #undef TRACE
 #ifdef DEBUG_ALLGATHER

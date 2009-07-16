@@ -12,9 +12,12 @@
  * \brief PipeWorkQueue "C" interface.
  */
 
-#include "collectives/interface/ll_pipeworkqueue.h"
-#include "collectives/interface/PipeWorkQueue.h"
+#include "interface/ll_pipeworkqueue.h"
+#include "interface/PipeWorkQueue.h"
 #include <new>
+//#include "Messager.h"
+
+//extern DCMF::Messager *_g_messager;
 
 ///
 /// \brief Configure for Shared Circular Buffer variety.

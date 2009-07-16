@@ -7,16 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/ShortRectangle.h
+ * \file algorithms/schedule/ShortRectangle.h
  * \brief ???
  */
 
 #ifndef  __SHORT_RECTANGLE_SCHEDULE__
 #define  __SHORT_RECTANGLE_SCHEDULE__
 
-#include "interfaces/Schedule.h"
-#include "adaptor/ccmi_util.h"
-#include "adaptor/TorusMapping.h"
+#include "Schedule.h"
+#include "util/ccmi_util.h"
+#include "interface/TorusCollectiveMapping.h"
 #include "OneColorTorusRect.h"
 
 static unsigned tmp_coords[CCMI_TORUS_NDIMS];
@@ -46,7 +46,7 @@ namespace CCMI
     protected:
 
       Rectangle       * _rect;        ///The base rectangle structure
-      TorusMapping    * _mapping; ///Mapping to translate between torus coordinates and ranks
+      TorusCollectiveMapping    * _mapping; ///CollectiveMapping to translate between torus coordinates and ranks
       bool              _useLocalBarrier;  ///Barriers can use an
       ///optimized local
       ///barrier instead of
@@ -63,10 +63,10 @@ namespace CCMI
       /**
        * \brief Constructor for local core barrier schedule
        *
-       * \param[in] map	Mapping object for geometry
+       * \param[in] map	CollectiveMapping object for geometry
        * \param[in] rectangle The rectangle to do the barrier on
        */
-      ShortRectangleSchedule(TorusMapping     * map,
+      ShortRectangleSchedule(TorusCollectiveMapping     * map,
                              Rectangle        & rectangle,
                              bool               uselocalbarrier=false)
       {
@@ -312,7 +312,7 @@ namespace CCMI
               startphase = PHASE_Z;
 
               if(_rect->zs <= 1)
-                CCMI_assert (0);  //This schedule isnt designed for
+                CCMI_abort();  //This schedule isnt designed for
                                   //1 core where xs==1,ys==1 and zs==1
             }
           }

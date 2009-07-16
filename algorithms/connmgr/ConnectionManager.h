@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interfaces/ConnectionManager.h
+ * \file algorithms/connmgr/ConnectionManager.h
  * \brief ???
  */
 

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file collectives/bgp/protocols/allreduce/CompositeT.h
+ * \file algorithms/protocols/allreduce/CompositeT.h
  * \brief CCMI allreduce sync composite template
  */
 
@@ -28,7 +28,7 @@ namespace CCMI
       ///
       /// 
       /// 
-      template <class SCHEDULE, class EXECUTOR> class CompositeT : public CCMI::Adaptor::Allreduce::Composite
+      template <class SCHEDULE, class EXECUTOR, class MAP> class CompositeT : public CCMI::Adaptor::Allreduce::Composite
       {
       protected:
         EXECUTOR  _executor;
@@ -44,25 +44,26 @@ namespace CCMI
         /// \brief Constructor
         ///
         CompositeT (CCMI_CollectiveRequest_t  * req,
-                    CCMI::Mapping        * map,
+                    MAP        * map,
                     CCMI::ConnectionManager::ConnectionManager *cmgr,
-                    CCMI_Callback_t             cb_done,
+                    CM_Callback_t             cb_done,
                     CCMI_Consistency            consistency,
-                    CCMI::MultiSend::MulticastInterface *mf,
+                    CCMI::MultiSend::OldMulticastInterface *mf,
                     Geometry                  * geometry,
                     char                      * srcbuf,
                     char                      * dstbuf,
                     unsigned                    offset,
                     unsigned                    count,
-                    CCMI_Dt                     dtype,
-                    CCMI_Op                     op,
+                    CM_Dt                     dtype,
+                    CM_Op                     op,
                     ConfigFlags                 flags,
-                    ProtocolFactory           * factory,
-                    int                         root = -1) :
+                    CollectiveProtocolFactory           * factory,
+                    int                         root = -1,
+                    CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
         CCMI::Adaptor::Allreduce::Composite( flags, geometry->getBarrierExecutor(), factory, cb_done),
         _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())        
         {
-          create_schedule(map, geometry);
+          create_schedule(map, geometry, color);
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::CompositeT() ALERT\n",(int)this,name));
           addExecutor (&_executor);
           initialize (&_executor, req, srcbuf, dstbuf, count, 
@@ -72,8 +73,9 @@ namespace CCMI
           _executor.reset ();
         }
         // Template implementation must specialize this function.
-        void create_schedule(CCMI::Mapping        * map,
-                             Geometry                  * geometry)
+        void create_schedule(MAP        * map,
+                             Geometry                  * geometry,
+                             CCMI::Schedule::Color       color)
         {
           CCMI_abort();
         }

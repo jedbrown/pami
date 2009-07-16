@@ -14,7 +14,7 @@
 #ifndef  __cg_conn_mgr_h__
 #define  __cg_conn_mgr_h__
 
-#include "collectives/algorithms/schedule/Rectangle.h"
+#include "algorithms/schedule/Rectangle.h"
 
 namespace CCMI
 {

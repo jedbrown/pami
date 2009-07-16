@@ -2,54 +2,18 @@
 #ifndef __ccmi_collective_h__
 #define __ccmi_collective_h__
 
+#include "cm_types.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  typedef struct _CCMIQuad
-  {
-    unsigned w0; /**< Word[0] */
-    unsigned w1; /**< Word[1] */
-    unsigned w2; /**< Word[2] */
-    unsigned w3; /**< Word[3] */
-  } CCMIQuad __attribute__ ((__aligned__ (16)));
-  
-  /**
-   * \brief CCMI Return codes
-   */
-  typedef enum
-  {
-    CCMI_SUCCESS = 0,  /**< Successful execution        */
-    CCMI_NERROR  =-1,  /**< Generic error (-1)          */
-    CCMI_ERROR   = 1,  /**< Generic error (+1)          */
-    CCMI_INVAL,        /**< Invalid argument            */
-    CCMI_UNIMPL,       /**< Function is not implemented */
-    CCMI_EAGAIN,       /**< Not currently availible     */
-    CCMI_SHUTDOWN,     /**< Rank has shutdown           */
-    CCMI_CHECK_ERRNO,  /**< Check the errno val         */
-    CCMI_OTHER,        /**< Other undefined error       */
-  } CCMI_Result;
-
-  /**
-   * \brief CCMI Error callback results
-   */
-  typedef struct CCMI_Error_t
-  {
-    CCMI_Result result;
-  } CCMI_Error_t;
-
-  typedef CCMIQuad CCMI_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
+  typedef CMQuad CCMI_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
 
   /*  increased to 8196 - JEB */
   /*  ...doubled again - BRC  */
-  typedef CCMIQuad CCMI_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
-
-  typedef struct CCMI_Callback_t
-  {
-    void (*function) (void *, CCMI_Error_t *);
-    void *clientdata;
-  } CCMI_Callback_t;
+  typedef CMQuad CCMI_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
 
   typedef enum
   {
@@ -60,54 +24,6 @@ extern "C"
     CCMI_CONSISTENCY_COUNT
   } CCMI_Consistency;
   
-  typedef enum
-  {
-    CCMI_UNDEFINED_OP = 0,
-    CCMI_NOOP,
-    CCMI_MAX,
-    CCMI_MIN,
-    CCMI_SUM,
-    CCMI_PROD,
-    CCMI_LAND,
-    CCMI_LOR,
-    CCMI_LXOR,
-    CCMI_BAND,
-    CCMI_BOR,
-    CCMI_BXOR,
-    CCMI_MAXLOC,
-    CCMI_MINLOC,
-    CCMI_USERDEFINED_OP,
-    CCMI_OP_COUNT
-  } CCMI_Op;
-
-  typedef enum
-  {
-    /* Standard/Primative DT's */
-    CCMI_UNDEFINED_DT = 0,
-    CCMI_SIGNED_CHAR,
-    CCMI_UNSIGNED_CHAR,
-    CCMI_SIGNED_SHORT,
-    CCMI_UNSIGNED_SHORT,
-    CCMI_SIGNED_INT,
-    CCMI_UNSIGNED_INT,
-    CCMI_SIGNED_LONG_LONG,
-    CCMI_UNSIGNED_LONG_LONG,
-    CCMI_FLOAT,
-    CCMI_DOUBLE,
-    CCMI_LONG_DOUBLE,
-    CCMI_LOGICAL,
-    CCMI_SINGLE_COMPLEX,
-    CCMI_DOUBLE_COMPLEX,
-    /* Max/Minloc DT's */
-    CCMI_LOC_2INT,
-    CCMI_LOC_SHORT_INT,
-    CCMI_LOC_FLOAT_INT,
-    CCMI_LOC_DOUBLE_INT,
-    CCMI_LOC_2FLOAT,
-    CCMI_LOC_2DOUBLE,
-    CCMI_USERDEFINED_DT
-  } CCMI_Dt;
-
   //--------------------------------------------------
   //----- Communication CCMI_Subtasks ---------------------
   //----- Each communication operation is split ------
@@ -182,7 +98,7 @@ extern "C"
    * \todo     Need to adjust size to optimal level (currently 2048 bytes).
    */
 
-  typedef CCMIQuad  CCMI_Geometry_t [32];
+  typedef CMQuad  CCMI_Geometry_t [32];
 
 
   /**
@@ -297,7 +213,7 @@ extern "C"
    * \param[in] protocol  A protocol to be tested.
    *
    * \return  Can the protocol run on the current geometry
-   * \retval  CCMI_SUCCESS The protocl will run on the current geometry
+   * \retval  CM_SUCCESS The protocl will run on the current geometry
    * \retval  ?????        The protocol does not support the current geometry
    */
 
@@ -308,7 +224,7 @@ extern "C"
    * \brief Free any memory allocated inside of a geometry. Mostly
    * the alltoall permutation array right now.
    * \param[in] geometry The geometry object to free 
-   * \retval CCMI_SUCCESS Memory free didn't fail
+   * \retval CM_SUCCESS Memory free didn't fail
    */
   int CCMI_Geometry_free(CCMI_Geometry_t *geometry);
 
@@ -342,7 +258,7 @@ extern "C"
    */
 
   int CCMI_Barrier (CCMI_Geometry_t     * geometry,
-                    CCMI_Callback_t       cb_done,
+                    CM_Callback_t       cb_done,
                     CCMI_Consistency      consistency);
 
 
@@ -362,7 +278,7 @@ extern "C"
                                              const unsigned     sndlen,
                                              unsigned         * rcvlen,
                                              char            ** rcvbuf,
-                                             CCMI_Callback_t  * const cb_info);
+                                             CM_Callback_t  * const cb_info);
 
   /**
    * \brief Asynchronous broadcast protocol implementations.
@@ -439,7 +355,7 @@ extern "C"
 
   int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
                       CCMI_CollectiveRequest_t   * request,
-                      CCMI_Callback_t    cb_done,
+                      CM_Callback_t    cb_done,
                       CCMI_Consistency   consistency,
                       CCMI_Geometry_t  * geometry,
                       unsigned           root,
@@ -526,14 +442,14 @@ extern "C"
    */
   int CCMI_Allreduce (CCMI_CollectiveProtocol_t * registration,
                       CCMI_CollectiveRequest_t  * request,
-                      CCMI_Callback_t   cb_done,
+                      CM_Callback_t   cb_done,
                       CCMI_Consistency  consistency,
                       CCMI_Geometry_t * geometry,
                       char            * sbuffer,
                       char            * rbuffer,
                       unsigned          count,
-                      CCMI_Dt           dt,
-                      CCMI_Op           op);
+                      CM_Dt           dt,
+                      CM_Op           op);
 
   /* ********************************************************************* */
   /*                                                                       */
@@ -615,15 +531,15 @@ extern "C"
    */
   int CCMI_Reduce (CCMI_CollectiveProtocol_t * registration,
                    CCMI_CollectiveRequest_t  * request,
-                   CCMI_Callback_t   cb_done,
+                   CM_Callback_t   cb_done,
                    CCMI_Consistency  consistency,
                    CCMI_Geometry_t * geometry,
                    int               root,
                    char            * sbuffer,
                    char            * rbuffer,
                    unsigned          count,
-                   CCMI_Dt           dt,
-                   CCMI_Op           op);
+                   CM_Dt           dt,
+                   CM_Op           op);
 
 
 #ifdef __cplusplus

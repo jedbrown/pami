@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file collectives/bgp/protocols/barrier/barrier_impl.h
+ * \file algorithms/protocols/barrier/barrier_impl.h
  * \brief ???
  */
 
-#include "collectives/algorithms/schedule/BinomialTree.h"
-#include "collectives/interface/Geometry.h"
+#include "algorithms/schedule/BinomialTree.h"
+#include "interface/Geometry.h"
 #include "BarrierT.h"
 
 namespace CCMI

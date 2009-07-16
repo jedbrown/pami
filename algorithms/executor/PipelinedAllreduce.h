@@ -7,22 +7,22 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file executor/PipelinedAllreduce.h
+ * \file algorithms/executor/PipelinedAllreduce.h
  * \brief ???
  */
 
 #ifndef __pipelined_allreduce_executor_h__
 #define __pipelined_allreduce_executor_h__
 
-#include "collectives/algorithms/schedule/Schedule.h"
-#include "collectives/algorithms/executor/Executor.h"
-#include "collectives/interface/MultiSendOld.h"
-#include "collectives/algorithms/connmgr/ConnectionManager.h"
-#include "collectives/util/logging/LogMgr.h"
+#include "algorithms/schedule/Schedule.h"
+#include "algorithms/executor/Executor.h"
+#include "interface/MultiSend.h"
+#include "algorithms/connmgr/ConnectionManager.h"
+#include "util/logging/LogMgr.h"
 #include "AllreduceState.h"
 #include "AllreduceBase.h"
 
-#define CCMI_MAX_ACTIVE_SENDS  8
+#define CM_MAX_ACTIVE_SENDS  8
 
 namespace CCMI
 {
@@ -34,19 +34,19 @@ namespace CCMI
 
     private:
       /// Static function to be passed into the done of multisend send  
-      static void pipeAllreduceNotifySend (void *cd, CCMI_Error_t *err)
+      static void pipeAllreduceNotifySend (void *cd, CM_Error_t *err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
-        CCMIQuad *info = (CCMIQuad *)cd;
+        CMQuad *info = (CMQuad *)cd;
 
         ((PipelinedAllreduce *)(cdata->me))->PipelinedAllreduce::notifySendDone( *info );
       }
 
       /// Static function to be passed into the done of multisend postRecv
-      static void pipeAllreduceNotifyReceive (void *cd, CCMI_Error_t *err)
+      static void pipeAllreduceNotifyReceive (void *cd, CM_Error_t *err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
-        CCMIQuad *info = (CCMIQuad *)cd;
+        CMQuad *info = (CMQuad *)cd;
 
         ((PipelinedAllreduce *)cdata->allreduce)->PipelinedAllreduce::notifyRecv 
         ((unsigned)-1, *info, NULL, (unsigned)-1);
@@ -112,7 +112,7 @@ namespace CCMI
 
       ///  Main constructor to initialize the executor
       PipelinedAllreduce 
-      (Mapping *map,
+      (CollectiveMapping *map,
        ConnectionManager::ConnectionManager  * connmgr,
        CCMI_Consistency                        consistency,
        const unsigned                          commID,
@@ -134,9 +134,9 @@ namespace CCMI
         _log_notifyrecv  = lmgr->registerEvent ("Allreduce notify recv");
       }
 
-      virtual void notifySendDone( const CCMIQuad &info );
+      virtual void notifySendDone( const CMQuad &info );
 
-      virtual void notifyRecv(unsigned src, const CCMIQuad &info, 
+      virtual void notifyRecv(unsigned src, const CMQuad &info, 
                               char * buf, unsigned bytes);
 
       /// start allreduce
@@ -191,7 +191,7 @@ namespace CCMI
 inline void CCMI::Executor::PipelinedAllreduce::start()
 {
   _initialized = true; 
-  _numActiveSends   = CCMI_MAX_ACTIVE_SENDS;
+  _numActiveSends   = CM_MAX_ACTIVE_SENDS;
 
   unsigned count;
   for(count = 0; count < _numActiveSends; count++)
@@ -236,7 +236,7 @@ inline void CCMI::Executor::PipelinedAllreduce::start()
 
 inline void CCMI::Executor::PipelinedAllreduce::notifyRecv 
 (unsigned                     src, 
- const CCMIQuad             & info, 
+ const CMQuad             & info, 
  char                       * buf, 
  unsigned                     bytes)
 {
@@ -267,7 +267,7 @@ inline void CCMI::Executor::PipelinedAllreduce::notifyRecv
 
 
 inline void CCMI::Executor::PipelinedAllreduce::notifySendDone 
-( const CCMIQuad & info)
+( const CMQuad & info)
 {
   // update state
   TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::notifySendDone "
@@ -288,7 +288,7 @@ inline void CCMI::Executor::PipelinedAllreduce::notifySendDone
 
   if((_curSendChunk > last_chunk)       &&
      (_numBcastChunksSent > last_chunk) && 
-     (_numActiveSends == CCMI_MAX_ACTIVE_SENDS))
+     (_numActiveSends == CM_MAX_ACTIVE_SENDS))
     processDone();
   else
   {
@@ -476,7 +476,8 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
 
       _astate.incrementPhaseChunksSent(_curSendPhase, npw);
     }
-    _curSendPhase ++;
+    //_curSendPhase ++;
+    _curSendPhase = _astate.getNextActivePhase (_curSendPhase);
 
     if(_curSendPhase > _lastReducePhase)
     {
@@ -487,7 +488,7 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
       {
         ///All sends done and all broadcasts done and no messages in
         ///flight
-        if(_numActiveSends == CCMI_MAX_ACTIVE_SENDS 
+        if(_numActiveSends == CM_MAX_ACTIVE_SENDS 
            && _numBcastChunksSent > last_chunk)
           processDone();
         break;
@@ -520,7 +521,7 @@ inline void CCMI::Executor::PipelinedAllreduce::sendMessage
               (int)this,ThreadID(), 
               _curSendChunk,_numActiveSends, offset, bytes));
 
-  int index = CCMI_MAX_ACTIVE_SENDS - 1;
+  int index = CM_MAX_ACTIVE_SENDS - 1;
   if(!_sState[index].sndClientData.isDone)
   {
     while((index --) && (!_sState[index].sndClientData.isDone));
@@ -556,7 +557,7 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceBcast ()
   if(bcastRecvPhase < 0)
       return;
 
-  if(_numActiveSends <= CCMI_MAX_ACTIVE_SENDS/2)
+  if(_numActiveSends <= CM_MAX_ACTIVE_SENDS/2)
       return;
 
   if(_astate.getPhaseChunksRcvd(bcastRecvPhase, 0) > _numBcastChunksSent)

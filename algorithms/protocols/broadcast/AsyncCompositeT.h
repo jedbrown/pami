@@ -1,12 +1,24 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/broadcast/AsyncCompositeT.h
+ * \brief ???
+ */
 
-#ifndef __ccmi_adaptor_async_composite_t_h__
-#define __ccmi_adaptor_async_composite_t_h__
+#ifndef __ccmi_adaptor_broadcast_async_composite_t_h__
+#define __ccmi_adaptor_broadcast_async_composite_t_h__
 
-#include "collectives/algorithms/executor/Broadcast.h"
-#include "collectives/interface/Geometry.h"
-#include "collectives/algorithms/connmgr/RankBasedConnMgr.h"
-#include "collectives/algorithms/protocols/broadcast/BroadcastFactory.h"
-#include "collectives/algorithms/protocols/broadcast/ExecutorPool.h"
+#include "algorithms/executor/Broadcast.h"
+#include "interface/Geometry.h"
+#include "algorithms/connmgr/RankBasedConnMgr.h"
+#include "./BroadcastFactory.h"
+#include "./ExecutorPool.h"
 
 namespace CCMI
 {
@@ -14,19 +26,11 @@ namespace CCMI
   {
     namespace Broadcast
     {
-      ///
-      /// \brief initialize he schdule based on input geometry
-      ///
-      typedef void      (*AsyncSchFn) (void                      * buf,
-                                       unsigned                    size,
-                                       unsigned                    root,
-                                       CCMI::Mapping             * map,
-                                       Geometry                  * g);
 
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
-      template <class T, AsyncSchFn sfn> 
+      template <class T, class MAP> 
       class AsyncCompositeT : public CCMI::Executor::Composite
       {
       protected:
@@ -39,11 +43,11 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        AsyncCompositeT (CCMI::Mapping             * map,
+        AsyncCompositeT (MAP             * map,
                          CCMI::ConnectionManager::ConnectionManager *cmgr,
-                         CCMI_Callback_t             cb_done,
+                         CM_Callback_t             cb_done,
                          CCMI_Consistency            consistency,
-                         CCMI::MultiSend::MulticastInterface *mf,
+                         CCMI::MultiSend::OldMulticastInterface *mf,
                          Geometry                  * geometry,
                          unsigned                    root,
                          char                      * src,
@@ -58,9 +62,19 @@ namespace CCMI
 
           addExecutor (&_executor);
 
-          sfn (&_schedule, sizeof(_schedule), root, map, geometry);
+          create_schedule(&_schedule, sizeof(_schedule), root, map, geometry);
           _executor.setSchedule (&_schedule);
         }
+
+        ///
+        /// \brief initialize the schedule based on input geometry. 
+        ///   Template implementation must specialize this function.
+        ///
+        void      create_schedule(void                      * buf,
+                                  unsigned                    size,
+                                  unsigned                    root,
+                                  MAP                       * map,
+                                  Geometry                  * g) {CCMI_abort();};
 
         ExecutorPool *execpool ()
         {
@@ -78,12 +92,12 @@ namespace CCMI
         ///
         /// \brief Receive the broadcast message and notify the executor
         ///
-        static void staticAsyncRecvFn (void *clientdata, CCMI_Error_t *err)
+        static void staticAsyncRecvFn (void *clientdata, CM_Error_t *err)
         {
-          CCMIQuad *info = NULL;  
+          CMQuad *info = NULL;  
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
 
-          TRACE_ERR((stderr, "In static notify recv, exe=%p\n",exe)); 
+          TRACE_ADAPTOR((stderr, "In static notify recv, exe=%p\n",exe)); 
           composite->executor().CCMI::Executor::Broadcast::notifyRecv ((unsigned)-1, *info, NULL, 
                                                                        composite->executor().getPwidth());
         }
@@ -93,8 +107,8 @@ namespace CCMI
       ///
       /// \brief Base factory class for broadcast factory implementations.
       ///
-      template <class T, AnalyzeFn afn>
-      class AsyncCompositeFactoryT : public BroadcastFactory
+      template <class T, AnalyzeFn afn, class MAP>
+      class AsyncCompositeFactoryT : public BroadcastFactory<MAP>
       {
       protected:
         CCMI::ConnectionManager::RankBasedConnMgr  _rbconnmgr; //Connection manager
@@ -105,13 +119,13 @@ namespace CCMI
         /// \brief Constructor for broadcast factory implementations.
         ///
         AsyncCompositeFactoryT
-        (CCMI::Mapping *map,
-         CCMI::MultiSend::MulticastInterface *mf, unsigned nconn)
-        : BroadcastFactory (mf, map, &_rbconnmgr, nconn, cb_head, cb_head_buffered),
+        (MAP *map,
+         CCMI::MultiSend::OldMulticastInterface *mf, unsigned nconn)
+        : BroadcastFactory<MAP>(mf, map, &_rbconnmgr, nconn, cb_head, cb_head_buffered),
         _rbconnmgr(map)
         {
           //--
-          TRACE_ERR((stderr, "Binomial Broadcast Factory Constructor\n"));
+          TRACE_ADAPTOR((stderr, "Binomial Broadcast Factory Constructor\n"));
         }
 
         ///Works on all sub-communicators
@@ -142,7 +156,7 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         CCMI_Callback_t             cb_done,
+         CM_Callback_t             cb_done,
          CCMI_Consistency            consistency,
          Geometry                  * geometry,
          unsigned                    root,
@@ -155,16 +169,15 @@ namespace CCMI
 
           CCMI_assert(rsize > sizeof(T));
 
-          if(_mapping->rank() == root)
+          if(this->_mapping->rank() == root)
           {
-	    //            a_bcast = new (request_buf, rsize)
-            a_bcast = new (request_buf)
-                      T ( _mapping, &_rbconnmgr,
-                          cb_done, consistency, _minterface,
-                          geometry, root, src, bytes, &_execpool );
+            a_bcast = new (request_buf, rsize)
+                      T ( this->_mapping, &this->_rbconnmgr,
+                          cb_done, consistency, this->_minterface,
+                          geometry, root, src, bytes, &this->_execpool );
             a_bcast->executor().start();
           }
-          else if(_isBuffered)
+          else if(this->_isBuffered)
           {
             CCMI::MatchQueue  & mqueue = geometry->asyncBcastUnexpQ();
             BcastQueueElem * elem = (BcastQueueElem *) mqueue.findAndDelete(root);
@@ -186,16 +199,15 @@ namespace CCMI
             /// queue it in posted queue
             else
             {
-              CCMI_Callback_t  cb_exec_done;
+              CM_Callback_t  cb_exec_done;
               cb_exec_done.function   = posted_done;
               cb_exec_done.clientdata = request_buf; //point to the executor
 
               //Create a new composite and post it to posted queue
-	      //              a_bcast = new (request_buf, rsize)
-              a_bcast = new (request_buf)
-                        T (_mapping, &_rbconnmgr,
-                           cb_exec_done, consistency, _minterface,
-                           geometry, root, src, bytes, &_execpool);
+              a_bcast = new (request_buf, rsize)
+                        T (this->_mapping, &this->_rbconnmgr,
+                           cb_exec_done, consistency, this->_minterface,
+                           geometry, root, src, bytes, &this->_execpool);
 
               BcastQueueElem *elem = a_bcast->bqelem();
               elem->initPostMsg (bytes, src, cb_done); 
@@ -207,7 +219,7 @@ namespace CCMI
         }
 
         static CCMI_Request_t *   cb_head_buffered   
-        (const CCMIQuad    * info,
+        (const CMQuad    * info,
          unsigned          count,
          unsigned          peer,
          unsigned          sndlen,
@@ -216,8 +228,10 @@ namespace CCMI
          unsigned        * rcvlen,
          char           ** rcvbuf,
          unsigned        * pipewidth,
-         CCMI_Callback_t * cb_done)
+         CM_Callback_t * cb_done)
         {
+          TRACE_ADAPTOR ((stderr, "Broadcast Async Handler\n"));
+
           AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;  
           CollHeaderData *cdata = (CollHeaderData *) info;   
 
@@ -235,13 +249,12 @@ namespace CCMI
             char *unexpbuf;
             factory->_execpool.allocateAsync (&exec_request, &unexpbuf, sndlen);
 
-            CCMI_Callback_t cb_exec_done;
+            CM_Callback_t cb_exec_done;
             ///Handler which will have to free the above allocated buffer
             cb_exec_done.function = unexpected_done;
             cb_exec_done.clientdata = exec_request;
 
-	    //            bcast = new (exec_request, sizeof(CCMI_Executor_t))
-            bcast = new (exec_request)
+            bcast = new (exec_request, sizeof(CCMI_Executor_t))
                     T (factory->_mapping, &factory->_rbconnmgr,
                        cb_exec_done, CCMI_MATCH_CONSISTENCY, factory->_minterface,
                        geometry, cdata->_root, unexpbuf, sndlen, &factory->_execpool); 
@@ -267,10 +280,9 @@ namespace CCMI
           return bcast->executor().getRecvRequest();
         }
 
-        static void unexpected_done (void *cd, CCMI_Error_t *err)
+        static void unexpected_done (void *cd, CM_Error_t *err)
         {
-          TRACE_ERR ((stderr, "%d: Unexpected bcast done\n", 
-                      DCMF_Messager_rank()));
+          TRACE_ADAPTOR ((stderr, "Unexpected bcast done\n"));
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe = 
           ((T *) cd)->bqelem();   
@@ -283,10 +295,9 @@ namespace CCMI
           }
         }
 
-        static void posted_done (void *cd, CCMI_Error_t *err)
+        static void posted_done (void *cd, CM_Error_t *err)
         {
-          TRACE_ERR ((stderr, "%d: Posted bcast done\n", 
-                      DCMF_Messager_rank()));
+          TRACE_ADAPTOR ((stderr, "Posted bcast done\n"));
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe = 
           ((T *) cd)->bqelem();   
@@ -296,7 +307,7 @@ namespace CCMI
         }
 
         static CCMI_Request_t *   cb_head   
-        (const CCMIQuad    * info,
+        (const CMQuad    * info,
          unsigned          count,
          unsigned          peer,
          unsigned          sndlen,
@@ -305,9 +316,9 @@ namespace CCMI
          unsigned        * rcvlen,
          char           ** rcvbuf,
          unsigned        * pipewidth,
-         CCMI_Callback_t * cb_done) 
+         CM_Callback_t * cb_done) 
         {
-          TRACE_ERR ((stderr, "Broadcast Async Handler\n"));    
+          TRACE_ADAPTOR ((stderr, "Broadcast Async Handler\n"));    
           AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;   
           CollHeaderData *cdata = (CollHeaderData *) info;
 
@@ -315,15 +326,14 @@ namespace CCMI
 	    factory->_cb_geometry(cdata->_comm);
 
           //Application callback
-          CCMI_Callback_t cb_client_done;  
+          CM_Callback_t cb_client_done;  
           CCMI_Executor_t *request =  (CCMI_Executor_t *)
                                       factory->_cb_async (cdata->_root, cdata->_comm, sndlen, rcvlen,
                                                           rcvbuf, &cb_client_done);
 
           *pipewidth = sndlen+1;
 
-	  //          T *bcast = new (request, sizeof(CCMI_Executor_t))
-          T *bcast = new (request)
+          T *bcast = new (request, sizeof(CCMI_Executor_t))
                      T (factory->_mapping, &factory->_rbconnmgr,
                         cb_client_done, CCMI_MATCH_CONSISTENCY, factory->_minterface,
                         geometry, cdata->_root, *rcvbuf, *rcvlen, &factory->_execpool);  

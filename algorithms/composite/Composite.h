@@ -7,14 +7,14 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interfaces/Composite.h
+ * \file interface/Composite.h
  * \brief An executor composite class which supports optional barriers
  */
 
 #ifndef __CCMI_KERNEL_EXECUTOR_COMPOSITE__
 #define __CCMI_KERNEL_EXECUTOR_COMPOSITE__
 
-#include "collectives/algorithms/executor/Executor.h"
+#include "algorithms/executor/Executor.h"
 
 #define MAX_EXECUTORS   6
 

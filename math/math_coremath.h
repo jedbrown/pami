@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "collectives/interface/cm_types.h"
+#include "interface/cm_types.h"
 
 /** \brief The maximum number of sources based on the number of cores */
 #define MATH_MAX_NSRC	4
@@ -178,8 +178,9 @@ extern void *Core_memcpy(void *dst, const void *src, size_t len);
 
 /*
  * We include this "late" so that it may use the above typedefs, etc.
+ * Build should pull it out of the appropriate directory (common/ppc450d/etc)
  */
-#include "common/math_optimath.h"
+#include "math_optimath.h"
 
 #if defined(__cplusplus)
 extern "C"

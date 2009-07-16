@@ -7,16 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interfaces/MultiSend.h
+ * \file interface/MultiSend.h
  * \brief Structures and abstract multisend classes which
  * must be derived in the adaptor.
  */
-
 #ifndef   __kernel_multisend_h__
 #define   __kernel_multisend_h__
-#include "collectives/interface/ccmi_internal.h"
-#include "collectives/util/ccmi_util.h"
-#include "collectives/util/ccmi_debug.h"
+
+#include "interface/ccmi_internal.h"
+#include "util/ccmi_util.h"
+#include "util/ccmi_debug.h"
 #include "ll_topology.h" 
 #include "ll_pipeworkqueue.h" 
 

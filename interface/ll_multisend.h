@@ -35,8 +35,8 @@
 #include "ll_topology.h"
 #include "ll_pipeworkqueue.h"
 
-//#define DEPRECATED_MULTICAST
-//#define DEPRECATED_MANYTOMANY
+#define DEPRECATED_MULTICAST
+#define DEPRECATED_MANYTOMANY
 
 #ifdef __cplusplus
 extern "C"
@@ -158,7 +158,7 @@ extern "C"
   /**
    * \brief ???
    * \Warning Any changes to this enum must also be applied to
-   * Schedule::Subtask in sys/collectives/adaptor/ccmi_internal.h
+   * Schedule::Subtask in interface/ccmi_internal.h 
    */
   typedef enum {
     DCMF_PT_TO_PT_SEND         =  0,	/* DEPRECATED */

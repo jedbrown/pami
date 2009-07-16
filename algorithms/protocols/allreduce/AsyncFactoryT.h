@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/AsyncFactoryT.h
+ * \file algorithms/protocols/allreduce/AsyncFactoryT.h
  * \brief  CCMI factory for async [all]reduce compositeT 
  *  
  * \todo AsyncFactoryT and FactoryT are very similar and could be combined. 
- * \todo should the mapping be a template parameter?  Mapping vs Mapping 
+ * \todo should the mapping be a template parameter?  CollectiveMapping vs CollectiveMapping 
  */
 
 #ifndef __ccmi_adaptor_allreduce_asyncfactoryt_h__
@@ -31,11 +31,11 @@ namespace CCMI
       ///
       /// This factory will generate a CompositeT [all]reduce.
       /// 
-      template <class CONNMGR, class COMPOSITE> class AsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactory
+      template <class CONNMGR, class COMPOSITE, class MAP> class AsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactory<MAP>
       {
       protected:
         CONNMGR     _sconnmgr;
-//      static CCMI_Request_t *   cb_asyncReceiveHead(const CCMIQuad    * info,
+//      static CCMI_Request_t *   cb_asyncReceiveHead(const CMQuad    * info,
 //                                                    unsigned          count,
 //                                                    unsigned          peer,
 //                                                    unsigned          sndlen,
@@ -44,7 +44,7 @@ namespace CCMI
 //                                                    unsigned        * rcvlen,
 //                                                    char           ** rcvbuf,
 //                                                    unsigned        * pipewidth,
-//                                                    CCMI_Callback_t * cb_done)
+//                                                    CM_Callback_t * cb_done)
 //      {
 //        return CCMI::Adaptor::Allreduce::AsyncFactory::cb_receiveHead(info,
 //                                                                          count,
@@ -66,18 +66,17 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline AsyncFactoryT(CCMI::Mapping *mapping, 
-                             CCMI::MultiSend::MulticastInterface *mf, 
+        inline AsyncFactoryT(MAP *mapping, 
+                             CCMI::MultiSend::OldMulticastInterface *mf, 
                              CCMI_mapIdToGeometry cb_geometry,
                              ConfigFlags flags) :
-        CCMI::Adaptor::Allreduce::AsyncFactory(mapping, mf, cb_geometry, flags), 
+        CCMI::Adaptor::Allreduce::AsyncFactory<MAP>(mapping, mf, cb_geometry, flags), 
         _sconnmgr(mapping)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT() ALERT:\n",(int)this, COMPOSITE::name));
           TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT() mf<%#X>\n",(int)this, COMPOSITE::name,
                           (int) mf));
           setConnectionManager(&_sconnmgr);
-          mf->setCallback (cb_receiveHead, this);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -91,14 +90,14 @@ namespace CCMI
         ///
         virtual CCMI::Executor::Composite * generate
         (CCMI_CollectiveRequest_t * request,
-         CCMI_Callback_t            cb_done,
+         CM_Callback_t            cb_done,
          CCMI_Consistency           consistency,
          Geometry                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         CCMI_Dt                    dtype,
-         CCMI_Op                    op,
+         CM_Dt                    dtype,
+         CM_Op                    op,
          int                        root = -1 )
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
@@ -111,10 +110,10 @@ namespace CCMI
           COMPOSITE *allreduce = 
           new (c_request, sizeof(CCMI_Executor_t))
           COMPOSITE(request,
-                    (CCMI::Mapping *)_mapping, &_sconnmgr, cb_done,
-                    consistency, _minterface, geometry,
+                    this->_mapping, &this->_sconnmgr, cb_done,
+                    consistency, this->_minterface, geometry,
                     srcbuf, dstbuf, 0, count, dtype, op,
-                    _flags, this, 
+                    this->_flags, this, 
                     geometry->getAllreduceIteration(),
                     root,
                     getOneColor(geometry)
@@ -132,8 +131,8 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generateAsync
         (Geometry                 * geometry,
          unsigned                   count,
-         CCMI_Dt                    dtype,
-         CCMI_Op                    op,
+         CM_Dt                    dtype,
+         CM_Op                    op,
          unsigned                   iteration,
          int                        root = -1 )
         {
@@ -142,7 +141,7 @@ namespace CCMI
                           " geometry %#X comm %#X iteration %#X\n",(int)this, COMPOSITE::name, 
                           sizeof(*this),(int) geometry, (int) geometry->comm(), iteration));
 
-          CCMI_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
+          CM_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
 
           //CCMI_assert(geometry->getAsyncAllreduceMode());
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage(iteration);
@@ -150,15 +149,15 @@ namespace CCMI
           COMPOSITE *allreduce = 
           new (c_request, sizeof(CCMI_Executor_t))
           COMPOSITE((CCMI_CollectiveRequest_t*)NULL, // restart will reset this
-                    (CCMI::Mapping *)_mapping, &_sconnmgr, 
+                    this->_mapping, &this->_sconnmgr, 
                     temp_cb_done, // bogus temporary cb, restart will reset it.
                     (CCMI_Consistency) CCMI_MATCH_CONSISTENCY, // restart may reset this
-                    _minterface, 
+                    this->_minterface, 
                     geometry,
                     NULL, // restart will reset src buffer
                     NULL, // restart will reset dst buffer
                     0, count, dtype, op,
-                    _flags, this, iteration,
+                    this->_flags, this, iteration,
                     root,
                     getOneColor(geometry)
                    );

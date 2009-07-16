@@ -7,19 +7,19 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file executor/Broadcast.h
+ * \file algorithms/executor/Broadcast.h
  * \brief ???
  */
 
 #ifndef   __broadcast_executor_h__
 #define   __broadcast_executor_h__
 
-//#define TRACE_ERR(x)  fprintf x
+//#define TRACE_FLOW(x)  fprintf x
 
-#include "collectives/algorithms/schedule/Schedule.h"
-#include "collectives/algorithms/executor/Executor.h"
-#include "collectives/interface/MultiSendOld.h"
-#include "collectives/algorithms/connmgr/ConnectionManager.h"
+#include "algorithms/schedule/Schedule.h"
+#include "algorithms/executor/Executor.h"
+#include "interface/MultiSend.h"
+#include "algorithms/connmgr/ConnectionManager.h"
 
 #define MAX_PARALLEL 20
 
@@ -37,10 +37,10 @@ namespace CCMI
     {
     protected:
 
-      Mapping                                   * _mapping;
+      CollectiveMapping                                   * _mapping;
       Schedule::Schedule                        * _comm_schedule;
-      MultiSend::MulticastInterface             * _mInterface;
-      MultiSend::CCMI_Multicast_t         _msend;
+      MultiSend::OldMulticastInterface             * _mInterface;
+      MultiSend::CCMI_OldMulticast_t         _msend;
 
       int              _comm;
       unsigned         _root;
@@ -59,7 +59,7 @@ namespace CCMI
       unsigned         _destpes    [MAX_PARALLEL];
       unsigned         _hints      [MAX_PARALLEL];
 
-      //CCMI_Callback_t           _msend_cb;
+      //CM_Callback_t           _msend_cb;
       CCMI_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
       CCMI_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
 
@@ -82,7 +82,7 @@ namespace CCMI
           _comm_schedule->getDstPeList (phase+count, _destpes+_nmessages,
                                         ndest, _hints+_nmessages);
 
-          TRACE_ERR ((stderr, "%d: destpe %d phase %d", _mapping->rank(), _destpes[_nmessages], count+_startphase));
+          TRACE_FLOW ((stderr, "destpe %d phase %d", _destpes[_nmessages], count+_startphase));
 
           CCMI_assert(_nmessages + ndest < MAX_PARALLEL);
           _nmessages += ndest;
@@ -92,9 +92,9 @@ namespace CCMI
 
     public:
 
-      static void staticSendDone (void *clientdata, CCMI_Error_t *err)
+      static void staticSendDone (void *clientdata, CM_Error_t *err)
       {
-        CCMIQuad * info = NULL;
+        CMQuad * info = NULL;
         Broadcast *bcast = (Broadcast *) clientdata;
         bcast->notifySendDone( *info );
       }
@@ -109,7 +109,7 @@ namespace CCMI
       {
       }
 
-      inline Broadcast (Mapping *map, unsigned comm,
+      inline Broadcast (CollectiveMapping *map, unsigned comm,
                         ConnectionManager::ConnectionManager *connmgr,
                         unsigned color, bool post_recvs = false):
       Executor(),
@@ -140,7 +140,7 @@ namespace CCMI
         _msend.setRequestBuffer(&_send_request);
         _msend.setConsistency (CCMI_MATCH_CONSISTENCY);
 
-        CCMIQuad *info = (_postReceives)?(NULL):(CCMIQuad*)((void*)&_mdata);
+        CMQuad *info = (_postReceives)?(NULL):(CMQuad*)((void*)&_mdata);
         _msend.setInfo(info,  1);
         _msend.setFlags (MultiSend::CCMI_FLAGS_UNSET);
 
@@ -170,7 +170,7 @@ namespace CCMI
         setPhase (phase);
       }
 
-      inline void setMulticastInterface (MultiSend::MulticastInterface *mf)
+      inline void setMulticastInterface (MultiSend::OldMulticastInterface *mf)
       {
         _mInterface = mf;
       }
@@ -205,8 +205,8 @@ namespace CCMI
       //------------------------------------------
 
       virtual void   start          ();
-      virtual void   notifySendDone ( const CCMIQuad &info );
-      virtual void   notifyRecv     (unsigned src,  const CCMIQuad &info,
+      virtual void   notifySendDone ( const CMQuad &info );
+      virtual void   notifyRecv     (unsigned src,  const CMQuad &info,
                                      char     *buf, unsigned bytes);
 
       //-----------------------------------------
@@ -225,7 +225,7 @@ namespace CCMI
       {
         return _pipelinewidth;
       }
-      inline Mapping       *getMapping ()
+      inline CollectiveMapping       *getMapping ()
       {
         return _mapping;
       }
@@ -242,7 +242,7 @@ namespace CCMI
 ///
 inline void  CCMI::Executor::Broadcast :: start ()
 {
-  TRACE_ERR ((stderr, "In Start with phase %d, num total phases %d\n", _startphase, _nphases));
+  TRACE_FLOW ((stderr, "In Start with phase %d, num total phases %d\n", _startphase, _nphases));
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
@@ -258,7 +258,7 @@ inline void  CCMI::Executor::Broadcast :: start ()
 inline void  CCMI::Executor::Broadcast :: sendNext ()
 {
 
-  TRACE_ERR ((stderr, "%d: In Send Next %d, %d, %d\n", _mapping->rank(), _startphase, _nphases, _nmessages));
+  TRACE_FLOW ((stderr, "In Send Next %d, %d, %d\n", _startphase, _nphases, _nmessages));
 
   //Leaf node who does not have to send
   if(_startphase == _nphases || _nmessages == 0)
@@ -302,7 +302,7 @@ inline void  CCMI::Executor::Broadcast :: sendNext ()
   _mdata._phase = 0;
 
   for(int dcount = 0; dcount < _nmessages; dcount++)
-    TRACE_ERR ((stderr, "%d: Calling multisend to %d for size %d\n", _mapping->rank(), _destpes[dcount], _curlen));
+    TRACE_FLOW ((stderr, "Calling multisend to %d for size %d\n", _destpes[dcount], _curlen));
 
   //Moved to setInfo call
   //unsigned connid = 
@@ -318,9 +318,9 @@ inline void  CCMI::Executor::Broadcast :: sendNext ()
 
 }
 
-inline void  CCMI::Executor::Broadcast :: notifySendDone ( const CCMIQuad & info )
+inline void  CCMI::Executor::Broadcast :: notifySendDone ( const CMQuad & info )
 {
-  TRACE_ERR((stderr, "In notify send done %d\n", _nmessages));
+  TRACE_FLOW((stderr, "In notify send done %d\n", _nmessages));
 
   _bytessent += _curlen;
   _curlen = 0;
@@ -332,11 +332,11 @@ inline void  CCMI::Executor::Broadcast :: notifySendDone ( const CCMIQuad & info
 
 inline void  CCMI::Executor::Broadcast::notifyRecv
 (unsigned        src,
- const CCMIQuad  & info,
+ const CMQuad  & info,
  char          * buf,
  unsigned        bytes)
 {
-  TRACE_ERR((stderr, "%d: In notify recv for %d\n", _mapping->rank(), bytes));
+  TRACE_FLOW((stderr, "In notify recv for %d\n", bytes));
 
   //buffer has changed
   if(buf != NULL)

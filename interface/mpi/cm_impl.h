@@ -13,7 +13,7 @@
 #ifndef __cm_impl_h__
 #define __cm_impl_h__
 
-#warning generic implementation
+#warning mpi implementation
 
 #include <assert.h>
 #include <stdio.h>

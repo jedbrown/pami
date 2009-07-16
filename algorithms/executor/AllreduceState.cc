@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file executor/AllreduceState.cc
+ * \file algorithms/executor/AllreduceState.cc
  * \brief ???
  */
 
@@ -137,7 +137,7 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
   ///  to nphases AND changing the indexing throughout the code to _phaseVec[phase-_startPhase] 
   ///  instead of _phaseVec[phase]
 
-  /// Calculate how much storage we need for all our schedule/phase data.
+  /// Calculate how much storage we need for all our algorithms/schedule/phase data.
   unsigned allocationNewSize =
   ((_endPhase + 1) * sizeof(PhaseState)) +      // _phaseVec
   (_numSrcPes *                                 // src pe data structures:
@@ -145,7 +145,7 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
     sizeof(unsigned) +                          // _all_srcHints
     sizeof(unsigned) +                          // _all_chunks
     sizeof(char*)  +                            // _all_recvBufs
-    sizeof(MultiSend::CCMI_MulticastRecv_t))) + // _all_mrecvs
+    sizeof(MultiSend::CCMI_OldMulticastRecv_t))) + // _all_mrecvs
   (_numDstPes *                                 // dst pe data structures:
    (sizeof(unsigned) +                          // _all_dstPes
     sizeof(unsigned)));                         // _all_dstHints
@@ -182,7 +182,7 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
   _all_chunks   = (unsigned*)((char*)_all_srcHints + (_numSrcPes * sizeof(unsigned)));
   _all_dstPes   = (unsigned*)((char*)_all_chunks   + (_numSrcPes * sizeof(unsigned)));
   _all_dstHints = (unsigned*)((char*)_all_dstPes   + (_numDstPes * sizeof(unsigned)));
-  _all_mrecvs   = (MultiSend::CCMI_MulticastRecv_t *) ((char*)_all_dstHints   + (_numDstPes * sizeof(unsigned)));
+  _all_mrecvs   = (MultiSend::CCMI_OldMulticastRecv_t *) ((char*)_all_dstHints   + (_numDstPes * sizeof(unsigned)));
 
   TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() allocation<%#.8X> _phaseVec<%#.8X> _all_recvBufs<%#.8X> _all_srcPes<%#.8X> _all_srcHints<%#.8X> _all_chunks<%#.8X> _all_dstPes<%#.8X> _all_dstHints<%#.8X>\n",
                (int)this,(int)_scheduleAllocation,
@@ -223,7 +223,7 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
           else
             connID = _bconnmgr->getRecvConnectionId (_commid, _root, srcrank, i, _color);   
 
-          MultiSend::CCMI_MulticastRecv_t *mrecv = &(_phaseVec[i].mrecv[scount]); 
+          MultiSend::CCMI_OldMulticastRecv_t *mrecv = &(_phaseVec[i].mrecv[scount]); 
           mrecv->connection_id = connID;
           mrecv->bytes = _bytes;
           mrecv->pipelineWidth = _pipelineWidth;
@@ -382,9 +382,9 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
   }
 
   if (_nextActivePhase)
-    free(_nextActivePhase);
+    CCMI_Free(_nextActivePhase);
   
-  _nextActivePhase = (unsigned *) malloc (sizeof(unsigned) * (_endPhase + 1));
+  _nextActivePhase = (unsigned *) CCMI_Alloc (sizeof(unsigned) * (_endPhase + 1));
 
   //the next active phase after endphase is a dummy place holder
   int cur_active_phase = _endPhase + 1;
@@ -406,10 +406,6 @@ void  CCMI::Executor::AllreduceState::setupReceives(unsigned infoRequired)
   TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setupReceives ALERT: Receive data being reset\n",(int)this));
 
   // setup/allocate receive request objects and bufs
-
-  /// \todo not sure this alignment is needed anymore but leaving it.
-  CCMI_assert((sizeof(CCMI_Request_t)%16)==0);         // Need 16 byte alignment?
-  CCMI_assert(((sizeof(RecvCallbackData) + 4)%16)==0); // Need 16 byte alignment?
 
   // How many requests might we receive per srcPe?  "infoRequired" indicates we 
   // are using recv head callback and need 1 per chunk per srcPE.  Otherwise we're doing postReceive 

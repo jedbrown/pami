@@ -11,7 +11,7 @@
 /* ************************************************************************* */
 
 #include "./Allreduce.h"
-#include "collectives/interface/Communicator.h"
+#include "interface/Communicator.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>

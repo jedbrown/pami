@@ -1,10 +1,22 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/barrier/BarrierFactory.h
+ * \brief ???
+ */
 
 #ifndef __ccmi_collectives_barrier_factory_h__
 #define __ccmi_collectives_barrier_factory_h__
 
-#include "collectives/algorithms/protocols/ProtocolFactory.h"
-#include "collectives/algorithms/executor/Barrier.h"
-#include "collectives/interface/Geometry.h"
+#include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "algorithms/executor/Barrier.h"
+#include "interface/Geometry.h"
 
 namespace CCMI
 {
@@ -13,39 +25,11 @@ namespace CCMI
     namespace Barrier
     {
       ///
-      /// \brief Barrier Factory Base class.
+      /// \brief Virtual Barrier Factory Base class.
       ///
-      class BarrierFactory : private ProtocolFactory
+      class BaseBarrierFactory : private CollectiveProtocolFactory
       {
-      protected:
-        CCMI::MultiSend::MulticastInterface          * _mcastInterface;
-        CCMI::Mapping                                * _mapping;
-        CCMI_mapIdToGeometry                           _cb_geometry;
-
       public:
-        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-        void operator delete(void * p)
-        {
-          CCMI_abort();
-        }
-
-        ///
-        /// \brief Constructor for barrier factory implementations.
-        ///
-        BarrierFactory (CCMI::MultiSend::MulticastInterface      * minterface,
-                        CCMI::Mapping                            * map,
-                        CCMI_mapIdToGeometry                       cb_geometry) :
-        _mcastInterface (minterface),
-        _mapping (map),
-        _cb_geometry (cb_geometry)
-        {
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
-                     (int)this,(int)cb_geometry));
-          minterface->setCallback (cb_head, this);
-        }
-
-        //   virtual bool Analyze(Geometry *geometry) = 0;
-
         ///
         /// \brief Generate a non-blocking barrier message.
         ///
@@ -59,7 +43,79 @@ namespace CCMI
         (CCMI_Executor_t           * request,
          Geometry                  * geometry) = 0;
 
-        static CCMI_Request_t *   cb_head   (const CCMIQuad    * info,
+      };  //- BarrierFactory
+
+      ///
+      /// \brief Barrier Factory Base class.
+      ///
+      template<class MAP>
+        class BarrierFactory : private BaseBarrierFactory
+        {
+        protected:
+          CCMI::MultiSend::MultisyncInterface  * _msyncInterface;
+          MAP                                * _mapping;
+          CCMI_mapIdToGeometry                           _cb_geometry;
+
+        public:
+          /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+          void operator delete(void * p)
+          {
+            CCMI_abort();
+          }
+
+          ///
+          /// \brief Constructor for barrier factory implementations.
+          ///
+          BarrierFactory (CCMI::MultiSend::MultisyncInterface      * minterface,
+                          MAP                           * map,
+                          CCMI_mapIdToGeometry                       cb_geometry) :
+          _msyncInterface (minterface),
+          _mapping (map),
+          _cb_geometry (cb_geometry)
+          {
+            TRACE_INIT((stderr,"<%#.8X>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
+                       (int)this,(int)cb_geometry));
+            //minterface->setCallback (cb_head, this);
+          }
+
+        };  //- BarrierFactory
+
+// Old, deprecated, interfaces for transition from OldMulticast to Multisync
+
+      ///
+      /// \brief Barrier Factory Base class.
+      ///
+      template<class MAP>
+      class OldBarrierFactory : private BaseBarrierFactory
+      {
+      protected:
+        CCMI::MultiSend::OldMulticastInterface  * _mcastInterface;
+        MAP                                     * _mapping;
+        CCMI_mapIdToGeometry                           _cb_geometry;
+
+      public:
+        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+        void operator delete(void * p)
+        {
+          CCMI_abort();
+        }
+
+        ///
+        /// \brief Constructor for barrier factory implementations.
+        ///
+        OldBarrierFactory (CCMI::MultiSend::OldMulticastInterface      * minterface,
+                        MAP                            * map,
+                        CCMI_mapIdToGeometry                       cb_geometry) :
+        _mcastInterface (minterface),
+        _mapping (map),
+        _cb_geometry (cb_geometry)
+        {
+          TRACE_INIT((stderr,"<%#.8X>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
+                     (int)this,(int)cb_geometry));
+          minterface->setCallback (cb_head, this);
+        }
+
+        static CCMI_Request_t *   cb_head   (const CMQuad    * info,
                                              unsigned          count,
                                              unsigned          peer,
                                              unsigned          sndlen,
@@ -68,10 +124,10 @@ namespace CCMI
                                              unsigned        * rcvlen,
                                              char           ** rcvbuf,
                                              unsigned        * pipewidth,
-                                             CCMI_Callback_t * cb_done)
+                                             CM_Callback_t * cb_done)
         {
           CollHeaderData  *cdata = (CollHeaderData *) info;      
-          BarrierFactory *factory = (BarrierFactory *) arg;
+          OldBarrierFactory *factory = (OldBarrierFactory *) arg;
 
           Geometry *geometry = (Geometry *) Geometry::getCachedGeometry(cdata->_comm);
           if(geometry == NULL)
@@ -80,14 +136,14 @@ namespace CCMI
             Geometry::updateCachedGeometry((CCMI_Geometry_t *)geometry, cdata->_comm);
           }
 
-          CCMI::Executor::Barrier *executor = (CCMI::Executor::Barrier*)
+          CCMI::Executor::OldBarrier *executor = (CCMI::Executor::OldBarrier*)
                                               geometry->getBarrierExecutor();
           CCMI_assert (executor != NULL);
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
                      (int)factory,cdata->_comm,(int)executor));
 
           //Override poly morphism
-          executor->CCMI::Executor::Barrier::notifyRecv (peer, *info, NULL, 0);
+          executor->CCMI::Executor::OldBarrier::notifyRecv (peer, *info, NULL, 0);
 
           *rcvlen    = 0;
           //*rcvbuf    = NULL;
@@ -97,7 +153,8 @@ namespace CCMI
 
           return NULL;
         }
-      };  //- BarrierFactory
+      };  //- OldBarrierFactory
+////////////////////////////////////////////////////////////////////////////
     };
   };
 };  //namespace CCMI::Adaptor::Barrier

@@ -7,16 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/GiSchedule.h
+ * \file algorithms/schedule/GiSchedule.h
  * \brief ???
  */
 
 #ifndef __GI_SCHEDULE__
 #define __GI_SCHEDULE__
 
-#include "interfaces/Schedule.h"
-#include "adaptor/ccmi_util.h"
-#include "adaptor/TorusMapping.h"
+#include "Schedule.h"
+#include "util/ccmi_util.h"
+#include "interface/TorusCollectiveMapping.h"
 #include "LockboxBarrierSchedule.h"
 
 namespace CCMI
@@ -31,7 +31,7 @@ namespace CCMI
     class GiSchedule : public Schedule
     {
     protected:
-      TorusMapping *_mapping;     /**< mapping for geometry */
+      TorusCollectiveMapping *_mapping;     /**< mapping for geometry */
       unsigned _npeers;     /**< number of peer nodes */
       unsigned _peer_ranks[MAX_NUM_CORES];  /**< peer nodes ranks */
       unsigned _masterRank;  /**< the master rank for the node */
@@ -149,7 +149,7 @@ namespace CCMI
       {
       }
 
-      GiSchedule(TorusMapping *map, unsigned nranks, unsigned *ranks);
+      GiSchedule(TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks);
 
       /**
        * \brief Get the upstream processors. Source processors
@@ -256,7 +256,7 @@ namespace CCMI
 
 
 
-inline CCMI::Schedule::GiSchedule::GiSchedule(TorusMapping *map,
+inline CCMI::Schedule::GiSchedule::GiSchedule(TorusCollectiveMapping *map,
                                               unsigned nranks,
                                               unsigned *ranks) :
 _masterRank(CCMI_UNDEFINED_RANK)

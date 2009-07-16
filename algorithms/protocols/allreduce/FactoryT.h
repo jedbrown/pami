@@ -7,9 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/FactoryT.h
+ * \file algorithms/protocols/allreduce/FactoryT.h
  * \brief  CCMI factory for sync [all]reduce compositeT 
- * \todo should the mapping be a template parameter?  Mapping vs Mapping 
   */
 
 #ifndef __ccmi_adaptor_allreduce_factoryt_h__
@@ -29,7 +28,7 @@ namespace CCMI
       ///
       /// This factory will generate a CompositeT [all]reduce.
       /// 
-      template <class CONNMGR, class COMPOSITE> class FactoryT : public CCMI::Adaptor::Allreduce::Factory
+      template <class CONNMGR, class COMPOSITE, class MAP> class FactoryT : public CCMI::Adaptor::Allreduce::Factory<MAP>
       {
       protected:
         CONNMGR     _sconnmgr;
@@ -42,18 +41,18 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline FactoryT(CCMI::Mapping *mapping, 
-                        CCMI::MultiSend::MulticastInterface *mf, 
+        inline FactoryT(MAP *mapping, 
+                        CCMI::MultiSend::OldMulticastInterface *mof, 
+                        CCMI::MultiSend::MulticombineInterface *mf, 
                         CCMI_mapIdToGeometry cb_geometry,
                         ConfigFlags flags) :
-        CCMI::Adaptor::Allreduce::Factory(mapping, mf, cb_geometry, flags), 
+        CCMI::Adaptor::Allreduce::Factory<MAP>(mapping, mof, mf, cb_geometry, flags), 
         _sconnmgr(mapping)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT() ALERT:\n",(int)this, COMPOSITE::name));
           TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT() mf<%#X>\n",(int)this, COMPOSITE::name,
                           (int) mf));
           setConnectionManager(&_sconnmgr);
-          mf->setCallback (cb_receiveHead, this);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -67,14 +66,14 @@ namespace CCMI
         ///
         virtual CCMI::Executor::Composite * generate
         (CCMI_CollectiveRequest_t * request,
-         CCMI_Callback_t            cb_done,
+         CM_Callback_t            cb_done,
          CCMI_Consistency           consistency,
          Geometry                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         CCMI_Dt                    dtype,
-         CCMI_Op                    op,
+         CM_Dt                    dtype,
+         CM_Op                    op,
          int                        root = -1 )
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
@@ -84,13 +83,14 @@ namespace CCMI
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
 
           COMPOSITE *allreduce = 
-	  new (c_request)//, sizeof(CCMI_Executor_t))
+          new (c_request, sizeof(CCMI_Executor_t))
           COMPOSITE(request,
-                    (CCMI::Mapping *)_mapping, &_sconnmgr, cb_done,
-                    consistency, _minterface, geometry,
+                    this->_mapping, &this->_sconnmgr, cb_done,
+                    consistency, this->_moldinterface, geometry,
                     srcbuf, dstbuf, 0, count, dtype, op,
-                    _flags, this,
-                    root
+                    this->_flags, this,
+                    root,
+                    getOneColor(geometry)
                     );
 
           geometry->setAllreduceComposite (allreduce);      
@@ -99,6 +99,10 @@ namespace CCMI
           return allreduce;
         }
 
+        CCMI::Schedule::Color getOneColor(Geometry * geometry)
+        {
+          return CCMI::Schedule::NO_COLOR;
+        }
         bool Analyze( Geometry * geometry )
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::Analyze() ALERT: %s\n",(int)this, COMPOSITE::name,

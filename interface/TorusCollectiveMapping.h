@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file adaptor/TorusMapping.h
+ * \file interface/TorusCollectiveMapping.h
  * \brief Define a torus mapping which must be implemented in the 
  * adaptor. 
  */
@@ -15,8 +15,8 @@
 #ifndef   __collective_engine_torus_mapping__
 #define   __collective_engine_torus_mapping__
 
-#include "./ccmi_internal.h"
-#include "./Mapping.h"
+#include "interface/ccmi_internal.h"
+#include "interface/CollectiveMapping.h"
 
 #ifndef   CCMI_TORUS_NDIMS
 #define   CCMI_TORUS_NDIMS 4
@@ -36,7 +36,7 @@
 
 namespace CCMI
 {
-  class TorusMapping : public Mapping
+  class TorusCollectiveMapping : public CollectiveMapping
   {
   protected:
     unsigned  _num_dims;
@@ -45,9 +45,9 @@ namespace CCMI
 
   public:
 
-    TorusMapping () : Mapping ()
+    TorusCollectiveMapping () : CollectiveMapping (),
+      _num_dims(CCMI_TORUS_NDIMS)
     {
-      _num_dims = CCMI_TORUS_NDIMS;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ namespace CCMI
     /// Implement this in the adaptor
     /// \return new instance
     //////////////////////////////////////////////////////////////////
-    TorusMapping (void * personality);
+    TorusCollectiveMapping (void * personality);
     
     //////////////////////////////////////////////////////////////////
     /// \brief Retreives the coordinate of the node in the "dim"
@@ -89,19 +89,19 @@ namespace CCMI
     
     //////////////////////////////////////////////////////////////////
     /// \brief Returns the rank given hardware coordinates in coords
-    /// \param[out] rank: rank, valid only if rc=CCMI_SUCCESS
+    /// \param[out] rank: rank, valid only if rc=CM_SUCCESS
     /// Implement this in the adaptor
     /// \return: int
     //////////////////////////////////////////////////////////////////
-    CCMI_Result Torus2Rank(unsigned* coords, unsigned* rank);
+    CM_Result Torus2Rank(unsigned* coords, unsigned* rank);
 
     //////////////////////////////////////////////////////////////////
     /// \brief Returns the hardware coords of a logical rank
     /// Implement this in the adaptor
     /// \return Returns the mapped coords of a given rank
     //////////////////////////////////////////////////////////////////
-    CCMI_Result Rank2Torus(unsigned* coords, unsigned rank) const;
+    CM_Result Rank2Torus(unsigned* coords, unsigned rank) const;
     
-  };  //- TorusMapping
+  };  //- TorusCollectiveMapping
 };  //- CCMI
 #endif

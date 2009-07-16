@@ -14,7 +14,7 @@
 #define __tspcoll_barrier_h__
 
 #include "./CollExchange.h"
-#include "collectives/interface/Communicator.h"
+#include "interface/Communicator.h"
 
 #undef TRACE
 //#define DEBUG_TSPCOLL_BARRIER 1

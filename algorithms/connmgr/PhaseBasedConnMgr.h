@@ -14,7 +14,7 @@
 #ifndef  __phase_conn_mgr_h__
 #define  __phase_conn_mgr_h__
 
-#include "interfaces/ConnectionManager.h"
+#include "ConnectionManager.h"
 
 ///
 /// This connection manager uses the phase of the collective for the
@@ -31,12 +31,12 @@ namespace CCMI
     class PhaseBasedConnMgr : public ConnectionManager
     {
     protected:
-      Mapping *_mapping;
+      CollectiveMapping *_mapping;
 
     public:
 
       /// Constructor
-      PhaseBasedConnMgr (Mapping *map) : ConnectionManager(), _mapping(map)
+      PhaseBasedConnMgr (CollectiveMapping *map) : ConnectionManager(), _mapping(map)
       {
         setNumConnections (-1);
       }

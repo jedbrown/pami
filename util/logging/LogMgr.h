@@ -16,7 +16,8 @@
 
 #include  <stdio.h>
 #include  <stdlib.h>
-#include  "collectives/interface/Mapping.h"
+#include  "interface/ccmi_internal.h"
+#include  "interface/CollectiveMapping.h"
 
 namespace CCMI
 {
@@ -77,7 +78,7 @@ namespace CCMI
 #endif
       }
 
-      void   dumpTimers(FILE *fp, Mapping *map)
+      void   dumpTimers(FILE *fp, CollectiveMapping *map)
       {
 #if ENABLE_PROFILING
         for(int idx = 0; idx < NTIMERS; idx ++)

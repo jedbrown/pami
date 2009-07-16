@@ -14,7 +14,7 @@
 #ifndef  __torus_conn_mgr_h__
 #define  __torus_conn_mgr_h__
 
-#include "interfaces/ConnectionManager.h"
+#include "ConnectionManager.h"
 
 namespace CCMI
 {
@@ -24,7 +24,7 @@ namespace CCMI
     class TorusConnMgr : public ConnectionManager
     {
     protected:
-      TorusMapping *_mapping;
+      TorusCollectiveMapping *_mapping;
 
     public:
 
@@ -39,7 +39,7 @@ namespace CCMI
       const static unsigned  NCONN      = 14;   //number of connections
 
       /// Constructor
-      TorusConnMgr (TorusMapping *map) : ConnectionManager(), _mapping(map)
+      TorusConnMgr (TorusCollectiveMapping *map) : ConnectionManager(), _mapping(map)
       {
         setNumConnections (NCONN);
       }

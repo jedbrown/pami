@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/TreeSchedule.h
+ * \file algorithms/schedule/TreeSchedule.h
  * \brief Schedule for Barrier, Broadcast, and [All]Reduce
  * on the BlueGene tree network
  */
@@ -15,10 +15,10 @@
 #ifndef  __TREE_SCHEDULE__
 #define  __TREE_SCHEDULE__
 
-#include "interfaces/Schedule.h"
-#include "adaptor/ccmi_util.h"
-#include "adaptor/TorusMapping.h"
-#include "schedule/BinomialTree.h"	// or SpraySchedule.h
+#include "Schedule.h"
+#include "util/ccmi_util.h"
+#include "interface/TorusCollectiveMapping.h"
+#include "algorithms/schedule/BinomialTree.h"	// or SpraySchedule.h
 #include "LockboxBarrierSchedule.h"
 
 #ifndef TREE_LOCAL_SCHED_TYPE
@@ -46,15 +46,15 @@ namespace CCMI
       {
       }
 
-      TreeSchedule(TorusMapping *map, unsigned nranks, unsigned *ranks);
+      TreeSchedule(TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks);
 
       /**
        * \brief Return maximum number of phases ever used by this schedule
        *
-       * \param[in] map	Mapping for the partition/geometry
+       * \param[in] map	CollectiveMapping for the partition/geometry
        * \param[in] nranks	Number of ranks in geometry
        */
-      static unsigned getMaxPhases(TorusMapping *map, unsigned nranks)
+      static unsigned getMaxPhases(TorusCollectiveMapping *map, unsigned nranks)
       {
         unsigned m, max = 0;
 
@@ -82,7 +82,7 @@ namespace CCMI
       /// \note _peer_ranks[0] is always the designated local root.
       /// May also be the collective root.
       ///
-      TorusMapping *_mapping;   /**< mapping for geometry */
+      TorusCollectiveMapping *_mapping;   /**< mapping for geometry */
       CollectiveOperation _op;  /**< collective operation being done */
       unsigned _root;     /**< root node in current op */
       unsigned _npeers;   /**< number of peer nodes */
@@ -446,12 +446,12 @@ namespace CCMI
  * i.e. "local cores".  The rest of schedule cannot be built until we
  * know the root node and collective operation.
  *
- * \param[in] map	Mapping object for geometry
+ * \param[in] map	CollectiveMapping object for geometry
  * \param[in] nranks	Number of ranks in geometry
  * \param[in] ranks	List of ranks in geometry
  */
 inline CCMI::Schedule::TreeSchedule::
-TreeSchedule(TorusMapping *map, unsigned nranks, unsigned *ranks) 
+TreeSchedule(TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks) 
 {
   unsigned i, t_size;
   unsigned tmp_coords[CCMI_TORUS_NDIMS];
@@ -470,7 +470,7 @@ TreeSchedule(TorusMapping *map, unsigned nranks, unsigned *ranks)
     for(i = 0; i < t_size; ++i)
     {
       tmp_coords[CCMI_T_DIM] = i;
-      if(CCMI_SUCCESS  == 
+      if(CM_SUCCESS  == 
          _mapping->Torus2Rank(tmp_coords, &trank))
         _peer_ranks[_npeers++] = trank;
     }

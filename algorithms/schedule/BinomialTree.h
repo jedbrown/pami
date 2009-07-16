@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/BinomialTree.h
+ * \file algorithms/schedule/BinomialTree.h
  * \brief The Binomial Schedule for Barrier, Broadcast, and [All]Reduce.
  *
  * Also used by the Rectangle schedule to implement Reduce.
@@ -17,7 +17,7 @@
 #define __binomial_tree_schedule__
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
-#include "collectives/algorithms/schedule/Schedule.h"
+#include "Schedule.h"
 
 namespace CCMI
 {
@@ -246,7 +246,7 @@ namespace CCMI
 
     public:
 
-      static unsigned getMaxPhases(Mapping *mapping, unsigned nranks,
+      static unsigned getMaxPhases(CollectiveMapping *mapping, unsigned nranks,
                                    unsigned *nbino = NULL)
       {
         unsigned nph;
@@ -288,7 +288,7 @@ namespace CCMI
        * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
        */
-      BinomialTreeSchedule(Mapping *mapping, unsigned nranks,
+      BinomialTreeSchedule(CollectiveMapping *mapping, unsigned nranks,
                            unsigned *ranks);
 
       /**
@@ -401,7 +401,7 @@ namespace CCMI
  * \param[in] ranks	Ranks list
  */
 inline CCMI::Schedule::BinomialTreeSchedule::
-BinomialTreeSchedule(Mapping *mapping, unsigned nranks, unsigned *ranks) : Schedule()
+BinomialTreeSchedule(CollectiveMapping *mapping, unsigned nranks, unsigned *ranks) : Schedule()
 {
 
   CCMI_assert(nranks > 0);

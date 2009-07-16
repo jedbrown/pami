@@ -1,10 +1,22 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/broadcast/async_impl.h
+ * \brief ???
+ */
 
-#ifndef   __ccmi_adaptor_async_broadcast_impl__
-#define   __ccmi_adaptor_async_broadcast_impl__
+#ifndef   __ccmi_adaptor_broadcast_async_impl__
+#define   __ccmi_adaptor_broadcast_async_impl__
 
-#include "collectives/algorithms/schedule/BinomialTree.h"
-#include "collectives/algorithms/schedule/RingSchedule.h"
-#include "collectives/algorithms/protocols/broadcast/AsyncCompositeT.h"
+#include "algorithms/schedule/BinomialTree.h"
+#include "algorithms/schedule/RingSchedule.h"
+#include "./AsyncCompositeT.h"
 
 namespace CCMI
 {
@@ -12,20 +24,21 @@ namespace CCMI
   {
     namespace Broadcast
     {
-      template <class T> void create_async_schedule (void                      * buf,
-                                                     unsigned                    size,
-                                                     unsigned                    root,
-                                                     CCMI::Mapping             * map,
-                                                     Geometry                  * g)
+
+      typedef 
+      AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule, CCMI::CollectiveMapping> AsyncBinomialComposite;      
+      template<> 
+      void AsyncBinomialComposite::create_schedule(void                      * buf,
+                                                   unsigned                    size,
+                                                   unsigned                    root,
+                                                   CCMI::CollectiveMapping             * map,
+                                                   Geometry                  * g)
       {
-	//        new (buf, size) T (map, g->nranks(), g->ranks());
-        new (buf) T (map, g->nranks(), g->ranks());
+        new (buf, size) CCMI::Schedule::BinomialTreeSchedule(map, g->nranks(), g->ranks());
       }
 
-      typedef AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule, 
-      create_async_schedule<CCMI::Schedule::BinomialTreeSchedule> > AsyncBinomialComposite;      
-
-      typedef AsyncCompositeFactoryT <AsyncBinomialComposite, true_analyze> AsyncBinomialFactory;
+      typedef AsyncCompositeFactoryT <AsyncBinomialComposite, true_analyze, CCMI::CollectiveMapping> 
+      AsyncBinomialFactory;
     };
   };
 };

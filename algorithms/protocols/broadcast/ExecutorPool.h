@@ -1,8 +1,21 @@
-#ifndef  __ccmi_adaptor_executor_pool__
-#define  __ccmi_adaptor_executor_pool__
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/broadcast/ExecutorPool.h
+ * \brief ???
+ */
 
-#include "collectives/util/queue/Queue.h"
-#include "collectives/algorithms/protocols/broadcast/BcastQueueElem.h"
+#ifndef  __ccmi_adaptor_broadcast_executor_pool__
+#define  __ccmi_adaptor_broadcast_executor_pool__
+
+#include "util/queue/Queue.h"
+#include "./BcastQueueElem.h"
 
 #define MAX_PREALLOCATED_BYTES      256
 #define MAX_NUM_PREALLOCATED        64

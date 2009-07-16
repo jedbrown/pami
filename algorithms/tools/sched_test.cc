@@ -20,14 +20,14 @@
 #include <getopt.h>
 
 #include "fakeTorusMapping.h"
-#include "schedule/Rectangle.h"
-#include "schedule/JaynomialTree.h"
-#include "schedule/BinomialTree.h"
-#include "schedule/BinomialTree.cc"
-#include "schedule/TreeSchedule.h"
-#include "schedule/GiSchedule.h"
-#include "schedule/RingSchedule.h"
-#include "schedule/LockboxBarrierSchedule.h"
+#include "algorithms/schedule/Rectangle.h"
+#include "algorithms/schedule/JaynomialTree.h"
+#include "algorithms/schedule/BinomialTree.h"
+#include "algorithms/schedule/BinomialTree.cc"
+#include "algorithms/schedule/TreeSchedule.h"
+#include "algorithms/schedule/GiSchedule.h"
+#include "algorithms/schedule/RingSchedule.h"
+#include "algorithms/schedule/LockboxBarrierSchedule.h"
 
 char *edges[] = {
   "red", "blue", "green", "yellow", "purple",
@@ -94,7 +94,7 @@ struct params
   char *coll_str;
   sched_type type;
   char *type_str;
-  CCMI::TorusMapping *map;
+  CCMI::TorusCollectiveMapping *map;
   CCMI::Schedule::Schedule *sched;
   const CCMI::Schedule::Rectangle *rect;
   CCMI::Schedule::Color color;
@@ -385,7 +385,7 @@ void get_sched(struct params *pm, void *mem)
   {
     if(!pm->flag)
     {
-      pm->sched = new(mem) CCMI::Schedule::JaynomialTreeSchedule((CCMI::Mapping *)pm->map, pm->rect->xs, pm->ranks);
+      pm->sched = new(mem) CCMI::Schedule::JaynomialTreeSchedule((CCMI::CollectiveMapping *)pm->map, pm->rect->xs, pm->ranks);
     }
     else
     {
@@ -398,7 +398,7 @@ void get_sched(struct params *pm, void *mem)
   {
     if(!pm->flag)
     {
-      pm->sched = new(mem) CCMI::Schedule::BinomialTreeSchedule((CCMI::Mapping *)pm->map, pm->nranks, pm->ranks);
+      pm->sched = new(mem) CCMI::Schedule::BinomialTreeSchedule((CCMI::CollectiveMapping *)pm->map, pm->nranks, pm->ranks);
     }
     else
     {
@@ -726,7 +726,7 @@ int main(int argc, char **argv)
         fclose(fp);
       }
       // At first, we keep _rect.?s as "max value + 1"
-      // This works fine later, as TorusMapping is always
+      // This works fine later, as TorusCollectiveMapping is always
       // based at 0,0,0,0.
       _rect = (CCMI::Schedule::Rectangle)
       {
@@ -790,7 +790,7 @@ int main(int argc, char **argv)
       _rect.ys -= _rect.y0;
       _rect.zs -= _rect.z0;
       _rect.ts -= _rect.t0;
-      pm.map = new CCMI::TorusMapping::TorusMapping(
+      pm.map = new CCMI::TorusCollectiveMapping::TorusCollectiveMapping(
                                                    pm.rect->xs, pm.rect->ys, pm.rect->zs, pm.rect->ts,
                                                    pm.rect->x0, pm.rect->y0, pm.rect->z0, pm.rect->t0,
                                                    pm.rect->x0, pm.rect->y0, pm.rect->z0, pm.rect->t0);
@@ -830,7 +830,7 @@ int main(int argc, char **argv)
       _rect.xs = _rect.xs - _rect.x0 + 1;
       _rect.y0 = _rect.z0 = _rect.t0 = 0;
       _rect.ys = _rect.zs = _rect.ts = 1;
-      pm.map = new CCMI::TorusMapping::TorusMapping(
+      pm.map = new CCMI::TorusCollectiveMapping::TorusCollectiveMapping(
                                                    pm.rect->xs, pm.rect->ys, pm.rect->zs, pm.rect->ts,
                                                    pm.rect->x0, pm.rect->y0, pm.rect->z0, pm.rect->t0,
                                                    pm.rect->x0, pm.rect->y0, pm.rect->z0, pm.rect->t0);
@@ -926,7 +926,7 @@ int main(int argc, char **argv)
     _rect.ys = abs((int)_rect.ys);
     _rect.zs = abs((int)_rect.zs);
     _rect.ts = abs((int)_rect.ts);
-    pm.map = new CCMI::TorusMapping::TorusMapping(
+    pm.map = new CCMI::TorusCollectiveMapping::TorusCollectiveMapping(
                                                  xs, ys, zs, ts,
                                                  0, 0, 0, 0,
                                                  pm.rect->x0, pm.rect->y0, pm.rect->z0, pm.rect->t0);

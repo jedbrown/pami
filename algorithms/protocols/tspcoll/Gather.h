@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "collectives/interface/Communicator.h"
+#include "interface/Communicator.h"
 #include "./Barrier.h"
 
 /* **************************************************************** */

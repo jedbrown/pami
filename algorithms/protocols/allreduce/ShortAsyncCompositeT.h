@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/ShortAsyncCompositeT.h
+ * \file algorithms/protocols/allreduce/ShortAsyncCompositeT.h
  * \brief CCMI allreduce async composite template
  *  
  * \todo AsyncCompositeT and CompositeT are very similar and could be combined. 
@@ -16,7 +16,7 @@
 #ifndef __ccmi_adaptor_allreduce_shortasynccompositet_h__
 #define __ccmi_adaptor_allreduce_shortasynccompositet_h__
 
-#include "protocols/allreduce/AsyncCompositeT.h"
+#include "./AsyncCompositeT.h"
 
 namespace CCMI
 {
@@ -30,31 +30,31 @@ namespace CCMI
       ///
       /// 
       /// 
-      template <class SCHEDULE, class EXECUTOR> class ShortAsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR> 
+      template <class SCHEDULE, class EXECUTOR, class MAP> class ShortAsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR,MAP> 
       {
       protected:
         unsigned _my_coord   [5]; //T,X,Y,Z,T
         unsigned _rect_start [5]; //T,X,Y,Z,T
       public:
         ShortAsyncCompositeT (CCMI_CollectiveRequest_t  * req,
-                              CCMI::Mapping             * map,
+                              MAP             * map,
                               CCMI::ConnectionManager::ConnectionManager *cmgr,
-                              CCMI_Callback_t             cb_done,
+                              CM_Callback_t             cb_done,
                               CCMI_Consistency            consistency,
-                              CCMI::MultiSend::MulticastInterface *mf,
+                              CCMI::MultiSend::OldMulticastInterface *mf,
                               Geometry                  * geometry,
                               char                      * srcbuf,
                               char                      * dstbuf,
                               unsigned                    offset,
                               unsigned                    count,
-                              CCMI_Dt                     dtype,
-                              CCMI_Op                     op,
+                              CM_Dt                     dtype,
+                              CM_Op                     op,
                               ConfigFlags                 flags,
-                              ProtocolFactory           * factory,
+                              CollectiveProtocolFactory           * factory,
                               unsigned                    iteration,
                               int                         root = -1,
                               CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
-        CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR>(req,
+        CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR,MAP>(req,
                                                                          map,
                                                                          cmgr,
                                                                          cb_done,

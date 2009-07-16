@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/Factory.h
+ * \file algorithms/protocols/allreduce/Factory.h
  * \brief CCMI factory for [all]reduce composite
  */
 
@@ -16,8 +16,9 @@
 #define __ccmi_adaptor_allreduce_factory_h__
 
 #include "./Composite.h"
-#include "collectives/interface/Geometry.h"
-#include "collectives/algorithms/protocols/ProtocolFactory.h"
+#include "interface/Geometry.h"
+#include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "math_coremath.h"
 
 namespace CCMI
 {
@@ -25,6 +26,34 @@ namespace CCMI
   {
     namespace Allreduce
     {
+      //-- BaeFactory
+      /// \brief Base virtual class for allreduce factory implementations.
+      ///
+      class BaseFactory : public CollectiveProtocolFactory
+      {
+      public:
+        /// NOTE: This is required to make "C" programs link
+        /// successfully with virtual destructors
+        void operator delete(void * p)
+        {
+          CCMI_abort();
+        }
+        ///
+        /// \brief Generate a non-blocking allreduce message.
+        ///
+        virtual CCMI::Executor::Composite *generate
+        (CCMI_CollectiveRequest_t * request,
+         CM_Callback_t            cb_done,
+         CCMI_Consistency           consistency,
+         Geometry                 * geometry,
+         char                     * srcbuf,
+         char                     * dstbuf,
+         unsigned                   count,
+         CM_Dt                    dtype,
+         CM_Op                    op,
+         int                        root = -1 ) = 0;
+      }; // class BaseFactory
+
       //-- Factory
       /// \brief Base class for allreduce factory implementations.
       ///
@@ -32,13 +61,15 @@ namespace CCMI
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
       /// 
-      class Factory : public ProtocolFactory
+      template<class MAP>
+      class Factory : public BaseFactory
       {
       protected:
         ///
         /// \brief Multisend interface
         ///
-        CCMI::MultiSend::MulticastInterface   * _minterface;
+        CCMI::MultiSend::OldMulticastInterface   * _moldinterface;
+        CCMI::MultiSend::MulticombineInterface   * _minterface;
 
         ///
         ///  \brief Connection Manager for the allreduce
@@ -53,7 +84,7 @@ namespace CCMI
         ///
         /// \brief mapping module
         ///
-        CCMI::Mapping                          * _mapping;
+        MAP                          * _mapping;
 
         ///
         /// \brief Configuration flags
@@ -73,10 +104,12 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline Factory(CCMI::Mapping                                      * mapping,
-                       CCMI::MultiSend::MulticastInterface        * minterface,
+        inline Factory(MAP                                           * mapping,
+                       CCMI::MultiSend::OldMulticastInterface        * moldinterface,
+                       CCMI::MultiSend::MulticombineInterface        * minterface,
                        CCMI_mapIdToGeometry                           cb_geometry,
                        ConfigFlags                                   flags ) :
+        _moldinterface (moldinterface),
         _minterface (minterface),
         _connmgr    (NULL),
         _cb_geometry(cb_geometry),
@@ -87,9 +120,11 @@ namespace CCMI
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Factory::ctor(%#X) "
                          "flags %#X\n",
                          (int)this, sizeof(*this),*(unsigned*)&_flags));
+          _moldinterface->setCallback (cb_receiveHead, this);
         }
 
-        inline void setConnectionManager(CCMI::ConnectionManager::ConnectionManager  * connmgr)
+        inline void setConnectionManager 
+        (CCMI::ConnectionManager::ConnectionManager  * connmgr)
         {
           _connmgr = connmgr;
         }
@@ -97,22 +132,7 @@ namespace CCMI
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
-        virtual CCMI::Executor::Composite *generate
-        (CCMI_CollectiveRequest_t * request,
-         CCMI_Callback_t            cb_done,
-         CCMI_Consistency           consistency,
-         Geometry                 * geometry,
-         char                     * srcbuf,
-         char                     * dstbuf,
-         unsigned                   count,
-         CCMI_Dt                    dtype,
-         CCMI_Op                    op,
-         int                        root = -1 ) = 0;
-
-        ///
-        /// \brief Generate a non-blocking allreduce message.
-        ///
-        static CCMI_Request_t *   cb_receiveHead(const CCMIQuad  * info,
+        static CCMI_Request_t *   cb_receiveHead(const CMQuad  * info,
                                                  unsigned          count,
                                                  unsigned          peer,
                                                  unsigned          sndlen,
@@ -121,7 +141,7 @@ namespace CCMI
                                                  unsigned        * rcvlen,
                                                  char           ** rcvbuf,
                                                  unsigned        * pipewidth,
-                                                 CCMI_Callback_t * cb_done)
+                                                 CM_Callback_t * cb_done)
         {
           TRACE_ADAPTOR((stderr, 
                          "<%#.8X>Allreduce::Factory::cb_receiveHead peer %d, conn_id %d\n",

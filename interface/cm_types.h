@@ -16,13 +16,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if TARGET==mpi
-#include "collectives/interface/mpi/cm_impl.h"
-#elif TARGET==lapiunix
-#include "collectives/interface/lapiunix/cm_impl.h"
-#else
-#error "Incorrect Target Specified"
-#endif
+#include "cm_impl.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -128,7 +122,11 @@ extern "C"
   typedef enum
   {
     CM_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
-    CM_TORUS_NETWORK,       /**< 3D-Torus / 1D-SMP network type. */
+    CM_TORUS_NETWORK,       /**< DEPRECATED! 3D-Torus / 1D-SMP network type. */
+    CM_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
+			     * mapping->numGlobalDims() for torus dim,
+			     * mapping->numDims() for all (torus+SMP) dim.
+			     */
     CM_SOCKET_NETWORK,      /**< Unix socket network type. */
     CM_SHMEM_NETWORK,       /**< local shared memory "network" for smp nodes. */
     CM_NETWORK_COUNT        /**< Number of network types defined. */

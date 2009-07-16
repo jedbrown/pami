@@ -19,8 +19,8 @@
 #include <stdlib.h>
 
 #include "./NBColl.h"
-#include "collectives/interface/Communicator.h"
-#include "collectives/interface/MultiSendOld.h"
+#include "interface/Communicator.h"
+#include "interface/MultiSendOld.h"
 /* **************************************************************** */
 /*                      Scatter                                     */
 /* **************************************************************** */

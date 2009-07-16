@@ -7,47 +7,40 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file collectives/bgp/protocols/alltoall/Alltoall.h
+ * \file algorithms/protocols/alltoall/Alltoall.h
  * \brief ???
  */
 
 #ifndef __ADAPTOR_ALL_TO_ALL_PROTOCOL__
 #define __ADAPTOR_ALL_TO_ALL_PROTOCOL__
 
-#include "collectives/interface/MultiSendOld.h"
-
-
-//#define TRACE(x) printf x; fflush(stdout);
-#define TRACE(x)
+#include "protocols/multisend/multisend_impl.h"
 
 namespace CCMI
 {
   namespace Adaptor
   {
-    namespace Alltoall
+    class A2AProtocol
     {
+    protected:
+      CCMI_Request_t    _sreq    __attribute__((__aligned__(16)));
+      CCMI_Request_t    _rreq    __attribute__((__aligned__(16)));
+      CM_Callback_t   _my_cb_done;
+      CM_Callback_t   _app_cb_done;
 
-      class A2AProtocol
-      {
-      protected:
-	CCMI_Request_t    _sreq    __attribute__((__aligned__(16)));
-	CCMI_Request_t    _rreq    __attribute__((__aligned__(16)));
-	CCMI_Callback_t   _my_cb_done;
-	CCMI_Callback_t   _app_cb_done;
-	
-	unsigned           _donecount;
+      unsigned           _donecount;
 
-	const char       * _sndbuf;
-	unsigned         * _sndlens;
-	unsigned         * _sdispls;
-	unsigned         * _sndcounters;
-	Geometry         * _geometry;
-	CCMI::MultiSend::ManytomanyInterface *_minterface;
+      const char       * _sndbuf;
+      unsigned         * _sndlens;
+      unsigned         * _sdispls;
+      unsigned         * _sndcounters;
+      Geometry         * _geometry;
+      CCMI::MultiSend::ManytomanyInterface *_minterface;
 
     public:
-      A2AProtocol (CCMI::Mapping                        *mapping,
+      A2AProtocol (CCMI::CollectiveMapping                        *mapping,
                    CCMI::MultiSend::ManytomanyInterface *minterface,
-                   CCMI_Callback_t    cb_done,
+                   CM_Callback_t    cb_done,
                    CCMI_Consistency   consistency,
                    Geometry         * geometry,
                    const char       * sndbuf,
@@ -93,7 +86,7 @@ namespace CCMI
 
       void operator delete (void *p)
       {
-        CCMI_assert (0);
+        CCMI_abort();
       }
 
       void start ()
@@ -108,7 +101,7 @@ namespace CCMI
                            _geometry->nranks());
       }
 
-      static void done (void *arg, CCMI_Error_t *err)
+      static void done (void *arg, CM_Error_t *err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->_donecount ++;
@@ -119,31 +112,30 @@ namespace CCMI
     };
 
 
-    class Factory : public ProtocolFactory
+    class AlltoallFactory : public CCMI::Adaptor::CollectiveProtocolFactory
     {
     protected:
       CCMI::MultiSend::ManytomanyInterface  * _minterface;
-      CCMI::Mapping                        * _mapping;
+      CCMI::CollectiveMapping                        * _mapping;
 
     public:
 
-      Factory (CCMI::MultiSend::ManytomanyInterface *minterface,
-	       CCMI::Mapping   *mapping)
-	{
-	  _minterface = minterface;
-	  _mapping   = mapping;
+      AlltoallFactory (CCMI::MultiSend::ManytomanyInterface *minterface,
+                       CCMI::CollectiveMapping   *mapping)
+      {
+        _minterface = minterface;
+        _mapping   = mapping;
       }
 
       //virtual ~AlltoallFactory () {}
-      //void operator delete (void *p) {CCMI_assert (0);}
-
+      //void operator delete (void *p) {CCMI_abort();}
       virtual bool Analyze(Geometry *geometry) 
       {
-        return true;      
+        return(geometry->isTorus());      
       }
 
       virtual unsigned generate (CCMI_CollectiveRequest_t   * request,
-                                 CCMI_Callback_t    cb_done,
+                                 CM_Callback_t    cb_done,
                                  CCMI_Consistency   consistency,
                                  Geometry         * geometry,
                                  const char       * sndbuf,
@@ -155,7 +147,6 @@ namespace CCMI
                                  unsigned         * sndcounters,
                                  unsigned         * rcvcounters)
       {
-	TRACE(("%d: Alltoall factory generate\n",HL_Rank()));
         new (request) A2AProtocol (_mapping, _minterface, cb_done,
                                    consistency,
                                    geometry,
@@ -174,18 +165,15 @@ namespace CCMI
         return 0;
       }
 
-      static void cb_barrier_done (void *arg, CCMI_Error_t *err)
+      static void cb_barrier_done (void *arg, CM_Error_t *err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
-	TRACE(("%d: Alltoall barrier done\n",HL_Rank()));
         proto->start();
       }
 
     };
-    };
   };
 };
 
-#undef TRACE
 
 #endif

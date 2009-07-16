@@ -7,24 +7,24 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/sync_impl.h
+ * \file algorithms/protocols/allreduce/sync_impl.h
  * \brief CCMI composite template implementations
  */
 
-#ifndef __ccmi_adaptor_sync_impl_h__
-#define __ccmi_adaptor_sync_impl_h__
+#ifndef __ccmi_adaptor_allreduce_sync_impl_h__
+#define __ccmi_adaptor_allreduce_sync_impl_h__
 
 #include "./CompositeT.h"
 #include "./FactoryT.h"
 
-#include "collectives/algorithms/executor/PipelinedAllreduce.h"
-#include "collectives/algorithms/executor//Allreduce.h"
+#include "algorithms/executor/PipelinedAllreduce.h"
+#include "algorithms/executor/Allreduce.h"
 
-#include "collectives/algorithms/schedule/BinomialTree.h"
-#include "collectives/algorithms/schedule/Rectangle.h"
-#include "collectives/algorithms/schedule/TreeBwSchedule.h"
+#include "algorithms/schedule/BinomialTree.h"
+#include "algorithms/schedule/Rectangle.h"
+//#include "algorithms/schedule/TreeBwSchedule.h"
 
-#include "collectives/algorithms/connmgr/RankBasedConnMgr.h"
+#include "algorithms/connmgr/RankBasedConnMgr.h"
 
 namespace CCMI
 {
@@ -42,20 +42,20 @@ namespace CCMI
       namespace Binomial
       {
         typedef CompositeT 
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce> Composite;      
-        // Specify the static name in the class (for debug)
-        //template<> const char* Composite::name="Binomial";
+        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> Composite;      
 
         typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::Composite> Factory;      
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::Composite,CCMI::CollectiveMapping> Factory;      
       };
       // Specializations for Binomial templates.
       ///
       /// \brief Binomial allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
       /// 
+      // Specify the static name in the class (for debug)
+      template<> const char* Binomial::Composite::name="Binomial";
       template<> bool Binomial::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void Binomial::Composite::create_schedule(CCMI::Mapping * map,Geometry * geometry)
+      template<> void Binomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
       };
@@ -69,20 +69,20 @@ namespace CCMI
       namespace ShortBinomial
       {
         typedef CompositeT 
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase> Composite;      
-        // Specify the static name in the class (for debug)
-        //template<> const char* Composite::name="ShortBinomial";
+        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase,CCMI::CollectiveMapping> Composite;      
 
         typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::Composite> Factory;      
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::Composite,CCMI::CollectiveMapping> Factory;      
       };
       // Specializations for Binomial templates.
       ///
       /// \brief Binomial short allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
       /// 
+      // Specify the static name in the class (for debug)
+      template<> const char* ShortBinomial::Composite::name="ShortBinomial";
       template<> bool ShortBinomial::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void ShortBinomial::Composite::create_schedule(CCMI::Mapping * map,Geometry * geometry)
+      template<> void ShortBinomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
       };
@@ -96,12 +96,10 @@ namespace CCMI
       namespace Ring
       {
         typedef CompositeT 
-        <CCMI::Schedule::RingSchedule,CCMI::Executor::PipelinedAllreduce> Composite;      
-        // Specify the static name in the class (for debug)
-      //  template<> const char* Composite::name="Ring";
+        <CCMI::Schedule::RingSchedule,CCMI::Executor::PipelinedAllreduce,CCMI::CollectiveMapping> Composite;      
 
         typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Ring::Composite> Factory;      
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Ring::Composite,CCMI::CollectiveMapping> Factory;      
       };
       // Specializations for Ring templates.
       ///
@@ -109,8 +107,10 @@ namespace CCMI
       /// Implement the correct analyze and schedule ctor.
       /// Implement the factory getOneColor
       /// 
+      // Specify the static name in the class (for debug)
+      template<> const char* Ring::Composite::name="Ring";
       template<> bool Ring::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void Ring::Composite::create_schedule(CCMI::Mapping * map,Geometry * geometry)
+      template<> void Ring::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
       };
@@ -124,24 +124,23 @@ namespace CCMI
       namespace RingReduce
       {
         typedef CompositeT 
-        <CCMI::Schedule::RingSchedule,CCMI::Executor::Allreduce> Composite;      //? pipelined or not?
-        // Specify the static name in the class (for debug)
-        //template<> const char* Composite::name="RingReduce";
+        <CCMI::Schedule::RingSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> Composite;      //? pipelined or not?
 
         typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RingReduce::Composite> Factory;      
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RingReduce::Composite,CCMI::CollectiveMapping> Factory;      
       };
       // Specializations for Ring templates.
       ///
       /// \brief Ring reduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
       /// Implement the factory getOneColor
+      // Specify the static name in the class (for debug)
+      template<> const char* RingReduce::Composite::name="RingReduce";
       template<> bool RingReduce::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void RingReduce::Composite::create_schedule(CCMI::Mapping * map,Geometry * geometry)
+      template<> void RingReduce::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
       };
-
     };
   };
 };  //namespace CCMI::Adaptor::Allreduce

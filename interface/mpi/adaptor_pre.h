@@ -7,15 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file adaptor/generic/adaptor_pre.h
+ * \file interface/mpi/adaptor_pre.h
  * \brief ???
  */
 
 
 #ifndef   __adaptor_pre_h__
 #define   __adaptor_pre_h__
-
-#include "ccmi_collectives.h"
+#warning mpi pre adaptor
+#include "interface/mpi/cm_types.h"
+#include "interface/mpi/ccmi_collectives.h"
 
 #ifdef __PGASRT_DISTRIBUTED /* pure distributed - no pthreads library */
 #define DECL_STATIC_MUTEX(x)    int x = 0
@@ -60,7 +61,7 @@ static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
 #endif
 
 
-
+// A debug thread id
 #define ThreadID() 0
 
     /// The pipeline width must be a multiple of 240 (DMA) and 256 (Tree)
@@ -84,13 +85,18 @@ static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
      /// This is the default allreduce min torus pipeline width, set to 1920
      const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;    
 
+/* These are defined in ccmi_collectives.h */
+#define __ccmi_consistency_defined__
+#define __ccmi_subtask_defined__
+#define __ccmi_recvasynccallback_defined__
+
+/* These are defined in cm_types.h */
+#define __ccmi_pipeworkqueue_defined__
+#define __ccmi_topology_defined__
+#define __ccmi_op_defined__
+#define __ccmi_dt_defined__
 #define __ccmi_quad_defined__
 #define __ccmi_error_defined__
 #define __ccmi_callback_defined__
-#define __ccmi_consistency_defined__
-#define __ccmi_op_defined__
-#define __ccmi_dt_defined__
-#define __ccmi_subtask_defined__
-#define __ccmi_recvasynccallback_defined__
 
 #endif

@@ -1,12 +1,13 @@
 
 #ifndef  __ccmi_collectives_adaptor_h__
 #define  __ccmi_collectives_adaptor_h__
+#warning mpi adaptor
 
-#include "collectives/util/ccmi_util.h"
-#include "collectives/interface/Mapping.h"
-#include "collectives/util/logging/LogMgr.h"
-#include "collectives/util/queue/Queue.h"
-#include "collectives/util/ccmi_debug.h"
+#include "util/ccmi_util.h"
+#include "interface/CollectiveMapping.h"
+#include "util/logging/LogMgr.h"
+#include "util/queue/Queue.h"
+#include "util/ccmi_debug.h"
 
 namespace CCMI
 {
@@ -22,7 +23,7 @@ namespace CCMI
     class Adaptor
     {
     protected:
-      CCMI::Mapping                     _mapping;
+      CCMI::CollectiveMapping                     _mapping;
       CCMI::Logging::LogMgr             _logmgr;
       CCMI::Queue                       _queue;
 
@@ -33,7 +34,7 @@ namespace CCMI
         TRACE_ADAPTOR((stderr,"<%#.8X>CCMI::Adaptor::Adaptor()\n",(int)this));
       }
 
-      CCMI::Mapping  * mapping ()
+      CCMI::CollectiveMapping  * mapping ()
       {
         return &_mapping;
       }
@@ -66,6 +67,6 @@ namespace CCMI
   };
 };
 
-extern CCMI::Adaptor::Adaptor *_g_generic_adaptor;
+extern CCMI::Adaptor::Adaptor *_g_mpi_adaptor;
 
 #endif

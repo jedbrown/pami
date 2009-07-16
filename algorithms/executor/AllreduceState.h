@@ -7,20 +7,20 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file executor/AllreduceState.h
+ * \file algorithms/executor/AllreduceState.h
  * \brief The persistent state data for [all]reduce executor
  */
 #ifndef __allreduce_state_h__
 #define __allreduce_state_h__
 
-#include "collectives/algorithms/schedule/Schedule.h"
-#include "collectives/algorithms/executor/Executor.h"
-#include "collectives/interface/MultiSendOld.h"
-#include "collectives/algorithms/connmgr/ConnectionManager.h"
-#include "collectives/interface/ccmi_internal.h"
-#include "collectives/util/ccmi_util.h"
+#include "algorithms/schedule/Schedule.h"
+#include "algorithms/executor/Executor.h"
+#include "interface/MultiSend.h"
+#include "algorithms/connmgr/ConnectionManager.h"
+#include "interface/ccmi_internal.h"
+#include "util/ccmi_util.h"
 
-#include "collectives/util/ccmi_debug.h"
+#include "util/ccmi_debug.h"
 
 namespace CCMI
 {
@@ -74,7 +74,7 @@ namespace CCMI
         unsigned     sconnId;      // # sender connection id for this phase
         unsigned  *  dstPes;       // destination ranks
         unsigned  *  dstHints;     // hints, one per destination
-        MultiSend::CCMI_MulticastRecv_t   *mrecv;
+        MultiSend::CCMI_OldMulticastRecv_t   *mrecv;
       } PhaseState __attribute__((__aligned__(16))); ///Achieve better cache blocking
 
     protected:
@@ -91,7 +91,7 @@ namespace CCMI
       /// my schedule
       Schedule::Schedule                   * _sched;
 
-      /// dynamically allocated buffer space (for schedule/phase data members)
+      /// dynamically allocated buffer space (for algorithms/schedule/phase data members)
       void             * _scheduleAllocation;
       unsigned           _scheduleAllocationSize;
 
@@ -103,7 +103,7 @@ namespace CCMI
       unsigned     *_all_dstHints;
       unsigned     *_all_chunks  ;
       unsigned     *_nextActivePhase;  //convert to dynamic vector
-      MultiSend::CCMI_MulticastRecv_t   *_all_mrecvs;
+      MultiSend::CCMI_OldMulticastRecv_t   *_all_mrecvs;
 
       /// dynamically allocated buffer space (for received data)
       void             * _receiveAllocation;
@@ -147,8 +147,8 @@ namespace CCMI
       unsigned                                _commid;   /// Communicator identifier
       unsigned                                _color;    /// Color of the collective
 
-      CCMI_Op                                 _op;         /// allreduce operation 
-      CCMI_Dt                                 _dt;         /// allreduce datatype
+      CM_Op                                 _op;         /// allreduce operation 
+      CM_Dt                                 _dt;         /// allreduce datatype
       unsigned                                _iteration;   /// allreduce async iteration 
       Executor                              * _executor;   /// Pointer to executor which is needed to 
       /// set up the receive callback data objects
@@ -172,11 +172,11 @@ namespace CCMI
         else CCMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION NULL",NULL , 0);
       }
 #endif
-      inline CCMI_Op getOp()
+      inline CM_Op getOp()
       {
         return _op;
       }
-      inline CCMI_Dt getDt()
+      inline CM_Dt getDt()
       {
         return _dt;
       }
@@ -325,7 +325,7 @@ namespace CCMI
       {
         return _phaseVec[index].totalChunksRcvd;
       }
-      inline  MultiSend::CCMI_MulticastRecv_t  *   getPhaseMcastRecv(unsigned index,unsigned jindex)
+      inline  MultiSend::CCMI_OldMulticastRecv_t  *   getPhaseMcastRecv(unsigned index,unsigned jindex)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::getPhaseMcastRecv _phaseVec[%#X].recvBufs[%#X]=%#X _phaseVec[%#X].mrecv[%#X].rcvbuf=%#X\n",
                      (int)this,
@@ -551,7 +551,7 @@ namespace CCMI
           _dstPhase = CCMI_UNDEFINED_PHASE;
           if (_nextActivePhase)
           {
-            free(_nextActivePhase);
+            CCMI_Free(_nextActivePhase);
             _nextActivePhase = NULL;
           }
 #ifdef CCMI_DEBUG
@@ -561,7 +561,7 @@ namespace CCMI
           _all_dstPes    = (unsigned*)0xFFFFFFF3;
           _all_dstHints  = (unsigned*)0xFFFFFFF4;
           _all_chunks    = (unsigned*)0xFFFFFFF5;
-          _all_mrecvs    = (MultiSend::CCMI_MulticastRecv_t*)0xFFFFFFF6;
+          _all_mrecvs    = (MultiSend::CCMI_OldMulticastRecv_t*)0xFFFFFFF6;
 
           _phaseVec      = (PhaseState*)0xFFFFFFF7;
 
@@ -628,8 +628,8 @@ namespace CCMI
       _bconnmgr (NULL),
       _commid ((unsigned)-1),
       _color  ((unsigned)-1),
-      _op(CCMI_UNDEFINED_OP),
-      _dt(CCMI_UNDEFINED_DT),
+      _op(CM_UNDEFINED_OP),
+      _dt(CM_UNDEFINED_DT),
       _iteration(iteration)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::ctor(void) enter\n",(int)this));
@@ -667,8 +667,8 @@ namespace CCMI
       inline void setDataFunc(unsigned         pipelineWidth,
                               unsigned         count,
                               unsigned         sizeOfType,
-                              CCMI_Op          op,
-                              CCMI_Dt          dt)
+                              CM_Op          op,
+                              CM_Dt          dt)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() enter\n",(int)this));
         CCMI_assert(pipelineWidth % sizeOfType == 0);
@@ -731,7 +731,7 @@ namespace CCMI
           for(int phase = _startPhase; phase <= _endPhase; phase++)
             for(unsigned scount = 0; scount < _phaseVec[phase].numSrcPes; scount ++)
             {
-              MultiSend::CCMI_MulticastRecv_t *mrecv = &(_phaseVec[phase].mrecv[scount]); 
+              MultiSend::CCMI_OldMulticastRecv_t *mrecv = &(_phaseVec[phase].mrecv[scount]); 
               mrecv->bytes = _bytes;
               mrecv->pipelineWidth = _pipelineWidth;
               //mrecv->opcode = (CCMI_Subtask) _phaseVec[phase].srcHints[scount];

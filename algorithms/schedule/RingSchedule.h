@@ -7,15 +7,15 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/RingSchedule.h
+ * \file algorithms/schedule/RingSchedule.h
  * \brief ???
  */
 
 #ifndef  __ring_schedule__
 #define  __ring_schedule__
 
-#include "collectives/algorithms/schedule/Schedule.h"
-#include "collectives/interface/Mapping.h"
+#include "Schedule.h" 
+#include "interface/CollectiveMapping.h"
 
 //#include "Rectangle.h"
 
@@ -49,9 +49,9 @@ namespace CCMI
       {
       }
 
-      RingSchedule (Mapping *map, unsigned nranks, unsigned *ranks); 
+      RingSchedule (CollectiveMapping *map, unsigned nranks, unsigned *ranks); 
       RingSchedule (unsigned x, unsigned x0, unsigned xN);
-      //RingSchedule (Rectangle  *rect, Mapping *map);
+      //RingSchedule (Rectangle  *rect, CollectiveMapping *map);
 
       //Ring broadcast: Send to next and recv from prev
       void getBroadcastSources (unsigned  phase, unsigned *srcpes,
@@ -81,7 +81,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _next : _prev;
           *subtasks = CCMI_PT_TO_PT_SUBTASK;
 
-          //printf ("%d: Sending bcast message to %d\n", _mapping->rank(), *dstpes);
+          TRACE_SCHEDULE(("Sending bcast message to %d\n", *dstpes));
         }
       }
 
@@ -115,7 +115,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _prev : _next;
           *subtasks = CCMI_PT_TO_PT_SUBTASK;
 
-          //printf ("%d: Sending reduce message to %d\n", _mapping->rank(), *dstpes);	
+          TRACE_SCHEDULE(("Sending reduce message to %d\n", *dstpes));	
         }
       }
 
@@ -263,7 +263,7 @@ namespace CCMI
           nphases = (_isTail || _isHead) ? 1 : 2;  
         }
         else
-          CCMI_assert (0);
+          CCMI_abort();
 
         startphase = _startPhase;   
 
@@ -303,7 +303,7 @@ namespace CCMI
 
         case BARRIER_OP:
         default:
-          CCMI_assert(0);
+          CCMI_abort();
         }
       }
 
@@ -336,7 +336,7 @@ namespace CCMI
 
         case BARRIER_OP:
         default:
-          CCMI_assert(0);
+          CCMI_abort();
         }
 
         return;
@@ -374,17 +374,17 @@ namespace CCMI
 
         local_init (root, op, startphase, nphases, maxranks);
 
-        //printf ("%d: In Ring Schedule _prev = %d, _next = %d\n", _mapping->rank(), _prev, _next);
+        TRACE_SCHEDULE(("In Ring Schedule _prev = %d, _next = %d\n", _prev, _next));
       }
 
-      static unsigned getMaxPhases (Mapping *map, unsigned nranks)
+      static unsigned getMaxPhases (CollectiveMapping *map, unsigned nranks)
       {
         return nranks - 1;
       }
 
 
     protected:
-      Mapping              * _mapping;  
+      CollectiveMapping              * _mapping;  
       unsigned   short       _op;
       unsigned               _root; 
       unsigned               _startPhase; 
@@ -408,7 +408,7 @@ namespace CCMI
 
 
 inline CCMI::Schedule::RingSchedule::RingSchedule 
-(Mapping       * map, 
+(CollectiveMapping       * map, 
  unsigned        nranks, 
  unsigned      * ranks) :
 _mapping (map), 
@@ -448,7 +448,7 @@ _x0 (x0), _my_x (x)
 
 #if 0
 inline CCMI::Schedule::RingSchedule::RingSchedule 
-(Rectangle  *rect, Mapping *map) : 
+(Rectangle  *rect, CollectiveMapping *map) : 
 _mapping (map), _isHead (false), _isTail (false), _ranks(NULL), 
 _nranks((unsigned)-1), _x0((unsigned) -1), _my_x ((unsigned) -1)
 {

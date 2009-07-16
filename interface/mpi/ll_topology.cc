@@ -12,8 +12,8 @@
  * \brief Topology C interface.
  */
 
-#include "collectives/interface/ll_topology.h"
-#include "collectives/interface/Topology.h"
+#include "interface/ll_topology.h"
+#include "interface/Topology.h"
 #include <new>
 
 /// \brief default constructor (LL_EMPTY_TOPOLOGY)

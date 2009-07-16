@@ -7,16 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/TreeBwSchedule.h
+ * \file algorithms/schedule/TreeBwSchedule.h
  * \brief ???
  */
 
 #ifndef  __tree_bw_schedule__
 #define  __tree_bw_schedule__
 
-#include "collectives/algorithms/schedule/Schedule.h"
-#include "collectives/util/ccmi_util.h"
-#include "collectives/interface/TorusMapping.h"
+#include "Schedule.h" 
+#include "util/ccmi_util.h"
+#include "interface/TorusCollectiveMapping.h"
 
 namespace CCMI
 {
@@ -34,7 +34,7 @@ namespace CCMI
       {
       }
 
-      TreeBwSchedule (TorusMapping *map, unsigned nranks, unsigned *ranks); 
+      TreeBwSchedule (TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks); 
 
       void getBroadcastSources (unsigned  phase, unsigned *srcpes,
                                 unsigned  &nsrc, unsigned *tasks) 
@@ -173,7 +173,7 @@ namespace CCMI
           break;
 
         default:
-          CCMI_assert (0);
+          CCMI_abort();
           break;    
         };
       }
@@ -254,7 +254,7 @@ namespace CCMI
           _startPhase = _startReducePhase;
         }
         else
-          CCMI_assert (0);
+          CCMI_abort();
 
         startphase = _startPhase;
 
@@ -294,7 +294,7 @@ namespace CCMI
           break;
 
         default:
-          CCMI_assert(0);
+          CCMI_abort();
         }
       }
 
@@ -333,7 +333,7 @@ namespace CCMI
           break;
 
         default:
-          CCMI_assert(0);
+          CCMI_abort();
         }
 
         return;
@@ -389,12 +389,12 @@ namespace CCMI
           break;
 
         default:
-          CCMI_assert(0);
+          CCMI_abort();
         }   
       }
 
     protected:
-      TorusMapping         * _mapping;  
+      TorusCollectiveMapping         * _mapping;  
       unsigned   short       _op;
       unsigned               _root;
       unsigned               _head; //the core with the same local rank as root
@@ -416,7 +416,7 @@ namespace CCMI
 
 
 inline CCMI::Schedule::TreeBwSchedule::TreeBwSchedule 
-(TorusMapping       * map, 
+(TorusCollectiveMapping       * map, 
  unsigned             nranks, 
  unsigned           * ranks) :
 _mapping (map),_isHead (false), _isTail (false)

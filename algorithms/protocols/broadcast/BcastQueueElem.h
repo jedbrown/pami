@@ -1,14 +1,22 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/broadcast/BcastQueueElem.h
+ * \brief ???
+ */
 
-#ifndef  __ccmi_adaptor_bcast_queue_elem__
-#define  __ccmi_adaptor_bcast_queue_elem__
+#ifndef  __ccmi_adaptor_broadcast_queue_elem__
+#define  __ccmi_adaptor_broadcast_queue_elem__
 
-#include "collectives/util/queue/Queue.h"
-#include "collectives/algorithms/composite/Composite.h"
-#include "collectives/util/ccmi_util.h"
-
-#ifndef TRACE_ERR
-  #define TRACE_ERR(x)
-#endif
+#include "util/queue/Queue.h"
+#include "algorithms/composite/Composite.h"
+#include "util/ccmi_util.h"
 
 namespace CCMI
 {
@@ -22,7 +30,7 @@ namespace CCMI
       protected:
         //matchq
         unsigned            _bytes;  ///Bytes in the broadcast
-        CCMI_Callback_t     _cb_done;///Application completion callback   
+        CM_Callback_t     _cb_done;///Application completion callback   
 
         char              * _rcvbuf;  ///buffer to receive bcast
         char              * _appbuf;  ///App buffer which will be
@@ -55,7 +63,7 @@ namespace CCMI
           CCMI_assert(bytes > 0);   
         }
 
-        void initPostMsg (unsigned bytes, char *rcvbuf, CCMI_Callback_t &cb)
+        void initPostMsg (unsigned bytes, char *rcvbuf, CM_Callback_t &cb)
         {
           _bytes    = bytes;
           _cb_done  = cb;
@@ -68,7 +76,7 @@ namespace CCMI
         ///        unexpected and the application wants to provide the final target
         ///        buffer
         void  setPosted (unsigned bytes, char *buf,
-                         CCMI_Callback_t &cb_done)
+                         CM_Callback_t &cb_done)
         {
           CCMI_assert(bytes >= _bytes);
           _appbuf = buf;
@@ -80,7 +88,7 @@ namespace CCMI
           return _composite;
         }
 
-        CCMI_Callback_t  &callback ()
+        CM_Callback_t  &callback ()
         {
           return _cb_done;
         }

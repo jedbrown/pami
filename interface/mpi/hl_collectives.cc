@@ -11,7 +11,7 @@
 #include "collectives/algorithms/protocols/barrier/barrier_impl.h"
 #include "collectives/algorithms/protocols/allreduce/sync_impl.h"
 #include "collectives/algorithms/protocols/allreduce/async_impl.h"
-#include "collectives/interface/mpi/api/mapping_impl.h" // ? why
+//#include "collectives/interface/mpi/api/mapping_impl.h" should be in Mapping.cc, not here
 #include "collectives/interface/mpi/GenericComm.h"
 #include "collectives/algorithms/protocols/tspcoll/NBColl.h"
 #include "collectives/algorithms/protocols/broadcast/async_impl.h"

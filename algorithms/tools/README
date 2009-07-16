@@ -22,7 +22,7 @@ digraph.pl		"Filter" for "sched_test -V" that produces
 				Use receives instead of sends
 				to build graph.
 
-fakeTorusMapping.h	Fake TorusMapping class for use outside of
+fakeTorusMapping.h	Fake TorusCollectivesMapping class for use outside of
 			actual BlueGene hardware.
 
 sched.pm		Library of useful routines for processing the

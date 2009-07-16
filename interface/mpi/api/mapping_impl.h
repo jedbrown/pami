@@ -7,9 +7,9 @@
 #endif
 
 #include "mpi.h"
-#include "collectives/interface/Mapping.h"
+#include "interface/CollectiveMapping.h"
 
-inline CCMI::Mapping::Mapping (void *pers)
+inline CCMI::CollectiveMapping::CollectiveMapping (void *pers)
 {
   _personality = pers;
 

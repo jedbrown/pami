@@ -14,13 +14,7 @@
 #ifndef __ll_cpp_pipeworkqueue_h__
 #define __ll_cpp_pipeworkqueue_h__
 
-#if TARGET==mpi
-#include "collectives/interface/mpi/PipeWorkQueueImpl.h"
-#elif TARGET==lapiunix
-#include "collectives/interface/lapiunix/PipeWorkQueueImpl.h"
-#else
-#error "Incorrect Target Specified"
-#endif
+#include "PipeWorkQueueImpl.h"
 
 namespace LL {
 
@@ -220,7 +214,6 @@ public:
 inline void LL::PipeWorkQueue::configure(void *sysdep, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, bufsize); }
 inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize); }
 inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize, size_t bufinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize, bufinit); }
-inline LL::PipeWorkQueue::PipeWorkQueue(LL::PipeWorkQueue &obj) {_PipeWorkQueueImpl::_PipeWorkQueueImpl((_PipeWorkQueueImpl&)obj); }
 inline void LL::PipeWorkQueue::reset() { _PipeWorkQueueImpl::reset(); }
 inline void LL::PipeWorkQueue::dump(const char *prefix) { _PipeWorkQueueImpl::dump(prefix); }
 inline void LL::PipeWorkQueue::setConsumerWakeup(void *vec) { _PipeWorkQueueImpl::setConsumerWakeup(vec); }

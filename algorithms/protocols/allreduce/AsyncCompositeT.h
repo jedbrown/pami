@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/AsyncCompositeT.h
+ * \file algorithms/protocols/allreduce/AsyncCompositeT.h
  * \brief CCMI allreduce async composite template
  *  
  * \todo AsyncCompositeT and CompositeT are very similar and could be combined. 
@@ -30,7 +30,7 @@ namespace CCMI
       ///
       /// 
       /// 
-      template <class SCHEDULE, class EXECUTOR> class AsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncComposite
+      template <class SCHEDULE, class EXECUTOR, class MAP> class AsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncComposite
       {
       protected:
         EXECUTOR  _executor;
@@ -46,20 +46,20 @@ namespace CCMI
         /// \brief Constructor
         ///
         AsyncCompositeT (CCMI_CollectiveRequest_t  * req,
-                         CCMI::Mapping             * map,
+                         MAP             * map,
                          CCMI::ConnectionManager::ConnectionManager *cmgr,
-                         CCMI_Callback_t             cb_done,
+                         CM_Callback_t             cb_done,
                          CCMI_Consistency            consistency,
-                         CCMI::MultiSend::MulticastInterface *mf,
+                         CCMI::MultiSend::OldMulticastInterface *mf,
                          Geometry                  * geometry,
                          char                      * srcbuf,
                          char                      * dstbuf,
                          unsigned                    offset,
                          unsigned                    count,
-                         CCMI_Dt                     dtype,
-                         CCMI_Op                     op,
+                         CM_Dt                     dtype,
+                         CM_Op                     op,
                          ConfigFlags                 flags,
-                         ProtocolFactory           * factory,
+                         CollectiveProtocolFactory           * factory,
                          unsigned                    iteration,
                          int                         root = -1,
                          CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
@@ -76,7 +76,7 @@ namespace CCMI
           _executor.reset ();
         }
         // Template implementation must specialize this function.
-        void create_schedule(CCMI::Mapping        * map,
+        void create_schedule(MAP        * map,
                              Geometry                  * geometry,
                              CCMI::Schedule::Color       color)
         {

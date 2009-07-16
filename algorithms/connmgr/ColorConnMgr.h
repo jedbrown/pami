@@ -14,7 +14,7 @@
 #ifndef  __color_conn_mgr_h__
 #define  __color_conn_mgr_h__
 
-#include "interfaces/ConnectionManager.h"
+#include "ConnectionManager.h"
 
 #define MAX_COLORS  7  //colors 0 - 6
 

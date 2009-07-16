@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/JaynomialTree.h
+ * \file algorithms/schedule/JaynomialTree.h
  * \brief The Jaynomial Schedule for Barrier, Broadcast, and [All]Reduce.
  *
  * Also used by the Rectangle schedule to implement Reduce.
@@ -17,7 +17,7 @@
 #define __jaynomial_tree_schedule__
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
-#include "interfaces/Schedule.h"
+#include "Schedule.h"
 
 
 #define Right(rank, phase, N) ( ((rank) + (1<<(phase)) + (N)) % (N) )
@@ -98,7 +98,7 @@ namespace CCMI
       {
       }
 
-      JaynomialTreeSchedule (Mapping *mapping, unsigned num_ranks,
+      JaynomialTreeSchedule (CollectiveMapping *mapping, unsigned num_ranks,
                              unsigned *ranks);
 
       JaynomialTreeSchedule (unsigned me, unsigned min, unsigned max);
@@ -239,7 +239,7 @@ namespace CCMI
 //--------------------------------------------------------------
 
 inline CCMI::Schedule::JaynomialTreeSchedule::
-JaynomialTreeSchedule(Mapping *mapping, unsigned num_ranks, unsigned *ranks) : Schedule ()
+JaynomialTreeSchedule(CollectiveMapping *mapping, unsigned num_ranks, unsigned *ranks) : Schedule ()
 {
 
   CCMI_assert(num_ranks > 1);

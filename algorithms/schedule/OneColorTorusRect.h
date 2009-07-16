@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/OneColorTorusRect.h
+ * \file algorithms/schedule/OneColorTorusRect.h
  * \brief ???
  */
 
@@ -22,6 +22,7 @@
 
 //#define TRACE_ERR(x)  fprintf x
 //#define RECTBCAST_DEBUG   1
+#define TRACE_ERR(x)
 
 ///
 /// \brief This schedule implements the following broadcast algorithm
@@ -131,7 +132,7 @@ namespace CCMI
       ///
       /// \brief The class constructor
       ///
-      OneColorTorusRect (TorusMapping *map, unsigned color, const Rectangle &rect):
+      OneColorTorusRect (TorusCollectiveMapping *map, unsigned color, const Rectangle &rect):
       _rect(&rect) 
       {
 
@@ -164,7 +165,7 @@ namespace CCMI
       virtual void getSrcPeList(unsigned phase, unsigned *srcpes,
                                 unsigned &nsrc, unsigned *subtasks=NULL)
       {
-        //CCMI_assert(0);
+        //CCMI_abort();
 
         ///This function isnt implemented yet as it isnt critical for
         ///broadcast
@@ -255,7 +256,7 @@ namespace CCMI
       unsigned          _root_coords[CCMI_TORUS_NDIMS];
       const Rectangle * _rect;
       unsigned          _startphase;
-      TorusMapping    * _mapping; 
+      TorusCollectiveMapping    * _mapping; 
 
       unsigned        * _my_coord;
     };  //-- OneColorTorusRect    

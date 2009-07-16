@@ -7,17 +7,17 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/ShortAsyncFactoryT.h
+ * \file algorithms/protocols/allreduce/ShortAsyncFactoryT.h
  * \brief  CCMI factory for async [all]reduce compositeT 
  *  
  * \todo AsyncFactoryT and FactoryT are very similar and could be combined. 
- * \todo should the mapping be a template parameter?  Mapping vs Mapping 
+ * \todo should the mapping be a template parameter?  CollectiveMapping vs CollectiveMapping 
  */
 
 #ifndef __ccmi_adaptor_allreduce_shortasyncfactoryt_h__
 #define __ccmi_adaptor_allreduce_shortasyncfactoryt_h__
 
-#include "protocols/allreduce/AsyncFactoryT.h"
+#include "./AsyncFactoryT.h"
 
 namespace CCMI
 {
@@ -31,10 +31,10 @@ namespace CCMI
       ///
       /// This factory will generate a ShortCompositeT [all]reduce.
       /// 
-      template <class CONNMGR, class COMPOSITE> class ShortAsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactoryT<CONNMGR, COMPOSITE>
+      template <class CONNMGR, class COMPOSITE, class MAP> class ShortAsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactoryT<CONNMGR, COMPOSITE, MAP>
       {
       protected:
-        static CCMI_Request_t * cb_asyncShortReceiveHead(const CCMIQuad    * info,
+        static CCMI_Request_t * cb_asyncShortReceiveHead(const CMQuad    * info,
                                                          unsigned          count,
                                                          unsigned          peer,
                                                          unsigned          sndlen,
@@ -43,7 +43,7 @@ namespace CCMI
                                                          unsigned        * rcvlen,
                                                          char           ** rcvbuf,
                                                          unsigned        * pipewidth,
-                                                         CCMI_Callback_t * cb_done)
+                                                         CM_Callback_t * cb_done)
         {
           TRACE_ADAPTOR((stderr, 
                          "<%#.8X>Allreduce::Short::%s::AsyncFactoryT::cb_asyncShortReceiveHead peer %d, conn_id %d\n",
@@ -80,8 +80,8 @@ namespace CCMI
             if(composite->isIdle())
               composite->restartAsync(allreduce,
                                       cdata->_count,
-                                      (CCMI_Dt)(cdata->_dt),
-                                      (CCMI_Op)(cdata->_op),
+                                      (CM_Dt)(cdata->_dt),
+                                      (CM_Op)(cdata->_op),
                                       cdata->_root);
           }
 
@@ -95,11 +95,11 @@ namespace CCMI
           return NULL;  //This must be a short one packet message
         }
       public:
-        inline ShortAsyncFactoryT(CCMI::Mapping *mapping, 
-                                  CCMI::MultiSend::MulticastInterface *mf, 
+        inline ShortAsyncFactoryT(MAP *mapping, 
+                                  CCMI::MultiSend::OldMulticastInterface *mf, 
                                   CCMI_mapIdToGeometry cb_geometry,
                                   ConfigFlags flags) :
-        CCMI::Adaptor::Allreduce::AsyncFactoryT<CONNMGR, COMPOSITE>(mapping, mf, cb_geometry, flags)
+        CCMI::Adaptor::Allreduce::AsyncFactoryT<CONNMGR, COMPOSITE, MAP>(mapping, mf, cb_geometry, flags)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::Short::%s::FactoryT() ALERT\n",(int)this, COMPOSITE::name));
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::Short::%s::FactoryT()\n",(int)this, COMPOSITE::name));

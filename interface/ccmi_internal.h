@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file adaptor/ccmi_internal.h
+ * \file interface/ccmi_internal.h
  * \brief ???
  */
 
@@ -19,13 +19,7 @@
 ///
 /// \brief CCMI Adaptor dependent definitions
 ///
-#if TARGET==mpi
-#include "collectives/interface/mpi/adaptor_pre.h"
-#elif TARGET==lapiunix
-#include "collectives/interface/lapiunix/adaptor_pre.h"
-#else
-#error "Incorrect Target Specified"
-#endif
+#include "adaptor_pre.h" // build needs to select this
 
 ///
 ///\brief CCMI definitions
@@ -46,58 +40,10 @@ CCMI_Consistency;
 
 #ifndef __ccmi_op_defined__
   #define __ccmi_op_defined__
-typedef enum
-{
-  CCMI_UNDEFINED_OP = 0,
-  CCMI_NOOP,
-  CCMI_MAX,
-  CCMI_MIN,
-  CCMI_SUM,
-  CCMI_PROD,
-  CCMI_LAND,
-  CCMI_LOR,
-  CCMI_LXOR,
-  CCMI_BAND,
-  CCMI_BOR,
-  CCMI_BXOR,
-  CCMI_MAXLOC,
-  CCMI_MINLOC,
-  CCMI_USERDEFINED_OP,
-  CCMI_OP_COUNT
-}
-CCMI_Op;
 #endif
 
 #ifndef __ccmi_dt_defined__
-  #define __ccmi_dt_defined__
-typedef enum
-{
-  /* Standard/Primative DT's */
-  CCMI_UNDEFINED_DT = 0,
-  CCMI_SIGNED_CHAR,
-  CCMI_UNSIGNED_CHAR,
-  CCMI_SIGNED_SHORT,
-  CCMI_UNSIGNED_SHORT,
-  CCMI_SIGNED_INT,
-  CCMI_UNSIGNED_INT,
-  CCMI_SIGNED_LONG_LONG,
-  CCMI_UNSIGNED_LONG_LONG,
-  CCMI_FLOAT,
-  CCMI_DOUBLE,
-  CCMI_LONG_DOUBLE,
-  CCMI_LOGICAL,
-  CCMI_SINGLE_COMPLEX,
-  CCMI_DOUBLE_COMPLEX,
-  /* Max/Minloc DT's */
-  CCMI_LOC_2INT,
-  CCMI_LOC_SHORT_INT,
-  CCMI_LOC_FLOAT_INT,
-  CCMI_LOC_DOUBLE_INT,
-  CCMI_LOC_2FLOAT,
-  CCMI_LOC_2DOUBLE,
-  CCMI_USERDEFINED_DT
-}
-CCMI_Dt;
+  #error define __ccmi_dt_defined__
 #endif
 
 //--------------------------------------------------
@@ -169,42 +115,45 @@ typedef struct _cheader_data
 //GI or Tree collective operation
 
 #ifndef __ccmi_quad_defined__
-  #warning Adaptor did not declare CCMIQuad!
-typedef struct CCMIQuad
-{
-  unsigned w0; /**< Word[0] */
-  unsigned w1; /**< Word[1] */
-  unsigned w2; /**< Word[2] */
-  unsigned w3; /**< Word[3] */
-}
-CCMIQuad __attribute__ ((__aligned__ (16)));
-#define __ccmi_quad_defined__
-
+  #error Adaptor did not declare CMQuad!
+  #define __ccmi_quad_defined__
 #endif
 
-typedef CCMIQuad CCMI_Geometry_t [32];
-typedef CCMIQuad CCMI_CollectiveProtocol_t [32*2];
-typedef CCMIQuad CCMI_CollectiveRequest_t  [32*8*4];
-typedef CCMIQuad CCMI_Request_t            [32];
-typedef CCMIQuad CCMI_Executor_t           [128];  //32 for schedule and 32 for executor
+#ifndef __ccmi_topology_defined__
+#error typedef CMQuad LL_Topology_t[2];
+#endif
+
+#ifndef __ccmi_pipeworkqueue_defined__
+#error typedef CMQuad LL_PipeWorkQueue_t[4];
+#endif
+
+#ifndef CCMI_REQUEST_SIZE
+#define CCMI_REQUEST_SIZE	32
+#endif
+
+#ifndef CCMI_PROTOCOL_SIZE
+#define CCMI_PROTOCOL_SIZE	64
+#endif
+
+#ifndef CCMI_GEOMETRY_SIZE
+#define CCMI_GEOMETRY_SIZE	32
+#endif
+
+typedef CMQuad CCMI_Geometry_t [CCMI_GEOMETRY_SIZE];
+typedef CMQuad CCMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];
+typedef CMQuad CCMI_Request_t            [CCMI_REQUEST_SIZE];
+
+// CCMI Collective request should be 32 CCMI_Requests. This is to store several
+// algorithms/schedule/executor pairs and have several messages in flight
+typedef CMQuad CCMI_CollectiveRequest_t  [CCMI_REQUEST_SIZE*8*4];
+typedef CMQuad CCMI_Executor_t           [CCMI_REQUEST_SIZE*4];
 
 #ifndef __ccmi_error_defined__
-
-typedef int CCMI_Error_t;
-typedef int CCMI_Result;
-const CCMI_Result CCMI_SUCCESS=0;
-
   #define __ccmi_error_defined__
 #endif
 
 
 #ifndef __ccmi_callback_defined__
-typedef struct CCMI_Callback_t
-{
-  void (*function) (void *, CCMI_Error_t *);
-  void *clientdata;
-}
-CCMI_Callback_t;
   #define __ccmi_callback_defined__
 #endif
 
@@ -215,7 +164,7 @@ typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
                                            const unsigned     sndlen,
                                            unsigned         * rcvlen,
                                            char            ** rcvbuf,
-                                           CCMI_Callback_t  * const cb_info);
+                                           CM_Callback_t  * const cb_info);
   #define __ccmi_recvasynccallback_defined__
 #endif
 
@@ -228,5 +177,15 @@ typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
 
 typedef CCMI_Geometry_t * (*CCMI_mapIdToGeometry) (int comm);
 
+typedef CCMI_Request_t * (*CCMI_OldRecvMulticast) (const CMQuad    * info,
+                                                   unsigned          count,
+                                                   unsigned          peer,
+                                                   unsigned          sndlen,
+                                                   unsigned          conn_id,
+                                                   void            * arg,
+                                                   unsigned        * rcvlen,
+                                                   char           ** rcvbuf,
+                                                   unsigned        * pipewidth,
+                                                   CM_Callback_t * cb_done);
 
 #endif

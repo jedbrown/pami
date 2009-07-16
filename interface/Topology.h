@@ -21,13 +21,8 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "ll_topology.h"
-#if TARGET==mpi
-#include "collectives/interface/mpi/TopologyImpl.h"
-#elif TARGET==lapiunix
-#include "collectives/interface/lapiunix/TopologyImpl.h"
-#else
-#error "Incorrect Target Specified"
-#endif
+
+#include "TopologyImpl.h"
 
 namespace LL {
 

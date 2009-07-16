@@ -7,14 +7,14 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/BinomialTree.cc
+ * \file algorithms/schedule/BinomialTree.cc
  * \brief The Binomial Schedule for Barrier, Broadcast, and [All]Reduce.
  *
  * Also used by the Rectangle schedule to implement Reduce.
  */
 
 #include "./BinomialTree.h"
-#include <new>
+
 /**
  * \brief Setup binomial schedule context
  *

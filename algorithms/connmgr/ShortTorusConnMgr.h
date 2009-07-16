@@ -14,7 +14,7 @@
 #ifndef  __short_torus_conn_mgr_h__
 #define  __short_torus_conn_mgr_h__
 
-#include "interfaces/ConnectionManager.h"
+#include "ConnectionManager.h"
 
 namespace CCMI
 {
@@ -24,11 +24,11 @@ namespace CCMI
     class ShortTorusConnMgr : public ConnectionManager
     {
     protected:
-      TorusMapping *_mapping;
+      TorusCollectiveMapping *_mapping;
 
     public: 
       /// Constructor
-      ShortTorusConnMgr (TorusMapping *map) : ConnectionManager(), _mapping(map)
+      ShortTorusConnMgr (TorusCollectiveMapping *map) : ConnectionManager(), _mapping(map)
       {
         unsigned* dims_lengths = _mapping->DimsLengths();
         unsigned nconn = dims_lengths[CCMI_X_DIM];
@@ -68,7 +68,7 @@ namespace CCMI
           return my_coords[CCMI_T_DIM];
 
         ///We shouldnt be here!
-        CCMI_assert (0);
+        CCMI_abort();
 
         return conn;
       }
@@ -95,7 +95,7 @@ namespace CCMI
         else if(coords[CCMI_T_DIM] != my_coords[CCMI_T_DIM])
           return my_coords[CCMI_T_DIM];
 
-        CCMI_assert (0); //We shouldnt be here, conn mgr does not
+        CCMI_abort(); //We shouldnt be here, conn mgr does not
         //permit sending to self
         return conn;
       }

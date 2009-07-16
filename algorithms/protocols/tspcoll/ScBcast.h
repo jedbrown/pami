@@ -21,7 +21,7 @@
 #include "./Scatter.h"
 #include "./Allgatherv.h"
 #include "./Barrier.h"
-#include "collectives/interface/MultiSendOld.h"
+#include "interface/MultiSendOld.h"
 // #define DEBUG_SCBCAST 1
 #undef TRACE
 #ifdef DEBUG_SCBCAST

@@ -13,7 +13,7 @@
 #ifndef __ll_pipeworkqueue_h__
 #define __ll_pipeworkqueue_h__
 
-#include "collectives/interface/cm_types.h"
+#include "cm_types.h"
 
 #ifdef __cplusplus
 extern "C"

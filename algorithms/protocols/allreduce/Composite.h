@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file collectives/bgp/protocols/allreduce/Composite.h
+ * \file algorithms/protocols/allreduce/Composite.h
  * \brief CCMI composite adaptor for allreduce with barrier support
  */
 
@@ -17,9 +17,9 @@
 
 #include "./BaseComposite.h"
 //  #include "Geometry.h"
-#include "collectives/algorithms/executor/Barrier.h"
-#include "collectives/algorithms/executor/AllreduceBase.h"
-
+#include "algorithms/executor/Barrier.h"
+#include "algorithms/executor/AllreduceBase.h"
+#include "math_coremath.h"
 
 namespace CCMI
 {
@@ -40,8 +40,8 @@ namespace CCMI
     {
 
       // Forward declare prototype
-      extern void getReduceFunction(CCMI_Dt, CCMI_Op, unsigned, 
-                                    unsigned&, CCMI_ReduceFunc&) __attribute__((noinline));
+      extern void getReduceFunction(CM_Dt, CM_Op, unsigned, 
+                                    unsigned&, coremath&) __attribute__((noinline));
 
       //-- Composite
       /// \brief The Composite for the Allreduce (and reduce)
@@ -75,7 +75,7 @@ namespace CCMI
         /// \brief Client's callback to call when the allreduce has
         /// finished
         ///
-        void               (* _myClientFunction)(void *, CCMI_Error_t *);
+        void               (* _myClientFunction)(void *, CM_Error_t *);
         void                * _myClientData;
       public:
         Composite () : 
@@ -87,8 +87,8 @@ namespace CCMI
 
         Composite ( ConfigFlags                       flags,
                     CCMI::Executor::Executor      * barrier,
-                    ProtocolFactory                 * factory,
-                    CCMI_Callback_t                   cb_done):
+                    CollectiveProtocolFactory                 * factory,
+                    CM_Callback_t                   cb_done):
 
         BaseComposite (factory),
         _doneCountdown(1),  // default to just a composite done needed
@@ -112,7 +112,7 @@ namespace CCMI
 
         void operator delete (void *p)
         {
-          CCMI_assert (0);
+          CCMI_abort();
         }
 
         void initializeBarrier (CCMI::Executor::Barrier *barrier)
@@ -132,11 +132,11 @@ namespace CCMI
                           char                            * srcbuf,
                           char                            * dstbuf,
                           unsigned                          count,
-                          CCMI_Dt                           dtype,
-                          CCMI_Op                           op,
+                          CM_Dt                           dtype,
+                          CM_Op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, CCMI_Error_t *) = cb_compositeDone, 
+                          void                           (* cb_done)(void *, CM_Error_t *) = cb_compositeDone, 
                           void                            * cd = NULL
                         )
         {
@@ -150,13 +150,13 @@ namespace CCMI
           if((op != allreduce->getOp()) || (dtype != allreduce->getDt()) || 
              (count != allreduce->getCount()))
           {
-            CCMI_ReduceFunc func;
+            coremath func;
             unsigned sizeOfType;
             CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op, count,
                                                         sizeOfType, func);
 
             unsigned min_pwidth = MIN_PIPELINE_WIDTH;
-            if(dtype == CCMI_DOUBLE && op == CCMI_SUM)
+            if(dtype == CM_DOUBLE && op == CM_SUM)
               min_pwidth = MIN_PIPELINE_WIDTH_SUM2P;
 
             /* Select pipeline width.
@@ -203,17 +203,18 @@ namespace CCMI
         }
 
         ///
-        /// \brief At this level we only support single color collectives
+        /// \brief At this level we only support single color
+        /// collectives
         ///
         virtual unsigned restart   ( CCMI_CollectiveRequest_t  * request,
-                                     CCMI_Callback_t           & cb_done,
+                                     CM_Callback_t           & cb_done,
                                      CCMI_Consistency            consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
-                                     unsigned                    count,
-                                     CCMI_Dt                     dtype,
-                                     CCMI_Op                     op,
-                                     int                         root=-1) 
+                                     size_t                      count,
+                                     CM_Dt                     dtype,
+                                     CM_Op                     op,
+                                     size_t                      root = (size_t)-1) 
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::restart()\n",(int)this));
           _myClientFunction = cb_done.function;
@@ -239,7 +240,7 @@ namespace CCMI
             startBarrier (consistency);
           }
 
-          return CCMI_SUCCESS;
+          return CM_SUCCESS;
         }
 
         virtual void start()
@@ -273,7 +274,7 @@ namespace CCMI
         /// It means the is done, but the client done isn't called
         /// until both the composite and (optional) barrier are done.
         /// 
-        static void cb_barrierDone(void *me, CCMI_Error_t *err)
+        static void cb_barrierDone(void *me, CM_Error_t *err)
         {
 
           TRACE_ADAPTOR((stderr,
@@ -298,7 +299,7 @@ namespace CCMI
         /// the client done isn't called until both the composite and
         /// (optional) barrier are done.
         /// 
-        static void cb_compositeDone(void *me, CCMI_Error_t *err)
+        static void cb_compositeDone(void *me, CM_Error_t *err)
         {
           TRACE_ADAPTOR((stderr,
                          "<%#.8X>Allreduce::Composite::cb_compositeDone()\n",

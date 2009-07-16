@@ -7,14 +7,15 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interfaces/Executor.h
+ * \file algorithms/executor/Executor.h
  * \brief ???
  */
 #ifndef         __executor_h__
 #define         __executor_h__
 
-#include "collectives/interface/ccmi_internal.h"
-#include "collectives/util/ccmi_util.h"
+#include "interface/ccmi_internal.h"
+#include "util/ccmi_util.h"
+#include "util/ccmi_debug.h"
 
 namespace CCMI
 {
@@ -69,7 +70,7 @@ namespace CCMI
        * operation has finished
        */
 
-      virtual void notifySendDone ( const CCMIQuad &info ) = 0;
+      virtual void notifySendDone ( const CMQuad &info ) = 0;
 
 
       /**
@@ -79,9 +80,9 @@ namespace CCMI
        * \param bytes : number of bytes received
        */
 
-      virtual void notifyRecv (unsigned src, const CCMIQuad &info, char * buf, unsigned bytes) = 0;
+      virtual void notifyRecv (unsigned src, const CMQuad &info, char * buf, unsigned bytes) = 0;
 
-      void setDoneCallback (void (*cb_done)(void *, CCMI_Error_t *), void *cd)
+      void setDoneCallback (void (*cb_done)(void *, CM_Error_t *), void *cd)
       {
         _cb_done    =   cb_done;
         _clientdata =   cd;
@@ -101,7 +102,7 @@ namespace CCMI
       ///
       ///  \brief Callback to call when the barrier has finished
       ///
-      void               (* _cb_done)(void *, CCMI_Error_t *);
+      void               (* _cb_done)(void *, CM_Error_t *);
       void                * _clientdata;
 
       ///

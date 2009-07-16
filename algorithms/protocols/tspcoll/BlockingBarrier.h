@@ -13,7 +13,7 @@
 #ifndef __tspcoll_blockingbarrier_h__
 #define __tspcoll_blockingbarrier_h__
 
-#include "collectives/interface/Communicator.h"
+#include "interface/Communicator.h"
 #include <assert.h>
 #include <stdio.h>
 

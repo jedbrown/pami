@@ -10,7 +10,7 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "collectives/interface/Communicator.h"
+#include "interface/Communicator.h"
 
 struct Split 
 { 

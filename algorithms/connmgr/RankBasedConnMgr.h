@@ -24,13 +24,13 @@ namespace CCMI
     class RankBasedConnMgr : public ConnectionManager
     {
     protected:
-      Mapping *_mapping;
+      CollectiveMapping *_mapping;
 
     public:
 
       /// Constructor
 
-      RankBasedConnMgr (Mapping *map) : ConnectionManager(), _mapping(map)
+      RankBasedConnMgr (CollectiveMapping *map) : ConnectionManager(), _mapping(map)
       {
         setNumConnections (_mapping->size());
       }

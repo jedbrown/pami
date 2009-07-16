@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ccmi/adaptor/protocols/allreduce/AsyncFactory.h
+ * \file algorithms/protocols/allreduce/AsyncFactory.h
  * \brief CCMI factory for [all]reduce composite
  */
 
@@ -15,9 +15,10 @@
 #ifndef __ccmi_adaptor_allreduce_async_factory_h__
 #define __ccmi_adaptor_allreduce_async_factory_h__
 
-#include "AsyncComposite.h"
-#include "collectives/interface/Geometry.h"
-#include "collectives/algorithms/protocols/ProtocolFactory.h"
+#include "./AsyncComposite.h"
+#include "interface/Geometry.h"
+#include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "math_coremath.h"
 
 namespace CCMI
 {
@@ -27,7 +28,7 @@ namespace CCMI
     {
       // A temporary callback for asynchronous generates. The local
       // restart will set the true callback and replace this one.
-      void temp_done_callback(void* cd, CCMI_Error_t *err)
+      void temp_done_callback(void* cd, CM_Error_t *err)
       {
         CCMI_abort();
       }
@@ -39,13 +40,13 @@ namespace CCMI
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
       /// 
-      class AsyncFactory : public ProtocolFactory
+      template <class MAP> class AsyncFactory : public CollectiveProtocolFactory
       {
       protected:
         ///
         /// \brief Multisend interface
         ///
-        CCMI::MultiSend::MulticastInterface   * _minterface;
+        CCMI::MultiSend::OldMulticastInterface   * _minterface;
 
         ///
         ///  \brief Connection Manager for the allreduce
@@ -60,12 +61,75 @@ namespace CCMI
         ///
         /// \brief mapping module
         ///
-        CCMI::Mapping                          * _mapping;
+        MAP                          * _mapping;
 
         ///
         /// \brief Configuration flags
         //
         ConfigFlags                       _flags;
+
+      ///
+      /// \brief Generate a non-blocking allreduce message.
+      ///
+      static CCMI_Request_t *   cb_receiveHead(const CMQuad    * info,
+                                               unsigned          count,
+                                               unsigned          peer,
+                                               unsigned          sndlen,
+                                               unsigned          conn_id,
+                                               void            * arg,
+                                               unsigned        * rcvlen,
+                                               char           ** rcvbuf,
+                                               unsigned        * pipewidth,
+                                               CM_Callback_t * cb_done)
+      {
+        TRACE_ADAPTOR((stderr, 
+                       "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead peer %d, conn_id %d\n",
+                       (int)arg, peer, conn_id));
+        CCMI_assert (info && arg);
+        CollHeaderData  *cdata = (CollHeaderData *) info;
+        AsyncFactory *factory = (AsyncFactory *) arg;
+
+        Geometry *geometry = (Geometry *)factory->_cb_geometry(cdata->_comm);
+        CCMI::Adaptor::Allreduce::AsyncComposite *composite = 
+        factory->getAllreduceComposite(geometry, cdata->_iteration);
+
+        CCMI::Executor::AllreduceBase *allreduce = 
+        factory->getAllreduce(geometry, cdata->_iteration);
+
+        TRACE_ADAPTOR((stderr, 
+                       "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead "
+                       "comm %#X, root %#X, count %#X, dt %#X, op %#X, iteration %#X,"
+                       "composite %#.8X, executor %#.8X %s\n",
+                       (int)factory, cdata->_comm, cdata->_root, cdata->_count,
+                       cdata->_dt, cdata->_op, cdata->_iteration,
+                       (int)composite, (int)allreduce, 
+                       (composite == NULL?" ":
+                        ((composite->isIdle())?"(Idle)":" "))));
+
+        if((allreduce == NULL) || (composite == NULL))
+        {
+          composite = factory->buildComposite (geometry, cdata);
+          allreduce = (CCMI::Executor::AllreduceBase *) composite->getExecutor (0);
+        }
+        else if(composite->isIdle())
+        {
+          composite->restartAsync(allreduce,
+                                  cdata->_count,
+                                  (CM_Dt)(cdata->_dt),
+                                  (CM_Op)(cdata->_op),
+                                  cdata->_root);
+        }
+
+        TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
+                       "cb_receiveHead(%#X,%#.8X)\n",
+                       (int)factory,cdata->_comm,(int)allreduce));
+
+        return allreduce->notifyRecvHead (info,      count,
+                                          peer,      sndlen,
+                                          conn_id,   arg,
+                                          rcvlen,    rcvbuf,
+                                          pipewidth, cb_done);
+      };
 
       public:
 
@@ -80,8 +144,8 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline AsyncFactory(CCMI::Mapping                                      * mapping,
-                            CCMI::MultiSend::MulticastInterface        * minterface,
+        inline AsyncFactory(MAP                                           * mapping,
+                            CCMI::MultiSend::OldMulticastInterface        * minterface,
                             CCMI_mapIdToGeometry                           cb_geometry,
                             ConfigFlags                                   flags ) :
         _minterface (minterface),
@@ -94,6 +158,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncFactory::ctor(%#X) "
                          "flags %#X\n",
                          (int)this, sizeof(*this),*(unsigned*)&_flags));
+          _minterface->setCallback(cb_receiveHead, this);
         }
 
         inline void setConnectionManager 
@@ -107,14 +172,14 @@ namespace CCMI
         ///
         virtual CCMI::Executor::Composite *generate
         (CCMI_CollectiveRequest_t * request,
-         CCMI_Callback_t            cb_done,
+         CM_Callback_t            cb_done,
          CCMI_Consistency           consistency,
          Geometry                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         CCMI_Dt                    dtype,
-         CCMI_Op                    op,
+         CM_Dt                      dtype,
+         CM_Op                      op,
          int                        root = -1 ) = 0;
 
         ///
@@ -124,73 +189,10 @@ namespace CCMI
         virtual CCMI::Executor::Composite *generateAsync
         (Geometry                 * geometry,
          unsigned                   count,
-         CCMI_Dt                    dtype,
-         CCMI_Op                    op,
+         CM_Dt                      dtype,
+         CM_Op                      op,
          unsigned                   iteration,
          int                        root = -1 ) = 0;
-
-        ///
-        /// \brief Generate a non-blocking allreduce message.
-        ///
-        static CCMI_Request_t *   cb_receiveHead(const CCMIQuad    * info,
-                                                 unsigned          count,
-                                                 unsigned          peer,
-                                                 unsigned          sndlen,
-                                                 unsigned          conn_id,
-                                                 void            * arg,
-                                                 unsigned        * rcvlen,
-                                                 char           ** rcvbuf,
-                                                 unsigned        * pipewidth,
-                                                 CCMI_Callback_t * cb_done)
-        {
-          TRACE_ADAPTOR((stderr, 
-                         "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead peer %d, conn_id %d\n",
-                         (int)arg, peer, conn_id));
-          CCMI_assert (info && arg);
-          CollHeaderData  *cdata = (CollHeaderData *) info;
-          AsyncFactory *factory = (AsyncFactory *) arg;
-
-          Geometry *geometry = (Geometry *)factory->_cb_geometry(cdata->_comm);
-          CCMI::Adaptor::Allreduce::AsyncComposite *composite = 
-          factory->getAllreduceComposite(geometry, cdata->_iteration);
-
-          CCMI::Executor::AllreduceBase *allreduce = 
-          factory->getAllreduce(geometry, cdata->_iteration);
-
-          TRACE_ADAPTOR((stderr, 
-                         "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead "
-                         "comm %#X, root %#X, count %#X, dt %#X, op %#X, iteration %#X,"
-                         "composite %#.8X, executor %#.8X %s\n",
-                         (int)factory, cdata->_comm, cdata->_root, cdata->_count,
-                         cdata->_dt, cdata->_op, cdata->_iteration,
-                         (int)composite, (int)allreduce, 
-                         (composite == NULL?" ":
-                          ((composite->isIdle())?"(Idle)":" "))));
-
-          if((allreduce == NULL) || (composite == NULL))
-          {
-            composite = factory->buildComposite (geometry, cdata);
-            allreduce = (CCMI::Executor::AllreduceBase *) composite->getExecutor (0);
-          }
-          else if(composite->isIdle())
-          {
-            composite->restartAsync(allreduce,
-                                    cdata->_count,
-                                    (CCMI_Dt)(cdata->_dt),
-                                    (CCMI_Op)(cdata->_op),
-                                    cdata->_root);
-          }
-
-          TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
-                         "cb_receiveHead(%#X,%#.8X)\n",
-                         (int)factory,cdata->_comm,(int)allreduce));
-
-          return allreduce->notifyRecvHead (info,      count,
-                                            peer,      sndlen,
-                                            conn_id,   arg,
-                                            rcvlen,    rcvbuf,
-                                            pipewidth, cb_done);
-        };
 
 
         AsyncComposite          * buildComposite (Geometry         * geometry,
@@ -199,8 +201,8 @@ namespace CCMI
           AsyncComposite *composite = (CCMI::Adaptor::Allreduce::AsyncComposite *)
                                       generateAsync(geometry,
                                                     cdata->_count,
-                                                    (CCMI_Dt)(cdata->_dt),
-                                                    (CCMI_Op)(cdata->_op),
+                                                    (CM_Dt)(cdata->_dt),
+                                                    (CM_Op)(cdata->_op),
                                                     cdata->_iteration);
           composite->setQueueing();
 
@@ -238,10 +240,10 @@ namespace CCMI
         /// otherwise destroy it and return NULL.
         ///
         CCMI::Adaptor::Allreduce::AsyncComposite * getAllreduceComposite(Geometry *geometry, 
-                                                                             unsigned iteration)
+                                                                         unsigned iteration)
         {
           CCMI::Adaptor::Allreduce::AsyncComposite *composite = (CCMI::Adaptor::Allreduce::AsyncComposite *)
-                                                                    geometry->getAllreduceComposite(iteration);
+                                                                geometry->getAllreduceComposite(iteration);
 
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
                          "getAllreduceComposite(comm id X, iteration %#X)"

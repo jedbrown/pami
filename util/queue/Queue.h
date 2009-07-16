@@ -10,6 +10,8 @@
 #define __ccmi_queue_h__
 
 #include <stdio.h>
+#include "util/ccmi_util.h"
+
 #ifndef TRACE_ERR
   #define TRACE_ERR(x)
 #endif

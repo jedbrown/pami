@@ -7,16 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file schedule/LockboxBarrierSchedule.h
+ * \file algorithms/schedule/LockboxBarrierSchedule.h
  * \brief Schedule for Barrier between local cores using lockbox
  */
 
 #ifndef  __LOCKBOX_BARRIER_SCHEDULE__
 #define  __LOCKBOX_BARRIER_SCHEDULE__
 
-#include "interfaces/Schedule.h"
-#include "adaptor/ccmi_util.h"
-#include "adaptor/TorusMapping.h"
+#include "Schedule.h"
+#include "util/ccmi_util.h"
+#include "interface/TorusCollectiveMapping.h"
 
 namespace CCMI
 {
@@ -39,11 +39,11 @@ namespace CCMI
       /**
        * \brief Constructor for local core barrier schedule
        *
-       * \param[in] map	Mapping object for geometry
+       * \param[in] map	CollectiveMapping object for geometry
        * \param[in] nranks	Number of ranks in geometry
        * \param[in] ranks	List of ranks in geometry
        */
-      LockboxBarrierSchedule(TorusMapping *map,
+      LockboxBarrierSchedule(TorusCollectiveMapping *map,
                              unsigned nranks, unsigned *ranks)
       {
         // anything? we assume all ranks are on same chip.
@@ -86,10 +86,10 @@ namespace CCMI
       /**
        * \brief Return maximum number of phases ever used by this schedule
        *
-       * \param[in] map	Mapping for the partition/geometry
+       * \param[in] map	CollectiveMapping for the partition/geometry
        * \param[in] nranks	Number of ranks in geometry
        */
-      static unsigned getMaxPhases(TorusMapping *map, unsigned nranks)
+      static unsigned getMaxPhases(TorusCollectiveMapping *map, unsigned nranks)
       {
         return 1;
       }

@@ -26,9 +26,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include "collectives/interface/ccmi_internal.h"
-#include "collectives/interface/mpi/multisend/multisend_impl.h"
-#include "collectives/interface/mpi/multisend/multisend.h"
+#include "interface/ccmi_internal.h"
+#include "interface/mpi/multisend/multisend_impl.h"
+#include "interface/mpi/multisend/multisend.h"
 
 extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration, 
 					     CCMI_RecvMultiSend   cb_recv, 
@@ -45,7 +45,7 @@ extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration,
 
 extern "C" int MultiSend_multicast(CCMI_Register_t   * registration,
 				   CCMI_Request_t    * request,
-				   CCMI_Callback_t     cb_done,
+				   CM_Callback_t     cb_done,
 				   CCMI_Consistency    consistency,
 				   unsigned            connection_id,
 				   unsigned            bytes,
@@ -53,7 +53,7 @@ extern "C" int MultiSend_multicast(CCMI_Register_t   * registration,
 				   unsigned            nranks,
 				   unsigned          * rank,
 				   unsigned          * hints,
-				   const CCMIQuad      * msginfo )
+				   const CMQuad      * msginfo )
 {
   assert ( registration );
 

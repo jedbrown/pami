@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file adaptor/ccmi_util.h
+ * \file util/ccmi_util.h
  * \brief ???
  */
 
@@ -16,11 +16,12 @@
 
 //#define throw() // Needed for xlC -noeh processing
 //#include <config.h>
+
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-#define TRACE_ERR(x)     //fprintf x
+
 #define MEMCPY           memcpy
 #define MEMSET           memset
 
@@ -70,7 +71,7 @@
  */
 #define COMPILE_TIME_ASSERT(expr) switch(0){case 0:case expr:;}
 
-#define __dcmf_ccmi_new_defined__
+//#define __dcmf_ccmi_new_defined__
 #ifndef  __dcmf_ccmi_new_defined__
   #define  __dcmf_ccmi_new_defined__
   #ifdef __cplusplus

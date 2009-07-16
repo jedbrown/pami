@@ -13,8 +13,8 @@
 #ifndef __tspcoll_collbase_h__
 #define __tspcoll_collbase_h__
 
-#include "collectives/util/ccmi_debug.h"
-#include "collectives/interface/MultiSendOld.h"
+#include "util/ccmi_debug.h"
+#include "interface/MultiSendOld.h"
 #include "NBColl.h"
 
 #include <assert.h>
