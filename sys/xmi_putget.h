@@ -39,7 +39,7 @@ typedef struct {
     xmi_task_t           dest;         /* destination task */
     void               * local_buffer; /* data address */
     xmi_data_type_t      local_type;   /* data type of local buffer */
-    void               * remote_buffer;/* remote buffer addreess */
+    void               * remote_buffer;/* remote buffer address */
     xmi_data_type_t      remote_type;  /* data type of remote buffer */
     xmi_size_t           data_size;    /* data size in bytes */
     xmi_event_callback_t send_done;    /* message is sent */
@@ -55,7 +55,7 @@ typedef struct {
     xmi_task_t           dest;         /* destination task */
     void               * local_buffer; /* data address */
     xmi_data_type_t      local_type;   /* data type of local buffer */
-    void               * remote_buffer;/* remote buffer addreess */
+    void               * remote_buffer;/* remote buffer address */
     xmi_data_type_t      remote_type;  /* data type of remote buffer */
     xmi_size_t           data_size;    /* data size in bytes */
     xmi_event_callback_t msg_done;     /* message is received at remote side */
@@ -63,8 +63,8 @@ typedef struct {
     xmi_send_hint_t      hints;        /* hints for sending the message */
 } xmi_get_t;
 
-xmi_result_t XMI_Get_contig(xmi_context_t context, xmi_put_t * get);
-xmi_result_t XMI_Get_typed(xmi_context_t context, xmi_put_t * get);
+xmi_result_t XMI_Get_contig(xmi_context_t context, xmi_get_t * get);
+xmi_result_t XMI_Get_typed(xmi_context_t context, xmi_get_t * get);
 
 xmi_result_t XMI_Register_mem(xmi_context_t context, void *buffer, xmi_size_t len);
 
