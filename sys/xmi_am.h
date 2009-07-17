@@ -38,6 +38,7 @@ typedef void (*xmi_event_callback_t) (
  */
 typedef struct {
     unsigned  consistency:1;
+    unsigned  buffer_registered:1;
     unsigned  use_rdma:1;
     unsigned  no_rdma:1;
     unsigned  no_local_copy:1;
