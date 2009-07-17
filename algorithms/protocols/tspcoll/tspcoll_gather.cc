@@ -99,7 +99,7 @@ void TSPColl::Gather::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 #endif
       unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = comm->absrankof (_root);
-      CCMI_Callback_t cb_done;
+      CM_Callback_t cb_done;
       cb_done.function        = cb_senddone;
       cb_done.clientdata      = this;
       void * r = mcast_iface->send (&_req,

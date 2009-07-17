@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "math_coremath.h"
+#include "math/math_coremath.h"
 #include "VnDualShortTreeAllreduce.h"
 #include "msgr.h"
 
@@ -158,7 +158,7 @@ namespace CCMI
               else
               {
                 _reduceOpSelect = OPT_FUN;
-                _reduceFunc = (CCMI_ReduceFunc)MATH_OP_FUNCS( (CM_Dt)dtype, 
+                _reduceFunc = (coremath)MATH_OP_FUNCS( (CM_Dt)dtype, 
                                                               (CM_Op)op, 
                                                               _numPeers );  
               }

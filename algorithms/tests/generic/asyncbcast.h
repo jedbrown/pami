@@ -43,7 +43,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result ccmiResult;
 
-  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&asyncbcast_reg, &asyncbcast_conf)) != CCMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&asyncbcast_reg, &asyncbcast_conf)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_AsyncBcast_register failed %d\n",ccmiResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &asyncbcast_reg))

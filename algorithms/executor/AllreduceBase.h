@@ -19,7 +19,7 @@
 #include "interface/MultiSend.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "util/logging/LogMgr.h"
-#include "math_coremath.h"
+#include "math/math_coremath.h"
 
 #include "util/ccmi_debug.h"
 
@@ -139,7 +139,7 @@ namespace CCMI
       const char        * _srcbuf;
       char              * _dstbuf;
 
-      CCMI_ReduceFunc     _reduceFunc;
+      coremath     _reduceFunc;
 
       //void (*_sendCallbackHandler) (void*, CM_Error_t *);
       //void (*_recvCallbackHandler) (void*, CM_Error_t *);
@@ -371,7 +371,7 @@ namespace CCMI
       inline void setReduceInfo( unsigned         count,
                                  unsigned         pipelineWidth,
                                  unsigned         sizeOfType,
-                                 CCMI_ReduceFunc  func,
+                                 coremath  func,
                                  CM_Op          op = CM_UNDEFINED_OP,
                                  CM_Dt          dt = CM_UNDEFINED_DT)
       {

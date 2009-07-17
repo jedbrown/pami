@@ -13,15 +13,15 @@
 #ifndef __tspcoll_genericcomm_h__
 #define __tspcoll_genericcomm_h__
 
-#include "collectives/interface/Communicator.h"
-#include "collectives/algorithms/protocols/tspcoll/Barrier.h"
-#include "collectives/algorithms/protocols/tspcoll/Allgather.h"
-#include "collectives/algorithms/protocols/tspcoll/Allgatherv.h"
-#include "collectives/algorithms/protocols/tspcoll/Scatter.h"
-#include "collectives/algorithms/protocols/tspcoll/BinomBcast.h"
-#include "collectives/algorithms/protocols/tspcoll/ScBcast.h"
-#include "collectives/algorithms/protocols/tspcoll/Allreduce.h"
-#include "collectives/algorithms/protocols/tspcoll/NBColl.h"
+#include "interface/Communicator.h"
+#include "algorithms/protocols/tspcoll/Barrier.h"
+#include "algorithms/protocols/tspcoll/Allgather.h"
+#include "algorithms/protocols/tspcoll/Allgatherv.h"
+#include "algorithms/protocols/tspcoll/Scatter.h"
+#include "algorithms/protocols/tspcoll/BinomBcast.h"
+#include "algorithms/protocols/tspcoll/ScBcast.h"
+#include "algorithms/protocols/tspcoll/Allreduce.h"
+#include "algorithms/protocols/tspcoll/NBColl.h"
 
 
 namespace TSPColl

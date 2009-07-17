@@ -461,11 +461,11 @@ namespace CCMI
        * \param[in] addr	Memory to contain new object
        * \return	Pointer to new object
        */
-      inline void * operator new(size_t size, void *addr)
-      {
-        CCMI_assert(size >= sizeof(OneColorRectangle));
-        return addr;
-      }
+//      inline void * operator new(size_t size, void *addr)
+//      {
+//        CCMI_assert(size >= sizeof(OneColorRectangle));
+//        return addr;
+//      }
 
       /**
        * \brief \e delete operator for destruction of object
@@ -979,11 +979,11 @@ namespace CCMI
        * \param[in] addr	The memory region
        * \return	Address of memory region to use for object
        */
-      inline void * operator new(size_t size, void *addr)
-      {
-        CCMI_assert(size >= sizeof(OneColorRectBcastSched));
-        return addr;
-      }
+//      inline void * operator new(size_t size, void *addr)
+//      {
+//        CCMI_assert(size >= sizeof(OneColorRectBcastSched));
+//        return addr;
+//      }
       /**
        * \brief object delete operator.
        *
@@ -1293,13 +1293,15 @@ namespace CCMI
       {
 
         if(_subScheduleType == Binomial)
-        {
-          _subschedule[axis] = new (&_subschedule_storage[axis],sizeof(_subschedule_storage[axis]))
+        { 
+          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(BinomialTreeSchedule));
+          _subschedule[axis] = new (&_subschedule_storage[axis])
                                BinomialTreeSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
         else
         {
-          _subschedule[axis] = new (&_subschedule_storage[axis],sizeof(_subschedule_storage[axis]))
+          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(RingSchedule));
+          _subschedule[axis] = new (&_subschedule_storage[axis])
                                RingSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
 
@@ -1473,11 +1475,11 @@ namespace CCMI
        * \param[in] addr	The memory region
        * \return	Address of memory region to use for object
        */
-      inline void * operator new(size_t size, void *addr)
-      {
-        CCMI_assert(size >= sizeof(OneColorRectRedSched));
-        return addr;
-      }
+//      inline void * operator new(size_t size, void *addr)
+//      {
+//        CCMI_assert(size >= sizeof(OneColorRectRedSched));
+//        return addr;
+//      }
       /**
        * \brief object delete operator.
        *
@@ -1645,10 +1647,10 @@ namespace CCMI
                                      CCMI::Schedule::OneColorRectRedSched::Subschedule subschedule=CCMI::Schedule::OneColorRectRedSched::Binomial) :
       OneColorRectangle(mapping, color, rect)
       {
-        new (&_reduce)
-        OneColorRectRedSched(mapping, color, rect, subschedule);
-        new (&_bcast)
-        OneColorRectBcastSched(mapping, color, rect);
+        COMPILE_TIME_ASSERT(sizeof(_reduce) >= sizeof(OneColorRectRedSched));
+        new (&_reduce) OneColorRectRedSched(mapping, color, rect, subschedule);
+        COMPILE_TIME_ASSERT(sizeof(_bcast) >= sizeof(OneColorRectBcastSched));
+        new (&_bcast)  OneColorRectBcastSched(mapping, color, rect);
         _midphase = PHASE_NONE;
       }
 

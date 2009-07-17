@@ -13,8 +13,8 @@
 #ifndef __tspcoll_basecomm_h__
 #define __tspcoll_basecomm_h__
 
-#include "collectives/util/ccmi_debug.h"
-#include "collectives/interface/MultiSendOld.h"
+#include "util/ccmi_debug.h"
+#include "interface/MultiSendOld.h"
 
 namespace TSPColl
 {
@@ -86,15 +86,15 @@ namespace TSPColl
     virtual NBColl * iallreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
 				  const void        * s,
 				  void              * d, 
-				  CCMI_Op             op,
-				  CCMI_Dt             dtype, 
+				  CM_Op             op,
+				  CM_Dt             dtype, 
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
     virtual void     allreduce   (CCMI::MultiSend::MulticastInterface *mcast_iface,
 				  const void        * s, 
 				  void              * d, 
-				  CCMI_Op             op,
-				  CCMI_Dt             dtype, 
+				  CM_Op             op,
+				  CM_Dt             dtype, 
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 

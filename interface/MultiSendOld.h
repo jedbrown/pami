@@ -7,16 +7,19 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interfaces/MultiSend.h
+ * \file interface/MultiSend.h
  * \brief Structures and abstract multisend classes which 
  * must be derived in the adaptor.
  */
 
 #ifndef   __kernel_multisend_h__
 #define   __kernel_multisend_h__
-#include "collectives/interface/ccmi_internal.h"
-#include "collectives/util/ccmi_util.h"
-#include "collectives/util/ccmi_debug.h"
+
+#include "interface/ccmi_internal.h"
+#include "util/ccmi_util.h"
+#include "util/ccmi_debug.h"
+//#include "ll_topology.h" 
+//#include "ll_pipeworkqueue.h" 
 
 namespace CCMI
 {
@@ -29,7 +32,8 @@ namespace CCMI
 
 
     #ifndef __ccmi_recv_multicast_callback_defined__ // may be pre-defined in the adaptor
-    typedef CCMI_Request_t * (*CCMI_RecvMulticast_t) (const CCMIQuad  * info,
+    #warning old ms
+    typedef CCMI_Request_t * (*CCMI_RecvMulticast_t) (const CMQuad  * info,
                                             unsigned          count,
                                             unsigned          peer,
                                             unsigned          sndlen,
@@ -38,7 +42,7 @@ namespace CCMI
                                             unsigned        * rcvlen,
                                             char           ** rcvbuf,
                                             unsigned        * pipewidth,
-                                            CCMI_Callback_t * cb_done);
+                                            CM_Callback_t * cb_done);
     #endif
 
     ///
@@ -52,7 +56,7 @@ namespace CCMI
                                                  unsigned       ** rcvlens,
                                                  unsigned       **rcvcounters,
                                                  unsigned        * nranks,
-                                                 CCMI_Callback_t * cb_done);
+                                                 CM_Callback_t * cb_done);
 
     typedef enum
     {
@@ -63,8 +67,8 @@ namespace CCMI
     struct CCMI_Multicast_t 
     {
       void              * registration;
-      CCMI_Request_t    * request;     
-      CCMI_Callback_t     cb_done;     
+      CM_Request_t    * request;     
+      CM_Callback_t     cb_done;     
       CCMI_Consistency    consistency;   
       unsigned            connection_id;   
       unsigned            bytes;     
@@ -72,10 +76,10 @@ namespace CCMI
       unsigned            nranks;    
       unsigned          * ranks;     
       CCMI_Subtask      * opcodes;    
-      const CCMIQuad    * msginfo;     
+      const CMQuad    * msginfo;     
       unsigned            count;     
-      CCMI_Op             op;      
-      CCMI_Dt             dt;           
+      CM_Op             op;      
+      CM_Dt             dt;           
       unsigned            flags;             
     
       CCMI_Multicast_t () 
@@ -91,8 +95,8 @@ namespace CCMI
         opcodes        = NULL;         
         msginfo        = NULL;         
         count          = 0;        
-        op             = CCMI_UNDEFINED_OP; 
-        dt             = CCMI_UNDEFINED_DT;   
+        op             = CM_UNDEFINED_OP; 
+        dt             = CM_UNDEFINED_DT;   
         flags          = CCMI_FLAGS_UNSET;             
       }
 
@@ -112,13 +116,13 @@ namespace CCMI
         this->bytes = bytes;
       }
 
-      void setCallback (void (*fn) (void *, CCMI_Error_t *),  void *cd)
+      void setCallback (void (*fn) (void *, CM_Error_t *),  void *cd)
       {
         cb_done.function = fn;
         cb_done.clientdata = cd;
       }
 
-      void setReduceInfo (CCMI_Op op,  CCMI_Dt dt)
+      void setReduceInfo (CM_Op op,  CM_Dt dt)
       {
         this->op = op;
         this->dt = dt;
@@ -134,7 +138,7 @@ namespace CCMI
         this->opcodes = op;
       }
 
-      void setInfo (CCMIQuad *info, int count)
+      void setInfo (CMQuad *info, int count)
       {
         this->msginfo = info;
         this->count   = count;
@@ -156,14 +160,14 @@ namespace CCMI
     {
       void              * registration;
       CCMI_Request_t    * request;     
-      CCMI_Callback_t     cb_done;     
+      CM_Callback_t     cb_done;     
       unsigned            connection_id;   
       unsigned            bytes;     
       char              * rcvbuf; 
       unsigned            pipelineWidth;
       CCMI_Subtask             opcode;  
-      CCMI_Op             op;      
-      CCMI_Dt             dt;           
+      CM_Op             op;      
+      CM_Dt             dt;           
 
       CCMI_MulticastRecv_t () 
       {
@@ -173,8 +177,8 @@ namespace CCMI
         bytes          = 0;;         
         rcvbuf         = NULL;         
         opcode         = CCMI_PT_TO_PT_SUBTASK;        
-        op             = CCMI_UNDEFINED_OP; 
-        dt             = CCMI_UNDEFINED_DT;   
+        op             = CM_UNDEFINED_OP; 
+        dt             = CM_UNDEFINED_DT;   
       }
 
       void setRequestBuffer (CCMI_Request_t *request)
@@ -193,13 +197,13 @@ namespace CCMI
         this->bytes = bytes;
       }
 
-      void setCallback (void (*fn) (void *, CCMI_Error_t *),  void *cd)
+      void setCallback (void (*fn) (void *, CM_Error_t *),  void *cd)
       {
         cb_done.function = fn;
         cb_done.clientdata = cd;
       }
 
-      void setReduceInfo (CCMI_Op op,  CCMI_Dt dt)
+      void setReduceInfo (CM_Op op,  CM_Dt dt)
       {
         this->op = op;
         this->dt = dt;
@@ -280,9 +284,9 @@ namespace CCMI
       ///
 
       virtual unsigned  send  (CCMI_Request_t         * request,
-                               const CCMI_Callback_t  * cb_done,
+                               const CM_Callback_t  * cb_done,
                                CCMI_Consistency         consistency,
-                               const CCMIQuad         * info,
+                               const CMQuad         * info,
 			       unsigned                 info_count,
 			       unsigned                 connection_id,
                                const char             * buf,
@@ -290,8 +294,8 @@ namespace CCMI
                                unsigned               * hints,
                                unsigned               * ranks,
                                unsigned                 nranks,
-                               CCMI_Op                  op    = CCMI_UNDEFINED_OP,
-                               CCMI_Dt                  dtype = CCMI_UNDEFINED_DT ) = 0;
+                               CM_Op                  op    = CM_UNDEFINED_OP,
+                               CM_Dt                  dtype = CM_UNDEFINED_DT ) = 0;
 
       virtual unsigned send (CCMI_Multicast_t  *mcastinfo) = 0;
 
@@ -311,14 +315,14 @@ namespace CCMI
       ///
 
       virtual unsigned postRecv (CCMI_Request_t         * request,
-                                 const CCMI_Callback_t  * cb_done,
+                                 const CM_Callback_t  * cb_done,
                                  unsigned                 conn_id,
                                  char                   * buf,
                                  unsigned                 size,
                                  unsigned                 pwidth,
                                  unsigned                 hint   = CCMI_UNDEFINED_SUBTASK,
-                                 CCMI_Op                  op     = CCMI_UNDEFINED_OP,
-                                 CCMI_Dt                  dtype  = CCMI_UNDEFINED_DT ) = 0;
+                                 CM_Op                  op     = CM_UNDEFINED_OP,
+                                 CM_Dt                  dtype  = CM_UNDEFINED_DT ) = 0;
 
       virtual unsigned postRecv (CCMI_MulticastRecv_t  *mrecv) = 0;
 
@@ -393,7 +397,7 @@ namespace CCMI
       ///
 
       virtual void send  (CCMI_Request_t         * request,
-                          const CCMI_Callback_t  * cb_done,
+                          const CM_Callback_t  * cb_done,
                           unsigned                 connid,
                           unsigned                 rcvindex,
                           const char             * buf,
@@ -418,7 +422,7 @@ namespace CCMI
       ///
 
       virtual void postRecv (CCMI_Request_t         * request,
-                             const CCMI_Callback_t  * cb_done,
+                             const CM_Callback_t  * cb_done,
                              unsigned                 connid,
                              char                   * buf,
                              unsigned               * sizes,

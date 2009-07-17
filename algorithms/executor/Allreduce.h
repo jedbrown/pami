@@ -239,7 +239,7 @@ namespace CCMI
                               void           * dstbuf,
                               unsigned         count,
                               unsigned         sizeOfType,
-                              CCMI_ReduceFunc  func,
+                              coremath  func,
                               CM_Op          op = CM_UNDEFINED_OP,
                               CM_Dt          dt = CM_UNDEFINED_DT)
       {

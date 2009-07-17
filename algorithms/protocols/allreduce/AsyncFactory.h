@@ -18,7 +18,7 @@
 #include "./AsyncComposite.h"
 #include "interface/Geometry.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
-#include "math_coremath.h"
+#include "math/math_coremath.h"
 
 namespace CCMI
 {

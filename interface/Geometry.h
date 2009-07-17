@@ -362,5 +362,63 @@ namespace CCMI
   };  //Adaptor
 }; // namespace CCMI
 
+#ifndef __bgp__
+#ifndef __bogus_dcmf_hardware_definitions__
+  #warning BOGUS TEMPORARY DCMF DEFINITIONS
+  /** \brief The size of the processor name string (happens to be the same as the MPI version) */
+#define DCMF_HARDWARE_MAX_PROCESSOR_NAME 128
+  /** \brief The number of dimensions in the hardware information arrays */
+#define DCMF_HARDWARE_NUM_DIMS 4
+
+  /** \brief Hardware information data type */
+  typedef struct
+  {
+    uint32_t lrank;  /**< Logical rank of the node in the existing mapping.                   */
+    uint32_t lsize;  /**< Logical size of the partition, based on the mapping and -np value.  */
+    uint32_t prank;  /**< Physical rank of the node (irrespective of mapping).                */
+    uint32_t psize;  /**< Physical size of the partition (irrespective of mapping).           */
+
+    union {
+      uint32_t Size[DCMF_HARDWARE_NUM_DIMS];  /**< Array for the dimension size of the HW.    */
+      struct {
+        uint32_t tSize;  /**< The number of ranks possible on the node.                       */
+        uint32_t zSize;  /**< The Z dimension size of the HW.                                 */
+        uint32_t ySize;  /**< The Y dimension size of the HW.                                 */
+        uint32_t xSize;  /**< The X dimension size of the HW.                                 */
+      };
+    };
+
+    union {
+      uint32_t Coord[DCMF_HARDWARE_NUM_DIMS]; /**< Array for the physical coordinates of the calling node. */
+      struct {
+        uint32_t tCoord; /**< The physical T rank       of the calling node.                  */
+        uint32_t zCoord; /**< The physical Z coordinate of the calling node.                  */
+        uint32_t yCoord; /**< The physical Y coordinate of the calling node.                  */
+        uint32_t xCoord; /**< The physical X coordinate of the calling node.                  */
+      };
+    };
+
+    union {
+      uint32_t Torus[DCMF_HARDWARE_NUM_DIMS];  /**< Array for torus/mesh indicators.          */
+      struct {
+        uint32_t  tTorus; /**< Do we have a torus in the T dimension (Yes).                   */
+        uint32_t  zTorus; /**< Do we have a torus in the Z dimension.                         */
+        uint32_t  yTorus; /**< Do we have a torus in the Y dimension.                         */
+        uint32_t  xTorus; /**< Do we have a torus in the X dimension.                         */
+      };
+    };
+
+    uint32_t rankInPset; /**< Rank in the Pset (irrespective of mapping).                     */
+    uint32_t sizeOfPset; /**< Number of nodes in the Pset (irrespective of mapping).          */
+    uint32_t idOfPset;   /**< Rank of the Pset in the partition (irrespective of mapping).    */
+
+    uint32_t clockMHz;   /**< Frequency of the core clock, in units of 10^6/seconds           */
+    uint32_t memSize;    /**< Size of the core main memory, in units of 1024^2 Bytes          */
+    char name[DCMF_HARDWARE_MAX_PROCESSOR_NAME]; /**< A unique name string for the calling node. */
+  } DCMF_Hardware_t;
+  inline void DCMF_Hardware (DCMF_Hardware_t *hw_info){memset(hw_info, 0x00, sizeof(DCMF_Hardware_t));}
+  #define __bogus_dcmf_hardware_definitions__
+#endif // !__bogus_dcmf_hardware_definitions__
+#endif // !__bgp__
 
 #endif

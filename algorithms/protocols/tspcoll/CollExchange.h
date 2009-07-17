@@ -67,7 +67,7 @@ namespace TSPColl
     /* ------------------------------ */
     
     void          send                     (int phase,CCMI::MultiSend::MulticastInterface *mcast_iface);
-    static inline CCMI_Request_t * cb_incoming(const CCMIQuad  * hdr,
+    static inline CCMI_Request_t * cb_incoming(const CMQuad  * hdr,
 					       unsigned          count,
 					       unsigned          peer,
 					       unsigned          sndlen,
@@ -76,10 +76,10 @@ namespace TSPColl
 					       unsigned        * rcvlen,
 					       char           ** rcvbuf,
 					       unsigned        * pipewidth,
-					       CCMI_Callback_t * cb_done);
+					       CM_Callback_t * cb_done);
       //      static       CCMI::MultiSend::CCMI_RecvMulticast_t cb_incoming;
     
-    static void   cb_recvcomplete (void * arg, CCMI_Error_t* error);
+    static void   cb_recvcomplete (void * arg, CM_Error_t* error);
       //    static void   cb_recvcomplete          (void *, void * arg);
     static void   cb_senddone              (void *);
     
@@ -343,8 +343,8 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::MulticastIn
 #endif
   unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
   unsigned        ranks   = _dest[phase];
-  CCMI_Callback_t cb_done;
-  cb_done.function   = (void (*)(void*, CCMI_Error_t*))CollExchange::cb_senddone;
+  CM_Callback_t cb_done;
+  cb_done.function   = (void (*)(void*, CM_Error_t*))CollExchange::cb_senddone;
   cb_done.clientdata = &_cmplt[phase];
   void *r = NULL;
   TRACE((stderr, "SEND MCAST_IFACE %p: tag=%d id=%d,hdr=%p count=%d\n", 
@@ -357,7 +357,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::MulticastIn
   mcast_iface->send (&_req[phase],
 		     &cb_done,
 		     CCMI_MATCH_CONSISTENCY,
-		     (CCMIQuad*)& _header[phase],
+		     (CMQuad*)& _header[phase],
 		     CCMIQuad_sizeof(_header[phase]),
 		     0,
 		     (char*)_sbuf[phase],
@@ -391,7 +391,7 @@ inline void TSPColl::CollExchange::cb_senddone (void * arg)
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
-inline CCMI_Request_t * TSPColl::CollExchange::cb_incoming(const CCMIQuad  * hdr,
+inline CCMI_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,
@@ -400,7 +400,7 @@ inline CCMI_Request_t * TSPColl::CollExchange::cb_incoming(const CCMIQuad  * hdr
 							   unsigned        * rcvlen,
 							   char           ** rcvbuf,
 							   unsigned        * pipewidth,
-							   CCMI_Callback_t * cb_done)
+							   CM_Callback_t * cb_done)
 
 {
   struct AMHeader * header = (struct AMHeader *) hdr;
@@ -445,7 +445,7 @@ inline CCMI_Request_t * TSPColl::CollExchange::cb_incoming(const CCMIQuad  * hdr
 /*                  active message reception complete                      */
 /* *********************************************************************** */
 inline void 
-TSPColl::CollExchange::cb_recvcomplete (void * arg, CCMI_Error_t* error)
+TSPColl::CollExchange::cb_recvcomplete (void * arg, CM_Error_t* error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;

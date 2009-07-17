@@ -10,18 +10,18 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "collectives/interface/Communicator.h"
-#include "collectives/interface/lapiunix/GenericComm.h"
-#include "collectives/interface/lapiunix/Adaptor.h"
-#include "collectives/algorithms/protocols/tspcoll/Barrier.h"
-#include "collectives/algorithms/protocols/tspcoll/Allgather.h"
-#include "collectives/algorithms/protocols/tspcoll/Allgatherv.h"
-#include "collectives/algorithms/protocols/tspcoll/Scatter.h"
-#include "collectives/algorithms/protocols/tspcoll/BinomBcast.h"
-#include "collectives/algorithms/protocols/tspcoll/ScBcast.h"
-#include "collectives/algorithms/protocols/tspcoll/Allreduce.h"
+#include "interface/Communicator.h"
+#include "interface/lapiunix/GenericComm.h"
+#include "interface/lapiunix/Adaptor.h"
+#include "algorithms/protocols/tspcoll/Barrier.h"
+#include "algorithms/protocols/tspcoll/Allgather.h"
+#include "algorithms/protocols/tspcoll/Allgatherv.h"
+#include "algorithms/protocols/tspcoll/Scatter.h"
+#include "algorithms/protocols/tspcoll/BinomBcast.h"
+#include "algorithms/protocols/tspcoll/ScBcast.h"
+#include "algorithms/protocols/tspcoll/Allreduce.h"
 
-//#include "collectives/algorithms/protocols/tspcoll/Gather.h"
+//#include "algorithms/protocols/tspcoll/Gather.h"
 
 
 #include <assert.h>
@@ -181,21 +181,21 @@ bcast (CCMI::MultiSend::MulticastInterface *mcast_iface,
 /*                  butterfly broadcast                                     */
 /* ************************************************************************ */
 namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(CCMI_Dt, CCMI_Op, unsigned, 
-				    unsigned&, CCMI_ReduceFunc&);
+      extern void getReduceFunction(CM_Dt, CM_Op, unsigned, 
+				    unsigned&, coremath&);
     }}};
 TSPColl::NBColl * TSPColl::Communicator::
 iallreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
 	     const void          * s,
 	     void                * d,
-	     CCMI_Op               op,
-	     CCMI_Dt               dtype,
+	     CM_Op               op,
+	     CM_Dt               dtype,
 	     unsigned              nelems,
 	     void (*cb_complete)(void *),
 	     void *arg)
 {
   unsigned        datawidth;
-  CCMI_ReduceFunc cb_allreduce;
+  coremath cb_allreduce;
   CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op, nelems, datawidth, cb_allreduce);
   //  if (Allreduce::datawidthof(dtype) * nelems < Allreduce::Short::MAXBUF)
   if (datawidth * nelems < Allreduce::Short::MAXBUF)
@@ -220,8 +220,8 @@ void TSPColl::Communicator::
 allreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
 	    const void *s,
 	    void * d,
-	    CCMI_Op op,
-	    CCMI_Dt dtype,
+	    CM_Op op,
+	    CM_Dt dtype,
 	    unsigned nelems,
 	    void (*cb_complete)(void *),
 	    void *arg)

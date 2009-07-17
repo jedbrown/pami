@@ -6,7 +6,7 @@
 #endif
 #include <mpi.h>
 #include <list>
-#include "collectives/interface/MultiSendOld.h"
+#include "interface/MultiSendOld.h"
 
 namespace CCMI
 {
@@ -16,13 +16,13 @@ namespace CCMI
     {
       
       struct MsgHeader {
-	CCMIQuad    _info[2];
+	CMQuad    _info[2];
 	int         _info_count;
 	int         _size;
 	int         _conn;
 	MPI_Request*_req;
 	int         _num;
-	CCMI_Callback_t _cb_done;
+	CM_Callback_t _cb_done;
 	inline void *buffer() { return ((char *)this + sizeof (MsgHeader)); } 
 	inline int  totalsize () { return _size + sizeof (MsgHeader); } 
       };      	
@@ -30,7 +30,7 @@ namespace CCMI
 
       struct M2MSendReq {
 	unsigned          _conn;
-	CCMI_Callback_t   _cb_done;
+	CM_Callback_t   _cb_done;
      	int               _num;
 	MPI_Request     * _reqs;
         int               _totalsize;
@@ -48,7 +48,7 @@ namespace CCMI
 
       struct M2MRecvReq {
 	unsigned          _conn;
-	CCMI_Callback_t   _cb_done;
+	CM_Callback_t   _cb_done;
      	int               _num;
 	char            * _buf;
         unsigned        * _sizes;

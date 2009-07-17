@@ -63,7 +63,7 @@ namespace TSPColl
     _header;
     
   protected:
-    static  CCMI_Request_t * cb_incoming(const CCMIQuad  * hdr,
+    static  CCMI_Request_t * cb_incoming(const CMQuad  * hdr,
 					 unsigned          count,
 					 unsigned          peer,
 					 unsigned          sndlen,
@@ -72,8 +72,8 @@ namespace TSPColl
 					 unsigned        * rcvlen,
 					 char           ** rcvbuf,
 					 unsigned        * pipewidth,
-					 CCMI_Callback_t * cb_done);
-    static void cb_recvcomplete (void *arg, CCMI_Error_t*err);
+					 CM_Callback_t * cb_done);
+    static void cb_recvcomplete (void *arg, CM_Error_t*err);
     static void cb_senddone (void *);
   };
 };

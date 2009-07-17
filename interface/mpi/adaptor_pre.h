@@ -15,7 +15,7 @@
 #ifndef   __adaptor_pre_h__
 #define   __adaptor_pre_h__
 #warning mpi pre adaptor
-#include "interface/mpi/cm_types.h"
+#include "interface/cm_types.h"
 #include "interface/mpi/ccmi_collectives.h"
 
 #ifdef __PGASRT_DISTRIBUTED /* pure distributed - no pthreads library */

@@ -11,6 +11,7 @@
  * \brief Structures and abstract multisend classes which
  * must be derived in the adaptor.
  */
+
 #ifndef   __kernel_multisend_h__
 #define   __kernel_multisend_h__
 
@@ -35,9 +36,11 @@ namespace CCMI
                                             unsigned          count,
                                             unsigned          peer,
                                             unsigned          sndlen,
+                                            unsigned          conn_id,
                                             void            * arg,
                                             unsigned        * rcvlen,
                                             char           ** rcvbuf,
+                                            unsigned        * pipewidth,
                                             CM_Callback_t * cb_done);
     typedef CCMI_Request_t * (*CCMI_OldRecvMulticast_t) (const CMQuad  * info,
                                             unsigned          count,
@@ -678,6 +681,7 @@ namespace CCMI
                                const CM_Callback_t  * cb_done,
                                CCMI_Consistency         consistency,
                                const CMQuad         * info,
+                               unsigned                 info_count,
                                unsigned                 connection_id,
                                const char             * buf,
                                unsigned                 size,

@@ -40,7 +40,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result dcmfResult;
 
-  if((dcmfResult = (CCMI_Result) CCMI_Broadcast_register (&bcast_reg, &bcast_conf)) != CCMI_SUCCESS)
+  if((dcmfResult = (CCMI_Result) CCMI_Broadcast_register (&bcast_reg, &bcast_conf)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Bcast_register failed %d\n",dcmfResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &bcast_reg))

@@ -17,6 +17,7 @@
 //#define throw() // Needed for xlC -noeh processing
 //#include <config.h>
 
+#include <new.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -71,7 +72,7 @@
  */
 #define COMPILE_TIME_ASSERT(expr) switch(0){case 0:case expr:;}
 
-//#define __dcmf_ccmi_new_defined__
+#define __dcmf_ccmi_new_defined__
 #ifndef  __dcmf_ccmi_new_defined__
   #define  __dcmf_ccmi_new_defined__
   #ifdef __cplusplus

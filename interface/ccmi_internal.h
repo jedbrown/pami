@@ -85,9 +85,6 @@ typedef enum
 #endif
 
 
-// Optimized reduction function (comes from the math lib)
-typedef void (*CCMI_ReduceFunc)(void *dst, void **srcs, int nsrcs, int count);
-
 //Descriptive quad of data that identifies each collective
 typedef struct _cheader_data
 {
@@ -111,8 +108,7 @@ typedef struct _cheader_data
 
 #define CCMI_UNDEFINED_PHASE ((unsigned)-1)
 
-#define  CCMI_UNDEFINED_RANK ((unsigned)-1)  //Return this when the destination rank is irrelevant like a
-//GI or Tree collective operation
+#define  CCMI_UNDEFINED_RANK ((unsigned)-1)
 
 #ifndef __ccmi_quad_defined__
   #error Adaptor did not declare CMQuad!
@@ -120,11 +116,11 @@ typedef struct _cheader_data
 #endif
 
 #ifndef __ccmi_topology_defined__
-#error typedef CMQuad LL_Topology_t[2];
+#error typedef CMQuad LL_Topology_t[2]; /// \todo resolve to ll interface
 #endif
 
 #ifndef __ccmi_pipeworkqueue_defined__
-#error typedef CMQuad LL_PipeWorkQueue_t[4];
+#error typedef CMQuad LL_PipeWorkQueue_t[4]; /// \todo resolve to ll interface
 #endif
 
 #ifndef CCMI_REQUEST_SIZE
@@ -140,11 +136,11 @@ typedef struct _cheader_data
 #endif
 
 typedef CMQuad CCMI_Geometry_t [CCMI_GEOMETRY_SIZE];
-typedef CMQuad CCMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];
-typedef CMQuad CCMI_Request_t            [CCMI_REQUEST_SIZE];
+typedef CMQuad CCMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];/// \todo CM_Prototol_t?
+typedef CMQuad CCMI_Request_t            [CCMI_REQUEST_SIZE]; /// \todo CM_Request_t?
 
 // CCMI Collective request should be 32 CCMI_Requests. This is to store several
-// algorithms/schedule/executor pairs and have several messages in flight
+// algorithms/schedule/executor pairs and have several messages in flight  \todo CM_?
 typedef CMQuad CCMI_CollectiveRequest_t  [CCMI_REQUEST_SIZE*8*4];
 typedef CMQuad CCMI_Executor_t           [CCMI_REQUEST_SIZE*4];
 

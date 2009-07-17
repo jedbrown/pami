@@ -42,7 +42,7 @@ extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration,
 
 extern "C" int MultiSend_multicast(CCMI_Register_t   * registration,
 				   CCMI_Request_t    * request,
-				   CCMI_Callback_t     cb_done,
+				   CM_Callback_t     cb_done,
 				   CCMI_Consistency    consistency,
 				   unsigned            connection_id,
 				   unsigned            bytes,
@@ -50,7 +50,7 @@ extern "C" int MultiSend_multicast(CCMI_Register_t   * registration,
 				   unsigned            nranks,
 				   unsigned          * rank,
 				   unsigned          * hints,
-				   const CCMIQuad      * msginfo )
+				   const CMQuad      * msginfo )
 {
   assert ( registration );
 

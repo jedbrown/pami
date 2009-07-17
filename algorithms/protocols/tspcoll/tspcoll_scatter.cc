@@ -76,8 +76,8 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
       {	  
       unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = this->_comm->absrankof (i);
-      CCMI_Callback_t cb_done;
-      cb_done.function        = (void (*)(void*, CCMI_Error_t*))cb_senddone;
+      CM_Callback_t cb_done;
+      cb_done.function        = (void (*)(void*, CM_Error_t*))cb_senddone;
       cb_done.clientdata      = &this->_header;
       void * r = NULL;
       TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
@@ -85,7 +85,7 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
       mcast_iface->send (&_req[i],
 			 &cb_done,
 			 CCMI_MATCH_CONSISTENCY,
-			 (CCMIQuad*)&this->_header,
+			 (CMQuad*)&this->_header,
 			 CCMIQuad_sizeof(this->_header),
 			 0,
 			 (char*)(this->_sbuf + i * this->_length),
@@ -169,14 +169,14 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 #endif
 	unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
 	unsigned        ranks   = this->_comm->absrankof (i);
-	CCMI_Callback_t cb_done;
-	cb_done.function        = (void (*)(void*, CCMI_Error_t*))this->cb_senddone;
+	CM_Callback_t cb_done;
+	cb_done.function        = (void (*)(void*, CM_Error_t*))this->cb_senddone;
 	cb_done.clientdata      = &this->_header;
 	void * r = NULL;
 	mcast_iface->send (&_req[i],
 			   &cb_done,
 			   CCMI_MATCH_CONSISTENCY,
-			   (CCMIQuad*)&this->_header,
+			   (CMQuad*)&this->_header,
 			   CCMIQuad_sizeof(this->_header),
 			   0,
 			   (char*)(s),
@@ -195,7 +195,7 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 //cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
 //	     void (** completionHandler)(void *, void *),
 //	     void ** arg)
-CCMI_Request_t * TSPColl::Scatter::cb_incoming(const CCMIQuad  * hdr,
+CCMI_Request_t * TSPColl::Scatter::cb_incoming(const CMQuad  * hdr,
 					       unsigned          count,
 					       unsigned          peer,
 					       unsigned          sndlen,
@@ -204,7 +204,7 @@ CCMI_Request_t * TSPColl::Scatter::cb_incoming(const CCMIQuad  * hdr,
 					       unsigned        * rcvlen,
 					       char           ** rcvbuf,
 					       unsigned        * pipewidth,
-					       CCMI_Callback_t * cb_done)
+					       CM_Callback_t * cb_done)
 {
   struct scatter_header * header = (struct scatter_header *) hdr;
   void * base0 =  NBCollManager::instance()->find (header->tag, header->id);
@@ -219,7 +219,7 @@ CCMI_Request_t * TSPColl::Scatter::cb_incoming(const CCMIQuad  * hdr,
   *rcvbuf             = (char*)s->_rbuf;
   *rcvlen             = sndlen;
   *pipewidth          = sndlen;
-  cb_done->function   = (void (*)(void*, CCMI_Error_t*))&Scatter::cb_recvcomplete;
+  cb_done->function   = (void (*)(void*, CM_Error_t*))&Scatter::cb_recvcomplete;
   cb_done->clientdata = s;
   
   TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING RETURING base=%p ptr=%p\n", 
@@ -237,7 +237,7 @@ CCMI_Request_t * TSPColl::Scatter::cb_incoming(const CCMIQuad  * hdr,
 /* **************************************************************** */
 /*           active message reception complete                      */
 /* **************************************************************** */
-void TSPColl::Scatter::cb_recvcomplete (void *arg, CCMI_Error_t*err)
+void TSPColl::Scatter::cb_recvcomplete (void *arg, CM_Error_t*err)
 {
   Scatter * s = (Scatter *) arg;
   s->_complete++;

@@ -15,7 +15,7 @@
 #define __ccmi_adaptor_allreduce_shm_tree_h__
 
 #include "../BaseComposite.h"
-#include "protocols/multisend/multisend_impl.h"
+#include "multisend/multisend_impl.h"
 
 extern int dcmf_dt_shift[CM_DT_COUNT];
 

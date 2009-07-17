@@ -12,8 +12,8 @@
  * \brief PipeWorkQueue "C" interface.
  */
 
-#include "collectives/interface/ll_pipeworkqueue.h"
-#include "collectives/interface/PipeWorkQueue.h"
+#include "interface/ll_pipeworkqueue.h"
+#include "interface/PipeWorkQueue.h"
 #include <new>
 
 ///

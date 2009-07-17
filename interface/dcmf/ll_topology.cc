@@ -13,7 +13,7 @@
  */
 
 #include "ll_topology.h"
-#include "Topology.h"
+#include "interface/Topology.h"
 
 /// \brief default constructor (LL_EMPTY_TOPOLOGY)
 ///

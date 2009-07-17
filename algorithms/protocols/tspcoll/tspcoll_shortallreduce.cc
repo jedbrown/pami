@@ -122,8 +122,8 @@ cb_switchbuf (CollExchange * coll, unsigned phase)
 /* ************************************************************************* */
 void TSPColl::Allreduce::Short::reset (const void         * sbuf,
 				       void               * dbuf,
-				       CCMI_Op              op,
-				       CCMI_Dt              dt,
+				       CM_Op              op,
+				       CM_Dt              dt,
 				       unsigned             nelems)
 {
   assert (sbuf != NULL);

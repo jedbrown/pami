@@ -11,7 +11,7 @@
 
 #define TRACE_ERR(x)  // fprintf x
 
-#include "collectives/interface/ll_multisend.h"
+#include "interface/ll_multisend.h"
 
 extern "C" int LL_Multicast(LL_Multicast_t *minfo) 
 {

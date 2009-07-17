@@ -1,21 +1,30 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+
 #include "../hl_collectives.h"
 #include <stdio.h>
 
 // Includes for CCMI
-#include "collectives/interface/ccmi_internal.h"
-#include "collectives/util/ccmi_util.h"
-#include "collectives/interface/mpi/multisend/multisend_impl.h"
-#include "collectives/interface/Geometry.h"
-#include "collectives/util/logging/LogMgr.h"
-#include "collectives/util/ccmi_debug.h"
-#include "collectives/algorithms/protocols/barrier/barrier_impl.h"
-#include "collectives/algorithms/protocols/allreduce/sync_impl.h"
-#include "collectives/algorithms/protocols/allreduce/async_impl.h"
-//#include "collectives/interface/mpi/api/mapping_impl.h" should be in Mapping.cc, not here
-#include "collectives/interface/mpi/GenericComm.h"
-#include "collectives/algorithms/protocols/tspcoll/NBColl.h"
-#include "collectives/algorithms/protocols/broadcast/async_impl.h"
-#include "collectives/algorithms/protocols/alltoall/Alltoall.h"
+#include "interface/ccmi_internal.h"
+#include "util/ccmi_util.h"
+#include "interface/mpi/multisend/multisend_impl.h"
+#include "interface/Geometry.h"
+#include "util/logging/LogMgr.h"
+#include "util/ccmi_debug.h"
+#include "algorithms/protocols/barrier/impl.h"
+#include "algorithms/protocols/allreduce/sync_impl.h"
+#include "algorithms/protocols/allreduce/async_impl.h"
+//#include "interface/mpi/api/mapping_impl.h" should be in Mapping.cc, not here
+#include "interface/mpi/GenericComm.h"
+#include "algorithms/protocols/tspcoll/NBColl.h"
+#include "algorithms/protocols/broadcast/async_impl.h"
+#include "algorithms/protocols/alltoall/Alltoall.h"
 
 #include <unistd.h>
 
@@ -30,49 +39,49 @@ CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
 extern "C"
 {
     int LL_to_CCMI_op[] =
-	{CCMI_UNDEFINED_OP,        // LL_UNDEFINED_OP
-	 CCMI_NOOP,                // LL_NOOP
-	 CCMI_MAX,                 // LL_MAX,
-	 CCMI_MIN,                 // LL_MIN,
-	 CCMI_SUM,                 // LL_SUM,
-	 CCMI_PROD,                // LL_PROD,
-	 CCMI_LAND,                // LL_LAND,
-	 CCMI_LOR,                 // LL_LOR,
-	 CCMI_LXOR,                // LL_LXOR,
-	 CCMI_BAND,                // LL_BAND,
-	 CCMI_BOR,                 // LL_BOR,
-	 CCMI_BXOR,                // LL_BXOR,
-	 CCMI_MAXLOC,              // LL_MAXLOC,
-	 CCMI_MINLOC,              // LL_MINLOC,
-	 CCMI_USERDEFINED_OP,      // LL_USERDEFINED_OP,
-	 CCMI_OP_COUNT             // LL_OP_COUNT
+	{CM_UNDEFINED_OP,        // LL_UNDEFINED_OP
+	 CM_NOOP,                // LL_NOOP
+	 CM_MAX,                 // LL_MAX,
+	 CM_MIN,                 // LL_MIN,
+	 CM_SUM,                 // LL_SUM,
+	 CM_PROD,                // LL_PROD,
+	 CM_LAND,                // LL_LAND,
+	 CM_LOR,                 // LL_LOR,
+	 CM_LXOR,                // LL_LXOR,
+	 CM_BAND,                // LL_BAND,
+	 CM_BOR,                 // LL_BOR,
+	 CM_BXOR,                // LL_BXOR,
+	 CM_MAXLOC,              // LL_MAXLOC,
+	 CM_MINLOC,              // LL_MINLOC,
+	 CM_USERDEFINED_OP,      // LL_USERDEFINED_OP,
+	 CM_OP_COUNT             // LL_OP_COUNT
 	};
     int LL_to_CCMI_dt[] =
 	{
 	 /* Standard/Primative DT's */
-	 CCMI_UNDEFINED_DT,        // LL_UNDEFINED_DT = 0,
-	 CCMI_SIGNED_CHAR,         // LL_SIGNED_CHAR,
-	 CCMI_UNSIGNED_CHAR,       // LL_UNSIGNED_CHAR,
-	 CCMI_SIGNED_SHORT,        // LL_SIGNED_SHORT,
-	 CCMI_UNSIGNED_SHORT,      // LL_UNSIGNED_SHORT,
-	 CCMI_SIGNED_INT,          // LL_SIGNED_INT,
-	 CCMI_UNSIGNED_INT,        // LL_UNSIGNED_INT,
-	 CCMI_SIGNED_LONG_LONG,    // LL_SIGNED_LONG_LONG,
-	 CCMI_UNSIGNED_LONG_LONG,  // LL_UNSIGNED_LONG_LONG,
-	 CCMI_FLOAT,               // LL_FLOAT,
-	 CCMI_DOUBLE,              // LL_DOUBLE,
-	 CCMI_LONG_DOUBLE,         // LL_LONG_DOUBLE,
-	 CCMI_LOGICAL,             // LL_LOGICAL,
-	 CCMI_SINGLE_COMPLEX,      // LL_SINGLE_COMPLEX,
-	 CCMI_DOUBLE_COMPLEX,      // LL_DOUBLE_COMPLEX,
+	 CM_UNDEFINED_DT,        // LL_UNDEFINED_DT = 0,
+	 CM_SIGNED_CHAR,         // LL_SIGNED_CHAR,
+	 CM_UNSIGNED_CHAR,       // LL_UNSIGNED_CHAR,
+	 CM_SIGNED_SHORT,        // LL_SIGNED_SHORT,
+	 CM_UNSIGNED_SHORT,      // LL_UNSIGNED_SHORT,
+	 CM_SIGNED_INT,          // LL_SIGNED_INT,
+	 CM_UNSIGNED_INT,        // LL_UNSIGNED_INT,
+	 CM_SIGNED_LONG_LONG,    // LL_SIGNED_LONG_LONG,
+	 CM_UNSIGNED_LONG_LONG,  // LL_UNSIGNED_LONG_LONG,
+	 CM_FLOAT,               // LL_FLOAT,
+	 CM_DOUBLE,              // LL_DOUBLE,
+	 CM_LONG_DOUBLE,         // LL_LONG_DOUBLE,
+	 CM_LOGICAL,             // LL_LOGICAL,
+	 CM_SINGLE_COMPLEX,      // LL_SINGLE_COMPLEX,
+	 CM_DOUBLE_COMPLEX,      // LL_DOUBLE_COMPLEX,
 	 /* Max/Minloc DT's */
-	 CCMI_LOC_2INT,            // LL_LOC_2INT,
-	 CCMI_LOC_SHORT_INT,       // LL_LOC_SHORT_INT,
-	 CCMI_LOC_FLOAT_INT,       // LL_LOC_FLOAT_INT,
-	 CCMI_LOC_DOUBLE_INT,      // LL_LOC_DOUBLE_INT,
-	 CCMI_LOC_2FLOAT,          // LL_LOC_2FLOAT,
-	 CCMI_LOC_2DOUBLE,         // LL_LOC_2DOUBLE,
-	 CCMI_USERDEFINED_DT,      // LL_USERDEFINED_DT,
+	 CM_LOC_2INT,            // LL_LOC_2INT,
+	 CM_LOC_SHORT_INT,       // LL_LOC_SHORT_INT,
+	 CM_LOC_FLOAT_INT,       // LL_LOC_FLOAT_INT,
+	 CM_LOC_DOUBLE_INT,      // LL_LOC_DOUBLE_INT,
+	 CM_LOC_2FLOAT,          // LL_LOC_2FLOAT,
+	 CM_LOC_2DOUBLE,         // LL_LOC_2DOUBLE,
+	 CM_USERDEFINED_DT,      // LL_USERDEFINED_DT,
 	 -1
 	};
 
@@ -684,14 +693,14 @@ extern "C"
 			if(allreduce != NULL  &&  allreduce->getFactory() == factory)
 			    {
 				unsigned status =  allreduce->restart((CCMI_CollectiveRequest_t*)parms->request,
-								      *(CCMI_Callback_t *)&parms->cb_done,
+								      *(CM_Callback_t *)&parms->cb_done,
 								      (CCMI_Consistency)0,
 								      parms->src,
 								      parms->dst,
 								      parms->count,
-								      (CCMI_Dt)LL_to_CCMI_dt[parms->dt],
-								      (CCMI_Op)LL_to_CCMI_op[parms->op]);
-				if(status == CCMI_SUCCESS)
+								      (CM_Dt)LL_to_CCMI_dt[parms->dt],
+								      (CM_Op)LL_to_CCMI_op[parms->op]);
+				if(status == CM_SUCCESS)
 				    {
 					_c_geometry->setAllreduceComposite(allreduce);
 					return status;
@@ -704,14 +713,14 @@ extern "C"
 				allreduce->~BaseComposite();
 			    }
 			void *ptr =factory->generate((CCMI_CollectiveRequest_t*)parms->request,
-						     *(CCMI_Callback_t *) &parms->cb_done,
+						     *(CM_Callback_t *) &parms->cb_done,
 						     (CCMI_Consistency)0,
 						     _c_geometry,
 						     parms->src,
 						     parms->dst,
 						     parms->count,
-						     (CCMI_Dt)LL_to_CCMI_dt[parms->dt],
-						     (CCMI_Op)LL_to_CCMI_op[parms->op]);
+						     (CM_Dt)LL_to_CCMI_dt[parms->dt],
+						     (CM_Op)LL_to_CCMI_op[parms->op]);
 			if(ptr == NULL)
 			    {
 				return HL_UNIMPL;
@@ -726,8 +735,8 @@ extern "C"
 		    tspcoll->iallreduce(minfo,
 					parms->src,           // source buffer
 					parms->dst,           // dst buffer
-					(CCMI_Op)LL_to_CCMI_op[parms->op], // op
-					(CCMI_Dt)LL_to_CCMI_dt[parms->dt], // dt
+					(CM_Op)LL_to_CCMI_op[parms->op], // op
+					(CM_Dt)LL_to_CCMI_dt[parms->dt], // dt
 					parms->count,             // type
 					(void (*)(void*))parms->cb_done.function,
 					parms->cb_done.clientdata);
@@ -753,8 +762,8 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		    CCMI::Adaptor::Alltoall::Factory *factory =
 		      (CCMI::Adaptor::Alltoall::Factory *)parms->registration;
 
-		    CCMI_Callback_t cb_done_ccmi;
-		    cb_done_ccmi.function   = (void (*)(void*, CCMI_Error_t*))parms->cb_done.function;
+		    CM_Callback_t cb_done_ccmi;
+		    cb_done_ccmi.function   = (void (*)(void*, CM_Error_t*))parms->cb_done.function;
 		    cb_done_ccmi.clientdata = parms->cb_done.clientdata;
 
 		    factory->generate((CCMI_CollectiveRequest_t *)parms->request,
@@ -780,7 +789,7 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 #ifdef USE_CCMI
 		    CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
 		    CCMI::Executor::Executor  *_c_bar         = _c_geometry->getBarrierExecutor();
-		    _c_bar->setDoneCallback    ((void (*)(void*, CCMI_Error_t*))parms->cb_done.function, parms->cb_done.clientdata);
+		    _c_bar->setDoneCallback    ((void (*)(void*, CM_Error_t*))parms->cb_done.function, parms->cb_done.clientdata);
 		    _c_bar->setConsistency ((CCMI_Consistency) 0);
 		    _c_bar->start();
 		    return HL_SUCCESS;
@@ -808,8 +817,8 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		  }
 		else
 		  {
-		    CCMI_Callback_t cb_done_ccmi;
-		    cb_done_ccmi.function   = (void (*)(void*, CCMI_Error_t*))parms->cb_done.function;
+		    CM_Callback_t cb_done_ccmi;
+		    cb_done_ccmi.function   = (void (*)(void*, CM_Error_t*))parms->cb_done.function;
 		    cb_done_ccmi.clientdata = parms->cb_done.clientdata;
 		    factory->generate(parms->request, 
 				      sizeof(CCMI_CollectiveRequest_t), 
@@ -821,7 +830,7 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 				      parms->bytes);
 		  }
 
-  return CCMI_SUCCESS;
+  return CM_SUCCESS;
 		
 #endif
 		return HL_SUCCESS;

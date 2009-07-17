@@ -25,7 +25,7 @@ int mysleep(int seconds)
 CCMI_CollectiveProtocol_t              bar_reg __attribute__((__aligned__(32))), local_bar_reg __attribute__((__aligned__(32)));
 CCMI_Barrier_Configuration_t           configuration;
 CCMI_CollectiveRequest_t               request;
-CCMI_Callback_t                        cb_done;
+CM_Callback_t                        cb_done;
 CCMI_Consistency                       consistency;
 CCMI_Geometry_t                        geometry;
 int                                    done;
@@ -47,7 +47,7 @@ void barrier()
     }
 }
 
-void done_callback(void* cd, CCMI_Error_t *err)
+void done_callback(void* cd, CM_Error_t *err)
 {
   done=1;
 
@@ -95,12 +95,12 @@ int main(int argc, char **argv)
   configuration.cb_geometry = getGeometry;
 
   CCMI_Result ccmiResult;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&bar_reg, &configuration)) != CCMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&bar_reg, &configuration)) != CM_SUCCESS)
     fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 
 #if 0
   configuration.protocol = CCMI_BINOMIAL_BARRIER_PROTOCOL;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_bar_reg, &configuration)) != CCMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_bar_reg, &configuration)) != CM_SUCCESS)
     fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 #endif
 
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
                                                            &bar_p, 1, 
                                                            &bar_p, 1, 
-                                                           &request, 0, 1)) != CCMI_SUCCESS)
+                                                           &request, 0, 1)) != CM_SUCCESS)
     fprintf(stderr,"CCMI_Geometry_initialize failed %d\n",ccmiResult);
 
   cb_done.function  = done_callback;

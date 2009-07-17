@@ -15,8 +15,8 @@
 #ifndef   __adaptor_pre_h__
 #define   __adaptor_pre_h__
 
-#include "collectives/interface/lapiunix/ccmi_collectives.h"
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
+#include "interface/lapiunix/ccmi_collectives.h"
+#include "interface/lapiunix/common/include/pgasrt.h"
 #define ThreadID() 0
 
     /// The pipeline width must be a multiple of 240 (DMA) and 256 (Tree)

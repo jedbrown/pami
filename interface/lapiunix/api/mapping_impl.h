@@ -2,8 +2,8 @@
 #ifndef __pgasp2p_mapping_impl_h__
 #define __pgasp2p_mapping_impl_h__
 
-#include "collectives/interface/Mapping.h"
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
+#include "interface/Mapping.h"
+#include "interface/lapiunix/common/include/pgasrt.h"
 
 
 inline CCMI::Mapping::Mapping (void *pers)

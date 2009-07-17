@@ -1,11 +1,11 @@
-#include "collectives/interface/lapiunix/ccmi_collectives.h"
-#include "collectives/interface/ccmi_internal.h"
-#include "collectives/util/ccmi_util.h"
-#include "collectives/interface/lapiunix/multisend/multisend_impl.h"
-#include "collectives/interface/Geometry.h"
-#include "collectives/util/logging/LogMgr.h"
-#include "collectives/util/ccmi_debug.h"
-#include "collectives/algorithms/protocols/barrier/barrier_impl.h"
+#include "interface/lapiunix/ccmi_collectives.h"
+#include "interface/ccmi_internal.h"
+#include "util/ccmi_util.h"
+#include "interface/lapiunix/multisend/multisend_impl.h"
+#include "interface/Geometry.h"
+#include "util/logging/LogMgr.h"
+#include "util/ccmi_debug.h"
+#include "algorithms/protocols/barrier/impl.h"
 #include "mapping_impl.h" // ? why
 
 CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr __attribute__((weak));
@@ -45,7 +45,7 @@ extern "C" int CCMI_Collective_finalize ()
   free (_g_generic_adaptor);
   fclose (fp);
 
-  return CCMI_SUCCESS;
+  return CM_SUCCESS;
 }
 
 unsigned                    _ccmi_cached_geometry_comm;
@@ -64,7 +64,7 @@ extern "C" int CCMI_Geometry_free(CCMI_Geometry_t *grequest)
   CCMI::Adaptor::Geometry *geometry = (CCMI::Adaptor::Geometry *)grequest;
   geometry->freePermutation();
   geometry->freeAllocations();
-  return CCMI_SUCCESS;
+  return CM_SUCCESS;
 }
 
 
@@ -142,7 +142,7 @@ extern "C" int CCMI_Geometry_initialize (CCMI_Geometry_t            * grequest,
 //-----------------------------------------------------------------------------
 
 extern "C" int CCMI_Barrier (CCMI_Geometry_t     * grequest,
-                             CCMI_Callback_t       cb_done,
+                             CM_Callback_t       cb_done,
                              CCMI_Consistency      consistency)
 {
 
@@ -189,7 +189,7 @@ extern "C" int CCMI_Barrier_register (CCMI_CollectiveProtocol_t   * registration
       //optimize one level of callbacks
       treg->minfo.initialize (_g_generic_adaptor);
 
-      status = CCMI_SUCCESS;
+      status = CM_SUCCESS;
     }
     break;
 
@@ -208,7 +208,7 @@ extern "C" int CCMI_Barrier_register (CCMI_CollectiveProtocol_t   * registration
 //---------------------  Broadcast --------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include "protocols/broadcast/mcbroadcast_impl.h"
+#include "protocols/broadcast/multi_color_impl.h"
 #include "protocols/broadcast/async_impl.h"
 #include "connmgr/ColorConnMgr.h"
 #include "connmgr/ColorGeometryConnMgr.h"
@@ -255,7 +255,7 @@ extern "C" int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registr
 	CCMI::Adaptor::Broadcast::BinomialBcastFactory
       (_g_generic_adaptor->mapping(), & treg->minfo, & treg->cg_connmgr, nconn );
 
-      status = CCMI_SUCCESS;
+      status = CM_SUCCESS;
     }
     break;
 
@@ -270,7 +270,7 @@ extern "C" int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registr
 
 extern "C" int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
                                CCMI_CollectiveRequest_t   * request,
-                               CCMI_Callback_t    cb_done,
+                               CM_Callback_t    cb_done,
                                CCMI_Consistency   consistency,
                                CCMI_Geometry_t  * geometry,
                                unsigned           root,
@@ -289,7 +289,7 @@ extern "C" int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
   }
   else
   {
-    CCMI_Callback_t cb_done_ccmi;
+    CM_Callback_t cb_done_ccmi;
     cb_done_ccmi.function = cb_done.function;
     cb_done_ccmi.clientdata = cb_done.clientdata;
     
@@ -301,7 +301,7 @@ extern "C" int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
                       bytes);
   }
 
-  return CCMI_SUCCESS;
+  return CM_SUCCESS;
 }
 
 
@@ -313,7 +313,7 @@ extern "C" int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
 //-----------------------------------------------------------------------------
 
 
-#include "collectives/algorithms/protocols/allreduce/sync_impl.h"
+#include "algorithms/protocols/allreduce/sync_impl.h"
 
 extern "C"
 int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
@@ -369,7 +369,7 @@ int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
                              _g_adaptor->mapping()->size(),
                              _g_rank_connlist);*/
 
-      status = CCMI_SUCCESS;
+      status = CM_SUCCESS;
     }
     break;
   case CCMI_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL:
@@ -398,7 +398,7 @@ int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
                              _g_adaptor->mapping()->size(),
                              _g_rank_connlist);*/
 
-      status = CCMI_SUCCESS;
+      status = CM_SUCCESS;
     }
     break;
 
@@ -415,14 +415,14 @@ int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
 extern "C"
 int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
                     CCMI_CollectiveRequest_t   * request,
-                    CCMI_Callback_t              cb_done,
+                    CM_Callback_t              cb_done,
                     CCMI_Consistency             consistency,
                     CCMI_Geometry_t            * geometry_request,
                     char                       * srcbuf,
                     char                       * dstbuf,
                     unsigned                     count,
-                    CCMI_Dt                      dtype,
-                    CCMI_Op                      op )
+                    CM_Dt                      dtype,
+                    CM_Op                      op )
 {
   CCMI::Adaptor::Geometry *geometry = (CCMI::Adaptor::Geometry *) geometry_request;
   CCMI::Adaptor::Allreduce::BaseComposite * allreduce =
@@ -437,15 +437,15 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
 //      fprintf(stderr, "allreduce restart\n");
 
     unsigned status =  allreduce->restart((CCMI_CollectiveRequest_t*)request,
-                                          *(CCMI_Callback_t *)&cb_done,
+                                          *(CM_Callback_t *)&cb_done,
                                           (CCMI_Consistency)consistency,
                                           srcbuf,
                                           dstbuf,
                                           count,
-                                          (CCMI_Dt)dtype,
-                                          (CCMI_Op)op);
+                                          (CM_Dt)dtype,
+                                          (CM_Op)op);
 
-    if(status == CCMI_SUCCESS)
+    if(status == CM_SUCCESS)
     {
 //      fprintf(stderr, "allreducecomposite\n");
       geometry->setAllreduceComposite(allreduce);
@@ -465,21 +465,21 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
   }
   //fprintf(stderr, "CCMI_Allreduce::ALERT: generate executor %#X with factory %#X\n",(int) allreduce,(int)factory);
   void *ptr =factory->generate((CCMI_CollectiveRequest_t*)request,
-                               *(CCMI_Callback_t *) &cb_done,
+                               *(CM_Callback_t *) &cb_done,
                                (CCMI_Consistency) consistency,
                                geometry,
                                srcbuf,
                                dstbuf,
                                count,
-                               (CCMI_Dt)dtype,
-                               (CCMI_Op)op);
+                               (CM_Dt)dtype,
+                               (CM_Op)op);
   if(ptr == NULL)
   {
 //    fprintf(stderr, "CCMI_Allreduce::ALERT: generate failed\n");
     return CCMI_UNIMPL;
   }
 
-  return CCMI_SUCCESS;
+  return CM_SUCCESS;
 }
 
 

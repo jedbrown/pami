@@ -14,7 +14,7 @@
 #ifndef __ADAPTOR_ALL_TO_ALL_PROTOCOL__
 #define __ADAPTOR_ALL_TO_ALL_PROTOCOL__
 
-#include "protocols/multisend/multisend_impl.h"
+#include "multisend/multisend_impl.h"
 
 namespace CCMI
 {

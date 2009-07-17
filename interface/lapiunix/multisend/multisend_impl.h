@@ -6,10 +6,10 @@
 #ifndef   __mpi_multisend_impl_h__
 #define   __mpi_multisend_impl_h__
 #include <assert.h>
-#include "collectives/interface/MultiSendOld.h"
-#include "collectives/interface/lapiunix/Adaptor.h"
+#include "interface/MultiSendOld.h"
+#include "interface/lapiunix/Adaptor.h"
 #include "./regTable.h"
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
+#include "interface/lapiunix/common/include/pgasrt.h"
 
 extern CCMI::Adaptor::Adaptor  * _g_generic_adaptor;
 
@@ -41,7 +41,7 @@ namespace CCMI
 	    public:
 		int                _totalsends;
 		int                _numsends;
-		CCMI_Callback_t    _user_cb_done;
+		CM_Callback_t    _user_cb_done;
 	    };
 	    static void send_comp_handler(void* input)
 		{
@@ -71,7 +71,7 @@ namespace CCMI
 	    static struct amheader
 	    {
 		__pgasrt_AMHeader_t   _hdr;
-		CCMIQuad              _info[2];
+		CMQuad              _info[2];
 		int                   _info_count;
 		int                   _size;
 		int                   _peer;
@@ -86,7 +86,7 @@ namespace CCMI
 				      void ** arg);
 
 
-	    typedef CCMI_Request_t * (*msend_recv) (const CCMIQuad  * info,
+	    typedef CCMI_Request_t * (*msend_recv) (const CMQuad  * info,
 						    unsigned          count,
 						    unsigned          peer,
 						    unsigned          sndlen,
@@ -95,7 +95,7 @@ namespace CCMI
 						    unsigned        * rcvlen,
 						    char           ** rcvbuf,
 						    unsigned        * pipewidth,
-						    CCMI_Callback_t * cb_done);
+						    CM_Callback_t * cb_done);
 
 	    static int _g_regId = TEST_NUM;
 
@@ -145,9 +145,9 @@ namespace CCMI
 			/// \param hints   : deposit bit bcast vs pt-to-pt
 			///
 			unsigned  send  (CCMI_Request_t         * request,
-					 const CCMI_Callback_t  * cb_done,
+					 const CM_Callback_t  * cb_done,
 					 CCMI_Consistency         consistency,
-					 const CCMIQuad         * info,
+					 const CMQuad         * info,
 					 unsigned                 info_count,
 					 unsigned                 connection_id,
 					 const char             * buf,
@@ -155,8 +155,8 @@ namespace CCMI
 					 unsigned               * hints,
 					 unsigned               * ranks,
 					 unsigned                 nranks,
-					 CCMI_Op                  op    = CCMI_UNDEFINED_OP,
-					 CCMI_Dt                  dtype = CCMI_UNDEFINED_DT )
+					 CM_Op                  op    = CM_UNDEFINED_OP,
+					 CM_Dt                  dtype = CM_UNDEFINED_DT )
 
 			{
 			    _g_generic_adaptor->lock();
@@ -175,7 +175,7 @@ namespace CCMI
 					    fprintf(stderr, "FIX:  The lapiunix adaptor only supports up to 2 quads\n");
 					    assert(0);
 					}
-				    memcpy (&_g_amheader._info[0],& info[0], info_count *sizeof (CCMIQuad));
+				    memcpy (&_g_amheader._info[0],& info[0], info_count *sizeof (CMQuad));
 				}
 			    send_info *si                 = (send_info*)request;
 			    si->_totalsends               = nranks;
@@ -221,14 +221,14 @@ namespace CCMI
 			}
 
 			virtual unsigned postRecv (CCMI_Request_t         * request,
-						   const CCMI_Callback_t  * cb_done,
+						   const CM_Callback_t  * cb_done,
 						   unsigned                 conn_id,
 						   char                   * buf,
 						   unsigned                 size,
 						   unsigned                 pwidth,
 						   unsigned                 hint   = CCMI_UNDEFINED_SUBTASK,
-						   CCMI_Op                  op     = CCMI_UNDEFINED_OP,
-						   CCMI_Dt                  dtype  = CCMI_UNDEFINED_DT )
+						   CM_Op                  op     = CM_UNDEFINED_OP,
+						   CM_Dt                  dtype  = CM_UNDEFINED_DT )
 			{
 			    assert (0);
 			}
@@ -253,7 +253,7 @@ namespace CCMI
 		class comp_data
 		{
 		public:
-		    CCMI_Callback_t  _cb_done;
+		    CM_Callback_t  _cb_done;
 		    int              _recvlen;
 		    int              _pwidth;
 		};
@@ -268,7 +268,7 @@ namespace CCMI
 		unsigned         rcvlen;
 		char           * rcvbuf;
 		unsigned         pwidth;
-		CCMI_Callback_t  cb_done;
+		CM_Callback_t  cb_done;
 		MulticastImpl *  mi = (MulticastImpl*)_g_regtable.get(msg->_regid);
 		TRACE((stderr, "cb_async: regid=%d mi=%p micount=%d peer=%d sz=%d conn=%d AA=%p\n",
 		       msg->_regid,mi, msg->_peer, msg->_info_count,msg->_size, msg->_conn, mi->getAsyncArg()));

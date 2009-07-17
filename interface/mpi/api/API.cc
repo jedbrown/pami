@@ -14,7 +14,7 @@
 #include "interface/Geometry.h"
 #include "util/logging/LogMgr.h"
 #include "util/ccmi_debug.h"
-#include "algorithms/protocols/barrier/barrier_impl.h"
+#include "algorithms/protocols/barrier/impl.h"
 //#include "interface/mpi/api/mapping_impl.h" should be in Mapping.cc, not here
 
 CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr __attribute__((weak));

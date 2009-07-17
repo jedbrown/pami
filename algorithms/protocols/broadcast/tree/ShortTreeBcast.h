@@ -14,7 +14,7 @@
 #ifndef __ccmi_adaptor_broadcast_short_tree_h__
 #define __ccmi_adaptor_broadcast_short_tree_h__
 
-#include "protocols/multisend/multisend_impl.h"
+#include "multisend/multisend_impl.h"
 
 //#include "../multi_color_impl.h"
 #include "interface/TorusCollectiveMapping.h"

@@ -15,10 +15,11 @@
 
 #include "./CollExchange.h"
 #include "interface/Communicator.h"
+#include "math/math_coremath.h"
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(CCMI_Dt, CCMI_Op, unsigned, 
-				    unsigned&, CCMI_ReduceFunc&);
+      extern void getReduceFunction(CM_Dt, CM_Op, unsigned, 
+				    unsigned&, coremath&);
     }}};
 namespace TSPColl
 {
@@ -43,8 +44,8 @@ namespace TSPColl
       Short (Communicator * comm, NBTag tag, int instID, int offset);
       void reset (const void        * s, 
 		  void              * d,
-		  CCMI_Op             op,
-		  CCMI_Dt             dt,
+		  CM_Op             op,
+		  CM_Dt             dt,
 		  unsigned            nelems);
     protected:
       static void cb_switchbuf (CollExchange *, unsigned phase);
@@ -53,7 +54,7 @@ namespace TSPColl
       int           _nelems, _logMaxBF;
       void        * _dbuf;
       //void       (* _cb_allreduce) (const void *, void *, unsigned);
-      CCMI_ReduceFunc _cb_allreduce;
+      coremath _cb_allreduce;
       char          _dummy;
       
     protected:
@@ -74,7 +75,7 @@ namespace TSPColl
       //      void reset (const void * s, void * d,
       //		  __pgasrt_ops_t op, __pgasrt_dtypes_t dt, unsigned nelems);
       void reset (const void * s, void * d,
-		  CCMI_Op op, CCMI_Dt dt, unsigned nelems);
+		  CM_Op op, CM_Dt dt, unsigned nelems);
 
     protected:
       static void cb_allreduce (CollExchange *, unsigned phase);
@@ -83,7 +84,7 @@ namespace TSPColl
       int           _nelems, _logMaxBF;
       void        * _dbuf;
       //      void       (* _cb_allreduce) (const void *, void *, unsigned);
-      CCMI_ReduceFunc _cb_allreduce;
+      coremath _cb_allreduce;
       char          _dummy;
       void        * _tmpbuf;
     }; /* Long Allreduce */

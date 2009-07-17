@@ -18,7 +18,7 @@
 //  #include "Geometry.h"
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/executor/AllreduceBase.h"
-#include "math_coremath.h"
+#include "math/math_coremath.h"
 
 namespace CCMI
 {

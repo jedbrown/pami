@@ -2,12 +2,12 @@
 #ifndef  __ccmi_collectives_adaptor_h__
 #define  __ccmi_collectives_adaptor_h__
 
-#include "collectives/util/ccmi_util.h"
-#include "collectives/interface/Mapping.h"
-#include "collectives/util/logging/LogMgr.h"
-#include "collectives/util/queue/Queue.h"
-#include "collectives/util/ccmi_debug.h"
-#include "collectives/interface/lapiunix/common/include/pgasrt.h"
+#include "util/ccmi_util.h"
+#include "interface/Mapping.h"
+#include "util/logging/LogMgr.h"
+#include "util/queue/Queue.h"
+#include "util/ccmi_debug.h"
+#include "interface/lapiunix/common/include/pgasrt.h"
 #include <unistd.h>
 #include <pthread.h>
 #include <lapi.h>

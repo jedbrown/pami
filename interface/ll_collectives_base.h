@@ -142,7 +142,7 @@ extern "C"
         LL_COORD_TOPOLOGY,		///< topology is a rectangular segment
         ///  represented by coordinates
         LL_TOPOLOGY_COUNT
-    } LL_Topology_t;
+    } LL_TopologyType_t;
 
 
     typedef Quad LL_NetworkCoord_t[2];

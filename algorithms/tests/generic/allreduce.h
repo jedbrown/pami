@@ -29,8 +29,8 @@ inline void allreduce_advance (unsigned * srcbuf, unsigned * dstbuf, unsigned sr
                  (char *)srcbuf,
                  (char *)dstbuf,
                  src_count,
-                 CCMI_UNSIGNED_INT,
-                 CCMI_SUM);
+                 CM_UNSIGNED_INT,
+                 CM_SUM);
   while(!done)
   {
     CCMI_Generic_adaptor_advance();
@@ -68,7 +68,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result ccmiResult;
 
-  if((ccmiResult = (CCMI_Result) CCMI_Allreduce_register (&allreduce_reg, &allreduce_conf)) != CCMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Allreduce_register (&allreduce_reg, &allreduce_conf)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Allreduce_register failed %d\n",ccmiResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &allreduce_reg))

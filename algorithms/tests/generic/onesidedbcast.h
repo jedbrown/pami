@@ -9,7 +9,7 @@ int                                    nreceived_countdown=0;
 unsigned                               narrived=0;
 CCMI_CollectiveRequest_t              *recvRequests=NULL;
 
-void recv_callback(void* cd, CCMI_Error_t *err)
+void recv_callback(void* cd, CM_Error_t *err)
 {
   TRACE_TEST_VERBOSE((stderr,"%s:%s nreceived_countdown %d\n", argv0,__PRETTY_FUNCTION__,nreceived_countdown));
   assert(nreceived_countdown);
@@ -20,7 +20,7 @@ void * recvBcast (unsigned          root,
                   unsigned          sndlen,
                   unsigned        * rcvlen,
                   char           ** rcvbuf,
-                  CCMI_Callback_t * const cb_info)
+                  CM_Callback_t * const cb_info)
 {
   //  printf ("Received broadcast message \n");
   TRACE_TEST_VERBOSE((stderr,"%s:%s narrived %d\n", argv0,__PRETTY_FUNCTION__, narrived));
@@ -93,7 +93,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result ccmiResult;
 
-  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&onesidedbcast_reg, &onesidedbcast_conf)) != CCMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&onesidedbcast_reg, &onesidedbcast_conf)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_OnesidedBcast_register failed %d\n",ccmiResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &onesidedbcast_reg))

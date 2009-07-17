@@ -2,7 +2,7 @@
 #ifndef __ccmi_collective_h__
 #define __ccmi_collective_h__
 
-#include "cm_types.h"
+#include "interface/cm_types.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -56,10 +56,6 @@ extern "C"
     
     CCMI_UNDEFINED_SUBTASK          =  (~LINE_BCAST_MASK),
   } CCMI_Subtask;
-
-
-  // Optimized reduction function (comes from the math lib)
-  typedef void (*CCMI_ReduceFunc)(void *dst, void **srcs, int nsrcs, int count);
 
 
   /* ********************************************************************* */

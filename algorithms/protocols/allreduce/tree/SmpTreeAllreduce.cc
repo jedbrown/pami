@@ -13,9 +13,9 @@
 #ifndef __bgp__
 #warning DCMF specific protocol - needs work to make it generic
 #endif
-#include "math_coremath.h"
+#include "math/math_coremath.h"
 #include "SmpTreeAllreduce.h"
-#include "Topology.h"
+#include "interface/Topology.h"
 #include "PipeWorkQueue.h"
 
 namespace CCMI

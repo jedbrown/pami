@@ -15,8 +15,8 @@
 #define __ccmi_adaptor_allreduce_vn_dual_short_tree_h__
 
 #include "../BaseComposite.h"
-#include "protocols/multisend/multisend_impl.h"
-#include "Topology.h"
+#include "multisend/multisend_impl.h"
+#include "interface/Topology.h"
 #include "PipeWorkQueue.h"
 
 namespace CCMI
@@ -194,7 +194,7 @@ namespace CCMI
           unsigned                       _sizeOfType;
           unsigned                       _count;
           unsigned                       _bytes;
-          CCMI_ReduceFunc                _reduceFunc;
+          coremath                _reduceFunc;
           ReduceOpSelect                 _reduceOpSelect;
 
           static CCMI::MultiSend::CCMI_Multicombine_t _mcombArgs __attribute__ ((__aligned__ (16)));

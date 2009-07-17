@@ -17,7 +17,7 @@
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"
 #include "interface/MultiSend.h"
-#include "Topology.h"
+#include "interface/Topology.h"
 
 #undef TRACE_ERR
 //#define TRACE_ERR(x) fprintf x

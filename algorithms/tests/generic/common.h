@@ -57,7 +57,7 @@ char *argv0; // filename
 CCMI_CollectiveProtocol_t              barrier_reg __attribute__((__aligned__(32))), local_barrier_reg __attribute__((__aligned__(32)));
 CCMI_Barrier_Configuration_t           configuration;
 CCMI_CollectiveRequest_t               request;
-CCMI_Callback_t                        common_done;
+CM_Callback_t                        common_done;
 CCMI_Consistency                       consistency;
 CCMI_Geometry_t                        geometry;
 
@@ -68,8 +68,8 @@ unsigned * srcbuf, * allocSrcBuf;
 unsigned * dstbuf, * allocDstBuf;
 unsigned * ranks;
 
-CCMI_Dt type = CCMI_UNSIGNED_INT;
-CCMI_Op op   = CCMI_SUM;
+CM_Dt type = CM_UNSIGNED_INT;
+CM_Op op   = CM_SUM;
 
 CCMI_Geometry_t *getGeometry (int comm)
 {
@@ -78,7 +78,7 @@ CCMI_Geometry_t *getGeometry (int comm)
 }
 
 
-void done_callback(void* cd, CCMI_Error_t *e)
+void done_callback(void* cd, CM_Error_t *e)
 {
   TRACE_TEST_VERBOSE((stderr,"%s:%s\n", argv0,__PRETTY_FUNCTION__));
   done=1;
@@ -167,22 +167,22 @@ void setup(int argc, char **argv, unsigned override_default_max_count = 0)
       repetitions  = atoi(optarg);
       break;
     case 'd':
-      type = CCMI_DOUBLE;
+      type = CM_DOUBLE;
       break;
     case 'i':
-      type = CCMI_UNSIGNED_INT;
+      type = CM_UNSIGNED_INT;
       break;
     case 'f':
-      type = CCMI_FLOAT;
+      type = CM_FLOAT;
       break;
     case 'm':
-      op = CCMI_MAX;
+      op = CM_MAX;
       break;
     case 'p':
-      op = CCMI_PROD;
+      op = CM_PROD;
       break;
     case 's':
-      op = CCMI_SUM;
+      op = CM_SUM;
       break;
     case 'h':
       if(rank == 0)usage(1);
@@ -214,18 +214,18 @@ void initialize_common(CCMI_Barrier_Protocol barrier_protocol,
   configuration.cb_geometry = getGeometry;
 
   CCMI_Result ccmiResult;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&barrier_reg, &configuration)) != CCMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&barrier_reg, &configuration)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 
   configuration.protocol = lbarrier_protocol;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_barrier_reg, &configuration)) != CCMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_barrier_reg, &configuration)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 
   CCMI_CollectiveProtocol_t  * bar_p = & barrier_reg, * local_bar_p = & local_barrier_reg;
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
                                                            &bar_p, 1, 
                                                            &local_bar_p, 1, 
-                                                           &request, 0, 1)) != CCMI_SUCCESS)
+                                                           &request, 0, 1)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Geometry_initialize failed %d\n",ccmiResult);
 
   return;
