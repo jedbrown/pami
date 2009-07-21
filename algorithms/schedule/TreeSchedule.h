@@ -125,8 +125,8 @@ namespace CCMI
           max = LockboxBarrierSchedule::getMaxPhases(_mapping, MAX_NUM_CORES);
           if(_npeers > 1)
           {
-            _loc_sched[idx] =
-            new (&_scheds[ix], sizeof(_scheds[ix]))
+           COMPILE_TIME_ASSERT(sizeof(_scheds[0]) >= sizeof(LockboxBarrierSchedule));
+            _loc_sched[idx] = new (&_scheds[ix])
             LockboxBarrierSchedule(_mapping,
                                    _npeers, _peer_ranks);
             _loc_sched[idx]->init(_peer_ranks[0],
@@ -142,8 +142,8 @@ namespace CCMI
           max = TREE_LOCAL_SCHED_TYPE::getMaxPhases(_mapping, MAX_NUM_CORES);
           if(_npeers > 1)
           {
-            _loc_sched[idx] =
-            new (&_scheds[ix], sizeof(_scheds[ix]))
+           COMPILE_TIME_ASSERT(sizeof(_scheds[0]) >= sizeof(TREE_LOCAL_SCHED_TYPE));
+            _loc_sched[idx] = new (&_scheds[ix])
             TREE_LOCAL_SCHED_TYPE(_mapping,
                                   _npeers, _peer_ranks);
             _loc_sched[idx]->init(_peer_ranks[0],

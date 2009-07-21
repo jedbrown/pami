@@ -62,6 +62,7 @@ namespace CCMI
 
           addExecutor (&_executor);
 
+          COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T));
           create_schedule(&_schedule, sizeof(_schedule), root, map, geometry);
           _executor.setSchedule (&_schedule);
         }
@@ -167,11 +168,11 @@ namespace CCMI
 
           T* a_bcast = NULL;
 
-          CCMI_assert(rsize > sizeof(T));
+          CM_assert(rsize > sizeof(T));
 
           if(this->_mapping->rank() == root)
           {
-            a_bcast = new (request_buf, rsize)
+            a_bcast = new (request_buf)
                       T ( this->_mapping, &this->_rbconnmgr,
                           cb_done, consistency, this->_minterface,
                           geometry, root, src, bytes, &this->_execpool );
@@ -204,7 +205,7 @@ namespace CCMI
               cb_exec_done.clientdata = request_buf; //point to the executor
 
               //Create a new composite and post it to posted queue
-              a_bcast = new (request_buf, rsize)
+              a_bcast = new (request_buf)
                         T (this->_mapping, &this->_rbconnmgr,
                            cb_exec_done, consistency, this->_minterface,
                            geometry, root, src, bytes, &this->_execpool);
@@ -254,7 +255,8 @@ namespace CCMI
             cb_exec_done.function = unexpected_done;
             cb_exec_done.clientdata = exec_request;
 
-            bcast = new (exec_request, sizeof(CCMI_Executor_t))
+            COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
+            bcast = new (exec_request)
                     T (factory->_mapping, &factory->_rbconnmgr,
                        cb_exec_done, CCMI_MATCH_CONSISTENCY, factory->_minterface,
                        geometry, cdata->_root, unexpbuf, sndlen, &factory->_execpool); 
@@ -333,7 +335,8 @@ namespace CCMI
 
           *pipewidth = sndlen+1;
 
-          T *bcast = new (request, sizeof(CCMI_Executor_t))
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
+          T *bcast = new (request)
                      T (factory->_mapping, &factory->_rbconnmgr,
                         cb_client_done, CCMI_MATCH_CONSISTENCY, factory->_minterface,
                         geometry, cdata->_root, *rcvbuf, *rcvlen, &factory->_execpool);  

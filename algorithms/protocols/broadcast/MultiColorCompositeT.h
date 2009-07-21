@@ -136,6 +136,7 @@ namespace CCMI
             bcast->setDoneCallback (cb_bcast_done, this);
 
             addExecutor (bcast);
+            COMPILE_TIME_ASSERT(sizeof(_schedules[0]) >= sizeof(S));
             create_schedule(&_schedules[c], sizeof(_schedules[c]), geometry, _colors[c]);
             bcast->setSchedule (&_schedules[c]);
           }
@@ -272,8 +273,9 @@ namespace CCMI
          char                      * src,
          unsigned                    bytes)
         {
+          CM_assert(rsize >= sizeof(B));
           B  *composite = 
-          new (request_buf, rsize)
+          new (request_buf)
           B (this->_mapping,
              this->_connmgr,
              cb_done,

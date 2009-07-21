@@ -97,8 +97,8 @@ namespace CCMI
             if((_mapping)->GetDimLength(CCMI_T_DIM) == 1) // smp mode
             {
               TRACE_ALERT((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate() SmpTreeAllreduce ALERT:\n",(int)this, COMPOSITE::name));
-              CCMI::Adaptor::Allreduce::BaseComposite *allreduce =
-              new (arequest, sizeof(CCMI_Executor_t))
+              COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce));
+              CCMI::Adaptor::Allreduce::BaseComposite *allreduce = new (arequest)
               CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce ( _minterface, this,  _mapping->rank() );
 
               allreduce->restart ( request,
@@ -113,7 +113,8 @@ namespace CCMI
             else if(count <= short_thresh)// && (root == -1)) // short allreduce only
             {
               TRACE_ALERT((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate() VnDualShortTreeAllreduce ALERT:\n",(int)this, COMPOSITE::name));
-              CCMI::Adaptor::Allreduce::Tree::VnDualShortTreeAllreduce *allreduce = new (arequest, sizeof(CCMI_Executor_t))
+              COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(CCMI::Adaptor::Allreduce::Tree::VnDualShortTreeAllreduce));
+              CCMI::Adaptor::Allreduce::Tree::VnDualShortTreeAllreduce *allreduce = new (arequest)
                                                           CCMI::Adaptor::Allreduce::Tree::VnDualShortTreeAllreduce ( _minterface, this, _mapping );
 
               unsigned status =  allreduce->restart( request,
@@ -134,8 +135,8 @@ namespace CCMI
               else; // Short protocol failed, fall through and try COMPOSITE
             }
             TRACE_ALERT((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
-            COMPOSITE *allreduce =
-              new (arequest, sizeof(CCMI_Executor_t))
+            COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
+            COMPOSITE *allreduce = new (arequest)
               COMPOSITE(request,
                         _mapping,
                         &_sconnmgr,

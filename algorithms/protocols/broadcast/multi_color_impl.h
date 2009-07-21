@@ -58,7 +58,7 @@ namespace CCMI
                                                                 Geometry                  * g,
                                                                 CCMI::Schedule::Color       color)
       {
-        new (buf, size) CCMI::Schedule::BinomialTreeSchedule (_mapping, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule (_mapping, g->nranks(), g->ranks());
       }
 
 
@@ -73,7 +73,7 @@ namespace CCMI
                                                             Geometry                  * g,
                                                             CCMI::Schedule::Color       color)
       {
-        new (buf, size) CCMI::Schedule::RingSchedule (_mapping, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::RingSchedule (_mapping, g->nranks(), g->ranks());
       }
 
 

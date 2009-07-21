@@ -65,8 +65,8 @@ namespace CCMI
         if(_npeers > 1)
         {
           CCMI_assert((ix < NUM_EXT_SCHED) && (idx < NUM_SCHED));
-          _loc_sched[idx] =
-          new (&_scheds[ix], sizeof(_scheds[ix]))
+          COMPILE_TIME_ASSERT(sizeof(_scheds[0]) >= sizeof(LockboxBarrierSchedule));
+          _loc_sched[idx] = new (&_scheds[ix])
           LockboxBarrierSchedule(_mapping,
                                  _npeers, _peer_ranks);
           _loc_sched[idx]->init(_peer_ranks[0],

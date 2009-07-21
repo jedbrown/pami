@@ -107,8 +107,8 @@ namespace CCMI
           //CCMI_assert(geometry->getAsyncAllreduceMode());
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
 
-          COMPOSITE *allreduce = 
-          new (c_request, sizeof(CCMI_Executor_t))
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
+          COMPOSITE *allreduce = new (c_request)
           COMPOSITE(request,
                     this->_mapping, &this->_sconnmgr, cb_done,
                     consistency, this->_minterface, geometry,
@@ -146,8 +146,8 @@ namespace CCMI
           //CCMI_assert(geometry->getAsyncAllreduceMode());
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage(iteration);
 
-          COMPOSITE *allreduce = 
-          new (c_request, sizeof(CCMI_Executor_t))
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
+          COMPOSITE *allreduce = new (c_request)
           COMPOSITE((CCMI_CollectiveRequest_t*)NULL, // restart will reset this
                     this->_mapping, &this->_sconnmgr, 
                     temp_cb_done, // bogus temporary cb, restart will reset it.

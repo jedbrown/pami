@@ -34,7 +34,7 @@ namespace CCMI
                                                    CCMI::CollectiveMapping             * map,
                                                    Geometry                  * g)
       {
-        new (buf, size) CCMI::Schedule::BinomialTreeSchedule(map, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule(map, g->nranks(), g->ranks());
       }
 
       typedef AsyncCompositeFactoryT <AsyncBinomialComposite, true_analyze, CCMI::CollectiveMapping> 

@@ -96,7 +96,7 @@ namespace CCMI
 
             // posts a receive on connection given by connection mgr
             minterface->send (&_tmpRequest, &newcb,
-                              CCMI_MATCH_CONSISTENCY, NULL, 0, NULL, _bytecounts[0], 
+                              CCMI_MATCH_CONSISTENCY, NULL, 1, 0, NULL, _bytecounts[0], 
                               &opcode, &dstrank, nranks, CM_UNDEFINED_OP, CM_UNDEFINED_DT);
           }
 
@@ -321,8 +321,9 @@ namespace CCMI
               cb_done.clientdata = request;  //Pass pointer before its constructed
             }
 
+            CM_assert(rsize >= sizeof(TreeBcastComposite));
             TreeBcastComposite  *composite = 
-            new (request, rsize)
+            new (request)
             TreeBcastComposite (_mapping,
                                 _connmgr,
                                 cb_done,
@@ -363,7 +364,7 @@ namespace CCMI
                                                Geometry                  * g,
                                                CCMI::Schedule::Color       color)
       {
-        new (buf, size) CCMI::Schedule::TreeBwSchedule (_mapping, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::TreeBwSchedule (_mapping, g->nranks(), g->ranks());
       }
     };  
   };  

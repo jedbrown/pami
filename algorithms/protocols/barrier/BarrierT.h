@@ -144,8 +144,8 @@ namespace CCMI
         (CCMI_Executor_t           * request,
          Geometry                  * geometry)  
         {
-          return new (request, sizeof (CCMI_Executor_t))
-          T (this->_mapping, this->_msyncInterface, geometry);
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
+          return new (request) T (this->_mapping, this->_msyncInterface, geometry);
         }
 
       };  //- BarrierFactoryT
@@ -268,8 +268,8 @@ namespace CCMI
         (CCMI_Executor_t           * request,
          Geometry                  * geometry)  
         {
-          return new (request, sizeof (CCMI_Executor_t))
-          T (this->_mapping, this->_mcastInterface, geometry);
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
+          return new (request) T (this->_mapping, this->_mcastInterface, geometry);
         }
 
       };  //- OldBarrierFactoryT

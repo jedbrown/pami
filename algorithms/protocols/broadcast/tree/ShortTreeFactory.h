@@ -89,7 +89,8 @@ namespace CCMI
           {
             TRACE_ADAPTOR ((stderr, "Tree Broadcast Generate\n"));      
 
-            new (_request, sizeof(ShortTreeBcast))ShortTreeBcast(_mf, _map, request, cb_done, consistency, src, bytes, root);
+            CM_assert(rsize >= sizeof(ShortTreeBcast));
+            new (_request)ShortTreeBcast(_mf, _map, request, cb_done, consistency, src, bytes, root);
 			return NULL;
           }
 

@@ -100,8 +100,10 @@ namespace CCMI
 
             CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
 
+            COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= 
+                                sizeof(CCMI::Adaptor::Allreduce::RectangleRingDput::Composite));
             CCMI::Adaptor::Allreduce::RectangleRingDput::Composite *allreduce = 
-            new (c_request, sizeof(CCMI_Executor_t))
+            new (c_request)
             Composite(request,
                       _mapping, &_tconnmgr, 
                       &_cconnmgr, cb_done,

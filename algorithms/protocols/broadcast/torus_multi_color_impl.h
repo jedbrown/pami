@@ -72,7 +72,7 @@ namespace CCMI
                                                              Geometry                  * g,
                                                              CCMI::Schedule::Color       color)
       {
-        new (buf, size) CCMI::Schedule::OneColorTorusRect (_mapping, (unsigned)color, *g->rectangle());
+        new (buf) CCMI::Schedule::OneColorTorusRect (_mapping, (unsigned)color, *g->rectangle());
       }
 
       typedef MultiColorBroadcastFactoryT <TorusRectComposite, rectangle_analyze,CCMI::TorusCollectiveMapping> TorusRectBcastFactory;
