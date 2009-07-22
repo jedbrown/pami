@@ -47,18 +47,50 @@ typedef struct {
  */
 
 /**
- * \brief Register a memory region for one sided operations
+ * \brief Default "global" memory region
  *
- * \param[in] context    XMI application context
- * \param[in] address    Virtual address of memory region
- * \param[in] bytes      Number of bytes to register
+ * The global memory region may be used in the one-sided operations to make use
+ * of the system-managed memory region support.
+ *
+ * User-managed memory regions may result in higher performance for one-sided
+ * operations due to system memory region caching, internal memory region
+ * exchange operations, and other implementation-specific management features.
  *
  * \ingroup rma
  */
-xmi_result_t XMI_Memory_register (xmi_context_t   context,
-                                  void          * address,
-                                  size_t          bytes);
+extern xmi_memregion_t xmi_global_memregion;
 
+/**
+ * \brief Register a local memory region for one sided operations
+ *
+ * The local memregion may be transfered, via a send message, to a remote task
+ * to allow the remote task to perform one-sided operations with this local
+ * task
+ *
+ * \param[in]  context   XMI application context
+ * \param[in]  address   Virtual address of memory region
+ * \param[in]  bytes     Number of bytes to register
+ * \param[out] memregion Memory region object
+ *
+ * \ingroup rma
+ */
+xmi_result_t XMI_Memory_register (xmi_context_t     context,
+                                  void            * address,
+                                  size_t            bytes,
+                                  xmi_memregion_t * memregion);
+
+/**
+ * \brief Deregister a local memory region for one sided operations
+ *
+ * It is illegal to deregister the "global" memory region.
+ *
+ * \param[in] context   XMI application context
+ * \param[in] memregion Memory region object
+ *
+ * \ingroup rma
+ */
+xmi_result_t XMI_Memory_deregister (xmi_context_t   context,
+                                    xmi_memregion_t memregion);
 
 /**
  * \brief Provide one or more contiguous segments to transfer.
@@ -135,8 +167,10 @@ typedef struct xmi_rma_typed {
  **/
 typedef struct xmi_put {
   size_t                 task;      /**< Destination task */
-  void                 * local;     /**< Local buffer virtual address */
-  void                 * remote;    /**< Remote buffer virtual addreess */
+  void                 * local_va;  /**< Local buffer virtual address */
+  xmi_memregion_t        local_mr;  /**< Local buffer memory region */
+  void                 * remote_va; /**< Remote buffer virtual addreess */
+  xmi_memregion_t        remote_mr; /**< Remote buffer memory region */
   xmi_event_callback_t   send_done; /**< All local data has been sent */
   xmi_event_callback_t   recv_done; /**< All local data has been received */
   void                 * cookie;    /**< Argument to \b all event callbacks */
@@ -199,8 +233,10 @@ xmi_result_t XMI_Put_typed (xmi_context_t context, xmi_put_t * parameters);
  **/
 typedef struct xmi_get {
   size_t                 task;      /**< Destination task */
-  void                 * local;     /**< Local buffer virtual address */
-  void                 * remote;    /**< Remote buffer virtual addreess */
+  void                 * local_va;  /**< Local buffer virtual address */
+  xmi_memregion_t        local_mr;  /**< Local buffer memory region */
+  void                 * remote_va; /**< Remote buffer virtual addreess */
+  xmi_memregion_t        remote_mr; /**< Remote buffer memory region */
   xmi_event_callback_t   done;      /**< All remote data has been received */
   void                 * cookie;    /**< Argument to \b all event callbacks */
   xmi_send_hint_t        hints;     /**< Hints for sending the message */
