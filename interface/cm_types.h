@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file cm_impl.h
+ * \file cm_types.h
  * \brief Common external collectives message layer types.
  */
 #ifndef __cm_types_h__

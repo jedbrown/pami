@@ -34,7 +34,7 @@ namespace CCMI
       template <class CONNMGR, class COMPOSITE, class MAP> class ShortAsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactoryT<CONNMGR, COMPOSITE, MAP>
       {
       protected:
-        static CCMI_Request_t * cb_asyncShortReceiveHead(const CMQuad    * info,
+        static CM_Request_t * cb_asyncShortReceiveHead(const CMQuad    * info,
                                                          unsigned          count,
                                                          unsigned          peer,
                                                          unsigned          sndlen,

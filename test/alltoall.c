@@ -66,9 +66,9 @@ void check_bufs()
 }
 
 
-HL_CollectiveProtocol_t _g_alltoall;
+CM_CollectiveProtocol_t _g_alltoall;
 volatile unsigned       _g_alltoall_active;
-HL_CollectiveRequest_t  _g_alltoall_request;
+CM_CollectiveRequest_t  _g_alltoall_request;
 
 static double timer()
 {
@@ -81,10 +81,10 @@ static double timer()
 // ------ Barrier 
 
 void cb_barrier (void * clientdata);
-HL_CollectiveProtocol_t _g_barrier;
+CM_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-HL_CollectiveRequest_t  _g_barrier_request;
-HL_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
+CM_CollectiveRequest_t  _g_barrier_request;
+CM_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
@@ -143,7 +143,7 @@ void init__alltoall ()
   TRACE(("%d: init alltoall active:%d(%p)\n",HL_Rank(),_g_alltoall_active,&_g_alltoall_active));
 }
 
-HL_Callback_t _cb = {(void (*)(void*,LL_Error_t*))cb_alltoall, (void *) &_g_alltoall_active };
+CM_Callback_t _cb = {(void (*)(void*,LL_Error_t*))cb_alltoall, (void *) &_g_alltoall_active };
 hl_alltoall_t  _xfer_alltoall =
     {
 	HL_XFER_ALLTOALL,

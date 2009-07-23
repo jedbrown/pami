@@ -89,7 +89,7 @@ extern "C"
     typedef struct
     {
 	int size;
-	HL_CollectiveProtocol_t *entries[MAX_REGISTRATIONS_PER_TABLE];
+	CM_CollectiveProtocol_t *entries[MAX_REGISTRATIONS_PER_TABLE];
     }HL_proto_table;
 
     CCMI_Geometry_t      *getGeometry (int comm);
@@ -129,7 +129,7 @@ extern "C"
 			       1);
 	//	__pgasrt_tsp_barrier       ();
 	MPI_Barrier(MPI_COMM_WORLD);
-	return HL_SUCCESS;
+	return CM_SUCCESS;
     }
 
     int HL_Poll()
@@ -162,11 +162,11 @@ extern "C"
     }
 
 
-    int HL_register(HL_CollectiveProtocol_t      *registration,
+    int HL_register(CM_CollectiveProtocol_t      *registration,
                     HL_CollectiveConfiguration_t *config,
 		    int                           key)
     {
-	HL_Result                                status;
+	CM_Result                                status;
 	switch(config->cfg_type)
 	    {
 	    case HL_CFG_BROADCAST:
@@ -181,11 +181,11 @@ extern "C"
 			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BcastTag, minfo);		    
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			  }
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -201,11 +201,11 @@ extern "C"
 			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::AllgatherTag, minfo);			    
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			  }
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -222,11 +222,11 @@ extern "C"
 			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::AllgathervTag, minfo);			    
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			  }
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -251,11 +251,11 @@ extern "C"
 			    scinfo->scatter.initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, &scinfo->barrier);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::ScatterTag, &scinfo->scatter);
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			  }
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -280,11 +280,11 @@ extern "C"
 			    scinfo->scatterv.initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, &scinfo->barrier);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::ScattervTag, &scinfo->scatterv);
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			  }
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -308,7 +308,7 @@ extern "C"
 				} SyncBinomialRegistration;
 
 				CCMI_assert (sizeof (SyncBinomialRegistration) <=
-					     sizeof (CCMI_CollectiveProtocol_t));
+					     sizeof (CM_CollectiveProtocol_t));
 
 				SyncBinomialRegistration *treg =
 				    (SyncBinomialRegistration *) registration;
@@ -328,11 +328,11 @@ extern "C"
 				TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::ShortAllreduceTag, minfo);
 #endif
 
-				return HL_SUCCESS;
+				return CM_SUCCESS;
 			    }
 			    break;
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -352,10 +352,10 @@ extern "C"
 			    } AlltoallRegistration;
 			    
 			    CCMI_assert( sizeof(AlltoallRegistration) <=
-					 sizeof(CCMI_CollectiveProtocol_t) );
+					 sizeof(CM_CollectiveProtocol_t) );
 			    
-			    CCMI_assert( sizeof(CCMI_CollectiveRequest_t) <=
-					 sizeof(HL_CollectiveRequest_t) );
+			    CCMI_assert( sizeof(CM_CollectiveRequest_t) <=
+					 sizeof(CM_CollectiveRequest_t) );
 			    
 			    AlltoallRegistration * treg = 
 			      (AlltoallRegistration *) registration;
@@ -368,11 +368,11 @@ extern "C"
 			    
 			    treg->minfo.initialize(_g_generic_adaptor);
 			  
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			  }
 			  break;
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -385,10 +385,10 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_ALLTOALLV_PROTOCOL:
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -405,11 +405,11 @@ extern "C"
 			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, minfo);		    
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			  }
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -427,7 +427,7 @@ extern "C"
 			      CCMI::Adaptor::Generic::MulticastImpl             minfo;
 			    } AsyncBinomialRegistration;
 			    CCMI_assert (sizeof (AsyncBinomialRegistration) <=
-					 sizeof (CCMI_CollectiveProtocol_t));
+					 sizeof (CM_CollectiveProtocol_t));
 			    AsyncBinomialRegistration *treg =
 			      (AsyncBinomialRegistration *) registration;
 			    new (& treg->minfo) CCMI::Adaptor::Generic::MulticastImpl();
@@ -439,11 +439,11 @@ extern "C"
 						  (CCMI_RecvAsyncBroadcast)cfg->cb_recv,
 						  (CCMI_mapIdToGeometry)cb_geometry_map);
 			    treg->minfo.initialize (_g_generic_adaptor);
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			  }
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -453,10 +453,10 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_AMSCATTER_PROTOCOL:
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -466,10 +466,10 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_AMGATHER_PROTOCOL:
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
@@ -479,19 +479,19 @@ extern "C"
 		    switch(cfg->protocol)
 			{
 			case HL_DEFAULT_AMREDUCE_PROTOCOL:
-			    return HL_SUCCESS;
+			    return CM_SUCCESS;
 			    break;
 			default:
-			    return HL_UNIMPL;
+			    return CM_UNIMPL;
 			    break;
 			}
 		}
 
 	    default:
-		return HL_UNIMPL;
+		return CM_UNIMPL;
 		break;
 	    }
-	return HL_SUCCESS;
+	return CM_SUCCESS;
     }
 
     class geometry_internal
@@ -572,7 +572,7 @@ extern "C"
 				       ranks,
 				       id,
 				       (CCMI_mapIdToGeometry)cb_geometry_map);
-	return HL_SUCCESS;
+	return CM_SUCCESS;
     }
 
 
@@ -580,16 +580,16 @@ extern "C"
     {
 	geometry_internal *g = (geometry_internal*)geometry;
 	free(g->_ranklist);
-	return HL_SUCCESS;
+	return CM_SUCCESS;
     }
 
 
     // Currently all algorithms are implemented
     int HL_Geometry_algorithm (HL_Geometry_t            *geometry,
-			       HL_CollectiveProtocol_t **protocols,
+			       CM_CollectiveProtocol_t **protocols,
 			       int                      *num)
     {
-	return HL_SUCCESS;
+	return CM_SUCCESS;
     }
 
 
@@ -608,7 +608,7 @@ extern "C"
 		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
 		    tspcoll->ibcast(minfo, p_root, parms->src, parms->dst, parms->bytes,
 				    (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 		}
 		break;
 	    case HL_XFER_ALLGATHER:
@@ -620,7 +620,7 @@ extern "C"
 		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
 		    tspcoll->iallgather(minfo,parms->src, parms->dst, parms->bytes,
 					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 		}
 		break;
 	    case HL_XFER_ALLGATHERV:
@@ -632,7 +632,7 @@ extern "C"
 		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
 		    tspcoll->iallgatherv(minfo,parms->src, parms->dst, parms->lengths,
 					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 		}
 		break;
 	    case HL_XFER_SCATTER:
@@ -650,7 +650,7 @@ extern "C"
 		    tspcoll->iscatter(&scinfo->barrier, &scinfo->scatter,
 				      p_root,parms->src, parms->dst, parms->bytes,
 				      (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 		}
 		break;
 	    case HL_XFER_SCATTERV:
@@ -668,7 +668,7 @@ extern "C"
 		    tspcoll->iscatterv(&scinfo->barrier, &scinfo->scatterv,
 				       p_root, parms->src, parms->dst, parms->lengths,
 				       (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 		}
 		break;
 	    case HL_XFER_ALLREDUCE:
@@ -692,7 +692,7 @@ extern "C"
 			//Also check for change in protocols
 			if(allreduce != NULL  &&  allreduce->getFactory() == factory)
 			    {
-				unsigned status =  allreduce->restart((CCMI_CollectiveRequest_t*)parms->request,
+				unsigned status =  allreduce->restart((CM_CollectiveRequest_t*)parms->request,
 								      *(CM_Callback_t *)&parms->cb_done,
 								      (CCMI_Consistency)0,
 								      parms->src,
@@ -712,7 +712,7 @@ extern "C"
 				_c_geometry->setAllreduceComposite(NULL);
 				allreduce->~BaseComposite();
 			    }
-			void *ptr =factory->generate((CCMI_CollectiveRequest_t*)parms->request,
+			void *ptr =factory->generate((CM_CollectiveRequest_t*)parms->request,
 						     *(CM_Callback_t *) &parms->cb_done,
 						     (CCMI_Consistency)0,
 						     _c_geometry,
@@ -723,10 +723,10 @@ extern "C"
 						     (CM_Op)LL_to_CCMI_op[parms->op]);
 			if(ptr == NULL)
 			    {
-				return HL_UNIMPL;
+				return CM_UNIMPL;
 			    }
 
-			return HL_SUCCESS;
+			return CM_SUCCESS;
 		    }
 #else
 		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
@@ -741,7 +741,7 @@ extern "C"
 					(void (*)(void*))parms->cb_done.function,
 					parms->cb_done.clientdata);
 #endif
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 		}
 		break;
 	    case HL_XFER_ALLTOALLV:
@@ -766,7 +766,7 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		    cb_done_ccmi.function   = (void (*)(void*, CM_Error_t*))parms->cb_done.function;
 		    cb_done_ccmi.clientdata = parms->cb_done.clientdata;
 
-		    factory->generate((CCMI_CollectiveRequest_t *)parms->request,
+		    factory->generate((CM_CollectiveRequest_t *)parms->request,
 				      cb_done_ccmi,
 				      (CCMI_Consistency)0,
 				      _c_geometry,
@@ -792,14 +792,14 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		    _c_bar->setDoneCallback    ((void (*)(void*, CM_Error_t*))parms->cb_done.function, parms->cb_done.clientdata);
 		    _c_bar->setConsistency ((CCMI_Consistency) 0);
 		    _c_bar->start();
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 #else
 		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
 		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;		    
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->ibarrier(minfo,(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 #endif
-		    return HL_SUCCESS;
+		    return CM_SUCCESS;
 		}
 		break;
 	    case HL_XFER_AMBROADCAST:
@@ -821,7 +821,7 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		    cb_done_ccmi.function   = (void (*)(void*, CM_Error_t*))parms->cb_done.function;
 		    cb_done_ccmi.clientdata = parms->cb_done.clientdata;
 		    factory->generate(parms->request, 
-				      sizeof(CCMI_CollectiveRequest_t), 
+				      sizeof(CM_CollectiveRequest_t), 
 				      cb_done_ccmi,
 				      (CCMI_Consistency)0,
 				      _c_geometry,
@@ -833,28 +833,28 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
   return CM_SUCCESS;
 		
 #endif
-		return HL_SUCCESS;
+		return CM_SUCCESS;
 	      }
 	      break;
 	    case HL_XFER_AMSCATTER:
 	      {
-		return HL_SUCCESS;
+		return CM_SUCCESS;
 	      }
 	      break;
             case HL_XFER_AMGATHER:
 	      {
-		return HL_SUCCESS;
+		return CM_SUCCESS;
 	      }
 	      break;
             case HL_XFER_AMREDUCE:
 	      {
-		return HL_SUCCESS;
+		return CM_SUCCESS;
 	      }
 	      break;
 	    default:
-		return HL_UNIMPL;
+		return CM_UNIMPL;
 		break;
 	    }
-	return HL_SUCCESS;
+	return CM_SUCCESS;
     }
 };

@@ -86,7 +86,7 @@ namespace CCMI
 				      void ** arg);
 
 
-	    typedef CCMI_Request_t * (*msend_recv) (const CMQuad  * info,
+	    typedef CM_Request_t * (*msend_recv) (const CMQuad  * info,
 						    unsigned          count,
 						    unsigned          peer,
 						    unsigned          sndlen,
@@ -144,7 +144,7 @@ namespace CCMI
 			/// \param nranks  : Number of destinations
 			/// \param hints   : deposit bit bcast vs pt-to-pt
 			///
-			unsigned  send  (CCMI_Request_t         * request,
+			unsigned  send  (CM_Request_t         * request,
 					 const CM_Callback_t  * cb_done,
 					 CCMI_Consistency         consistency,
 					 const CMQuad         * info,
@@ -220,7 +220,7 @@ namespace CCMI
 							mcastinfo->dt);
 			}
 
-			virtual unsigned postRecv (CCMI_Request_t         * request,
+			virtual unsigned postRecv (CM_Request_t         * request,
 						   const CM_Callback_t  * cb_done,
 						   unsigned                 conn_id,
 						   char                   * buf,
@@ -272,7 +272,7 @@ namespace CCMI
 		MulticastImpl *  mi = (MulticastImpl*)_g_regtable.get(msg->_regid);
 		TRACE((stderr, "cb_async: regid=%d mi=%p micount=%d peer=%d sz=%d conn=%d AA=%p\n",
 		       msg->_regid,mi, msg->_peer, msg->_info_count,msg->_size, msg->_conn, mi->getAsyncArg()));
-		CCMI_Request_t * req=
+		CM_Request_t * req=
 		    mi->_cb_async_head(&msg->_info[0],
 				       msg->_info_count,
 				       msg->_peer,
@@ -288,7 +288,7 @@ namespace CCMI
 
 		if(rcvlen == 0)
 		    {
-			CCMI_Request_t tmpreq;
+			CM_Request_t tmpreq;
 			comp_data * cd = (comp_data*)&tmpreq;
 			cd->_cb_done   = cb_done;
 			cd->_recvlen   = rcvlen;

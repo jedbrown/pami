@@ -35,7 +35,7 @@ namespace CCMI
       {
       protected:
         CONNMGR     _sconnmgr;
-//      static CCMI_Request_t *   cb_asyncReceiveHead(const CMQuad    * info,
+//      static CM_Request_t *   cb_asyncReceiveHead(const CMQuad    * info,
 //                                                    unsigned          count,
 //                                                    unsigned          peer,
 //                                                    unsigned          sndlen,
@@ -89,7 +89,7 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite * generate
-        (CCMI_CollectiveRequest_t * request,
+        (CM_CollectiveRequest_t * request,
          CM_Callback_t            cb_done,
          CCMI_Consistency           consistency,
          Geometry                 * geometry,
@@ -148,7 +148,7 @@ namespace CCMI
 
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
           COMPOSITE *allreduce = new (c_request)
-          COMPOSITE((CCMI_CollectiveRequest_t*)NULL, // restart will reset this
+          COMPOSITE((CM_CollectiveRequest_t*)NULL, // restart will reset this
                     this->_mapping, &this->_sconnmgr, 
                     temp_cb_done, // bogus temporary cb, restart will reset it.
                     (CCMI_Consistency) CCMI_MATCH_CONSISTENCY, // restart may reset this

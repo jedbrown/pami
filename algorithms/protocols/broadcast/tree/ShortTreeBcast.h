@@ -206,10 +206,10 @@ namespace CCMI
               _shared->client[ 2 ].isSrcReady = 0;
               _shared->client[ 3 ].isSrcReady = 0;
 
-              _mcastArgs.setRequestBuffer( (CCMI_Request_t *)request);
+              _mcastArgs.setRequestBuffer( (CM_Request_t *)request);
               _mcastArgs.setSendData( _shared->dst, _bytes );
 
-              _mcastRecvArgs.setRequestBuffer( (CCMI_Request_t *)request + 1 );
+              _mcastRecvArgs.setRequestBuffer( (CM_Request_t *)request + 1 );
 
               if(_numPeers == 1) _mcastRecvArgs.setRecvData( buf, _bytes );
               else  _mcastRecvArgs.setRecvData( _shared->dst, _bytes );

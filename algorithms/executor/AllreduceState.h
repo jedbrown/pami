@@ -112,7 +112,7 @@ namespace CCMI
       /// pointers into the receive allocation
       char             * _tempBuf; 
       char             * _bufs;
-      CCMI_Request_t   * _recvReq;
+      CM_Request_t   * _recvReq;
       RecvCallbackData * _recvClientData;
 
       // global state information
@@ -421,7 +421,7 @@ namespace CCMI
         ++_recvClientData[index].srcPeIndex;
       }
 
-      inline CCMI_Request_t   * getRecvReq()
+      inline CM_Request_t   * getRecvReq()
       {
         return  _recvReq;
       }
@@ -567,7 +567,7 @@ namespace CCMI
 
           _tempBuf       = (char             *)0xFFFFFFF8;
           _bufs          = (char             *)0xFFFFFFF9;
-          _recvReq       = (CCMI_Request_t   *)0xFFFFFFFa;
+          _recvReq       = (CM_Request_t   *)0xFFFFFFFa;
           _recvClientData= (RecvCallbackData *)0xFFFFFFFb;
 #endif
         }

@@ -78,7 +78,7 @@ namespace CCMI
           ///
           /// \brief Constructor
           ///
-          Composite (CCMI_CollectiveRequest_t  * req,
+          Composite (CM_CollectiveRequest_t  * req,
                      CCMI::TorusCollectiveMapping              * map,
                      CCMI::ConnectionManager::ConnectionManager *rcmgr,
                      CCMI::ConnectionManager::ConnectionManager *bcmgr,
@@ -145,7 +145,7 @@ namespace CCMI
             }
           }
 
-          void internal_restart (CCMI_CollectiveRequest_t  * creq,
+          void internal_restart (CM_CollectiveRequest_t  * creq,
                                  char                      * srcbuf,
                                  char                      * dstbuf,
                                  unsigned                    count,
@@ -216,7 +216,7 @@ namespace CCMI
                              idx,
                              byteCnt[idx]/sizeOfType));
               CCMI::Executor::PipelinedAllreduce *allreduce = (CCMI::Executor::PipelinedAllreduce *) getExecutor(idx);
-              initialize (allreduce, (CCMI_CollectiveRequest_t *)rvec[idx], 
+              initialize (allreduce, (CM_CollectiveRequest_t *)rvec[idx], 
                           nexts[idx], nextd[idx], byteCnt[idx]/sizeOfType, 
                           dtype, op, -1, pwidth, cb_mc_compositeDone, this);
 
@@ -227,7 +227,7 @@ namespace CCMI
             _doneCountdown = _ncolors; // default to just a composite done needed
           }
 
-          virtual unsigned restart   ( CCMI_CollectiveRequest_t  * request,
+          virtual unsigned restart   ( CM_CollectiveRequest_t  * request,
                                        CM_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,

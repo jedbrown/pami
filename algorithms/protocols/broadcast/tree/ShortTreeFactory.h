@@ -99,7 +99,7 @@ namespace CCMI
 		  //ShortTreeBcast tree_bcast;
           CCMI::TorusCollectiveMapping                         * _map;
           CCMI::MultiSend::OldMulticastInterface        * _mf;
-          CCMI_Request_t    _request __attribute__((__aligned__(16)));
+          CM_Request_t    _request __attribute__((__aligned__(16)));
 
 				
         };

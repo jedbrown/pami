@@ -2,9 +2,9 @@
 #include "common.h"
 #include "barrier.h"
 
-CCMI_CollectiveProtocol_t              bcast_reg;
+CM_CollectiveProtocol_t              bcast_reg;
 CCMI_Broadcast_Configuration_t         bcast_conf;
-CCMI_CollectiveRequest_t               bcast_request;
+CM_CollectiveRequest_t               bcast_request;
 
 inline void bcast_advance (unsigned * srcbuf, unsigned src_count, unsigned root)
 {

@@ -61,7 +61,7 @@ extern "C" int CCMI_Collective_finalize ()
 //CCMI_Geometry_t           * _ccmi_cached_geometry;
 
 extern "C" int CCMI_Geometry_analyze(CCMI_Geometry_t *grequest,
-				     CCMI_CollectiveProtocol_t *proto)
+				     CM_CollectiveProtocol_t *proto)
 {
   return(((CCMI::Adaptor::CollectiveProtocolFactory *)proto) ->
          Analyze((CCMI::Adaptor::Geometry *)grequest));
@@ -81,11 +81,11 @@ extern "C" int CCMI_Geometry_initialize (CCMI_Geometry_t            * grequest,
                                          unsigned                     id,
                                          unsigned                   * ranks,
                                          unsigned                     nranks,
-                                         CCMI_CollectiveProtocol_t ** protocols,
+                                         CM_CollectiveProtocol_t ** protocols,
                                          unsigned                     nprotocols,
-                                         CCMI_CollectiveProtocol_t ** localprotocols,
+                                         CM_CollectiveProtocol_t ** localprotocols,
                                          unsigned                     nlocalprotocols,
-                                         CCMI_CollectiveRequest_t   * request,
+                                         CM_CollectiveRequest_t   * request,
                                          unsigned                     numcolors,
                                          unsigned                     globalcontext)
 {
@@ -105,7 +105,7 @@ extern "C" int CCMI_Geometry_initialize (CCMI_Geometry_t            * grequest,
 
   CCMI_Executor_t *executors = (CCMI_Executor_t *) request;
   //  See _compile_time_assert_ instead
-  //    COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) * 2 <= sizeof(CCMI_CollectiveRequest_t));
+  //    COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) * 2 <= sizeof(CM_CollectiveRequest_t));
 
   CCMI_assert (nprotocols > 0);
   for(unsigned count = 0; count < nprotocols; count++ )
@@ -169,7 +169,7 @@ extern "C" int CCMI_Barrier (CCMI_Geometry_t     * grequest,
 
 
 
-extern "C" int CCMI_Barrier_register (CCMI_CollectiveProtocol_t   * registration,
+extern "C" int CCMI_Barrier_register (CM_CollectiveProtocol_t   * registration,
                                       CCMI_Barrier_Configuration_t * configuration)
 {
   typedef struct
@@ -185,7 +185,7 @@ extern "C" int CCMI_Barrier_register (CCMI_CollectiveProtocol_t   * registration
   case CCMI_BINOMIAL_BARRIER_PROTOCOL:
     {
       COMPILE_TIME_ASSERT (sizeof (BinomialRegistration) <=
-                   sizeof (CCMI_CollectiveProtocol_t));
+                   sizeof (CM_CollectiveProtocol_t));
 
       BinomialRegistration *treg = (BinomialRegistration *) registration;
 
@@ -219,7 +219,7 @@ extern "C" int CCMI_Barrier_register (CCMI_CollectiveProtocol_t   * registration
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/connmgr/ColorGeometryConnMgr.h"
 
-extern "C" int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registration,
+extern "C" int CCMI_Broadcast_register (CM_CollectiveProtocol_t      * registration,
                                         CCMI_Broadcast_Configuration_t * configuration)
 {
   int status = CM_ERROR;
@@ -253,7 +253,7 @@ extern "C" int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registr
   case CCMI_BINOMIAL_BROADCAST_PROTOCOL:
     {
       nconn = MAX_GEOMETRIES;
-      COMPILE_TIME_ASSERT (sizeof (BinomialRegistration) <= sizeof (CCMI_CollectiveProtocol_t));
+      COMPILE_TIME_ASSERT (sizeof (BinomialRegistration) <= sizeof (CM_CollectiveProtocol_t));
 
       BinomialRegistration *treg = (BinomialRegistration *) registration;
 
@@ -271,7 +271,7 @@ extern "C" int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registr
     {
       nconn = MAX_GEOMETRIES;
 
-      COMPILE_TIME_ASSERT (sizeof (RingRegistration) <= sizeof (CCMI_CollectiveProtocol_t));
+      COMPILE_TIME_ASSERT (sizeof (RingRegistration) <= sizeof (CM_CollectiveProtocol_t));
       RingRegistration *treg = (RingRegistration *) registration;
       
       new (& treg->minfo, sizeof(treg->minfo)) CCMI::Adaptor::Generic::MulticastImpl();
@@ -291,7 +291,7 @@ extern "C" int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registr
   case CCMI_ASYNCBINOMIAL_BROADCAST_PROTOCOL:
     {
       COMPILE_TIME_ASSERT (sizeof (AsyncBinomialRegistration) <=
-		   sizeof (CCMI_CollectiveProtocol_t));
+		   sizeof (CM_CollectiveProtocol_t));
     
       AsyncBinomialRegistration *treg =
 	(AsyncBinomialRegistration *) registration;
@@ -324,8 +324,8 @@ extern "C" int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registr
 }
 
 
-extern "C" int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
-                               CCMI_CollectiveRequest_t   * request,
+extern "C" int CCMI_Broadcast (CM_CollectiveProtocol_t  * registration,
+                               CM_CollectiveRequest_t   * request,
                                CM_Callback_t    cb_done,
                                CCMI_Consistency   consistency,
                                CCMI_Geometry_t  * geometry,
@@ -349,7 +349,7 @@ extern "C" int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
     cb_done_ccmi.function = cb_done.function;
     cb_done_ccmi.clientdata = cb_done.clientdata;
     
-    factory->generate(request, sizeof(CCMI_CollectiveRequest_t), cb_done_ccmi,
+    factory->generate(request, sizeof(CM_CollectiveRequest_t), cb_done_ccmi,
                       (CCMI_Consistency) consistency,
                       (CCMI::Adaptor::Geometry *) geometry,
                       root,
@@ -371,7 +371,7 @@ extern "C" int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
 #include "algorithms/protocols/allreduce/async_impl.h"
 
 extern "C"
-int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
+int CCMI_Allreduce_register (CM_CollectiveProtocol_t      * registration,
                              CCMI_Allreduce_Configuration_t * configuration)
 {
 
@@ -407,7 +407,7 @@ int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
       } SyncRegistration;
 
       COMPILE_TIME_ASSERT (sizeof (SyncRegistration) <=
-                   sizeof (CCMI_CollectiveProtocol_t));
+                   sizeof (CM_CollectiveProtocol_t));
 
       SyncRegistration *treg =
       (SyncRegistration *) registration;
@@ -432,7 +432,7 @@ int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
       } AsyncBinomialRegistration;
 
       COMPILE_TIME_ASSERT (sizeof (AsyncBinomialRegistration) <=
-                   sizeof (CCMI_CollectiveProtocol_t));
+                   sizeof (CM_CollectiveProtocol_t));
 
       AsyncBinomialRegistration *treg =
       (AsyncBinomialRegistration *) registration;
@@ -462,8 +462,8 @@ int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
 
 
 extern "C"
-int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
-                    CCMI_CollectiveRequest_t   * request,
+int CCMI_Allreduce (CM_CollectiveProtocol_t  * registration,
+                    CM_CollectiveRequest_t   * request,
                     CM_Callback_t              cb_done,
                     CCMI_Consistency             consistency,
                     CCMI_Geometry_t            * geometry_request,
@@ -483,7 +483,7 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
   //Also check for change in protocols
   if(allreduce != NULL  &&  allreduce->getFactory() == factory)
   {
-    unsigned status =  allreduce->restart((CCMI_CollectiveRequest_t*)request,
+    unsigned status =  allreduce->restart((CM_CollectiveRequest_t*)request,
                                           *(CM_Callback_t *)&cb_done,
                                           (CCMI_Consistency)consistency,
                                           srcbuf,
@@ -510,7 +510,7 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
   }
 
   //fprintf(stderr, "CCMI_Allreduce::ALERT: generate executor %#X with factory %#X\n",(int) allreduce,(int)factory);
-  void *ptr =factory->generate((CCMI_CollectiveRequest_t*)request,
+  void *ptr =factory->generate((CM_CollectiveRequest_t*)request,
                                *(CM_Callback_t *) &cb_done,
                                (CCMI_Consistency) consistency,
                                geometry,
@@ -534,7 +534,7 @@ int CCMI_Allreduce (CCMI_CollectiveProtocol_t  * registration,
 
 
 extern "C"
-int CCMI_Reduce_register (CCMI_CollectiveProtocol_t   * registration,
+int CCMI_Reduce_register (CM_CollectiveProtocol_t   * registration,
                           CCMI_Reduce_Configuration_t * configuration)
 {
   CCMI::Adaptor::ConfigFlags flags;
@@ -569,7 +569,7 @@ int CCMI_Reduce_register (CCMI_CollectiveProtocol_t   * registration,
         CCMI::Adaptor::Generic::MulticastImpl                  minfo;
       } SyncRegistration;
 
-      COMPILE_TIME_ASSERT(sizeof(SyncRegistration) <= sizeof(CCMI_CollectiveProtocol_t));
+      COMPILE_TIME_ASSERT(sizeof(SyncRegistration) <= sizeof(CM_CollectiveProtocol_t));
 
       SyncRegistration *treg = (SyncRegistration *) registration;
 
@@ -596,8 +596,8 @@ int CCMI_Reduce_register (CCMI_CollectiveProtocol_t   * registration,
 
 
 extern "C"
-int CCMI_Reduce (CCMI_CollectiveProtocol_t  * registration,
-                 CCMI_CollectiveRequest_t   * request,
+int CCMI_Reduce (CM_CollectiveProtocol_t  * registration,
+                 CM_CollectiveRequest_t   * request,
                  CM_Callback_t              cb_done,
                  CCMI_Consistency             consistency,
                  CCMI_Geometry_t            * geometry_request,
@@ -618,7 +618,7 @@ int CCMI_Reduce (CCMI_CollectiveProtocol_t  * registration,
   //Also check for change in protocols
   if(allreduce != NULL  &&  allreduce->getFactory() == factory)
   {
-    unsigned status =  allreduce->restart((CCMI_CollectiveRequest_t*)request,
+    unsigned status =  allreduce->restart((CM_CollectiveRequest_t*)request,
                                           *(CM_Callback_t *)&cb_done,
                                           (CCMI_Consistency)consistency,
                                           srcbuf,
@@ -646,7 +646,7 @@ int CCMI_Reduce (CCMI_CollectiveProtocol_t  * registration,
   }
 
   //fprintf(stderr, "CCMI_Reduce::ALERT: generate executor %#X with factory %#X\n",(int) allreduce,(int)factory);
-  void *ptr =factory->generate((CCMI_CollectiveRequest_t*)request,
+  void *ptr =factory->generate((CM_CollectiveRequest_t*)request,
                                *(CM_Callback_t *) &cb_done,
                                (CCMI_Consistency) consistency,
                                geometry,

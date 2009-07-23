@@ -153,7 +153,7 @@ namespace CCMI
       ScheduleCache         _cache;
 
       /// \brief Request for the multisend msg
-      CCMI_Request_t        _request __attribute__((__aligned__(16)));   
+      CM_Request_t        _request __attribute__((__aligned__(16)));   
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -507,7 +507,7 @@ namespace CCMI
       ScheduleCache         _cache;
 
       /// \brief Request for the multisend msg
-      CCMI_Request_t        _request __attribute__((__aligned__(16)));   
+      CM_Request_t        _request __attribute__((__aligned__(16)));   
 
       ///
       /// \brief core internal function to initiate the next phase

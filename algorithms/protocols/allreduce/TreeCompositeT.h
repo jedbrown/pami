@@ -45,7 +45,7 @@ namespace CCMI
           {
             TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~CompositeT() ALERT\n",(int)this,name));
           }
-          CompositeT(CCMI_CollectiveRequest_t                      * req,
+          CompositeT(CM_CollectiveRequest_t                      * req,
                      CCMI::TorusCollectiveMapping                  * map,
                      CCMI::ConnectionManager::ConnectionManager    * cmgr,
                      CM_Callback_t                                 cb_done,
@@ -189,7 +189,7 @@ namespace CCMI
             done();
           }
 
-          virtual unsigned restart ( CCMI_CollectiveRequest_t  * request,
+          virtual unsigned restart ( CM_CollectiveRequest_t  * request,
                                      CM_Callback_t           & cb_done,
                                      CCMI_Consistency            consistency,
                                      char                      * srcbuf,

@@ -120,7 +120,7 @@ namespace CCMI
 
         }
 
-          unsigned VnDualShortTreeAllreduce::restart(CCMI_CollectiveRequest_t  *request,
+          unsigned VnDualShortTreeAllreduce::restart(CM_CollectiveRequest_t  *request,
                                        CM_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
@@ -287,7 +287,7 @@ namespace CCMI
               _shared->client[2].isSrcReady = 0;
 
               // call tree multisend directly
-              _mcombArgs.setRequestBuffer((CCMI_Request_t *)request, sizeof(CCMI_Request_t));
+              _mcombArgs.setRequestBuffer((CM_Request_t *)request, sizeof(CM_Request_t));
               _mcomb->generate(&_mcombArgs);
             }
 

@@ -65,7 +65,7 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
   _mcast_iface = mcast_iface;
   TRACE((stderr, "SCATTER KICK START\n"));
   if (!_isroot) return;  
-  _req = (CCMI_Request_t*) malloc(this->_comm->size()*sizeof(CCMI_Request_t));
+  _req = (CM_Request_t*) malloc(this->_comm->size()*sizeof(CM_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
     if (i == this->_comm->rank()) 
       { 
@@ -144,7 +144,7 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
   TRACE((stderr, "SCATTERV KICK ctr=%d cplt=%d\n",
 	 this->_counter, this->_complete));
 
-  _req = (CCMI_Request_t*) malloc(this->_comm->size()*sizeof(CCMI_Request_t));
+  _req = (CM_Request_t*) malloc(this->_comm->size()*sizeof(CM_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
     {
       const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
@@ -195,7 +195,7 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
 //cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
 //	     void (** completionHandler)(void *, void *),
 //	     void ** arg)
-CCMI_Request_t * TSPColl::Scatter::cb_incoming(const CMQuad  * hdr,
+CM_Request_t * TSPColl::Scatter::cb_incoming(const CMQuad  * hdr,
 					       unsigned          count,
 					       unsigned          peer,
 					       unsigned          sndlen,

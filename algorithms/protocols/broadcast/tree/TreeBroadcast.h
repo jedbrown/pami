@@ -82,7 +82,7 @@ namespace CCMI
           CM_Callback_t     _cb_app_done;
           Geometry          * _geometry;
 
-          CCMI_Request_t    _tmpRequest __attribute__((__aligned__(16)));
+          CM_Request_t    _tmpRequest __attribute__((__aligned__(16)));
 
           ///
           /// \brief Post a dummy send to inject 0s into the collective network

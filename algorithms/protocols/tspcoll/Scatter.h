@@ -40,8 +40,8 @@ namespace TSPColl
     virtual bool isdone  (void) const { return _complete >= _counter; }
     static void amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface);
   protected:
-    CCMI_Request_t                       *_req;
-    CCMI_Request_t                       _rreq;
+    CM_Request_t                       *_req;
+    CM_Request_t                       _rreq;
     CCMI::MultiSend::MulticastInterface *_mcast_iface;
     const char    * _sbuf;         /* send buffer    */
     void          * _rbuf;         /* receive buffer */
@@ -63,7 +63,7 @@ namespace TSPColl
     _header;
     
   protected:
-    static  CCMI_Request_t * cb_incoming(const CMQuad  * hdr,
+    static  CM_Request_t * cb_incoming(const CMQuad  * hdr,
 					 unsigned          count,
 					 unsigned          peer,
 					 unsigned          sndlen,

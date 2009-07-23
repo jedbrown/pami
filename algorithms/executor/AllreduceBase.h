@@ -36,7 +36,7 @@ namespace CCMI
       {
         CollHeaderData    sndInfo __attribute__((__aligned__(16)));
         SendCallbackData  sndClientData;
-        CCMI_Request_t    sndReq __attribute__((__aligned__(16)));
+        CM_Request_t    sndReq __attribute__((__aligned__(16)));
       } __attribute__((__aligned__(16)));
     private:
       /// \brief Static function to be passed into the done of multisend send
@@ -249,7 +249,7 @@ namespace CCMI
         _astate.setCommID (commID);
       }
 
-      void setSendState (CCMI_CollectiveRequest_t* storage)
+      void setSendState (CM_CollectiveRequest_t* storage)
       {
         // See _compile_time_assert_() for storage assertions
         _sState = (SendState*)storage; 
@@ -314,7 +314,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       /// 
-      virtual CCMI_Request_t *   notifyRecvHead(const CMQuad  * info,
+      virtual CM_Request_t *   notifyRecvHead(const CMQuad  * info,
                                                 unsigned          count,
                                                 unsigned          peer,
                                                 unsigned          sndlen,
@@ -503,7 +503,7 @@ namespace CCMI
       {
         // Compile time assert
         // SendState storage must must fit in a request 
-        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase::SendState) <= sizeof(CCMI_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase::SendState) <= sizeof(CM_CollectiveRequest_t));
       }
     }; // AllreduceBase
   } // Executor
@@ -798,7 +798,7 @@ inline void CCMI::Executor::AllreduceBase::postReceives ()
 }
 
 
-inline CCMI_Request_t * 
+inline CM_Request_t * 
 CCMI::Executor::AllreduceBase::notifyRecvHead 
 (const CMQuad  * info,
  unsigned          count,

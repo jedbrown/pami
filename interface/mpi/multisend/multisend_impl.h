@@ -27,6 +27,16 @@
 //#define TRACE(x) printf x; fflush(stdout);
 #define TRACE(x) 
 
+      typedef CM_Request_t * (*msend_recv) (const CMQuad  * info,
+                                              unsigned          count,
+                                              unsigned          peer,
+                                              unsigned          sndlen,
+                                              unsigned          conn_id,
+                                              void            * arg,
+                                              unsigned        * rcvlen,
+                                              char           ** rcvbuf,
+                                              unsigned        * pipewidth,
+                                              CM_Callback_t * cb_done);
 
 namespace CCMI {
   namespace Adaptor {
@@ -75,7 +85,7 @@ namespace CCMI {
         /// \param hints   : deposit bit bcast vs pt-to-pt
         ///
 
-        unsigned  send  (CCMI_Request_t         * request,
+        unsigned  send  (CM_Request_t         * request,
                          const CM_Callback_t  * cb_done,
                          CCMI_Consistency         consistency,
                          const CMQuad         * info, 
@@ -160,7 +170,7 @@ namespace CCMI {
                                         mcastinfo->dt);
           }
 
-          virtual unsigned postRecv (CCMI_Request_t         * request,
+          virtual unsigned postRecv (CM_Request_t         * request,
                                      const CM_Callback_t  * cb_done,
                                      unsigned                 conn_id,
                                      char                   * buf,
@@ -249,7 +259,7 @@ namespace CCMI {
         /// \brief Callback function for unexpected async many to many
         /// operations
         ///
-        typedef CCMI_Request_t * (*manytomany_recv) (unsigned          conn_id,
+        typedef CM_Request_t * (*manytomany_recv) (unsigned          conn_id,
                                                      void            * arg,
                                                      char           ** rcvbuf,
                                                      unsigned       ** rcvdispls,
@@ -298,7 +308,7 @@ namespace CCMI {
           /// \param nranks  : Number of destinations
           ///
 
-          virtual void send  (CCMI_Request_t         * request,
+          virtual void send  (CM_Request_t         * request,
                               const CM_Callback_t  * cb_done,
                               unsigned                 connid,
                               unsigned                 rcvindex,
@@ -387,7 +397,7 @@ namespace CCMI {
           }
 
 
-          virtual void postRecv (CCMI_Request_t         * request,
+          virtual void postRecv (CM_Request_t         * request,
                                  const CM_Callback_t  * cb_done,
                                  unsigned                 connid,
                                  char                   * buf,

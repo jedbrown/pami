@@ -19,7 +19,7 @@ namespace CCMI
     namespace Generic
     {
 
-      typedef CCMI_Request_t * (*msend_recv) (const CMQuad  * info,
+      typedef CM_Request_t * (*msend_recv) (const CMQuad  * info,
                                               unsigned          count,
                                               unsigned          peer,
                                               unsigned          sndlen,
@@ -76,7 +76,7 @@ namespace CCMI
         /// \param nranks  : Number of destinations
         /// \param hints   : deposit bit bcast vs pt-to-pt 
         ///        
-        unsigned  send  (CCMI_Request_t         * request,
+        unsigned  send  (CM_Request_t         * request,
                          const CM_Callback_t  * cb_done,
                          CCMI_Consistency         consistency,
                          const CMQuad         * info, 
@@ -134,7 +134,7 @@ namespace CCMI
                                       mcastinfo->dt);    
         }
 
-        virtual unsigned postRecv (CCMI_Request_t         * request,
+        virtual unsigned postRecv (CM_Request_t         * request,
                                    const CM_Callback_t  * cb_done,
                                    unsigned                 conn_id,
                                    char                   * buf,

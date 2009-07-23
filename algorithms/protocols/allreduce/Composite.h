@@ -128,7 +128,7 @@ namespace CCMI
         /// have been added to the composite
         ///	  
         void initialize ( CCMI::Executor::AllreduceBase * allreduce,
-                          CCMI_CollectiveRequest_t        * request,
+                          CM_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
                           unsigned                          count,
@@ -206,7 +206,7 @@ namespace CCMI
         /// \brief At this level we only support single color
         /// collectives
         ///
-        virtual unsigned restart   ( CCMI_CollectiveRequest_t  * request,
+        virtual unsigned restart   ( CM_CollectiveRequest_t  * request,
                                      CM_Callback_t           & cb_done,
                                      CCMI_Consistency            consistency,
                                      char                      * srcbuf,

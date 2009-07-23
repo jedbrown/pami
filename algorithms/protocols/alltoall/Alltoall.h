@@ -23,8 +23,8 @@ namespace CCMI
     class A2AProtocol
     {
     protected:
-      CCMI_Request_t    _sreq    __attribute__((__aligned__(16)));
-      CCMI_Request_t    _rreq    __attribute__((__aligned__(16)));
+      CM_Request_t    _sreq    __attribute__((__aligned__(16)));
+      CM_Request_t    _rreq    __attribute__((__aligned__(16)));
       CM_Callback_t   _my_cb_done;
       CM_Callback_t   _app_cb_done;
 
@@ -134,7 +134,7 @@ namespace CCMI
         return(geometry->isTorus());      
       }
 
-      virtual unsigned generate (CCMI_CollectiveRequest_t   * request,
+      virtual unsigned generate (CM_CollectiveRequest_t   * request,
                                  CM_Callback_t    cb_done,
                                  CCMI_Consistency   consistency,
                                  Geometry         * geometry,

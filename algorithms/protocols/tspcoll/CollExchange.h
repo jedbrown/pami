@@ -67,7 +67,7 @@ namespace TSPColl
     /* ------------------------------ */
     
     void          send                     (int phase,CCMI::MultiSend::MulticastInterface *mcast_iface);
-    static inline CCMI_Request_t * cb_incoming(const CMQuad  * hdr,
+    static inline CM_Request_t * cb_incoming(const CMQuad  * hdr,
 					       unsigned          count,
 					       unsigned          peer,
 					       unsigned          sndlen,
@@ -87,8 +87,8 @@ namespace TSPColl
     /* ------------------------------ */
     /* static: set by constructor     */
     /* ------------------------------ */
-    CCMI_Request_t                       _req[MAX_PHASES];
-    CCMI_Request_t                       _rreq[MAX_PHASES];
+    CM_Request_t                       _req[MAX_PHASES];
+    CM_Request_t                       _rreq[MAX_PHASES];
     
     CCMI::MultiSend::MulticastInterface *_mcast_iface;
 
@@ -391,7 +391,7 @@ inline void TSPColl::CollExchange::cb_senddone (void * arg)
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
-inline CCMI_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
+inline CM_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,

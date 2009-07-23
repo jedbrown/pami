@@ -219,7 +219,7 @@ namespace CCMI
           return a_bcast;   
         }
 
-        static CCMI_Request_t *   cb_head_buffered   
+        static CM_Request_t *   cb_head_buffered   
         (const CMQuad    * info,
          unsigned          count,
          unsigned          peer,
@@ -308,7 +308,7 @@ namespace CCMI
           //nothing needs to be freed as this is an application buffer
         }
 
-        static CCMI_Request_t *   cb_head   
+        static CM_Request_t *   cb_head   
         (const CMQuad    * info,
          unsigned          count,
          unsigned          peer,

@@ -72,7 +72,7 @@ namespace CCMI
       } SendCallbackData;
 
       // send info - use AllreduceBase sendState
-//         CCMI_Request_t   *_sndReq;
+//         CM_Request_t   *_sndReq;
 //         SendCallbackData *_sndClientData;
 //         CollHeaderData   *_sndInfo;
       unsigned         _sndInfoRequired; // Is the info field required on send()?
@@ -313,7 +313,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       /// 
-      inline CCMI_Request_t *   notifyRecvHead(const CMQuad  * info,
+      inline CM_Request_t *   notifyRecvHead(const CMQuad  * info,
                                                unsigned          count,
                                                unsigned          peer,
                                                unsigned          sndlen,
@@ -327,14 +327,14 @@ namespace CCMI
       {
         // Compile time assert
         // SendState array must must fit in a request 
-        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(CCMI_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(CM_CollectiveRequest_t));
       }
     }; // Allreduce
   };
 };// CCMI::Executor
 
 
-inline CCMI_Request_t * 
+inline CM_Request_t * 
 CCMI::Executor::Allreduce::notifyRecvHead(const CMQuad    * info,
                                           unsigned          count,
                                           unsigned          peer,

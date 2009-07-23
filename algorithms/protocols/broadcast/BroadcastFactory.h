@@ -138,12 +138,12 @@ namespace CCMI
         ///
         /// \brief Callback for one-sided broadcasts
         ///
-        CCMI::MultiSend::CCMI_OldRecvMulticast_t      _cb_head;
+        CCMI::MultiSend::LL_OldRecvMulticast_t      _cb_head;
 
         ///
         /// \brief Callback for two-sided broadcasts
         ///
-        CCMI::MultiSend::CCMI_OldRecvMulticast_t      _cb_head_buffered;  
+        CCMI::MultiSend::LL_OldRecvMulticast_t      _cb_head_buffered;  
 
         bool                      _isBuffered;
 
@@ -162,8 +162,8 @@ namespace CCMI
          MAP                                             * mapping,
          CCMI::ConnectionManager::ConnectionManager      * connmgr,
          unsigned                                          nconn,
-         CCMI::MultiSend::CCMI_OldRecvMulticast_t          cb_head = NULL,
-         CCMI::MultiSend::CCMI_OldRecvMulticast_t          cb_head_buffered = NULL ) :
+         CCMI::MultiSend::LL_OldRecvMulticast_t          cb_head = NULL,
+         CCMI::MultiSend::LL_OldRecvMulticast_t          cb_head_buffered = NULL ) :
         _minterface (minterface), _connmgr(connmgr), _mapping (mapping),
         _cb_async(NULL), _cb_geometry(NULL), _cb_head(cb_head), 
         _cb_head_buffered (cb_head_buffered), _isBuffered (true)    

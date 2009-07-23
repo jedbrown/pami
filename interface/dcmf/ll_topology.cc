@@ -137,7 +137,7 @@ extern "C" size_t LL_Topology_rank2Index(LL_Topology_t *topo, size_t rank) {
 /// \param[in] topo	Opaque memory for topology
 /// \param[out] first	Where to put first rank in range
 /// \param[out] last	Where to put last rank in range
-/// \return	LL_SUCCESS, or LL_UNIMPL if not a range topology
+/// \return	CM_SUCCESS, or CM_UNIMPL if not a range topology
 ///
 extern "C" CM_Result LL_Topology_rankRange(LL_Topology_t *topo, size_t *first, size_t *last) {
 	LL::Topology *topology = (LL::Topology *)topo;
@@ -148,7 +148,7 @@ extern "C" CM_Result LL_Topology_rankRange(LL_Topology_t *topo, size_t *first, s
 ///
 /// \param[in] topo	Opaque memory for topology
 /// \param[out] list	pointer to list stored here
-/// \return	LL_SUCCESS, or LL_UNIMPL if not a list topology
+/// \return	CM_SUCCESS, or CM_UNIMPL if not a list topology
 ///
 extern "C" CM_Result LL_Topology_rankList(LL_Topology_t *topo, size_t **list) {
 	LL::Topology *topology = (LL::Topology *)topo;
@@ -164,7 +164,7 @@ extern "C" CM_Result LL_Topology_rankList(LL_Topology_t *topo, size_t **list) {
 /// \param[out] ll	lower-left coord pointer storage
 /// \param[out] ur	upper-right coord pointer storage
 /// \param[out] tl	optional, torus links flags
-/// \return	LL_SUCCESS, or LL_UNIMPL if not a coord topology
+/// \return	CM_SUCCESS, or CM_UNIMPL if not a coord topology
 ///
 extern "C" CM_Result LL_Topology_rectSeg(LL_Topology_t *topo,
 			CM_Coord_t *ll, CM_Coord_t *ur,

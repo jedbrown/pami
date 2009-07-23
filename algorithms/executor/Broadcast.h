@@ -60,8 +60,8 @@ namespace CCMI
       unsigned         _hints      [MAX_PARALLEL];
 
       //CM_Callback_t           _msend_cb;
-      CCMI_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
-      CCMI_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
+      CM_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
+      CM_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
 
       CollHeaderData           _mdata;
       ConnectionManager::ConnectionManager     * _connmgr;
@@ -191,11 +191,11 @@ namespace CCMI
 	_pipelinewidth = pwidth;
       }
 
-      inline CCMI_Request_t * getRecvRequest ()
+      inline CM_Request_t * getRecvRequest ()
       {
         return & _recv_request;
       }
-      inline CCMI_Request_t * getSendRequest ()
+      inline CM_Request_t * getSendRequest ()
       {
         return & _send_request;
       }

@@ -15,14 +15,12 @@
 #define __ll_topology_h__
 
 #include "cm_types.h"
-#include "ll_collectives_base.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#if 0 // defined in ll_collectives_base
   /// \brief The various types a Topology can be
   typedef enum {
     LL_EMPTY_TOPOLOGY = 0,  ///< topology represents no (zero) ranks
@@ -34,10 +32,8 @@ extern "C"
     LL_TOPOLOGY_COUNT
   } LL_TopologyType_t;
 
-
-#endif
-
   typedef CMQuad LL_Topology_t[2];
+
   /// \brief default constructor (LL_EMPTY_TOPOLOGY)
   ///
   /// \param[out] topo	Opaque memory for topology

@@ -420,7 +420,7 @@ void  CCMI::Executor::AllreduceState::setupReceives(unsigned infoRequired)
 
   /// \todo maybe one too many mallocs?  for the final non-combine receive buf?
   unsigned allocationNewSize =
-  ((_numSrcPes * numRequests) * sizeof(CCMI_Request_t)) +         // _recvReq
+  ((_numSrcPes * numRequests) * sizeof(CM_Request_t)) +         // _recvReq
   ((_numSrcPes * numRequests) * (sizeof(RecvCallbackData) + 4)) + // _recvClientData (padded to 16 bytes)
   (_numSrcPes * alignedBytes) +                                   // _bufs
   (((_root == -1) | (_root == (int)_myRank))? 0 : alignedBytes);  // We need a temp buffer on non-root nodes
@@ -462,7 +462,7 @@ void  CCMI::Executor::AllreduceState::setupReceives(unsigned infoRequired)
   {
     // See if the current allocation supports the buffer size.  If not, adjust buffer size.
     unsigned maxAllocationSize =
-    ((_numSrcPes * numRequests) * sizeof(CCMI_Request_t)) +         // _recvReq
+    ((_numSrcPes * numRequests) * sizeof(CM_Request_t)) +         // _recvReq
     ((_numSrcPes * numRequests) * (sizeof(RecvCallbackData) + 4)) + // _recvClientData (padded to 16 bytes)
     (_numSrcPes * _sizeOfBuffers) +                                   // _bufs
     (((_root == -1) | (_root == (int)_myRank))? 0 : _sizeOfBuffers);  // We need a temp buffer on non-root nodes
@@ -471,9 +471,9 @@ void  CCMI::Executor::AllreduceState::setupReceives(unsigned infoRequired)
       _sizeOfBuffers = alignedBytes;
   }
 
-  _recvReq = (CCMI_Request_t *) _receiveAllocation;
+  _recvReq = (CM_Request_t *) _receiveAllocation;
 
-  _recvClientData = (RecvCallbackData *) ((char*)_recvReq + ((_numSrcPes * numRequests) * sizeof(CCMI_Request_t)));
+  _recvClientData = (RecvCallbackData *) ((char*)_recvReq + ((_numSrcPes * numRequests) * sizeof(CM_Request_t)));
 
   _bufs = (char *) _recvClientData + ((_numSrcPes * numRequests) * (sizeof(RecvCallbackData) + 4));
 
@@ -514,7 +514,7 @@ void  CCMI::Executor::AllreduceState::setupReceives(unsigned infoRequired)
     {
       for(unsigned scount = 0; scount < _phaseVec[p].numSrcPes; scount ++)
       {
-        CCMI_Request_t *request = getRecvReq() + nextRecvData;
+        CM_Request_t *request = getRecvReq() + nextRecvData;
         RecvCallbackData *rdata = getRecvClient(nextRecvData);
         rdata->allreduce        = _executor;
         rdata->phase            = p;

@@ -32,17 +32,15 @@ namespace CCMI
 
 
     #ifndef __ccmi_recv_multicast_callback_defined__ // may be pre-defined in the adaptor
-    typedef CCMI_Request_t * (*CCMI_RecvMulticast_t) (const CMQuad  * info,
+    typedef CM_Request_t * (*CCMI_RecvMulticast_t) (const CMQuad  * info,
                                             unsigned          count,
                                             unsigned          peer,
                                             unsigned          sndlen,
-                                            unsigned          conn_id,
-                                            void            * arg,
+                                            void            * clientdata,
                                             unsigned        * rcvlen,
                                             char           ** rcvbuf,
-                                            unsigned        * pipewidth,
                                             CM_Callback_t * cb_done);
-    typedef CCMI_Request_t * (*CCMI_OldRecvMulticast_t) (const CMQuad  * info,
+    typedef CM_Request_t * (*LL_OldRecvMulticast_t) (const CMQuad  * info,
                                             unsigned          count,
                                             unsigned          peer,
                                             unsigned          sndlen,
@@ -58,7 +56,7 @@ namespace CCMI
     {
       // This MUST be kept identical to LL_Multicast_t!
       void              * registration;
-      CCMI_Request_t    * request;
+      CM_Request_t    * request;
       size_t              req_size;
       CM_Callback_t     cb_done;
       unsigned            connection_id;
@@ -87,7 +85,7 @@ namespace CCMI
         count          = 0;
       }
 
-      void setRequestBuffer (CCMI_Request_t *request, size_t req_size)
+      void setRequestBuffer (CM_Request_t *request, size_t req_size)
       {
         this->request = request;
         this->req_size = req_size;
@@ -143,7 +141,7 @@ namespace CCMI
     struct CCMI_Multicombine_t
     {
       void              * registration;
-      CCMI_Request_t    * request;
+      CM_Request_t    * request;
       size_t              req_size;
       CM_Callback_t     cb_done;
       unsigned            connection_id;
@@ -180,7 +178,7 @@ namespace CCMI
 #endif
       }
 
-      void setRequestBuffer(CCMI_Request_t *request, size_t req_size)
+      void setRequestBuffer(CM_Request_t *request, size_t req_size)
       {
         this->request = request;
         this->req_size = req_size;
@@ -244,7 +242,7 @@ namespace CCMI
     struct CCMI_Multisync_t
     {
       void              * registration;
-      CCMI_Request_t    * request;
+      CM_Request_t    * request;
       size_t              req_size;
       CM_Callback_t     cb_done;
       unsigned            connection_id;
@@ -262,7 +260,7 @@ namespace CCMI
         participants = NULL;
       }
 
-      void setRequestBuffer (CCMI_Request_t *request, size_t req_size)
+      void setRequestBuffer (CM_Request_t *request, size_t req_size)
       {
         this->request = request;
         this->req_size = req_size;
@@ -444,7 +442,7 @@ namespace CCMI
     /// \brief Callback function for unexpected async many to many
     /// operations
     ///
-    typedef CCMI_Request_t * (*manytomany_recv) (unsigned          conn_id,
+    typedef CM_Request_t * (*manytomany_recv) (unsigned          conn_id,
                                                  void            * arg,
                                                  char           ** rcvbuf,
                                                  unsigned       ** rcvdispls,
@@ -462,7 +460,7 @@ namespace CCMI
     struct CCMI_OldMulticast_t
     {
       void              * registration;
-      CCMI_Request_t    * request;
+      CM_Request_t    * request;
       CM_Callback_t     cb_done;
       CCMI_Consistency    consistency;
       unsigned            connection_id;
@@ -495,7 +493,7 @@ namespace CCMI
         flags          = CCMI_FLAGS_UNSET;
       }
 
-      void setRequestBuffer (CCMI_Request_t *request)
+      void setRequestBuffer (CM_Request_t *request)
       {
         this->request = request;
       }
@@ -554,7 +552,7 @@ namespace CCMI
     struct CCMI_OldMulticastRecv_t
     {
       void              * registration;
-      CCMI_Request_t    * request;
+      CM_Request_t    * request;
       CM_Callback_t     cb_done;
       unsigned            connection_id;
       unsigned            bytes;
@@ -576,7 +574,7 @@ namespace CCMI
         dt             = CM_UNDEFINED_DT;
       }
 
-      void setRequestBuffer (CCMI_Request_t *request)
+      void setRequestBuffer (CM_Request_t *request)
       {
         this->request = request;
       }
@@ -626,7 +624,7 @@ namespace CCMI
       ///  \brief the arguments for async mode of operation where no
       ///  receive is posted
       ///
-      CCMI_OldRecvMulticast_t   _cb_async_head;
+      LL_OldRecvMulticast_t   _cb_async_head;
       void                 * _async_arg;
 
     public:
@@ -653,7 +651,7 @@ namespace CCMI
       }
 
       /// Set the async head packet callback
-      inline void setCallback (CCMI_OldRecvMulticast_t cb_recv, void *arg)
+      inline void setCallback (LL_OldRecvMulticast_t cb_recv, void *arg)
       {
         TRACE_INIT((stderr, "<%#.8X>CCMI::MultiSend::MulticastInterface::setCallback() %#.8X %#.8X\n", (int)this,(int)cb_recv,(int)arg));
         _cb_async_head    =  cb_recv;
@@ -677,7 +675,7 @@ namespace CCMI
       /// \param dtype   : datatype in case of reduction ( for pre-processing )
       ///
 
-      virtual unsigned  send  (CCMI_Request_t         * request,
+      virtual unsigned  send  (CM_Request_t         * request,
                                const CM_Callback_t  * cb_done,
                                CCMI_Consistency         consistency,
                                const CMQuad         * info,
@@ -708,7 +706,7 @@ namespace CCMI
 
       ///
 
-      virtual unsigned postRecv (CCMI_Request_t         * request,
+      virtual unsigned postRecv (CM_Request_t         * request,
                                  const CM_Callback_t  * cb_done,
                                  unsigned                 conn_id,
                                  char                   * buf,
@@ -788,7 +786,7 @@ namespace CCMI
       /// \param nranks  : Number of destinations
       ///
 
-      virtual void send  (CCMI_Request_t         * request,
+      virtual void send  (CM_Request_t         * request,
                           const CM_Callback_t  * cb_done,
                           unsigned                 connid,
                           unsigned                 rcvindex,
@@ -813,7 +811,7 @@ namespace CCMI
       /// \param nranks  : number of ranks
       ///
 
-      virtual void postRecv (CCMI_Request_t         * request,
+      virtual void postRecv (CM_Request_t         * request,
                              const CM_Callback_t  * cb_done,
                              unsigned                 connid,
                              char                   * buf,

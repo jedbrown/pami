@@ -27,7 +27,7 @@ namespace CCMI
       namespace Tree
       {
 
-          unsigned SmpTreeAllreduce::restart(CCMI_CollectiveRequest_t  *request,
+          unsigned SmpTreeAllreduce::restart(CM_CollectiveRequest_t  *request,
                                        CM_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
@@ -38,7 +38,7 @@ namespace CCMI
                                        size_t                      root) 
           {
 	    struct _req {
-		CCMI_Request_t _msg;
+		CM_Request_t _msg;
 		LL::Topology _root;
 		LL::PipeWorkQueue _swq;
 		LL::PipeWorkQueue _rwq;

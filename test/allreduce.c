@@ -13,7 +13,7 @@
 #define NITERBW    10
 #define CUTOFF     65536
 
-HL_Op op_array[] =
+CM_Op op_array[] =
     {
 	LL_MAX,
 	LL_MIN,
@@ -46,7 +46,7 @@ enum opNum
     };
 int op_count = OP_COUNT;
 
-HL_Dt dt_array[] =
+CM_Dt dt_array[] =
     {
 	LL_SIGNED_CHAR,
 	LL_UNSIGNED_CHAR,
@@ -165,10 +165,10 @@ unsigned elemsize_array[] =
 void cb_barrier (void * clientdata);
 void cb_allreduce (void * clientdata);
 // Barrier Data
-HL_CollectiveProtocol_t _g_barrier;
+CM_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-HL_CollectiveRequest_t  _g_barrier_request;
-HL_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
+CM_CollectiveRequest_t  _g_barrier_request;
+CM_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
@@ -180,10 +180,10 @@ hl_barrier_t  _xfer_barrier =
     };
 
 // Allreduce
-HL_CollectiveProtocol_t _g_allreduce;
+CM_CollectiveProtocol_t _g_allreduce;
 volatile unsigned       _g_allreduce_active;
-HL_CollectiveRequest_t  _g_allreduce_request;
-HL_Callback_t _cb_allreduce   = {(void (*)(void*,LL_Error_t*))cb_allreduce,
+CM_CollectiveRequest_t  _g_allreduce_request;
+CM_Callback_t _cb_allreduce   = {(void (*)(void*,LL_Error_t*))cb_allreduce,
 			       (void *) &_g_allreduce_active };
 hl_allreduce_t  _xfer_allreduce =
     {
@@ -195,8 +195,8 @@ hl_allreduce_t  _xfer_allreduce =
 	NULL,
 	NULL,
 	0,
-	(HL_Dt)-1,
-	(HL_Op)-1
+	(CM_Dt)-1,
+	(CM_Op)-1
     };
 
 static double timer()
@@ -259,8 +259,8 @@ void _barrier ()
 void _allreduce (char            * src,
 		 char            * dst,
 		 unsigned          count,
-		 LL_Dt             dt,
-		 LL_Op             op)
+		 CM_Dt             dt,
+		 CM_Op             op)
 {
     _g_allreduce_active++;
     _xfer_allreduce.src   = src;

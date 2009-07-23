@@ -43,7 +43,7 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        CompositeT (CCMI_CollectiveRequest_t  * req,
+        CompositeT (CM_CollectiveRequest_t  * req,
                     MAP        * map,
                     CCMI::ConnectionManager::ConnectionManager *cmgr,
                     CM_Callback_t             cb_done,

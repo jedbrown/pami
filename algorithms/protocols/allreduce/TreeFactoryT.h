@@ -68,7 +68,7 @@ namespace CCMI
             return( geometry->isGlobalContext() && geometry->isTree());
           }
 
-          virtual CCMI::Executor::Composite * generate(CCMI_CollectiveRequest_t * request,
+          virtual CCMI::Executor::Composite * generate(CM_CollectiveRequest_t * request,
                                                        CM_Callback_t            cb_done,
                                                        CCMI_Consistency           consistency,
                                                        Geometry                 * geometry,

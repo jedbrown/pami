@@ -2,9 +2,9 @@
 #include "common.h"
 #include "barrier.h"
 
-CCMI_CollectiveProtocol_t              asyncbcast_reg;
+CM_CollectiveProtocol_t              asyncbcast_reg;
 CCMI_Broadcast_Configuration_t         asyncbcast_conf;
-CCMI_CollectiveRequest_t               asyncbcast_request;
+CM_CollectiveRequest_t               asyncbcast_request;
 
 inline void asyncbcast_advance (unsigned * srcbuf, unsigned src_count, unsigned root)
 {

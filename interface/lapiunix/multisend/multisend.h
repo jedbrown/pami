@@ -35,7 +35,7 @@ extern "C"
 
   
   
-  typedef CCMI_Request_t * (*CCMI_RecvMultiSend) (const CMQuad    * info,
+  typedef CM_Request_t * (*CCMI_RecvMultiSend) (const CMQuad    * info,
 						  unsigned            count,
 						  unsigned            peer,
 						  unsigned            sndlen,
@@ -53,7 +53,7 @@ extern "C"
   
   
   int MultiSend_multicast (CCMI_Register_t   * registration,
-			   CCMI_Request_t    * request,
+			   CM_Request_t    * request,
 			   CM_Callback_t     cb_done,
 			   CCMI_Consistency    consistency,
 			   unsigned            connection_id,

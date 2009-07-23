@@ -115,7 +115,7 @@ namespace CCMI
           minterface->setCallback (cb_head, this);
         }
 
-        static CCMI_Request_t *   cb_head   (const CMQuad    * info,
+        static CM_Request_t *   cb_head   (const CMQuad    * info,
                                              unsigned          count,
                                              unsigned          peer,
                                              unsigned          sndlen,

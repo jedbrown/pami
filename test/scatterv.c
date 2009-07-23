@@ -13,10 +13,10 @@ void cb_barrier (void * clientdata);
 void cb_scatterv (void * clientdata);
 
 // Barrier Data
-HL_CollectiveProtocol_t _g_barrier;
+CM_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-HL_CollectiveRequest_t  _g_barrier_request;
-HL_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
+CM_CollectiveRequest_t  _g_barrier_request;
+CM_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
@@ -28,10 +28,10 @@ hl_barrier_t  _xfer_barrier =
     };
 
 // Scatterv
-HL_CollectiveProtocol_t _g_scatterv;
+CM_CollectiveProtocol_t _g_scatterv;
 volatile unsigned       _g_scatterv_active;
-HL_CollectiveRequest_t  _g_scatterv_request;
-HL_Callback_t _cb_scatterv   = {(void (*)(void*,LL_Error_t*))cb_scatterv,
+CM_CollectiveRequest_t  _g_scatterv_request;
+CM_Callback_t _cb_scatterv   = {(void (*)(void*,LL_Error_t*))cb_scatterv,
 			       (void *) &_g_scatterv_active };
 hl_scatterv_t  _xfer_scatterv =
     {

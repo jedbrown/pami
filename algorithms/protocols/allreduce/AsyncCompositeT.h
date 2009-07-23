@@ -45,7 +45,7 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        AsyncCompositeT (CCMI_CollectiveRequest_t  * req,
+        AsyncCompositeT (CM_CollectiveRequest_t  * req,
                          MAP             * map,
                          CCMI::ConnectionManager::ConnectionManager *cmgr,
                          CM_Callback_t             cb_done,

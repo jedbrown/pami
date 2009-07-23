@@ -2,12 +2,12 @@
 #include "common.h"
 #include "barrier.h"
 
-CCMI_CollectiveProtocol_t              onesidedbcast_reg;
+CM_CollectiveProtocol_t              onesidedbcast_reg;
 CCMI_Broadcast_Configuration_t         onesidedbcast_conf;
-CCMI_CollectiveRequest_t               onesidedbcast_request;
+CM_CollectiveRequest_t               onesidedbcast_request;
 int                                    nreceived_countdown=0;
 unsigned                               narrived=0;
-CCMI_CollectiveRequest_t              *recvRequests=NULL;
+CM_CollectiveRequest_t              *recvRequests=NULL;
 
 void recv_callback(void* cd, CM_Error_t *err)
 {
@@ -102,8 +102,8 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
     exit(0);
   }
 
-  assert((unsigned)(repetitions * sizeof(CCMI_CollectiveRequest_t)) > 0);
-  recvRequests = (CCMI_CollectiveRequest_t *)malloc(repetitions * sizeof(CCMI_CollectiveRequest_t));
+  assert((unsigned)(repetitions * sizeof(CM_CollectiveRequest_t)) > 0);
+  recvRequests = (CM_CollectiveRequest_t *)malloc(repetitions * sizeof(CM_CollectiveRequest_t));
   assert(recvRequests);
   return;
 }

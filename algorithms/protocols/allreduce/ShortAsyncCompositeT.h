@@ -36,7 +36,7 @@ namespace CCMI
         unsigned _my_coord   [5]; //T,X,Y,Z,T
         unsigned _rect_start [5]; //T,X,Y,Z,T
       public:
-        ShortAsyncCompositeT (CCMI_CollectiveRequest_t  * req,
+        ShortAsyncCompositeT (CM_CollectiveRequest_t  * req,
                               MAP             * map,
                               CCMI::ConnectionManager::ConnectionManager *cmgr,
                               CM_Callback_t             cb_done,

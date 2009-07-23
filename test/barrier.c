@@ -6,9 +6,9 @@
 #include <sys/time.h>
 #include "../interface/hl_collectives.h"
 
-HL_CollectiveProtocol_t _g_barrier;
+CM_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-HL_CollectiveRequest_t  _g_barrier_request;
+CM_CollectiveRequest_t  _g_barrier_request;
 
 static double timer()
 {
@@ -35,7 +35,7 @@ void init__barriers ()
 }
 
 
-HL_Callback_t _cb = {(void (*)(void*,LL_Error_t*))cb_barrier, (void *) &_g_barrier_active };
+CM_Callback_t _cb = {(void (*)(void*,LL_Error_t*))cb_barrier, (void *) &_g_barrier_active };
 hl_barrier_t  _xfer =
     {
 	HL_XFER_BARRIER,

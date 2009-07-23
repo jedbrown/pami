@@ -22,9 +22,9 @@ int mysleep(int seconds)
   return j;
 }
 
-CCMI_CollectiveProtocol_t              bar_reg __attribute__((__aligned__(32))), local_bar_reg __attribute__((__aligned__(32)));
+CM_CollectiveProtocol_t              bar_reg __attribute__((__aligned__(32))), local_bar_reg __attribute__((__aligned__(32)));
 CCMI_Barrier_Configuration_t           configuration;
-CCMI_CollectiveRequest_t               request;
+CM_CollectiveRequest_t               request;
 CM_Callback_t                        cb_done;
 CCMI_Consistency                       consistency;
 CCMI_Geometry_t                        geometry;
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
     fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 #endif
 
-  CCMI_CollectiveProtocol_t             * bar_p = & bar_reg, * local_bar_p = & local_bar_reg;
+  CM_CollectiveProtocol_t             * bar_p = & bar_reg, * local_bar_p = & local_bar_reg;
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
                                                            &bar_p, 1, 
                                                            &bar_p, 1, 

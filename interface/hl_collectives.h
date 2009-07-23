@@ -216,26 +216,26 @@ extern "C"
 					  const unsigned     sndlen,
 					  unsigned         * rcvlen,
 					  char            ** rcvbuf,
-					  HL_Callback_t    * const cb_info);
+					  CM_Callback_t    * const cb_info);
 
     typedef void * (*HL_RecvAMScatter) (unsigned           root,
 					unsigned           comm,
 					const unsigned     sndlen,
 					unsigned         * rcvlen,
 					char            ** rcvbuf,
-					HL_Callback_t    * const cb_info);
+					CM_Callback_t    * const cb_info);
     typedef void * (*HL_RecvAMGather) (unsigned           root,
 				       unsigned           comm,
 				       const unsigned     sndlen,
 				       unsigned         * rcvlen,
 				       char            ** rcvbuf,
-				       HL_Callback_t    * const cb_info);
+				       CM_Callback_t    * const cb_info);
     typedef void * (*HL_RecvAMReduce) (unsigned           root,
 				       unsigned           comm,
 				       const unsigned     sndlen,
 				       unsigned         * rcvlen,
 				       char            ** rcvbuf,
-				       HL_Callback_t    * const cb_info);
+				       CM_Callback_t    * const cb_info);
 
     /* ************************************************************************* */
     /* **************    Configuration Objects  ******************************** */
@@ -372,7 +372,7 @@ extern "C"
     int HL_Collectives_initialize(int *argc, char***argv, HL_mapIdToGeometry cb_map);
     int HL_Collectives_finalize();
     /* Rename  to CollectiveRegistration_T , doxygen with Storage variable storage, others*/
-    int HL_register(HL_CollectiveProtocol_t      *registration,
+    int HL_register(CM_CollectiveProtocol_t      *registration,
                     HL_CollectiveConfiguration_t *HL_CollectiveConfiguration_t,
 		    int                           key);
 
@@ -425,18 +425,18 @@ extern "C"
      *                           pointers will be set to NULL for invalid protocols on
      *                           this geometry.
      * \param[in/out] num        number of protocols in the list in/requested, out/actual
-     * \retval        HL_SUCCESS The protocol will run on the current geometry
+     * \retval        CM_SUCCESS The protocol will run on the current geometry
      * \retval        ?????      The protocol does not support the current geometry
      */
     int HL_Geometry_algorithm (HL_Geometry_t            *geometry,
-			       HL_CollectiveProtocol_t **protocols,
+			       CM_CollectiveProtocol_t **protocols,
 			       int                      *num);
 
     /**
      * \brief Free any memory allocated inside of a geometry. Mostly
      * the alltoall permutation array right now.
      * \param[in] geometry The geometry object to free
-     * \retval HL_SUCCESS Memory free didn't fail
+     * \retval CM_SUCCESS Memory free didn't fail
      */
     int HL_Geometry_finalize(HL_Geometry_t *geometry);
 
@@ -473,9 +473,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
         char                     * sndbuf;
         unsigned                 * sndlens;
@@ -517,9 +517,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
         char                     * sndbuf;
         unsigned                 * sndlens;
@@ -559,16 +559,16 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t            xfer_type;
-        HL_CollectiveProtocol_t * registration;
-        HL_CollectiveRequest_t  * request;
-        HL_Callback_t             cb_done;
+        CM_CollectiveProtocol_t * registration;
+        CM_CollectiveRequest_t  * request;
+        CM_Callback_t             cb_done;
         HL_Geometry_t           * geometry;
         int                       root;
         char                    * sbuffer;
         char                    * rbuffer;
         unsigned                  count;
-        HL_Dt                     dt;
-        HL_Op                     op;
+        CM_Dt                     dt;
+        CM_Op                     op;
     }hl_reduce_t;
 
     /**
@@ -596,9 +596,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
         unsigned                   root;
         char                     * src;
@@ -630,9 +630,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
         char                     * src;
         char                     * dst;
@@ -663,9 +663,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
         char                     * src;
         char                     * dst;
@@ -696,9 +696,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
         unsigned                   root;
         char                     * src;
@@ -730,9 +730,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
         unsigned                   root;
         char                     * src;
@@ -767,15 +767,15 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t            xfer_type;
-        HL_CollectiveProtocol_t * registration;
-        HL_CollectiveRequest_t  * request;
-        HL_Callback_t             cb_done;
+        CM_CollectiveProtocol_t * registration;
+        CM_CollectiveRequest_t  * request;
+        CM_Callback_t             cb_done;
         HL_Geometry_t           * geometry;
         char                    * src;
         char                    * dst;
         unsigned                  count;
-        HL_Dt                     dt;
-        HL_Op                     op;
+        CM_Dt                     dt;
+        CM_Op                     op;
     }hl_allreduce_t;
 
 
@@ -794,9 +794,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t            xfer_type;
-        HL_CollectiveProtocol_t * registration;
-        HL_CollectiveRequest_t  * request;
-        HL_Callback_t             cb_done;
+        CM_CollectiveProtocol_t * registration;
+        CM_CollectiveRequest_t  * request;
+        CM_Callback_t             cb_done;
         HL_Geometry_t           * geometry;
     }hl_barrier_t;
 
@@ -832,9 +832,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
 	HL_AMHeader_t            * header;
         char                     * src;
@@ -868,9 +868,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
 	HL_AMHeader_t            * headers;
         char                     * src;
@@ -908,9 +908,9 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
 	HL_AMHeader_t            * headers;
         char                     * src;
@@ -949,15 +949,15 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        HL_CollectiveProtocol_t  * registration;
-        HL_CollectiveRequest_t   * request;
-        HL_Callback_t              cb_done;
+        CM_CollectiveProtocol_t  * registration;
+        CM_CollectiveRequest_t   * request;
+        CM_Callback_t              cb_done;
         HL_Geometry_t            * geometry;
 	HL_AMHeader_t            * headers;
         char                     * src;
 	unsigned                   count;
-	HL_Dt                      dt;
-        HL_Op                      op;
+	CM_Dt                      dt;
+        CM_Op                      op;
     }hl_amreduce_t;
 
 

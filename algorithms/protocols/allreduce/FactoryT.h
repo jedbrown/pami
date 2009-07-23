@@ -65,7 +65,7 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite * generate
-        (CCMI_CollectiveRequest_t * request,
+        (CM_CollectiveRequest_t * request,
          CM_Callback_t            cb_done,
          CCMI_Consistency           consistency,
          Geometry                 * geometry,

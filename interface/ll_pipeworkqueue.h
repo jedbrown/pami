@@ -14,16 +14,14 @@
 #define __ll_pipeworkqueue_h__
 
 #include "cm_types.h"
-#include "ll_collectives_base.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#if 0 // defined in ll_collectives_base
   typedef CMQuad LL_PipeWorkQueue_t[4];
-#endif
+
   ///
   /// \brief Configure for Shared Circular Buffer variety.
   ///

@@ -39,11 +39,11 @@ extern "C"
     CCMI_Result result;
   } CM_Error_t;
 
-  typedef CMQuad CCMI_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
+  typedef CMQuad CM_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
 
   /*  increased to 8196 - JEB */
   /*  ...doubled again - BRC  */
-  typedef CMQuad CCMI_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
+  typedef CMQuad CM_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
 
   typedef struct CM_Callback_t
   {
@@ -248,7 +248,7 @@ extern "C"
    * \see CCMI_Barrier
    */
 
-  int CCMI_Barrier_register (CCMI_CollectiveProtocol_t    * registration,
+  int CCMI_Barrier_register (CM_CollectiveProtocol_t    * registration,
                              CCMI_Barrier_Configuration_t * configuration);
 
 
@@ -278,11 +278,11 @@ extern "C"
                                 unsigned                     id,
                                 unsigned                   * ranks,
                                 unsigned                     count,
-                                CCMI_CollectiveProtocol_t ** protocols,
+                                CM_CollectiveProtocol_t ** protocols,
                                 unsigned                     nprotocols,
-                                CCMI_CollectiveProtocol_t ** localprotocols,
+                                CM_CollectiveProtocol_t ** localprotocols,
                                 unsigned                     nlocalprotocols,
-                                CCMI_CollectiveRequest_t   * request,
+                                CM_CollectiveRequest_t   * request,
                                 unsigned                     numcolors,
                                 unsigned                     globalcontext);
 
@@ -298,7 +298,7 @@ extern "C"
    */
 
   int CCMI_Geometry_analyze (CCMI_Geometry_t *geometry,
-                             CCMI_CollectiveProtocol_t *protocol);
+                             CM_CollectiveProtocol_t *protocol);
 
   /**
    * \brief Free any memory allocated inside of a geometry. Mostly
@@ -402,7 +402,7 @@ extern "C"
    * \see CCMI_Broadcast
    */
 
-  int CCMI_Broadcast_register (CCMI_CollectiveProtocol_t      * registration,
+  int CCMI_Broadcast_register (CM_CollectiveProtocol_t      * registration,
                                CCMI_Broadcast_Configuration_t * configuration);
 
   /**
@@ -431,8 +431,8 @@ extern "C"
    * \todo doxygen
    */
 
-  int CCMI_Broadcast (CCMI_CollectiveProtocol_t  * registration,
-                      CCMI_CollectiveRequest_t   * request,
+  int CCMI_Broadcast (CM_CollectiveProtocol_t  * registration,
+                      CM_CollectiveRequest_t   * request,
                       CM_Callback_t    cb_done,
                       CCMI_Consistency   consistency,
                       CCMI_Geometry_t  * geometry,
@@ -487,7 +487,7 @@ extern "C"
    * \see CCMI_Allreduce
    */
 
-  int CCMI_Allreduce_register (CCMI_CollectiveProtocol_t      * registration,
+  int CCMI_Allreduce_register (CM_CollectiveProtocol_t      * registration,
                                CCMI_Allreduce_Configuration_t * configuration);
 
 
@@ -518,8 +518,8 @@ extern "C"
    *
    * \todo doxygen
    */
-  int CCMI_Allreduce (CCMI_CollectiveProtocol_t * registration,
-                      CCMI_CollectiveRequest_t  * request,
+  int CCMI_Allreduce (CM_CollectiveProtocol_t * registration,
+                      CM_CollectiveRequest_t  * request,
                       CM_Callback_t   cb_done,
                       CCMI_Consistency  consistency,
                       CCMI_Geometry_t * geometry,

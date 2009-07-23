@@ -120,7 +120,7 @@ namespace CCMI
             }
           }
 
-          virtual unsigned restart(CCMI_CollectiveRequest_t  *request,
+          virtual unsigned restart(CM_CollectiveRequest_t  *request,
                                        CM_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,

@@ -13,9 +13,9 @@
 
 #include "common.h"
 
-CCMI_CollectiveProtocol_t              allreduce_reg;
+CM_CollectiveProtocol_t              allreduce_reg;
 CCMI_Allreduce_Configuration_t         allreduce_conf;
-CCMI_CollectiveRequest_t               allreduce_request;
+CM_CollectiveRequest_t               allreduce_request;
 
 inline void allreduce_advance (unsigned * srcbuf, unsigned * dstbuf, unsigned src_count)
 {

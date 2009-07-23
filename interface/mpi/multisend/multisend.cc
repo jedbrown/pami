@@ -44,7 +44,7 @@ extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration,
 }
 
 extern "C" int MultiSend_multicast(CCMI_Register_t   * registration,
-				   CCMI_Request_t    * request,
+				   CM_Request_t    * request,
 				   CM_Callback_t     cb_done,
 				   CCMI_Consistency    consistency,
 				   unsigned            connection_id,

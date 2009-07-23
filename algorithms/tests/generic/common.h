@@ -54,9 +54,9 @@ int repetitions = 50; // default performance loop
 
 char *argv0; // filename
 
-CCMI_CollectiveProtocol_t              barrier_reg __attribute__((__aligned__(32))), local_barrier_reg __attribute__((__aligned__(32)));
+CM_CollectiveProtocol_t              barrier_reg __attribute__((__aligned__(32))), local_barrier_reg __attribute__((__aligned__(32)));
 CCMI_Barrier_Configuration_t           configuration;
-CCMI_CollectiveRequest_t               request;
+CM_CollectiveRequest_t               request;
 CM_Callback_t                        common_done;
 CCMI_Consistency                       consistency;
 CCMI_Geometry_t                        geometry;
@@ -221,7 +221,7 @@ void initialize_common(CCMI_Barrier_Protocol barrier_protocol,
   if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_barrier_reg, &configuration)) != CM_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 
-  CCMI_CollectiveProtocol_t  * bar_p = & barrier_reg, * local_bar_p = & local_barrier_reg;
+  CM_CollectiveProtocol_t  * bar_p = & barrier_reg, * local_bar_p = & local_barrier_reg;
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
                                                            &bar_p, 1, 
                                                            &local_bar_p, 1, 
