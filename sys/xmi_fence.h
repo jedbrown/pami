@@ -97,5 +97,35 @@ xmi_result_t XMI_Fence_task (xmi_context_t          context,
                              void                 * cookie,
                              size_t                 task);
 
+/**
+ * \brief Clean up local resources to a task in preparation for
+ *        task shutdown or checkpoint
+ *
+ *        It is the user of this API's responsibility to ensure
+ *        that all communication has been quiesced to and from 
+ *        the destination via a fence call and synchronization
+ *       
+ *
+ * \param[in] context    XMI application context
+ * \param[in] dest       Array of destinations to close connections to
+ * \param[in] count      Number of destinations in the array dest
+ *
+ * \ingroup dynamictasks
+ */
+
+xmi_result_t XMI_Purge_totask(xmi_context_t context, size_t *dest, size_t count);
+
+/**
+ * \brief Setup local resources to a task in preparation for
+ *        task restart or creation
+ *
+ *
+ * \param[in] context    XMI application context
+ * \param[in] dest       Array of destinations to close connections to
+ * \param[in] count      Number of destinations in the array dest
+ *
+ * \ingroup dynamictasks
+ */
+xmi_result_t XMI_Resume_totask(xmi_context_t context, size_t *dest, size_t count);
 
 #endif
