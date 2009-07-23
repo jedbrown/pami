@@ -4,15 +4,15 @@
 // Includes for CCMI
 #include "collectives/interface/ccmi_internal.h"
 #include "collectives/util/ccmi_util.h"
-#include "collectives/interface/genericmpi/multisend/multisend_impl.h"
+#include "collectives/interface/mpi/multisend/multisend_impl.h"
 #include "collectives/interface/Geometry.h"
 #include "collectives/util/logging/LogMgr.h"
 #include "collectives/util/ccmi_debug.h"
 #include "collectives/algorithms/protocols/barrier/barrier_impl.h"
 #include "collectives/algorithms/protocols/allreduce/sync_impl.h"
 #include "collectives/algorithms/protocols/allreduce/async_impl.h"
-#include "collectives/interface/genericmpi/api/mapping_impl.h" // ? why
-#include "collectives/interface/genericmpi/GenericComm.h"
+#include "collectives/interface/mpi/api/mapping_impl.h" // ? why
+#include "collectives/interface/mpi/GenericComm.h"
 #include "collectives/algorithms/protocols/tspcoll/NBColl.h"
 #include "collectives/algorithms/protocols/broadcast/async_impl.h"
 #include "collectives/algorithms/protocols/alltoall/Alltoall.h"

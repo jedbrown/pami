@@ -18,7 +18,7 @@
 #include <assert.h>
 
 #include "collectives/interface/MultiSendOld.h"
-#include "collectives/interface/genericmpi/Adaptor.h"
+#include "collectives/interface/mpi/Adaptor.h"
 #include "Table.h"
 
 

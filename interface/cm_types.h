@@ -16,8 +16,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if TARGET==genericmpi
-#include "collectives/interface/genericmpi/cm_impl.h"
+#if TARGET==mpi
+#include "collectives/interface/mpi/cm_impl.h"
 #elif TARGET==lapiunix
 #include "collectives/interface/lapiunix/cm_impl.h"
 #else

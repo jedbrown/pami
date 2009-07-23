@@ -11,8 +11,8 @@
 /* ************************************************************************* */
 
 #include "collectives/interface/Communicator.h"
-#include "collectives/interface/genericmpi/GenericComm.h"
-#include "collectives/interface/genericmpi/Adaptor.h"
+#include "collectives/interface/mpi/GenericComm.h"
+#include "collectives/interface/mpi/Adaptor.h"
 #include "collectives/algorithms/protocols/tspcoll/Barrier.h"
 #include "collectives/algorithms/protocols/tspcoll/Allgather.h"
 #include "collectives/algorithms/protocols/tspcoll/Allgatherv.h"

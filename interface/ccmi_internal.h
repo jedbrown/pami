@@ -19,8 +19,8 @@
 ///
 /// \brief CCMI Adaptor dependent definitions
 ///
-#if TARGET==genericmpi
-#include "collectives/interface/genericmpi/adaptor_pre.h"
+#if TARGET==mpi
+#include "collectives/interface/mpi/adaptor_pre.h"
 #elif TARGET==lapiunix
 #include "collectives/interface/lapiunix/adaptor_pre.h"
 #else

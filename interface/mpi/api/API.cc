@@ -1,12 +1,12 @@
-#include "collectives/interface/genericmpi/ccmi_collectives.h"
+#include "collectives/interface/mpi/ccmi_collectives.h"
 #include "collectives/interface/ccmi_internal.h"
 #include "collectives/util/ccmi_util.h"
-#include "collectives/interface/genericmpi/multisend/multisend_impl.h"
+#include "collectives/interface/mpi/multisend/multisend_impl.h"
 #include "collectives/interface/Geometry.h"
 #include "collectives/util/logging/LogMgr.h"
 #include "collectives/util/ccmi_debug.h"
 #include "collectives/algorithms/protocols/barrier/barrier_impl.h"
-#include "collectives/interface/genericmpi/api/mapping_impl.h" // ? why
+#include "collectives/interface/mpi/api/mapping_impl.h" // ? why
 
 CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr __attribute__((weak));
 CCMI::Adaptor::Adaptor  * _g_generic_adaptor;

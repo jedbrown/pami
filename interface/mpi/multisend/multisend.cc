@@ -27,8 +27,8 @@
 #include <assert.h>
 #include <string.h>
 #include "collectives/interface/ccmi_internal.h"
-#include "collectives/interface/genericmpi/multisend/multisend_impl.h"
-#include "collectives/interface/genericmpi/multisend/multisend.h"
+#include "collectives/interface/mpi/multisend/multisend_impl.h"
+#include "collectives/interface/mpi/multisend/multisend.h"
 
 extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration, 
 					     CCMI_RecvMultiSend   cb_recv, 

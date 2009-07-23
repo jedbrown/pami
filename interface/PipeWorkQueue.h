@@ -14,8 +14,8 @@
 #ifndef __ll_cpp_pipeworkqueue_h__
 #define __ll_cpp_pipeworkqueue_h__
 
-#if TARGET==genericmpi
-#include "collectives/interface/genericmpi/PipeWorkQueueImpl.h"
+#if TARGET==mpi
+#include "collectives/interface/mpi/PipeWorkQueueImpl.h"
 #elif TARGET==lapiunix
 #include "collectives/interface/lapiunix/PipeWorkQueueImpl.h"
 #else

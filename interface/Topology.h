@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "ll_topology.h"
-#if TARGET==genericmpi
-#include "collectives/interface/genericmpi/TopologyImpl.h"
+#if TARGET==mpi
+#include "collectives/interface/mpi/TopologyImpl.h"
 #elif TARGET==lapiunix
 #include "collectives/interface/lapiunix/TopologyImpl.h"
 #else
