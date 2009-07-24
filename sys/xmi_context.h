@@ -51,7 +51,7 @@ xmi_result_t XMI_Context_create (xmi_cookie_t         magic_cookie,
 /**
  * \brief Destroy an independent communication context
  *
- * \param[in] context 
+ * \param[in] context XMI communication context
  */
 xmi_result_t XMI_Context_destroy (xmi_context_t context);
 
@@ -71,58 +71,59 @@ xmi_result_t XMI_Context_post (xmi_context_t        context,
 
 
 /**
- * \brief Singular advance of the progress engine for a context
+ * \brief Advance the progress engine for a single communication context
  *
- * May complete zero, one, or more outbound transfers. May
- * invoke dispatch handlers for incoming transfers.
+ * May complete zero, one, or more outbound transfers. May invoke dispatch
+ * handlers for incoming transfers.
  *
- * \param[in] context XMI communication context
- */
-xmi_result_t XMI_Advance (xmi_context_t context);
-
-/**
- * \brief Multiple advance of the progress engine for a context
+ * This polling advance function will return after the first poll iteration
+ * that results in a processed event or if, no events are processed, after
+ * polling for the maximum number of iterations.
  *
- * May complete zero, one, or more outbound transfers. May
- * invoke dispatch handlers for incoming transfers.
+ * If the maximum poll count is zero the advance function will block and return
+ * only after an event is processed. This allows platform-specific
+ * optimizations to sleep, or unschedule, the thread until an event occurs.
+ * Example events include packet arrival and a context post from another
+ * thread.
  *
- * The polling advance function will return after the first poll iteration that
- * results in a processed event or if no events are processed after polling for
- * the maximum number of iterations.
+ * \warning This function is \b not \b threadsafe and the application must
+ *          ensure that only one thread advances a context at any time.
+ *
+ * \todo Define return code, event bitmask ?
  *
  * \param[in] context XMI communication context
  * \param[in] maximum Maximum number of internal poll iterations
  */
-xmi_result_t XMI_Advance_poll (xmi_context_t context, size_t maximum);
+xmi_result_t XMI_Advance (xmi_context_t context, size_t maximum);
 
 /**
- * \brief Blocking advance of the progress engine for a context
+ * \brief Advance the progress engine for multiple communication contexts
  *
- * May complete zero, one, or more outbound transfers. May
- * invoke dispatch handlers for incoming transfers.
+ * May complete zero, one, or more outbound transfers. May invoke dispatch
+ * handlers for incoming transfers.
  *
- * The blocking advance function will return after the first event processed.
- * This allows platform-specific optimizations to sleep, or unschedule, the
- * thread until an event occurs. Example events include packet arrival and
- * a context post from another thread.
+ * This polling advance function will return after the first poll iteration
+ * that results in a processed event or if, no events are processed, after
+ * polling for the maximum number of iterations.
  *
- * \see XMI_Context_post
+ * If the maximum poll count is zero the advance function will block and return
+ * only after an event is processed. This allows platform-specific
+ * optimizations to sleep, or unschedule, the thread until an event occurs.
+ * Example events include packet arrival and a context post from another
+ * thread.
  *
- * \param[in] context XMI communication context
- */
-xmi_result_t XMI_Advance_wait (xmi_context_t context);
-
-/**
- * \brief Singular advance of the progress engine for many contexts
+ * \warning This function is \b not \b threadsafe and the application must
+ *          ensure that only one thread advances the contexts at any time.
  *
- * May complete zero, one, or more outbound transfers. May
- * invoke dispatch handlers for incoming transfers.
+ * \todo Define return code, event bitmask ?
  *
  * \param[in] context Array of XMI communication contexts
  * \param[in] count   Number of communication contexts
+ * \param[in] maximum Maximum number of internal poll iterations
  */
-xmi_result_t XMI_Advance_multiple (xmi_context_t * context, size_t count);
-
+xmi_result_t XMI_Advance_multiple (xmi_context_t * context,
+                                   size_t          count,
+                                   size_t          maximum);
 
 
 
