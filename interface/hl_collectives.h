@@ -6,7 +6,8 @@
 #ifndef __hl_collective_h__
 #define __hl_collective_h__
 
-#include "ll_collectives_base.h"
+#include "cm_types.h"
+#include "ccmi_internal.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -184,7 +185,7 @@ extern "C"
      *
      * \todo     Need to adjust size to optimal level (currently 2048 bytes).
      */
-    typedef Quad  HL_Geometry_t [512];
+    typedef CMQuad  HL_Geometry_t [512];
     typedef struct
     {
 	size_t lo;
@@ -203,7 +204,7 @@ extern "C"
      *  between geometry id's and geometry structures.
      */
     typedef HL_Geometry_t * (*HL_mapIdToGeometry) (int comm);
-    typedef Quad          HL_AMHeader_t[8];
+    typedef CMQuad          HL_AMHeader_t[8];
 
 
     /**

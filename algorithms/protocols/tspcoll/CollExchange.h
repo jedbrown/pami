@@ -14,7 +14,6 @@
 #define __tspcoll_collbase_h__
 
 #include "util/ccmi_debug.h"
-#include "interface/MultiSendOld.h"
 #include "NBColl.h"
 
 #include <assert.h>
@@ -67,21 +66,18 @@ namespace TSPColl
     /* ------------------------------ */
     
     void          send                     (int phase,CCMI::MultiSend::MulticastInterface *mcast_iface);
-    static inline CM_Request_t * cb_incoming(const CMQuad  * hdr,
-					       unsigned          count,
-					       unsigned          peer,
-					       unsigned          sndlen,
-					       unsigned          conn_id,
-					       void            * arg,
-					       unsigned        * rcvlen,
-					       char           ** rcvbuf,
-					       unsigned        * pipewidth,
-					       CM_Callback_t * cb_done);
-      //      static       CCMI::MultiSend::CCMI_RecvMulticast_t cb_incoming;
+    //static inline CCMI::MultiSend::LL_RecvMulticast_t cb_incoming;
+    static inline CM_Request_t *cb_incoming(const CMQuad  * info,
+					unsigned          count,
+					size_t          peer,
+					size_t          sndlen,
+					void            * arg,
+					size_t        * rcvlen,
+					char           ** rcvbuf,
+					CM_Callback_t * cb_done);
     
     static void   cb_recvcomplete (void * arg, CM_Error_t* error);
-      //    static void   cb_recvcomplete          (void *, void * arg);
-    static void   cb_senddone              (void *);
+    static void   cb_senddone              (void *, CM_Error_t *err);
     
   protected:
     /* ------------------------------ */
@@ -344,7 +340,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::MulticastIn
   unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
   unsigned        ranks   = _dest[phase];
   CM_Callback_t cb_done;
-  cb_done.function   = (void (*)(void*, CM_Error_t*))CollExchange::cb_senddone;
+  cb_done.function   = CollExchange::cb_senddone;
   cb_done.clientdata = &_cmplt[phase];
   void *r = NULL;
   TRACE((stderr, "SEND MCAST_IFACE %p: tag=%d id=%d,hdr=%p count=%d\n", 
@@ -373,7 +369,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::MulticastIn
 /* *********************************************************************** */
 /*                             send complete                               */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::cb_senddone (void * arg)
+inline void TSPColl::CollExchange::cb_senddone (void * arg, CM_Error_t *err)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   MUTEX_LOCK(&base->_mutex);

@@ -14,7 +14,6 @@
 #define __tspcoll_basecomm_h__
 
 #include "util/ccmi_debug.h"
-#include "interface/MultiSendOld.h"
 
 namespace TSPColl
 {

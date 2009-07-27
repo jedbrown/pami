@@ -20,7 +20,6 @@
 
 #include "./NBColl.h"
 #include "interface/Communicator.h"
-#include "interface/MultiSendOld.h"
 /* **************************************************************** */
 /*                      Scatter                                     */
 /* **************************************************************** */

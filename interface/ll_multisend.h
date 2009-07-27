@@ -35,8 +35,9 @@
 #include "ll_topology.h"
 #include "ll_pipeworkqueue.h"
 
-#define DEPRECATED_MULTICAST
-#define DEPRECATED_MANYTOMANY
+// These are now defined in cm_impl.h (via cm_types.h), according to target needs
+// #define DEPRECATED_MULTICAST
+// #define DEPRECATED_MANYTOMANY
 
 #ifdef __cplusplus
 extern "C"
@@ -128,7 +129,7 @@ extern "C"
                                                 size_t peer,
                                                 size_t sndlen,
                                                 void *clientdata,
-                                                unsigned *rcvlen,
+                                                size_t *rcvlen,
                                                 char **rcvbuf,
                                                 CM_Callback_t *cb_done);
 

@@ -6,7 +6,6 @@
 #ifndef   __mpi_multisend_impl_h__
 #define   __mpi_multisend_impl_h__
 #include <assert.h>
-#include "interface/MultiSendOld.h"
 #include "interface/lapiunix/Adaptor.h"
 #include "./regTable.h"
 #include "interface/lapiunix/common/include/pgasrt.h"

@@ -107,7 +107,7 @@ typedef enum
 #define CCMI_GEOMETRY_SIZE	32
 
 
-//#define __ccmi_recv_multicast_callback_defined__
+#define __ccmi_recv_multicast_callback_defined__
 #ifdef DEPRECATED_MULTICAST
 typedef DCMF_OldRecvMulticast CCMI_OldRecvMulticast_t;
 #endif /*  DEPRECATED_MULTICAST */

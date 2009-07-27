@@ -18,8 +18,8 @@
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
 
-#include "collectives/interface/MultiSendOld.h"
-#include "collectives/interface/mpi/Adaptor.h"
+#include "interface/MultiSend.h"
+#include "interface/mpi/Adaptor.h"
 #include "Table.h"
 
 

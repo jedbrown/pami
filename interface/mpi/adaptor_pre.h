@@ -16,6 +16,7 @@
 #define   __adaptor_pre_h__
 #warning mpi pre adaptor
 #include "interface/cm_types.h"
+#include "interface/ll_multisend.h"
 #include "interface/mpi/ccmi_collectives.h"
 
 #ifdef __PGASRT_DISTRIBUTED /* pure distributed - no pthreads library */
@@ -84,6 +85,9 @@ static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
 
      /// This is the default allreduce min torus pipeline width, set to 1920
      const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;    
+
+typedef LL_RecvMulticast CCMI_RecvMulticast_t;
+#define __ccmi_recv_multicast_callback_defined__
 
 /* These are defined in ccmi_collectives.h */
 #define __ccmi_consistency_defined__

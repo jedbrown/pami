@@ -685,8 +685,8 @@ extern "C"
 			    (CCMI::Adaptor::Allreduce::BaseComposite *)
 			    _c_geometry->getAllreduceComposite();
 
-			CCMI::Adaptor::Allreduce::Factory *factory =
-			    (CCMI::Adaptor::Allreduce::Factory *)
+			CCMI::Adaptor::Allreduce::Ring::Factory *factory =
+			    (CCMI::Adaptor::Allreduce::Ring::Factory *)
 			    parms->registration;
 
 			//Also check for change in protocols

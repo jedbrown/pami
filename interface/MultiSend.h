@@ -32,24 +32,7 @@ namespace CCMI
 
 
     #ifndef __ccmi_recv_multicast_callback_defined__ // may be pre-defined in the adaptor
-    typedef CM_Request_t * (*CCMI_RecvMulticast_t) (const CMQuad  * info,
-                                            unsigned          count,
-                                            unsigned          peer,
-                                            unsigned          sndlen,
-                                            void            * clientdata,
-                                            unsigned        * rcvlen,
-                                            char           ** rcvbuf,
-                                            CM_Callback_t * cb_done);
-    typedef CM_Request_t * (*LL_OldRecvMulticast_t) (const CMQuad  * info,
-                                            unsigned          count,
-                                            unsigned          peer,
-                                            unsigned          sndlen,
-                                            unsigned          conn_id,
-                                            void            * arg,
-                                            unsigned        * rcvlen,
-                                            char           ** rcvbuf,
-                                            unsigned        * pipewidth,
-                                            CM_Callback_t * cb_done);
+#error no RecvMulticast defined
     #endif
 
     struct CCMI_Multicast_t
@@ -613,6 +596,7 @@ namespace CCMI
       }
     };
 
+#ifdef DEPRECATED_MULTICAST
     ///
     /// \brief Message passing interface suitable for broadcasts, barriers
     /// and reductions
@@ -732,6 +716,7 @@ namespace CCMI
 #endif
 
     };  //-- OldMulticastInterface
+#endif // DEPRECATED_MULTICAST
 
     ///
     /// \brief Message passing interface suitable for alltoall

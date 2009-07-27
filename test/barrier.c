@@ -17,7 +17,7 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void cb_barrier (void * clientdata)
+void cb_barrier (void * clientdata, CM_Error_t *err)
 {
   int * active = (int *) clientdata;
   (*active)--;
@@ -35,7 +35,7 @@ void init__barriers ()
 }
 
 
-CM_Callback_t _cb = {(void (*)(void*,LL_Error_t*))cb_barrier, (void *) &_g_barrier_active };
+CM_Callback_t _cb = { cb_barrier, (void *)&_g_barrier_active };
 hl_barrier_t  _xfer =
     {
 	HL_XFER_BARRIER,

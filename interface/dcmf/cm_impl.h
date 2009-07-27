@@ -22,6 +22,9 @@ extern "C"
 {
 #endif
 
+#define DEPRECATED_MULTICAST
+#define DEPRECATED_MANYTOMANY
+
 /**
  * \todo CNK's abort() does not core dump...
  *

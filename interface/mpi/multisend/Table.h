@@ -6,7 +6,7 @@
 #endif
 #include <mpi.h>
 #include <list>
-#include "interface/MultiSendOld.h"
+#include "interface/MultiSend.h"
 
 namespace CCMI
 {

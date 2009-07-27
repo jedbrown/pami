@@ -90,10 +90,12 @@ _asyncBcastUnexpQueue(NULL)
     //Used in alltoalls
   _permutation = NULL;
 
+#ifndef ADAPTOR_MPI
   /// \todo DCMF specifics need to split out of ccmi geometry
   #warning DCMF specifics need to split out of ccmi geometry
   DCMF_Hardware_t  hw_info;
   DCMF_Hardware (& hw_info);
+#endif // ADAPTOR_MPI
 
   for(count = 0; count < nranks; count ++)
   {
@@ -135,9 +137,11 @@ _asyncBcastUnexpQueue(NULL)
     _rectangle.zs = max_coords[CCMI_Z_DIM] - min_coords[CCMI_Z_DIM] + 1;
     _rectangle.ts = max_coords[CCMI_T_DIM] - min_coords[CCMI_T_DIM] + 1;
 
+#ifndef ADAPTOR_MPI
     _rectangle.isTorusX = (hw_info.xTorus && _rectangle.xs == hw_info.xSize);
     _rectangle.isTorusY = (hw_info.yTorus && _rectangle.ys == hw_info.ySize);
     _rectangle.isTorusZ = (hw_info.zTorus && _rectangle.zs == hw_info.zSize);
+#endif // ADAPTOR_MPI
     _rectangle.isTorusT = 1;
 
     //Some protocols cannot make use of torus links. Cache a mesh for them

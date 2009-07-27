@@ -13,8 +13,6 @@
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
 
-#include "interface/MultiSendOld.h"
-
 namespace TSPColl
 {
   class Communicator;
