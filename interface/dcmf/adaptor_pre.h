@@ -135,7 +135,7 @@ public:
   {
   }
 
-  void setRequestBuffer (CCMI_Request_t *request)
+  void setRequestBuffer (CM_Request_t *request)
   {
     this->request = request;
   }
