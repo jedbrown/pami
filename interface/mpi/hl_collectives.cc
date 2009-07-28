@@ -176,8 +176,8 @@ extern "C"
 			{
 			case HL_DEFAULT_BROADCAST_PROTOCOL:
 			  {
-			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
-			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    CCMI::Adaptor::Generic::OldMulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::OldMulticastImpl();
 			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BcastTag, minfo);		    
@@ -197,8 +197,8 @@ extern "C"
 			{
 			case HL_DEFAULT_ALLGATHER_PROTOCOL:
 			  {
-			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
-			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    CCMI::Adaptor::Generic::OldMulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::OldMulticastImpl();
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::AllgatherTag, minfo);			    
 			    return CM_SUCCESS;
@@ -217,8 +217,8 @@ extern "C"
 			{
 			case HL_DEFAULT_ALLGATHERV_PROTOCOL:
 			  {
-			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
-			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    CCMI::Adaptor::Generic::OldMulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::OldMulticastImpl();
 			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::AllgathervTag, minfo);			    
@@ -240,13 +240,13 @@ extern "C"
 			  {
 			    typedef struct scatter_info
 			    {
-			      CCMI::Adaptor::Generic::MulticastImpl barrier;
-			      CCMI::Adaptor::Generic::MulticastImpl scatter;
+			      CCMI::Adaptor::Generic::OldMulticastImpl barrier;
+			      CCMI::Adaptor::Generic::OldMulticastImpl scatter;
 			    }scatter_info;
 			    COMPILE_TIME_ASSERT(sizeof(scatter_info) < sizeof (*registration));
 			    scatter_info *scinfo = (scatter_info *) registration;
-			    new(&scinfo->barrier) CCMI::Adaptor::Generic::MulticastImpl();
-			    new(&scinfo->scatter) CCMI::Adaptor::Generic::MulticastImpl();
+			    new(&scinfo->barrier) CCMI::Adaptor::Generic::OldMulticastImpl();
+			    new(&scinfo->scatter) CCMI::Adaptor::Generic::OldMulticastImpl();
 			    scinfo->barrier.initialize(_g_generic_adaptor);
 			    scinfo->scatter.initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, &scinfo->barrier);
@@ -269,13 +269,13 @@ extern "C"
 			  {
 			    typedef struct scatterv_info
 			    {
-			      CCMI::Adaptor::Generic::MulticastImpl barrier;
-			      CCMI::Adaptor::Generic::MulticastImpl scatterv;
+			      CCMI::Adaptor::Generic::OldMulticastImpl barrier;
+			      CCMI::Adaptor::Generic::OldMulticastImpl scatterv;
 			    }scatterv_info;
 			    COMPILE_TIME_ASSERT(sizeof(scatterv_info) < sizeof (*registration));
 			    scatterv_info *scinfo = (scatterv_info *) registration;
-			    new(&scinfo->barrier) CCMI::Adaptor::Generic::MulticastImpl();
-			    new(&scinfo->scatterv) CCMI::Adaptor::Generic::MulticastImpl();
+			    new(&scinfo->barrier) CCMI::Adaptor::Generic::OldMulticastImpl();
+			    new(&scinfo->scatterv) CCMI::Adaptor::Generic::OldMulticastImpl();
 			    scinfo->barrier.initialize(_g_generic_adaptor);
 			    scinfo->scatterv.initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, &scinfo->barrier);
@@ -304,7 +304,7 @@ extern "C"
 				typedef struct
 				{
 				    CCMI::Adaptor::Allreduce::Binomial::Factory    allreduce_registration;
-				    CCMI::Adaptor::Generic::MulticastImpl                         minfo;
+				    CCMI::Adaptor::Generic::OldMulticastImpl                         minfo;
 				} SyncBinomialRegistration;
 
 				CCMI_assert (sizeof (SyncBinomialRegistration) <=
@@ -314,16 +314,16 @@ extern "C"
 				    (SyncBinomialRegistration *) registration;
 
 				new (& treg->minfo)//, sizeof(treg->minfo))
-				    CCMI::Adaptor::Generic::MulticastImpl();
+				    CCMI::Adaptor::Generic::OldMulticastImpl();
 				
 				new (& treg->allreduce_registration)//, sizeof(treg->allreduce_registration))
 				    CCMI::Adaptor::Allreduce::Binomial::Factory
-				    (_g_generic_adaptor->mapping(), & treg->minfo, (CCMI_mapIdToGeometry)cb_geometry_map, flags);
+				    (_g_generic_adaptor->mapping(), & treg->minfo, NULL, (CCMI_mapIdToGeometry)cb_geometry_map, flags);
 
 				treg->minfo.initialize(_g_generic_adaptor);
 #else
-				CCMI::Adaptor::Generic::MulticastImpl *minfo = 
-				  new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+				CCMI::Adaptor::Generic::OldMulticastImpl *minfo = 
+				  new(registration) CCMI::Adaptor::Generic::OldMulticastImpl();
 				minfo->initialize(_g_generic_adaptor);
 				TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::ShortAllreduceTag, minfo);
 #endif
@@ -337,7 +337,8 @@ extern "C"
 			}
 		}
 		break;
-
+#warning disabled HL_CFG_ALLTOALL until working
+#if 0
 	    case HL_CFG_ALLTOALL:
 		{
 		    HL_Alltoall_Configuration_t *cfg   = (HL_Alltoall_Configuration_t *)config;
@@ -353,9 +354,6 @@ extern "C"
 			    
 			    CCMI_assert( sizeof(AlltoallRegistration) <=
 					 sizeof(CM_CollectiveProtocol_t) );
-			    
-			    CCMI_assert( sizeof(CM_CollectiveRequest_t) <=
-					 sizeof(CM_CollectiveRequest_t) );
 			    
 			    AlltoallRegistration * treg = 
 			      (AlltoallRegistration *) registration;
@@ -377,7 +375,7 @@ extern "C"
 			}
 		}
 		break;
-
+#endif
 
 	    case HL_CFG_ALLTOALLV:
 		{
@@ -400,8 +398,8 @@ extern "C"
 			{
 			case HL_DEFAULT_BARRIER_PROTOCOL:
 			  {
-			    CCMI::Adaptor::Generic::MulticastImpl *minfo = 
-			      new(registration) CCMI::Adaptor::Generic::MulticastImpl();
+			    CCMI::Adaptor::Generic::OldMulticastImpl *minfo = 
+			      new(registration) CCMI::Adaptor::Generic::OldMulticastImpl();
 			    COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
 			    minfo->initialize(_g_generic_adaptor);
 			    TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BarrierTag, minfo);		    
@@ -424,13 +422,13 @@ extern "C"
 			    typedef struct
 			    {
 			      CCMI::Adaptor::Broadcast::AsyncBinomialFactory    bcast_registration;
-			      CCMI::Adaptor::Generic::MulticastImpl             minfo;
+			      CCMI::Adaptor::Generic::OldMulticastImpl             minfo;
 			    } AsyncBinomialRegistration;
 			    CCMI_assert (sizeof (AsyncBinomialRegistration) <=
 					 sizeof (CM_CollectiveProtocol_t));
 			    AsyncBinomialRegistration *treg =
 			      (AsyncBinomialRegistration *) registration;
-			    new (& treg->minfo) CCMI::Adaptor::Generic::MulticastImpl();
+			    new (& treg->minfo) CCMI::Adaptor::Generic::OldMulticastImpl();
 			    CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
 			      new (& treg->bcast_registration)
 			      CCMI::Adaptor::Broadcast::AsyncBinomialFactory
@@ -505,9 +503,9 @@ extern "C"
 			  unsigned             id,
 			  CCMI_mapIdToGeometry cb_geometry):
 	    _ccmi_geometry(_g_generic_adaptor->mapping(),
-			   ranks, nranks,id,0),
+			   ranks, (unsigned)nranks,id,0,false),
 	    _minfo(),
-	    _barrier_factory(static_cast<CCMI::MultiSend::MulticastInterface *>(&_minfo),
+	    _barrier_factory(static_cast<CCMI::MultiSend::OldMulticastInterface *>(&_minfo),
 			     _g_generic_adaptor->mapping(),
 			     cb_geometry),
 	    _pgasrt_comm(my_rank, (int)slice_count,(TSPColl::Range*)rank_slices),
@@ -524,7 +522,7 @@ extern "C"
 	}
 	CCMI::Adaptor::Geometry                              _ccmi_geometry;
 	CCMI_Executor_t                                      _barrier_executors[2];
-	CCMI::Adaptor::Generic::MulticastImpl                _minfo;
+	CCMI::Adaptor::Generic::OldMulticastImpl             _minfo;
 	CCMI::Adaptor::Barrier::BinomialBarrierFactory       _barrier_factory;
         TSPColl::RangedComm                                  _pgasrt_comm;
 	unsigned                                            *_ranklist;
@@ -604,8 +602,8 @@ extern "C"
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    int p_root                      = tspcoll->virtrankof(parms->root);
-		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
-		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    CCMI::Adaptor::Generic::OldMulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::OldMulticastImpl *)parms->registration;
 		    tspcoll->ibcast(minfo, p_root, parms->src, parms->dst, parms->bytes,
 				    (void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return CM_SUCCESS;
@@ -616,8 +614,8 @@ extern "C"
 		    hl_allgather_t        * parms   = &cmd->xfer_allgather;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
-		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    CCMI::Adaptor::Generic::OldMulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::OldMulticastImpl *)parms->registration;
 		    tspcoll->iallgather(minfo,parms->src, parms->dst, parms->bytes,
 					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return CM_SUCCESS;
@@ -628,8 +626,8 @@ extern "C"
 		    hl_allgatherv_t        * parms   = &cmd->xfer_allgatherv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
-		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
-		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    CCMI::Adaptor::Generic::OldMulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::OldMulticastImpl *)parms->registration;
 		    tspcoll->iallgatherv(minfo,parms->src, parms->dst, parms->lengths,
 					(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 		    return CM_SUCCESS;
@@ -639,8 +637,8 @@ extern "C"
 		{
 		    typedef struct scatter_info
 		    {
-		      CCMI::Adaptor::Generic::MulticastImpl barrier;
-		      CCMI::Adaptor::Generic::MulticastImpl scatter;
+		      CCMI::Adaptor::Generic::OldMulticastImpl barrier;
+		      CCMI::Adaptor::Generic::OldMulticastImpl scatter;
 		    }scatter_info;
 		    hl_scatter_t          * parms   = &cmd->xfer_scatter;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
@@ -657,8 +655,8 @@ extern "C"
 		{
 		    typedef struct scatterv_info
 		    {
-		      CCMI::Adaptor::Generic::MulticastImpl barrier;
-		      CCMI::Adaptor::Generic::MulticastImpl scatterv;
+		      CCMI::Adaptor::Generic::OldMulticastImpl barrier;
+		      CCMI::Adaptor::Generic::OldMulticastImpl scatterv;
 		    }scatterv_info;
 		    hl_scatterv_t         * parms   = &cmd->xfer_scatterv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
@@ -729,8 +727,8 @@ extern "C"
 			return CM_SUCCESS;
 		    }
 #else
-		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
-		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;
+		    CCMI::Adaptor::Generic::OldMulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::OldMulticastImpl *)parms->registration;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->iallreduce(minfo,
 					parms->src,           // source buffer
@@ -751,7 +749,7 @@ extern "C"
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		}
 		break;
-
+#if 0
 	    case HL_XFER_ALLTOALL:
 		{
 		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
@@ -780,7 +778,7 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 				      parms->rcvcounters);
 		}
 		break;
-		
+#endif
 
 	    case HL_XFER_BARRIER:
 		{
@@ -794,8 +792,8 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		    _c_bar->start();
 		    return CM_SUCCESS;
 #else
-		    CCMI::Adaptor::Generic::MulticastImpl *minfo =
-		      (CCMI::Adaptor::Generic::MulticastImpl *)parms->registration;		    
+		    CCMI::Adaptor::Generic::OldMulticastImpl *minfo =
+		      (CCMI::Adaptor::Generic::OldMulticastImpl *)parms->registration;		    
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    tspcoll->ibarrier(minfo,(void (*)(void*))parms->cb_done.function,parms->cb_done.clientdata);
 #endif
@@ -808,8 +806,8 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		hl_ambroadcast_t          * parms   = &cmd->xfer_ambroadcast;
 		geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
-		CCMI::Adaptor::Broadcast::BroadcastFactory *factory =
-		  (CCMI::Adaptor::Broadcast::BroadcastFactory *) parms->registration;
+		CCMI::Adaptor::Broadcast::BroadcastFactory<CCMI::CollectiveMapping> *factory =
+		  (CCMI::Adaptor::Broadcast::BroadcastFactory<CCMI::CollectiveMapping> *) parms->registration;
 		CCMI_assert (((CCMI::Adaptor::Geometry *) geometry)->getBarrierExecutor() != NULL);
 		if(parms->bytes == 0)
 		  {

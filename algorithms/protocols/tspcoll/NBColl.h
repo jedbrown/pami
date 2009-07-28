@@ -46,7 +46,7 @@ namespace TSPColl
 	    void (*cb_complete)(void *), void *arg);
 
   public:
-    virtual void  kick  (CCMI::MultiSend::MulticastInterface *mcast_iface) {};
+    virtual void  kick  (CCMI::MultiSend::OldMulticastInterface *mcast_iface) {};
     virtual bool isdone () const { return false; } /* check completion */
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }
@@ -105,7 +105,7 @@ namespace TSPColl
 
     NBColl * find (NBTag tag, int id); /* find an existing instance */
     NBColl * allocate (Communicator *, NBTag tag);
-    void     multisend_reg (NBTag tag,CCMI::MultiSend::MulticastInterface *mcast_iface);
+    void     multisend_reg (NBTag tag,CCMI::MultiSend::OldMulticastInterface *mcast_iface);
 
   private:
     /* ------------ */

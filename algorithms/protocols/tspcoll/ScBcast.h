@@ -41,11 +41,11 @@ namespace TSPColl
     void * operator new (size_t, void * addr) { return addr; }
     ScBcast (Communicator * comm, NBTag tag, int instID, int tagoff);
     void reset (int root, const void * sbuf, void *buf, size_t);
-    virtual void kick (CCMI::MultiSend::MulticastInterface *mcast_iface);
+    virtual void kick (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
     virtual bool isdone (void) const;
-    static void amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface);
+    static void amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
   protected:
-    CCMI::MultiSend::MulticastInterface *_mcast_iface;
+    CCMI::MultiSend::OldMulticastInterface *_mcast_iface;
   private:
     size_t     *_lengths;
     Scatterv   _scatterv;
@@ -125,7 +125,7 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
 /* *********************************************************************** */
 /*              start the broadcast rolling                                */
 /* *********************************************************************** */
-inline void TSPColl::ScBcast::kick (CCMI::MultiSend::MulticastInterface *mcast_iface)
+inline void TSPColl::ScBcast::kick (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   TRACE((stderr, "%d: SCBCAST kick\n", PGASRT_MYNODE));
   _mcast_iface = mcast_iface;
@@ -190,7 +190,7 @@ inline bool TSPColl::ScBcast::isdone (void) const
   // return _barrier3.isdone();
 }
 
-inline void TSPColl::ScBcast::amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface)
+inline void TSPColl::ScBcast::amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   assert(0);
   //  mcast_iface->setCallback(cb_incoming, NULL);

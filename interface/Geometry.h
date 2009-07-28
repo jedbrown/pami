@@ -135,6 +135,13 @@ namespace CCMI
               unsigned comm,
               unsigned numcolors,
               bool     globalcontext);
+      Geometry(
+              CCMI::CollectiveMapping *mapping,
+              unsigned *ranks,
+              unsigned nranks,
+              unsigned comm,
+              unsigned numcolors,
+              bool     globalcontext) { CM_abortf("Need to add support for generic Mapping"); }
 
       /// --------------------
       /// --- Query Functions

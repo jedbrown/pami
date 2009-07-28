@@ -24,8 +24,16 @@ extern "C"
 {
 #endif
 
-#undef DEPRECATED_MULTICAST
+#define DEPRECATED_MULTICAST
 #undef DEPRECATED_MANYTOMANY
+
+typedef enum {
+	DCMF_MATCH_CONSISTENCY,
+	DCMF_RELAXED_CONSISTENCY,
+	DCMF_SEQUENTIAL_CONSISTENCY,
+	DCMF_WEAK_CONSISTENCY
+} DCMF_Consistency;
+#warning defining deprecated DCMF_Consistency
 
 /**
  * \todo CNK's abort() does not core dump...

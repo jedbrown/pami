@@ -35,13 +35,13 @@ namespace TSPColl
     void * operator new (size_t, void * addr)    { return addr; }
     Scatter      (Communicator * comm, NBTag tag, int instID, int tagoff);
     void reset   (int root, const void * sbuf, void * rbuf, size_t length);
-    virtual void kick    (CCMI::MultiSend::MulticastInterface *mcast_iface);
+    virtual void kick    (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
     virtual bool isdone  (void) const { return _complete >= _counter; }
-    static void amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface);
+    static void amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
   protected:
     CM_Request_t                       *_req;
     CM_Request_t                       _rreq;
-    CCMI::MultiSend::MulticastInterface *_mcast_iface;
+    CCMI::MultiSend::OldMulticastInterface *_mcast_iface;
     const char    * _sbuf;         /* send buffer    */
     void          * _rbuf;         /* receive buffer */
     size_t          _length;       /* msg length     */
@@ -77,7 +77,7 @@ namespace TSPColl
   };
 };
 
-inline void TSPColl::Scatter::amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface)
+inline void TSPColl::Scatter::amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
     {
       mcast_iface->setCallback(TSPColl::Scatter::cb_incoming, NULL);
     }
@@ -94,7 +94,7 @@ namespace TSPColl
     Scatterv (Communicator * comm, NBTag tag, int instID, int tagoff):
               Scatter (comm, tag, instID, tagoff), _lengths(0) { }
     void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
-    virtual void kick (CCMI::MultiSend::MulticastInterface *mcast_iface);
+    virtual void kick (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
   protected:
     size_t * _lengths;  
   };

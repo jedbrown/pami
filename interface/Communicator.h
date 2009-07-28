@@ -56,40 +56,40 @@ namespace TSPColl
     /* collectives          */
     /* -------------------- */
 
-    virtual NBColl * ibarrier    (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual NBColl * ibarrier    (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     barrier     (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual void     barrier     (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iallgather  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual NBColl * iallgather  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void *s, void *d, size_t l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     allgather   (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual void     allgather   (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void *s, void *d, size_t l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iallgatherv (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual NBColl * iallgatherv (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void *s, void *d, size_t *l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     allgatherv  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual void     allgatherv  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void *s, void *d, size_t *l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * ibcast      (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual NBColl * ibcast      (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  int root, const void *s, void *d, size_t l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     bcast       (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual void     bcast       (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  int root, const void *s, void *d, size_t l,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iallreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual NBColl * iallreduce  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void        * s,
 				  void              * d, 
 				  CM_Op             op,
 				  CM_Dt             dtype, 
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     allreduce   (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual void     allreduce   (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void        * s, 
 				  void              * d, 
 				  CM_Op             op,
@@ -97,27 +97,27 @@ namespace TSPColl
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iscatter   (CCMI::MultiSend::MulticastInterface *info_barrier,
-				 CCMI::MultiSend::MulticastInterface *info_scatter,
+    virtual NBColl * iscatter   (CCMI::MultiSend::OldMulticastInterface *info_barrier,
+				 CCMI::MultiSend::OldMulticastInterface *info_scatter,
 				 int root, const void *s, void *d, size_t l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     scatter    (CCMI::MultiSend::MulticastInterface *info_barrier,
-				 CCMI::MultiSend::MulticastInterface *info_scatter,
+    virtual void     scatter    (CCMI::MultiSend::OldMulticastInterface *info_barrier,
+				 CCMI::MultiSend::OldMulticastInterface *info_scatter,
 				 int root, const void *s, void *d, size_t l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual NBColl * iscatterv  (CCMI::MultiSend::MulticastInterface *info_barrier,
-				 CCMI::MultiSend::MulticastInterface *info_scatter,
+    virtual NBColl * iscatterv  (CCMI::MultiSend::OldMulticastInterface *info_barrier,
+				 CCMI::MultiSend::OldMulticastInterface *info_scatter,
 				 int root, const void *s, void *d, size_t *l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
-    virtual void     scatterv   (CCMI::MultiSend::MulticastInterface *info_barrier,
-				 CCMI::MultiSend::MulticastInterface *info_scatter,
+    virtual void     scatterv   (CCMI::MultiSend::OldMulticastInterface *info_barrier,
+				 CCMI::MultiSend::OldMulticastInterface *info_scatter,
 				 int root, const void *s, void *d, size_t *l,
 				 void (*cb_complete)(void *)=NULL, void *arg=NULL);
 
-    virtual void     gather     (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual void     gather     (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				 int root, const void *s, void *d, size_t l);
-    virtual void     gatherv    (CCMI::MultiSend::MulticastInterface *mcast_iface,
+    virtual void     gatherv    (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				 int root, const void *s, void *d, size_t *l);
 
     virtual void     nbwait     (NBColl *);

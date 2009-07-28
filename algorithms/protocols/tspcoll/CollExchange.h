@@ -47,9 +47,9 @@ namespace TSPColl
     /* ------------------------------ */
     /*  public API                    */
     /* ------------------------------ */
-    virtual void  kick             (CCMI::MultiSend::MulticastInterface *mcast_iface);
+    virtual void  kick             (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
     virtual bool  isdone           () const;
-    static void   amsend_reg       (CCMI::MultiSend::MulticastInterface *mcast_iface);
+    static void   amsend_reg       (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
   protected:
 
     CollExchange                   (Communicator *, NBTag, 
@@ -65,16 +65,18 @@ namespace TSPColl
     /*  local functions               */
     /* ------------------------------ */
     
-    void          send                     (int phase,CCMI::MultiSend::MulticastInterface *mcast_iface);
-    //static inline CCMI::MultiSend::LL_RecvMulticast_t cb_incoming;
-    static inline CM_Request_t *cb_incoming(const CMQuad  * info,
-					unsigned          count,
-					size_t          peer,
-					size_t          sndlen,
-					void            * arg,
-					size_t        * rcvlen,
-					char           ** rcvbuf,
-					CM_Callback_t * cb_done);
+    void          send                     (int phase,CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    //static inline CCMI::MultiSend::DCMF_OldRecvMulticast cb_incoming;
+    static inline CM_Request_t *cb_incoming(const CMQuad  * hdr,
+							   unsigned          count,
+							   unsigned          peer,
+							   unsigned          sndlen,
+							   unsigned          conn_id,
+							   void            * arg,
+							   unsigned        * rcvlen,
+							   char           ** rcvbuf,
+							   unsigned        * pipewidth,
+							   CM_Callback_t * cb_done);
     
     static void   cb_recvcomplete (void * arg, CM_Error_t* error);
     static void   cb_senddone              (void *, CM_Error_t *err);
@@ -86,7 +88,7 @@ namespace TSPColl
     CM_Request_t                       _req[MAX_PHASES];
     CM_Request_t                       _rreq[MAX_PHASES];
     
-    CCMI::MultiSend::MulticastInterface *_mcast_iface;
+    CCMI::MultiSend::OldMulticastInterface *_mcast_iface;
 
     int          _numphases;
 
@@ -152,7 +154,7 @@ namespace TSPColl
 /*                  register collexchange                                  */
 /* *********************************************************************** */
 
-inline void TSPColl::CollExchange::amsend_reg  (CCMI::MultiSend::MulticastInterface *mcast_iface)
+inline void TSPColl::CollExchange::amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   
   mcast_iface->setCallback(cb_incoming, NULL);
@@ -207,7 +209,7 @@ inline void TSPColl::CollExchange::reset()
 /* *********************************************************************** */
 /*                   kick the state machine (make progress)                */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
+inline void TSPColl::CollExchange::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   /* continued ATOMIC (code should be entered with mutex already locked */
   _mcast_iface = mcast_iface;
@@ -322,7 +324,7 @@ inline bool TSPColl::CollExchange::isdone() const
 /* *********************************************************************** */
 /*                     send an active message                              */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::MulticastInterface *mcast_iface)
+inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   TRACE((stderr, "SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d, mcast_iface=%p\n",
 	 _tag, _counter, phase, 

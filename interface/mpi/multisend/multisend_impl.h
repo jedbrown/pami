@@ -42,6 +42,9 @@ namespace CCMI {
   namespace Adaptor {
     namespace Generic {
 
+      class  OldMulticastImpl : public CCMI::MultiSend::OldMulticastInterface, public CCMI::Adaptor::Message
+      {
+
       protected:
 //      struct MsgHeader
 //      {
@@ -55,9 +58,9 @@ namespace CCMI {
 //
       public:
 
-	MulticastImpl () : MulticastInterface (), Message() {}
+        OldMulticastImpl () : OldMulticastInterface (), Message() {}
 
-	virtual ~MulticastImpl () {}
+        virtual ~OldMulticastImpl () {}
 
 	/// NOTE: This is required to make "C" programs link successfully with virtual destructors
 	inline void operator delete(void * p)
@@ -155,7 +158,7 @@ namespace CCMI {
         }
           virtual unsigned send (MultiSend::CCMI_OldMulticast_t  *mcastinfo) {    
             //          printf ("Here New\n");
-            return MulticastImpl::send (mcastinfo->request,
+            return OldMulticastImpl::send (mcastinfo->request,
                                         &mcastinfo->cb_done,
                                         mcastinfo->consistency,
                                         mcastinfo->msginfo,
@@ -252,7 +255,7 @@ namespace CCMI {
             //	  printf ("After advance\n");
           }
 
-        }; //Generic MPI Multicast
+        }; // class OldMulticastImpl
 
 
         ///
@@ -594,13 +597,11 @@ namespace CCMI {
           }
 
 
-        };
-      };
-    };
-  };
-};
+        }; // class ManytomanyImpl
+    }; // namespace Generic
+  }; // namespace Adaptor
+}; // namespace CCMI
 
 #undef TRACE
 
 #endif
-
