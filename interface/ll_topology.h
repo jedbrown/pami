@@ -50,8 +50,7 @@ extern "C"
   /// \param[in] tl	optional, torus links flags
   ///
   void LL_Topology_create_rect(LL_Topology_t *topo,
-  		CM_Coord_t *ll, CM_Coord_t *ur,
-  					unsigned char *tl = NULL);
+  		CM_Coord_t *ll, CM_Coord_t *ur, unsigned char *tl);
 
   /// \brief single rank constructor (LL_SINGLE_TOPOLOGY)
   ///
@@ -153,7 +152,7 @@ extern "C"
   ///
   CM_Result LL_Topology_rectSeg(LL_Topology_t *topo,
 			CM_Coord_t *ll, CM_Coord_t *ur,
-  			unsigned char *tl = NULL);
+  			unsigned char *tl);
 
   /// \brief does topology consist entirely of ranks local to self
   ///
@@ -176,7 +175,7 @@ extern "C"
   /// \param[out] tl	optional, torus link flag
   ///
   void LL_Topology_getNthDims(LL_Topology_t *topo, unsigned n,
-			unsigned *c0, unsigned *cn, unsigned char *tl = NULL);
+			unsigned *c0, unsigned *cn, unsigned char *tl);
 
   /// \brief is rank in topology
   ///
