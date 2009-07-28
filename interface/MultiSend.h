@@ -608,7 +608,7 @@ namespace CCMI
       ///  \brief the arguments for async mode of operation where no
       ///  receive is posted
       ///
-      LL_OldRecvMulticast_t   _cb_async_head;
+      DCMF_OldRecvMulticast   _cb_async_head;
       void                 * _async_arg;
 
     public:
@@ -635,7 +635,7 @@ namespace CCMI
       }
 
       /// Set the async head packet callback
-      inline void setCallback (LL_OldRecvMulticast_t cb_recv, void *arg)
+      inline void setCallback (DCMF_OldRecvMulticast cb_recv, void *arg)
       {
         TRACE_INIT((stderr, "<%#.8X>CCMI::MultiSend::MulticastInterface::setCallback() %#.8X %#.8X\n", (int)this,(int)cb_recv,(int)arg));
         _cb_async_head    =  cb_recv;
