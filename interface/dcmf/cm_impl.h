@@ -65,7 +65,7 @@ extern "C"
 #define CM_REQUEST_NQUADS	32
 #define CM_ERROR_NQUADS		2
 #elif defined(__bgq__)
-#define CM_PROTOCOL_NQUADS	64
+#define CM_PROTOCOL_NQUADS	96
 #define CM_REQUEST_NQUADS	64
 #define CM_ERROR_NQUADS		2
 #else
