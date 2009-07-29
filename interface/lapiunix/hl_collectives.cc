@@ -86,6 +86,7 @@ extern "C"
     CCMI_Geometry_t      *getGeometry (int comm);
 
     HL_Geometry_t         HL_World_Geometry;
+    unsigned              HL_World_Geometry_id=0;
     HL_Geometry_range_t   world_range;
     HL_mapIdToGeometry    cb_geometry_map;
 

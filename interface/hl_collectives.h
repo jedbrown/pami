@@ -193,7 +193,7 @@ extern "C"
     }HL_Geometry_range_t;
 
     extern HL_Geometry_t  HL_World_Geometry;
-    unsigned              HL_World_Geometry_id=0;
+    extern unsigned       HL_World_Geometry_id;
 
     /* *********************************************************************************** */
     /* **************    "Special Callback Types Objects  ******************************** */

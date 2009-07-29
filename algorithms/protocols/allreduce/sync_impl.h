@@ -54,8 +54,8 @@ namespace CCMI
       /// 
       // Specify the static name in the class (for debug)
       template<> const char* Binomial::Composite::name="Binomial";
-      template<> bool Binomial::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void Binomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool Binomial::Composite::analyze(Geometry *geometry){ return true;};
+      template<> inline void Binomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
       };
@@ -81,8 +81,8 @@ namespace CCMI
       /// 
       // Specify the static name in the class (for debug)
       template<> const char* ShortBinomial::Composite::name="ShortBinomial";
-      template<> bool ShortBinomial::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void ShortBinomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool ShortBinomial::Composite::analyze(Geometry *geometry){ return true;};
+      template<> inline void ShortBinomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
       };
@@ -109,8 +109,8 @@ namespace CCMI
       /// 
       // Specify the static name in the class (for debug)
       template<> const char* Ring::Composite::name="Ring";
-      template<> bool Ring::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void Ring::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool Ring::Composite::analyze(Geometry *geometry){ return true;};
+      template<> inline void Ring::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
       };
@@ -136,8 +136,8 @@ namespace CCMI
       /// Implement the factory getOneColor
       // Specify the static name in the class (for debug)
       template<> const char* RingReduce::Composite::name="RingReduce";
-      template<> bool RingReduce::Composite::analyze(Geometry *geometry){ return true;};
-      template<> void RingReduce::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool RingReduce::Composite::analyze(Geometry *geometry){ return true;};
+      template<> inline void RingReduce::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
       };

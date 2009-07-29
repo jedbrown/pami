@@ -38,6 +38,7 @@ CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr;
 
 extern "C"
 {
+
     int LL_to_CCMI_op[] =
 	{CM_UNDEFINED_OP,        // LL_UNDEFINED_OP
 	 CM_NOOP,                // LL_NOOP
@@ -95,6 +96,7 @@ extern "C"
     CCMI_Geometry_t      *getGeometry (int comm);
 
     HL_Geometry_t         HL_World_Geometry;
+    unsigned              HL_World_Geometry_id=0;
     HL_Geometry_range_t   world_range;
     HL_mapIdToGeometry    cb_geometry_map;
 

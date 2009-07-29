@@ -54,8 +54,8 @@ namespace CCMI
       /// 
       // Specify the static name in the class (for debug)
       template<> const char* Binomial::AsyncComposite::name="Binomial";
-      template<> bool Binomial::AsyncComposite::analyze(Geometry *geometry){ return true;};
-      template<> void Binomial::AsyncComposite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color _not_used_)
+      template<> inline bool Binomial::AsyncComposite::analyze(Geometry *geometry){ return true;};
+      template<> inline void Binomial::AsyncComposite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color _not_used_)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
       };
@@ -81,8 +81,8 @@ namespace CCMI
       /// 
       // Specify the static name in the class (for debug)
       template<> const char* ShortBinomial::AsyncComposite::name="ShortBinomial";
-      template<> bool ShortBinomial::AsyncComposite::analyze(Geometry *geometry){ return true;};
-      template<> void ShortBinomial::AsyncComposite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color _not_used_)
+      template<> inline bool ShortBinomial::AsyncComposite::analyze(Geometry *geometry){ return true;};
+      template<> inline void ShortBinomial::AsyncComposite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color _not_used_)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
       };
