@@ -42,12 +42,21 @@ typedef struct {
     void *           value;
 } xmi_config_t;
 
+#if 0
+/* Replaced by XMI_Context_create */
 xmi_result_t XMI_Init(xmi_context_t *context, 
                       int num_configs, xmi_config_t config[]);
+#endif
 char * XMI_Last_error();
 
 /*
- * Query the value of an attribute
+ * \brief NULL_CONTEXT to allow queries outside a context
+ */
+
+#define NULL_CONTEXT  ((xmi_context_t)0)
+
+/*
+ * \brief Query the value of an attribute
  *
  * \param [in]  context    The XMI context
  * \param [in]  attribute  The attribute of interest
@@ -64,7 +73,7 @@ xmi_result_t XMI_Config_query(xmi_context_t context, xmi_attribute_t attribute,
         void* value_out);
 
 /*
- * Update the value of an attribute
+ * \brief Update the value of an attribute
  *
  * \param [in]  context    The XMI context
  * \param [in]  attribute  The attribute of interest

@@ -21,7 +21,9 @@ xmi_result_t XMI_Initialize ();
 xmi_result_t XMI_Finalize ();
 
 
-/** \brief XMI context "magic cookie" data type. */
+/** \brief XMI context "magic cookie" data type. 
+ *  \todo Move to config interface
+ */
 typedef uint64_t xmi_cookie_t[2];
 
 /**
@@ -37,15 +39,18 @@ typedef uint64_t xmi_cookie_t[2];
  *   4d504943 48325f31 2e315f5f 00000002 => "MPICH2_1.1__" context 2
  *   41524d43 495f342e 325f5f5f 00000001 => "ARMCI_4.2___" context 1
  *
- * \todo Is this a collective or some kind of synchronous operation? or is it
- *       strictly local?
+ * Magic cookie and hints for creating a context are covered by the config
+ * interface and can be queried.
  *
- * \param[in]  magic_cookie  Application specified unique context identifier
- * \param[in]  hints         Hints to create the context
+ * \todo Is this a collective or some kind of synchronous operation? or is it
+ *       strictly local? A: Dynamic tasking will like it to be local.
+ *
+ * \param[in]  num_configs   Number of configurations
+ * \param[in]  config        List of configurable attributes and values
  * \param[out] context       XMI communication context
  */
-xmi_result_t XMI_Context_create (xmi_cookie_t         magic_cookie,
-                                 xmi_context_hint_t   hints,
+xmi_result_t XMI_Context_create (int                  num_configs,
+                                 xmi_config_t         config[],
                                  xmi_context_t      * context);
 
 /**
@@ -128,7 +133,7 @@ xmi_result_t XMI_Advance_multiple (xmi_context_t * context,
 
 
 /** \brief XMI lock data type */
-typedef xmi_lock_t size_t;
+typedef size_t xmi_lock_t;
 
 /**
  * \brief Create an atomic lock.
