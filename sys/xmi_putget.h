@@ -37,6 +37,8 @@ typedef struct {
     unsigned  high_priority:1;
     unsigned  reserved:25;
 } xmi_send_hint_t;
+
+typedef unsigned long size_t;
 #endif
 
 
@@ -58,6 +60,7 @@ typedef struct {
  *
  * \ingroup rma
  */
+typedef void * xmi_memregion_t;
 extern xmi_memregion_t xmi_global_memregion;
 
 /**
@@ -70,7 +73,7 @@ extern xmi_memregion_t xmi_global_memregion;
  * \param[in]  context   XMI application context
  * \param[in]  address   Virtual address of memory region
  * \param[in]  bytes     Number of bytes to register
- * \param[out] memregion Memory region object
+ * \param[out] memregion Memory region object. Can be NULL.
  *
  * \ingroup rma
  */
@@ -162,25 +165,79 @@ typedef struct xmi_rma_typed {
  * \ingroup put
  *
  * \see XMI_Put
- * \see XMI_Put_iterate
  * \see XMI_Put_typed
  **/
 typedef struct xmi_put {
   size_t                 task;      /**< Destination task */
-  void                 * local_va;  /**< Local buffer virtual address */
-  xmi_memregion_t        local_mr;  /**< Local buffer memory region */
-  void                 * remote_va; /**< Remote buffer virtual addreess */
-  xmi_memregion_t        remote_mr; /**< Remote buffer memory region */
+  void                 * local;     /**< Local buffer virtual address */
+  void                 * remote;    /**< Remote buffer virtual address */
   xmi_event_callback_t   send_done; /**< All local data has been sent */
   xmi_event_callback_t   recv_done; /**< All local data has been received */
   void                 * cookie;    /**< Argument to \b all event callbacks */
   xmi_send_hint_t        hints;     /**< Hints for sending the message */
   union {
     xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Put() */
-    xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_Put_iterate() */
     xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Put_typed() */
   };
 } xmi_put_t;
+
+xmi_result_t XMI_Put (xmi_context_t context, xmi_put_t * parameters);
+xmi_result_t XMI_Put_typed (xmi_context_t context, xmi_put_t * parameters);
+
+/**
+ * \brief Input parameters for the XMI get functions
+ * \ingroup get
+ *
+ * \see XMI_Get
+ * \see XMI_Get_typed
+ **/
+typedef struct xmi_get {
+  size_t                 task;      /**< Destination task */
+  void                 * local;     /**< Local buffer virtual address */
+  void                 * remote;    /**< Remote buffer virtual address */
+  xmi_event_callback_t   done;      /**< All local data has been sent */
+  xmi_event_callback_t   recv_done; /**< All local data has been received */
+  void                 * cookie;    /**< Argument to \b all event callbacks */
+  xmi_send_hint_t        hints;     /**< Hints for sending the message */
+  union {
+    xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Get() */
+    xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Get_typed() */
+  };
+} xmi_get_t;
+
+xmi_result_t XMI_Get (xmi_context_t context, xmi_put_t * parameters);
+xmi_result_t XMI_Get_typed (xmi_context_t context, xmi_put_t * parameters);
+
+/*************************************************************************/
+/*                                                                      
+   RDMA interface starts
+*/
+/*************************************************************************/
+
+/**
+ * \brief Input parameters for the XMI put functions
+ * \ingroup put
+ *
+ * \see XMI_RPut
+ * \see XMI_RPut_iterate
+ * \see XMI_RPut_typed
+ **/
+typedef struct xmi_rput {
+  size_t                 task;      /**< Destination task */
+  void                 * local_va;  /**< Local buffer virtual address */
+  xmi_memregion_t        local_mr;  /**< Local buffer memory region */
+  void                 * remote_va; /**< Remote buffer virtual address */
+  xmi_memregion_t        remote_mr; /**< Remote buffer memory region */
+  xmi_event_callback_t   send_done; /**< All local data has been sent */
+  xmi_event_callback_t   recv_done; /**< All local data has been received */
+  void                 * cookie;    /**< Argument to \b all event callbacks */
+  xmi_send_hint_t        hints;     /**< Hints for sending the message */
+  union {
+    xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_RPut() */
+    xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_RPut_iterate() */
+    xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_RPut_typed() */
+  };
+} xmi_rput_t;
 
 /**
  * \brief Simple put operation for one-sided contiguous data transfer.
@@ -190,7 +247,7 @@ typedef struct xmi_put {
  *
  * \ingroup put
  */
-xmi_result_t XMI_Put (xmi_context_t context, xmi_put_t * parameters);
+xmi_result_t XMI_RPut (xmi_context_t context, xmi_rput_t * parameters);
 
 /**
  * \brief Put operation for callback-driven one-sided non-contiguous data transfer.
@@ -200,7 +257,7 @@ xmi_result_t XMI_Put (xmi_context_t context, xmi_put_t * parameters);
  *
  * \ingroup put
  */
-xmi_result_t XMI_Put_iterate (xmi_context_t context, xmi_put_t * parameters);
+xmi_result_t XMI_RPut_iterate (xmi_context_t context, xmi_rput_t * parameters);
 
 /**
  * \brief Put operation for data type specific one-sided data transfer.
@@ -210,7 +267,7 @@ xmi_result_t XMI_Put_iterate (xmi_context_t context, xmi_put_t * parameters);
  *
  * \ingroup put
  */
-xmi_result_t XMI_Put_typed (xmi_context_t context, xmi_put_t * parameters);
+xmi_result_t XMI_RPut_typed (xmi_context_t context, xmi_rput_t * parameters);
 
 
 
@@ -227,15 +284,15 @@ xmi_result_t XMI_Put_typed (xmi_context_t context, xmi_put_t * parameters);
  * \brief Input parameters for the XMI get functions
  * \ingroup get
  *
- * \see XMI_Get
- * \see XMI_Get_iterate
- * \see XMI_Get_typed
+ * \see XMI_RGet
+ * \see XMI_RGet_iterate
+ * \see XMI_RGet_typed
  **/
-typedef struct xmi_get {
+typedef struct xmi_rget {
   size_t                 task;      /**< Destination task */
   void                 * local_va;  /**< Local buffer virtual address */
   xmi_memregion_t        local_mr;  /**< Local buffer memory region */
-  void                 * remote_va; /**< Remote buffer virtual addreess */
+  void                 * remote_va; /**< Remote buffer virtual address */
   xmi_memregion_t        remote_mr; /**< Remote buffer memory region */
   xmi_event_callback_t   done;      /**< All remote data has been received */
   void                 * cookie;    /**< Argument to \b all event callbacks */
@@ -245,7 +302,7 @@ typedef struct xmi_get {
     xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_Get_iterate() */
     xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Get_typed() */
   };
-} xmi_get_t;
+} xmi_rget_t;
 
 
 /**
@@ -256,7 +313,7 @@ typedef struct xmi_get {
  *
  * \ingroup get
  */
-xmi_result_t XMI_Get (xmi_context_t context, xmi_get_t * parameters);
+xmi_result_t XMI_RGet (xmi_context_t context, xmi_rget_t * parameters);
 
 /**
  * \brief Get operation for callback-driven one-sided non-contiguous data transfer.
@@ -266,7 +323,7 @@ xmi_result_t XMI_Get (xmi_context_t context, xmi_get_t * parameters);
  *
  * \ingroup get
  */
-xmi_result_t XMI_Get_iterate (xmi_context_t context, xmi_get_t * parameters);
+xmi_result_t XMI_RGet_iterate (xmi_context_t context, xmi_rget_t * parameters);
 
 /**
  * \brief Get operation for data type specific one-sided data transfer.
@@ -276,7 +333,7 @@ xmi_result_t XMI_Get_iterate (xmi_context_t context, xmi_get_t * parameters);
  *
  * \ingroup get
  */
-xmi_result_t XMI_Get_typed (xmi_context_t context, xmi_get_t * parameters);
+xmi_result_t XMI_RGet_typed (xmi_context_t context, xmi_rget_t * parameters);
 
 
 #endif
