@@ -15,7 +15,7 @@ void cb_broadcast (void * clientdata);
 CM_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
 CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
+CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
@@ -33,7 +33,7 @@ volatile unsigned       _g_total_broadcasts;
 CM_CollectiveRequest_t  _g_broadcast_request;
 char                   *_g_recv_buffer;
 
-CM_Callback_t _cb_broadcast   = {(void (*)(void*,LL_Error_t*))cb_broadcast,
+CM_Callback_t _cb_broadcast   = {(void (*)(void*,CM_Error_t*))cb_broadcast,
 			       (void *) &_g_broadcast_active };
 hl_ambroadcast_t  _xfer_broadcast =
     {
@@ -47,7 +47,7 @@ hl_ambroadcast_t  _xfer_broadcast =
 	0
     };
 
-void cb_ambcast_done (void * clientdata, LL_Error_t*err)
+void cb_ambcast_done (void * clientdata, CM_Error_t*err)
 {
   _g_total_broadcasts++;
   free(clientdata);

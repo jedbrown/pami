@@ -12,3 +12,15 @@
  */
 
 #include "mapping_impl.h"
+
+CCMI::CollectiveMapping::CollectiveMapping (void *pers)
+{
+  _personality = pers;
+
+  int rank, size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  _rank = rank;
+  _size = size;
+}

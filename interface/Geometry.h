@@ -27,7 +27,9 @@
 #include "util/ccmi_debug.h"
 #include "interface/CollectiveMapping.h"
 #include "algorithms/executor/Executor.h"
-#include "algorithms/schedule/Rectangle.h"
+#ifndef ADAPTOR_MPI
+ #include "algorithms/schedule/Rectangle.h"
+#endif
 #include "Adaptor.h"     // build needs to find this
 #include "algorithms/composite/Composite.h"
 #include "util/queue/Queue.h"
@@ -81,10 +83,12 @@ namespace CCMI
       bool                             _isGlobalContext;
       /// \brief is this some part of a torus?
       bool                             _isTorus; // generic for binom
+#ifndef ADAPTOR_MPI
       /// \brief The rectangle schedule, if this is a rectangular group
       CCMI::Schedule::Rectangle      _rectangle;
       /// \brief The rectangle schedule, if this is a rectangular group
       CCMI::Schedule::Rectangle      _rectangle_mesh;
+#endif
       /// \brief Need to store a barrier in the geometry
       CCMI::Executor::Executor       * _barrier_exec;
       /// \brief Need to store a barrier in the geometry
@@ -127,6 +131,7 @@ namespace CCMI
     public:
 
       /// \brief constructor
+#ifndef ADAPTOR_MPI
 
       Geometry(
               CCMI::TorusCollectiveMapping *mapping, /// \todo should not be torus
@@ -142,6 +147,15 @@ namespace CCMI
               unsigned comm,
               unsigned numcolors,
               bool     globalcontext) { CM_abortf("Need to add support for generic Mapping"); }
+#else // MPI
+      Geometry(
+              CCMI::CollectiveMapping *mapping,
+              unsigned *ranks,
+              unsigned nranks,
+              unsigned comm,
+              unsigned numcolors,
+              bool     globalcontext);
+#endif
 
       /// --------------------
       /// --- Query Functions
@@ -201,6 +215,7 @@ namespace CCMI
         return _numcolors;
       };
 
+#ifndef ADAPTOR_MPI
       inline CCMI::Schedule::Rectangle *rectangle()
       {
         return &_rectangle;
@@ -210,7 +225,7 @@ namespace CCMI
       {
         return &_rectangle_mesh;
       }
-
+#endif
       inline CCMI::Executor::Executor * getBarrierExecutor ()
       {
         return _barrier_exec;

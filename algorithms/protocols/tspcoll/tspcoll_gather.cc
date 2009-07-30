@@ -77,7 +77,7 @@ reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 /*              kick the scatter routine                            */
 /* **************************************************************** */
 
-void TSPColl::Gather::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
+void TSPColl::Gather::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   Communicator * comm = TSPColl::_commlist[_commID];
 

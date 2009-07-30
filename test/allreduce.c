@@ -15,18 +15,18 @@
 
 CM_Op op_array[] =
     {
-	LL_MAX,
-	LL_MIN,
-	LL_SUM,
-	LL_PROD,
-	LL_LAND,
-	LL_LOR,
-	LL_LXOR,
-	LL_BAND,
-	LL_BOR,
-	LL_BXOR,
-	LL_MAXLOC,
-	LL_MINLOC,
+	CM_MAX,
+	CM_MIN,
+	CM_SUM,
+	CM_PROD,
+	CM_LAND,
+	CM_LOR,
+	CM_LXOR,
+	CM_BAND,
+	CM_BOR,
+	CM_BXOR,
+	CM_MAXLOC,
+	CM_MINLOC,
     };
 enum opNum
     {
@@ -48,26 +48,26 @@ int op_count = OP_COUNT;
 
 CM_Dt dt_array[] =
     {
-	LL_SIGNED_CHAR,
-	LL_UNSIGNED_CHAR,
-	LL_SIGNED_SHORT,
-	LL_UNSIGNED_SHORT,
-	LL_SIGNED_INT,
-	LL_UNSIGNED_INT,
-	LL_SIGNED_LONG_LONG,
-	LL_UNSIGNED_LONG_LONG,
-	LL_FLOAT,
-	LL_DOUBLE,
- 	LL_LONG_DOUBLE,
-	LL_LOGICAL,
-	LL_SINGLE_COMPLEX,
-	LL_DOUBLE_COMPLEX,
-	LL_LOC_2INT,
-	LL_LOC_SHORT_INT,
-	LL_LOC_FLOAT_INT,
-	LL_LOC_DOUBLE_INT,
-	LL_LOC_2FLOAT,
-	LL_LOC_2DOUBLE,
+	CM_SIGNED_CHAR,
+	CM_UNSIGNED_CHAR,
+	CM_SIGNED_SHORT,
+	CM_UNSIGNED_SHORT,
+	CM_SIGNED_INT,
+	CM_UNSIGNED_INT,
+	CM_SIGNED_LONG_LONG,
+	CM_UNSIGNED_LONG_LONG,
+	CM_FLOAT,
+	CM_DOUBLE,
+ 	CM_LONG_DOUBLE,
+	CM_LOGICAL,
+	CM_SINGLE_COMPLEX,
+	CM_DOUBLE_COMPLEX,
+	CM_LOC_2INT,
+	CM_LOC_SHORT_INT,
+	CM_LOC_FLOAT_INT,
+	CM_LOC_DOUBLE_INT,
+	CM_LOC_2FLOAT,
+	CM_LOC_2DOUBLE,
     };
 
 enum dtNum
@@ -99,67 +99,67 @@ int dt_count = DT_COUNT;
 
 const char * op_array_str[] =
     {
-	"LL_MAX",
-	"LL_MIN",
-	"LL_SUM",
-	"LL_PROD",
-	"LL_LAND",
-	"LL_LOR",
-	"LL_LXOR",
-	"LL_BAND",
-	"LL_BOR",
-	"LL_BXOR",
-	"LL_MAXLOC",
-	"LL_MINLOC"
+	"CM_MAX",
+	"CM_MIN",
+	"CM_SUM",
+	"CM_PROD",
+	"CM_LAND",
+	"CM_LOR",
+	"CM_LXOR",
+	"CM_BAND",
+	"CM_BOR",
+	"CM_BXOR",
+	"CM_MAXLOC",
+	"CM_MINLOC"
     };
 
 
 const char * dt_array_str[] =
     {
-	"LL_SIGNED_CHAR",
-	"LL_UNSIGNED_CHAR",
-	"LL_SIGNED_SHORT",
-	"LL_UNSIGNED_SHORT",
-	"LL_SIGNED_INT",
-	"LL_UNSIGNED_INT",
-	"LL_SIGNED_LONG_LONG",
-	"LL_UNSIGNED_LONG_LONG",
-	"LL_FLOAT",
-	"LL_DOUBLE",
-	"LL_LONG_DOUBLE",
-	"LL_LOGICAL",
-	"LL_SINGLE_COMPLEX",
-	"LL_DOUBLE_COMPLEX",
-	"LL_LOC_2INT",
-	"LL_LOC_SHORT_INT",
-	"LL_LOC_FLOAT_INT",
-	"LL_LOC_DOUBLE_INT",
-	"LL_LOC_2FLOAT",
-	"LL_LOC_2DOUBLE"
+	"CM_SIGNED_CHAR",
+	"CM_UNSIGNED_CHAR",
+	"CM_SIGNED_SHORT",
+	"CM_UNSIGNED_SHORT",
+	"CM_SIGNED_INT",
+	"CM_UNSIGNED_INT",
+	"CM_SIGNED_LONG_LONG",
+	"CM_UNSIGNED_LONG_LONG",
+	"CM_FLOAT",
+	"CM_DOUBLE",
+	"CM_LONG_DOUBLE",
+	"CM_LOGICAL",
+	"CM_SINGLE_COMPLEX",
+	"CM_DOUBLE_COMPLEX",
+	"CM_LOC_2INT",
+	"CM_LOC_SHORT_INT",
+	"CM_LOC_FLOAT_INT",
+	"CM_LOC_DOUBLE_INT",
+	"CM_LOC_2FLOAT",
+	"CM_LOC_2DOUBLE"
     };
 
 unsigned elemsize_array[] =
     {
-	2, // LL_SIGNED_CHAR,
-	2, // LL_UNSIGNED_CHAR,
-	2, // LL_SIGNED_SHORT,
-	2, // LL_UNSIGNED_SHORT,
-	4, // LL_SIGNED_INT,
-	4, // LL_UNSIGNED_INT,
-	8, // LL_SIGNED_LONG_LONG,
-	8, // LL_UNSIGNED_LONG_LONG,
-	4, // LL_FLOAT,
-	8, // LL_DOUBLE,
-	8, // LL_LONG_DOUBLE,
-	4, // LL_LOGICAL,
-	8, // LL_SINGLE_COMPLEX,
-	1, // LL_DOUBLE_COMPLEX
-	8, // LL_LOC_2INT,
-	6, // LL_LOC_SHORT_INT,
-	8, // LL_LOC_FLOAT_INT,
-	12, // LL_LOC_DOUBLE_INT,
-	8,  // LL_LOC_2FLOAT,
-	16, // LL_LOC_2DOUBLE,
+	2, // CM_SIGNED_CHAR,
+	2, // CM_UNSIGNED_CHAR,
+	2, // CM_SIGNED_SHORT,
+	2, // CM_UNSIGNED_SHORT,
+	4, // CM_SIGNED_INT,
+	4, // CM_UNSIGNED_INT,
+	8, // CM_SIGNED_LONG_LONG,
+	8, // CM_UNSIGNED_LONG_LONG,
+	4, // CM_FLOAT,
+	8, // CM_DOUBLE,
+	8, // CM_LONG_DOUBLE,
+	4, // CM_LOGICAL,
+	8, // CM_SINGLE_COMPLEX,
+	1, // CM_DOUBLE_COMPLEX
+	8, // CM_LOC_2INT,
+	6, // CM_LOC_SHORT_INT,
+	8, // CM_LOC_FLOAT_INT,
+	12, // CM_LOC_DOUBLE_INT,
+	8,  // CM_LOC_2FLOAT,
+	16, // CM_LOC_2DOUBLE,
     };
 
 void cb_barrier (void * clientdata);
@@ -168,7 +168,7 @@ void cb_allreduce (void * clientdata);
 CM_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
 CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
+CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
@@ -183,7 +183,7 @@ hl_barrier_t  _xfer_barrier =
 CM_CollectiveProtocol_t _g_allreduce;
 volatile unsigned       _g_allreduce_active;
 CM_CollectiveRequest_t  _g_allreduce_request;
-CM_Callback_t _cb_allreduce   = {(void (*)(void*,LL_Error_t*))cb_allreduce,
+CM_Callback_t _cb_allreduce   = {(void (*)(void*,CM_Error_t*))cb_allreduce,
 			       (void *) &_g_allreduce_active };
 hl_allreduce_t  _xfer_allreduce =
     {

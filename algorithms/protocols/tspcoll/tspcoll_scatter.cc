@@ -60,7 +60,7 @@ reset (int root, const void * sbuf, void * rbuf, size_t length)
 /* **************************************************************** */
 /*              kick the scatter routine                            */
 /* **************************************************************** */
-void TSPColl::Scatter::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
+void TSPColl::Scatter::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   _mcast_iface = mcast_iface;
   TRACE((stderr, "SCATTER KICK START\n"));
@@ -136,7 +136,7 @@ reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 /* **************************************************************** */
 /*             kick the scatterv routine                            */
 /* **************************************************************** */
-void TSPColl::Scatterv::kick(CCMI::MultiSend::MulticastInterface *mcast_iface)
+void TSPColl::Scatterv::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   _mcast_iface = mcast_iface;
   if (!this->_isroot) return;

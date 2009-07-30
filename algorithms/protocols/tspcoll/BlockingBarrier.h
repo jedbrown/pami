@@ -84,7 +84,7 @@ BlockingBarrier (Communicator * comm, int tag, int id)
 /*                     send an active message                              */
 /* *********************************************************************** */
 
-inline void TSPColl::BlockingBarrier::execute (CCMI::MultiSend::MulticastInterface *mcast_iface)
+inline void TSPColl::BlockingBarrier::execute (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   _counter ++;
   for (int i=0; i<_numphases; i++)

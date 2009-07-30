@@ -11,7 +11,6 @@
  * \brief Define a torus mapping which must be implemented in the 
  * adaptor. 
  */
-
 #ifndef   __collective_engine_torus_mapping__
 #define   __collective_engine_torus_mapping__
 

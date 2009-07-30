@@ -14,7 +14,7 @@
 #define __tspcoll_basecomm_h__
 
 #include "util/ccmi_debug.h"
-
+#include "./MultiSend.h"
 namespace TSPColl
 {
   class NBColl; /* any non-blocking collective */

@@ -16,6 +16,9 @@
 
 #include "./Composite.h"
 
+/// \todo remote color/torus rectangle requirements
+#include "algorithms/schedule/Rectangle.h"
+
 namespace CCMI
 {
   namespace Adaptor

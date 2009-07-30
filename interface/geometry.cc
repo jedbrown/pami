@@ -20,11 +20,18 @@
 unsigned          CCMI::Adaptor::_ccmi_cached_geometry_comm;
 CCMI_Geometry_t * CCMI::Adaptor::_ccmi_cached_geometry;
 
+/// \todo DCMF specifics need to split out of ccmi geometry
+#warning DCMF specifics need to split out of ccmi geometry
+
+#ifndef ADAPTOR_MPI
 CCMI::Adaptor::Geometry::Geometry (CCMI::TorusCollectiveMapping *mapping, /// \todo should not be torus
+#else // MPI
+CCMI::Adaptor::Geometry::Geometry (CCMI::CollectiveMapping *mapping,
+#endif
 				   unsigned *ranks,
 				   unsigned nranks,
 				   unsigned comm,
-                   unsigned numcolors,
+				   unsigned numcolors,
 				   bool globalcontext):
 _allreduce_iteration(0),
 _allreduce_async_mode(1),
@@ -70,6 +77,7 @@ _asyncBcastUnexpQueue(NULL)
     _collective_exec[i] = NULL;
   }
 
+#ifndef ADAPTOR_MPI
   /// \brief setup the rectangle
   unsigned coords[CCMI_TORUS_NDIMS];
   unsigned min_coords[CCMI_TORUS_NDIMS];
@@ -86,16 +94,13 @@ _asyncBcastUnexpQueue(NULL)
       _myidx = count;
       break;
     }
-
+#endif
     //Used in alltoalls
   _permutation = NULL;
 
 #ifndef ADAPTOR_MPI
-  /// \todo DCMF specifics need to split out of ccmi geometry
-  #warning DCMF specifics need to split out of ccmi geometry
   DCMF_Hardware_t  hw_info;
   DCMF_Hardware (& hw_info);
-#endif // ADAPTOR_MPI
 
   for(count = 0; count < nranks; count ++)
   {
@@ -137,11 +142,9 @@ _asyncBcastUnexpQueue(NULL)
     _rectangle.zs = max_coords[CCMI_Z_DIM] - min_coords[CCMI_Z_DIM] + 1;
     _rectangle.ts = max_coords[CCMI_T_DIM] - min_coords[CCMI_T_DIM] + 1;
 
-#ifndef ADAPTOR_MPI
     _rectangle.isTorusX = (hw_info.xTorus && _rectangle.xs == hw_info.xSize);
     _rectangle.isTorusY = (hw_info.yTorus && _rectangle.ys == hw_info.ySize);
     _rectangle.isTorusZ = (hw_info.zTorus && _rectangle.zs == hw_info.zSize);
-#endif // ADAPTOR_MPI
     _rectangle.isTorusT = 1;
 
     //Some protocols cannot make use of torus links. Cache a mesh for them
@@ -172,7 +175,10 @@ _asyncBcastUnexpQueue(NULL)
     //Some protocols cannot make use of torus links. Cache a mesh for them
     _rectangle_mesh = _rectangle;
   }
-  
+#else // ADAPTOR_MPI
+    _isRectangle = false;
+
+#endif  
 }
 
 #define PRIME_A   19

@@ -19,6 +19,7 @@
 #include "algorithms/schedule/ShortRectangle.h"
 #include "interface/Geometry.h"
 #include "BarrierT.h"
+#include "BarrierR.h"
 
 namespace CCMI
 {
@@ -39,7 +40,7 @@ namespace CCMI
       typedef BarrierFactoryT <GiBarrier, CCMI::TorusCollectiveMapping>                  GiBarrierFactory;
       typedef OldBarrierFactoryT <TreeBarrier, CCMI::TorusCollectiveMapping>             TreeBarrierFactory;
       typedef BarrierFactoryT <LockboxBarrier, CCMI::TorusCollectiveMapping>             LockboxBarrierFactory;
-      typedef OldBarrierFactoryT <RectangleBarrier, CCMI::TorusCollectiveMapping>        RectangleBarrierFactory;            
+      typedef OldBarrierFactoryR <RectangleBarrier, CCMI::TorusCollectiveMapping>        RectangleBarrierFactory;            
 
       ///
       /// \brief Rectangle lockbox barrier

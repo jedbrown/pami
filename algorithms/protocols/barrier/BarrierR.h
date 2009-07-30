@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_collectives_barrier_factory_template_h__
-#define __ccmi_collectives_barrier_factory_template_h__
+#ifndef __ccmi_collectives_barrier_factory_template_r_h__
+#define __ccmi_collectives_barrier_factory_template_r_h__
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "./BarrierFactory.h"
@@ -26,17 +26,17 @@ namespace CCMI
   {
     namespace Barrier
     {
-      typedef bool (*AnalyzeFn) (Geometry *g);
 
       ///
-      /// \brief Binomial barrier
-      ///  
-      template <class S, AnalyzeFn afn, class MAP> class BarrierT : public CCMI::Executor::Barrier
+      /// \brief Barrier for rectangle schedules
+      ///        The R argument chooses a rectangle schedule
+      ///
+      template <class R, class MAP> class BarrierR : public CCMI::Executor::Barrier
       {
         ///
         /// \brief The schedule for binomial barrier protocol
         ///
-        S                             _myschedule;
+        R                              _myschedule;
 
       public:
         ///
@@ -46,30 +46,29 @@ namespace CCMI
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-
-        BarrierT  (MAP                     * mapping,
+        BarrierR  (MAP                    * mapping,
                    CCMI::MultiSend::MultisyncInterface    * mInterface,
                    Geometry                               * geometry) :
         Barrier (geometry->nranks(), geometry->ranks(), geometry->comm(), 0, mInterface),
-        _myschedule (mapping, geometry->nranks(), geometry->ranks())
+        _myschedule ( mapping, *geometry->rectangle())
         {
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
+          TRACE_ADAPTOR((stderr,"<%X>CCMI::Adaptor::Barrier::BarrierR::ctor(%X)\n",
                      (int)this, geometry->comm()));
           setCommSchedule (&_myschedule);
         }
 
         static bool analyze (Geometry *geometry)
         {
-          return((AnalyzeFn) afn)(geometry);
+          return geometry->isRectangle() && geometry->nranks() > 1;
         }
+      }; //-RectangleBarrier
 
-      }; //-BarrierT
 
       ///
       /// \brief Barrier Factory Base class.
       ///
       template <class T, class MAP>
-      class BarrierFactoryT : private BarrierFactory<MAP>
+      class BarrierFactoryR : private BarrierFactory<MAP>
       {
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -81,7 +80,7 @@ namespace CCMI
         ///
         /// \brief Constructor for barrier factory implementations.
         ///
-        BarrierFactoryT (CCMI::MultiSend::MultisyncInterface    * minterface,
+        BarrierFactoryR (CCMI::MultiSend::MultisyncInterface    * minterface,
                          MAP                          * map,
                          CCMI_mapIdToGeometry                     cb_geometry) :
         BarrierFactory<MAP> (minterface, map, cb_geometry)
@@ -115,14 +114,15 @@ namespace CCMI
 // Old, deprecated interfaces for transition from OldMulticast to Multisync
 
       ///
-      /// \brief Binomial barrier
-      ///  
-      template <class S, AnalyzeFn afn, class MAP> class OldBarrierT : public CCMI::Executor::OldBarrier
+      /// \brief Barrier for rectangle schedules
+      ///        The R argument chooses a rectangle schedule
+      ///
+      template <class R, class MAP> class OldBarrierR : public CCMI::Executor::OldBarrier
       {
         ///
         /// \brief The schedule for binomial barrier protocol
         ///
-        S                             _myschedule;
+        R                              _myschedule;
 
       public:
         ///
@@ -132,31 +132,29 @@ namespace CCMI
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-
-        OldBarrierT  (MAP                     * mapping,
+        OldBarrierR  (MAP                     * mapping,
                    CCMI::MultiSend::OldMulticastInterface    * mInterface,
                    Geometry                               * geometry) :
         OldBarrier (geometry->nranks(), geometry->ranks(), geometry->comm(), 0, mInterface),
-        _myschedule (mapping, geometry->nranks(), geometry->ranks())
+        _myschedule ( mapping, *geometry->rectangle())
         {
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
+          TRACE_ADAPTOR((stderr,"<%X>CCMI::Adaptor::Barrier::BarrierR::ctor(%X)\n",
                      (int)this, geometry->comm()));
           setCommSchedule (&_myschedule);
         }
 
         static bool analyze (Geometry *geometry)
         {
-          return((AnalyzeFn) afn)(geometry);
+          return geometry->isRectangle() && geometry->nranks() > 1;
         }
-
-      }; //- OldBarrierT
+      }; //-OldRectangleBarrier
 
 
       ///
       /// \brief Barrier Factory Base class.
       ///
       template <class T, class MAP>
-      class OldBarrierFactoryT : private OldBarrierFactory<MAP>
+      class OldBarrierFactoryR : private OldBarrierFactory<MAP>
       {
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -168,7 +166,7 @@ namespace CCMI
         ///
         /// \brief Constructor for barrier factory implementations.
         ///
-        OldBarrierFactoryT (CCMI::MultiSend::OldMulticastInterface    * minterface,
+        OldBarrierFactoryR (CCMI::MultiSend::OldMulticastInterface    * minterface,
                          MAP                          * map,
                          CCMI_mapIdToGeometry                     cb_geometry) :
         OldBarrierFactory<MAP> (minterface, map, cb_geometry)
@@ -197,7 +195,7 @@ namespace CCMI
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);
         }
 
-      };  //- OldBarrierFactoryT
+      };  //- OldBarrierFactoryR
 //////////////////////////////////////////////////////////////////////////////
     };
   };

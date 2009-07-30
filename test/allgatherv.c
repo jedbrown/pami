@@ -16,7 +16,7 @@ void cb_allgatherv (void * clientdata);
 CM_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
 CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,LL_Error_t*))cb_barrier,
+CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
@@ -31,7 +31,7 @@ hl_barrier_t  _xfer_barrier =
 CM_CollectiveProtocol_t _g_allgatherv;
 volatile unsigned       _g_allgatherv_active;
 CM_CollectiveRequest_t  _g_allgatherv_request;
-CM_Callback_t _cb_allgatherv   = {(void (*)(void*,LL_Error_t*))cb_allgatherv,
+CM_Callback_t _cb_allgatherv   = {(void (*)(void*,CM_Error_t*))cb_allgatherv,
 			       (void *) &_g_allgatherv_active };
 hl_allgatherv_t  _xfer_allgatherv =
     {

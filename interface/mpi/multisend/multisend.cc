@@ -39,7 +39,7 @@ extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration,
   TRACE_ADAPTOR((stderr, "<%#.8X>Multisend_multicast_register\n", (int)registration));
   CCMI::Adaptor::Generic::OldMulticastImpl * msend =
     new ( registration ) CCMI::Adaptor::Generic::OldMulticastImpl();
-  msend->setCallback( (CCMI::Adaptor::Generic::msend_recv)cb_recv, arg );
+  msend->setCallback( cb_recv, arg );
   return 0;
 }
 

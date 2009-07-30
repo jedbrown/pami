@@ -12,6 +12,7 @@
 
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
+#include "interface/MultiSend.h"
 
 namespace TSPColl
 {

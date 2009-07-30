@@ -20,7 +20,7 @@
 #include "algorithms/executor/AllreduceBase.h"
 
 #include "algorithms/schedule/BinomialTree.h"
-#include "algorithms/schedule/Rectangle.h"
+//#include "algorithms/schedule/Rectangle.h"
 //#include "algorithms/schedule/TreeBwSchedule.h"
 
 #include "algorithms/connmgr/RankBasedConnMgr.h"

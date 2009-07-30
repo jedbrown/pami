@@ -75,7 +75,7 @@ void TSPColl::Communicator::nbwait (NBColl * c)
 /*                 bruck exchange barrier implementation                    */
 /* ************************************************************************ */
 
-TSPColl::NBColl * TSPColl::Communicator::ibarrier (CCMI::MultiSend::MulticastInterface *mcast_iface,
+TSPColl::NBColl * TSPColl::Communicator::ibarrier (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 						   void (*cb_complete)(void *),
 						   void *arg)
 {
@@ -86,7 +86,7 @@ TSPColl::NBColl * TSPColl::Communicator::ibarrier (CCMI::MultiSend::MulticastInt
   return _barrier;
 }
 
-void TSPColl::Communicator::barrier(CCMI::MultiSend::MulticastInterface *mcast_iface,
+void TSPColl::Communicator::barrier(CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				    void (*cb_complete)(void *),
 				    void *arg)
 {
@@ -98,7 +98,7 @@ void TSPColl::Communicator::barrier(CCMI::MultiSend::MulticastInterface *mcast_i
 /* ************************************************************************ */
 
 TSPColl::NBColl * TSPColl::Communicator::
-iallgather (CCMI::MultiSend::MulticastInterface *mcast_iface,
+iallgather (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	    const void * sbuf, void * rbuf, size_t nbytes,
 	    void (*cb_complete)(void *), void *arg)
 {
@@ -110,7 +110,7 @@ iallgather (CCMI::MultiSend::MulticastInterface *mcast_iface,
 }
 
 void TSPColl::Communicator::
-allgather (CCMI::MultiSend::MulticastInterface *mcast_iface,
+allgather (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	   const void * sbuf, void * rbuf, size_t nbytes,
 	   void (*cb_complete)(void *), void *arg)
 {
@@ -122,7 +122,7 @@ allgather (CCMI::MultiSend::MulticastInterface *mcast_iface,
 /* ************************************************************************ */
 
 TSPColl::NBColl * TSPColl::Communicator::
-iallgatherv (CCMI::MultiSend::MulticastInterface *mcast_iface,
+iallgatherv (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	     const void * sbuf, void * rbuf, size_t * lengths,
 	     void (*cb_complete)(void *), void *arg)
 {
@@ -134,7 +134,7 @@ iallgatherv (CCMI::MultiSend::MulticastInterface *mcast_iface,
 }
 
 void TSPColl::Communicator::
-allgatherv (CCMI::MultiSend::MulticastInterface *mcast_iface,
+allgatherv (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	    const void * sbuf, void * rbuf, size_t * lengths,
 	    void (*cb_complete)(void *), void *arg)
 {
@@ -146,7 +146,7 @@ allgatherv (CCMI::MultiSend::MulticastInterface *mcast_iface,
 /* ************************************************************************ */
 
 TSPColl::NBColl * TSPColl::Communicator::
-ibcast (CCMI::MultiSend::MulticastInterface *mcast_iface,
+ibcast (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	int root, const void * sbuf, void * rbuf, size_t length,
 	void (*cb_complete)(void *), void *arg)
 {
@@ -169,7 +169,7 @@ ibcast (CCMI::MultiSend::MulticastInterface *mcast_iface,
 }
 
 void TSPColl::Communicator::
-bcast (CCMI::MultiSend::MulticastInterface *mcast_iface,
+bcast (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
        int root, const void * sbuf, void * rbuf, size_t length,
        void (*cb_complete)(void *), void *arg)
 {
@@ -185,7 +185,7 @@ namespace CCMI { namespace Adaptor { namespace Allreduce {
 				    unsigned&, coremath&);
     }}};
 TSPColl::NBColl * TSPColl::Communicator::
-iallreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+iallreduce  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	     const void          * s,
 	     void                * d,
 	     CM_Op               op,
@@ -217,7 +217,7 @@ iallreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
 }
 
 void TSPColl::Communicator::
-allreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
+allreduce  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	    const void *s,
 	    void * d,
 	    CM_Op op,
@@ -234,8 +234,8 @@ allreduce  (CCMI::MultiSend::MulticastInterface *mcast_iface,
 /* ************************************************************************ */
 
 TSPColl::NBColl * TSPColl::Communicator::
-iscatter (CCMI::MultiSend::MulticastInterface *barrier_iface,
-	  CCMI::MultiSend::MulticastInterface *scatter_iface,
+iscatter (CCMI::MultiSend::OldMulticastInterface *barrier_iface,
+	  CCMI::MultiSend::OldMulticastInterface *scatter_iface,
 	  int root, const void * sbuf, void * rbuf, size_t length,
 	  void (*cb_complete)(void *), void *arg)
 {
@@ -248,8 +248,8 @@ iscatter (CCMI::MultiSend::MulticastInterface *barrier_iface,
 }
 
 void TSPColl::Communicator::
-scatter (CCMI::MultiSend::MulticastInterface *barrier_iface,
-	 CCMI::MultiSend::MulticastInterface *scatter_iface,
+scatter (CCMI::MultiSend::OldMulticastInterface *barrier_iface,
+	 CCMI::MultiSend::OldMulticastInterface *scatter_iface,
 
 	 int r, const void * s, void * d, size_t l,
 	 void (*cb_complete)(void *), void *arg)
@@ -262,8 +262,8 @@ scatter (CCMI::MultiSend::MulticastInterface *barrier_iface,
 /* ************************************************************************ */
 
 TSPColl::NBColl * TSPColl::Communicator::
-iscatterv (CCMI::MultiSend::MulticastInterface *barrier_iface,
-	   CCMI::MultiSend::MulticastInterface *scatterv_iface,
+iscatterv (CCMI::MultiSend::OldMulticastInterface *barrier_iface,
+	   CCMI::MultiSend::OldMulticastInterface *scatterv_iface,
 	   int root, const void * sbuf, void * rbuf, size_t * lengths,
 	   void (*cb_complete)(void *), void *arg)
 {
@@ -276,8 +276,8 @@ iscatterv (CCMI::MultiSend::MulticastInterface *barrier_iface,
 }
 
 void TSPColl::Communicator::
-scatterv (CCMI::MultiSend::MulticastInterface *barrier_iface,
-	  CCMI::MultiSend::MulticastInterface *scatterv_iface,
+scatterv (CCMI::MultiSend::OldMulticastInterface *barrier_iface,
+	  CCMI::MultiSend::OldMulticastInterface *scatterv_iface,
 	  int root, const void * sbuf, void * rbuf, size_t * lengths,
 	  void (*cb_complete)(void *), void *arg)
 {
@@ -289,7 +289,7 @@ scatterv (CCMI::MultiSend::MulticastInterface *barrier_iface,
 /* ************************************************************************ */
 
 void TSPColl::Communicator::
-gather (CCMI::MultiSend::MulticastInterface *mcast_iface,
+gather (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	int root, const void * sbuf, void * rbuf, size_t length)
 {
 #if 0
@@ -306,7 +306,7 @@ gather (CCMI::MultiSend::MulticastInterface *mcast_iface,
 /* ************************************************************************ */
 
 void TSPColl::Communicator::
-gatherv (CCMI::MultiSend::MulticastInterface *mcast_iface,
+gatherv (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	 int root, const void * sbuf, void * rbuf, size_t * lengths)
 {
 

@@ -18,7 +18,7 @@ namespace CCMI
   {
     namespace Generic
     {
-
+#warning ccmi adaptor generice msend_recv
       typedef CCMI_Request_t * (*msend_recv) (const CMQuad  * info,
                                               unsigned          count,
                                               unsigned          peer,

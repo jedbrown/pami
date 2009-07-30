@@ -54,7 +54,7 @@ void TSPColl::NBCollFactory::initialize ()
 }
 
 void
-TSPColl::NBCollManager::multisend_reg (NBTag tag,CCMI::MultiSend::MulticastInterface *mcast_iface)
+TSPColl::NBCollManager::multisend_reg (NBTag tag,CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   switch (tag)
     {
