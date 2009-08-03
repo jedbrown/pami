@@ -1,9 +1,13 @@
 /**
  * \file xmi_context.h
  * \brief xmi multi-context messaging interface
+ * \example config/xmi_config_test.c
  */
 #ifndef __xmi_context_h__
 #define __xmi_context_h__
+
+#include "xmi.h"
+#include "xmi_config.h"
 
 /**
  * \brief Initialize the XMI runtime
@@ -21,7 +25,7 @@ xmi_result_t XMI_Initialize ();
 xmi_result_t XMI_Finalize ();
 
 
-/** \brief XMI context "magic cookie" data type. 
+/** \brief XMI context "magic cookie" data type.
  *  \todo Move to config interface
  */
 typedef uint64_t xmi_cookie_t[2];
@@ -99,7 +103,7 @@ xmi_result_t XMI_Context_post (xmi_context_t        context,
  * \param[in] context XMI communication context
  * \param[in] maximum Maximum number of internal poll iterations
  */
-xmi_result_t XMI_Advance (xmi_context_t context, size_t maximum);
+xmi_result_t XMI_Advance_max (xmi_context_t context, size_t maximum);
 
 /**
  * \brief Advance the progress engine for multiple communication contexts

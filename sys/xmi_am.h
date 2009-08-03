@@ -1,26 +1,11 @@
+/**
+ * \file xmi_am.h
+ * \brief messaging interface
+ */
 #ifndef __xmi_am_h__
 #define __xmi_am_h__
 
-typedef int           xmi_result_t;
-typedef void *        xmi_context_t;
-typedef unsigned int  xmi_task_t;
-typedef unsigned long xmi_size_t;
-typedef void *        xmi_dispatch_t;
-typedef void *        xmi_data_type_t;
-
-/**
- * \brief Callback to handle message events
- *
- * \todo Move this to a common header file
- *
- * \param[in] context   XMI application context
- * \param[in] cookie    Event callback application argument
- * \param[in] result    Asynchronous result information (was error information)
- */
-typedef void (*xmi_event_callback_t) ( xmi_context_t   context,
-                                       void          * cookie,
-                                       xmi_result_t    result );
-
+#include "xmi.h"
 
 /**
  * \brief Callback to provide data at send side or consume data at receive side
@@ -82,7 +67,7 @@ typedef struct {
 typedef struct {
   size_t                 bytes;    /**< Number of bytes data */
   size_t                 offset;   /**< Starting offset */
-  xmi_datatype_t         datatype; /**< Datatype TODO */
+  xmi_data_type_t        datatype; /**< Datatype TODO */
 } xmi_send_typed_t;
 
 typedef struct {
