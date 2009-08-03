@@ -1,7 +1,13 @@
+/**
+ * \file config/xmi_config_test.c
+ * \brief Example XMI_Send source code.
+ *
+ * ***** need more description of this example ***
+ */
 #include <stdio.h>
-#include <xmi_config.h>
+#include "xmi_context.h"
 
-xmi_context_t  context;
+xmi_context_t context;
 
 void Init()
 {
@@ -15,8 +21,8 @@ void Init()
     };
 
     int num_configs = sizeof(config)/sizeof(config[0]);
-    int rc = XMI_Init(&context, num_configs, config);
-    if (rc) 
+    int rc = XMI_Context_create(num_configs, config, &context);
+    if (rc)
         printf("XMI_Init returned %d due to %s\n", rc, XMI_Last_error());
 }
 
@@ -32,7 +38,7 @@ void Update()
     config.key   = "some key";
     config.value = "some value";
     XMI_Config_update(context, XMI_USER_CONFIG, &config);
-    // The XMI implementation can check user config 
+    // The XMI implementation can check user config
     // but it is not part of the API specification
 }
 
@@ -57,7 +63,7 @@ void Query1()
     // All attributes are defined in xmi.h + xmi_ext.h already
     xmi_attribute_t *xmi_attrs;
     XMI_Config_query(context, XMI_ATTRIBUTES, &xmi_attrs);
-    for (; *xmi_attrs; xmi_attrs++) 
+    for (; *xmi_attrs; xmi_attrs++)
         printf("%d\n", *xmi_attrs);
 
     // Query user defined keys and values
@@ -95,5 +101,3 @@ void Query2()
     // Need an extra query for number of keys
     // ...
 }
-
-

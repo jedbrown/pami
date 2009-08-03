@@ -1,10 +1,13 @@
 /**
- * \file xmi_send.h
+ * \file xmi_send.c
  * \brief Example XMI_Send source code.
  *
  * ***** need more description of this example ***
  */
 
+#include <stdio.h>
+#include <string.h>
+#include "xmi_send.h"
 
 typedef struct example_recv_info
 {
@@ -313,8 +316,3 @@ void do_test ()
 
   return;
 }
-
-
-
-
-
