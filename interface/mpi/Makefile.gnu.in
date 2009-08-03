@@ -4,7 +4,7 @@ NOTBUILT        =
 @LIBNAME@-""-COLLECTIVESIFACE_SOURCES=hl_collectives.cc \
 				      ll_pipeworkqueue.cc   \
 				      ll_multisend.cc \
-				      ll_topology.cc
-#				      tspcoll_communicator.cc
+				      ll_topology.cc \
+				      tspcoll_communicator.cc
 DEVICENAME     = @LIBNAME@-""-COLLECTIVESIFACE
 include @abs_top_builddir@/Build.rules
