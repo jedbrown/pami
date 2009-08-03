@@ -194,4 +194,3 @@ xmi_result_t XMI_Lock_destroy (xmi_lock_t lock);
 
 
 #endif /* __xmi_context_h__ */
-

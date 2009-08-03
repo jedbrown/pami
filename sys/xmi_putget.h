@@ -1,5 +1,5 @@
 /**
- * \file sys/xmi_putget.h
+ * \file xmi_putget.h
  * \brief XMI remote memory access interface
  */
 #ifndef __xmi_putget_h__
