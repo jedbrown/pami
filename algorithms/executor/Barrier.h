@@ -114,10 +114,10 @@ namespace CCMI
           return &_dstranks[_dstoffsets[phase]];
         }
 
-        unsigned  *getDstSubtasks (unsigned phase)
+        size_t  *getDstSubtasks (unsigned phase)
         {
           CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
-          return (unsigned*)&_dstsubtasks[_dstoffsets[phase]];
+          return &_dstsubtasks[_dstoffsets[phase]];
         }      
 
         unsigned  getStartPhase()
