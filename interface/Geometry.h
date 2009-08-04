@@ -27,6 +27,11 @@
 #include "util/ccmi_debug.h"
 #include "interface/CollectiveMapping.h"
 #include "algorithms/executor/Executor.h"
+#include <new>
+#if (TARGET==mpi || TARGET==lapiunix)
+#define ADAPTOR_MPI
+#endif
+
 #ifndef ADAPTOR_MPI
  #include "algorithms/schedule/Rectangle.h"
 #endif
@@ -38,7 +43,7 @@
 
 namespace CCMI
 {
-  namespace Adaptor 
+  namespace Adaptor
   {
     extern unsigned          _ccmi_cached_geometry_comm;
     extern CCMI_Geometry_t * _ccmi_cached_geometry;
@@ -55,16 +60,16 @@ namespace CCMI
       {
         // 1 is async on (two iterations of the composite saved)
         // 0 is async off (only one iteration of the composite saved)
-        _allreduce_async_mode = value; 
+        _allreduce_async_mode = value;
       }
       inline unsigned getAsyncAllreduceMode()
       {
         // 1 is async on (two iterations of the composite saved)
         // 0 is async off (only one iteration of the composite saved)
-        return _allreduce_async_mode; 
+        return _allreduce_async_mode;
       }
 
-    protected:    
+    protected:
 
       /// \brief Unique ID which is the same on all ranks in the group
       unsigned                         _commid;
@@ -101,15 +106,15 @@ namespace CCMI
       /// \brief Need to store executors in the geometry for async callbacks
       CCMI::Executor::Executor       * _collective_exec[colorsArray];
 
-      /// \brief Persistent storage for [all]reduce composites.    
+      /// \brief Persistent storage for [all]reduce composites.
       /// Saved for the life of the geometry and freed when the
-      // geometry is destroyed.  
+      // geometry is destroyed.
       CCMI_Executor_t                  * _allreduce_storage[2];
 
       unsigned                         _allreduce_iteration;
       unsigned                         _allreduce_async_mode;
       unsigned                         * _permutation;
-      int                              _myidx;      
+      int                              _myidx;
       unsigned                         _numcolors;
 
       //Queue               _asyncBcastPostQueue;
@@ -181,7 +186,7 @@ namespace CCMI
       void generatePermutation ();
       void freePermutation ();
 
-      inline unsigned   *permutation() 
+      inline unsigned   *permutation()
       {
         if(!_permutation)
           generatePermutation();
@@ -251,18 +256,18 @@ namespace CCMI
         return _allreduce_iteration;
       }
 
-      inline CCMI_Executor_t  *getAllreduceCompositeStorage () 
+      inline CCMI_Executor_t  *getAllreduceCompositeStorage ()
       {
         if(_allreduce_storage[_allreduce_iteration] == NULL)
           _allreduce_storage[_allreduce_iteration] = (CCMI_Executor_t *) CCMI_Alloc (sizeof (CCMI_Executor_t));
-        return _allreduce_storage[_allreduce_iteration]; 
+        return _allreduce_storage[_allreduce_iteration];
       }
 
-      inline CCMI_Executor_t  *getAllreduceCompositeStorage(unsigned i) 
+      inline CCMI_Executor_t  *getAllreduceCompositeStorage(unsigned i)
       {
         if(_allreduce_storage[i] == NULL)
           _allreduce_storage[i] = (CCMI_Executor_t *) CCMI_Alloc (sizeof (CCMI_Executor_t));
-        return _allreduce_storage[i]; 
+        return _allreduce_storage[i];
       }
 
       inline CCMI::Executor::Composite *getAllreduceComposite()
@@ -297,11 +302,11 @@ namespace CCMI
       {
   //      int i;
 	//            fprintf(stderr,"Geometry::freeAllocations(), _allreduce %#X, _allreduce_storage %#X\n",
-	//                    (int)_allreduce, (int)_allreduce_storage);	
+	//                    (int)_allreduce, (int)_allreduce_storage);
 	if(_asyncBcastPostQueue)
 	  CCMI_Free (_asyncBcastPostQueue);
 	_asyncBcastPostQueue = NULL;
-	
+
 	if(_asyncBcastUnexpQueue)
 	  CCMI_Free (_asyncBcastUnexpQueue);
 	_asyncBcastUnexpQueue = NULL;

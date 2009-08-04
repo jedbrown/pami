@@ -6,7 +6,12 @@
 #ifndef   __mpi_multisend_impl_h__
 #define   __mpi_multisend_impl_h__
 #include <assert.h>
+
+#include "util/ccmi_util.h"
+#include "util/ccmi_debug.h"
+#include "interface/MultiSend.h"
 #include "interface/lapiunix/Adaptor.h"
+
 #include "./regTable.h"
 #include "interface/lapiunix/common/include/pgasrt.h"
 
@@ -243,7 +248,8 @@ namespace CCMI
 			}
 		public:
 			void * getAsyncArg() {return this->OldMulticastInterface::_async_arg;}
-			CCMI::MultiSend::CCMI_RecvOldMulticast_t getCbAsyncHead()
+//			CCMI_RecvMulticast_t getCbAsyncHead()
+			DCMF_OldRecvMulticast    getCbAsyncHead()
 			    {
 				return this->OldMulticastInterface::_cb_async_head;
 			    }
@@ -283,7 +289,7 @@ namespace CCMI
 				       &pwidth,
 				       &cb_done);
 		      TRACE((stderr, "Delivered  Callback to user rcvlen=%d buf=%p req=%p!\n", rcvlen, rcvbuf, req));
-		
+
 
 		if(rcvlen == 0)
 		    {

@@ -327,7 +327,7 @@ extern "C"
 			}
 		}
 		break;
-
+#if 0
 	    case HL_CFG_ALLTOALL:
 		{
 		    HL_Alltoall_Configuration_t *cfg   = (HL_Alltoall_Configuration_t *)config;
@@ -379,6 +379,7 @@ extern "C"
 			}
 		}
 		break;
+#endif
 	    case HL_CFG_BARRIER:
 		{
 		    HL_Barrier_Configuration_t *cfg = (HL_Barrier_Configuration_t *)config;

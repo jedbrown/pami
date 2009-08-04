@@ -54,7 +54,7 @@ namespace CCMI
 
       }
 
-      CCMI::Mapping  * mapping ()
+      CCMI::CollectiveMapping  * mapping ()
       {
         return &_mapping;
       }

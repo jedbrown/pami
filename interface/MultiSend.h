@@ -604,7 +604,7 @@ namespace CCMI
     ///
     class OldMulticastInterface
     {
-    protected:
+    public:
       ///
       ///  \brief the arguments for async mode of operation where no
       ///  receive is posted
