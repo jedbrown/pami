@@ -339,8 +339,7 @@ extern "C"
 			}
 		}
 		break;
-#warning disabled HL_CFG_ALLTOALL until working
-#if 0
+
 	    case HL_CFG_ALLTOALL:
 		{
 		    HL_Alltoall_Configuration_t *cfg   = (HL_Alltoall_Configuration_t *)config;
@@ -350,7 +349,7 @@ extern "C"
 			  {
 			    typedef struct
 			    {
-			      CCMI::Adaptor::Alltoall::Factory       alltoall_registration;
+			      CCMI::Adaptor::AlltoallFactory       alltoall_registration;
 			      CCMI::Adaptor::Generic::ManytomanyImpl minfo;
 			    } AlltoallRegistration;
 			    
@@ -363,7 +362,7 @@ extern "C"
 			    new ( & treg->minfo ) 
 			      CCMI::Adaptor::Generic::ManytomanyImpl();
 			    new ( & treg->alltoall_registration ) 
-			      CCMI::Adaptor::Alltoall::Factory(& treg->minfo,
+			      CCMI::Adaptor::AlltoallFactory(& treg->minfo,
 							       _g_generic_adaptor->mapping() );
 			    
 			    treg->minfo.initialize(_g_generic_adaptor);
@@ -377,7 +376,6 @@ extern "C"
 			}
 		}
 		break;
-#endif
 
 	    case HL_CFG_ALLTOALLV:
 		{
@@ -751,7 +749,7 @@ extern "C"
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		}
 		break;
-#if 0
+
 	    case HL_XFER_ALLTOALL:
 		{
 		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
@@ -759,8 +757,8 @@ extern "C"
 geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
 
-		    CCMI::Adaptor::Alltoall::Factory *factory =
-		      (CCMI::Adaptor::Alltoall::Factory *)parms->registration;
+		    CCMI::Adaptor::AlltoallFactory *factory =
+		      (CCMI::Adaptor::AlltoallFactory *)parms->registration;
 
 		    CM_Callback_t cb_done_ccmi;
 		    cb_done_ccmi.function   = (void (*)(void*, CM_Error_t*))parms->cb_done.function;
@@ -780,7 +778,6 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 				      parms->rcvcounters);
 		}
 		break;
-#endif
 
 	    case HL_XFER_BARRIER:
 		{
