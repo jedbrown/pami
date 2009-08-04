@@ -7,7 +7,7 @@
 #ifndef __xmi_dgs_h__
 #define __xmi_dgs_h__
 
-#include <string.h> // for size_t
+#include <stdlib.h> // for size_t
 
 /********************************************************************/
 /*
@@ -65,7 +65,7 @@ int XMI_Dgsm_destroy(
  * By default, a DGSM just copies data. The callback provides a mechanism
  * for the user to further manipulate the data.
  */
-int XMI_DGSM_set_callback(
+int XMI_Dgsm_set_callback(
     xmi_dgsm_t           dgsm,         /* IN: DGSM to get the callback */
     xmi_dgsm_callback_t  callback,     /* IN: callback to handle data chunk */
     void               * cookie);      /* IN: cookie to the callback */
