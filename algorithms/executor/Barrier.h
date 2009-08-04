@@ -117,7 +117,7 @@ namespace CCMI
         unsigned  *getDstSubtasks (unsigned phase)
         {
           CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
-          return &_dstsubtasks[_dstoffsets[phase]];
+          return (unsigned*)&_dstsubtasks[_dstoffsets[phase]];
         }      
 
         unsigned  getStartPhase()
