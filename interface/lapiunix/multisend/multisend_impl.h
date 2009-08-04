@@ -98,13 +98,13 @@ namespace CCMI
 
 	    static int _g_regId = TEST_NUM;
 
-	    class  MulticastImpl :
-	        public CCMI::MultiSend::MulticastInterface,
+	    class  OldMulticastImpl :
+	        public CCMI::MultiSend::OldMulticastInterface,
 		public CCMI::Adaptor::Message
 		{
 		public:
 		    int _regId;
-		    MulticastImpl () : MulticastInterface (), Message()
+		    OldMulticastImpl () : OldMulticastInterface (), Message()
 			{
 			    _regId = _g_regId;
 			    TRACE((stderr, "registering new mcast iface, id=%d cd=%p\n", _regId, this));
@@ -116,7 +116,7 @@ namespace CCMI
 			    _g_regId++;
 
 			}
-			virtual ~MulticastImpl () {}
+			virtual ~OldMulticastImpl () {}
 
 			inline void operator delete(void * p)
 			    {
@@ -202,9 +202,9 @@ namespace CCMI
 			    return rc;
 			}
 
-			virtual unsigned send (MultiSend::CCMI_Multicast_t  *mcastinfo)
+			virtual unsigned send (MultiSend::CCMI_OldMulticast_t  *mcastinfo)
 			{
-			    return MulticastImpl::send (mcastinfo->request,
+			    return OldMulticastImpl::send (mcastinfo->request,
 							&mcastinfo->cb_done,
 							mcastinfo->consistency,
 							mcastinfo->msginfo,
@@ -232,7 +232,7 @@ namespace CCMI
 			    assert (0);
 			}
 
-			virtual unsigned postRecv (MultiSend::CCMI_MulticastRecv_t  *mrecv)
+			virtual unsigned postRecv (MultiSend::CCMI_OldMulticastRecv_t  *mrecv)
 			{
 			    assert (0);
 			}
@@ -242,10 +242,10 @@ namespace CCMI
 
 			}
 		public:
-			void * getAsyncArg() {return this->MulticastInterface::_async_arg;}
-			CCMI::MultiSend::CCMI_RecvMulticast_t getCbAsyncHead()
+			void * getAsyncArg() {return this->OldMulticastInterface::_async_arg;}
+			CCMI::MultiSend::CCMI_RecvOldMulticast_t getCbAsyncHead()
 			    {
-				return this->MulticastInterface::_cb_async_head;
+				return this->OldMulticastInterface::_cb_async_head;
 			    }
 		};
 
@@ -268,7 +268,7 @@ namespace CCMI
 		char           * rcvbuf;
 		unsigned         pwidth;
 		CM_Callback_t  cb_done;
-		MulticastImpl *  mi = (MulticastImpl*)_g_regtable.get(msg->_regid);
+		OldMulticastImpl *  mi = (OldMulticastImpl*)_g_regtable.get(msg->_regid);
 		TRACE((stderr, "cb_async: regid=%d mi=%p micount=%d peer=%d sz=%d conn=%d AA=%p\n",
 		       msg->_regid,mi, msg->_peer, msg->_info_count,msg->_size, msg->_conn, mi->getAsyncArg()));
 		CM_Request_t * req=

@@ -12,3 +12,12 @@
  */
 
 #include "mapping_impl.h"
+
+CCMI::CollectiveMapping::CollectiveMapping (void *pers)
+{
+  _personality = pers;
+
+  int rank, size;
+  _size = __pgasrt_tsp_numnodes();
+  _rank = __pgasrt_tsp_myID();
+}

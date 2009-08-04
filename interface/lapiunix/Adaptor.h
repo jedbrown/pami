@@ -3,7 +3,7 @@
 #define  __ccmi_collectives_adaptor_h__
 
 #include "util/ccmi_util.h"
-#include "interface/Mapping.h"
+#include "interface/CollectiveMapping.h"
 #include "util/logging/LogMgr.h"
 #include "util/queue/Queue.h"
 #include "util/ccmi_debug.h"
@@ -28,14 +28,13 @@ namespace CCMI
     class Adaptor
     {
     protected:
-      CCMI::Mapping                     _mapping;
+      CCMI::CollectiveMapping                     _mapping;
       CCMI::Logging::LogMgr             _logmgr;
       CCMI::Queue                       _queue;
+
     public:
       pthread_mutex_t                   _adaptor_lock;
       lapi_thread_func_t                _tf;
-
-
 
       Adaptor () :  _mapping (NULL), _logmgr()
       {

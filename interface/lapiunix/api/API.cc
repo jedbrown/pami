@@ -6,7 +6,7 @@
 #include "util/logging/LogMgr.h"
 #include "util/ccmi_debug.h"
 #include "algorithms/protocols/barrier/impl.h"
-#include "mapping_impl.h" // ? why
+//#include "interface/mpi/api/mapping_impl.h" should be in Mapping.cc, not here
 
 CCMI::Logging::LogMgr   * CCMI::Logging::LogMgr::_staticLogMgr __attribute__((weak));
 CCMI::Adaptor::Adaptor  * _g_generic_adaptor;
@@ -42,19 +42,19 @@ extern "C" int CCMI_Collective_finalize ()
 
   _g_generic_adaptor->getLogMgr()->dumpTimers(fp, _g_generic_adaptor->mapping());
 
-  free (_g_generic_adaptor);
+  CCMI_Free (_g_generic_adaptor);
   fclose (fp);
 
   return CM_SUCCESS;
 }
 
-unsigned                    _ccmi_cached_geometry_comm;
-CCMI_Geometry_t           * _ccmi_cached_geometry;
+//unsigned                    _ccmi_cached_geometry_comm;
+//CCMI_Geometry_t           * _ccmi_cached_geometry;
 
 extern "C" int CCMI_Geometry_analyze(CCMI_Geometry_t *grequest,
 				     CM_CollectiveProtocol_t *proto)
 {
-  return(((CCMI::Adaptor::ProtocolFactory *)proto) ->
+  return(((CCMI::Adaptor::CollectiveProtocolFactory *)proto) ->
          Analyze((CCMI::Adaptor::Geometry *)grequest));
 
 }
@@ -96,7 +96,7 @@ extern "C" int CCMI_Geometry_initialize (CCMI_Geometry_t            * grequest,
 
   CCMI_Executor_t *executors = (CCMI_Executor_t *) request;
   //  See _compile_time_assert_ instead
-  //    CCMI_assert(sizeof(CCMI_Executor_t) * 2 <= sizeof(CM_CollectiveRequest_t));
+  //    COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) * 2 <= sizeof(CM_CollectiveRequest_t));
 
   CCMI_assert (nprotocols > 0);
   for(unsigned count = 0; count < nprotocols; count++ )
@@ -104,7 +104,7 @@ extern "C" int CCMI_Geometry_initialize (CCMI_Geometry_t            * grequest,
     CCMI::Adaptor::Barrier::BarrierFactory * factory =
     (CCMI::Adaptor::Barrier::BarrierFactory *) protocols[count];
 
-    TRACE_ERR ((stderr, "Creating Barrier Protocol\n"));
+    TRACE_ADAPTOR ((stderr, "Creating Barrier Protocol\n"));
     if(CCMI_Geometry_analyze(grequest, protocols[count]))
     {
       exe = factory->generate(&executors[0], geometry);
@@ -121,7 +121,7 @@ extern "C" int CCMI_Geometry_initialize (CCMI_Geometry_t            * grequest,
     CCMI::Adaptor::Barrier::BarrierFactory * factory =
     (CCMI::Adaptor::Barrier::BarrierFactory *) localprotocols[count];
 
-    TRACE_ERR ((stderr, "Creating Local Barrier Protocol\n"));
+    TRACE_ADAPTOR ((stderr, "Creating Local Barrier Protocol\n"));
     if(CCMI_Geometry_analyze(grequest, localprotocols[count]))
     {
       CCMI::Executor::Executor *l_exe = factory->generate(&executors[1], geometry);
@@ -175,7 +175,7 @@ extern "C" int CCMI_Barrier_register (CM_CollectiveProtocol_t   * registration,
   {
   case CCMI_BINOMIAL_BARRIER_PROTOCOL:
     {
-      CCMI_assert (sizeof (BinomialRegistration) <=
+      COMPILE_TIME_ASSERT (sizeof (BinomialRegistration) <=
                    sizeof (CM_CollectiveProtocol_t));
 
       BinomialRegistration *treg = (BinomialRegistration *) registration;
@@ -183,7 +183,7 @@ extern "C" int CCMI_Barrier_register (CM_CollectiveProtocol_t   * registration,
       new (& treg->minfo, sizeof(treg->minfo)) CCMI::Adaptor::Generic::MulticastImpl::MulticastImpl ();
 
       new (& treg->bar_registration, sizeof(treg->bar_registration)) CCMI::Adaptor::Barrier::
-	BinomialBarrierFactory (static_cast<CCMI::MultiSend::MulticastInterface *>(&treg->minfo),
+	BinomialBarrierFactory (static_cast<CCMI::MultiSend::OldMulticastInterface *>(&treg->minfo),
 			      _g_generic_adaptor->mapping(),
 			      configuration->cb_geometry);
       //optimize one level of callbacks
@@ -194,30 +194,26 @@ extern "C" int CCMI_Barrier_register (CM_CollectiveProtocol_t   * registration,
     break;
 
   default:
-    status = CCMI_INVAL;
-    //CCMI_assert (0);
+    status = CM_INVAL;
+    //CCMI_abort();
     break;
   };
 
   return status;
 }
 
-#if 0
-
 //-----------------------------------------------------------------------------
 //---------------------  Broadcast --------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include "protocols/broadcast/multi_color_impl.h"
-#include "protocols/broadcast/async_impl.h"
-#include "connmgr/ColorConnMgr.h"
-#include "connmgr/ColorGeometryConnMgr.h"
-#include "protocols/broadcast/tree/TreeBroadcast.h"
+#include "algorithms/protocols/broadcast/multi_color_impl.h"
+#include "algorithms/protocols/broadcast/async_impl.h"
+#include "algorithms/connmgr/ColorGeometryConnMgr.h"
 
 extern "C" int CCMI_Broadcast_register (CM_CollectiveProtocol_t      * registration,
                                         CCMI_Broadcast_Configuration_t * configuration)
 {
-  int status = CCMI_ERROR;
+  int status = CM_ERROR;
 
   // Our max size for SyncBcast is MAX(context_id) * maxColors = 64K*3 = 192K
   // context_id is the communicator_id that is the same on all ranks.
@@ -225,32 +221,35 @@ extern "C" int CCMI_Broadcast_register (CM_CollectiveProtocol_t      * registrat
 
   typedef struct
   {
-    CCMI::Adaptor::Broadcast::BinomialBcastFactory      bcast_registration;
-    CCMI::ConnectionManager::ColorGeometryConnMgr           cg_connmgr;
-    CCMI::ConnectionManager::ColorConnMgr                   c_connmgr;
-    CCMI::Adaptor::Generic::MulticastImpl               minfo;
+    CCMI::Adaptor::Broadcast::BinomialBcastFactory         bcast_registration;
+    CCMI::ConnectionManager::ColorGeometryConnMgr          cg_connmgr;
+    CCMI::Adaptor::Generic::MulticastImpl                  minfo;
   } BinomialRegistration;
+
+  typedef struct 
+  {
+    CCMI::Adaptor::Broadcast::RingBcastFactory             bcast_registration;
+    CCMI::ConnectionManager::ColorGeometryConnMgr          cg_connmgr;
+    CCMI::Adaptor::Generic::MulticastImpl                  minfo;
+  } RingRegistration;
+    
+  typedef struct
+  {
+    CCMI::Adaptor::Broadcast::AsyncBinomialFactory    bcast_registration;
+    CCMI::Adaptor::Generic::MulticastImpl             minfo;
+  } AsyncBinomialRegistration;
 
   switch(configuration->protocol)
   {
-  case CCMI_TORUS_BINOMIAL_BROADCAST_PROTOCOL:
+  case CCMI_BINOMIAL_BROADCAST_PROTOCOL:
     {
-      if(!_g_commcolor_connlist)
-      {
-        int nbcast = MAX_GEOMETRIES * MAX_COLORS;
-        _g_commcolor_connlist  = (void **) malloc(sizeof(void *) * nbcast);
-      }
-
       nconn = MAX_GEOMETRIES;
-      CCMI_assert (sizeof (BinomialRegistration) <= sizeof (CM_CollectiveProtocol_t));
+      COMPILE_TIME_ASSERT (sizeof (BinomialRegistration) <= sizeof (CM_CollectiveProtocol_t));
 
       BinomialRegistration *treg = (BinomialRegistration *) registration;
 
       new (& treg->cg_connmgr, sizeof(treg->cg_connmgr)) CCMI::ConnectionManager::ColorGeometryConnMgr(nconn);
-      
-      new (& treg->minfo, sizeof(treg->minfo)) CCMI::Adaptor::MultiSend::MulticastImpl
-	(CCMI_MEMFIFO_DMA_MSEND_PROTOCOL, nconn, _g_commcolor_connlist);
-
+      new (& treg->minfo, sizeof(treg->minfo)) CCMI::Adaptor::Generic::MulticastImpl();
       new (& treg->bcast_registration, sizeof(treg->bcast_registration))
 	CCMI::Adaptor::Broadcast::BinomialBcastFactory
       (_g_generic_adaptor->mapping(), & treg->minfo, & treg->cg_connmgr, nconn );
@@ -258,9 +257,57 @@ extern "C" int CCMI_Broadcast_register (CM_CollectiveProtocol_t      * registrat
       status = CM_SUCCESS;
     }
     break;
+    
+  case CCMI_RING_BROADCAST_PROTOCOL:
+    {
+      nconn = MAX_GEOMETRIES;
+
+      COMPILE_TIME_ASSERT (sizeof (RingRegistration) <= sizeof (CM_CollectiveProtocol_t));
+      RingRegistration *treg = (RingRegistration *) registration;
+      
+      new (& treg->minfo, sizeof(treg->minfo)) CCMI::Adaptor::Generic::MulticastImpl();
+      new (& treg->cg_connmgr, sizeof(treg->cg_connmgr)) CCMI::ConnectionManager::ColorGeometryConnMgr(nconn);
+
+      new (& treg->bcast_registration, sizeof(treg->bcast_registration))
+        CCMI::Adaptor::Broadcast::RingBcastFactory
+        (_g_generic_adaptor->mapping(), & treg->minfo, & treg->cg_connmgr, nconn );
+      
+      treg->minfo.initialize (_g_generic_adaptor);
+
+      status = CM_SUCCESS;
+    }
+    break;    
+
+    //////////////  Asynchronous Broadcast Protocols ///////////////////////////////
+  case CCMI_ASYNCBINOMIAL_BROADCAST_PROTOCOL:
+    {
+      COMPILE_TIME_ASSERT (sizeof (AsyncBinomialRegistration) <=
+		   sizeof (CM_CollectiveProtocol_t));
+    
+      AsyncBinomialRegistration *treg =
+	(AsyncBinomialRegistration *) registration;
+    
+    new (& treg->minfo,
+         sizeof(treg->minfo)) CCMI::Adaptor::Generic::MulticastImpl();
+    
+    CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
+      new (& treg->bcast_registration, sizeof(treg->bcast_registration))
+      CCMI::Adaptor::Broadcast::AsyncBinomialFactory
+      (_g_generic_adaptor->mapping(), & treg->minfo, _g_generic_adaptor->mapping()->size()); 
+    
+    factory->setAsyncInfo(configuration->isBuffered,
+                          configuration->cb_recv,
+                          configuration->cb_geometry);
+    
+    //optimize one level of callbacks
+    treg->minfo.initialize (_g_generic_adaptor);
+    
+    status = CM_SUCCESS;
+    }
+    break;
 
   default:
-    status = CCMI_INVAL;
+    status = CM_INVAL;
     break;
   };
 
@@ -306,14 +353,13 @@ extern "C" int CCMI_Broadcast (CM_CollectiveProtocol_t  * registration,
 
 
 
-#endif
-
 //-----------------------------------------------------------------------------
 //---------------------  Allreduce --------------------------------------------
 //-----------------------------------------------------------------------------
 
 
 #include "algorithms/protocols/allreduce/sync_impl.h"
+#include "algorithms/protocols/allreduce/async_impl.h"
 
 extern "C"
 int CCMI_Allreduce_register (CM_CollectiveProtocol_t      * registration,
@@ -339,71 +385,65 @@ int CCMI_Allreduce_register (CM_CollectiveProtocol_t      * registration,
     else
       flags.pipeline_override = 0;
   }
-  int status = CCMI_ERROR;
+  int status = CM_ERROR;
 
   switch(configuration->protocol)
   {
-  case CCMI_BINOMIAL_ALLREDUCE_PROTOCOL:
+  case CCMI_RING_ALLREDUCE_PROTOCOL:
     {
       typedef struct
       {
-        CCMI::Adaptor::Allreduce::Binomial::Factory    allreduce_registration;
-        CCMI::Adaptor::Generic::MulticastImpl                         minfo;
-      } SyncBinomialRegistration;
+        CCMI::Adaptor::Allreduce::Ring::Factory    allreduce_registration;
+        CCMI::Adaptor::Generic::MulticastImpl               minfo;
+      } SyncRegistration;
 
-      CCMI_assert (sizeof (SyncBinomialRegistration) <=
+      COMPILE_TIME_ASSERT (sizeof (SyncRegistration) <=
                    sizeof (CM_CollectiveProtocol_t));
 
-      SyncBinomialRegistration *treg =
-      (SyncBinomialRegistration *) registration;
+      SyncRegistration *treg =
+      (SyncRegistration *) registration;
 
       new (& treg->minfo, sizeof(treg->minfo))
       CCMI::Adaptor::Generic::MulticastImpl();
 
       new (& treg->allreduce_registration, sizeof(treg->allreduce_registration))
-      CCMI::Adaptor::Allreduce::Binomial::Factory
-      (_g_generic_adaptor->mapping(), & treg->minfo, configuration->cb_geometry, flags);
+      CCMI::Adaptor::Allreduce::Ring::Factory
+      (_g_generic_adaptor->mapping(), & treg->minfo, NULL, configuration->cb_geometry, flags);
 
       treg->minfo.initialize(_g_generic_adaptor);
-                             /*(CCMI_MEMFIFO_DMA_MSEND_PROTOCOL,
-                             _g_adaptor->mapping()->size(),
-                             _g_rank_connlist);*/
-
       status = CM_SUCCESS;
     }
     break;
-  case CCMI_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL:
+  case CCMI_ASYNC_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL:
     {
       typedef struct
       {
-        CCMI::Adaptor::Allreduce::ShortBinomial::Factory  allreduce_registration;
-        CCMI::Adaptor::Generic::MulticastImpl              minfo;
-      } SyncBinomialRegistration;
+        CCMI::Adaptor::Allreduce::ShortBinomial::AsyncFactory  allreduce_registration;
+        CCMI::Adaptor::Generic::MulticastImpl                  minfo;
+      } AsyncBinomialRegistration;
 
-      CCMI_assert (sizeof (SyncBinomialRegistration) <=
+      COMPILE_TIME_ASSERT (sizeof (AsyncBinomialRegistration) <=
                    sizeof (CM_CollectiveProtocol_t));
 
-      SyncBinomialRegistration *treg =
-      (SyncBinomialRegistration *) registration;
+      AsyncBinomialRegistration *treg =
+      (AsyncBinomialRegistration *) registration;
 
       new (& treg->minfo, sizeof(treg->minfo))
       CCMI::Adaptor::Generic::MulticastImpl();
 
       new (& treg->allreduce_registration, sizeof(treg->allreduce_registration))
-      CCMI::Adaptor::Allreduce::ShortBinomial::Factory
+      CCMI::Adaptor::Allreduce::ShortBinomial::AsyncFactory
       (_g_generic_adaptor->mapping(), & treg->minfo, configuration->cb_geometry, flags);
+      
 
       treg->minfo.initialize(_g_generic_adaptor);
-                            /*(CCMI_MEMFIFO_DMA_MSEND_PROTOCOL,
-                             _g_adaptor->mapping()->size(),
-                             _g_rank_connlist);*/
 
       status = CM_SUCCESS;
     }
     break;
 
   default:
-    CCMI_assert (0);
+    CCMI_abort();
     break;
   }
 
@@ -428,14 +468,12 @@ int CCMI_Allreduce (CM_CollectiveProtocol_t  * registration,
   CCMI::Adaptor::Allreduce::BaseComposite * allreduce =
   (CCMI::Adaptor::Allreduce::BaseComposite *) geometry->getAllreduceComposite();
 
-  CCMI::Adaptor::Allreduce::Factory *factory =
-  (CCMI::Adaptor::Allreduce::Factory *) registration;
+  CCMI::Adaptor::Allreduce::BaseFactory *factory =
+  (CCMI::Adaptor::Allreduce::BaseFactory *) registration;
 
   //Also check for change in protocols
   if(allreduce != NULL  &&  allreduce->getFactory() == factory)
   {
-//      fprintf(stderr, "allreduce restart\n");
-
     unsigned status =  allreduce->restart((CM_CollectiveRequest_t*)request,
                                           *(CM_Callback_t *)&cb_done,
                                           (CCMI_Consistency)consistency,
@@ -444,10 +482,8 @@ int CCMI_Allreduce (CM_CollectiveProtocol_t  * registration,
                                           count,
                                           (CM_Dt)dtype,
                                           (CM_Op)op);
-
     if(status == CM_SUCCESS)
     {
-//      fprintf(stderr, "allreducecomposite\n");
       geometry->setAllreduceComposite(allreduce);
       TRACE_ADAPTOR((stderr, "<%#.8X>CCMI_Allreduce::ALERT: restart successful with status %#X\n", 
                  (int) allreduce, status));
@@ -463,6 +499,7 @@ int CCMI_Allreduce (CM_CollectiveProtocol_t  * registration,
     geometry->setAllreduceComposite(NULL);
     allreduce->~BaseComposite();
   }
+
   //fprintf(stderr, "CCMI_Allreduce::ALERT: generate executor %#X with factory %#X\n",(int) allreduce,(int)factory);
   void *ptr =factory->generate((CM_CollectiveRequest_t*)request,
                                *(CM_Callback_t *) &cb_done,
@@ -476,7 +513,144 @@ int CCMI_Allreduce (CM_CollectiveProtocol_t  * registration,
   if(ptr == NULL)
   {
 //    fprintf(stderr, "CCMI_Allreduce::ALERT: generate failed\n");
-    return CCMI_UNIMPL;
+    return CM_UNIMPL;
+  }
+
+  return CM_SUCCESS;
+}
+
+//-----------------------------------------------------------------------------
+//------------------------  Reduce --------------------------------------------
+//-----------------------------------------------------------------------------
+
+
+extern "C"
+int CCMI_Reduce_register (CM_CollectiveProtocol_t   * registration,
+                          CCMI_Reduce_Configuration_t * configuration)
+{
+  CCMI::Adaptor::ConfigFlags flags;
+  if(configuration->reuse_storage)
+  {
+    char* envopts = getenv("CCMI_REDUCE_REUSE_STORAGE_LIMIT");
+    if(envopts != NULL)
+      flags.reuse_storage_limit = atoi(envopts);
+    else
+      flags.reuse_storage_limit = CCMI_DEFAULT_REUSE_STORAGE_LIMIT;
+  }
+  else
+    flags.reuse_storage_limit = 0;
+
+  {
+    char* envopts = getenv("CCMI_REDUCE_PIPELINE_OVERRIDE");
+    if(envopts != NULL)
+      flags.pipeline_override = atoi(envopts);
+    else
+      flags.pipeline_override = 0;
+  }
+
+  int status = CM_ERROR;
+
+  switch(configuration->protocol)
+  {
+  case CCMI_RING_REDUCE_PROTOCOL:
+    {
+      typedef struct
+      {
+        CCMI::Adaptor::Allreduce::RingReduce::Factory reduce_registration;
+        CCMI::Adaptor::Generic::MulticastImpl                  minfo;
+      } SyncRegistration;
+
+      COMPILE_TIME_ASSERT(sizeof(SyncRegistration) <= sizeof(CM_CollectiveProtocol_t));
+
+      SyncRegistration *treg = (SyncRegistration *) registration;
+
+      new (& treg->minfo, sizeof(treg->minfo))
+      CCMI::Adaptor::Generic::MulticastImpl();
+
+      new (& treg->reduce_registration, sizeof(treg->reduce_registration))
+      CCMI::Adaptor::Allreduce::RingReduce::Factory
+        (_g_generic_adaptor->mapping(), & treg->minfo, NULL, configuration->cb_geometry, flags);
+
+      treg->minfo.initialize(_g_generic_adaptor);
+
+      status = CM_SUCCESS;
+    }
+    break;
+
+  default:
+    CCMI_abort();
+    break;
+  }
+
+  return status;
+}
+
+
+extern "C"
+int CCMI_Reduce (CM_CollectiveProtocol_t  * registration,
+                 CM_CollectiveRequest_t   * request,
+                 CM_Callback_t              cb_done,
+                 CCMI_Consistency             consistency,
+                 CCMI_Geometry_t            * geometry_request,
+                 int                          root,
+                 char                       * srcbuf,
+                 char                       * dstbuf,
+                 unsigned                     count,
+                 CM_Dt                      dtype,
+                 CM_Op                      op )
+{
+  CCMI::Adaptor::Geometry *geometry = (CCMI::Adaptor::Geometry *) geometry_request;
+  CCMI::Adaptor::Allreduce::BaseComposite * allreduce =
+  (CCMI::Adaptor::Allreduce::BaseComposite *) geometry->getAllreduceComposite();
+
+  CCMI::Adaptor::Allreduce::BaseFactory *factory =
+  (CCMI::Adaptor::Allreduce::BaseFactory *) registration;
+
+  //Also check for change in protocols
+  if(allreduce != NULL  &&  allreduce->getFactory() == factory)
+  {
+    unsigned status =  allreduce->restart((CM_CollectiveRequest_t*)request,
+                                          *(CM_Callback_t *)&cb_done,
+                                          (CCMI_Consistency)consistency,
+                                          srcbuf,
+                                          dstbuf,
+                                          count,
+                                          (CM_Dt)dtype,
+                                          (CM_Op)op,
+                                          root);
+    //    if (status != CM_SUCCESS) fprintf(stderr, "CCMI_Reduce::ALERT: restart failed on executor %#X with status %#X\n", (int) allreduce, status);
+    if(status == CM_SUCCESS)
+    {
+      TRACE_ADAPTOR((stderr, "<%#.8X>CCMI_Reduce::ALERT: restart successful with status %#X\n", 
+                 (int) allreduce, status));
+
+      geometry->setAllreduceComposite(allreduce);
+      return status;
+    }
+    else TRACE_ADAPTOR((stderr, "<%#.8X>CCMI_Allreduce::ALERT: restart unsuccessful with status %#X\n", 
+                    (int) allreduce, status));
+  }
+  if(allreduce != NULL) // Different factory?  Cleanup old executor.
+  {
+    geometry->setAllreduceComposite(NULL);
+    allreduce->~BaseComposite(); 
+  }
+
+  //fprintf(stderr, "CCMI_Reduce::ALERT: generate executor %#X with factory %#X\n",(int) allreduce,(int)factory);
+  void *ptr =factory->generate((CM_CollectiveRequest_t*)request,
+                               *(CM_Callback_t *) &cb_done,
+                               (CCMI_Consistency) consistency,
+                               geometry,
+                               srcbuf,
+                               dstbuf,
+                               count,
+                               (CM_Dt)dtype,
+                               (CM_Op)op,
+                               root);
+  if(ptr == NULL)
+  {
+//    fprintf(stderr, "CCMI_Reduce::ALERT: generate failed\n");
+    return CM_UNIMPL;
   }
 
   return CM_SUCCESS;

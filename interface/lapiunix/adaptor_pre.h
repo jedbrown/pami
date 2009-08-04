@@ -7,13 +7,17 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file adaptor/generic/adaptor_pre.h
+ * \file interface/mpi/adaptor_pre.h
  * \brief ???
  */
 
 
 #ifndef   __adaptor_pre_h__
 #define   __adaptor_pre_h__
+#warning mpi pre adaptor
+#include "interface/cm_types.h"
+#include "interface/ll_multisend.h"
+#include "interface/mpi/ccmi_collectives.h"
 
 #include "interface/lapiunix/ccmi_collectives.h"
 #include "interface/lapiunix/common/include/pgasrt.h"
@@ -40,13 +44,21 @@
      /// This is the default allreduce min torus pipeline width, set to 1920
      const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;    
 
+typedef LL_RecvMulticast CCMI_RecvMulticast_t;
+#define __ccmi_recv_multicast_callback_defined__
+
+/* These are defined in ccmi_collectives.h */
+#define __ccmi_consistency_defined__
+#define __ccmi_subtask_defined__
+#define __ccmi_recvasynccallback_defined__
+
+/* These are defined in cm_types.h */
+#define __ccmi_pipeworkqueue_defined__
+#define __ccmi_topology_defined__
+#define __ccmi_op_defined__
+#define __ccmi_dt_defined__
 #define __ccmi_quad_defined__
 #define __ccmi_error_defined__
 #define __ccmi_callback_defined__
-#define __ccmi_consistency_defined__
-#define __ccmi_op_defined__
-#define __ccmi_dt_defined__
-#define __ccmi_subtask_defined__
-#define __ccmi_recvasynccallback_defined__
 
 #endif

@@ -2,54 +2,18 @@
 #ifndef __ccmi_collective_h__
 #define __ccmi_collective_h__
 
+#include "interface/cm_types.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-  typedef struct _CCMIQuad
-  {
-    unsigned w0; /**< Word[0] */
-    unsigned w1; /**< Word[1] */
-    unsigned w2; /**< Word[2] */
-    unsigned w3; /**< Word[3] */
-  } CMQuad __attribute__ ((__aligned__ (16)));
-  
-  /**
-   * \brief CCMI Return codes
-   */
-  typedef enum
-  {
-    CM_SUCCESS = 0,  /**< Successful execution        */
-    CCMI_NERROR  =-1,  /**< Generic error (-1)          */
-    CCMI_ERROR   = 1,  /**< Generic error (+1)          */
-    CCMI_INVAL,        /**< Invalid argument            */
-    CCMI_UNIMPL,       /**< Function is not implemented */
-    CCMI_EAGAIN,       /**< Not currently availible     */
-    CCMI_SHUTDOWN,     /**< Rank has shutdown           */
-    CCMI_CHECK_ERRNO,  /**< Check the errno val         */
-    CCMI_OTHER,        /**< Other undefined error       */
-  } CCMI_Result;
-
-  /**
-   * \brief CCMI Error callback results
-   */
-  typedef struct CM_Error_t
-  {
-    CCMI_Result result;
-  } CM_Error_t;
 
   typedef CMQuad CM_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
 
   /*  increased to 8196 - JEB */
   /*  ...doubled again - BRC  */
   typedef CMQuad CM_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
-
-  typedef struct CM_Callback_t
-  {
-    void (*function) (void *, CM_Error_t *);
-    void *clientdata;
-  } CM_Callback_t;
 
   typedef enum
   {
@@ -60,54 +24,6 @@ extern "C"
     CCMI_CONSISTENCY_COUNT
   } CCMI_Consistency;
   
-  typedef enum
-  {
-    CM_UNDEFINED_OP = 0,
-    CM_NOOP,
-    CM_MAX,
-    CM_MIN,
-    CM_SUM,
-    CM_PROD,
-    CM_LAND,
-    CM_LOR,
-    CM_LXOR,
-    CM_BAND,
-    CM_BOR,
-    CM_BXOR,
-    CM_MAXLOC,
-    CM_MINLOC,
-    CM_USERDEFINED_OP,
-    CM_OP_COUNT
-  } CM_Op;
-
-  typedef enum
-  {
-    /* Standard/Primative DT's */
-    CM_UNDEFINED_DT = 0,
-    CM_SIGNED_CHAR,
-    CM_UNSIGNED_CHAR,
-    CM_SIGNED_SHORT,
-    CM_UNSIGNED_SHORT,
-    CM_SIGNED_INT,
-    CM_UNSIGNED_INT,
-    CM_SIGNED_LONG_LONG,
-    CM_UNSIGNED_LONG_LONG,
-    CM_FLOAT,
-    CM_DOUBLE,
-    CM_LONG_DOUBLE,
-    CM_LOGICAL,
-    CM_SINGLE_COMPLEX,
-    CM_DOUBLE_COMPLEX,
-    /* Max/Minloc DT's */
-    CM_LOC_2INT,
-    CM_LOC_SHORT_INT,
-    CM_LOC_FLOAT_INT,
-    CM_LOC_DOUBLE_INT,
-    CM_LOC_2FLOAT,
-    CM_LOC_2DOUBLE,
-    CM_USERDEFINED_DT
-  } CM_Dt;
-
   //--------------------------------------------------
   //----- Communication CCMI_Subtasks ---------------------
   //----- Each communication operation is split ------
@@ -370,7 +286,9 @@ extern "C"
 
   typedef enum
     {
-      CCMI_BINOMIAL_BROADCAST_PROTOCOL,   /**< Torus binom broadcast. */
+      CCMI_BINOMIAL_BROADCAST_PROTOCOL,   /**< Binomial broadcast. */
+      CCMI_RING_BROADCAST_PROTOCOL,   /**< Ring broadcast. */
+      CCMI_ASYNCBINOMIAL_BROADCAST_PROTOCOL,   /**< Async Binomial broadcast. */
       CCMI_NUM_BROADCAST_PROTOCOLS,
     }
   CCMI_Broadcast_Protocol;
@@ -452,8 +370,8 @@ extern "C"
 
   typedef enum
     {
-      CCMI_BINOMIAL_ALLREDUCE_PROTOCOL,         /**< Binomial allreduce. */
-      CCMI_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL,   /**< Binomial short allreduce. */
+      CCMI_RING_ALLREDUCE_PROTOCOL, /**< Rectangle/ring allreduce. */
+      CCMI_ASYNC_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL,   /**< Binomial short async allreduce. */
       CCMI_NUM_ALLREDUCE_PROTOCOLS
     }
   CCMI_Allreduce_Protocol;
@@ -528,6 +446,96 @@ extern "C"
                       unsigned          count,
                       CM_Dt           dt,
                       CM_Op           op);
+
+  /* ********************************************************************* */
+  /*                                                                       */
+  /*      Reduce                                                           */
+  /*                                                                       */
+  /* ********************************************************************* */
+
+
+  /**
+   * \brief Reduce protocol implementations.
+   */
+
+  typedef enum
+    {
+      CCMI_RING_REDUCE_PROTOCOL,  /**<  rectangle/ring reduce. */
+      CCMI_NUM_REDUCE_PROTOCOLS
+    }
+  CCMI_Reduce_Protocol;
+
+  /**
+   * \brief Reduce configuration.
+   */
+
+  typedef struct
+  {
+    CCMI_Reduce_Protocol protocol;    /**< The reduce protocol implementation to register. */
+    CCMI_mapIdToGeometry cb_geometry; /**< Callback to get the geometry when the async packet arrives. **/
+    unsigned reuse_storage:1;         /**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
+    unsigned reserved:31;             /**< Reserved for future use. */
+  }
+  CCMI_Reduce_Configuration_t;
+
+
+  /**
+   * \brief Register the reduce protocol implementation
+   *        specified by the reduce configuration.
+   *
+   * \warning After registering the protocol information it is illegal to
+   *          deallocate the registration object.
+   *
+   * \param[out] registration  Opaque memory to maintain registration information.
+   * \param[in]  configuration Reduce configuration information.
+   *
+   * \retval     0            Success
+   *
+   * \see CCMI_Reduce
+   */
+
+  int CCMI_Reduce_register (CM_CollectiveProtocol_t   * registration,
+                            CCMI_Reduce_Configuration_t * configuration);
+
+  /**
+   * \brief Create and post a non-blocking reduce operation.
+   *
+   * The reduce operation ...
+   *
+   * \warning Until the message callback is invoked, it is illegal to send it
+   *          again, reset it, touch the attached buffers, or deallocate the
+   *          request object.
+   *
+   * \param[in]  registration Protocol registration.
+   * \param[in]  request      Opaque memory to maintain internal message state.
+   * \param[in]  cb_done      Callback to invoke when message is complete.
+   * \param[in]  consistency  Required consistency level.
+   * \param[in]  geometry     Geometry to use for this collective operation.
+   *                          \c NULL indicates the global geometry.
+   * \param[in]  root         Rank of the reduce root node.
+   * \param[in]  sbuffer      Source buffer.
+   * \param[in]  rbuffer      Receive buffer.
+   * \param[in]  count        Number of elements to reduce.
+   * \param[in]  dt           Element data type
+   * \param[in]  op           Reduce operation
+   *
+   * \retval     0            Success
+   *
+   * \see CCMI_Reduce_register
+   *
+   * \todo doxygen
+   */
+  int CCMI_Reduce (CM_CollectiveProtocol_t * registration,
+                   CM_CollectiveRequest_t  * request,
+                   CM_Callback_t   cb_done,
+                   CCMI_Consistency  consistency,
+                   CCMI_Geometry_t * geometry,
+                   int               root,
+                   char            * sbuffer,
+                   char            * rbuffer,
+                   unsigned          count,
+                   CM_Dt           dt,
+                   CM_Op           op);
 
 
 #ifdef __cplusplus

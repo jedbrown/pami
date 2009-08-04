@@ -18,25 +18,24 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-//#include "mpi.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include "../../ccmi_internal.h"
-#include "multisend_impl.h"
-#include "multisend.h"
+#include "interface/ccmi_internal.h"
+#include "interface/lapiunix/multisend/multisend_impl.h"
+#include "interface/lapiunix/multisend/multisend.h"
 #include <new>
 
 extern "C" int Multisend_multicast_register( CCMI_Register_t    * registration, 
 					     CCMI_RecvMultiSend   cb_recv, 
 					     void               * arg )
 {
-  assert( sizeof ( CCMI_Register_t ) >= sizeof( CCMI::Adaptor::Generic::MulticastImpl ));
+  assert( sizeof ( CCMI_Register_t ) >= sizeof( CCMI::Adaptor::Generic::OldMulticastImpl ));
   
   TRACE_ADAPTOR((stderr, "<%#.8X>Multisend_multicast_register\n", (int)registration));
-  CCMI::Adaptor::Generic::MulticastImpl * msend =
-    new ( registration ) CCMI::Adaptor::Generic::MulticastImpl();
-  msend->setCallback( (CCMI::Adaptor::Generic::msend_recv)cb_recv, arg );
+  CCMI::Adaptor::Generic::OldMulticastImpl * msend =
+    new ( registration ) CCMI::Adaptor::Generic::OldMulticastImpl();
+  msend->setCallback( cb_recv, arg );
   return 0;
 }
 
@@ -55,8 +54,8 @@ extern "C" int MultiSend_multicast(CCMI_Register_t   * registration,
   assert ( registration );
 
   TRACE_ADAPTOR((stderr, "<%#.8X>Multisend_multicast\n", (int)registration));
-  CCMI::Adaptor::Generic::MulticastImpl * msend =
-    ( CCMI::Adaptor::Generic::MulticastImpl * )registration;
+  CCMI::Adaptor::Generic::OldMulticastImpl * msend =
+    ( CCMI::Adaptor::Generic::OldMulticastImpl * )registration;
 
   return msend->send(request,
 		     &cb_done,
@@ -77,8 +76,8 @@ extern "C" int Multisend_advance(CCMI_Register_t * registration)
   assert ( registration );
   
   TRACE_ADAPTOR((stderr, "<%#.8X>Multisend_advance\n", (int)registration));
-  CCMI::Adaptor::Generic::MulticastImpl * msend =
-    ( CCMI::Adaptor::Generic::MulticastImpl * )registration;
+  CCMI::Adaptor::Generic::OldMulticastImpl * msend =
+    ( CCMI::Adaptor::Generic::OldMulticastImpl * )registration;
 
   msend->advance();
 }

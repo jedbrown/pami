@@ -115,6 +115,7 @@ namespace LL
     static size_t __sizeRange(CM_Coord_t *ll, CM_Coord_t *ur,
 			      unsigned ndims) 
     {
+	return 0;
     }
 
     /// \brief expand range to include coord
@@ -275,7 +276,7 @@ namespace LL
     ///
     size_t index2Rank(size_t ix) 
     {
-
+	return 0;
     }
 
     /// \brief determine index of rank in topology
@@ -287,7 +288,7 @@ namespace LL
     ///
     size_t rank2Index(size_t rank) 
     {
-
+	return 0;
     }
 
     /// \brief return range
@@ -298,7 +299,7 @@ namespace LL
     ///
     CM_Result rankRange(size_t *first, size_t *last) 
     {
-
+	return CM_ERROR;
     }
 
     /// \brief return rank list
@@ -308,6 +309,7 @@ namespace LL
     ///
     CM_Result rankList(size_t **list) 
     {
+	return CM_ERROR;
     }
 
     /// \brief return rectangular segment coordinates
@@ -323,7 +325,7 @@ namespace LL
     CM_Result rectSeg(CM_Coord_t **ll, CM_Coord_t **ur,
 		      unsigned char **tl = NULL) 
     {
-
+	return CM_ERROR;
     }
 
     /// \brief return rectangular segment coordinates
@@ -405,6 +407,7 @@ namespace LL
     ///
     bool isCoordMember(CM_Coord_t *c0) 
     {
+	return false;
     }
 
     /// \brief create topology of ranks local to self
@@ -485,6 +488,7 @@ namespace LL
     ///
     bool convertTopology(LL_TopologyType_t new_type) 
     {
+	return false;
     }
 
     /// \brief produce the union of two topologies
