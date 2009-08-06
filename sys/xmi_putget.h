@@ -81,21 +81,21 @@ typedef size_t (*xmi_iterate_fn) (xmi_context_t   context,
 /**
  * \brief ???
  */
-typedef struct xmi_rma_iterate {
+typedef struct {
   xmi_iterate_fn  function; /**< Non-contiguous iterate function */
 } xmi_rma_iterate_t;
 
 /**
  * \brief ???
  */
-typedef struct xmi_rma_simple {
+typedef struct {
   size_t          bytes;    /**< Data transfer size in bytes */
 } xmi_rma_simple_t;
 
 /**
  * \brief ???
  */
-typedef struct xmi_rma_typed {
+typedef struct {
   size_t          bytes;    /**< Data transfer size in bytes */
   xmi_data_type_t local;    /**< Data type of local buffer */
   xmi_data_type_t remote;   /**< Data type of remote buffer */
@@ -118,7 +118,7 @@ typedef struct xmi_rma_typed {
  * \see XMI_Put
  * \see XMI_Put_typed
  **/
-typedef struct xmi_put {
+typedef struct {
   size_t                 task;      /**< Destination task */
   void                 * local;     /**< Local buffer virtual address */
   void                 * remote;    /**< Remote buffer virtual address */
@@ -142,7 +142,7 @@ xmi_result_t XMI_Put_typed (xmi_context_t context, xmi_put_t * parameters);
  * \see XMI_Get
  * \see XMI_Get_typed
  **/
-typedef struct xmi_get {
+typedef struct {
   size_t                 task;      /**< Destination task */
   void                 * local;     /**< Local buffer virtual address */
   void                 * remote;    /**< Remote buffer virtual address */
@@ -173,7 +173,7 @@ xmi_result_t XMI_Get_typed (xmi_context_t context, xmi_put_t * parameters);
  * \see XMI_RPut_iterate
  * \see XMI_RPut_typed
  **/
-typedef struct xmi_rput {
+typedef struct {
   size_t                 task;      /**< Destination task */
   void                 * local_va;  /**< Local buffer virtual address */
   xmi_memregion_t        local_mr;  /**< Local buffer memory region */
@@ -238,7 +238,7 @@ xmi_result_t XMI_RPut_typed (xmi_context_t context, xmi_rput_t * parameters);
  * \see XMI_RGet_iterate
  * \see XMI_RGet_typed
  **/
-typedef struct xmi_rget {
+typedef struct {
   size_t                 task;      /**< Destination task */
   void                 * local_va;  /**< Local buffer virtual address */
   xmi_memregion_t        local_mr;  /**< Local buffer memory region */

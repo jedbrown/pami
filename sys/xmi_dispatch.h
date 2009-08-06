@@ -10,7 +10,11 @@
 #include "xmi.h"
 #include "xmi_am.h"
 
-typedef void * xmi_option_t; /**< temporary .. remove later. */
+typedef enum
+{
+  XMI_OPTION_RDMA = 0x01,
+  XMI_OPTION_SMP  = 0x02
+} xmi_option_t;
 
 
 /**

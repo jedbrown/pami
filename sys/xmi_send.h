@@ -6,6 +6,7 @@
 #define __xmi_send_h__
 
 #include "xmi.h"
+#include "xmi_am.h"
 
 /* ************************************************************************* */
 /* ************************************************************************* */
@@ -15,28 +16,20 @@
 /* ************************************************************************* */
 /* ************************************************************************* */
 
-#if 0
 typedef void (*xmi_callback_fn) (void * arg, xmi_error_t error);
 
-typedef struct xmi_callback
+typedef struct
 {
   xmi_callback_fn   fn;  /**< Callback function pointer */
   void            * arg; /**< Callback function parameter */
 } xmi_callback_t;
 
-typedef struct xmi_metadata
+typedef struct
 {
   void     * source;    /**< Are there alignment requirements for metadata? */
   size_t     bytes;
   uint64_t   options;   /**< bitmask? Options may include for whether to checksum the metadata or not... */
 } xmi_metadata_t;
-
-typedef struct xmi_recv
-{
-  void            * destination; /**< Destination recv buffer address */
-  size_t            bytes;       /**< Number of bytes to receive */
-  xmi_callback_t    callback;    /**< Callback to invoke when the recv is complete */
-} xmi_recv_t;
 
 /**
  * \brief Dispatch function signature for receives.
@@ -55,14 +48,7 @@ typedef void (*xmi_recv_fn) (void                 * clientdata,
                              const void           * source,
                              xmi_recv_t           * recv);
 
-typedef enum
-{
-  XMI_OPTION_RDMA = 0x01,
-  XMI_OPTION_SMP  = 0x02
-} xmi_option_t;
-
-
-typedef struct xmi_send_packet
+typedef struct
 {
   xmi_callback_t    remote;    /**< Transfer event callback, Source data buffer has been received */
   size_t            rank;      /**< Global rank of the remote process */
@@ -73,12 +59,6 @@ typedef struct xmi_send_packet
   xmi_hint_t        hints;     /**< Send hints which may be ignored by the runtime. */
 } xmi_send_packet_t;
 
-typedef struct xmi_send
-{
-  xmi_callback_t     local;    /**< Transfer event callback, Source data buffer has been sent and may be reused */
-  xmi_send_packet_t  send;     /**< Common send parameters */
-} xmi_send_t;
-
 /**
  * Send a single packet. The source buffer is immediately available for reuse
  * upon the return of this function.
@@ -88,6 +68,5 @@ typedef struct xmi_send
  */
 xmi_result_t XMI_Send_packet (xmi_context_t     * context,
                               xmi_send_packet_t * parameters);
-#endif
 
 #endif /* __xmi_send_h__ */
