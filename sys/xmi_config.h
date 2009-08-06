@@ -24,18 +24,15 @@ typedef struct {
  */
 typedef enum {
     // Attribute        // Init / Query / Update
-    XMI_PROTOCOL_NAME=1,// IQ: char *: name of the protocol
-    XMI_RELIABILITY,    // IQ: xmi_bool_t: guaranteed reliability
-    XMI_ATTRIBUTES,     // Q : xmi_attribute_t[]: attributes on the platform
-                        //     terminated with NULL
-    XMI_TASK_ID,        // Q : xmi_task_t: ID of this task
-    XMI_NUM_TASKS,      // Q : xmi_task_t: total number of tasks
-    XMI_RECV_INTR_MASK, // QU: xmi_intr_mask_t: receive interrupt mask
-    XMI_CHECK_PARAMS,   // QU: xmi_bool_t: check parameters
-    XMI_USER_KEYS,      // Q : xmi_user_key_t[]: user-defined keys
-                        //     terminated with NULL
-    XMI_USER_CONFIG,    // QU: xmi_user_config_t: user-defined configuration
-                        //     key and value are shallow-copied for update
+    XMI_PROTOCOL_NAME=1,// IQ  : char *            : name of the protocol
+    XMI_RELIABILITY,    // IQ  : xmi_bool_t        : guaranteed reliability
+    XMI_ATTRIBUTES,     //  Q  : xmi_attribute_t[] : attributes on the platform terminated with NULL
+    XMI_TASK_ID,        //  Q  : size_t            : ID of this task
+    XMI_NUM_TASKS,      //  Q  : size_t            : total number of tasks
+    XMI_RECV_INTR_MASK, //  QU : xmi_intr_mask_t   : receive interrupt mask
+    XMI_CHECK_PARAMS,   //  QU : xmi_bool_t        : check parameters
+    XMI_USER_KEYS,      //  Q  : xmi_user_key_t[]  : user-defined keys terminated with NULL
+    XMI_USER_CONFIG,    //  QU : xmi_user_config_t : user-defined configuration key and value are shallow-copied for update
 } xmi_attribute_t;
 
 #define XMI_EXT_ATTR 1000 // starting value for extended attributes

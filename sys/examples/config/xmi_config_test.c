@@ -48,7 +48,7 @@ void Update()
 void Query1()
 {
     // Query attribute with a simple value
-    xmi_task_t  *num_tasks;
+    size_t  *num_tasks;
     XMI_Config_query(context, XMI_NUM_TASKS, &num_tasks);
     printf("num tasks = %d\n", *num_tasks);
 
@@ -83,7 +83,7 @@ void Query1()
 void Query2()
 {
     // Query attribute with a simple value
-    xmi_task_t  num_tasks;
+    size_t  num_tasks;
     XMI_Config_query(context, XMI_NUM_TASKS, &num_tasks);
     printf("num tasks = %d\n", num_tasks);
 

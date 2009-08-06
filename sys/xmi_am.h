@@ -27,7 +27,7 @@ typedef size_t (*xmi_data_callback_t) ( xmi_context_t   context,
                                         void          * cookie,
                                         size_t          offset,
                                         void          * pipe_addr,
-                                        xmi_size_t      pipe_size );
+                                        size_t          pipe_size );
 
 
 /*

@@ -9,15 +9,13 @@
 #include <stdint.h>
 
 
-typedef int           xmi_result_t;
-typedef void *        xmi_context_t;
-typedef unsigned int  xmi_task_t;
-typedef size_t        xmi_size_t;
-typedef void *        xmi_error_t;
-typedef void *        xmi_hint_t;
-typedef void *        xmi_configuration_t;
-typedef void *        xmi_dispatch_t;
-typedef void *        xmi_data_type_t;
+typedef int   xmi_result_t;
+typedef void* xmi_context_t;
+typedef void* xmi_error_t;
+typedef void* xmi_hint_t;
+typedef void* xmi_configuration_t;
+typedef void* xmi_dispatch_t;
+typedef void* xmi_data_type_t;
 
 
 /**
