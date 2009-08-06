@@ -1,5 +1,6 @@
-SUBDIRS=examples/config
+SUBDIRS=examples examples/config
 .PHONY: docs clean check ${SUBDIRS}
+
 docs:
 	doxygen ./Doxyfile
 
@@ -9,17 +10,12 @@ clean:
 
 HEADERS   = ${shell echo *.h}
 HEADERS_O = ${patsubst %.h,  %.h.o, ${HEADERS}}
-check: examples/config ${HEADERS_O}
-	(						\
-		for i in ${HEADERS} ; do		\
-			 echo "#include \"$$i\"";	\
-		 done;					\
-		 echo "void foo(){;}"			\
-	) | ${CC} -x c -c -o xmi_checkall.h.o -
+check: ${HEADERS_O} examples examples/config xmi_checkall.h.o
+xmi_checkall.h.o: ${HEADERS}
+	@perl cmp ${CC} $@ ${HEADERS}
+	@echo All of {${HEADERS}} parse together
 %.h.o: %.h
-	(					\
-		echo "#include \"$^\"";		\
-		echo "void foo(){;}";		\
-	) | ${CC} -x c -c -o $@ -
+	@perl cmp ${CC} $@ $^
+	@echo "$^" parses
 ${SUBDIRS}:
 	${MAKE} -C $@
