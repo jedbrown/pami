@@ -62,25 +62,6 @@ typedef enum
 } xmi_option_t;
 
 
-/**
- * \brief Initialize the dispatch functions for a dispatch id.
- *
- * This is a local, non-collective operation. There is no communication
- * between ranks.
- *
- * \param[in] context    XMI application context
- * \param[in] dispatch   Dispatch identifier to initialize
- * \param[in] fn         Dispatch receive function
- * \param[in] clientdata Dispatch function clientdata
- * \param[in] options    Dispatch registration options - bitmask?
- *
- */
-xmi_result_t XMI_Dispatch_set (xmi_context_t     * context,
-                               xmi_dispatch_t      dispatch,
-                               xmi_recv_fn         fn,
-                               void              * clientdata,
-                               xmi_option_t        options);
-
 typedef struct xmi_send_packet
 {
   xmi_callback_t    remote;    /**< Transfer event callback, Source data buffer has been received */
@@ -107,17 +88,6 @@ typedef struct xmi_send
  */
 xmi_result_t XMI_Send_packet (xmi_context_t     * context,
                               xmi_send_packet_t * parameters);
-
-/**
- * \brief Send a source data buffer to a remote rank.
- *
- * \example xmi_send.c
- *
- * \param[in]  context    XMI application context
- * \param[in]  parameters XMI send parameters
- */
-xmi_result_t XMI_Send (xmi_context_t * context,
-                       xmi_send_t    * parameters);
 #endif
 
 #endif /* __xmi_send_h__ */

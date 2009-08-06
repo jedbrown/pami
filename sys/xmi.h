@@ -16,6 +16,7 @@
 
 typedef int   xmi_result_t;
 typedef void* xmi_context_t;
+typedef void* xmi_application_t;
 typedef void* xmi_error_t;
 typedef void* xmi_hint_t;
 typedef void* xmi_configuration_t;
