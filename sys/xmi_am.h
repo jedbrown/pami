@@ -1,6 +1,8 @@
 /**
  * \file xmi_am.h
- * \brief messaging interface
+ * \brief xmi active messaging interface
+ * \defgroup activemessage Active message
+ * \{
  */
 #ifndef __xmi_am_h__
 #define __xmi_am_h__
@@ -15,7 +17,7 @@
  *
  * TBD: <=0 byte being copied implies truncation
  *
- * \param[in] context   XMI application context
+ * \param[in] context   XMI communication context
  * \param[in] cookie    Event callback application argument
  * \param[in] offset    Starting data offset (???)
  * \param[in] pipe_addr Address of the XMI pipe buffer
@@ -47,7 +49,6 @@ typedef struct {
   uint32_t reserved:25;
 } xmi_send_hint_t;
 
-
 typedef struct {
   uint32_t data_in_pipe:1;          /* sync_send */
   uint32_t inline_completion:1;
@@ -55,21 +56,33 @@ typedef struct {
 } xmi_recv_hint_t;
 
 
+/**
+ * \brief Structure for send parameters unique to a simple active message send
+ */
 typedef struct {
   size_t                 bytes;    /**< Number of bytes of data */
   void                 * addr;     /**< Address of the buffer */
 } xmi_send_simple_t;
 
+/**
+ * \brief Structure for send parameters unique to an iterator active message send
+ */
 typedef struct {
   xmi_data_callback_t    callback; /**< Data callback function */
 } xmi_send_iterate_t;
 
+/**
+ * \brief Structure for send parameters unique to a typed active message send
+ */
 typedef struct {
   size_t                 bytes;    /**< Number of bytes data */
   size_t                 offset;   /**< Starting offset */
   xmi_data_type_t        datatype; /**< Datatype TODO */
 } xmi_send_typed_t;
 
+/**
+ * \brief Active message send parameter structure
+ */
 typedef struct {
   xmi_dispatch_t         dispatch; /**< Dispatch identifier */
   xmi_send_hint_t        hints;    /**< Hints for sending the message */
@@ -92,28 +105,46 @@ typedef struct {
 
 /**
  * \brief Contiguous send
+ *
+ * \param[in] context    XMI communication context
+ * \param[in] parameters Send parameter structure
  */
-xmi_result_t XMI_Send (xmi_context_t context, xmi_send_t * send);
+xmi_result_t XMI_Send (xmi_context_t context, xmi_send_t * parameters);
 
 /**
  * \brief Short contiguous send
  * \todo Is this needed? Can't we use hints with XMI_Send() instead?
+ *
+ * \param[in] context    XMI communication context
+ * \param[in] parameters Send parameter structure
  */
-xmi_result_t XMI_Send_contig_short (xmi_context_t context, xmi_send_t * send);
+xmi_result_t XMI_Send_contig_short (xmi_context_t context, xmi_send_t * parameters);
 
 /**
  * \brief Typed (DGSP) send
+ *
+ * \param[in] context    XMI communication context
+ * \param[in] parameters Send parameter structure
  */
-xmi_result_t XMI_Send_typed (xmi_context_t context, xmi_send_t * send);
+xmi_result_t XMI_Send_typed (xmi_context_t context, xmi_send_t * parameters);
 
 /**
  * \brief Untyped send with callback requesting for data
+ *
+ * \param[in] context    XMI communication context
+ * \param[in] parameters Send parameter structure
  */
-xmi_result_t XMI_Send_iterate (xmi_context_t context, xmi_send_t * send);
+xmi_result_t XMI_Send_iterate (xmi_context_t context, xmi_send_t * parameters);
 
 
 /**
  * \brief Receive message structure
+ *
+ * This structure is initialized and then returned as an output parameter from
+ * the active message dispatch callback to direct the xmi runtime how to
+ * receive the data stream.
+ *
+ * \see xmi_dispatch_callback_t
  */
 typedef struct {
   xmi_recv_hint_t        hints;    /**< Hints for receiving the message */
@@ -140,5 +171,12 @@ typedef void (*xmi_dispatch_callback_t) (
     void               * pipe_addr,    /* IN: address of XMI pipe buffer */
     size_t               pipe_size,    /* IN: size of XMI pipe buffer */
     xmi_recv_t         * recv);        /* OUT: receive message structure */
+
+/**
+ * \}
+ * \addtogroup activemessage
+ *
+ * More documentation for active message stuff....
+ */
 
 #endif

@@ -15,7 +15,7 @@
 /* ************************************************************************* */
 /* ************************************************************************* */
 
-
+#if 0
 typedef void (*xmi_callback_fn) (void * arg, xmi_error_t error);
 
 typedef struct xmi_callback
@@ -118,6 +118,6 @@ xmi_result_t XMI_Send_packet (xmi_context_t     * context,
  */
 xmi_result_t XMI_Send (xmi_context_t * context,
                        xmi_send_t    * parameters);
-
+#endif
 
 #endif /* __xmi_send_h__ */

@@ -7,10 +7,15 @@
 #include <stdio.h>
 #include "xmi_context.h"
 
-xmi_context_t context;
+xmi_application_t application;
+xmi_context_t     context;
 
 void Init()
 {
+    xmi_result_t rc = XMI_Application_initialize ("MPI", &application);
+    if (rc)
+        printf("XMI_Application_initialize returned %d due to %s\n", rc, XMI_Last_error());
+
     char             protocol_name[] = "MPI";
     xmi_bool_t       reliability = 0;
     xmi_intr_mask_t  intr_mask = 0;
@@ -21,9 +26,9 @@ void Init()
     };
 
     int num_configs = sizeof(config)/sizeof(config[0]);
-    int rc = XMI_Context_create(num_configs, config, &context);
+    rc = XMI_Context_create (application, config, num_configs, &context);
     if (rc)
-        printf("XMI_Init returned %d due to %s\n", rc, XMI_Last_error());
+        printf("XMI_Context_create returned %d due to %s\n", rc, XMI_Last_error());
 }
 
 /*

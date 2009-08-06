@@ -1,6 +1,8 @@
 /**
  * \file xmi_putget.h
  * \brief XMI remote memory access interface
+ * \defgroup rma Remote Memory Access data transfer operations
+ * \{
  */
 #ifndef __xmi_putget_h__
 #define __xmi_putget_h__
@@ -8,11 +10,7 @@
 #include "xmi.h"
 #include "xmi_am.h"
 
-/**
- * \defgroup rma Remote Memory Access data transfer operations
- *
- * Documentation for RMA stuff ...
- */
+typedef void * xmi_memregion_t;
 
 /**
  * \brief Default "global" memory region
@@ -23,10 +21,7 @@
  * User-managed memory regions may result in higher performance for one-sided
  * operations due to system memory region caching, internal memory region
  * exchange operations, and other implementation-specific management features.
- *
- * \ingroup rma
  */
-typedef void * xmi_memregion_t;
 extern xmi_memregion_t xmi_global_memregion;
 
 /**
@@ -40,8 +35,6 @@ extern xmi_memregion_t xmi_global_memregion;
  * \param[in]  address   Virtual address of memory region
  * \param[in]  bytes     Number of bytes to register
  * \param[out] memregion Memory region object. Can be NULL.
- *
- * \ingroup rma
  */
 xmi_result_t XMI_Memory_register (xmi_context_t     context,
                                   void            * address,
@@ -55,8 +48,6 @@ xmi_result_t XMI_Memory_register (xmi_context_t     context,
  *
  * \param[in] context   XMI application context
  * \param[in] memregion Memory region object
- *
- * \ingroup rma
  */
 xmi_result_t XMI_Memory_deregister (xmi_context_t   context,
                                     xmi_memregion_t memregion);
@@ -79,8 +70,6 @@ xmi_result_t XMI_Memory_deregister (xmi_context_t   context,
  *            this transfer
  * \retval !0 Iterate is not complete, the iterate callback must be invoked
  *            again for this transfer
- *
- * \ingroup rma
  */
 typedef size_t (*xmi_iterate_fn) (xmi_context_t   context,
                                   void          * cookie,
@@ -91,7 +80,6 @@ typedef size_t (*xmi_iterate_fn) (xmi_context_t   context,
 
 /**
  * \brief ???
- * \ingroup rma
  */
 typedef struct xmi_rma_iterate {
   xmi_iterate_fn  function; /**< Non-contiguous iterate function */
@@ -99,7 +87,6 @@ typedef struct xmi_rma_iterate {
 
 /**
  * \brief ???
- * \ingroup rma
  */
 typedef struct xmi_rma_simple {
   size_t          bytes;    /**< Data transfer size in bytes */
@@ -107,7 +94,6 @@ typedef struct xmi_rma_simple {
 
 /**
  * \brief ???
- * \ingroup rma
  */
 typedef struct xmi_rma_typed {
   size_t          bytes;    /**< Data transfer size in bytes */
@@ -121,7 +107,6 @@ typedef struct xmi_rma_typed {
 
 /**
  * \defgroup put Put data transfer operations
- * \ingroup rma
  *
  * Foo
  */
@@ -241,7 +226,6 @@ xmi_result_t XMI_RPut_typed (xmi_context_t context, xmi_rput_t * parameters);
 
 /**
  * \defgroup get Get data transfer operations
- * \ingroup rma
  *
  * Foo
  */
@@ -300,6 +284,13 @@ xmi_result_t XMI_RGet_iterate (xmi_context_t context, xmi_rget_t * parameters);
  * \ingroup get
  */
 xmi_result_t XMI_RGet_typed (xmi_context_t context, xmi_rget_t * parameters);
+
+/**
+ * \}
+ * \addtogroup rma
+ *
+ * More documentation for rma stuff....
+ */
 
 
 #endif
