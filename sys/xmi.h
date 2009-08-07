@@ -14,7 +14,19 @@
 #include <stdint.h>
 
 
-typedef int   xmi_result_t;
+typedef enum
+  {
+    XMI_SUCCESS = 0,  /**< Successful execution        */
+    XMI_NERROR  =-1,  /**< Generic error (-1)          */
+    XMI_ERROR   = 1,  /**< Generic error (+1)          */
+    XMI_INVAL,        /**< Invalid argument            */
+    XMI_UNIMPL,       /**< Function is not implemented */
+    XMI_EAGAIN,       /**< Not currently availible     */
+    XMI_SHUTDOWN,     /**< Rank has shutdown           */
+    XMI_CHECK_ERRNO,  /**< Check the errno val         */
+    XMI_OTHER,        /**< Other undefined error       */
+  }
+  xmi_result_t;
 typedef void* xmi_context_t;
 typedef void* xmi_application_t;
 typedef void* xmi_error_t;

@@ -13,12 +13,16 @@ check: ${HEADERS_O} examples examples/config xmi_checkall.h.o
 xmi_checkall.h.o: ${HEADERS}
 	@perl cmp ${CC} $@ ${HEADERS}
 	@echo All of {${HEADERS}} parse together
-%.h.o: %.h
-	@perl cmp ${CC} $@ $^
-	@echo "$^" parses
 ${SUBDIRS}:
 	${MAKE} -C $@
 
 clean:
 	${RM} -r html *~ *.h.o
 	for i in ${SUBDIRS} ; do ${MAKE} -C $$i clean ; done
+
+%.h.o: %.h
+	@perl cmp ${CC} $@ $^
+	@echo "$^" parses
+%.txt: %.pod
+	podchecker $^
+	pod2text $^ > $@
