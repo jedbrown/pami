@@ -21,18 +21,18 @@ extern "C"
 
 
   typedef enum
-    {
-      XMI_SUCCESS = 0,  /**< Successful execution        */
-      XMI_NERROR  =-1,  /**< Generic error (-1)          */
-      XMI_ERROR   = 1,  /**< Generic error (+1)          */
-      XMI_INVAL,        /**< Invalid argument            */
-      XMI_UNIMPL,       /**< Function is not implemented */
-      XMI_EAGAIN,       /**< Not currently availible     */
-      XMI_SHUTDOWN,     /**< Rank has shutdown           */
-      XMI_CHECK_ERRNO,  /**< Check the errno val         */
-      XMI_OTHER,        /**< Other undefined error       */
-    }
-    xmi_result_t;
+  {
+    XMI_SUCCESS = 0,  /**< Successful execution        */
+    XMI_NERROR  = -1, /**< Generic error (-1)          */
+    XMI_ERROR   = 1,  /**< Generic error (+1)          */
+    XMI_INVAL,        /**< Invalid argument            */
+    XMI_UNIMPL,       /**< Function is not implemented */
+    XMI_EAGAIN,       /**< Not currently availible     */
+    XMI_SHUTDOWN,     /**< Rank has shutdown           */
+    XMI_CHECK_ERRNO,  /**< Check the errno val         */
+    XMI_OTHER,        /**< Other undefined error       */
+  }
+  xmi_result_t;
   typedef void* xmi_context_t;
   typedef void* xmi_application_t;
   typedef void* xmi_error_t;
@@ -71,33 +71,35 @@ extern "C"
   typedef char *        xmi_user_key_t;
   typedef char *        xmi_user_value_t;
 
-  typedef struct {
-      xmi_user_key_t    key;
-      xmi_user_value_t  value;
+  typedef struct
+  {
+    xmi_user_key_t    key;
+    xmi_user_value_t  value;
   } xmi_user_config_t;
 
   /*
    * This enum contains ALL possible attributes for all hardware
    */
   typedef enum {
-      /* Attribute            Init / Query / Update                                                                            */
-      XMI_PROTOCOL_NAME=1, /* IQ  : char *            : name of the protocol                                                   */
-      XMI_RELIABILITY,     /* IQ  : xmi_bool_t        : guaranteed reliability                                                 */
-      XMI_ATTRIBUTES,      /*  Q  : xmi_attribute_t[] : attributes on the platform terminated with NULL                        */
-      XMI_TASK_ID,         /*  Q  : size_t            : ID of this task                                                        */
-      XMI_NUM_TASKS,       /*  Q  : size_t            : total number of tasks                                                  */
-      XMI_RECV_INTR_MASK,  /*  QU : xmi_intr_mask_t   : receive interrupt mask                                                 */
-      XMI_CHECK_PARAMS,    /*  QU : xmi_bool_t        : check parameters                                                       */
-      XMI_USER_KEYS,       /*  Q  : xmi_user_key_t[]  : user-defined keys terminated with NULL                                 */
-      XMI_USER_CONFIG,     /*  QU : xmi_user_config_t : user-defined configuration key and value are shallow-copied for update */
+    /* Attribute            Init / Query / Update                                                                            */
+    XMI_PROTOCOL_NAME = 1, /* IQ  : char *            : name of the protocol                                                   */
+    XMI_RELIABILITY,     /* IQ  : xmi_bool_t        : guaranteed reliability                                                 */
+    XMI_ATTRIBUTES,      /*  Q  : xmi_attribute_t[] : attributes on the platform terminated with NULL                        */
+    XMI_TASK_ID,         /*  Q  : size_t            : ID of this task                                                        */
+    XMI_NUM_TASKS,       /*  Q  : size_t            : total number of tasks                                                  */
+    XMI_RECV_INTR_MASK,  /*  QU : xmi_intr_mask_t   : receive interrupt mask                                                 */
+    XMI_CHECK_PARAMS,    /*  QU : xmi_bool_t        : check parameters                                                       */
+    XMI_USER_KEYS,       /*  Q  : xmi_user_key_t[]  : user-defined keys terminated with NULL                                 */
+    XMI_USER_CONFIG,     /*  QU : xmi_user_config_t : user-defined configuration key and value are shallow-copied for update */
   } xmi_attribute_t;
 
 #define XMI_EXT_ATTR 1000 /* starting value for extended attributes */
 #include "xmi_ext.h"      /* platform-specific */
 
-  typedef struct {
-      xmi_attribute_t  attr;
-      void *           value;
+  typedef struct
+  {
+    xmi_attribute_t  attr;
+    void *           value;
   } xmi_config_t;
 
   char * XMI_Last_error();
@@ -123,7 +125,7 @@ extern "C"
    *   XMI_ERR_VALUE
    */
   xmi_result_t XMI_Config_query(xmi_context_t context, xmi_attribute_t attribute,
-          void* value_out);
+                                void* value_out);
 
   /*
    * \brief Update the value of an attribute
@@ -140,7 +142,7 @@ extern "C"
    *   XMI_ERR_VALUE
    */
   xmi_result_t XMI_Config_update(xmi_context_t context, xmi_attribute_t attribute,
-          void* value_in);
+                                 void* value_in);
 
   /** \} */ /* end of "configuration" group */
 
@@ -325,11 +327,11 @@ extern "C"
 
   /* Add simple buffers */
   int XMI_Type_add_simple(xmi_type_t type, size_t bytes,
-          size_t offset, size_t reps, size_t stride);
+                          size_t offset, size_t reps, size_t stride);
 
   /* Add typed buffers */
   int XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type,
-          size_t offset, size_t reps, size_t stride);
+                         size_t offset, size_t reps, size_t stride);
 
   /* Commit the type, which can no longer be modified afterwards */
   int XMI_Type_commit(xmi_type_t type);
@@ -360,17 +362,18 @@ extern "C"
    * \todo better names for the hints
    * \todo better documentation for the hints
    */
-  typedef struct {
-    uint32_t consistency       :1; /**< Force match ordering semantics */
-    uint32_t sync_send         :1; /**< Assert that all sends will be synchronously received */
-    uint32_t buffer_registered :1;
-    uint32_t use_rdma          :1; /**< Assert/enable rdma operations */
-    uint32_t no_rdma           :1; /**< Disable rdma operations */
-    uint32_t no_local_copy     :1;
-    uint32_t interrupt_on_recv :1; /**< Interrupt the remote task when the first packet arrives */
-    uint32_t high_priority     :1; /**< Message is delivered with high priority,
+  typedef struct
+  {
+    uint32_t consistency       : 1; /**< Force match ordering semantics */
+    uint32_t sync_send         : 1; /**< Assert that all sends will be synchronously received */
+    uint32_t buffer_registered : 1;
+    uint32_t use_rdma          : 1; /**< Assert/enable rdma operations */
+    uint32_t no_rdma           : 1; /**< Disable rdma operations */
+    uint32_t no_local_copy     : 1;
+    uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
+    uint32_t high_priority     : 1; /**< Message is delivered with high priority,
                                         which may result in out-of-order delivery */
-    uint32_t reserved:24;
+    uint32_t reserved: 24;
   } xmi_send_hint_t;
 
 
@@ -406,7 +409,8 @@ extern "C"
   /**
    * \brief Structure for send parameters unique to a simple active message send
    */
-  typedef struct {
+  typedef struct
+  {
     size_t                 bytes;    /**< Number of bytes of data */
     void                 * addr;     /**< Address of the buffer */
   } xmi_send_simple_t;
@@ -414,14 +418,16 @@ extern "C"
   /**
    * \brief Structure for send parameters unique to an iterator active message send
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_data_callback_t    callback; /**< Data callback function */
   } xmi_send_iterate_t;
 
   /**
    * \brief Structure for send parameters unique to a typed active message send
    */
-  typedef struct {
+  typedef struct
+  {
     size_t                 bytes;    /**< Number of bytes data */
     size_t                 offset;   /**< Starting offset */
     xmi_type_t             datatype; /**< Datatype */
@@ -430,18 +436,21 @@ extern "C"
   /**
    * \brief Active message send parameter structure
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_dispatch_t         dispatch; /**< Dispatch identifier */
     xmi_send_hint_t        hints;    /**< Hints for sending the message */
     size_t                 task;     /**< Destination task */
     void                 * cookie;   /**< Argument to \b all event callbacks */
     xmi_event_callback_t   local;    /**< Local message completion event */
     xmi_event_callback_t   remote;   /**< Remote message completion event ------ why is this needed ? */
-    struct {
+    struct
+    {
       size_t               bytes;    /**< Header buffer size in bytes */
       void               * addr;     /**< Header buffer address */
     } header;                        /**< Send message metadata header */
-    union {
+    union
+    {
       xmi_send_simple_t    simple;   /**< Required, and only valid for, XMI_Send() */
       xmi_send_iterate_t   iterate;  /**< Required, and only valid for, XMI_Send_iterate() */
       xmi_send_typed_t     typed;    /**< Required, and only valid for, XMI_Send_typed() */
@@ -481,10 +490,11 @@ extern "C"
    */
   xmi_result_t XMI_Send_iterate (xmi_context_t context, xmi_send_t * parameters);
 
-  typedef struct {
-    uint32_t data_in_pipe:1;          /* sync_send */
-    uint32_t inline_completion:1;
-    uint32_t reserved:30;
+  typedef struct
+  {
+    uint32_t data_in_pipe: 1;         /* sync_send */
+    uint32_t inline_completion: 1;
+    uint32_t reserved: 30;
   } xmi_recv_hint_t;
 
   /**
@@ -496,12 +506,14 @@ extern "C"
    *
    * \see xmi_dispatch_callback_t
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_recv_hint_t        hints;    /**< Hints for receiving the message */
     void                 * cookie;   /**< Argument to \b all event callbacks */
     xmi_event_callback_t   local;    /**< Local message completion event */
     xmi_am_kind_t          kind;     /**< Which kind receive is to be done */
-    union {
+    union
+    {
       xmi_send_simple_t    simple;   /**< Receive into a simple contiguous buffer */
       xmi_send_iterate_t   iterate;  /**< Receive via explicit data callbacks */
       xmi_send_typed_t     typed;    /**< Receive into a non-contiguous buffer */
@@ -514,14 +526,14 @@ extern "C"
    * TBD: make input parameters a struct
    */
   typedef void (*xmi_dispatch_callback_t) (
-      xmi_context_t        context,      /* IN: XMI context */
-      void               * cookie,       /* IN: dispatch cookie */
-      size_t               task,         /* IN: source task */
-      void               * header_addr,  /* IN: header address */
-      size_t               header_size,  /* IN: header size */
-      void               * pipe_addr,    /* IN: address of XMI pipe buffer */
-      size_t               pipe_size,    /* IN: size of XMI pipe buffer */
-      xmi_recv_t         * recv);        /* OUT: receive message structure */
+    xmi_context_t        context,      /* IN: XMI context */
+    void               * cookie,       /* IN: dispatch cookie */
+    size_t               task,         /* IN: source task */
+    void               * header_addr,  /* IN: header address */
+    size_t               header_size,  /* IN: header size */
+    void               * pipe_addr,    /* IN: address of XMI pipe buffer */
+    size_t               pipe_size,    /* IN: size of XMI pipe buffer */
+    xmi_recv_t         * recv);        /* OUT: receive message structure */
 
   /** \} */ /* end of "active message" group */
 
@@ -709,21 +721,24 @@ extern "C"
   /**
    * \brief ???
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_iterate_fn  function; /**< Non-contiguous iterate function */
   } xmi_rma_iterate_t;
 
   /**
    * \brief ???
    */
-  typedef struct {
+  typedef struct
+  {
     size_t          bytes;    /**< Data transfer size in bytes */
   } xmi_rma_simple_t;
 
   /**
    * \brief ???
    */
-  typedef struct {
+  typedef struct
+  {
     size_t          bytes;    /**< Data transfer size in bytes */
     xmi_type_t      local;    /**< Data type of local buffer */
     xmi_type_t      remote;   /**< Data type of remote buffer */
@@ -746,7 +761,8 @@ extern "C"
    * \see XMI_Put
    * \see XMI_Put_typed
    **/
-  typedef struct {
+  typedef struct
+  {
     size_t                 task;      /**< Destination task */
     void                 * local;     /**< Local buffer virtual address */
     void                 * remote;    /**< Remote buffer virtual address */
@@ -754,7 +770,8 @@ extern "C"
     xmi_event_callback_t   recv_done; /**< All local data has been received */
     void                 * cookie;    /**< Argument to \b all event callbacks */
     xmi_send_hint_t        hints;     /**< Hints for sending the message */
-    union {
+    union
+    {
       xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Put() */
       xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Put_typed() */
     };
@@ -770,7 +787,8 @@ extern "C"
    * \see XMI_Get
    * \see XMI_Get_typed
    **/
-  typedef struct {
+  typedef struct
+  {
     size_t                 task;      /**< Destination task */
     void                 * local;     /**< Local buffer virtual address */
     void                 * remote;    /**< Remote buffer virtual address */
@@ -778,7 +796,8 @@ extern "C"
     xmi_event_callback_t   recv_done; /**< All local data has been received */
     void                 * cookie;    /**< Argument to \b all event callbacks */
     xmi_send_hint_t        hints;     /**< Hints for sending the message */
-    union {
+    union
+    {
       xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Get() */
       xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Get_typed() */
     };
@@ -801,7 +820,8 @@ extern "C"
    * \see XMI_RPut_iterate
    * \see XMI_RPut_typed
    **/
-  typedef struct {
+  typedef struct
+  {
     size_t                 task;      /**< Destination task */
     void                 * local_va;  /**< Local buffer virtual address */
     xmi_memregion_t        local_mr;  /**< Local buffer memory region */
@@ -811,7 +831,8 @@ extern "C"
     xmi_event_callback_t   recv_done; /**< All local data has been received */
     void                 * cookie;    /**< Argument to \b all event callbacks */
     xmi_send_hint_t        hints;     /**< Hints for sending the message */
-    union {
+    union
+    {
       xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_RPut() */
       xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_RPut_iterate() */
       xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_RPut_typed() */
@@ -866,7 +887,8 @@ extern "C"
    * \see XMI_RGet_iterate
    * \see XMI_RGet_typed
    **/
-  typedef struct {
+  typedef struct
+  {
     size_t                 task;      /**< Destination task */
     void                 * local_va;  /**< Local buffer virtual address */
     xmi_memregion_t        local_mr;  /**< Local buffer memory region */
@@ -875,7 +897,8 @@ extern "C"
     xmi_event_callback_t   done;      /**< All remote data has been received */
     void                 * cookie;    /**< Argument to \b all event callbacks */
     xmi_send_hint_t        hints;     /**< Hints for sending the message */
-    union {
+    union
+    {
       xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Get() */
       xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_Get_iterate() */
       xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Get_typed() */
@@ -914,23 +937,6 @@ extern "C"
   xmi_result_t XMI_RGet_typed (xmi_context_t context, xmi_rget_t * parameters);
 
   /** \} */ /* end of "rma" group */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -979,5 +985,12 @@ extern "C"
 };
 #endif
 
+/*
+ * astyle info    http://astyle.sourceforge.net
+ *
+ * astyle options --style=gnu --indent=spaces=2 --indent-classes
+ * astyle options --indent-switches --indent-namespaces --break-blocks
+ * astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+ */
 
 #endif /* __xmi_h__ */
