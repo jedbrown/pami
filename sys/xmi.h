@@ -102,6 +102,7 @@ extern "C"
     void *           value;
   } xmi_config_t;
 
+  /** Remove?  What is this?  It needs documentation */
   char * XMI_Last_error();
 
   /*
@@ -323,25 +324,25 @@ extern "C"
   typedef void *        xmi_type_t;
 
   /* Create a new type */
-  int XMI_Type_create(xmi_type_t *type);
+  xmi_result_t XMI_Type_create(xmi_type_t *type);
 
   /* Add simple buffers */
-  int XMI_Type_add_simple(xmi_type_t type, size_t bytes,
+  xmi_result_t XMI_Type_add_simple(xmi_type_t type, size_t bytes,
                           size_t offset, size_t reps, size_t stride);
 
   /* Add typed buffers */
-  int XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type,
+  xmi_result_t XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type,
                          size_t offset, size_t reps, size_t stride);
 
   /* Commit the type, which can no longer be modified afterwards */
-  int XMI_Type_commit(xmi_type_t type);
+  xmi_result_t XMI_Type_commit(xmi_type_t type);
 
   /* Destroy the type */
   /*
      What if some in-flight messages are still using it?
      What if some other types have references to it?
    */
-  int XMI_Type_destroy(xmi_type_t type);
+  xmi_result_t XMI_Type_destroy(xmi_type_t type);
 
   /** \} */ /* end of "datatype" group */
 
