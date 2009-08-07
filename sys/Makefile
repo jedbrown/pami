@@ -1,15 +1,14 @@
-SUBDIRS=examples examples/config
-.PHONY: docs clean check ${SUBDIRS}
-
-docs:
-	doxygen ./Doxyfile
-
-clean:
-	${RM} -r html *~ *.h.o
-	for i in ${SUBDIRS} ; do ${MAKE} -C $$i clean ; done
-
+SUBDIRS   = examples examples/config
 HEADERS   = ${shell echo *.h}
 HEADERS_O = ${patsubst %.h,  %.h.o, ${HEADERS}}
+.PHONY: docs clean check ${SUBDIRS} default all install
+
+default all install: check docs
+
+docs:
+	${RM} -r html
+	doxygen ./Doxyfile
+
 check: ${HEADERS_O} examples examples/config xmi_checkall.h.o
 xmi_checkall.h.o: ${HEADERS}
 	@perl cmp ${CC} $@ ${HEADERS}
@@ -19,3 +18,7 @@ xmi_checkall.h.o: ${HEADERS}
 	@echo "$^" parses
 ${SUBDIRS}:
 	${MAKE} -C $@
+
+clean:
+	${RM} -r html *~ *.h.o
+	for i in ${SUBDIRS} ; do ${MAKE} -C $$i clean ; done

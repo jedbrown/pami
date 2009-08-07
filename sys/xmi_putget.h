@@ -108,7 +108,7 @@ typedef struct {
 /**
  * \defgroup put Put data transfer operations
  *
- * Foo
+ * ???
  */
 
 /**
@@ -227,7 +227,7 @@ xmi_result_t XMI_RPut_typed (xmi_context_t context, xmi_rput_t * parameters);
 /**
  * \defgroup get Get data transfer operations
  *
- * Foo
+ * ???
  */
 
 /**
