@@ -26,8 +26,11 @@ int XMI_Type_add_simple(xmi_type_t type, size_t bytes,
 int XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type, 
         size_t offset, size_t reps, size_t stride);
 
-/* Commit the type, which can no longer be modified afterwards */
-int XMI_Type_commit(xmi_type_t type);
+/* Complete the type, which can no longer be modified afterwards */
+int XMI_Type_complete(xmi_type_t type);
+
+/* Get the byte size of the type */
+int XMI_Type_sizeof(xmi_type_t type);
 
 /* Destroy the type */
 /*
@@ -75,14 +78,20 @@ int XMI_Dgsm_move_cursor(
     xmi_dgsm_t           dgsm,         /* IN: DGSM for data buffer */
     size_t               offset);      /* IN: offset to move to */
 
+/* Get a contiguous block of buffer */
+int XMI_Dgsm_get_block(
+    xmi_dgsm_t           dgsm,         /* IN: DGSM for data buffer */
+    void              ** address,      /* OUT: address of the next block */
+    size_t             * size);        /* OUT: size of the next block */
+
 /* Gather DGSM data to a contiguous buffer */
-int XMI_Dgsm_gather(
+int XMI_Dgsm_pack(
     xmi_dgsm_t           dgsm,         /* IN: DGSM for source buffer */
     void               * address,      /* IN: address of destination buffer */
     size_t               size);        /* IN: size of destination buffer */
 
 /* Scatter contiguous data to DGSM data buffer */
-int XMI_Dgsm_scatter(
+int XMI_Dgsm_unpack(
     xmi_dgsm_t           dgsm,         /* IN: DGSM for destination buffer */
     void               * address,      /* IN: address of source buffer */
     size_t               size);        /* IN: size of source buffer */
