@@ -1,4 +1,4 @@
-#include <xmi_dgs.h>
+#include <xmi.h>
 
 void CreateType()
 {
@@ -9,12 +9,12 @@ void CreateType()
     XMI_Type_create(&double_type);
     XMI_Type_add_simple(double_type, sizeof(double), 0, 1, sizeof(double));
     XMI_Type_complete(double_type);
-    
+
     // create a type for a row
     // NOTE: can be internally optimized to a single contiguous buffer
     xmi_type_t   row_type;
     XMI_Type_create(&row_type);
-    XMI_Type_add_typed(row_type, double_type, 
+    XMI_Type_add_typed(row_type, double_type,
             0,                 // offset at 1st element
             20,                // repead 20 times
             sizeof(double));   // stride in 1 element
@@ -24,17 +24,17 @@ void CreateType()
     // NOTE: can be internally optimized to strided buffers
     xmi_type_t   odd_type;
     XMI_Type_create(&odd_type);
-    XMI_Type_add_typed(odd_type, double_type, 
+    XMI_Type_add_typed(odd_type, double_type,
             sizeof(double),    // offset at 2nd element
             10,                // repead 10 times
             2*sizeof(double)); // stride in 2 element
     XMI_Type_complete(odd_type);
 
-    // create a type for a column 
+    // create a type for a column
     // NOTE: can be internally optimized to strided buffers
     xmi_type_t   column_type;
     XMI_Type_create(&column_type);
-    XMI_Type_add_typed(column_type, double_type, 
+    XMI_Type_add_typed(column_type, double_type,
             0,                 // offset at 1st element
             10,                // repeat 10 times
             20*sizeof(double));// stride in 20 elements
@@ -83,7 +83,7 @@ void TypedCopy2(void *dst_addr, xmi_type_t dst_type,
     void * block_addr;
     size_t block_size;
     while (XMI_Dgsm_get_block(&src_dgsm, &block_addr, &block_size) &&
-            block_size > 0) 
+            block_size > 0)
         XMI_Dgsm_unpack(&dst_dgsm, block_addr, block_size);
 
     XMI_Dgsm_destroy(dst_dgsm);
@@ -126,7 +126,7 @@ void TypedReduce2(void *dst_addr, xmi_type_t dst_type,
     void * block_addr;
     size_t block_size;
     while (XMI_Dgsm_get_block(&src_dgsm, &block_addr, &block_size) &&
-            block_size > 0) 
+            block_size > 0)
         XMI_Dgsm_unpack(&dst_dgsm, block_addr, block_size);
 
     XMI_Dgsm_destroy(dst_dgsm);

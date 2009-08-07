@@ -5,7 +5,7 @@
  * ***** need more description of this example ***
  */
 #include <stdio.h>
-#include "xmi_context.h"
+#include "xmi.h"
 
 xmi_application_t application;
 xmi_context_t     context;
