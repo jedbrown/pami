@@ -662,7 +662,7 @@ extern "C"
    * operations due to system memory region caching, internal memory region
    * exchange operations, and other implementation-specific management features.
    */
-  extern xmi_memregion_t xmi_global_memregion;
+  extern xmi_memregion_t XMI_MEMREGION_GLOBAL;
 
   /**
    * \brief Register a local memory region for one sided operations
@@ -816,9 +816,9 @@ extern "C"
    * \brief Input parameters for the XMI put functions
    * \ingroup put
    *
-   * \see XMI_RPut
-   * \see XMI_RPut_iterate
-   * \see XMI_RPut_typed
+   * \see XMI_Rput
+   * \see XMI_Rput_iterate
+   * \see XMI_Rput_typed
    **/
   typedef struct
   {
@@ -833,9 +833,9 @@ extern "C"
     xmi_send_hint_t        hints;     /**< Hints for sending the message */
     union
     {
-      xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_RPut() */
-      xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_RPut_iterate() */
-      xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_RPut_typed() */
+      xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Rput() */
+      xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_Rput_iterate() */
+      xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Rput_typed() */
     };
   } xmi_rput_t;
 
@@ -847,7 +847,7 @@ extern "C"
    *
    * \ingroup put
    */
-  xmi_result_t XMI_RPut (xmi_context_t context, xmi_rput_t * parameters);
+  xmi_result_t XMI_Rput (xmi_context_t context, xmi_rput_t * parameters);
 
   /**
    * \brief Put operation for callback-driven one-sided non-contiguous data transfer.
@@ -857,7 +857,7 @@ extern "C"
    *
    * \ingroup put
    */
-  xmi_result_t XMI_RPut_iterate (xmi_context_t context, xmi_rput_t * parameters);
+  xmi_result_t XMI_Rput_iterate (xmi_context_t context, xmi_rput_t * parameters);
 
   /**
    * \brief Put operation for data type specific one-sided data transfer.
@@ -867,7 +867,7 @@ extern "C"
    *
    * \ingroup put
    */
-  xmi_result_t XMI_RPut_typed (xmi_context_t context, xmi_rput_t * parameters);
+  xmi_result_t XMI_Rput_typed (xmi_context_t context, xmi_rput_t * parameters);
 
 
 
@@ -883,9 +883,9 @@ extern "C"
    * \brief Input parameters for the XMI get functions
    * \ingroup get
    *
-   * \see XMI_RGet
-   * \see XMI_RGet_iterate
-   * \see XMI_RGet_typed
+   * \see XMI_Rget
+   * \see XMI_Rget_iterate
+   * \see XMI_Rget_typed
    **/
   typedef struct
   {
@@ -914,7 +914,7 @@ extern "C"
    *
    * \ingroup get
    */
-  xmi_result_t XMI_RGet (xmi_context_t context, xmi_rget_t * parameters);
+  xmi_result_t XMI_Rget (xmi_context_t context, xmi_rget_t * parameters);
 
   /**
    * \brief Get operation for callback-driven one-sided non-contiguous data transfer.
@@ -924,7 +924,7 @@ extern "C"
    *
    * \ingroup get
    */
-  xmi_result_t XMI_RGet_iterate (xmi_context_t context, xmi_rget_t * parameters);
+  xmi_result_t XMI_Rget_iterate (xmi_context_t context, xmi_rget_t * parameters);
 
   /**
    * \brief Get operation for data type specific one-sided data transfer.
@@ -934,7 +934,7 @@ extern "C"
    *
    * \ingroup get
    */
-  xmi_result_t XMI_RGet_typed (xmi_context_t context, xmi_rget_t * parameters);
+  xmi_result_t XMI_Rget_typed (xmi_context_t context, xmi_rget_t * parameters);
 
   /** \} */ /* end of "rma" group */
 
