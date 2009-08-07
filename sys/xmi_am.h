@@ -32,21 +32,23 @@ typedef size_t (*xmi_data_callback_t) ( xmi_context_t   context,
                                         size_t          pipe_size );
 
 
-/*
- * Hints for sending a message
+/**
+ * \brief Hints for sending a message
  *
- * TBD: better names for the hints
+ * \todo better names for the hints
+ * \todo better documentation for the hints
  */
 typedef struct {
-  uint32_t consistency:1;
-  uint32_t buffer_registered:1;
-  uint32_t use_rdma:1;
-  uint32_t no_rdma:1;
-  uint32_t no_local_copy:1;
-  uint32_t contig_buffers:1;
-  uint32_t interrupt_on_recv:1;
-  uint32_t high_priority:1;
-  uint32_t reserved:25;
+  uint32_t consistency       :1; /**< Force match ordering semantics */
+  uint32_t sync_send         :1; /**< Assert that all sends will be synchronously received */
+  uint32_t buffer_registered :1;
+  uint32_t use_rdma          :1; /**< Assert/enable rdma operations */
+  uint32_t no_rdma           :1; /**< Disable rdma operations */
+  uint32_t no_local_copy     :1;
+  uint32_t interrupt_on_recv :1; /**< Interrupt the remote task when the first packet arrives */
+  uint32_t high_priority     :1; /**< Message is delivered with high priority,
+                                      which may result in out-of-order delivery */
+  uint32_t reserved:24;
 } xmi_send_hint_t;
 
 typedef struct {
