@@ -8,6 +8,7 @@
 #define __xmi_am_h__
 
 #include "xmi.h"
+//#include "../interface/ll_pipeworkqueue.h"
 
 /**
  * \brief Callback to provide data at send side or consume data at receive side
@@ -77,9 +78,13 @@ typedef struct {
  * \brief Structure for send parameters unique to a typed active message send
  */
 typedef struct {
+#if 1
   size_t                 bytes;    /**< Number of bytes data */
   size_t                 offset;   /**< Starting offset */
   xmi_data_type_t        datatype; /**< Datatype TODO */
+#else
+  LL_PipeWorkQueue_t    * wq;      /**< \see interface/ll_pipeworkqueue.h */
+#endif
 } xmi_send_typed_t;
 
 /**
@@ -138,6 +143,12 @@ xmi_result_t XMI_Send_typed (xmi_context_t context, xmi_send_t * parameters);
  */
 xmi_result_t XMI_Send_iterate (xmi_context_t context, xmi_send_t * parameters);
 
+typedef enum {
+  XMI_AM_KIND_SIMPLE        = 0,
+  XMI_AM_KIND_ITERATE,
+  XMI_AM_KIND_NONCONTIGUOUS,
+  XMI_AM_KIND_COUNT
+} xmi_am_kind_t;
 
 /**
  * \brief Receive message structure
@@ -152,10 +163,11 @@ typedef struct {
   xmi_recv_hint_t        hints;    /**< Hints for receiving the message */
   void                 * cookie;   /**< Argument to \b all event callbacks */
   xmi_event_callback_t   local;    /**< Local message completion event */
+  xmi_am_kind_t          kind;     /**< Which kind receive is to be done */
   union {
-    xmi_send_simple_t    simple;   /**< Required, and only valid for, XMI_Send() */
-    xmi_send_iterate_t   iterate;  /**< Required, and only valid for, XMI_Send_iterate() */
-    xmi_send_typed_t     typed;    /**< Required, and only valid for, XMI_Send_typed() */
+    xmi_send_simple_t    simple;   /**< Receive into a simple contiguous buffer */
+    xmi_send_iterate_t   iterate;  /**< Receive via explicit data callbacks */
+    xmi_send_typed_t     typed;    /**< Receive into a non-contiguous buffer */
   } data;                          /**< Receive message destination data */
 } xmi_recv_t;
 
