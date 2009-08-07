@@ -323,18 +323,18 @@ extern "C"
 
   typedef void *        xmi_type_t;
 
-  /* Create a new type */
+  /** Create a new type */
   xmi_result_t XMI_Type_create(xmi_type_t *type);
 
-  /* Add simple buffers */
+  /** Add simple buffers */
   xmi_result_t XMI_Type_add_simple(xmi_type_t type, size_t bytes,
                           size_t offset, size_t reps, size_t stride);
 
-  /* Add typed buffers */
+  /** Add typed buffers */
   xmi_result_t XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type,
                          size_t offset, size_t reps, size_t stride);
 
-  /* Commit the type, which can no longer be modified afterwards */
+  /** Commit the type, which can no longer be modified afterwards */
   xmi_result_t XMI_Type_commit(xmi_type_t type);
 
   /**
@@ -366,16 +366,16 @@ extern "C"
    */
   typedef struct
   {
-    uint32_t consistency       : 1; /**< Force match ordering semantics */
-    uint32_t sync_send         : 1; /**< Assert that all sends will be synchronously received */
-    uint32_t buffer_registered : 1;
-    uint32_t use_rdma          : 1; /**< Assert/enable rdma operations */
-    uint32_t no_rdma           : 1; /**< Disable rdma operations */
-    uint32_t no_local_copy     : 1;
+    uint32_t consistency       : 1; /**< Force match ordering semantics                          */
+    uint32_t sync_send         : 1; /**< Assert that all sends will be synchronously received    */
+    uint32_t buffer_registered : 1; /**< ???                                                     */
+    uint32_t use_rdma          : 1; /**< Assert/enable rdma operations                           */
+    uint32_t no_rdma           : 1; /**< Disable rdma operations                                 */
+    uint32_t no_local_copy     : 1; /**< ???                                                     */
     uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
     uint32_t high_priority     : 1; /**< Message is delivered with high priority,
-                                        which may result in out-of-order delivery */
-    uint32_t reserved: 24;
+                                        which may result in out-of-order delivery                */
+    uint32_t reserved          :24; /**< Unused at this time                                     */
   } xmi_send_hint_t;
 
 
@@ -524,18 +524,16 @@ extern "C"
 
   /**
    * \brief Dispatch callback
-   *
-   * TBD: make input parameters a struct
    */
   typedef void (*xmi_dispatch_callback_t) (
-    xmi_context_t        context,      /* IN: XMI context */
-    void               * cookie,       /* IN: dispatch cookie */
-    size_t               task,         /* IN: source task */
-    void               * header_addr,  /* IN: header address */
-    size_t               header_size,  /* IN: header size */
-    void               * pipe_addr,    /* IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /* IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv);        /* OUT: receive message structure */
+    xmi_context_t        context,      /**< IN: XMI context */
+    void               * cookie,       /**< IN: dispatch cookie */
+    size_t               task,         /**< IN: source task */
+    void               * header_addr,  /**< IN: header address */
+    size_t               header_size,  /**< IN: header size */
+    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
+    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
+    xmi_recv_t         * recv);        /**< OUT: receive message structure */
 
   /** \} */ /* end of "active message" group */
 
@@ -808,11 +806,11 @@ extern "C"
   xmi_result_t XMI_Get (xmi_context_t context, xmi_put_t * parameters);
   xmi_result_t XMI_Get_typed (xmi_context_t context, xmi_put_t * parameters);
 
-  /* ***************************************************************************
+  /****************************************************************************
    *
    *   RDMA interface starts
    *
-   * ***************************************************************************
+   ****************************************************************************
    */
 
   /**
