@@ -33,8 +33,9 @@ extern "C"
     XMI_OTHER,        /**< Other undefined error       */
   }
   xmi_result_t;
+
+  typedef void* xmi_client_t;
   typedef void* xmi_context_t;
-  typedef void* xmi_application_t;
   typedef void* xmi_error_t;
   typedef void* xmi_hint_t;
   typedef void* xmi_configuration_t;
@@ -159,30 +160,34 @@ extern "C"
   /*****************************************************************************/
 
   /**
-   * \brief Initialize the XMI runtime for an application
+   * \brief Initialize the XMI runtime for a client program
+   *
+   * A client program is any program that invokes any XMI function. This
+   * includes applications, libraries, and other middleware. Some example
+   * clienti names may include: "MPI", "UPC", "OpenSHMEM", and "ARMCI"
    *
    * A communication context must be created before any data transfer functions
    * may be invoked.
    *
-   * \param[in]  name        Application, or middleware, unique name
-   * \param[out] application Application realm
+   * \param[in]  name   XMI client unique name
+   * \param[out] client XMI client handle
    */
-  xmi_result_t XMI_Application_initialize (char              * name,
-                                           xmi_application_t * application);
+  xmi_result_t XMI_Client_initialize (char         * name,
+                                      xmi_client_t * client);
 
   /**
-   * \brief Finalize the XMI runtime for an application
+   * \brief Finalize the XMI runtime for a client program
    *
-   * \warning It is \b illegal to invoke any XMI functions using the application
-   *          realm after the finalize function.
+   * \warning It is \b illegal to invoke any XMI functions using the client
+   *          handle from any thread after the finalize function.
    *
-   * \param[in] application Application realm
+   * \param[in] client XMI client handle
    */
-  xmi_result_t XMI_Application_finalize (xmi_application_t application);
+  xmi_result_t XMI_Client_finalize (xmi_client_t client);
 
 
   /**
-   * \brief Create a new independent communication context for an application
+   * \brief Create a new independent communication context for a client
    *
    * The context configuration attributes may include:
    * - Unique context name for this application, which is platform specific
@@ -191,21 +196,22 @@ extern "C"
    * Context creation is a local operation and does not involve communication or
    * syncronization with other tasks.
    *
-   * \param[in]  application   Application realm
+   * \param[in]  client        Client handle
    * \param[in]  configuration List of configurable attributes and values
    * \param[in]  count         Number of configurations, may be zero
    * \param[out] context       XMI communication context
    */
-  xmi_result_t XMI_Context_create (xmi_application_t    application,
-                                   xmi_config_t         configuration[],
-                                   size_t               count,
-                                   xmi_context_t      * context);
+  xmi_result_t XMI_Context_create (xmi_client_t    client,
+                                   xmi_config_t    configuration[],
+                                   size_t          count,
+                                   xmi_context_t * context);
 
   /**
    * \brief Destroy an independent communication context
    *
    * \warning It is \b illegal to invoke any XMI functions using the
-   *          communication context after the context is destroyed.
+   *          communication context from any thread after the context is
+   *          destroyed.
    *
    * \param[in] context XMI communication context
    */
@@ -216,13 +222,13 @@ extern "C"
    *
    * It is \b not required that the target context is locked, or otherwise
    * reserved, by an external atomic operation to ensure thread safety. The XMI
-   * runtime will internally perform and atomic operation in order to post the
+   * runtime will internally perform an atomic operation in order to post the
    * work to the context.
    *
    * The callback function will be invoked in the thread that advances the
    * communication context. There is no implicit completion notification provided
-   * to the \em posting thread when the application returns from the callback
-   * function.  If the application desires a completion notification in the
+   * to the \em posting thread when the xmi client returns from the callback
+   * function.  If the xmi client desires a completion notification in the
    * posting thread it must explicitly program such notifications, via the
    * XMI_Context_post() interface, from the target thread back to the origin
    * thread
@@ -250,6 +256,9 @@ extern "C"
    * \warning This function is \b not \b threadsafe and the application must
    *          ensure that only one thread advances a context at any time.
    *
+   * \see XMI_Context_lock()
+   * \see XMI_Context_trylock()
+   *
    * \todo Define return code, event bitmask ?
    *
    * \param[in] context XMI communication context
@@ -271,9 +280,18 @@ extern "C"
    * \warning This function is \b not \b threadsafe and the application must
    *          ensure that only one thread advances the contexts at any time.
    *
-   * \todo Define return code, event bitmask ?
+   * \note It is possible to define a set of communication contexts that are
+   *       always advanced together by any xmi client thread.  It is the
+   *       responsibility of the xmi client to atomically lock the context set,
+   *       perhaps by using the XMI_Context_lock() function on a designated
+   *       \em leader context, and to manage the xmi client threads to ensure
+   *       that only one thread ever advances the set of contexts.
    *
+   * \todo Define return code, event bitmask ?
    * \todo Rename function to something better
+   *
+   * \see XMI_Context_lock()
+   * \see XMI_Context_trylock()
    *
    * \param[in] context Array of XMI communication contexts
    * \param[in] count   Number of communication contexts
@@ -321,29 +339,78 @@ extern "C"
    */
   /*****************************************************************************/
 
-  typedef void *        xmi_type_t;
-
-  /** Create a new type */
-  xmi_result_t XMI_Type_create(xmi_type_t *type);
-
-  /** Add simple buffers */
-  xmi_result_t XMI_Type_add_simple(xmi_type_t type, size_t bytes,
-                          size_t offset, size_t reps, size_t stride);
-
-  /** Add typed buffers */
-  xmi_result_t XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type,
-                         size_t offset, size_t reps, size_t stride);
-
-  /** Commit the type, which can no longer be modified afterwards */
-  xmi_result_t XMI_Type_commit(xmi_type_t type);
+  typedef void * xmi_type_t;
 
   /**
-   * Destroy the type
+   * \brief Create a new type for noncontiguous transfers
    *
-   * What if some in-flight messages are still using it?  What if some
-   * other types have references to it?
+   * \todo provide example code
+   *
+   * \param[out] type Type identifier to be created
    */
-  xmi_result_t XMI_Type_destroy(xmi_type_t type);
+  xmi_result_t XMI_Type_create (xmi_type_t * type);
+
+  /**
+   * \brief Append a simple contiguous buffer to an existing type identifier
+   *
+   * \todo doxygen for offset parameter
+   * \todo provide example code
+   *
+   * \param[in,out] type   Type identifier to be modified
+   * \param[in]     bytes  Number of contiguous bytes to append
+   * \param[in]     offset Offset from the end of the type to place the buffer
+   * \param[in]     count  Number of buffers
+   * \param[in]     stride Data stride
+   */
+  xmi_result_t XMI_Type_add_simple (xmi_type_t type,
+                                    size_t     bytes,
+                                    size_t     offset,
+                                    size_t     count,
+                                    size_t     stride);
+
+  /**
+   * \brief Append a typed buffer to an existing type identifier
+   *
+   * \todo doxygen for offset parameter
+   * \todo provide example code
+   *
+   * \warning It is considered \b illegal to append an uncommitted type to
+   *          another type.
+   *
+   * \param[in,out] type    Type identifier to be modified
+   * \param[in]     subtype Subtype to append
+   * \param[in]     offset  Offset from the end of the type to place the buffer
+   * \param[in]     count   Number of buffers
+   * \param[in]     stride  Data stride
+   */
+  xmi_result_t XMI_Type_add_typed (xmi_type_t type,
+                                   xmi_type_t subtype,
+                                   size_t     offset,
+                                   size_t     count,
+                                   size_t     stride);
+
+  /**
+   * \brief Commit the type identifier
+   *
+   * \warning It is considered \b illegal to modify a type identifier after it
+   *          has been committed.
+   *
+   * \param[in] type Type identifier to be committed
+   */
+  xmi_result_t XMI_Type_commit (xmi_type_t type);
+
+  /**
+   * \brief Destroy the type
+   *
+   * Q. What if some in-flight messages are still using it?  What if some
+   * other types have references to it?
+   *
+   * A. Maintain an internal reference count and release internal type
+   * resources when the count hits zero.
+   *
+   * \param[in] type Type identifier to be destroyed
+   */
+  xmi_result_t XMI_Type_destroy (xmi_type_t type);
 
   /** \} */ /* end of "datatype" group */
 
@@ -374,7 +441,7 @@ extern "C"
     uint32_t no_local_copy     : 1; /**< ???                                                     */
     uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
     uint32_t high_priority     : 1; /**< Message is delivered with high priority,
-                                        which may result in out-of-order delivery                */
+                                         which may result in out-of-order delivery               */
     uint32_t reserved          :24; /**< Unused at this time                                     */
   } xmi_send_hint_t;
 
@@ -403,7 +470,7 @@ extern "C"
 
   typedef enum {
     XMI_AM_KIND_SIMPLE = 0,
-    XMI_AM_KIND_ITERATE,
+    XMI_AM_KIND_DIRECT,
     XMI_AM_KIND_TYPED,
     XMI_AM_KIND_COUNT
   } xmi_am_kind_t;
@@ -418,21 +485,22 @@ extern "C"
   } xmi_send_simple_t;
 
   /**
-   * \brief Structure for send parameters unique to an iterator active message send
+   * \brief Structure for send parameters unique to a direct active message send
    */
   typedef struct
   {
     xmi_data_callback_t    callback; /**< Data callback function */
-  } xmi_send_iterate_t;
+  } xmi_send_direct_t;
 
   /**
    * \brief Structure for send parameters unique to a typed active message send
    */
   typedef struct
   {
-    size_t                 bytes;    /**< Number of bytes data */
+    size_t                 bytes;    /**< Number of bytes of data */
+    void                 * addr;     /**< Starting address of the buffer */
     size_t                 offset;   /**< Starting offset */
-    xmi_type_t             datatype; /**< Datatype */
+    xmi_type_t             type;     /**< Datatype */
   } xmi_send_typed_t;
 
   /**
@@ -453,14 +521,14 @@ extern "C"
     } header;                        /**< Send message metadata header */
     union
     {
-      xmi_send_simple_t    simple;   /**< Required, and only valid for, XMI_Send() */
-      xmi_send_iterate_t   iterate;  /**< Required, and only valid for, XMI_Send_iterate() */
+      xmi_send_simple_t    simple;   /**< Required, and only valid for, XMI_Send() and XMI_Send_immediate() */
+      xmi_send_direct_t    direct;   /**< Required, and only valid for, XMI_Send_direct() */
       xmi_send_typed_t     typed;    /**< Required, and only valid for, XMI_Send_typed() */
     } data;                          /**< Send message source data */
   } xmi_send_t;
 
   /**
-   * \brief Contiguous send
+   * \brief Non-blocking active message send for contiguous data
    *
    * \param[in] context    XMI communication context
    * \param[in] parameters Send parameter structure
@@ -468,16 +536,50 @@ extern "C"
   xmi_result_t XMI_Send (xmi_context_t context, xmi_send_t * parameters);
 
   /**
-   * \brief Short contiguous send
-   * \todo Is this needed? Can't we use hints with XMI_Send() instead?
+   * \brief Immediate active message send for small contiguous data
+   *
+   * The blocking send is only valid for small data buffers. The implementation
+   * configuration attribute \code IMMEDIATE_SEND_LIMIT defines the upper
+   * bounds for the size of data buffers that can be sent with this function.
+   * This function will return an error if a data buffer larger than the
+   * \code IMMEDIATE_SEND_LIMIT is attempted.
+   *
+   * This function provides a low-latency send that can be optimized by the
+   * specific xmi implementation. If network resources are immediately
+   * available the send data will be injected directly into the network. If
+   * resources are not available the specific xmi implementation may internally
+   * buffer the send parameters and data until network resource are available
+   * to complete the transfer. In either case the send will immediately return,
+   * no doce callback is invoked, and is considered complete.
+   *
+   * The low-latency send operation may be further enhanced by using a
+   * specially configured dispatch id which asserts that all dispatch receive
+   * callbacks will not exceed a certain limit. The implementation
+   * configuration attribute \code SYNC_SEND_LIMIT defines the upper bounds for
+   * the size of data buffers that can be completely received with a single
+   * dispatch callback. Typically this limit is associated with a network
+   * resource attribute, such as a packet size.
+   * 
+   * \see xmi_send_hint_t::sync_send
+   * \see XMI_Configuration_query()
+   * 
+   * \todo Better define send parameter structure so done callback is not required
+   * \todo Define configuration attribute for the size limit
    *
    * \param[in] context    XMI communication context
    * \param[in] parameters Send parameter structure
    */
-  xmi_result_t XMI_Send_contig_short (xmi_context_t context, xmi_send_t * parameters);
+  xmi_result_t XMI_Send_immediate (xmi_context_t context, xmi_send_t * parameters);
 
   /**
-   * \brief Typed (DGSP) send
+   * \brief Non-blocking active message send for non-contiguous typed data
+   *
+   * Transfers data according to a predefined data memory layout, or type, to
+   * the remote task.
+   *
+   * Conceptually, the data is transfered as a byte stream which may be
+   * received by the remote task into a different format, such as a contiguous
+   * buffer or the same or different predefined type.
    *
    * \param[in] context    XMI communication context
    * \param[in] parameters Send parameter structure
@@ -485,18 +587,36 @@ extern "C"
   xmi_result_t XMI_Send_typed (xmi_context_t context, xmi_send_t * parameters);
 
   /**
-   * \brief Untyped send with callback requesting for data
+   * \brief Non-blocking active message send for direct data injection
+   *
+   * Source data to transfer is provided by the xmi client via a series of send
+   * callbacks in which the xmi client will copy the source data directly into
+   * the available network resources. 
+   *
+   * The input parameters of the data callback will specify the output data
+   * address and the maximum data size in bytes. As a convenience, the xmi
+   * client may query the configuration attribute \code DIRECT_SEND_LIMIT to
+   * obtain the maximum direct data size outside of the callback mechanism.
+   *
+   * Typically, the \code DIRECT_SEND_LIMIT is associated with a network
+   * attribute, such as a packet size. 
+   *
+   * \see xmi_data_callback_t 
    *
    * \param[in] context    XMI communication context
    * \param[in] parameters Send parameter structure
    */
-  xmi_result_t XMI_Send_iterate (xmi_context_t context, xmi_send_t * parameters);
+  xmi_result_t XMI_Send_direct (xmi_context_t context, xmi_send_t * parameters);
 
+  /**
+   * \brief Active message receive hints
+   */
   typedef struct
   {
-    uint32_t data_in_pipe: 1;         /* sync_send */
-    uint32_t inline_completion: 1;
-    uint32_t reserved: 30;
+    uint32_t inline_completion :  1; /**< The receive completion callback
+                                      *   \b must be invoked by the thread that
+                                      *   receives the dispatch notification. */
+    uint32_t reserved          : 30;
   } xmi_recv_hint_t;
 
   /**
@@ -517,7 +637,7 @@ extern "C"
     union
     {
       xmi_send_simple_t    simple;   /**< Receive into a simple contiguous buffer */
-      xmi_send_iterate_t   iterate;  /**< Receive via explicit data callbacks */
+      xmi_send_direct_t    direct;   /**< Receive via explicit data callbacks */
       xmi_send_typed_t     typed;    /**< Receive into a non-contiguous buffer */
     } data;                          /**< Receive message destination data */
   } xmi_recv_t;
@@ -671,6 +791,9 @@ extern "C"
    * to allow the remote task to perform one-sided operations with this local
    * task
    *
+   * \todo Define, exactly, what the sematics are if a NULL pointer is passed
+   *       as the memregion to initialize.
+    *
    * \param[in]  context   XMI application context
    * \param[in]  address   Virtual address of memory region
    * \param[in]  bytes     Number of bytes to register
@@ -694,6 +817,8 @@ extern "C"
 
   /**
    * \brief Provide one or more contiguous segments to transfer.
+   *
+   * \todo this desperatly needs example code
    *
    * \see XMI_Put_iterate
    * \see XMI_Get_iterate
@@ -719,7 +844,7 @@ extern "C"
                                     size_t        * segments);
 
   /**
-   * \brief ???
+   * \brief Input parameter structure for rma iterator transfers
    */
   typedef struct
   {
@@ -727,7 +852,7 @@ extern "C"
   } xmi_rma_iterate_t;
 
   /**
-   * \brief ???
+   * \brief Input parameter structure for rma simple transfers
    */
   typedef struct
   {
@@ -735,7 +860,7 @@ extern "C"
   } xmi_rma_simple_t;
 
   /**
-   * \brief ???
+   * \brief Input parameter structure for rma typed transfers
    */
   typedef struct
   {
