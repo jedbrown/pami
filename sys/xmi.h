@@ -36,11 +36,9 @@ extern "C"
 
   typedef void* xmi_client_t;
   typedef void* xmi_context_t;
-  typedef void* xmi_error_t;
   typedef void* xmi_hint_t;
-  typedef void* xmi_configuration_t;
   typedef void* xmi_dispatch_t;
-  typedef void* xmi_data_type_t;
+  typedef void* xmi_type_t;
 
 
   /**
@@ -101,16 +99,12 @@ extern "C"
   {
     xmi_attribute_t  attr;
     void *           value;
-  } xmi_config_t;
-
-  /** Remove?  What is this?  It needs documentation */
-  char * XMI_Last_error();
+  } xmi_configuration_t;
 
   /**
-   * \brief NULL_CONTEXT to allow queries outside a context
-   */
-
-#define NULL_CONTEXT  ((xmi_context_t)NULL)
+   * \todo  Remove?  What is this? Is it similar to perror()? why not call it
+   *        XMI_perror() then? It needs documentation */
+  char * XMI_Last_error();
 
   /**
    * \brief Query the value of an attribute
@@ -126,8 +120,9 @@ extern "C"
    *   XMI_ERR_ATTRIBUTE
    *   XMI_ERR_VALUE
    */
-  xmi_result_t XMI_Config_query(xmi_context_t context, xmi_attribute_t attribute,
-                                void* value_out);
+  xmi_result_t XMI_Configuration_query (xmi_context_t     context,
+                                        xmi_attribute_t   attribute,
+                                        void            * value);
 
   /**
    * \brief Update the value of an attribute
@@ -143,8 +138,9 @@ extern "C"
    *   XMI_ERR_ATTRIBUTE
    *   XMI_ERR_VALUE
    */
-  xmi_result_t XMI_Config_update(xmi_context_t context, xmi_attribute_t attribute,
-                                 void* value_in);
+  xmi_result_t XMI_Configuration_update (xmi_context_t     context,
+                                         xmi_attribute_t   attribute,
+                                         void            * value);
 
   /** \} */ /* end of "configuration" group */
 
@@ -201,10 +197,10 @@ extern "C"
    * \param[in]  count         Number of configurations, may be zero
    * \param[out] context       XMI communication context
    */
-  xmi_result_t XMI_Context_create (xmi_client_t    client,
-                                   xmi_config_t    configuration[],
-                                   size_t          count,
-                                   xmi_context_t * context);
+  xmi_result_t XMI_Context_create (xmi_client_t           client,
+                                   xmi_configuration_t    configuration[],
+                                   size_t                 count,
+                                   xmi_context_t        * context);
 
   /**
    * \brief Destroy an independent communication context
@@ -338,8 +334,6 @@ extern "C"
    * \{
    */
   /*****************************************************************************/
-
-  typedef void * xmi_type_t;
 
   /**
    * \brief Create a new type for noncontiguous transfers
@@ -540,9 +534,9 @@ extern "C"
    *
    * The blocking send is only valid for small data buffers. The implementation
    * configuration attribute \code IMMEDIATE_SEND_LIMIT defines the upper
-   * bounds for the size of data buffers that can be sent with this function.
-   * This function will return an error if a data buffer larger than the
-   * \code IMMEDIATE_SEND_LIMIT is attempted.
+   * bounds for the size of data buffers, including header data, that can be
+   * sent with this function. This function will return an error if a data
+   * buffer larger than the \code IMMEDIATE_SEND_LIMIT is attempted.
    *
    * This function provides a low-latency send that can be optimized by the
    * specific xmi implementation. If network resources are immediately
