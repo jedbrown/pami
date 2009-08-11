@@ -103,22 +103,13 @@ extern "C"
 
 
   /**
-   * \brief This contains the latest result from an XMI call.
+   * \brief Provides the detailed description of the most recent xmi result.
    *
-   * This is a thread-local variable.  It will not be affected by
-   * other threads using XMI, but it also means that the value is
-   * specific to the thread and caanot be read by another thread or
-   * after the thread exits and is joined.
-   */
-  extern __thread xmi_result_t xmi_errno;
-
-  /**
-   * \brief Return a string related to the current xmi_errno.
-   * \note  This will not change xmi_errno
+   * The "most recent xmi result" is specific to each thread. 
    *
-   * This will use the current xmi_errno, which is specific to the current thread.
+   * \note  XMI implementations may provide translated (i18n) text.
    */
-  char * XMI_Perror();
+  char * XMI_Error_text ();
 
   /**
    * \brief Query the value of an attribute
