@@ -108,8 +108,13 @@ extern "C"
    * The "most recent xmi result" is specific to each thread. 
    *
    * \note  XMI implementations may provide translated (i18n) text.
+   *
+   * \param[in] string Character array to write the descriptive text
+   * \param[in] length Length of the character array
+   *
+   * \return Number of characters written into the array
    */
-  char * XMI_Error_text ();
+  size_t XMI_Error_text (char * string, size_t length);
 
   /**
    * \brief Query the value of an attribute
