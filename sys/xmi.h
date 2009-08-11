@@ -706,7 +706,7 @@ extern "C"
     uint32_t inline_completion :  1; /**< The receive completion callback
                                       *   \b must be invoked by the thread that
                                       *   receives the dispatch notification. */
-    uint32_t reserved          : 30;
+    uint32_t reserved          : 31; /**< Reserved. Do not use. */
   } xmi_recv_hint_t;
 
   /**
@@ -767,8 +767,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] dispatch   Dispatch identifier to initialize
    * \param[in] fn         Dispatch receive function
-   * \param[in] clientdata Dispatch function clientdata
-   * \param[in] options    Dispatch registration options
+   * \param[in] cookie     Dispatch function cookie
+   * \param[in] options    Dispatch registration assertions
    *
    */
   xmi_result_t XMI_Dispatch_set (xmi_context_t           * context,
@@ -913,7 +913,7 @@ extern "C"
    * \see XMI_Put_iterate
    * \see XMI_Get_iterate
    *
-   * \param[in]     context       XMI application context
+   * \param[in]     context       XMI communication context
    * \param[in]     cookie        Event callback argument
    * \param[in,out] local_offset  Array of byte offsets from the local buffer
    * \param[in,out] remote_offset Array of byte offsets from the remote buffer
@@ -992,7 +992,20 @@ extern "C"
     };
   } xmi_put_t;
 
+  /**
+   * \brief One-sided put operation for simple contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Put operation input parameters
+   */
   xmi_result_t XMI_Put (xmi_context_t context, xmi_put_t * parameters);
+
+  /**
+   * \brief One-sided put operation for typed non-contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Put operation input parameters
+   */
   xmi_result_t XMI_Put_typed (xmi_context_t context, xmi_put_t * parameters);
 
   /**
@@ -1007,8 +1020,7 @@ extern "C"
     size_t                 task;      /**< Destination task */
     void                 * local;     /**< Local buffer virtual address */
     void                 * remote;    /**< Remote buffer virtual address */
-    xmi_event_callback_t   done;      /**< All local data has been sent */
-    xmi_event_callback_t   recv_done; /**< All local data has been received */
+    xmi_event_callback_t   done;      /**< All remote data has been received */
     void                 * cookie;    /**< Argument to \b all event callbacks */
     xmi_send_hint_t        hints;     /**< Hints for sending the message */
     union
@@ -1018,7 +1030,20 @@ extern "C"
     };
   } xmi_get_t;
 
+  /**
+   * \brief One-sided get operation for simple contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Get operation input parameters
+   */
   xmi_result_t XMI_Get (xmi_context_t context, xmi_put_t * parameters);
+
+  /**
+   * \brief One-sided get operation for typed non-contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Get operation input parameters
+   */
   xmi_result_t XMI_Get_typed (xmi_context_t context, xmi_put_t * parameters);
 
   /****************************************************************************
