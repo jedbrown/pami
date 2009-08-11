@@ -95,10 +95,13 @@ extern "C"
 #define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 #include "xmi_ext.h"      /**< platform-specific */
 
+  /**
+   * \brief General purpose configuration structure.
+   */
   typedef struct
   {
-    xmi_attribute_t  attr;
-    void *           value;
+    xmi_attribute_t  attr;  /**< Attribute type */
+    void *           value; /**< Opaque pointer to attribute value. */
   } xmi_configuration_t;
 
 
@@ -554,11 +557,13 @@ extern "C"
                                           void          * pipe_addr,
                                           size_t          pipe_size );
 
+  /**
+   * \brief Active message kind identifier
+   */
   typedef enum {
-    XMI_AM_KIND_SIMPLE = 0,
-    XMI_AM_KIND_DIRECT,
-    XMI_AM_KIND_TYPED,
-    XMI_AM_KIND_COUNT
+    XMI_AM_KIND_SIMPLE = 0, /**< Simple contiguous data transfer */
+    XMI_AM_KIND_DIRECT,     /**< Direct injection via callback transfer */
+    XMI_AM_KIND_TYPED       /**< Typed, non-contiguous, data transfer */
   } xmi_am_kind_t;
 
   /**
@@ -625,10 +630,10 @@ extern "C"
    * \brief Immediate active message send for small contiguous data
    *
    * The blocking send is only valid for small data buffers. The implementation
-   * configuration attribute \code IMMEDIATE_SEND_LIMIT defines the upper
+   * configuration attribute \c IMMEDIATE_SEND_LIMIT defines the upper
    * bounds for the size of data buffers, including header data, that can be
    * sent with this function. This function will return an error if a data
-   * buffer larger than the \code IMMEDIATE_SEND_LIMIT is attempted.
+   * buffer larger than the \c IMMEDIATE_SEND_LIMIT is attempted.
    *
    * This function provides a low-latency send that can be optimized by the
    * specific xmi implementation. If network resources are immediately
@@ -641,13 +646,12 @@ extern "C"
    * The low-latency send operation may be further enhanced by using a
    * specially configured dispatch id which asserts that all dispatch receive
    * callbacks will not exceed a certain limit. The implementation
-   * configuration attribute \code SYNC_SEND_LIMIT defines the upper bounds for
+   * configuration attribute \c SYNC_SEND_LIMIT defines the upper bounds for
    * the size of data buffers that can be completely received with a single
    * dispatch callback. Typically this limit is associated with a network
    * resource attribute, such as a packet size.
    * 
-   * \see xmi_send_hint_t::sync_send
-   * \see XMI_Configuration_query()
+   * \see XMI_Configuration_query
    * 
    * \todo Better define send parameter structure so done callback is not required
    * \todo Define configuration attribute for the size limit
@@ -681,10 +685,10 @@ extern "C"
    *
    * The input parameters of the data callback will specify the output data
    * address and the maximum data size in bytes. As a convenience, the xmi
-   * client may query the configuration attribute \code DIRECT_SEND_LIMIT to
+   * client may query the configuration attribute \c DIRECT_SEND_LIMIT to
    * obtain the maximum direct data size outside of the callback mechanism.
    *
-   * Typically, the \code DIRECT_SEND_LIMIT is associated with a network
+   * Typically, the \c DIRECT_SEND_LIMIT is associated with a network
    * attribute, such as a packet size. 
    *
    * \see xmi_data_callback_t 
