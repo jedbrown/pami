@@ -1046,6 +1046,35 @@ extern "C"
    */
   xmi_result_t XMI_Get_typed (xmi_context_t context, xmi_put_t * parameters);
 
+  /**
+   * \brief Atomic Read-Modify-Write Function
+   *
+   *   local_variable <- Rmw_op(remote_variable, immediate_value)
+   **/
+  typedef enum 
+  {
+      XMI_FETCH_AND_ADD,
+      XMI_FETCH_AND_OR,
+      XMI_SWAP,
+      XMI_COMPARE_AND_SWAP,
+      /* more to be added */
+  } xmi_rmw_op_t;
+
+  typedef struct
+  {
+    size_t                 task;      /**< Destination task */
+    void                 * local;     /**< Local variable */
+    void                 * remote;    /**< Remote variable */
+    void                 * immdiate;  /**< Immdiate value to the operation */
+    xmi_rmw_op_t           op;        /**< operation */
+    xmi_event_callback_t   done;      /**< Result is stored in local variable */
+    void                 * cookie;    /**< Argument to \b all event callbacks */
+    xmi_send_hint_t        hints;     /**< Hints for sending the message */
+  } xmi_rmw_t;
+
+  xmi_result_t XMI_Rmw32(xmi_context_t context, xmi_rmw_t * parameters);
+  xmi_result_t XMI_Rmw64(xmi_context_t context, xmi_rmw_t * parameters);
+
   /****************************************************************************
    *
    *   RDMA interface starts
