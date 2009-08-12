@@ -107,7 +107,7 @@ extern "C"
   /**
    * \brief Provides the detailed description of the most recent xmi result.
    *
-   * The "most recent xmi result" is specific to each thread. 
+   * The "most recent xmi result" is specific to each thread.
    *
    * \note  XMI implementations may provide translated (i18n) text.
    *
@@ -560,9 +560,9 @@ extern "C"
    * the size of data buffers that can be completely received with a single
    * dispatch callback. Typically this limit is associated with a network
    * resource attribute, such as a packet size.
-   * 
+   *
    * \see XMI_Configuration_query
-   * 
+   *
    * \todo Better define send parameter structure so done callback is not required
    * \todo Define configuration attribute for the size limit
    *
