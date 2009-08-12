@@ -130,7 +130,7 @@ extern "C"
                                                 size_t sndlen,
                                                 void *clientdata,
                                                 size_t *rcvlen,
-                                                char **rcvbuf,
+                                                LL_PipeWorkQueue_t **rcvbuf,
                                                 CM_Callback_t *cb_done);
 
 #ifdef DEPRECATED_MULTICAST
