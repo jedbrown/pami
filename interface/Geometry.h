@@ -28,9 +28,6 @@
 #include "interface/CollectiveMapping.h"
 #include "algorithms/executor/Executor.h"
 #include <new>
-#if (TARGET==mpi || TARGET==lapiunix)
-#define ADAPTOR_MPI
-#endif
 
 #ifndef ADAPTOR_MPI
  #include "algorithms/schedule/Rectangle.h"
