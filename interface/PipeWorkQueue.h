@@ -76,6 +76,28 @@ public:
 	inline void configure(void *sysdep, char *buffer, size_t bufsize, size_t bufinit);
 
 	///
+	/// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
+	///
+	/// Only one consumer and producer are allowed. Still supports pipelining.
+	/// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
+	/// Assumes the caller has placed buffer and (this) in appropriate memory
+	/// for desired use - i.e. all in shared memory if to be used beyond this process.
+	///
+	/// This is typically only used for the application buffer, either input or output,
+	/// and so would not normally have both producer and consumer (only one or the other).
+	/// The interface is the same as for contiguous data except that "bytesAvailable" will
+	/// only return the number of *contiguous* bytes available. The user must consume those
+	/// bytes before it can see the next contiguous chunk.
+	///
+	/// \param[out] wq            Opaque memory for PipeWorkQueue
+	/// \param[in] buffer         Buffer to use
+	/// \param[in] dgsp           Memory layout of a buffer unit
+	/// \param[in] dgspcount      Number of repetitions of buffer units
+	/// \param[in] dgspinit       Number of units initially in buffer
+	///
+	inline void configure(void *sysdep, char *buffer, dgsp_t *dgsp, size_t dgspcount, size_t dgspinit);
+
+	///
 	/// \brief Clone constructor.
 	///
 	/// Used to create a second local memory wrapper object of the same
@@ -107,6 +129,39 @@ public:
 	/// \param[in] prefix Optional character string to prefix.
 	///
 	inline void dump(const char *prefix = NULL);
+
+	///
+	/// \brief Export
+	///
+	/// Produces information about the PipeWorkQueue into the opaque buffer "export".
+	/// This info is suitable for sharing with other processes such that those processes
+	/// can then construct a PipeWorkQueue which accesses the same data stream.
+	///
+	/// \param[in] wq             Opaque memory for PipeWorkQueue
+	/// \param[out] export        Opaque memory to export into
+	/// \return   success of the export operation
+	///
+	inline CM_Result export(LL_PipeWorkQueue_ext *export);
+	
+	///
+	/// \brief Import
+	///
+	/// Takes the results of an export of a PipeWorkQueue on a different process and
+	/// constructs a new PipeWorkQueue which the local process may use to access the
+	/// data stream.
+	///
+	/// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
+	/// The producer has no knowledge of data consumed. There can be only one producer.
+	/// There may be multiple consumers, but the producer does not know about them.
+	///
+	/// TODO: can this work for circular buffers? does it need to, since those are
+	/// normally shared memory and thus already permit inter-process communication.
+	///
+	/// \param[in] import        Opaque memory into which an export was done.
+	/// \param[out] wq           Opaque memory for new PipeWorkQueue
+	/// \return   success of the import operation
+	///
+	inline CM_Result import(LL_PipeWorkQueue_ext *import);
 
 	/// \brief register a wakeup for the consumer side of the PipeWorkQueue
 	///
@@ -214,8 +269,11 @@ public:
 inline void LL::PipeWorkQueue::configure(void *sysdep, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, bufsize); }
 inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize); }
 inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize, size_t bufinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize, bufinit); }
+inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, dgsp, dgspcount, dgspinit); }
 inline LL::PipeWorkQueue::PipeWorkQueue(LL::PipeWorkQueue &obj) {_PipeWorkQueueImpl::_PipeWorkQueueImpl((_PipeWorkQueueImpl&)obj); }
 inline void LL::PipeWorkQueue::reset() { _PipeWorkQueueImpl::reset(); }
+inline CM_Result LL::PipeWorkQueue::export(LL_PipeWorkQueue_ext *e) { _PipeWorkQueueImpl::export(e); }
+inline CM_Result LL::PipeWorkQueue::import(LL_PipeWorkQueue_ext *i) { _PipeWorkQueueImpl::import(i); }
 inline void LL::PipeWorkQueue::dump(const char *prefix) { _PipeWorkQueueImpl::dump(prefix); }
 inline void LL::PipeWorkQueue::setConsumerWakeup(void *vec) { _PipeWorkQueueImpl::setConsumerWakeup(vec); }
 inline void LL::PipeWorkQueue::setProducerWakeup(void *vec) { _PipeWorkQueueImpl::setProducerWakeup(vec); }
@@ -228,6 +286,5 @@ inline void LL::PipeWorkQueue::produceBytes(size_t bytes) { _PipeWorkQueueImpl::
 inline char *LL::PipeWorkQueue::bufferToConsume() { return _PipeWorkQueueImpl::bufferToConsume(); }
 inline void LL::PipeWorkQueue::consumeBytes(size_t bytes) { _PipeWorkQueueImpl::consumeBytes(bytes); }
 inline bool LL::PipeWorkQueue::available() { return _PipeWorkQueueImpl::available(); }
-inline bool LL::PipeWorkQueue::aligned() { return _PipeWorkQueueImpl::aligned(); }
 
 #endif /* __ll_cpp_pipeworkqueue_h__ */

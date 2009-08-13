@@ -74,6 +74,72 @@ extern "C" void LL_PipeWorkQueue_config_flat(LL_PipeWorkQueue_t *wq, char *buffe
 }
 
 ///
+/// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
+///
+/// Only one consumer and producer are allowed. Still supports pipelining.
+/// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
+/// Assumes the caller has placed buffer and (this) in appropriate memory
+/// for desired use - i.e. all in shared memory if to be used beyond this process.
+///
+/// This is typically only used for the application buffer, either input or output, 
+/// and so would not normally have both producer and consumer (only one or the other). 
+/// The interface is the same as for contiguous data except that "bytesAvailable" will
+/// only return the number of *contiguous* bytes available. The user must consume those
+/// bytes before it can see the next contiguous chunk.
+///
+/// \param[out] wq            Opaque memory for PipeWorkQueue
+/// \param[in] buffer         Buffer to use
+/// \param[in] dgsp           Memory layout of a buffer unit
+/// \param[in] dgspcount      Number of repetitions of buffer units
+/// \param[in] dgspinit       Number of units initially in buffer
+///
+extern "C" void LL_PipeWorkQueue_config_noncontig(LL_PipeWorkQueue_t *wq, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) {
+	LL::PipeWorkQueue *pwq =
+		new (wq) LL::PipeWorkQueue();
+	pwq->configure(_g_messager->sysdep(), buffer, dgsp, dgspcount, dgspinit);
+}
+
+///
+/// \brief Export
+///
+/// Produces information about the PipeWorkQueue into the opaque buffer "export".
+/// This info is suitable for sharing with other processes such that those processes
+/// can then construct a PipeWorkQueue which accesses the same data stream. 
+///
+/// \param[in] wq             Opaque memory for PipeWorkQueue
+/// \param[out] export        Opaque memory to export into
+/// \return   success of the export operation
+///
+extern "C" CM_Result LL_PipeWorkQueue_export(LL_PipeWorkQueue_t *wq, LL_PipeWorkQueue_ext *export) {
+	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	return pwq->export(export);
+}
+
+///
+/// \brief Import
+///
+/// Takes the results of an export of a PipeWorkQueue on a different process and
+/// constructs a new PipeWorkQueue which the local process may use to access the
+/// data stream. 
+///
+/// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
+/// The producer has no knowledge of data consumed. There can be only one producer.
+/// There may be multiple consumers, but the producer does not know about them.
+///
+/// TODO: can this work for circular buffers? does it need to, since those are
+/// normally shared memory and thus already permit inter-process communication.
+///
+/// \param[in] import        Opaque memory into which an export was done.
+/// \param[out] wq           Opaque memory for new PipeWorkQueue
+/// \return   success of the import operation
+///
+extern "C" CM_Result LL_PipeWorkQueue_import(LL_PipeWorkQueue_ext *import, LL_PipeWorkQueue_t *wq) {
+	LL::PipeWorkQueue *pwq =
+		new (wq) LL::PipeWorkQueue();
+	return pwq->import(import);
+}
+
+///
 /// \brief Clone constructor.
 ///
 /// Used to create a second local memory wrapper object of the same
@@ -248,14 +314,4 @@ extern "C" void LL_PipeWorkQueue_consumeBytes(LL_PipeWorkQueue_t *wq, size_t byt
 extern "C" bool LL_PipeWorkQueue_available(LL_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->available();
-}
-
-/// \brief is workqueue buffer 16-byte aligned
-///
-/// \param[in] wq	Opaque memory for PipeWorkQueue
-/// \return	boolean indicate workqueue buffer alignment
-///
-extern "C" bool LL_PipeWorkQueue_aligned(LL_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
-	return pwq->aligned();
 }

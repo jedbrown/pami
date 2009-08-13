@@ -114,9 +114,11 @@ extern "C"
    * Note, certain flavors of Multicast do not use a Receive Callback and
    * constructing or registering with a non-NULL cb_recv will result in error.
    *
-   * \param[in] info		Metadata
-   * \param[in] count		Count of metadata
-   * \param[in] peer		Sending rank
+   * Does this accept zero-byte (no data, no metadata) operations?
+   *
+   * \param[in] msginfo		Metadata
+   * \param[in] msgcount	Count of metadata
+   * \param[in] root		Sending rank
    * \param[in] sndlen		Length of data sent
    * \param[in] clientdata	Opaque arg
    * \param[out] rcvlen		Length of data to receive
@@ -124,9 +126,9 @@ extern "C"
    * \param[out] cb_done	Completion callback to invoke when data received
    * \return	CM_Request opaque memory for message
    */
-  typedef CM_Request_t *(*LL_RecvMulticast)(const CMQuad *info,
-                                                unsigned count,
-                                                size_t peer,
+  typedef CM_Request_t *(*LL_RecvMulticast)(const CMQuad *msginfo,
+                                                unsigned msgcount,
+                                                size_t root,
                                                 size_t sndlen,
                                                 void *clientdata,
                                                 size_t *rcvlen,
@@ -340,6 +342,9 @@ extern "C"
 
   /**
    * \brief The new structure to pass parameters for the multisend multicast operation.
+   *
+   * The LL_Multicast_t object is re-useable immediately, but objects referred to
+   * (src, etc) cannot be re-used until cb_done.
    */
   typedef struct {
     CM_Protocol_t      *registration;	/**< Pointer to registration */
@@ -455,7 +460,9 @@ extern "C"
     LL_Topology_t *participants;	/**< Ranks that are vectored in buffer */
     size_t *lengths;			/**< Array of lengths in buffer for each rank */
     size_t *offsets;			/**< Array of offsets in buffer for each rank */
-    /* memregion? */			/**< only for DPUT/RGET flavors */
+    size_t num_vecs;                    /**< The number of entries in "lengths" and
+                                             "offsets". May be a flag: either "1" or
+                                             participants->size().
   } LL_ManytomanyBuf_t;
 
   /**
@@ -526,17 +533,15 @@ extern "C"
     CM_Callback_t       cb_done;	/**< User's completion callback */
     unsigned            connection_id;	/**< differentiate data streams */
     unsigned            roles;		/**< bitmap of roles to perform */
-    size_t              rankIndex;	/**< Index of send in recv parameters */
+    size_t              *rankIndex;	/**< Index of send in recv parameters */
+    size_t              num_index;      /**< Number of entries in "rankIndex".
+                                             should be multiple of send.participants->size()?
+                                         */
     LL_ManytomanyBuf_t  send;		/**< send data parameters */
     const CMQuad       *metadata;	/**< A extra info field to be sent with the message.
 					     This might include information about
 					     the data being sent, for one-sided. */
     unsigned            metacount;	/**< metadata count*/
-    /*
-     * in order to support DPUT/RGET we need this, and possibly all-sided,
-     * but then we may not need the recv cb (enforced by constructor).
-     */
-    LL_ManytomanyBuf_t  recv;		/**< recv data params, all-sided and DPUT/RGET */
   } LL_Manytomany_t;
 
   /**
@@ -645,25 +650,6 @@ extern "C"
   } LL_Multicombine_protocol_t;
 
   /**
-   * \brief Recv callback for Multicombine.
-   *
-   * Not normally used.
-   *
-   * Note, certain flavors of Multicombine do not use a Receive Callback and
-   * constructing or registering with a non-NULL cb_recv will result in error.
-   *
-   * \param[in] clientdata	Opaque arg
-   * \param[in] msginfo		Metadata
-   * \param[in] msgcount	Number of CMQuads in msginfo
-   * \param[in] conn_id		Instance ID
-   * \return	CM_Request opaque memory for message
-   */
-  typedef CM_Request_t *(*LL_RecvMulticomb)(void *clientdata,
-					    CMQuad *msginfo,
-					    unsigned msgcount,
-					    unsigned conn_id);
-
-  /**
    * \brief configuration interface for registering Multicombine
    *
    * Note, reply_proto is a protocol structure used by the protocol being registered
@@ -672,20 +658,28 @@ extern "C"
    */
   typedef struct {
     LL_Multicombine_protocol_t  protocol;	/**< The protocol to register */
-    LL_RecvMulticomb       	*cb_recv;	/**< Recv callback */
-    void                        *clientdata;	/**< Opaque arg for callback */
     /* add more configuration fields here */
   } LL_Multicombine_configuration_t;
 
   /**
    * \brief structure defining interface to Multicombine
+   *
+   * The recv callback, and associated metadata parameters, are not valid for all
+   * multicombines. Depending on the kind of multicombine being registered, it may
+   * require that the recv callback be either NULL or valid. If the recv callback
+   * is NULL then the metadata parameters should also be NULL (0) when inoking
+   * the multicombine.
+   *
+   * data and results parameters may not always be required, depending on role (and other?).
+   * For example, if a call the a multicombine specifies a single role of, say, "injection",
+   * then the results parameters are not needed. Details of this are specified by the
+   * type of multicombine being registered/used.
    */
   typedef struct {
     CM_Protocol_t      *registration;   /**< Pointer to registration */
     void               *request;        /**< Temporary storage for the multi* */
     size_t              req_size;	/**< space available in request, bytes */
     CM_Callback_t       cb_done;	/**< User's completion callback */
-    unsigned            connection_id;	/**< (remove?) differentiate data streams */
     unsigned            roles;		/**< bitmap of roles to perform */
     LL_PipeWorkQueue_t *data;		/**< Data source */
     LL_Topology_t      *data_participants;	/**< Ranks contributing data */
@@ -694,11 +688,6 @@ extern "C"
     CM_Op               optor;		/**< Operation to perform on data */
     CM_Dt               dtype;		/**< Datatype of elements */
     size_t              count;		/**< Number of elements */
-    const CMQuad       *msginfo;        /**< An extra info field to be used by the
-					     recv callback of the multicombine.
-                                             This might include information about
-                                             the data being sent, for one-sided. */
-    unsigned            msgcount;       /**< info count*/
   } LL_Multicombine_t;
 
   /**

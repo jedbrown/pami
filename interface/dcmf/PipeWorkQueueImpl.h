@@ -72,6 +72,12 @@ class _PipeWorkQueueImpl {
 		volatile char buffer[0]; ///< Producer-consumer buffer
 	} workqueue_t __attribute__ ((__aligned__(16)));
 
+	typedef struct export_t {
+		uint64_t bufPaddr;	// memregion?
+		uint64_t hdrPaddr;	// memregion?
+		unsigned pmask;
+	} export_t;
+
 public:
 	_PipeWorkQueueImpl() :
 	_qsize(0),
@@ -98,7 +104,6 @@ public:
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		_pmask = (size_t)-1; // nil mask
 #endif /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
-		_aligned = (((size_t)_buffer & 0x0f) == 0);
 	}
 #endif /* USE_FLAT_BUFFER */
 	///
@@ -120,7 +125,6 @@ public:
 		_buffer = &_sharedqueue->buffer[0];
 		CM_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 		_pmask = _qsize - 1;
-		_aligned = (((size_t)_buffer & 0x0f) == 0);
 	}
 
 	///
@@ -143,7 +147,6 @@ public:
 		_sharedqueue = &this->__sq;
 		CM_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 		_pmask = _qsize - 1;
-		_aligned = (((size_t)buffer & 0x0f) == 0);
 	}
 
 	///
@@ -171,7 +174,30 @@ public:
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		_pmask = (size_t)-1; // nil mask
 #endif /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
-		_aligned = (((size_t)buffer & 0x0f) == 0);
+	}
+
+	///
+	/// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
+	///
+	/// Only one consumer and producer are allowed. Still supports pipelining.
+	/// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
+	/// Assumes the caller has placed buffer and (this) in appropriate memory
+	/// for desired use - i.e. all in shared memory if to be used beyond this process.
+	///
+	/// This is typically only used for the application buffer, either input or output,
+	/// and so would not normally have both producer and consumer (only one or the other).
+	/// The interface is the same as for contiguous data except that "bytesAvailable" will
+	/// only return the number of *contiguous* bytes available. The user must consume those
+	/// bytes before it can see the next contiguous chunk.
+	///
+	/// \param[out] wq            Opaque memory for PipeWorkQueue
+	/// \param[in] buffer         Buffer to use
+	/// \param[in] dgsp           Memory layout of a buffer unit
+	/// \param[in] dgspcount      Number of repetitions of buffer units
+	/// \param[in] dgspinit       Number of units initially in buffer
+	///
+	inline void configure(void *sysdep, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) {
+		CM_abortf("DGSP PipeWorkQueue not yet supported");
 	}
 
 	///
@@ -189,7 +215,6 @@ public:
 	_qsize(obj._qsize),
 	_pmask(obj._pmask),
 	_buffer(obj._buffer),
-	_aligned(obj._aligned),
 	_sharedqueue(obj._sharedqueue) {
 		// need ref count so we know when to free...
 		reset();
@@ -212,10 +237,15 @@ public:
 	/// consumed by each consumer to zero.
 	///
 	inline void reset() {
-		_sharedqueue->_u._s.producedBytes = _isize;
-		_sharedqueue->_u._s.consumedBytes = 0;
-		_sharedqueue->_u._s.producerWakeVec = NULL;
-		_sharedqueue->_u._s.consumerWakeVec = NULL;
+		if (_pmask == (unsigned)-1) {
+			// exported/imported flat
+			_qsize = 0;
+		} else {
+			_sharedqueue->_u._s.producedBytes = _isize;
+			_sharedqueue->_u._s.consumedBytes = 0;
+			_sharedqueue->_u._s.producerWakeVec = NULL;
+			_sharedqueue->_u._s.consumerWakeVec = NULL;
+		}
 		mem_sync();
 	}
 
@@ -243,6 +273,58 @@ public:
 			_sharedqueue->_u._s.producerWakeVec, _sharedqueue->_u._s.consumerWakeVec,
 			pbytes0, bytesAvailableToProduce(),
 			cbytes0, bytesAvailableToConsume());
+	}
+
+	/// 
+	/// \brief Export
+	/// 
+	/// Produces information about the PipeWorkQueue into the opaque buffer "export".
+	/// This info is suitable for sharing with other processes such that those processes
+	/// can then construct a PipeWorkQueue which accesses the same data stream.
+	///
+	/// \param[in] wq             Opaque memory for PipeWorkQueue
+	/// \param[out] export        Opaque memory to export into
+	/// \return   success of the export operation
+	/// 
+	inline CM_Result export(LL_PipeWorkQueue_ext *export) {
+		unlikely_if (_pmask) {
+			return CM_ERROR;
+		}
+		export_t *e = (export_t *)export;
+		e->bufPaddr = vtop(_buffer);
+		e->hdrPaddr = vtop(_sharedqueue);
+		e->pmask = _pmask;
+		return CM_SUCCESS;
+	}
+	
+	/// 
+	/// \brief Import
+	/// 
+	/// Takes the results of an export of a PipeWorkQueue on a different process and
+	/// constructs a new PipeWorkQueue which the local process may use to access the
+	/// data stream.
+	/// 
+	/// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
+	/// The producer has no knowledge of data consumed. There can be only one producer.
+	/// There may be multiple consumers, but the producer does not know about them.
+	/// 
+	/// TODO: can this work for circular buffers? does it need to, since those are
+	/// normally shared memory and thus already permit inter-process communication.
+	///
+	/// \param[in] import        Opaque memory into which an export was done.
+	/// \param[out] wq           Opaque memory for new PipeWorkQueue
+	/// \return   success of the import operation 
+	///
+	inline CM_Result import(LL_PipeWorkQueue_ext *import) {
+		export_t *i = (export_t *)import;
+		unlikely_if (i->pmask) {
+			return CM_ERROR;
+		}
+		_pmask = (unsigned)-1; // signal local consumedBytes...
+		_buffer = map(i->bufPaddr);
+		_sharedqueue = map(i->hdrPaddr);
+		// need flag to prevent/localize produce/consume bytes...
+		return CM_SUCCESS;
 	}
 
 	/// \brief register a wakeup for the consumer side of the PipeWorkQueue
@@ -292,6 +374,9 @@ public:
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		likely_if (!_pmask) {
 			a = _qsize - p;
+		} else if (_pmask == (unsigned)-1) {
+			// exported/imported flat buffer
+			a = 0; // no producer allowed here...
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -333,6 +418,9 @@ public:
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		likely_if (!_pmask) {
 			a = p - c;
+		} else if (_pmask == (unsigned)-1) {
+			// exported/imported flat buffer
+			a = p - _qsize;
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -382,7 +470,11 @@ public:
 	/// \return	number of bytes consumed
 	///
 	inline size_t getBytesConsumed() {
-		return _sharedqueue->_u._s.consumedBytes;
+		unlikely_if(_pmask == (unsigned)-1) {
+			return _qsize;
+		} else {
+			return _sharedqueue->_u._s.consumedBytes;
+		}
 	}
 
 	/// \brief current position for producing into buffer
@@ -428,6 +520,8 @@ public:
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		likely_if (!_pmask) {
 			b = (char *)&_buffer[c];
+		} else if (_pmask == (unsigned)-1) {
+			b = (char *)&_buffer[_qsize];
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -443,11 +537,15 @@ public:
 	/// \return	number of bytes that were consumed
 	///
 	inline void consumeBytes(size_t bytes) {
-		_sharedqueue->_u._s.consumedBytes += bytes;
-		// cast undoes "volatile"...
-		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
-		if (v) {
-			WAKEUP(v);
+		unlikely_if (_pmask == (unsigned)-1) {
+			_pmask += bytes;
+		} else {
+			_sharedqueue->_u._s.consumedBytes += bytes;
+			// cast undoes "volatile"...
+			void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
+			if (v) {
+				WAKEUP(v);
+			}
 		}
 	}
 
@@ -459,12 +557,8 @@ public:
 		return (_sharedqueue != NULL);
 	}
 
-	/// \brief is workqueue buffer 16-byte aligned
-	///
-	/// \return	boolean indicate workqueue buffer alignment
-	///
-	inline bool aligned() {
-		return _aligned;
+	static inline void compile_time_assert () {
+		COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(LL_PipeWorkQueue_ext));
 	}
 
 private:
@@ -473,7 +567,6 @@ private:
 	unsigned _isize;
 	unsigned _pmask;
 	volatile char *_buffer;
-	bool _aligned;
 	workqueue_t *_sharedqueue;
 	workqueue_t __sq;
 }; // class _PipeWorkQueueImpl
