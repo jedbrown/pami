@@ -19,7 +19,9 @@ extern "C"
 {
 #endif
 
-
+  /**
+   * \brief XMI result status codes.
+   */
   typedef enum
   {
     XMI_SUCCESS = 0,  /**< Successful execution        */
@@ -50,9 +52,9 @@ extern "C"
    * \param[in] cookie    Event callback application argument
    * \param[in] result    Asynchronous result information (was error information)
    */
-  typedef void (*xmi_event_callback_t) ( xmi_context_t   context,
-                                         void          * cookie,
-                                         xmi_result_t    result );
+  typedef void (*xmi_event_callback_fn) ( xmi_context_t   context,
+                                          void          * cookie,
+                                          xmi_result_t    result );
 
 
   /*****************************************************************************/
@@ -246,8 +248,8 @@ extern "C"
    * \param[in] context XMI communication context
    * \param[in] work    Event callback to post to the context
    */
-  xmi_result_t XMI_Context_post (xmi_context_t        context,
-                                 xmi_event_callback_t work);
+  xmi_result_t XMI_Context_post (xmi_context_t         context,
+                                 xmi_event_callback_fn work);
 
 
   /**
@@ -473,11 +475,27 @@ extern "C"
    *
    * \return Number of bytes processed (read or written) from the pipe address
    */
-  typedef size_t (*xmi_data_callback_t) ( xmi_context_t   context,
-                                          void          * cookie,
-                                          size_t          offset,
-                                          void          * pipe_addr,
-                                          size_t          pipe_size );
+  typedef size_t (*xmi_data_callback_fn) ( xmi_context_t   context,
+                                           void          * cookie,
+                                           size_t          offset,
+                                           void          * pipe_addr,
+                                           size_t          pipe_size );
+
+  /**
+   * \brief Active message send common parameters structure
+   */
+  typedef struct
+  {
+    xmi_dispatch_t         dispatch; /**< Dispatch identifier */
+    xmi_send_hint_t        hints;    /**< Hints for sending the message */
+    size_t                 task;     /**< Destination task */
+    void                 * cookie;   /**< Argument to \b all event callbacks */
+    struct
+    {
+      size_t               bytes;    /**< Header buffer size in bytes */
+      void               * addr;     /**< Header buffer address */
+    } header;                        /**< Send message metadata header */
+  } xmi_send_t;
 
   /**
    * \brief Active message kind identifier
@@ -493,16 +511,41 @@ extern "C"
    */
   typedef struct
   {
-    size_t                 bytes;    /**< Number of bytes of data */
-    void                 * addr;     /**< Address of the buffer */
+    xmi_send_t               send;     /**< Common send parameters */
+    struct
+    {
+      size_t                 bytes;    /**< Number of bytes of data */
+      void                 * addr;     /**< Address of the buffer */
+      xmi_event_callback_fn  local;    /**< Local message completion event */
+      xmi_event_callback_fn  remote;   /**< Remote message completion event ------ why is this needed ? */
+    } simple;                          /**< Simple send parameters */
   } xmi_send_simple_t;
+
+  /**
+   * \brief Structure for send parameters unique to an immediate active message send
+   */
+  typedef struct
+  {
+    xmi_send_t               send;     /**< Common send parameters */
+    struct
+    {
+      size_t                 bytes;    /**< Number of bytes of data */
+      void                 * addr;     /**< Address of the buffer */
+    } immediate;                       /**< Immediate send parameters */
+  } xmi_send_immediate_t;
 
   /**
    * \brief Structure for send parameters unique to a direct active message send
    */
   typedef struct
   {
-    xmi_data_callback_t    callback; /**< Data callback function */
+    xmi_send_t               send;     /**< Common send parameters */
+    struct
+    {
+      xmi_data_callback_fn   callback; /**< Data callback function */
+      xmi_event_callback_fn  local;    /**< Local message completion event */
+      xmi_event_callback_fn  remote;   /**< Remote message completion event ------ why is this needed ? */
+    } direct;                          /**< Direct send parameters */
   } xmi_send_direct_t;
 
   /**
@@ -510,43 +553,26 @@ extern "C"
    */
   typedef struct
   {
-    size_t                 bytes;    /**< Number of bytes of data */
-    void                 * addr;     /**< Starting address of the buffer */
-    size_t                 offset;   /**< Starting offset */
-    xmi_type_t             type;     /**< Datatype */
-  } xmi_send_typed_t;
-
-  /**
-   * \brief Active message send parameter structure
-   */
-  typedef struct
-  {
-    xmi_dispatch_t         dispatch; /**< Dispatch identifier */
-    xmi_send_hint_t        hints;    /**< Hints for sending the message */
-    size_t                 task;     /**< Destination task */
-    void                 * cookie;   /**< Argument to \b all event callbacks */
-    xmi_event_callback_t   local;    /**< Local message completion event */
-    xmi_event_callback_t   remote;   /**< Remote message completion event ------ why is this needed ? */
+    xmi_send_t               send;     /**< Common send parameters */
     struct
     {
-      size_t               bytes;    /**< Header buffer size in bytes */
-      void               * addr;     /**< Header buffer address */
-    } header;                        /**< Send message metadata header */
-    union
-    {
-      xmi_send_simple_t    simple;   /**< Required, and only valid for, XMI_Send() and XMI_Send_immediate() */
-      xmi_send_direct_t    direct;   /**< Required, and only valid for, XMI_Send_direct() */
-      xmi_send_typed_t     typed;    /**< Required, and only valid for, XMI_Send_typed() */
-    } data;                          /**< Send message source data */
-  } xmi_send_t;
+      size_t                 bytes;    /**< Number of bytes of data */
+      void                 * addr;     /**< Starting address of the buffer */
+      size_t                 offset;   /**< Starting offset */
+      xmi_type_t             type;     /**< Datatype */
+      xmi_event_callback_fn  local;    /**< Local message completion event */
+      xmi_event_callback_fn  remote;   /**< Remote message completion event ------ why is this needed ? */
+    } typed;                           /**< Typed send parameters */
+  } xmi_send_typed_t;
 
   /**
    * \brief Non-blocking active message send for contiguous data
    *
    * \param[in] context    XMI communication context
-   * \param[in] parameters Send parameter structure
+   * \param[in] parameters Send simple parameter structure
    */
-  xmi_result_t XMI_Send (xmi_context_t context, xmi_send_t * parameters);
+  xmi_result_t XMI_Send (xmi_context_t       context,
+                         xmi_send_simple_t * parameters);
 
   /**
    * \brief Immediate active message send for small contiguous data
@@ -579,9 +605,10 @@ extern "C"
    * \todo Define configuration attribute for the size limit
    *
    * \param[in] context    XMI communication context
-   * \param[in] parameters Send parameter structure
+   * \param[in] parameters Send immediate parameter structure
    */
-  xmi_result_t XMI_Send_immediate (xmi_context_t context, xmi_send_t * parameters);
+  xmi_result_t XMI_Send_immediate (xmi_context_t          context,
+                                   xmi_send_immediate_t * parameters);
 
   /**
    * \brief Non-blocking active message send for non-contiguous typed data
@@ -594,9 +621,10 @@ extern "C"
    * buffer or the same or different predefined type.
    *
    * \param[in] context    XMI communication context
-   * \param[in] parameters Send parameter structure
+   * \param[in] parameters Send typed parameter structure
    */
-  xmi_result_t XMI_Send_typed (xmi_context_t context, xmi_send_t * parameters);
+  xmi_result_t XMI_Send_typed (xmi_context_t      context,
+                               xmi_send_typed_t * parameters);
 
   /**
    * \brief Non-blocking active message send for direct data injection
@@ -613,12 +641,13 @@ extern "C"
    * Typically, the \c DIRECT_SEND_LIMIT is associated with a network
    * attribute, such as a packet size. 
    *
-   * \see xmi_data_callback_t 
+   * \see xmi_data_callback_fn 
    *
    * \param[in] context    XMI communication context
-   * \param[in] parameters Send parameter structure
+   * \param[in] parameters Send direct parameter structure
    */
-  xmi_result_t XMI_Send_direct (xmi_context_t context, xmi_send_t * parameters);
+  xmi_result_t XMI_Send_direct (xmi_context_t       context,
+                                xmi_send_direct_t * parameters);
 
   /**
    * \brief Active message receive hints
@@ -638,26 +667,38 @@ extern "C"
    * the active message dispatch callback to direct the xmi runtime how to
    * receive the data stream.
    *
-   * \see xmi_dispatch_callback_t
+   * \see xmi_dispatch_callback_fn
    */
   typedef struct
   {
-    xmi_recv_hint_t        hints;    /**< Hints for receiving the message */
-    void                 * cookie;   /**< Argument to \b all event callbacks */
-    xmi_event_callback_t   local;    /**< Local message completion event */
-    xmi_am_kind_t          kind;     /**< Which kind receive is to be done */
+    xmi_recv_hint_t         hints;    /**< Hints for receiving the message */
+    void                  * cookie;   /**< Argument to \b all event callbacks */
+    xmi_event_callback_fn   local;    /**< Local message completion event */
+    xmi_am_kind_t           kind;     /**< Which kind receive is to be done */
     union
     {
-      xmi_send_simple_t    simple;   /**< Receive into a simple contiguous buffer */
-      xmi_send_direct_t    direct;   /**< Receive via explicit data callbacks */
-      xmi_send_typed_t     typed;    /**< Receive into a non-contiguous buffer */
-    } data;                          /**< Receive message destination data */
+      struct
+      {
+        size_t                 bytes; /**< Number of bytes of data */
+        void                 * addr;  /**< Starting address of the buffer */
+      } simple;                       /**< Contiguous buffer receive */
+      struct
+      {
+        size_t                 bytes; /**< Number of bytes of data */
+        void                 * addr;  /**< Starting address of the buffer */
+        xmi_type_t             type;  /**< Datatype */
+      } typed;                        /**< Typed receive */
+      struct
+      {
+        xmi_data_callback_fn   fn;    /**< Data callback function */
+      } direct;                       /**< Direct receive */
+    } data;                           /**< Receive message destination information */
   } xmi_recv_t;
 
   /**
    * \brief Dispatch callback
    */
-  typedef void (*xmi_dispatch_callback_t) (
+  typedef void (*xmi_dispatch_callback_fn) (
     xmi_context_t        context,      /**< IN: XMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     size_t               task,         /**< IN: source task */
@@ -693,11 +734,11 @@ extern "C"
    * \param[in] options    Dispatch registration assertions
    *
    */
-  xmi_result_t XMI_Dispatch_set (xmi_context_t           * context,
-                                 xmi_dispatch_t            dispatch,
-                                 xmi_dispatch_callback_t   fn,
-                                 void                    * cookie,
-                                 xmi_send_hint_t           options);
+  xmi_result_t XMI_Dispatch_set (xmi_context_t            * context,
+                                 xmi_dispatch_t             dispatch,
+                                 xmi_dispatch_callback_fn   fn,
+                                 void                     * cookie,
+                                 xmi_send_hint_t            options);
 
   /** \} */ /* end of "dispatch" group */
 
@@ -752,9 +793,9 @@ extern "C"
    * \param[in] fence_done Event callback to invoke when the fence is complete
    * \param[in] cookie     Event callback argument
    */
-  xmi_result_t XMI_Fence_all (xmi_context_t          context,
-                              xmi_event_callback_t   fence_done,
-                              void                 * cookie);
+  xmi_result_t XMI_Fence_all (xmi_context_t           context,
+                              xmi_event_callback_fn   fence_done,
+                              void                  * cookie);
 
   /**
    * \brief Syncronize all transfers between two tasks.
@@ -764,10 +805,10 @@ extern "C"
    * \param[in] cookie     Event callback argument
    * \param[in] task       Remote task to synchronize
    */
-  xmi_result_t XMI_Fence_task (xmi_context_t          context,
-                               xmi_event_callback_t   fence_done,
-                               void                 * cookie,
-                               size_t                 task);
+  xmi_result_t XMI_Fence_task (xmi_context_t           context,
+                               xmi_event_callback_fn   fence_done,
+                               void                  * cookie,
+                               size_t                  task);
 
   /** \} */ /* end of "sync" group */
 
@@ -900,17 +941,17 @@ extern "C"
    **/
   typedef struct
   {
-    size_t                 task;      /**< Destination task */
-    void                 * local;     /**< Local buffer virtual address */
-    void                 * remote;    /**< Remote buffer virtual address */
-    xmi_event_callback_t   send_done; /**< All local data has been sent */
-    xmi_event_callback_t   recv_done; /**< All local data has been received */
-    void                 * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t        hints;     /**< Hints for sending the message */
+    size_t                  task;      /**< Destination task */
+    void                  * local;     /**< Local buffer virtual address */
+    void                  * remote;    /**< Remote buffer virtual address */
+    xmi_event_callback_fn   send_done; /**< All local data has been sent */
+    xmi_event_callback_fn   recv_done; /**< All local data has been received */
+    void                  * cookie;    /**< Argument to \b all event callbacks */
+    xmi_send_hint_t         hints;     /**< Hints for sending the message */
     union
     {
-      xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Put() */
-      xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Put_typed() */
+      xmi_rma_simple_t      simple;    /**< Required, and only valid for, XMI_Put() */
+      xmi_rma_typed_t       typed;     /**< Required, and only valid for, XMI_Put_typed() */
     };
   } xmi_put_t;
 
@@ -939,16 +980,16 @@ extern "C"
    **/
   typedef struct
   {
-    size_t                 task;      /**< Destination task */
-    void                 * local;     /**< Local buffer virtual address */
-    void                 * remote;    /**< Remote buffer virtual address */
-    xmi_event_callback_t   done;      /**< All remote data has been received */
-    void                 * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t        hints;     /**< Hints for sending the message */
+    size_t                  task;      /**< Destination task */
+    void                  * local;     /**< Local buffer virtual address */
+    void                  * remote;    /**< Remote buffer virtual address */
+    xmi_event_callback_fn   done;      /**< All remote data has been received */
+    void                  * cookie;    /**< Argument to \b all event callbacks */
+    xmi_send_hint_t         hints;     /**< Hints for sending the message */
     union
     {
-      xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Get() */
-      xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Get_typed() */
+      xmi_rma_simple_t      simple;    /**< Required, and only valid for, XMI_Get() */
+      xmi_rma_typed_t       typed;     /**< Required, and only valid for, XMI_Get_typed() */
     };
   } xmi_get_t;
 
@@ -984,14 +1025,14 @@ extern "C"
 
   typedef struct
   {
-    size_t                 task;      /**< Destination task */
-    void                 * local;     /**< Local variable */
-    void                 * remote;    /**< Remote variable */
-    void                 * immdiate;  /**< Immdiate value to the operation */
-    xmi_rmw_op_t           op;        /**< operation */
-    xmi_event_callback_t   done;      /**< Result is stored in local variable */
-    void                 * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t        hints;     /**< Hints for sending the message */
+    size_t                  task;      /**< Destination task */
+    void                  * local;     /**< Local variable */
+    void                  * remote;    /**< Remote variable */
+    void                  * immdiate;  /**< Immdiate value to the operation */
+    xmi_rmw_op_t            op;        /**< operation */
+    xmi_event_callback_fn   done;      /**< Result is stored in local variable */
+    void                  * cookie;    /**< Argument to \b all event callbacks */
+    xmi_send_hint_t         hints;     /**< Hints for sending the message */
   } xmi_rmw_t;
 
   xmi_result_t XMI_Rmw32(xmi_context_t context, xmi_rmw_t * parameters);
@@ -1014,20 +1055,20 @@ extern "C"
    **/
   typedef struct
   {
-    size_t                 task;      /**< Destination task */
-    void                 * local_va;  /**< Local buffer virtual address */
-    xmi_memregion_t        local_mr;  /**< Local buffer memory region */
-    void                 * remote_va; /**< Remote buffer virtual address */
-    xmi_memregion_t        remote_mr; /**< Remote buffer memory region */
-    xmi_event_callback_t   send_done; /**< All local data has been sent */
-    xmi_event_callback_t   recv_done; /**< All local data has been received */
-    void                 * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t        hints;     /**< Hints for sending the message */
+    size_t                  task;      /**< Destination task */
+    void                  * local_va;  /**< Local buffer virtual address */
+    xmi_memregion_t         local_mr;  /**< Local buffer memory region */
+    void                  * remote_va; /**< Remote buffer virtual address */
+    xmi_memregion_t         remote_mr; /**< Remote buffer memory region */
+    xmi_event_callback_fn   send_done; /**< All local data has been sent */
+    xmi_event_callback_fn   recv_done; /**< All local data has been received */
+    void                  * cookie;    /**< Argument to \b all event callbacks */
+    xmi_send_hint_t         hints;     /**< Hints for sending the message */
     union
     {
-      xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Rput() */
-      xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_Rput_iterate() */
-      xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Rput_typed() */
+      xmi_rma_simple_t      simple;    /**< Required, and only valid for, XMI_Rput() */
+      xmi_rma_iterate_t     iterate;   /**< Required, and only valid for, XMI_Rput_iterate() */
+      xmi_rma_typed_t       typed;     /**< Required, and only valid for, XMI_Rput_typed() */
     };
   } xmi_rput_t;
 
@@ -1081,19 +1122,19 @@ extern "C"
    **/
   typedef struct
   {
-    size_t                 task;      /**< Destination task */
-    void                 * local_va;  /**< Local buffer virtual address */
-    xmi_memregion_t        local_mr;  /**< Local buffer memory region */
-    void                 * remote_va; /**< Remote buffer virtual address */
-    xmi_memregion_t        remote_mr; /**< Remote buffer memory region */
-    xmi_event_callback_t   done;      /**< All remote data has been received */
-    void                 * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t        hints;     /**< Hints for sending the message */
+    size_t                  task;      /**< Destination task */
+    void                  * local_va;  /**< Local buffer virtual address */
+    xmi_memregion_t         local_mr;  /**< Local buffer memory region */
+    void                  * remote_va; /**< Remote buffer virtual address */
+    xmi_memregion_t         remote_mr; /**< Remote buffer memory region */
+    xmi_event_callback_fn   done;      /**< All remote data has been received */
+    void                  * cookie;    /**< Argument to \b all event callbacks */
+    xmi_send_hint_t         hints;     /**< Hints for sending the message */
     union
     {
-      xmi_rma_simple_t     simple;    /**< Required, and only valid for, XMI_Get() */
-      xmi_rma_iterate_t    iterate;   /**< Required, and only valid for, XMI_Get_iterate() */
-      xmi_rma_typed_t      typed;     /**< Required, and only valid for, XMI_Get_typed() */
+      xmi_rma_simple_t      simple;    /**< Required, and only valid for, XMI_Get() */
+      xmi_rma_iterate_t     iterate;   /**< Required, and only valid for, XMI_Get_iterate() */
+      xmi_rma_typed_t       typed;     /**< Required, and only valid for, XMI_Get_typed() */
     };
   } xmi_rget_t;
 

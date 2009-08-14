@@ -3,9 +3,15 @@
  * \brief platform-specific messaging interface
  * \todo  put this into percs subdir and rename to xmi_ext.h
  */
-#ifndef __xmi_ext_h__
-#define __xmi_ext_h__
+#ifndef __xmi_ext_percs_h__
+#define __xmi_ext_percs_h__
 
+#include "xmi.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
   /*****************************************************************************/
   /**
    * \defgroup mutex_cond XMI context mutext and condition
