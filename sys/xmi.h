@@ -410,7 +410,7 @@ extern "C"
    *
    * \param[in] type Type identifier to get size from
    */
-  xmi_result_t XMI_Type_sizeof(xmi_type_t type);
+  xmi_result_t XMI_Type_sizeof (xmi_type_t type);
 
   /**
    * \brief Destroy the type
@@ -787,10 +787,10 @@ extern "C"
    * \param[in]  bytes     Number of bytes to register
    * \param[out] memregion Memory region object. Can be NULL.
    */
-  xmi_result_t XMI_Memory_register (xmi_context_t     context,
-                                    void            * address,
-                                    size_t            bytes,
-                                    xmi_memregion_t * memregion);
+  xmi_result_t XMI_Memregion_register (xmi_context_t     context,
+                                       void            * address,
+                                       size_t            bytes,
+                                       xmi_memregion_t * memregion);
 
   /**
    * \brief Deregister a local memory region for one sided operations
@@ -800,8 +800,25 @@ extern "C"
    * \param[in] context   XMI application context
    * \param[in] memregion Memory region object
    */
-  xmi_result_t XMI_Memory_deregister (xmi_context_t   context,
-                                      xmi_memregion_t memregion);
+  xmi_result_t XMI_Memregion_deregister (xmi_context_t   context,
+                                         xmi_memregion_t memregion);
+
+  /**
+   * \brief Query the attributes of a memory region
+   *
+   * \todo Should the communication context be an output parameter?
+   *
+   * \param[in]  context   XMI application context
+   * \param[in]  memregion Memory region object
+   * \param[out] address   Base virtual address
+   * \param[out] bytes     Number of contiguous bytes from the base address
+   * \param[out] task      XMI task that registered the memory region
+   */
+  xmi_result_t XMI_Memregion_query (xmi_context_t      context,
+                                    xmi_memregion_t    memregion,
+                                    void            ** address,
+                                    size_t           * bytes,
+                                    size_t           * task);
 
   /**
    * \brief Provide one or more contiguous segments to transfer.
@@ -856,10 +873,6 @@ extern "C"
     xmi_type_t      local;    /**< Data type of local buffer */
     xmi_type_t      remote;   /**< Data type of remote buffer */
   } xmi_rma_typed_t;
-
-
-
-
 
   /**
    * \defgroup put Put data transfer operations
