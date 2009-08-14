@@ -3,8 +3,6 @@
  * \brief messaging interface
  * \todo API style - all lowercase types? mixed-case? all uppercase?
  * \todo API style - abbreviated or explicit method/type/variable names ?
- * \todo API style - use MPI convention to name function pointer typedefs
- *       and function pointer parameters. see -> https://svn.mpi-forum.org/trac/mpi-forum-web/ticket/7
  * \todo API style - define parameter list convention. Most common parameters first?
  */
 #ifndef __xmi_h__
@@ -460,29 +458,6 @@ extern "C"
     uint32_t reserved          :24; /**< Unused at this time                                     */
   } xmi_send_hint_t;
 
-
-  /**
-   * \brief Callback to provide data at send side or consume data at receive side
-   *
-   * Returns number of bytes copied into pipe buffer at send side
-   * or number of bytes copied out from pipe buffer at receive side.
-   *
-   * TBD: <=0 byte being copied implies truncation
-   *
-   * \param[in] context   XMI communication context
-   * \param[in] cookie    Event callback application argument
-   * \param[in] offset    Starting data offset (???)
-   * \param[in] pipe_addr Address of the XMI pipe buffer
-   * \param[in] pipe_size Size of the XMI pipe buffer
-   *
-   * \return Number of bytes processed (read or written) from the pipe address
-   */
-  typedef size_t (*xmi_data_function) ( xmi_context_t   context,
-                                        void          * cookie,
-                                        size_t          offset,
-                                        void          * pipe_addr,
-                                        size_t          pipe_size );
-
   /**
    * \brief Active message send common parameters structure
    */
@@ -504,7 +479,6 @@ extern "C"
    */
   typedef enum {
     XMI_AM_KIND_SIMPLE = 0, /**< Simple contiguous data transfer */
-    XMI_AM_KIND_DIRECT,     /**< Direct injection via callback transfer */
     XMI_AM_KIND_TYPED       /**< Typed, non-contiguous, data transfer */
   } xmi_am_kind_t;
 
@@ -535,20 +509,6 @@ extern "C"
       void                 * addr;     /**< Address of the buffer */
     } immediate;                       /**< Immediate send parameters */
   } xmi_send_immediate_t;
-
-  /**
-   * \brief Structure for send parameters unique to a direct active message send
-   */
-  typedef struct
-  {
-    xmi_send_t             send;     /**< Common send parameters */
-    struct
-    {
-      xmi_data_function    data_fn;  /**< Data callback function */
-      xmi_event_function   local_fn; /**< Local message completion event */
-      xmi_event_function   remote_fn;/**< Remote message completion event ------ why is this needed ? */
-    } direct;                        /**< Direct send parameters */
-  } xmi_send_direct_t;
 
   /**
    * \brief Structure for send parameters unique to a typed active message send
@@ -629,29 +589,6 @@ extern "C"
                                xmi_send_typed_t * parameters);
 
   /**
-   * \brief Non-blocking active message send for direct data injection
-   *
-   * Source data to transfer is provided by the xmi client via a series of send
-   * callbacks in which the xmi client will copy the source data directly into
-   * the available network resources. 
-   *
-   * The input parameters of the data callback will specify the output data
-   * address and the maximum data size in bytes. As a convenience, the xmi
-   * client may query the configuration attribute \c DIRECT_SEND_LIMIT to
-   * obtain the maximum direct data size outside of the callback mechanism.
-   *
-   * Typically, the \c DIRECT_SEND_LIMIT is associated with a network
-   * attribute, such as a packet size. 
-   *
-   * \see xmi_data_function 
-   *
-   * \param[in] context    XMI communication context
-   * \param[in] parameters Send direct parameter structure
-   */
-  xmi_result_t XMI_Send_direct (xmi_context_t       context,
-                                xmi_send_direct_t * parameters);
-
-  /**
    * \brief Active message receive hints
    */
   typedef struct
@@ -690,10 +627,6 @@ extern "C"
         void              * addr;     /**< Starting address of the buffer */
         xmi_type_t          type;     /**< Datatype */
       } typed;                        /**< Typed receive */
-      struct
-      {
-        xmi_data_function   fn;       /**< Data callback function */
-      } direct;                       /**< Direct receive */
     } data;                           /**< Receive message destination information */
   } xmi_recv_t;
 
