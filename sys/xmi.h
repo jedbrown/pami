@@ -758,6 +758,250 @@ extern "C"
    */
   /*****************************************************************************/
 
+  /**
+   * \brief Common input parameters for all XMI rma functions
+   **/
+  typedef struct
+  {
+    size_t               task;      /**< Destination task */
+    xmi_send_hint_t      hints;     /**< Hints for sending the message */
+    void               * local;     /**< Local transfer virtual address */
+    void               * remote;    /**< Remote transfer virtual address */
+    void               * cookie;    /**< Argument to \b all event callbacks */
+    xmi_event_function   done_fn;   /**< Local completion event */
+  } xmi_rma_t;
+
+  /*****************************************************************************/
+  /**
+   * \defgroup put xmi remote memory access put transfer interface
+   *
+   * Some brief documentation on put stuff ...
+   * \{
+   */
+  /*****************************************************************************/
+
+  /**
+   * \brief Input parameter structure for simple put transfers
+   */
+  typedef struct
+  {
+    xmi_rma_t            rma;       /**< Common rma parameters */
+    struct
+    {
+      size_t             bytes;     /**< Data transfer size in bytes */
+      xmi_event_function rdone_fn;  /**< Remote completion event - all local
+                                         data has been received by remote task */
+    } put;                          /**< Parameters specific to put */
+  } xmi_put_simple_t;
+
+  /**
+   * \brief Input parameter structure for typed put transfers
+   */
+  typedef struct
+  {
+    xmi_rma_t            rma;       /**< Common rma parameters */
+    struct
+    {
+      size_t             bytes;     /**< Data transfer size in bytes */
+      xmi_event_function rdone_fn;  /**< Remote completion event - all local
+                                         data has been received by remote task */
+      xmi_type_t         local;     /**< Data type of local buffer */
+      xmi_type_t         remote;    /**< Data type of remote buffer */
+    } put;                          /**< Parameters specific to put */
+  } xmi_put_typed_t;
+
+  /**
+   * \brief One-sided put operation for simple contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Simple put input parameters
+   */
+  xmi_result_t XMI_Put (xmi_context_t      context,
+                        xmi_put_simple_t * parameters);
+
+  /**
+   * \brief One-sided put operation for typed non-contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Typed put input parameters
+   */
+  xmi_result_t XMI_Put_typed (xmi_context_t     context,
+                              xmi_put_typed_t * parameters);
+
+
+  /** \} */ /* end of "put" group */
+
+  /*****************************************************************************/
+  /**
+   * \defgroup get xmi remote memory access get transfer interface
+   *
+   * Some brief documentation on get stuff ...
+   * \{
+   */
+  /*****************************************************************************/
+
+  /**
+   * \brief Input parameter structure for simple get transfers
+   */
+  typedef struct
+  {
+    xmi_rma_t            rma;       /**< Common rma parameters */
+    struct
+    {
+      size_t             bytes;     /**< Data transfer size in bytes */
+    } get;                          /**< Parameters specific to get */
+  } xmi_get_simple_t;
+
+  /**
+   * \brief Input parameter structure for typed get transfers
+   */
+  typedef struct
+  {
+    xmi_rma_t            rma;         /**< Common rma parameters */
+    struct
+    {
+      size_t             bytes;     /**< Data transfer size in bytes */
+      xmi_type_t         local;     /**< Data type of local buffer */
+      xmi_type_t         remote;    /**< Data type of remote buffer */
+    } get;                          /**< Parameters specific to get */
+  } xmi_get_typed_t;
+
+  /**
+   * \brief One-sided get operation for simple contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Simple get input parameters
+   */
+  xmi_result_t XMI_Get (xmi_context_t      context,
+                        xmi_get_simple_t * parameters);
+
+  /**
+   * \brief One-sided get operation for typed non-contiguous data transfer
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters Typed get input parameters
+   */
+  xmi_result_t XMI_Get_typed (xmi_context_t     context,
+                              xmi_get_typed_t * parameters);
+
+  /** \} */ /* end of "get" group */
+
+  /*****************************************************************************/
+  /**
+   * \defgroup rmw xmi remote memory access read-modify-write interface
+   *
+   * Some brief documentation on rmw stuff ...
+   * \{
+   */
+  /*****************************************************************************/
+
+  /** \brief Atomic rmw data type */
+  typedef enum
+  {
+    XMI_RMW_KIND_UINT32      = 0x0001, /**< 32-bit unsigned integer operation */
+    XMI_RMW_KIND_UINT64      = 0x0002  /**< 64-bit unsigned integer operation */
+  } xmi_rmw_kind_t;
+
+  /** \brief Atomic rmw assignment type */
+  typedef enum
+  {
+    XMI_RMW_ASSIGNMENT_SET   = 0x0010, /**< =  operation */
+    XMI_RMW_ASSIGNMENT_ADD   = 0x0020, /**< += operation */
+    XMI_RMW_ASSIGNMENT_OR    = 0x0040  /**< |= operation */
+  } xmi_rmw_assignment_t;
+
+  /** \brief Atomic rmw comparison type */
+  typedef enum
+  {
+    XMI_RMW_COMPARISON_NOOP  = 0x0100, /**< No comparison operation */
+    XMI_RMW_COMPARISON_EQUAL = 0x0200  /**< Equality comparison operation */
+  } xmi_rmw_comparison_t;
+
+  typedef struct
+  {
+    xmi_rma_t               rma;       /**< Common rma parameters */
+    struct
+    {
+      xmi_rmw_comparison_t  compare;   /**< read-modify-write comparison type */
+      xmi_rmw_assignment_t  assign;    /**< read-modify-write assignment type */
+      xmi_rmw_kind_t        kind;      /**< read-modify-write variable type */
+      union
+      {
+        struct
+        {
+          uint32_t          value;     /**< 32-bit data value */
+          uint32_t          test;      /**< 32-bit test value */
+        } uint32;                      /**< 32-bit rmw input parameters */
+        struct
+        {
+          uint64_t          value;     /**< 64-bit data value */
+          uint64_t          test;      /**< 64-bit test value */
+        } uint64;                      /**< 64-bit rmw input parameters */
+      };
+    } rmw;                             /**< Parameters specific to rmw */
+  } xmi_rmw_t;
+
+  /**
+   * \brief Atomic read-modify-write operation to a remote memory location
+   *
+   * The specific operation is determined by the combination of the three rmw
+   * identifier enumeration types. All operations will perform the same
+   * generic logical atomic operation:
+   *
+   * \code
+   * *result = *remote; (*remote COMPARISON test) ? *remote ASSIGNMENT value;
+   * \endcode
+   *
+   * \warning All read-modify-write operations are \b unordered relative
+   *          to all other data transfer operations - including other
+   *          read-modify-write operations.
+   *
+   * Example read-modify-write operations include:
+   *
+   * \par XMI_RMW_KIND_UINT32 | XMI_RMW_COMPARISON_NOOP | XMI_RMW_ASSIGNMENT_ADD
+   *      "32-bit unsigned integer fetch-and-add operation"
+   * \code
+   * uint32_t *result, *remote, value, test;
+   * *result = *remote; *remote += value;
+   * \endcode
+   *
+   * \par XMI_RMW_KIND_UINT32 | XMI_RMW_COMPARISON_NOOP | XMI_RMW_ASSIGNMENT_OR
+   *      "32-bit unsigned integer fetch-and-or operation"
+   * \code
+   * uint32_t *result, *remote, value, test;
+   * *result = *remote; *remote |= value;
+   * \endcode
+   *
+   * \par XMI_RMW_KIND_UINT64 | XMI_RMW_COMPARISON_NOOP | XMI_RMW_ASSIGNMENT_SET
+   *      "64-bit unsigned integer swap (fetch-and-set) operation"
+   * \code
+   * uint64_t *result, *remote, value, test;
+   * *result = *remote; *remote = value;
+   * \endcode
+   *
+   * \par XMI_RMW_KIND_UINT64 | XMI_RMW_COMPARISON_EQUAL | XMI_RMW_ASSIGNMENT_SET
+   *      "64-bit unsigned integer compare-and-swap operation"
+   * \code
+   * uint64_t *result, *remote, value, test;
+   * *result = *remote; (*remote == test) ? *remote = value;
+   * \endcode
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] parameters read-modify-write input parameters
+   */
+  xmi_result_t XMI_Rmw (xmi_context_t context, xmi_rmw_t * parameters);
+
+  /** \} */ /* end of "rmw" group */
+
+  /*****************************************************************************/
+  /**
+   * \defgroup rdma xmi remote memory access rdma interfaces
+   *
+   * Some brief documentation on rdma stuff ...
+   * \{
+   */
+  /*****************************************************************************/
+
   typedef void * xmi_memregion_t;
 
   /**
@@ -820,303 +1064,101 @@ extern "C"
                                     size_t           * bytes,
                                     size_t           * task);
 
-  /**
-   * \brief Provide one or more contiguous segments to transfer.
-   *
-   * \todo this desperatly needs example code
-   *
-   * \see XMI_Put_iterate
-   * \see XMI_Get_iterate
-   *
-   * \param[in]     context       XMI communication context
-   * \param[in]     cookie        Event callback argument
-   * \param[in,out] local_offset  Array of byte offsets from the local buffer
-   * \param[in,out] remote_offset Array of byte offsets from the remote buffer
-   * \param[in,out] bytes         Array of bytes to transfer
-   * \param[in,out] segments      Number of segments available to be initialized
-   *                              and the number of segments actually initialized
-   *
-   * \retval  0 Iterate complete, do not invoke the iterate callback again for
-   *            this transfer
-   * \retval !0 Iterate is not complete, the iterate callback must be invoked
-   *            again for this transfer
-   */
-  typedef size_t (*xmi_iterate_fn) (xmi_context_t   context,
-                                    void          * cookie,
-                                    size_t        * local_offset,
-                                    size_t        * remote_offset,
-                                    size_t        * bytes,
-                                    size_t        * segments);
 
   /**
-   * \brief Input parameter structure for rma iterator transfers
+   * \brief Input parameter structure for simple rput transfers
    */
   typedef struct
   {
-    xmi_iterate_fn  function; /**< Non-contiguous iterate function */
-  } xmi_rma_iterate_t;
-
-  /**
-   * \brief Input parameter structure for rma simple transfers
-   */
-  typedef struct
-  {
-    size_t          bytes;    /**< Data transfer size in bytes */
-  } xmi_rma_simple_t;
-
-  /**
-   * \brief Input parameter structure for rma typed transfers
-   */
-  typedef struct
-  {
-    size_t          bytes;    /**< Data transfer size in bytes */
-    xmi_type_t      local;    /**< Data type of local buffer */
-    xmi_type_t      remote;   /**< Data type of remote buffer */
-  } xmi_rma_typed_t;
-
-  /**
-   * \defgroup put Put data transfer operations
-   *
-   * ???
-   */
-
-  /**
-   * \brief Input parameters for the XMI put functions
-   * \ingroup put
-   *
-   * \see XMI_Put
-   * \see XMI_Put_typed
-   **/
-  typedef struct
-  {
-    size_t               task;         /**< Destination task */
-    void               * local;        /**< Local buffer virtual address */
-    void               * remote;       /**< Remote buffer virtual address */
-    xmi_event_function   send_done_fn; /**< All local data has been sent */
-    xmi_event_function   recv_done_fn; /**< All local data has been received */
-    void               * cookie;       /**< Argument to \b all event callbacks */
-    xmi_send_hint_t      hints;        /**< Hints for sending the message */
-    union
+    xmi_rma_t              rma;       /**< Common rma parameters */
+    struct
     {
-      xmi_rma_simple_t   simple;       /**< Required, and only valid for, XMI_Put() */
-      xmi_rma_typed_t    typed;        /**< Required, and only valid for, XMI_Put_typed() */
-    };
-  } xmi_put_t;
+      xmi_event_function   remote_fn; /**< Remote completion event - all local
+                                           data has been received by remote task */
+      xmi_memregion_t      local_mr;  /**< Local buffer memory region */
+      xmi_memregion_t      remote_mr; /**< Remote buffer memory region */
+    } rput;                           /**< Parameters specific to rput */
+  } xmi_rput_simple_t;
 
   /**
-   * \brief One-sided put operation for simple contiguous data transfer
-   *
-   * \param[in] context    XMI communication context
-   * \param[in] parameters Put operation input parameters
+   * \brief Input parameter structure for typed put transfers
    */
-  xmi_result_t XMI_Put (xmi_context_t context, xmi_put_t * parameters);
-
-  /**
-   * \brief One-sided put operation for typed non-contiguous data transfer
-   *
-   * \param[in] context    XMI communication context
-   * \param[in] parameters Put operation input parameters
-   */
-  xmi_result_t XMI_Put_typed (xmi_context_t context, xmi_put_t * parameters);
-
-  /**
-   * \brief Input parameters for the XMI get functions
-   * \ingroup get
-   *
-   * \see XMI_Get
-   * \see XMI_Get_typed
-   **/
   typedef struct
   {
-    size_t                  task;      /**< Destination task */
-    void                  * local;     /**< Local buffer virtual address */
-    void                  * remote;    /**< Remote buffer virtual address */
-    xmi_event_function   done_fn;      /**< All remote data has been received */
-    void                  * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t         hints;     /**< Hints for sending the message */
-    union
+    xmi_rma_t            rma;         /**< Common rma parameters */
+    struct
     {
-      xmi_rma_simple_t      simple;    /**< Required, and only valid for, XMI_Get() */
-      xmi_rma_typed_t       typed;     /**< Required, and only valid for, XMI_Get_typed() */
-    };
-  } xmi_get_t;
+      xmi_event_function   remote_fn; /**< Remote completion event - all local
+                                           data has been received by remote task */
+      xmi_type_t           local;     /**< Data type of local buffer */
+      xmi_type_t           remote;    /**< Data type of remote buffer */
+      xmi_memregion_t      local_mr;  /**< Local buffer memory region */
+      xmi_memregion_t      remote_mr; /**< Remote buffer memory region */
+    } rput;                           /**< Parameters specific to rput */
+  } xmi_rput_typed_t;
 
-  /**
-   * \brief One-sided get operation for simple contiguous data transfer
-   *
-   * \param[in] context    XMI communication context
-   * \param[in] parameters Get operation input parameters
-   */
-  xmi_result_t XMI_Get (xmi_context_t context, xmi_put_t * parameters);
-
-  /**
-   * \brief One-sided get operation for typed non-contiguous data transfer
-   *
-   * \param[in] context    XMI communication context
-   * \param[in] parameters Get operation input parameters
-   */
-  xmi_result_t XMI_Get_typed (xmi_context_t context, xmi_put_t * parameters);
-
-  /**
-   * \brief Atomic Read-Modify-Write Function
-   *
-   *   local_variable <- Rmw_op(remote_variable, immediate_value)
-   **/
-  typedef enum 
-  {
-      XMI_FETCH_AND_ADD,
-      XMI_FETCH_AND_OR,
-      XMI_SWAP,
-      XMI_COMPARE_AND_SWAP,
-      /* more to be added */
-  } xmi_rmw_op_t;
-
-  typedef struct
-  {
-    size_t                  task;      /**< Destination task */
-    void                  * local;     /**< Local variable */
-    void                  * remote;    /**< Remote variable */
-    void                  * immdiate;  /**< Immdiate value to the operation */
-    xmi_rmw_op_t            op;        /**< operation */
-    xmi_event_function   done_fn;      /**< Result is stored in local variable */
-    void                  * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t         hints;     /**< Hints for sending the message */
-  } xmi_rmw_t;
-
-  xmi_result_t XMI_Rmw32(xmi_context_t context, xmi_rmw_t * parameters);
-  xmi_result_t XMI_Rmw64(xmi_context_t context, xmi_rmw_t * parameters);
-
-  /****************************************************************************
-   *
-   *   RDMA interface starts
-   *
-   ****************************************************************************
-   */
-
-  /**
-   * \brief Input parameters for the XMI put functions
-   * \ingroup put
-   *
-   * \see XMI_Rput
-   * \see XMI_Rput_iterate
-   * \see XMI_Rput_typed
-   **/
-  typedef struct
-  {
-    size_t                  task;      /**< Destination task */
-    void                  * local_va;  /**< Local buffer virtual address */
-    xmi_memregion_t         local_mr;  /**< Local buffer memory region */
-    void                  * remote_va; /**< Remote buffer virtual address */
-    xmi_memregion_t         remote_mr; /**< Remote buffer memory region */
-    xmi_event_function   send_done_fn; /**< All local data has been sent */
-    xmi_event_function   recv_done_fn; /**< All local data has been received */
-    void                  * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t         hints;     /**< Hints for sending the message */
-    union
-    {
-      xmi_rma_simple_t      simple;    /**< Required, and only valid for, XMI_Rput() */
-      xmi_rma_iterate_t     iterate;   /**< Required, and only valid for, XMI_Rput_iterate() */
-      xmi_rma_typed_t       typed;     /**< Required, and only valid for, XMI_Rput_typed() */
-    };
-  } xmi_rput_t;
 
   /**
    * \brief Simple put operation for one-sided contiguous data transfer.
    *
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
-   *
-   * \ingroup put
    */
-  xmi_result_t XMI_Rput (xmi_context_t context, xmi_rput_t * parameters);
-
-  /**
-   * \brief Put operation for callback-driven one-sided non-contiguous data transfer.
-   *
-   * \param[in] context    XMI application context
-   * \param[in] parameters Input parameters structure
-   *
-   * \ingroup put
-   */
-  xmi_result_t XMI_Rput_iterate (xmi_context_t context, xmi_rput_t * parameters);
+  xmi_result_t XMI_Rput (xmi_context_t context, xmi_rput_simple_t * parameters);
 
   /**
    * \brief Put operation for data type specific one-sided data transfer.
    *
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
-   *
-   * \ingroup put
    */
-  xmi_result_t XMI_Rput_typed (xmi_context_t context, xmi_rput_t * parameters);
-
-
-
-
+  xmi_result_t XMI_Rput_typed (xmi_context_t context, xmi_rput_typed_t * parameters);
 
   /**
-   * \defgroup get Get data transfer operations
-   *
-   * ???
+   * \brief Input parameter structure for simple rput transfers
    */
-
-  /**
-   * \brief Input parameters for the XMI get functions
-   * \ingroup get
-   *
-   * \see XMI_Rget
-   * \see XMI_Rget_iterate
-   * \see XMI_Rget_typed
-   **/
   typedef struct
   {
-    size_t                  task;      /**< Destination task */
-    void                  * local_va;  /**< Local buffer virtual address */
-    xmi_memregion_t         local_mr;  /**< Local buffer memory region */
-    void                  * remote_va; /**< Remote buffer virtual address */
-    xmi_memregion_t         remote_mr; /**< Remote buffer memory region */
-    xmi_event_function   done_fn;      /**< All remote data has been received */
-    void                  * cookie;    /**< Argument to \b all event callbacks */
-    xmi_send_hint_t         hints;     /**< Hints for sending the message */
-    union
+    xmi_rma_t              rma;       /**< Common rma parameters */
+    struct
     {
-      xmi_rma_simple_t      simple;    /**< Required, and only valid for, XMI_Get() */
-      xmi_rma_iterate_t     iterate;   /**< Required, and only valid for, XMI_Get_iterate() */
-      xmi_rma_typed_t       typed;     /**< Required, and only valid for, XMI_Get_typed() */
-    };
-  } xmi_rget_t;
+      xmi_memregion_t      local_mr;  /**< Local buffer memory region */
+      xmi_memregion_t      remote_mr; /**< Remote buffer memory region */
+    } rget;                           /**< Parameters specific to rget */
+  } xmi_rget_simple_t;
 
+  /**
+   * \brief Input parameter structure for typed put transfers
+   */
+  typedef struct
+  {
+    xmi_rma_t            rma;         /**< Common rma parameters */
+    struct
+    {
+      xmi_type_t           local;     /**< Data type of local buffer */
+      xmi_type_t           remote;    /**< Data type of remote buffer */
+      xmi_memregion_t      local_mr;  /**< Local buffer memory region */
+      xmi_memregion_t      remote_mr; /**< Remote buffer memory region */
+    } rget;                           /**< Parameters specific to rget */
+  } xmi_rget_typed_t;
 
   /**
    * \brief Simple get operation for one-sided contiguous data transfer.
    *
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
-   *
-   * \ingroup get
    */
-  xmi_result_t XMI_Rget (xmi_context_t context, xmi_rget_t * parameters);
-
-  /**
-   * \brief Get operation for callback-driven one-sided non-contiguous data transfer.
-   *
-   * \param[in] context    XMI application context
-   * \param[in] parameters Input parameters structure
-   *
-   * \ingroup get
-   */
-  xmi_result_t XMI_Rget_iterate (xmi_context_t context, xmi_rget_t * parameters);
+  xmi_result_t XMI_Rget (xmi_context_t context, xmi_rget_simple_t * parameters);
 
   /**
    * \brief Get operation for data type specific one-sided data transfer.
    *
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
-   *
-   * \ingroup get
    */
-  xmi_result_t XMI_Rget_typed (xmi_context_t context, xmi_rget_t * parameters);
+  xmi_result_t XMI_Rget_typed (xmi_context_t context, xmi_rget_typed_t * parameters);
 
+  /** \} */ /* end of "rdma" group */
   /** \} */ /* end of "rma" group */
 
 
