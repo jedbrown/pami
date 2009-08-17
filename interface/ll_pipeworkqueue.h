@@ -21,7 +21,7 @@ extern "C"
 #endif
 
   typedef CMQuad LL_PipeWorkQueue_t[4];
-  typedef CMQuad LL_PipeWorkQueue_ext[1];
+  typedef CMQuad LL_PipeWorkQueue_ext[2];
 
   ///
   /// \brief Configure for Shared Circular Buffer variety.
@@ -89,7 +89,7 @@ extern "C"
   /// \param[in] dgspcount      Number of repetitions of buffer units
   /// \param[in] dgspinit       Number of units initially in buffer
   ///
-  void LL_PipeWorkQueue_configure_noncontig(LL_PipeWorkQueue_t *wq, char *buffer, dgsp_t *dgsp, size_t dgspcount, size_t dgspinit); 
+  void LL_PipeWorkQueue_configure_noncontig(LL_PipeWorkQueue_t *wq, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit); 
 
   ///
   /// \brief Export
@@ -110,7 +110,7 @@ extern "C"
   /// \param[out] export        Opaque memory to export into
   /// \return	success of the export operation
   ///
-  CM_Result LL_PipeWorkQueue_export(LL_PipeWorkQueue_t *wq, LL_PipeWorkQueue_ext *export); 
+  CM_Result LL_PipeWorkQueue_export(LL_PipeWorkQueue_t *wq, LL_PipeWorkQueue_ext *exp); 
 
   ///
   /// \brief Import

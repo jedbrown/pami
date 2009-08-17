@@ -202,6 +202,8 @@ typedef CMQuad CM_Protocol_t[CM_PROTOCOL_NQUADS];
 
 typedef CMQuad CM_Request_t[CM_REQUEST_NQUADS];
 
+typedef void CM_dgsp_t;	// temporary...
+
 #ifdef __cplusplus
 };
 #endif

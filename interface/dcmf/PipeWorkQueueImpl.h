@@ -44,6 +44,10 @@
 #define WAKEUP(vector)		\
 	((DCMF::SysDep *)_sysdep)->wakeupManager().wakeup(vector)
 
+#warning need to define vtop and map...
+#define vtop(v)	((uint64_t)v)
+#define map(p)	((void *)p)
+
 namespace LL {
 
 class _PipeWorkQueueImpl {
@@ -286,11 +290,11 @@ public:
 	/// \param[out] export        Opaque memory to export into
 	/// \return   success of the export operation
 	/// 
-	inline CM_Result export(LL_PipeWorkQueue_ext *export) {
+	inline CM_Result exp(LL_PipeWorkQueue_ext *exp) {
 		unlikely_if (_pmask) {
 			return CM_ERROR;
 		}
-		export_t *e = (export_t *)export;
+		export_t *e = (export_t *)exp;
 		e->bufPaddr = vtop(_buffer);
 		e->hdrPaddr = vtop(_sharedqueue);
 		e->pmask = _pmask;
@@ -321,8 +325,8 @@ public:
 			return CM_ERROR;
 		}
 		_pmask = (unsigned)-1; // signal local consumedBytes...
-		_buffer = map(i->bufPaddr);
-		_sharedqueue = map(i->hdrPaddr);
+		_buffer = (volatile char *)map(i->bufPaddr);
+		_sharedqueue = (workqueue_t *)map(i->hdrPaddr);
 		// need flag to prevent/localize produce/consume bytes...
 		return CM_SUCCESS;
 	}

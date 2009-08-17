@@ -110,9 +110,9 @@ extern "C" void LL_PipeWorkQueue_config_noncontig(LL_PipeWorkQueue_t *wq, char *
 /// \param[out] export        Opaque memory to export into
 /// \return   success of the export operation
 ///
-extern "C" CM_Result LL_PipeWorkQueue_export(LL_PipeWorkQueue_t *wq, LL_PipeWorkQueue_ext *export) {
+extern "C" CM_Result LL_PipeWorkQueue_export(LL_PipeWorkQueue_t *wq, LL_PipeWorkQueue_ext *exp) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
-	return pwq->export(export);
+	return pwq->exp(exp);
 }
 
 ///

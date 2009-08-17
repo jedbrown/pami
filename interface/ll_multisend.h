@@ -462,7 +462,7 @@ extern "C"
     size_t *offsets;			/**< Array of offsets in buffer for each rank */
     size_t num_vecs;                    /**< The number of entries in "lengths" and
                                              "offsets". May be a flag: either "1" or
-                                             participants->size().
+                                             participants->size(). */
   } LL_ManytomanyBuf_t;
 
   /**
