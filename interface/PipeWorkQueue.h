@@ -256,12 +256,6 @@ public:
 	///
 	inline bool available();
 
-	/// \brief is workqueue buffer 16-byte aligned
-	///
-	/// \return	boolean indicate workqueue buffer alignment
-	///
-	inline bool aligned();
-
 }; /* class PipeWorkQueue */
 
 }; /* namespace LL */
@@ -273,8 +267,8 @@ inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufs
 inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, dgsp, dgspcount, dgspinit); }
 inline LL::PipeWorkQueue::PipeWorkQueue(LL::PipeWorkQueue &obj) {_PipeWorkQueueImpl::_PipeWorkQueueImpl((_PipeWorkQueueImpl&)obj); }
 inline void LL::PipeWorkQueue::reset() { _PipeWorkQueueImpl::reset(); }
-inline CM_Result LL::PipeWorkQueue::exp(LL_PipeWorkQueue_ext *e) { _PipeWorkQueueImpl::exp(e); }
-inline CM_Result LL::PipeWorkQueue::import(LL_PipeWorkQueue_ext *i) { _PipeWorkQueueImpl::import(i); }
+inline CM_Result LL::PipeWorkQueue::exp(LL_PipeWorkQueue_ext *e) { return _PipeWorkQueueImpl::exp(e); }
+inline CM_Result LL::PipeWorkQueue::import(LL_PipeWorkQueue_ext *i) { return _PipeWorkQueueImpl::import(i); }
 inline void LL::PipeWorkQueue::dump(const char *prefix) { _PipeWorkQueueImpl::dump(prefix); }
 inline void LL::PipeWorkQueue::setConsumerWakeup(void *vec) { _PipeWorkQueueImpl::setConsumerWakeup(vec); }
 inline void LL::PipeWorkQueue::setProducerWakeup(void *vec) { _PipeWorkQueueImpl::setProducerWakeup(vec); }
