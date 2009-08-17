@@ -98,6 +98,14 @@ extern "C"
   /// This info is suitable for sharing with other processes such that those processes
   /// can then construct a PipeWorkQueue which accesses the same data stream.
   ///
+  /// This only has value in the case of a flat buffer PipeWorkQueue and a platform
+  /// that supports direct mapping of memory from other processes. Circular buffer
+  /// PipeWorkQueues use shared memory and are inherently inter-process in nature.
+  ///
+  /// The exporting process is the only one that can produce to the PipeWorkQueue.
+  /// All importing processes are restricted to consuming. There is no feedback
+  /// from the consumers to the producer - no flow control.
+  ///
   /// \param[in] wq             Opaque memory for PipeWorkQueue
   /// \param[out] export        Opaque memory to export into
   /// \return	success of the export operation
@@ -114,6 +122,7 @@ extern "C"
   /// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
   /// The producer has no knowledge of data consumed. There can be only one producer.
   /// There may be multiple consumers, but the producer does not know about them.
+  /// An importing processes cannot be the producer.
   ///
   /// TODO: can this work for circular buffers? does it need to, since those are
   /// normally shared memory and thus already permit inter-process communication.
