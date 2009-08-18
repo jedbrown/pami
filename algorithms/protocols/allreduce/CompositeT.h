@@ -46,10 +46,10 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        CompositeT (CM_CollectiveRequest_t  * req,
+        CompositeT (XMI_CollectiveRequest_t  * req,
                     MAP        * map,
                     CCMI::ConnectionManager::ConnectionManager *cmgr,
-                    CM_Callback_t             cb_done,
+                    XMI_Callback_t             cb_done,
                     CCMI_Consistency            consistency,
                     CCMI::MultiSend::OldMulticastInterface *mf,
                     Geometry                  * geometry,
@@ -57,8 +57,8 @@ namespace CCMI
                     char                      * dstbuf,
                     unsigned                    offset,
                     unsigned                    count,
-                    CM_Dt                     dtype,
-                    CM_Op                     op,
+                    XMI_Dt                     dtype,
+                    XMI_Op                     op,
                     ConfigFlags                 flags,
                     CollectiveProtocolFactory           * factory,
                     int                         root = -1,

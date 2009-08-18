@@ -29,7 +29,7 @@
 /// \param[out] wq	Opaque memory for PipeWorkQueue
 /// \param[in] bufsize	Size of buffer to allocate
 ///
-extern "C" void LL_PipeWorkQueue_config_circ(LL_PipeWorkQueue_t *wq, size_t bufsize) {
+extern "C" void XMI_PipeWorkQueue_config_circ(XMI_PipeWorkQueue_t *wq, size_t bufsize) {
 	LL::PipeWorkQueue *pwq =
 		new (wq) LL::PipeWorkQueue();
 	//	pwq->configure(_g_messager->sysdep(), bufsize);
@@ -48,7 +48,7 @@ extern "C" void LL_PipeWorkQueue_config_circ(LL_PipeWorkQueue_t *wq, size_t bufs
 /// \param[in] buffer	Buffer to use
 /// \param[in] bufsize	Size of buffer
 ///
-extern "C" void LL_PipeWorkQueue_config_circ_usr(LL_PipeWorkQueue_t *wq, char *buffer, size_t bufsize) {
+extern "C" void XMI_PipeWorkQueue_config_circ_usr(XMI_PipeWorkQueue_t *wq, char *buffer, size_t bufsize) {
 	LL::PipeWorkQueue *pwq =
 		new (wq) LL::PipeWorkQueue();
 	//	pwq->configure(_g_messager->sysdep(), buffer, bufsize);
@@ -68,7 +68,7 @@ extern "C" void LL_PipeWorkQueue_config_circ_usr(LL_PipeWorkQueue_t *wq, char *b
 /// \param[in] bufsize	Size of buffer
 /// \param[in] bufinit	Amount of data initially in buffer
 ///
-extern "C" void LL_PipeWorkQueue_config_flat(LL_PipeWorkQueue_t *wq, char *buffer, size_t bufsize, size_t bufinit) {
+extern "C" void XMI_PipeWorkQueue_config_flat(XMI_PipeWorkQueue_t *wq, char *buffer, size_t bufsize, size_t bufinit) {
 	LL::PipeWorkQueue *pwq =
 		new (wq) LL::PipeWorkQueue();
 	//	pwq->configure(_g_messager->sysdep(), buffer, bufsize, bufinit);
@@ -85,7 +85,7 @@ extern "C" void LL_PipeWorkQueue_config_flat(LL_PipeWorkQueue_t *wq, char *buffe
 /// \param[out] wq	Opaque memory for new PipeWorkQueue
 /// \param[in] obj	old object, to be cloned
 ///
-extern "C" void LL_PipeWorkQueue_clone(LL_PipeWorkQueue_t *wq, LL_PipeWorkQueue_t *obj) {
+extern "C" void XMI_PipeWorkQueue_clone(XMI_PipeWorkQueue_t *wq, XMI_PipeWorkQueue_t *obj) {
 	LL::PipeWorkQueue *_obj = (LL::PipeWorkQueue *)obj;
 	new (wq) LL::PipeWorkQueue(*_obj);
 }
@@ -95,7 +95,7 @@ extern "C" void LL_PipeWorkQueue_clone(LL_PipeWorkQueue_t *wq, LL_PipeWorkQueue_
 ///
 /// \param[out] wq	Opaque memory for PipeWorkQueue
 ///
-extern "C" void LL_PipeWorkQueue_destroy(LL_PipeWorkQueue_t *wq) {
+extern "C" void XMI_PipeWorkQueue_destroy(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	pwq->~PipeWorkQueue();
 }
@@ -108,7 +108,7 @@ extern "C" void LL_PipeWorkQueue_destroy(LL_PipeWorkQueue_t *wq) {
 ///
 /// \param[out] wq	Opaque memory for PipeWorkQueue
 ///
-extern "C" void LL_PipeWorkQueue_reset(LL_PipeWorkQueue_t *wq) {
+extern "C" void XMI_PipeWorkQueue_reset(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	pwq->reset();
 }
@@ -119,7 +119,7 @@ extern "C" void LL_PipeWorkQueue_reset(LL_PipeWorkQueue_t *wq) {
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \param[in] prefix Optional character string to prefix.
 ///
-extern "C" void LL_PipeWorkQueue_dump(LL_PipeWorkQueue_t *wq, const char *prefix) {
+extern "C" void XMI_PipeWorkQueue_dump(XMI_PipeWorkQueue_t *wq, const char *prefix) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	pwq->dump(prefix);
 }
@@ -129,7 +129,7 @@ extern "C" void LL_PipeWorkQueue_dump(LL_PipeWorkQueue_t *wq, const char *prefix
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \param[in] vec	Opaque wakeup vector parameter
 ///
-extern "C" void LL_PipeWorkQueue_setConsumerWakeup(LL_PipeWorkQueue_t *wq, void *vec) {
+extern "C" void XMI_PipeWorkQueue_setConsumerWakeup(XMI_PipeWorkQueue_t *wq, void *vec) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	pwq->setConsumerWakeup(vec);
 }
@@ -139,7 +139,7 @@ extern "C" void LL_PipeWorkQueue_setConsumerWakeup(LL_PipeWorkQueue_t *wq, void 
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \param[in] vec	Opaque wakeup vector parameter
 ///
-extern "C" void LL_PipeWorkQueue_setProducerWakeup(LL_PipeWorkQueue_t *wq, void *vec) {
+extern "C" void XMI_PipeWorkQueue_setProducerWakeup(XMI_PipeWorkQueue_t *wq, void *vec) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	pwq->setProducerWakeup(vec);
 }
@@ -156,7 +156,7 @@ extern "C" void LL_PipeWorkQueue_setProducerWakeup(LL_PipeWorkQueue_t *wq, void 
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return Number of bytes that may be produced.
 ///
-extern "C" size_t LL_PipeWorkQueue_bytesAvailableToProduce(LL_PipeWorkQueue_t *wq) {
+extern "C" size_t XMI_PipeWorkQueue_bytesAvailableToProduce(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->bytesAvailableToProduce();
 }
@@ -176,7 +176,7 @@ extern "C" size_t LL_PipeWorkQueue_bytesAvailableToProduce(LL_PipeWorkQueue_t *w
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return Number of bytes that may be consumed.
 ///
-extern "C" size_t LL_PipeWorkQueue_bytesAvailableToConsume(LL_PipeWorkQueue_t *wq) {
+extern "C" size_t XMI_PipeWorkQueue_bytesAvailableToConsume(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->bytesAvailableToConsume();
 }
@@ -186,7 +186,7 @@ extern "C" size_t LL_PipeWorkQueue_bytesAvailableToConsume(LL_PipeWorkQueue_t *w
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	number of bytes produced
 ///
-extern "C" size_t LL_PipeWorkQueue_getBytesProduced(LL_PipeWorkQueue_t *wq) {
+extern "C" size_t XMI_PipeWorkQueue_getBytesProduced(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->getBytesProduced();
 }
@@ -196,7 +196,7 @@ extern "C" size_t LL_PipeWorkQueue_getBytesProduced(LL_PipeWorkQueue_t *wq) {
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	number of bytes consumed
 ///
-extern "C" size_t LL_PipeWorkQueue_getBytesConsumed(LL_PipeWorkQueue_t *wq) {
+extern "C" size_t XMI_PipeWorkQueue_getBytesConsumed(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->getBytesConsumed();
 }
@@ -206,7 +206,7 @@ extern "C" size_t LL_PipeWorkQueue_getBytesConsumed(LL_PipeWorkQueue_t *wq) {
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	location in buffer to produce into
 ///
-char *LL_PipeWorkQueue_bufferToProduce(LL_PipeWorkQueue_t *wq) {
+char *XMI_PipeWorkQueue_bufferToProduce(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->bufferToProduce();
 }
@@ -216,7 +216,7 @@ char *LL_PipeWorkQueue_bufferToProduce(LL_PipeWorkQueue_t *wq) {
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	number of bytes that were produced
 ///
-extern "C" void LL_PipeWorkQueue_produceBytes(LL_PipeWorkQueue_t *wq, size_t bytes) {
+extern "C" void XMI_PipeWorkQueue_produceBytes(XMI_PipeWorkQueue_t *wq, size_t bytes) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	pwq->produceBytes(bytes);
 }
@@ -226,7 +226,7 @@ extern "C" void LL_PipeWorkQueue_produceBytes(LL_PipeWorkQueue_t *wq, size_t byt
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	location in buffer to consume from
 ///
-char *LL_PipeWorkQueue_bufferToConsume(LL_PipeWorkQueue_t *wq) {
+char *XMI_PipeWorkQueue_bufferToConsume(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->bufferToConsume();
 }
@@ -236,7 +236,7 @@ char *LL_PipeWorkQueue_bufferToConsume(LL_PipeWorkQueue_t *wq) {
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	number of bytes that were consumed
 ///
-extern "C" void LL_PipeWorkQueue_consumeBytes(LL_PipeWorkQueue_t *wq, size_t bytes) {
+extern "C" void XMI_PipeWorkQueue_consumeBytes(XMI_PipeWorkQueue_t *wq, size_t bytes) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	pwq->consumeBytes(bytes);
 }
@@ -246,7 +246,7 @@ extern "C" void LL_PipeWorkQueue_consumeBytes(LL_PipeWorkQueue_t *wq, size_t byt
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	boolean indicate workqueue readiness
 ///
-extern "C" bool LL_PipeWorkQueue_available(LL_PipeWorkQueue_t *wq) {
+extern "C" bool XMI_PipeWorkQueue_available(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->available();
 }
@@ -256,7 +256,7 @@ extern "C" bool LL_PipeWorkQueue_available(LL_PipeWorkQueue_t *wq) {
 /// \param[in] wq	Opaque memory for PipeWorkQueue
 /// \return	boolean indicate workqueue buffer alignment
 ///
-extern "C" bool LL_PipeWorkQueue_aligned(LL_PipeWorkQueue_t *wq) {
+extern "C" bool XMI_PipeWorkQueue_aligned(XMI_PipeWorkQueue_t *wq) {
 	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
 	return pwq->aligned();
 }

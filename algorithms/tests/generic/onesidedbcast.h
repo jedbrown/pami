@@ -2,14 +2,14 @@
 #include "common.h"
 #include "barrier.h"
 
-CM_CollectiveProtocol_t              onesidedbcast_reg;
+XMI_CollectiveProtocol_t              onesidedbcast_reg;
 CCMI_Broadcast_Configuration_t         onesidedbcast_conf;
-CM_CollectiveRequest_t               onesidedbcast_request;
+XMI_CollectiveRequest_t               onesidedbcast_request;
 int                                    nreceived_countdown=0;
 unsigned                               narrived=0;
-CM_CollectiveRequest_t              *recvRequests=NULL;
+XMI_CollectiveRequest_t              *recvRequests=NULL;
 
-void recv_callback(void* cd, CM_Error_t *err)
+void recv_callback(void* cd, XMI_Error_t *err)
 {
   TRACE_TEST_VERBOSE((stderr,"%s:%s nreceived_countdown %d\n", argv0,__PRETTY_FUNCTION__,nreceived_countdown));
   assert(nreceived_countdown);
@@ -20,7 +20,7 @@ void * recvBcast (unsigned          root,
                   unsigned          sndlen,
                   unsigned        * rcvlen,
                   char           ** rcvbuf,
-                  CM_Callback_t * const cb_info)
+                  XMI_Callback_t * const cb_info)
 {
   //  printf ("Received broadcast message \n");
   TRACE_TEST_VERBOSE((stderr,"%s:%s narrived %d\n", argv0,__PRETTY_FUNCTION__, narrived));
@@ -93,7 +93,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result ccmiResult;
 
-  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&onesidedbcast_reg, &onesidedbcast_conf)) != CM_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&onesidedbcast_reg, &onesidedbcast_conf)) != XMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_OnesidedBcast_register failed %d\n",ccmiResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &onesidedbcast_reg))
@@ -102,8 +102,8 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
     exit(0);
   }
 
-  assert((unsigned)(repetitions * sizeof(CM_CollectiveRequest_t)) > 0);
-  recvRequests = (CM_CollectiveRequest_t *)malloc(repetitions * sizeof(CM_CollectiveRequest_t));
+  assert((unsigned)(repetitions * sizeof(XMI_CollectiveRequest_t)) > 0);
+  recvRequests = (XMI_CollectiveRequest_t *)malloc(repetitions * sizeof(XMI_CollectiveRequest_t));
   assert(recvRequests);
   return;
 }

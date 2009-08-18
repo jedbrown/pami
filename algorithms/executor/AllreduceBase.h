@@ -36,11 +36,11 @@ namespace CCMI
       {
         CollHeaderData    sndInfo __attribute__((__aligned__(16)));
         SendCallbackData  sndClientData;
-        CM_Request_t    sndReq __attribute__((__aligned__(16)));
+        XMI_Request_t    sndReq __attribute__((__aligned__(16)));
       } __attribute__((__aligned__(16)));
     private:
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (void *cd, CM_Error_t *err)
+      static void staticNotifySendDone (void *cd, XMI_Error_t *err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
         CMQuad *info = (CMQuad *)cd;
@@ -50,7 +50,7 @@ namespace CCMI
       }
 
       /// \brief Static function to be passed into the done of multisend postRecv
-      static void staticNotifyReceiveDone (void *cd, CM_Error_t *err)
+      static void staticNotifyReceiveDone (void *cd, XMI_Error_t *err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
@@ -60,7 +60,7 @@ namespace CCMI
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
       }
 
-      static void short_recv_done (void *me, CM_Error_t *)
+      static void short_recv_done (void *me, XMI_Error_t *)
       {
         AllreduceBase *allreduce = (AllreduceBase *)me;   
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::short_recv_done enter\n", (int)allreduce));
@@ -70,9 +70,9 @@ namespace CCMI
       }   
 
     protected:  
-      typedef void (*Callback_t) (void *, CM_Error_t *);
+      typedef void (*Callback_t) (void *, XMI_Error_t *);
 
-      void inline_math_isum (void *dst, void *src1, void *src2, CM_Op op, CM_Dt dt, unsigned count)
+      void inline_math_isum (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
       {
         int *idst  = (int *) dst;
         int *isrc1 = (int *) src1;
@@ -82,7 +82,7 @@ namespace CCMI
           idst[c] = isrc1[c] + isrc2[c];        
       }       
 
-      void inline_math_dsum (void *dst, void *src1, void *src2, CM_Op op, CM_Dt dt, unsigned count)
+      void inline_math_dsum (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
       {
         double *idst  = (double *) dst;
         double *isrc1 = (double *) src1;
@@ -92,7 +92,7 @@ namespace CCMI
           idst[c] = isrc1[c] + isrc2[c];        
       }       
 
-        void inline_math_dmin (void *dst, void *src1, void *src2, CM_Op op, CM_Dt dt, unsigned count)
+        void inline_math_dmin (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
         {
           double *idst  = (double *) dst;
           double *isrc1 = (double *) src1;
@@ -102,7 +102,7 @@ namespace CCMI
             idst[c] = (isrc1[c] < isrc2[c]) ? isrc1[c] : isrc2[c];
         }       
 
-        void inline_math_dmax (void *dst, void *src1, void *src2, CM_Op op, CM_Dt dt, unsigned count)
+        void inline_math_dmax (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
         {
           double *idst  = (double *) dst;
           double *isrc1 = (double *) src1;
@@ -141,8 +141,8 @@ namespace CCMI
 
       coremath     _reduceFunc;
 
-      //void (*_sendCallbackHandler) (void*, CM_Error_t *);
-      //void (*_recvCallbackHandler) (void*, CM_Error_t *);
+      //void (*_sendCallbackHandler) (void*, XMI_Error_t *);
+      //void (*_recvCallbackHandler) (void*, XMI_Error_t *);
 
       Callback_t         _sendCallbackHandler;
       Callback_t         _recvCallbackHandler;  
@@ -249,7 +249,7 @@ namespace CCMI
         _astate.setCommID (commID);
       }
 
-      void setSendState (CM_CollectiveRequest_t* storage)
+      void setSendState (XMI_CollectiveRequest_t* storage)
       {
         // See _compile_time_assert_() for storage assertions
         _sState = (SendState*)storage; 
@@ -314,7 +314,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       /// 
-      virtual CM_Request_t *   notifyRecvHead(const CMQuad  * info,
+      virtual XMI_Request_t *   notifyRecvHead(const CMQuad  * info,
                                                 unsigned          count,
                                                 unsigned          peer,
                                                 unsigned          sndlen,
@@ -323,7 +323,7 @@ namespace CCMI
                                                 unsigned        * rcvlen,
                                                 char           ** rcvbuf,
                                                 unsigned        * pipewidth,
-                                                CM_Callback_t * cb_done);       
+                                                XMI_Callback_t * cb_done);       
 
       ///
       ///  \fast callback for short allreduce operations
@@ -334,7 +334,7 @@ namespace CCMI
                                              unsigned          srcindex,
                                              unsigned        * rcvlen,
                                              char           ** rcvbuf,
-                                             CM_Callback_t * cb_done);
+                                             XMI_Callback_t * cb_done);
 
       ///
       /// \brief Set the buffer info for the allreduce collective
@@ -372,8 +372,8 @@ namespace CCMI
                                  unsigned         pipelineWidth,
                                  unsigned         sizeOfType,
                                  coremath  func,
-                                 CM_Op          op = CM_UNDEFINED_OP,
-                                 CM_Dt          dt = CM_UNDEFINED_DT)
+                                 XMI_Op          op = XMI_UNDEFINED_OP,
+                                 XMI_Dt          dt = XMI_UNDEFINED_DT)
       {
         TRACE_INIT((stderr,"<%#.8X>Executor::AllreduceBase::setReduceInfo() "
                     "count %#X, pipelineWidth %#X, sizeOfType %#X, func %#X, op %#X, dt %#X\n",
@@ -487,11 +487,11 @@ namespace CCMI
         return &_astate; 
       }
 
-      inline CM_Op    getOp ()
+      inline XMI_Op    getOp ()
       {
         return  _astate.getOp();
       }
-      inline CM_Dt    getDt ()
+      inline XMI_Dt    getDt ()
       {
         return  _astate.getDt();
       }
@@ -503,7 +503,7 @@ namespace CCMI
       {
         // Compile time assert
         // SendState storage must must fit in a request 
-        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase::SendState) <= sizeof(CM_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase::SendState) <= sizeof(XMI_CollectiveRequest_t));
       }
     }; // AllreduceBase
   } // Executor
@@ -541,11 +541,11 @@ inline void CCMI::Executor::AllreduceBase::advance ()
     void *src1 = (void *) (((_curIdx==0)&&(_curPhase==_firstCombinePhase)) ? _srcbuf : reducebuf); 
     void *src2 = NULL;
 
-    CM_Op op = _astate.getOp();
-    CM_Dt dt = _astate.getDt();
+    XMI_Op op = _astate.getOp();
+    XMI_Dt dt = _astate.getDt();
     unsigned count = _astate.getCount();
 
-    if(op == CM_SUM && dt == CM_SIGNED_INT)
+    if(op == XMI_SUM && dt == XMI_SIGNED_INT)
     {
       for(; (_curIdx < nsrcpes) && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0); _curIdx ++)
       {
@@ -557,7 +557,7 @@ inline void CCMI::Executor::AllreduceBase::advance ()
         }
       }
     }
-    else if(op == CM_SUM && dt == CM_DOUBLE)
+    else if(op == XMI_SUM && dt == XMI_DOUBLE)
     {
       for(; (_curIdx < nsrcpes) && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0); _curIdx ++)
       {
@@ -569,7 +569,7 @@ inline void CCMI::Executor::AllreduceBase::advance ()
         }
       }
     }
-    else if(op == CM_MIN && dt == CM_DOUBLE)
+    else if(op == XMI_MIN && dt == XMI_DOUBLE)
     {
       for(; (_curIdx < nsrcpes)
             && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0);
@@ -583,7 +583,7 @@ inline void CCMI::Executor::AllreduceBase::advance ()
         }
       }
     }
-    else if(op == CM_MAX && dt == CM_DOUBLE)
+    else if(op == XMI_MAX && dt == XMI_DOUBLE)
     {
       for(; (_curIdx < nsrcpes)
             && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0);
@@ -798,7 +798,7 @@ inline void CCMI::Executor::AllreduceBase::postReceives ()
 }
 
 
-inline CM_Request_t * 
+inline XMI_Request_t * 
 CCMI::Executor::AllreduceBase::notifyRecvHead 
 (const CMQuad  * info,
  unsigned          count,
@@ -809,7 +809,7 @@ CCMI::Executor::AllreduceBase::notifyRecvHead
  unsigned        * rcvlen,
  char           ** rcvbuf,
  unsigned        * pipewidth,
- CM_Callback_t * cb_done)
+ XMI_Callback_t * cb_done)
 {
   CCMI_assert_debug(count == 1);
   CCMI_assert_debug(info);
@@ -919,7 +919,7 @@ CCMI::Executor::AllreduceBase::notifyRecvShort
  unsigned          srcindex,
  unsigned        * rcvlen,
  char           ** rcvbuf,
- CM_Callback_t * cb_done) 
+ XMI_Callback_t * cb_done) 
 {
   *rcvbuf = _astate.getPhaseRecvBufs (phase, srcindex);
   *rcvlen = sndlen;

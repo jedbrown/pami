@@ -105,7 +105,7 @@ extern "C"
    *				or -1 if no additional roles are used.
    * \return	success or failure
    */
-  CM_Result LL_Multisend_getRoles(CM_Protocol_t *registration,
+  XMI_Result XMI_Multisend_getRoles(XMI_Protocol_t *registration,
 					int *numRoles, int *replRole);
 
   /**
@@ -124,19 +124,19 @@ extern "C"
    * \param[out] rcvlen		Length of data to receive
    * \param[out] rcvbuf		Where to put recv data
    * \param[out] cb_done	Completion callback to invoke when data received
-   * \return	CM_Request opaque memory for message
+   * \return	XMI_Request opaque memory for message
    */
-  typedef CM_Request_t *(*LL_RecvMulticast)(const CMQuad *msginfo,
+  typedef XMI_Request_t *(*XMI_RecvMulticast)(const CMQuad *msginfo,
                                                 unsigned msgcount,
                                                 size_t root,
                                                 size_t sndlen,
                                                 void *clientdata,
                                                 size_t *rcvlen,
-                                                LL_PipeWorkQueue_t **rcvbuf,
-                                                CM_Callback_t *cb_done);
+                                                XMI_PipeWorkQueue_t **rcvbuf,
+                                                XMI_Callback_t *cb_done);
 
 #ifdef DEPRECATED_MULTICAST
-  typedef CM_Request_t * (*DCMF_OldRecvMulticast) (const CMQuad    * info, /* DEPRECATED */
+  typedef XMI_Request_t * (*DCMF_OldRecvMulticast) (const CMQuad    * info, /* DEPRECATED */
                                                   unsigned          count,
                                                   unsigned          peer,
                                                   unsigned          sndlen,
@@ -145,7 +145,7 @@ extern "C"
                                                   unsigned        * rcvlen,
                                                   char           ** rcvbuf,
                                                   unsigned        * pipewidth,
-                                                  CM_Callback_t * cb_done);
+                                                  XMI_Callback_t * cb_done);
 
 
 
@@ -183,8 +183,8 @@ extern "C"
     DCMF_BCAST_RECV_NOSTORE    =  0x0a00, /* DEPRECATED */
     DCMF_LOCALCOPY             =  0x0b00, /* DEPRECATED */
 
-    CM_UNDEFINED_OPCODE      =  (~DCMF_LINE_BCAST_MASK), /* DEPRECATED */
-  } CM_Opcode_t;
+    XMI_UNDEFINED_OPCODE      =  (~DCMF_LINE_BCAST_MASK), /* DEPRECATED */
+  } XMI_Opcode_t;
 #endif /* DEPRECATED_MULTICAST */
 
   /**
@@ -192,11 +192,11 @@ extern "C"
    */
 
   typedef enum {
-    LL_DEFAULT_MULTICAST_PROTOCOL = 0,
+    XMI_DEFAULT_MULTICAST_PROTOCOL = 0,
 
 #ifdef DEPRECATED_MULTICAST
 /**************** obsolete, legacy enums ****************/
-    DCMF_DEFAULT_MSEND_PROTOCOL=LL_DEFAULT_MULTICAST_PROTOCOL,         /**< Default multicast. */ /* DEPRECATED */
+    DCMF_DEFAULT_MSEND_PROTOCOL=XMI_DEFAULT_MULTICAST_PROTOCOL,         /**< Default multicast. */ /* DEPRECATED */
     DCMF_MEMFIFO_DMA_MSEND_PROTOCOL, /* DEPRECATED */      /**< Memory fifo multicast,
 					     pipeline width should be
 					     a multiple of 240 bytes.*/
@@ -217,37 +217,37 @@ extern "C"
 					     multiple of 240 bytes. */
 /**************** all of the above are obsolete. ****************/
 #endif /* DEPRECATED_MULTICAST */
-    LL_GLOBAL_MULTICAST_PROTOCOL,
-    LL_INTRANODE_MULTICAST_PROTOCOL,
-    LL_MFIFO_LINEBCAST_MULTICAST_PROTOCOL,
-    LL_DPUT_LINEBCAST_MULTICAST_PROTOCOL,
+    XMI_GLOBAL_MULTICAST_PROTOCOL,
+    XMI_INTRANODE_MULTICAST_PROTOCOL,
+    XMI_MFIFO_LINEBCAST_MULTICAST_PROTOCOL,
+    XMI_DPUT_LINEBCAST_MULTICAST_PROTOCOL,
     /* add more protocols here */
-    LL_MULTICAST_PROTOCOL_COUNT,
+    XMI_MULTICAST_PROTOCOL_COUNT,
 
 #ifdef DEPRECATED_MULTICAST
     /**************** this is also obsolete. ****************/
-    DCMF_TREE_DPUT_MSEND_PROTOCOL = LL_MULTICAST_PROTOCOL_COUNT /* DEPRECATED */
+    DCMF_TREE_DPUT_MSEND_PROTOCOL = XMI_MULTICAST_PROTOCOL_COUNT /* DEPRECATED */
 #endif /* DEPRECATED_MULTICAST */
-  } LL_Multicast_Protocol;
+  } XMI_Multicast_Protocol;
 
   /**
    * \brief Multicast configuration. The connection ids here go from
    * 0 - (nconnections-1).
    */
   typedef struct {
-    LL_Multicast_Protocol protocol;   /**< The multicast protocol to initialize */
-    LL_RecvMulticast      cb_recv;    /**< Async callback */
+    XMI_Multicast_Protocol protocol;   /**< The multicast protocol to initialize */
+    XMI_RecvMulticast      cb_recv;    /**< Async callback */
     void                 *clientdata; /**< Callback clientdata */
 #ifdef DEPRECATED_MULTICAST
     DCMF_OldRecvMulticast        cb_oldrecv;   /**< Async callback */ /* DEPRECATED */
     void                       **connectionlist; /**< connection list vector */
     unsigned                     nconnections;  /**< number of connections */
 #endif /* DEPRECATED_MULTICAST */
-  } LL_Multicast_Configuration_t;
+  } XMI_Multicast_Configuration_t;
 
 
-  CM_Result LL_Multicast_register (CM_Protocol_t                *registration,
-				   LL_Multicast_Configuration_t *configuration);
+  XMI_Result XMI_Multicast_register (XMI_Protocol_t                *registration,
+				   XMI_Multicast_Configuration_t *configuration);
 
 #ifdef DEPRECATED_MULTICAST
 #warning Exposing Deprecated Multicast interfaces
@@ -261,10 +261,10 @@ extern "C"
    */
 
   typedef struct {
-    CM_Protocol_t    *registration;     /**< Pointer to registration */
-    CM_Request_t    * request;         /**< Temporary storage for the
+    XMI_Protocol_t    *registration;     /**< Pointer to registration */
+    XMI_Request_t    * request;         /**< Temporary storage for the
                                               multicast message */
-    CM_Callback_t     cb_done;         /**< Completion callback */
+    XMI_Callback_t     cb_done;         /**< Completion callback */
     DCMF_Consistency    consistency;     /**< Consistency model */ /* DEPRECATED */
     unsigned            connection_id;	 /**< A connection is a distinct stream of
 					      traffic. The connection id
@@ -274,7 +274,7 @@ extern "C"
     unsigned            nranks;		 /**< number of destinations
                                               to multicast to*/
     unsigned          * ranks;		 /**< Array of destination ranks*/
-    CM_Opcode_t     * opcodes;         /**< A hardare hint to do a
+    XMI_Opcode_t     * opcodes;         /**< A hardare hint to do a
                                               specific operation. For
                                               example, send a point to
                                               point message or send a
@@ -282,8 +282,8 @@ extern "C"
     const CMQuad      * msginfo;         /**< A extra info field to be
                                               sent with the message*/
     unsigned            count;           /**< info count*/
-    CM_Op             op;              /**< Operation for a reduce*/
-    CM_Dt             dt;              /**< Data type for the reduce */
+    XMI_Op             op;              /**< Operation for a reduce*/
+    XMI_Dt             dt;              /**< Data type for the reduce */
     unsigned            flags;           /**< A flags parameter to
                                               configure special options in
                                               the multicast. For example
@@ -306,10 +306,10 @@ extern "C"
    */
 
   typedef struct {
-    CM_Protocol_t *registration;  /**< Pointer to registration */
-    CM_Request_t  *request;       /**< Temporary storage for the
+    XMI_Protocol_t *registration;  /**< Pointer to registration */
+    XMI_Request_t  *request;       /**< Temporary storage for the
 					    multisend message */
-    CM_Callback_t  cb_done;       /**< Completion callback */
+    XMI_Callback_t  cb_done;       /**< Completion callback */
     unsigned       connection_id; /**< A connection is a
 					    distinct stream of
 					    traffic. The connection id
@@ -318,13 +318,13 @@ extern "C"
     unsigned       bytes;	       /**< size of the message*/
     char          *dst;	       /**< source buffer */
     unsigned            pwidth;        /**< pipelining parameter */
-    CM_Opcode_t       opcode;        /**< A hardare hint to do a
+    XMI_Opcode_t       opcode;        /**< A hardare hint to do a
 					    specific operation. For
 					    example, send a point to
 					    point message or send a
 					    deposit bit broadcast along a line*/
-    CM_Op             op;	       /**< Operation for a reduce*/
-    CM_Dt             dt;            /**< Data type for the reduce */
+    XMI_Op             op;	       /**< Operation for a reduce*/
+    XMI_Dt             dt;            /**< Data type for the reduce */
   } DCMF_OldMulticastRecv_t; /* DEPRECATED */
 
 
@@ -343,30 +343,30 @@ extern "C"
   /**
    * \brief The new structure to pass parameters for the multisend multicast operation.
    *
-   * The LL_Multicast_t object is re-useable immediately, but objects referred to
+   * The XMI_Multicast_t object is re-useable immediately, but objects referred to
    * (src, etc) cannot be re-used until cb_done.
    */
   typedef struct {
-    CM_Protocol_t      *registration;	/**< Pointer to registration */
+    XMI_Protocol_t      *registration;	/**< Pointer to registration */
     void               *request;	/**< Temporary storage for the multicast message */
     size_t              req_size;	/**< space available in request, bytes */
-    CM_Callback_t       cb_done;	/**< Completion callback */
+    XMI_Callback_t       cb_done;	/**< Completion callback */
     unsigned            connection_id;	/**< A connection is a distinct stream of
 					     traffic. The connection id identifies the
 					     connection */
     unsigned            roles;		/**< bitmap of roles to perform */
     size_t              bytes;		/**< size of the message*/
-    LL_PipeWorkQueue_t *src;		/**< source buffer */
-    LL_Topology_t      *src_participants; /**< root */
-    LL_PipeWorkQueue_t *dst;		/**< dest buffer (ignored for one-sided) */
-    LL_Topology_t      *dst_participants; /**< destinations to multicast to*/
+    XMI_PipeWorkQueue_t *src;		/**< source buffer */
+    XMI_Topology_t      *src_participants; /**< root */
+    XMI_PipeWorkQueue_t *dst;		/**< dest buffer (ignored for one-sided) */
+    XMI_Topology_t      *dst_participants; /**< destinations to multicast to*/
     const CMQuad       *msginfo;	/**< A extra info field to be sent with the message.
 					     This might include information about
 					     the data being sent, for one-sided. */
     unsigned            msgcount;	/**< info count*/
-  } LL_Multicast_t;
+  } XMI_Multicast_t;
 
-  int LL_Multicast(LL_Multicast_t *mcastinfo);
+  int XMI_Multicast(XMI_Multicast_t *mcastinfo);
 
 
 #ifdef DEPRECATED_MANYTOMANY
@@ -387,7 +387,7 @@ extern "C"
    *                         does not receive and should not be used.
    */
 
-  typedef CM_Request_t * (*DCMF_RecvManytomany) (unsigned          conn_id, /* DEPRECATED */
+  typedef XMI_Request_t * (*DCMF_RecvManytomany) (unsigned          conn_id, /* DEPRECATED */
                                                    void            * arg,
                                                    char           ** rcvbuf,
                                                    unsigned       ** rcvlens,
@@ -395,7 +395,7 @@ extern "C"
                                                    unsigned       ** rcvcounters,
                                                    unsigned        * nranks,
                                                    unsigned        * rankIndex,
-                                                   CM_Callback_t * cb_done);
+                                                   XMI_Callback_t * cb_done);
 
   /**
    * \brief Manytomany protocol implementations.
@@ -420,12 +420,12 @@ extern "C"
   DCMF_Manytomany_Configuration_t; /* DEPRECATED */
 
 
-  CM_Result DCMF_Manytomany_register (CM_Protocol_t                 * registration, /* DEPRECATED */
+  XMI_Result DCMF_Manytomany_register (XMI_Protocol_t                 * registration, /* DEPRECATED */
                                         DCMF_Manytomany_Configuration_t * configuration); /* DEPRECATED */
 
-  int DCMF_Manytomany         (CM_Protocol_t   * registration, /* DEPRECATED */
-                               CM_Request_t    * request,
-                               CM_Callback_t     cb_done,
+  int DCMF_Manytomany         (XMI_Protocol_t   * registration, /* DEPRECATED */
+                               XMI_Request_t    * request,
+                               XMI_Callback_t     cb_done,
                                DCMF_Consistency    consistency, /* DEPRECATED */
                                unsigned            connection_id,
                                unsigned            rindex,
@@ -442,9 +442,9 @@ extern "C"
    * \brief Manytomany protocol implementations.
    */
   typedef enum {
-    LL_DEFAULT_M2M_PROTOCOL=0,	/**< Default point-to-point send. */
-    LL_M2M_PROTOCOL_COUNT	/**< Total number of protocols supported */
-  } LL_Manytomany_Protocol;
+    XMI_DEFAULT_M2M_PROTOCOL=0,	/**< Default point-to-point send. */
+    XMI_M2M_PROTOCOL_COUNT	/**< Total number of protocols supported */
+  } XMI_Manytomany_Protocol;
 
   /**
    * \brief Sub-structure used to represent a vectored buffer for many-to-many.
@@ -456,14 +456,14 @@ extern "C"
    * contains permutation information.
    */
   typedef struct {
-    LL_PipeWorkQueue_t *buffer;		/**< Memory used for data (buffer) */
-    LL_Topology_t *participants;	/**< Ranks that are vectored in buffer */
+    XMI_PipeWorkQueue_t *buffer;		/**< Memory used for data (buffer) */
+    XMI_Topology_t *participants;	/**< Ranks that are vectored in buffer */
     size_t *lengths;			/**< Array of lengths in buffer for each rank */
     size_t *offsets;			/**< Array of offsets in buffer for each rank */
     size_t num_vecs;                    /**< The number of entries in "lengths" and
                                              "offsets". May be a flag: either "1" or
                                              participants->size(). */
-  } LL_ManytomanyBuf_t;
+  } XMI_ManytomanyBuf_t;
 
   /**
    * \brief Callback for Manytomany Receive operations
@@ -490,22 +490,22 @@ extern "C"
    * \param[out] cb_done	Completion callback when message complete
    * \return	Request object opaque storage for message.
    */
-  typedef CM_Request_t *(*LL_RecvManytomany)(void *arg,
+  typedef XMI_Request_t *(*XMI_RecvManytomany)(void *arg,
 					     unsigned conn_id,
 					     CMQuad *metadata,
 					     unsigned metacount,
-					     LL_ManytomanyBuf_t **recv,
+					     XMI_ManytomanyBuf_t **recv,
 					     size_t *myIndex,
-                                             CM_Callback_t *cb_done);
+                                             XMI_Callback_t *cb_done);
 
   /**
    * \brief Many to many configuration.
    */
   typedef struct {
-    LL_Manytomany_Protocol protocol;	/**< Protocol (ManyToMany flavor) to register */
-    LL_RecvManytomany      cb_recv;	/**< Recv callback to use */
+    XMI_Manytomany_Protocol protocol;	/**< Protocol (ManyToMany flavor) to register */
+    XMI_RecvManytomany      cb_recv;	/**< Recv callback to use */
     void                  *arg;		/**< Opaque arg to include in callback */
-  } LL_Manytomany_Configuration_t;
+  } XMI_Manytomany_Configuration_t;
 
   /**
    * \brief Register a ManyToMany "protocol" (flavor)
@@ -515,10 +515,10 @@ extern "C"
    *
    * \param[out] registration	Opaque memory for ManyToMany class object.
    * \param[in] configuration	Configuration of ManyToMany to register/construct.
-   * \return	CM_SUCCESS or error code.
+   * \return	XMI_SUCCESS or error code.
    */
-  CM_Result LL_Manytomany_register(CM_Protocol_t *registration,
-                                   LL_Manytomany_Configuration_t *configuration);
+  XMI_Result XMI_Manytomany_register(XMI_Protocol_t *registration,
+                                   XMI_Manytomany_Configuration_t *configuration);
 
   /**
    * \brief Structure of parameters used to initiate a ManyToMany
@@ -527,30 +527,30 @@ extern "C"
    * for indexing into the recv parameter arrays (lengths and offsets).
    */
   typedef struct {
-    CM_Protocol_t      *registration;	/**< Opaque registration object */
+    XMI_Protocol_t      *registration;	/**< Opaque registration object */
     void               *request;	/**< Opaque request object */
     size_t              req_size;	/**< space available in request, bytes */
-    CM_Callback_t       cb_done;	/**< User's completion callback */
+    XMI_Callback_t       cb_done;	/**< User's completion callback */
     unsigned            connection_id;	/**< differentiate data streams */
     unsigned            roles;		/**< bitmap of roles to perform */
     size_t              *rankIndex;	/**< Index of send in recv parameters */
     size_t              num_index;      /**< Number of entries in "rankIndex".
                                              should be multiple of send.participants->size()?
                                          */
-    LL_ManytomanyBuf_t  send;		/**< send data parameters */
+    XMI_ManytomanyBuf_t  send;		/**< send data parameters */
     const CMQuad       *metadata;	/**< A extra info field to be sent with the message.
 					     This might include information about
 					     the data being sent, for one-sided. */
     unsigned            metacount;	/**< metadata count*/
-  } LL_Manytomany_t;
+  } XMI_Manytomany_t;
 
   /**
    * \brief Initiate a ManyToMany
    *
    * \param[in] m2minfo	Paramters for ManyToMany operation to be performed
-   * \return	CM_SUCCESS or error code
+   * \return	XMI_SUCCESS or error code
    */
-  CM_Result LL_Manytomany(LL_Manytomany_t *m2minfo);
+  XMI_Result XMI_Manytomany(XMI_Manytomany_t *m2minfo);
 
   /******************************************************************************
    *       Multisync Personalized synchronization/coordination
@@ -560,13 +560,13 @@ extern "C"
    * \brief protocols supported for Multisync
    */
   typedef enum {
-    LL_DEFAULT_MULTISYNC_PROTOCOL = 0,
-    LL_GLOBAL_MULTISYNC_PROTOCOL,
-    LL_INTRANODE_MULTISYNC_PROTOCOL,
-    LL_LOCKMANAGER_MULTISYNC_PROTOCOL,
+    XMI_DEFAULT_MULTISYNC_PROTOCOL = 0,
+    XMI_GLOBAL_MULTISYNC_PROTOCOL,
+    XMI_INTRANODE_MULTISYNC_PROTOCOL,
+    XMI_LOCKMANAGER_MULTISYNC_PROTOCOL,
     /* other protocols added here */
-    LL_MULTISYNC_PROTOCOL_COUNT
-  } LL_Multisync_protocol_t;
+    XMI_MULTISYNC_PROTOCOL_COUNT
+  } XMI_Multisync_protocol_t;
 
   /**
    * \brief Recv callback for Multisync.
@@ -580,9 +580,9 @@ extern "C"
    * \param[in] msginfo		Metadata
    * \param[in] msgcount	Number of CMQuads in msginfo
    * \param[in] conn_id		Instance ID
-   * \return	CM_Request opaque memory for message
+   * \return	XMI_Request opaque memory for message
    */
-  typedef CM_Request_t *(*LL_RecvMultisync)(void *clientdata,
+  typedef XMI_Request_t *(*XMI_RecvMultisync)(void *clientdata,
 					    CMQuad *msginfo,
 					    unsigned msgcount,
 					    unsigned conn_id);
@@ -593,34 +593,34 @@ extern "C"
    * \todo Is there such a thing as a one-sided barrier?
    */
   typedef struct {
-    LL_Multisync_protocol_t   protocol;		/**< The protocol to register */
-    LL_RecvMultisync         *cb_recv;		/**< Recv callback */
+    XMI_Multisync_protocol_t   protocol;		/**< The protocol to register */
+    XMI_RecvMultisync         *cb_recv;		/**< Recv callback */
     void                     *clientdata;	/**< Opaque arg for callback */
     /* additional configuration fields here */
-  } LL_Multisync_configuration_t;
+  } XMI_Multisync_configuration_t;
 
   /**
    * \brief structure defining interface to Multisync
    */
   typedef struct {
-    CM_Protocol_t   *registration;	/**< Opaque registration object */
+    XMI_Protocol_t   *registration;	/**< Opaque registration object */
     void            *request;		/**< Opaque request object */
     size_t           req_size;		/**< space available in request, bytes */
-    CM_Callback_t    cb_done;		/**< User's completion callback */
+    XMI_Callback_t    cb_done;		/**< User's completion callback */
     unsigned         connection_id;	/**< (remove?) differentiate data streams */
     unsigned         roles;		/**< bitmap of roles to perform */
-    LL_Topology_t   *participants;	/**< Ranks involved in synchronization */
-  } LL_Multisync_t;
+    XMI_Topology_t   *participants;	/**< Ranks involved in synchronization */
+  } XMI_Multisync_t;
 
   /**
    * \brief Register a Multi-sync protocol
    *
    * \param[out] registration	Opaque memory used to construct protocol object
    * \param[in] configuration	Specifics of registration configuration
-   * \return	CM_SUCCESS or error codes
+   * \return	XMI_SUCCESS or error codes
    */
-  CM_Result LL_Multisync_register(CM_Protocol_t   *registration,
-                         LL_Multisync_configuration_t *configuration);
+  XMI_Result XMI_Multisync_register(XMI_Protocol_t   *registration,
+                         XMI_Multisync_configuration_t *configuration);
 
   /**
    * \brief Barriers and the like.
@@ -629,9 +629,9 @@ extern "C"
    * distinction needed.
    *
    * \param[in] msyncinfo	Struct of all params needed to perform operation
-   * \return	CM_SUCCESS or error codes
+   * \return	XMI_SUCCESS or error codes
    */
-  CM_Result LL_Multisync(LL_Multisync_t *msyncinfo);
+  XMI_Result XMI_Multisync(XMI_Multisync_t *msyncinfo);
 
 
   /******************************************************************************
@@ -642,24 +642,24 @@ extern "C"
    * \brief protocols supported for Multicombine
    */
   typedef enum {
-    LL_DEFAULT_MULTICOMBINE_PROTOCOL = 0,
-    LL_GLOBAL_MULTICOMBINE_PROTOCOL,
-    LL_INTRANODE_MULTICOMBINE_PROTOCOL,
+    XMI_DEFAULT_MULTICOMBINE_PROTOCOL = 0,
+    XMI_GLOBAL_MULTICOMBINE_PROTOCOL,
+    XMI_INTRANODE_MULTICOMBINE_PROTOCOL,
     /* add more protocols here */
-    LL_MULTICOMBINE_PROTOCOL_COUNT
-  } LL_Multicombine_protocol_t;
+    XMI_MULTICOMBINE_PROTOCOL_COUNT
+  } XMI_Multicombine_protocol_t;
 
   /**
    * \brief configuration interface for registering Multicombine
    *
    * Note, reply_proto is a protocol structure used by the protocol being registered
    * to establish a data path for target replies. This protocol is setup by the
-   * registration, not by the caller of LL_Multicombine_register.
+   * registration, not by the caller of XMI_Multicombine_register.
    */
   typedef struct {
-    LL_Multicombine_protocol_t  protocol;	/**< The protocol to register */
+    XMI_Multicombine_protocol_t  protocol;	/**< The protocol to register */
     /* add more configuration fields here */
-  } LL_Multicombine_configuration_t;
+  } XMI_Multicombine_configuration_t;
 
   /**
    * \brief structure defining interface to Multicombine
@@ -676,29 +676,29 @@ extern "C"
    * type of multicombine being registered/used.
    */
   typedef struct {
-    CM_Protocol_t      *registration;   /**< Pointer to registration */
+    XMI_Protocol_t      *registration;   /**< Pointer to registration */
     void               *request;        /**< Temporary storage for the multi* */
     size_t              req_size;	/**< space available in request, bytes */
-    CM_Callback_t       cb_done;	/**< User's completion callback */
+    XMI_Callback_t       cb_done;	/**< User's completion callback */
     unsigned            roles;		/**< bitmap of roles to perform */
-    LL_PipeWorkQueue_t *data;		/**< Data source */
-    LL_Topology_t      *data_participants;	/**< Ranks contributing data */
-    LL_PipeWorkQueue_t *results;	/**< Results destination */
-    LL_Topology_t      *results_participants;	/**< Ranks receiving results */
-    CM_Op               optor;		/**< Operation to perform on data */
-    CM_Dt               dtype;		/**< Datatype of elements */
+    XMI_PipeWorkQueue_t *data;		/**< Data source */
+    XMI_Topology_t      *data_participants;	/**< Ranks contributing data */
+    XMI_PipeWorkQueue_t *results;	/**< Results destination */
+    XMI_Topology_t      *results_participants;	/**< Ranks receiving results */
+    XMI_Op               optor;		/**< Operation to perform on data */
+    XMI_Dt               dtype;		/**< Datatype of elements */
     size_t              count;		/**< Number of elements */
-  } LL_Multicombine_t;
+  } XMI_Multicombine_t;
 
   /**
    * \brief Register a Multi-combine protocol
    *
    * \param[out] registration	Opaque memory used to construct protocol object
    * \param[in] configuration	Specifics of registration configuration
-   * \return	CM_SUCCESS or error codes
+   * \return	XMI_SUCCESS or error codes
    */
-  CM_Result LL_Multicombine_register(CM_Protocol_t   *registration,
-                         LL_Multicombine_configuration_t *configuration);
+  XMI_Result XMI_Multicombine_register(XMI_Protocol_t   *registration,
+                         XMI_Multicombine_configuration_t *configuration);
 
   /**
    * \brief Allreduce, Reduce, etc. (may include some specialized Broadcasts, too)
@@ -711,9 +711,9 @@ extern "C"
    * All participants == {data_participants .U. results_participants}.
    *
    * \param[in] mcombineinfo	Struct of all params needed to perform operation
-   * \return	CM_SUCCESS or error codes
+   * \return	XMI_SUCCESS or error codes
    */
-  CM_Result LL_Multicombine(LL_Multicombine_t *mcombineinfo);
+  XMI_Result XMI_Multicombine(XMI_Multicombine_t *mcombineinfo);
 
 #ifdef __cplusplus
 };

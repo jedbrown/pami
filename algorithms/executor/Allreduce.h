@@ -72,7 +72,7 @@ namespace CCMI
       } SendCallbackData;
 
       // send info - use AllreduceBase sendState
-//         CM_Request_t   *_sndReq;
+//         XMI_Request_t   *_sndReq;
 //         SendCallbackData *_sndClientData;
 //         CollHeaderData   *_sndInfo;
       unsigned         _sndInfoRequired; // Is the info field required on send()?
@@ -114,7 +114,7 @@ namespace CCMI
       inline void postReceives();
 
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (void *cd, CM_Error_t *err)
+      static void staticNotifySendDone (void *cd, XMI_Error_t *err)
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifySendDone() enter\n",(int)((SendCallbackData *)cd)->me));
         ((SendCallbackData *)cd)->me->notifySendDone (*(CMQuad *)cd);
@@ -123,7 +123,7 @@ namespace CCMI
 
       /// \brief Static function to be passed into the done of multisend postRecv
 
-      static void staticNotifyReceiveDone (void *cd, CM_Error_t *err)
+      static void staticNotifyReceiveDone (void *cd, XMI_Error_t *err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
@@ -240,8 +240,8 @@ namespace CCMI
                               unsigned         count,
                               unsigned         sizeOfType,
                               coremath  func,
-                              CM_Op          op = CM_UNDEFINED_OP,
-                              CM_Dt          dt = CM_UNDEFINED_DT)
+                              XMI_Op          op = XMI_UNDEFINED_OP,
+                              XMI_Dt          dt = XMI_UNDEFINED_DT)
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::setDataFunc() enter\n",(int)this));
         CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
@@ -313,7 +313,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       /// 
-      inline CM_Request_t *   notifyRecvHead(const CMQuad  * info,
+      inline XMI_Request_t *   notifyRecvHead(const CMQuad  * info,
                                                unsigned          count,
                                                unsigned          peer,
                                                unsigned          sndlen,
@@ -322,19 +322,19 @@ namespace CCMI
                                                unsigned        * rcvlen,
                                                char           ** rcvbuf,
                                                unsigned        * pipewidth,
-                                               CM_Callback_t * cb_done);
+                                               XMI_Callback_t * cb_done);
       static inline void _compile_time_assert_ ()
       {
         // Compile time assert
         // SendState array must must fit in a request 
-        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(CM_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(XMI_CollectiveRequest_t));
       }
     }; // Allreduce
   };
 };// CCMI::Executor
 
 
-inline CM_Request_t * 
+inline XMI_Request_t * 
 CCMI::Executor::Allreduce::notifyRecvHead(const CMQuad    * info,
                                           unsigned          count,
                                           unsigned          peer,
@@ -344,7 +344,7 @@ CCMI::Executor::Allreduce::notifyRecvHead(const CMQuad    * info,
                                           unsigned        * rcvlen,
                                           char           ** rcvbuf,
                                           unsigned        * pipewidth,
-                                          CM_Callback_t * cb_done)
+                                          XMI_Callback_t * cb_done)
 {
   CCMI_assert(!_delayAdvance); /// \todo Don't expect to receive within send() processing but
   /// this could change in the future
@@ -449,7 +449,7 @@ inline void CCMI::Executor::Allreduce::postReceives()
   //resetReceives();
 
   // post receives for each expected incoming message
-  CM_Callback_t cb_done;
+  XMI_Callback_t cb_done;
   cb_done.function   = staticNotifyReceiveDone;
   for(int i = _state->getStartPhase(); i <= _state->getEndPhase(); i++)
   {
@@ -532,7 +532,7 @@ inline void CCMI::Executor::Allreduce::start()
       ++nextSrcPhase;
     }
 
-    CM_Callback_t cb_done;
+    XMI_Callback_t cb_done;
     unsigned sndIndex  = CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_SEND_INDEX;
 
     cb_done.function   = staticNotifySendDone;
@@ -818,7 +818,7 @@ void CCMI::Executor::Allreduce::advance()
           _sState[curSndIndex].sndInfo._root  = _state->getRoot();
         }
 
-        CM_Callback_t cb_done;
+        XMI_Callback_t cb_done;
         _sState[curSndIndex].sndClientData.isDone = false;
         cb_done.function   = staticNotifySendDone;
         cb_done.clientdata =  &(_sState[curSndIndex].sndClientData);

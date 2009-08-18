@@ -13,43 +13,43 @@ void cb_barrier (void * clientdata);
 void cb_allgather (void * clientdata);
 
 // Barrier Data
-CM_CollectiveProtocol_t _g_barrier;
+XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
+XMI_CollectiveRequest_t  _g_barrier_request;
+XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
-	HL_XFER_BARRIER,
+	XMI_XFER_BARRIER,
 	&_g_barrier,
 	&_g_barrier_request,
 	_cb_barrier,
-	&HL_World_Geometry
+	&XMI_World_Geometry
     };
 
 // Allgather
-CM_CollectiveProtocol_t _g_allgather;
+XMI_CollectiveProtocol_t _g_allgather;
 volatile unsigned       _g_allgather_active;
-CM_CollectiveRequest_t  _g_allgather_request;
+XMI_CollectiveRequest_t  _g_allgather_request;
 
-CM_Callback_t _cb_allgather   = {(void (*)(void*,CM_Error_t*))cb_allgather,
+XMI_Callback_t _cb_allgather   = {(void (*)(void*,XMI_Error_t*))cb_allgather,
 			       (void *) &_g_allgather_active };
 hl_allgather_t  _xfer_allgather =
     {
-	HL_XFER_ALLGATHER,
+	XMI_XFER_ALLGATHER,
 	&_g_allgather,
 	&_g_allgather_request,
 	_cb_allgather,
-	&HL_World_Geometry,
+	&XMI_World_Geometry,
 	NULL,
 	NULL,
 	0
     };
 
-HL_Geometry_t *cb_geometry (int comm)
+XMI_Geometry_t *cb_geometry (int comm)
 {
     if(comm == 0)
-	return &HL_World_Geometry;
+	return &XMI_World_Geometry;
     else
 	assert(0);
 }
@@ -76,22 +76,22 @@ void cb_allgather (void * clientdata)
 
 void init__barriers ()
 {
-  HL_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = HL_CFG_BARRIER;
-  barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  HL_register(&_g_barrier,
-	      (HL_CollectiveConfiguration_t*)&barrier_config,
+  XMI_Barrier_Configuration_t barrier_config;
+  barrier_config.cfg_type    = XMI_CFG_BARRIER;
+  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
+  XMI_register(&_g_barrier,
+	      (XMI_CollectiveConfiguration_t*)&barrier_config,
 	      0);
   _g_barrier_active = 0;
 }
 
 void init__allgathers ()
 {
-  HL_Allgather_Configuration_t allgather_config;
-  allgather_config.cfg_type    = HL_CFG_ALLGATHER;
-  allgather_config.protocol    = HL_DEFAULT_ALLGATHER_PROTOCOL;
-  HL_register(&_g_allgather,
-	      (HL_CollectiveConfiguration_t*)&allgather_config,
+  XMI_Allgather_Configuration_t allgather_config;
+  allgather_config.cfg_type    = XMI_CFG_ALLGATHER;
+  allgather_config.protocol    = XMI_DEFAULT_ALLGATHER_PROTOCOL;
+  XMI_register(&_g_allgather,
+	      (XMI_CollectiveConfiguration_t*)&allgather_config,
 	      0);
   _g_allgather_active = 0;
 }
@@ -99,9 +99,9 @@ void init__allgathers ()
 void _barrier ()
 {
   _g_barrier_active++;
-  HL_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
-      HL_Poll();
+      XMI_Poll();
 }
 
 void _allgather (char            * src,
@@ -112,9 +112,9 @@ void _allgather (char            * src,
     _xfer_allgather.src   = src;
     _xfer_allgather.dst   = dst;
     _xfer_allgather.bytes = bytes;
-    HL_Xfer (NULL, (hl_xfer_t*)&_xfer_allgather);
+    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_allgather);
     while (_g_allgather_active)
-	HL_Poll();
+	XMI_Poll();
 }
 
 
@@ -122,11 +122,11 @@ void _allgather (char            * src,
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
-  HL_Collectives_initialize(&argc,&argv,cb_geometry);
+  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   init__allgathers();
-  int rank  = HL_Rank();
-  int sz    = HL_Size();
+  int rank  = XMI_Rank();
+  int sz    = XMI_Size();
   char *buf = (char*)malloc(BUFSIZE*sz);
   char *rbuf= (char*)malloc(BUFSIZE*sz);
   int i,j,root = 0;
@@ -165,6 +165,6 @@ int main(int argc, char*argv[])
 	      }
       }
 #endif
-  HL_Collectives_finalize();
+  XMI_Collectives_finalize();
   return 0;
 }

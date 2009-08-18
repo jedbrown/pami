@@ -9,11 +9,11 @@ extern "C"
 {
 #endif
 
-  typedef CMQuad CM_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
+  typedef CMQuad XMI_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
 
   /*  increased to 8196 - JEB */
   /*  ...doubled again - BRC  */
-  typedef CMQuad CM_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
+  typedef CMQuad XMI_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
 
   typedef enum
   {
@@ -164,7 +164,7 @@ extern "C"
    * \see CCMI_Barrier
    */
 
-  int CCMI_Barrier_register (CM_CollectiveProtocol_t    * registration,
+  int CCMI_Barrier_register (XMI_CollectiveProtocol_t    * registration,
                              CCMI_Barrier_Configuration_t * configuration);
 
 
@@ -194,11 +194,11 @@ extern "C"
                                 unsigned                     id,
                                 unsigned                   * ranks,
                                 unsigned                     count,
-                                CM_CollectiveProtocol_t ** protocols,
+                                XMI_CollectiveProtocol_t ** protocols,
                                 unsigned                     nprotocols,
-                                CM_CollectiveProtocol_t ** localprotocols,
+                                XMI_CollectiveProtocol_t ** localprotocols,
                                 unsigned                     nlocalprotocols,
-                                CM_CollectiveRequest_t   * request,
+                                XMI_CollectiveRequest_t   * request,
                                 unsigned                     numcolors,
                                 unsigned                     globalcontext);
 
@@ -209,18 +209,18 @@ extern "C"
    * \param[in] protocol  A protocol to be tested.
    *
    * \return  Can the protocol run on the current geometry
-   * \retval  CM_SUCCESS The protocl will run on the current geometry
+   * \retval  XMI_SUCCESS The protocl will run on the current geometry
    * \retval  ?????        The protocol does not support the current geometry
    */
 
   int CCMI_Geometry_analyze (CCMI_Geometry_t *geometry,
-                             CM_CollectiveProtocol_t *protocol);
+                             XMI_CollectiveProtocol_t *protocol);
 
   /**
    * \brief Free any memory allocated inside of a geometry. Mostly
    * the alltoall permutation array right now.
    * \param[in] geometry The geometry object to free 
-   * \retval CM_SUCCESS Memory free didn't fail
+   * \retval XMI_SUCCESS Memory free didn't fail
    */
   int CCMI_Geometry_free(CCMI_Geometry_t *geometry);
 
@@ -254,7 +254,7 @@ extern "C"
    */
 
   int CCMI_Barrier (CCMI_Geometry_t     * geometry,
-                    CM_Callback_t       cb_done,
+                    XMI_Callback_t       cb_done,
                     CCMI_Consistency      consistency);
 
 
@@ -274,7 +274,7 @@ extern "C"
                                              const unsigned     sndlen,
                                              unsigned         * rcvlen,
                                              char            ** rcvbuf,
-                                             CM_Callback_t  * const cb_info);
+                                             XMI_Callback_t  * const cb_info);
 
   /**
    * \brief Asynchronous broadcast protocol implementations.
@@ -320,7 +320,7 @@ extern "C"
    * \see CCMI_Broadcast
    */
 
-  int CCMI_Broadcast_register (CM_CollectiveProtocol_t      * registration,
+  int CCMI_Broadcast_register (XMI_CollectiveProtocol_t      * registration,
                                CCMI_Broadcast_Configuration_t * configuration);
 
   /**
@@ -349,9 +349,9 @@ extern "C"
    * \todo doxygen
    */
 
-  int CCMI_Broadcast (CM_CollectiveProtocol_t  * registration,
-                      CM_CollectiveRequest_t   * request,
-                      CM_Callback_t    cb_done,
+  int CCMI_Broadcast (XMI_CollectiveProtocol_t  * registration,
+                      XMI_CollectiveRequest_t   * request,
+                      XMI_Callback_t    cb_done,
                       CCMI_Consistency   consistency,
                       CCMI_Geometry_t  * geometry,
                       unsigned           root,
@@ -405,7 +405,7 @@ extern "C"
    * \see CCMI_Allreduce
    */
 
-  int CCMI_Allreduce_register (CM_CollectiveProtocol_t      * registration,
+  int CCMI_Allreduce_register (XMI_CollectiveProtocol_t      * registration,
                                CCMI_Allreduce_Configuration_t * configuration);
 
 
@@ -436,16 +436,16 @@ extern "C"
    *
    * \todo doxygen
    */
-  int CCMI_Allreduce (CM_CollectiveProtocol_t * registration,
-                      CM_CollectiveRequest_t  * request,
-                      CM_Callback_t   cb_done,
+  int CCMI_Allreduce (XMI_CollectiveProtocol_t * registration,
+                      XMI_CollectiveRequest_t  * request,
+                      XMI_Callback_t   cb_done,
                       CCMI_Consistency  consistency,
                       CCMI_Geometry_t * geometry,
                       char            * sbuffer,
                       char            * rbuffer,
                       unsigned          count,
-                      CM_Dt           dt,
-                      CM_Op           op);
+                      XMI_Dt           dt,
+                      XMI_Op           op);
 
   /* ********************************************************************* */
   /*                                                                       */
@@ -494,7 +494,7 @@ extern "C"
    * \see CCMI_Reduce
    */
 
-  int CCMI_Reduce_register (CM_CollectiveProtocol_t   * registration,
+  int CCMI_Reduce_register (XMI_CollectiveProtocol_t   * registration,
                             CCMI_Reduce_Configuration_t * configuration);
 
   /**
@@ -525,17 +525,17 @@ extern "C"
    *
    * \todo doxygen
    */
-  int CCMI_Reduce (CM_CollectiveProtocol_t * registration,
-                   CM_CollectiveRequest_t  * request,
-                   CM_Callback_t   cb_done,
+  int CCMI_Reduce (XMI_CollectiveProtocol_t * registration,
+                   XMI_CollectiveRequest_t  * request,
+                   XMI_Callback_t   cb_done,
                    CCMI_Consistency  consistency,
                    CCMI_Geometry_t * geometry,
                    int               root,
                    char            * sbuffer,
                    char            * rbuffer,
                    unsigned          count,
-                   CM_Dt           dt,
-                   CM_Op           op);
+                   XMI_Dt           dt,
+                   XMI_Op           op);
 
 
 #ifdef __cplusplus

@@ -247,8 +247,8 @@ namespace CCMI
     static inline unsigned coord2rank(TorusCollectiveMapping *map, axii_t x)
     {
       unsigned rank = CCMI_UNDEFINED_RANK;
-      CM_Result rc = map->Torus2Rank(x, &rank);
-      return(rc == CM_SUCCESS ? rank : CCMI_UNDEFINED_RANK);
+      XMI_Result rc = map->Torus2Rank(x, &rank);
+      return(rc == XMI_SUCCESS ? rank : CCMI_UNDEFINED_RANK);
     }
 
 /**

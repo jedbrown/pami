@@ -72,12 +72,12 @@ typedef struct _cheader_data
 #endif
 
 typedef CMQuad CCMI_Geometry_t [CCMI_GEOMETRY_SIZE];
-typedef CMQuad CM_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];/// \todo CM_Prototol_t?
+typedef CMQuad XMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];/// \todo XMI_Prototol_t?
 
 // CCMI Collective request should be 32 CCMI_Requests. This is to store several
-// algorithms/schedule/executor pairs and have several messages in flight  \todo CM_?
-typedef CMQuad CM_CollectiveRequest_t  [CM_REQUEST_NQUADS*8*4];
-typedef CMQuad CCMI_Executor_t           [CM_REQUEST_NQUADS*4];
+// algorithms/schedule/executor pairs and have several messages in flight  \todo XMI_?
+typedef CMQuad XMI_CollectiveRequest_t  [XMI_REQUEST_NQUADS*8*4];
+typedef CMQuad CCMI_Executor_t           [XMI_REQUEST_NQUADS*4];
 
 #ifndef __ccmi_recvasynccallback_defined__
 typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
@@ -85,7 +85,7 @@ typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
                                            const unsigned     sndlen,
                                            unsigned         * rcvlen,
                                            char            ** rcvbuf,
-                                           CM_Callback_t  * const cb_info);
+                                           XMI_Callback_t  * const cb_info);
   #define __ccmi_recvasynccallback_defined__
 #endif
 

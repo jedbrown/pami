@@ -22,157 +22,157 @@ extern "C"
      */
     typedef enum
     {
-	HL_DEFAULT_BARRIER_PROTOCOL,
-        HL_CAU_BARRIER_PROTOCOL,             /**< Global Interrupt barrier. */
-        HL_GI_BARRIER_PROTOCOL,             /**< Global Interrupt barrier. */
-        HL_TREE_BARRIER_PROTOCOL,           /**< Tree barrier. */
-        HL_RECTANGLE_BARRIER_PROTOCOL,      /**< Rectangular shape barrier. */
-        HL_BINOMIAL_BARRIER_PROTOCOL,       /**< Rectangular shape barrier. */
-        HL_LOCKBOX_BARRIER_PROTOCOL,        /**< Lockbox Barrier protocol. */
-        HL_IPC_BARRIER_PROTOCOL,            /**< IPC barrier. */
-        HL_NUM_BARRIER_PROTOCOLS
-    }HL_Barrier_Protocol_t;
+	XMI_DEFAULT_BARRIER_PROTOCOL,
+        XMI_CAU_BARRIER_PROTOCOL,             /**< Global Interrupt barrier. */
+        XMI_GI_BARRIER_PROTOCOL,             /**< Global Interrupt barrier. */
+        XMI_TREE_BARRIER_PROTOCOL,           /**< Tree barrier. */
+        XMI_RECTANGLE_BARRIER_PROTOCOL,      /**< Rectangular shape barrier. */
+        XMI_BINOMIAL_BARRIER_PROTOCOL,       /**< Rectangular shape barrier. */
+        XMI_LOCKBOX_BARRIER_PROTOCOL,        /**< Lockbox Barrier protocol. */
+        XMI_IPC_BARRIER_PROTOCOL,            /**< IPC barrier. */
+        XMI_NUM_BARRIER_PROTOCOLS
+    }XMI_Barrier_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_BROADCAST_PROTOCOL,
-        HL_TREE_BROADCAST_PROTOCOL,            /**< Tree broadcast.  */
-        HL_RECTANGLE_BROADCAST_PROTOCOL,       /**< rect broadcast. */
-        HL_RECTANGLE_BROADCAST_PROTOCOL_DPUT,  /**< rect broadcast with direct put broadcasts. */
-        HL_BINOMIAL_BROADCAST_PROTOCOL,        /**< binom broadcast. */
-        HL_IPC_BROADCAST_PROTOCOL,             /**< IPC broadcast.   */
-        HL_NUM_BROADCAST_PROTOCOLS
-    }HL_Broadcast_Protocol_t;
+	XMI_DEFAULT_BROADCAST_PROTOCOL,
+        XMI_TREE_BROADCAST_PROTOCOL,            /**< Tree broadcast.  */
+        XMI_RECTANGLE_BROADCAST_PROTOCOL,       /**< rect broadcast. */
+        XMI_RECTANGLE_BROADCAST_PROTOCOL_DPUT,  /**< rect broadcast with direct put broadcasts. */
+        XMI_BINOMIAL_BROADCAST_PROTOCOL,        /**< binom broadcast. */
+        XMI_IPC_BROADCAST_PROTOCOL,             /**< IPC broadcast.   */
+        XMI_NUM_BROADCAST_PROTOCOLS
+    }XMI_Broadcast_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_ALLGATHER_PROTOCOL,
-        HL_TREE_ALLGATHER_PROTOCOL,            /**< Tree allgather.  */
-        HL_RECTANGLE_ALLGATHER_PROTOCOL,       /**< rect allgather. */
-        HL_RECTANGLE_ALLGATHER_PROTOCOL_DPUT,  /**< rect allgather with direct put allgathers. */
-        HL_BINOMIAL_ALLGATHER_PROTOCOL,        /**< binom allgather. */
-        HL_IPC_ALLGATHER_PROTOCOL,             /**< IPC allgather.   */
-        HL_NUM_ALLGATHER_PROTOCOLS
-    }HL_Allgather_Protocol_t;
+	XMI_DEFAULT_ALLGATHER_PROTOCOL,
+        XMI_TREE_ALLGATHER_PROTOCOL,            /**< Tree allgather.  */
+        XMI_RECTANGLE_ALLGATHER_PROTOCOL,       /**< rect allgather. */
+        XMI_RECTANGLE_ALLGATHER_PROTOCOL_DPUT,  /**< rect allgather with direct put allgathers. */
+        XMI_BINOMIAL_ALLGATHER_PROTOCOL,        /**< binom allgather. */
+        XMI_IPC_ALLGATHER_PROTOCOL,             /**< IPC allgather.   */
+        XMI_NUM_ALLGATHER_PROTOCOLS
+    }XMI_Allgather_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_ALLGATHERV_PROTOCOL,
-        HL_TREE_ALLGATHERV_PROTOCOL,            /**< Tree allgatherv.  */
-        HL_RECTANGLE_ALLGATHERV_PROTOCOL,       /**< rect allgatherv. */
-        HL_RECTANGLE_ALLGATHERV_PROTOCOL_DPUT,  /**< rect allgatherv with direct put allgathervs. */
-        HL_BINOMIAL_ALLGATHERV_PROTOCOL,        /**< binom allgatherv. */
-        HL_IPC_ALLGATHERV_PROTOCOL,             /**< IPC allgatherv.   */
-        HL_NUM_ALLGATHERV_PROTOCOLS
-    }HL_Allgatherv_Protocol_t;
+	XMI_DEFAULT_ALLGATHERV_PROTOCOL,
+        XMI_TREE_ALLGATHERV_PROTOCOL,            /**< Tree allgatherv.  */
+        XMI_RECTANGLE_ALLGATHERV_PROTOCOL,       /**< rect allgatherv. */
+        XMI_RECTANGLE_ALLGATHERV_PROTOCOL_DPUT,  /**< rect allgatherv with direct put allgathervs. */
+        XMI_BINOMIAL_ALLGATHERV_PROTOCOL,        /**< binom allgatherv. */
+        XMI_IPC_ALLGATHERV_PROTOCOL,             /**< IPC allgatherv.   */
+        XMI_NUM_ALLGATHERV_PROTOCOLS
+    }XMI_Allgatherv_Protocol_t;
 
 
     typedef enum
     {
-	HL_DEFAULT_SCATTER_PROTOCOL,
-        HL_TREE_SCATTER_PROTOCOL,            /**< Tree scatter.  */
-        HL_RECTANGLE_SCATTER_PROTOCOL,       /**< rect scatter. */
-        HL_RECTANGLE_SCATTER_PROTOCOL_DPUT,  /**< rect scatter with direct put scatters. */
-        HL_BINOMIAL_SCATTER_PROTOCOL,        /**< binom scatter. */
-        HL_IPC_SCATTER_PROTOCOL,             /**< IPC scatter.   */
-        HL_NUM_SCATTER_PROTOCOLS
-    }HL_Scatter_Protocol_t;
+	XMI_DEFAULT_SCATTER_PROTOCOL,
+        XMI_TREE_SCATTER_PROTOCOL,            /**< Tree scatter.  */
+        XMI_RECTANGLE_SCATTER_PROTOCOL,       /**< rect scatter. */
+        XMI_RECTANGLE_SCATTER_PROTOCOL_DPUT,  /**< rect scatter with direct put scatters. */
+        XMI_BINOMIAL_SCATTER_PROTOCOL,        /**< binom scatter. */
+        XMI_IPC_SCATTER_PROTOCOL,             /**< IPC scatter.   */
+        XMI_NUM_SCATTER_PROTOCOLS
+    }XMI_Scatter_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_SCATTERV_PROTOCOL,
-        HL_TREE_SCATTERV_PROTOCOL,            /**< Tree scatterv.  */
-        HL_RECTANGLE_SCATTERV_PROTOCOL,       /**< rect scatterv. */
-        HL_RECTANGLE_SCATTERV_PROTOCOL_DPUT,  /**< rect scatterv with direct put scattervs. */
-        HL_BINOMIAL_SCATTERV_PROTOCOL,        /**< binom scatterv. */
-        HL_IPC_SCATTERV_PROTOCOL,             /**< IPC scatterv.   */
-        HL_NUM_SCATTERV_PROTOCOLS
-    }HL_Scatterv_Protocol_t;
+	XMI_DEFAULT_SCATTERV_PROTOCOL,
+        XMI_TREE_SCATTERV_PROTOCOL,            /**< Tree scatterv.  */
+        XMI_RECTANGLE_SCATTERV_PROTOCOL,       /**< rect scatterv. */
+        XMI_RECTANGLE_SCATTERV_PROTOCOL_DPUT,  /**< rect scatterv with direct put scattervs. */
+        XMI_BINOMIAL_SCATTERV_PROTOCOL,        /**< binom scatterv. */
+        XMI_IPC_SCATTERV_PROTOCOL,             /**< IPC scatterv.   */
+        XMI_NUM_SCATTERV_PROTOCOLS
+    }XMI_Scatterv_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_ALLREDUCE_PROTOCOL,
-        HL_TREE_ALLREDUCE_PROTOCOL,                 /**< Tree allreduce. */
-        HL_BINOMIAL_ALLREDUCE_PROTOCOL,             /**< binomial allreduce. */
-        HL_RECTANGLE_ALLREDUCE_PROTOCOL,            /**< rectangle/binomial allreduce. */
-        HL_RECTANGLE_RING_ALLREDUCE_PROTOCOL,       /**< rectangle/ring allreduce. */
-        HL_TREE_PIPELINED_ALLREDUCE_PROTOCOL,       /**< Tree allreduce. */
-        HL_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL,       /**< binomial short allreduce. */
-        HL_TREE_DPUT_PIPELINED_ALLREDUCE_PROTOCOL,  /**< Tree allreduce. */
-        HL_ASYNC_BINOMIAL_ALLREDUCE_PROTOCOL,       /**< binomial allreduce. */
-        HL_ASYNC_RECTANGLE_ALLREDUCE_PROTOCOL,      /**< rectangle/binomial async allreduce. */
-        HL_ASYNC_RECTANGLE_RING_ALLREDUCE_PROTOCOL, /**< rectangle/ring async allreduce. */
-        HL_ASYNC_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL, /**< binomial short async allreduce. */
-        HL_ASYNC_SHORT_RECTANGLE_ALLREDUCE_PROTOCOL,/**< rectangle short async allreduce. */
-        HL_RRING_DPUT_ALLREDUCE_PROTOCOL_SINGLETH,  /**< rectangle allreduce with direct puts (needs 16B alignmened buffers) */
-        HL_IPC_ALLREDUCE_PROTOCOL,                  /**< IPC allreduce. */
-        HL_NUM_ALLREDUCE_PROTOCOLS
-    }HL_Allreduce_Protocol_t;
+	XMI_DEFAULT_ALLREDUCE_PROTOCOL,
+        XMI_TREE_ALLREDUCE_PROTOCOL,                 /**< Tree allreduce. */
+        XMI_BINOMIAL_ALLREDUCE_PROTOCOL,             /**< binomial allreduce. */
+        XMI_RECTANGLE_ALLREDUCE_PROTOCOL,            /**< rectangle/binomial allreduce. */
+        XMI_RECTANGLE_RING_ALLREDUCE_PROTOCOL,       /**< rectangle/ring allreduce. */
+        XMI_TREE_PIPELINED_ALLREDUCE_PROTOCOL,       /**< Tree allreduce. */
+        XMI_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL,       /**< binomial short allreduce. */
+        XMI_TREE_DPUT_PIPELINED_ALLREDUCE_PROTOCOL,  /**< Tree allreduce. */
+        XMI_ASYNC_BINOMIAL_ALLREDUCE_PROTOCOL,       /**< binomial allreduce. */
+        XMI_ASYNC_RECTANGLE_ALLREDUCE_PROTOCOL,      /**< rectangle/binomial async allreduce. */
+        XMI_ASYNC_RECTANGLE_RING_ALLREDUCE_PROTOCOL, /**< rectangle/ring async allreduce. */
+        XMI_ASYNC_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL, /**< binomial short async allreduce. */
+        XMI_ASYNC_SHORT_RECTANGLE_ALLREDUCE_PROTOCOL,/**< rectangle short async allreduce. */
+        XMI_RRING_DPUT_ALLREDUCE_PROTOCOL_SINGLETH,  /**< rectangle allreduce with direct puts (needs 16B alignmened buffers) */
+        XMI_IPC_ALLREDUCE_PROTOCOL,                  /**< IPC allreduce. */
+        XMI_NUM_ALLREDUCE_PROTOCOLS
+    }XMI_Allreduce_Protocol_t;
 
     typedef enum
     {
-        HL_TREE_REDUCE_PROTOCOL,           /**< Tree reduce. */
-        HL_BINOMIAL_REDUCE_PROTOCOL,       /**< binomial reduce. */
-        HL_RECTANGLE_REDUCE_PROTOCOL,      /**< rectangle/binomial reduce. */
-        HL_RECTANGLE_RING_REDUCE_PROTOCOL, /**< rectangle/ring reduce. */
-        HL_SHORT_BINOMIAL_REDUCE_PROTOCOL, /**< binomial reduce. */
-        HL_NUM_REDUCE_PROTOCOLS
-    }HL_Reduce_Protocol_t;
+        XMI_TREE_REDUCE_PROTOCOL,           /**< Tree reduce. */
+        XMI_BINOMIAL_REDUCE_PROTOCOL,       /**< binomial reduce. */
+        XMI_RECTANGLE_REDUCE_PROTOCOL,      /**< rectangle/binomial reduce. */
+        XMI_RECTANGLE_RING_REDUCE_PROTOCOL, /**< rectangle/ring reduce. */
+        XMI_SHORT_BINOMIAL_REDUCE_PROTOCOL, /**< binomial reduce. */
+        XMI_NUM_REDUCE_PROTOCOLS
+    }XMI_Reduce_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_ALLTOALL_PROTOCOL,
-        HL_ALLTOALL_PROTOCOL,       /**< Alltoall. */
-        HL_IPC_ALLTOALL_PROTOCOL,   /**< IPC Alltoall. */
-        HL_NUM_ALLTOALL_PROTOCOLS
-    }HL_Alltoall_Protocol_t;
+	XMI_DEFAULT_ALLTOALL_PROTOCOL,
+        XMI_ALLTOALL_PROTOCOL,       /**< Alltoall. */
+        XMI_IPC_ALLTOALL_PROTOCOL,   /**< IPC Alltoall. */
+        XMI_NUM_ALLTOALL_PROTOCOLS
+    }XMI_Alltoall_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_ALLTOALLV_PROTOCOL,
-        HL_ALLTOALLV_PROTOCOL,       /**< Alltoallv. */
-        HL_IPC_ALLTOALLV_PROTOCOL,   /**< IPC Alltoallv. */
-        HL_NUM_ALLTOALLV_PROTOCOLS
-    }HL_Alltoallv_Protocol_t;
+	XMI_DEFAULT_ALLTOALLV_PROTOCOL,
+        XMI_ALLTOALLV_PROTOCOL,       /**< Alltoallv. */
+        XMI_IPC_ALLTOALLV_PROTOCOL,   /**< IPC Alltoallv. */
+        XMI_NUM_ALLTOALLV_PROTOCOLS
+    }XMI_Alltoallv_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_AMBROADCAST_PROTOCOL
-    }HL_AMBroadcast_Protocol_t;
+	XMI_DEFAULT_AMBROADCAST_PROTOCOL
+    }XMI_AMBroadcast_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_AMSCATTER_PROTOCOL
-    }HL_AMScatter_Protocol_t;
+	XMI_DEFAULT_AMSCATTER_PROTOCOL
+    }XMI_AMScatter_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_AMGATHER_PROTOCOL
-    }HL_AMGather_Protocol_t;
+	XMI_DEFAULT_AMGATHER_PROTOCOL
+    }XMI_AMGather_Protocol_t;
 
     typedef enum
     {
-	HL_DEFAULT_AMREDUCE_PROTOCOL
-    }HL_AMReduce_Protocol_t;
+	XMI_DEFAULT_AMREDUCE_PROTOCOL
+    }XMI_AMReduce_Protocol_t;
 
 
     typedef enum
 	{
-	    HL_CFG_BROADCAST = 0,
-	    HL_CFG_ALLREDUCE,
-	    HL_CFG_REDUCE,
-	    HL_CFG_ALLGATHER,
-	    HL_CFG_ALLGATHERV,
-	    HL_CFG_SCATTER,
-	    HL_CFG_SCATTERV,
-	    HL_CFG_BARRIER,
-	    HL_CFG_ALLTOALL,
-	    HL_CFG_ALLTOALLV,
-	    HL_CFG_AMBROADCAST,
-	    HL_CFG_AMSCATTER,
-	    HL_CFG_AMGATHER,
-	    HL_CFG_AMREDUCE,
-	    HL_CFG_COUNT
+	    XMI_CFG_BROADCAST = 0,
+	    XMI_CFG_ALLREDUCE,
+	    XMI_CFG_REDUCE,
+	    XMI_CFG_ALLGATHER,
+	    XMI_CFG_ALLGATHERV,
+	    XMI_CFG_SCATTER,
+	    XMI_CFG_SCATTERV,
+	    XMI_CFG_BARRIER,
+	    XMI_CFG_ALLTOALL,
+	    XMI_CFG_ALLTOALLV,
+	    XMI_CFG_AMBROADCAST,
+	    XMI_CFG_AMSCATTER,
+	    XMI_CFG_AMGATHER,
+	    XMI_CFG_AMREDUCE,
+	    XMI_CFG_COUNT
 	}hl_config_t;
 
     /**
@@ -181,19 +181,19 @@ extern "C"
      * The external API does not reveal the internal structure of the object.
      *
      * \internal Implementations should verify that geometry objects
-     *           need less space than \c sizeof(HL_Geometry_t).
+     *           need less space than \c sizeof(XMI_Geometry_t).
      *
      * \todo     Need to adjust size to optimal level (currently 2048 bytes).
      */
-    typedef CMQuad  HL_Geometry_t [512];
+    typedef CMQuad  XMI_Geometry_t [512];
     typedef struct
     {
 	size_t lo;
 	size_t hi;
-    }HL_Geometry_range_t;
+    }XMI_Geometry_range_t;
 
-    extern HL_Geometry_t  HL_World_Geometry;
-    extern unsigned       HL_World_Geometry_id;
+    extern XMI_Geometry_t  XMI_World_Geometry;
+    extern unsigned       XMI_World_Geometry_id;
 
     /* *********************************************************************************** */
     /* **************    "Special Callback Types Objects  ******************************** */
@@ -203,8 +203,8 @@ extern "C"
      *  structure. The runtime has to be able to freely translate
      *  between geometry id's and geometry structures.
      */
-    typedef HL_Geometry_t * (*HL_mapIdToGeometry) (int comm);
-    typedef CMQuad          HL_AMHeader_t[8];
+    typedef XMI_Geometry_t * (*XMI_mapIdToGeometry) (int comm);
+    typedef CMQuad          XMI_AMHeader_t[8];
 
 
     /**
@@ -212,31 +212,31 @@ extern "C"
      *
      * \todo doxygen
      */
-    typedef void * (*HL_RecvAMBroadcast) (unsigned           root,
+    typedef void * (*XMI_RecvAMBroadcast) (unsigned           root,
 					  unsigned           comm,
 					  const unsigned     sndlen,
 					  unsigned         * rcvlen,
 					  char            ** rcvbuf,
-					  CM_Callback_t    * const cb_info);
+					  XMI_Callback_t    * const cb_info);
 
-    typedef void * (*HL_RecvAMScatter) (unsigned           root,
+    typedef void * (*XMI_RecvAMScatter) (unsigned           root,
 					unsigned           comm,
 					const unsigned     sndlen,
 					unsigned         * rcvlen,
 					char            ** rcvbuf,
-					CM_Callback_t    * const cb_info);
-    typedef void * (*HL_RecvAMGather) (unsigned           root,
+					XMI_Callback_t    * const cb_info);
+    typedef void * (*XMI_RecvAMGather) (unsigned           root,
 				       unsigned           comm,
 				       const unsigned     sndlen,
 				       unsigned         * rcvlen,
 				       char            ** rcvbuf,
-				       CM_Callback_t    * const cb_info);
-    typedef void * (*HL_RecvAMReduce) (unsigned           root,
+				       XMI_Callback_t    * const cb_info);
+    typedef void * (*XMI_RecvAMReduce) (unsigned           root,
 				       unsigned           comm,
 				       const unsigned     sndlen,
 				       unsigned         * rcvlen,
 				       char            ** rcvbuf,
-				       CM_Callback_t    * const cb_info);
+				       XMI_Callback_t    * const cb_info);
 
     /* ************************************************************************* */
     /* **************    Configuration Objects  ******************************** */
@@ -254,127 +254,127 @@ extern "C"
      *
      * \retval     0            Success
      *
-     * \see HL_Broadcast
+     * \see XMI_Broadcast
      */
     /*  Clear up mapId to geometry!!!! */
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_Broadcast_Protocol_t protocol;          /**< The broadcast protocol implementation to register. */
-    }HL_Broadcast_Configuration_t;
+        XMI_Broadcast_Protocol_t protocol;          /**< The broadcast protocol implementation to register. */
+    }XMI_Broadcast_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_Allgather_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
-    }HL_Allgather_Configuration_t;
+        XMI_Allgather_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
+    }XMI_Allgather_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_Allgatherv_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
-    }HL_Allgatherv_Configuration_t;
+        XMI_Allgatherv_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
+    }XMI_Allgatherv_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_Scatter_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
-    }HL_Scatter_Configuration_t;
+        XMI_Scatter_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
+    }XMI_Scatter_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_Scatterv_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
-    }HL_Scatterv_Configuration_t;
+        XMI_Scatterv_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
+    }XMI_Scatterv_Configuration_t;
 
     typedef struct
     {
         hl_config_t           cfg_type;
-        HL_Allreduce_Protocol_t protocol;       /**< The allreduce protocol implementation to register. */
+        XMI_Allreduce_Protocol_t protocol;       /**< The allreduce protocol implementation to register. */
         unsigned              reuse_storage:1;/**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
         unsigned              reserved:31;    /**< Currently unused */
-    }HL_Allreduce_Configuration_t;
+    }XMI_Allreduce_Configuration_t;
 
     typedef struct
     {
         hl_config_t        cfg_type;
-        HL_Reduce_Protocol_t protocol;       /**< The reduce protocol implementation to register. */
+        XMI_Reduce_Protocol_t protocol;       /**< The reduce protocol implementation to register. */
         unsigned           reuse_storage:1;/**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
         unsigned           reserved:31;    /**< Reserved for future use. */
-    }HL_Reduce_Configuration_t;
+    }XMI_Reduce_Configuration_t;
 
     typedef struct
     {
         hl_config_t           cfg_type;
-        HL_Barrier_Protocol_t protocol;    /**< The barrier protocol implementation to register. */
-    }HL_Barrier_Configuration_t;
+        XMI_Barrier_Protocol_t protocol;    /**< The barrier protocol implementation to register. */
+    }XMI_Barrier_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_Alltoall_Protocol_t  protocol;    /**< The alltoall protocol implementation to register. */
-    }HL_Alltoall_Configuration_t;
+        XMI_Alltoall_Protocol_t  protocol;    /**< The alltoall protocol implementation to register. */
+    }XMI_Alltoall_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_Alltoallv_Protocol_t protocol;    /**< The alltoallv protocol implementation to register. */
-    }HL_Alltoallv_Configuration_t;
+        XMI_Alltoallv_Protocol_t protocol;    /**< The alltoallv protocol implementation to register. */
+    }XMI_Alltoallv_Configuration_t;
 
     typedef struct
     {
         hl_config_t               cfg_type;
-        HL_RecvAMBroadcast        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
-        HL_AMBroadcast_Protocol_t protocol;     /**< The AMBroad protocol implementation to register. */
-    }HL_AMBroadcast_Configuration_t;
+        XMI_RecvAMBroadcast        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        XMI_AMBroadcast_Protocol_t protocol;     /**< The AMBroad protocol implementation to register. */
+    }XMI_AMBroadcast_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_RecvAMScatter        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
-        HL_AMScatter_Protocol_t protocol;     /**< The AMScatter protocol implementation to register. */
-    }HL_AMScatter_Configuration_t;
+        XMI_RecvAMScatter        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        XMI_AMScatter_Protocol_t protocol;     /**< The AMScatter protocol implementation to register. */
+    }XMI_AMScatter_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_RecvAMGather         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
-        HL_AMGather_Protocol_t  protocol;     /**< The AMGather protocol implementation to register. */
-    }HL_AMGather_Configuration_t;
+        XMI_RecvAMGather         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        XMI_AMGather_Protocol_t  protocol;     /**< The AMGather protocol implementation to register. */
+    }XMI_AMGather_Configuration_t;
 
     typedef struct
     {
         hl_config_t             cfg_type;
-        HL_RecvAMReduce         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
-        HL_AMReduce_Protocol_t  protocol;     /**< The AMReduce protocol implementation to register. */
-    }HL_AMReduce_Configuration_t;
+        XMI_RecvAMReduce         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
+        XMI_AMReduce_Protocol_t  protocol;     /**< The AMReduce protocol implementation to register. */
+    }XMI_AMReduce_Configuration_t;
 
     typedef union
     {
         hl_config_t                       cfg_type;
-        HL_Reduce_Configuration_t         cfg_reduce;
-        HL_Allreduce_Configuration_t      cfg_allreduce;
-        HL_Allgather_Configuration_t      cfg_allgather;
-        HL_Allgatherv_Configuration_t     cfg_allgatherv;
-        HL_Scatter_Configuration_t        cfg_scatter;
-        HL_Scatterv_Configuration_t       cfg_scatterv;
-        HL_Broadcast_Configuration_t      cfg_broadcast;
-        HL_Alltoall_Configuration_t       cfg_alltoall;
-        HL_Alltoallv_Configuration_t      cfg_alltoallv;
-        HL_AMBroadcast_Configuration_t    cfg_ambroadcast;
-        HL_AMScatter_Configuration_t      cfg_amscatter;
-        HL_AMGather_Configuration_t       cfg_amgather;
-        HL_AMReduce_Configuration_t       cfg_amreduce;
-        HL_Barrier_Configuration_t        cfg_barrier;
-    }   HL_CollectiveConfiguration_t;
+        XMI_Reduce_Configuration_t         cfg_reduce;
+        XMI_Allreduce_Configuration_t      cfg_allreduce;
+        XMI_Allgather_Configuration_t      cfg_allgather;
+        XMI_Allgatherv_Configuration_t     cfg_allgatherv;
+        XMI_Scatter_Configuration_t        cfg_scatter;
+        XMI_Scatterv_Configuration_t       cfg_scatterv;
+        XMI_Broadcast_Configuration_t      cfg_broadcast;
+        XMI_Alltoall_Configuration_t       cfg_alltoall;
+        XMI_Alltoallv_Configuration_t      cfg_alltoallv;
+        XMI_AMBroadcast_Configuration_t    cfg_ambroadcast;
+        XMI_AMScatter_Configuration_t      cfg_amscatter;
+        XMI_AMGather_Configuration_t       cfg_amgather;
+        XMI_AMReduce_Configuration_t       cfg_amreduce;
+        XMI_Barrier_Configuration_t        cfg_barrier;
+    }   XMI_CollectiveConfiguration_t;
 
 
-    int HL_Collectives_initialize(int *argc, char***argv, HL_mapIdToGeometry cb_map);
-    int HL_Collectives_finalize();
+    int XMI_Collectives_initialize(int *argc, char***argv, XMI_mapIdToGeometry cb_map);
+    int XMI_Collectives_finalize();
     /* Rename  to CollectiveRegistration_T , doxygen with Storage variable storage, others*/
-    int HL_register(CM_CollectiveProtocol_t      *registration,
-                    HL_CollectiveConfiguration_t *HL_CollectiveConfiguration_t,
+    int XMI_register(XMI_CollectiveProtocol_t      *registration,
+                    XMI_CollectiveConfiguration_t *XMI_CollectiveConfiguration_t,
 		    int                           key);
 
     /* ************************************************************************* */
@@ -382,21 +382,21 @@ extern "C"
     /* ************************************************************************* */
     typedef enum
 	{
-            HL_XFER_BROADCAST = 0,
-            HL_XFER_ALLREDUCE,
-            HL_XFER_REDUCE,
-            HL_XFER_ALLGATHER,
-            HL_XFER_ALLGATHERV,
-            HL_XFER_SCATTER,
-            HL_XFER_SCATTERV,
-            HL_XFER_BARRIER,
-            HL_XFER_ALLTOALL,
-            HL_XFER_ALLTOALLV,
-            HL_XFER_AMBROADCAST,
-            HL_XFER_AMSCATTER,
-            HL_XFER_AMGATHER,
-            HL_XFER_AMREDUCE,
-            HL_XFER_COUNT
+            XMI_XFER_BROADCAST = 0,
+            XMI_XFER_ALLREDUCE,
+            XMI_XFER_REDUCE,
+            XMI_XFER_ALLGATHER,
+            XMI_XFER_ALLGATHERV,
+            XMI_XFER_SCATTER,
+            XMI_XFER_SCATTERV,
+            XMI_XFER_BARRIER,
+            XMI_XFER_ALLTOALL,
+            XMI_XFER_ALLTOALLV,
+            XMI_XFER_AMBROADCAST,
+            XMI_XFER_AMSCATTER,
+            XMI_XFER_AMGATHER,
+            XMI_XFER_AMREDUCE,
+            XMI_XFER_COUNT
         }hl_xfer_type_t;
 
     /* ************************************************************************* */
@@ -413,9 +413,9 @@ extern "C"
      *                             duration of the geometry's existence
      * \param[in]  slice_count     Number of nodes participating in the geometry
      */
-    int HL_Geometry_initialize (HL_Geometry_t            * geometry,
+    int XMI_Geometry_initialize (XMI_Geometry_t            * geometry,
                                 unsigned                   id,
-                                HL_Geometry_range_t      * rank_slices,
+                                XMI_Geometry_range_t      * rank_slices,
                                 unsigned                   slice_count);
 
     /**
@@ -426,20 +426,20 @@ extern "C"
      *                           pointers will be set to NULL for invalid protocols on
      *                           this geometry.
      * \param[in/out] num        number of protocols in the list in/requested, out/actual
-     * \retval        CM_SUCCESS The protocol will run on the current geometry
+     * \retval        XMI_SUCCESS The protocol will run on the current geometry
      * \retval        ?????      The protocol does not support the current geometry
      */
-    int HL_Geometry_algorithm (HL_Geometry_t            *geometry,
-			       CM_CollectiveProtocol_t **protocols,
+    int XMI_Geometry_algorithm (XMI_Geometry_t            *geometry,
+			       XMI_CollectiveProtocol_t **protocols,
 			       int                      *num);
 
     /**
      * \brief Free any memory allocated inside of a geometry. Mostly
      * the alltoall permutation array right now.
      * \param[in] geometry The geometry object to free
-     * \retval CM_SUCCESS Memory free didn't fail
+     * \retval XMI_SUCCESS Memory free didn't fail
      */
-    int HL_Geometry_finalize(HL_Geometry_t *geometry);
+    int XMI_Geometry_finalize(XMI_Geometry_t *geometry);
 
     /* *********************************************************************************** */
     /* **************    "Transfer Routine and Objects    ******************************** */
@@ -474,10 +474,10 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
         char                     * sndbuf;
         unsigned                 * sndlens;
         unsigned                 * sdispls;
@@ -518,10 +518,10 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
         char                     * sndbuf;
         unsigned                 * sndlens;
         unsigned                 * sdispls;
@@ -560,16 +560,16 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t            xfer_type;
-        CM_CollectiveProtocol_t * registration;
-        CM_CollectiveRequest_t  * request;
-        CM_Callback_t             cb_done;
-        HL_Geometry_t           * geometry;
+        XMI_CollectiveProtocol_t * registration;
+        XMI_CollectiveRequest_t  * request;
+        XMI_Callback_t             cb_done;
+        XMI_Geometry_t           * geometry;
         int                       root;
         char                    * sbuffer;
         char                    * rbuffer;
         unsigned                  count;
-        CM_Dt                     dt;
-        CM_Op                     op;
+        XMI_Dt                     dt;
+        XMI_Op                     op;
     }hl_reduce_t;
 
     /**
@@ -597,10 +597,10 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
         unsigned                   root;
         char                     * src;
         char                     * dst;
@@ -631,10 +631,10 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
         char                     * src;
         char                     * dst;
         size_t                     bytes;
@@ -664,10 +664,10 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
         char                     * src;
         char                     * dst;
         size_t                   * lengths;
@@ -697,10 +697,10 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
         unsigned                   root;
         char                     * src;
         char                     * dst;
@@ -731,10 +731,10 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
         unsigned                   root;
         char                     * src;
         char                     * dst;
@@ -768,15 +768,15 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t            xfer_type;
-        CM_CollectiveProtocol_t * registration;
-        CM_CollectiveRequest_t  * request;
-        CM_Callback_t             cb_done;
-        HL_Geometry_t           * geometry;
+        XMI_CollectiveProtocol_t * registration;
+        XMI_CollectiveRequest_t  * request;
+        XMI_Callback_t             cb_done;
+        XMI_Geometry_t           * geometry;
         char                    * src;
         char                    * dst;
         unsigned                  count;
-        CM_Dt                     dt;
-        CM_Op                     op;
+        XMI_Dt                     dt;
+        XMI_Op                     op;
     }hl_allreduce_t;
 
 
@@ -788,17 +788,17 @@ extern "C"
      * \param[in]  cb_done      Callback to invoke when message is complete.
      * \retval  0            Success
      *
-     * \see HL_Barrier_register
+     * \see XMI_Barrier_register
      *
      * \todo doxygen
      */
     typedef struct
     {
         hl_xfer_type_t            xfer_type;
-        CM_CollectiveProtocol_t * registration;
-        CM_CollectiveRequest_t  * request;
-        CM_Callback_t             cb_done;
-        HL_Geometry_t           * geometry;
+        XMI_CollectiveProtocol_t * registration;
+        XMI_CollectiveRequest_t  * request;
+        XMI_Callback_t             cb_done;
+        XMI_Geometry_t           * geometry;
     }hl_barrier_t;
 
     /**
@@ -833,11 +833,11 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
-	HL_AMHeader_t            * header;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
+	XMI_AMHeader_t            * header;
         char                     * src;
         unsigned                   bytes;
     }hl_ambroadcast_t;
@@ -869,11 +869,11 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
-	HL_AMHeader_t            * headers;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
+	XMI_AMHeader_t            * headers;
         char                     * src;
 	size_t                     srclengths;
     }hl_amscatter_t;
@@ -909,11 +909,11 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
-	HL_AMHeader_t            * headers;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
+	XMI_AMHeader_t            * headers;
         char                     * src;
 	size_t                     srclengths;
     }hl_amgather_t;
@@ -950,15 +950,15 @@ extern "C"
     typedef struct
     {
         hl_xfer_type_t             xfer_type;
-        CM_CollectiveProtocol_t  * registration;
-        CM_CollectiveRequest_t   * request;
-        CM_Callback_t              cb_done;
-        HL_Geometry_t            * geometry;
-	HL_AMHeader_t            * headers;
+        XMI_CollectiveProtocol_t  * registration;
+        XMI_CollectiveRequest_t   * request;
+        XMI_Callback_t              cb_done;
+        XMI_Geometry_t            * geometry;
+	XMI_AMHeader_t            * headers;
         char                     * src;
 	unsigned                   count;
-	CM_Dt                      dt;
-        CM_Op                      op;
+	XMI_Dt                      dt;
+        XMI_Op                      op;
     }hl_amreduce_t;
 
 
@@ -981,10 +981,10 @@ extern "C"
 	hl_barrier_t          xfer_barrier;
     }hl_xfer_t;
 
-    int HL_Xfer (void *context, hl_xfer_t *cmd);
-    int HL_Poll();
-    int HL_Rank();
-    int HL_Size();
+    int XMI_Xfer (void *context, hl_xfer_t *cmd);
+    int XMI_Poll();
+    int XMI_Rank();
+    int XMI_Size();
 
 #ifdef __cplusplus
 };

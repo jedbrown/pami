@@ -96,7 +96,7 @@ public:
 	/// \param[in] dgspcount      Number of repetitions of buffer units
 	/// \param[in] dgspinit       Number of units initially in buffer
 	///
-	inline void configure(void *sysdep, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit);
+	inline void configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit);
 
 	///
 	/// \brief Clone constructor.
@@ -142,7 +142,7 @@ public:
 	/// \param[out] export        Opaque memory to export into
 	/// \return   success of the export operation
 	///
-	inline CM_Result exp(LL_PipeWorkQueue_ext *exp);
+	inline XMI_Result exp(XMI_PipeWorkQueue_ext *exp);
 	
 	///
 	/// \brief Import
@@ -162,7 +162,7 @@ public:
 	/// \param[out] wq           Opaque memory for new PipeWorkQueue
 	/// \return   success of the import operation
 	///
-	inline CM_Result import(LL_PipeWorkQueue_ext *import);
+	inline XMI_Result import(XMI_PipeWorkQueue_ext *import);
 
 	/// \brief register a wakeup for the consumer side of the PipeWorkQueue
 	///
@@ -264,11 +264,11 @@ public:
 inline void LL::PipeWorkQueue::configure(void *sysdep, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, bufsize); }
 inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize); }
 inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize, size_t bufinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize, bufinit); }
-inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, dgsp, dgspcount, dgspinit); }
+inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, dgsp, dgspcount, dgspinit); }
 inline LL::PipeWorkQueue::PipeWorkQueue(LL::PipeWorkQueue &obj) {_PipeWorkQueueImpl::_PipeWorkQueueImpl((_PipeWorkQueueImpl&)obj); }
 inline void LL::PipeWorkQueue::reset() { _PipeWorkQueueImpl::reset(); }
-inline CM_Result LL::PipeWorkQueue::exp(LL_PipeWorkQueue_ext *e) { return _PipeWorkQueueImpl::exp(e); }
-inline CM_Result LL::PipeWorkQueue::import(LL_PipeWorkQueue_ext *i) { return _PipeWorkQueueImpl::import(i); }
+inline XMI_Result LL::PipeWorkQueue::exp(XMI_PipeWorkQueue_ext *e) { return _PipeWorkQueueImpl::exp(e); }
+inline XMI_Result LL::PipeWorkQueue::import(XMI_PipeWorkQueue_ext *i) { return _PipeWorkQueueImpl::import(i); }
 inline void LL::PipeWorkQueue::dump(const char *prefix) { _PipeWorkQueueImpl::dump(prefix); }
 inline void LL::PipeWorkQueue::setConsumerWakeup(void *vec) { _PipeWorkQueueImpl::setConsumerWakeup(vec); }
 inline void LL::PipeWorkQueue::setProducerWakeup(void *vec) { _PipeWorkQueueImpl::setProducerWakeup(vec); }

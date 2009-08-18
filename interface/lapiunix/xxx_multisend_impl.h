@@ -19,7 +19,7 @@ namespace CCMI
     namespace Generic
     {
 
-      typedef CM_Request_t * (*msend_recv) (const CMQuad  * info,
+      typedef XMI_Request_t * (*msend_recv) (const CMQuad  * info,
                                               unsigned          count,
                                               unsigned          peer,
                                               unsigned          sndlen,
@@ -28,7 +28,7 @@ namespace CCMI
                                               unsigned        * rcvlen,
                                               char           ** rcvbuf,
                                               unsigned        * pipewidth,
-                                              CM_Callback_t * cb_done);
+                                              XMI_Callback_t * cb_done);
 
 
       class  MulticastImpl : public CCMI::MultiSend::OldMulticastInterface, public CCMI::Adaptor::Message
@@ -76,8 +76,8 @@ namespace CCMI
         /// \param nranks  : Number of destinations
         /// \param hints   : deposit bit bcast vs pt-to-pt 
         ///        
-        unsigned  send  (CM_Request_t         * request,
-                         const CM_Callback_t  * cb_done,
+        unsigned  send  (XMI_Request_t         * request,
+                         const XMI_Callback_t  * cb_done,
                          CCMI_Consistency         consistency,
                          const CMQuad         * info, 
                          unsigned                 connection_id,
@@ -86,8 +86,8 @@ namespace CCMI
                          unsigned               * hints,
                          unsigned               * ranks, 
                          unsigned                 nranks,
-                         CM_Op                  op    = CM_UNDEFINED_OP,
-                         CM_Dt                  dtype = CM_UNDEFINED_DT )
+                         XMI_Op                  op    = XMI_UNDEFINED_OP,
+                         XMI_Dt                  dtype = XMI_UNDEFINED_DT )
 
         {     
           MsgHeader *hdr = (MsgHeader *) 
@@ -134,15 +134,15 @@ namespace CCMI
                                       mcastinfo->dt);    
         }
 
-        virtual unsigned postRecv (CM_Request_t         * request,
-                                   const CM_Callback_t  * cb_done,
+        virtual unsigned postRecv (XMI_Request_t         * request,
+                                   const XMI_Callback_t  * cb_done,
                                    unsigned                 conn_id,
                                    char                   * buf,
                                    unsigned                 size,
                                    unsigned                 pwidth,
                                    unsigned                 hint   = CCMI_UNDEFINED_SUBTASK,
-                                   CM_Op                  op     = CM_UNDEFINED_OP,
-                                   CM_Dt                  dtype  = CM_UNDEFINED_DT ) { assert (0);}
+                                   XMI_Op                  op     = XMI_UNDEFINED_OP,
+                                   XMI_Dt                  dtype  = XMI_UNDEFINED_DT ) { assert (0);}
 
         virtual unsigned postRecv (MultiSend::CCMI_OldMulticastRecv_t  *mrecv) { assert (0);}
 
@@ -170,7 +170,7 @@ namespace CCMI
             unsigned         rcvlen;
             char           * rcvbuf;
             unsigned         pwidth;
-            CM_Callback_t  cb_done;
+            XMI_Callback_t  cb_done;
 
             _cb_async_head (&msg->_info, 1, sts.MPI_SOURCE, msg->_size, msg->_conn,
                             _async_arg, &rcvlen, &rcvbuf, &pwidth, &cb_done);

@@ -23,10 +23,10 @@ namespace CCMI
     class A2AProtocol
     {
     protected:
-      CM_Request_t    _sreq    __attribute__((__aligned__(16)));
-      CM_Request_t    _rreq    __attribute__((__aligned__(16)));
-      CM_Callback_t   _my_cb_done;
-      CM_Callback_t   _app_cb_done;
+      XMI_Request_t    _sreq    __attribute__((__aligned__(16)));
+      XMI_Request_t    _rreq    __attribute__((__aligned__(16)));
+      XMI_Callback_t   _my_cb_done;
+      XMI_Callback_t   _app_cb_done;
 
       unsigned           _donecount;
 
@@ -40,7 +40,7 @@ namespace CCMI
     public:
       A2AProtocol (CCMI::CollectiveMapping                        *mapping,
                    CCMI::MultiSend::ManytomanyInterface *minterface,
-                   CM_Callback_t    cb_done,
+                   XMI_Callback_t    cb_done,
                    CCMI_Consistency   consistency,
                    Geometry         * geometry,
                    const char       * sndbuf,
@@ -101,7 +101,7 @@ namespace CCMI
                            _geometry->nranks());
       }
 
-      static void done (void *arg, CM_Error_t *err)
+      static void done (void *arg, XMI_Error_t *err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->_donecount ++;
@@ -134,8 +134,8 @@ namespace CCMI
         return(geometry->isTorus());      
       }
 
-      virtual unsigned generate (CM_CollectiveRequest_t   * request,
-                                 CM_Callback_t    cb_done,
+      virtual unsigned generate (XMI_CollectiveRequest_t   * request,
+                                 XMI_Callback_t    cb_done,
                                  CCMI_Consistency   consistency,
                                  Geometry         * geometry,
                                  const char       * sndbuf,
@@ -165,7 +165,7 @@ namespace CCMI
         return 0;
       }
 
-      static void cb_barrier_done (void *arg, CM_Error_t *err)
+      static void cb_barrier_done (void *arg, XMI_Error_t *err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->start();

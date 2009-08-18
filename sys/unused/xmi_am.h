@@ -83,7 +83,7 @@ typedef struct {
   size_t                 offset;   /**< Starting offset */
   xmi_data_type_t        datatype; /**< Datatype TODO */
 #else
-  LL_PipeWorkQueue_t    * wq;      /**< \see interface/ll_pipeworkqueue.h */
+  XMI_PipeWorkQueue_t    * wq;      /**< \see interface/ll_pipeworkqueue.h */
 #endif
 } xmi_send_typed_t;
 

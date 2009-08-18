@@ -22,7 +22,7 @@ namespace CCMI
 	int         _conn;
 	MPI_Request*_req;
 	int         _num;
-	CM_Callback_t _cb_done;
+	XMI_Callback_t _cb_done;
 	inline void *buffer() { return ((char *)this + sizeof (MsgHeader)); } 
 	inline int  totalsize () { return _size + sizeof (MsgHeader); } 
       };      	
@@ -30,7 +30,7 @@ namespace CCMI
 
       struct M2MSendReq {
 	unsigned          _conn;
-	CM_Callback_t   _cb_done;
+	XMI_Callback_t   _cb_done;
      	int               _num;
 	MPI_Request     * _reqs;
         int               _totalsize;
@@ -48,7 +48,7 @@ namespace CCMI
 
       struct M2MRecvReq {
 	unsigned          _conn;
-	CM_Callback_t   _cb_done;
+	XMI_Callback_t   _cb_done;
      	int               _num;
 	char            * _buf;
         unsigned        * _sizes;

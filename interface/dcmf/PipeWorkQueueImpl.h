@@ -100,9 +100,9 @@ public:
 		_isize = bufinit;
 		size_t size = sizeof(workqueue_t) + _qsize;
 		ALLOC_SHMEM(_sharedqueue, 16, size);
-		CM_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
+		XMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
 		_buffer = &_sharedqueue->buffer[0];
-		CM_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
+		XMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		_pmask = 0; // nil mask
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
@@ -125,9 +125,9 @@ public:
 		_qsize = bufsize;
 		size_t size = sizeof(workqueue_t) + _qsize;
 		ALLOC_SHMEM(_sharedqueue, 16, size);
-		CM_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
+		XMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
 		_buffer = &_sharedqueue->buffer[0];
-		CM_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
+		XMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 		_pmask = _qsize - 1;
 	}
 
@@ -149,7 +149,7 @@ public:
 		_qsize = bufsize;
 		_buffer = buffer;
 		_sharedqueue = &this->__sq;
-		CM_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
+		XMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 		_pmask = _qsize - 1;
 	}
 
@@ -200,8 +200,8 @@ public:
 	/// \param[in] dgspcount      Number of repetitions of buffer units
 	/// \param[in] dgspinit       Number of units initially in buffer
 	///
-	inline void configure(void *sysdep, char *buffer, CM_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) {
-		CM_abortf("DGSP PipeWorkQueue not yet supported");
+	inline void configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) {
+		XMI_abortf("DGSP PipeWorkQueue not yet supported");
 	}
 
 	///
@@ -290,15 +290,15 @@ public:
 	/// \param[out] export        Opaque memory to export into
 	/// \return   success of the export operation
 	/// 
-	inline CM_Result exp(LL_PipeWorkQueue_ext *exp) {
+	inline XMI_Result exp(XMI_PipeWorkQueue_ext *exp) {
 		unlikely_if (_pmask) {
-			return CM_ERROR;
+			return XMI_ERROR;
 		}
 		export_t *e = (export_t *)exp;
 		e->bufPaddr = vtop(_buffer);
 		e->hdrPaddr = vtop(_sharedqueue);
 		e->pmask = _pmask;
-		return CM_SUCCESS;
+		return XMI_SUCCESS;
 	}
 	
 	/// 
@@ -319,16 +319,16 @@ public:
 	/// \param[out] wq           Opaque memory for new PipeWorkQueue
 	/// \return   success of the import operation 
 	///
-	inline CM_Result import(LL_PipeWorkQueue_ext *import) {
+	inline XMI_Result import(XMI_PipeWorkQueue_ext *import) {
 		export_t *i = (export_t *)import;
 		unlikely_if (i->pmask) {
-			return CM_ERROR;
+			return XMI_ERROR;
 		}
 		_pmask = (unsigned)-1; // signal local consumedBytes...
 		_buffer = (volatile char *)map(i->bufPaddr);
 		_sharedqueue = (workqueue_t *)map(i->hdrPaddr);
 		// need flag to prevent/localize produce/consume bytes...
-		return CM_SUCCESS;
+		return XMI_SUCCESS;
 	}
 
 	/// \brief register a wakeup for the consumer side of the PipeWorkQueue
@@ -562,7 +562,7 @@ public:
 	}
 
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(LL_PipeWorkQueue_ext));
+		COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(XMI_PipeWorkQueue_ext));
 	}
 
 private:

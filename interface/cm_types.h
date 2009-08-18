@@ -35,26 +35,26 @@ extern "C"
 
   typedef enum
   {
-    CM_SUCCESS = 0,  /**< Successful execution        */
-    CM_NERROR  =-1,  /**< Generic error (-1)          */
-    CM_ERROR   = 1,  /**< Generic error (+1)          */
-    CM_INVAL,        /**< Invalid argument            */
-    CM_UNIMPL,       /**< Function is not implemented */
-    CM_EAGAIN,       /**< Not currently availible     */
-    CM_SHUTDOWN,     /**< Rank has shutdown           */
-    CM_CHECK_ERRNO,  /**< Check the errno val         */
-    CM_OTHER,        /**< Other undefined error       */
+    XMI_SUCCESS = 0,  /**< Successful execution        */
+    XMI_NERROR  =-1,  /**< Generic error (-1)          */
+    XMI_ERROR   = 1,  /**< Generic error (+1)          */
+    XMI_INVAL,        /**< Invalid argument            */
+    XMI_UNIMPL,       /**< Function is not implemented */
+    XMI_EAGAIN,       /**< Not currently availible     */
+    XMI_SHUTDOWN,     /**< Rank has shutdown           */
+    XMI_CHECK_ERRNO,  /**< Check the errno val         */
+    XMI_OTHER,        /**< Other undefined error       */
   }
-  CM_Result;
+  XMI_Result;
 
   /**
    * \brief Core Messaging Error callback results
    */
-  typedef struct CM_Error_t
+  typedef struct XMI_Error_t
   {
-    CM_Result result;
+    XMI_Result result;
   }
-  CM_Error_t;
+  XMI_Error_t;
 
   /**
    * \brief Message layer operation types
@@ -62,24 +62,24 @@ extern "C"
 
   typedef enum
   {
-    CM_UNDEFINED_OP = 0,
-    CM_NOOP,
-    CM_MAX,
-    CM_MIN,
-    CM_SUM,
-    CM_PROD,
-    CM_LAND,
-    CM_LOR,
-    CM_LXOR,
-    CM_BAND,
-    CM_BOR,
-    CM_BXOR,
-    CM_MAXLOC,
-    CM_MINLOC,
-    CM_USERDEFINED_OP,
-    CM_OP_COUNT
+    XMI_UNDEFINED_OP = 0,
+    XMI_NOOP,
+    XMI_MAX,
+    XMI_MIN,
+    XMI_SUM,
+    XMI_PROD,
+    XMI_LAND,
+    XMI_LOR,
+    XMI_LXOR,
+    XMI_BAND,
+    XMI_BOR,
+    XMI_BXOR,
+    XMI_MAXLOC,
+    XMI_MINLOC,
+    XMI_USERDEFINED_OP,
+    XMI_OP_COUNT
   }
-  CM_Op;
+  XMI_Op;
 
   /**
    * \brief Message layer data types
@@ -88,32 +88,32 @@ extern "C"
   typedef enum
   {
     /* Standard/Primative DT's */
-    CM_UNDEFINED_DT = 0,
-    CM_SIGNED_CHAR,
-    CM_UNSIGNED_CHAR,
-    CM_SIGNED_SHORT,
-    CM_UNSIGNED_SHORT,
-    CM_SIGNED_INT,
-    CM_UNSIGNED_INT,
-    CM_SIGNED_LONG_LONG,
-    CM_UNSIGNED_LONG_LONG,
-    CM_FLOAT,
-    CM_DOUBLE,
-    CM_LONG_DOUBLE,
-    CM_LOGICAL,
-    CM_SINGLE_COMPLEX,
-    CM_DOUBLE_COMPLEX,
+    XMI_UNDEFINED_DT = 0,
+    XMI_SIGNED_CHAR,
+    XMI_UNSIGNED_CHAR,
+    XMI_SIGNED_SHORT,
+    XMI_UNSIGNED_SHORT,
+    XMI_SIGNED_INT,
+    XMI_UNSIGNED_INT,
+    XMI_SIGNED_LONG_LONG,
+    XMI_UNSIGNED_LONG_LONG,
+    XMI_FLOAT,
+    XMI_DOUBLE,
+    XMI_LONG_DOUBLE,
+    XMI_LOGICAL,
+    XMI_SINGLE_COMPLEX,
+    XMI_DOUBLE_COMPLEX,
     /* Max/Minloc DT's */
-    CM_LOC_2INT,
-    CM_LOC_SHORT_INT,
-    CM_LOC_FLOAT_INT,
-    CM_LOC_DOUBLE_INT,
-    CM_LOC_2FLOAT,
-    CM_LOC_2DOUBLE,
-    CM_USERDEFINED_DT,
-    CM_DT_COUNT
+    XMI_LOC_2INT,
+    XMI_LOC_SHORT_INT,
+    XMI_LOC_FLOAT_INT,
+    XMI_LOC_DOUBLE_INT,
+    XMI_LOC_2FLOAT,
+    XMI_LOC_2DOUBLE,
+    XMI_USERDEFINED_DT,
+    XMI_DT_COUNT
   }
-  CM_Dt;
+  XMI_Dt;
 
 
   /**
@@ -121,26 +121,26 @@ extern "C"
    */
   typedef enum
   {
-    CM_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
-    CM_TORUS_NETWORK,       /**< DEPRECATED! 3D-Torus / 1D-SMP network type. */
-    CM_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
+    XMI_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
+    XMI_TORUS_NETWORK,       /**< DEPRECATED! 3D-Torus / 1D-SMP network type. */
+    XMI_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
 			     * mapping->numGlobalDims() for torus dim,
 			     * mapping->numDims() for all (torus+SMP) dim.
 			     */
-    CM_SOCKET_NETWORK,      /**< Unix socket network type. */
-    CM_SHMEM_NETWORK,       /**< local shared memory "network" for smp nodes. */
-    CM_NETWORK_COUNT        /**< Number of network types defined. */
+    XMI_SOCKET_NETWORK,      /**< Unix socket network type. */
+    XMI_SHMEM_NETWORK,       /**< local shared memory "network" for smp nodes. */
+    XMI_NETWORK_COUNT        /**< Number of network types defined. */
   }
-  CM_Network;
+  XMI_Network;
 
-  #define CM_MAX_DIMS	4
+  #define XMI_MAX_DIMS	4
 
   /**
    * \brief A structure to describe a network coordinate
    */
-  typedef struct CM_Coord_t
+  typedef struct XMI_Coord_t
   {
-    CM_Network network; /**< Network type for the coordinates */
+    XMI_Network network; /**< Network type for the coordinates */
     union
     {
       struct
@@ -149,23 +149,23 @@ extern "C"
         size_t y; /**< Torus network y coordinate */
         size_t z; /**< Torus network z coordinate */
         size_t t; /**< Torus network t coordinate */
-      } torus;    /**< obsolete: CM_TORUS_NETWORK coordinates */
+      } torus;    /**< obsolete: XMI_TORUS_NETWORK coordinates */
       struct
       {
-        size_t coords[CM_MAX_DIMS];
+        size_t coords[XMI_MAX_DIMS];
       } n_torus;
       struct
       {
         int recv_fd;   /**< Receive file descriptor */
         int send_fd;   /**< Send file descriptor    */
-      } socket;   /**< CM_SOCKET_NETWORK coordinates */
+      } socket;   /**< XMI_SOCKET_NETWORK coordinates */
       struct
       {
         size_t rank;   /**< Global rank of process */
         size_t peer;   /**< Local rank of process */
-      } shmem;    /**< CM_SHMEM_NETWORK coordinates */
+      } shmem;    /**< XMI_SHMEM_NETWORK coordinates */
     };
-  } CM_Coord_t;
+  } XMI_Coord_t;
 
   /* ********************************************************************* */
   /*                                                                       */
@@ -180,8 +180,8 @@ extern "C"
    * \param[in] error       Error result of the error event.
    */
 
-  typedef void (*CM_Callback) (void         * clientdata,
-                                 CM_Error_t * error);
+  typedef void (*XMI_Callback) (void         * clientdata,
+                                 XMI_Error_t * error);
 
   /**
    * \brief Completion callback information descriptor.
@@ -191,18 +191,18 @@ extern "C"
    * during a call to Messager advance()
    */
 
-  typedef struct CM_Callback_t
+  typedef struct XMI_Callback_t
   {
-    CM_Callback   function;    /**< Function to invoke */
+    XMI_Callback   function;    /**< Function to invoke */
     void          * clientdata;  /**< Argument to function */
   }
-  CM_Callback_t;
+  XMI_Callback_t;
 
-typedef CMQuad CM_Protocol_t[CM_PROTOCOL_NQUADS];
+typedef CMQuad XMI_Protocol_t[XMI_PROTOCOL_NQUADS];
 
-typedef CMQuad CM_Request_t[CM_REQUEST_NQUADS];
+typedef CMQuad XMI_Request_t[XMI_REQUEST_NQUADS];
 
-typedef void CM_dgsp_t;	// temporary...
+typedef void XMI_dgsp_t;	// temporary...
 
 #ifdef __cplusplus
 };

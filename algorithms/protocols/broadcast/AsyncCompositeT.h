@@ -45,7 +45,7 @@ namespace CCMI
         ///
         AsyncCompositeT (MAP             * map,
                          CCMI::ConnectionManager::ConnectionManager *cmgr,
-                         CM_Callback_t             cb_done,
+                         XMI_Callback_t             cb_done,
                          CCMI_Consistency            consistency,
                          CCMI::MultiSend::OldMulticastInterface *mf,
                          Geometry                  * geometry,
@@ -93,7 +93,7 @@ namespace CCMI
         ///
         /// \brief Receive the broadcast message and notify the executor
         ///
-        static void staticAsyncRecvFn (void *clientdata, CM_Error_t *err)
+        static void staticAsyncRecvFn (void *clientdata, XMI_Error_t *err)
         {
           CMQuad *info = NULL;  
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
@@ -157,7 +157,7 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         CM_Callback_t             cb_done,
+         XMI_Callback_t             cb_done,
          CCMI_Consistency            consistency,
          Geometry                  * geometry,
          unsigned                    root,
@@ -168,7 +168,7 @@ namespace CCMI
 
           T* a_bcast = NULL;
 
-          CM_assert(rsize > sizeof(T));
+          XMI_assert(rsize > sizeof(T));
 
           if(this->_mapping->rank() == root)
           {
@@ -200,7 +200,7 @@ namespace CCMI
             /// queue it in posted queue
             else
             {
-              CM_Callback_t  cb_exec_done;
+              XMI_Callback_t  cb_exec_done;
               cb_exec_done.function   = posted_done;
               cb_exec_done.clientdata = request_buf; //point to the executor
 
@@ -219,7 +219,7 @@ namespace CCMI
           return a_bcast;   
         }
 
-        static CM_Request_t *   cb_head_buffered   
+        static XMI_Request_t *   cb_head_buffered   
         (const CMQuad    * info,
          unsigned          count,
          unsigned          peer,
@@ -229,7 +229,7 @@ namespace CCMI
          unsigned        * rcvlen,
          char           ** rcvbuf,
          unsigned        * pipewidth,
-         CM_Callback_t * cb_done)
+         XMI_Callback_t * cb_done)
         {
           TRACE_ADAPTOR ((stderr, "Broadcast Async Handler\n"));
 
@@ -250,7 +250,7 @@ namespace CCMI
             char *unexpbuf;
             factory->_execpool.allocateAsync (&exec_request, &unexpbuf, sndlen);
 
-            CM_Callback_t cb_exec_done;
+            XMI_Callback_t cb_exec_done;
             ///Handler which will have to free the above allocated buffer
             cb_exec_done.function = unexpected_done;
             cb_exec_done.clientdata = exec_request;
@@ -282,7 +282,7 @@ namespace CCMI
           return bcast->executor().getRecvRequest();
         }
 
-        static void unexpected_done (void *cd, CM_Error_t *err)
+        static void unexpected_done (void *cd, XMI_Error_t *err)
         {
           TRACE_ADAPTOR ((stderr, "Unexpected bcast done\n"));
 
@@ -297,7 +297,7 @@ namespace CCMI
           }
         }
 
-        static void posted_done (void *cd, CM_Error_t *err)
+        static void posted_done (void *cd, XMI_Error_t *err)
         {
           TRACE_ADAPTOR ((stderr, "Posted bcast done\n"));
 
@@ -308,7 +308,7 @@ namespace CCMI
           //nothing needs to be freed as this is an application buffer
         }
 
-        static CM_Request_t *   cb_head   
+        static XMI_Request_t *   cb_head   
         (const CMQuad    * info,
          unsigned          count,
          unsigned          peer,
@@ -318,7 +318,7 @@ namespace CCMI
          unsigned        * rcvlen,
          char           ** rcvbuf,
          unsigned        * pipewidth,
-         CM_Callback_t * cb_done) 
+         XMI_Callback_t * cb_done) 
         {
           TRACE_ADAPTOR ((stderr, "Broadcast Async Handler\n"));    
           AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;   
@@ -328,7 +328,7 @@ namespace CCMI
 	    factory->_cb_geometry(cdata->_comm);
 
           //Application callback
-          CM_Callback_t cb_client_done;  
+          XMI_Callback_t cb_client_done;  
           CCMI_Executor_t *request =  (CCMI_Executor_t *)
                                       factory->_cb_async (cdata->_root, cdata->_comm, sndlen, rcvlen,
                                                           rcvbuf, &cb_client_done);

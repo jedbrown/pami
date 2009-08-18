@@ -26,7 +26,7 @@ namespace CCMI
       namespace Tree
       {
 
-        extern int checkOp(CM_Dt dt, CM_Op op);
+        extern int checkOp(XMI_Dt dt, XMI_Op op);
 
         ///
         /// \brief Tree allreduce protocol
@@ -45,18 +45,18 @@ namespace CCMI
           {
             TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~CompositeT() ALERT\n",(int)this,name));
           }
-          CompositeT(CM_CollectiveRequest_t                      * req,
+          CompositeT(XMI_CollectiveRequest_t                      * req,
                      CCMI::TorusCollectiveMapping                  * map,
                      CCMI::ConnectionManager::ConnectionManager    * cmgr,
-                     CM_Callback_t                                 cb_done,
+                     XMI_Callback_t                                 cb_done,
                      CCMI_Consistency                                consistency,
                      CCMI::MultiSend::OldMulticastInterface           * mf,
                      Geometry                                      * geometry,
                      char                                          * srcbuf,
                      char                                          * dstbuf,
                      unsigned                                        count,
-                     CM_Dt                                           dtype,
-                     CM_Op                                           op,
+                     XMI_Dt                                           dtype,
+                     XMI_Op                                           op,
                      ConfigFlags                                     flags,
                      CCMI::Adaptor::CollectiveProtocolFactory*                 factory,
                      int                                             root = -1 ) :
@@ -88,7 +88,7 @@ namespace CCMI
           }
 
           void internal_restart (CCMI_Consistency   consistency,
-                                 CM_Callback_t    & cb_done)
+                                 XMI_Callback_t    & cb_done)
           {
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::CompositeT::internal_restart\n", (int)this,name));
             _doneCountdown = 1;
@@ -119,7 +119,7 @@ namespace CCMI
           /// the client done isn't called until both the composite and
           /// both barriers are done.
           /// 
-          static void cb_reduceCompositeDone(void *me, CM_Error_t *err)
+          static void cb_reduceCompositeDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
                            "<%#.8X>Allreduce::%s::CompositeT::cb_reduceCompositeDone()\n",
@@ -148,7 +148,7 @@ namespace CCMI
           ///
           /// Start the [all]reduce now.  Start the ending/second barrier.
           /// 
-          static void cb_endBarrierDone(void *me, CM_Error_t *err)
+          static void cb_endBarrierDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
                            "<%#.8X>Allreduce::%s::CompositeT::cb_endBarrierDone()\n",
@@ -164,7 +164,7 @@ namespace CCMI
           ///
           /// Start the [all]reduce now.  Start the ending/second barrier.
           /// 
-          static void cb_barrierDone(void *me, CM_Error_t *err)
+          static void cb_barrierDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
                            "<%#.8X>Allreduce::%s::CompositeT::cb_barrierDone()\n",
@@ -189,14 +189,14 @@ namespace CCMI
             done();
           }
 
-          virtual unsigned restart ( CM_CollectiveRequest_t  * request,
-                                     CM_Callback_t           & cb_done,
+          virtual unsigned restart ( XMI_CollectiveRequest_t  * request,
+                                     XMI_Callback_t           & cb_done,
                                      CCMI_Consistency            consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
                                      size_t                      count,
-                                     CM_Dt                     dtype,
-                                     CM_Op                     op,
+                                     XMI_Dt                     dtype,
+                                     XMI_Op                     op,
                                      size_t                      root = (size_t)-1)
           {
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::CompositeT::restart _executor %#X\n", (int)this,name,
@@ -211,11 +211,11 @@ namespace CCMI
                || count != _executor.getCount())
             {
               TRACE_ALERT((stderr, "<%#.8X>Allreduce::%s::CompositeT::restart() ALERT: "
-                           "CM_ERROR op %#X, type %#X, count %#X!\n", (int)this,name, op, dtype, count));
+                           "XMI_ERROR op %#X, type %#X, count %#X!\n", (int)this,name, op, dtype, count));
               TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::%s::CompositeT::restart():"
-                             "CM_ERROR op %#X, type %#X, count %#X!\n",(int)this,name, op, dtype, count));
+                             "XMI_ERROR op %#X, type %#X, count %#X!\n",(int)this,name, op, dtype, count));
               _executor.getAllreduceState()->freeAllocations();
-              return CM_ERROR;
+              return XMI_ERROR;
             }
 
             initialize (&_executor, request, srcbuf, dstbuf,
@@ -224,7 +224,7 @@ namespace CCMI
             _executor.reset();
             internal_restart (consistency, cb_done);
 
-            return CM_SUCCESS;
+            return XMI_SUCCESS;
           }
         }; // class Composite
 

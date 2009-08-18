@@ -37,7 +37,7 @@ extern "C"
 #ifdef DEPRECATED_MULTICAST
   typedef DCMF_OldRecvMulticast CCMI_RecvMultiSend;
 #else
-  typedef CM_Request_t * (*CCMI_RecvMultiSend) (const CMQuad    * info,
+  typedef XMI_Request_t * (*CCMI_RecvMultiSend) (const CMQuad    * info,
 						  unsigned            count,
 						  unsigned            peer,
 						  unsigned            sndlen,
@@ -46,7 +46,7 @@ extern "C"
 						  unsigned          * rcvlen,
 						  char             ** rcvbuf,
 						  unsigned          * pipewidth,
-						  CM_Callback_t   * cb_done);
+						  XMI_Callback_t   * cb_done);
   
 #endif
   int Multisend_multicast_register ( CCMI_Register_t    * registration, 
@@ -55,8 +55,8 @@ extern "C"
   
   
   int MultiSend_multicast (CCMI_Register_t   * registration,
-			   CM_Request_t    * request,
-			   CM_Callback_t     cb_done,
+			   XMI_Request_t    * request,
+			   XMI_Callback_t     cb_done,
 			   CCMI_Consistency    consistency,
 			   unsigned            connection_id,
 			   unsigned            bytes,

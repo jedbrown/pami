@@ -13,20 +13,20 @@
 #define NITERBW    10
 #define CUTOFF     65536
 
-CM_Op op_array[] =
+XMI_Op op_array[] =
     {
-	CM_MAX,
-	CM_MIN,
-	CM_SUM,
-	CM_PROD,
-	CM_LAND,
-	CM_LOR,
-	CM_LXOR,
-	CM_BAND,
-	CM_BOR,
-	CM_BXOR,
-	CM_MAXLOC,
-	CM_MINLOC,
+	XMI_MAX,
+	XMI_MIN,
+	XMI_SUM,
+	XMI_PROD,
+	XMI_LAND,
+	XMI_LOR,
+	XMI_LXOR,
+	XMI_BAND,
+	XMI_BOR,
+	XMI_BXOR,
+	XMI_MAXLOC,
+	XMI_MINLOC,
     };
 enum opNum
     {
@@ -46,28 +46,28 @@ enum opNum
     };
 int op_count = OP_COUNT;
 
-CM_Dt dt_array[] =
+XMI_Dt dt_array[] =
     {
-	CM_SIGNED_CHAR,
-	CM_UNSIGNED_CHAR,
-	CM_SIGNED_SHORT,
-	CM_UNSIGNED_SHORT,
-	CM_SIGNED_INT,
-	CM_UNSIGNED_INT,
-	CM_SIGNED_LONG_LONG,
-	CM_UNSIGNED_LONG_LONG,
-	CM_FLOAT,
-	CM_DOUBLE,
- 	CM_LONG_DOUBLE,
-	CM_LOGICAL,
-	CM_SINGLE_COMPLEX,
-	CM_DOUBLE_COMPLEX,
-	CM_LOC_2INT,
-	CM_LOC_SHORT_INT,
-	CM_LOC_FLOAT_INT,
-	CM_LOC_DOUBLE_INT,
-	CM_LOC_2FLOAT,
-	CM_LOC_2DOUBLE,
+	XMI_SIGNED_CHAR,
+	XMI_UNSIGNED_CHAR,
+	XMI_SIGNED_SHORT,
+	XMI_UNSIGNED_SHORT,
+	XMI_SIGNED_INT,
+	XMI_UNSIGNED_INT,
+	XMI_SIGNED_LONG_LONG,
+	XMI_UNSIGNED_LONG_LONG,
+	XMI_FLOAT,
+	XMI_DOUBLE,
+ 	XMI_LONG_DOUBLE,
+	XMI_LOGICAL,
+	XMI_SINGLE_COMPLEX,
+	XMI_DOUBLE_COMPLEX,
+	XMI_LOC_2INT,
+	XMI_LOC_SHORT_INT,
+	XMI_LOC_FLOAT_INT,
+	XMI_LOC_DOUBLE_INT,
+	XMI_LOC_2FLOAT,
+	XMI_LOC_2DOUBLE,
     };
 
 enum dtNum
@@ -99,104 +99,104 @@ int dt_count = DT_COUNT;
 
 const char * op_array_str[] =
     {
-	"CM_MAX",
-	"CM_MIN",
-	"CM_SUM",
-	"CM_PROD",
-	"CM_LAND",
-	"CM_LOR",
-	"CM_LXOR",
-	"CM_BAND",
-	"CM_BOR",
-	"CM_BXOR",
-	"CM_MAXLOC",
-	"CM_MINLOC"
+	"XMI_MAX",
+	"XMI_MIN",
+	"XMI_SUM",
+	"XMI_PROD",
+	"XMI_LAND",
+	"XMI_LOR",
+	"XMI_LXOR",
+	"XMI_BAND",
+	"XMI_BOR",
+	"XMI_BXOR",
+	"XMI_MAXLOC",
+	"XMI_MINLOC"
     };
 
 
 const char * dt_array_str[] =
     {
-	"CM_SIGNED_CHAR",
-	"CM_UNSIGNED_CHAR",
-	"CM_SIGNED_SHORT",
-	"CM_UNSIGNED_SHORT",
-	"CM_SIGNED_INT",
-	"CM_UNSIGNED_INT",
-	"CM_SIGNED_LONG_LONG",
-	"CM_UNSIGNED_LONG_LONG",
-	"CM_FLOAT",
-	"CM_DOUBLE",
-	"CM_LONG_DOUBLE",
-	"CM_LOGICAL",
-	"CM_SINGLE_COMPLEX",
-	"CM_DOUBLE_COMPLEX",
-	"CM_LOC_2INT",
-	"CM_LOC_SHORT_INT",
-	"CM_LOC_FLOAT_INT",
-	"CM_LOC_DOUBLE_INT",
-	"CM_LOC_2FLOAT",
-	"CM_LOC_2DOUBLE"
+	"XMI_SIGNED_CHAR",
+	"XMI_UNSIGNED_CHAR",
+	"XMI_SIGNED_SHORT",
+	"XMI_UNSIGNED_SHORT",
+	"XMI_SIGNED_INT",
+	"XMI_UNSIGNED_INT",
+	"XMI_SIGNED_LONG_LONG",
+	"XMI_UNSIGNED_LONG_LONG",
+	"XMI_FLOAT",
+	"XMI_DOUBLE",
+	"XMI_LONG_DOUBLE",
+	"XMI_LOGICAL",
+	"XMI_SINGLE_COMPLEX",
+	"XMI_DOUBLE_COMPLEX",
+	"XMI_LOC_2INT",
+	"XMI_LOC_SHORT_INT",
+	"XMI_LOC_FLOAT_INT",
+	"XMI_LOC_DOUBLE_INT",
+	"XMI_LOC_2FLOAT",
+	"XMI_LOC_2DOUBLE"
     };
 
 unsigned elemsize_array[] =
     {
-	2, // CM_SIGNED_CHAR,
-	2, // CM_UNSIGNED_CHAR,
-	2, // CM_SIGNED_SHORT,
-	2, // CM_UNSIGNED_SHORT,
-	4, // CM_SIGNED_INT,
-	4, // CM_UNSIGNED_INT,
-	8, // CM_SIGNED_LONG_LONG,
-	8, // CM_UNSIGNED_LONG_LONG,
-	4, // CM_FLOAT,
-	8, // CM_DOUBLE,
-	8, // CM_LONG_DOUBLE,
-	4, // CM_LOGICAL,
-	8, // CM_SINGLE_COMPLEX,
-	1, // CM_DOUBLE_COMPLEX
-	8, // CM_LOC_2INT,
-	6, // CM_LOC_SHORT_INT,
-	8, // CM_LOC_FLOAT_INT,
-	12, // CM_LOC_DOUBLE_INT,
-	8,  // CM_LOC_2FLOAT,
-	16, // CM_LOC_2DOUBLE,
+	2, // XMI_SIGNED_CHAR,
+	2, // XMI_UNSIGNED_CHAR,
+	2, // XMI_SIGNED_SHORT,
+	2, // XMI_UNSIGNED_SHORT,
+	4, // XMI_SIGNED_INT,
+	4, // XMI_UNSIGNED_INT,
+	8, // XMI_SIGNED_LONG_LONG,
+	8, // XMI_UNSIGNED_LONG_LONG,
+	4, // XMI_FLOAT,
+	8, // XMI_DOUBLE,
+	8, // XMI_LONG_DOUBLE,
+	4, // XMI_LOGICAL,
+	8, // XMI_SINGLE_COMPLEX,
+	1, // XMI_DOUBLE_COMPLEX
+	8, // XMI_LOC_2INT,
+	6, // XMI_LOC_SHORT_INT,
+	8, // XMI_LOC_FLOAT_INT,
+	12, // XMI_LOC_DOUBLE_INT,
+	8,  // XMI_LOC_2FLOAT,
+	16, // XMI_LOC_2DOUBLE,
     };
 
 void cb_barrier (void * clientdata);
 void cb_allreduce (void * clientdata);
 // Barrier Data
-CM_CollectiveProtocol_t _g_barrier;
+XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
+XMI_CollectiveRequest_t  _g_barrier_request;
+XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
-	HL_XFER_BARRIER,
+	XMI_XFER_BARRIER,
 	&_g_barrier,
 	&_g_barrier_request,
 	_cb_barrier,
-	&HL_World_Geometry
+	&XMI_World_Geometry
     };
 
 // Allreduce
-CM_CollectiveProtocol_t _g_allreduce;
+XMI_CollectiveProtocol_t _g_allreduce;
 volatile unsigned       _g_allreduce_active;
-CM_CollectiveRequest_t  _g_allreduce_request;
-CM_Callback_t _cb_allreduce   = {(void (*)(void*,CM_Error_t*))cb_allreduce,
+XMI_CollectiveRequest_t  _g_allreduce_request;
+XMI_Callback_t _cb_allreduce   = {(void (*)(void*,XMI_Error_t*))cb_allreduce,
 			       (void *) &_g_allreduce_active };
 hl_allreduce_t  _xfer_allreduce =
     {
-	HL_XFER_ALLREDUCE,
+	XMI_XFER_ALLREDUCE,
 	&_g_allreduce,
 	&_g_allreduce_request,
 	_cb_allreduce,
-	&HL_World_Geometry,
+	&XMI_World_Geometry,
 	NULL,
 	NULL,
 	0,
-	(CM_Dt)-1,
-	(CM_Op)-1
+	(XMI_Dt)-1,
+	(XMI_Op)-1
     };
 
 static double timer()
@@ -206,10 +206,10 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-HL_Geometry_t *cb_geometry (int comm)
+XMI_Geometry_t *cb_geometry (int comm)
 {
     if(comm == 0)
-	return &HL_World_Geometry;
+	return &XMI_World_Geometry;
     else
 	assert(0);
 }
@@ -228,22 +228,22 @@ void cb_allreduce (void * clientdata)
 
 void init__barriers ()
 {
-  HL_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = HL_CFG_BARRIER;
-  barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  HL_register(&_g_barrier,
-	      (HL_CollectiveConfiguration_t*)&barrier_config,
+  XMI_Barrier_Configuration_t barrier_config;
+  barrier_config.cfg_type    = XMI_CFG_BARRIER;
+  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
+  XMI_register(&_g_barrier,
+	      (XMI_CollectiveConfiguration_t*)&barrier_config,
 	      0);
   _g_barrier_active = 0;
 }
 
 void init__allreduces ()
 {
-  HL_Allreduce_Configuration_t allreduce_config;
-  allreduce_config.cfg_type    = HL_CFG_ALLREDUCE;
-  allreduce_config.protocol    = HL_DEFAULT_ALLREDUCE_PROTOCOL;
-  HL_register(&_g_allreduce,
-	      (HL_CollectiveConfiguration_t*)&allreduce_config,
+  XMI_Allreduce_Configuration_t allreduce_config;
+  allreduce_config.cfg_type    = XMI_CFG_ALLREDUCE;
+  allreduce_config.protocol    = XMI_DEFAULT_ALLREDUCE_PROTOCOL;
+  XMI_register(&_g_allreduce,
+	      (XMI_CollectiveConfiguration_t*)&allreduce_config,
 	      0);
   _g_allreduce_active = 0;
 }
@@ -251,16 +251,16 @@ void init__allreduces ()
 void _barrier ()
 {
   _g_barrier_active++;
-  HL_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
-      HL_Poll();
+      XMI_Poll();
 }
 
 void _allreduce (char            * src,
 		 char            * dst,
 		 unsigned          count,
-		 CM_Dt             dt,
-		 CM_Op             op)
+		 XMI_Dt             dt,
+		 XMI_Op             op)
 {
     _g_allreduce_active++;
     _xfer_allreduce.src   = src;
@@ -268,9 +268,9 @@ void _allreduce (char            * src,
     _xfer_allreduce.count = count;
     _xfer_allreduce.dt    = dt;
     _xfer_allreduce.op    = op;
-    HL_Xfer (NULL, (hl_xfer_t*)&_xfer_allreduce);
+    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_allreduce);
     while (_g_allreduce_active)
-	HL_Poll();
+	XMI_Poll();
 }
 
 
@@ -295,10 +295,10 @@ int main(int argc, char*argv[])
   char rbuf[MAXBUFSIZE];
   int  op, dt;
 
-  HL_Collectives_initialize(&argc,&argv,cb_geometry);
+  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   init__allreduces();
-  int rank = HL_Rank();
+  int rank = XMI_Rank();
   int i,j,root = 0;
 
 
@@ -390,6 +390,6 @@ int main(int argc, char*argv[])
 		  }
 	  }
 #endif
-  HL_Collectives_finalize();
+  XMI_Collectives_finalize();
   return 0;
 }

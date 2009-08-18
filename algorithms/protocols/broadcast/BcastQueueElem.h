@@ -30,7 +30,7 @@ namespace CCMI
       protected:
         //matchq
         unsigned            _bytes;  ///Bytes in the broadcast
-        CM_Callback_t     _cb_done;///Application completion callback   
+        XMI_Callback_t     _cb_done;///Application completion callback   
 
         char              * _rcvbuf;  ///buffer to receive bcast
         char              * _appbuf;  ///App buffer which will be
@@ -63,7 +63,7 @@ namespace CCMI
           CCMI_assert(bytes > 0);   
         }
 
-        void initPostMsg (unsigned bytes, char *rcvbuf, CM_Callback_t &cb)
+        void initPostMsg (unsigned bytes, char *rcvbuf, XMI_Callback_t &cb)
         {
           _bytes    = bytes;
           _cb_done  = cb;
@@ -76,7 +76,7 @@ namespace CCMI
         ///        unexpected and the application wants to provide the final target
         ///        buffer
         void  setPosted (unsigned bytes, char *buf,
-                         CM_Callback_t &cb_done)
+                         XMI_Callback_t &cb_done)
         {
           CCMI_assert(bytes >= _bytes);
           _appbuf = buf;
@@ -88,7 +88,7 @@ namespace CCMI
           return _composite;
         }
 
-        CM_Callback_t  &callback ()
+        XMI_Callback_t  &callback ()
         {
           return _cb_done;
         }

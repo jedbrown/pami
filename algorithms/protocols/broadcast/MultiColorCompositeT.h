@@ -43,7 +43,7 @@ namespace CCMI
       ///
       /// \brief Receive the broadcast message and notify the executor
       ///
-      static void staticRecvFn (void *executor, CM_Error_t *err)
+      static void staticRecvFn (void *executor, XMI_Error_t *err)
       {
         CMQuad *info = NULL;
 
@@ -74,7 +74,7 @@ namespace CCMI
         ///
         ///  \brief Application callback to call when the broadcast has finished
         ///
-        CM_Callback_t                               _cb_done;
+        XMI_Callback_t                               _cb_done;
 
         ///
         /// \brief Pointer to mapping
@@ -93,7 +93,7 @@ namespace CCMI
 
         MultiColorCompositeT (MAP                              * map,
                               CCMI::ConnectionManager::ConnectionManager * cmgr,
-                              CM_Callback_t                              cb_done,
+                              XMI_Callback_t                              cb_done,
                               CCMI_Consistency                             consistency,
                               CCMI::MultiSend::OldMulticastInterface        * mf,
                               Geometry                                   * geometry,
@@ -151,7 +151,7 @@ namespace CCMI
                                  unsigned                    size,
                                  Geometry                  * g,
                                  CCMI::Schedule::Color       color) {CCMI_abort();};
-        void setDoneCallback (CM_Callback_t  cb_done) { _cb_done = cb_done;}
+        void setDoneCallback (XMI_Callback_t  cb_done) { _cb_done = cb_done;}
 
         void SyncBcastPost(Geometry                                     * geometry, 
                            unsigned                                       root,
@@ -185,7 +185,7 @@ namespace CCMI
         /// \brief For sync broadcasts, the done call back to be called
         ///        when barrier finishes
         ///
-        static void cb_barrier_done(void *me, CM_Error_t *err)
+        static void cb_barrier_done(void *me, XMI_Error_t *err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;   
           CCMI_assert (bcast_composite != NULL);    
@@ -203,7 +203,7 @@ namespace CCMI
           }
         }
 
-        static void cb_bcast_done(void *me, CM_Error_t *err)
+        static void cb_bcast_done(void *me, XMI_Error_t *err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);    
@@ -266,14 +266,14 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         CM_Callback_t             cb_done,
+         XMI_Callback_t             cb_done,
          CCMI_Consistency            consistency,
          Geometry                  * geometry,
          unsigned                    root,
          char                      * src,
          unsigned                    bytes)
         {
-          CM_assert(rsize >= sizeof(B));
+          XMI_assert(rsize >= sizeof(B));
           B  *composite = 
           new (request_buf)
           B (this->_mapping,

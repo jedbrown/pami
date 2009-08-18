@@ -94,7 +94,7 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         CM_Callback_t             cb_done,
+         XMI_Callback_t             cb_done,
          CCMI_Consistency            consistency,
          Geometry                  * geometry,
          unsigned                    root,

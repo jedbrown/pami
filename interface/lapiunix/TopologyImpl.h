@@ -16,7 +16,7 @@
 /// \brief Coordinate/Address Topology Class
 ///
 /// Some Basic Assertions:
-///	* We never have a LL_COORD_TOPOLOGY unless we also have CM_TORUS_NETWORK
+///	* We never have a XMI_COORD_TOPOLOGY unless we also have XMI_TORUS_NETWORK
 ///
 ////////////////////////////////////////////////////////////////////////
 namespace LL 
@@ -29,8 +29,8 @@ namespace LL
     /// \param[in] c1	second coordinate
     /// \return	boolean indicate locality of two coords
     ///
-    bool __isLocalCoord(const CM_Coord_t *c0,
-			const CM_Coord_t *c1) 
+    bool __isLocalCoord(const XMI_Coord_t *c0,
+			const XMI_Coord_t *c1) 
     {
       return true;
     }
@@ -42,7 +42,7 @@ namespace LL
     /// \return	boolean indicating if the coordinate lies in this
     ///		topology, according to significant dimensions.
     ///
-    bool __isMemberCoord(const CM_Coord_t *c0, unsigned ndims) 
+    bool __isMemberCoord(const XMI_Coord_t *c0, unsigned ndims) 
     {
       return true;
     }
@@ -50,7 +50,7 @@ namespace LL
     /// \brief create topology of only ranks local to self
     ///
     /// \param[out] _new	place to construct new topology
-    /// \return	nothing, but _new may be LL_EMPTY_TOPOLOGY
+    /// \return	nothing, but _new may be XMI_EMPTY_TOPOLOGY
     ///
     void __subTopologyLocalToMe(LL::_TopologyImpl *_new) 
     {
@@ -58,13 +58,13 @@ namespace LL
 
     /// \brief create topology of all Nth ranks on all nodes
     ///
-    /// This implemention is only for LL_COORD_TOPOLOGY.
+    /// This implemention is only for XMI_COORD_TOPOLOGY.
     /// Essentially a horizontal slice of ranks. The resulting
     /// topology will have no two ranks sharing the same node.
     ///
     /// \param[out] _new	space to construct new topology
     /// \param[in] n	which local rank to select
-    /// \return	nothing, but _new may be LL_EMPTY_TOPOLOGY
+    /// \return	nothing, but _new may be XMI_EMPTY_TOPOLOGY
     ///
     void __subTopologyNthGlobal(LL::_TopologyImpl *_new, int n) 
     {
@@ -79,7 +79,7 @@ namespace LL
     /// \param[out] _new	Storage for new topology
     /// \param[in] fmt	Coords to collapse/preserve
     ///
-    void __subTopologyReduceDims(LL::_TopologyImpl *_new, CM_Coord_t *fmt) 
+    void __subTopologyReduceDims(LL::_TopologyImpl *_new, XMI_Coord_t *fmt) 
     {
 
     }
@@ -89,7 +89,7 @@ namespace LL
     /// \param[in,out] c0	coordinate to "increment"
     /// \return	boolean indicating overflow (end of count)
     ///
-    bool __nextCoord(CM_Coord_t *c0, unsigned ndims) 
+    bool __nextCoord(XMI_Coord_t *c0, unsigned ndims) 
     {
       return false;	// wrapped all dims - end of iteration
     }
@@ -100,8 +100,8 @@ namespace LL
     /// \param[out] ur	upper-right corner of range
     /// \param[in] c0	initial coordinate
     ///
-    static void __initRange(CM_Coord_t *ll, CM_Coord_t *ur,
-			    CM_Coord_t *c0, unsigned ndims) 
+    static void __initRange(XMI_Coord_t *ll, XMI_Coord_t *ur,
+			    XMI_Coord_t *c0, unsigned ndims) 
     {
     }
 
@@ -112,7 +112,7 @@ namespace LL
     /// \param[in] ndims	number of significant dimensions
     /// \return	size of rectangular segment
     ///
-    static size_t __sizeRange(CM_Coord_t *ll, CM_Coord_t *ur,
+    static size_t __sizeRange(XMI_Coord_t *ll, XMI_Coord_t *ur,
 			      unsigned ndims) 
     {
 	return 0;
@@ -124,8 +124,8 @@ namespace LL
     /// \param[in,out] ur	upper-right corner of range
     /// \param[in] c0	coord to be included
     ///
-    static void __bumpRange(CM_Coord_t *ll, CM_Coord_t *ur,
-			    CM_Coord_t *c0, unsigned ndims) 
+    static void __bumpRange(XMI_Coord_t *ll, XMI_Coord_t *ur,
+			    XMI_Coord_t *c0, unsigned ndims) 
     {
     }
 
@@ -166,7 +166,7 @@ namespace LL
     /// \param[in] ndims	Number of significant dimensions
     /// \return	boolean indicating [c0] < [c1]
     ///
-    static bool __coordLT(CM_Coord_t *c0, CM_Coord_t *c1,
+    static bool __coordLT(XMI_Coord_t *c0, XMI_Coord_t *c1,
 			  unsigned ndims) 
     {
       return true;
@@ -183,8 +183,8 @@ namespace LL
     ///
     /// Leaves un-used dimensions uninitialized
     ///
-    static void __coordMAX(CM_Coord_t *_new,
-			   CM_Coord_t *c0, CM_Coord_t *c1,
+    static void __coordMAX(XMI_Coord_t *_new,
+			   XMI_Coord_t *c0, XMI_Coord_t *c1,
 			   unsigned ndims) 
     {
     }
@@ -200,20 +200,20 @@ namespace LL
     ///
     /// Leaves un-used dimensions uninitialized
     ///
-    static void __coordMIN(CM_Coord_t *_new,
-			   CM_Coord_t *c0, CM_Coord_t *c1,
+    static void __coordMIN(XMI_Coord_t *_new,
+			   XMI_Coord_t *c0, XMI_Coord_t *c1,
 			   unsigned ndims) 
     {
     }
 
   public:
-    /// \brief default constructor (LL_EMPTY_TOPOLOGY)
+    /// \brief default constructor (XMI_EMPTY_TOPOLOGY)
     ///
     _TopologyImpl() 
       {
       }
 
-    /// \brief rectangular segment with torus (LL_COORD_TOPOLOGY)
+    /// \brief rectangular segment with torus (XMI_COORD_TOPOLOGY)
     ///
     /// Assumes no torus links if no 'tl' param.
     ///
@@ -221,13 +221,13 @@ namespace LL
     /// \param[in] ur	upper-right coordinate
     /// \param[in] tl	optional, torus links flags
     ///
-    _TopologyImpl(CM_Coord_t *ll, CM_Coord_t *ur,
+    _TopologyImpl(XMI_Coord_t *ll, XMI_Coord_t *ur,
 		  unsigned char *tl = NULL) 
       {
 
       }
 
-    /// \brief single rank constructor (LL_SINGLE_TOPOLOGY)
+    /// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
     ///
     /// \param[in] rank	The rank
     ///
@@ -235,7 +235,7 @@ namespace LL
       {
       }
 
-    /// \brief rank range constructor (LL_RANGE_TOPOLOGY)
+    /// \brief rank range constructor (XMI_RANGE_TOPOLOGY)
     ///
     /// \param[in] rank0	first rank in range
     /// \param[in] rankn	last rank in range
@@ -244,7 +244,7 @@ namespace LL
       {
       }
 
-    /// \brief rank list constructor (LL_LIST_TOPOLOGY)
+    /// \brief rank list constructor (XMI_LIST_TOPOLOGY)
     ///
     /// caller must not free ranks[]!
     ///
@@ -267,7 +267,7 @@ namespace LL
 
     /// \brief type of topology
     /// \return	topology type
-    LL_TopologyType_t type() { return __type; }
+    XMI_TopologyType_t type() { return __type; }
 
     /// \brief Nth rank in topology
     ///
@@ -295,21 +295,21 @@ namespace LL
     ///
     /// \param[out] first	Where to put first rank in range
     /// \param[out] last	Where to put last rank in range
-    /// \return	CM_SUCCESS, or CM_UNIMPL if not a range topology
+    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
     ///
-    CM_Result rankRange(size_t *first, size_t *last) 
+    XMI_Result rankRange(size_t *first, size_t *last) 
     {
-	return CM_ERROR;
+	return XMI_ERROR;
     }
 
     /// \brief return rank list
     ///
     /// \param[out] list	pointer to list stored here
-    /// \return	CM_SUCCESS, or CM_UNIMPL if not a list topology
+    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
     ///
-    CM_Result rankList(size_t **list) 
+    XMI_Result rankList(size_t **list) 
     {
-	return CM_ERROR;
+	return XMI_ERROR;
     }
 
     /// \brief return rectangular segment coordinates
@@ -320,12 +320,12 @@ namespace LL
     /// \param[out] ll	lower-left coord pointer storage
     /// \param[out] ur	upper-right coord pointer storage
     /// \param[out] tl	optional, torus links flags
-    /// \return	CM_SUCCESS, or CM_UNIMPL if not a coord topology
+    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
     ///
-    CM_Result rectSeg(CM_Coord_t **ll, CM_Coord_t **ur,
+    XMI_Result rectSeg(XMI_Coord_t **ll, XMI_Coord_t **ur,
 		      unsigned char **tl = NULL) 
     {
-	return CM_ERROR;
+	return XMI_ERROR;
     }
 
     /// \brief return rectangular segment coordinates
@@ -336,12 +336,12 @@ namespace LL
     /// \param[out] ll	lower-left coord pointer storage
     /// \param[out] ur	upper-right coord pointer storage
     /// \param[out] tl	optional, torus links flags
-    /// \return	CM_SUCCESS, or CM_UNIMPL if not a coord topology
+    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
     ///
-    CM_Result rectSeg(CM_Coord_t *ll, CM_Coord_t *ur,
+    XMI_Result rectSeg(XMI_Coord_t *ll, XMI_Coord_t *ur,
 		      unsigned char *tl = NULL) 
     {
-      return CM_SUCCESS;
+      return XMI_SUCCESS;
     }
 
     /// \brief does topology consist entirely of ranks local to eachother
@@ -370,12 +370,12 @@ namespace LL
     {
       // is this too difficult/expensive? is it needed?
       // Note, this is NOT simply "!isLocal()"...
-      CM_abortf("Topology::isGlobal not implemented\n");
+      XMI_abortf("Topology::isGlobal not implemented\n");
     }
 
     /// \brief is topology a rectangular segment
     /// \return	boolean indicating rect seg topo
-    bool isRectSeg() { return (__type == LL_COORD_TOPOLOGY); }
+    bool isRectSeg() { return (__type == XMI_COORD_TOPOLOGY); }
 
     /// \brief extract Nth dimensions from coord topology
     ///
@@ -396,7 +396,7 @@ namespace LL
     ///
     bool isRankMember(size_t rank) 
     {
-      // i.e. LL_EMPTY_TOPOLOGY
+      // i.e. XMI_EMPTY_TOPOLOGY
       return false;
     }
 
@@ -405,7 +405,7 @@ namespace LL
     /// \param[in] c0	Coord to test
     /// \return	boolean indicating coord is a member of topology
     ///
-    bool isCoordMember(CM_Coord_t *c0) 
+    bool isCoordMember(XMI_Coord_t *c0) 
     {
 	return false;
     }
@@ -437,7 +437,7 @@ namespace LL
     /// \param[out] _new	where to build new topology
     /// \param[in] fmt	how to reduce dimensions
     ///
-    void subTopologyReduceDims(LL::_TopologyImpl *_new, CM_Coord_t *fmt) 
+    void subTopologyReduceDims(LL::_TopologyImpl *_new, XMI_Coord_t *fmt) 
     {
     }
 
@@ -463,13 +463,13 @@ namespace LL
     /// \brief check if rank range or list can be converted to rectangle
     ///
     /// Since a rectangular segment is consider the optimal state, no
-    /// other analysis is done. A LL_SINGLE_TOPOLOGY cannot be optimized,
+    /// other analysis is done. A XMI_SINGLE_TOPOLOGY cannot be optimized,
     /// either. Optimization levels:
     ///
-    ///	LL_SINGLE_TOPOLOGY (most)
-    ///	LL_COORD_TOPOLOGY
-    ///	LL_RANGE_TOPOLOGY
-    ///	LL_LIST_TOPOLOGY (least)
+    ///	XMI_SINGLE_TOPOLOGY (most)
+    ///	XMI_COORD_TOPOLOGY
+    ///	XMI_RANGE_TOPOLOGY
+    ///	XMI_LIST_TOPOLOGY (least)
     ///
     /// \return	'true' if topology was changed
     ///
@@ -486,7 +486,7 @@ namespace LL
     /// \param[in] new_type	Topology type to try and convert into
     /// \return	'true' if topology was changed
     ///
-    bool convertTopology(LL_TopologyType_t new_type) 
+    bool convertTopology(XMI_TopologyType_t new_type) 
     {
 	return false;
     }
@@ -528,7 +528,7 @@ namespace LL
 
   private:
     size_t	      __size;	///< number of ranks in this topology
-    LL_TopologyType_t __type;	///< type of topology this is
+    XMI_TopologyType_t __type;	///< type of topology this is
 
   }; // class _TopologyImpl
 

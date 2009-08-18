@@ -27,7 +27,7 @@
 #define _math_optimath_h_
 
 /**
- * \fn void OPTIMATH_NSRC(CM_Dt dt, CM_Op op, int nsrc, coremath func)
+ * \fn void OPTIMATH_NSRC(XMI_Dt dt, XMI_Op op, int nsrc, coremath func)
  * \brief Macro used to generate code to call optimized math functions
  * \param dt	Datatype of math to perform
  * \param op	Math operation to perform
@@ -37,7 +37,7 @@
  */
 
 /**
- * \fn void OPTIMATH_UNARY(CM_Dt dt, CM_Op op, coremath1 func)
+ * \fn void OPTIMATH_UNARY(XMI_Dt dt, XMI_Op op, coremath1 func)
  * \brief Macro used to generate code to call optimized math functions
  * \param dt	Datatype of math to perform
  * \param op	Math operation to perform

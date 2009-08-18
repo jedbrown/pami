@@ -154,11 +154,11 @@ namespace CCMI
       return _nRanks;
     }
 
-    CM_Result torus2rank(unsigned x, unsigned y, unsigned z, unsigned t,
+    XMI_Result torus2rank(unsigned x, unsigned y, unsigned z, unsigned t,
                            unsigned *rank)
     {
       *rank = ((z * _yMax + y) * _xMax + x) * _tMax + t;
-      return CM_SUCCESS;
+      return XMI_SUCCESS;
     }
 
     const void rank2torus(unsigned rank, unsigned &x, unsigned &y, unsigned &z, unsigned &t)

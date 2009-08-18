@@ -40,38 +40,38 @@ typedef enum {
  *
  * \todo make the _debug versions do something only if DEBUG compiles
  */
-#define CM_abort()		abort()
+#define XMI_abort()		abort()
 /* These "f" versions support a printf format string and args. */
-#define CM_abortf(fmt...)	{ fprintf(stderr, __FILE__ ":%d: ", __LINE__); fprintf(stderr, fmt); abort(); }
+#define XMI_abortf(fmt...)	{ fprintf(stderr, __FILE__ ":%d: ", __LINE__); fprintf(stderr, fmt); abort(); }
 
 #if ASSERT_LEVEL==0
 
 /* No asserts at all */
-#define CM_assert(expr)
-#define CM_assertf(expr, fmt...)
-#define CM_assert_debug(expr)
-#define CM_assert_debugf(expr, fmt...)
+#define XMI_assert(expr)
+#define XMI_assertf(expr, fmt...)
+#define XMI_assert_debug(expr)
+#define XMI_assert_debugf(expr, fmt...)
 
 #elif ASSERT_LEVEL==1
 
 /* No debug asserts, only "normal" ones */
-#define CM_assert(expr)			assert(expr)
-#define CM_assertf(expr, fmt...)	{ if (!(expr)) CM_abortf(fmt); }
-#define CM_assert_debug(expr)
-#define CM_assert_debugf(expr, fmt...)
+#define XMI_assert(expr)			assert(expr)
+#define XMI_assertf(expr, fmt...)	{ if (!(expr)) XMI_abortf(fmt); }
+#define XMI_assert_debug(expr)
+#define XMI_assert_debugf(expr, fmt...)
 
 #else /* ASSERT_LEVEL==2 */
 
 /* all asserts */
-#define CM_assert(expr)			assert(expr)
-#define CM_assertf(expr, fmt...)	{ if (!(expr)) CM_abortf(fmt); }
-#define CM_assert_debug(expr)		CM_assert(expr)
-#define CM_assert_debugf(expr, fmt...)	CM_assertf(expr, fmt)
+#define XMI_assert(expr)			assert(expr)
+#define XMI_assertf(expr, fmt...)	{ if (!(expr)) XMI_abortf(fmt); }
+#define XMI_assert_debug(expr)		XMI_assert(expr)
+#define XMI_assert_debugf(expr, fmt...)	XMI_assertf(expr, fmt)
 
 #endif /* ASSERT_LEVEL */
 
-#define CM_PROTOCOL_NQUADS	48
-#define CM_REQUEST_NQUADS	32
+#define XMI_PROTOCOL_NQUADS	48
+#define XMI_REQUEST_NQUADS	32
 
 #ifdef __cplusplus
 };

@@ -148,7 +148,7 @@ namespace CCMI
               unsigned nranks,
               unsigned comm,
               unsigned numcolors,
-              bool     globalcontext) { CM_abortf("Need to add support for generic Mapping"); }
+              bool     globalcontext) { XMI_abortf("Need to add support for generic Mapping"); }
 #else // MPI
       Geometry(
               CCMI::CollectiveMapping *mapping,

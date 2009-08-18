@@ -48,14 +48,14 @@ void init_bufs(int r)
 
 void check_bufs()
 {
-  unsigned myrank = HL_Rank();
-  for ( int r = 0; r < HL_Size(); r++ )
+  unsigned myrank = XMI_Rank();
+  for ( int r = 0; r < XMI_Size(); r++ )
     for ( unsigned k = 0; k < rcvlens[r]; k++ ) 
       {				
 	if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) ) 
 	  {		
 	    printf("%d: (E) rbuf[%d]:%02x instead of %02x (r:%d)\n",
-		   HL_Rank(),
+		   XMI_Rank(),
 		   rdispls[r] + k, 
 		   rbuf[ rdispls[r] + k ], 
 		   ((r + k) & 0xff), 
@@ -66,9 +66,9 @@ void check_bufs()
 }
 
 
-CM_CollectiveProtocol_t _g_alltoall;
+XMI_CollectiveProtocol_t _g_alltoall;
 volatile unsigned       _g_alltoall_active;
-CM_CollectiveRequest_t  _g_alltoall_request;
+XMI_CollectiveRequest_t  _g_alltoall_request;
 
 static double timer()
 {
@@ -81,18 +81,18 @@ static double timer()
 // ------ Barrier 
 
 void cb_barrier (void * clientdata);
-CM_CollectiveProtocol_t _g_barrier;
+XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
+XMI_CollectiveRequest_t  _g_barrier_request;
+XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
-	HL_XFER_BARRIER,
+	XMI_XFER_BARRIER,
 	&_g_barrier,
 	&_g_barrier_request,
 	_cb_barrier,
-	&HL_World_Geometry
+	&XMI_World_Geometry
     };
 
 void cb_barrier (void * clientdata)
@@ -103,11 +103,11 @@ void cb_barrier (void * clientdata)
 
 void init__barriers ()
 {
-  HL_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = HL_CFG_BARRIER;
-  barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  HL_register(&_g_barrier,
-	      (HL_CollectiveConfiguration_t*)&barrier_config,
+  XMI_Barrier_Configuration_t barrier_config;
+  barrier_config.cfg_type    = XMI_CFG_BARRIER;
+  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
+  XMI_register(&_g_barrier,
+	      (XMI_CollectiveConfiguration_t*)&barrier_config,
 	      0);
   _g_barrier_active = 0;
 }
@@ -115,9 +115,9 @@ void init__barriers ()
 void _barrier ()
 {
   _g_barrier_active++;
-  HL_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
-      HL_Poll();
+      XMI_Poll();
 }
 
 // ------- Alltoall
@@ -125,32 +125,32 @@ void _barrier ()
 void cb_alltoall (void * clientdata)
 {
   int * active = (int *) clientdata;
-  TRACE(("%d: cb_alltoall active:%d(%p)\n",HL_Rank(),*active,active));
+  TRACE(("%d: cb_alltoall active:%d(%p)\n",XMI_Rank(),*active,active));
   (*active)--;
 }
 
 
 void init__alltoall ()
 {
-  HL_Alltoall_Configuration_t alltoall_config;
-  alltoall_config.cfg_type    = HL_CFG_ALLTOALL;
-  alltoall_config.protocol    = HL_DEFAULT_ALLTOALL_PROTOCOL;
-  int rc = HL_register(&_g_alltoall,
-		       (HL_CollectiveConfiguration_t*)&alltoall_config,
+  XMI_Alltoall_Configuration_t alltoall_config;
+  alltoall_config.cfg_type    = XMI_CFG_ALLTOALL;
+  alltoall_config.protocol    = XMI_DEFAULT_ALLTOALL_PROTOCOL;
+  int rc = XMI_register(&_g_alltoall,
+		       (XMI_CollectiveConfiguration_t*)&alltoall_config,
 		       0);
   assert ( rc == 0 );
   _g_alltoall_active = 0;
-  TRACE(("%d: init alltoall active:%d(%p)\n",HL_Rank(),_g_alltoall_active,&_g_alltoall_active));
+  TRACE(("%d: init alltoall active:%d(%p)\n",XMI_Rank(),_g_alltoall_active,&_g_alltoall_active));
 }
 
-CM_Callback_t _cb = {(void (*)(void*,CM_Error_t*))cb_alltoall, (void *) &_g_alltoall_active };
+XMI_Callback_t _cb = {(void (*)(void*,XMI_Error_t*))cb_alltoall, (void *) &_g_alltoall_active };
 hl_alltoall_t  _xfer_alltoall =
     {
-	HL_XFER_ALLTOALL,
+	XMI_XFER_ALLTOALL,
 	&_g_alltoall,
 	&_g_alltoall_request,
 	_cb,
-	&HL_World_Geometry,
+	&XMI_World_Geometry,
 	NULL,// char                     * sndbuf;
         NULL,//unsigned                 * sndlens;
         NULL,//unsigned                 * sdispls;
@@ -161,10 +161,10 @@ hl_alltoall_t  _xfer_alltoall =
         NULL,//unsigned                 * rcvcounters;
     };
 
-HL_Geometry_t *cb_geometry (int comm)
+XMI_Geometry_t *cb_geometry (int comm)
 {
     if(comm == 0)
-	return &HL_World_Geometry;
+	return &XMI_World_Geometry;
     else
 	assert(0);
 }
@@ -186,9 +186,9 @@ void _alltoall (
   _xfer_alltoall.rcvlens = rcvlens;
   _xfer_alltoall.rdispls = rdispls;
 
-  HL_Xfer (NULL, (hl_xfer_t*)&_xfer_alltoall);
+  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_alltoall);
   while (_g_alltoall_active)
-      HL_Poll();
+      XMI_Poll();
 }
 
 
@@ -196,11 +196,11 @@ int main(int argc, char*argv[])
 {
   double tf,ti,usec;
 
-  HL_Collectives_initialize(&argc,&argv,cb_geometry);
+  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
   init__alltoall();
 
-  int rank = HL_Rank();
-  int size = HL_Size();
+  int rank = XMI_Rank();
+  int size = XMI_Size();
 
   assert ( size < MAX_COMM_SIZE );
 
@@ -256,7 +256,7 @@ int main(int argc, char*argv[])
 	      }
       }
 #endif
-  HL_Collectives_finalize();
+  XMI_Collectives_finalize();
   return 0;
 }
 

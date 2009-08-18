@@ -82,7 +82,7 @@ namespace CCMI
 
       virtual void notifyRecv (unsigned src, const CMQuad &info, char * buf, unsigned bytes) = 0;
 
-      void setDoneCallback (void (*cb_done)(void *, CM_Error_t *), void *cd)
+      void setDoneCallback (void (*cb_done)(void *, XMI_Error_t *), void *cd)
       {
         _cb_done    =   cb_done;
         _clientdata =   cd;
@@ -102,7 +102,7 @@ namespace CCMI
       ///
       ///  \brief Callback to call when the barrier has finished
       ///
-      void               (* _cb_done)(void *, CM_Error_t *);
+      void               (* _cb_done)(void *, XMI_Error_t *);
       void                * _clientdata;
 
       ///

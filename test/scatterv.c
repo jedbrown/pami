@@ -13,33 +13,33 @@ void cb_barrier (void * clientdata);
 void cb_scatterv (void * clientdata);
 
 // Barrier Data
-CM_CollectiveProtocol_t _g_barrier;
+XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
+XMI_CollectiveRequest_t  _g_barrier_request;
+XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
-	HL_XFER_BARRIER,
+	XMI_XFER_BARRIER,
 	&_g_barrier,
 	&_g_barrier_request,
 	_cb_barrier,
-	&HL_World_Geometry
+	&XMI_World_Geometry
     };
 
 // Scatterv
-CM_CollectiveProtocol_t _g_scatterv;
+XMI_CollectiveProtocol_t _g_scatterv;
 volatile unsigned       _g_scatterv_active;
-CM_CollectiveRequest_t  _g_scatterv_request;
-CM_Callback_t _cb_scatterv   = {(void (*)(void*,CM_Error_t*))cb_scatterv,
+XMI_CollectiveRequest_t  _g_scatterv_request;
+XMI_Callback_t _cb_scatterv   = {(void (*)(void*,XMI_Error_t*))cb_scatterv,
 			       (void *) &_g_scatterv_active };
 hl_scatterv_t  _xfer_scatterv =
     {
-	HL_XFER_SCATTERV,
+	XMI_XFER_SCATTERV,
 	&_g_scatterv,
 	&_g_scatterv_request,
 	_cb_scatterv,
-	&HL_World_Geometry,
+	&XMI_World_Geometry,
 	NULL,
 	NULL,
 	NULL,
@@ -52,10 +52,10 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-HL_Geometry_t *cb_geometry (int comm)
+XMI_Geometry_t *cb_geometry (int comm)
 {
     if(comm == 0)
-	return &HL_World_Geometry;
+	return &XMI_World_Geometry;
     else
 	assert(0);
 }
@@ -75,22 +75,22 @@ void cb_scatterv (void * clientdata)
 
 void init__barriers ()
 {
-  HL_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = HL_CFG_BARRIER;
-  barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  HL_register(&_g_barrier,
-	      (HL_CollectiveConfiguration_t*)&barrier_config,
+  XMI_Barrier_Configuration_t barrier_config;
+  barrier_config.cfg_type    = XMI_CFG_BARRIER;
+  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
+  XMI_register(&_g_barrier,
+	      (XMI_CollectiveConfiguration_t*)&barrier_config,
 	      0);
   _g_barrier_active = 0;
 }
 
 void init__scattervs ()
 {
-  HL_Scatterv_Configuration_t scatterv_config;
-  scatterv_config.cfg_type    = HL_CFG_SCATTERV;
-  scatterv_config.protocol    = HL_DEFAULT_SCATTERV_PROTOCOL;
-  HL_register(&_g_scatterv,
-	      (HL_CollectiveConfiguration_t*)&scatterv_config,
+  XMI_Scatterv_Configuration_t scatterv_config;
+  scatterv_config.cfg_type    = XMI_CFG_SCATTERV;
+  scatterv_config.protocol    = XMI_DEFAULT_SCATTERV_PROTOCOL;
+  XMI_register(&_g_scatterv,
+	      (XMI_CollectiveConfiguration_t*)&scatterv_config,
 	      0);
   _g_scatterv_active = 0;
 }
@@ -98,9 +98,9 @@ void init__scattervs ()
 void _barrier ()
 {
   _g_barrier_active++;
-  HL_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
-      HL_Poll();
+      XMI_Poll();
 }
 
 void _scatterv (int         root,
@@ -113,9 +113,9 @@ void _scatterv (int         root,
     _xfer_scatterv.src     = src;
     _xfer_scatterv.dst     = dst;
     _xfer_scatterv.lengths = lengths;
-    HL_Xfer (NULL, (hl_xfer_t*)&_xfer_scatterv);
+    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_scatterv);
     while (_g_scatterv_active)
-	HL_Poll();
+	XMI_Poll();
 }
 
 
@@ -123,11 +123,11 @@ void _scatterv (int         root,
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
-  HL_Collectives_initialize(&argc,&argv,cb_geometry);
+  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   init__scattervs();
-  int     rank    = HL_Rank();
-  int     sz      = HL_Size();
+  int     rank    = XMI_Rank();
+  int     sz      = XMI_Size();
   size_t *lengths = (size_t*)malloc(sz*sizeof(size_t));
   char   *buf     = (char*)malloc(BUFSIZE*sz);
   char   *rbuf    = (char*)malloc(BUFSIZE*sz);
@@ -171,6 +171,6 @@ int main(int argc, char*argv[])
 	      }
       }
 #endif
-  HL_Collectives_finalize();
+  XMI_Collectives_finalize();
   return 0;
 }

@@ -42,15 +42,15 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite *generate
-        (CM_CollectiveRequest_t * request,
-         CM_Callback_t            cb_done,
+        (XMI_CollectiveRequest_t * request,
+         XMI_Callback_t            cb_done,
          CCMI_Consistency           consistency,
          Geometry                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         CM_Dt                    dtype,
-         CM_Op                    op,
+         XMI_Dt                    dtype,
+         XMI_Op                    op,
          int                        root = -1 ) = 0;
       }; // class BaseFactory
 
@@ -132,7 +132,7 @@ namespace CCMI
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
-        static CM_Request_t *   cb_receiveHead(const CMQuad  * info,
+        static XMI_Request_t *   cb_receiveHead(const CMQuad  * info,
                                                  unsigned          count,
                                                  unsigned          peer,
                                                  unsigned          sndlen,
@@ -141,7 +141,7 @@ namespace CCMI
                                                  unsigned        * rcvlen,
                                                  char           ** rcvbuf,
                                                  unsigned        * pipewidth,
-                                                 CM_Callback_t * cb_done)
+                                                 XMI_Callback_t * cb_done)
         {
           TRACE_ADAPTOR((stderr, 
                          "<%#.8X>Allreduce::Factory::cb_receiveHead peer %d, conn_id %d\n",

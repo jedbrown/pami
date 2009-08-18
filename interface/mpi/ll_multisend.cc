@@ -13,32 +13,32 @@
 
 #include "interface/ll_multisend.h"
 
-extern "C" int LL_Multicast(LL_Multicast_t *minfo) 
+extern "C" int XMI_Multicast(XMI_Multicast_t *minfo) 
 {
 }
 
 
-CM_Result LL_Multicast_register (CM_Protocol_t                * registration,
-				 LL_Multicast_Configuration_t * configuration)
+XMI_Result XMI_Multicast_register (XMI_Protocol_t                * registration,
+				 XMI_Multicast_Configuration_t * configuration)
 {
 
 }
 
 
-CM_Result LL_Manytomany_register (CM_Protocol_t      * registration,
-				  LL_Manytomany_Configuration_t *configuration)
+XMI_Result XMI_Manytomany_register (XMI_Protocol_t      * registration,
+				  XMI_Manytomany_Configuration_t *configuration)
 {
 
 }
 
-CM_Result LL_Multisync_register(CM_Protocol_t *registration,
-				LL_Multisync_configuration_t *configuration)
+XMI_Result XMI_Multisync_register(XMI_Protocol_t *registration,
+				XMI_Multisync_configuration_t *configuration)
 {
 
 }
 
-CM_Result LL_Multicombine_register(CM_Protocol_t *registration,
-				LL_Multicombine_configuration_t *configuration)
+XMI_Result XMI_Multicombine_register(XMI_Protocol_t *registration,
+				XMI_Multicombine_configuration_t *configuration)
 {
 
 }

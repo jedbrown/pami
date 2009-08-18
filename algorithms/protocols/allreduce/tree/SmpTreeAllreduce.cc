@@ -27,18 +27,18 @@ namespace CCMI
       namespace Tree
       {
 
-          unsigned SmpTreeAllreduce::restart(CM_CollectiveRequest_t  *request,
-                                       CM_Callback_t           & cb_done,
+          unsigned SmpTreeAllreduce::restart(XMI_CollectiveRequest_t  *request,
+                                       XMI_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
                                        char                      * dstbuf,
                                        size_t                      count,
-                                       CM_Dt                     dtype,
-                                       CM_Op                     op,
+                                       XMI_Dt                     dtype,
+                                       XMI_Op                     op,
                                        size_t                      root) 
           {
 	    struct _req {
-		CM_Request_t _msg;
+		XMI_Request_t _msg;
 		LL::Topology _root;
 		LL::PipeWorkQueue _swq;
 		LL::PipeWorkQueue _rwq;
@@ -64,17 +64,17 @@ namespace CCMI
 
             _mcombArgs.setRequestBuffer(&req->_msg, sizeof(req->_msg));
             _mcombArgs.setRoles((unsigned)-1); // perform all roles
-            _mcombArgs.setData((LL_PipeWorkQueue_t *)&req->_swq, _count);
+            _mcombArgs.setData((XMI_PipeWorkQueue_t *)&req->_swq, _count);
             _mcombArgs.setDataRanks(NULL);
-            _mcombArgs.setResults((LL_PipeWorkQueue_t *)&req->_rwq, _count);
-            _mcombArgs.setResultsRanks((LL_Topology_t *)&req->_root);
+            _mcombArgs.setResults((XMI_PipeWorkQueue_t *)&req->_rwq, _count);
+            _mcombArgs.setResultsRanks((XMI_Topology_t *)&req->_root);
             _mcombArgs.setReduceInfo(op, dtype);
             _mcombArgs.setCallback(cb_done.function, cb_done.clientdata);
 
             ///Inlining the send implementation
             _mcomb->DCMF::Collectives::MultiSend::MulticombineImpl::generate(&_mcombArgs);
 
-            return CM_SUCCESS;
+            return XMI_SUCCESS;
           }   
 
       }

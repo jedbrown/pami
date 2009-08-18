@@ -141,8 +141,8 @@ cb_allreduce (CollExchange *coll, unsigned phase)
 /* ************************************************************************* */
 void TSPColl::Allreduce::Long::reset (const void         * sbuf, 
 				      void               * dbuf, 
-				      CM_Op              op,
-				      CM_Dt              dt,
+				      XMI_Op              op,
+				      XMI_Dt              dt,
 				      unsigned             nelems)
 {
   assert (sbuf != NULL);

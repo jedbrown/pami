@@ -35,7 +35,7 @@ namespace CCMI
       {
       protected:
         CONNMGR     _sconnmgr;
-//      static CM_Request_t *   cb_asyncReceiveHead(const CMQuad    * info,
+//      static XMI_Request_t *   cb_asyncReceiveHead(const CMQuad    * info,
 //                                                    unsigned          count,
 //                                                    unsigned          peer,
 //                                                    unsigned          sndlen,
@@ -44,7 +44,7 @@ namespace CCMI
 //                                                    unsigned        * rcvlen,
 //                                                    char           ** rcvbuf,
 //                                                    unsigned        * pipewidth,
-//                                                    CM_Callback_t * cb_done)
+//                                                    XMI_Callback_t * cb_done)
 //      {
 //        return CCMI::Adaptor::Allreduce::AsyncFactory::cb_receiveHead(info,
 //                                                                          count,
@@ -89,15 +89,15 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite * generate
-        (CM_CollectiveRequest_t * request,
-         CM_Callback_t            cb_done,
+        (XMI_CollectiveRequest_t * request,
+         XMI_Callback_t            cb_done,
          CCMI_Consistency           consistency,
          Geometry                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         CM_Dt                    dtype,
-         CM_Op                    op,
+         XMI_Dt                    dtype,
+         XMI_Op                    op,
          int                        root = -1 )
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
@@ -131,8 +131,8 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generateAsync
         (Geometry                 * geometry,
          unsigned                   count,
-         CM_Dt                    dtype,
-         CM_Op                    op,
+         XMI_Dt                    dtype,
+         XMI_Op                    op,
          unsigned                   iteration,
          int                        root = -1 )
         {
@@ -141,14 +141,14 @@ namespace CCMI
                           " geometry %#X comm %#X iteration %#X\n",(int)this, COMPOSITE::name, 
                           sizeof(*this),(int) geometry, (int) geometry->comm(), iteration));
 
-          CM_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
+          XMI_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
 
           //CCMI_assert(geometry->getAsyncAllreduceMode());
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage(iteration);
 
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
           COMPOSITE *allreduce = new (c_request)
-          COMPOSITE((CM_CollectiveRequest_t*)NULL, // restart will reset this
+          COMPOSITE((XMI_CollectiveRequest_t*)NULL, // restart will reset this
                     this->_mapping, &this->_sconnmgr, 
                     temp_cb_done, // bogus temporary cb, restart will reset it.
                     (CCMI_Consistency) CCMI_MATCH_CONSISTENCY, // restart may reset this

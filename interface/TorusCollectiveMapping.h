@@ -88,18 +88,18 @@ namespace CCMI
     
     //////////////////////////////////////////////////////////////////
     /// \brief Returns the rank given hardware coordinates in coords
-    /// \param[out] rank: rank, valid only if rc=CM_SUCCESS
+    /// \param[out] rank: rank, valid only if rc=XMI_SUCCESS
     /// Implement this in the adaptor
     /// \return: int
     //////////////////////////////////////////////////////////////////
-    CM_Result Torus2Rank(unsigned* coords, unsigned* rank);
+    XMI_Result Torus2Rank(unsigned* coords, unsigned* rank);
 
     //////////////////////////////////////////////////////////////////
     /// \brief Returns the hardware coords of a logical rank
     /// Implement this in the adaptor
     /// \return Returns the mapped coords of a given rank
     //////////////////////////////////////////////////////////////////
-    CM_Result Rank2Torus(unsigned* coords, unsigned rank) const;
+    XMI_Result Rank2Torus(unsigned* coords, unsigned rank) const;
     
   };  //- TorusCollectiveMapping
 };  //- CCMI

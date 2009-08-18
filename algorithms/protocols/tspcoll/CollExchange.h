@@ -67,7 +67,7 @@ namespace TSPColl
     
     void          send                     (int phase,CCMI::MultiSend::OldMulticastInterface *mcast_iface);
     //static inline CCMI::MultiSend::DCMF_OldRecvMulticast cb_incoming;
-    static inline CM_Request_t *cb_incoming(const CMQuad  * hdr,
+    static inline XMI_Request_t *cb_incoming(const CMQuad  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,
@@ -76,17 +76,17 @@ namespace TSPColl
 							   unsigned        * rcvlen,
 							   char           ** rcvbuf,
 							   unsigned        * pipewidth,
-							   CM_Callback_t * cb_done);
+							   XMI_Callback_t * cb_done);
     
-    static void   cb_recvcomplete (void * arg, CM_Error_t* error);
-    static void   cb_senddone              (void *, CM_Error_t *err);
+    static void   cb_recvcomplete (void * arg, XMI_Error_t* error);
+    static void   cb_senddone              (void *, XMI_Error_t *err);
     
   protected:
     /* ------------------------------ */
     /* static: set by constructor     */
     /* ------------------------------ */
-    CM_Request_t                       _req[MAX_PHASES];
-    CM_Request_t                       _rreq[MAX_PHASES];
+    XMI_Request_t                       _req[MAX_PHASES];
+    XMI_Request_t                       _rreq[MAX_PHASES];
     
     CCMI::MultiSend::OldMulticastInterface *_mcast_iface;
 
@@ -341,7 +341,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::OldMulticas
 #endif
   unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
   unsigned        ranks   = _dest[phase];
-  CM_Callback_t cb_done;
+  XMI_Callback_t cb_done;
   cb_done.function   = CollExchange::cb_senddone;
   cb_done.clientdata = &_cmplt[phase];
   void *r = NULL;
@@ -371,7 +371,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::OldMulticas
 /* *********************************************************************** */
 /*                             send complete                               */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::cb_senddone (void * arg, CM_Error_t *err)
+inline void TSPColl::CollExchange::cb_senddone (void * arg, XMI_Error_t *err)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   MUTEX_LOCK(&base->_mutex);
@@ -389,7 +389,7 @@ inline void TSPColl::CollExchange::cb_senddone (void * arg, CM_Error_t *err)
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
-inline CM_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
+inline XMI_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,
@@ -398,7 +398,7 @@ inline CM_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
 							   unsigned        * rcvlen,
 							   char           ** rcvbuf,
 							   unsigned        * pipewidth,
-							   CM_Callback_t * cb_done)
+							   XMI_Callback_t * cb_done)
 
 {
   struct AMHeader * header = (struct AMHeader *) hdr;
@@ -443,7 +443,7 @@ inline CM_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
 /*                  active message reception complete                      */
 /* *********************************************************************** */
 inline void 
-TSPColl::CollExchange::cb_recvcomplete (void * arg, CM_Error_t* error)
+TSPColl::CollExchange::cb_recvcomplete (void * arg, XMI_Error_t* error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;

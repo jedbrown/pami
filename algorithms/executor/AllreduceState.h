@@ -112,7 +112,7 @@ namespace CCMI
       /// pointers into the receive allocation
       char             * _tempBuf; 
       char             * _bufs;
-      CM_Request_t   * _recvReq;
+      XMI_Request_t   * _recvReq;
       RecvCallbackData * _recvClientData;
 
       // global state information
@@ -147,8 +147,8 @@ namespace CCMI
       unsigned                                _commid;   /// Communicator identifier
       unsigned                                _color;    /// Color of the collective
 
-      CM_Op                                 _op;         /// allreduce operation 
-      CM_Dt                                 _dt;         /// allreduce datatype
+      XMI_Op                                 _op;         /// allreduce operation 
+      XMI_Dt                                 _dt;         /// allreduce datatype
       unsigned                                _iteration;   /// allreduce async iteration 
       Executor                              * _executor;   /// Pointer to executor which is needed to 
       /// set up the receive callback data objects
@@ -172,11 +172,11 @@ namespace CCMI
         else CCMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION NULL",NULL , 0);
       }
 #endif
-      inline CM_Op getOp()
+      inline XMI_Op getOp()
       {
         return _op;
       }
-      inline CM_Dt getDt()
+      inline XMI_Dt getDt()
       {
         return _dt;
       }
@@ -421,7 +421,7 @@ namespace CCMI
         ++_recvClientData[index].srcPeIndex;
       }
 
-      inline CM_Request_t   * getRecvReq()
+      inline XMI_Request_t   * getRecvReq()
       {
         return  _recvReq;
       }
@@ -567,7 +567,7 @@ namespace CCMI
 
           _tempBuf       = (char             *)0xFFFFFFF8;
           _bufs          = (char             *)0xFFFFFFF9;
-          _recvReq       = (CM_Request_t   *)0xFFFFFFFa;
+          _recvReq       = (XMI_Request_t   *)0xFFFFFFFa;
           _recvClientData= (RecvCallbackData *)0xFFFFFFFb;
 #endif
         }
@@ -628,8 +628,8 @@ namespace CCMI
       _bconnmgr (NULL),
       _commid ((unsigned)-1),
       _color  ((unsigned)-1),
-      _op(CM_UNDEFINED_OP),
-      _dt(CM_UNDEFINED_DT),
+      _op(XMI_UNDEFINED_OP),
+      _dt(XMI_UNDEFINED_DT),
       _iteration(iteration)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::ctor(void) enter\n",(int)this));
@@ -667,8 +667,8 @@ namespace CCMI
       inline void setDataFunc(unsigned         pipelineWidth,
                               unsigned         count,
                               unsigned         sizeOfType,
-                              CM_Op          op,
-                              CM_Dt          dt)
+                              XMI_Op          op,
+                              XMI_Dt          dt)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() enter\n",(int)this));
         CCMI_assert(pipelineWidth % sizeOfType == 0);

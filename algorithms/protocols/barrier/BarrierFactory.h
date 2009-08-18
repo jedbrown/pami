@@ -115,7 +115,7 @@ namespace CCMI
           minterface->setCallback (cb_head, this);
         }
 
-        static CM_Request_t *   cb_head   (const CMQuad    * info,
+        static XMI_Request_t *   cb_head   (const CMQuad    * info,
                                              unsigned          count,
                                              unsigned          peer,
                                              unsigned          sndlen,
@@ -124,7 +124,7 @@ namespace CCMI
                                              unsigned        * rcvlen,
                                              char           ** rcvbuf,
                                              unsigned        * pipewidth,
-                                             CM_Callback_t * cb_done)
+                                             XMI_Callback_t * cb_done)
         {
           CollHeaderData  *cdata = (CollHeaderData *) info;      
           OldBarrierFactory *factory = (OldBarrierFactory *) arg;

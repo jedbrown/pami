@@ -18,7 +18,7 @@
 #include "math/math_coremath.h"
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(CM_Dt, CM_Op, unsigned, 
+      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned, 
 				    unsigned&, coremath&);
     }}};
 namespace TSPColl
@@ -44,8 +44,8 @@ namespace TSPColl
       Short (Communicator * comm, NBTag tag, int instID, int offset);
       void reset (const void        * s, 
 		  void              * d,
-		  CM_Op             op,
-		  CM_Dt             dt,
+		  XMI_Op             op,
+		  XMI_Dt             dt,
 		  unsigned            nelems);
     protected:
       static void cb_switchbuf (CollExchange *, unsigned phase);
@@ -75,7 +75,7 @@ namespace TSPColl
       //      void reset (const void * s, void * d,
       //		  __pgasrt_ops_t op, __pgasrt_dtypes_t dt, unsigned nelems);
       void reset (const void * s, void * d,
-		  CM_Op op, CM_Dt dt, unsigned nelems);
+		  XMI_Op op, XMI_Dt dt, unsigned nelems);
 
     protected:
       static void cb_allreduce (CollExchange *, unsigned phase);

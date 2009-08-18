@@ -181,15 +181,15 @@ bcast (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 /*                  butterfly broadcast                                     */
 /* ************************************************************************ */
 namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(CM_Dt, CM_Op, unsigned, 
+      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned, 
 				    unsigned&, coremath&);
     }}};
 TSPColl::NBColl * TSPColl::Communicator::
 iallreduce  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	     const void          * s,
 	     void                * d,
-	     CM_Op               op,
-	     CM_Dt               dtype,
+	     XMI_Op               op,
+	     XMI_Dt               dtype,
 	     unsigned              nelems,
 	     void (*cb_complete)(void *),
 	     void *arg)
@@ -220,8 +220,8 @@ void TSPColl::Communicator::
 allreduce  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 	    const void *s,
 	    void * d,
-	    CM_Op op,
-	    CM_Dt dtype,
+	    XMI_Op op,
+	    XMI_Dt dtype,
 	    unsigned nelems,
 	    void (*cb_complete)(void *),
 	    void *arg)

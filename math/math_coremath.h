@@ -149,7 +149,7 @@ typedef void (*coremath)  (void *dst, void **srcs, int nsrc, int count);
  * datatype "dt", operand "op", and number of inputs "n", taking
  * into account conbinations that are not optimized.
  */
-extern void *math_op_funcs[CM_OP_COUNT][CM_DT_COUNT][MATH_MAX_NSRC];
+extern void *math_op_funcs[XMI_OP_COUNT][XMI_DT_COUNT][MATH_MAX_NSRC];
 
 /**
  * \brief Return best math routine for datatype, operand, and number inputs.
@@ -163,7 +163,7 @@ extern void *math_op_funcs[CM_OP_COUNT][CM_DT_COUNT][MATH_MAX_NSRC];
  * \param nsrc	Number of input buffers
  * \return	Pointer to coremath function
  */
-static inline coremath MATH_OP_FUNCS(CM_Dt dt, CM_Op op, int nsrc) {
+static inline coremath MATH_OP_FUNCS(XMI_Dt dt, XMI_Op op, int nsrc) {
 	/* assert(nsrc >= 2); */
 	int n = nsrc - 1;
 	return (coremath)(math_op_funcs[op][dt][n] ?

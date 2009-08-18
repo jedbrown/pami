@@ -13,33 +13,33 @@ void cb_barrier (void * clientdata);
 void cb_allgatherv (void * clientdata);
 
 // Barrier Data
-CM_CollectiveProtocol_t _g_barrier;
+XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-CM_CollectiveRequest_t  _g_barrier_request;
-CM_Callback_t _cb_barrier   = {(void (*)(void*,CM_Error_t*))cb_barrier,
+XMI_CollectiveRequest_t  _g_barrier_request;
+XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
 hl_barrier_t  _xfer_barrier =
     {
-	HL_XFER_BARRIER,
+	XMI_XFER_BARRIER,
 	&_g_barrier,
 	&_g_barrier_request,
 	_cb_barrier,
-	&HL_World_Geometry
+	&XMI_World_Geometry
     };
 
 // Allgatherv
-CM_CollectiveProtocol_t _g_allgatherv;
+XMI_CollectiveProtocol_t _g_allgatherv;
 volatile unsigned       _g_allgatherv_active;
-CM_CollectiveRequest_t  _g_allgatherv_request;
-CM_Callback_t _cb_allgatherv   = {(void (*)(void*,CM_Error_t*))cb_allgatherv,
+XMI_CollectiveRequest_t  _g_allgatherv_request;
+XMI_Callback_t _cb_allgatherv   = {(void (*)(void*,XMI_Error_t*))cb_allgatherv,
 			       (void *) &_g_allgatherv_active };
 hl_allgatherv_t  _xfer_allgatherv =
     {
-	HL_XFER_ALLGATHERV,
+	XMI_XFER_ALLGATHERV,
 	&_g_allgatherv,
 	&_g_allgatherv_request,
 	_cb_allgatherv,
-	&HL_World_Geometry,
+	&XMI_World_Geometry,
 	NULL,
 	NULL,
 	NULL,
@@ -52,10 +52,10 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-HL_Geometry_t *cb_geometry (int comm)
+XMI_Geometry_t *cb_geometry (int comm)
 {
     if(comm == 0)
-	return &HL_World_Geometry;
+	return &XMI_World_Geometry;
     else
 	assert(0);
 }
@@ -74,22 +74,22 @@ void cb_allgatherv (void * clientdata)
 
 void init__barriers ()
 {
-  HL_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = HL_CFG_BARRIER;
-  barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  HL_register(&_g_barrier,
-	      (HL_CollectiveConfiguration_t*)&barrier_config,
+  XMI_Barrier_Configuration_t barrier_config;
+  barrier_config.cfg_type    = XMI_CFG_BARRIER;
+  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
+  XMI_register(&_g_barrier,
+	      (XMI_CollectiveConfiguration_t*)&barrier_config,
 	      0);
   _g_barrier_active = 0;
 }
 
 void init__allgathervs ()
 {
-  HL_Allgatherv_Configuration_t allgatherv_config;
-  allgatherv_config.cfg_type    = HL_CFG_ALLGATHERV;
-  allgatherv_config.protocol    = HL_DEFAULT_ALLGATHERV_PROTOCOL;
-  HL_register(&_g_allgatherv,
-	      (HL_CollectiveConfiguration_t*)&allgatherv_config,
+  XMI_Allgatherv_Configuration_t allgatherv_config;
+  allgatherv_config.cfg_type    = XMI_CFG_ALLGATHERV;
+  allgatherv_config.protocol    = XMI_DEFAULT_ALLGATHERV_PROTOCOL;
+  XMI_register(&_g_allgatherv,
+	      (XMI_CollectiveConfiguration_t*)&allgatherv_config,
 	      0);
   _g_allgatherv_active = 0;
 }
@@ -97,9 +97,9 @@ void init__allgathervs ()
 void _barrier ()
 {
   _g_barrier_active++;
-  HL_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
-      HL_Poll();
+      XMI_Poll();
 }
 
 void _allgatherv (char      * src,
@@ -110,9 +110,9 @@ void _allgatherv (char      * src,
     _xfer_allgatherv.src     = src;
     _xfer_allgatherv.dst     = dst;
     _xfer_allgatherv.lengths = lengths;
-    HL_Xfer (NULL, (hl_xfer_t*)&_xfer_allgatherv);
+    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_allgatherv);
     while (_g_allgatherv_active)
-	HL_Poll();
+	XMI_Poll();
 }
 
 
@@ -120,11 +120,11 @@ void _allgatherv (char      * src,
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
-  HL_Collectives_initialize(&argc,&argv,cb_geometry);
+  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
   init__barriers();
   init__allgathervs();
-  int     rank    = HL_Rank();
-  int     sz      = HL_Size();
+  int     rank    = XMI_Rank();
+  int     sz      = XMI_Size();
   size_t *lengths = (size_t*)malloc(sz*sizeof(size_t));
   char   *buf     = (char*)malloc(BUFSIZE*sz);
   char   *rbuf    = (char*)malloc(BUFSIZE*sz);
@@ -169,6 +169,6 @@ int main(int argc, char*argv[])
 	      }
       }
 #endif
-  HL_Collectives_finalize();
+  XMI_Collectives_finalize();
   return 0;
 }

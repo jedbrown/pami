@@ -38,18 +38,18 @@ namespace CCMI
 
     struct CCMI_Multicast_t
     {
-      // This MUST be kept identical to LL_Multicast_t!
+      // This MUST be kept identical to XMI_Multicast_t!
       void              * registration;
-      CM_Request_t    * request;
+      XMI_Request_t    * request;
       size_t              req_size;
-      CM_Callback_t     cb_done;
+      XMI_Callback_t     cb_done;
       unsigned            connection_id;
       unsigned            roles;
       size_t              bytes;
-      LL_PipeWorkQueue_t *src;
-      LL_Topology_t      *src_participants;
-      LL_PipeWorkQueue_t *dst;
-      LL_Topology_t      *dst_participants;
+      XMI_PipeWorkQueue_t *src;
+      XMI_Topology_t      *src_participants;
+      XMI_PipeWorkQueue_t *dst;
+      XMI_Topology_t      *dst_participants;
       const CMQuad    * msginfo;
       unsigned            count;
 
@@ -69,7 +69,7 @@ namespace CCMI
         count          = 0;
       }
 
-      void setRequestBuffer (CM_Request_t *request, size_t req_size)
+      void setRequestBuffer (XMI_Request_t *request, size_t req_size)
       {
         this->request = request;
         this->req_size = req_size;
@@ -85,29 +85,29 @@ namespace CCMI
         this->roles = roles;
       }
 
-      void setSendData (LL_PipeWorkQueue_t *src, size_t bytes)
+      void setSendData (XMI_PipeWorkQueue_t *src, size_t bytes)
       {
         this->src = src;
         this->bytes = bytes;
       }
 
-      void setSendRanks (LL_Topology_t *src_participants)
+      void setSendRanks (XMI_Topology_t *src_participants)
       {
         this->src_participants = src_participants;
       }
 
-      void setRecvData (LL_PipeWorkQueue_t *dst, size_t bytes)
+      void setRecvData (XMI_PipeWorkQueue_t *dst, size_t bytes)
       {
         this->dst = dst;
         this->bytes = bytes;
       }
 
-      void setRecvRanks (LL_Topology_t *dst_participants)
+      void setRecvRanks (XMI_Topology_t *dst_participants)
       {
         this->dst_participants = dst_participants;
       }
 
-      void setCallback (void (*fn) (void *, CM_Error_t *),  void *cd)
+      void setCallback (void (*fn) (void *, XMI_Error_t *),  void *cd)
       {
         cb_done.function = fn;
         cb_done.clientdata = cd;
@@ -121,21 +121,21 @@ namespace CCMI
 
     }; // struct CCMI_Multicast_t
 
-    // This MUST be kept identical to LL_Multicombine_t!
+    // This MUST be kept identical to XMI_Multicombine_t!
     struct CCMI_Multicombine_t
     {
       void              * registration;
-      CM_Request_t    * request;
+      XMI_Request_t    * request;
       size_t              req_size;
-      CM_Callback_t     cb_done;
+      XMI_Callback_t     cb_done;
       unsigned            connection_id;
       unsigned            roles;
-      LL_PipeWorkQueue_t *data;
-      LL_Topology_t      *data_participants;
-      LL_PipeWorkQueue_t *results;
-      LL_Topology_t      *results_participants;
-      CM_Op             op;
-      CM_Dt             dt;
+      XMI_PipeWorkQueue_t *data;
+      XMI_Topology_t      *data_participants;
+      XMI_PipeWorkQueue_t *results;
+      XMI_Topology_t      *results_participants;
+      XMI_Op             op;
+      XMI_Dt             dt;
       size_t              count;
 #ifdef NOT_YET /* These are only needed if we support one-sided multicombine directly */
       const CMQuad    * msginfo;
@@ -153,8 +153,8 @@ namespace CCMI
         data_participants = NULL;
         results = NULL;
         results_participants = NULL;
-        op = CM_UNDEFINED_OP;
-        dt = CM_UNDEFINED_DT;
+        op = XMI_UNDEFINED_OP;
+        dt = XMI_UNDEFINED_DT;
         count = 0;
 #ifdef NOT_YET /* These are only needed if we support one-sided multicombine directly */
         msginfo = NULL;
@@ -162,7 +162,7 @@ namespace CCMI
 #endif
       }
 
-      void setRequestBuffer(CM_Request_t *request, size_t req_size)
+      void setRequestBuffer(XMI_Request_t *request, size_t req_size)
       {
         this->request = request;
         this->req_size = req_size;
@@ -178,35 +178,35 @@ namespace CCMI
         this->roles = roles;
       }
 
-      void setData (LL_PipeWorkQueue_t *data, size_t count)
+      void setData (XMI_PipeWorkQueue_t *data, size_t count)
       {
         this->data = data;
         this->count = count;
       }
 
-      void setDataRanks (LL_Topology_t *data_participants)
+      void setDataRanks (XMI_Topology_t *data_participants)
       {
         this->data_participants = data_participants;
       }
 
-      void setResults (LL_PipeWorkQueue_t *results, size_t count)
+      void setResults (XMI_PipeWorkQueue_t *results, size_t count)
       {
         this->results = results;
         this->count = count;
       }
 
-      void setResultsRanks (LL_Topology_t *results_participants)
+      void setResultsRanks (XMI_Topology_t *results_participants)
       {
         this->results_participants = results_participants;
       }
 
-      void setReduceInfo (CM_Op op,  CM_Dt dt)
+      void setReduceInfo (XMI_Op op,  XMI_Dt dt)
       {
         this->op = op;
         this->dt = dt;
       }
 
-      void setCallback (void (*fn) (void *, CM_Error_t *),  void *cd)
+      void setCallback (void (*fn) (void *, XMI_Error_t *),  void *cd)
       {
         cb_done.function = fn;
         cb_done.clientdata = cd;
@@ -222,17 +222,17 @@ namespace CCMI
 
     }; // struct CCMI_Multicombine_t
 
-    // This MUST be kept identical to LL_Multisync_t!
+    // This MUST be kept identical to XMI_Multisync_t!
     struct CCMI_Multisync_t
     {
       void              * registration;
-      CM_Request_t    * request;
+      XMI_Request_t    * request;
       size_t              req_size;
-      CM_Callback_t     cb_done;
+      XMI_Callback_t     cb_done;
       unsigned            connection_id;
       unsigned            roles;
       size_t              bytes;
-      LL_Topology_t    *participants;
+      XMI_Topology_t    *participants;
 
       CCMI_Multisync_t ()
       {
@@ -244,7 +244,7 @@ namespace CCMI
         participants = NULL;
       }
 
-      void setRequestBuffer (CM_Request_t *request, size_t req_size)
+      void setRequestBuffer (XMI_Request_t *request, size_t req_size)
       {
         this->request = request;
         this->req_size = req_size;
@@ -260,12 +260,12 @@ namespace CCMI
         this->roles = roles;
       }
 
-      void setRanks (LL_Topology_t *participants)
+      void setRanks (XMI_Topology_t *participants)
       {
         this->participants = participants;
       }
 
-      void setCallback (void (*fn) (void *, CM_Error_t *),  void *cd)
+      void setCallback (void (*fn) (void *, XMI_Error_t *),  void *cd)
       {
         cb_done.function = fn;
         cb_done.clientdata = cd;
@@ -321,7 +321,7 @@ namespace CCMI
       ///
       /// \param mcastinfo  : mcast parameters in a structure
       ///
-      virtual CM_Result generate(CCMI_Multicast_t *mcastinfo) = 0;
+      virtual XMI_Result generate(CCMI_Multicast_t *mcastinfo) = 0;
 
     };  //-- MulticastInterface
 
@@ -378,7 +378,7 @@ namespace CCMI
       ///
       /// \param mcombinfo  : mcombine parameters in a structure
       ///
-      virtual CM_Result generate(CCMI_Multicombine_t *mcombinfo) = 0;
+      virtual XMI_Result generate(CCMI_Multicombine_t *mcombinfo) = 0;
 
     };  //-- MulticombineInterface
 
@@ -415,7 +415,7 @@ namespace CCMI
       ///
       /// \param msyncinfo  : msync parameters in a structure
       ///
-      virtual CM_Result generate(CCMI_Multisync_t *msyncinfo) = 0;
+      virtual XMI_Result generate(CCMI_Multisync_t *msyncinfo) = 0;
 
     };  //-- MultisyncInterface
 
@@ -426,14 +426,14 @@ namespace CCMI
     /// \brief Callback function for unexpected async many to many
     /// operations
     ///
-    typedef CM_Request_t * (*manytomany_recv) (unsigned          conn_id,
+    typedef XMI_Request_t * (*manytomany_recv) (unsigned          conn_id,
                                                  void            * arg,
                                                  char           ** rcvbuf,
                                                  unsigned       ** rcvdispls,
                                                  unsigned       ** rcvlens,
                                                  unsigned       **rcvcounters,
                                                  unsigned        * nranks,
-                                                 CM_Callback_t * cb_done);
+                                                 XMI_Callback_t * cb_done);
 
     typedef enum
     {
@@ -444,8 +444,8 @@ namespace CCMI
     struct CCMI_OldMulticast_t
     {
       void              * registration;
-      CM_Request_t    * request;
-      CM_Callback_t     cb_done;
+      XMI_Request_t    * request;
+      XMI_Callback_t     cb_done;
       CCMI_Consistency    consistency;
       unsigned            connection_id;
       unsigned            bytes;
@@ -455,8 +455,8 @@ namespace CCMI
       CCMI_Subtask      * opcodes;
       const CMQuad    * msginfo;
       unsigned            count;
-      CM_Op             op;
-      CM_Dt             dt;
+      XMI_Op             op;
+      XMI_Dt             dt;
       unsigned            flags;
 
       CCMI_OldMulticast_t ()
@@ -472,12 +472,12 @@ namespace CCMI
         opcodes        = NULL;
         msginfo        = NULL;
         count          = 0;
-        op             = CM_UNDEFINED_OP;
-        dt             = CM_UNDEFINED_DT;
+        op             = XMI_UNDEFINED_OP;
+        dt             = XMI_UNDEFINED_DT;
         flags          = CCMI_FLAGS_UNSET;
       }
 
-      void setRequestBuffer (CM_Request_t *request)
+      void setRequestBuffer (XMI_Request_t *request)
       {
         this->request = request;
       }
@@ -493,13 +493,13 @@ namespace CCMI
         this->bytes = bytes;
       }
 
-      void setCallback (void (*fn) (void *, CM_Error_t *),  void *cd)
+      void setCallback (void (*fn) (void *, XMI_Error_t *),  void *cd)
       {
         cb_done.function = fn;
         cb_done.clientdata = cd;
       }
 
-      void setReduceInfo (CM_Op op,  CM_Dt dt)
+      void setReduceInfo (XMI_Op op,  XMI_Dt dt)
       {
         this->op = op;
         this->dt = dt;
@@ -536,15 +536,15 @@ namespace CCMI
     struct CCMI_OldMulticastRecv_t
     {
       void              * registration;
-      CM_Request_t    * request;
-      CM_Callback_t     cb_done;
+      XMI_Request_t    * request;
+      XMI_Callback_t     cb_done;
       unsigned            connection_id;
       unsigned            bytes;
       char              * rcvbuf;
       unsigned            pipelineWidth;
       CCMI_Subtask             opcode;
-      CM_Op             op;
-      CM_Dt             dt;
+      XMI_Op             op;
+      XMI_Dt             dt;
 
       CCMI_OldMulticastRecv_t ()
       {
@@ -554,11 +554,11 @@ namespace CCMI
         bytes          = 0;;
         rcvbuf         = NULL;
         opcode         = CCMI_PT_TO_PT_SUBTASK;
-        op             = CM_UNDEFINED_OP;
-        dt             = CM_UNDEFINED_DT;
+        op             = XMI_UNDEFINED_OP;
+        dt             = XMI_UNDEFINED_DT;
       }
 
-      void setRequestBuffer (CM_Request_t *request)
+      void setRequestBuffer (XMI_Request_t *request)
       {
         this->request = request;
       }
@@ -574,13 +574,13 @@ namespace CCMI
         this->bytes = bytes;
       }
 
-      void setCallback (void (*fn) (void *, CM_Error_t *),  void *cd)
+      void setCallback (void (*fn) (void *, XMI_Error_t *),  void *cd)
       {
         cb_done.function = fn;
         cb_done.clientdata = cd;
       }
 
-      void setReduceInfo (CM_Op op,  CM_Dt dt)
+      void setReduceInfo (XMI_Op op,  XMI_Dt dt)
       {
         this->op = op;
         this->dt = dt;
@@ -660,8 +660,8 @@ namespace CCMI
       /// \param dtype   : datatype in case of reduction ( for pre-processing )
       ///
 
-      virtual unsigned  send  (CM_Request_t         * request,
-                               const CM_Callback_t  * cb_done,
+      virtual unsigned  send  (XMI_Request_t         * request,
+                               const XMI_Callback_t  * cb_done,
                                CCMI_Consistency         consistency,
                                const CMQuad         * info,
                                unsigned                 info_count,
@@ -671,8 +671,8 @@ namespace CCMI
                                unsigned               * hints,
                                unsigned               * ranks,
                                unsigned                 nranks,
-                               CM_Op                  op    = CM_UNDEFINED_OP,
-                               CM_Dt                  dtype = CM_UNDEFINED_DT ) = 0;
+                               XMI_Op                  op    = XMI_UNDEFINED_OP,
+                               XMI_Dt                  dtype = XMI_UNDEFINED_DT ) = 0;
 
       virtual unsigned send (CCMI_OldMulticast_t  *mcastinfo) = 0;
 
@@ -691,15 +691,15 @@ namespace CCMI
 
       ///
 
-      virtual unsigned postRecv (CM_Request_t         * request,
-                                 const CM_Callback_t  * cb_done,
+      virtual unsigned postRecv (XMI_Request_t         * request,
+                                 const XMI_Callback_t  * cb_done,
                                  unsigned                 conn_id,
                                  char                   * buf,
                                  unsigned                 size,
                                  unsigned                 pwidth,
                                  unsigned                 hint   = CCMI_UNDEFINED_SUBTASK,
-                                 CM_Op                  op     = CM_UNDEFINED_OP,
-                                 CM_Dt                  dtype  = CM_UNDEFINED_DT ) = 0;
+                                 XMI_Op                  op     = XMI_UNDEFINED_OP,
+                                 XMI_Dt                  dtype  = XMI_UNDEFINED_DT ) = 0;
 
       virtual unsigned postRecv (CCMI_OldMulticastRecv_t  *mrecv) = 0;
 
@@ -772,8 +772,8 @@ namespace CCMI
       /// \param nranks  : Number of destinations
       ///
 
-      virtual void send  (CM_Request_t         * request,
-                          const CM_Callback_t  * cb_done,
+      virtual void send  (XMI_Request_t         * request,
+                          const XMI_Callback_t  * cb_done,
                           unsigned                 connid,
                           unsigned                 rcvindex,
                           const char             * buf,
@@ -797,8 +797,8 @@ namespace CCMI
       /// \param nranks  : number of ranks
       ///
 
-      virtual void postRecv (CM_Request_t         * request,
-                             const CM_Callback_t  * cb_done,
+      virtual void postRecv (XMI_Request_t         * request,
+                             const XMI_Callback_t  * cb_done,
                              unsigned                 connid,
                              char                   * buf,
                              unsigned               * sizes,

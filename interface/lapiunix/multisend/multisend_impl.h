@@ -45,7 +45,7 @@ namespace CCMI
 	    public:
 		int                _totalsends;
 		int                _numsends;
-		CM_Callback_t    _user_cb_done;
+		XMI_Callback_t    _user_cb_done;
 	    };
 	    static void send_comp_handler(void* input)
 		{
@@ -90,7 +90,7 @@ namespace CCMI
 				      void ** arg);
 
 
-	    typedef CM_Request_t * (*msend_recv) (const CMQuad  * info,
+	    typedef XMI_Request_t * (*msend_recv) (const CMQuad  * info,
 						    unsigned          count,
 						    unsigned          peer,
 						    unsigned          sndlen,
@@ -99,7 +99,7 @@ namespace CCMI
 						    unsigned        * rcvlen,
 						    char           ** rcvbuf,
 						    unsigned        * pipewidth,
-						    CM_Callback_t * cb_done);
+						    XMI_Callback_t * cb_done);
 
 	    static int _g_regId = TEST_NUM;
 
@@ -148,8 +148,8 @@ namespace CCMI
 			/// \param nranks  : Number of destinations
 			/// \param hints   : deposit bit bcast vs pt-to-pt
 			///
-			unsigned  send  (CM_Request_t         * request,
-					 const CM_Callback_t  * cb_done,
+			unsigned  send  (XMI_Request_t         * request,
+					 const XMI_Callback_t  * cb_done,
 					 CCMI_Consistency         consistency,
 					 const CMQuad         * info,
 					 unsigned                 info_count,
@@ -159,8 +159,8 @@ namespace CCMI
 					 unsigned               * hints,
 					 unsigned               * ranks,
 					 unsigned                 nranks,
-					 CM_Op                  op    = CM_UNDEFINED_OP,
-					 CM_Dt                  dtype = CM_UNDEFINED_DT )
+					 XMI_Op                  op    = XMI_UNDEFINED_OP,
+					 XMI_Dt                  dtype = XMI_UNDEFINED_DT )
 
 			{
 			    _g_generic_adaptor->lock();
@@ -224,15 +224,15 @@ namespace CCMI
 							mcastinfo->dt);
 			}
 
-			virtual unsigned postRecv (CM_Request_t         * request,
-						   const CM_Callback_t  * cb_done,
+			virtual unsigned postRecv (XMI_Request_t         * request,
+						   const XMI_Callback_t  * cb_done,
 						   unsigned                 conn_id,
 						   char                   * buf,
 						   unsigned                 size,
 						   unsigned                 pwidth,
 						   unsigned                 hint   = CCMI_UNDEFINED_SUBTASK,
-						   CM_Op                  op     = CM_UNDEFINED_OP,
-						   CM_Dt                  dtype  = CM_UNDEFINED_DT )
+						   XMI_Op                  op     = XMI_UNDEFINED_OP,
+						   XMI_Dt                  dtype  = XMI_UNDEFINED_DT )
 			{
 			    assert (0);
 			}
@@ -258,7 +258,7 @@ namespace CCMI
 		class comp_data
 		{
 		public:
-		    CM_Callback_t  _cb_done;
+		    XMI_Callback_t  _cb_done;
 		    int              _recvlen;
 		    int              _pwidth;
 		};
@@ -273,11 +273,11 @@ namespace CCMI
 		unsigned         rcvlen;
 		char           * rcvbuf;
 		unsigned         pwidth;
-		CM_Callback_t  cb_done;
+		XMI_Callback_t  cb_done;
 		OldMulticastImpl *  mi = (OldMulticastImpl*)_g_regtable.get(msg->_regid);
 		TRACE((stderr, "cb_async: regid=%d mi=%p micount=%d peer=%d sz=%d conn=%d AA=%p\n",
 		       msg->_regid,mi, msg->_peer, msg->_info_count,msg->_size, msg->_conn, mi->getAsyncArg()));
-		CM_Request_t * req=
+		XMI_Request_t * req=
 		    mi->_cb_async_head(&msg->_info[0],
 				       msg->_info_count,
 				       msg->_peer,
@@ -293,7 +293,7 @@ namespace CCMI
 
 		if(rcvlen == 0)
 		    {
-			CM_Request_t tmpreq;
+			XMI_Request_t tmpreq;
 			comp_data * cd = (comp_data*)&tmpreq;
 			cd->_cb_done   = cb_done;
 			cd->_recvlen   = rcvlen;

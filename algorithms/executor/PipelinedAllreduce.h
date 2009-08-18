@@ -22,7 +22,7 @@
 #include "AllreduceState.h"
 #include "AllreduceBase.h"
 
-#define CM_MAX_ACTIVE_SENDS  8
+#define XMI_MAX_ACTIVE_SENDS  8
 
 namespace CCMI
 {
@@ -34,7 +34,7 @@ namespace CCMI
 
     private:
       /// Static function to be passed into the done of multisend send  
-      static void pipeAllreduceNotifySend (void *cd, CM_Error_t *err)
+      static void pipeAllreduceNotifySend (void *cd, XMI_Error_t *err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
         CMQuad *info = (CMQuad *)cd;
@@ -43,7 +43,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend postRecv
-      static void pipeAllreduceNotifyReceive (void *cd, CM_Error_t *err)
+      static void pipeAllreduceNotifyReceive (void *cd, XMI_Error_t *err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         CMQuad *info = (CMQuad *)cd;
@@ -191,7 +191,7 @@ namespace CCMI
 inline void CCMI::Executor::PipelinedAllreduce::start()
 {
   _initialized = true; 
-  _numActiveSends   = CM_MAX_ACTIVE_SENDS;
+  _numActiveSends   = XMI_MAX_ACTIVE_SENDS;
 
   unsigned count;
   for(count = 0; count < _numActiveSends; count++)
@@ -288,7 +288,7 @@ inline void CCMI::Executor::PipelinedAllreduce::notifySendDone
 
   if((_curSendChunk > last_chunk)       &&
      (_numBcastChunksSent > last_chunk) && 
-     (_numActiveSends == CM_MAX_ACTIVE_SENDS))
+     (_numActiveSends == XMI_MAX_ACTIVE_SENDS))
     processDone();
   else
   {
@@ -488,7 +488,7 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
       {
         ///All sends done and all broadcasts done and no messages in
         ///flight
-        if(_numActiveSends == CM_MAX_ACTIVE_SENDS 
+        if(_numActiveSends == XMI_MAX_ACTIVE_SENDS 
            && _numBcastChunksSent > last_chunk)
           processDone();
         break;
@@ -521,7 +521,7 @@ inline void CCMI::Executor::PipelinedAllreduce::sendMessage
               (int)this,ThreadID(), 
               _curSendChunk,_numActiveSends, offset, bytes));
 
-  int index = CM_MAX_ACTIVE_SENDS - 1;
+  int index = XMI_MAX_ACTIVE_SENDS - 1;
   if(!_sState[index].sndClientData.isDone)
   {
     while((index --) && (!_sState[index].sndClientData.isDone));
@@ -557,7 +557,7 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceBcast ()
   if(bcastRecvPhase < 0)
       return;
 
-  if(_numActiveSends <= CM_MAX_ACTIVE_SENDS/2)
+  if(_numActiveSends <= XMI_MAX_ACTIVE_SENDS/2)
       return;
 
   if(_astate.getPhaseChunksRcvd(bcastRecvPhase, 0) > _numBcastChunksSent)

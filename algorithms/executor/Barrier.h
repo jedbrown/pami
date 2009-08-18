@@ -153,7 +153,7 @@ namespace CCMI
       ScheduleCache         _cache;
 
       /// \brief Request for the multisend msg
-      CM_Request_t        _request __attribute__((__aligned__(16)));   
+      XMI_Request_t        _request __attribute__((__aligned__(16)));   
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -183,7 +183,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend
-      static void staticNotifySendDone(void *cd, CM_Error_t *err)
+      static void staticNotifySendDone(void *cd, XMI_Error_t *err)
       {
         CMQuad * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));
@@ -283,7 +283,7 @@ inline void CCMI::Executor::Barrier::sendNext()
   _senddone = false;
   size_t ndest     = _cache.getDstNumRanks(_phase);
   size_t *dstranks = _cache.getDstRanks(_phase);
-  LL_Topology_t topo;
+  XMI_Topology_t topo;
   //unsigned *subtasks = _cache.getDstSubtasks(_phase);
 
   TRACE_ERR((stderr,"<%X>Executor::Barrier::sendNext _phase %d, ndest %zd, _destrank %zd, _connid %d, _clientdata %X\n",
@@ -507,7 +507,7 @@ namespace CCMI
       ScheduleCache         _cache;
 
       /// \brief Request for the multisend msg
-      CM_Request_t        _request __attribute__((__aligned__(16)));   
+      XMI_Request_t        _request __attribute__((__aligned__(16)));   
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -537,7 +537,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend
-      static void staticNotifySendDone(void *cd, CM_Error_t *err)
+      static void staticNotifySendDone(void *cd, XMI_Error_t *err)
       {
         CMQuad * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));

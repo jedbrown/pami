@@ -74,7 +74,7 @@ CCMI_Consistency;
 #define  LINE_BCAST_MASK    (CCMI_LINE_BCAST_XP|CCMI_LINE_BCAST_XM|\
                                  CCMI_LINE_BCAST_YP|CCMI_LINE_BCAST_YM|\
                                  CCMI_LINE_BCAST_ZP|CCMI_LINE_BCAST_ZM)
-// Warning. This enum must "follow" CM_Opcode_t in sys/include/dcmf.h.
+// Warning. This enum must "follow" XMI_Opcode_t in sys/include/dcmf.h.
 // Both enums must define the same values.
 //
 typedef enum
@@ -101,9 +101,9 @@ typedef enum
   CCMI_UNDEFINED_SUBTASK          = (~LINE_BCAST_MASK),
 } CCMI_Subtask;
 
-#define CCMI_REQUEST_SIZE	CM_REQUEST_NQUADS
+#define CCMI_REQUEST_SIZE	XMI_REQUEST_NQUADS
 // CCMI Protocol may contain two DCMF Protocols
-#define CCMI_PROTOCOL_SIZE	(CM_PROTOCOL_NQUADS*2)
+#define CCMI_PROTOCOL_SIZE	(XMI_PROTOCOL_NQUADS*2)
 #define CCMI_GEOMETRY_SIZE	32
 
 
@@ -112,7 +112,7 @@ typedef enum
 typedef DCMF_OldRecvMulticast CCMI_OldRecvMulticast_t;
 #endif /*  DEPRECATED_MULTICAST */
 
-typedef LL_RecvMulticast CCMI_RecvMulticast_t;
+typedef XMI_RecvMulticast CCMI_RecvMulticast_t;
 
 #define __ccmi_recvasynccallback_defined__
 typedef DCMF_RecvAsyncBroadcast CCMI_RecvAsyncBroadcast;
@@ -121,9 +121,9 @@ typedef DCMF_RecvAsyncBroadcast CCMI_RecvAsyncBroadcast;
 
 //static inline void _adaptor_pre_h_compile_time_assert_ ()
 //{
-// Just trying to get rid of " warning: #CM_Op_to_CM_Op# defined but not used"
-//  assert(CM_Dt_to_CM_Dt[CM_DT_COUNT]==(CM_Dt)CM_DT_COUNT);
-//  assert(CM_Op_to_CM_Op[CM_OP_COUNT]==(CM_Op)CM_OP_COUNT);
+// Just trying to get rid of " warning: #XMI_Op_to_CM_Op# defined but not used"
+//  assert(XMI_Dt_to_CM_Dt[XMI_DT_COUNT]==(XMI_Dt)XMI_DT_COUNT);
+//  assert(XMI_Op_to_CM_Op[XMI_OP_COUNT]==(XMI_Op)XMI_OP_COUNT);
 //}
 
 #if 0
@@ -135,7 +135,7 @@ public:
   {
   }
 
-  void setRequestBuffer (CM_Request_t *request)
+  void setRequestBuffer (XMI_Request_t *request)
   {
     this->request = request;
   }
@@ -157,10 +157,10 @@ public:
     cb_done.clientdata = cd;
   }
 
-  void setReduceInfo (CM_Op op,  CM_Dt dt)
+  void setReduceInfo (XMI_Op op,  XMI_Dt dt)
   {
-    this->op = CM_Op_to_CM_Op[op];
-    this->dt = CM_Dt_to_CM_Dt[dt];
+    this->op = XMI_Op_to_CM_Op[op];
+    this->dt = XMI_Dt_to_CM_Dt[dt];
   }
 
   void setConsistency (CCMI_Consistency c)
@@ -170,7 +170,7 @@ public:
 
   void setOpcodes (CCMI_Subtask *op)
   {
-    this->opcodes = (CM_Opcode_t *) op;
+    this->opcodes = (XMI_Opcode_t *) op;
   }
 
   void setInfo (CMQuad *info, int count)

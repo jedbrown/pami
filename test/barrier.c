@@ -6,9 +6,9 @@
 #include <sys/time.h>
 #include "../interface/hl_collectives.h"
 
-CM_CollectiveProtocol_t _g_barrier;
+XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-CM_CollectiveRequest_t  _g_barrier_request;
+XMI_CollectiveRequest_t  _g_barrier_request;
 
 static double timer()
 {
@@ -17,7 +17,7 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void cb_barrier (void * clientdata, CM_Error_t *err)
+void cb_barrier (void * clientdata, XMI_Error_t *err)
 {
   int * active = (int *) clientdata;
   (*active)--;
@@ -25,30 +25,30 @@ void cb_barrier (void * clientdata, CM_Error_t *err)
 
 void init__barriers ()
 {
-  HL_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = HL_CFG_BARRIER;
-  barrier_config.protocol    = HL_DEFAULT_BARRIER_PROTOCOL;
-  HL_register(&_g_barrier,
-	      (HL_CollectiveConfiguration_t*)&barrier_config,
+  XMI_Barrier_Configuration_t barrier_config;
+  barrier_config.cfg_type    = XMI_CFG_BARRIER;
+  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
+  XMI_register(&_g_barrier,
+	      (XMI_CollectiveConfiguration_t*)&barrier_config,
 	      0);
   _g_barrier_active = 0;
 }
 
 
-CM_Callback_t _cb = { cb_barrier, (void *)&_g_barrier_active };
+XMI_Callback_t _cb = { cb_barrier, (void *)&_g_barrier_active };
 hl_barrier_t  _xfer =
     {
-	HL_XFER_BARRIER,
+	XMI_XFER_BARRIER,
 	&_g_barrier,
 	&_g_barrier_request,
 	_cb,
-	&HL_World_Geometry
+	&XMI_World_Geometry
     };
 
-HL_Geometry_t *cb_geometry (int comm)
+XMI_Geometry_t *cb_geometry (int comm)
 {
     if(comm == 0)
-	return &HL_World_Geometry;
+	return &XMI_World_Geometry;
     else
 	assert(0);
 }
@@ -56,17 +56,17 @@ HL_Geometry_t *cb_geometry (int comm)
 void _barrier ()
 {
   _g_barrier_active++;
-  HL_Xfer (NULL, (hl_xfer_t*)&_xfer);
+  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer);
   while (_g_barrier_active)
-      HL_Poll();
+      XMI_Poll();
 }
 
 
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;  
-  HL_Collectives_initialize(&argc,&argv,cb_geometry);
-  int r = HL_Rank();
+  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
+  int r = XMI_Rank();
   init__barriers();
 
   if(!r)
@@ -90,6 +90,6 @@ int main(int argc, char*argv[])
   if(!r)
       fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
 
-  HL_Collectives_finalize();
+  XMI_Collectives_finalize();
   return 0;
 }

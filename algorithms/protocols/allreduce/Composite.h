@@ -40,7 +40,7 @@ namespace CCMI
     {
 
       // Forward declare prototype
-      extern void getReduceFunction(CM_Dt, CM_Op, unsigned, 
+      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned, 
                                     unsigned&, coremath&) __attribute__((noinline));
 
       //-- Composite
@@ -75,7 +75,7 @@ namespace CCMI
         /// \brief Client's callback to call when the allreduce has
         /// finished
         ///
-        void               (* _myClientFunction)(void *, CM_Error_t *);
+        void               (* _myClientFunction)(void *, XMI_Error_t *);
         void                * _myClientData;
       public:
         Composite () : 
@@ -88,7 +88,7 @@ namespace CCMI
         Composite ( ConfigFlags                       flags,
                     CCMI::Executor::Executor      * barrier,
                     CollectiveProtocolFactory                 * factory,
-                    CM_Callback_t                   cb_done):
+                    XMI_Callback_t                   cb_done):
 
         BaseComposite (factory),
         _doneCountdown(1),  // default to just a composite done needed
@@ -128,15 +128,15 @@ namespace CCMI
         /// have been added to the composite
         ///	  
         void initialize ( CCMI::Executor::AllreduceBase * allreduce,
-                          CM_CollectiveRequest_t        * request,
+                          XMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
                           unsigned                          count,
-                          CM_Dt                           dtype,
-                          CM_Op                           op,
+                          XMI_Dt                           dtype,
+                          XMI_Op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, CM_Error_t *) = cb_compositeDone, 
+                          void                           (* cb_done)(void *, XMI_Error_t *) = cb_compositeDone, 
                           void                            * cd = NULL
                         )
         {
@@ -156,7 +156,7 @@ namespace CCMI
                                                         sizeOfType, func);
 
             unsigned min_pwidth = MIN_PIPELINE_WIDTH;
-            if(dtype == CM_DOUBLE && op == CM_SUM)
+            if(dtype == XMI_DOUBLE && op == XMI_SUM)
               min_pwidth = MIN_PIPELINE_WIDTH_SUM2P;
 
             /* Select pipeline width.
@@ -206,14 +206,14 @@ namespace CCMI
         /// \brief At this level we only support single color
         /// collectives
         ///
-        virtual unsigned restart   ( CM_CollectiveRequest_t  * request,
-                                     CM_Callback_t           & cb_done,
+        virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
+                                     XMI_Callback_t           & cb_done,
                                      CCMI_Consistency            consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
                                      size_t                      count,
-                                     CM_Dt                     dtype,
-                                     CM_Op                     op,
+                                     XMI_Dt                     dtype,
+                                     XMI_Op                     op,
                                      size_t                      root = (size_t)-1) 
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::restart()\n",(int)this));
@@ -240,7 +240,7 @@ namespace CCMI
             startBarrier (consistency);
           }
 
-          return CM_SUCCESS;
+          return XMI_SUCCESS;
         }
 
         virtual void start()
@@ -274,7 +274,7 @@ namespace CCMI
         /// It means the is done, but the client done isn't called
         /// until both the composite and (optional) barrier are done.
         /// 
-        static void cb_barrierDone(void *me, CM_Error_t *err)
+        static void cb_barrierDone(void *me, XMI_Error_t *err)
         {
 
           TRACE_ADAPTOR((stderr,
@@ -299,7 +299,7 @@ namespace CCMI
         /// the client done isn't called until both the composite and
         /// (optional) barrier are done.
         /// 
-        static void cb_compositeDone(void *me, CM_Error_t *err)
+        static void cb_compositeDone(void *me, XMI_Error_t *err)
         {
           TRACE_ADAPTOR((stderr,
                          "<%#.8X>Allreduce::Composite::cb_compositeDone()\n",

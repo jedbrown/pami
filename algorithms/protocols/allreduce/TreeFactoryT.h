@@ -68,15 +68,15 @@ namespace CCMI
             return( geometry->isGlobalContext() && geometry->isTree());
           }
 
-          virtual CCMI::Executor::Composite * generate(CM_CollectiveRequest_t * request,
-                                                       CM_Callback_t            cb_done,
+          virtual CCMI::Executor::Composite * generate(XMI_CollectiveRequest_t * request,
+                                                       XMI_Callback_t            cb_done,
                                                        CCMI_Consistency           consistency,
                                                        Geometry                 * geometry,
                                                        char                     * srcbuf,
                                                        char                     * dstbuf,
                                                        unsigned                   count,
-                                                       CM_Dt                    dtype,
-                                                       CM_Op                    op,
+                                                       XMI_Dt                    dtype,
+                                                       XMI_Op                    op,
                                                        int                        root = -1 )
           {
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate(), comm %d\n",
@@ -127,7 +127,7 @@ namespace CCMI
                                   op, 
                                   root );
 
-              if(status == CM_SUCCESS)
+              if(status == XMI_SUCCESS)
               {
                 geometry->setAllreduceComposite (allreduce);
                 return allreduce;

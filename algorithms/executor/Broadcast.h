@@ -59,9 +59,9 @@ namespace CCMI
       unsigned         _destpes    [MAX_PARALLEL];
       unsigned         _hints      [MAX_PARALLEL];
 
-      //CM_Callback_t           _msend_cb;
-      CM_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
-      CM_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
+      //XMI_Callback_t           _msend_cb;
+      XMI_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
+      XMI_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
 
       CollHeaderData           _mdata;
       ConnectionManager::ConnectionManager     * _connmgr;
@@ -92,7 +92,7 @@ namespace CCMI
 
     public:
 
-      static void staticSendDone (void *clientdata, CM_Error_t *err)
+      static void staticSendDone (void *clientdata, XMI_Error_t *err)
       {
         CMQuad * info = NULL;
         Broadcast *bcast = (Broadcast *) clientdata;
@@ -191,11 +191,11 @@ namespace CCMI
 	_pipelinewidth = pwidth;
       }
 
-      inline CM_Request_t * getRecvRequest ()
+      inline XMI_Request_t * getRecvRequest ()
       {
         return & _recv_request;
       }
-      inline CM_Request_t * getSendRequest ()
+      inline XMI_Request_t * getSendRequest ()
       {
         return & _send_request;
       }

@@ -59,7 +59,7 @@ namespace CCMI
           ShortTreeBcast (CCMI::MultiSend::OldMulticastInterface * mf,
                           CCMI::TorusCollectiveMapping                  * mapping,
                           void  *request,
-                          CM_Callback_t           & cb_done,
+                          XMI_Callback_t           & cb_done,
                           CCMI_Consistency            consistency,
                           char                      * buf,
                           unsigned                    count,
@@ -67,8 +67,8 @@ namespace CCMI
           _mapping      (mapping),
           _mcast        ((DCMF::Collectives::MultiSend::OldMulticastImpl *)mf),
           _dstbuf       (NULL),
-          _op           (CM_UNDEFINED_OP),
-          _dt           (CM_UNDEFINED_DT),
+          _op           (XMI_UNDEFINED_OP),
+          _dt           (XMI_UNDEFINED_DT),
           _count        (0),
           _bytes        (0),
           _masterCore   (_minTCoord),
@@ -100,7 +100,7 @@ namespace CCMI
 
           static void init( CCMI::TorusCollectiveMapping * mapping );
 
-          static void cb_treeRecvDone( void *me, CM_Error_t *err )
+          static void cb_treeRecvDone( void *me, XMI_Error_t *err )
           {
             ShortTreeBcast * a = (ShortTreeBcast *)me;
 
@@ -147,7 +147,7 @@ namespace CCMI
           }
 
           virtual unsigned internal_restart   ( void  * request,
-                                                CM_Callback_t           & cb_done,
+                                                XMI_Callback_t           & cb_done,
                                                 CCMI_Consistency            consistency,
                                                 char                      * buf,
                                                 unsigned                    count,
@@ -164,7 +164,7 @@ namespace CCMI
 
             if(_bytes > MaxDataBytes)
             {
-              return CM_INVAL;
+              return XMI_INVAL;
             }
 
             unsigned tCoord = _mapping->GetCoord(CCMI_T_DIM);
@@ -206,10 +206,10 @@ namespace CCMI
               _shared->client[ 2 ].isSrcReady = 0;
               _shared->client[ 3 ].isSrcReady = 0;
 
-              _mcastArgs.setRequestBuffer( (CM_Request_t *)request);
+              _mcastArgs.setRequestBuffer( (XMI_Request_t *)request);
               _mcastArgs.setSendData( _shared->dst, _bytes );
 
-              _mcastRecvArgs.setRequestBuffer( (CM_Request_t *)request + 1 );
+              _mcastRecvArgs.setRequestBuffer( (XMI_Request_t *)request + 1 );
 
               if(_numPeers == 1) _mcastRecvArgs.setRecvData( buf, _bytes );
               else  _mcastRecvArgs.setRecvData( _shared->dst, _bytes );
@@ -258,7 +258,7 @@ namespace CCMI
 
             }
 
-            return CM_SUCCESS;
+            return XMI_SUCCESS;
           } 
 
           bool is_vn_peer(unsigned rank, unsigned &root_tcoord){
@@ -273,10 +273,10 @@ namespace CCMI
 
           CCMI::TorusCollectiveMapping                 * _mapping;
           DCMF::Collectives::MultiSend::OldMulticastImpl     * _mcast;
-          CM_Callback_t                _cb_done;
+          XMI_Callback_t                _cb_done;
           char                         * _dstbuf;
-          CM_Op                        _op;
-          CM_Dt                        _dt;
+          XMI_Op                        _op;
+          XMI_Dt                        _dt;
           unsigned                       _count;
           unsigned                       _bytes;
           unsigned                       _masterCore;

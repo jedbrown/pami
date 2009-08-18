@@ -85,15 +85,15 @@ namespace TSPColl
     virtual NBColl * iallreduce  (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void        * s,
 				  void              * d, 
-				  CM_Op             op,
-				  CM_Dt             dtype, 
+				  XMI_Op             op,
+				  XMI_Dt             dtype, 
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
     virtual void     allreduce   (CCMI::MultiSend::OldMulticastInterface *mcast_iface,
 				  const void        * s, 
 				  void              * d, 
-				  CM_Op             op,
-				  CM_Dt             dtype, 
+				  XMI_Op             op,
+				  XMI_Dt             dtype, 
 				  unsigned            nelems,
 				  void (*cb_complete)(void *)=NULL, void *arg=NULL);
 

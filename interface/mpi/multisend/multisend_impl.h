@@ -23,11 +23,11 @@
 #include "Table.h"
 
 
-//extern int HL_Rank();
+//extern int XMI_Rank();
 //#define TRACE(x) printf x; fflush(stdout);
 #define TRACE(x) 
 
-typedef CM_Request_t * (*msend_recv) (const CMQuad  * info,
+typedef XMI_Request_t * (*msend_recv) (const CMQuad  * info,
                                       unsigned          count,
                                       unsigned          peer,
                                       unsigned          sndlen,
@@ -36,7 +36,7 @@ typedef CM_Request_t * (*msend_recv) (const CMQuad  * info,
                                       unsigned        * rcvlen,
                                       char           ** rcvbuf,
                                       unsigned        * pipewidth,
-                                      CM_Callback_t * cb_done);
+                                      XMI_Callback_t * cb_done);
 
 namespace CCMI
 {
@@ -91,8 +91,8 @@ namespace CCMI
         /// \param hints   : deposit bit bcast vs pt-to-pt
         ///
 
-        unsigned  send  (CM_Request_t         * request,
-                         const CM_Callback_t  * cb_done,
+        unsigned  send  (XMI_Request_t         * request,
+                         const XMI_Callback_t  * cb_done,
                          CCMI_Consistency         consistency,
                          const CMQuad         * info, 
                          unsigned                 info_count,
@@ -102,8 +102,8 @@ namespace CCMI
                          unsigned               * hints,
                          unsigned               * ranks,
                          unsigned                 nranks,
-                         CM_Op                  op    = CM_UNDEFINED_OP,
-                         CM_Dt                  dtype = CM_UNDEFINED_DT )
+                         XMI_Op                  op    = XMI_UNDEFINED_OP,
+                         XMI_Dt                  dtype = XMI_UNDEFINED_DT )
 
         {
           TRACE_ADAPTOR((stderr, "<%#.8X>CCMI::Adaptor::Generic::MulticastImpl::send()\n", (int)this));
@@ -174,15 +174,15 @@ namespace CCMI
                                          mcastinfo->dt);
         }
 
-        virtual unsigned postRecv (CM_Request_t         * request,
-                                   const CM_Callback_t  * cb_done,
+        virtual unsigned postRecv (XMI_Request_t         * request,
+                                   const XMI_Callback_t  * cb_done,
                                    unsigned                 conn_id,
                                    char                   * buf,
                                    unsigned                 size,
                                    unsigned                 pwidth,
                                    unsigned                 hint   = CCMI_UNDEFINED_SUBTASK,
-                                   CM_Op                  op     = CM_UNDEFINED_OP,
-                                   CM_Dt                  dtype  = CM_UNDEFINED_DT ) { CCMI_abort();}
+                                   XMI_Op                  op     = XMI_UNDEFINED_OP,
+                                   XMI_Dt                  dtype  = XMI_UNDEFINED_DT ) { CCMI_abort();}
 
         virtual unsigned postRecv (MultiSend::CCMI_OldMulticastRecv_t  *mrecv) { CCMI_abort();}
 
@@ -234,7 +234,7 @@ namespace CCMI
             unsigned         rcvlen;
             char           * rcvbuf;
             unsigned         pwidth;
-            CM_Callback_t  cb_done;
+            XMI_Callback_t  cb_done;
 
             _cb_async_head (&msg->_info[0], msg->_info_count, sts.MPI_SOURCE, msg->_size, msg->_conn,
                             _async_arg, &rcvlen, &rcvbuf, &pwidth, &cb_done);
@@ -263,14 +263,14 @@ namespace CCMI
       /// \brief Callback function for unexpected async many to many
       /// operations
       ///
-      typedef CM_Request_t * (*manytomany_recv) (unsigned          conn_id,
+      typedef XMI_Request_t * (*manytomany_recv) (unsigned          conn_id,
                                                  void            * arg,
                                                  char           ** rcvbuf,
                                                  unsigned       ** rcvdispls,
                                                  unsigned       ** rcvlens,
                                                  unsigned       **rcvcounters,
                                                  unsigned        * nranks,
-                                                 CM_Callback_t * cb_done);
+                                                 XMI_Callback_t * cb_done);
 
 
 
@@ -312,8 +312,8 @@ namespace CCMI
         /// \param nranks  : Number of destinations
         ///
 
-        virtual void send  (CM_Request_t         * request,
-                            const CM_Callback_t  * cb_done,
+        virtual void send  (XMI_Request_t         * request,
+                            const XMI_Callback_t  * cb_done,
                             unsigned                 connid,
                             unsigned                 rcvindex,
                             const char             * buf,
@@ -326,7 +326,7 @@ namespace CCMI
         {
           unsigned i;
 
-          TRACE_ADAPTOR(("%d: ManytomanyImpl::send() (%p)\n", HL_Rank(),this));
+          TRACE_ADAPTOR(("%d: ManytomanyImpl::send() (%p)\n", XMI_Rank(),this));
 
           M2MSendReq * m2m = (M2MSendReq *)CCMI_Alloc(sizeof(M2MSendReq));
           CCMI_assert( m2m != NULL );
@@ -381,7 +381,7 @@ namespace CCMI
             int rc = -1;
 
             TRACE_ADAPTOR(("%d: MPI_Isend to %d tag:%p conn:%d size:%d totalsize:%d\n",
-                           HL_Rank(),ranks[index],this,hdr->_conn,hdr->_size,hdr->totalsize()));
+                           XMI_Rank(),ranks[index],this,hdr->_conn,hdr->_size,hdr->totalsize()));
             rc = MPI_Isend (hdr,
                             hdr->totalsize(),
                             MPI_CHAR,
@@ -401,8 +401,8 @@ namespace CCMI
         }
 
 
-        virtual void postRecv (CM_Request_t         * request,
-                               const CM_Callback_t  * cb_done,
+        virtual void postRecv (XMI_Request_t         * request,
+                               const XMI_Callback_t  * cb_done,
                                unsigned                 connid,
                                char                   * buf,
                                unsigned               * sizes,
@@ -411,7 +411,7 @@ namespace CCMI
                                unsigned                 nranks,
                                unsigned                 myindex)
         {
-          TRACE_ADAPTOR(("%d: CCMI::Adaptor::Generic::ManytomanyImpl::postRecv() (%p)\n", HL_Rank(),this));
+          TRACE_ADAPTOR(("%d: CCMI::Adaptor::Generic::ManytomanyImpl::postRecv() (%p)\n", XMI_Rank(),this));
 
           std::list<M2MRecvReq*>::iterator it;
           for(it=_g_m2m_recvreq_list.begin();it != _g_m2m_recvreq_list.end(); it++)
@@ -430,7 +430,7 @@ namespace CCMI
         virtual void advance () {
           //	  printf ("In manytomany advance\n");
 
-          TRACE_ADAPTOR(("%d: ManytomanyImpl::advance() (tag:%p)\n", HL_Rank(),this));
+          TRACE_ADAPTOR(("%d: ManytomanyImpl::advance() (tag:%p)\n", XMI_Rank(),this));
           int flag = 0;
           MPI_Status sts;
 
@@ -474,7 +474,7 @@ namespace CCMI
 
             CCMI_assert (rc == MPI_SUCCESS);
 
-            TRACE_ADAPTOR(("%d: ManytomanyImpl::advance() received message from:%d connid:%d size:%d nbytes:%d\n", HL_Rank(),sts.MPI_SOURCE,msg->_conn,msg->_size,nbytes));
+            TRACE_ADAPTOR(("%d: ManytomanyImpl::advance() received message from:%d connid:%d size:%d nbytes:%d\n", XMI_Rank(),sts.MPI_SOURCE,msg->_conn,msg->_size,nbytes));
 
 
             std::list<M2MRecvReq*>::iterator it;
@@ -486,14 +486,14 @@ namespace CCMI
             M2MRecvReq * m2m;
             if( it == _g_m2m_recvreq_list.end() )
             {
-              CM_Callback_t   cb_done;
+              XMI_Callback_t   cb_done;
               char            * buf;
               unsigned        * sizes;
               unsigned        * offsets;
               unsigned        * rcvcounters;
               unsigned          nranks;
 
-              TRACE_ADAPTOR(("%d: Manytomany async callback\n",HL_Rank()));
+              TRACE_ADAPTOR(("%d: Manytomany async callback\n",XMI_Rank()));
 
               CCMI_assert ( _cb_m2m_head );
 
@@ -524,7 +524,7 @@ namespace CCMI
             if( m2m )
             {
               TRACE_ADAPTOR(("%d: Manytomany advance received from %d num:%d msgsize:%d recvsize:%d offset:%d rcvbuf:%p\n",
-                             HL_Rank(),
+                             XMI_Rank(),
                              src,m2m->_num,
                              msg->_size,
                              m2m->_sizes[src],
@@ -554,7 +554,7 @@ namespace CCMI
       private:
 
         M2MRecvReq * create_recvreq( unsigned                 connid,
-                                     const CM_Callback_t  * cb_done,
+                                     const XMI_Callback_t  * cb_done,
                                      char                   * buf,
                                      unsigned               * sizes,
                                      unsigned               * offsets,

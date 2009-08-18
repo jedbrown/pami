@@ -86,7 +86,7 @@ static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
      /// This is the default allreduce min torus pipeline width, set to 1920
      const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;    
 
-typedef LL_RecvMulticast CCMI_RecvMulticast_t;
+typedef XMI_RecvMulticast CCMI_RecvMulticast_t;
 #define __ccmi_recv_multicast_callback_defined__
 
 /* These are defined in ccmi_collectives.h */

@@ -29,273 +29,273 @@ namespace CCMI
         /// \brief check the reduce function and datatype and see if
         /// it's supported by the tree
         ///
-        int checkOp(CM_Dt dt, CM_Op op)
+        int checkOp(XMI_Dt dt, XMI_Op op)
         {
           TRACE_ADAPTOR ((stderr, "<          >CCMI::Adaptor::Tree:checkOp((op %#X, type %#X)\n",
                           op, dt));
           switch(op)
           {
-          case CM_SUM:
+          case XMI_SUM:
             switch(dt)
             {
-            case CM_SIGNED_INT:
-            case CM_UNSIGNED_INT:
+            case XMI_SIGNED_INT:
+            case XMI_UNSIGNED_INT:
               break;
-            case CM_SIGNED_LONG_LONG:
+            case XMI_SIGNED_LONG_LONG:
               break;
-            case CM_UNSIGNED_LONG_LONG:
+            case XMI_UNSIGNED_LONG_LONG:
               break;
-            case CM_SIGNED_SHORT:
-            case CM_UNSIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
               break;
-            case CM_DOUBLE:
+            case XMI_DOUBLE:
               break;
-            case CM_LOGICAL:
+            case XMI_LOGICAL:
               return -1;
-            case CM_FLOAT:
+            case XMI_FLOAT:
               return -1;
-            case CM_LONG_DOUBLE:
+            case XMI_LONG_DOUBLE:
               return -1;
-            case CM_DOUBLE_COMPLEX:
+            case XMI_DOUBLE_COMPLEX:
               return -1;
-            case CM_SIGNED_CHAR:
-            case CM_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
             default:
               return -1;
             }
             break;
-          case CM_MAX:
+          case XMI_MAX:
             switch(dt)
             {
-            case CM_SIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_SIGNED_LONG_LONG:
+            case XMI_SIGNED_LONG_LONG:
               break;
-            case CM_UNSIGNED_LONG_LONG:
+            case XMI_UNSIGNED_LONG_LONG:
               break;
-            case CM_SIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_UNSIGNED_INT:
+            case XMI_UNSIGNED_INT:
               break;
-            case CM_UNSIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
               break;
-            case CM_FLOAT:
+            case XMI_FLOAT:
               break;
-            case CM_DOUBLE:
+            case XMI_DOUBLE:
               break;
-            case CM_LOGICAL:
+            case XMI_LOGICAL:
               return -1;
-            case CM_LONG_DOUBLE:
+            case XMI_LONG_DOUBLE:
               return -1;
-            case CM_DOUBLE_COMPLEX:
+            case XMI_DOUBLE_COMPLEX:
               return -1;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
             default:
               return -1;
             }
             break;
-          case CM_MIN:
+          case XMI_MIN:
             switch(dt)
             {
-            case CM_SIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_SIGNED_LONG_LONG:
-            case CM_UNSIGNED_LONG_LONG:
+            case XMI_SIGNED_LONG_LONG:
+            case XMI_UNSIGNED_LONG_LONG:
               break;
-            case CM_SIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_UNSIGNED_INT:
+            case XMI_UNSIGNED_INT:
               break;
-            case CM_UNSIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
               break;
-            case CM_FLOAT:
+            case XMI_FLOAT:
               break;
-            case CM_DOUBLE:
+            case XMI_DOUBLE:
               break;
-            case CM_LOGICAL:
+            case XMI_LOGICAL:
               return -1;
-            case CM_LONG_DOUBLE:
+            case XMI_LONG_DOUBLE:
               return -1;
-            case CM_DOUBLE_COMPLEX:
+            case XMI_DOUBLE_COMPLEX:
               return -1;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
             default:
               return -1;
             }
             break;
-          case CM_BAND:
+          case XMI_BAND:
             switch(dt)
             {
-            case CM_LOGICAL:
-            case CM_FLOAT:
-            case CM_UNSIGNED_INT:
-            case CM_SIGNED_INT:
+            case XMI_LOGICAL:
+            case XMI_FLOAT:
+            case XMI_UNSIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_DOUBLE:
-            case CM_SIGNED_LONG_LONG:
-            case CM_UNSIGNED_LONG_LONG:
+            case XMI_DOUBLE:
+            case XMI_SIGNED_LONG_LONG:
+            case XMI_UNSIGNED_LONG_LONG:
               break;
-            case CM_UNSIGNED_SHORT:
-            case CM_SIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
-              break;
-            default:
-              return -1;
-            }
-            break;
-          case CM_BOR:
-            switch(dt)
-            {
-            case CM_LOGICAL:
-            case CM_FLOAT:
-            case CM_UNSIGNED_INT:
-            case CM_SIGNED_INT:
-              break;
-            case CM_DOUBLE:
-            case CM_SIGNED_LONG_LONG:
-            case CM_UNSIGNED_LONG_LONG:
-              break;
-            case CM_UNSIGNED_SHORT:
-            case CM_SIGNED_SHORT:
-              break;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case CM_BXOR:
+          case XMI_BOR:
             switch(dt)
             {
-            case CM_LOGICAL:
-            case CM_FLOAT:
-            case CM_UNSIGNED_INT:
-            case CM_SIGNED_INT:
+            case XMI_LOGICAL:
+            case XMI_FLOAT:
+            case XMI_UNSIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_DOUBLE:
-            case CM_SIGNED_LONG_LONG:
-            case CM_UNSIGNED_LONG_LONG:
+            case XMI_DOUBLE:
+            case XMI_SIGNED_LONG_LONG:
+            case XMI_UNSIGNED_LONG_LONG:
               break;
-            case CM_UNSIGNED_SHORT:
-            case CM_SIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case CM_LAND:
+          case XMI_BXOR:
             switch(dt)
             {
-            case CM_LOGICAL:
-            case CM_FLOAT:
-            case CM_UNSIGNED_INT:
-            case CM_SIGNED_INT:
+            case XMI_LOGICAL:
+            case XMI_FLOAT:
+            case XMI_UNSIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_DOUBLE:
-            case CM_UNSIGNED_LONG_LONG:
-            case CM_SIGNED_LONG_LONG:
+            case XMI_DOUBLE:
+            case XMI_SIGNED_LONG_LONG:
+            case XMI_UNSIGNED_LONG_LONG:
               break;
-            case CM_UNSIGNED_SHORT:
-            case CM_SIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case CM_LOR:
+          case XMI_LAND:
             switch(dt)
             {
-            case CM_LOGICAL:
-            case CM_FLOAT:
-            case CM_UNSIGNED_INT:
-            case CM_SIGNED_INT:
+            case XMI_LOGICAL:
+            case XMI_FLOAT:
+            case XMI_UNSIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_DOUBLE:
-            case CM_UNSIGNED_LONG_LONG:
-            case CM_SIGNED_LONG_LONG:
+            case XMI_DOUBLE:
+            case XMI_UNSIGNED_LONG_LONG:
+            case XMI_SIGNED_LONG_LONG:
               break;
-            case CM_UNSIGNED_SHORT:
-            case CM_SIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case CM_LXOR:
+          case XMI_LOR:
             switch(dt)
             {
-            case CM_LOGICAL:
-            case CM_FLOAT:
-            case CM_UNSIGNED_INT:
-            case CM_SIGNED_INT:
+            case XMI_LOGICAL:
+            case XMI_FLOAT:
+            case XMI_UNSIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_DOUBLE:
-            case CM_UNSIGNED_LONG_LONG:
-            case CM_SIGNED_LONG_LONG:
+            case XMI_DOUBLE:
+            case XMI_UNSIGNED_LONG_LONG:
+            case XMI_SIGNED_LONG_LONG:
               break;
-            case CM_UNSIGNED_SHORT:
-            case CM_SIGNED_SHORT:
+            case XMI_UNSIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_UNSIGNED_CHAR:
-            case CM_SIGNED_CHAR:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case CM_MAXLOC:
+          case XMI_LXOR:
             switch(dt)
             {
-            case CM_LOC_2INT:
+            case XMI_LOGICAL:
+            case XMI_FLOAT:
+            case XMI_UNSIGNED_INT:
+            case XMI_SIGNED_INT:
               break;
-            case CM_LOC_SHORT_INT:
+            case XMI_DOUBLE:
+            case XMI_UNSIGNED_LONG_LONG:
+            case XMI_SIGNED_LONG_LONG:
               break;
-            case CM_LOC_FLOAT_INT:
+            case XMI_UNSIGNED_SHORT:
+            case XMI_SIGNED_SHORT:
               break;
-            case CM_LOC_DOUBLE_INT:
-              break;
-            case CM_LOC_2FLOAT:
-              break;
-            case CM_LOC_2DOUBLE:
+            case XMI_UNSIGNED_CHAR:
+            case XMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case CM_MINLOC:
+          case XMI_MAXLOC:
             switch(dt)
             {
-            case CM_LOC_2INT:
+            case XMI_LOC_2INT:
               break;
-            case CM_LOC_SHORT_INT:
+            case XMI_LOC_SHORT_INT:
               break;
-            case CM_LOC_FLOAT_INT:
+            case XMI_LOC_FLOAT_INT:
               break;
-            case CM_LOC_DOUBLE_INT:
+            case XMI_LOC_DOUBLE_INT:
               break;
-            case CM_LOC_2FLOAT:
+            case XMI_LOC_2FLOAT:
               break;
-            case CM_LOC_2DOUBLE:
+            case XMI_LOC_2DOUBLE:
               break;
             default:
               return -1;
             }
             break;
-          case CM_PROD:
+          case XMI_MINLOC:
+            switch(dt)
+            {
+            case XMI_LOC_2INT:
+              break;
+            case XMI_LOC_SHORT_INT:
+              break;
+            case XMI_LOC_FLOAT_INT:
+              break;
+            case XMI_LOC_DOUBLE_INT:
+              break;
+            case XMI_LOC_2FLOAT:
+              break;
+            case XMI_LOC_2DOUBLE:
+              break;
+            default:
+              return -1;
+            }
+            break;
+          case XMI_PROD:
             return -1;
           default:
             return -1;

@@ -42,7 +42,7 @@ void bcast_done (void *arg) {
 char sbuf[MSG_SIZE];
 
 // async callback for receiver's side of multisend  
-CM_Request_t * msend_recv(const CMQuad  * info,
+XMI_Request_t * msend_recv(const CMQuad  * info,
 			    unsigned          count,
 			    unsigned          peer,
 			    unsigned          sndlen,
@@ -51,7 +51,7 @@ CM_Request_t * msend_recv(const CMQuad  * info,
 			    unsigned        * rcvlen,
 			    char           ** rcvbuf,
 			    unsigned        * pipewidth,
-			    CM_Callback_t * cb_done)
+			    XMI_Callback_t * cb_done)
 {
   assert ( sndlen == MSG_SIZE );
   * rcvlen          = sndlen;
@@ -85,7 +85,7 @@ int main (int argc, char **argv)
   MPI_Barrier(MPI_COMM_WORLD);
 
   // request object for sending
-  CM_Request_t req;
+  XMI_Request_t req;
 
   unsigned i;
   for (i = 0; i < MAX_ITER; i ++) {
@@ -110,7 +110,7 @@ int main (int argc, char **argv)
 	      hints[ n++ ] = CCMI_PT_TO_PT_SUBTASK; 
 	    }
 
-	CM_Callback_t cb_done = { bcast_done, NULL };
+	XMI_Callback_t cb_done = { bcast_done, NULL };
 	unsigned connId = i;
 	// post the message
 	MultiSend_multicast ( &msend_registration,
