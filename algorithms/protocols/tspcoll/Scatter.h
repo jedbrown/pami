@@ -62,7 +62,7 @@ namespace TSPColl
     _header;
     
   protected:
-    static  XMI_Request_t * cb_incoming(const CMQuad  * hdr,
+    static  XMI_Request_t * cb_incoming(const XMIQuad  * hdr,
 					 unsigned          count,
 					 unsigned          peer,
 					 unsigned          sndlen,

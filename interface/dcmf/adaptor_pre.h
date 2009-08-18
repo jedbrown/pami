@@ -173,7 +173,7 @@ public:
     this->opcodes = (XMI_Opcode_t *) op;
   }
 
-  void setInfo (CMQuad *info, int count)
+  void setInfo (XMIQuad *info, int count)
   {
     this->msginfo = info;
     this->count   = count;

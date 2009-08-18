@@ -9,11 +9,11 @@ extern "C"
 {
 #endif
 
-  typedef CMQuad XMI_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
+  typedef XMIQuad XMI_CollectiveProtocol_t [32*2];     /**< Opaque datatype for collective protocols */
 
   /*  increased to 8196 - JEB */
   /*  ...doubled again - BRC  */
-  typedef CMQuad XMI_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
+  typedef XMIQuad XMI_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
 
   typedef enum
   {
@@ -94,7 +94,7 @@ extern "C"
    * \todo     Need to adjust size to optimal level (currently 2048 bytes).
    */
 
-  typedef CMQuad  CCMI_Geometry_t [32];
+  typedef XMIQuad  CCMI_Geometry_t [32];
 
 
   /**

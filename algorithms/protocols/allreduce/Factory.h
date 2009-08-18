@@ -132,7 +132,7 @@ namespace CCMI
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
-        static XMI_Request_t *   cb_receiveHead(const CMQuad  * info,
+        static XMI_Request_t *   cb_receiveHead(const XMIQuad  * info,
                                                  unsigned          count,
                                                  unsigned          peer,
                                                  unsigned          sndlen,

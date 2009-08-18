@@ -70,7 +70,7 @@ namespace CCMI
        * operation has finished
        */
 
-      virtual void notifySendDone ( const CMQuad &info ) = 0;
+      virtual void notifySendDone ( const XMIQuad &info ) = 0;
 
 
       /**
@@ -80,7 +80,7 @@ namespace CCMI
        * \param bytes : number of bytes received
        */
 
-      virtual void notifyRecv (unsigned src, const CMQuad &info, char * buf, unsigned bytes) = 0;
+      virtual void notifyRecv (unsigned src, const XMIQuad &info, char * buf, unsigned bytes) = 0;
 
       void setDoneCallback (void (*cb_done)(void *, XMI_Error_t *), void *cd)
       {

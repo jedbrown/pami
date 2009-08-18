@@ -42,7 +42,7 @@ void bcast_done (void *arg) {
 char sbuf[MSG_SIZE];
 
 // async callback for receiver's side of multisend  
-XMI_Request_t * msend_recv(const CMQuad  * info,
+XMI_Request_t * msend_recv(const XMIQuad  * info,
 			    unsigned          count,
 			    unsigned          peer,
 			    unsigned          sndlen,

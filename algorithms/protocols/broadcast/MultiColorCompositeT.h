@@ -45,7 +45,7 @@ namespace CCMI
       ///
       static void staticRecvFn (void *executor, XMI_Error_t *err)
       {
-        CMQuad *info = NULL;
+        XMIQuad *info = NULL;
 
         CCMI::Executor::Broadcast *exe =
         (CCMI::Executor::Broadcast *) executor;

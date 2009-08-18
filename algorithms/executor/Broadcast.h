@@ -94,7 +94,7 @@ namespace CCMI
 
       static void staticSendDone (void *clientdata, XMI_Error_t *err)
       {
-        CMQuad * info = NULL;
+        XMIQuad * info = NULL;
         Broadcast *bcast = (Broadcast *) clientdata;
         bcast->notifySendDone( *info );
       }
@@ -140,7 +140,7 @@ namespace CCMI
         _msend.setRequestBuffer(&_send_request);
         _msend.setConsistency (CCMI_MATCH_CONSISTENCY);
 
-        CMQuad *info = (_postReceives)?(NULL):(CMQuad*)((void*)&_mdata);
+        XMIQuad *info = (_postReceives)?(NULL):(XMIQuad*)((void*)&_mdata);
         _msend.setInfo(info,  1);
         _msend.setFlags (MultiSend::CCMI_FLAGS_UNSET);
 
@@ -205,8 +205,8 @@ namespace CCMI
       //------------------------------------------
 
       virtual void   start          ();
-      virtual void   notifySendDone ( const CMQuad &info );
-      virtual void   notifyRecv     (unsigned src,  const CMQuad &info,
+      virtual void   notifySendDone ( const XMIQuad &info );
+      virtual void   notifyRecv     (unsigned src,  const XMIQuad &info,
                                      char     *buf, unsigned bytes);
 
       //-----------------------------------------
@@ -318,7 +318,7 @@ inline void  CCMI::Executor::Broadcast :: sendNext ()
 
 }
 
-inline void  CCMI::Executor::Broadcast :: notifySendDone ( const CMQuad & info )
+inline void  CCMI::Executor::Broadcast :: notifySendDone ( const XMIQuad & info )
 {
   TRACE_FLOW((stderr, "In notify send done %d\n", _nmessages));
 
@@ -332,7 +332,7 @@ inline void  CCMI::Executor::Broadcast :: notifySendDone ( const CMQuad & info )
 
 inline void  CCMI::Executor::Broadcast::notifyRecv
 (unsigned        src,
- const CMQuad  & info,
+ const XMIQuad  & info,
  char          * buf,
  unsigned        bytes)
 {

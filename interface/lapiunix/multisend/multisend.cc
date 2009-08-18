@@ -49,7 +49,7 @@ extern "C" int MultiSend_multicast(CCMI_Register_t   * registration,
 				   unsigned            nranks,
 				   unsigned          * rank,
 				   unsigned          * hints,
-				   const CMQuad      * msginfo )
+				   const XMIQuad      * msginfo )
 {
   assert ( registration );
 

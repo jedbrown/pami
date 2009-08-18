@@ -43,7 +43,7 @@ namespace CCMI
       static void staticNotifySendDone (void *cd, XMI_Error_t *err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
-        CMQuad *info = (CMQuad *)cd;
+        XMIQuad *info = (XMIQuad *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifySendDone() enter\n",(int)cdata->me));
         ((AllreduceBase *)(cdata->me))->AllreduceBase::notifySendDone(*info);
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifySendDone() exit\n",(int)cdata->me));
@@ -54,7 +54,7 @@ namespace CCMI
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
-        CMQuad *info = (CMQuad *)cd;
+        XMIQuad *info = (XMIQuad *)cd;
 
         ((AllreduceBase *)cdata->allreduce)->AllreduceBase::notifyRecv((unsigned)-1, *info, NULL, (unsigned)-1);
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
@@ -286,10 +286,10 @@ namespace CCMI
       }
 
       ///entry method
-      virtual void notifySendDone( const CMQuad &info );
+      virtual void notifySendDone( const XMIQuad &info );
 
       ///entry method
-      virtual void notifyRecv(unsigned src, const CMQuad &info, 
+      virtual void notifyRecv(unsigned src, const XMIQuad &info, 
                               char * buf, unsigned bytes);
 
       /// entry method : start allreduce
@@ -314,7 +314,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       /// 
-      virtual XMI_Request_t *   notifyRecvHead(const CMQuad  * info,
+      virtual XMI_Request_t *   notifyRecvHead(const XMIQuad  * info,
                                                 unsigned          count,
                                                 unsigned          peer,
                                                 unsigned          sndlen,
@@ -683,7 +683,7 @@ inline void CCMI::Executor::AllreduceBase::sendMessage
     s_state->sndInfo._op      = _astate.getOp();
     s_state->sndInfo._iteration = _astate.getIteration();
     s_state->sndInfo._root    = (unsigned)_astate.getRoot();
-    _msend_data.setInfo ((CMQuad *)(void *)&s_state->sndInfo, 1);
+    _msend_data.setInfo ((XMIQuad *)(void *)&s_state->sndInfo, 1);
   }
 
   TRACE_MSG ((stderr, "<%#.8X>Executor::AllreduceBase::sendMessage connid %#X curphase:%#X " 
@@ -737,7 +737,7 @@ inline void CCMI::Executor::AllreduceBase::start()
 
 inline void CCMI::Executor::AllreduceBase::notifyRecv 
 (unsigned                     src, 
- const CMQuad             & info, 
+ const XMIQuad             & info, 
  char                       * buf, 
  unsigned                     bytes)
 {
@@ -759,7 +759,7 @@ inline void CCMI::Executor::AllreduceBase::notifyRecv
 
 
 inline void CCMI::Executor::AllreduceBase::notifySendDone 
-( const CMQuad & info)
+( const XMIQuad & info)
 {
   // update state
   TRACE_MSG((stderr, "<%#.8X>Executor::AllreduceBase::notifySendDone, cur phase %#X\n", 
@@ -800,7 +800,7 @@ inline void CCMI::Executor::AllreduceBase::postReceives ()
 
 inline XMI_Request_t * 
 CCMI::Executor::AllreduceBase::notifyRecvHead 
-(const CMQuad  * info,
+(const XMIQuad  * info,
  unsigned          count,
  unsigned          peer,
  unsigned          sndlen,

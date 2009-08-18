@@ -25,7 +25,7 @@
 #include "interface/ccmi_internal.h"
 
 
-typedef CMQuad CCMI_Register_t[32];
+typedef XMIQuad CCMI_Register_t[32];
 
 #ifdef __cplusplus
 extern "C"
@@ -37,7 +37,7 @@ extern "C"
 #ifdef DEPRECATED_MULTICAST
   typedef DCMF_OldRecvMulticast CCMI_RecvMultiSend;
 #else
-  typedef XMI_Request_t * (*CCMI_RecvMultiSend) (const CMQuad    * info,
+  typedef XMI_Request_t * (*CCMI_RecvMultiSend) (const XMIQuad    * info,
 						  unsigned            count,
 						  unsigned            peer,
 						  unsigned            sndlen,
@@ -64,7 +64,7 @@ extern "C"
 			   unsigned            nranks,
 			   unsigned          * rank,
 			   unsigned          * hints,
-			   const CMQuad    * msginfo );
+			   const XMIQuad    * msginfo );
 
 
   int Multisend_advance ( CCMI_Register_t * registration );

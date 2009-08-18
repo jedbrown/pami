@@ -27,7 +27,7 @@
 //#define TRACE(x) printf x; fflush(stdout);
 #define TRACE(x) 
 
-typedef XMI_Request_t * (*msend_recv) (const CMQuad  * info,
+typedef XMI_Request_t * (*msend_recv) (const XMIQuad  * info,
                                       unsigned          count,
                                       unsigned          peer,
                                       unsigned          sndlen,
@@ -51,7 +51,7 @@ namespace CCMI
       protected:
 //      struct MsgHeader
 //      {
-//        CMQuad    _info;
+//        XMIQuad    _info;
 //        int         _size;
 //        int         _conn;
 //
@@ -94,7 +94,7 @@ namespace CCMI
         unsigned  send  (XMI_Request_t         * request,
                          const XMI_Callback_t  * cb_done,
                          CCMI_Consistency         consistency,
-                         const CMQuad         * info, 
+                         const XMIQuad         * info, 
                          unsigned                 info_count,
                          unsigned                 connection_id,
                          const char             * buf,
@@ -117,7 +117,7 @@ namespace CCMI
           hdr->_conn = connection_id;
           if( info )
           {
-            memcpy (&hdr->_info[0], info, info_count * sizeof (CMQuad));
+            memcpy (&hdr->_info[0], info, info_count * sizeof (XMIQuad));
             if(info_count > 2)
             {
               fprintf(stderr, "FIX:  The generic adaptor only supports up to 2 quads\n");

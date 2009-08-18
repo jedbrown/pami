@@ -35,7 +35,7 @@ namespace CCMI
       {
       protected:
         CONNMGR     _sconnmgr;
-//      static XMI_Request_t *   cb_asyncReceiveHead(const CMQuad    * info,
+//      static XMI_Request_t *   cb_asyncReceiveHead(const XMIQuad    * info,
 //                                                    unsigned          count,
 //                                                    unsigned          peer,
 //                                                    unsigned          sndlen,

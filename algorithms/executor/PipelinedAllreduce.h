@@ -37,7 +37,7 @@ namespace CCMI
       static void pipeAllreduceNotifySend (void *cd, XMI_Error_t *err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
-        CMQuad *info = (CMQuad *)cd;
+        XMIQuad *info = (XMIQuad *)cd;
 
         ((PipelinedAllreduce *)(cdata->me))->PipelinedAllreduce::notifySendDone( *info );
       }
@@ -46,7 +46,7 @@ namespace CCMI
       static void pipeAllreduceNotifyReceive (void *cd, XMI_Error_t *err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
-        CMQuad *info = (CMQuad *)cd;
+        XMIQuad *info = (XMIQuad *)cd;
 
         ((PipelinedAllreduce *)cdata->allreduce)->PipelinedAllreduce::notifyRecv 
         ((unsigned)-1, *info, NULL, (unsigned)-1);
@@ -134,9 +134,9 @@ namespace CCMI
         _log_notifyrecv  = lmgr->registerEvent ("Allreduce notify recv");
       }
 
-      virtual void notifySendDone( const CMQuad &info );
+      virtual void notifySendDone( const XMIQuad &info );
 
-      virtual void notifyRecv(unsigned src, const CMQuad &info, 
+      virtual void notifyRecv(unsigned src, const XMIQuad &info, 
                               char * buf, unsigned bytes);
 
       /// start allreduce
@@ -236,7 +236,7 @@ inline void CCMI::Executor::PipelinedAllreduce::start()
 
 inline void CCMI::Executor::PipelinedAllreduce::notifyRecv 
 (unsigned                     src, 
- const CMQuad             & info, 
+ const XMIQuad             & info, 
  char                       * buf, 
  unsigned                     bytes)
 {
@@ -267,7 +267,7 @@ inline void CCMI::Executor::PipelinedAllreduce::notifyRecv
 
 
 inline void CCMI::Executor::PipelinedAllreduce::notifySendDone 
-( const CMQuad & info)
+( const XMIQuad & info)
 {
   // update state
   TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::notifySendDone "

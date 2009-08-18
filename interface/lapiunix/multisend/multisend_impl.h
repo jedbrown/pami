@@ -75,7 +75,7 @@ namespace CCMI
 	    static struct amheader
 	    {
 		__pgasrt_AMHeader_t   _hdr;
-		CMQuad              _info[2];
+		XMIQuad              _info[2];
 		int                   _info_count;
 		int                   _size;
 		int                   _peer;
@@ -90,7 +90,7 @@ namespace CCMI
 				      void ** arg);
 
 
-	    typedef XMI_Request_t * (*msend_recv) (const CMQuad  * info,
+	    typedef XMI_Request_t * (*msend_recv) (const XMIQuad  * info,
 						    unsigned          count,
 						    unsigned          peer,
 						    unsigned          sndlen,
@@ -151,7 +151,7 @@ namespace CCMI
 			unsigned  send  (XMI_Request_t         * request,
 					 const XMI_Callback_t  * cb_done,
 					 CCMI_Consistency         consistency,
-					 const CMQuad         * info,
+					 const XMIQuad         * info,
 					 unsigned                 info_count,
 					 unsigned                 connection_id,
 					 const char             * buf,
@@ -179,7 +179,7 @@ namespace CCMI
 					    fprintf(stderr, "FIX:  The lapiunix adaptor only supports up to 2 quads\n");
 					    assert(0);
 					}
-				    memcpy (&_g_amheader._info[0],& info[0], info_count *sizeof (CMQuad));
+				    memcpy (&_g_amheader._info[0],& info[0], info_count *sizeof (XMIQuad));
 				}
 			    send_info *si                 = (send_info*)request;
 			    si->_totalsends               = nranks;

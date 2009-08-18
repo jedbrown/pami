@@ -95,7 +95,7 @@ namespace CCMI
         ///
         static void staticAsyncRecvFn (void *clientdata, XMI_Error_t *err)
         {
-          CMQuad *info = NULL;  
+          XMIQuad *info = NULL;  
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
 
           TRACE_ADAPTOR((stderr, "In static notify recv, exe=%p\n",exe)); 
@@ -220,7 +220,7 @@ namespace CCMI
         }
 
         static XMI_Request_t *   cb_head_buffered   
-        (const CMQuad    * info,
+        (const XMIQuad    * info,
          unsigned          count,
          unsigned          peer,
          unsigned          sndlen,
@@ -309,7 +309,7 @@ namespace CCMI
         }
 
         static XMI_Request_t *   cb_head   
-        (const CMQuad    * info,
+        (const XMIQuad    * info,
          unsigned          count,
          unsigned          peer,
          unsigned          sndlen,

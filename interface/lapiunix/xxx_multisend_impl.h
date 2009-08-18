@@ -19,7 +19,7 @@ namespace CCMI
     namespace Generic
     {
 
-      typedef XMI_Request_t * (*msend_recv) (const CMQuad  * info,
+      typedef XMI_Request_t * (*msend_recv) (const XMIQuad  * info,
                                               unsigned          count,
                                               unsigned          peer,
                                               unsigned          sndlen,
@@ -37,7 +37,7 @@ namespace CCMI
       protected:
         struct MsgHeader
         {
-          CMQuad    _info;
+          XMIQuad    _info;
           int         _size;
           int         _conn;
 
@@ -79,7 +79,7 @@ namespace CCMI
         unsigned  send  (XMI_Request_t         * request,
                          const XMI_Callback_t  * cb_done,
                          CCMI_Consistency         consistency,
-                         const CMQuad         * info, 
+                         const XMIQuad         * info, 
                          unsigned                 connection_id,
                          const char             * buf, 
                          unsigned                 size,
@@ -98,7 +98,7 @@ namespace CCMI
           hdr->_size = size;
           hdr->_conn = connection_id;
           if( info )
-            memcpy (&hdr->_info, info, sizeof (CMQuad));
+            memcpy (&hdr->_info, info, sizeof (XMIQuad));
           memcpy (hdr->buffer(), buf, size);
 
           int rc = -1;

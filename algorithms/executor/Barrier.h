@@ -185,7 +185,7 @@ namespace CCMI
       /// Static function to be passed into the done of multisend
       static void staticNotifySendDone(void *cd, XMI_Error_t *err)
       {
-        CMQuad * info = NULL;
+        XMIQuad * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));
 
         Barrier *barrier = (Barrier *) cd;
@@ -222,7 +222,7 @@ namespace CCMI
         MEMSET(_phasevec, 0, sizeof(_phasevec));
 
         _minfo.setRequestBuffer(& _request, sizeof(_request));
-        //_minfo.setInfo((CMQuad *)((void *) &_cdata),  1);
+        //_minfo.setInfo((XMIQuad *)((void *) &_cdata),  1);
         _minfo.setConnectionId(_connid);      
         _minfo.setRoles((unsigned)-1);
         _minfo.setRanks(NULL);
@@ -247,15 +247,15 @@ namespace CCMI
       }
 
       /// Entry function to notify message has arrived
-      virtual void notifyRecv(unsigned src, const CMQuad &info, char *buf, unsigned len);
+      virtual void notifyRecv(unsigned src, const XMIQuad &info, char *buf, unsigned len);
 
       /// Entry function to declare that Message has been sent
-      virtual void notifySendDone( const CMQuad & info )
+      virtual void notifySendDone( const XMIQuad & info )
       {
         internalNotifySendDone(info);
       }
 
-      void internalNotifySendDone( const CMQuad & info );
+      void internalNotifySendDone( const XMIQuad & info );
 
       /// Start sending barrier operation
       virtual void start();
@@ -314,7 +314,7 @@ inline void CCMI::Executor::Barrier::sendNext()
   }
   else
   {
-    CMQuad * info = NULL;
+    XMIQuad * info = NULL;
     //nothing to do, skip this phase
     notifySendDone( *info );    
   }
@@ -333,7 +333,7 @@ inline void  CCMI::Executor::Barrier::start()
 /// \brief grab the info of the message
 ///
 inline void CCMI::Executor::Barrier::notifyRecv(unsigned          src,
-                                                const CMQuad  & info,
+                                                const XMIQuad  & info,
                                                 char            * buf,
                                                 unsigned          size)
 {
@@ -364,7 +364,7 @@ inline void CCMI::Executor::Barrier::notifyRecv(unsigned          src,
 ///
 /// \brief Entry function to indicate the send has finished
 ///
-inline void CCMI::Executor::Barrier::internalNotifySendDone( const CMQuad & info )
+inline void CCMI::Executor::Barrier::internalNotifySendDone( const XMIQuad & info )
 {
   TRACE_ERR((stderr,"<%X>Executor::Barrier::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
 
@@ -539,7 +539,7 @@ namespace CCMI
       /// Static function to be passed into the done of multisend
       static void staticNotifySendDone(void *cd, XMI_Error_t *err)
       {
-        CMQuad * info = NULL;
+        XMIQuad * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));
 
         OldBarrier *barrier = (OldBarrier *) cd;
@@ -577,7 +577,7 @@ namespace CCMI
 
 	_minfo.setRequestBuffer(& _request);
 	_minfo.setConsistency (CCMI_MATCH_CONSISTENCY);
-        _minfo.setInfo((CMQuad *)((void *) &_cdata),  1);
+        _minfo.setInfo((XMIQuad *)((void *) &_cdata),  1);
         _minfo.setConnectionId(_connid);      
 	_minfo.setSendData (NULL, 0);
 	_minfo.setRanks (NULL, 0);
@@ -603,15 +603,15 @@ namespace CCMI
       }
 
       /// Entry function to notify message has arrived
-      virtual void notifyRecv(unsigned src, const CMQuad &info, char *buf, unsigned len);
+      virtual void notifyRecv(unsigned src, const XMIQuad &info, char *buf, unsigned len);
 
       /// Entry function to declare that Message has been sent
-      virtual void notifySendDone( const CMQuad & info )
+      virtual void notifySendDone( const XMIQuad & info )
       {
         internalNotifySendDone(info);
       }
 
-      void internalNotifySendDone( const CMQuad & info );
+      void internalNotifySendDone( const XMIQuad & info );
 
       /// Start sending barrier operation
       virtual void start();
@@ -669,7 +669,7 @@ inline void CCMI::Executor::OldBarrier::sendNext()
   }
   else
   {
-    CMQuad * info = NULL;
+    XMIQuad * info = NULL;
     //nothing to do, skip this phase
     notifySendDone( *info );    
   }
@@ -688,7 +688,7 @@ inline void  CCMI::Executor::OldBarrier::start()
 /// \brief grab the info of the message
 ///
 inline void CCMI::Executor::OldBarrier::notifyRecv(unsigned          src,
-                                                const CMQuad  & info,
+                                                const XMIQuad  & info,
                                                 char            * buf,
                                                 unsigned          size)
 {
@@ -719,7 +719,7 @@ inline void CCMI::Executor::OldBarrier::notifyRecv(unsigned          src,
 ///
 /// \brief Entry function to indicate the send has finished
 ///
-inline void CCMI::Executor::OldBarrier::internalNotifySendDone( const CMQuad & info )
+inline void CCMI::Executor::OldBarrier::internalNotifySendDone( const XMIQuad & info )
 {
   TRACE_ERR((stderr,"<%X>Executor::OldBarrier::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
 

@@ -67,7 +67,7 @@ namespace TSPColl
     
     void          send                     (int phase,CCMI::MultiSend::OldMulticastInterface *mcast_iface);
     //static inline CCMI::MultiSend::DCMF_OldRecvMulticast cb_incoming;
-    static inline XMI_Request_t *cb_incoming(const CMQuad  * hdr,
+    static inline XMI_Request_t *cb_incoming(const XMIQuad  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,
@@ -355,7 +355,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::OldMulticas
   mcast_iface->send (&_req[phase],
 		     &cb_done,
 		     CCMI_MATCH_CONSISTENCY,
-		     (CMQuad*)& _header[phase],
+		     (XMIQuad*)& _header[phase],
 		     CCMIQuad_sizeof(_header[phase]),
 		     0,
 		     (char*)_sbuf[phase],
@@ -389,7 +389,7 @@ inline void TSPColl::CollExchange::cb_senddone (void * arg, XMI_Error_t *err)
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
-inline XMI_Request_t * TSPColl::CollExchange::cb_incoming(const CMQuad  * hdr,
+inline XMI_Request_t * TSPColl::CollExchange::cb_incoming(const XMIQuad  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,

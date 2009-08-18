@@ -89,9 +89,9 @@ namespace CCMI
       int         _delayAdvance;
 
       /// \brief Member function to be called by multisend cb_done static function
-      inline void notifySendDone(const CMQuad &info);
+      inline void notifySendDone(const XMIQuad &info);
       /// \brief Member function to be called by postRecv cb_done static function
-      inline void notifyRecv(unsigned src, const CMQuad &info, char * buf, unsigned bytes);
+      inline void notifyRecv(unsigned src, const XMIQuad &info, char * buf, unsigned bytes);
       /// \brief Advance the [all]reduce progress
       inline void advance();
     public:
@@ -117,7 +117,7 @@ namespace CCMI
       static void staticNotifySendDone (void *cd, XMI_Error_t *err)
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifySendDone() enter\n",(int)((SendCallbackData *)cd)->me));
-        ((SendCallbackData *)cd)->me->notifySendDone (*(CMQuad *)cd);
+        ((SendCallbackData *)cd)->me->notifySendDone (*(XMIQuad *)cd);
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifySendDone() exit\n",(int)((SendCallbackData *)cd)->me));
       }
 
@@ -127,7 +127,7 @@ namespace CCMI
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
-        CMQuad *info = (CMQuad *)cd;
+        XMIQuad *info = (XMIQuad *)cd;
 
         cdata->allreduce->notifyRecv((unsigned)-1, *info, NULL, (unsigned)-1);
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
@@ -313,7 +313,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       /// 
-      inline XMI_Request_t *   notifyRecvHead(const CMQuad  * info,
+      inline XMI_Request_t *   notifyRecvHead(const XMIQuad  * info,
                                                unsigned          count,
                                                unsigned          peer,
                                                unsigned          sndlen,
@@ -335,7 +335,7 @@ namespace CCMI
 
 
 inline XMI_Request_t * 
-CCMI::Executor::Allreduce::notifyRecvHead(const CMQuad    * info,
+CCMI::Executor::Allreduce::notifyRecvHead(const XMIQuad    * info,
                                           unsigned          count,
                                           unsigned          peer,
                                           unsigned          sndlen,
@@ -588,7 +588,7 @@ inline void CCMI::Executor::Allreduce::start()
     _msendInterface->send(&_sState[sndIndex].sndReq,
                           &cb_done,
                           _consistency,
-                          (CMQuad *)(void *)(_sndInfoRequired?&_sState[sndIndex].sndInfo:NULL),
+                          (XMIQuad *)(void *)(_sndInfoRequired?&_sState[sndIndex].sndInfo:NULL),
                           1,
                           _sendConnectionID,
                           _srcbuf,
@@ -623,7 +623,7 @@ inline void CCMI::Executor::Allreduce::start()
 }
 
 
-void CCMI::Executor::Allreduce::notifyRecv(unsigned src, const CMQuad & info, char * buf, unsigned bytes)
+void CCMI::Executor::Allreduce::notifyRecv(unsigned src, const XMIQuad & info, char * buf, unsigned bytes)
 {
   RecvCallbackData * cdata = (RecvCallbackData *)(&info);
   unsigned rphase = cdata->phase;
@@ -644,7 +644,7 @@ void CCMI::Executor::Allreduce::notifyRecv(unsigned src, const CMQuad & info, ch
 }
 
 
-void CCMI::Executor::Allreduce::notifySendDone(const CMQuad & info)
+void CCMI::Executor::Allreduce::notifySendDone(const XMIQuad & info)
 {
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::notifySendDone() enter\n",(int)this));
 
@@ -858,7 +858,7 @@ void CCMI::Executor::Allreduce::advance()
         _msendInterface->send(&_sState[curSndIndex].sndReq,
                               &cb_done,
                               _consistency,
-                              (CMQuad *)(void *)(_sndInfoRequired?&_sState[curSndIndex].sndInfo:NULL),
+                              (XMIQuad *)(void *)(_sndInfoRequired?&_sState[curSndIndex].sndInfo:NULL),
                               1,
                               _sendConnectionID,
                               reduceBuf + bufOffset,

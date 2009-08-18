@@ -16,7 +16,7 @@ namespace CCMI
     {
       
       struct MsgHeader {
-	CMQuad    _info[2];
+	XMIQuad    _info[2];
 	int         _info_count;
 	int         _size;
 	int         _conn;
