@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file cm_impl.h
+ * \file xmi_impl.h
  * \brief Common external collectives message layer types.
  */
-#ifndef __cm_impl_h__
-#define __cm_impl_h__
+#ifndef __xmi_impl_h__
+#define __xmi_impl_h__
 
 #warning generic implementation
 
@@ -77,4 +77,4 @@ typedef enum {
 };
 #endif
 
-#endif // __cm_impl_h__
+#endif // __xmi_impl_h__

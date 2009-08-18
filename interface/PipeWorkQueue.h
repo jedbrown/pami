@@ -11,13 +11,13 @@
  * \brief ???
  */
 
-#ifndef __ll_cpp_pipeworkqueue_h__
-#define __ll_cpp_pipeworkqueue_h__
+#ifndef __xmi_cpp_pipeworkqueue_h__
+#define __xmi_cpp_pipeworkqueue_h__
 
-#include "ll_pipeworkqueue.h"
+#include "xmi_pipeworkqueue.h"
 #include "PipeWorkQueueImpl.h"
 
-namespace LL {
+namespace XMI {
 
 ///
 /// \brief Work queue implementation of a fixed-size shared memory buffer.
@@ -258,28 +258,28 @@ public:
 
 }; /* class PipeWorkQueue */
 
-}; /* namespace LL */
+}; /* namespace XMI */
 
 // This is ugly - but it never has to change...
-inline void LL::PipeWorkQueue::configure(void *sysdep, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, bufsize); }
-inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize); }
-inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize, size_t bufinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize, bufinit); }
-inline void LL::PipeWorkQueue::configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, dgsp, dgspcount, dgspinit); }
-inline LL::PipeWorkQueue::PipeWorkQueue(LL::PipeWorkQueue &obj) {_PipeWorkQueueImpl::_PipeWorkQueueImpl((_PipeWorkQueueImpl&)obj); }
-inline void LL::PipeWorkQueue::reset() { _PipeWorkQueueImpl::reset(); }
-inline XMI_Result LL::PipeWorkQueue::exp(XMI_PipeWorkQueue_ext *e) { return _PipeWorkQueueImpl::exp(e); }
-inline XMI_Result LL::PipeWorkQueue::import(XMI_PipeWorkQueue_ext *i) { return _PipeWorkQueueImpl::import(i); }
-inline void LL::PipeWorkQueue::dump(const char *prefix) { _PipeWorkQueueImpl::dump(prefix); }
-inline void LL::PipeWorkQueue::setConsumerWakeup(void *vec) { _PipeWorkQueueImpl::setConsumerWakeup(vec); }
-inline void LL::PipeWorkQueue::setProducerWakeup(void *vec) { _PipeWorkQueueImpl::setProducerWakeup(vec); }
-inline size_t LL::PipeWorkQueue::bytesAvailableToProduce() { return _PipeWorkQueueImpl::bytesAvailableToProduce(); }
-inline size_t LL::PipeWorkQueue::bytesAvailableToConsume() { return _PipeWorkQueueImpl::bytesAvailableToConsume(); }
-inline size_t LL::PipeWorkQueue::getBytesProduced() { return _PipeWorkQueueImpl::getBytesProduced(); }
-inline size_t LL::PipeWorkQueue::getBytesConsumed() { return _PipeWorkQueueImpl::getBytesConsumed(); }
-inline char *LL::PipeWorkQueue::bufferToProduce() { return _PipeWorkQueueImpl::bufferToProduce(); }
-inline void LL::PipeWorkQueue::produceBytes(size_t bytes) { _PipeWorkQueueImpl::produceBytes(bytes); }
-inline char *LL::PipeWorkQueue::bufferToConsume() { return _PipeWorkQueueImpl::bufferToConsume(); }
-inline void LL::PipeWorkQueue::consumeBytes(size_t bytes) { _PipeWorkQueueImpl::consumeBytes(bytes); }
-inline bool LL::PipeWorkQueue::available() { return _PipeWorkQueueImpl::available(); }
+inline void XMI::PipeWorkQueue::configure(void *sysdep, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, bufsize); }
+inline void XMI::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize); }
+inline void XMI::PipeWorkQueue::configure(void *sysdep, char *buffer, size_t bufsize, size_t bufinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, bufsize, bufinit); }
+inline void XMI::PipeWorkQueue::configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) { _PipeWorkQueueImpl::configure(sysdep, buffer, dgsp, dgspcount, dgspinit); }
+inline XMI::PipeWorkQueue::PipeWorkQueue(XMI::PipeWorkQueue &obj) {_PipeWorkQueueImpl::_PipeWorkQueueImpl((_PipeWorkQueueImpl&)obj); }
+inline void XMI::PipeWorkQueue::reset() { _PipeWorkQueueImpl::reset(); }
+inline XMI_Result XMI::PipeWorkQueue::exp(XMI_PipeWorkQueue_ext *e) { return _PipeWorkQueueImpl::exp(e); }
+inline XMI_Result XMI::PipeWorkQueue::import(XMI_PipeWorkQueue_ext *i) { return _PipeWorkQueueImpl::import(i); }
+inline void XMI::PipeWorkQueue::dump(const char *prefix) { _PipeWorkQueueImpl::dump(prefix); }
+inline void XMI::PipeWorkQueue::setConsumerWakeup(void *vec) { _PipeWorkQueueImpl::setConsumerWakeup(vec); }
+inline void XMI::PipeWorkQueue::setProducerWakeup(void *vec) { _PipeWorkQueueImpl::setProducerWakeup(vec); }
+inline size_t XMI::PipeWorkQueue::bytesAvailableToProduce() { return _PipeWorkQueueImpl::bytesAvailableToProduce(); }
+inline size_t XMI::PipeWorkQueue::bytesAvailableToConsume() { return _PipeWorkQueueImpl::bytesAvailableToConsume(); }
+inline size_t XMI::PipeWorkQueue::getBytesProduced() { return _PipeWorkQueueImpl::getBytesProduced(); }
+inline size_t XMI::PipeWorkQueue::getBytesConsumed() { return _PipeWorkQueueImpl::getBytesConsumed(); }
+inline char *XMI::PipeWorkQueue::bufferToProduce() { return _PipeWorkQueueImpl::bufferToProduce(); }
+inline void XMI::PipeWorkQueue::produceBytes(size_t bytes) { _PipeWorkQueueImpl::produceBytes(bytes); }
+inline char *XMI::PipeWorkQueue::bufferToConsume() { return _PipeWorkQueueImpl::bufferToConsume(); }
+inline void XMI::PipeWorkQueue::consumeBytes(size_t bytes) { _PipeWorkQueueImpl::consumeBytes(bytes); }
+inline bool XMI::PipeWorkQueue::available() { return _PipeWorkQueueImpl::available(); }
 
-#endif /* __ll_cpp_pipeworkqueue_h__ */
+#endif /* __xmi_cpp_pipeworkqueue_h__ */

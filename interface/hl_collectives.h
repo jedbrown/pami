@@ -6,7 +6,7 @@
 #ifndef __hl_collective_h__
 #define __hl_collective_h__
 
-#include "cm_types.h"
+#include "xmi_types.h"
 #include "ccmi_internal.h"
 
 #ifdef __cplusplus
@@ -185,7 +185,7 @@ extern "C"
      *
      * \todo     Need to adjust size to optimal level (currently 2048 bytes).
      */
-    typedef CMQuad  XMI_Geometry_t [512];
+    typedef XMIQuad  XMI_Geometry_t [512];
     typedef struct
     {
 	size_t lo;
@@ -204,7 +204,7 @@ extern "C"
      *  between geometry id's and geometry structures.
      */
     typedef XMI_Geometry_t * (*XMI_mapIdToGeometry) (int comm);
-    typedef CMQuad          XMI_AMHeader_t[8];
+    typedef XMIQuad          XMI_AMHeader_t[8];
 
 
     /**

@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __ll_cpp_topology_h__
-#define __ll_cpp_topology_h__
+#ifndef __xmi_cpp_topology_h__
+#define __xmi_cpp_topology_h__
 
 ////////////////////////////////////////////////////////////////////////
 /// \file sysdep/Topology.h
@@ -20,11 +20,11 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 
-#include "ll_topology.h"
+#include "xmi_topology.h"
 
 #include "TopologyImpl.h"
 
-namespace LL {
+namespace XMI {
 
 class Topology : public _TopologyImpl {
 
@@ -69,7 +69,7 @@ public:
 	Topology(size_t *ranks, size_t nranks);
 
 	/// \brief accessor for size of a Topology object
-	/// \return	size of LL::Topology
+	/// \return	size of XMI::Topology
 	static const unsigned size_of() { return sizeof(Topology); }
 
 	/// \brief number of ranks in topology
@@ -189,14 +189,14 @@ public:
 	///
 	/// \param[out] _new	Where to build topology
 	///
-	void subTopologyLocalToMe(LL::Topology *_new);
+	void subTopologyLocalToMe(XMI::Topology *_new);
 
 	/// \brief create topology from all Nth ranks globally
 	///
 	/// \param[out] _new	Where to build topology
 	/// \param[in] n	Which local rank to select on each node
 	///
-	void subTopologyNthGlobal(LL::Topology *_new, int n);
+	void subTopologyNthGlobal(XMI::Topology *_new, int n);
 
 	/// \brief reduce dimensions of topology (cube -> plane, etc)
 	///
@@ -208,7 +208,7 @@ public:
 	/// \param[out] _new	where to build new topology
 	/// \param[in] fmt	how to reduce dimensions
 	///
-	void subTopologyReduceDims(LL::Topology *_new, XMI_Coord_t *fmt);
+	void subTopologyReduceDims(XMI::Topology *_new, XMI_Coord_t *fmt);
 
 	/// \brief Return list of ranks representing contents of topology
 	///
@@ -281,36 +281,36 @@ public:
 
 }; /* class Topology */
 
-}; /* namespace LL */
+}; /* namespace XMI */
 
 // This is ugly - but never needs to change
-inline LL::Topology::Topology(XMI_Coord_t *ll, XMI_Coord_t *ur, unsigned char *tl) : LL::_TopologyImpl::_TopologyImpl(ll, ur, tl) {}
-inline LL::Topology::Topology(size_t rank) : LL::_TopologyImpl::_TopologyImpl(rank) {}
-inline LL::Topology::Topology(size_t rank0, size_t rankn) : LL::_TopologyImpl::_TopologyImpl(rank0, rankn) {}
-inline LL::Topology::Topology(size_t *ranks, size_t nranks) : LL::_TopologyImpl::_TopologyImpl(ranks, nranks) {}
-inline size_t LL::Topology::size() { return LL::_TopologyImpl::size(); }
-inline XMI_TopologyType_t LL::Topology::type() { return LL::_TopologyImpl::type(); }
-inline size_t LL::Topology::index2Rank(size_t ix) { return LL::_TopologyImpl::index2Rank(ix); }
-inline size_t LL::Topology::rank2Index(size_t rank) { return LL::_TopologyImpl::rank2Index(rank); }
-inline XMI_Result LL::Topology::rankRange(size_t *first, size_t *last) { return LL::_TopologyImpl::rankRange(first, last); }
-inline XMI_Result LL::Topology::rankList(size_t **list) { return LL::_TopologyImpl::rankList(list); }
-inline XMI_Result LL::Topology::rectSeg(XMI_Coord_t **ll, XMI_Coord_t **ur, unsigned char **tl) { return LL::_TopologyImpl::rectSeg(ll, ur, tl); }
-inline XMI_Result LL::Topology::rectSeg(XMI_Coord_t *ll, XMI_Coord_t *ur, unsigned char *tl) { return LL::_TopologyImpl::rectSeg(ll, ur, tl); }
-inline bool LL::Topology::isLocal() { return LL::_TopologyImpl::isLocal(); }
-inline bool LL::Topology::isLocalToMe() { return LL::_TopologyImpl::isLocalToMe(); }
-inline bool LL::Topology::isGlobal() { return LL::_TopologyImpl::isGlobal(); }
-inline bool LL::Topology::isRectSeg() { return LL::_TopologyImpl::isRectSeg(); }
-inline void LL::Topology::getNthDims(unsigned n, unsigned *c0, unsigned *cn, unsigned char *tl) { LL::_TopologyImpl::getNthDims(n, c0, cn, tl); }
-inline bool LL::Topology::isRankMember(size_t rank) { return LL::_TopologyImpl::isRankMember(rank); }
-inline bool LL::Topology::isCoordMember(XMI_Coord_t *c0) { return LL::_TopologyImpl::isCoordMember(c0); }
-inline void LL::Topology::subTopologyLocalToMe(LL::Topology *_new) { LL::_TopologyImpl::subTopologyLocalToMe(_new); }
-inline void LL::Topology::subTopologyNthGlobal(LL::Topology *_new, int n) { LL::_TopologyImpl::subTopologyNthGlobal(_new, n); }
-inline void LL::Topology::subTopologyReduceDims(LL::Topology *_new, XMI_Coord_t *fmt) { LL::_TopologyImpl::subTopologyReduceDims(_new, fmt); }
-inline void LL::Topology::getRankList(size_t max, size_t *ranks, size_t *nranks) { LL::_TopologyImpl::getRankList(max, ranks, nranks); }
-inline bool LL::Topology::analyzeTopology() { return LL::_TopologyImpl::analyzeTopology(); }
-inline bool LL::Topology::convertTopology(XMI_TopologyType_t new_type) { return LL::_TopologyImpl::convertTopology(new_type); }
-inline void LL::Topology::unionTopology(Topology *_new, Topology *other) { LL::_TopologyImpl::unionTopology(_new, other); }
-inline void LL::Topology::intersectTopology(Topology *_new, Topology *other) { LL::_TopologyImpl::intersectTopology(_new, other); }
-inline void LL::Topology::subtractTopology(Topology *_new, Topology *other) { LL::_TopologyImpl::subtractTopology(_new, other); }
+inline XMI::Topology::Topology(XMI_Coord_t *ll, XMI_Coord_t *ur, unsigned char *tl) : XMI::_TopologyImpl::_TopologyImpl(ll, ur, tl) {}
+inline XMI::Topology::Topology(size_t rank) : XMI::_TopologyImpl::_TopologyImpl(rank) {}
+inline XMI::Topology::Topology(size_t rank0, size_t rankn) : XMI::_TopologyImpl::_TopologyImpl(rank0, rankn) {}
+inline XMI::Topology::Topology(size_t *ranks, size_t nranks) : XMI::_TopologyImpl::_TopologyImpl(ranks, nranks) {}
+inline size_t XMI::Topology::size() { return XMI::_TopologyImpl::size(); }
+inline XMI_TopologyType_t XMI::Topology::type() { return XMI::_TopologyImpl::type(); }
+inline size_t XMI::Topology::index2Rank(size_t ix) { return XMI::_TopologyImpl::index2Rank(ix); }
+inline size_t XMI::Topology::rank2Index(size_t rank) { return XMI::_TopologyImpl::rank2Index(rank); }
+inline XMI_Result XMI::Topology::rankRange(size_t *first, size_t *last) { return XMI::_TopologyImpl::rankRange(first, last); }
+inline XMI_Result XMI::Topology::rankList(size_t **list) { return XMI::_TopologyImpl::rankList(list); }
+inline XMI_Result XMI::Topology::rectSeg(XMI_Coord_t **ll, XMI_Coord_t **ur, unsigned char **tl) { return XMI::_TopologyImpl::rectSeg(ll, ur, tl); }
+inline XMI_Result XMI::Topology::rectSeg(XMI_Coord_t *ll, XMI_Coord_t *ur, unsigned char *tl) { return XMI::_TopologyImpl::rectSeg(ll, ur, tl); }
+inline bool XMI::Topology::isLocal() { return XMI::_TopologyImpl::isLocal(); }
+inline bool XMI::Topology::isLocalToMe() { return XMI::_TopologyImpl::isLocalToMe(); }
+inline bool XMI::Topology::isGlobal() { return XMI::_TopologyImpl::isGlobal(); }
+inline bool XMI::Topology::isRectSeg() { return XMI::_TopologyImpl::isRectSeg(); }
+inline void XMI::Topology::getNthDims(unsigned n, unsigned *c0, unsigned *cn, unsigned char *tl) { XMI::_TopologyImpl::getNthDims(n, c0, cn, tl); }
+inline bool XMI::Topology::isRankMember(size_t rank) { return XMI::_TopologyImpl::isRankMember(rank); }
+inline bool XMI::Topology::isCoordMember(XMI_Coord_t *c0) { return XMI::_TopologyImpl::isCoordMember(c0); }
+inline void XMI::Topology::subTopologyLocalToMe(XMI::Topology *_new) { XMI::_TopologyImpl::subTopologyLocalToMe(_new); }
+inline void XMI::Topology::subTopologyNthGlobal(XMI::Topology *_new, int n) { XMI::_TopologyImpl::subTopologyNthGlobal(_new, n); }
+inline void XMI::Topology::subTopologyReduceDims(XMI::Topology *_new, XMI_Coord_t *fmt) { XMI::_TopologyImpl::subTopologyReduceDims(_new, fmt); }
+inline void XMI::Topology::getRankList(size_t max, size_t *ranks, size_t *nranks) { XMI::_TopologyImpl::getRankList(max, ranks, nranks); }
+inline bool XMI::Topology::analyzeTopology() { return XMI::_TopologyImpl::analyzeTopology(); }
+inline bool XMI::Topology::convertTopology(XMI_TopologyType_t new_type) { return XMI::_TopologyImpl::convertTopology(new_type); }
+inline void XMI::Topology::unionTopology(Topology *_new, Topology *other) { XMI::_TopologyImpl::unionTopology(_new, other); }
+inline void XMI::Topology::intersectTopology(Topology *_new, Topology *other) { XMI::_TopologyImpl::intersectTopology(_new, other); }
+inline void XMI::Topology::subtractTopology(Topology *_new, Topology *other) { XMI::_TopologyImpl::subtractTopology(_new, other); }
 
-#endif /* __ll_cpp_topology_h__ */
+#endif /* __xmi_cpp_topology_h__ */

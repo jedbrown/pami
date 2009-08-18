@@ -37,7 +37,7 @@ example/info.
 #include "dcmf.h"
 /* dcmf_collectives.h might not be installed yet so reference relative dir */
 #include "../../include/dcmf_collectives.h"
-#include "ll_multisend.h"
+#include "xmi_multisend.h"
 
 /* all these are defined in cm_types.h, dcmf.h et al. */
 #define __ccmi_pipeworkqueue_defined__

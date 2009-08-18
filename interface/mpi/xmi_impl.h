@@ -7,11 +7,13 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file cm_impl.h
+ * \file xmi_impl.h
  * \brief Common external collectives message layer types.
  */
-#ifndef __cm_impl_h__
-#define __cm_impl_h__
+#ifndef __xmi_impl_h__
+#define __xmi_impl_h__
+
+#warning mpi implementation
 
 #include <assert.h>
 #include <stdio.h>
@@ -23,7 +25,15 @@ extern "C"
 #endif
 
 #define DEPRECATED_MULTICAST
-#define DEPRECATED_MANYTOMANY
+#undef DEPRECATED_MANYTOMANY
+
+typedef enum {
+	DCMF_MATCH_CONSISTENCY,
+	DCMF_RELAXED_CONSISTENCY,
+	DCMF_SEQUENTIAL_CONSISTENCY,
+	DCMF_WEAK_CONSISTENCY
+} DCMF_Consistency;
+#warning defining deprecated DCMF_Consistency
 
 /**
  * \todo CNK's abort() does not core dump...
@@ -60,22 +70,11 @@ extern "C"
 
 #endif /* ASSERT_LEVEL */
 
-#ifdef __bgp__
 #define XMI_PROTOCOL_NQUADS	48
 #define XMI_REQUEST_NQUADS	32
-#define XMI_ERROR_NQUADS		2
-#elif defined(__bgq__)
-#define XMI_PROTOCOL_NQUADS	96
-#define XMI_REQUEST_NQUADS	64
-#define XMI_ERROR_NQUADS		2
-#else
-#define XMI_PROTOCOL_NQUADS	32
-#define XMI_REQUEST_NQUADS	32
-#define XMI_ERROR_NQUADS		2
-#endif
 
 #ifdef __cplusplus
 };
 #endif
 
-#endif // __cm_impl_h__
+#endif // __xmi_impl_h__

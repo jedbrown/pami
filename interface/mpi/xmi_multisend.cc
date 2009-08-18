@@ -11,7 +11,7 @@
 
 #define TRACE_ERR(x)  // fprintf x
 
-#include "interface/ll_multisend.h"
+#include "interface/xmi_multisend.h"
 
 extern "C" int XMI_Multicast(XMI_Multicast_t *minfo) 
 {

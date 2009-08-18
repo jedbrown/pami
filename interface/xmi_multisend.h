@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ll_multisend.h
+ * \file xmi_multisend.h
  * \brief Multisend interface.
  *    A multisend operation allows many message passing transactions
  * 	to be performed in the same call to amortize software
@@ -28,14 +28,14 @@
  * end-points. Moreover the processor lists can be created on the
  * fly.
  */
-#ifndef __ll_multisend_h__
-#define __ll_multisend_h__
+#ifndef __xmi_multisend_h__
+#define __xmi_multisend_h__
 
-#include "cm_types.h"
-#include "ll_topology.h"
-#include "ll_pipeworkqueue.h"
+#include "xmi_types.h"
+#include "xmi_topology.h"
+#include "xmi_pipeworkqueue.h"
 
-// These are now defined in cm_impl.h (via cm_types.h), according to target needs
+// These are now defined in xmi_impl.h (via xmi_types.h), according to target needs
 // #define DEPRECATED_MULTICAST
 // #define DEPRECATED_MANYTOMANY
 
@@ -126,7 +126,7 @@ extern "C"
    * \param[out] cb_done	Completion callback to invoke when data received
    * \return	XMI_Request opaque memory for message
    */
-  typedef XMI_Request_t *(*XMI_RecvMulticast)(const CMQuad *msginfo,
+  typedef XMI_Request_t *(*XMI_RecvMulticast)(const XMIQuad *msginfo,
                                                 unsigned msgcount,
                                                 size_t root,
                                                 size_t sndlen,
@@ -136,7 +136,7 @@ extern "C"
                                                 XMI_Callback_t *cb_done);
 
 #ifdef DEPRECATED_MULTICAST
-  typedef XMI_Request_t * (*DCMF_OldRecvMulticast) (const CMQuad    * info, /* DEPRECATED */
+  typedef XMI_Request_t * (*DCMF_OldRecvMulticast) (const XMIQuad    * info, /* DEPRECATED */
                                                   unsigned          count,
                                                   unsigned          peer,
                                                   unsigned          sndlen,
@@ -279,7 +279,7 @@ extern "C"
                                               example, send a point to
                                               point message or send a
                                               deposit bit broadcast along a line*/
-    const CMQuad      * msginfo;         /**< A extra info field to be
+    const XMIQuad      * msginfo;         /**< A extra info field to be
                                               sent with the message*/
     unsigned            count;           /**< info count*/
     XMI_Op             op;              /**< Operation for a reduce*/
@@ -360,7 +360,7 @@ extern "C"
     XMI_Topology_t      *src_participants; /**< root */
     XMI_PipeWorkQueue_t *dst;		/**< dest buffer (ignored for one-sided) */
     XMI_Topology_t      *dst_participants; /**< destinations to multicast to*/
-    const CMQuad       *msginfo;	/**< A extra info field to be sent with the message.
+    const XMIQuad       *msginfo;	/**< A extra info field to be sent with the message.
 					     This might include information about
 					     the data being sent, for one-sided. */
     unsigned            msgcount;	/**< info count*/
@@ -484,7 +484,7 @@ extern "C"
    * \param[in] arg		Client Data
    * \param[in] conn_id		Instance ID
    * \param[in] metadata	Pointer to metadata, if any, in message header.
-   * \param[in] metacount	Number of CMQuads of metadata.
+   * \param[in] metacount	Number of XMIQuads of metadata.
    * \param[out] recv		Receive parameters for this connection (instance)
    * \param[out] myIndex	Index of Recv Rank in the receive parameters.
    * \param[out] cb_done	Completion callback when message complete
@@ -492,7 +492,7 @@ extern "C"
    */
   typedef XMI_Request_t *(*XMI_RecvManytomany)(void *arg,
 					     unsigned conn_id,
-					     CMQuad *metadata,
+					     XMIQuad *metadata,
 					     unsigned metacount,
 					     XMI_ManytomanyBuf_t **recv,
 					     size_t *myIndex,
@@ -538,7 +538,7 @@ extern "C"
                                              should be multiple of send.participants->size()?
                                          */
     XMI_ManytomanyBuf_t  send;		/**< send data parameters */
-    const CMQuad       *metadata;	/**< A extra info field to be sent with the message.
+    const XMIQuad       *metadata;	/**< A extra info field to be sent with the message.
 					     This might include information about
 					     the data being sent, for one-sided. */
     unsigned            metacount;	/**< metadata count*/
@@ -578,12 +578,12 @@ extern "C"
    *
    * \param[in] clientdata	Opaque arg
    * \param[in] msginfo		Metadata
-   * \param[in] msgcount	Number of CMQuads in msginfo
+   * \param[in] msgcount	Number of XMIQuads in msginfo
    * \param[in] conn_id		Instance ID
    * \return	XMI_Request opaque memory for message
    */
   typedef XMI_Request_t *(*XMI_RecvMultisync)(void *clientdata,
-					    CMQuad *msginfo,
+					    XMIQuad *msginfo,
 					    unsigned msgcount,
 					    unsigned conn_id);
 
@@ -719,4 +719,4 @@ extern "C"
 };
 #endif
 
-#endif /* __ll_multisend_h__ */
+#endif /* __xmi_multisend_h__ */

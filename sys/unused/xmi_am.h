@@ -8,7 +8,7 @@
 #define __xmi_am_h__
 
 #include "xmi.h"
-//#include "../interface/ll_pipeworkqueue.h"
+//#include "../interface/xmi_pipeworkqueue.h"
 
 /**
  * \brief Callback to provide data at send side or consume data at receive side
@@ -83,7 +83,7 @@ typedef struct {
   size_t                 offset;   /**< Starting offset */
   xmi_data_type_t        datatype; /**< Datatype TODO */
 #else
-  XMI_PipeWorkQueue_t    * wq;      /**< \see interface/ll_pipeworkqueue.h */
+  XMI_PipeWorkQueue_t    * wq;      /**< \see interface/xmi_pipeworkqueue.h */
 #endif
 } xmi_send_typed_t;
 

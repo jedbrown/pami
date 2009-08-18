@@ -7,31 +7,31 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file cm_types.h
+ * \file xmi_types.h
  * \brief Common external collectives message layer types.
  */
-#ifndef __cm_types_h__
-#define __cm_types_h__
+#ifndef __xmi_types_h__
+#define __xmi_types_h__
 
 #include <stdint.h>
 #include <stddef.h>
 
-#include "cm_impl.h"
+#include "xmi_impl.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  // this probably should be platform-dependent... need PLATFORM/cm_types_impl.h
-  typedef struct CMQuad
+  // this probably should be platform-dependent... need PLATFORM/xmi_types_impl.h
+  typedef struct XMIQuad
   {
     unsigned w0; /**< Word[0] */
     unsigned w1; /**< Word[1] */
     unsigned w2; /**< Word[2] */
     unsigned w3; /**< Word[3] */
   }
-  CMQuad __attribute__ ((__aligned__ (16)));
+  XMIQuad __attribute__ ((__aligned__ (16)));
 
   typedef enum
   {
@@ -198,9 +198,9 @@ extern "C"
   }
   XMI_Callback_t;
 
-typedef CMQuad XMI_Protocol_t[XMI_PROTOCOL_NQUADS];
+typedef XMIQuad XMI_Protocol_t[XMI_PROTOCOL_NQUADS];
 
-typedef CMQuad XMI_Request_t[XMI_REQUEST_NQUADS];
+typedef XMIQuad XMI_Request_t[XMI_REQUEST_NQUADS];
 
 typedef void XMI_dgsp_t;	// temporary...
 
@@ -208,4 +208,4 @@ typedef void XMI_dgsp_t;	// temporary...
 };
 #endif
 
-#endif // __cm_types_h__
+#endif // __xmi_types_h__

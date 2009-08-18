@@ -8,13 +8,13 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file ll_topology.h
+ * \file xmi_topology.h
  * \brief Topology interface.
  */
-#ifndef __ll_topology_h__
-#define __ll_topology_h__
+#ifndef __xmi_topology_h__
+#define __xmi_topology_h__
 
-#include "cm_types.h"
+#include "xmi_types.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -32,7 +32,7 @@ extern "C"
     XMI_TOPOLOGY_COUNT
   } XMI_TopologyType_t;
 
-  typedef CMQuad XMI_Topology_t[2];
+  typedef XMIQuad XMI_Topology_t[2];
 
   /// \brief default constructor (XMI_EMPTY_TOPOLOGY)
   ///
@@ -90,7 +90,7 @@ extern "C"
   /// \brief accessor for size of a Topology object
   ///
   /// \param[in] topo	Opaque memory for topology
-  /// \return	size of LL::Topology
+  /// \return	size of XMI::Topology
   ///
   unsigned XMI_Topology_size_of(XMI_Topology_t *topo);
 
@@ -290,4 +290,4 @@ extern "C"
 };
 #endif
 
-#endif /* __ll_topology_h__ */
+#endif /* __xmi_topology_h__ */

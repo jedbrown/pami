@@ -7,21 +7,21 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file ll_pipeworkqueue.h
+ * \file xmi_pipeworkqueue.h
  * \brief PipeWorkQueue interface.
  */
-#ifndef __ll_pipeworkqueue_h__
-#define __ll_pipeworkqueue_h__
+#ifndef __xmi_pipeworkqueue_h__
+#define __xmi_pipeworkqueue_h__
 
-#include "cm_types.h"
+#include "xmi_types.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  typedef CMQuad XMI_PipeWorkQueue_t[4];
-  typedef CMQuad XMI_PipeWorkQueue_ext[2];
+  typedef XMIQuad XMI_PipeWorkQueue_t[4];
+  typedef XMIQuad XMI_PipeWorkQueue_ext[2];
 
   ///
   /// \brief Configure for Shared Circular Buffer variety.
@@ -304,4 +304,4 @@ extern "C"
 };
 #endif
 
-#endif /* __ll_pipeworkqueue_h__ */
+#endif /* __xmi_pipeworkqueue_h__ */

@@ -15,8 +15,8 @@
 #ifndef   __adaptor_pre_h__
 #define   __adaptor_pre_h__
 #warning mpi pre adaptor
-#include "interface/cm_types.h"
-#include "interface/ll_multisend.h"
+#include "interface/xmi_types.h"
+#include "interface/xmi_multisend.h"
 #include "interface/mpi/ccmi_collectives.h"
 
 #ifdef __PGASRT_DISTRIBUTED /* pure distributed - no pthreads library */
@@ -94,7 +94,7 @@ typedef XMI_RecvMulticast CCMI_RecvMulticast_t;
 #define __ccmi_subtask_defined__
 #define __ccmi_recvasynccallback_defined__
 
-/* These are defined in cm_types.h */
+/* These are defined in xmi_types.h */
 #define __ccmi_pipeworkqueue_defined__
 #define __ccmi_topology_defined__
 #define __ccmi_op_defined__

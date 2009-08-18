@@ -1,6 +1,6 @@
 
 #include <xmi.h>
-#include "../../interface/ll_pipeworkqueue.h"
+#include "../../interface/xmi_pipeworkqueue.h"
 
 inline void dgs_pack (void       * src_buffer,
                       xmi_type_t   src_type,

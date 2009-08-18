@@ -2,7 +2,7 @@
 #ifndef __ccmi_collective_h__
 #define __ccmi_collective_h__
 
-#include "interface/cm_types.h"
+#include "interface/xmi_types.h"
 
 #ifdef __cplusplus
 extern "C"

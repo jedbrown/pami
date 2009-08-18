@@ -8,11 +8,11 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file ll_topology.cc
+ * \file xmi_topology.cc
  * \brief Topology C interface.
  */
 
-#include "ll_topology.h"
+#include "xmi_topology.h"
 #include "interface/Topology.h"
 
 /// \brief default constructor (XMI_EMPTY_TOPOLOGY)
@@ -20,7 +20,7 @@
 /// \param[out] topo	Opaque memory for topology
 ///
 extern "C" void XMI_Topology_create(XMI_Topology_t *topo) {
-	new (topo) LL::Topology();
+	new (topo) XMI::Topology();
 }
 
 /// \brief rectangular segment with torus (XMI_COORD_TOPOLOGY)
@@ -35,7 +35,7 @@ extern "C" void XMI_Topology_create(XMI_Topology_t *topo) {
 extern "C" void XMI_Topology_create_rect(XMI_Topology_t *topo,
 		XMI_Coord_t *ll, XMI_Coord_t *ur,
 					unsigned char *tl) {
-	new (topo) LL::Topology(ll, ur, tl);
+	new (topo) XMI::Topology(ll, ur, tl);
 }
 
 /// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
@@ -44,7 +44,7 @@ extern "C" void XMI_Topology_create_rect(XMI_Topology_t *topo,
 /// \param[in] rank	The rank
 ///
 extern "C" void XMI_Topology_create_rank(XMI_Topology_t *topo, size_t rank) {
-	new (topo) LL::Topology(rank);
+	new (topo) XMI::Topology(rank);
 }
 
 /// \brief rank range constructor (XMI_RANGE_TOPOLOGY)
@@ -54,7 +54,7 @@ extern "C" void XMI_Topology_create_rank(XMI_Topology_t *topo, size_t rank) {
 /// \param[in] rankn	last rank in range
 ///
 extern "C" void XMI_Topology_create_range(XMI_Topology_t *topo, size_t rank0, size_t rankn) {
-	new (topo) LL::Topology(rank0, rankn);
+	new (topo) XMI::Topology(rank0, rankn);
 }
 
 /// \brief rank list constructor (XMI_LIST_TOPOLOGY)
@@ -68,7 +68,7 @@ extern "C" void XMI_Topology_create_range(XMI_Topology_t *topo, size_t rank0, si
 /// \todo create destructor to free list, or establish rules
 ///
 extern "C" void XMI_Topology_create_list(XMI_Topology_t *topo, size_t *ranks, size_t nranks) {
-	new (topo) LL::Topology(ranks, nranks);
+	new (topo) XMI::Topology(ranks, nranks);
 }
 
 /// \brief destructor
@@ -78,17 +78,17 @@ extern "C" void XMI_Topology_create_list(XMI_Topology_t *topo, size_t *ranks, si
 /// \param[out] topo	Opaque memory for topology
 ///
 extern "C" void XMI_Topology_destroy(XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	topology->~Topology();
 }
 
 /// \brief accessor for size of a Topology object
 ///
 /// \param[in] topo	Opaque memory for topology
-/// \return	size of LL::Topology
+/// \return	size of XMI::Topology
 ///
 extern "C" unsigned XMI_Topology_size_of(XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->size_of();
 }
 
@@ -96,7 +96,7 @@ extern "C" unsigned XMI_Topology_size_of(XMI_Topology_t *topo) {
 /// \param[in] topo	Opaque memory for topology
 /// \return	number of ranks
 extern "C" size_t XMI_Topology_size(XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->size();
 }
 
@@ -104,7 +104,7 @@ extern "C" size_t XMI_Topology_size(XMI_Topology_t *topo) {
 /// \param[out] topo	Opaque memory for topology
 /// \return	topology type
 extern "C" XMI_TopologyType_t XMI_Topology_type(XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->type();
 }
 
@@ -115,7 +115,7 @@ extern "C" XMI_TopologyType_t XMI_Topology_type(XMI_Topology_t *topo) {
 /// \return	Nth rank or (size_t)-1 if does not exist
 ///
 extern "C" size_t XMI_Topology_index2Rank(XMI_Topology_t *topo, size_t ix) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->index2Rank(ix);
 }
 
@@ -128,7 +128,7 @@ extern "C" size_t XMI_Topology_index2Rank(XMI_Topology_t *topo, size_t ix) {
 /// \return	index of rank (rank(ix) == rank) or (size_t)-1
 ///
 extern "C" size_t XMI_Topology_rank2Index(XMI_Topology_t *topo, size_t rank) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->rank2Index(rank);
 }
 
@@ -140,7 +140,7 @@ extern "C" size_t XMI_Topology_rank2Index(XMI_Topology_t *topo, size_t rank) {
 /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
 ///
 extern "C" XMI_Result XMI_Topology_rankRange(XMI_Topology_t *topo, size_t *first, size_t *last) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->rankRange(first, last);
 }
 
@@ -151,7 +151,7 @@ extern "C" XMI_Result XMI_Topology_rankRange(XMI_Topology_t *topo, size_t *first
 /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
 ///
 extern "C" XMI_Result XMI_Topology_rankList(XMI_Topology_t *topo, size_t **list) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->rankList(list);
 }
 
@@ -169,7 +169,7 @@ extern "C" XMI_Result XMI_Topology_rankList(XMI_Topology_t *topo, size_t **list)
 extern "C" XMI_Result XMI_Topology_rectSeg(XMI_Topology_t *topo,
 			XMI_Coord_t *ll, XMI_Coord_t *ur,
 			unsigned char *tl) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->rectSeg(ll, ur, tl);
 }
 
@@ -179,7 +179,7 @@ extern "C" XMI_Result XMI_Topology_rectSeg(XMI_Topology_t *topo,
 /// \return boolean indicating locality of ranks
 ///
 extern "C" bool XMI_Topology_isLocalToMe(XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->isLocalToMe();
 }
 
@@ -187,7 +187,7 @@ extern "C" bool XMI_Topology_isLocalToMe(XMI_Topology_t *topo) {
 /// \param[in] topo	Opaque memory for topology
 /// \return	boolean indicating rect seg topo
 extern "C" bool XMI_Topology_isRectSeg(XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->isRectSeg();
 }
 
@@ -201,7 +201,7 @@ extern "C" bool XMI_Topology_isRectSeg(XMI_Topology_t *topo) {
 ///
 extern "C" void XMI_Topology_getNthDims(XMI_Topology_t *topo, unsigned n,
 			unsigned *c0, unsigned *cn, unsigned char *tl) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	topology->getNthDims(n, c0, cn, tl);
 }
 
@@ -212,7 +212,7 @@ extern "C" void XMI_Topology_getNthDims(XMI_Topology_t *topo, unsigned n,
 /// \return	boolean indicating rank is in topology
 ///
 extern "C" bool XMI_Topology_isRankMember(XMI_Topology_t *topo, size_t rank) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->isRankMember(rank);
 }
 
@@ -223,7 +223,7 @@ extern "C" bool XMI_Topology_isRankMember(XMI_Topology_t *topo, size_t rank) {
 /// \return	boolean indicating coord is a member of topology
 ///
 extern "C" bool XMI_Topology_isCoordMember(XMI_Topology_t *topo, XMI_Coord_t *c0) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->isCoordMember(c0);
 }
 
@@ -233,8 +233,8 @@ extern "C" bool XMI_Topology_isCoordMember(XMI_Topology_t *topo, XMI_Coord_t *c0
 /// \param[in] topo	Opaque memory for topology
 ///
 extern "C" void XMI_Topology_sub_LocalToMe(XMI_Topology_t *_new, XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
-	LL::Topology *__new = (LL::Topology *)_new;
+	XMI::Topology *topology = (XMI::Topology *)topo;
+	XMI::Topology *__new = (XMI::Topology *)_new;
 	topology->subTopologyLocalToMe(__new);
 }
 
@@ -245,8 +245,8 @@ extern "C" void XMI_Topology_sub_LocalToMe(XMI_Topology_t *_new, XMI_Topology_t 
 /// \param[in] n	Which local rank to select on each node
 ///
 extern "C" void XMI_Topology_sub_NthGlobal(XMI_Topology_t *_new, XMI_Topology_t *topo, int n) {
-	LL::Topology *topology = (LL::Topology *)topo;
-	LL::Topology *__new = (LL::Topology *)_new;
+	XMI::Topology *topology = (XMI::Topology *)topo;
+	XMI::Topology *__new = (XMI::Topology *)_new;
 	topology->subTopologyNthGlobal(__new, n);
 }
 
@@ -262,8 +262,8 @@ extern "C" void XMI_Topology_sub_NthGlobal(XMI_Topology_t *_new, XMI_Topology_t 
 /// \param[in] fmt	how to reduce dimensions
 ///
 extern "C" void XMI_Topology_sub_ReduceDims(XMI_Topology_t *_new, XMI_Topology_t *topo, XMI_Coord_t *fmt) {
-	LL::Topology *topology = (LL::Topology *)topo;
-	LL::Topology *__new = (LL::Topology *)_new;
+	XMI::Topology *topology = (XMI::Topology *)topo;
+	XMI::Topology *__new = (XMI::Topology *)_new;
 	topology->subTopologyReduceDims(__new, fmt);
 }
 
@@ -284,7 +284,7 @@ extern "C" void XMI_Topology_sub_ReduceDims(XMI_Topology_t *_new, XMI_Topology_t
 /// \param[out] nranks	actual number of ranks put into array
 ///
 extern "C" void XMI_Topology_getRankList(XMI_Topology_t *topo, size_t max, size_t *ranks, size_t *nranks) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	topology->getRankList(max, ranks, nranks);
 }
 
@@ -303,7 +303,7 @@ extern "C" void XMI_Topology_getRankList(XMI_Topology_t *topo, size_t max, size_
 /// \return	'true' if topology was changed
 ///
 extern "C" bool XMI_Topology_analyze(XMI_Topology_t *topo) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->analyzeTopology();
 }
 
@@ -317,7 +317,7 @@ extern "C" bool XMI_Topology_analyze(XMI_Topology_t *topo) {
 /// \return	'true' if topology was changed
 ///
 extern "C" bool XMI_Topology_convert(XMI_Topology_t *topo, XMI_TopologyType_t new_type) {
-	LL::Topology *topology = (LL::Topology *)topo;
+	XMI::Topology *topology = (XMI::Topology *)topo;
 	return topology->convertTopology(new_type);
 }
 
@@ -330,9 +330,9 @@ extern "C" bool XMI_Topology_convert(XMI_Topology_t *topo, XMI_TopologyType_t ne
 /// \param[in] other	The other topology
 ///
 extern "C" void XMI_Topology_intersect(XMI_Topology_t *_new, XMI_Topology_t *topo, XMI_Topology_t *_other) {
-	LL::Topology *topology = (LL::Topology *)topo;
-	LL::Topology *__new = (LL::Topology *)_new;
-	LL::Topology *other = (LL::Topology *)_other;
+	XMI::Topology *topology = (XMI::Topology *)topo;
+	XMI::Topology *__new = (XMI::Topology *)_new;
+	XMI::Topology *other = (XMI::Topology *)_other;
 	topology->intersectTopology(__new, other);
 }
 
@@ -345,8 +345,8 @@ extern "C" void XMI_Topology_intersect(XMI_Topology_t *_new, XMI_Topology_t *top
 /// \param[in] other	The other topology
 ///
 extern "C" void XMI_Topology_subtract(XMI_Topology_t *_new, XMI_Topology_t *topo, XMI_Topology_t *_other) {
-	LL::Topology *topology = (LL::Topology *)topo;
-	LL::Topology *__new = (LL::Topology *)_new;
-	LL::Topology *other = (LL::Topology *)_other;
+	XMI::Topology *topology = (XMI::Topology *)topo;
+	XMI::Topology *__new = (XMI::Topology *)_new;
+	XMI::Topology *other = (XMI::Topology *)_other;
 	topology->subtractTopology(__new, other);
 }

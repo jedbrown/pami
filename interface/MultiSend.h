@@ -18,9 +18,9 @@
 #include "interface/ccmi_internal.h"
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
-#include "ll_topology.h" 
-#include "ll_pipeworkqueue.h" 
-#include "ll_multisend.h" 
+#include "xmi_topology.h" 
+#include "xmi_pipeworkqueue.h" 
+#include "xmi_multisend.h" 
 
 namespace CCMI
 {
@@ -50,7 +50,7 @@ namespace CCMI
       XMI_Topology_t      *src_participants;
       XMI_PipeWorkQueue_t *dst;
       XMI_Topology_t      *dst_participants;
-      const CMQuad    * msginfo;
+      const XMIQuad    * msginfo;
       unsigned            count;
 
       CCMI_Multicast_t ()
@@ -113,7 +113,7 @@ namespace CCMI
         cb_done.clientdata = cd;
       }
 
-      void setInfo (CMQuad *info, int count)
+      void setInfo (XMIQuad *info, int count)
       {
         this->msginfo = info;
         this->count   = count;
@@ -138,7 +138,7 @@ namespace CCMI
       XMI_Dt             dt;
       size_t              count;
 #ifdef NOT_YET /* These are only needed if we support one-sided multicombine directly */
-      const CMQuad    * msginfo;
+      const XMIQuad    * msginfo;
       unsigned            count;
 #endif
 
@@ -213,7 +213,7 @@ namespace CCMI
       }
 
 #ifdef NOT_YET /* These are only needed if we support one-sided multicombine directly */
-      void setInfo (CMQuad *info, int count)
+      void setInfo (XMIQuad *info, int count)
       {
         this->msginfo = info;
         this->count   = count;
@@ -453,7 +453,7 @@ namespace CCMI
       unsigned            nranks;
       unsigned          * ranks;
       CCMI_Subtask      * opcodes;
-      const CMQuad    * msginfo;
+      const XMIQuad    * msginfo;
       unsigned            count;
       XMI_Op             op;
       XMI_Dt             dt;
@@ -515,7 +515,7 @@ namespace CCMI
         this->opcodes = op;
       }
 
-      void setInfo (CMQuad *info, int count)
+      void setInfo (XMIQuad *info, int count)
       {
         this->msginfo = info;
         this->count   = count;
@@ -663,7 +663,7 @@ namespace CCMI
       virtual unsigned  send  (XMI_Request_t         * request,
                                const XMI_Callback_t  * cb_done,
                                CCMI_Consistency         consistency,
-                               const CMQuad         * info,
+                               const XMIQuad         * info,
                                unsigned                 info_count,
                                unsigned                 connection_id,
                                const char             * buf,

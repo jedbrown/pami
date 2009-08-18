@@ -8,15 +8,16 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file ll_pipeworkqueue.cc
+ * \file xmi_pipeworkqueue.cc
  * \brief PipeWorkQueue "C" interface.
  */
 
-#include "ll_pipeworkqueue.h"
-#include "PipeWorkQueue.h"
-#include "Messager.h"
+#include "interface/xmi_pipeworkqueue.h"
+#include "interface/PipeWorkQueue.h"
+#include <new>
+//#include "Messager.h"
 
-extern DCMF::Messager *_g_messager;
+//extern DCMF::Messager *_g_messager;
 
 ///
 /// \brief Configure for Shared Circular Buffer variety.
@@ -29,9 +30,9 @@ extern DCMF::Messager *_g_messager;
 /// \param[in] bufsize	Size of buffer to allocate
 ///
 extern "C" void XMI_PipeWorkQueue_config_circ(XMI_PipeWorkQueue_t *wq, size_t bufsize) {
-	LL::PipeWorkQueue *pwq =
-		new (wq) LL::PipeWorkQueue();
-	pwq->configure(_g_messager->sysdep(), bufsize);
+	XMI::PipeWorkQueue *pwq =
+		new (wq) XMI::PipeWorkQueue();
+	//	pwq->configure(_g_messager->sysdep(), bufsize);
 }
 
 ///
@@ -48,9 +49,9 @@ extern "C" void XMI_PipeWorkQueue_config_circ(XMI_PipeWorkQueue_t *wq, size_t bu
 /// \param[in] bufsize	Size of buffer
 ///
 extern "C" void XMI_PipeWorkQueue_config_circ_usr(XMI_PipeWorkQueue_t *wq, char *buffer, size_t bufsize) {
-	LL::PipeWorkQueue *pwq =
-		new (wq) LL::PipeWorkQueue();
-	pwq->configure(_g_messager->sysdep(), buffer, bufsize);
+	XMI::PipeWorkQueue *pwq =
+		new (wq) XMI::PipeWorkQueue();
+	//	pwq->configure(_g_messager->sysdep(), buffer, bufsize);
 }
 
 ///
@@ -68,75 +69,9 @@ extern "C" void XMI_PipeWorkQueue_config_circ_usr(XMI_PipeWorkQueue_t *wq, char 
 /// \param[in] bufinit	Amount of data initially in buffer
 ///
 extern "C" void XMI_PipeWorkQueue_config_flat(XMI_PipeWorkQueue_t *wq, char *buffer, size_t bufsize, size_t bufinit) {
-	LL::PipeWorkQueue *pwq =
-		new (wq) LL::PipeWorkQueue();
-	pwq->configure(_g_messager->sysdep(), buffer, bufsize, bufinit);
-}
-
-///
-/// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
-///
-/// Only one consumer and producer are allowed. Still supports pipelining.
-/// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
-/// Assumes the caller has placed buffer and (this) in appropriate memory
-/// for desired use - i.e. all in shared memory if to be used beyond this process.
-///
-/// This is typically only used for the application buffer, either input or output, 
-/// and so would not normally have both producer and consumer (only one or the other). 
-/// The interface is the same as for contiguous data except that "bytesAvailable" will
-/// only return the number of *contiguous* bytes available. The user must consume those
-/// bytes before it can see the next contiguous chunk.
-///
-/// \param[out] wq            Opaque memory for PipeWorkQueue
-/// \param[in] buffer         Buffer to use
-/// \param[in] dgsp           Memory layout of a buffer unit
-/// \param[in] dgspcount      Number of repetitions of buffer units
-/// \param[in] dgspinit       Number of units initially in buffer
-///
-extern "C" void XMI_PipeWorkQueue_config_noncontig(XMI_PipeWorkQueue_t *wq, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit) {
-	LL::PipeWorkQueue *pwq =
-		new (wq) LL::PipeWorkQueue();
-	pwq->configure(_g_messager->sysdep(), buffer, dgsp, dgspcount, dgspinit);
-}
-
-///
-/// \brief Export
-///
-/// Produces information about the PipeWorkQueue into the opaque buffer "export".
-/// This info is suitable for sharing with other processes such that those processes
-/// can then construct a PipeWorkQueue which accesses the same data stream. 
-///
-/// \param[in] wq             Opaque memory for PipeWorkQueue
-/// \param[out] export        Opaque memory to export into
-/// \return   success of the export operation
-///
-extern "C" XMI_Result XMI_PipeWorkQueue_export(XMI_PipeWorkQueue_t *wq, XMI_PipeWorkQueue_ext *exp) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
-	return pwq->exp(exp);
-}
-
-///
-/// \brief Import
-///
-/// Takes the results of an export of a PipeWorkQueue on a different process and
-/// constructs a new PipeWorkQueue which the local process may use to access the
-/// data stream. 
-///
-/// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
-/// The producer has no knowledge of data consumed. There can be only one producer.
-/// There may be multiple consumers, but the producer does not know about them.
-///
-/// TODO: can this work for circular buffers? does it need to, since those are
-/// normally shared memory and thus already permit inter-process communication.
-///
-/// \param[in] import        Opaque memory into which an export was done.
-/// \param[out] wq           Opaque memory for new PipeWorkQueue
-/// \return   success of the import operation
-///
-extern "C" XMI_Result XMI_PipeWorkQueue_import(XMI_PipeWorkQueue_ext *import, XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq =
-		new (wq) LL::PipeWorkQueue();
-	return pwq->import(import);
+	XMI::PipeWorkQueue *pwq =
+		new (wq) XMI::PipeWorkQueue();
+	//	pwq->configure(_g_messager->sysdep(), buffer, bufsize, bufinit);
 }
 
 ///
@@ -151,8 +86,8 @@ extern "C" XMI_Result XMI_PipeWorkQueue_import(XMI_PipeWorkQueue_ext *import, XM
 /// \param[in] obj	old object, to be cloned
 ///
 extern "C" void XMI_PipeWorkQueue_clone(XMI_PipeWorkQueue_t *wq, XMI_PipeWorkQueue_t *obj) {
-	LL::PipeWorkQueue *_obj = (LL::PipeWorkQueue *)obj;
-	new (wq) LL::PipeWorkQueue(*_obj);
+	XMI::PipeWorkQueue *_obj = (XMI::PipeWorkQueue *)obj;
+	new (wq) XMI::PipeWorkQueue(*_obj);
 }
 
 ///
@@ -161,7 +96,7 @@ extern "C" void XMI_PipeWorkQueue_clone(XMI_PipeWorkQueue_t *wq, XMI_PipeWorkQue
 /// \param[out] wq	Opaque memory for PipeWorkQueue
 ///
 extern "C" void XMI_PipeWorkQueue_destroy(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	pwq->~PipeWorkQueue();
 }
 
@@ -174,7 +109,7 @@ extern "C" void XMI_PipeWorkQueue_destroy(XMI_PipeWorkQueue_t *wq) {
 /// \param[out] wq	Opaque memory for PipeWorkQueue
 ///
 extern "C" void XMI_PipeWorkQueue_reset(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	pwq->reset();
 }
 
@@ -185,7 +120,7 @@ extern "C" void XMI_PipeWorkQueue_reset(XMI_PipeWorkQueue_t *wq) {
 /// \param[in] prefix Optional character string to prefix.
 ///
 extern "C" void XMI_PipeWorkQueue_dump(XMI_PipeWorkQueue_t *wq, const char *prefix) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	pwq->dump(prefix);
 }
 
@@ -195,7 +130,7 @@ extern "C" void XMI_PipeWorkQueue_dump(XMI_PipeWorkQueue_t *wq, const char *pref
 /// \param[in] vec	Opaque wakeup vector parameter
 ///
 extern "C" void XMI_PipeWorkQueue_setConsumerWakeup(XMI_PipeWorkQueue_t *wq, void *vec) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	pwq->setConsumerWakeup(vec);
 }
 
@@ -205,7 +140,7 @@ extern "C" void XMI_PipeWorkQueue_setConsumerWakeup(XMI_PipeWorkQueue_t *wq, voi
 /// \param[in] vec	Opaque wakeup vector parameter
 ///
 extern "C" void XMI_PipeWorkQueue_setProducerWakeup(XMI_PipeWorkQueue_t *wq, void *vec) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	pwq->setProducerWakeup(vec);
 }
 
@@ -222,7 +157,7 @@ extern "C" void XMI_PipeWorkQueue_setProducerWakeup(XMI_PipeWorkQueue_t *wq, voi
 /// \return Number of bytes that may be produced.
 ///
 extern "C" size_t XMI_PipeWorkQueue_bytesAvailableToProduce(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	return pwq->bytesAvailableToProduce();
 }
 
@@ -242,7 +177,7 @@ extern "C" size_t XMI_PipeWorkQueue_bytesAvailableToProduce(XMI_PipeWorkQueue_t 
 /// \return Number of bytes that may be consumed.
 ///
 extern "C" size_t XMI_PipeWorkQueue_bytesAvailableToConsume(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	return pwq->bytesAvailableToConsume();
 }
 
@@ -252,7 +187,7 @@ extern "C" size_t XMI_PipeWorkQueue_bytesAvailableToConsume(XMI_PipeWorkQueue_t 
 /// \return	number of bytes produced
 ///
 extern "C" size_t XMI_PipeWorkQueue_getBytesProduced(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	return pwq->getBytesProduced();
 }
 
@@ -262,7 +197,7 @@ extern "C" size_t XMI_PipeWorkQueue_getBytesProduced(XMI_PipeWorkQueue_t *wq) {
 /// \return	number of bytes consumed
 ///
 extern "C" size_t XMI_PipeWorkQueue_getBytesConsumed(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	return pwq->getBytesConsumed();
 }
 
@@ -272,7 +207,7 @@ extern "C" size_t XMI_PipeWorkQueue_getBytesConsumed(XMI_PipeWorkQueue_t *wq) {
 /// \return	location in buffer to produce into
 ///
 char *XMI_PipeWorkQueue_bufferToProduce(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	return pwq->bufferToProduce();
 }
 
@@ -282,7 +217,7 @@ char *XMI_PipeWorkQueue_bufferToProduce(XMI_PipeWorkQueue_t *wq) {
 /// \return	number of bytes that were produced
 ///
 extern "C" void XMI_PipeWorkQueue_produceBytes(XMI_PipeWorkQueue_t *wq, size_t bytes) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	pwq->produceBytes(bytes);
 }
 
@@ -292,7 +227,7 @@ extern "C" void XMI_PipeWorkQueue_produceBytes(XMI_PipeWorkQueue_t *wq, size_t b
 /// \return	location in buffer to consume from
 ///
 char *XMI_PipeWorkQueue_bufferToConsume(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	return pwq->bufferToConsume();
 }
 
@@ -302,7 +237,7 @@ char *XMI_PipeWorkQueue_bufferToConsume(XMI_PipeWorkQueue_t *wq) {
 /// \return	number of bytes that were consumed
 ///
 extern "C" void XMI_PipeWorkQueue_consumeBytes(XMI_PipeWorkQueue_t *wq, size_t bytes) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	pwq->consumeBytes(bytes);
 }
 
@@ -312,6 +247,16 @@ extern "C" void XMI_PipeWorkQueue_consumeBytes(XMI_PipeWorkQueue_t *wq, size_t b
 /// \return	boolean indicate workqueue readiness
 ///
 extern "C" bool XMI_PipeWorkQueue_available(XMI_PipeWorkQueue_t *wq) {
-	LL::PipeWorkQueue *pwq = (LL::PipeWorkQueue *)wq;
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
 	return pwq->available();
+}
+
+/// \brief is workqueue buffer 16-byte aligned
+///
+/// \param[in] wq	Opaque memory for PipeWorkQueue
+/// \return	boolean indicate workqueue buffer alignment
+///
+extern "C" bool XMI_PipeWorkQueue_aligned(XMI_PipeWorkQueue_t *wq) {
+	XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)wq;
+	return pwq->aligned();
 }
