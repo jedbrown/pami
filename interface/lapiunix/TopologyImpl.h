@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __ll_topologyimpl_h__
-#define __ll_topologyimpl_h__
+#ifndef __xmi_topologyimpl_h__
+#define __xmi_topologyimpl_h__
 
 ////////////////////////////////////////////////////////////////////////
 /// \file generic/TopologyImpl.h
@@ -19,7 +19,7 @@
 ///	* We never have a XMI_COORD_TOPOLOGY unless we also have XMI_TORUS_NETWORK
 ///
 ////////////////////////////////////////////////////////////////////////
-namespace LL 
+namespace XMI 
 {
   class _TopologyImpl 
   {
@@ -52,7 +52,7 @@ namespace LL
     /// \param[out] _new	place to construct new topology
     /// \return	nothing, but _new may be XMI_EMPTY_TOPOLOGY
     ///
-    void __subTopologyLocalToMe(LL::_TopologyImpl *_new) 
+    void __subTopologyLocalToMe(XMI::_TopologyImpl *_new) 
     {
     }
 
@@ -66,7 +66,7 @@ namespace LL
     /// \param[in] n	which local rank to select
     /// \return	nothing, but _new may be XMI_EMPTY_TOPOLOGY
     ///
-    void __subTopologyNthGlobal(LL::_TopologyImpl *_new, int n) 
+    void __subTopologyNthGlobal(XMI::_TopologyImpl *_new, int n) 
     {
 
     }
@@ -79,7 +79,7 @@ namespace LL
     /// \param[out] _new	Storage for new topology
     /// \param[in] fmt	Coords to collapse/preserve
     ///
-    void __subTopologyReduceDims(LL::_TopologyImpl *_new, XMI_Coord_t *fmt) 
+    void __subTopologyReduceDims(XMI::_TopologyImpl *_new, XMI_Coord_t *fmt) 
     {
 
     }
@@ -258,7 +258,7 @@ namespace LL
       }
 
     /// \brief accessor for size of a Topology object
-    /// \return	size of LL::Topology
+    /// \return	size of XMI::Topology
     static const unsigned size_of() { return sizeof(_TopologyImpl); }
 
     /// \brief number of ranks in topology
@@ -414,7 +414,7 @@ namespace LL
     ///
     /// \param[out] _new	Where to build topology
     ///
-    void subTopologyLocalToMe(LL::_TopologyImpl *_new) 
+    void subTopologyLocalToMe(XMI::_TopologyImpl *_new) 
     {
     }
 
@@ -423,7 +423,7 @@ namespace LL
     /// \param[out] _new	Where to build topology
     /// \param[in] n	Which local rank to select on each node
     ///
-    void subTopologyNthGlobal(LL::_TopologyImpl *_new, int n) 
+    void subTopologyNthGlobal(XMI::_TopologyImpl *_new, int n) 
     {
     }
 
@@ -437,7 +437,7 @@ namespace LL
     /// \param[out] _new	where to build new topology
     /// \param[in] fmt	how to reduce dimensions
     ///
-    void subTopologyReduceDims(LL::_TopologyImpl *_new, XMI_Coord_t *fmt) 
+    void subTopologyReduceDims(XMI::_TopologyImpl *_new, XMI_Coord_t *fmt) 
     {
     }
 
@@ -532,6 +532,6 @@ namespace LL
 
   }; // class _TopologyImpl
 
-}; /* namespace LL */
+}; /* namespace XMI */
 
-#endif /* __ll_topologyimpl_h__ */
+#endif /* __xmi_topologyimpl_h__ */

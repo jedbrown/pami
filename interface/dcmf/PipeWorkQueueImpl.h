@@ -11,8 +11,8 @@
  * \brief Implementation of PipeWorkQueue on DCMF
  */
 
-#ifndef __ll_cpp_pipeworkqueueimpl_h__
-#define __ll_cpp_pipeworkqueueimpl_h__
+#ifndef __xmi_cpp_pipeworkqueueimpl_h__
+#define __xmi_cpp_pipeworkqueueimpl_h__
 
 // undef/define to control workqueues that are optimized for the flat buffer case.
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
@@ -48,7 +48,7 @@
 #define vtop(v)	((uint64_t)v)
 #define map(p)	((void *)p)
 
-namespace LL {
+namespace XMI {
 
 class _PipeWorkQueueImpl {
 ///
@@ -71,7 +71,7 @@ class _PipeWorkQueueImpl {
 				volatile void *producerWakeVec;
 				volatile void *consumerWakeVec;
 			} _s;
-			CMQuad _pad;
+			XMIQuad _pad;
 		} _u;
 		volatile char buffer[0]; ///< Producer-consumer buffer
 	} workqueue_t __attribute__ ((__aligned__(16)));
@@ -575,6 +575,6 @@ private:
 	workqueue_t __sq;
 }; // class _PipeWorkQueueImpl
 
-}; /* namespace LL */
+}; /* namespace XMI */
 
-#endif /* __ll_cpp_pipeworkqueueimpl_h__ */
+#endif /* __xmi_cpp_pipeworkqueueimpl_h__ */

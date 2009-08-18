@@ -11,12 +11,12 @@
  * \brief Implementation of PipeWorkQueue
  */
 
-#ifndef __ll_cpp_pipeworkqueueimpl_h__
-#define __ll_cpp_pipeworkqueueimpl_h__
+#ifndef __xmi_cpp_pipeworkqueueimpl_h__
+#define __xmi_cpp_pipeworkqueueimpl_h__
 
 
 
-namespace LL 
+namespace XMI 
 {
   class _PipeWorkQueueImpl 
   {
@@ -239,6 +239,6 @@ namespace LL
   private:
   }; // class _PipeWorkQueueImpl
 
-}; /* namespace LL */
+}; /* namespace XMI */
 
-#endif /* __ll_cpp_pipeworkqueueimpl_h__ */
+#endif /* __xmi_cpp_pipeworkqueueimpl_h__ */
