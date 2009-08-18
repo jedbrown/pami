@@ -201,9 +201,9 @@ namespace CCMI
           static SharedData            * _shared;
 	  static char *_swq_buf;
 	  static char *_rwq_buf;
-	  static LL::PipeWorkQueue _swq;
-	  static LL::PipeWorkQueue _rwq;
-	  static LL::Topology _root;
+	  static XMI::PipeWorkQueue _swq;
+	  static XMI::PipeWorkQueue _rwq;
+	  static XMI::Topology _root;
           static unsigned _numPeers;
           static unsigned _myPeer;
           static unsigned _isMasterCore;

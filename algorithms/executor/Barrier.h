@@ -306,7 +306,7 @@ inline void CCMI::Executor::Barrier::sendNext()
     else
       _minfo.setCallback (staticNotifySendDone, this);
 
-    new (&topo) LL::Topology(dstranks, ndest);
+    new (&topo) XMI::Topology(dstranks, ndest);
     _minfo.setRanks(&topo);
 
     ///Initiate multisend

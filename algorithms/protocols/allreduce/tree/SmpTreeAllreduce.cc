@@ -39,9 +39,9 @@ namespace CCMI
           {
 	    struct _req {
 		XMI_Request_t _msg;
-		LL::Topology _root;
-		LL::PipeWorkQueue _swq;
-		LL::PipeWorkQueue _rwq;
+		XMI::Topology _root;
+		XMI::PipeWorkQueue _swq;
+		XMI::PipeWorkQueue _rwq;
 	    } *req = (struct _req *)request;
             // call tree multisend directly	      
             //TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::SmpTreeAllreduce::restart\n", (int)this));
@@ -57,9 +57,9 @@ namespace CCMI
 	    req->_rwq.configure(NULL, dstbuf, _bytes, 0);
 	    req->_rwq.reset();
 	    if (root != (size_t)-1) {
-	    	new (&req->_root) LL::Topology(root);
+	    	new (&req->_root) XMI::Topology(root);
 	    } else {
-	    	new (&req->_root) LL::Topology(_rank);
+	    	new (&req->_root) XMI::Topology(_rank);
 	    }
 
             _mcombArgs.setRequestBuffer(&req->_msg, sizeof(req->_msg));

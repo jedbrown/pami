@@ -27,7 +27,7 @@
 
 extern DCMF::Messager *_g_messager; /// \todo dcmf specific
 
-extern LL::Topology *_g_topology_local;
+extern XMI::Topology *_g_topology_local;
 
 #define SHM_FILE "/unique-ccmi-shmem"
 
@@ -48,9 +48,9 @@ namespace CCMI
 					(VnDualShortTreeAllreduce::SharedData *)-1;
 	char *VnDualShortTreeAllreduce::_swq_buf;
 	char *VnDualShortTreeAllreduce::_rwq_buf;
-	LL::PipeWorkQueue VnDualShortTreeAllreduce::_swq;
-	LL::PipeWorkQueue VnDualShortTreeAllreduce::_rwq;
-	LL::Topology VnDualShortTreeAllreduce::_root;
+	XMI::PipeWorkQueue VnDualShortTreeAllreduce::_swq;
+	XMI::PipeWorkQueue VnDualShortTreeAllreduce::_rwq;
+	XMI::Topology VnDualShortTreeAllreduce::_root;
         unsigned VnDualShortTreeAllreduce::_numPeers = 0;
         unsigned VnDualShortTreeAllreduce::_myPeer = 0;
         unsigned VnDualShortTreeAllreduce::_isMasterCore = 0;
@@ -232,9 +232,9 @@ namespace CCMI
               } while (num < _numPeers - 1);
 
               if (_dstbuf) {
-	        new (&_root) LL::Topology(_mapping->rank());
+	        new (&_root) XMI::Topology(_mapping->rank());
               } else { // we don't want the results if we're non-root reduce.
-	        new (&_root) LL::Topology();
+	        new (&_root) XMI::Topology();
 	      }
               _mcombArgs.setResultsRanks((XMI_Topology_t *)&_root);
 
