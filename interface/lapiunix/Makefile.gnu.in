@@ -1,8 +1,8 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= api multisend common
 NOTBUILT        =
-@LIBNAME@-""-COLLECTIVESIFACE_SOURCES=hl_collectives.cc ll_pipeworkqueue.cc   \
-				      tspcoll_communicator.cc ll_multisend.cc \
-				      ll_topology.cc
+@LIBNAME@-""-COLLECTIVESIFACE_SOURCES=xmi_collectives.cc xmi_pipeworkqueue.cc   \
+				      tspcoll_communicator.cc xmi_multisend.cc \
+				      xmi_topology.cc
 DEVICENAME     = @LIBNAME@-""-COLLECTIVESIFACE
 include @abs_top_builddir@/Build.rules

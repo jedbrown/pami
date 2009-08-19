@@ -1,4 +1,4 @@
-#include "../hl_collectives.h"
+#include "../xmi_collectives.h"
 #include <stdio.h>
 
 // Includes for CCMI
@@ -581,13 +581,13 @@ extern "C"
 
 
 
-    int XMI_Xfer (void* context, hl_xfer_t *cmd)
+    int XMI_Xfer (void* context, XMI_Xfer_t *cmd)
     {
 	switch(cmd->xfer_type)
 	    {
 	    case XMI_XFER_BROADCAST:
 		{
-		    hl_broadcast_t        * parms   = &cmd->xfer_broadcast;
+		    XMI_Broadcast_t        * parms   = &cmd->xfer_broadcast;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    int p_root                      = tspcoll->virtrankof(parms->root);
@@ -600,7 +600,7 @@ extern "C"
 		break;
 	    case XMI_XFER_ALLGATHER:
 		{
-		    hl_allgather_t        * parms   = &cmd->xfer_allgather;
+		    XMI_Allgather_t        * parms   = &cmd->xfer_allgather;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    CCMI::Adaptor::Generic::OldMulticastImpl *minfo =
@@ -612,7 +612,7 @@ extern "C"
 		break;
 	    case XMI_XFER_ALLGATHERV:
 		{
-		    hl_allgatherv_t        * parms   = &cmd->xfer_allgatherv;
+		    XMI_Allgatherv_t        * parms   = &cmd->xfer_allgatherv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    CCMI::Adaptor::Generic::OldMulticastImpl *minfo =
@@ -629,7 +629,7 @@ extern "C"
 		      CCMI::Adaptor::Generic::OldMulticastImpl barrier;
 		      CCMI::Adaptor::Generic::OldMulticastImpl scatter;
 		    }scatter_info;
-		    hl_scatter_t          * parms   = &cmd->xfer_scatter;
+		    XMI_Scatter_t          * parms   = &cmd->xfer_scatter;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    scatter_info          * scinfo  = (scatter_info*)parms->registration;
@@ -647,7 +647,7 @@ extern "C"
 		      CCMI::Adaptor::Generic::OldMulticastImpl barrier;
 		      CCMI::Adaptor::Generic::OldMulticastImpl scatterv;
 		    }scatterv_info;
-		    hl_scatterv_t         * parms   = &cmd->xfer_scatterv;
+		    XMI_Scatterv_t         * parms   = &cmd->xfer_scatterv;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		    scatterv_info         * scinfo  = (scatterv_info*)parms->registration;
@@ -660,7 +660,7 @@ extern "C"
 		break;
 	    case XMI_XFER_ALLREDUCE:
 		{
-		    hl_allreduce_t        * parms   = &cmd->xfer_allreduce;
+		    XMI_Allreduce_t        * parms   = &cmd->xfer_allreduce;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 #ifdef USE_CCMI
 		    {
@@ -733,7 +733,7 @@ extern "C"
 		break;
 	    case XMI_XFER_ALLTOALLV:
 		{
-		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
+		    XMI_Alltoall_t         * parms   = &cmd->xfer_alltoall;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 		    TSPColl::Communicator * tspcoll = (TSPColl::Communicator *)&g->_pgasrt_comm;
 		}
@@ -741,7 +741,7 @@ extern "C"
 
 	    case XMI_XFER_ALLTOALL:
 		{
-		    hl_alltoall_t         * parms   = &cmd->xfer_alltoall;
+		    XMI_Alltoall_t         * parms   = &cmd->xfer_alltoall;
 
 geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
@@ -770,7 +770,7 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 
 	    case XMI_XFER_BARRIER:
 		{
-		    hl_barrier_t          * parms   = &cmd->xfer_barrier;
+		    XMI_Barrier_t          * parms   = &cmd->xfer_barrier;
 		    geometry_internal     * g       = (geometry_internal*)parms->geometry;
 #ifdef USE_CCMI
 		    CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
@@ -791,7 +791,7 @@ geometry_internal         * g       = (geometry_internal*)parms->geometry;
 	    case XMI_XFER_AMBROADCAST:
 	      {
 #ifdef USE_CCMI
-		hl_ambroadcast_t          * parms   = &cmd->xfer_ambroadcast;
+		XMI_Ambroadcast_t          * parms   = &cmd->xfer_ambroadcast;
 		geometry_internal         * g       = (geometry_internal*)parms->geometry;
 		CCMI::Adaptor::Geometry   *_c_geometry    = (CCMI::Adaptor::Geometry *)&g->_ccmi_geometry;
 		CCMI::Adaptor::Broadcast::BroadcastFactory<CCMI::CollectiveMapping> *factory =

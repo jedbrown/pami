@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <assert.h>
-#include "../interface/hl_collectives.h"
+#include "../interface/xmi_collectives.h"
 
 #define FULL_TEST  
 #define COUNT      65536
@@ -170,7 +170,7 @@ volatile unsigned       _g_barrier_active;
 XMI_CollectiveRequest_t  _g_barrier_request;
 XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
-hl_barrier_t  _xfer_barrier =
+XMI_Barrier_t  _xfer_barrier =
     {
 	XMI_XFER_BARRIER,
 	&_g_barrier,
@@ -185,7 +185,7 @@ volatile unsigned       _g_allreduce_active;
 XMI_CollectiveRequest_t  _g_allreduce_request;
 XMI_Callback_t _cb_allreduce   = {(void (*)(void*,XMI_Error_t*))cb_allreduce,
 			       (void *) &_g_allreduce_active };
-hl_allreduce_t  _xfer_allreduce =
+XMI_Allreduce_t  _xfer_allreduce =
     {
 	XMI_XFER_ALLREDUCE,
 	&_g_allreduce,
@@ -251,7 +251,7 @@ void init__allreduces ()
 void _barrier ()
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
       XMI_Poll();
 }
@@ -268,7 +268,7 @@ void _allreduce (char            * src,
     _xfer_allreduce.count = count;
     _xfer_allreduce.dt    = dt;
     _xfer_allreduce.op    = op;
-    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_allreduce);
+    XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_allreduce);
     while (_g_allreduce_active)
 	XMI_Poll();
 }

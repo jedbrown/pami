@@ -4,7 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "../interface/hl_collectives.h"
+#include "../interface/xmi_collectives.h"
 
 
 //#define TRACE(x) printf x;fflush(stdout);
@@ -86,7 +86,7 @@ volatile unsigned       _g_barrier_active;
 XMI_CollectiveRequest_t  _g_barrier_request;
 XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
-hl_barrier_t  _xfer_barrier =
+XMI_Barrier_t  _xfer_barrier =
     {
 	XMI_XFER_BARRIER,
 	&_g_barrier,
@@ -115,7 +115,7 @@ void init__barriers ()
 void _barrier ()
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
       XMI_Poll();
 }
@@ -144,7 +144,7 @@ void init__alltoall ()
 }
 
 XMI_Callback_t _cb = {(void (*)(void*,XMI_Error_t*))cb_alltoall, (void *) &_g_alltoall_active };
-hl_alltoall_t  _xfer_alltoall =
+XMI_Alltoall_t  _xfer_alltoall =
     {
 	XMI_XFER_ALLTOALL,
 	&_g_alltoall,
@@ -186,7 +186,7 @@ void _alltoall (
   _xfer_alltoall.rcvlens = rcvlens;
   _xfer_alltoall.rdispls = rdispls;
 
-  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_alltoall);
+  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_alltoall);
   while (_g_alltoall_active)
       XMI_Poll();
 }

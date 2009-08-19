@@ -4,7 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "../interface/hl_collectives.h"
+#include "../interface/xmi_collectives.h"
 
 XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
@@ -36,7 +36,7 @@ void init__barriers ()
 
 
 XMI_Callback_t _cb = { cb_barrier, (void *)&_g_barrier_active };
-hl_barrier_t  _xfer =
+XMI_Barrier_t  _xfer =
     {
 	XMI_XFER_BARRIER,
 	&_g_barrier,
@@ -56,7 +56,7 @@ XMI_Geometry_t *cb_geometry (int comm)
 void _barrier ()
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer);
+  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer);
   while (_g_barrier_active)
       XMI_Poll();
 }

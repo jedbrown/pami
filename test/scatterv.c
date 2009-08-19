@@ -4,7 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "../interface/hl_collectives.h"
+#include "../interface/xmi_collectives.h"
 
 
 #define BUFSIZE 131072
@@ -18,7 +18,7 @@ volatile unsigned       _g_barrier_active;
 XMI_CollectiveRequest_t  _g_barrier_request;
 XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
-hl_barrier_t  _xfer_barrier =
+XMI_Barrier_t  _xfer_barrier =
     {
 	XMI_XFER_BARRIER,
 	&_g_barrier,
@@ -33,7 +33,7 @@ volatile unsigned       _g_scatterv_active;
 XMI_CollectiveRequest_t  _g_scatterv_request;
 XMI_Callback_t _cb_scatterv   = {(void (*)(void*,XMI_Error_t*))cb_scatterv,
 			       (void *) &_g_scatterv_active };
-hl_scatterv_t  _xfer_scatterv =
+XMI_Scatterv_t  _xfer_scatterv =
     {
 	XMI_XFER_SCATTERV,
 	&_g_scatterv,
@@ -98,7 +98,7 @@ void init__scattervs ()
 void _barrier ()
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
       XMI_Poll();
 }
@@ -113,7 +113,7 @@ void _scatterv (int         root,
     _xfer_scatterv.src     = src;
     _xfer_scatterv.dst     = dst;
     _xfer_scatterv.lengths = lengths;
-    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_scatterv);
+    XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_scatterv);
     while (_g_scatterv_active)
 	XMI_Poll();
 }

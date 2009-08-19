@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <assert.h>
-#include "../interface/hl_collectives.h"
+#include "../interface/xmi_collectives.h"
 
 
 #define BUFSIZE 131072
@@ -18,7 +18,7 @@ volatile unsigned       _g_barrier_active;
 XMI_CollectiveRequest_t  _g_barrier_request;
 XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
-hl_barrier_t  _xfer_barrier =
+XMI_Barrier_t  _xfer_barrier =
     {
 	XMI_XFER_BARRIER,
 	&_g_barrier,
@@ -34,7 +34,7 @@ XMI_CollectiveRequest_t  _g_allgather_request;
 
 XMI_Callback_t _cb_allgather   = {(void (*)(void*,XMI_Error_t*))cb_allgather,
 			       (void *) &_g_allgather_active };
-hl_allgather_t  _xfer_allgather =
+XMI_Allgather_t  _xfer_allgather =
     {
 	XMI_XFER_ALLGATHER,
 	&_g_allgather,
@@ -99,7 +99,7 @@ void init__allgathers ()
 void _barrier ()
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
       XMI_Poll();
 }
@@ -112,7 +112,7 @@ void _allgather (char            * src,
     _xfer_allgather.src   = src;
     _xfer_allgather.dst   = dst;
     _xfer_allgather.bytes = bytes;
-    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_allgather);
+    XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_allgather);
     while (_g_allgather_active)
 	XMI_Poll();
 }

@@ -4,7 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "../interface/hl_collectives.h"
+#include "../interface/xmi_collectives.h"
 
 
 #define BUFSIZE 524288
@@ -17,7 +17,7 @@ volatile unsigned       _g_barrier_active;
 XMI_CollectiveRequest_t  _g_barrier_request;
 XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
 			       (void *) &_g_barrier_active };
-hl_barrier_t  _xfer_barrier =
+XMI_Barrier_t  _xfer_barrier =
     {
 	XMI_XFER_BARRIER,
 	&_g_barrier,
@@ -32,7 +32,7 @@ volatile unsigned       _g_broadcast_active;
 XMI_CollectiveRequest_t  _g_broadcast_request;
 XMI_Callback_t _cb_broadcast   = {(void (*)(void*,XMI_Error_t*))cb_broadcast,
 			       (void *) &_g_broadcast_active };
-hl_broadcast_t  _xfer_broadcast =
+XMI_Broadcast_t  _xfer_broadcast =
     {
 	XMI_XFER_BROADCAST,
 	&_g_broadcast,
@@ -97,7 +97,7 @@ void init__broadcasts ()
 void _barrier ()
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_barrier);
+  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
   while (_g_barrier_active)
       XMI_Poll();
 }
@@ -112,7 +112,7 @@ void _broadcast (int               root,
     _xfer_broadcast.src   = src;
     _xfer_broadcast.dst   = dst;
     _xfer_broadcast.bytes = bytes;
-    XMI_Xfer (NULL, (hl_xfer_t*)&_xfer_broadcast);
+    XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_broadcast);
     while (_g_broadcast_active)
 	XMI_Poll();
 }

@@ -1,10 +1,10 @@
 /**
- * \file hl_collectives.h
+ * \file xmi_collectives.h
  * \brief Common external collective layer interface.
  */
 
-#ifndef __hl_collective_h__
-#define __hl_collective_h__
+#ifndef __xmi_collective_h__
+#define __xmi_collective_h__
 
 #include "xmi_types.h"
 #include "ccmi_internal.h"
@@ -173,7 +173,7 @@ extern "C"
 	    XMI_CFG_AMGATHER,
 	    XMI_CFG_AMREDUCE,
 	    XMI_CFG_COUNT
-	}hl_config_t;
+	}XMI_Config_t;
 
     /**
      * \brief Opaque data type that holds geometry information.
@@ -260,37 +260,37 @@ extern "C"
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_Broadcast_Protocol_t protocol;          /**< The broadcast protocol implementation to register. */
     }XMI_Broadcast_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_Allgather_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
     }XMI_Allgather_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_Allgatherv_Protocol_t protocol;          /**< The allgather protocol implementation to register. */
     }XMI_Allgatherv_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_Scatter_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
     }XMI_Scatter_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_Scatterv_Protocol_t protocol;          /**< The scatter protocol implementation to register. */
     }XMI_Scatterv_Configuration_t;
 
     typedef struct
     {
-        hl_config_t           cfg_type;
+        XMI_Config_t           cfg_type;
         XMI_Allreduce_Protocol_t protocol;       /**< The allreduce protocol implementation to register. */
         unsigned              reuse_storage:1;/**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
         unsigned              reserved:31;    /**< Currently unused */
@@ -298,7 +298,7 @@ extern "C"
 
     typedef struct
     {
-        hl_config_t        cfg_type;
+        XMI_Config_t        cfg_type;
         XMI_Reduce_Protocol_t protocol;       /**< The reduce protocol implementation to register. */
         unsigned           reuse_storage:1;/**< Reuse malloc'd storage across calls if set. Otherwise, free it. */
         unsigned           reserved:31;    /**< Reserved for future use. */
@@ -306,53 +306,53 @@ extern "C"
 
     typedef struct
     {
-        hl_config_t           cfg_type;
+        XMI_Config_t           cfg_type;
         XMI_Barrier_Protocol_t protocol;    /**< The barrier protocol implementation to register. */
     }XMI_Barrier_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_Alltoall_Protocol_t  protocol;    /**< The alltoall protocol implementation to register. */
     }XMI_Alltoall_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_Alltoallv_Protocol_t protocol;    /**< The alltoallv protocol implementation to register. */
     }XMI_Alltoallv_Configuration_t;
 
     typedef struct
     {
-        hl_config_t               cfg_type;
+        XMI_Config_t               cfg_type;
         XMI_RecvAMBroadcast        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
         XMI_AMBroadcast_Protocol_t protocol;     /**< The AMBroad protocol implementation to register. */
     }XMI_AMBroadcast_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_RecvAMScatter        cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
         XMI_AMScatter_Protocol_t protocol;     /**< The AMScatter protocol implementation to register. */
     }XMI_AMScatter_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_RecvAMGather         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
         XMI_AMGather_Protocol_t  protocol;     /**< The AMGather protocol implementation to register. */
     }XMI_AMGather_Configuration_t;
 
     typedef struct
     {
-        hl_config_t             cfg_type;
+        XMI_Config_t             cfg_type;
         XMI_RecvAMReduce         cb_recv;      /**< Callback to invoke to receive an asynchronous broadcast message. */
         XMI_AMReduce_Protocol_t  protocol;     /**< The AMReduce protocol implementation to register. */
     }XMI_AMReduce_Configuration_t;
 
     typedef union
     {
-        hl_config_t                       cfg_type;
+        XMI_Config_t                       cfg_type;
         XMI_Reduce_Configuration_t         cfg_reduce;
         XMI_Allreduce_Configuration_t      cfg_allreduce;
         XMI_Allgather_Configuration_t      cfg_allgather;
@@ -397,7 +397,7 @@ extern "C"
             XMI_XFER_AMGATHER,
             XMI_XFER_AMREDUCE,
             XMI_XFER_COUNT
-        }hl_xfer_type_t;
+        }XMI_Xfer_type_t;
 
     /* ************************************************************************* */
     /* **************     Geometry (like groups/communicators)  **************** */
@@ -473,7 +473,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -486,7 +486,7 @@ extern "C"
         unsigned                 * rdispls;
         unsigned                 * sndcounters;
         unsigned                 * rcvcounters;
-    }hl_alltoallv_t;
+    }XMI_Alltoallv_t;
 
     /**
      * \brief Create and post a non-blocking alltoall operation.
@@ -517,7 +517,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -530,7 +530,7 @@ extern "C"
         unsigned                 * rdispls;
         unsigned                 * sndcounters;
         unsigned                 * rcvcounters;
-    }hl_alltoall_t;
+    }XMI_Alltoall_t;
 
     /**
      * \brief Create and post a non-blocking reduce operation.
@@ -559,7 +559,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t            xfer_type;
+        XMI_Xfer_type_t            xfer_type;
         XMI_CollectiveProtocol_t * registration;
         XMI_CollectiveRequest_t  * request;
         XMI_Callback_t             cb_done;
@@ -570,7 +570,7 @@ extern "C"
         unsigned                  count;
         XMI_Dt                     dt;
         XMI_Op                     op;
-    }hl_reduce_t;
+    }XMI_Reduce_t;
 
     /**
      * \brief Create and post a non-blocking broadcast operation.
@@ -596,7 +596,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -605,7 +605,7 @@ extern "C"
         char                     * src;
         char                     * dst;
         unsigned                   bytes;
-    }hl_broadcast_t;
+    }XMI_Broadcast_t;
 
     /**
      * \brief Create and post a non-blocking allgather
@@ -630,7 +630,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -638,7 +638,7 @@ extern "C"
         char                     * src;
         char                     * dst;
         size_t                     bytes;
-    }hl_allgather_t;
+    }XMI_Allgather_t;
 
     /**
      * \brief Create and post a non-blocking allgatherv
@@ -663,7 +663,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -671,7 +671,7 @@ extern "C"
         char                     * src;
         char                     * dst;
         size_t                   * lengths;
-    }hl_allgatherv_t;
+    }XMI_Allgatherv_t;
 
     /**
      * \brief Create and post a non-blocking scatter
@@ -696,7 +696,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -705,7 +705,7 @@ extern "C"
         char                     * src;
         char                     * dst;
         size_t                     bytes;
-    }hl_scatter_t;
+    }XMI_Scatter_t;
 
     /**
      * \brief Create and post a non-blocking scatterv
@@ -730,7 +730,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -739,7 +739,7 @@ extern "C"
         char                     * src;
         char                     * dst;
         size_t                   * lengths;
-    }hl_scatterv_t;
+    }XMI_Scatterv_t;
 
     /**
      * \brief Create and post a non-blocking allreduce operation.
@@ -767,7 +767,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t            xfer_type;
+        XMI_Xfer_type_t            xfer_type;
         XMI_CollectiveProtocol_t * registration;
         XMI_CollectiveRequest_t  * request;
         XMI_Callback_t             cb_done;
@@ -777,7 +777,7 @@ extern "C"
         unsigned                  count;
         XMI_Dt                     dt;
         XMI_Op                     op;
-    }hl_allreduce_t;
+    }XMI_Allreduce_t;
 
 
     /**
@@ -794,12 +794,12 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t            xfer_type;
+        XMI_Xfer_type_t            xfer_type;
         XMI_CollectiveProtocol_t * registration;
         XMI_CollectiveRequest_t  * request;
         XMI_Callback_t             cb_done;
         XMI_Geometry_t           * geometry;
-    }hl_barrier_t;
+    }XMI_Barrier_t;
 
     /**
      * \brief Create and post a non-blocking active message broadcast operation.
@@ -832,7 +832,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -840,7 +840,7 @@ extern "C"
 	XMI_AMHeader_t            * header;
         char                     * src;
         unsigned                   bytes;
-    }hl_ambroadcast_t;
+    }XMI_Ambroadcast_t;
 
     /**
      * \brief Create and post a non-blocking active message scatter operation.
@@ -868,7 +868,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -876,7 +876,7 @@ extern "C"
 	XMI_AMHeader_t            * headers;
         char                     * src;
 	size_t                     srclengths;
-    }hl_amscatter_t;
+    }XMI_Amscatter_t;
 
     /**
      * \brief Create and post a non-blocking active message gather operation.
@@ -908,7 +908,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -916,7 +916,7 @@ extern "C"
 	XMI_AMHeader_t            * headers;
         char                     * src;
 	size_t                     srclengths;
-    }hl_amgather_t;
+    }XMI_Amgather_t;
 
     /**
      * \brief Create and post a non-blocking active message reduce operation.
@@ -949,7 +949,7 @@ extern "C"
      */
     typedef struct
     {
-        hl_xfer_type_t             xfer_type;
+        XMI_Xfer_type_t             xfer_type;
         XMI_CollectiveProtocol_t  * registration;
         XMI_CollectiveRequest_t   * request;
         XMI_Callback_t              cb_done;
@@ -959,29 +959,29 @@ extern "C"
 	unsigned                   count;
 	XMI_Dt                      dt;
         XMI_Op                      op;
-    }hl_amreduce_t;
+    }XMI_Amreduce_t;
 
 
     typedef union
     {
-	hl_xfer_type_t        xfer_type;
-        hl_allreduce_t        xfer_allreduce;
-        hl_broadcast_t        xfer_broadcast;
-        hl_reduce_t           xfer_reduce;
-        hl_allgather_t        xfer_allgather;
-        hl_allgatherv_t       xfer_allgatherv;
-        hl_scatter_t          xfer_scatter;
-        hl_scatterv_t         xfer_scatterv;
-        hl_alltoall_t         xfer_alltoall;
-        hl_alltoallv_t        xfer_alltoallv;
-	hl_ambroadcast_t      xfer_ambroadcast;
-	hl_amscatter_t        xfer_amscatter;
-	hl_amgather_t         xfer_amgather;
-	hl_amreduce_t         xfer_amreduce;
-	hl_barrier_t          xfer_barrier;
-    }hl_xfer_t;
+	XMI_Xfer_type_t        xfer_type;
+        XMI_Allreduce_t        xfer_allreduce;
+        XMI_Broadcast_t        xfer_broadcast;
+        XMI_Reduce_t           xfer_reduce;
+        XMI_Allgather_t        xfer_allgather;
+        XMI_Allgatherv_t       xfer_allgatherv;
+        XMI_Scatter_t          xfer_scatter;
+        XMI_Scatterv_t         xfer_scatterv;
+        XMI_Alltoall_t         xfer_alltoall;
+        XMI_Alltoallv_t        xfer_alltoallv;
+	XMI_Ambroadcast_t      xfer_ambroadcast;
+	XMI_Amscatter_t        xfer_amscatter;
+	XMI_Amgather_t         xfer_amgather;
+	XMI_Amreduce_t         xfer_amreduce;
+	XMI_Barrier_t          xfer_barrier;
+    }XMI_Xfer_t;
 
-    int XMI_Xfer (void *context, hl_xfer_t *cmd);
+    int XMI_Xfer (void *context, XMI_Xfer_t *cmd);
     int XMI_Poll();
     int XMI_Rank();
     int XMI_Size();
@@ -990,4 +990,4 @@ extern "C"
 };
 #endif
 
-#endif
+#endif /* __xmi_collective_h__ */
