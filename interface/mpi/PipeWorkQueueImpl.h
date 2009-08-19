@@ -73,6 +73,32 @@ namespace XMI
     {
     }
 
+
+    ///
+    /// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
+    ///
+    /// Only one consumer and producer are allowed. Still supports pipelining.
+    /// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
+    /// Assumes the caller has placed buffer and (this) in appropriate memory
+    /// for desired use - i.e. all in shared memory if to be used beyond this process.
+    ///
+    /// This is typically only used for the application buffer, either input or output,
+    /// and so would not normally have both producer and consumer (only one or the other).
+    /// The interface is the same as for contiguous data except that "bytesAvailable" will
+    /// only return the number of *contiguous* bytes available. The user must consume those
+    /// bytes before it can see the next contiguous chunk.
+    ///
+    /// \param[out] wq            Opaque memory for PipeWorkQueue
+    /// \param[in] buffer         Buffer to use
+    /// \param[in] dgsp           Memory layout of a buffer unit
+    /// \param[in] dgspcount      Number of repetitions of buffer units
+    /// \param[in] dgspinit       Number of units initially in buffer
+    ///
+    inline void configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit)
+    {
+
+    }
+
     ///
     /// \brief Clone constructor.
     ///
@@ -113,6 +139,46 @@ namespace XMI
     inline void dump(const char *prefix = NULL) 
     {
     }
+
+    ///
+    /// \brief Export
+    ///
+    /// Produces information about the PipeWorkQueue into the opaque buffer "export".
+    /// This info is suitable for sharing with other processes such that those processes
+    /// can then construct a PipeWorkQueue which accesses the same data stream.
+    ///
+    /// \param[in] wq             Opaque memory for PipeWorkQueue
+    /// \param[out] export        Opaque memory to export into
+    /// \return   success of the export operation
+    ///
+    inline XMI_Result exp(XMI_PipeWorkQueue_ext *exp)
+    {
+
+    }
+	
+    ///
+    /// \brief Import
+    ///
+    /// Takes the results of an export of a PipeWorkQueue on a different process and
+    /// constructs a new PipeWorkQueue which the local process may use to access the
+    /// data stream.
+    ///
+    /// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
+    /// The producer has no knowledge of data consumed. There can be only one producer.
+    /// There may be multiple consumers, but the producer does not know about them.
+    ///
+    /// TODO: can this work for circular buffers? does it need to, since those are
+    /// normally shared memory and thus already permit inter-process communication.
+    ///
+    /// \param[in] import        Opaque memory into which an export was done.
+    /// \param[out] wq           Opaque memory for new PipeWorkQueue
+    /// \return   success of the import operation
+    ///
+    inline XMI_Result import(XMI_PipeWorkQueue_ext *import)
+    {
+
+    }
+
 
     /// \brief register a wakeup for the consumer side of the PipeWorkQueue
     ///
