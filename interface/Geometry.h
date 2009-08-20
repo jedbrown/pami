@@ -29,8 +29,17 @@
 #include "algorithms/executor/Executor.h"
 #include <new>
 
-#ifndef ADAPTOR_MPI
- #include "algorithms/schedule/Rectangle.h"
+#ifdef ADAPTOR_MPI
+#define ADAPTOR_NO_TORUS
+#endif
+
+#ifdef ADAPTOR_LAPI
+#define ADAPTOR_NO_TORUS
+#endif
+
+
+#ifndef ADAPTOR_NO_TORUS
+#include "algorithms/schedule/Rectangle.h"
 #endif
 #include "Adaptor.h"     // build needs to find this
 #include "algorithms/composite/Composite.h"
@@ -85,7 +94,7 @@ namespace CCMI
       bool                             _isGlobalContext;
       /// \brief is this some part of a torus?
       bool                             _isTorus; // generic for binom
-#ifndef ADAPTOR_MPI
+#ifndef ADAPTOR_NO_TORUS
       /// \brief The rectangle schedule, if this is a rectangular group
       CCMI::Schedule::Rectangle      _rectangle;
       /// \brief The rectangle schedule, if this is a rectangular group
@@ -133,7 +142,7 @@ namespace CCMI
     public:
 
       /// \brief constructor
-#ifndef ADAPTOR_MPI
+#ifndef ADAPTOR_NO_TORUS
 
       Geometry(
               CCMI::TorusCollectiveMapping *mapping, /// \todo should not be torus
@@ -217,7 +226,7 @@ namespace CCMI
         return _numcolors;
       };
 
-#ifndef ADAPTOR_MPI
+#ifndef ADAPTOR_NO_TORUS
       inline CCMI::Schedule::Rectangle *rectangle()
       {
         return &_rectangle;

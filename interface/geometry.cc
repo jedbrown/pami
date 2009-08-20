@@ -23,7 +23,7 @@ CCMI_Geometry_t * CCMI::Adaptor::_ccmi_cached_geometry;
 /// \todo DCMF specifics need to split out of ccmi geometry
 #warning DCMF specifics need to split out of ccmi geometry
 
-#ifndef ADAPTOR_MPI
+#ifndef ADAPTOR_NO_TORUS
 CCMI::Adaptor::Geometry::Geometry (CCMI::TorusCollectiveMapping *mapping, /// \todo should not be torus
 #else // MPI
 CCMI::Adaptor::Geometry::Geometry (CCMI::CollectiveMapping *mapping,
@@ -77,7 +77,7 @@ _asyncBcastUnexpQueue(NULL)
     _collective_exec[i] = NULL;
   }
 
-#ifndef ADAPTOR_MPI
+#ifndef ADAPTOR_NO_TORUS
   /// \brief setup the rectangle
   unsigned coords[CCMI_TORUS_NDIMS];
   unsigned min_coords[CCMI_TORUS_NDIMS];
@@ -98,7 +98,7 @@ _asyncBcastUnexpQueue(NULL)
     //Used in alltoalls
   _permutation = NULL;
 
-#ifndef ADAPTOR_MPI
+#ifndef ADAPTOR_NO_TORUS
   DCMF_Hardware_t  hw_info;
   DCMF_Hardware (& hw_info);
 
@@ -175,7 +175,7 @@ _asyncBcastUnexpQueue(NULL)
     //Some protocols cannot make use of torus links. Cache a mesh for them
     _rectangle_mesh = _rectangle;
   }
-#else // ADAPTOR_MPI
+#else // ADAPTOR_NO_TORUS
     _isRectangle = false;
 
 #endif  
