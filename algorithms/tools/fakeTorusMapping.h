@@ -32,6 +32,24 @@
 
 #include <stdlib.h>
 
+#include <ccmi_internal.h>
+
+#ifndef   CCMI_TORUS_NDIMS
+#define   CCMI_TORUS_NDIMS 4
+#endif
+
+#define CCMI_X_DIM 0
+#define CCMI_Y_DIM 1
+#define CCMI_Z_DIM 2
+#define CCMI_T_DIM 3
+
+#define CCMI_COPY_COORDS(a,b)               \
+{                                           \
+  int _i;                                   \
+  for (_i = 0; _i < CCMI_TORUS_NDIMS; _i++) \
+    a[_i] = b[_i];                          \
+}
+
 namespace CCMI
 {
   class Mapping
@@ -56,17 +74,17 @@ namespace CCMI
   {
 
   protected:
-    unsigned _x, _y, _z, _t;
-    unsigned _xMin, _yMin, _zMin, _tMin;
-    unsigned _xMax, _yMax, _zMax, _tMax;
-    unsigned _xSize, _ySize, _zSize, _tSize;
+    unsigned _coords[CCMI_TORUS_NDIMS];
+    unsigned _mins[CCMI_TORUS_NDIMS];
+    unsigned _maxs[CCMI_TORUS_NDIMS];
+    unsigned _sizes[CCMI_TORUS_NDIMS];
     unsigned _nRanks;
   public:
     TorusMapping(void)
     {
-      _x = _y = _z = _t =
-           _xMin = _yMin = _zMin = _tMin =
-           _xSize = _ySize = _zSize = _tSize = 0;
+      _coords[CCMI_X_DIM] = _coords[CCMI_Y_DIM] = _coords[CCMI_Z_DIM] = _coords[CCMI_T_DIM] =
+           _mins[CCMI_X_DIM] = _mins[CCMI_Y_DIM] = _mins[CCMI_Z_DIM] = _mins[CCMI_T_DIM] =
+           _sizes[CCMI_X_DIM] = _sizes[CCMI_Y_DIM] = _sizes[CCMI_Z_DIM] = _sizes[CCMI_T_DIM] = 0;
     }
     TorusMapping(unsigned xs, unsigned ys, unsigned zs, unsigned ts,
                  unsigned x0, unsigned y0, unsigned z0, unsigned t0,
@@ -74,19 +92,19 @@ namespace CCMI
     {
 
       // Always computes ranks relative to (0,0,0,0)
-      _xMin = x0;
-      _yMin = y0;
-      _zMin = z0;
-      _tMin = t0;
-      _xMax = x0 + xs;
-      _yMax = y0 + ys;
-      _zMax = z0 + zs;
-      _tMax = t0 + ts;
-      _xSize = xs;
-      _ySize = ys;
-      _zSize = zs;
-      _tSize = ts;
-      _nRanks = _xSize * _ySize * _zSize * _tSize;
+      _mins[CCMI_X_DIM] = x0;
+      _mins[CCMI_Y_DIM] = y0;
+      _mins[CCMI_Z_DIM] = z0;
+      _mins[CCMI_T_DIM] = t0;
+      _maxs[CCMI_X_DIM] = x0 + xs;
+      _maxs[CCMI_Y_DIM] = y0 + ys;
+      _maxs[CCMI_Z_DIM] = z0 + zs;
+      _maxs[CCMI_T_DIM] = t0 + ts;
+      _sizes[CCMI_X_DIM] = xs;
+      _sizes[CCMI_Y_DIM] = ys;
+      _sizes[CCMI_Z_DIM] = zs;
+      _sizes[CCMI_T_DIM] = ts;
+      _nRanks = _sizes[CCMI_X_DIM] * _sizes[CCMI_Y_DIM] * _sizes[CCMI_Z_DIM] * _sizes[CCMI_T_DIM];
       reset(x, y, z, t);
     }
     inline void * operator new(unsigned size)
@@ -97,53 +115,38 @@ namespace CCMI
     {
       return addr;
     }
-    void reset(unsigned x, unsigned y, unsigned z, unsigned t)
-    {
-      unsigned r;
-      _x = x;
-      _y = y;
-      _z = z;
-      _t = t;
-      (void) torus2rank(_x, _y, _z, _t, &r);
-      setRank(r);
-    }
-    void reset(unsigned r)
-    {
-      setRank(r);
-      rank2torus(r, _x, _y, _z, _t);
-    }
 
     unsigned x()
     {
-      return _x;
+      return _coords[CCMI_X_DIM];
     }
     unsigned y()
     {
-      return _y;
+      return _coords[CCMI_Y_DIM];
     }
     unsigned z()
     {
-      return _z;
+      return _coords[CCMI_Z_DIM];
     }
     unsigned t()
     {
-      return _t;
+      return _coords[CCMI_T_DIM];
     }
     unsigned xSize()
     {
-      return _xSize;
+      return _sizes[CCMI_X_DIM];
     }
     unsigned ySize()
     {
-      return _ySize;
+      return _sizes[CCMI_Y_DIM];
     }
     unsigned zSize()
     {
-      return _zSize;
+      return _sizes[CCMI_Z_DIM];
     }
     unsigned tSize()
     {
-      return _tSize;
+      return _sizes[CCMI_T_DIM];
     }
     unsigned nRanks()
     {
@@ -154,19 +157,52 @@ namespace CCMI
       return _nRanks;
     }
 
-    XMI_Result torus2rank(unsigned x, unsigned y, unsigned z, unsigned t,
-                           unsigned *rank)
+    XMI_Result Torus2Rank(unsigned *coords, unsigned *rank)
     {
-      *rank = ((z * _yMax + y) * _xMax + x) * _tMax + t;
+      *rank = ((coords[CCMI_Z_DIM] * _maxs[CCMI_Y_DIM] + coords[CCMI_Y_DIM]) * _maxs[CCMI_X_DIM] + coords[CCMI_X_DIM]) * _maxs[CCMI_T_DIM] + coords[CCMI_T_DIM];
       return XMI_SUCCESS;
     }
 
-    const void rank2torus(unsigned rank, unsigned &x, unsigned &y, unsigned &z, unsigned &t)
+    const void Rank2Torus(unsigned *coords, unsigned rank)
     {
-      t = rank % _tMax; rank = rank / _tMax;
-      x = rank % _xMax; rank = rank / _xMax;
-      y = rank % _yMax; rank = rank / _yMax;
-      z = rank % _zMax; rank = rank / _zMax;
+      coords[CCMI_T_DIM] = rank % _maxs[CCMI_T_DIM]; rank = rank / _maxs[CCMI_T_DIM];
+      coords[CCMI_X_DIM] = rank % _maxs[CCMI_X_DIM]; rank = rank / _maxs[CCMI_X_DIM];
+      coords[CCMI_Y_DIM] = rank % _maxs[CCMI_Y_DIM]; rank = rank / _maxs[CCMI_Y_DIM];
+      coords[CCMI_Z_DIM] = rank % _maxs[CCMI_Z_DIM]; rank = rank / _maxs[CCMI_Z_DIM];
+    }
+    unsigned GetCoord(unsigned dim)
+    {
+      return _coords[dim];
+    }
+    unsigned GetDimLength(unsigned dim)
+    {
+      return _sizes[dim];
+    }
+
+    unsigned* Coords()
+    {
+      return &(_coords[0]);
+    }
+    
+    unsigned* DimsLengths()
+    {
+      return &(_sizes[0]);
+    }
+
+    void reset(unsigned x, unsigned y, unsigned z, unsigned t)
+    {
+      unsigned r;
+      _coords[CCMI_X_DIM] = x;
+      _coords[CCMI_Y_DIM] = y;
+      _coords[CCMI_Z_DIM] = z;
+      _coords[CCMI_T_DIM] = t;
+      (void) Torus2Rank(_coords, &r);
+      setRank(r);
+    }
+    void reset(unsigned r)
+    {
+      setRank(r);
+      Rank2Torus(_coords, r);
     }
   };
 };

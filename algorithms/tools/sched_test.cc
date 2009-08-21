@@ -143,7 +143,7 @@ void dot_send(struct params *pm,
   if(ph < (sizeof(edges) / sizeof(edges[0]))) e = edges[ph];
   if(!pm->recv && (op & LINE_BCAST_MASK))
   {
-    unsigned x, y, z, t;
+    unsigned coords[CCMI_TORUS_NDIMS];
     unsigned r = src;
     if(subgraph)
     {
@@ -155,17 +155,17 @@ void dot_send(struct params *pm,
     }
     do
     {
-      pm->map->rank2torus(r, x, y, z, t);
+      pm->map->Rank2Torus(coords, r);
       switch(op)
       {
-      case CCMI_LINE_BCAST_XP: ++x; break;
-      case CCMI_LINE_BCAST_XM: --x; break;
-      case CCMI_LINE_BCAST_YP: ++y; break;
-      case CCMI_LINE_BCAST_YM: --y; break;
-      case CCMI_LINE_BCAST_ZP: ++z; break;
-      case CCMI_LINE_BCAST_ZM: --z; break;
+      case CCMI_LINE_BCAST_XP: ++coords[CCMI_X_DIM]; break;
+      case CCMI_LINE_BCAST_XM: --coords[CCMI_X_DIM]; break;
+      case CCMI_LINE_BCAST_YP: ++coords[CCMI_Y_DIM]; break;
+      case CCMI_LINE_BCAST_YM: --coords[CCMI_Y_DIM]; break;
+      case CCMI_LINE_BCAST_ZP: ++coords[CCMI_Z_DIM]; break;
+      case CCMI_LINE_BCAST_ZM: --coords[CCMI_Z_DIM]; break;
       }
-      (void) pm->map->torus2rank(x, y, z, t, &r);
+      (void) pm->map->Torus2Rank(coords, &r);
       if(subgraph)
       {
         printf(" -> \"%s%d\"", subgraph, r);
@@ -211,26 +211,26 @@ static char *dbg_colors(unsigned c)
 /* mapping must already be setup */
 unsigned get_root(struct params *pm, char *s)
 {
-  unsigned x, y, z, t;
+  unsigned coords[CCMI_TORUS_NDIMS];
   int i;
   if(strchr(s, ','))
   {
-    i = sscanf(s, "(%d,%d,%d,%d)", &x, &y, &z, &t);
+    i = sscanf(s, "(%d,%d,%d,%d)", &coords[CCMI_X_DIM], &coords[CCMI_Y_DIM], &coords[CCMI_Z_DIM], &coords[CCMI_T_DIM]);
   }
   else
   {
-    i = sscanf(s, "(%d %d %d %d)", &x, &y, &z, &t);
+    i = sscanf(s, "(%d %d %d %d)", &coords[CCMI_X_DIM], &coords[CCMI_Y_DIM], &coords[CCMI_Z_DIM], &coords[CCMI_T_DIM]);
   }
   if(i != 4)
   {
     return((unsigned)-1);
   }
-  if(x < pm->rect->x0) x = pm->rect->x0;if(x >= pm->rect->xs) x = pm->rect->xs - 1;
-  if(y < pm->rect->y0) y = pm->rect->y0;if(y >= pm->rect->ys) y = pm->rect->ys - 1;
-  if(z < pm->rect->z0) z = pm->rect->z0;if(z >= pm->rect->zs) z = pm->rect->zs - 1;
-  if(t < pm->rect->t0) t = pm->rect->t0;if(t >= pm->rect->ts) t = pm->rect->ts - 1;
+  if(coords[CCMI_X_DIM] < pm->rect->x0) coords[CCMI_X_DIM] = pm->rect->x0;if(coords[CCMI_X_DIM] >= pm->rect->xs) coords[CCMI_X_DIM] = pm->rect->xs - 1;
+  if(coords[CCMI_Y_DIM] < pm->rect->y0) coords[CCMI_Y_DIM] = pm->rect->y0;if(coords[CCMI_Y_DIM] >= pm->rect->ys) coords[CCMI_Y_DIM] = pm->rect->ys - 1;
+  if(coords[CCMI_Z_DIM] < pm->rect->z0) coords[CCMI_Z_DIM] = pm->rect->z0;if(coords[CCMI_Z_DIM] >= pm->rect->zs) coords[CCMI_Z_DIM] = pm->rect->zs - 1;
+  if(coords[CCMI_T_DIM] < pm->rect->t0) coords[CCMI_T_DIM] = pm->rect->t0;if(coords[CCMI_T_DIM] >= pm->rect->ts) coords[CCMI_T_DIM] = pm->rect->ts - 1;
   unsigned rank;
-  (void) pm->map->torus2rank(x, y, z, t, &rank);
+  (void) pm->map->Torus2Rank(coords, &rank);
   return rank;
 }
 
@@ -690,7 +690,7 @@ int main(int argc, char **argv)
       struct stat stb;
       int n;
       char *s;
-      unsigned xx, yy, zz, tt;
+      unsigned cc[CCMI_TORUS_NDIMS];
 
       if(argc - optind != 1)
       {
@@ -735,54 +735,54 @@ int main(int argc, char **argv)
       n = 0;
       s = (char *)pm.ranks;
       s[stb.st_size] = '\0';
-#define RANK_PACK(x,y,z,t)	(((x) << 24)|((y) << 16)|((z) << 8)|(t))
-#define RANK_UNPACK(r, x, y, z, t)	{	\
-        (x) = (((r) >> 24) & 0x00ff);		\
-        (y) = (((r) >> 16) & 0x00ff);		\
-        (z) = (((r) >> 8) & 0x00ff);		\
-        (t) = ((r) & 0x00ff);			\
+#define RANK_PACK(c)	(((c[CCMI_X_DIM]) << 24)|((c[CCMI_Y_DIM]) << 16)|((c[CCMI_Z_DIM]) << 8)|(c[CCMI_T_DIM]))
+#define RANK_UNPACK(r, c)	{	\
+        (c[CCMI_X_DIM]) = (((r) >> 24) & 0x00ff);		\
+        (c[CCMI_Y_DIM]) = (((r) >> 16) & 0x00ff);		\
+        (c[CCMI_Z_DIM]) = (((r) >> 8) & 0x00ff);		\
+        (c[CCMI_T_DIM]) = ((r) & 0x00ff);			\
 }
       while(*s)
       {
-        x = sscanf(s, "%d %d %d %d\n", &xx, &yy, &zz, &tt);
+        x = sscanf(s, "%d %d %d %d\n", &cc[CCMI_X_DIM], &cc[CCMI_Y_DIM], &cc[CCMI_Z_DIM], &cc[CCMI_T_DIM]);
         if(x != 4)
         {
           fprintf(stderr, "Format error: %s\n", rank_list); exit(1);
         }
         while(*s && *s++ != '\n');
-        if(xx < _rect.x0)
+        if(cc[CCMI_X_DIM] < _rect.x0)
         {
-          _rect.x0 = xx;
+          _rect.x0 = cc[CCMI_X_DIM];
         }
-        if(yy < _rect.y0)
+        if(cc[CCMI_Y_DIM] < _rect.y0)
         {
-          _rect.y0 = yy;
+          _rect.y0 = cc[CCMI_Y_DIM];
         }
-        if(zz < _rect.z0)
+        if(cc[CCMI_Z_DIM] < _rect.z0)
         {
-          _rect.z0 = zz;
+          _rect.z0 = cc[CCMI_Z_DIM];
         }
-        if(tt < _rect.t0)
+        if(cc[CCMI_T_DIM] < _rect.t0)
         {
-          _rect.t0 = tt;
+          _rect.t0 = cc[CCMI_T_DIM];
         }
-        if(xx >= _rect.xs)
+        if(cc[CCMI_X_DIM] >= _rect.xs)
         {
-          _rect.xs = xx + 1;
+          _rect.xs = cc[CCMI_X_DIM] + 1;
         }
-        if(yy >= _rect.ys)
+        if(cc[CCMI_Y_DIM] >= _rect.ys)
         {
-          _rect.ys = yy + 1;
+          _rect.ys = cc[CCMI_Y_DIM] + 1;
         }
-        if(zz >= _rect.zs)
+        if(cc[CCMI_Z_DIM] >= _rect.zs)
         {
-          _rect.zs = zz + 1;
+          _rect.zs = cc[CCMI_Z_DIM] + 1;
         }
-        if(tt >= _rect.ts)
+        if(cc[CCMI_T_DIM] >= _rect.ts)
         {
-          _rect.ts = tt + 1;
+          _rect.ts = cc[CCMI_T_DIM] + 1;
         }
-        pm.ranks[n++] = RANK_PACK(xx, yy, zz, tt);
+        pm.ranks[n++] = RANK_PACK(cc);
       }
       pm.nranks = n;
       // convert "max coord + 1" to relative size
@@ -796,8 +796,8 @@ int main(int argc, char **argv)
                                                    pm.rect->x0, pm.rect->y0, pm.rect->z0, pm.rect->t0);
       for(x = 0; x < n; ++x)
       {
-        RANK_UNPACK(pm.ranks[x], xx, yy, zz, tt);
-        (void) pm.map->torus2rank(xx, yy, zz, tt, &pm.ranks[x]);
+        RANK_UNPACK(pm.ranks[x], cc);
+        (void) pm.map->Torus2Rank(cc, &pm.ranks[x]);
       }
       if(isdigit(argv[optind][0]))
       {
