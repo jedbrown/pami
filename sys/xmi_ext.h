@@ -6,17 +6,18 @@
 #define __xmi_ext_h__
 
 #ifndef XMI_EXT_ATTR
-#define XMI_EXT_ATTR 1000
+#define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 #endif
 
 typedef struct {
-    int x, y, z;
+  int x; /**< X value */
+  int y; /**< Y value */
+  int z; /**< Z value */
 } xmi_coordinates_t;
 
 typedef enum {
-    // Attribute        // Init / Query / Update
-    XMI_COORDINATES     // Q : xmi_coordinates_t: coordinates of this task
-        = XMI_EXT_ATTR,
+  /* Attribute                    Init / Query / Update    */
+  XMI_COORDINATES = XMI_EXT_ATTR, /** Q : xmi_coordinates_t: coordinates of this task */
 } xmi_attribute_ext_t;
 
 #endif

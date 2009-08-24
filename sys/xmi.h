@@ -34,11 +34,11 @@ extern "C"
   }
   xmi_result_t;
 
-  typedef void* xmi_client_t;
-  typedef void* xmi_context_t;
-  typedef void* xmi_hint_t;
-  typedef void* xmi_dispatch_t;
-  typedef void* xmi_type_t;
+  typedef void* xmi_client_t;   /**< ??? */
+  typedef void* xmi_context_t;  /**< ??? */
+  typedef void* xmi_hint_t;     /**< ??? */
+  typedef void* xmi_dispatch_t; /**< ??? */
+  typedef void* xmi_type_t;     /**< ??? */
 
 
   /**
@@ -64,16 +64,16 @@ extern "C"
    */
   /*****************************************************************************/
 
-  typedef unsigned int  xmi_intr_mask_t;
-  typedef unsigned int  xmi_bool_t;
+  typedef unsigned int  xmi_intr_mask_t;  /**< ??? */
+  typedef unsigned int  xmi_bool_t;       /**< ??? */
+  typedef char *        xmi_user_key_t;   /**< ??? */
+  typedef char *        xmi_user_value_t; /**< ??? */
 
-  typedef char *        xmi_user_key_t;
-  typedef char *        xmi_user_value_t;
-
+  /** Key/value pairs for configuration */
   typedef struct
   {
-    xmi_user_key_t    key;
-    xmi_user_value_t  value;
+    xmi_user_key_t    key;   /**< The configuration key   */
+    xmi_user_value_t  value; /**< The configuration value */
   } xmi_user_config_t;
 
   /**
@@ -1002,7 +1002,7 @@ extern "C"
    */
   /*****************************************************************************/
 
-  typedef void * xmi_memregion_t;
+  typedef void * xmi_memregion_t; /**< ??? */
 
   /**
    * \brief Default "global" memory region
