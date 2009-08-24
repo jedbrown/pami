@@ -160,6 +160,40 @@ extern "C"
 
     /*****************************************************************************/
     /**
+     * \defgroup Time Timer functions required by MPI
+     *
+     * \{
+     */
+    /*****************************************************************************/
+
+    /**
+     * \brief  Returns an elapsed time on the calling processor.
+     * \note   This has the same definition as MPI_Wtime
+     * \return Time in seconds since an arbitrary time in the past.
+     */
+    double XMI_Wtime();
+
+    /**
+     * \brief  Computes the smallest clock resolution theoretically possible
+     * \note   This has the same definition as MPI_Wtick
+     * \return The duration of a single timebase clock increment in seconds
+     */
+    double XMI_Wtick();
+
+    /**
+     * \brief  Returns the number of "cycles" elapsed on the calling processor.
+     * \return Number of "cycles" since an arbitrary time in the past.
+     *
+     * "Cycles" could be any quickly and continuously increasing counter
+     * if true cycles are unavailable.
+     */
+    unsigned long long XMI_Wtimebase();
+
+    /** \} */ /* end of "Time" group */
+
+
+    /*****************************************************************************/
+    /**
      * \defgroup context xmi multi-context messaging interface
      *
      * Some brief documentation on context stuff ...
