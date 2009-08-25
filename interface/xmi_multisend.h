@@ -118,6 +118,7 @@ extern "C"
    *
    * \param[in] msginfo		Metadata
    * \param[in] msgcount	Count of metadata
+   * \param[in] connection_id	Stream ID of data
    * \param[in] root		Sending rank
    * \param[in] sndlen		Length of data sent
    * \param[in] clientdata	Opaque arg
@@ -128,6 +129,7 @@ extern "C"
    */
   typedef XMI_Request_t *(*XMI_RecvMulticast)(const XMIQuad *msginfo,
                                                 unsigned msgcount,
+						unsigned connection_id,
                                                 size_t root,
                                                 size_t sndlen,
                                                 void *clientdata,
