@@ -67,7 +67,7 @@ extern "C"
   /// \param[in] bufsize	Size of buffer
   /// \param[in] bufinit	Amount of data initially in buffer
   ///
-  void XMI_PipeWorkQueue_configure_flat(XMI_PipeWorkQueue_t *wq, char *buffer, size_t bufsize, size_t bufinit);
+  void XMI_PipeWorkQueue_config_flat(XMI_PipeWorkQueue_t *wq, char *buffer, size_t bufsize, size_t bufinit);
 
   ///
   /// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
@@ -89,7 +89,7 @@ extern "C"
   /// \param[in] dgspcount      Number of repetitions of buffer units
   /// \param[in] dgspinit       Number of units initially in buffer
   ///
-  void XMI_PipeWorkQueue_configure_noncontig(XMI_PipeWorkQueue_t *wq, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit); 
+  void XMI_PipeWorkQueue_config_noncontig(XMI_PipeWorkQueue_t *wq, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit); 
 
   ///
   /// \brief Export
