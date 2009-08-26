@@ -5,7 +5,7 @@
 
 #include "sys/xmi.h"
 
-#include "api/c/@TARGET@/platform.h"
+#include "platform.h"
 
 ///
 /// \copydoc XMI_Error_text
