@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= @TARGET@
+NOTBUILT        =
+@LIBNAME@-""-CAPI_SOURCES=xmi.cc
+DEVICENAME     = @LIBNAME@-""-CAPI
+include @abs_top_builddir@/Build.rules

@@ -8,18 +8,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "queueing/Queue.h"
+#include "util/queue/Queue.h"
 
 namespace XMI
 {
   namespace Client
   {
     template <class T_Client, class T_Context>
-    class Client : public DCMF::Queueing::QueueElem
+    class Client : public CCMI::QueueElem
     {
       public:
         inline Client (char * name) :
-          DCMF::Queueing::QueueElem ()
+          CCMI::QueueElem ()
         {
         }
 
@@ -34,7 +34,7 @@ namespace XMI
         inline T_Context * createContext (xmi_configuration_t configuration[],
                                           size_t              count);
 
-        inline void destroyContext (T_Context * context);
+        inline xmi_result_t destroyContext (T_Context * context);
 
     }; // end class XMI::Client::Client
 
@@ -64,7 +64,7 @@ namespace XMI
     }
 
     template <class T_Client, class T_Context>
-    inline void Client<T_Client,T_Context>::destroyContext (T_Context * context)
+    inline xmi_result_t Client<T_Client,T_Context>::destroyContext (T_Context * context)
     {
       static_cast<T_Client*>(this)->destroyContext_impl(context);
     }
