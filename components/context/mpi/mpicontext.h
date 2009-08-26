@@ -75,6 +75,68 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
+        inline xmi_result_t put_impl (xmi_put_simple_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t put_typed_impl (xmi_put_typed_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t get_impl (xmi_get_simple_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t get_typed_impl (xmi_get_typed_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t rmw_impl (xmi_rmw_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        // Memregion API's go here
+
+        inline xmi_result_t rput_impl (xmi_rput_simple_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t rput_typed_impl (xmi_rput_typed_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t rget_impl (xmi_rget_simple_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t rget_typed_impl (xmi_rget_typed_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t purge_totask_impl (size_t * dest, size_t count)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t resume_totask_impl (size_t * dest, size_t count)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
+
         inline xmi_result_t dispatch_impl (xmi_dispatch_t             id,
                                            xmi_dispatch_callback_fn   fn,
                                            void                     * cookie,

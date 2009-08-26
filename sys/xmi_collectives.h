@@ -965,7 +965,7 @@ extern "C"
         xmi_barrier_t          xfer_barrier;
     }xmi_xfer_t;
 
-    int XMI_Xfer (void *context, xmi_xfer_t *cmd);
+    xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
     int XMI_Poll();
     int XMI_Rank();
     int XMI_Size();

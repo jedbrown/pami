@@ -6,6 +6,9 @@
 #include "sys/xmi.h"
 
 #include "platform.h"
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_misc.h                                                  //
+////////////////////////////////////////////////////////////////////////////////
 
 ///
 /// \copydoc XMI_Error_text
@@ -159,7 +162,9 @@ extern "C" xmi_result_t XMI_Context_unlock (xmi_context_t context)
 }
 
 
-
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_p2p.h                                                   //
+////////////////////////////////////////////////////////////////////////////////
 
 ///
 /// \copydoc XMI_Send
@@ -190,6 +195,151 @@ extern "C" xmi_result_t XMI_Send_typed (xmi_context_t      context,
   XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
   return ctx->send (parameters);
 }
+
+
+///
+/// \copydoc XMI_Put
+///
+extern "C" xmi_result_t XMI_Put (xmi_context_t      context,
+                                 xmi_put_simple_t * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->put (parameters);
+}
+
+
+///
+/// \copydoc XMI_Put_typed
+///
+extern "C" xmi_result_t XMI_Put_typed (xmi_context_t      context,
+                                       xmi_put_typed_t  * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->put_typed (parameters);
+}
+
+///
+/// \copydoc XMI_Get
+///
+extern "C" xmi_result_t XMI_Get (xmi_context_t      context,
+                                 xmi_get_simple_t * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->get (parameters);
+}
+
+
+///
+/// \copydoc XMI_Get_typed
+///
+extern "C" xmi_result_t XMI_Get_typed (xmi_context_t      context,
+                                       xmi_get_typed_t  * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->get_typed (parameters);
+}
+
+
+///
+/// \copydoc XMI_Rmw
+///
+extern "C" xmi_result_t XMI_Rmw (xmi_context_t      context,
+                                 xmi_rmw_t * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->rmw (parameters);
+}
+
+/// Memory region API's go here
+
+
+
+///
+/// \copydoc XMI_Rput
+///
+extern "C" xmi_result_t XMI_Rput (xmi_context_t      context,
+                                 xmi_rput_simple_t * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->rput (parameters);
+}
+
+
+///
+/// \copydoc XMI_Rput_typed
+///
+extern "C" xmi_result_t XMI_Rput_typed (xmi_context_t      context,
+                                       xmi_rput_typed_t  * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->rput_typed (parameters);
+}
+
+///
+/// \copydoc XMI_Rget
+///
+extern "C" xmi_result_t XMI_Rget (xmi_context_t      context,
+                                 xmi_rget_simple_t * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->rget (parameters);
+}
+
+
+///
+/// \copydoc XMI_Rget_typed
+///
+extern "C" xmi_result_t XMI_Rget_typed (xmi_context_t      context,
+                                       xmi_rget_typed_t  * parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->rget_typed (parameters);
+}
+
+
+///
+/// \copydoc XMI_Purge_totask
+///
+extern "C" xmi_result_t XMI_Purge_totask (xmi_context_t   context,
+                                          size_t        * dest,
+                                          size_t          count)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->purge_totask (dest, count);
+}
+
+
+///
+/// \copydoc XMI_Resume_totask
+///
+extern "C" xmi_result_t XMI_Resume_totask (xmi_context_t   context,
+                                           size_t        * dest,
+                                           size_t          count)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->resume_totask (dest, count);
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_collectives.h                                           //
+////////////////////////////////////////////////////////////////////////////////
+
+///
+/// \copydoc XMI_Collective
+///
+extern "C" xmi_result_t XMI_Collective (xmi_context_t   context,
+                                        xmi_xfer_t     *parameters)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->collective (parameters);
+}
+
+
+
+
+
 
 ///
 /// \copydoc XMI_Dispatch_set
