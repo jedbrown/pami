@@ -70,7 +70,6 @@ extern "C" xmi_result_t XMI_Context_create (xmi_client_t           client,
 {
   XMI_CLIENT_CLASS * xmi = (XMI_CLIENT_CLASS *) client;
   *context = (xmi_context_t) xmi->createContext (configuration, count);
-
   return XMI_UNIMPL;
 }
 
@@ -250,8 +249,17 @@ extern "C" xmi_result_t XMI_Rmw (xmi_context_t      context,
   return ctx->rmw (parameters);
 }
 
-/// Memory region API's go here
-
+///
+/// \copydoc XMI_Memregion_register
+///
+extern "C" xmi_result_t XMI_Memregion_register (xmi_context_t     context,
+                                                void            * address,
+                                                size_t            bytes,
+                                                xmi_memregion_t * memregion)
+{
+    XMI_CONTEXT_CLASS   * ctx = (XMI_CONTEXT_CLASS *) context;
+    return ctx->memregion_register(address, bytes, memregion);
+}
 
 
 ///

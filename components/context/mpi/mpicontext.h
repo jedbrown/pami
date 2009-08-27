@@ -100,7 +100,32 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
-        // Memregion API's go here
+        inline xmi_result_t memregion_register (void            * address,
+                                                size_t            bytes,
+                                                xmi_memregion_t * memregion)
+        {
+            return XMI_UNIMPL;
+        }
+        
+        inline xmi_result_t memregion_deregister (xmi_memregion_t * memregion)
+        {
+            return XMI_UNIMPL;
+        }
+
+
+        inline xmi_result_t memregion_query (xmi_memregion_t    memregion,
+                                             void            ** address,
+                                             size_t           * bytes,
+                                             size_t           * task)
+        {
+            return XMI_UNIMPL;
+        }
+        
+
+        inline xmi_result_t memregion_register_impl (xmi_rmw_t * parameters)
+        {
+          return XMI_UNIMPL;
+        }
 
         inline xmi_result_t rput_impl (xmi_rput_simple_t * parameters)
         {

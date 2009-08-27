@@ -50,8 +50,16 @@ namespace XMI
 
         inline xmi_result_t rmw (xmi_rmw_t * parameters);
 
-        // Memregion API's go here!
+        inline xmi_result_t memregion_register (void            * address,
+                                                size_t            bytes,
+                                                xmi_memregion_t * memregion);
 
+        inline xmi_result_t memregion_deregister (xmi_memregion_t * memregion);
+
+        inline xmi_result_t memregion_query (xmi_memregion_t    memregion,
+                                             void            ** address,
+                                             size_t           * bytes,
+                                             size_t           * task);
 
         inline xmi_result_t rput (xmi_rput_simple_t * parameters);
 
@@ -165,8 +173,33 @@ namespace XMI
       return static_cast<T_Context*>(this)->rmw_impl(parameters);
     }
 
-    // Memregion API's
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::memregion_register (void            * address,
+                                                         size_t            bytes,
+                                                         xmi_memregion_t * memregion)
+    {
+      return static_cast<T_Context*>(this)->memregion_register_impl(address,
+                                                                    bytes, 
+                                                                    memregion);
+    }
 
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::memregion_deregister (xmi_memregion_t * memregion)
+    {
+      return static_cast<T_Context*>(this)->memregion_deregister_impl(memregion);
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::memregion_query (xmi_memregion_t    memregion,
+                                                      void            ** address,
+                                                      size_t           * bytes,
+                                                      size_t           * task)
+    {
+      return static_cast<T_Context*>(this)->memregion_query_impl(memregion,
+                                                                 address,
+                                                                 bytes,
+                                                                 task);
+    }
 
     template <class T_Context>
     xmi_result_t Context<T_Context>::rput (xmi_rput_simple_t * parameters)
