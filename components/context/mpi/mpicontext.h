@@ -180,6 +180,33 @@ namespace XMI
           return XMI_UNIMPL;
         }
         
+        inline xmi_result_t geometry_initialize_impl (xmi_geometry_t       * geometry,
+                                                      unsigned               id,
+                                                      xmi_geometry_range_t * rank_slices,
+                                                      unsigned               slice_count)
+        {
+          return XMI_UNIMPL;
+        }
+            
+
+        inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t geometry_algorithm_impl (xmi_geometry_t   geometry,
+                                                     xmi_algorithm_t *algorithm,
+                                                     int             *num)
+        {
+          return XMI_UNIMPL;
+        }
+        
+        inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
+        {
+          return XMI_UNIMPL;
+        }
+
+
         inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
         {
           return XMI_UNIMPL;

@@ -13,14 +13,13 @@ extern "C"
 {
 #endif
     typedef size_t  xmi_geometry_t;
+    typedef size_t  xmi_algorithm_t;
+
     typedef struct
     {
         size_t lo;
         size_t hi;
     }xmi_geometry_range_t;
-
-    extern xmi_geometry_t    XMI_World_Geometry;
-    extern size_t            XMI_World_Geometry_id;
 
     /* ************************************************************************* */
     /* ********* Transfer Types, used by geometry and xfer routines ************ */
@@ -62,35 +61,43 @@ extern "C"
      *                             duration of the geometry's existence
      * \param[in]  slice_count     Number of nodes participating in the geometry
      */
-    int XMI_Geometry_initialize (xmi_context_t               context,
-                                 xmi_geometry_t            * geometry,
-                                 unsigned                    id,
-                                 xmi_geometry_range_t      * rank_slices,
-                                 unsigned                    slice_count);
+    xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+                                          xmi_geometry_t            * geometry,
+                                          unsigned                    id,
+                                          xmi_geometry_range_t      * rank_slices,
+                                          unsigned                    slice_count);
 
+    /**
+     * \brief Initialize the geometry
+     *
+     * \param[in]  context         xmi context
+     * \param[in]  world_geometry  world geometry object
+     */
+    xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+                                     xmi_geometry_t            * world_geometry);
+    
+    
     /**
      * \brief Analyze a protocol to ensure that it will run on the specified geometry
      *
      * \param[in]     geometry   An input geometry to be analyzed.
-     * \param[in/out] protocol   A list of protocol pointers to be checked for this geometry
-     *                           pointers will be set to NULL for invalid protocols on
-     *                           this geometry.
-     * \param[in/out] num        number of protocols in the list in/requested, out/actual
+     * \param[in/out] algorithm  Storage for a list of algorithm id's
+     * \param[in/out] num        number of algorithms in the list in/requested, out/actual
      * \retval        XMI_SUCCESS The protocol will run on the current geometry
      * \retval        ?????      The protocol does not support the current geometry
      */
-    int XMI_Geometry_algorithm (xmi_context_t              context,
-                                xmi_geometry_t            *geometry,
-                                XMI_CollectiveProtocol_t **protocols,
-                                int                       *num);
-
+    xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
+                                         xmi_geometry_t             geometry,
+                                         xmi_algorithm_t           *algorithm,
+                                         int                       *num);
+    
     /**
      * \brief Free any memory allocated inside of a geometry.
      * \param[in] geometry The geometry object to free
      * \retval XMI_SUCCESS Memory free didn't fail
      */
-    int XMI_Geometry_finalize(xmi_context_t   context,
-                              xmi_geometry_t *geometry);
+    xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+                                       xmi_geometry_t  geometry);
 
     /**
      * \brief Create and post a non-blocking alltoall vector operation.
@@ -115,7 +122,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         char                     * sndbuf;
         xmi_type_t               * stype;
         size_t                   * stypecounts;
@@ -149,7 +157,8 @@ extern "C"
     {
         xmi_xfer_type_t           xfer_type;
         xmi_event_function        cb_done;
-        xmi_geometry_t          * geometry;
+        xmi_geometry_t            geometry;
+        xmi_algorithm_t           algorithm;
         char                    * sndbuf;
         xmi_type_t              * stype;
         int                     * stypecounts;
@@ -182,7 +191,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         char                      * sndbuf;
         xmi_type_t                * stype;
         size_t                      stypecount;
@@ -213,7 +223,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         size_t                     root;
         char                     * sbuffer;
         xmi_type_t               * stype;
@@ -249,7 +260,8 @@ extern "C"
     {
         xmi_xfer_type_t           xfer_type;
         xmi_event_function        cb_done;
-        xmi_geometry_t          * geometry;
+        xmi_geometry_t            geometry;
+        xmi_algorithm_t           algorithm;
         char                    * sbuffer;
         xmi_type_t              * stype;
         size_t                    stypecount;
@@ -280,7 +292,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         size_t                      root;
         char                      * buf;
         xmi_type_t                * type;
@@ -309,7 +322,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         char                      * src;
         xmi_type_t                * stype;
         size_t                      stypecount;
@@ -342,7 +356,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         size_t                      root;
         char                      * src;
         xmi_type_t                * stype;
@@ -377,7 +392,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         size_t                     root;
         char                     * sndbuf;
         xmi_type_t               * stype;
@@ -413,7 +429,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         int                        root;
         char                     * sndbuf;
         xmi_type_t               * stype;
@@ -448,7 +465,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         char                     * sndbuf;
         xmi_type_t               * stype;
         size_t                     stypecount;
@@ -481,7 +499,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         char                     * sndbuf;
         xmi_type_t               * stype;
         int                        stypecount;
@@ -515,7 +534,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         size_t                      root;
         char                      * sbuffer;
         xmi_type_t                * stype;
@@ -548,7 +568,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         size_t                      root;
         char                      * sndbuf;
         xmi_type_t                * stype;
@@ -582,7 +603,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         int                         root;
         char                      * sndbuf;
         xmi_type_t                * stype;
@@ -619,7 +641,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         char                     * sbuffer;
         xmi_type_t               * stype;
         size_t                     stypecount;
@@ -657,7 +680,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
         char                     * sbuffer;
         xmi_type_t               * stype;
         size_t                     stypecount;
@@ -684,7 +708,8 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
-        xmi_geometry_t           * geometry;
+        xmi_geometry_t             geometry;
+        xmi_algorithm_t            algorithm;
     }xmi_barrier_t;
 
 
@@ -716,7 +741,8 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
+        xmi_algorithm_t             algorithm;
         void                      * user_header;
         size_t                      headerlen;
         void                      * src;
@@ -740,7 +766,7 @@ extern "C"
      * \todo doxygen
      */
     typedef void (*xmi_dispatch_ambroadcast_fn) (unsigned              root,
-                                                 size_t                geometry_id,
+                                                 xmi_geometry_t        geometry,
                                                  const unsigned        sndlen,
                                                  void                * user_header,
                                                  const size_t          headerlen,
@@ -773,7 +799,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
         void                      * headers;
         size_t                      headerlen;
         void                      * src;
@@ -797,7 +823,7 @@ extern "C"
      * \todo doxygen
      */
     typedef void (*xmi_dispatch_amscatter_fn) (unsigned             root,
-                                               size_t               geometry_id,
+                                               xmi_geometry_t       geometry,
                                                const unsigned       sndlen,
                                                void               * user_header,
                                                const size_t         headerlen,
@@ -834,7 +860,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
         void                      * headers;
         size_t                      headerlen;
         void                      * rcvbuf;
@@ -858,7 +884,7 @@ extern "C"
      * \todo doxygen
      */
     typedef void (*xmi_dispatch_amgather_fn) (unsigned             root,
-                                              size_t               geometry_id,
+                                              xmi_geometry_t       geometry_id,
                                               const unsigned       sndlen,
                                               void               * user_header,
                                               const size_t         headerlen,
@@ -899,7 +925,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
-        xmi_geometry_t            * geometry;
+        xmi_geometry_t              geometry;
         void                      * user_header;
         size_t                      headerlen;
         void                      * rcvbuf;
@@ -932,7 +958,7 @@ extern "C"
      * \todo doxygen
      */
     typedef void (*xmi_dispatch_amreduce_fn) (unsigned             root,
-                                              size_t               geometry_id,
+                                              xmi_geometry_t       geometry_id,
                                               const unsigned       sndlen,
                                               xmi_dt               dt,
                                               xmi_op               op,
@@ -969,9 +995,6 @@ extern "C"
     }xmi_xfer_t;
 
     xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
-    int XMI_Poll();
-    int XMI_Rank();
-    int XMI_Size();
 
 #ifdef __cplusplus
 };

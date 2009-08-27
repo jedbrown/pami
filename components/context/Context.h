@@ -84,6 +84,19 @@ namespace XMI
                                         void               * cookie,
                                         size_t               task);
 
+        inline xmi_result_t geometry_initialize (xmi_geometry_t       * geometry,
+                                                 unsigned               id,
+                                                 xmi_geometry_range_t * rank_slices,
+                                                 unsigned               slice_count);
+
+        inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry);
+
+        inline xmi_result_t geometry_algorithm (xmi_geometry_t   geometry,
+                                                xmi_algorithm_t *algorithm,
+                                                int             *num);
+        
+        inline xmi_result_t geometry_finalize (xmi_geometry_t geometry);
+        
         inline xmi_result_t collective (xmi_xfer_t * parameters);
 
         inline xmi_result_t dispatch (xmi_dispatch_t             dispatch,
@@ -273,6 +286,39 @@ namespace XMI
                                                  size_t               task)
     {
       return static_cast<T_Context*>(this)->fence_task_impl(done_fn, cookie, task);
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::geometry_initialize (xmi_geometry_t       * geometry,
+                                                          unsigned               id,
+                                                          xmi_geometry_range_t * rank_slices,
+                                                          unsigned               slice_count)
+    {
+      return static_cast<T_Context*>(this)->geometry_initialize_impl(geometry, id, 
+                                                                     rank_slices, 
+                                                                     slice_count);
+    }
+   
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::geometry_world (xmi_geometry_t * world_geometry)
+    {
+      return static_cast<T_Context*>(this)->geometry_world_impl(world_geometry);
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::geometry_algorithm (xmi_geometry_t   geometry,
+                                                         xmi_algorithm_t *algorithm,
+                                                         int             *num)
+    {
+      return static_cast<T_Context*>(this)->geometry_algorithm_impl(geometry, 
+                                                                    algorithm,
+                                                                    num);
+    }
+
+    template <class T_Context>        
+    xmi_result_t Context<T_Context>::geometry_finalize (xmi_geometry_t geometry)
+    {
+      return static_cast<T_Context*>(this)->geometry_finalize_impl(geometry);
     }
 
     template <class T_Context>

@@ -380,6 +380,52 @@ extern "C" xmi_result_t XMI_Fence_task (xmi_context_t        context,
 // Functions from xmi_collectives.h                                           //
 ////////////////////////////////////////////////////////////////////////////////
 
+
+///
+/// \copydoc XMI_Geometry_initialize
+///
+xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+                                      xmi_geometry_t            * geometry,
+                                      unsigned                    id,
+                                      xmi_geometry_range_t      * rank_slices,
+                                      unsigned                    slice_count)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->geometry_initialize (geometry,id,rank_slices,slice_count);
+}
+
+///
+/// \copydoc XMI_Geometry_initialize
+///
+xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+                                 xmi_geometry_t            * world_geometry)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->geometry_world (world_geometry);
+}
+
+///
+/// \copydoc XMI_Geometry_algorithm
+///
+xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
+                                     xmi_geometry_t             geometry,
+                                     xmi_algorithm_t           *algorithm,
+                                     int                       *num)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->geometry_algorithm (geometry, algorithm, num);
+}
+
+///
+/// \copydoc XMI_Geometry_finalize
+///
+xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+                                   xmi_geometry_t  geometry)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->geometry_finalize (geometry);
+}
+
 ///
 /// \copydoc XMI_Collective
 ///
