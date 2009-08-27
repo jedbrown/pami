@@ -16,6 +16,13 @@ namespace XMI
 {
   namespace Context
   {
+    typedef CDI::Fifo::FifoPacket <16,240> ShmemPacket;
+    typedef CDI::Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
+
+    typedef CDI::ShmemBaseMessage<ShmemPacket> ShmemMessage;
+    typedef CDI::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
+    typedef CDI::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
+  
     class BGP : public Context<XMI::Context::BGP>
     {
       public:
@@ -62,7 +69,20 @@ namespace XMI
 
         inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
         {
-          return XMI_UNIMPL;
+          assert (_dispatch[id] != NULL);
+          
+          XMI::Protocol::Send::Simple * send =
+            (XMI::Protocol::Send::Simple *) _dispatch[id];
+          send->start (parameters->simple.local_fn,
+                       parameters->simple.remote_fn,
+                       parameters->cookie,
+                       parameters->task,
+                       parameters->simple.addr,
+                       parameters->simple.bytes,
+                       parameters->header.addr,
+                       parameters->header.bytes);
+          
+          return XMI_SUCCESS;
         }
 
         inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
@@ -80,30 +100,16 @@ namespace XMI
                                            void                     * cookie,
                                            xmi_send_hint_t            options)
         {
-          if (_dispatch[id] == NULL) return XMI_ERROR;
+          if (_dispatch[id] != NULL) return XMI_ERROR;
 
-          // For now, only enable dma short/eager sends.
-          XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice, ShmemMessage> * eager;
-          posix_memalign ((void **)&eager, 16,
-                          sizeof(XMI::Protocol::Send::Eager <ShmemModel,
-                                                             ShmemDevice,
-                                                             ShmemMessage>));
-          new (eager) XMI::Protocol::Send::Eager <ShmemModel,ShmemDevice,ShmemMessage>
-                                                 (_shmem, _mapping, result);
-#if 0
-          factory = new (registration)
-            Protocol::Send::CDI::EagerFactory <ShmemModel, ShmemDevice, ShmemMessage>
-                                              (configuration->cb_recv_short,
-                                               configuration->cb_recv_short_clientdata,
-                                               configuration->cb_recv,
-                                               configuration->cb_recv_clientdata,
-                                               msgr->shmem(),
-                                               msgr->mapping(),
-                                               status,
-                                               DCMF_PROTOCOL_HAS_NO_CHANNELS);
-#endif
+          // Allocate memory for the protocol object.
+          _dispatch[id] = (void *) _request.allocateObject ();
 
-          return XMI_UNIMPL;
+          // For now, only enable shmem short/eager sends.
+          typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice, ShmemMessage> EagerShmem;
+          new (_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, _mapping.rank(), result);
+
+          return XMI_SUCCESS;
         }
 
 
@@ -115,6 +121,7 @@ namespace XMI
         xmi_client_t _client;
 
         void * _dispatch[1024];
+        MemoryAllocator<sizeof(CM_Request_t),16> _request;
 
     }; // end XMI::Context::BGP
   }; // end namespace Context
