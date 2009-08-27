@@ -157,6 +157,29 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
+        inline xmi_result_t fence_begin_impl ()
+        {
+          return XMI_UNIMPL;
+        }
+
+        inline xmi_result_t fence_end_impl ()
+        {
+          return XMI_UNIMPL;
+        }
+        
+        inline xmi_result_t fence_all_impl (xmi_event_function   done_fn,
+                                            void               * cookie)
+        {
+          return XMI_UNIMPL;
+        }
+        
+        inline  xmi_result_t fence_task_impl (xmi_event_function   done_fn,
+                                              void               * cookie,
+                                              size_t               task)
+        {
+          return XMI_UNIMPL;
+        }
+        
         inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
         {
           return XMI_UNIMPL;

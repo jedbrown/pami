@@ -73,6 +73,17 @@ namespace XMI
 
         inline xmi_result_t resume_totask (size_t *dest, size_t count);
 
+        inline xmi_result_t fence_begin ();
+
+        inline xmi_result_t fence_end ();
+
+        inline xmi_result_t fence_all (xmi_event_function   done_fn,
+                                       void               * cookie);
+
+        inline xmi_result_t fence_task (xmi_event_function   done_fn,
+                                        void               * cookie,
+                                        size_t               task);
+
         inline xmi_result_t collective (xmi_xfer_t * parameters);
 
         inline xmi_result_t dispatch (xmi_dispatch_t             dispatch,
@@ -235,6 +246,33 @@ namespace XMI
     xmi_result_t Context<T_Context>::resume_totask (size_t *dest, size_t count)
     {
       return static_cast<T_Context*>(this)->resume_totask_impl(dest, count);
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::fence_begin ()
+    {
+      return static_cast<T_Context*>(this)->fence_begin_impl();
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::fence_end ()
+    {
+      return static_cast<T_Context*>(this)->fence_end_impl();
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::fence_all (xmi_event_function   done_fn,
+                                                void               * cookie)
+    {
+      return static_cast<T_Context*>(this)->fence_all_impl(done_fn, cookie);
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::fence_task (xmi_event_function   done_fn,
+                                                 void               * cookie,
+                                                 size_t               task)
+    {
+      return static_cast<T_Context*>(this)->fence_task_impl(done_fn, cookie, task);
     }
 
     template <class T_Context>

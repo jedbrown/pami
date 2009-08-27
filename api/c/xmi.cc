@@ -298,7 +298,7 @@ extern "C" xmi_result_t XMI_Rget (xmi_context_t      context,
 /// \copydoc XMI_Rget_typed
 ///
 extern "C" xmi_result_t XMI_Rget_typed (xmi_context_t      context,
-                                       xmi_rget_typed_t  * parameters)
+                                        xmi_rget_typed_t  * parameters)
 {
   XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
   return ctx->rget_typed (parameters);
@@ -329,6 +329,52 @@ extern "C" xmi_result_t XMI_Resume_totask (xmi_context_t   context,
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_fence.h                                                 //
+////////////////////////////////////////////////////////////////////////////////
+
+///
+/// \copydoc XMI_Fence_begin
+///
+extern "C" xmi_result_t XMI_Fence_begin (xmi_context_t      context)
+
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->fence_begin ();
+}
+
+///
+/// \copydoc XMI_Fence_end
+///
+extern "C" xmi_result_t XMI_Fence_end (xmi_context_t      context)
+
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->fence_end ();
+}
+
+///
+/// \copydoc XMI_Fence_all
+///
+extern "C" xmi_result_t XMI_Fence_all (xmi_context_t        context,
+                                       xmi_event_function   done_fn,
+                                       void               * cookie)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->fence_all (done_fn, cookie);
+}
+
+///
+/// \copydoc XMI_Fence_task
+///
+extern "C" xmi_result_t XMI_Fence_task (xmi_context_t        context,
+                                        xmi_event_function   done_fn,
+                                        void               * cookie,
+                                        size_t               task)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->fence_task (done_fn, cookie, task);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from xmi_collectives.h                                           //
