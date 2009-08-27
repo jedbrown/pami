@@ -25,6 +25,17 @@ extern "C"
 #define DEPRECATED_MULTICAST
 #define DEPRECATED_MANYTOMANY
 
+#if defined(__bgp__)
+#define XMI_MAX_DIMS  4
+#define XMI_MAX_TORUS_DIMS  3
+#elif defined(__bgq__)
+#define XMI_MAX_DIMS  7
+#define XMI_MAX_TORUS_DIMS  5
+#else
+#define XMI_MAX_DIMS  3		// ?
+#define XMI_MAX_TORUS_DIMS  3	// ?
+#endif
+
 /**
  * \todo CNK's abort() does not core dump...
  *

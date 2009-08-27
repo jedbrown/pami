@@ -27,6 +27,9 @@ extern "C"
 #define DEPRECATED_MULTICAST
 #undef DEPRECATED_MANYTOMANY
 
+#define XMI_MAX_DIMS  3 // ?
+#define XMI_MAX_TORUS_DIMS  3   // ?
+
 typedef enum {
 	DCMF_MATCH_CONSISTENCY,
 	DCMF_RELAXED_CONSISTENCY,

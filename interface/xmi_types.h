@@ -133,8 +133,6 @@ extern "C"
   }
   XMI_Network;
 
-  #define XMI_MAX_DIMS	4
-
   /**
    * \brief A structure to describe a network coordinate
    */
