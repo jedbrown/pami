@@ -392,8 +392,9 @@ extern "C" xmi_result_t XMI_Collective (xmi_context_t   context,
 
 
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_dispatch.h                                              //
+////////////////////////////////////////////////////////////////////////////////
 
 ///
 /// \copydoc XMI_Dispatch_set
@@ -409,12 +410,62 @@ extern "C" xmi_result_t XMI_Dispatch_set (xmi_context_t            * context,
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_datatypes.h                                             //
+////////////////////////////////////////////////////////////////////////////////
 
+///
+/// \copydoc XMI_Type_create
+///
+extern "C" xmi_result_t XMI_Type_create (xmi_type_t * type)
+{
+  return XMI_UNIMPL;
+}
 
+///
+/// \copydoc XMI_Type_create
+///
+extern "C" xmi_result_t XMI_Type_add_simple (xmi_type_t type,
+                                             size_t     bytes,
+                                             size_t     offset,
+                                             size_t     count,
+                                             size_t     stride)
+{
+  return XMI_UNIMPL;
+}
 
+///
+/// \copydoc XMI_Type_create
+///
+extern "C" xmi_result_t XMI_Type_add_typed (xmi_type_t type,
+                                            xmi_type_t subtype,
+                                            size_t     offset,
+                                            size_t     count,
+                                            size_t     stride)
+{
+  return XMI_UNIMPL;
+}
 
+///
+/// \copydoc XMI_Type_create
+///
+extern "C" xmi_result_t XMI_Type_complete (xmi_type_t type)
+{
+  return XMI_UNIMPL;
+}
 
+///
+/// \copydoc XMI_Type_create
+///
+extern "C" xmi_result_t XMI_Type_sizeof (xmi_type_t type)
+{
+  return XMI_UNIMPL;
+}
 
-
-
-
+///
+/// \copydoc XMI_Type_create
+///
+extern "C" xmi_result_t XMI_Type_destroy (xmi_type_t type)
+{
+  return XMI_UNIMPL;
+}

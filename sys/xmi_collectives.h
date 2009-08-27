@@ -17,7 +17,7 @@ extern "C"
     {
         size_t lo;
         size_t hi;
-    }XMI_Geometry_range_t;
+    }xmi_geometry_range_t;
 
     extern xmi_geometry_t    XMI_World_Geometry;
     extern size_t            XMI_World_Geometry_id;
@@ -62,9 +62,10 @@ extern "C"
      *                             duration of the geometry's existence
      * \param[in]  slice_count     Number of nodes participating in the geometry
      */
-    int XMI_Geometry_initialize (xmi_geometry_t            * geometry,
+    int XMI_Geometry_initialize (xmi_context_t               context,
+                                 xmi_geometry_t            * geometry,
                                  unsigned                    id,
-                                 XMI_Geometry_range_t      * rank_slices,
+                                 xmi_geometry_range_t      * rank_slices,
                                  unsigned                    slice_count);
 
     /**
@@ -78,16 +79,18 @@ extern "C"
      * \retval        XMI_SUCCESS The protocol will run on the current geometry
      * \retval        ?????      The protocol does not support the current geometry
      */
-    int XMI_Geometry_algorithm (xmi_geometry_t            *geometry,
+    int XMI_Geometry_algorithm (xmi_context_t              context,
+                                xmi_geometry_t            *geometry,
                                 XMI_CollectiveProtocol_t **protocols,
-                                int                      *num);
+                                int                       *num);
 
     /**
      * \brief Free any memory allocated inside of a geometry.
      * \param[in] geometry The geometry object to free
      * \retval XMI_SUCCESS Memory free didn't fail
      */
-    int XMI_Geometry_finalize(xmi_geometry_t *geometry);
+    int XMI_Geometry_finalize(xmi_context_t   context,
+                              xmi_geometry_t *geometry);
 
     /**
      * \brief Create and post a non-blocking alltoall vector operation.
