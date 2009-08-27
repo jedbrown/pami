@@ -35,6 +35,12 @@
 #define COLLECTIVE_MAPPING void*
 //#define COLLECTIVE_MAPPING XMI::CollectiveMapping*
 
+#define MCAST_INTERFACE void*
+//#define MCAST_INTERFACE CCMI::MultiSend::OldMulticastInterface *
+
+#define PGASNBCOLL void*
+//#define PGASNBCOLL NBColl*
+
 namespace XMI
 {
     namespace Geometry
@@ -49,6 +55,7 @@ namespace XMI
                             unsigned             comm,
                             unsigned             numcolors,
                             bool                 globalcontext);
+            // These methods were originally from the CCMI Geometry class
             inline int                        getColorsArray();
             inline void                       setAsyncAllreduceMode(unsigned value);
             inline unsigned                   getAsyncAllreduceMode();
@@ -79,7 +86,7 @@ namespace XMI
             inline COMPOSITE_TYPE             getAllreduceComposite(unsigned i);
             inline void                       setAllreduceComposite(COMPOSITE_TYPE c);
             inline void                       setAllreduceComposite(COMPOSITE_TYPE c, 
-                                                                   unsigned i);
+                                                                    unsigned i);
             inline void                       freeAllocations ();
             inline EXECUTOR_TYPE              getCollectiveExecutor (unsigned color=0);
             inline void                       setCollectiveExecutor (EXECUTOR_TYPE exe,
@@ -92,7 +99,92 @@ namespace XMI
             static inline CCMI_GEOMETRY       getCachedGeometry (unsigned comm);
             static inline void                updateCachedGeometry (CCMI_GEOMETRY geometry, 
                                                                     unsigned comm);
-#endif            
+#endif
+            // These methods were originally from the PGASRT Communicator class            
+            inline int                        size       (void);
+            inline int                        rank       (void);
+            inline int                        split      (int color, int rank, int * proclist);
+            inline int                        absrankof  (int rank);
+            inline int                        virtrankof (int rank);
+            inline PGASNBCOLL                 ibarrier    (MCAST_INTERFACE mcast_iface,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline void                       barrier     (MCAST_INTERFACE mcast_iface,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline PGASNBCOLL                 iallgather  (MCAST_INTERFACE mcast_iface,
+                                                           const void *s,void *d, size_t l,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline void                       allgather   (MCAST_INTERFACE mcast_iface,
+                                                           const void *s, void *d,size_t l,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline PGASNBCOLL                 iallgatherv (MCAST_INTERFACE mcast_iface,
+                                                           const void *s, void *d, size_t *l,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline void                       allgatherv  (MCAST_INTERFACE mcast_iface,
+                                                           const void *s, void *d, size_t *l,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline PGASNBCOLL                 ibcast      (MCAST_INTERFACE mcast_iface,
+                                                           int root, const void *s, void *d,
+                                                           size_t l,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline void                       bcast       (MCAST_INTERFACE mcast_iface,
+                                                           int root, const void *s, void *d,
+                                                           size_t l,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline PGASNBCOLL                 iallreduce  (MCAST_INTERFACE mcast_iface,
+                                                           const void        * s,
+                                                           void              * d, 
+                                                           xmi_op              op,
+                                                           xmi_dt              dtype, 
+                                                           unsigned            nelems,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline void                       allreduce   (MCAST_INTERFACE mcast_iface,
+                                                           const void        * s, 
+                                                           void              * d, 
+                                                           xmi_op             op,
+                                                           xmi_dt             dtype, 
+                                                           unsigned            nelems,
+                                                           void (*cb_complete)(void *)=NULL,
+                                                           void *arg=NULL);
+            inline PGASNBCOLL                 iscatter   (MCAST_INTERFACE info_barrier,
+                                                          MCAST_INTERFACE info_scatter,
+                                                          int root, const void *s, void *d,
+                                                          size_t l,
+                                                          void (*cb_complete)(void *)=NULL,
+                                                          void *arg=NULL);
+            inline void                       scatter    (MCAST_INTERFACE info_barrier,
+                                                          MCAST_INTERFACE info_scatter,
+                                                          int root, const void *s, void *d,
+                                                          size_t l,
+                                                          void (*cb_complete)(void *)=NULL,
+                                                          void *arg=NULL);
+            inline PGASNBCOLL                 iscatterv  (MCAST_INTERFACE info_barrier,
+                                                          MCAST_INTERFACE info_scatter,
+                                                          int root, const void *s, void *d,
+                                                          size_t *l,
+                                                          void (*cb_complete)(void *)=NULL,
+                                                          void *arg=NULL);
+            inline void                       scatterv   (MCAST_INTERFACE info_barrier,
+                                                          MCAST_INTERFACE info_scatter,
+                                                          int root, const void *s, void *d,
+                                                          size_t *l,
+                                                          void (*cb_complete)(void *)=NULL,
+                                                          void *arg=NULL);
+            inline void                       gather     (MCAST_INTERFACE mcast_iface,
+                                                          int root, const void *s,
+                                                          void *d, size_t l);
+            inline void                       gatherv    (MCAST_INTERFACE mcast_iface,
+                                                          int root, const void *s,
+                                                          void *d, size_t *l);
+            inline void                       nbwait     (PGASNBCOLL);
         }; // class Geometry
 
         template <class T_Geometry>
@@ -332,7 +424,183 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->updateCachedGeometry_impl(geometry, comm);
         }
-#endif        
+#endif
+
+        // These methods were originally from the PGASRT Communicator class
+        template <class T_Geometry>
+        inline int                        Geometry<T_Geometry>::size       (void)
+        {
+            return static_cast<T_Geometry*>(this)->size_impl();
+        }
+        template <class T_Geometry>
+        inline int                        Geometry<T_Geometry>::rank       (void)
+        {
+            return static_cast<T_Geometry*>(this)->rank_impl();
+        }
+        template <class T_Geometry>
+        inline int                        Geometry<T_Geometry>::split      (int color, int rank, int * proclist)
+        {
+            return static_cast<T_Geometry*>(this)->split_impl();
+        }
+        template <class T_Geometry>
+        inline int                        Geometry<T_Geometry>::absrankof  (int rank)
+        {
+            return static_cast<T_Geometry*>(this)->absrankof_impl();
+        }
+        template <class T_Geometry>
+        inline int                        Geometry<T_Geometry>::virtrankof (int rank)
+        {
+            return static_cast<T_Geometry*>(this)->virtrankof_impl();
+        }
+        template <class T_Geometry>
+        inline PGASNBCOLL                 Geometry<T_Geometry>::ibarrier    (MCAST_INTERFACE mcast_iface,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->ibarrier_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::barrier     (MCAST_INTERFACE mcast_iface,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->barrier_impl();
+        }
+        template <class T_Geometry>
+        inline PGASNBCOLL                 Geometry<T_Geometry>::iallgather  (MCAST_INTERFACE mcast_iface,
+                                                                             const void *s,void *d, size_t l,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->iallgather_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::allgather   (MCAST_INTERFACE mcast_iface,
+                                                                             const void *s, void *d,size_t l,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->allgather_impl();
+        }
+        template <class T_Geometry>
+        inline PGASNBCOLL                 Geometry<T_Geometry>::iallgatherv (MCAST_INTERFACE mcast_iface,
+                                                                             const void *s, void *d, size_t *l,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->iallgatherv_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::allgatherv  (MCAST_INTERFACE mcast_iface,
+                                                                             const void *s, void *d, size_t *l,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->allgatherv_impl();
+        }
+        template <class T_Geometry>
+        inline PGASNBCOLL                 Geometry<T_Geometry>::ibcast      (MCAST_INTERFACE mcast_iface,
+                                                                             int root, const void *s, void *d,
+                                                                             size_t l,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->ibcast_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::bcast       (MCAST_INTERFACE mcast_iface,
+                                                                             int root, const void *s, void *d,
+                                                                             size_t l,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->bcast_impl();
+        }
+        template <class T_Geometry>
+        inline PGASNBCOLL                 Geometry<T_Geometry>::iallreduce  (MCAST_INTERFACE mcast_iface,
+                                                                             const void        * s,
+                                                                             void              * d, 
+                                                                             xmi_op              op,
+                                                                             xmi_dt              dtype, 
+                                                                             unsigned            nelems,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->iallreduce_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::allreduce   (MCAST_INTERFACE mcast_iface,
+                                                                             const void        * s, 
+                                                                             void              * d, 
+                                                                             xmi_op             op,
+                                                                             xmi_dt             dtype, 
+                                                                             unsigned           nelems,
+                                                                             void (*cb_complete)(void *),
+                                                                             void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->allreduce_impl();
+        }
+        template <class T_Geometry>
+        inline PGASNBCOLL                 Geometry<T_Geometry>::iscatter   (MCAST_INTERFACE info_barrier,
+                                                                            MCAST_INTERFACE info_scatter,
+                                                                            int root, const void *s, void *d,
+                                                                            size_t l,
+                                                                            void (*cb_complete)(void *),
+                                                                            void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->iscatter_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::scatter    (MCAST_INTERFACE info_barrier,
+                                                                            MCAST_INTERFACE info_scatter,
+                                                                            int root, const void *s, void *d,
+                                                                            size_t l,
+                                                                            void (*cb_complete)(void *),
+                                                                            void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->scatter_impl();
+        }
+        template <class T_Geometry>
+        inline PGASNBCOLL                 Geometry<T_Geometry>::iscatterv  (MCAST_INTERFACE info_barrier,
+                                                                            MCAST_INTERFACE info_scatter,
+                                                                            int root, const void *s, void *d,
+                                                                            size_t *l,
+                                                                            void (*cb_complete)(void *),
+                                                                            void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->iscatterv_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::scatterv   (MCAST_INTERFACE info_barrier,
+                                                                            MCAST_INTERFACE info_scatter,
+                                                                            int root, const void *s, void *d,
+                                                                            size_t *l,
+                                                                            void (*cb_complete)(void *),
+                                                                            void *arg)
+        {
+            return static_cast<T_Geometry*>(this)->scatterv_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::gather     (MCAST_INTERFACE mcast_iface,
+                                                                            int root, const void *s,
+                                                                            void *d, size_t l)
+        {
+            return static_cast<T_Geometry*>(this)->gather_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::gatherv    (MCAST_INTERFACE mcast_iface,
+                                                                            int root, const void *s,
+                                                                            void *d, size_t *l)
+        {
+            return static_cast<T_Geometry*>(this)->gatherv_impl();
+        }
+        template <class T_Geometry>
+        inline void                       Geometry<T_Geometry>::nbwait     (PGASNBCOLL)
+        {
+            return static_cast<T_Geometry*>(this)->nbwait_impl();
+        }
+
+        
 
     }; // namespace Geometry
 }; // namespace XMI

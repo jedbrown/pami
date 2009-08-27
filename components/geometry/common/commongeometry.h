@@ -166,7 +166,160 @@ namespace XMI
                                                                        unsigned comm)
                 {
                 }
-#endif            
+#endif
+            // These methods were originally from the PGASRT Communicator class            
+            inline int                        size_impl       (void)
+                {
+
+                }
+            inline int                        rank_impl       (void)
+                {
+
+                }
+            inline int                        split_impl      (int color, int rank, int * proclist)
+                {
+
+                }
+            inline int                        absrankof_impl  (int rank)
+                {
+
+                }
+            inline int                        virtrankof_impl (int rank)
+                {
+
+                }
+            inline PGASNBCOLL                 ibarrier_impl    (MCAST_INTERFACE mcast_iface,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline void                       barrier_impl     (MCAST_INTERFACE mcast_iface,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline PGASNBCOLL                 iallgather_impl  (MCAST_INTERFACE mcast_iface,
+                                                                const void *s,void *d, size_t l,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline void                       allgather_impl   (MCAST_INTERFACE mcast_iface,
+                                                                const void *s, void *d,size_t l,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline PGASNBCOLL                 iallgatherv_impl (MCAST_INTERFACE mcast_iface,
+                                                                const void *s, void *d, size_t *l,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline void                       allgatherv_impl  (MCAST_INTERFACE mcast_iface,
+                                                                const void *s, void *d, size_t *l,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline PGASNBCOLL                 ibcast_impl      (MCAST_INTERFACE mcast_iface,
+                                                                int root, const void *s, void *d,
+                                                                size_t l,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline void                       bcast_impl       (MCAST_INTERFACE mcast_iface,
+                                                                int root, const void *s, void *d,
+                                                                size_t l,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline PGASNBCOLL                 iallreduce_impl  (MCAST_INTERFACE mcast_iface,
+                                                                const void        * s,
+                                                                void              * d, 
+                                                                xmi_op              op,
+                                                                xmi_dt              dtype, 
+                                                                unsigned            nelems,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline void                       allreduce_impl   (MCAST_INTERFACE mcast_iface,
+                                                                const void        * s, 
+                                                                void              * d, 
+                                                                xmi_op              op,
+                                                                xmi_dt              dtype, 
+                                                                unsigned            nelems,
+                                                                void (*cb_complete)(void *)=NULL,
+                                                                void *arg=NULL)
+                {
+
+                }
+            inline PGASNBCOLL                 iscatter_impl   (MCAST_INTERFACE info_barrier,
+                                                               MCAST_INTERFACE info_scatter,
+                                                               int root, const void *s, void *d,
+                                                               size_t l,
+                                                               void (*cb_complete)(void *)=NULL,
+                                                               void *arg=NULL)
+                {
+
+                }
+            inline void                       scatter_impl    (MCAST_INTERFACE info_barrier,
+                                                               MCAST_INTERFACE info_scatter,
+                                                               int root, const void *s, void *d,
+                                                               size_t l,
+                                                               void (*cb_complete)(void *)=NULL,
+                                                               void *arg=NULL)
+                {
+
+                }
+            inline PGASNBCOLL                 iscatterv_impl  (MCAST_INTERFACE info_barrier,
+                                                               MCAST_INTERFACE info_scatter,
+                                                               int root, const void *s, void *d,
+                                                               size_t *l,
+                                                               void (*cb_complete)(void *)=NULL,
+                                                               void *arg=NULL)
+                {
+
+                }
+            inline void                       scatterv_impl   (MCAST_INTERFACE info_barrier,
+                                                               MCAST_INTERFACE info_scatter,
+                                                               int root, const void *s, void *d,
+                                                               size_t *l,
+                                                               void (*cb_complete)(void *)=NULL,
+                                                               void *arg=NULL)
+                {
+
+                }
+            inline void                       gather_impl     (MCAST_INTERFACE mcast_iface,
+                                                               int root, const void *s,
+                                                               void *d, size_t l)
+                {
+
+                }
+            inline void                       gatherv_impl    (MCAST_INTERFACE mcast_iface,
+                                                               int root, const void *s,
+                                                               void *d, size_t *l)
+                {
+
+                }
+            inline void                       nbwait_impl     (PGASNBCOLL)
+                {
+
+                }
+
+            
         }; // class Geometry
     };  // namespace Geometry
 }; // namespace XMI
