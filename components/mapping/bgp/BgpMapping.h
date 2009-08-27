@@ -22,12 +22,12 @@ namespace XMI
 {
   namespace Mapping
   {
-    class BgpMapping : public Base<BgpMapping>, public Torus<BgpMapping>
+    class BgpMapping : public Interface::Base<BgpMapping>, public Interface::Torus<BgpMapping>
     {
       public:
         inline BgpMapping () :
-            Base<BgpMapping>(),
-            Torus<BgpMapping>()
+            Interface::Base<BgpMapping>(),
+            Interface::Torus<BgpMapping>()
         {
         };
 
@@ -35,13 +35,13 @@ namespace XMI
 
         /////////////////////////////////////////////////////////////////////////
         //
-        // XMI::Mapping::Base interface implementation
+        // XMI::Mapping::Interface::Base interface implementation
         //
         /////////////////////////////////////////////////////////////////////////
 
         ///
         /// \brief Return the BGP global task for this process
-        /// \see XMI::Mapping::Base::task()
+        /// \see XMI::Mapping::Interface::Base::task()
         ///
         inline size_t task_impl() const
         {
@@ -50,7 +50,7 @@ namespace XMI
 
         ///
         /// \brief Returns the number of global tasks
-        /// \see XMI::Mapping::Base::size()
+        /// \see XMI::Mapping::Interface::Base::size()
         ///
         inline size_t size_impl() const
         {
@@ -59,7 +59,7 @@ namespace XMI
 
         ///
         /// \brief Number of physical active nodes in the partition.
-        /// \see XMI::Mapping::Base::numActiveNodesGlobal()
+        /// \see XMI::Mapping::Interface::Base::numActiveNodesGlobal()
         ///
         inline size_t numActiveNodesGlobal_impl () const
         {
@@ -68,7 +68,7 @@ namespace XMI
 
         ///
         /// \brief Number of physical active tasks in the partition.
-        /// \see XMI::Mapping::Base::numActiveRanksGlobal()
+        /// \see XMI::Mapping::Interface::Base::numActiveRanksGlobal()
         ///
         inline size_t numActiveRanksGlobal_impl () const
         {
@@ -77,7 +77,7 @@ namespace XMI
 
         ///
         /// \brief Number of physical active tasks in the local node.
-        /// \see XMI::Mapping::Base::numActiveRanksLocal()
+        /// \see XMI::Mapping::Interface::Base::numActiveRanksLocal()
         ///
         inline size_t numActiveRanksLocal_impl () const
         {
@@ -86,7 +86,7 @@ namespace XMI
 
         ///
         /// \brief Determines if two global tasks are located on the same physical node.
-        /// \see XMI::Mapping::Base::isPeer()
+        /// \see XMI::Mapping::Interface::Base::isPeer()
         ///
         inline bool isPeer_impl (size_t task1, size_t task2) const
         {
@@ -111,14 +111,14 @@ namespace XMI
 #endif
         /////////////////////////////////////////////////////////////////////////
         //
-        // XMI::Mapping::Torus interface implementation
+        // XMI::Mapping::Interface::Torus interface implementation
         //
         /////////////////////////////////////////////////////////////////////////
 
         ///
         /// \brief Return the BGP torus x coordinate (dimension 0) for this task
         ///
-        /// \see XMI::Mapping::Torus::torusCoord()
+        /// \see XMI::Mapping::Interface::Torus::torusCoord()
         ///
         template <>
         inline size_t torusCoord_impl<0> () const
@@ -129,7 +129,7 @@ namespace XMI
         ///
         /// \brief Return the BGP torus y coordinate (dimension 1) for this task
         ///
-        /// \see XMI::Mapping::Torus::torusCoord()
+        /// \see XMI::Mapping::Interface::Torus::torusCoord()
         ///
         template <>
         inline size_t torusCoord_impl<1> () const
@@ -140,7 +140,7 @@ namespace XMI
         ///
         /// \brief Return the BGP torus z coordinate (dimension 2) for this task
         ///
-        /// \see XMI::Mapping::Torus::torusCoord()
+        /// \see XMI::Mapping::Interface::Torus::torusCoord()
         ///
         template <>
         inline size_t torusCoord_impl<2> () const
@@ -151,7 +151,7 @@ namespace XMI
         ///
         /// \brief Return the BGP torus t coordinate (dimension 3) for this task
         ///
-        /// \see XMI::Mapping::Torus::torusCoord()
+        /// \see XMI::Mapping::Interface::Torus::torusCoord()
         ///
         template <>
         inline size_t torusCoord_impl<3> () const
@@ -162,7 +162,7 @@ namespace XMI
         ///
         /// \brief Return the size of the BGP torus x dimension
         ///
-        /// \see XMI::Mapping::Torus::torusSize()
+        /// \see XMI::Mapping::Interface::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<0> () const
@@ -173,7 +173,7 @@ namespace XMI
         ///
         /// \brief Return the size of the BGP torus y dimension
         ///
-        /// \see XMI::Mapping::Torus::torusSize()
+        /// \see XMI::Mapping::Interface::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<1> () const
@@ -184,7 +184,7 @@ namespace XMI
         ///
         /// \brief Return the size of the BGP torus z dimension
         ///
-        /// \see XMI::Mapping::Torus::torusSize()
+        /// \see XMI::Mapping::Interface::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<2> () const
@@ -194,7 +194,7 @@ namespace XMI
 
         ///
         /// \brief Return the size of the BGP torus t dimension
-        /// \see XMI::Mapping::Torus::torusSize()
+        /// \see XMI::Mapping::Interface::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<3> () const
@@ -204,7 +204,7 @@ namespace XMI
 
         ///
         /// \brief Get the number of BGP torus dimensions
-        /// \see XMI::Mapping::Torus::torusDims()
+        /// \see XMI::Mapping::Interface::Torus::torusDims()
         ///
         inline const size_t torusDims_impl() const
         {
@@ -213,7 +213,7 @@ namespace XMI
 
         ///
         /// \brief Get the BGP torus address for this task
-        /// \see XMI::Mapping::Torus::torusAddr()
+        /// \see XMI::Mapping::Interface::Torus::torusAddr()
         ///
         template <>
         inline void torusAddr_impl<4> (size_t (&addr)[4]) const
@@ -226,7 +226,7 @@ namespace XMI
 
         ///
         /// \brief Get the BGP torus address for a task
-        /// \see XMI::Mapping::Torus::task2torus()
+        /// \see XMI::Mapping::Interface::Torus::task2torus()
         ///
         /// \todo Error path
         ///
@@ -243,7 +243,7 @@ namespace XMI
 
         ///
         /// \brief Get the global task for a BGP torus address
-        /// \see XMI::Mapping::Torus::torus2task()
+        /// \see XMI::Mapping::Interface::Torus::torus2task()
         ///
         /// \todo Error path
         ///

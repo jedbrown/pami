@@ -25,7 +25,7 @@ namespace XMI
       ///
       /// \param T  device template class
       ///
-      template <class T>
+      template <class T_Device, class T_SysDep>
       class BaseDevice
       {
         public:
@@ -47,7 +47,7 @@ namespace XMI
           ///
           /// \return  Return code of the device init status
           ///
-          inline int init (SysDep & sd);
+          inline int init (T_SysDep & sd);
 
           ///
           /// \brief Is the device initialized?
@@ -72,22 +72,22 @@ namespace XMI
           inline int advance ();
       };
 
-      template <class T>
-      inline int BaseDevice<T>::init (SysDep & sd)
+      template <class T_Device, class T_SysDep>
+      inline int BaseDevice<T_Device, T_SysDep>::init (T_SysDep & sd)
       {
-        return static_cast<T*>(this)->init_impl(sd);
+        return static_cast<T_Device*>(this)->init_impl(sd);
       }
 
-      template <class T>
-      inline bool BaseDevice<T>::isInit ()
+      template <class T_Device, class T_SysDep>
+      inline bool BaseDevice<T_Device, T_SysDep>::isInit ()
       {
-        return static_cast<T*>(this)->isInit_impl();
+        return static_cast<T_Device*>(this)->isInit_impl();
       }
 
-      template <class T>
-      inline int BaseDevice<T>::advance ()
+      template <class T_Device, class T_SysDep>
+      inline int BaseDevice<T_Device, T_SysDep>::advance ()
       {
-        return static_cast<T*>(this)->advance_impl();
+        return static_cast<T_Device*>(this)->advance_impl();
       }
     };
   };

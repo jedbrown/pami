@@ -17,8 +17,6 @@
 #ifndef __components_devices_shmem_fifo_fifo_h__
 #define __components_devices_shmem_fifo_fifo_h__
 
-#include "SysDep.h"
-
 #ifndef TRACE
 #define TRACE(x)
 #endif
@@ -36,6 +34,9 @@ namespace XMI
           Fifo () {};
           ~Fifo () {};
 
+          ///
+          /// \brief Initialize the fifo
+          ///
           inline void init (XMI::SysDep & sysdep);
 
           inline T_Packet * nextInjPacket ();
@@ -50,9 +51,9 @@ namespace XMI
       };
 
       template <class T_Fifo, class T_Packet>
-      void Fifo<T_Fifo, T_Packet>::init (XMI::SysDep & sysdep)
+      void Fifo<T_Fifo, T_Packet>::init (void * addr, size_t bytes)
       {
-        static_cast<T_Fifo*>(this)->init_impl (sysdep);
+        static_cast<T_Fifo*>(this)->init_impl (addr, bytes);
       }
 
       template <class T_Fifo, class T_Packet>

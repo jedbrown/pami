@@ -24,30 +24,31 @@ namespace XMI
 {
   namespace Device
   {
-    template <class T_Fifo, class T_Packet>
-    class ShmemPacketDevice : public ShmemBaseDevice<T_Fifo, T_Packet>,
-                              public Interface::BaseDevice<ShmemPacketDevice<T_Fifo, T_Packet> >,
-                              public Interface::MessageDevice<ShmemPacketDevice<T_Fifo, T_Packet> >
+    template <class T_SysDep, class T_Fifo, class T_Packet>
+    class ShmemPacketDevice : public ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>,
+                              public Interface::BaseDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet>, T_SysDep>,
+                              public Interface::MessageDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet> ,T_SysDep>
     {
       public:
         inline ShmemPacketDevice () :
-            ShmemBaseDevice<T_Fifo, T_Packet> (),
-            Message::Device<ShmemPacketDevice<T_Fifo, T_Packet> > ()
+            ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet> (),
+            Interface::BaseDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet>, T_SysDep> (),
+            Interface::MessageDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet>, T_SysDep> ()
         {
         };
 
         inline ~ShmemPacketDevice () {};
 
         /// \see XMI::Device::Interface::BaseDevice::init()
-        inline int init_impl (SysDep & sysdep)
+        inline int init_impl (T_SysDep & sysdep)
         {
-          return ShmemBaseDevice<T_Fifo, T_Packet>::init_internal (sysdep);
+          return ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (sysdep);
         }
 
         /// \see XMI::Device::Interface::BaseDevice::advance()
         inline int advance_impl ()
         {
-          return ShmemBaseDevice<T_Fifo, T_Packet>::advance_internal ();
+          return ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_internal ();
         }
     };
   };

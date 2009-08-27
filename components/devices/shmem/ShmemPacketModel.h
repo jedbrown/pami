@@ -20,7 +20,6 @@
 #include "ShmemPacketDevice.h"
 #include "ShmemSysDep.h"
 
-#include "SysDep.h"
 #include "errno.h"
 
 #ifndef TRACE_ERR
