@@ -214,6 +214,7 @@ extern "C"
         size_t              bytes;    /**< Number of bytes of data */
         void              * addr;     /**< Starting address of the buffer */
         xmi_type_t          type;     /**< Datatype */
+        size_t              offset;   /**< Starting offset of the type */
       } typed;                        /**< Typed receive */
     } data;                           /**< Receive message destination information */
   } xmi_recv_t;
