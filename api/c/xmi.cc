@@ -469,7 +469,7 @@ extern "C" xmi_result_t XMI_Type_create (xmi_type_t * type)
 }
 
 ///
-/// \copydoc XMI_Type_create
+/// \copydoc XMI_Type_add_simple
 ///
 extern "C" xmi_result_t XMI_Type_add_simple (xmi_type_t type,
                                              size_t     bytes,
@@ -481,7 +481,7 @@ extern "C" xmi_result_t XMI_Type_add_simple (xmi_type_t type,
 }
 
 ///
-/// \copydoc XMI_Type_create
+/// \copydoc XMI_Type_add_typed
 ///
 extern "C" xmi_result_t XMI_Type_add_typed (xmi_type_t type,
                                             xmi_type_t subtype,
@@ -493,7 +493,7 @@ extern "C" xmi_result_t XMI_Type_add_typed (xmi_type_t type,
 }
 
 ///
-/// \copydoc XMI_Type_create
+/// \copydoc XMI_Type_complete
 ///
 extern "C" xmi_result_t XMI_Type_complete (xmi_type_t type)
 {
@@ -501,7 +501,7 @@ extern "C" xmi_result_t XMI_Type_complete (xmi_type_t type)
 }
 
 ///
-/// \copydoc XMI_Type_create
+/// \copydoc XMI_Type_sizeof
 ///
 extern "C" xmi_result_t XMI_Type_sizeof (xmi_type_t type)
 {
@@ -509,9 +509,33 @@ extern "C" xmi_result_t XMI_Type_sizeof (xmi_type_t type)
 }
 
 ///
-/// \copydoc XMI_Type_create
+/// \copydoc XMI_Type_destroy
 ///
 extern "C" xmi_result_t XMI_Type_destroy (xmi_type_t type)
+{
+  return XMI_UNIMPL;
+}
+
+///
+/// \copydoc XMI_Type_pack_data
+///
+extern "C" xmi_result_t XMI_Type_pack_data (xmi_type_t src_type, 
+                                            size_t     src_offset,
+                                            void     * src_addr, 
+                                            void     * dst_addr, 
+                                            size_t     dst_size)
+{
+  return XMI_UNIMPL;
+}
+
+///
+/// \copydoc XMI_Type_unpack_data
+///
+extern "C" xmi_result_t XMI_Type_unpack (xmi_type_t dst_type, 
+                                         size_t     dst_offset, 
+                                         void     * dst_addr, 
+                                         void     * src_addr, 
+                                         size_t     src_size)
 {
   return XMI_UNIMPL;
 }
