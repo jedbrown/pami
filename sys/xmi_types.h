@@ -205,8 +205,6 @@ typedef XMIQuad XMI_Protocol_t[XMI_PROTOCOL_NQUADS];
 
 typedef XMIQuad XMI_Request_t[XMI_REQUEST_NQUADS];
 
-typedef void XMI_dgsp_t;	// temporary...
-
 #ifdef __cplusplus
 };
 #endif

@@ -43,7 +43,7 @@ namespace XMI
                 {
                 }
 
-            inline void configure_impl(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit)
+            inline void configure_impl(void *sysdep, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit)
                 {
                 }
 

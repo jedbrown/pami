@@ -93,11 +93,11 @@ namespace XMI
             ///
             /// \param[out] wq            Opaque memory for PipeWorkQueue
             /// \param[in] buffer         Buffer to use
-            /// \param[in] dgsp           Memory layout of a buffer unit
-            /// \param[in] dgspcount      Number of repetitions of buffer units
-            /// \param[in] dgspinit       Number of units initially in buffer
+            /// \param[in] type           Memory layout of a buffer unit
+            /// \param[in] typecount      Number of repetitions of buffer units
+            /// \param[in] typeinit       Number of units initially in buffer
             ///
-            inline void configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit);
+            inline void configure(void *sysdep, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit);
 
             ///
             /// \brief Reset this shared memory work queue.
@@ -264,11 +264,11 @@ namespace XMI
         }
         
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep, char *buffer, XMI_dgsp_t *dgsp,
-                                                       size_t dgspcount, size_t dgspinit)
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep, char *buffer, xmi_type_t *type,
+                                                       size_t typecount, size_t typeinit)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep, buffer, dgsp,
-                                                                       dgspcount, dgspinit);
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep, buffer, type,
+                                                                       typecount, typeinit);
         }
 
         template <class T_PipeWorkQueue>

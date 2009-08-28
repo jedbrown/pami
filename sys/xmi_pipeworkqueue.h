@@ -77,11 +77,11 @@ extern "C"
   ///
   /// \param[out] wq            Opaque memory for PipeWorkQueue
   /// \param[in] buffer         Buffer to use
-  /// \param[in] dgsp           Memory layout of a buffer unit
-  /// \param[in] dgspcount      Number of repetitions of buffer units
-  /// \param[in] dgspinit       Number of units initially in buffer
+  /// \param[in] type           Memory layout of a buffer unit
+  /// \param[in] typecount      Number of repetitions of buffer units
+  /// \param[in] typeinit       Number of units initially in buffer
   ///
-  void XMI_PipeWorkQueue_config_noncontig(XMI_PipeWorkQueue_t *wq, char *buffer, XMI_dgsp_t *dgsp, size_t dgspcount, size_t dgspinit); 
+  void XMI_PipeWorkQueue_config_noncontig(XMI_PipeWorkQueue_t *wq, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit); 
 
   ///
   /// \brief Export
