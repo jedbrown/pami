@@ -97,6 +97,35 @@ extern "C"
    */
   xmi_result_t XMI_Type_destroy (xmi_type_t type);
 
+  /*
+   * \brief Pack data from a non-contiguous buffer to a contiguous buffer
+   *
+   * \param[in] src_type   source data type 
+   * \param[in] src_offset starting offset of source data type 
+   * \param[in] src_addr   starting address of source buffer
+   * \param[in] dst_addr   starting address of destination buffer
+   * \param[in] dst_size   destination buffer size
+   */
+  xmi_result_t XMI_Type_pack_data (xmi_type_t src_type, 
+                                   size_t     src_offset,
+                                   void     * src_addr, 
+                                   void     * dst_addr, 
+                                   size_t     dst_size);
+
+  /*
+   * \brief Unpack data from a contiguous buffer to a non-contiguous buffer
+   *
+   * \param[in] dst_type   destination data type 
+   * \param[in] dst_offset starting offset of destination data type 
+   * \param[in] dst_addr   starting address of destination buffer
+   * \param[in] src_addr   starting address of source buffer
+   * \param[in] src_size   source buffer size
+   */
+  xmi_result_t XMI_Type_unpack_data (xmi_type_t dst_type, 
+                                     size_t     dst_offset, 
+                                     void     * dst_addr, 
+                                     void     * src_addr, 
+                                     size_t     src_size);
   /** \} */ /* end of "datatype" group */
 
 #ifdef __cplusplus
