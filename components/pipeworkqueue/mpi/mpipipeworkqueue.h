@@ -2,13 +2,13 @@
 /// \file xmi/mpi/mpiPipeWorkQueue.h
 /// \brief XMI MPI specific PipeWorkQueue implementation.
 ///
-#ifndef   __xmi_mpi_mpiPipeWorkQueue_h__
-#define   __xmi_mpi_mpiPipeWorkQueue_h__
+#ifndef   __xmi_mpi_mpipipeworkqueue_h__
+#define   __xmi_mpi_mpipipeworkqueue_h__
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/PipeWorkQueue/PipeWorkQueue.h"
+#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 #define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue::MPI
 
