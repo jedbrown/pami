@@ -16,13 +16,14 @@
 #include "components/sysdep/SysDep.h"
 
 #include "components/mapping/bgp/BgpMapping.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 
 namespace XMI
 {
   namespace SysDep
   {
-    typedef Interface::SysDep<Mapping::BgpMapping> BgpSysDep;
+    typedef Interface::SysDep<Mapping::BgpMapping, Memory::SharedMemoryManager> BgpSysDep;
   };
 };
 #endif // __components_sysdep_bgp_bgpsysdep_h__

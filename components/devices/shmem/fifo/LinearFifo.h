@@ -34,8 +34,8 @@ namespace XMI
   {
     namespace Fifo
     {
-      template <class T_Atomic, class T_Packet>
-      class LinearFifo : public Fifo<LinearFifo <T_Atomic, T_Packet>, T_Packet >
+      template <class T_Atomic, class T_Packet, class T_FifoSize>
+      class LinearFifo : public Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet >
       {
         private:
           class LinearFifoPacket : public T_Packet
@@ -69,7 +69,7 @@ namespace XMI
 
         public:
           inline LinearFifo () :
-              Fifo<LinearFifo <T_Atomic, T_Packet>, T_Packet> (),
+              Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet> (),
               _packet (NULL),
               _head (0),
               _tail (),
@@ -82,17 +82,15 @@ namespace XMI
           ///
           /// \brief Initialize the linear fifo with a specific packet buffer.
           ///
-          /// \todo Is the buffer needed? Why not just define a buffer within this class?
-          ///
-          inline void init_impl (void * addr, size_t bytes)
+          inline void init_impl ()
           {
-            _npackets = bytes / sizeof(LinearFifoPacket);
+//            _npackets = bytes / sizeof(LinearFifoPacket);
 
 //            size_t size = sizeof(LinearFifoPacket) * T_FifoSize;
 
   //          TRACE_ERR((stderr, "(%zd) LinearFifo() .. before scratchpad_dynamic_area_memalign()\n", DCMF_Messager_rank()));
     //        void * tmp = sysdep.memoryManager.scratchpad_dynamic_area_memalign(16, size);
-            _packet = (LinearFifoPacket *) addr;
+ //           _packet = (LinearFifoPacket *) addr;
 
             _head = 0;
             _tail.init ();
@@ -100,7 +98,7 @@ namespace XMI
 
             unsigned i;
 
-            for (i = 0; i < _npackets; i++)
+            for (i = 0; i < T_FifoSize; i++)
               _packet[i].reset ();
           }
 
@@ -108,13 +106,13 @@ namespace XMI
           {
             size_t index = _tail.fetch_and_inc ();
             TRACE_ERR((stderr, "(%zd) LinearFifo::nextInjPacket_impl() .. _tail.fetch_and_inc() => %zd, T_FifoSize = %d, &_packet[0] = %p\n", DCMF_Messager_rank(), index, T_FifoSize, &_packet[0]));
-            if (index < _npackets)
+            if (index < T_FifoSize)
               {
                 // Set the packet sequence number at this time to avoid race
                 // condition where a second packet is reserved after this
                 // packet and then "produced" before this packet can be
                 // produced.
-                _packet[index].setSequenceId (index + _inj_wrap_count * _npackets);
+                _packet[index].setSequenceId (index + _inj_wrap_count * T_FifoSize);
                 return (T_Packet *) &_packet[index];
               }
 
@@ -130,7 +128,7 @@ namespace XMI
                 pkt = (T_Packet *) & _packet[_head];
                 _head++;
 
-                if (_head == _npackets) _head = 0;
+                if (_head == T_FifoSize) _head = 0;
               }
 
             return pkt;
@@ -145,7 +143,7 @@ namespace XMI
 
             // If this packet is the last packet in the fifo, reset the tail
             // to the start of the fifo.
-            if (p == &_packet[_npackets-1])
+            if (p == &_packet[T_FifoSize-1])
               {
                 _tail.fetch_and_clear ();
               }
@@ -161,10 +159,10 @@ namespace XMI
           inline size_t nextInjSequenceId_impl ()
           {
             size_t index = _tail.fetch ();
-            if (index < _npackets)
-              return index + _inj_wrap_count * _npackets;
+            if (index < T_FifoSize)
+              return index + _inj_wrap_count * T_FifoSize;
 
-            return (_inj_wrap_count + 1) * _npackets;
+            return (_inj_wrap_count + 1) * T_FifoSize;
           }
 
           inline size_t lastRecSequenceId_impl ()
@@ -179,13 +177,12 @@ namespace XMI
           }
 
         protected:
-          LinearFifoPacket * _packet;
-          size_t             _head;
-          T_Atomic           _tail;
+          LinearFifoPacket _packet[T_FifoSize];
+          size_t           _head;
+          T_Atomic         _tail;
 
-          size_t             _inj_wrap_count;
-          size_t             _last_rec_sequence;
-          size_t             _npackets;
+          size_t           _inj_wrap_count;
+          size_t           _last_rec_sequence;
       };
     };
   };

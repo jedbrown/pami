@@ -24,7 +24,7 @@ namespace XMI
       ///
       /// \param T_Mapping Platform-specific mapping class
       ///
-      template <class T_Mapping>
+      template <class T_Mapping, class T_Memory>
       class SysDep
       {
         public:
@@ -32,6 +32,7 @@ namespace XMI
           inline SysDep () {};
 
           T_Mapping & mapping;
+          T_Memory  & mm;
       }
     };
   };

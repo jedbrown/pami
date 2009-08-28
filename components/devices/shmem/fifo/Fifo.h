@@ -37,7 +37,7 @@ namespace XMI
           ///
           /// \brief Initialize the fifo
           ///
-          inline void init (XMI::SysDep & sysdep);
+          inline void init ();
 
           inline T_Packet * nextInjPacket ();
           inline T_Packet * nextRecPacket ();
@@ -51,9 +51,9 @@ namespace XMI
       };
 
       template <class T_Fifo, class T_Packet>
-      void Fifo<T_Fifo, T_Packet>::init (void * addr, size_t bytes)
+      void Fifo<T_Fifo, T_Packet>::init ()
       {
-        static_cast<T_Fifo*>(this)->init_impl (addr, bytes);
+        static_cast<T_Fifo*>(this)->init_impl ();
       }
 
       template <class T_Fifo, class T_Packet>

@@ -27,19 +27,18 @@ namespace XMI
 
       _global_task = __sysdep.mapping.task ();
       size_t global;
-      __sysdep.mapping.task2node (_global_task, global, _local_ask);
-      _fifo = (T_Fifo *) malloc (sizeof (T_Fifo) * _num_procs);
+      __sysdep.mapping.task2node (_global_task, global, _local_task);
 
-      for (i = 0; i < _num_procs; i++)
-        {
-          new (&_fifo[i]) T_Fifo ();
-          _fifo[i].init (addr, bytes);
+      // Allocate a shared memory segment for the fifos
+      size_t size = ((sizeof(T_Fifo) + 15) & 0xfff0) * _num_procs;
+      _fifo = (T_Fifo *) sysdep.mm.memalign (16, size);
 
-          if (_local_rank == i)
-            {
-              _rfifo = &_fifo[i];
-            }
-        }
+      // Initialize the fifo acting as the reception fifo for this local task
+      _rfifo = &_fifo[_local_rank];
+      new (_rfifo) T_Fifo ();
+      _rfifo->init ();
+
+      // barrier ?
 
       // Allocate memory for and construct the queue objects,
       // one for each local rank.

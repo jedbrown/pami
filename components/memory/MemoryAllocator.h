@@ -7,19 +7,20 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file util/MemoryAllocator.h
+/// \file components/memory/MemoryAllocator.h
 /// \brief Common templatized memory allocator class
 ///
 /// The class defined in this file uses C++ templates. C++ templates
 /// require all source code to be #include'd from a header file.
 ///
-#ifndef __xmi_util_memoryallocator_h__
-#define __xmi_util_memoryallocator_h__
+#ifndef __xmi_components_memory_memoryallocator_h__
+#define __xmi_components_memory_memoryallocator_h__
 
 #include "./atomic/noop/Noop.h"
 
 namespace XMI
 {
+  /// \todo Update to use a memory manager template parameter.
   template <unsigned T_ObjSize, unsigned T_ObjAlign, class T_Atomic = XMI::Atomic::Noop>
   class MemoryAllocator
   {
@@ -95,5 +96,5 @@ namespace XMI
   };
 };
 
-#endif // __xmi_util_memoryallocator_h__
+#endif // __xmi_components_memory_memoryallocator_h__
 
