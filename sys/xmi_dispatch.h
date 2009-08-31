@@ -53,4 +53,4 @@ extern "C"
 };
 #endif
 
-#endif // __xmi_dispatch_h__
+#endif /* __xmi_dispatch_h__ */

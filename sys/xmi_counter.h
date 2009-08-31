@@ -11,7 +11,7 @@ extern "C"
 #endif
 
 /* \brief XMI counter */
-    typedef struct { 
+    typedef struct {
         size_t opaque[2];
     } xmi_counter_t;
 
@@ -19,11 +19,11 @@ extern "C"
     xmi_result_t XMI_Counter_set(xmi_context_t context, xmi_counter_t *counter, size_t value);
 
     /* \brief Get counter value */
-    xmi_result_t  XMI_Counter_get(xmi_context_t context, xmi_counter_t *counter, size_t *value); 
+    xmi_result_t  XMI_Counter_get(xmi_context_t context, xmi_counter_t *counter, size_t *value);
     /* \brief Wait for the counter to reach/exceed the specified the value
        then the specified value is substracted from the counter and the new
        value is returned. CPU is released after poll_count expires. */
-    xmi_result_t XMI_Counter_wait(xmi_context_t context, xmi_counter_t *counter, 
+    xmi_result_t XMI_Counter_wait(xmi_context_t context, xmi_counter_t *counter,
                      size_t target_value, size_t *current_value, size_t poll_count);
 
     /* \brief Simple send command using counters for notifications */

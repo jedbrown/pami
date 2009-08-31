@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "xmi_config.h"
-//#include "xmi_impl.h"
+/* #include "xmi_impl.h" */
 
 #ifdef __cplusplus
 extern "C"
@@ -209,4 +209,4 @@ typedef XMIQuad XMI_Request_t[XMI_REQUEST_NQUADS];
 };
 #endif
 
-#endif // __xmi_types_h__
+#endif /* __xmi_types_h__ */

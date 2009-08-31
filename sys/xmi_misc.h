@@ -143,7 +143,7 @@ extern "C"
     /**
      * \brief Provides the detailed description of the most recent xmi result.
      *
-     * The "most recent xmi result" is specific to each thread. 
+     * The "most recent xmi result" is specific to each thread.
      *
      * \note  XMI implementations may provide translated (i18n) text.
      *
@@ -376,4 +376,4 @@ extern "C"
 };
 #endif
 
-#endif // __xmi_misc_h__
+#endif /* __xmi_misc_h__ */

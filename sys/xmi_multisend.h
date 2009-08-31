@@ -35,9 +35,11 @@
 #include "xmi_topology.h"
 #include "xmi_pipeworkqueue.h"
 
-// These are now defined in xmi_impl.h (via xmi_types.h), according to target needs
-// #define DEPRECATED_MULTICAST
-// #define DEPRECATED_MANYTOMANY
+/*
+ * These are now defined in xmi_impl.h (via xmi_types.h), according to target needs
+ * #define DEPRECATED_MULTICAST
+ * #define DEPRECATED_MANYTOMANY
+ */
 
 #ifdef __cplusplus
 extern "C"
@@ -163,7 +165,7 @@ extern "C"
   /**
    * \brief ???
    * \Warning Any changes to this enum must also be applied to
-   * Schedule::Subtask in interface/ccmi_internal.h 
+   * Schedule::Subtask in interface/ccmi_internal.h
    */
   typedef enum {
     DCMF_PT_TO_PT_SEND         =  0,	/* DEPRECATED */

@@ -63,7 +63,7 @@ extern "C"
    *
    * Source data to transfer is provided by the xmi client via a series of send
    * callbacks in which the xmi client will copy the source data directly into
-   * the available network resources. 
+   * the available network resources.
    *
    * The input parameters of the data callback will specify the output data
    * address and the maximum data size in bytes. As a convenience, the xmi
@@ -71,9 +71,9 @@ extern "C"
    * obtain the maximum direct data size outside of the callback mechanism.
    *
    * Typically, the \c DIRECT_SEND_LIMIT is associated with a network
-   * attribute, such as a packet size. 
+   * attribute, such as a packet size.
    *
-   * \see xmi_data_function 
+   * \see xmi_data_function
    *
    * \param[in] context    XMI communication context
    * \param[in] parameters Send direct parameter structure
@@ -102,9 +102,9 @@ extern "C"
    * \param[out] owner   Owner of the context lock, compatible to pthread_t
    */
   xmi_result_t XMI_Mutex_getowner (xmi_context_t context, unsigned long *owner);
-  
+
   /*
-     The following functions are modelled after pthread_cond_* functions.
+   * The following functions are modelled after pthread_cond_* functions.
    */
   /**
    * \brief Create a condition

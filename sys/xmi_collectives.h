@@ -75,8 +75,8 @@ extern "C"
      */
     xmi_result_t XMI_Geometry_world (xmi_context_t               context,
                                      xmi_geometry_t            * world_geometry);
-    
-    
+
+
     /**
      * \brief Analyze a protocol to ensure that it will run on the specified geometry
      *
@@ -90,7 +90,7 @@ extern "C"
                                          xmi_geometry_t             geometry,
                                          xmi_algorithm_t           *algorithm,
                                          int                       *num);
-    
+
     /**
      * \brief Free any memory allocated inside of a geometry.
      * \param[in] geometry The geometry object to free
