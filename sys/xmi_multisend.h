@@ -9,24 +9,25 @@
 /**
  * \file xmi_multisend.h
  * \brief Multisend interface.
- *    A multisend operation allows many message passing transactions
- * 	to be performed in the same call to amortize software
- *    overheads.  It has two flavors
- *    - multicast, which sends the same buffer to a list of
- *	  processors and also supports depost-bit torus line broadcasts
- *	- manytomany, which sends different offsets from the same
- *      buffer to a list of processors
  *
- *      As reductions have a single source buffer and destination
- *	  buffer, we have extended the multicast call to support
- *	  reductions.
+ * A multisend operation allows many message passing transactions to
+ * be performed in the same call to amortize software overheads.  It
+ * has two flavors
+ *
+ *   - multicast, which sends the same buffer to a list of processors
+ *     and also supports depost-bit torus line broadcasts
+ *
+ *   - manytomany, which sends different offsets from the same buffer
+ *     to a list of processors
+ *
+ * As reductions have a single source buffer and destination buffer,
+ * we have extended the multicast call to support reductions.
  *
  * Each multisend operation carries a connection id to identify the
  * data on the reciever.
  *
  * In a multisend operation the cores are typically involved at the
- * end-points. Moreover the processor lists can be created on the
- * fly.
+ * end-points. Moreover the processor lists can be created on the fly.
  */
 #ifndef __xmi_multisend_h__
 #define __xmi_multisend_h__
