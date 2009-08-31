@@ -489,7 +489,7 @@ public:
 		_sharedqueue->_u._s.producedBytes += bytes;
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.consumerWakeVec;
-		unlikely_if (v) {
+		unlikely_if ((long)v != 0) {
 			WAKEUP(v);
 		}
 	}
@@ -522,7 +522,7 @@ public:
 		_sharedqueue->_u._s.consumedBytes += bytes;
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
-		unlikely_if (v) {
+		unlikely_if ((long)v != 0) {
 			WAKEUP(v);
 		}
 	}
