@@ -45,12 +45,14 @@
 	((DCMF::SysDep *)_sysdep)->wakeupManager().wakeup(vector)
 
 #warning need to define vtop and map...
-#define vtop(v)	((uint64_t)v)
-#define map(p)	((void *)p)
+#define vtop(v)		((uint64_t)v)
+#define map(p)		((void *)p)
+#define unmap(p)	((void *)p)
 
 namespace XMI {
 
 class _PipeWorkQueueImpl {
+	friend class _ShadrWorkQueueImpl;
 ///
 /// \brief Work queue implementation of a fixed-size shared memory buffer.
 ///
@@ -241,15 +243,10 @@ public:
 	/// consumed by each consumer to zero.
 	///
 	inline void reset() {
-		if (_pmask == (unsigned)-1) {
-			// exported/imported flat
-			_qsize = 0;
-		} else {
-			_sharedqueue->_u._s.producedBytes = _isize;
-			_sharedqueue->_u._s.consumedBytes = 0;
-			_sharedqueue->_u._s.producerWakeVec = NULL;
-			_sharedqueue->_u._s.consumerWakeVec = NULL;
-		}
+		_sharedqueue->_u._s.producedBytes = _isize;
+		_sharedqueue->_u._s.consumedBytes = 0;
+		_sharedqueue->_u._s.producerWakeVec = NULL;
+		_sharedqueue->_u._s.consumerWakeVec = NULL;
 		mem_sync();
 	}
 
@@ -320,15 +317,8 @@ public:
 	/// \return   success of the import operation 
 	///
 	inline XMI_Result import(XMI_PipeWorkQueue_ext *import) {
-		export_t *i = (export_t *)import;
-		unlikely_if (i->pmask) {
-			return XMI_ERROR;
-		}
-		_pmask = (unsigned)-1; // signal local consumedBytes...
-		_buffer = (volatile char *)map(i->bufPaddr);
-		_sharedqueue = (workqueue_t *)map(i->hdrPaddr);
-		// need flag to prevent/localize produce/consume bytes...
-		return XMI_SUCCESS;
+		// import is not supported for this class
+		return XMI_ERROR;
 	}
 
 	/// \brief register a wakeup for the consumer side of the PipeWorkQueue
@@ -378,9 +368,6 @@ public:
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		likely_if (!_pmask) {
 			a = _qsize - p;
-		} else if (_pmask == (unsigned)-1) {
-			// exported/imported flat buffer
-			a = 0; // no producer allowed here...
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -422,9 +409,6 @@ public:
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		likely_if (!_pmask) {
 			a = p - c;
-		} else if (_pmask == (unsigned)-1) {
-			// exported/imported flat buffer
-			a = p - _qsize;
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -474,11 +458,7 @@ public:
 	/// \return	number of bytes consumed
 	///
 	inline size_t getBytesConsumed() {
-		unlikely_if(_pmask == (unsigned)-1) {
-			return _qsize;
-		} else {
-			return _sharedqueue->_u._s.consumedBytes;
-		}
+		return _sharedqueue->_u._s.consumedBytes;
 	}
 
 	/// \brief current position for producing into buffer
@@ -509,7 +489,7 @@ public:
 		_sharedqueue->_u._s.producedBytes += bytes;
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.consumerWakeVec;
-		if (v) {
+		unlikely_if (v) {
 			WAKEUP(v);
 		}
 	}
@@ -524,8 +504,6 @@ public:
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		likely_if (!_pmask) {
 			b = (char *)&_buffer[c];
-		} else if (_pmask == (unsigned)-1) {
-			b = (char *)&_buffer[_qsize];
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -541,15 +519,11 @@ public:
 	/// \return	number of bytes that were consumed
 	///
 	inline void consumeBytes(size_t bytes) {
-		unlikely_if (_pmask == (unsigned)-1) {
-			_pmask += bytes;
-		} else {
-			_sharedqueue->_u._s.consumedBytes += bytes;
-			// cast undoes "volatile"...
-			void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
-			if (v) {
-				WAKEUP(v);
-			}
+		_sharedqueue->_u._s.consumedBytes += bytes;
+		// cast undoes "volatile"...
+		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
+		unlikely_if (v) {
+			WAKEUP(v);
 		}
 	}
 
@@ -574,6 +548,221 @@ private:
 	workqueue_t *_sharedqueue;
 	workqueue_t __sq;
 }; // class _PipeWorkQueueImpl
+
+class _ShadrWorkQueueImpl {
+///
+/// \brief Work queue implementation for import-only remote shadr consumers
+///
+
+public:
+	_ShadrWorkQueueImpl() :
+	_buffer(NULL),
+	_sharedqueue(NULL) {
+	}
+
+	///
+	/// \brief Clone constructor.
+	///
+	/// Used to create a second local memory wrapper object of the same
+	/// shared memory resource.
+	///
+	/// \see WorkQueue(WorkQueue &)
+	///
+	/// \param[in] obj     Shared work queue object
+	///
+	_ShadrWorkQueueImpl(_ShadrWorkQueueImpl &obj) :
+	_sysdep(obj._sysdep),
+	_buffer(obj._buffer),
+	_sharedqueue(obj._sharedqueue) {
+		// need ref count so we know when to free...
+		reset();
+	}
+	///
+	/// \brief Virtual destructors make compilers happy.
+	///
+	inline void operator delete(void * p) { }
+	~_ShadrWorkQueueImpl() {
+		// need ref count so we know when to free...
+		unmap(_sharedqueue);
+		unmap(_buffer);
+	}
+
+	///
+	/// \brief Reset this shared memory work queue.
+	///
+	/// Sets the number of bytes produced and the number of bytes
+	/// consumed by each consumer to zero.
+	///
+	inline void reset() {
+		_consumed = 0;
+		mem_sync();
+	}
+
+	///
+	/// \brief Dump shared memory work queue statistics to stderr.
+	///
+	/// \param[in] prefix Optional character string to prefix.
+	///
+	inline void dump(const char *prefix = NULL) {
+		mem_sync();
+		size_t pbytes0 = _sharedqueue->_u._s.producedBytes;
+		size_t cbytes0 = _consumed;
+
+		if (prefix == NULL) {
+			prefix = "";
+		}
+
+		fprintf(stderr, "%s dump(%p) _sharedqueue = %p, "
+			"produced bytes = %zd (%zd), "
+			"consumed bytes = %zd (%zd)\n",
+			prefix, this, _sharedqueue,
+			pbytes0, bytesAvailableToProduce(),
+			cbytes0, bytesAvailableToConsume());
+	}
+
+	/// 
+	/// \brief Import
+	/// 
+	/// Takes the results of an export of a PipeWorkQueue on a different process and
+	/// constructs a new PipeWorkQueue which the local process may use to access the
+	/// data stream.
+	/// 
+	/// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
+	/// The producer has no knowledge of data consumed. There can be only one producer.
+	/// There may be multiple consumers, but the producer does not know about them.
+	/// 
+	/// TODO: can this work for circular buffers? does it need to, since those are
+	/// normally shared memory and thus already permit inter-process communication.
+	///
+	/// \param[in] import        Opaque memory into which an export was done.
+	/// \param[out] wq           Opaque memory for new PipeWorkQueue
+	/// \return   success of the import operation 
+	///
+	inline XMI_Result import(XMI_PipeWorkQueue_ext *import) {
+		_PipeWorkQueueImpl::export_t *i = (_PipeWorkQueueImpl::export_t *)import;
+		unlikely_if (i->pmask) {
+			// circular PWQ not support (yet?)
+			return XMI_ERROR;
+		}
+		_buffer = (volatile char *)map(i->bufPaddr);
+		_sharedqueue = (_PipeWorkQueueImpl::workqueue_t *)map(i->hdrPaddr);
+		// need flag to prevent/localize produce/consume bytes...
+		return XMI_SUCCESS;
+	}
+
+	///
+	/// \brief Return the maximum number of bytes that can be produced into this work queue.
+	///
+	/// Bytes must be produced into the memory location returned by bufferToProduce() and then
+	/// this work queue \b must be updated with produceBytes().
+	///
+	/// The number of bytes that may be produced is calculated by determining
+	/// the difference between the \b minimum number of bytes consumed by all
+	/// consumers and the number of bytes produced.
+	///
+	/// This must only be called with serious intent to produce! If this
+	/// routine returns non-zero, the caller MUST produceBytes() in a timely
+	/// manner. Never returns more than one packet.
+	///
+	/// \see bufferToProduce
+	/// \see produceBytes
+	///
+	/// \return Number of bytes that may be produced.
+	///
+	inline size_t bytesAvailableToProduce() {
+		size_t a = 0;
+		a = 0; // no producer allowed here...
+		return a;
+	}
+
+	///
+	/// \brief Return the maximum number of bytes that can be consumed from this work queue.
+	///
+	/// Consuming from work queues with multiple consumers must specify the consumer id.
+	///
+	/// Bytes must be consumed into the memory location returned by bufferToConsume() and then
+	/// this work queue \b must be updated with consumeBytes().
+	///
+	/// \see bufferToConsume
+	/// \see consumeBytes
+	///
+	/// \param[in] consumer Consumer id for work queues with multiple consumers
+	///
+	/// \return Number of bytes that may be consumed.
+	///
+	inline size_t bytesAvailableToConsume() {
+		size_t a = 0;
+		size_t p = _sharedqueue->_u._s.producedBytes;
+		a = p - _consumed;
+		return a;
+	}
+
+	/// \brief raw accessor for total number of bytes produced since reset()
+	///
+	/// \return	number of bytes produced
+	///
+	inline size_t getBytesProduced() {
+		return _sharedqueue->_u._s.producedBytes;
+	}
+
+	/// \brief raw accessor for total number of bytes consumed since reset()
+	///
+	/// \return	number of bytes consumed
+	///
+	inline size_t getBytesConsumed() {
+		return _consumed;
+	}
+
+	/// \brief current position for producing into buffer
+	///
+	/// \return	location in buffer to produce into
+	///
+	inline char *bufferToProduce() {
+		char *b;
+		b = NULL; // cannot produce bytes
+		return b;
+	}
+
+	/// \brief notify workqueue that bytes have been produced
+	///
+	/// \return	number of bytes that were produced
+	///
+	inline void produceBytes(size_t bytes) {
+		// cannot produce bytes
+	}
+
+	/// \brief current position for consuming from buffer
+	///
+	/// \return	location in buffer to consume from
+	///
+	inline char *bufferToConsume() {
+		char *b;
+		b = (char *)&_buffer[_consumed];
+		return b;
+	}
+
+	/// \brief notify workqueue that bytes have been consumed
+	///
+	/// \return	number of bytes that were consumed
+	///
+	inline void consumeBytes(size_t bytes) {
+		_consumed += bytes;
+	}
+
+	/// \brief is workqueue ready for action
+	///
+	/// \return	boolean indicate workqueue readiness
+	///
+	inline bool available() {
+		return (_sharedqueue != NULL);
+	}
+
+private:
+	void *_sysdep;	// possible pointer to system-dependencies (platform specifics)
+	size_t _consumed;
+	volatile char *_buffer;
+	_PipeWorkQueueImpl::workqueue_t *_sharedqueue;
+}; // class _ShadrWorkQueueImpl
 
 }; /* namespace XMI */
 
