@@ -43,7 +43,7 @@ extern "C"
    * \param[in] tl	optional, torus links flags
    */
   void XMI_Topology_create_rect(XMI_Topology_t *topo,
-  		xmi_coord_t *ll, xmi_coord_t *ur, unsigned char *tl);
+                  xmi_coord_t *ll, xmi_coord_t *ur, unsigned char *tl);
 
   /**
    * \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
@@ -186,7 +186,7 @@ extern "C"
    * \param[out] tl	optional, torus link flag
    */
   void XMI_Topology_getNthDims(XMI_Topology_t *topo, unsigned n,
-			unsigned *c0, unsigned *cn, unsigned char *tl);
+                        unsigned *c0, unsigned *cn, unsigned char *tl);
 
   /**
    * \brief is rank in topology

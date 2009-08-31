@@ -109,7 +109,7 @@ extern "C"
    * \return	success or failure
    */
   xmi_result_t XMI_Multisend_getRoles(XMI_Protocol_t *registration,
-					int *numRoles, int *replRole);
+                                        int *numRoles, int *replRole);
 
   /**
    * \brief Recv callback for Multicast
@@ -203,23 +203,23 @@ extern "C"
 /**************** obsolete, legacy enums ****************/
     DCMF_DEFAULT_MSEND_PROTOCOL=XMI_DEFAULT_MULTICAST_PROTOCOL,         /**< Default multicast. */ /* DEPRECATED */
     DCMF_MEMFIFO_DMA_MSEND_PROTOCOL, /* DEPRECATED */      /**< Memory fifo multicast,
-					     pipeline width should be
-					     a multiple of 240 bytes.*/
+                                             pipeline width should be
+                                             a multiple of 240 bytes.*/
     DCMF_GI_MSEND_PROTOCOL,  /* DEPRECATED */              /**< GI barrier */
     DCMF_TREE_MSEND_PROTOCOL,  /* DEPRECATED */            /**< Multicast/reduce on the
-					     collective network. The
-					     pipeline width should be
-					     a multiple of 256 bytes.
-					     A combined memfifo and
-					     tree protocol will need
-					     the pipeline width to be
-					     3840 bytes. */
+                                             collective network. The
+                                             pipeline width should be
+                                             a multiple of 256 bytes.
+                                             A combined memfifo and
+                                             tree protocol will need
+                                             the pipeline width to be
+                                             3840 bytes. */
     DCMF_DPUT_DMA_MSEND_PROTOCOL, /* DEPRECATED */	  /**< Direct put multicast,
-					     requires a receive to be
-					     posted on the
-					     connection. The pipeline
-					     width should be a
-					     multiple of 240 bytes. */
+                                             requires a receive to be
+                                             posted on the
+                                             connection. The pipeline
+                                             width should be a
+                                             multiple of 240 bytes. */
 /**************** all of the above are obsolete. ****************/
 #endif /* DEPRECATED_MULTICAST */
     XMI_GLOBAL_MULTICAST_PROTOCOL,
@@ -252,7 +252,7 @@ extern "C"
 
 
   xmi_result_t XMI_Multicast_register (XMI_Protocol_t                *registration,
-				   XMI_Multicast_Configuration_t *configuration);
+                                   XMI_Multicast_Configuration_t *configuration);
 
 #ifdef DEPRECATED_MULTICAST
 #warning Exposing Deprecated Multicast interfaces
@@ -272,8 +272,8 @@ extern "C"
     xmi_event_function     cb_done;         /**< Completion callback */
     DCMF_Consistency    consistency;     /**< Consistency model */ /* DEPRECATED */
     unsigned            connection_id;	 /**< A connection is a distinct stream of
-					      traffic. The connection id
-					      identifies the connection */
+                                              traffic. The connection id
+                                              identifies the connection */
     unsigned            bytes;		 /**< size of the message*/
     const char        * src;		 /**< source buffer */
     unsigned            nranks;		 /**< number of destinations
@@ -313,21 +313,21 @@ extern "C"
   typedef struct {
     XMI_Protocol_t *registration;  /**< Pointer to registration */
     XMI_Request_t  *request;       /**< Temporary storage for the
-					    multisend message */
+                                            multisend message */
     xmi_event_function  cb_done;       /**< Completion callback */
     unsigned       connection_id; /**< A connection is a
-					    distinct stream of
-					    traffic. The connection id
-					    identifies the
-					    connection */
+                                            distinct stream of
+                                            traffic. The connection id
+                                            identifies the
+                                            connection */
     unsigned       bytes;	       /**< size of the message*/
     char          *dst;	       /**< source buffer */
     unsigned            pwidth;        /**< pipelining parameter */
     XMI_Opcode_t       opcode;        /**< A hardare hint to do a
-					    specific operation. For
-					    example, send a point to
-					    point message or send a
-					    deposit bit broadcast along a line*/
+                                            specific operation. For
+                                            example, send a point to
+                                            point message or send a
+                                            deposit bit broadcast along a line*/
     xmi_op             op;	       /**< Operation for a reduce*/
     xmi_dt             dt;            /**< Data type for the reduce */
   } DCMF_OldMulticastRecv_t; /* DEPRECATED */
@@ -357,8 +357,8 @@ extern "C"
     size_t              req_size;	/**< space available in request, bytes */
     xmi_event_function       cb_done;	/**< Completion callback */
     unsigned            connection_id;	/**< A connection is a distinct stream of
-					     traffic. The connection id identifies the
-					     connection */
+                                             traffic. The connection id identifies the
+                                             connection */
     unsigned            roles;		/**< bitmap of roles to perform */
     size_t              bytes;		/**< size of the message*/
     XMI_PipeWorkQueue_t *src;		/**< source buffer */
@@ -366,8 +366,8 @@ extern "C"
     XMI_PipeWorkQueue_t *dst;		/**< dest buffer (ignored for one-sided) */
     XMI_Topology_t      *dst_participants; /**< destinations to multicast to*/
     const XMIQuad       *msginfo;	/**< A extra info field to be sent with the message.
-					     This might include information about
-					     the data being sent, for one-sided. */
+                                             This might include information about
+                                             the data being sent, for one-sided. */
     unsigned            msgcount;	/**< info count*/
   } XMI_Multicast_t;
 
@@ -496,11 +496,11 @@ extern "C"
    * \return	Request object opaque storage for message.
    */
   typedef XMI_Request_t *(*XMI_RecvManytomany)(void *arg,
-					     unsigned conn_id,
-					     XMIQuad *metadata,
-					     unsigned metacount,
-					     XMI_ManytomanyBuf_t **recv,
-					     size_t *myIndex,
+                                             unsigned conn_id,
+                                             XMIQuad *metadata,
+                                             unsigned metacount,
+                                             XMI_ManytomanyBuf_t **recv,
+                                             size_t *myIndex,
                                              xmi_event_function *cb_done);
 
   /**
@@ -544,8 +544,8 @@ extern "C"
                                          */
     XMI_ManytomanyBuf_t  send;		/**< send data parameters */
     const XMIQuad       *metadata;	/**< A extra info field to be sent with the message.
-					     This might include information about
-					     the data being sent, for one-sided. */
+                                             This might include information about
+                                             the data being sent, for one-sided. */
     unsigned            metacount;	/**< metadata count*/
   } XMI_Manytomany_t;
 
@@ -588,9 +588,9 @@ extern "C"
    * \return	XMI_Request opaque memory for message
    */
   typedef XMI_Request_t *(*XMI_RecvMultisync)(void *clientdata,
-					    XMIQuad *msginfo,
-					    unsigned msgcount,
-					    unsigned conn_id);
+                                            XMIQuad *msginfo,
+                                            unsigned msgcount,
+                                            unsigned conn_id);
 
   /**
    * \brief configuration interface for registering Multisync
