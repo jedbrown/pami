@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		=
+NOTBUILT        =
+@LIBNAME@-""-MAPPING_SOURCES=BgpMapping.cc
+DEVICENAME     = @LIBNAME@-""-MAPPING
+include @abs_top_builddir@/Build.rules

@@ -16,7 +16,7 @@
 #ifndef __xmi_components_memory_memorymanager_h__
 #define __xmi_components_memory_memorymanager_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {
@@ -41,7 +41,7 @@ namespace XMI
       };
 
       template <class T>
-      inline void * MemoryManager<T>::memalign(void ** memptr, size_t alignment, size_t bytes)
+      inline xmi_result_t MemoryManager<T>::memalign(void ** memptr, size_t alignment, size_t bytes)
       {
         return static_cast<T*>(this)->memalign_impl (memptr, alignment, bytes);
       }

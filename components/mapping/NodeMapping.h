@@ -13,7 +13,7 @@
 #ifndef __components_mapping_nodemapping_h__
 #define __components_mapping_nodemapping_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {
@@ -60,7 +60,7 @@ namespace XMI
           /// \param[out] task   Global task identifier
           ///
           inline xmi_result_t node2task (size_t global, size_t local, size_t & task) const;
-      }
+      };
 
       template <class T_Mapping>
       inline xmi_result_t Node<T_Mapping>::nodeSize (size_t global, size_t & size) const

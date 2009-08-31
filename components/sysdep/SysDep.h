@@ -13,7 +13,7 @@
 #ifndef __components_sysdep_sysdep_h__
 #define __components_sysdep_sysdep_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {
@@ -24,15 +24,18 @@ namespace XMI
       ///
       /// \param T_Mapping Platform-specific mapping class
       ///
-      template <class T_Mapping, class T_Memory>
+      template <class T_Memory, class T_Mapping>
       class SysDep
       {
         public:
 
-          inline SysDep () {};
+          inline SysDep ()
+          {
+            mapping.init (mm);
+          };
 
-          T_Mapping & mapping;
-          T_Memory  & mm;
+          T_Mapping mapping;
+          T_Memory  mm;
       }
     };
   };

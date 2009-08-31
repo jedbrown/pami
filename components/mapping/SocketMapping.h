@@ -13,7 +13,7 @@
 #ifndef __components_mapping_socketmapping_h__
 #define __components_mapping_socketmapping_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {
@@ -54,7 +54,7 @@ namespace XMI
           /// \param[out] task    Global task identifier
           ///
           inline xmi_result_t socket2task (size_t recv_fd, size_t send_fd, size_t & task) const;
-      }
+      };
 
       template <class T_Mapping>
       inline void Socket<T_Mapping>::socketAddr (size_t & recv_fd, size_t & send_fd) const

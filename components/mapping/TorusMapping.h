@@ -13,7 +13,7 @@
 #ifndef __components_mapping_torusmapping_h__
 #define __components_mapping_torusmapping_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {
@@ -24,11 +24,13 @@ namespace XMI
       ///
       /// \param T_Mapping Torus mapping template class
       ///
-      template <class T_Mapping>
+      template <class T_Mapping, unsigned T_Dimensions>
       class Torus
       {
+      
+      
         public:
-
+#if 0
           ///
           /// \brief Get the torus coordinate of a particular dimension for the local task
           ///
@@ -47,7 +49,11 @@ namespace XMI
           /// \return Torus coordinate for this task
           ///
           template <int T_Dimension>
-          inline size_t torusCoord () const;
+          inline size_t torusCoord () const
+          {
+            abort();
+            return;
+          };
 
           ///
           /// \brief Get the size of a torus dimension
@@ -67,13 +73,16 @@ namespace XMI
           ///
           template <int T_Dimension>
           inline size_t torusSize () const;
-
+#endif
           ///
           /// \brief Get the number of torus dimensions
           ///
           /// \return Torus dimensions
           ///
-          inline const size_t torusDims() const;
+          inline size_t torusDims() const
+          {
+            return T_Dimensions;
+          };
 
           ///
           /// \brief Get the torus address for the local task
@@ -106,8 +115,8 @@ namespace XMI
           ///
           /// \param[out] addr Array of torus coordinates
           ///
-          template <int T_Dimension>
-          inline void torusAddr (size_t (&addr)[T_Dimension]) const;
+//          inline void torusAddr (size_t (&addr)[T_Dimensions]) const;
+          inline void torusAddr (size_t (&addr)[T_Dimensions]) const;
 
           ///
           /// \brief Get the torus address for a specific task
@@ -137,8 +146,7 @@ namespace XMI
           /// \retval XMI_SUCCESS
           /// \retval XMI_INVAL   Invalid task used as an input
           ///
-          template <int T_Dimension>
-          inline xmi_result_t task2torus (size_t task, size_t (&addr)[T_Dimension]) const;
+          inline xmi_result_t task2torus (size_t task, size_t (&addr)[T_Dimensions]) const;
 
           ///
           /// \brief Get the global task for a specific torus address
@@ -173,10 +181,10 @@ namespace XMI
           /// \retval DCMF_SUCCESS
           /// \retval DCMF_INVAL   Invalid torus address used as an input
           ///
-          template <int T_Dimension>
-          inline xmi_result_t torus2task (size_t (&addr)[T_Dimension], size_t & task) const;
-
-        protected:
+//          template <int T_Dimension>
+          inline xmi_result_t torus2task (size_t (&addr)[T_Dimensions], size_t & task) const;
+#if 0
+        //protected:
           ///
           /// \brief Default torus coordintate template implementation.
           ///
@@ -236,50 +244,55 @@ namespace XMI
           ///
           template <int T_Dimension>
           inline xmi_result_t torus2task_impl (size_t (&addr)[T_Dimension], size_t & task) const;
-
-      }
-
-      template <class T_Mapping>
+#endif
+      };
+#if 0
+      template <class T_Mapping, unsigned T_Dimensions>
       template <int T_Dimension>
-      inline size_t Torus<T_Mapping>::torusCoord<T_Dimension> () const
+      inline size_t Torus<T_Mapping,T_Dimensions>::torusCoord<T_Dimension> () const
       {
-        return static_cast<T_Mapping*>(this)->torusCoord_impl<T_Dimension> ();
+        abort();
+        return 0;
+        //return static_cast<T_Mapping*>(this)->torusCoord_impl[T_Dimension];
       }
 
-      template <class T_Mapping>
+
+      template <class T_Mapping, unsigned T_Dimensions>
       template <int T_Dimension>
       inline size_t Torus<T_Mapping>::torusSize<T_Dimension> () const
       {
         return static_cast<T_Mapping*>(this)->torusSize_impl<T_Dimension> ();
       }
-
-      template <class T_Mapping>
-      inline size_t Torus<T_Mapping>::torusDims () const
+#endif
+#if 0
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline size_t Torus<T_Mapping,T_Dimensions>::torusDims () const
       {
-        return static_cast<T_Mapping*>(this)->torusDims_impl ();
+        return T_Dimensions;
+      }
+#endif
+      template <class T_Mapping, unsigned T_Dimensions>
+      //template <int T_Dimension>
+      //inline size_t Torus<T_Mapping,T_Dimensions>::torusAddr (size_t (&addr)[T_Dimensions]) const
+      inline void Torus<T_Mapping,T_Dimensions>::torusAddr (size_t (&addr)[T_Dimensions]) const
+      {
+        return static_cast<T_Mapping*>(this)->torusAddr_impl (addr);
       }
 
-      template <class T_Mapping>
-      template <int T_Dimension>
-      inline size_t Torus<T_Mapping>::torusAddr<T_Dimension> (size_t (&addr)[T_Dimension]) const
+      template <class T_Mapping, unsigned T_Dimensions>
+      //template <int T_Dimension>
+      inline xmi_result_t Torus<T_Mapping,T_Dimensions>::task2torus (size_t task, size_t (&addr)[T_Dimensions]) const
       {
-        return static_cast<T_Mapping*>(this)->torusAddr_impl<T_Dimension> (addr);
+        return static_cast<T_Mapping*>(this)->task2torus_impl (task, addr);
       }
 
-      template <class T_Mapping>
-      template <int T_Dimension>
-      inline xmi_result_t Torus<T_Mapping>::task2torus_impl<T_Dimension> (size_t task, size_t (&addr)[T_Dimension]) const
+      template <class T_Mapping, unsigned T_Dimensions>
+      //template <int T_Dimension>
+      inline xmi_result_t Torus<T_Mapping,T_Dimensions>::torus2task (size_t (&addr)[T_Dimensions], size_t & task) const
       {
-        return static_cast<T_Mapping*>(this)->task2torus_impl<T_Dimension> (task, addr);
+        return static_cast<T_Mapping*>(this)->torus2task_impl (addr, task);
       }
-
-      template <class T_Mapping>
-      template <int T_Dimension>
-      inline xmi_result_t Torus<T_Mapping>::torus2task_impl<T_Dimension> (size_t (&addr)[T_Dimension], size_t & task) const
-      {
-        return static_cast<T_Mapping*>(this)->torus2task_impl<T_Dimension> (addr, task);
-      }
-
+#if 0
       template <class T_Mapping>
       template <int T_Dimension>
       inline size_t Torus<T_Mapping>::torusCoord_impl<T_Dimension> () const
@@ -319,6 +332,7 @@ namespace XMI
         abort();
         return 0;
       }
+#endif
     };
   };
 };

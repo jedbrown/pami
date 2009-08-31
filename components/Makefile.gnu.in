@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= atomic  client  context  devices  geometry  mapping  memory  memregion  sysdep
+NOTBUILT        =
+#@LIBNAME@-""-COLLECTIVESGEOM_SOURCES=geometry.cc
+#DEVICENAME     = @LIBNAME@-""-COLLECTIVESGEOM
+include @abs_top_builddir@/Build.rules

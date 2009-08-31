@@ -16,23 +16,33 @@
 #ifndef __xmi_components_memory_shmem_sharedmemorymanager_h__
 #define __xmi_components_memory_shmem_sharedmemorymanager_h__
 
-#include "xmi.h"
+#include "components/memory/MemoryManager.h"
+
+#include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+//#include <spi/bgp_SPI.h>
+//#include <cnk/bgp_SysCall_Extensions.h>
 
 namespace XMI
 {
   namespace Memory
   {
     template <unsigned T_PageSize, char * T_ShmemFile = "/unique-xmi-shmem-file">
-    class SharedMemoryManager : public Interface::MemoryManager<SharedMemoryManager>
+    class SharedMemoryManager : public Interface::MemoryManager<SharedMemoryManager<T_PageSize, T_ShmemFile> >
     {
       public:
         inline SharedMemoryManager (size_t bytes = 1024*1024) :
-          Interface::MemoryManager<SharedMemoryManager> (xmi_result_t & result),
+          Interface::MemoryManager<SharedMemoryManager<T_PageSize, T_ShmemFile> > (),
           _location (NULL),
           _size (0),
           _offset (0)
         {
-          result = XMI_ERROR;
+          xmi_result_t result = XMI_ERROR;
 
           // Round up to the page size
           size_t size = (bytes + T_PageSize - 1) & ~(T_PageSize - 1);
