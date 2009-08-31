@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file xmi_datatypes.h
+ * \brief ???
+ */
+
 #ifndef __xmi_datatypes_h__
 #define __xmi_datatypes_h__
 

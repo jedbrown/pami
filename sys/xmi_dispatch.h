@@ -1,7 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file xmi_dispatch.h
  * \brief messaging interface
  */
+
 #ifndef __xmi_dispatch_h__
 #define __xmi_dispatch_h__
 
