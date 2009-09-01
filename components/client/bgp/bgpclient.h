@@ -91,11 +91,11 @@ namespace XMI
           return context;
         }
         
-        inline void destroyContext_impl (XMI::Context::BGP * context)
+        inline xmi_result_t destroyContext_impl (XMI::Context::BGP * context)
         {
           //_context_list->lock ();
           //_context_list->remove (context);
-          context->destroy ();
+          return context->destroy ();
           //_context_list->unlock ();
         }
         

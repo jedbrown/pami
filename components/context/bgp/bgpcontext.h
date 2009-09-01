@@ -56,8 +56,9 @@ namespace XMI
           return _client;
         }
 
-        inline void destroy_impl ()
+        inline xmi_result_t destroy_impl ()
         {
+          return XMI_UNIMPL;
         }
 
         inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
@@ -70,6 +71,7 @@ namespace XMI
           result = XMI_ERROR;
 
           size_t events = 0;
+          unsigned i;
           for (i=0; i<maximum && events==0; i++)
           {
             events += _shmem.advance();
@@ -95,6 +97,8 @@ namespace XMI
 
         inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
         {
+#warning implement this!
+#if 0
           assert (_dispatch[parameters->send.dispatch] != NULL);
 
           XMI::Protocol::Send::Simple * send =
@@ -107,7 +111,7 @@ namespace XMI
                        parameters->simple.bytes,
                        parameters->send.header.addr,
                        parameters->send.header.bytes);
-
+#endif
           return XMI_SUCCESS;
         }
 
@@ -126,7 +130,7 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
-        inline xmi_result_t put_typed (xmi_put_typed_t * parameters);
+        inline xmi_result_t put_typed (xmi_put_typed_t * parameters)
         {
           return XMI_UNIMPL;
         }
@@ -256,6 +260,8 @@ namespace XMI
                                            void                     * cookie,
                                            xmi_send_hint_t            options)
         {
+#warning implement this!
+#if 0
           if (_dispatch[id] != NULL) return XMI_ERROR;
 
           // Allocate memory for the protocol object.
@@ -268,6 +274,8 @@ namespace XMI
           new (_dispatch[id]) EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), result);
 
           return result;
+#endif
+          return XMI_UNIMPL;
         }
 
 
@@ -281,7 +289,7 @@ namespace XMI
         ShmemDevice _shmem;
 
         void * _dispatch[1024];
-        MemoryAllocator<sizeof(CM_Request_t),16> _request;
+        MemoryAllocator<1024,16> _request;
 
     }; // end XMI::Context::BGP
   }; // end namespace Context

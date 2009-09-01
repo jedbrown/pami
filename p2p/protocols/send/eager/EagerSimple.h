@@ -105,33 +105,33 @@ namespace XMI
                 return;
               }
 
-            _cb_null.function   = NULL;
-            _cb_null.clientdata = NULL;
+            //_cb_null.function   = NULL;
+            //_cb_null.clientdata = NULL;
 
             TRACE_ERR((stderr, "Eager() [0] status = %d\n", status));
-            success = _envelope_model.init (dispatch_envelope_direct, this,
-                                            dispatch_envelope_read, this);
+            status = _envelope_model.init (dispatch_envelope_direct, this,
+                                           dispatch_envelope_read, this);
             TRACE_ERR((stderr, "Eager() [1] success = %d\n", success));
 
-            if (success)
+            if (status == XMI_SUCCESS)
               {
-                success = _data_model.init (dispatch_data_direct, this,
+                status = _data_model.init (dispatch_data_direct, this,
                                             dispatch_data_read, this);
                 TRACE_ERR((stderr, "Eager() [2] success = %d\n", success));
 
-                if (success)
+                if (status == XMI_SUCCESS)
                   {
-                    success = _ack_model.init (dispatch_ack_direct, this,
+                    status = _ack_model.init (dispatch_ack_direct, this,
                                                dispatch_ack_read, this);
                     TRACE_ERR((stderr, "Eager() [3] success = %d\n", success));
 
-                    if (success) status = XMI_SUCCESS;
+                    //if (status == XMI_SUCCESS) status = XMI_SUCCESS;
 
-                    return;
+                    //return;
                   }
               }
 
-            status = XMI_ERROR;
+            //status = XMI_ERROR;
           }
 
           ///
@@ -148,7 +148,7 @@ namespace XMI
                                       void               * msginfo,
                                       size_t               mbytes)
           {
-            T_Message * msg = (T_Message *) request;
+            //T_Message * msg = (T_Message *) request;
 
             short_metadata_t metadata;
             metadata.fromRank = _fromRank;
@@ -161,7 +161,8 @@ namespace XMI
             state->cookie    = cookie;
 
             _envelope_model.postPacket (&(state->msg[0]),
-                                        _cb_null,
+                                        NULL,
+                                        NULL,
                                         peer,
                                         (void *) &metadata,
                                         sizeof (short_metadata_t),
@@ -169,7 +170,8 @@ namespace XMI
                                         mbytes);
 
             _data_model.postMessage (&(state->msg[1]),
-                                     _cb_null,
+                                     NULL,
+                                     NULL,
                                      peer,
                                      (void *) &metadata.fromRank,
                                      sizeof (size_t),
@@ -213,15 +215,15 @@ namespace XMI
           T_Model         _data_model;
           T_Model         _ack_model;
           T_Device      & _msgDevice;
-          DCMF::Mapping & _mapping;
+          //DCMF::Mapping & _mapping;
           size_t          _pktsize;
           size_t          _fromRank;
 
           size_t          _context; // Id .. not object
 
-          xmi_dispatch_callback_fn   _dispatch_fn,
-          void                     * _cookie,
-          CM_Callback_t   _cb_null;
+          xmi_dispatch_callback_fn   _dispatch_fn;
+          void                     * _cookie;
+          //CM_Callback_t   _cb_null;
 
 
           static int dispatch_ack_direct (void         * metadata,
@@ -231,16 +233,16 @@ namespace XMI
           {
             send_state_t * state = (send_state_t *) metadata;
 
-            xmi_event_function * local_fn  = state->local_fn;
-            xmi_event_function * remote_fn = state->remote_fn;
-            void               * cookie    = state->cookie;
+            xmi_event_function local_fn  = state->local_fn;
+            xmi_event_function remote_fn = state->remote_fn;
+            void               * cookie  = state->cookie;
 
-            Eager<T_Model, T_Device, T_Message> * eager =
-              (Eager<T_Model, T_Device, T_Message> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_Message> * eager =
+              (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
             eager->freeSendState (state);
 
+#warning callbacks must provide the context
             if (local_fn)  local_fn  (0, cookie, XMI_SUCCESS);
-
             if (remote_fn) remote_fn (0, cookie, XMI_SUCCESS);
 
             freeSendState (state);
@@ -302,13 +304,13 @@ namespace XMI
 
             //TRACE_ERR ((stderr, "(%zd) dispatch_envelope_direct(), m->quads = %d, m->fromRank = %zd, m->bytes = %zd\n", DCMF_Messager_rank(), m->quads, m->fromRank, m->bytes)); fflush(stderr);
 
-            Eager<T_Model, T_Device, T_Message> * eager =
-              (Eager<T_Model, T_Device, T_Message> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_Message> * eager =
+              (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
             // This packet device provides the data buffer(s) for the message.
             // The dispatch function must provide the (CMQuad) aligned pointer(s)
             // to the registered user callback.
-            DCMF_assert_debug(eager->getDevice()->getConnection (channel, m->fromRank) == NULL);
+            assert(eager->getDevice()->getConnection (m->fromRank) == NULL);
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
@@ -327,7 +329,7 @@ namespace XMI
 
             assert(state->recv.kind == XMI_AM_KIND_SIMPLE);
 
-            pf->getDevice()->setConnection (channel, m->fromRank, (void *)state);
+            eager->getDevice()->setConnection (m->fromRank, (void *)state);
 
             return 0;
           };
@@ -356,8 +358,8 @@ namespace XMI
                                              size_t   bytes,
                                              void   * recv_func_parm)
           {
-            Eager<T_Model, T_Device, T_Message> * eager =
-              (Eager<T_Model, T_Device, T_Message> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_Message> * eager =
+              (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
             size_t fromRank = *((size_t *)metadata);
 //fprintf (stderr, "dispatch_data_direct(), fromRank = %zd, bytes = %zd\n", fromRank, bytes);
@@ -366,8 +368,8 @@ namespace XMI
             // The dispatch function must provide the (CMQuad) aligned pointer(s)
             // to the registered user callback.
 
-            recv_state_t * state = (recv_state_t *) pf->getDevice()->getConnection (channel, fromRank);
-            DCMF_assert_debug(state != NULL);
+            recv_state_t * state = (recv_state_t *) eager->getDevice()->getConnection (fromRank);
+            assert(state != NULL);
 
             size_t nbyte = state->received;
             size_t nleft = state->recv.data.simple.bytes - nbyte;
@@ -387,18 +389,16 @@ namespace XMI
             if ((nbyte + ncopy) == state->sndlen)
               {
 //fprintf (stderr, "dispatch_data_direct(), setConnection = NULL\n");
-                eager->getDevice()->setConnection (channel, fromRank, NULL);
+                eager->getDevice()->setConnection (fromRank, NULL);
 
 
 //fprintf (stderr, "dispatch_data_direct(),  after setConnection\n");
                 if (state->recv.local_fn) state->recv.local_fn (0, state->recv.cookie, XMI_SUCCESS);
 
                 // Send the acknowledgement.
-                CM_Callback_t cb;
-                cb.function = receive_complete;
-                cb.clientdata = (void *) state;
-                _ack_model.postPacket (&(state->msg),
-                                       cb_done,
+                eager->_ack_model.postPacket (&(state->msg),
+                                       receive_complete,
+                                       (void *) state,
                                        fromRank,
                                        (void *) &(state->origin_object),
                                        sizeof (void *),
@@ -514,8 +514,8 @@ namespace XMI
                                         xmi_result_t    result)
           {
             recv_state_t * state = (recv_state_t *) cookie;
-            Eager<T_Model, T_Device, T_Message> * eager =
-              (Eager<T_Model, T_Device, T_Message> *) state->factory;
+            EagerSimple<T_Model, T_Device, T_Message> * eager =
+              (EagerSimple<T_Model, T_Device, T_Message> *) state->factory;
 
             eager->freeRecvState (state);
 

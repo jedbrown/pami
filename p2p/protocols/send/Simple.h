@@ -34,6 +34,14 @@ namespace XMI
           inline Simple () {};
 
           ///
+          /// \brief Base class destructor.
+          ///
+          /// \note Any class with virtual functions must define a virtual
+          ///       destructor.
+          ///
+          virtual ~Simple () {};
+
+          ///
           /// \brief Start a new simple send message.
           ///
           /// \param[in]  local_fn  Callback to invoke on local node when

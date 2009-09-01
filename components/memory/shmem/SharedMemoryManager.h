@@ -32,21 +32,23 @@ namespace XMI
 {
   namespace Memory
   {
-    template <unsigned T_PageSize>
-    class SharedMemoryManager : public Interface::MemoryManager<SharedMemoryManager<T_PageSize> >
+    //template <unsigned T_PageSize = 4096>
+    class SharedMemoryManager : public Interface::MemoryManager<SharedMemoryManager>
     {
       public:
-        inline SharedMemoryManager (char   * shmemfile = "/unique-xmi-shmem-file",
-                                    size_t   bytes     = 1024*1024) :
-          Interface::MemoryManager<SharedMemoryManager<T_PageSize> > (),
+        inline SharedMemoryManager () :
+          Interface::MemoryManager<SharedMemoryManager> (),
           _location (NULL),
           _size (0),
           _offset (0)
         {
+        char   * shmemfile = "/unique-xmi-shmem-file";
+                                    size_t   bytes     = 1024*1024;
           xmi_result_t result = XMI_ERROR;
 
           // Round up to the page size
-          size_t size = (bytes + T_PageSize - 1) & ~(T_PageSize - 1);
+//          size_t size = (bytes + T_PageSize - 1) & ~(T_PageSize - 1);
+          size_t size = (bytes + 4096 - 1) & ~(4096 - 1);
           
           int fd, rc;
           size_t n;

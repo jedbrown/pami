@@ -1,5 +1,5 @@
 
-
+#if 0
 #include "BgpMapping.h"
 
 
@@ -355,5 +355,7 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
 
   return XMI_SUCCESS;
 };
+
+#endif
 
 
