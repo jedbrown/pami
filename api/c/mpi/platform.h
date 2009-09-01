@@ -3,3 +3,4 @@
 #include "components/geometry/common/commongeometry.h"
 #include "components/topology/mpi/mpitopology.h"
 #include "components/devices/mpi/mpimulticastmodel.h"
+#include "components/devices/mpi/mpimulticombinemodel.h"
