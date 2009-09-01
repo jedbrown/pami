@@ -30,7 +30,7 @@ namespace XMI
           return _client;
         }
 
-        inline void destroy_impl ()
+        inline xmi_client_t destroy_impl ()
         {
         }
 

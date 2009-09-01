@@ -22,7 +22,7 @@ namespace XMI
 
         inline xmi_client_t getClientId ();
 
-        inline void destroy ();
+        inline xmi_client_t destroy ();
 
         inline xmi_result_t post (xmi_event_function work_fn, void * cookie);
 
@@ -114,7 +114,7 @@ namespace XMI
     }
 
     template <class T_Context>
-    void Context<T_Context>::destroy ()
+    xmi_client_t Context<T_Context>::destroy ()
     {
       static_cast<T_Context*>(this)->destroy_impl();
     }
