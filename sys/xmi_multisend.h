@@ -105,7 +105,10 @@ extern "C"
      *				or -1 if no additional roles are used.
      * \return	success or failure
      */
-    xmi_result_t XMI_Multisend_getroles(xmi_dispatch_t dispatch, int *numRoles, int *replRole);
+    xmi_result_t XMI_Multisend_getroles(xmi_context_t  context,
+                                        xmi_dispatch_t dispatch,
+                                        int *numRoles,
+                                        int *replRole);
 
     /**
      * \brief Recv callback for Multicast
@@ -159,7 +162,7 @@ extern "C"
                                                   the data being sent, for one-sided. */
         unsigned            msgcount;          /**< info count*/
     } xmi_multicast_t;
-    int XMI_Multicast(xmi_multicast_t *mcastinfo);
+    int XMI_Multicast(xmi_context_t context,xmi_multicast_t *mcastinfo);
 
     /**
      * \brief Sub-structure used to represent a vectored buffer for many-to-many.
@@ -241,7 +244,7 @@ extern "C"
      * \param[in] m2minfo	Paramters for ManyToMany operation to be performed
      * \return	XMI_SUCCESS or error code
      */
-    xmi_result_t XMI_Manytomany(xmi_manytomany_t *m2minfo);
+    xmi_result_t XMI_Manytomany(xmi_context_t context,xmi_manytomany_t *m2minfo);
 
     /******************************************************************************
      *       Multisync Personalized synchronization/coordination
@@ -284,7 +287,7 @@ extern "C"
      * \param[in] msyncinfo	Struct of all params needed to perform operation
      * \return	XMI_SUCCESS or error codes
      */
-    xmi_result_t XMI_Multisync(xmi_multisync_t *msyncinfo);
+    xmi_result_t XMI_Multisync(xmi_context_t context,xmi_multisync_t *msyncinfo);
 
 
     /******************************************************************************
@@ -330,7 +333,7 @@ extern "C"
      * \param[in] mcombineinfo	Struct of all params needed to perform operation
      * \return	XMI_SUCCESS or error codes
      */
-    xmi_result_t XMI_Multicombine(xmi_multicombine_t *mcombineinfo);
+    xmi_result_t XMI_Multicombine(xmi_context_t context,xmi_multicombine_t *mcombineinfo);
 
 #ifdef __cplusplus
 };
