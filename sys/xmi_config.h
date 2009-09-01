@@ -21,16 +21,14 @@
 #ifdef PLATFORM_DUMMY
 #define XMI_PROTOCOL_NQUADS	48
 #define XMI_REQUEST_NQUADS	32
-typedef struct XMIQuad
+typedef struct xmi_quad_t
 {
     unsigned w0; /**< Word[0] */
     unsigned w1; /**< Word[1] */
     unsigned w2; /**< Word[2] */
     unsigned w3; /**< Word[3] */
 }
-XMIQuad __attribute__ ((__aligned__ (16)));
-typedef XMIQuad XMI_CollectiveProtocol_t [32*2];   /**< Opaque datatype for collective protocols */
-typedef XMIQuad XMI_CollectiveRequest_t  [32*8*4]; /**< Opaque datatype for collective requests */
+xmi_quad_t __attribute__ ((__aligned__ (16)));
 #endif
 
 #ifdef PLATFORM_SOCKETS

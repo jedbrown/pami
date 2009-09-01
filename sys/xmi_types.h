@@ -48,17 +48,6 @@ extern "C"
                                        void          * cookie,
                                        xmi_result_t    result );
 
-
-
-  /**
-   * \brief Core Messaging Error callback results
-   */
-  typedef struct xmi_error_t
-  {
-    xmi_result_t result;
-  }
-  xmi_error_t;
-
   /**
    * \brief Message layer operation types
    */
@@ -170,40 +159,7 @@ extern "C"
     };
   } xmi_coord_t;
 
-  /* ********************************************************************* */
-  /*                                                                       */
-  /*               Data structures                                         */
-  /*                                                                       */
-  /* ********************************************************************* */
 
-  /**
-   * \brief Function signature of the completion callback function.
-   *
-   * \param[in] clientdata  Registered client data.
-   * \param[in] error       Error result of the error event.
-   */
-
-  typedef void (*XMI_Callback) (void         * clientdata,
-                                xmi_error_t  * error);
-
-  /**
-   * \brief Completion callback information descriptor.
-   *
-   * Commonly used to signal completion of a particular operation to the
-   * world outside the messaging library. These callbacks are invoked
-   * during a call to Messager advance()
-   */
-
-  typedef struct XMI_Callback_t
-  {
-    XMI_Callback   function;    /**< Function to invoke */
-    void          * clientdata;  /**< Argument to function */
-  }
-  XMI_Callback_t;
-
-typedef XMIQuad XMI_Protocol_t[XMI_PROTOCOL_NQUADS];
-
-typedef XMIQuad XMI_Request_t[XMI_REQUEST_NQUADS];
 
 #ifdef __cplusplus
 };

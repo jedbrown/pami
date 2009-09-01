@@ -17,6 +17,7 @@
 #include "xmi_types.h"
 #include "xmi_p2p.h"
 #include "xmi_collectives.h"
+#include "xmi_multisend.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -28,6 +29,9 @@ extern "C"
         xmi_dispatch_ambroadcast_fn ambroadcast;
         xmi_dispatch_amscatter_fn   amscatter;
         xmi_dispatch_amreduce_fn    amreduce;
+        xmi_dispatch_multicast_fn   multicast;
+        xmi_dispatch_manytomany_fn  manytomany;
+        xmi_dispatch_multisync_fn   multisync;
     }xmi_dispatch_callback_fn;
 
     /*****************************************************************************/

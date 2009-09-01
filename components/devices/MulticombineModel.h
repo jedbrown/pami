@@ -40,24 +40,16 @@ namespace XMI
                 /// \param[in] device                Multicombine device reference
                 MulticombineModel (T_Device & device) {};
                 ~MulticombineModel () {};
-                inline void setRequestBuffer(XMI_Request_t *request, size_t req_size);
                 inline void setConnectionId (unsigned conn);
                 inline void setRoles (unsigned roles);
-                inline void setData (XMI_PipeWorkQueue_t *data, size_t count);
-                inline void setDataRanks (XMI_Topology_t *data_participants);
-                inline void setResults (XMI_PipeWorkQueue_t *results, size_t count);
-                inline void setResultsRanks (XMI_Topology_t *results_participants);
+                inline void setData (xmi_pipeworkqueue_t *data, size_t count);
+                inline void setDataRanks (xmi_topology_t *data_participants);
+                inline void setResults (xmi_pipeworkqueue_t *results, size_t count);
+                inline void setResultsRanks (xmi_topology_t *results_participants);
                 inline void setReduceInfo (xmi_op op,  xmi_dt dt);
-                inline void setCallback (void (*fn) (void *, xmi_error_t *),  void *cd);
+                inline void setCallback (void (*fn) (void *, xmi_result_t *),  void *cd);
                 inline bool postMulticombine (T_Object * obj);
             };
-            template <class T_Model, class T_Device, class T_Object>
-            void MulticombineModel<T_Model, T_Device, T_Object>::setRequestBuffer (XMI_Request_t *request,
-                                                                                   size_t req_size)
-            {
-                static_cast<T_Model*>(this)->setRequestBuffer_impl(request, req_size);
-            }
-        
             template <class T_Model, class T_Device, class T_Object>
             void MulticombineModel<T_Model, T_Device, T_Object>::setConnectionId (unsigned conn)
             {
@@ -71,27 +63,27 @@ namespace XMI
             }
         
             template <class T_Model, class T_Device, class T_Object>
-            void MulticombineModel<T_Model, T_Device, T_Object>::setData (XMI_PipeWorkQueue_t *src,
+            void MulticombineModel<T_Model, T_Device, T_Object>::setData (xmi_pipeworkqueue_t *src,
                                                                           size_t count)
             {
                 static_cast<T_Model*>(this)->setData_impl(src, count);
             }
 
             template <class T_Model, class T_Device, class T_Object>
-            void MulticombineModel<T_Model, T_Device, T_Object>::setDataRanks (XMI_Topology_t *src_participants)
+            void MulticombineModel<T_Model, T_Device, T_Object>::setDataRanks (xmi_topology_t *src_participants)
             {
                 static_cast<T_Model*>(this)->setDataRanks_impl(src_participants);
             }
 
             template <class T_Model, class T_Device, class T_Object>
-            void MulticombineModel<T_Model, T_Device, T_Object>::setResults (XMI_PipeWorkQueue_t *results,
+            void MulticombineModel<T_Model, T_Device, T_Object>::setResults (xmi_pipeworkqueue_t *results,
                                                                              size_t count)
             {
                 static_cast<T_Model*>(this)->setResults_impl(results,count);
             }
         
             template <class T_Model, class T_Device, class T_Object>        
-            void MulticombineModel<T_Model, T_Device, T_Object>::setResultsRanks (XMI_Topology_t *results_participants)
+            void MulticombineModel<T_Model, T_Device, T_Object>::setResultsRanks (xmi_topology_t *results_participants)
             {
                 static_cast<T_Model*>(this)->setResultsRanks_impl(results_participants);
             }

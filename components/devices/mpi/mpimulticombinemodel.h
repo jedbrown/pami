@@ -17,31 +17,28 @@ namespace XMI
                 Interface::MessageModel < MPIMulticombineModel<T_Device, T_Message>, T_Device, T_Message > (device)
                 {};
 
-            inline void setRequestBuffer(XMI_Request_t *request, size_t req_size)
+            inline void setConnectionId_impl (unsigned conn)
                 {
                 }
-            inline void setConnectionId (unsigned conn)
+            inline void setRoles_impl (unsigned roles)
                 {
                 }
-            inline void setRoles (unsigned roles)
+            inline void setData_impl (xmi_pipeworkqueue_t *data, size_t count)
                 {
                 }
-            inline void setData (XMI_PipeWorkQueue_t *data, size_t count)
+            inline void setDataRanks_impl (xmi_topology_t *data_participants)
                 {
                 }
-            inline void setDataRanks (XMI_Topology_t *data_participants)
+            inline void setResults_impl (xmi_pipeworkqueue_t *results, size_t count)
                 {
                 }
-            inline void setResults (XMI_PipeWorkQueue_t *results, size_t count)
+            inline void setResultsRanks_impl (xmi_topology_t *results_participants)
                 {
                 }
-            inline void setResultsRanks (XMI_Topology_t *results_participants)
+            inline void setReduceInfo_impl (xmi_op op,  xmi_dt dt)
                 {
                 }
-            inline void setReduceInfo (xmi_op op,  xmi_dt dt)
-                {
-                }
-            inline void setCallback (void (*fn) (void *, xmi_error_t *),  void *cd)
+            inline void setCallback_impl (void (*fn) (void *, xmi_result_t *),  void *cd)
                 {
                 }
         };

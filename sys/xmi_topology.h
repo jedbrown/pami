@@ -23,14 +23,14 @@ extern "C"
     XMI_TOPOLOGY_COUNT
   } XMI_TopologyType_t;
 
-  typedef XMIQuad XMI_Topology_t[2];
+  typedef xmi_quad_t xmi_topology_t[2];
 
   /**
    * \brief default constructor (XMI_EMPTY_TOPOLOGY)
    *
    * \param[out] topo	Opaque memory for topology
    */
-  void XMI_Topology_create(XMI_Topology_t *topo);
+  void XMI_Topology_create(xmi_topology_t *topo);
 
   /**
    * \brief rectangular segment with torus (XMI_COORD_TOPOLOGY)
@@ -42,7 +42,7 @@ extern "C"
    * \param[in] ur	upper-right coordinate
    * \param[in] tl	optional, torus links flags
    */
-  void XMI_Topology_create_rect(XMI_Topology_t *topo,
+  void XMI_Topology_create_rect(xmi_topology_t *topo,
                   xmi_coord_t *ll, xmi_coord_t *ur, unsigned char *tl);
 
   /**
@@ -51,7 +51,7 @@ extern "C"
    * \param[out] topo	Opaque memory for topology
    * \param[in] rank	The rank
    */
-  void XMI_Topology_create_rank(XMI_Topology_t *topo, size_t rank);
+  void XMI_Topology_create_rank(xmi_topology_t *topo, size_t rank);
 
   /**
    * \brief rank range constructor (XMI_RANGE_TOPOLOGY)
@@ -60,7 +60,7 @@ extern "C"
    * \param[in] rank0	first rank in range
    * \param[in] rankn	last rank in range
    */
-  void XMI_Topology_create_range(XMI_Topology_t *topo, size_t rank0, size_t rankn);
+  void XMI_Topology_create_range(xmi_topology_t *topo, size_t rank0, size_t rankn);
 
   /**
    * \brief rank list constructor (XMI_LIST_TOPOLOGY)
@@ -73,7 +73,7 @@ extern "C"
    *
    * \todo create destructor to free list, or establish rules
    */
-  void XMI_Topology_create_list(XMI_Topology_t *topo, size_t *ranks, size_t nranks);
+  void XMI_Topology_create_list(xmi_topology_t *topo, size_t *ranks, size_t nranks);
 
   /**
    * \brief destructor
@@ -82,7 +82,7 @@ extern "C"
    *
    * \param[out] topo	Opaque memory for topology
    */
-  void XMI_Topology_destroy(XMI_Topology_t *topo);
+  void XMI_Topology_destroy(xmi_topology_t *topo);
 
   /**
    * \brief accessor for size of a Topology object
@@ -90,21 +90,21 @@ extern "C"
    * \param[in] topo	Opaque memory for topology
    * \return	size of XMI::Topology
    */
-  unsigned XMI_Topology_size_of(XMI_Topology_t *topo);
+  unsigned XMI_Topology_size_of(xmi_topology_t *topo);
 
   /**
    * \brief number of ranks in topology
    * \param[in] topo	Opaque memory for topology
    * \return	number of ranks
    */
-  size_t XMI_Topology_size(XMI_Topology_t *topo);
+  size_t XMI_Topology_size(xmi_topology_t *topo);
 
   /**
    * \brief type of topology
    * \param[out] topo	Opaque memory for topology
    * \return	topology type
    */
-  XMI_TopologyType_t XMI_Topology_type(XMI_Topology_t *topo);
+  XMI_TopologyType_t xmi_topology_type(xmi_topology_t *topo);
 
   /**
    * \brief Nth rank in topology
@@ -113,7 +113,7 @@ extern "C"
    * \param[in] ix	Which rank to select
    * \return	Nth rank or (size_t)-1 if does not exist
    */
-  size_t XMI_Topology_index2Rank(XMI_Topology_t *topo, size_t ix);
+  size_t XMI_Topology_index2Rank(xmi_topology_t *topo, size_t ix);
 
   /**
    * \brief determine index of rank in topology
@@ -124,7 +124,7 @@ extern "C"
    * \param[in] rank	Which rank to get index for
    * \return	index of rank (rank(ix) == rank) or (size_t)-1
    */
-  size_t XMI_Topology_rank2Index(XMI_Topology_t *topo, size_t rank);
+  size_t XMI_Topology_rank2Index(xmi_topology_t *topo, size_t rank);
 
   /**
    * \brief return range
@@ -134,7 +134,7 @@ extern "C"
    * \param[out] last	Where to put last rank in range
    * \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
    */
-  xmi_result_t XMI_Topology_rankRange(XMI_Topology_t *topo, size_t *first, size_t *last);
+  xmi_result_t XMI_Topology_rankRange(xmi_topology_t *topo, size_t *first, size_t *last);
 
   /**
    * \brief return rank list
@@ -143,7 +143,7 @@ extern "C"
    * \param[out] list	pointer to list stored here
    * \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
    */
-  xmi_result_t XMI_Topology_rankList(XMI_Topology_t *topo, size_t **list);
+  xmi_result_t XMI_Topology_rankList(xmi_topology_t *topo, size_t **list);
 
   /**
    * \brief return rectangular segment coordinates
@@ -157,7 +157,7 @@ extern "C"
    * \param[out] tl	optional, torus links flags
    * \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
    */
-  xmi_result_t XMI_Topology_rectSeg(XMI_Topology_t *topo,
+  xmi_result_t XMI_Topology_rectSeg(xmi_topology_t *topo,
                                     xmi_coord_t *ll, xmi_coord_t *ur,
                                     unsigned char *tl);
 
@@ -167,14 +167,14 @@ extern "C"
    * \param[in] topo	Opaque memory for topology
    * \return boolean indicating locality of ranks
    */
-  int XMI_Topology_isLocalToMe(XMI_Topology_t *topo);
+  int XMI_Topology_isLocalToMe(xmi_topology_t *topo);
 
   /**
    * \brief is topology a rectangular segment
    * \param[in] topo	Opaque memory for topology
    * \return	boolean indicating rect seg topo
    */
-  int XMI_Topology_isRectSeg(XMI_Topology_t *topo);
+  int XMI_Topology_isRectSeg(xmi_topology_t *topo);
 
   /**
    * \brief extract Nth dimensions from coord topology
@@ -185,7 +185,7 @@ extern "C"
    * \param[out] cn	upper value for dim range
    * \param[out] tl	optional, torus link flag
    */
-  void XMI_Topology_getNthDims(XMI_Topology_t *topo, unsigned n,
+  void XMI_Topology_getNthDims(xmi_topology_t *topo, unsigned n,
                         unsigned *c0, unsigned *cn, unsigned char *tl);
 
   /**
@@ -195,7 +195,7 @@ extern "C"
    * \param[in] rank	Rank to test
    * \return	boolean indicating rank is in topology
    */
-  int XMI_Topology_isRankMember(XMI_Topology_t *topo, size_t rank);
+  int XMI_Topology_isRankMember(xmi_topology_t *topo, size_t rank);
 
   /**
    * \brief is coordinate in topology
@@ -204,7 +204,7 @@ extern "C"
    * \param[in] c0	Coord to test
    * \return	boolean indicating coord is a member of topology
    */
-  int XMI_Topology_isCoordMember(XMI_Topology_t *topo, xmi_coord_t *c0);
+  int XMI_Topology_isCoordMember(xmi_topology_t *topo, xmi_coord_t *c0);
 
   /**
    * \brief create topology of ranks local to self
@@ -212,7 +212,7 @@ extern "C"
    * \param[out] _new	Where to build topology
    * \param[in] topo	Opaque memory for topology
    */
-  void XMI_Topology_sub_LocalToMe(XMI_Topology_t *_new, XMI_Topology_t *topo);
+  void XMI_Topology_sub_LocalToMe(xmi_topology_t *_new, xmi_topology_t *topo);
 
   /**
    * \brief create topology from all Nth ranks globally
@@ -221,7 +221,7 @@ extern "C"
    * \param[in] topo	Opaque memory for topology
    * \param[in] n	Which local rank to select on each node
    */
-  void XMI_Topology_sub_NthGlobal(XMI_Topology_t *_new, XMI_Topology_t *topo, int n);
+  void XMI_Topology_sub_NthGlobal(xmi_topology_t *_new, xmi_topology_t *topo, int n);
 
   /**
    * \brief reduce dimensions of topology (cube -> plane, etc)
@@ -235,7 +235,7 @@ extern "C"
    * \param[in] topo	Opaque memory for topology
    * \param[in] fmt	how to reduce dimensions
    */
-  void XMI_Topology_sub_ReduceDims(XMI_Topology_t *_new, XMI_Topology_t *topo, xmi_coord_t *fmt);
+  void XMI_Topology_sub_ReduceDims(xmi_topology_t *_new, xmi_topology_t *topo, xmi_coord_t *fmt);
 
   /**
    * \brief Return list of ranks representing contents of topology
@@ -254,7 +254,7 @@ extern "C"
    * \param[out] ranks	array where rank list is placed
    * \param[out] nranks	actual number of ranks put into array
    */
-  void XMI_Topology_getRankList(XMI_Topology_t *topo, size_t max, size_t *ranks, size_t *nranks);
+  void XMI_Topology_getRankList(xmi_topology_t *topo, size_t max, size_t *ranks, size_t *nranks);
 
   /**
    * \brief check if rank range or list can be converted to rectangle
@@ -271,7 +271,7 @@ extern "C"
    * \param[in,out] topo	Opaque memory for topology
    * \return	'true' if topology was changed
    */
-  int XMI_Topology_analyze(XMI_Topology_t *topo);
+  int XMI_Topology_analyze(xmi_topology_t *topo);
 
   /**
    * \brief check if topology can be converted to type
@@ -283,7 +283,7 @@ extern "C"
    * \param[in] new_type	Topology type to try and convert into
    * \return	'true' if topology was changed
    */
-  int XMI_Topology_convert(XMI_Topology_t *topo, XMI_TopologyType_t new_type);
+  int XMI_Topology_convert(xmi_topology_t *topo, XMI_TopologyType_t new_type);
 
   /**
    * \brief produce the intersection of two topologies
@@ -294,7 +294,7 @@ extern "C"
    * \param[in] topo	Opaque memory for topology
    * \param[in] other	The other topology
    */
-  void XMI_Topology_intersect(XMI_Topology_t *_new, XMI_Topology_t *topo, XMI_Topology_t *other);
+  void XMI_Topology_intersect(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other);
 
   /**
    * \brief produce the difference of two topologies
@@ -305,7 +305,7 @@ extern "C"
    * \param[in] topo	Opaque memory for topology
    * \param[in] other	The other topology
    */
-  void XMI_Topology_subtract(XMI_Topology_t *_new, XMI_Topology_t *topo, XMI_Topology_t *other);
+  void XMI_Topology_subtract(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other);
 
 #ifdef __cplusplus
 };

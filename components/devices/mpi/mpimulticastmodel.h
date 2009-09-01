@@ -16,36 +16,31 @@ namespace XMI
             MPIMulticastModel (T_Device & device) :
                 Interface::MessageModel < MPIMulticastModel<T_Device, T_Message>, T_Device, T_Message > (device)
                 {};
-
-            inline void setRequestBuffer (XMI_Request_t *request, size_t req_size)
-                {
-
-                }
-            inline void setConnectionId (unsigned conn)
+            inline void setConnectionId_impl (unsigned conn)
                 {
                 }
-            inline void setRoles (unsigned roles)
+            inline void setRoles_impl (unsigned roles)
                 {
                 }
-            inline void setSendData (XMI_PipeWorkQueue_t *src, size_t bytes)
+            inline void setSendData_impl (xmi_pipeworkqueue_t *src, size_t bytes)
                 {
                 }
-            inline void setSendRanks (XMI_Topology_t *src_participants)
+            inline void setSendRanks_impl (xmi_topology_t *src_participants)
                 {
                 }
-            inline void setRecvData (XMI_PipeWorkQueue_t *dst, size_t bytes)
+            inline void setRecvData_impl (xmi_pipeworkqueue_t *dst, size_t bytes)
                 {
                 }
-            inline void setRecvRanks (XMI_Topology_t *dst_participants)
+            inline void setRecvRanks_impl (xmi_topology_t *dst_participants)
                 {
                 }
-            inline void setCallback (void (*fn) (void *, xmi_error_t *),  void *cd)
+            inline void setCallback_impl (void (*fn) (void *, xmi_result_t *),  void *cd)
                 {
                 }
-            inline void setInfo (XMIQuad *info, int count)
+            inline void setInfo_impl (xmi_quad_t *info, int count)
                 {
                 }
-            inline bool postMultiCast (T_Message * obj)
+            inline bool postMultiCast_impl (T_Message * obj)
                 {
                 }
         };
