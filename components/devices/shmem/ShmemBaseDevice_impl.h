@@ -20,21 +20,21 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (T_SysDep & sysdep)
     {
-      __sysdep = sysdep;
+      _sysdep = sysdep;
 
       unsigned i, j;
-      _num_procs = __sysdep.mapping.numActiveTasksLocal ();
+      _num_procs = _sysdep.mapping.numActiveTasksLocal ();
 
-      _global_task = __sysdep.mapping.task ();
+      _global_task = _sysdep.mapping.task ();
       size_t global;
-      __sysdep.mapping.task2node (_global_task, global, _local_task);
+      _sysdep.mapping.task2node (_global_task, global, _local_task);
 
       // Allocate a shared memory segment for the fifos
       size_t size = ((sizeof(T_Fifo) + 15) & 0xfff0) * _num_procs;
       _fifo = (T_Fifo *) sysdep.mm.memalign (16, size);
 
       // Initialize the fifo acting as the reception fifo for this local task
-      _rfifo = &_fifo[_local_rank];
+      _rfifo = &_fifo[_local_task];
       new (_rfifo) T_Fifo ();
       _rfifo->init ();
 
@@ -42,13 +42,13 @@ namespace XMI
 
       // Allocate memory for and construct the queue objects,
       // one for each local rank.
-      __sendQ = (XMI::Queueing::Queue *) malloc ((sizeof (XMI::Queueing::Queue) * _num_procs));
-      __doneQ = (XMI::Queueing::Queue *) malloc ((sizeof (XMI::Queueing::Queue) * _num_procs));
+      __sendQ = (CCMI::Queue *) malloc ((sizeof (CCMI::Queue) * _num_procs));
+      __doneQ = (CCMI::Queue *) malloc ((sizeof (CCMI::Queue) * _num_procs));
 
       for (i = 0; i < _num_procs; i++)
       {
-        new (&__sendQ[i]) XMI::Queueing::Queue ();
-        new (&__doneQ[i]) XMI::Queueing::Queue ();
+        new (&__sendQ[i]) CCMI::Queue ();
+        new (&__doneQ[i]) CCMI::Queue ();
       }
 
       // Initialize the send and done queue masks to zero (empty).
@@ -121,7 +121,7 @@ namespace XMI
     /// \return Dispatch id for this registration
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::registerRecvFunction (Packet::RecvFunction_t   recv_func,
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::registerRecvFunction (Interface::RecvFunction_t   recv_func,
                                                                  void                   * recv_func_parm)
     {
       if (_dispatch_count > 256) return -1;
@@ -133,10 +133,10 @@ namespace XMI
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    CM_Result ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::post (size_t fnum, ShmemBaseMessage<T_Packet> * msg)
+    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::post (size_t fnum, ShmemBaseMessage<T_Packet> * msg)
     {
-      pushSendQueueTail (fnum, (Queueing::QueueElem *) msg);
-      return CM_SUCCESS;
+      pushSendQueueTail (fnum, (CCMI::QueueElem *) msg);
+      return XMI_SUCCESS;
     };
 
 
@@ -173,9 +173,9 @@ namespace XMI
           // There is a pending message on the send queue.
           msg = (ShmemBaseMessage<T_Packet> *) __sendQ[peer].peekHead ();
 
-          CM_Result result = writeSinglePacket (peer, msg, sequence);
+          xmi_result_t result = writeSinglePacket (peer, msg, sequence);
 
-          if (result == CM_SUCCESS)
+          if (result == XMI_SUCCESS)
             {
               if (msg->done())
                 {
@@ -202,7 +202,7 @@ namespace XMI
                       // of this message. Add the message to the done queue
                       // and check for completion again later.
                       msg->setSequenceId (sequence);
-                      pushDoneQueueTail (peer, (Queueing::QueueElem *) msg);
+                      pushDoneQueueTail (peer, (CCMI::QueueElem *) msg);
                     }
                   }
                   else

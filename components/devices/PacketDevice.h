@@ -14,7 +14,7 @@
 #ifndef __components_devices_packetdevice_h__
 #define __components_devices_packetdevice_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {
@@ -114,9 +114,9 @@ namespace XMI
       };
 
       template <class T>
-      inline int PacketDevice<T>::readData (int channel, void * buf, size_t length)
+      inline int PacketDevice<T>::readData (void * dst, size_t length)
       {
-        return static_cast<T*>(this)->readData_impl(channel, buf, length);
+        return static_cast<T*>(this)->readData_impl(dst, length);
       }
 
       template <class T>

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xmi.h"
+#include "sys/xmi.h"
 #include "../Context.h"
 
 #include "components/devices/shmem/ShmemPacketDevice.h"

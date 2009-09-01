@@ -32,12 +32,13 @@ namespace XMI
 {
   namespace Memory
   {
-    template <unsigned T_PageSize, char * T_ShmemFile = "/unique-xmi-shmem-file">
-    class SharedMemoryManager : public Interface::MemoryManager<SharedMemoryManager<T_PageSize, T_ShmemFile> >
+    template <unsigned T_PageSize>
+    class SharedMemoryManager : public Interface::MemoryManager<SharedMemoryManager<T_PageSize> >
     {
       public:
-        inline SharedMemoryManager (size_t bytes = 1024*1024) :
-          Interface::MemoryManager<SharedMemoryManager<T_PageSize, T_ShmemFile> > (),
+        inline SharedMemoryManager (char   * shmemfile = "/unique-xmi-shmem-file",
+                                    size_t   bytes     = 1024*1024) :
+          Interface::MemoryManager<SharedMemoryManager<T_PageSize> > (),
           _location (NULL),
           _size (0),
           _offset (0)
@@ -50,7 +51,7 @@ namespace XMI
           int fd, rc;
           size_t n;
 
-          fd = shm_open (T_ShmemFile, O_CREAT | O_RDWR, 0600);
+          fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
           if ( fd != -1 )
           {
             rc = ftruncate( fd, n );

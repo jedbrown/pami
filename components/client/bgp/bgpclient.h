@@ -7,9 +7,9 @@
 
 #include <stdlib.h>
 
-#include "xmi/Client.h"
+#include "../Client.h"
 
-#include "bgpcontext.h"
+#include "components/context/bgp/bgpcontext.h"
 
 #define XMI_CLIENT_CLASS XMI::Client::BGP
 

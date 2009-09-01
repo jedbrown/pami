@@ -23,7 +23,7 @@
 
 /// The device supports a rendezvous style protocol for shaddr
 //#define SUPPORT_SHADDR
-#include <ppc450_inlines.h>
+#include <bpcore/ppc450_inlines.h>
 #include <bpcore/bgp_atomic_ops.h>
 #include <spi/kernel_interface.h>
 #define mem_sync()	_bgp_msync()

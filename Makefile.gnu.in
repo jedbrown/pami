@@ -1,5 +1,6 @@
 VPATH		= @abs_srcdir@
-SUBDIRS		= components p2p interface algorithms math util api
+#SUBDIRS		= components p2p interface algorithms math util api
+SUBDIRS		= components p2p math util api
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules
 

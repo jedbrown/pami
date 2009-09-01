@@ -28,20 +28,20 @@ namespace XMI
       public:
         Noop () :
             AtomicObject <Noop> ()
-        {}
+        {};
 
-        ~Noop () {}
+        ~Noop () {};
 
         /// \see XMI::Atomic::AtomicObject::init
         void init_impl ()
         {
           return;
-        }
+        };
 
         /// \see XMI::Atomic::AtomicObject::fetch
         inline size_t fetch_impl ()
         {
-          return 0
+          return 0;
         };
 
         /// \see XMI::Atomic::AtomicObject::fetch_and_inc

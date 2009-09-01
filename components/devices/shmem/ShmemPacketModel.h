@@ -14,7 +14,7 @@
 #ifndef __components_devices_shmem_shmempacketmodel_h__
 #define __components_devices_shmem_shmempacketmodel_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 #include "../MessageModel.h"
 #include "ShmemPacketDevice.h"
@@ -80,7 +80,7 @@ namespace XMI
           TRACE_ERR((stderr,"ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, global = %zd, peer = %zd\n", target_rank, global, peer));
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
-                                         payload, bytes, sequence) == CM_SUCCESS)
+                                         payload, bytes, sequence) == XMI_SUCCESS)
             {
               if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
 
@@ -113,7 +113,7 @@ namespace XMI
                                          metadata, metasize,
                                          payload0, bytes0,
                                          payload1, bytes1,
-                                         sequence) == CM_SUCCESS)
+                                         sequence) == XMI_SUCCESS)
             {
               if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
 
@@ -142,7 +142,7 @@ namespace XMI
 
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
-                                         iov, niov, sequence) == CM_SUCCESS)
+                                         iov, niov, sequence) == XMI_SUCCESS)
             {
               if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
 
@@ -172,7 +172,7 @@ namespace XMI
 
           if (_device.isSendQueueEmpty (peer))
             {
-              while (_device.writeSinglePacket (peer, obj, sequence) == CM_SUCCESS)
+              while (_device.writeSinglePacket (peer, obj, sequence) == XMI_SUCCESS)
                 {
                   if (obj->done())
                     {

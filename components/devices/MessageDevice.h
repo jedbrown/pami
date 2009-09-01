@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_packetdevice_h__
-#define __components_devices_packetdevice_h__
+#ifndef __components_devices_messagedevice_h__
+#define __components_devices_messagedevice_h__
 
 #include "PacketDevice.h"
 
@@ -133,7 +133,7 @@ namespace XMI
   };
 };
 
-#endif // __components_devices_packetdevice_h__
+#endif // __components_devices_messagedevice_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

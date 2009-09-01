@@ -14,28 +14,32 @@
 
 #include <sys/uio.h>
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
-#include "queueing/Queue.h"
+#include "util/common.h"
+#include "util/queue/Queue.h"
 
 namespace XMI
 {
   namespace Device
   {
     template <class T_Packet>
-    class ShmemBaseMessage : public Queueing::QueueElem
+    class ShmemBaseMessage : public CCMI::QueueElem
     {
       public:
-        inline ShmemBaseMessage (xmi_event_function   fn,
+        inline ShmemBaseMessage (xmi_context_t        context,
+                                 xmi_event_function   fn,
                                  void               * cookie,
-                                 uint8_t           dispatch_id,
-                                 void            * metadata,
-                                 size_t            metasize,
-                                 void            * src,
-                                 size_t            bytes,
-                                 bool              packed) :
-            Queueing::QueueElem (),
-            _cb (cb),
+                                 uint8_t              dispatch_id,
+                                 void               * metadata,
+                                 size_t               metasize,
+                                 void               * src,
+                                 size_t               bytes,
+                                 bool                 packed) :
+            CCMI::QueueElem (),
+            _context (context),
+            _fn (fn),
+            _cookie (cookie),
             _iov (&__iov[0]),
             _tiov (1),
             _niov (0),
@@ -49,7 +53,8 @@ namespace XMI
           memcpy(_metadata, metadata, metasize);
         };
 
-        inline ShmemBaseMessage (xmi_event_function   fn,
+        inline ShmemBaseMessage (xmi_context_t        context,
+                                 xmi_event_function   fn,
                                  void               * cookie,
                                  uint8_t           dispatch_id,
                                  void            * metadata,
@@ -59,8 +64,10 @@ namespace XMI
                                  void            * src1,
                                  size_t            bytes1,
                                  bool              packed) :
-            Queueing::QueueElem (),
-            _cb (cb),
+            CCMI::QueueElem (),
+            _context (context),
+            _fn (fn),
+            _cookie (cookie),
             _iov (&__iov[0]),
             _tiov (2),
             _niov (0),
@@ -76,16 +83,19 @@ namespace XMI
           memcpy(_metadata, metadata, metasize);
         };
 
-        inline ShmemBaseMessage (xmi_event_function   fn,
+        inline ShmemBaseMessage (xmi_context_t        context,
+                                 xmi_event_function   fn,
                                  void               * cookie,
-                                 uint8_t           dispatch_id,
-                                 void            * metadata,
-                                 size_t            metasize,
-                                 struct iovec    * iov,
-                                 size_t            niov,
-                                 bool              packed) :
-            Queueing::QueueElem (),
-            _cb (cb),
+                                 uint8_t             dispatch_id,
+                                 void               * metadata,
+                                 size_t               metasize,
+                                 struct iovec       * iov,
+                                 size_t               niov,
+                                 bool                 packed) :
+            CCMI::QueueElem (),
+            _context (context),
+            _fn (fn),
+            _cookie (cookie),
             _iov (iov),
             _tiov (niov),
             _niov (0),
@@ -97,13 +107,16 @@ namespace XMI
         };
 
 
-        inline ShmemBaseMessage (xmi_event_function   fn,
+        inline ShmemBaseMessage (xmi_context_t        context,
+                                 xmi_event_function   fn,
                                  void               * cookie,
-                                 uint8_t           dispatch_id,
-                                 void            * metadata,
-                                 size_t            metasize) :
-            Queueing::QueueElem (),
-            _cb (cb),
+                                 uint8_t              dispatch_id,
+                                 void               * metadata,
+                                 size_t               metasize) :
+            CCMI::QueueElem (),
+            _context (context),
+            _fn (fn),
+            _cookie (cookie),
             _iov (&__iov[0]),
             _tiov (0),
             _niov (0),
@@ -115,11 +128,11 @@ namespace XMI
         };
 
 
-        inline int executeCallback (CM_Error_t * error = NULL)
+        inline int executeCallback (xmi_result_t status = XMI_SUCCESS)
         {
-          if (_cb.function)
+          if (_fn)
             {
-              _cb.function (_cb.clientdata, error);
+              _fn (_context, _cookie, status);
             }
 
           return 0;
@@ -178,7 +191,11 @@ namespace XMI
 
 
       protected:
-        CM_Callback_t   _cb;
+        // Client callback information.
+        xmi_event_function   _fn;
+        void               * _cookie;
+        xmi_context_t        _context;
+
         struct iovec    * _iov;
         size_t            _tiov;
         size_t            _niov;

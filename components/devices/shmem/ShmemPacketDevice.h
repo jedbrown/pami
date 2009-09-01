@@ -27,13 +27,13 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     class ShmemPacketDevice : public ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>,
                               public Interface::BaseDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet>, T_SysDep>,
-                              public Interface::MessageDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet> ,T_SysDep>
+                              public Interface::MessageDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet> >
     {
       public:
         inline ShmemPacketDevice () :
             ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet> (),
             Interface::BaseDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet>, T_SysDep> (),
-            Interface::MessageDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet>, T_SysDep> ()
+            Interface::MessageDevice<ShmemPacketDevice<T_SysDep, T_Fifo, T_Packet> > ()
         {
         };
 

@@ -14,7 +14,7 @@
 #ifndef __components_devices_basedevice_h__
 #define __components_devices_basedevice_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {

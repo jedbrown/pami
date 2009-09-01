@@ -14,9 +14,10 @@
 
 #include <sys/uio.h>
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 #include "components/sysdep/SysDep.h"
+#include "util/queue/Queue.h"
 
 #include "../PacketDevice.h"
 #include "ShmemSysDep.h"
@@ -107,7 +108,7 @@ namespace XMI
         int registerRecvFunction (Interface::RecvFunction_t   recv_func,
                                   void                      * recv_func_parm);
 
-        inline CM_Result writeSinglePacket (size_t   fnum,
+        inline xmi_result_t writeSinglePacket (size_t   fnum,
                                               size_t   dispatch_id,
                                               void   * metadata,
                                               size_t   metasize,
@@ -115,7 +116,7 @@ namespace XMI
                                               size_t   bytes,
                                               size_t & sequence);
 
-        inline CM_Result writeSinglePacket (size_t   fnum,
+        inline xmi_result_t writeSinglePacket (size_t   fnum,
                                               size_t   dispatch_id,
                                               void   * metadata,
                                               size_t   metasize,
@@ -125,7 +126,7 @@ namespace XMI
                                               size_t   bytes1,
                                               size_t & sequence);
 
-        inline CM_Result writeSinglePacket (size_t           fnum,
+        inline xmi_result_t writeSinglePacket (size_t           fnum,
                                               size_t           dispatch_id,
                                               void           * metadata,
                                               size_t           metasize,
@@ -133,11 +134,11 @@ namespace XMI
                                               size_t           niov,
                                               size_t & sequence);
 
-        inline CM_Result writeSinglePacket (size_t                       ififo,
+        inline xmi_result_t writeSinglePacket (size_t                       ififo,
                                               ShmemBaseMessage<T_Packet> * msg,
                                               size_t                     & sequence);
 
-        CM_Result post (size_t ififo, ShmemBaseMessage<T_Packet> * msg);
+        xmi_result_t post (size_t ififo, ShmemBaseMessage<T_Packet> * msg);
 
         ///
         /// \brief Check if the send queue to a local rank is empty
@@ -152,13 +153,13 @@ namespace XMI
 
         inline int advance_internal ();
 
-        inline void pushSendQueueTail (size_t peer, Queueing::QueueElem * element);
+        inline void pushSendQueueTail (size_t peer, CCMI::QueueElem * element);
 
-        inline Queueing::QueueElem * popSendQueueHead (size_t peer);
+        inline CCMI::QueueElem * popSendQueueHead (size_t peer);
 
-        inline void pushDoneQueueTail (size_t peer, Queueing::QueueElem * element);
+        inline void pushDoneQueueTail (size_t peer, CCMI::QueueElem * element);
 
-        inline Queueing::QueueElem * popDoneQueueHead (size_t peer);
+        inline CCMI::QueueElem * popDoneQueueHead (size_t peer);
 
         ///
         /// \brief Advance the send queues and process any pending messages.
@@ -191,21 +192,21 @@ namespace XMI
         T_Fifo * _fifo;  ///< Array of injection fifos
         T_Fifo * _rfifo; ///< Pointer to fifo to use as a reception fifo
 
-        T_SysDep      *__sysdep;
+        T_SysDep      & _sysdep;
        // Mapping     *__mapping;
 
         dispatch_t  _dispatch[256];
         unsigned    _dispatch_count;
 
-        Queueing::Queue * __sendQ;
+        CCMI::Queue * __sendQ;
         unsigned          __sendQMask;
 
-        Queueing::Queue * __doneQ;
+        CCMI::Queue * __doneQ;
         unsigned          __doneQMask;
 
         size_t            _num_procs;
-        size_t            _global_rank;
-        size_t            _local_rank;
+        size_t            _global_task;
+        size_t            _local_task;
 
         // Connection array for local ranks on a channel. Currently, only
         // one channel is defined. To add more channels the size of this
@@ -218,10 +219,10 @@ namespace XMI
         unsigned   _current_pkt_iov;
     };
 
-    template <class T_Fifo, class T_Packet>
-    inline size_t ShmemBaseDevice<T_Fifo, T_Packet>::getLocalRank()
+    template <class T_SysDep, class T_Fifo, class T_Packet>
+    inline size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::getLocalRank()
     {
-      return _local_rank;
+      return _local_task;
     }
 
     ///
@@ -250,7 +251,7 @@ namespace XMI
                                                                 void   * arg)
     {
       size_t global, local;
-      __mapping->rank2node (fromRank, global, local);
+      _sysdep.mapping.rank2node (fromRank, global, local);
       _connection[channel][local] = arg;
     }
 
@@ -260,13 +261,13 @@ namespace XMI
                                                                   size_t fromRank)
     {
       size_t global, local;
-      __mapping->rank2node (fromRank, global, local);
+      _sysdep.mapping.rank2node (fromRank, global, local);
       return _connection[channel][local];
     }
 
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    CM_Result ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,
+    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,
                                                                       size_t   dispatch_id,
                                                                       void   * metadata,
                                                                       size_t   metasize,
@@ -296,14 +297,14 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          return CM_SUCCESS;
+          return XMI_SUCCESS;
         }
 
-      return CM_EAGAIN;
+      return XMI_EAGAIN;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    CM_Result ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,
+    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,
                                                                       size_t   dispatch_id,
                                                                       void   * metadata,
                                                                       size_t   metasize,
@@ -338,15 +339,15 @@ namespace XMI
           _fifo[fnum].producePacket (pkt);
 
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_SUCCESS\n", DCMF_Messager_rank(), fnum, dispatch_id));
-          return CM_SUCCESS;
+          return XMI_SUCCESS;
         }
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_EAGAIN\n", DCMF_Messager_rank(), fnum, dispatch_id));
-      return CM_EAGAIN;
+      return XMI_EAGAIN;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    CM_Result ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t         fnum,
+    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t         fnum,
                                                                       size_t         dispatch_id,
                                                                       void         * metadata,
                                                                       size_t         metasize,
@@ -384,15 +385,15 @@ namespace XMI
           _fifo[fnum].producePacket (pkt);
 
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", DCMF_Messager_rank(), fnum, dispatch_id, metadata, iov, niov));
-          return CM_SUCCESS;
+          return XMI_SUCCESS;
         }
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", DCMF_Messager_rank(), fnum, dispatch_id, metadata, iov, niov));
-      return CM_EAGAIN;
+      return XMI_EAGAIN;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    CM_Result ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t                       fnum,
+    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t                       fnum,
                                                                       ShmemBaseMessage<T_Packet> * msg,
                                                                       size_t                     & sequence)
     {
@@ -432,11 +433,11 @@ namespace XMI
           _fifo[fnum].producePacket (pkt);
 
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_SUCCESS\n", DCMF_Messager_rank(), fnum, msg));
-          return CM_SUCCESS;
+          return XMI_SUCCESS;
         }
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_EAGAIN\n", DCMF_Messager_rank(), fnum, msg));
-      return CM_EAGAIN;
+      return XMI_EAGAIN;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
@@ -479,7 +480,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushSendQueueTail (size_t peer, Queueing::QueueElem * element)
+    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushSendQueueTail (size_t peer, CCMI::QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", DCMF_Messager_rank(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
       __sendQ[peer].pushTail (element);
@@ -492,10 +493,10 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline Queueing::QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popSendQueueHead (size_t peer)
+    inline CCMI::QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popSendQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the sendQ\n"));
-      Queueing::QueueElem * tmp = __sendQ[peer].popHead();
+      CCMI::QueueElem * tmp = __sendQ[peer].popHead();
       __sendQMask = __sendQMask & ~(__sendQ[peer].isEmpty() << peer);
       return tmp;
     }
@@ -506,7 +507,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushDoneQueueTail (size_t peer, Queueing::QueueElem * element)
+    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushDoneQueueTail (size_t peer, CCMI::QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushDoneQueueTail(%zd, %p), __doneQMask = %d -> %d\n", DCMF_Messager_rank(), peer, element, __doneQMask, __doneQMask | (1 << peer)));
       __doneQ[peer].pushTail (element);
@@ -519,10 +520,10 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline Queueing::QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popDoneQueueHead (size_t peer)
+    inline CCMI::QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popDoneQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the doneQ\n"));
-      Queueing::QueueElem * tmp = __doneQ[peer].popHead();
+      CCMI::QueueElem * tmp = __doneQ[peer].popHead();
       __doneQMask = __doneQMask & ~(__doneQ[peer].isEmpty() << peer);
       return tmp;
     }

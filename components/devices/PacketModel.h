@@ -16,7 +16,7 @@
 
 #include <sys/uio.h>
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 #include "PacketDevice.h"
 

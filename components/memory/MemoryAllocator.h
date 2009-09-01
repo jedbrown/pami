@@ -16,7 +16,7 @@
 #ifndef __xmi_components_memory_memoryallocator_h__
 #define __xmi_components_memory_memoryallocator_h__
 
-#include "./atomic/noop/Noop.h"
+#include "components/atomic/noop/Noop.h"
 
 namespace XMI
 {
@@ -31,9 +31,9 @@ namespace XMI
         uint8_t             object[T_ObjSize];
         union
         {
-          memory_object_t * next;
-          uint8_t           pad[T_ObjAlign];
-        }
+          struct memory_object * next;
+          uint8_t                pad[T_ObjAlign];
+        };
       } memory_object_t;
 
     public:

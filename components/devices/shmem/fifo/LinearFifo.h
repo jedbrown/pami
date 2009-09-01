@@ -34,7 +34,7 @@ namespace XMI
   {
     namespace Fifo
     {
-      template <class T_Atomic, class T_Packet, class T_FifoSize>
+      template <class T_Atomic, class T_Packet, unsigned T_FifoSize>
       class LinearFifo : public Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet >
       {
         private:

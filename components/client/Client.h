@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sys/xmi.h"
+
 #include "util/queue/Queue.h"
 
 namespace XMI
@@ -66,7 +68,7 @@ namespace XMI
     template <class T_Client, class T_Context>
     inline xmi_result_t Client<T_Client,T_Context>::destroyContext (T_Context * context)
     {
-      static_cast<T_Client*>(this)->destroyContext_impl(context);
+      return static_cast<T_Client*>(this)->destroyContext_impl(context);
     }
 
   }; // end namespace Client

@@ -19,24 +19,22 @@ namespace XMI
 {
   namespace SysDep
   {
-    namespace Interface
+    ///
+    /// \param T_Mapping Platform-specific mapping class
+    ///
+    template <class T_Memory, class T_Mapping>
+    class SysDep
     {
-      ///
-      /// \param T_Mapping Platform-specific mapping class
-      ///
-      template <class T_Memory, class T_Mapping>
-      class SysDep
-      {
-        public:
+      public:
+        inline SysDep () :
+          mm (),
+          mapping ()
+        {
+          mapping.init (mm);
+        };
 
-          inline SysDep ()
-          {
-            mapping.init (mm);
-          };
-
-          T_Mapping mapping;
-          T_Memory  mm;
-      }
+        T_Memory  mm;
+        T_Mapping mapping;
     };
   };
 };

@@ -13,7 +13,7 @@
 #ifndef __xmi_p2p_protocols_send_simple_h__
 #define __xmi_p2p_protocols_send_simple_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI
 {
