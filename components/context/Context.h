@@ -99,6 +99,19 @@ namespace XMI
         
         inline xmi_result_t collective (xmi_xfer_t * parameters);
 
+        inline xmi_result_t multisend_getroles(xmi_dispatch_t  dispatch,
+                                               int            *numRoles,
+                                               int            *replRole);
+        
+        inline xmi_result_t multicast(xmi_multicast_t *mcastinfo);
+        
+        inline xmi_result_t manytomany(xmi_manytomany_t *m2minfo);
+        
+        inline xmi_result_t multisync(xmi_multisync_t *msyncinfo);
+
+        inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo);
+        
+
         inline xmi_result_t dispatch (xmi_dispatch_t             dispatch,
                                       xmi_dispatch_callback_fn   fn,
                                       void                     * cookie,
@@ -326,6 +339,38 @@ namespace XMI
     {
       return static_cast<T_Context*>(this)->collective_impl(parameters);
     }
+      
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::multisend_getroles(xmi_dispatch_t  dispatch,
+                                                        int            *numRoles,
+                                                        int            *replRole)
+    {
+        return static_cast<T_Context*>(this)->multisend_getroles_impl(dispatch,numRoles,replRole);
+    }
+      
+    template <class T_Context>        
+    xmi_result_t Context<T_Context>::multicast(xmi_multicast_t *mcastinfo)
+    {
+        return static_cast<T_Context*>(this)->multicast_impl(mcastinfo);
+    }
+      
+    template <class T_Context>        
+    xmi_result_t Context<T_Context>::manytomany(xmi_manytomany_t *m2minfo)
+    {
+        return static_cast<T_Context*>(this)->manytomany_impl(m2minfo);
+    }
+
+    template <class T_Context>        
+    xmi_result_t Context<T_Context>::multisync(xmi_multisync_t *msyncinfo)
+    {
+        return static_cast<T_Context*>(this)->multisync_impl(msyncinfo);
+    }
+      
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::multicombine(xmi_multicombine_t *mcombineinfo)
+    {
+        return static_cast<T_Context*>(this)->multicombine_impl(mcombineinfo);
+    }
 
     template <class T_Context>
     xmi_result_t Context<T_Context>::dispatch (xmi_dispatch_t             dispatch,
@@ -333,13 +378,8 @@ namespace XMI
                                                void                     * cookie,
                                                xmi_send_hint_t            options)
     {
-      return static_cast<T_Context*>(this)->dispatch_impl(dispatch,fn,cookie,options);
+        return static_cast<T_Context*>(this)->dispatch_impl(dispatch,fn,cookie,options);
     }
-
-
-
-
-
   }; // end namespace Context
 }; // end namespace XMI
 

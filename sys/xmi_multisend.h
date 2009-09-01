@@ -105,10 +105,10 @@ extern "C"
      *				or -1 if no additional roles are used.
      * \return	success or failure
      */
-    xmi_result_t XMI_Multisend_getroles(xmi_context_t  context,
-                                        xmi_dispatch_t dispatch,
-                                        int *numRoles,
-                                        int *replRole);
+    xmi_result_t XMI_Multisend_getroles(xmi_context_t   context,
+                                        xmi_dispatch_t  dispatch,
+                                        int            *numRoles,
+                                        int            *replRole);
 
     /**
      * \brief Recv callback for Multicast
@@ -162,7 +162,7 @@ extern "C"
                                                   the data being sent, for one-sided. */
         unsigned            msgcount;          /**< info count*/
     } xmi_multicast_t;
-    int XMI_Multicast(xmi_context_t context,xmi_multicast_t *mcastinfo);
+    xmi_result_t XMI_Multicast(xmi_context_t context,xmi_multicast_t *mcastinfo);
 
     /**
      * \brief Sub-structure used to represent a vectored buffer for many-to-many.

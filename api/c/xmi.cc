@@ -384,7 +384,7 @@ extern "C" xmi_result_t XMI_Fence_task (xmi_context_t        context,
 ///
 /// \copydoc XMI_Geometry_initialize
 ///
-xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+extern "C" xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
                                       xmi_geometry_t            * geometry,
                                       unsigned                    id,
                                       xmi_geometry_range_t      * rank_slices,
@@ -397,7 +397,7 @@ xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
 ///
 /// \copydoc XMI_Geometry_initialize
 ///
-xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+extern "C" xmi_result_t XMI_Geometry_world (xmi_context_t               context,
                                  xmi_geometry_t            * world_geometry)
 {
   XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
@@ -407,7 +407,7 @@ xmi_result_t XMI_Geometry_world (xmi_context_t               context,
 ///
 /// \copydoc XMI_Geometry_algorithm
 ///
-xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
+extern "C" xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
                                      xmi_geometry_t             geometry,
                                      xmi_algorithm_t           *algorithm,
                                      int                       *num)
@@ -419,7 +419,7 @@ xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
 ///
 /// \copydoc XMI_Geometry_finalize
 ///
-xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+extern "C" xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
                                    xmi_geometry_t  geometry)
 {
   XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
@@ -436,6 +436,62 @@ extern "C" xmi_result_t XMI_Collective (xmi_context_t   context,
   return ctx->collective (parameters);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_multisend.h                                             //
+////////////////////////////////////////////////////////////////////////////////
+
+
+///
+/// \copydoc XMI_Multisend_getroles
+///
+extern "C" xmi_result_t XMI_Multisend_getroles(xmi_context_t   context,
+                                               xmi_dispatch_t  dispatch,
+                                               int            *numRoles,
+                                               int            *replRole)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->multisend_getroles (dispatch,numRoles,replRole);
+}
+
+///
+/// \copydoc XMI_Multicast
+///
+extern "C" xmi_result_t XMI_Multicast(xmi_context_t    context,
+                                      xmi_multicast_t *mcastinfo)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->multicast (mcastinfo);
+}
+
+///
+/// \copydoc XMI_Manytomany
+///
+extern "C" xmi_result_t XMI_Manytomany(xmi_context_t     context,
+                                       xmi_manytomany_t *m2minfo)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->manytomany (m2minfo);
+}
+
+///
+/// \copydoc XMI_Multisync
+///
+extern "C" xmi_result_t XMI_Multisync(xmi_context_t    context,
+                                      xmi_multisync_t *msyncinfo)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->multisync (msyncinfo);
+}
+
+///
+/// \copydoc XMI_Multicombine
+///
+extern "C" xmi_result_t XMI_Multicombine(xmi_context_t       context,
+                                         xmi_multicombine_t *mcombineinfo)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->multicombine (mcombineinfo);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

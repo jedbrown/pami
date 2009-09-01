@@ -211,7 +211,33 @@ namespace XMI
         {
           return XMI_UNIMPL;
         }
+        
+        inline xmi_result_t multisend_getroles_impl(xmi_dispatch_t  dispatch,
+                                                    int            *numRoles,
+                                                    int            *replRole)
+        {
+            return XMI_UNIMPL;
+        }
+        
+        inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
+        {
+            return XMI_UNIMPL;
+        }
+        
+        inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
+        {
+            return XMI_UNIMPL;
+        }
+        
+        inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
+        {
+            return XMI_UNIMPL;
+        }
 
+        inline xmi_result_t multicombine_impl(xmi_multicombine_t *mcombineinfo)
+        {
+            return XMI_UNIMPL;
+        }
         inline xmi_result_t dispatch_impl (xmi_dispatch_t             id,
                                            xmi_dispatch_callback_fn   fn,
                                            void                     * cookie,
