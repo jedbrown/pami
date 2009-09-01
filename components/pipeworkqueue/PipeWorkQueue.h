@@ -125,7 +125,7 @@ namespace XMI
             /// \param[out] export        Opaque memory to export into
             /// \return   success of the export operation
             ///
-            inline xmi_result_t exp(XMI_PipeWorkQueue_ext *exp);
+            inline xmi_result_t exp(xmi_pipeworkqueue_ext_t *exp);
 	
             ///
             /// \brief Import
@@ -145,7 +145,7 @@ namespace XMI
             /// \param[out] wq           Opaque memory for new PipeWorkQueue
             /// \return   success of the import operation
             ///
-            inline xmi_result_t import(XMI_PipeWorkQueue_ext *import);
+            inline xmi_result_t import(xmi_pipeworkqueue_ext_t *import);
 
             /// \brief register a wakeup for the consumer side of the PipeWorkQueue
             ///
@@ -278,13 +278,13 @@ namespace XMI
         }
 
         template <class T_PipeWorkQueue>
-        xmi_result_t PipeWorkQueue<T_PipeWorkQueue>::exp(XMI_PipeWorkQueue_ext *exp)
+        xmi_result_t PipeWorkQueue<T_PipeWorkQueue>::exp(xmi_pipeworkqueue_ext_t *exp)
         {
             return static_cast<T_PipeWorkQueue*>(this)->exp_impl(exp);
         }
 
         template <class T_PipeWorkQueue>
-        xmi_result_t PipeWorkQueue<T_PipeWorkQueue>::import(XMI_PipeWorkQueue_ext *import)
+        xmi_result_t PipeWorkQueue<T_PipeWorkQueue>::import(xmi_pipeworkqueue_ext_t *import)
         {
             return static_cast<T_PipeWorkQueue*>(this)->import_impl(import);
         }

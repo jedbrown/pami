@@ -21,7 +21,7 @@ extern "C"
     XMI_COORD_TOPOLOGY,     /**< topology is a rectangular segment
                                    represented by coordinates           */
     XMI_TOPOLOGY_COUNT
-  } XMI_TopologyType_t;
+  } xmi_topology_type_t;
 
   typedef xmi_quad_t xmi_topology_t[2];
 
@@ -104,7 +104,7 @@ extern "C"
    * \param[out] topo	Opaque memory for topology
    * \return	topology type
    */
-  XMI_TopologyType_t xmi_topology_type(xmi_topology_t *topo);
+  xmi_topology_type_t xmi_topology_type(xmi_topology_t *topo);
 
   /**
    * \brief Nth rank in topology
@@ -283,7 +283,7 @@ extern "C"
    * \param[in] new_type	Topology type to try and convert into
    * \return	'true' if topology was changed
    */
-  int XMI_Topology_convert(xmi_topology_t *topo, XMI_TopologyType_t new_type);
+  int XMI_Topology_convert(xmi_topology_t *topo, xmi_topology_type_t new_type);
 
   /**
    * \brief produce the intersection of two topologies

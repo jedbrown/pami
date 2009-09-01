@@ -55,11 +55,11 @@ namespace XMI
                 {
                 }
 
-            inline xmi_result_t exp_impl(XMI_PipeWorkQueue_ext *exp)
+            inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp)
                 {
                 }
 
-            inline xmi_result_t import_impl(XMI_PipeWorkQueue_ext *import)
+            inline xmi_result_t import_impl(xmi_pipeworkqueue_ext_t *import)
                 {
                 }
 

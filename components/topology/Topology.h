@@ -67,7 +67,7 @@ namespace XMI
 
             /// \brief type of topology
             /// \return	topology type
-            inline XMI_TopologyType_t type();
+            inline xmi_topology_type_t type();
 
             /// \brief Nth rank in topology
             ///
@@ -239,7 +239,7 @@ namespace XMI
             /// \param[in] new_type	Topology type to try and convert into
             /// \return	'true' if topology was changed
             ///
-            inline bool convertTopology(XMI_TopologyType_t new_type);
+            inline bool convertTopology(xmi_topology_type_t new_type);
 
             /// \brief produce the union of two topologies
             ///
@@ -282,7 +282,7 @@ namespace XMI
         }
 
         template <class T_Topology>
-	XMI_TopologyType_t Topology<T_Topology>::type()
+	xmi_topology_type_t Topology<T_Topology>::type()
         {
             return static_cast<T_Topology*>(this)->type_impl();
         }
@@ -399,7 +399,7 @@ namespace XMI
         }
         
         template <class T_Topology>
-	bool Topology<T_Topology>::convertTopology(XMI_TopologyType_t new_type)
+	bool Topology<T_Topology>::convertTopology(xmi_topology_type_t new_type)
         {
             return static_cast<T_Topology*>(this)->convertTopology_impl(new_type);
         }

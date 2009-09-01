@@ -595,3 +595,461 @@ extern "C" xmi_result_t XMI_Type_unpack (xmi_type_t dst_type,
 {
   return XMI_UNIMPL;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_pipeworkqueue.h                                         //
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+///
+/// \copydoc XMI_PipeWorkQueue_config_circ
+///
+void XMI_PipeWorkQueue_config_circ(xmi_pipeworkqueue_t *wq,
+                                   size_t bufsize)
+{
+    assert (0);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_config_circ_usr
+///
+void XMI_PipeWorkQueue_config_circ_usr(xmi_pipeworkqueue_t *wq,
+                                       char                *buffer,
+                                       size_t               bufsize)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_config_flat
+///
+void XMI_PipeWorkQueue_config_flat(xmi_pipeworkqueue_t *wq,
+                                   char                *buffer,
+                                   size_t               bufsize,
+                                   size_t               bufinit)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_config_noncontig
+///
+void XMI_PipeWorkQueue_config_noncontig(xmi_pipeworkqueue_t *wq,
+                                        char                *buffer,
+                                        xmi_type_t          *type,
+                                        size_t               typecount,
+                                        size_t               typeinit)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_export
+///
+xmi_result_t XMI_PipeWorkQueue_export(xmi_pipeworkqueue_t     *wq,
+                                      xmi_pipeworkqueue_ext_t *exp)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    pwq->exp (exp);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_import
+///
+xmi_result_t XMI_PipeWorkQueue_import(xmi_pipeworkqueue_ext_t *import,
+                                      xmi_pipeworkqueue_t     *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    pwq->import (import);
+}
+
+
+///
+/// \copydoc XMI_PipeWorkQueue_clone
+///
+void XMI_PipeWorkQueue_clone(xmi_pipeworkqueue_t *wq,
+                             xmi_pipeworkqueue_t *obj)
+{
+}
+
+
+///
+/// \copydoc XMI_PipeWorkQueue_destroy
+///
+void XMI_PipeWorkQueue_destroy(xmi_pipeworkqueue_t *wq)
+{
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_reset
+///
+void XMI_PipeWorkQueue_reset(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    pwq->reset();
+}
+
+
+///
+/// \copydoc XMI_PipeWorkQueue_dump
+///
+void XMI_PipeWorkQueue_dump(xmi_pipeworkqueue_t *wq,
+                            const char          *prefix)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    pwq->dump (prefix);    
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_setConsumerWakeup
+///
+void XMI_PipeWorkQueue_setConsumerWakeup(xmi_pipeworkqueue_t *wq,
+                                         void                *vec)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    pwq->setConsumerWakeup (vec);    
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_setProducerWakeup
+///
+void XMI_PipeWorkQueue_setProducerWakeup(xmi_pipeworkqueue_t *wq,
+                                         void                *vec)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    pwq->setProducerWakeup (vec);    
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_bytesAvailableToProduce
+///
+size_t XMI_PipeWorkQueue_bytesAvailableToProduce(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->bytesAvailableToProduce ();    
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_bytesAvailableToConsume
+///
+size_t XMI_PipeWorkQueue_bytesAvailableToConsume(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->bytesAvailableToConsume ();
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_getBytesProduced
+///
+size_t XMI_PipeWorkQueue_getBytesProduced(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->getBytesProduced ();
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_getBytesConsumed
+///
+size_t XMI_PipeWorkQueue_getBytesConsumed(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->getBytesConsumed ();
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_bufferToProduce
+///
+char *XMI_PipeWorkQueue_bufferToProduce(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->bufferToProduce ();
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_produceBytes
+///
+void XMI_PipeWorkQueue_produceBytes(xmi_pipeworkqueue_t *wq,
+                                    size_t               bytes)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->produceBytes (bytes);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_bufferToConsume
+///
+char *XMI_PipeWorkQueue_bufferToConsume(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->bufferToConsume ();
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_consumeBytes
+///
+void XMI_PipeWorkQueue_consumeBytes(xmi_pipeworkqueue_t *wq,
+                                    size_t               bytes)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->consumeBytes (bytes);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_available
+///
+int XMI_PipeWorkQueue_available(xmi_pipeworkqueue_t *wq)
+{
+    XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
+    return pwq->available ();    
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions from xmi_topology.h                                              //
+////////////////////////////////////////////////////////////////////////////////
+
+
+///
+/// \copydoc XMI_Topology_create
+///
+void XMI_Topology_create(xmi_topology_t *topo)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_Topology_create_rect
+///
+void XMI_Topology_create_rect(xmi_topology_t *topo,
+                              xmi_coord_t *ll, xmi_coord_t *ur, unsigned char *tl)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_Topology_create_rank
+///
+void XMI_Topology_create_rank(xmi_topology_t *topo, size_t rank)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_Topology_create_range
+///
+void XMI_Topology_create_range(xmi_topology_t *topo, size_t rank0, size_t rankn)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_Topology_create_list
+///
+void XMI_Topology_create_list(xmi_topology_t *topo, size_t *ranks, size_t nranks)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_Topology_destroy
+///
+void XMI_Topology_destroy(xmi_topology_t *topo)
+{
+    assert(0);
+}
+
+///
+/// \copydoc XMI_Topology_size_of
+///
+unsigned XMI_Topology_size_of(xmi_topology_t *topo)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->size_of();
+}
+
+///
+/// \copydoc XMI_Topology_size
+///
+size_t XMI_Topology_size(xmi_topology_t *topo)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->size();
+}
+
+///
+/// \copydoc XMI_Topology_type
+///
+xmi_topology_type_t xmi_topology_type(xmi_topology_t *topo)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->type();
+}
+
+///
+/// \copydoc XMI_Topology_index2Rank
+///
+size_t XMI_Topology_index2Rank(xmi_topology_t *topo, size_t ix)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->index2Rank(ix);    
+}
+
+///
+/// \copydoc XMI_Topology_rank2Index
+///
+size_t XMI_Topology_rank2Index(xmi_topology_t *topo, size_t rank)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->rank2Index(rank);
+}
+
+///
+/// \copydoc XMI_Topology_rankRange
+///
+xmi_result_t XMI_Topology_rankRange(xmi_topology_t *topo, size_t *first, size_t *last)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->rankRange(first,last);
+}
+
+///
+/// \copydoc XMI_Topology_rankList
+///
+xmi_result_t XMI_Topology_rankList(xmi_topology_t *topo, size_t **list)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->rankList(list);
+}
+
+///
+/// \copydoc XMI_Topology_rectSeg
+///
+xmi_result_t XMI_Topology_rectSeg(xmi_topology_t *topo,
+                                  xmi_coord_t *ll, xmi_coord_t *ur,
+                                  unsigned char *tl)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->rectSeg(ll,ur,tl);
+}
+
+///
+/// \copydoc XMI_Topology_isLocalToMe
+///
+int XMI_Topology_isLocalToMe(xmi_topology_t *topo)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->isLocalToMe();
+}
+
+///
+/// \copydoc XMI_Topology_isRectSeg
+///
+int XMI_Topology_isRectSeg(xmi_topology_t *topo)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->isRectSeg();
+}
+
+///
+/// \copydoc XMI_Topology_getNthDims
+///
+void XMI_Topology_getNthDims(xmi_topology_t *topo, unsigned n,
+                             unsigned *c0, unsigned *cn, unsigned char *tl)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->getNthDims(n,c0,cn,tl);    
+}
+
+///
+/// \copydoc XMI_Topology_isRankMember
+///
+int XMI_Topology_isRankMember(xmi_topology_t *topo, size_t rank)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->isRankMember(rank);    
+}
+
+///
+/// \copydoc XMI_Topology_isCoordMember
+///
+int XMI_Topology_isCoordMember(xmi_topology_t *topo, xmi_coord_t *c0)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->isCoordMember(c0);
+}
+
+///
+/// \copydoc XMI_Topology_sub_LocalToMe
+///
+void XMI_Topology_sub_LocalToMe(xmi_topology_t *_new, xmi_topology_t *topo)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    t->subTopologyLocalToMe((XMI_TOPOLOGY_CLASS *)_new);    
+}
+
+///
+/// \copydoc XMI_Topology_sub_NthGlobal
+///
+void XMI_Topology_sub_NthGlobal(xmi_topology_t *_new, xmi_topology_t *topo, int n)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    t->subTopologyNthGlobal((XMI_TOPOLOGY_CLASS *)_new, n);    
+}
+
+///
+/// \copydoc XMI_Topology_sub_ReduceDims
+///
+void XMI_Topology_sub_ReduceDims(xmi_topology_t *_new, xmi_topology_t *topo, xmi_coord_t *fmt)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    t->subTopologyReduceDims((XMI_TOPOLOGY_CLASS *)_new, fmt);
+}
+
+///
+/// \copydoc XMI_Topology_getRankList
+///
+void XMI_Topology_getRankList(xmi_topology_t *topo, size_t max, size_t *ranks, size_t *nranks)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    t->getRankList(max,ranks,nranks);
+}
+
+///
+/// \copydoc XMI_Topology_analyze
+///
+int  XMI_Topology_analyze(xmi_topology_t *topo)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->analyzeTopology();
+}
+
+///
+/// \copydoc XMI_Topology_convert
+///
+int  XMI_Topology_convert(xmi_topology_t *topo, xmi_topology_type_t new_type)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->convertTopology(new_type);
+}
+
+///
+/// \copydoc XMI_Topology_intersect
+///
+void XMI_Topology_intersect(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->intersectTopology((XMI_TOPOLOGY_CLASS *)_new, (XMI_TOPOLOGY_CLASS *)other);
+}
+
+///
+/// \copydoc XMI_Topology_subtract
+///
+void XMI_Topology_subtract(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other)
+{
+    XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
+    return t->subtractTopology((XMI_TOPOLOGY_CLASS *)_new, (XMI_TOPOLOGY_CLASS *)other);
+}

@@ -45,7 +45,7 @@ namespace XMI
             inline size_t size_impl()
                 {
                 }
-            inline XMI_TopologyType_t type_impl()
+            inline xmi_topology_type_t type_impl()
                 {
                 }
             inline size_t index2Rank(size_t ix)
@@ -106,7 +106,7 @@ namespace XMI
             inline bool analyzeTopology()
                 {
                 }
-            inline bool convertTopology(XMI_TopologyType_t new_type)
+            inline bool convertTopology(xmi_topology_type_t new_type)
                 {
                 }
             inline void unionTopology(XMI::Topology::MPI *_new, XMI::Topology::MPI *other)

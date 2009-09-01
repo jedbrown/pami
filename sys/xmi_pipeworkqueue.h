@@ -13,7 +13,7 @@ extern "C"
 #endif
 
   typedef xmi_quad_t xmi_pipeworkqueue_t[4];
-  typedef xmi_quad_t XMI_PipeWorkQueue_ext[2];
+  typedef xmi_quad_t xmi_pipeworkqueue_ext_t[2];
 
   /**
    * \brief Configure for Shared Circular Buffer variety.
@@ -102,7 +102,7 @@ extern "C"
    * \param[out] export        Opaque memory to export into
    * \return	success of the export operation
    */
-  xmi_result_t XMI_PipeWorkQueue_export(xmi_pipeworkqueue_t *wq, XMI_PipeWorkQueue_ext *exp);
+  xmi_result_t XMI_PipeWorkQueue_export(xmi_pipeworkqueue_t *wq, xmi_pipeworkqueue_ext_t *exp);
 
   /**
    * \brief Import
@@ -123,7 +123,7 @@ extern "C"
    * \param[out] wq           Opaque memory for new PipeWorkQueue
    * \return	success of the import operation
    */
-  xmi_result_t XMI_PipeWorkQueue_import(XMI_PipeWorkQueue_ext *import, xmi_pipeworkqueue_t *wq);
+  xmi_result_t XMI_PipeWorkQueue_import(xmi_pipeworkqueue_ext_t *import, xmi_pipeworkqueue_t *wq);
 
   /**
    * \brief Clone constructor.
