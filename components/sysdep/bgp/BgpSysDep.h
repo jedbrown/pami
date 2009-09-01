@@ -27,7 +27,7 @@ namespace XMI
                                     Mapping::BgpMapping<Memory::SharedMemoryManager<4096> >
     {
       public:
-    }
+    };
   };
 };
 #endif // __components_sysdep_bgp_bgpsysdep_h__

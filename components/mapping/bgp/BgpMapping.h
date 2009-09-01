@@ -18,7 +18,6 @@
 #include "../BaseMapping.h"
 #include "../TorusMapping.h"
 
-//#include "components/memory/shmem/SharedMemoryManager.h"
 #include "components/sysdep/bgp/BgpPersonality.h"
 
 extern XMI::SysDep::BgpPersonality __global_personality;
