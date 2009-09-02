@@ -26,12 +26,14 @@
 #define PERS_SIZE 1024
 
 #include <sys/types.h>
+#include <util/common.h>
 
 #include <unistd.h>
+#include <stdlib.h>
+
 #include <spi/kernel_interface.h>
 #include <common/bgp_personality.h>
 #include <common/bgp_personality_inlines.h>
-
 
 namespace XMI
 {

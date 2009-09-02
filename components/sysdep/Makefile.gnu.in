@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= @TARGET@
+NOTBUILT        =
+#@LIBNAME@-""-COLLECTIVESGEOM_SOURCES=geometry.cc
+#DEVICENAME     = @LIBNAME@-""-COLLECTIVESGEOM
+include @abs_top_builddir@/Build.rules

@@ -2,7 +2,9 @@
 
 
 
-#include "BgpPersonality.h'
+#include "BgpPersonality.h"
+
+XMI::SysDep::BgpPersonality __global_personality;
 
 XMI::SysDep::BgpPersonality::BgpPersonality ()
 {
@@ -65,7 +67,7 @@ void XMI::SysDep::BgpPersonality::location (char location[], size_t size)
   char tmp[BGPPERSONALITY_MAX_LOCATION+1];
   BGP_Personality_getLocationString(p, tmp);
 
-  snprintf (location, MIN(size,BGPPERSONALITY_MAX_LOCATION), " % s", tmp);
+  snprintf (location, MIN(size,BGPPERSONALITY_MAX_LOCATION), " %s", tmp);
 
   return;
 };
@@ -75,25 +77,22 @@ void XMI::SysDep::BgpPersonality::dumpPersonality ()
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
   int i, tmp;
 
-  printf("Personality:
-         CRC 0x % 04x, Version % d, Size % d.\n",
+  printf("Personality: CRC 0x %04x, Version %d, Size %d.\n",
          p->CRC, p->Version, p->PersonalitySizeWords );
 
-  printf(" BlockID:         0x % 08x\n", p->Network_Config.BlockID );
-  printf(" RASPolicy:       0x % 08x\n", p->Kernel_Config.RASPolicy );
-  printf(" ProcessConfig:   0x % 08x\n", p->Kernel_Config.ProcessConfig );
-  printf(" TraceConfig:     0x % 08x\n", p->Kernel_Config.TraceConfig );
-  printf(" NodeConfig:      0x % 08x\n", p->Kernel_Config.NodeConfig );
-  printf(" L1Config:        0x % 08x\n", p->Kernel_Config.L1Config );
-  printf(" L2Config:        0x % 08x\n", p->Kernel_Config.L2Config );
-  printf(" L3Config:        0x % 08x\n", p->Kernel_Config.L3Config );
-  printf(" L3Select:        0x % 08x\n", p->Kernel_Config.L3Select );
+  printf(" BlockID:         0x %08x\n", p->Network_Config.BlockID );
+  printf(" RASPolicy:       0x %08x\n", p->Kernel_Config.RASPolicy );
+  printf(" ProcessConfig:   0x %08x\n", p->Kernel_Config.ProcessConfig );
+  printf(" TraceConfig:     0x %08x\n", p->Kernel_Config.TraceConfig );
+  printf(" NodeConfig:      0x %08x\n", p->Kernel_Config.NodeConfig );
+  printf(" L1Config:        0x %08x\n", p->Kernel_Config.L1Config );
+  printf(" L2Config:        0x %08x\n", p->Kernel_Config.L2Config );
+  printf(" L3Config:        0x %08x\n", p->Kernel_Config.L3Config );
+  printf(" L3Select:        0x %08x\n", p->Kernel_Config.L3Select );
 
-  printf(" FreqMHz:
-         % d\n",      p->Kernel_Config.FreqMHz );
+  printf(" FreqMHz:         %d\n",      p->Kernel_Config.FreqMHz );
 
-  printf(" Torus:
-         ( % 2d, % 2d, % 2d) in ( % 2d % c, % 2d % c, % 2d % c)\n",
+  printf(" Torus:         ( %2d, %2d, %2d) in ( %2d %c, %2d %c, %2d %c)\n",
          p->Network_Config.Xcoord,
          p->Network_Config.Ycoord,
          p->Network_Config.Zcoord,
@@ -104,41 +103,28 @@ void XMI::SysDep::BgpPersonality::dumpPersonality ()
          p->Network_Config.Znodes,
          (p->Kernel_Config.NodeConfig & _BGP_PERS_ENABLE_TorusMeshZ?'M':'T'));
 
-  printf(" IOnodes:
-         % d\n", p->Network_Config.IOnodes );
-  printf(" Rank:
-         % d\n", p->Network_Config.Rank );
+  printf(" IOnodes:         %d\n", p->Network_Config.IOnodes );
+  printf(" Rank:         %d\n", p->Network_Config.Rank );
   for ( i = 0, tmp = 0 ; i < 16 ; i++ )
     {
       if ( p->Network_Config.TreeRoutes[i] )
         {
           tmp++;
-          printf(" TreeRoutes[%d]: 0x % 04x\n",
+          printf(" TreeRoutes[%d]: 0x %04x\n",
                  i, p->Network_Config.TreeRoutes[i] );
         }
     }
   if ( !tmp )
-    printf(" TreeRoutes:
-           (none defined)\n" );
+    printf(" TreeRoutes:           (none defined)\n" );
 
 
-  printf(" DDRSizeMB:
-         % d\n",      p->DDR_Config.DDRSizeMB   );
-  printf(" DDRChips:        0x % 02x\n", p->DDR_Config.Chips    );
-  printf(" DDRCAS:
-         % d\n",      p->DDR_Config.CAS      );
-  printf(" DDRThrottle:
-         % d % % \n",    p->DDR_Config.Throttle );
-  printf(" MTU:
-         % d\n", p->Ethernet_Config.MTU );
+  printf(" DDRSizeMB:         %d\n",      p->DDR_Config.DDRSizeMB   );
+  printf(" DDRChips:        0x %02x\n", p->DDR_Config.Chips    );
+  printf(" DDRCAS:         %d\n",      p->DDR_Config.CAS      );
+  printf(" DDRThrottle:         %d %% \n",    p->DDR_Config.Throttle );
+  printf(" MTU:         %d\n", p->Ethernet_Config.MTU );
 
-  printf(" EmacID:
-         % 02x:
-         % 02x:
-         % 02x:
-         % 02x:
-         % 02x:
-         % 02x\n",
+  printf(" EmacID:         %02x:%02x:%02x:%02x:%02x:%02x\n",
          p->Ethernet_Config.EmacID[0],
          p->Ethernet_Config.EmacID[1],
          p->Ethernet_Config.EmacID[2],
@@ -146,52 +132,44 @@ void XMI::SysDep::BgpPersonality::dumpPersonality ()
          p->Ethernet_Config.EmacID[4],
          p->Ethernet_Config.EmacID[5] );
 
-  printf(" IPAddress:
-         % d. % d. % d. % d\n",
+  printf(" IPAddress:         %d.%d.%d.%d\n",
          p->Ethernet_Config.IPAddress.octet[12],
          p->Ethernet_Config.IPAddress.octet[13],
          p->Ethernet_Config.IPAddress.octet[14],
          p->Ethernet_Config.IPAddress.octet[15]  );
 
-  printf(" IPNetmask:
-         % d. % d. % d. % d\n",
+  printf(" IPNetmask:         %d.%d.%d.%d\n",
          p->Ethernet_Config.IPNetmask.octet[12],
          p->Ethernet_Config.IPNetmask.octet[13],
          p->Ethernet_Config.IPNetmask.octet[14],
          p->Ethernet_Config.IPNetmask.octet[15]  );
 
-  printf(" IPBroadcast:
-         % d. % d. % d. % d\n",
+  printf(" IPBroadcast:       %d.%d.%d.%d\n",
          p->Ethernet_Config.IPBroadcast.octet[12],
          p->Ethernet_Config.IPBroadcast.octet[13],
          p->Ethernet_Config.IPBroadcast.octet[14],
          p->Ethernet_Config.IPBroadcast.octet[15]  );
 
-  printf(" IPGateway:
-         % d. % d. % d. % d\n",
+  printf(" IPGateway:         %d.%d.%d.% d\n",
          p->Ethernet_Config.IPGateway.octet[12],
          p->Ethernet_Config.IPGateway.octet[13],
          p->Ethernet_Config.IPGateway.octet[14],
          p->Ethernet_Config.IPGateway.octet[15]  );
 
-  printf(" NFSServer:
-         % d. % d. % d. % d\n",
+  printf(" NFSServer:         %d.%d.%d.%d\n",
          p->Ethernet_Config.NFSServer.octet[12],
          p->Ethernet_Config.NFSServer.octet[13],
          p->Ethernet_Config.NFSServer.octet[14],
          p->Ethernet_Config.NFSServer.octet[15]  );
 
-  printf(" serviceNode:
-         % d. % d. % d. % d\n",
+  printf(" serviceNode:       %d.%d.%d.%d\n",
          p->Ethernet_Config.serviceNode.octet[12],
          p->Ethernet_Config.serviceNode.octet[13],
          p->Ethernet_Config.serviceNode.octet[14],
          p->Ethernet_Config.serviceNode.octet[15]  );
 
-  printf(" NFSExportDir:
-         > % s < \n", p->Ethernet_Config.NFSExportDir );
-  printf(" NFSMountDir:
-         > % s < \n", p->Ethernet_Config.NFSMountDir  );
+  printf(" NFSExportDir:         > %s < \n", p->Ethernet_Config.NFSExportDir );
+  printf(" NFSMountDir:          > %s < \n", p->Ethernet_Config.NFSMountDir  );
 
   return;
 };
