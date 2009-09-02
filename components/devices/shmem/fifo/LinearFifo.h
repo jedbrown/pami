@@ -70,7 +70,7 @@ namespace XMI
         public:
           inline LinearFifo () :
               Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet> (),
-              _packet (NULL),
+            //  _packet (NULL),
               _head (0),
               _tail (),
               _inj_wrap_count (0),
@@ -178,6 +178,7 @@ namespace XMI
 
         protected:
           LinearFifoPacket _packet[T_FifoSize];
+          //LinearFifoPacket _packet[1000];
           size_t           _head;
           T_Atomic         _tail;
 

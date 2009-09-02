@@ -33,7 +33,7 @@ namespace XMI
           ///
           /// \return Dimension size
           ///
-          inline xmi_result_t nodeSize (size_t global, size_t & size) const;
+          inline xmi_result_t nodeSize (size_t global, size_t & size);
 
           ///
           /// \brief Get the node address for the local task
@@ -41,7 +41,7 @@ namespace XMI
           /// \param[out] global Node global identifier
           /// \param[out] local  Node local identifier
           ///
-          inline void nodeAddr (size_t & global, size_t & local) const;
+          inline void nodeAddr (size_t & global, size_t & local);
 
           ///
           /// \brief Get the node address for a specific task
@@ -50,7 +50,7 @@ namespace XMI
           /// \param[out] global Node global identifier
           /// \param[out] local  Node local identifier
           ///
-          inline xmi_result_t task2node (size_t task, size_t & global, size_t & local) const;
+          inline xmi_result_t task2node (size_t task, size_t & global, size_t & local);
 
           ///
           /// \brief Get the task associated with a specific node address
@@ -59,29 +59,29 @@ namespace XMI
           /// \param[in]  local  Node local identifier
           /// \param[out] task   Global task identifier
           ///
-          inline xmi_result_t node2task (size_t global, size_t local, size_t & task) const;
+          inline xmi_result_t node2task (size_t global, size_t local, size_t & task);
       };
 
       template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::nodeSize (size_t global, size_t & size) const
+      inline xmi_result_t Node<T_Mapping>::nodeSize (size_t global, size_t & size)
       {
         return static_cast<T_Mapping*>(this)->nodeSize_impl (global, size);
       }
 
       template <class T_Mapping>
-      inline void Node<T_Mapping>::nodeAddr (size_t & global, size_t & local) const
+      inline void Node<T_Mapping>::nodeAddr (size_t & global, size_t & local)
       {
         return static_cast<T_Mapping*>(this)->nodeAddr_impl (global, local);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::task2node (size_t task, size_t & global, size_t & local) const
+      inline xmi_result_t Node<T_Mapping>::task2node (size_t task, size_t & global, size_t & local)
       {
         return static_cast<T_Mapping*>(this)->task2node_impl (task, global, local);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::node2task (size_t global, size_t local, size_t & task) const
+      inline xmi_result_t Node<T_Mapping>::node2task (size_t global, size_t local, size_t & task)
       {
         return static_cast<T_Mapping*>(this)->node2task_impl (global, local, task);
       }

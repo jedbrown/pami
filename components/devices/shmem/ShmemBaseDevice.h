@@ -149,7 +149,7 @@ namespace XMI
 
       protected:
 
-        int init_internal (T_SysDep & sysdep);
+        int init_internal (T_SysDep * sysdep);
 
         inline int advance_internal ();
 
@@ -182,8 +182,7 @@ namespace XMI
         ///
         /// \see XMI::Device::Interface::RecvFunction_t
         ///
-        static int noop (int      channel,
-                         void   * metadata,
+        static int noop (void   * metadata,
                          void   * payload,
                          size_t   bytes,
                          void   * recv_func_parm);
@@ -192,7 +191,7 @@ namespace XMI
         T_Fifo * _fifo;  ///< Array of injection fifos
         T_Fifo * _rfifo; ///< Pointer to fifo to use as a reception fifo
 
-        T_SysDep      & _sysdep;
+        T_SysDep      * _sysdep;
        // Mapping     *__mapping;
 
         dispatch_t  _dispatch[256];
@@ -464,7 +463,7 @@ namespace XMI
 
           mem_sync (); // TODO -- is this needed?
 
-          _dispatch[id].function (0, meta, data, pkt->payloadSize(), _dispatch[id].clientdata);
+          _dispatch[id].function (meta, data, pkt->payloadSize(), _dispatch[id].clientdata);
 
           // Complete this message/packet and increment the fifo head.
           _rfifo->consumePacket (pkt);

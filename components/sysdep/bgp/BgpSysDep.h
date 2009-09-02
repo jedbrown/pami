@@ -23,7 +23,7 @@ namespace XMI
 {
   namespace SysDep
   {
-    typedef SysDep<XMI::Memory::SharedMemoryManager, 6> BgpSysDep;
+    typedef SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping::BgpMapping> BgpSysDep;
  //  typedef SysDep<XMI::Memory::SharedMemoryManager,
    //                XMI::Mapping::BgpMapping<XMI::Memory::SharedMemoryManager > BgpSysDep;
 //    class BgpSysDep : public SysDep<XMI::Memory::SharedMemoryManager<4096>,

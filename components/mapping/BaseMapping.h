@@ -37,12 +37,12 @@ namespace XMI
           ///
           /// \brief Returns the global task id for this process
           ///
-          inline size_t task () const;
+          inline size_t task ();
 
           ///
           /// \brief Returns the number of global tasks
           ///
-          inline size_t size () const;
+          inline size_t size ();
 
           ///
           /// \brief Number of physical active nodes in the partition.
@@ -51,7 +51,7 @@ namespace XMI
           ///
           /// \see size()
           ///
-          inline size_t numActiveNodesGlobal () const;
+          inline size_t numActiveNodesGlobal ();
 
           ///
           /// \brief Number of physical active tasks in the partition.
@@ -60,17 +60,17 @@ namespace XMI
           ///
           /// \see size()
           ///
-          inline size_t numActiveTasksGlobal () const;
+          inline size_t numActiveTasksGlobal ();
 
           ///
           /// \brief Number of physical active tasks in the local node.
           ///
-          inline size_t numActiveTasksLocal () const;
+          inline size_t numActiveTasksLocal ();
 
           ///
           /// \brief Determines if two global task ids are located on the same physical node.
           ///
-          inline bool isPeer (size_t task1, size_t task2) const;
+          inline bool isPeer (size_t task1, size_t task2);
 #if 0
           inline DCMF_Result network2rank (const DCMF_NetworkCoord_t  * addr,
                                            size_t                     * rank,
@@ -90,37 +90,37 @@ namespace XMI
       }
 
       template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::task () const
+      inline size_t Base<T_Mapping,T_Memory>::task ()
       {
         return static_cast<T_Mapping*>(this)->task_impl ();
       }
 
       template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::size () const
+      inline size_t Base<T_Mapping,T_Memory>::size ()
       {
         return static_cast<T_Mapping*>(this)->size_impl ();
       }
 
       template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::numActiveNodesGlobal () const
+      inline size_t Base<T_Mapping,T_Memory>::numActiveNodesGlobal ()
       {
         return static_cast<T_Mapping*>(this)->numActiveNodesGlobal_impl ();
       }
 
       template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::numActiveTasksGlobal () const
+      inline size_t Base<T_Mapping,T_Memory>::numActiveTasksGlobal ()
       {
         return static_cast<T_Mapping*>(this)->numActiveTasksGlobal_impl ();
       }
 
       template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::numActiveTasksLocal () const
+      inline size_t Base<T_Mapping,T_Memory>::numActiveTasksLocal ()
       {
         return static_cast<T_Mapping*>(this)->numActiveTasksLocal_impl ();
       }
 
       template <class T_Mapping, class T_Memory>
-      inline bool Base<T_Mapping,T_Memory>::isPeer (size_t task1, size_t task2) const
+      inline bool Base<T_Mapping,T_Memory>::isPeer (size_t task1, size_t task2)
       {
         return static_cast<T_Mapping*>(this)->isPeer_impl (task1, task2);
       }

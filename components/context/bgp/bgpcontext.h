@@ -48,7 +48,7 @@ namespace XMI
           _sysdep (),
           _shmem ()
         {
-          _shmem.init (_sysdep);
+          _shmem.init (&_sysdep);
         }
 
         inline xmi_client_t getClientId_impl ()

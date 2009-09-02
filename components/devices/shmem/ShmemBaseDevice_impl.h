@@ -18,20 +18,20 @@ namespace XMI
   namespace Device
   {
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (T_SysDep & sysdep)
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (T_SysDep * sysdep)
     {
       _sysdep = sysdep;
 
       unsigned i, j;
-      _num_procs = _sysdep.mapping.numActiveTasksLocal ();
+      _num_procs = _sysdep->mapping.numActiveTasksLocal ();
 
-      _global_task = _sysdep.mapping.task ();
+      _global_task = _sysdep->mapping.task ();
       size_t global;
-      _sysdep.mapping.task2node (_global_task, global, _local_task);
+      _sysdep->mapping.task2node (_global_task, global, _local_task);
 
       // Allocate a shared memory segment for the fifos
       size_t size = ((sizeof(T_Fifo) + 15) & 0xfff0) * _num_procs;
-      _fifo = (T_Fifo *) sysdep.mm.memalign (16, size);
+      sysdep->mm.memalign ((void **)&_fifo, 16, size);
 
       // Initialize the fifo acting as the reception fifo for this local task
       _rfifo = &_fifo[_local_task];
@@ -142,8 +142,7 @@ namespace XMI
 
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::noop (int      channel,
-                                                 void   * metadata,
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::noop (void   * metadata,
                                                  void   * payload,
                                                  size_t   bytes,
                                                  void   * recv_func_parm)

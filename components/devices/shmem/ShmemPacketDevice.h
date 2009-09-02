@@ -40,7 +40,7 @@ namespace XMI
         inline ~ShmemPacketDevice () {};
 
         /// \see XMI::Device::Interface::BaseDevice::init()
-        inline int init_impl (T_SysDep & sysdep)
+        inline int init_impl (T_SysDep * sysdep)
         {
           return ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (sysdep);
         }

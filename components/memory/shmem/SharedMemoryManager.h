@@ -32,7 +32,7 @@ namespace XMI
 {
   namespace Memory
   {
-    //template <unsigned T_PageSize = 4096>
+    //template <unsigned T_PageSize>
     class SharedMemoryManager : public Interface::MemoryManager<SharedMemoryManager>
     {
       public:
@@ -42,16 +42,19 @@ namespace XMI
           _size (0),
           _offset (0)
         {
-        char   * shmemfile = "/unique-xmi-shmem-file";
-                                    size_t   bytes     = 1024*1024;
+          char   * shmemfile = "/unique-xmi-shmem-file";
+          size_t   bytes     = 1024*1024;
+          size_t   pagesize  = 4096;
+
           xmi_result_t result = XMI_ERROR;
 
           // Round up to the page size
-//          size_t size = (bytes + T_PageSize - 1) & ~(T_PageSize - 1);
-          size_t size = (bytes + 4096 - 1) & ~(4096 - 1);
+          size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+          //size_t size = (bytes + T_PageSize - 1) & ~(T_PageSize - 1);
+//          size_t size = (bytes + 4096 - 1) & ~(4096 - 1);
           
           int fd, rc;
-          size_t n;
+          size_t n = bytes;
 
           fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
           if ( fd != -1 )

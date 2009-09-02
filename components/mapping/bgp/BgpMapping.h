@@ -17,8 +17,10 @@
 
 #include "../BaseMapping.h"
 #include "../TorusMapping.h"
+#include "../NodeMapping.h"
 
 #include "components/sysdep/bgp/BgpPersonality.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 extern XMI::SysDep::BgpPersonality __global_personality;
 
@@ -26,14 +28,20 @@ namespace XMI
 {
   namespace Mapping
   {
-    template <class T_Memory>
-    class BgpMapping : public Interface::Base<BgpMapping<T_Memory>,T_Memory>,
-                       public Interface::Torus<BgpMapping<T_Memory>,4>
+    //template <class T_Memory>
+    //class BgpMapping : public Interface::Base<BgpMapping<T_Memory>,T_Memory>,
+    //                   public Interface::Torus<BgpMapping<T_Memory>,4>
+    class BgpMapping : public Interface::Base<BgpMapping,Memory::SharedMemoryManager>,
+                       public Interface::Torus<BgpMapping,4>,
+                       public Interface::Node<BgpMapping>
     {
       public:
         inline BgpMapping () :
-            Interface::Base<BgpMapping<T_Memory>,T_Memory>(),
-            Interface::Torus<BgpMapping<T_Memory>,4>(),
+//            Interface::Base<BgpMapping<T_Memory>,T_Memory>(),
+//            Interface::Torus<BgpMapping<T_Memory>,4>(),
+            Interface::Base<BgpMapping,Memory::SharedMemoryManager>(),
+            Interface::Torus<BgpMapping,4>(),
+            Interface::Node<BgpMapping> (),
             _x (__global_personality.xCoord()),
             _y (__global_personality.yCoord()),
             _z (__global_personality.zCoord()),
@@ -74,13 +82,14 @@ namespace XMI
         /// \brief Initialize the mapping
         /// \see XMI::Mapping::Interface::Base::init()
         ///
-        inline xmi_result_t init_impl(T_Memory & mm);
+        inline xmi_result_t init_impl(Memory::SharedMemoryManager & mm);
+        //inline xmi_result_t init_impl(T_Memory & mm);
 
         ///
         /// \brief Return the BGP global task for this process
         /// \see XMI::Mapping::Interface::Base::task()
         ///
-        inline size_t task_impl() const
+	inline size_t task_impl()
         {
           return _task;
         }
@@ -89,7 +98,7 @@ namespace XMI
         /// \brief Returns the number of global tasks
         /// \see XMI::Mapping::Interface::Base::size()
         ///
-        inline size_t size_impl() const
+        inline size_t size_impl()
         {
           return _size;
         }
@@ -98,7 +107,7 @@ namespace XMI
         /// \brief Number of physical active nodes in the partition.
         /// \see XMI::Mapping::Interface::Base::numActiveNodesGlobal()
         ///
-        inline size_t numActiveNodesGlobal_impl () const
+        inline size_t numActiveNodesGlobal_impl ()
         {
           return _nodes;
         }
@@ -107,7 +116,7 @@ namespace XMI
         /// \brief Number of physical active tasks in the partition.
         /// \see XMI::Mapping::Interface::Base::numActiveRanksGlobal()
         ///
-        inline size_t numActiveRanksGlobal_impl () const
+        inline size_t numActiveTasksGlobal_impl ()
         {
           return _size;
         }
@@ -116,7 +125,7 @@ namespace XMI
         /// \brief Number of physical active tasks in the local node.
         /// \see XMI::Mapping::Interface::Base::numActiveRanksLocal()
         ///
-        inline size_t numActiveRanksLocal_impl () const
+        inline size_t numActiveTasksLocal_impl ()
         {
           return _peers;
         }
@@ -125,7 +134,7 @@ namespace XMI
         /// \brief Determines if two global tasks are located on the same physical node.
         /// \see XMI::Mapping::Interface::Base::isPeer()
         ///
-        inline bool isPeer_impl (size_t task1, size_t task2) const
+        inline bool isPeer_impl (size_t task1, size_t task2)
         {
           unsigned xyzt1 = _mapcache[task1];
           unsigned xyzt2 = _mapcache[task2];
@@ -157,39 +166,39 @@ namespace XMI
         ///
         /// \see XMI::Mapping::Interface::Torus::torusCoord()
         ///
-        inline size_t x () const
+        inline size_t x ()
         {
           return __global_personality.xCoord();
         }
-        inline size_t y () const
+        inline size_t y ()
         {
           return __global_personality.yCoord();
         }
-        inline size_t z () const
+        inline size_t z ()
         {
           return __global_personality.zCoord();
         }
-        inline size_t t () const
+        inline size_t t ()
         {
           return __global_personality.tCoord();
         }
         
-        inline size_t xSize () const
+        inline size_t xSize ()
         {
           return __global_personality.xSize();
         }
         
-        inline size_t ySize () const
+        inline size_t ySize ()
         {
           return __global_personality.ySize();
         }
         
-        inline size_t zSize () const
+        inline size_t zSize ()
         {
           return __global_personality.zSize();
         }
         
-        inline size_t tSize () const
+        inline size_t tSize ()
         {
           return __global_personality.tSize();
         }
@@ -288,7 +297,7 @@ namespace XMI
         /// \see XMI::Mapping::Interface::Torus::torusAddr()
         ///
         //template <>
-        inline void torusAddr_impl (size_t (&addr)[4]) const
+        inline void torusAddr_impl (size_t (&addr)[4])
         //inline void torusAddr_impl (Address & addr) const
         {
           addr[0] = _x;
@@ -304,7 +313,7 @@ namespace XMI
         /// \todo Error path
         ///
         //template <>
-        inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[4]) const
+        inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[4])
         {
           unsigned xyzt = _mapcache[task];
           addr[0] = (xyzt & 0xFF000000) >> 24;
@@ -321,7 +330,7 @@ namespace XMI
         /// \todo Error path
         ///
         //template <>
-        inline xmi_result_t torus2task_impl (size_t (&addr)[4], size_t & task) const
+        inline xmi_result_t torus2task_impl (size_t (&addr)[4], size_t & task)
         {
           size_t xSize = __global_personality.xSize();
           size_t ySize = __global_personality.ySize();
@@ -353,7 +362,40 @@ namespace XMI
         };
     
     
-    
+        /////////////////////////////////////////////////////////////////////////
+        //
+        // XMI::Mapping::Interface::Node interface implementation
+        //
+        /////////////////////////////////////////////////////////////////////////
+
+        /// \brief Get the number of possible tasks on a node
+        /// \return Dimension size
+        inline xmi_result_t nodeSize_impl (size_t global, size_t & size)
+        {
+#warning implement this!
+          return XMI_UNIMPL;
+        };
+
+        /// \brief Get the node address for the local task
+        inline void nodeAddr_impl (size_t & global, size_t & local)
+        {
+#warning implement this!
+        };
+
+        /// \brief Get the node address for a specific task
+        inline xmi_result_t task2node_impl (size_t task, size_t & global, size_t & local)
+        {
+#warning implement this!
+          return XMI_UNIMPL;
+        };
+
+        /// \brief Get the task associated with a specific node address
+        inline xmi_result_t node2task_impl (size_t global, size_t local, size_t & task)
+        {
+#warning implement this!
+          return XMI_UNIMPL;
+        };
+
     
     
     
@@ -361,8 +403,9 @@ namespace XMI
   };
 };
 
-template <class T_Memory>
-xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
+//template <class T_Memory>
+//xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
+xmi_result_t XMI::Mapping::BgpMapping::init_impl (XMI::Memory::SharedMemoryManager & mm)
 {
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this constructor,

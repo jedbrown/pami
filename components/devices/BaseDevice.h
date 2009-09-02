@@ -47,7 +47,7 @@ namespace XMI
           ///
           /// \return  Return code of the device init status
           ///
-          inline int init (T_SysDep & sd);
+          inline int init (T_SysDep * sd);
 
           ///
           /// \brief Is the device initialized?
@@ -73,7 +73,7 @@ namespace XMI
       };
 
       template <class T_Device, class T_SysDep>
-      inline int BaseDevice<T_Device, T_SysDep>::init (T_SysDep & sd)
+      inline int BaseDevice<T_Device, T_SysDep>::init (T_SysDep * sd)
       {
         return static_cast<T_Device*>(this)->init_impl(sd);
       }
