@@ -17,9 +17,8 @@
 #include "algorithms/executor/Executor.h"
 #include "interface/MultiSend.h"
 #include "algorithms/connmgr/ConnectionManager.h"
-#include "interface/ccmi_internal.h"
+#include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"
-
 #include "util/ccmi_debug.h"
 
 namespace CCMI

@@ -16,7 +16,7 @@
 
 #include  <stdio.h>
 #include  <stdlib.h>
-#include  "interface/ccmi_internal.h"
+#include  "algorithms/ccmi.h"
 #include  "interface/CollectiveMapping.h"
 
 namespace CCMI

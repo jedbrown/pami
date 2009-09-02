@@ -12,7 +12,7 @@
  */
 
 #include "util/ccmi_util.h"  // need this first to define throw() before stdlib.h is included (for xlC -noeh)
-#include "interface/ccmi_internal.h"
+#include "algorithms/ccmi.h"
 #include "math/math_coremath.h"
 #include "algorithms/executor/AllreduceBase.h"
 //#include "protocols/allreduce/Factory.h"

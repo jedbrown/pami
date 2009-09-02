@@ -14,7 +14,7 @@
 #warning DCMF specific protocol - needs work to make it generic
 #endif
 #include "util/ccmi_util.h"
-#include "interface/ccmi_internal.h"
+#include "algorithms/ccmi.h"
 #include "util/ccmi_debug.h"
 
 #include <sys/mman.h>

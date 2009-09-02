@@ -16,7 +16,7 @@
 
 #include "util/ccmi_util.h"
 #include "interface/CollectiveMapping.h"
-#include "interface/ccmi_internal.h"
+#include "algorithms/ccmi.h"
 #include "util/ccmi_debug.h"
 
 /*-------------------------------------------------*/

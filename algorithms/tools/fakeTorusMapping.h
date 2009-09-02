@@ -32,7 +32,7 @@
 
 #include <stdlib.h>
 
-#include <ccmi_internal.h>
+#include "algorithms/ccmi.h"
 
 #ifndef   CCMI_TORUS_NDIMS
 #define   CCMI_TORUS_NDIMS 4

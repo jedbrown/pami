@@ -15,7 +15,7 @@
 #ifndef   __kernel_multisend_h__
 #define   __kernel_multisend_h__
 
-#include "interface/ccmi_internal.h"
+#include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
 #include "xmi_topology.h" 

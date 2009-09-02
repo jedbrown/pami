@@ -13,7 +13,7 @@
 #ifndef         __executor_h__
 #define         __executor_h__
 
-#include "interface/ccmi_internal.h"
+#include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
 
@@ -70,7 +70,7 @@ namespace CCMI
        * operation has finished
        */
 
-      virtual void notifySendDone ( const XMIQuad &info ) = 0;
+      virtual void notifySendDone ( const xmi_quad_t &info ) = 0;
 
 
       /**
@@ -80,9 +80,9 @@ namespace CCMI
        * \param bytes : number of bytes received
        */
 
-      virtual void notifyRecv (unsigned src, const XMIQuad &info, char * buf, unsigned bytes) = 0;
+      virtual void notifyRecv (unsigned src, const xmi_quad_t &info, char * buf, unsigned bytes) = 0;
 
-      void setDoneCallback (void (*cb_done)(void *, XMI_Error_t *), void *cd)
+      void setDoneCallback (void (*cb_done)(void *, xmi_result_t *), void *cd)
       {
         _cb_done    =   cb_done;
         _clientdata =   cd;
@@ -102,7 +102,7 @@ namespace CCMI
       ///
       ///  \brief Callback to call when the barrier has finished
       ///
-      void               (* _cb_done)(void *, XMI_Error_t *);
+      void               (* _cb_done)(void *, xmi_result_t *);
       void                * _clientdata;
 
       ///
