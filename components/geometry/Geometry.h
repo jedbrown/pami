@@ -1,21 +1,9 @@
-/**
- * \file components/Geometry.h
-
- * \brief Geometry object
- * This object is a message layer approximation of communicators
- *  - Stores ranks and number of ranks in this particular group
- *  - Stores an ID which must be the same on all the ranks in the group
- *  - Has flags for tree, GI, rectangle, and torus
- *  - Has flag for global context - needed in MPI to determine if this is
- *    comm_world or a comm dupe of comm_world in multi-threaded environments
- *  - Keeps a barrier for this group of nodes
- */
-
 #ifndef   __xmi_geometry__h__
 #define   __xmi_geometry__h__
 
 #include "sys/xmi.h"
 #include "util/queue/MatchQueue.h"
+//#include "algorithms/schedule/Rectangle.h"
 
 #define RECTANGLE_TYPE void*
 //#define RECTANGLE_TYPE CCMI::Schedule::Rectangle*
