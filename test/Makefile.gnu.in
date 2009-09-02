@@ -1,5 +1,5 @@
 VPATH		= @srcdir@
-SUBDIRS         = client
+SUBDIRS         = client time
 NOTBUILT        = 
 APPS            = 
 #APPS            = barrier.${EXTENSION} bcast.${EXTENSION} bcast_subcomm.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} scatter.${EXTENSION} scatterv.${EXTENSION} ambcast.${EXTENSION} alltoall.${EXTENSION}

@@ -17,13 +17,14 @@
 
 #include "components/mapping/bgp/BgpMapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
+#include "components/time/bgp/BgpTime.h"
 
 
 namespace XMI
 {
   namespace SysDep
   {
-    typedef SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping::BgpMapping> BgpSysDep;
+    typedef SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping::BgpMapping, XMI::Time::BgpTime> BgpSysDep;
  //  typedef SysDep<XMI::Memory::SharedMemoryManager,
    //                XMI::Mapping::BgpMapping<XMI::Memory::SharedMemoryManager > BgpSysDep;
 //    class BgpSysDep : public SysDep<XMI::Memory::SharedMemoryManager<4096>,

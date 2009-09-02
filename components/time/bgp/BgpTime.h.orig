@@ -1,0 +1,127 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+///
+/// \file components/time/bgp/BgpTime.h
+/// \brief ???
+///
+#ifndef __components_time_bgp_bgptime_h__
+#define __components_time_bgp_bgptime_h__
+
+#include "sys/xmi.h"
+
+#include "components/time/BaseTime.h"
+
+namespace XMI
+{
+  namespace Time
+  {
+      class BgpTime : public Interface::BaseTime<BgpTime>
+      {
+        public:
+        
+          inline BgpTime () :
+            Interface::BaseTime<BgpTime>
+          {
+            compute_sec_per_cyc ();
+          }
+          
+
+          ///
+          /// \brief Initialize the time object.
+          ///
+          inline xmi_result_t init_impl ()
+          {
+            return XMI_UNIMPL;
+          }
+
+          ///
+          /// \brief The processor clock in MHz.
+          ///
+          /// \warning This returns \b mega hertz. Do not be confused.
+          ///
+          inline size_t clockMHz_impl ()
+          {
+          };
+
+          ///
+          /// \brief Returns the number of "cycles" elapsed on the calling processor.
+          ///
+          inline unsigned long long timebase_impl ()
+          {
+  unsigned temp;
+  union
+  {
+    struct { unsigned hi, lo; } w;
+    unsigned long long d;
+  } result;
+
+  do {
+    asm volatile ("mfspr %0,%1" : "=r" (temp)        : "i" (SPRN_TBRU));
+    asm volatile ("mfspr %0,%1" : "=r" (result.w.lo) : "i" (SPRN_TBRL));
+    asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
+  } while (temp != result.w.hi);
+
+   return result.d;
+          };
+
+          ///
+          /// \brief Computes the smallest clock resolution theoretically possible
+          ///
+          inline double tick_impl ()
+          {
+   if(_sec_per_cyc==0.0)
+     compute_sec_per_cyc();
+   return _sec_per_cyc;
+          };
+
+          ///
+          /// \brief Returns an elapsed time on the calling processor.
+          ///
+          inline double timer_impl ()
+          {
+   if(_sec_per_cyc==0.0)
+     compute_sec_per_cyc();
+   return ((double)timebase() * _sec_per_cyc);
+          };
+          
+        protected:
+          
+          double _sec_per_cyc;
+          
+          inline double compute_sec_per_cyc ()
+          {
+  double sec_per_cyc;
+  size_t MHz = clockMHz();
+  switch(MHz)
+    {
+//  printf("%.19g\n", 1/850000000.0);
+    case 850:
+      sec_per_cyc = (double)1.176470588235294033e-09;
+/*    sec_per_cyc = 1/850000000.0; */
+      break;
+    case 700:
+      sec_per_cyc = (double)1.428571428571428571e-09;
+/*    sec_per_cyc = 1/700000000.0; */
+      break;
+    case 500:
+      sec_per_cyc = (double)2.0e-09;
+/*    sec_per_cyc = 1/500000000.0; */
+      break;
+    default:
+      sec_per_cyc = 1/((double)MHz * 1000000.0);
+      break;
+    }
+    _sec_per_cyc = sec_per_cyc;
+    return sec_per_cyc;
+          };
+      };
+  };
+};
+#endif // __components_time_time_h__
+

@@ -39,6 +39,29 @@ extern "C" xmi_result_t XMI_Configuration_update (xmi_context_t     context,
 }
 
 
+///
+/// \copydoc XMI_Wtime
+///
+double XMI_Wtime ()
+{
+  return XMI_TIME_CLASS::time();
+}
+
+///
+/// \copydoc XMI_Wtick
+///
+double XMI_Wtick()
+{
+  return XMI_TIME_CLASS::tick();
+}
+
+///
+/// \copydoc XMI_Wtimebase
+///
+unsigned long long XMI_Wtimebase()
+{
+  return XMI_TIME_CLASS::timebase();
+}
 
 
 ///

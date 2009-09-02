@@ -20,21 +20,25 @@ namespace XMI
   namespace SysDep
   {
     ///
+    /// \param T_Memory  Platform-specific memory manager class
     /// \param T_Mapping Platform-specific mapping class
+    /// \param T_Time    Platform-specific time class
     ///
-    template <class T_Memory, class T_Mapping>
+    template <class T_Memory, class T_Mapping, class T_Time>
     class SysDep
     {
       public:
         inline SysDep () :
           mm (),
-          mapping ()
+          mapping (),
+          time ()
         {
           mapping.init (mm);
         };
 
         T_Memory  mm;
         T_Mapping mapping;
+        T_Time    time;
     };
   };
 };
