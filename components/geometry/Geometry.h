@@ -42,7 +42,7 @@ namespace XMI
                             unsigned             nranks,
                             unsigned             comm,
                             unsigned             numcolors,
-                            bool                 globalcontext);
+                            bool                 globalcontext) {}
             // These methods were originally from the CCMI Geometry class
             inline int                        getColorsArray();
             inline void                       setAsyncAllreduceMode(unsigned value);
