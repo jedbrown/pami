@@ -10,7 +10,7 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "./Allreduce.h"
+#include "algorithms/protocols/tspcoll/Allreduce.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,9 +27,10 @@
 /* ************************************************************************* */
 /*                       start a long allreduce                              */
 /* ************************************************************************* */
-TSPColl::Allreduce::Long::
-Long (Communicator * comm, NBTag tag, int instID, int offset) :
-  CollExchange (comm, tag, instID, offset, false)
+template <class T_Mcast>
+TSPColl::Allreduce::Long<T_Mcast>::
+Long (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset) :
+  CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   _tmpbuf = NULL;
   _dbuf = NULL;
@@ -127,10 +128,11 @@ Long (Communicator * comm, NBTag tag, int instID, int offset) :
 /* ************************************************************************* */
 /*                     allreduce executor                                    */
 /* ************************************************************************* */
-void TSPColl::Allreduce::Long::
-cb_allreduce (CollExchange *coll, unsigned phase)
+template <class T_Mcast>
+void TSPColl::Allreduce::Long<T_Mcast>::
+cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
 {
-  TSPColl::Allreduce::Long * ar = (TSPColl::Allreduce::Long *) coll;
+  TSPColl::Allreduce::Long<T_Mcast> * ar = (TSPColl::Allreduce::Long<T_Mcast> *) coll;
   void * inputs[] = {ar->_dbuf, ar->_tmpbuf};
   //  ar->_cb_allreduce (ar->_dbuf, ar->_tmpbuf, ar->_nelems);
   ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
@@ -139,10 +141,11 @@ cb_allreduce (CollExchange *coll, unsigned phase)
 /* ************************************************************************* */
 /*                      start a long allreduce operation                     */
 /* ************************************************************************* */
-void TSPColl::Allreduce::Long::reset (const void         * sbuf, 
+template <class T_Mcast>
+void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf, 
 				      void               * dbuf, 
-				      XMI_Op              op,
-				      XMI_Dt              dt,
+				      xmi_op              op,
+				      xmi_dt              dt,
 				      unsigned             nelems)
 {
   assert (sbuf != NULL);
@@ -199,5 +202,5 @@ void TSPColl::Allreduce::Long::reset (const void         * sbuf,
 
   assert (phase == this->_numphases);
   //  _cb_allreduce = getcallback (op, dt);
-  TSPColl::CollExchange::reset();
+  TSPColl::CollExchange<T_Mcast>::reset();
 }

@@ -13,12 +13,12 @@
 #ifndef __tspcoll_Allreduce_h__
 #define __tspcoll_Allreduce_h__
 
+#include "platform.h"
 #include "./CollExchange.h"
-#include "interface/Communicator.h"
 #include "math/math_coremath.h"
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned, 
+      extern void getReduceFunction(xmi_dt, xmi_op, unsigned, 
 				    unsigned&, coremath&);
     }}};
 namespace TSPColl
@@ -36,20 +36,21 @@ namespace TSPColl
     /*      short allreduce (up to 1000 bytes of exchanged data)           */
     /* ******************************************************************* */
 
-    class Short: public CollExchange
+    template<class T_Mcast>
+    class Short: public CollExchange<T_Mcast>
     {
     public:
       static const int MAXBUF = 1000;
       void * operator new (size_t, void * addr) { return addr; }
-      Short (Communicator * comm, NBTag tag, int instID, int offset);
+      Short(XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset);
       void reset (const void        * s, 
 		  void              * d,
-		  XMI_Op             op,
-		  XMI_Dt             dt,
+		  xmi_op             op,
+		  xmi_dt             dt,
 		  unsigned            nelems);
     protected:
-      static void cb_switchbuf (CollExchange *, unsigned phase);
-      static void cb_allreduce (CollExchange *, unsigned phase);
+      static void cb_switchbuf (CollExchange<T_Mcast> *, unsigned phase);
+      static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
     protected:
       int           _nelems, _logMaxBF;
       void        * _dbuf;
@@ -66,19 +67,19 @@ namespace TSPColl
     /* ******************************************************************* */
     /* long allreduce (extra data buffer, message xfer permit protocol)    */
     /* ******************************************************************* */
-
-    class Long: public CollExchange
+    template<class T_Mcast>
+    class Long: public CollExchange<T_Mcast>
     {
     public:
       void * operator new (size_t, void * addr) { return addr; }
-      Long (Communicator * comm, NBTag tag, int instID, int offset);
+      Long (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset);
       //      void reset (const void * s, void * d,
       //		  __pgasrt_ops_t op, __pgasrt_dtypes_t dt, unsigned nelems);
       void reset (const void * s, void * d,
-		  XMI_Op op, XMI_Dt dt, unsigned nelems);
+		  xmi_op op, xmi_dt dt, unsigned nelems);
 
     protected:
-      static void cb_allreduce (CollExchange *, unsigned phase);
+      static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
       
     protected:
       int           _nelems, _logMaxBF;

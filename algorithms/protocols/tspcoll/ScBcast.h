@@ -35,24 +35,26 @@
 
 namespace TSPColl
 {
-  class ScBcast: public NBColl
+
+  template <class T_Mcast>
+  class ScBcast: public NBColl<T_Mcast>
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
-    ScBcast (Communicator * comm, NBTag tag, int instID, int tagoff);
+    ScBcast (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff);
     void reset (int root, const void * sbuf, void *buf, size_t);
-    virtual void kick (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    virtual void kick (T_Mcast *mcast_iface);
     virtual bool isdone (void) const;
-    static void amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    static void amsend_reg  (T_Mcast *mcast_iface);
   protected:
-    CCMI::MultiSend::OldMulticastInterface *_mcast_iface;
+    T_Mcast *_mcast_iface;
   private:
-    size_t     *_lengths;
-    Scatterv   _scatterv;
-    Barrier    _barrier;
-    Barrier    _barrier2;
-    Barrier    _barrier3;
-    Allgatherv _allgatherv;
+    size_t             *_lengths;
+    Scatterv<T_Mcast>   _scatterv;
+    Barrier<T_Mcast>    _barrier;
+    Barrier<T_Mcast>    _barrier2;
+    Barrier<T_Mcast>    _barrier3;
+    Allgatherv<T_Mcast> _allgatherv;
 
   private:
 
@@ -67,9 +69,10 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                    broadcast constructor                                */
 /* *********************************************************************** */
-inline TSPColl::ScBcast::
-ScBcast(Communicator * comm, NBTag tag, int instID, int tagoff) :
-               NBColl (comm, tag, instID, NULL, NULL),
+template <class T_Mcast>
+inline TSPColl::ScBcast<T_Mcast>::
+ScBcast(XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff) :
+               NBColl<T_Mcast> (comm, tag, instID, NULL, NULL),
 	       _scatterv (comm, tag, instID, 
 			  (size_t)&_scatterv - (size_t) this + tagoff),
 	       _barrier (comm, tag, instID,
@@ -101,7 +104,8 @@ ScBcast(Communicator * comm, NBTag tag, int instID, int tagoff) :
 #define CEIL(x,y) (((x)+(y)-1)/(y))
 #define MIN(x,y) (((x)<(y))?(x):(y))
 
-inline void TSPColl::ScBcast::
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::
 reset (int root, const void * sbuf, void *rbuf, size_t len)
 {
   int myoffset = -1;
@@ -125,7 +129,8 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
 /* *********************************************************************** */
 /*              start the broadcast rolling                                */
 /* *********************************************************************** */
-inline void TSPColl::ScBcast::kick (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::kick (T_Mcast *mcast_iface)
 {
   TRACE((stderr, "%d: SCBCAST kick\n", PGASRT_MYNODE));
   _mcast_iface = mcast_iface;
@@ -135,7 +140,8 @@ inline void TSPColl::ScBcast::kick (CCMI::MultiSend::OldMulticastInterface *mcas
 /* *********************************************************************** */
 /*               first phase is complete: start allgather                  */
 /* *********************************************************************** */
-inline void TSPColl::ScBcast::scattercomplete(void *arg)
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::scattercomplete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST scattercomplete\n", PGASRT_MYNODE));
@@ -146,7 +152,8 @@ inline void TSPColl::ScBcast::scattercomplete(void *arg)
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-inline void TSPColl::ScBcast::barriercomplete(void *arg)
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::barriercomplete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barriercomplete\n", PGASRT_MYNODE));
@@ -156,7 +163,8 @@ inline void TSPColl::ScBcast::barriercomplete(void *arg)
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-inline void TSPColl::ScBcast::barrier2complete(void *arg)
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::barrier2complete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barrier2complete\n", PGASRT_MYNODE));
@@ -166,7 +174,8 @@ inline void TSPColl::ScBcast::barrier2complete(void *arg)
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-inline void TSPColl::ScBcast::barrier3complete(void *arg)
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::barrier3complete(void *arg)
 {
   TRACE((stderr, "%d: SCBCAST barrier3complete\n", PGASRT_MYNODE));
   // ScBcast * self = (ScBcast *) arg;
@@ -174,7 +183,8 @@ inline void TSPColl::ScBcast::barrier3complete(void *arg)
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-inline void TSPColl::ScBcast::allgathervcomplete(void *arg)
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::allgathervcomplete(void *arg)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST agvcomplete\n", PGASRT_MYNODE));
@@ -184,13 +194,14 @@ inline void TSPColl::ScBcast::allgathervcomplete(void *arg)
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-inline bool TSPColl::ScBcast::isdone (void) const
+template <class T_Mcast>
+inline bool TSPColl::ScBcast<T_Mcast>::isdone (void) const
 {
   return _allgatherv.isdone();
   // return _barrier3.isdone();
 }
-
-inline void TSPColl::ScBcast::amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template <class T_Mcast>
+inline void TSPColl::ScBcast<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface)
 {
   assert(0);
   //  mcast_iface->setCallback(cb_incoming, NULL);

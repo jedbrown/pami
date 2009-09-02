@@ -15,6 +15,7 @@
 
 #include "util/ccmi_debug.h"
 #include "NBColl.h"
+#include "algorithms/ccmi.h" //for request type
 
 #include <assert.h>
 #include <stdio.h>
@@ -37,7 +38,8 @@
 
 namespace TSPColl
 {
-  class CollExchange: public NBColl
+  template<class T_Mcast>
+  class CollExchange: public NBColl<T_Mcast>
   {
   protected:
     //    static const int MAX_PHASES=64;
@@ -47,12 +49,12 @@ namespace TSPColl
     /* ------------------------------ */
     /*  public API                    */
     /* ------------------------------ */
-    virtual void  kick             (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    virtual void  kick             (T_Mcast *mcast_iface);
     virtual bool  isdone           () const;
-    static void   amsend_reg       (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    static void   amsend_reg       (T_Mcast *mcast_iface);
   protected:
 
-    CollExchange                   (Communicator *, NBTag, 
+    CollExchange                   (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *, NBTag, 
 				    int id, int off, bool strict=true,
 				    void (*cb_complete)(void *)=NULL,
 				    void * arg = NULL);
@@ -65,9 +67,9 @@ namespace TSPColl
     /*  local functions               */
     /* ------------------------------ */
     
-    void          send                     (int phase,CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    void          send                     (int phase,T_Mcast*mcast_iface);
     //static inline CCMI::MultiSend::DCMF_OldRecvMulticast cb_incoming;
-    static inline XMI_Request_t *cb_incoming(const XMIQuad  * hdr,
+    static inline XMI_Request_t *cb_incoming(const xmi_quad_t  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,
@@ -78,8 +80,8 @@ namespace TSPColl
 							   unsigned        * pipewidth,
 							   XMI_Callback_t * cb_done);
     
-    static void   cb_recvcomplete (void * arg, XMI_Error_t* error);
-    static void   cb_senddone              (void *, XMI_Error_t *err);
+    static void   cb_recvcomplete (void * arg, xmi_result_t* error);
+    static void   cb_senddone              (void *, xmi_result_t *err);
     
   protected:
     /* ------------------------------ */
@@ -88,7 +90,7 @@ namespace TSPColl
     XMI_Request_t                       _req[MAX_PHASES];
     XMI_Request_t                       _rreq[MAX_PHASES];
     
-    CCMI::MultiSend::OldMulticastInterface *_mcast_iface;
+    T_Mcast                            *_mcast_iface;
 
     int          _numphases;
 
@@ -146,15 +148,15 @@ namespace TSPColl
 
     DECL_MUTEX(_mutex);
 
-    void internalerror (TSPColl::CollExchange::AMHeader *, int);
+    void internalerror (TSPColl::CollExchange<T_Mcast>::AMHeader *, int);
   };
 };
   
 /* *********************************************************************** */
 /*                  register collexchange                                  */
 /* *********************************************************************** */
-
-inline void TSPColl::CollExchange::amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template <class T_Mcast>
+inline void TSPColl::CollExchange<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface)
 {
   
   mcast_iface->setCallback(cb_incoming, NULL);
@@ -166,10 +168,12 @@ inline void TSPColl::CollExchange::amsend_reg  (CCMI::MultiSend::OldMulticastInt
 /* *********************************************************************** */
 /*                  CollExchange constructor                               */
 /* *********************************************************************** */
-inline TSPColl::CollExchange::
-CollExchange (Communicator * comm, NBTag tag, int id, int offset, 
-	      bool strict, void (*cb_complete)(void *), void *arg):
-              NBColl (comm, tag, id, cb_complete, arg), _strict(strict)
+template <class T_Mcast>
+inline TSPColl::CollExchange<T_Mcast>::
+CollExchange (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm,
+                       NBTag tag, int id, int offset, 
+                       bool strict, void (*cb_complete)(void *), void *arg):
+NBColl<T_Mcast> (comm, tag, id, cb_complete, arg), _strict(strict)
 {
   _counter         = 0;
   _numphases       = -100 * tag;
@@ -199,7 +203,8 @@ CollExchange (Communicator * comm, NBTag tag, int id, int offset,
 /* *********************************************************************** */
 /*    reinitialize the state machine for another collective execution      */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::reset()
+template <class T_Mcast>
+inline void TSPColl::CollExchange<T_Mcast>::reset()
 {
   _sendstarted = _sendcomplete = 0;
   _counter++;
@@ -209,7 +214,8 @@ inline void TSPColl::CollExchange::reset()
 /* *********************************************************************** */
 /*                   kick the state machine (make progress)                */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template <class T_Mcast>
+inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
 {
   /* continued ATOMIC (code should be entered with mutex already locked */
   _mcast_iface = mcast_iface;
@@ -314,7 +320,8 @@ inline void TSPColl::CollExchange::kick(CCMI::MultiSend::OldMulticastInterface *
 /* *********************************************************************** */
 /*    advance the progress engine                                          */
 /* *********************************************************************** */
-inline bool TSPColl::CollExchange::isdone() const
+template <class T_Mcast>
+inline bool TSPColl::CollExchange<T_Mcast>::isdone() const
 {
     TRACE((stderr, "Is done:  _phase=%d sendcomplete=%d, numphase=%d\n",
 	   _phase, _sendcomplete, _numphases));
@@ -324,7 +331,8 @@ inline bool TSPColl::CollExchange::isdone() const
 /* *********************************************************************** */
 /*                     send an active message                              */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template <class T_Mcast>
+inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_iface)
 {
   TRACE((stderr, "SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d, mcast_iface=%p\n",
 	 _tag, _counter, phase, 
@@ -355,7 +363,7 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::OldMulticas
   mcast_iface->send (&_req[phase],
 		     &cb_done,
 		     CCMI_MATCH_CONSISTENCY,
-		     (XMIQuad*)& _header[phase],
+		     (xmi_quad_t*)& _header[phase],
 		     CCMIQuad_sizeof(_header[phase]),
 		     0,
 		     (char*)_sbuf[phase],
@@ -371,7 +379,8 @@ inline void TSPColl::CollExchange::send (int phase, CCMI::MultiSend::OldMulticas
 /* *********************************************************************** */
 /*                             send complete                               */
 /* *********************************************************************** */
-inline void TSPColl::CollExchange::cb_senddone (void * arg, XMI_Error_t *err)
+template <class T_Mcast>
+inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (void * arg, xmi_result_t *err)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   MUTEX_LOCK(&base->_mutex);
@@ -389,7 +398,8 @@ inline void TSPColl::CollExchange::cb_senddone (void * arg, XMI_Error_t *err)
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
-inline XMI_Request_t * TSPColl::CollExchange::cb_incoming(const XMIQuad  * hdr,
+template <class T_Mcast>
+inline XMI_Request_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
 							   unsigned          count,
 							   unsigned          peer,
 							   unsigned          sndlen,
@@ -402,7 +412,7 @@ inline XMI_Request_t * TSPColl::CollExchange::cb_incoming(const XMIQuad  * hdr,
 
 {
   struct AMHeader * header = (struct AMHeader *) hdr;
-  void * base0 = NBCollManager::instance()->find (header->tag, header->id);
+  void * base0 = NBCollManager<T_Mcast>::instance()->find (header->tag, header->id);
   if (base0 == NULL)
     CCMI_FATALERROR (-1, "incoming: cannot find coll=<%d,%d>",
 		     header->tag, header->id);
@@ -442,8 +452,9 @@ inline XMI_Request_t * TSPColl::CollExchange::cb_incoming(const XMIQuad  * hdr,
 /* *********************************************************************** */
 /*                  active message reception complete                      */
 /* *********************************************************************** */
+template <class T_Mcast>
 inline void 
-TSPColl::CollExchange::cb_recvcomplete (void * arg, XMI_Error_t* error)
+TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (void * arg, xmi_result_t* error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;
@@ -464,15 +475,16 @@ TSPColl::CollExchange::cb_recvcomplete (void * arg, XMI_Error_t* error)
 /* *********************************************************************** */
 /*      something bad happened. We print the state as best as we can.      */
 /* *********************************************************************** */
+template <class T_Mcast>
 inline void 
-TSPColl::CollExchange::internalerror (AMHeader * header, int lineno)
+TSPColl::CollExchange<T_Mcast>::internalerror (AMHeader * header, int lineno)
 {
   if (header)
     fprintf (stderr, "CollExchange internal: line=%d "
 	     "tag=%d id=%d phase=%d/%d ctr=%d "
 	     "header: tag=%d id=%d phase=%d ctr=%d\n",
 	     lineno,
-             NBColl::_tag, NBColl::_instID, 
+             NBColl<T_Mcast>::_tag, NBColl<T_Mcast>::_instID, 
 	     _phase, _numphases, _counter,
 	     header->tag, header->id, header->phase,
 	     header->counter);
@@ -480,7 +492,7 @@ TSPColl::CollExchange::internalerror (AMHeader * header, int lineno)
     fprintf (stderr, "CollExchange internal: line=%d "
 	     "tag=%d id=%d phase=%d/%d ctr=%d\n",
 	     lineno,
-	     NBColl::_tag, NBColl::_instID,
+	     NBColl<T_Mcast>::_tag, NBColl<T_Mcast>::_instID,
 	     _phase, _numphases, _counter);
   abort();
 }

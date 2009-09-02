@@ -17,8 +17,9 @@
 #ifdef OP
 #ifdef TYPE
 
-XMI_assert_debug(nsrc <= MATH_MAX_NSRC);
-XMI_assert_debug(nsrc >= 2);
+#warning "MATH:  need to turn these compile time asserts back on"
+//XMI_assert_debug(nsrc <= MATH_MAX_NSRC);
+//XMI_assert_debug(nsrc >= 2);
 register int n = 0, m;
 TYPE buf0[MATH_MAX_NSRC];
 register TYPE rbuffer0;

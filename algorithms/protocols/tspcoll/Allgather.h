@@ -19,7 +19,6 @@
 #include <stdlib.h>
 
 #include "./CollExchange.h"
-#include "interface/Communicator.h"
 //#define DEBUG_ALLGATHER 1
 #undef TRACE
 #ifdef DEBUG_ALLGATHER
@@ -34,12 +33,13 @@
 
 namespace TSPColl
 {
-  class Allgather: public CollExchange
+  template <class T_Mcast>
+  class Allgather: public CollExchange<T_Mcast>
   {
   public:
     static 
     void * operator new (size_t, void * addr)    { return addr; }
-    Allgather (Communicator *, NBTag tag, int instID, int offset);
+    Allgather (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *, NBTag tag, int instID, int offset);
     void reset (const void *, void *, size_t nbytes);
   private:
     char _dummy;
@@ -49,9 +49,10 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                   Allgather constructor                                 */
 /* *********************************************************************** */
-inline TSPColl::Allgather::Allgather (Communicator *comm, NBTag tag, 
+template <class T_Mcast>
+inline TSPColl::Allgather<T_Mcast>::Allgather (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *comm, NBTag tag, 
 				      int instID, int offset):
-	       CollExchange (comm, tag, instID, offset, false)
+  CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
@@ -71,8 +72,9 @@ inline TSPColl::Allgather::Allgather (Communicator *comm, NBTag tag,
 /*              start a new allgather operation                     */
 /* **************************************************************** */
 
+template <class T_Mcast>
 inline
-void TSPColl::Allgather::reset (const void *sbuf, void *rbuf, size_t nbytes)
+void TSPColl::Allgather<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t nbytes)
 {
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
@@ -110,6 +112,6 @@ void TSPColl::Allgather::reset (const void *sbuf, void *rbuf, size_t nbytes)
 	}
     }
 
-  CollExchange::reset();
+  CollExchange<T_Mcast>::reset();
 }
 #endif

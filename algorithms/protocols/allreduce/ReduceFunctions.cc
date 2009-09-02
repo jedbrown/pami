@@ -48,8 +48,8 @@ namespace CCMI
 ///
 /// \brief Get the reduce function and datatype size
 ///
-      void getReduceFunction(XMI_Dt           dtype,
-                             XMI_Op           op,
+      void getReduceFunction(xmi_dt           dtype,
+                             xmi_op           op,
                              unsigned          count,
                              unsigned        & sizeOfType,
                              coremath        & func )

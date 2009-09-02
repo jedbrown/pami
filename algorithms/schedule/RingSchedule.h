@@ -15,8 +15,7 @@
 #define  __ring_schedule__
 
 #include "Schedule.h" 
-#include "interface/CollectiveMapping.h"
-
+#include "platform.h"
 //#include "Rectangle.h"
 
 #define TRACE_RING(x)   
@@ -49,9 +48,9 @@ namespace CCMI
       {
       }
 
-      RingSchedule (CollectiveMapping *map, unsigned nranks, unsigned *ranks); 
+      RingSchedule (XMI_MAPPING_CLASS *map, unsigned nranks, unsigned *ranks); 
       RingSchedule (unsigned x, unsigned x0, unsigned xN);
-      //RingSchedule (Rectangle  *rect, CollectiveMapping *map);
+      //RingSchedule (Rectangle  *rect, XMI_MAPPING_CLASS *map);
 
       //Ring broadcast: Send to next and recv from prev
       void getBroadcastSources (unsigned  phase, unsigned *srcpes,
@@ -130,7 +129,7 @@ namespace CCMI
         if(_ranks != NULL)
         {
           for(idx = 0; idx < _nranks; idx++)
-            if(_mapping->rank() == _ranks[idx])
+            if(_mapping->task() == _ranks[idx])
               return idx;
 
           return(unsigned)-1;
@@ -377,14 +376,14 @@ namespace CCMI
         TRACE_SCHEDULE(("In Ring Schedule _prev = %d, _next = %d\n", _prev, _next));
       }
 
-      static unsigned getMaxPhases (CollectiveMapping *map, unsigned nranks)
+      static unsigned getMaxPhases (XMI_MAPPING_CLASS *map, unsigned nranks)
       {
         return nranks - 1;
       }
 
 
     protected:
-      CollectiveMapping              * _mapping;  
+      XMI_MAPPING_CLASS              * _mapping;  
       unsigned   short       _op;
       unsigned               _root; 
       unsigned               _startPhase; 
@@ -408,7 +407,7 @@ namespace CCMI
 
 
 inline CCMI::Schedule::RingSchedule::RingSchedule 
-(CollectiveMapping       * map, 
+(XMI_MAPPING_CLASS       * map, 
  unsigned        nranks, 
  unsigned      * ranks) :
 _mapping (map), 
@@ -448,7 +447,7 @@ _x0 (x0), _my_x (x)
 
 #if 0
 inline CCMI::Schedule::RingSchedule::RingSchedule 
-(Rectangle  *rect, CollectiveMapping *map) : 
+(Rectangle  *rect, XMI_MAPPING_CLASS *map) : 
 _mapping (map), _isHead (false), _isTail (false), _ranks(NULL), 
 _nranks((unsigned)-1), _x0((unsigned) -1), _my_x ((unsigned) -1)
 {

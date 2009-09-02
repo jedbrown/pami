@@ -3,10 +3,10 @@
 
 #include "sys/xmi.h"
 #include "util/queue/MatchQueue.h"
-#include "algorithms/schedule/Rectangle.h"
+//#include "algorithms/schedule/Rectangle.h"
 
-//#define RECTANGLE_TYPE void*
-#define RECTANGLE_TYPE CCMI::Schedule::Rectangle*
+#define RECTANGLE_TYPE void*
+//#define RECTANGLE_TYPE CCMI::Schedule::Rectangle*
 
 #define EXECUTOR_TYPE  void*
 //#define EXECUTOR_TYPE  CCMI::Executor::Executor*

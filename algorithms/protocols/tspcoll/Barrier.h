@@ -14,7 +14,7 @@
 #define __tspcoll_barrier_h__
 
 #include "./CollExchange.h"
-#include "interface/Communicator.h"
+#include "platform.h"
 
 #undef TRACE
 //#define DEBUG_TSPCOLL_BARRIER 1
@@ -30,12 +30,13 @@
 
 namespace TSPColl
 {
-  class Barrier: public CollExchange
+  template <class T_Mcast>
+  class Barrier: public CollExchange<T_Mcast>
   {
   public:
     void * operator new (size_t, void * addr)    { return addr; }
-    Barrier (Communicator * comm, NBTag tag, int instID, int offset);
-    void reset () { CollExchange::reset(); }
+    Barrier (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset);
+    void reset () { CollExchange<T_Mcast>::reset(); }
   private:
     char _dummy;
   };
@@ -45,9 +46,10 @@ namespace TSPColl
 /*                 constructor                                             */
 /* *********************************************************************** */
 
-inline TSPColl::Barrier::
-Barrier (Communicator * comm, NBTag tag, int instID, int offset) :
-	       CollExchange (comm, tag, instID, offset, false)
+template <class T_Mcast>
+inline TSPColl::Barrier<T_Mcast>::
+Barrier (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset) :
+  CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n", 
 	 PGASRT_MYNODE, _comm->rank(), _comm->size()));

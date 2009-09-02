@@ -12,11 +12,11 @@
 
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
-#include "interface/MultiSend.h"
+#include "platform.h"
 
 namespace TSPColl
 {
-  class Communicator;
+//  class XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>;
   typedef unsigned char *           __pgasrt_local_addr_t;
   /* *********************************************************** */
   /* *********************************************************** */
@@ -40,21 +40,22 @@ namespace TSPColl
   /* *********************************************************** */
   /*        a generic non-blocking transport collective          */
   /* *********************************************************** */
+  template <class T_mcast>
   class NBColl
   {
   public:
-    NBColl (Communicator * comm, NBTag tag, int instID,
+    NBColl (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID,
 	    void (*cb_complete)(void *), void *arg);
 
   public:
-    virtual void  kick  (CCMI::MultiSend::OldMulticastInterface *mcast_iface) {};
+    virtual void  kick  (T_mcast *mcast_iface) {};
     virtual bool isdone () const { return false; } /* check completion */
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }
     virtual void setComplete (void (*cb_complete)(void *), void *arg);
 
   protected:
-    Communicator * _comm;
+    XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * _comm;
     NBTag          _tag;
     int            _instID;
     void        (* _cb_complete) (void *);
@@ -64,10 +65,11 @@ namespace TSPColl
   /* *********************************************************** */
   /*    A factory for generating non-blocking coll. instances    */
   /* *********************************************************** */
+  template <class T_Mcast>
   class NBCollFactory
   {
   public:
-    static NBColl * create (Communicator * comm, NBTag tag, int id);
+    static NBColl<T_Mcast> * create (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int id);
     static void initialize();
   };
 
@@ -94,6 +96,7 @@ namespace TSPColl
   /*   Managing non-blocking collectives at runtime.             */
   /* The manager is a singleton.                                 */
   /* *********************************************************** */
+  template <class T_Mcast>
   class NBCollManager
   {
   public:
@@ -104,16 +107,16 @@ namespace TSPColl
     static void initialize ();
     static NBCollManager * instance();
 
-    NBColl * find (NBTag tag, int id); /* find an existing instance */
-    NBColl * allocate (Communicator *, NBTag tag);
-    void     multisend_reg (NBTag tag,CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    NBColl<T_Mcast> * find (NBTag tag, int id); /* find an existing instance */
+    NBColl<T_Mcast> * allocate (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *, NBTag tag);
+    void     multisend_reg (NBTag tag,T_Mcast *mcast_iface);
 
   private:
     /* ------------ */
     /* data members */
     /* ------------ */
 
-    Vector<NBColl *>        * _taglist[MAXTAG];
+    Vector<NBColl<T_Mcast> *>        * _taglist[MAXTAG];
     static NBCollManager    * _instance; 
 
   private:

@@ -18,6 +18,7 @@
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
 #include "Schedule.h"
+#include "platform.h"
 
 namespace CCMI
 {
@@ -246,7 +247,7 @@ namespace CCMI
 
     public:
 
-      static unsigned getMaxPhases(CollectiveMapping *mapping, unsigned nranks,
+      static unsigned getMaxPhases(XMI_MAPPING_CLASS *mapping, unsigned nranks,
                                    unsigned *nbino = NULL)
       {
         unsigned nph;
@@ -288,7 +289,7 @@ namespace CCMI
        * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
        */
-      BinomialTreeSchedule(CollectiveMapping *mapping, unsigned nranks,
+      BinomialTreeSchedule(XMI_MAPPING_CLASS *mapping, unsigned nranks,
                            unsigned *ranks);
 
       /**
@@ -401,14 +402,14 @@ namespace CCMI
  * \param[in] ranks	Ranks list
  */
 inline CCMI::Schedule::BinomialTreeSchedule::
-BinomialTreeSchedule(CollectiveMapping *mapping, unsigned nranks, unsigned *ranks) : Schedule()
+BinomialTreeSchedule(XMI_MAPPING_CLASS *mapping, unsigned nranks, unsigned *ranks) : Schedule()
 {
 
   CCMI_assert(nranks > 0);
   CCMI_assert(ranks != NULL);
 
   /* find my index - my place in rank list */
-  unsigned rank = mapping->rank();
+  unsigned rank = mapping->task();
   CCMI::Schedule::BinomialTreeSchedule::
   initBinoSched(rank, 0, nranks - 1, ranks);
 }

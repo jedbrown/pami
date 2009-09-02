@@ -19,7 +19,6 @@
 #include <stdlib.h>
 
 #include "./CollExchange.h"
-#include "interface/Communicator.h"
 
 /* *********************************************************************** */
 /*                     Allgather (Bruck's algorithm)                       */
@@ -27,11 +26,12 @@
 
 namespace TSPColl
 {
-  class Allgatherv: public CollExchange
+  template <class T_Mcast>
+  class Allgatherv: public CollExchange<T_Mcast>
   {
   public:
     void * operator new (size_t, void * addr)    { return addr; }
-    Allgatherv (Communicator * comm, NBTag tag, int instID, int offset);
+    Allgatherv (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset);
     void reset (const void *, void *, size_t * lengths);
   private:
     char _dummy;
@@ -41,9 +41,10 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                   Allgather constructor                                 */
 /* *********************************************************************** */
-inline TSPColl::Allgatherv::Allgatherv (Communicator * comm, NBTag tag, 
+template <class T_Mcast>
+inline TSPColl::Allgatherv<T_Mcast>::Allgatherv (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, 
 					int instID, int off):
-	       CollExchange (comm, tag, instID, off, false)
+  CollExchange<T_Mcast> (comm, tag, instID, off, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
@@ -62,8 +63,9 @@ inline TSPColl::Allgatherv::Allgatherv (Communicator * comm, NBTag tag,
 /* **************************************************************** */
 /*              start a new allgather operation                     */
 /* **************************************************************** */
+template <class T_Mcast>
 inline void TSPColl::
-Allgatherv::reset (const void *sbuf, void *rbuf, size_t * lengths)
+Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
 {
   size_t allsumbytes= 0;
   for(int i=0;i<this->_comm->size();i++) 
@@ -112,6 +114,6 @@ Allgatherv::reset (const void *sbuf, void *rbuf, size_t * lengths)
   /* ----------------------------------- */
   /* ----------------------------------- */
 
-  CollExchange::reset();
+  CollExchange<T_Mcast>::reset();
 }
 #endif

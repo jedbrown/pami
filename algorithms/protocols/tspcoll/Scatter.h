@@ -17,31 +17,32 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include "algorithms/ccmi.h" // for XMI_Request_t
 #include "./NBColl.h"
-#include "interface/Communicator.h"
+
 /* **************************************************************** */
 /*                      Scatter                                     */
 /* **************************************************************** */
 
 namespace TSPColl
 {
-  class Scatter: public NBColl
+  template <class T_Mcast>
+  class Scatter: public NBColl<T_Mcast>
   {
   protected:
     static const int MAX_CONCURRENCY=10;
 
   public:
     void * operator new (size_t, void * addr)    { return addr; }
-    Scatter      (Communicator * comm, NBTag tag, int instID, int tagoff);
+    Scatter      (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff);
     void reset   (int root, const void * sbuf, void * rbuf, size_t length);
-    virtual void kick    (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    virtual void kick    (T_Mcast *mcast_iface);
     virtual bool isdone  (void) const { return _complete >= _counter; }
-    static void amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    static void amsend_reg  (T_Mcast *mcast_iface);
   protected:
     XMI_Request_t                       *_req;
     XMI_Request_t                       _rreq;
-    CCMI::MultiSend::OldMulticastInterface *_mcast_iface;
+    T_Mcast       *_mcast_iface;
     const char    * _sbuf;         /* send buffer    */
     void          * _rbuf;         /* receive buffer */
     size_t          _length;       /* msg length     */
@@ -62,7 +63,7 @@ namespace TSPColl
     _header;
     
   protected:
-    static  XMI_Request_t * cb_incoming(const XMIQuad  * hdr,
+    static  XMI_Request_t * cb_incoming(const xmi_quad_t  * hdr,
 					 unsigned          count,
 					 unsigned          peer,
 					 unsigned          sndlen,
@@ -72,14 +73,14 @@ namespace TSPColl
 					 char           ** rcvbuf,
 					 unsigned        * pipewidth,
 					 XMI_Callback_t * cb_done);
-    static void cb_recvcomplete (void *arg, XMI_Error_t*err);
+    static void cb_recvcomplete (void *arg, xmi_result_t*err);
     static void cb_senddone (void *);
   };
 };
-
-inline void TSPColl::Scatter::amsend_reg  (CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template <class T_Mcast>
+inline void TSPColl::Scatter<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface)
     {
-      mcast_iface->setCallback(TSPColl::Scatter::cb_incoming, NULL);
+      mcast_iface->setCallback(TSPColl::Scatter<T_Mcast>::cb_incoming, NULL);
     }
 /* **************************************************************** */
 /*                    Scatterv                                      */
@@ -87,14 +88,15 @@ inline void TSPColl::Scatter::amsend_reg  (CCMI::MultiSend::OldMulticastInterfac
 
 namespace TSPColl
 {
-  class Scatterv: public Scatter
+  template <class T_Mcast>
+  class Scatterv: public Scatter<T_Mcast>
   {
   public:
     void * operator new (size_t, void * addr)    { return addr; }
-    Scatterv (Communicator * comm, NBTag tag, int instID, int tagoff):
-              Scatter (comm, tag, instID, tagoff), _lengths(0) { }
+    Scatterv (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff):
+      Scatter<T_Mcast> (comm, tag, instID, tagoff), _lengths(0) { }
     void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
-    virtual void kick (CCMI::MultiSend::OldMulticastInterface *mcast_iface);
+    virtual void kick (T_Mcast *mcast_iface);
   protected:
     size_t * _lengths;  
   };

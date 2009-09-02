@@ -513,8 +513,8 @@ namespace CCMI
 /////////////////////////////////////////////
 ///   Protected Methods
 /////////////////////////////////////////////
-
-inline void CCMI::Executor::AllreduceBase::advance ()
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::advance ()
 {
 
   Logging::LogMgr::getLogMgr()->startCounter (_log_advance);
@@ -652,7 +652,8 @@ inline void CCMI::Executor::AllreduceBase::advance ()
 ///
 ///  \brief Send the next message by calling the msend interface
 ///
-inline void CCMI::Executor::AllreduceBase::sendMessage 
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::sendMessage 
 (const char             * buf, 
  unsigned                 bytes,
  unsigned               * dstpes,
@@ -706,8 +707,8 @@ inline void CCMI::Executor::AllreduceBase::sendMessage
 ///  Public methods that can be called externally
 ///
 ////////////////////////////////////////////////////////
-
-inline void CCMI::Executor::AllreduceBase::start()
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::start()
 {
   _initialized = true;    
   _sState->sndClientData.me        = this;
@@ -734,8 +735,8 @@ inline void CCMI::Executor::AllreduceBase::start()
   TRACE_INIT ((stderr,"<%#.8X>Executor::AllreduceBase start()\n",(int)this));
 }
 
-
-inline void CCMI::Executor::AllreduceBase::notifyRecv 
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifyRecv 
 (unsigned                     src, 
  const xmi_quad_t             & info, 
  char                       * buf, 
@@ -757,8 +758,8 @@ inline void CCMI::Executor::AllreduceBase::notifyRecv
     advance();
 }
 
-
-inline void CCMI::Executor::AllreduceBase::notifySendDone 
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifySendDone 
 ( const xmi_quad_t & info)
 {
   // update state
@@ -773,8 +774,8 @@ inline void CCMI::Executor::AllreduceBase::notifySendDone
   advance ();
 }
 
-
-inline void CCMI::Executor::AllreduceBase::postReceives ()
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::postReceives ()
 {
   Logging::LogMgr::getLogMgr()->startCounter (_log_postrecv);
 
@@ -785,7 +786,7 @@ inline void CCMI::Executor::AllreduceBase::postReceives ()
   {
     if(_astate.getPhaseNumSrcPes(p) > 0)
     {
-      MultiSend::CCMI_OldMulticastRecv_t *recv = _astate.getPhaseMcastRecv (p,0);
+      T_Mcastrecv *recv = _astate.getPhaseMcastRecv (p,0);
       recv->cb_done.function = _recvCallbackHandler;
       _msendInterface->postRecv(recv);
     }
@@ -797,9 +798,9 @@ inline void CCMI::Executor::AllreduceBase::postReceives ()
               (int)this));  
 }
 
-
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
 inline XMI_Request_t * 
-CCMI::Executor::AllreduceBase::notifyRecvHead 
+CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifyRecvHead 
 (const xmi_quad_t  * info,
  unsigned          count,
  unsigned          peer,
@@ -912,8 +913,9 @@ CCMI::Executor::AllreduceBase::notifyRecvHead
 ///  \fast callback for short allreduce operations
 ///  This callback does not return a request
 ///
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
 inline void 
-CCMI::Executor::AllreduceBase::notifyRecvShort 
+CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifyRecvShort 
 (unsigned          phase,
  unsigned          sndlen,
  unsigned          srcindex,

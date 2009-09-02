@@ -23,9 +23,10 @@
 /* **************************************************************** */
 /*                 Scatterv constructor                             */
 /* **************************************************************** */
-TSPColl::Scatter::Scatter (Communicator * comm, NBTag tag, 
+template<class T_Mcast>
+TSPColl::Scatter<T_Mcast>::Scatter (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, 
 			   int instID, int tagoff):
-  NBColl (comm, tag, instID, NULL, NULL)
+  NBColl<T_Mcast> (comm, tag, instID, NULL, NULL)
 {
   _counter         = 0;
   _complete        = 0;
@@ -46,7 +47,8 @@ TSPColl::Scatter::Scatter (Communicator * comm, NBTag tag,
 /* **************************************************************** */
 /*               reset the scatterv routine                         */
 /* **************************************************************** */
-void TSPColl::Scatter::
+template<class T_Mcast>
+void TSPColl::Scatter<T_Mcast>::
 reset (int root, const void * sbuf, void * rbuf, size_t length)
 {
   _isroot = (root == this->_comm->rank());
@@ -60,7 +62,8 @@ reset (int root, const void * sbuf, void * rbuf, size_t length)
 /* **************************************************************** */
 /*              kick the scatter routine                            */
 /* **************************************************************** */
-void TSPColl::Scatter::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template<class T_Mcast>
+void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
 {
   _mcast_iface = mcast_iface;
   TRACE((stderr, "SCATTER KICK START\n"));
@@ -77,7 +80,7 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
       unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = this->_comm->absrankof (i);
       XMI_Callback_t cb_done;
-      cb_done.function        = (void (*)(void*, XMI_Error_t*))cb_senddone;
+      cb_done.function        = (void (*)(void*, xmi_result_t*))cb_senddone;
       cb_done.clientdata      = &this->_header;
       void * r = NULL;
       TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
@@ -85,7 +88,7 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
       mcast_iface->send (&_req[i],
 			 &cb_done,
 			 CCMI_MATCH_CONSISTENCY,
-			 (XMIQuad*)&this->_header,
+			 (xmi_quad_t*)&this->_header,
 			 CCMIQuad_sizeof(this->_header),
 			 0,
 			 (char*)(this->_sbuf + i * this->_length),
@@ -99,7 +102,8 @@ void TSPColl::Scatter::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 /* **************************************************************** */
 /*               send completion in scatter                         */
 /* **************************************************************** */
-void TSPColl::Scatter::cb_senddone (void * arg)
+template<class T_Mcast>
+void TSPColl::Scatter<T_Mcast>::cb_senddone (void * arg)
 {
   Scatter * self = ((struct scatter_header *)arg)->self;
   /* LOCK */
@@ -119,7 +123,8 @@ void TSPColl::Scatter::cb_senddone (void * arg)
 /* **************************************************************** */
 /*               reset the scatterv routine                         */
 /* **************************************************************** */
-void TSPColl::Scatterv::
+template<class T_Mcast>
+void TSPColl::Scatterv<T_Mcast>::
 reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 {
   this->_isroot = (root == this->_comm->rank());
@@ -136,15 +141,16 @@ reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 /* **************************************************************** */
 /*             kick the scatterv routine                            */
 /* **************************************************************** */
-void TSPColl::Scatterv::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+template<class T_Mcast>
+void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 {
-  _mcast_iface = mcast_iface;
+  this->_mcast_iface = mcast_iface;
   if (!this->_isroot) return;
   assert (this->_lengths != NULL && this->_sbuf != NULL);
   TRACE((stderr, "SCATTERV KICK ctr=%d cplt=%d\n",
 	 this->_counter, this->_complete));
 
-  _req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
+  this->_req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
     {
       const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
@@ -170,13 +176,13 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface
 	unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
 	unsigned        ranks   = this->_comm->absrankof (i);
 	XMI_Callback_t cb_done;
-	cb_done.function        = (void (*)(void*, XMI_Error_t*))this->cb_senddone;
+	cb_done.function        = (void (*)(void*, xmi_result_t*))this->cb_senddone;
 	cb_done.clientdata      = &this->_header;
 	void * r = NULL;
-	mcast_iface->send (&_req[i],
+	mcast_iface->send (&this->_req[i],
 			   &cb_done,
 			   CCMI_MATCH_CONSISTENCY,
-			   (XMIQuad*)&this->_header,
+			   (xmi_quad_t*)&this->_header,
 			   CCMIQuad_sizeof(this->_header),
 			   0,
 			   (char*)(s),
@@ -195,7 +201,8 @@ void TSPColl::Scatterv::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface
 //cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
 //	     void (** completionHandler)(void *, void *),
 //	     void ** arg)
-XMI_Request_t * TSPColl::Scatter::cb_incoming(const XMIQuad  * hdr,
+template<class T_Mcast>
+XMI_Request_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
 					       unsigned          count,
 					       unsigned          peer,
 					       unsigned          sndlen,
@@ -207,7 +214,7 @@ XMI_Request_t * TSPColl::Scatter::cb_incoming(const XMIQuad  * hdr,
 					       XMI_Callback_t * cb_done)
 {
   struct scatter_header * header = (struct scatter_header *) hdr;
-  void * base0 =  NBCollManager::instance()->find (header->tag, header->id);
+  void * base0 =  NBCollManager<T_Mcast>::instance()->find (header->tag, header->id);
   if (base0 == NULL)
     CCMI_FATALERROR (-1, "Scatter/v: <%d,%d> is undefined",
 		     header->tag, header->id);
@@ -219,7 +226,7 @@ XMI_Request_t * TSPColl::Scatter::cb_incoming(const XMIQuad  * hdr,
   *rcvbuf             = (char*)s->_rbuf;
   *rcvlen             = sndlen;
   *pipewidth          = sndlen;
-  cb_done->function   = (void (*)(void*, XMI_Error_t*))&Scatter::cb_recvcomplete;
+  cb_done->function   = (void (*)(void*, xmi_result_t*))&Scatter::cb_recvcomplete;
   cb_done->clientdata = s;
   
   TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING RETURING base=%p ptr=%p\n", 
@@ -237,7 +244,8 @@ XMI_Request_t * TSPColl::Scatter::cb_incoming(const XMIQuad  * hdr,
 /* **************************************************************** */
 /*           active message reception complete                      */
 /* **************************************************************** */
-void TSPColl::Scatter::cb_recvcomplete (void *arg, XMI_Error_t*err)
+template<class T_Mcast>
+void TSPColl::Scatter<T_Mcast>::cb_recvcomplete (void *arg, xmi_result_t*err)
 {
   Scatter * s = (Scatter *) arg;
   s->_complete++;

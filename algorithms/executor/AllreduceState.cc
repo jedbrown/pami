@@ -14,8 +14,8 @@
 //#include "AllreduceState.h"
 #include "AllreduceBase.h"
 
-
-void CCMI::Executor::AllreduceState::constructPhaseData()
+template<class T_mcastrecv>
+void CCMI::Executor::AllreduceState<T_mcastrecv>::constructPhaseData()
 {
 
   TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reset\n",(int)this));
@@ -145,7 +145,7 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
     sizeof(unsigned) +                          // _all_srcHints
     sizeof(unsigned) +                          // _all_chunks
     sizeof(char*)  +                            // _all_recvBufs
-    sizeof(MultiSend::CCMI_OldMulticastRecv_t))) + // _all_mrecvs
+    sizeof(T_mcastrecv))) + // _all_mrecvs
   (_numDstPes *                                 // dst pe data structures:
    (sizeof(unsigned) +                          // _all_dstPes
     sizeof(unsigned)));                         // _all_dstHints
@@ -182,7 +182,7 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
   _all_chunks   = (unsigned*)((char*)_all_srcHints + (_numSrcPes * sizeof(unsigned)));
   _all_dstPes   = (unsigned*)((char*)_all_chunks   + (_numSrcPes * sizeof(unsigned)));
   _all_dstHints = (unsigned*)((char*)_all_dstPes   + (_numDstPes * sizeof(unsigned)));
-  _all_mrecvs   = (MultiSend::CCMI_OldMulticastRecv_t *) ((char*)_all_dstHints   + (_numDstPes * sizeof(unsigned)));
+  _all_mrecvs   = (T_mcastrecv *) ((char*)_all_dstHints   + (_numDstPes * sizeof(unsigned)));
 
   TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() allocation<%#.8X> _phaseVec<%#.8X> _all_recvBufs<%#.8X> _all_srcPes<%#.8X> _all_srcHints<%#.8X> _all_chunks<%#.8X> _all_dstPes<%#.8X> _all_dstHints<%#.8X>\n",
                (int)this,(int)_scheduleAllocation,
@@ -223,7 +223,7 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
           else
             connID = _bconnmgr->getRecvConnectionId (_commid, _root, srcrank, i, _color);   
 
-          MultiSend::CCMI_OldMulticastRecv_t *mrecv = &(_phaseVec[i].mrecv[scount]); 
+          T_mcastrecv *mrecv = &(_phaseVec[i].mrecv[scount]); 
           mrecv->connection_id = connID;
           mrecv->bytes = _bytes;
           mrecv->pipelineWidth = _pipelineWidth;
@@ -399,8 +399,8 @@ void CCMI::Executor::AllreduceState::constructPhaseData()
   TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() exit\n",(int)this));
 }
 
-
-void  CCMI::Executor::AllreduceState::setupReceives(unsigned infoRequired)
+template<class T_mcastrecv>
+void  CCMI::Executor::AllreduceState<T_mcastrecv>::setupReceives(unsigned infoRequired)
 {
 
   TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setupReceives ALERT: Receive data being reset\n",(int)this));

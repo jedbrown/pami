@@ -36,7 +36,7 @@ typedef unsigned axii_t[NUM_AXIS];
 #include "Schedule.h"
 #include "./BinomialTree.h"
 #include "./RingSchedule.h"
-#include "interface/TorusCollectiveMapping.h"
+#include "platform.h"
 
 namespace CCMI
 {
@@ -244,10 +244,10 @@ namespace CCMI
  * \param[in] x		Coordinates to convert into rank
  * \return	nothing
  */
-    static inline unsigned coord2rank(TorusCollectiveMapping *map, axii_t x)
+    static inline unsigned coord2rank(XMI_MAPPING_CLASS *map, axii_t x)
     {
       unsigned rank = CCMI_UNDEFINED_RANK;
-      XMI_Result rc = map->Torus2Rank(x, &rank);
+      xmi_result_t rc = map->Torus2Rank(x, &rank);
       return(rc == XMI_SUCCESS ? rank : CCMI_UNDEFINED_RANK);
     }
 
@@ -259,7 +259,7 @@ namespace CCMI
  * \param[out] x	Coordinates to return
  * \return	nothing
  */
-    static inline void rank2coord(TorusCollectiveMapping *map, unsigned rank, axii_t x)
+    static inline void rank2coord(XMI_MAPPING_CLASS *map, unsigned rank, axii_t x)
     {
       map->Rank2Torus(&(x[0]), rank);
     }
@@ -273,7 +273,7 @@ namespace CCMI
  * \param[out] x	Coordinates to return
  * \return	nothing
  */
-    static inline void get_my_coord(TorusCollectiveMapping *map, axii_t x)
+    static inline void get_my_coord(XMI_MAPPING_CLASS *map, axii_t x)
     {
       x[CCMI_X_DIM] = map->GetCoord(CCMI_X_DIM);
       x[CCMI_Y_DIM] = map->GetCoord(CCMI_Y_DIM);
@@ -440,7 +440,7 @@ namespace CCMI
        * \param[in] rect	Rectangle descriptor
        * \return
        */
-      inline OneColorRectangle(TorusCollectiveMapping *mapping, Color color,
+      inline OneColorRectangle(XMI_MAPPING_CLASS *mapping, Color color,
                                const Rectangle &rect) : Schedule()
       {
         _color = color;
@@ -588,7 +588,7 @@ namespace CCMI
       Color _color;   /** \brief color to use (pri axis) */
       unsigned _op;   /** \brief operation, BROADCAST_OP... */
       const axis_rect *_rect; /** \brief pointer to rectangle structure */
-      CCMI::TorusCollectiveMapping *_mapping; /** \brief saved pointer to mapping
+      CCMI::XMI_MAPPING_CLASS *_mapping; /** \brief saved pointer to mapping
                * for this partition */
       unsigned _startrecv;  /** \brief Starting recv phase for this node */
       unsigned _startsend;  /** \brief Starting send phase for this node */
@@ -964,7 +964,7 @@ namespace CCMI
        * \param[in] color	The color to use for this schedule
        * \param[in] rect	The rectangle info for this geom
        */
-      inline OneColorRectBcastSched(TorusCollectiveMapping *mapping, Color color,
+      inline OneColorRectBcastSched(XMI_MAPPING_CLASS *mapping, Color color,
                                     const Rectangle &rect) :
       OneColorRectangle(mapping, color, rect)
       {
@@ -1457,7 +1457,7 @@ namespace CCMI
        * \param[in] color	Color of schedule
        * \param[in] rect	Rectangle of geom
        */
-      inline OneColorRectRedSched(TorusCollectiveMapping *mapping, Color color,
+      inline OneColorRectRedSched(XMI_MAPPING_CLASS *mapping, Color color,
                                   const Rectangle &rect, Subschedule subschedule=Binomial) :
       OneColorRectangle(mapping, color, rect),
       _subScheduleType(subschedule),
@@ -1642,7 +1642,7 @@ namespace CCMI
        * \param[in] color	Color of schedule
        * \param[in] rect	Rectangle of geom
        */
-      inline OneColorRectAllredSched(TorusCollectiveMapping *mapping,
+      inline OneColorRectAllredSched(XMI_MAPPING_CLASS *mapping,
                                      Color color, const Rectangle &rect, 
                                      CCMI::Schedule::OneColorRectRedSched::Subschedule subschedule=CCMI::Schedule::OneColorRectRedSched::Binomial) :
       OneColorRectangle(mapping, color, rect)

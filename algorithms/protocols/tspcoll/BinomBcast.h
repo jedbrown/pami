@@ -19,7 +19,6 @@
 #include <stdlib.h>
 
 #include "./CollExchange.h"
-#include "interface/Communicator.h"
 
 /* *********************************************************************** */
 /*                      binomial broadcast class                           */
@@ -27,11 +26,12 @@
 
 namespace TSPColl
 {
-  class BinomBcast: public CollExchange
+  template<class T_Mcast>
+  class BinomBcast: public CollExchange<T_Mcast>
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
-    BinomBcast (Communicator * comm, NBTag tag, int instID, int tagoff);
+    BinomBcast (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff);
     void reset (int root, const void * sbuf, void *buf, size_t);
   private:
     char _dummy;
@@ -40,9 +40,10 @@ namespace TSPColl
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-inline TSPColl::BinomBcast::
-BinomBcast(Communicator * comm, NBTag tag, int instID, int tagoff) :
-	       CollExchange(comm, tag, instID, tagoff, false)
+template<class T_Mcast>
+inline TSPColl::BinomBcast<T_Mcast>::
+BinomBcast(XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff) :
+  CollExchange<T_Mcast>(comm, tag, instID, tagoff, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
@@ -61,7 +62,8 @@ BinomBcast(Communicator * comm, NBTag tag, int instID, int tagoff) :
 /* ********************************************************************** */
 /*                    start a new binomial broadcast                      */
 /* ********************************************************************** */
-inline void TSPColl::BinomBcast::
+template<class T_Mcast>
+inline void TSPColl::BinomBcast<T_Mcast>::
 reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
 {
   if (rootindex >= this->_comm->size())
@@ -92,7 +94,7 @@ reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
       this->_rbuf[phase]    = dorecv ? buf : NULL;
     }
 
-  CollExchange::reset();
+  CollExchange<T_Mcast>::reset();
 }
 
 #endif

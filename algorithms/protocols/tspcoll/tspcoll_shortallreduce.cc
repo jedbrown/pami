@@ -11,7 +11,6 @@
 /* ************************************************************************* */
 
 #include "./Allreduce.h"
-#include "interface/Communicator.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,9 +27,10 @@
 /* ************************************************************************* */
 /*                      start a short allreduce                              */
 /* ************************************************************************* */
-TSPColl::Allreduce::Short::
-Short (Communicator * comm, NBTag tag, int instID, int offset) :
-       CollExchange (comm, tag, instID, offset, false)
+template <class T_Mcast>
+TSPColl::Allreduce::Short<T_Mcast>::
+Short (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset) :
+       CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   _dbuf   = NULL;
   _nelems = 0;
@@ -98,10 +98,11 @@ Short (Communicator * comm, NBTag tag, int instID, int offset) :
 /* ************************************************************************* */
 /*                     allreduce executor                                    */
 /* ************************************************************************* */
-void TSPColl::Allreduce::Short::
-cb_allreduce (CollExchange *coll, unsigned phase)
+template <class T_Mcast>
+void TSPColl::Allreduce::Short<T_Mcast>::
+cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
 {
-  TSPColl::Allreduce::Short * ar = (TSPColl::Allreduce::Short *) coll;
+  TSPColl::Allreduce::Short<T_Mcast> * ar = (TSPColl::Allreduce::Short<T_Mcast> *) coll;
   int c = (ar->_counter+1) & 1;
   void * inputs[] = {ar->_dbuf, ar->_phasebuf[phase][c]};
   //  ar->_cb_allreduce (ar->_dbuf, ar->_phasebuf[phase][c], ar->_nelems);
@@ -109,10 +110,12 @@ cb_allreduce (CollExchange *coll, unsigned phase)
 
 
 }
-void TSPColl::Allreduce::Short::
-cb_switchbuf (CollExchange * coll, unsigned phase)
+
+template <class T_Mcast>
+void TSPColl::Allreduce::Short<T_Mcast>::
+cb_switchbuf (CollExchange<T_Mcast> * coll, unsigned phase)
 {
-  TSPColl::Allreduce::Short * ar = (TSPColl::Allreduce::Short *) coll;
+  TSPColl::Allreduce::Short<T_Mcast> * ar = (TSPColl::Allreduce::Short<T_Mcast> *) coll;
   int c = (++(ar->_bufctr[phase])) & 1;
   ar->_rbuf[phase] = ar->_phasebuf[phase][c];
 }
@@ -120,10 +123,11 @@ cb_switchbuf (CollExchange * coll, unsigned phase)
 /* ************************************************************************* */
 /*                     start an allreduce operation                          */
 /* ************************************************************************* */
-void TSPColl::Allreduce::Short::reset (const void         * sbuf,
+template <class T_Mcast>
+void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 				       void               * dbuf,
-				       XMI_Op              op,
-				       XMI_Dt              dt,
+				       xmi_op              op,
+				       xmi_dt              dt,
 				       unsigned             nelems)
 {
   assert (sbuf != NULL);
@@ -190,5 +194,5 @@ void TSPColl::Allreduce::Short::reset (const void         * sbuf,
 #endif
 
   //  _cb_allreduce = getcallback (op, dt);
-  TSPColl::CollExchange::reset();
+  TSPColl::CollExchange<T_Mcast>::reset();
 }

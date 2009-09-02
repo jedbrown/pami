@@ -60,8 +60,43 @@ typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 #define __ccmi_callback_defined__
 
 
+#define CCMI_X_DIM 0
+#define CCMI_Y_DIM 1
+#define CCMI_Z_DIM 2
+#define CCMI_T_DIM 3
+
+#include <pthread.h>
+
+#define DECL_STATIC_MUTEX(x) \
+static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
+#define DECL_MUTEX(x)    pthread_mutex_t x
+#define MUTEX_INIT(x)    pthread_mutex_init(x,NULL)
+#define MUTEX_TRYLOCK(x) pthread_mutex_trylock(x)
+#define MUTEX_LOCK(x)    pthread_mutex_lock(x)
+#define MUTEX_UNLOCK(x)  pthread_mutex_unlock(x)
+#define MUTEX_DESTROY(x) pthread_mutex_destroy(x)
+
+#if (_XOPEN_SOURCE - 0) >= 500
+#define DECL_RW_MUTEX(x) \
+static pthread_rwlock_t x = PTHREAD_RWLOCK_INITIALIZER
+#define RDLOCK(x)        pthread_rwlock_rdlock(x)
+#define WRLOCK(x)        pthread_rwlock_wrlock(x)
+#define RWUNLOCK(x)      pthread_rwlock_unlock(x)
+#else
+#define DECL_RW_MUTEX(x) \
+static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
+#define RDLOCK(x)        pthread_mutex_lock(x)
+#define WRLOCK(x)        pthread_mutex_lock(x)
+#define RWUNLOCK(x)      pthread_mutex_unlock(x)
+#endif
+
+
 typedef xmi_quad_t XMI_Request_t[XMI_REQUEST_NQUADS];
-typedef xmi_event_function XMI_Callback_t;
+typedef struct XMI_Callback_t
+{
+  xmi_event_function  function;
+  void               *clientdata;
+}XMI_Callback_t;
 
 
 //--------------------------------------------------

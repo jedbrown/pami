@@ -28,7 +28,8 @@
 /* ************************************************************************ */
 /*                 non-blocking collective constructor                      */
 /* ************************************************************************ */
-TSPColl::NBColl::NBColl (Communicator * comm, NBTag tag, int instID,
+template <class T_Mcast>
+TSPColl::NBColl<T_Mcast>::NBColl (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID,
 			 void (*cb_complete)(void *), void *arg):
   _comm (comm), _tag (tag), _instID (instID),
   _cb_complete (cb_complete), _arg(arg)
@@ -37,7 +38,8 @@ TSPColl::NBColl::NBColl (Communicator * comm, NBTag tag, int instID,
 
 /* ************************************************************************ */
 /* ************************************************************************ */
-void TSPColl::NBColl::setComplete (void (*cb_complete)(void *), void *arg)
+template <class T_Mcast>
+void TSPColl::NBColl<T_Mcast>::setComplete (void (*cb_complete)(void *), void *arg)
 {
   _cb_complete = cb_complete;
   _arg = arg;
@@ -46,61 +48,62 @@ void TSPColl::NBColl::setComplete (void (*cb_complete)(void *), void *arg)
 /* ************************************************************************ */
 /*                    initialize the factory                                */
 /* ************************************************************************ */
-void TSPColl::NBCollFactory::initialize ()
+template <class T_Mcast>
+void TSPColl::NBCollFactory<T_Mcast>::initialize ()
 {
   // TSPColl::CollExchange::amsend_reg ();
   // TSPColl::Scatter::amsend_reg ();
   // TSPColl::Gather::amsend_reg ();
 }
-
+template <class T_Mcast>
 void
-TSPColl::NBCollManager::multisend_reg (NBTag tag,CCMI::MultiSend::OldMulticastInterface *mcast_iface)
+TSPColl::NBCollManager<T_Mcast>::multisend_reg (NBTag tag,T_Mcast *mcast_iface)
 {
   switch (tag)
     {
     case BarrierTag:
       {
-	TSPColl::Barrier::amsend_reg(mcast_iface);
+	TSPColl::Barrier<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case AllgatherTag:
       {
-	TSPColl::Allgather::amsend_reg(mcast_iface);
+	TSPColl::Allgather<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case AllgathervTag:
       {
-	TSPColl::Allgatherv::amsend_reg(mcast_iface);
+	TSPColl::Allgatherv<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case BcastTag:
       {
-	TSPColl::BinomBcast::amsend_reg(mcast_iface);
+	TSPColl::BinomBcast<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case BcastTag2:
       {
-	TSPColl::ScBcast::amsend_reg(mcast_iface);
+	TSPColl::ScBcast<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case ShortAllreduceTag:
       {
-	TSPColl::Allreduce::Short::amsend_reg(mcast_iface);
+	TSPColl::Allreduce::Short<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case LongAllreduceTag:
       {
-	TSPColl::Allreduce::Long::amsend_reg(mcast_iface);
+	TSPColl::Allreduce::Long<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case ScatterTag:
       {
-	TSPColl::Scatter::amsend_reg(mcast_iface);
+	TSPColl::Scatter<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case ScattervTag:
       {
-	TSPColl::Scatterv::amsend_reg(mcast_iface);
+	TSPColl::Scatterv<T_Mcast>::amsend_reg(mcast_iface);
 	break;
       }
     case GatherTag:
@@ -116,81 +119,82 @@ TSPColl::NBCollManager::multisend_reg (NBTag tag,CCMI::MultiSend::OldMulticastIn
 /* ************************************************************************ */
 /*                     Collective factory                                   */
 /* ************************************************************************ */
-TSPColl::NBColl * 
-TSPColl::NBCollFactory::create (Communicator * comm, NBTag tag, int instID)
+template <class T_Mcast>
+TSPColl::NBColl<T_Mcast> * 
+TSPColl::NBCollFactory<T_Mcast>::create (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID)
 {
   switch (tag)
     {
     case BarrierTag:
       {
-	NBColl * b = (NBColl *)malloc (sizeof(Barrier));
+	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Barrier<T_Mcast>));
 	assert (b != NULL);
-	memset (b, 0, sizeof(Barrier));
-	new (b) Barrier (comm, tag, instID, 0);
+	memset (b, 0, sizeof(Barrier<T_Mcast>));
+	new (b) Barrier<T_Mcast> (comm, tag, instID, 0);
 	return b;
       }
     case AllgatherTag:
       {
-	NBColl * b = (NBColl *)malloc (sizeof(Allgather));
+	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allgather<T_Mcast>));
 	assert (b != NULL);
-	memset (b, 0, sizeof(Allgather));
-	new (b) Allgather (comm, tag, instID, 0);
+	memset (b, 0, sizeof(Allgather<T_Mcast>));
+	new (b) Allgather<T_Mcast> (comm, tag, instID, 0);
 	return b;
       }
     case AllgathervTag:
       {
-	NBColl * b = (NBColl *)malloc (sizeof(Allgatherv));
+	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allgatherv<T_Mcast>));
 	assert (b != NULL);
-	memset (b, 0, sizeof(Allgatherv));
-	new (b) Allgatherv (comm, tag, instID, 0);
+	memset (b, 0, sizeof(Allgatherv<T_Mcast>));
+	new (b) Allgatherv<T_Mcast> (comm, tag, instID, 0);
 	return b;
       }
     case BcastTag:
       {
-	NBColl * b = (NBColl *)malloc (sizeof(BinomBcast));
+	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(BinomBcast<T_Mcast>));
 	assert (b != NULL);
-	memset (b, 0, sizeof(BinomBcast));
-	new (b) BinomBcast (comm, tag, instID, 0);
+	memset (b, 0, sizeof(BinomBcast<T_Mcast>));
+	new (b) BinomBcast<T_Mcast> (comm, tag, instID, 0);
 	return b;
       }
     case BcastTag2:
       {
-	NBColl * b = (NBColl *)malloc (sizeof(ScBcast));
+	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(ScBcast<T_Mcast>));
 	assert (b != NULL);
-	memset (b, 0, sizeof(ScBcast));
-	new (b) ScBcast (comm, tag, instID, 0);
+	memset (b, 0, sizeof(ScBcast<T_Mcast>));
+	new (b) ScBcast<T_Mcast> (comm, tag, instID, 0);
 	return b;
       }
     case ShortAllreduceTag:
       {
-        NBColl * b = (NBColl *)malloc (sizeof(Allreduce::Short));
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allreduce::Short<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Allreduce::Short));
-        new (b) Allreduce::Short (comm, tag, instID, 0);
+	memset (b, 0, sizeof(Allreduce::Short<T_Mcast>));
+        new (b) Allreduce::Short<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
     case LongAllreduceTag:
       {
-        NBColl * b = (NBColl *)malloc (sizeof(Allreduce::Long));
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allreduce::Long<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Allreduce::Long));
-        new (b) Allreduce::Long (comm, tag, instID, 0);
+	memset (b, 0, sizeof(Allreduce::Long<T_Mcast>));
+        new (b) Allreduce::Long<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
     case ScatterTag:
       {
-	NBColl * b = (NBColl *)malloc (sizeof(Scatter));
+	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Scatter<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Scatter));
-        new (b) Scatter (comm, tag, instID, 0);
+	memset (b, 0, sizeof(Scatter<T_Mcast>));
+        new (b) Scatter<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
     case ScattervTag:
       {
-	NBColl * b = (NBColl *)malloc (sizeof(Scatterv));
+	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Scatterv<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Scatterv));
-        new (b) Scatterv (comm, tag, instID, 0);
+	memset (b, 0, sizeof(Scatterv<T_Mcast>));
+        new (b) Scatterv<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
     case GatherTag:
@@ -200,7 +204,7 @@ TSPColl::NBCollFactory::create (Communicator * comm, NBTag tag, int instID)
 	assert (0);
       }
     }
-  return (NBColl *) NULL;
+  return (NBColl<T_Mcast> *) NULL;
 }
 
 /* ************************************************************************ */
@@ -223,19 +227,23 @@ T & TSPColl::Vector<T>::operator[](int idx)
   if (idx>=_size) _size = idx+1;
   return _v[idx];
 }
-TSPColl::NBCollManager * TSPColl::NBCollManager::_instance = NULL;
+
+//TSPColl::NBCollManager * TSPColl::NBCollManager::_instance = NULL;
 
 /* ************************************************************************ */
 /*          NBColl life cycle manager: singleton initializer                */
 /* ************************************************************************ */
-void TSPColl::NBCollManager::initialize (void)
+template <class T_Mcast>
+void TSPColl::NBCollManager<T_Mcast>::initialize (void)
 {
-  _instance = (NBCollManager *)malloc (sizeof(NBCollManager));
+  _instance = (NBCollManager<T_Mcast> *)malloc (sizeof(NBCollManager));
   assert (_instance);
-  new (_instance) NBCollManager();
-  NBCollFactory::initialize();
+  new (_instance) NBCollManager<T_Mcast>();
+  NBCollFactory<T_Mcast>::initialize();
 }
-TSPColl::NBCollManager * TSPColl::NBCollManager::instance()
+
+template <class T_Mcast>
+TSPColl::NBCollManager<T_Mcast> * TSPColl::NBCollManager<T_Mcast>::instance()
 {
   if (_instance==NULL) initialize();
   return _instance;
@@ -244,20 +252,22 @@ TSPColl::NBCollManager * TSPColl::NBCollManager::instance()
 /* ************************************************************************ */
 /*           NBColl life cycle manager: constructor                         */
 /* ************************************************************************ */
-TSPColl::NBCollManager::NBCollManager (void)
+template <class T_Mcast>
+TSPColl::NBCollManager<T_Mcast>::NBCollManager (void)
 {
   for (int i=0; i<MAXTAG; i++)
     {
-      _taglist [i] = (Vector<NBColl *> *) malloc (sizeof(Vector<NBColl *>));
-      new (_taglist[i]) Vector<NBColl *> ();
+      _taglist [i] = (Vector<NBColl<T_Mcast> *> *) malloc (sizeof(Vector<NBColl<T_Mcast> *>));
+      new (_taglist[i]) Vector<NBColl<T_Mcast> *> ();
     }
 }
 
 /* ************************************************************************ */
 /*              find an instance                                            */
 /* ************************************************************************ */
-TSPColl::NBColl * 
-TSPColl::NBCollManager::find (NBTag tag, int id)
+template <class T_Mcast>
+TSPColl::NBColl<T_Mcast> * 
+TSPColl::NBCollManager<T_Mcast>::find (NBTag tag, int id)
 {
   assert (0 <= tag && tag < MAXTAG);
   return (*_taglist[tag])[id];
@@ -266,12 +276,13 @@ TSPColl::NBCollManager::find (NBTag tag, int id)
 /* ************************************************************************ */
 /*            reserve an instance or create a new one                       */
 /* ************************************************************************ */
-TSPColl::NBColl * 
-TSPColl::NBCollManager::allocate (Communicator * comm, NBTag tag)
+template <class T_Mcast>
+TSPColl::NBColl<T_Mcast> * 
+TSPColl::NBCollManager<T_Mcast>::allocate (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag)
 {
   assert (0 <= tag && tag < MAXTAG);
   int nextID = _taglist[tag]->size();
-  NBColl * retval = NBCollFactory::create (comm, tag, nextID);
+  NBColl<T_Mcast> * retval = NBCollFactory<T_Mcast>::create (comm, tag, nextID);
   (*_taglist[tag])[nextID] = retval;
   return retval;
 }
