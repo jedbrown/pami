@@ -1,5 +1,5 @@
 ///
-/// \file components/context/bgp/bgpcontext.h
+/// \file components/context/bgp/BgpContext.h
 /// \brief XMI BGP specific context implementation.
 ///
 #ifndef   __components_context_bgp_bgpcontext_h__
@@ -26,7 +26,7 @@
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
 
-#define XMI_CONTEXT_CLASS XMI::Context::BGP
+#define XMI_CONTEXT_CLASS XMI::Context::BgpContext
 
 namespace XMI
 {
@@ -39,11 +39,11 @@ namespace XMI
     typedef Device::ShmemPacketDevice<SysDep::BgpSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
 
-    class BGP : public Context<XMI::Context::BGP>
+    class BgpContext : public Context<XMI::Context::BgpContext>
     {
       public:
-        inline BGP (xmi_client_t client) :
-          Context<XMI::Context::BGP> (client),
+        inline BgpContext (xmi_client_t client) :
+          Context<XMI::Context::BgpContext> (client),
           _client (client),
           _sysdep (),
           _shmem ()
@@ -278,6 +278,37 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
+        inline xmi_result_t multisend_getroles(xmi_dispatch_t  dispatch,
+                                               int            *numRoles,
+                                               int            *replRole)
+        {
+          return XMI_UNIMPL;
+        };
+        
+        inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
+        {
+          return XMI_UNIMPL;
+        };
+
+        
+        inline xmi_result_t manytomany(xmi_manytomany_t *m2minfo)
+        {
+          return XMI_UNIMPL;
+        };
+
+        
+        inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
+        {
+          return XMI_UNIMPL;
+        };
+
+
+        inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
+        {
+          return XMI_UNIMPL;
+        };
+
+
 
       private:
 
@@ -291,7 +322,7 @@ namespace XMI
         void * _dispatch[1024];
         MemoryAllocator<1024,16> _request;
 
-    }; // end XMI::Context::BGP
+    }; // end XMI::Context::BgpContext
   }; // end namespace Context
 }; // end namespace XMI
 

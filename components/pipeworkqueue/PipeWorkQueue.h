@@ -248,6 +248,12 @@ namespace XMI
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep,bufsize);
         }
         
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::reset()
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->reset_impl();
+        }
+        
         template <class T_PipeWorkQueue>        
         void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep,
                                                        char *buffer,

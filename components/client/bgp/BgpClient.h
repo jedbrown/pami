@@ -1,50 +1,50 @@
 ///
-/// \file xmi/bgp/bgpclient.h
+/// \file components/client/bgp/BgpClient.h
 /// \brief XMI client interface specific for the BGP platform.
 ///
-#ifndef   __xmi_bgp_bgpclient_h__
-#define   __xmi_bgp_bgpclient_h__
+#ifndef   __components_client_bgp_bgpclient_h__
+#define   __components_client_bgp_bgpclient_h__
 
 #include <stdlib.h>
 
 #include "../Client.h"
 
-#include "components/context/bgp/bgpcontext.h"
+#include "components/context/bgp/BgpContext.h"
 
-#define XMI_CLIENT_CLASS XMI::Client::BGP
+#define XMI_CLIENT_CLASS XMI::Client::BgpClient
 
 namespace XMI
 {
   namespace Client
   {
-    class BGP : public Client<XMI::Client::BGP,XMI::Context::BGP>
+    class BgpClient : public Client<XMI::Client::BgpClient,XMI::Context::BgpContext>
     {
       public:
-        inline BGP (char * name) :
-          Client<XMI::Client::BGP,XMI::Context::BGP>(name),
+        inline BgpClient (char * name) :
+          Client<XMI::Client::BgpClient,XMI::Context::BgpContext>(name),
           _client ((xmi_client_t) this),
           _references (1)
         {
         }
 
-        inline ~BGP ()
+        inline ~BgpClient ()
         {
         }
 
-        static XMI::Client::BGP * generate_impl (char * name)
+        static XMI::Client::BgpClient * generate_impl (char * name)
         {
           int rc = 0;
 
           //__client_list->lock();
 
           // If a client with this name is not already initialized...
-          XMI::Client::BGP * client = NULL;
+          XMI::Client::BgpClient * client = NULL;
           //if ((client = __client_list->contains (name)) == NULL)
           //{
-            rc = posix_memalign((void **)&client, 16, sizeof (XMI::Client::BGP));
+            rc = posix_memalign((void **)&client, 16, sizeof (XMI::Client::BgpClient));
             if (rc != 0) assert(0);
-            memset ((void *)client, 0x00, sizeof(XMI::Client::BGP));
-            new (client) XMI::Client::BGP (name);
+            memset ((void *)client, 0x00, sizeof(XMI::Client::BgpClient));
+            new (client) XMI::Client::BgpClient (name);
             //__client_list->pushHead ((QueueElem *) client);
           //}
           //else
@@ -57,7 +57,7 @@ namespace XMI
           return client;
         }
 
-        static void destroy_impl (XMI::Client::BGP * client)
+        static void destroy_impl (XMI::Client::BgpClient * client)
         {
           //__client_list->lock ();
           //client->decReferenceCount ();
@@ -74,16 +74,16 @@ namespace XMI
           return "";
         }
 
-        inline XMI::Context::BGP * createContext_impl (xmi_configuration_t configuration[],
+        inline XMI::Context::BgpContext * createContext_impl (xmi_configuration_t configuration[],
                                                        size_t              count)
         {
           //_context_list->lock ();
 
-          XMI::Context::BGP * context = NULL;
-          int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::BGP));
+          XMI::Context::BgpContext * context = NULL;
+          int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::BgpContext));
           if (rc != 0) assert(0);
-          memset ((void *)context, 0x00, sizeof(XMI::Context::BGP));
-          new (context) XMI::Context::BGP (this->getClientId());
+          memset ((void *)context, 0x00, sizeof(XMI::Context::BgpContext));
+          new (context) XMI::Context::BgpContext (this->getClientId());
           //_context_list->pushHead ((QueueElem *) context);
 
           //_context_list->unlock ();
@@ -91,7 +91,7 @@ namespace XMI
           return context;
         }
         
-        inline xmi_result_t destroyContext_impl (XMI::Context::BGP * context)
+        inline xmi_result_t destroyContext_impl (XMI::Context::BgpContext * context)
         {
           //_context_list->lock ();
           //_context_list->remove (context);
@@ -111,9 +111,9 @@ namespace XMI
         xmi_client_t _client;
         size_t       _references;
 
-    }; // end class XMI::Client::BGP
+    }; // end class XMI::Client::BgpClient
   }; // end namespace Client
 }; // end namespace XMI
 
 
-#endif // __xmi_bgp_bgpclient_h__
+#endif // __components_client_bgp_bgpclient_h__

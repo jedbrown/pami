@@ -653,7 +653,7 @@ xmi_result_t XMI_PipeWorkQueue_export(xmi_pipeworkqueue_t     *wq,
                                       xmi_pipeworkqueue_ext_t *exp)
 {
     XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
-    pwq->exp (exp);
+    return pwq->exp (exp);
 }
 
 ///
@@ -663,7 +663,7 @@ xmi_result_t XMI_PipeWorkQueue_import(xmi_pipeworkqueue_ext_t *import,
                                       xmi_pipeworkqueue_t     *wq)
 {
     XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
-    pwq->import (import);
+    return pwq->import (import);
 }
 
 
