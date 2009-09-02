@@ -17,7 +17,6 @@
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  "algorithms/ccmi.h"
-#include  "interface/CollectiveMapping.h"
 
 namespace CCMI
 {
@@ -77,7 +76,7 @@ namespace CCMI
         _count[id] += n;
 #endif
       }
-
+#if 0
       void   dumpTimers(FILE *fp, CollectiveMapping *map)
       {
 #if ENABLE_PROFILING
@@ -92,7 +91,7 @@ namespace CCMI
         }
 #endif
       }
-
+#endif
       static void setLogMgr (LogMgr *l)
       {
         _staticLogMgr = l;

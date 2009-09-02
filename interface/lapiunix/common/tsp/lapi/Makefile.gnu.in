@@ -1,7 +1,0 @@
-VPATH		= @abs_srcdir@
-SUBDIRS		= 
-NOTBUILT        = lapi_regmem.c lapi_update.c lapi_getv.c lapi_put.c lapi_get.c lapi_putv.c
-@LIBNAME@-""-AMCOLLECTIVES_SOURCES=lapi_amsend.c lapi_setup.c lapi_barrier.c lapi_pool.c lapi_dput.c lapi_dget.c
-
-DEVICENAME     = @LIBNAME@-""-AMCOLLECTIVES
-include @abs_top_builddir@/Build.rules

@@ -16,19 +16,17 @@
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"
-#include "interface/MultiSend.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "util/logging/LogMgr.h"
-#include "math/math_coremath.h"
-
 #include "util/ccmi_debug.h"
-
+#include "math/math_coremath.h"
 #include "./AllreduceState.h"
 
 namespace CCMI
 {
   namespace Executor
   {
+    template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
     class AllreduceBase : public Executor
     {
     public:
@@ -40,27 +38,27 @@ namespace CCMI
       } __attribute__((__aligned__(16)));
     private:
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (void *cd, XMI_Error_t *err)
+      static void staticNotifySendDone (void *cd, xmi_result_t *err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
-        XMIQuad *info = (XMIQuad *)cd;
+        xmi_quad_t *info = (xmi_quad_t *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifySendDone() enter\n",(int)cdata->me));
         ((AllreduceBase *)(cdata->me))->AllreduceBase::notifySendDone(*info);
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifySendDone() exit\n",(int)cdata->me));
       }
 
       /// \brief Static function to be passed into the done of multisend postRecv
-      static void staticNotifyReceiveDone (void *cd, XMI_Error_t *err)
+      static void staticNotifyReceiveDone (void *cd, xmi_result_t *err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
-        XMIQuad *info = (XMIQuad *)cd;
+        xmi_quad_t *info = (xmi_quad_t *)cd;
 
         ((AllreduceBase *)cdata->allreduce)->AllreduceBase::notifyRecv((unsigned)-1, *info, NULL, (unsigned)-1);
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
       }
 
-      static void short_recv_done (void *me, XMI_Error_t *)
+      static void short_recv_done (void *me, xmi_result_t *)
       {
         AllreduceBase *allreduce = (AllreduceBase *)me;   
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::short_recv_done enter\n", (int)allreduce));
@@ -70,9 +68,9 @@ namespace CCMI
       }   
 
     protected:  
-      typedef void (*Callback_t) (void *, XMI_Error_t *);
+      typedef void (*Callback_t) (void *, xmi_result_t *);
 
-      void inline_math_isum (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
+      void inline_math_isum (void *dst, void *src1, void *src2, xmi_op op, xmi_dt dt, unsigned count)
       {
         int *idst  = (int *) dst;
         int *isrc1 = (int *) src1;
@@ -82,7 +80,7 @@ namespace CCMI
           idst[c] = isrc1[c] + isrc2[c];        
       }       
 
-      void inline_math_dsum (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
+      void inline_math_dsum (void *dst, void *src1, void *src2, xmi_op op, xmi_dt dt, unsigned count)
       {
         double *idst  = (double *) dst;
         double *isrc1 = (double *) src1;
@@ -92,7 +90,7 @@ namespace CCMI
           idst[c] = isrc1[c] + isrc2[c];        
       }       
 
-        void inline_math_dmin (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
+        void inline_math_dmin (void *dst, void *src1, void *src2, xmi_op op, xmi_dt dt, unsigned count)
         {
           double *idst  = (double *) dst;
           double *isrc1 = (double *) src1;
@@ -102,7 +100,7 @@ namespace CCMI
             idst[c] = (isrc1[c] < isrc2[c]) ? isrc1[c] : isrc2[c];
         }       
 
-        void inline_math_dmax (void *dst, void *src1, void *src2, XMI_Op op, XMI_Dt dt, unsigned count)
+        void inline_math_dmax (void *dst, void *src1, void *src2, xmi_op op, xmi_dt dt, unsigned count)
         {
           double *idst  = (double *) dst;
           double *isrc1 = (double *) src1;
@@ -141,18 +139,18 @@ namespace CCMI
 
       coremath     _reduceFunc;
 
-      //void (*_sendCallbackHandler) (void*, XMI_Error_t *);
-      //void (*_recvCallbackHandler) (void*, XMI_Error_t *);
+      //void (*_sendCallbackHandler) (void*, xmi_result_t *);
+      //void (*_recvCallbackHandler) (void*, xmi_result_t *);
 
       Callback_t         _sendCallbackHandler;
       Callback_t         _recvCallbackHandler;  
 
-      MultiSend::OldMulticastInterface        * _msendInterface;
+      T_Mcastinterface  * _msendInterface;
       ConnectionManager::ConnectionManager * _rconnmgr;  ///Reduce connection manager
       ConnectionManager::ConnectionManager * _bconnmgr;  ///Broadcast connction manager
 
-      MultiSend::CCMI_OldMulticast_t            _msend_data;
-      AllreduceState                         _astate;
+      T_Mcast             _msend_data;
+      AllreduceState<T_Mcastrecv>                         _astate;
 
       ///
       /// \brief Ids to the LogMgr table
@@ -207,7 +205,7 @@ namespace CCMI
 
       ///  Main constructor to initialize the executor
       ///  By default it only needs one connection manager
-      AllreduceBase(CollectiveMapping *map,
+      AllreduceBase(T_Mapping *map,
                     ConnectionManager::ConnectionManager  * connmgr,
                     CCMI_Consistency                        consistency,
                     const unsigned                          commID,
@@ -232,7 +230,7 @@ namespace CCMI
         setConsistency(consistency);
 
         _msend_data.setConsistency (consistency);
-        _msend_data.setFlags (MultiSend::CCMI_FLAGS_UNSET);
+        _msend_data.setFlags (CCMI_FLAGS_UNSET);
         _msend_data.setInfo (NULL, 0);
         _astate.setReduceConnectionManager (connmgr);
         _astate.setBroadcastConnectionManager (connmgr);
@@ -286,10 +284,10 @@ namespace CCMI
       }
 
       ///entry method
-      virtual void notifySendDone( const XMIQuad &info );
+      virtual void notifySendDone( const xmi_quad_t &info );
 
       ///entry method
-      virtual void notifyRecv(unsigned src, const XMIQuad &info, 
+      virtual void notifyRecv(unsigned src, const xmi_quad_t &info, 
                               char * buf, unsigned bytes);
 
       /// entry method : start allreduce
@@ -314,7 +312,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       /// 
-      virtual XMI_Request_t *   notifyRecvHead(const XMIQuad  * info,
+      virtual XMI_Request_t *   notifyRecvHead(const xmi_quad_t  * info,
                                                 unsigned          count,
                                                 unsigned          peer,
                                                 unsigned          sndlen,
@@ -372,8 +370,8 @@ namespace CCMI
                                  unsigned         pipelineWidth,
                                  unsigned         sizeOfType,
                                  coremath  func,
-                                 XMI_Op          op = XMI_UNDEFINED_OP,
-                                 XMI_Dt          dt = XMI_UNDEFINED_DT)
+                                 xmi_op          op = XMI_UNDEFINED_OP,
+                                 xmi_dt          dt = XMI_UNDEFINED_DT)
       {
         TRACE_INIT((stderr,"<%#.8X>Executor::AllreduceBase::setReduceInfo() "
                     "count %#X, pipelineWidth %#X, sizeOfType %#X, func %#X, op %#X, dt %#X\n",
@@ -440,12 +438,12 @@ namespace CCMI
       /// \brief Register the multicast interface
       ///
       /// \param[in]  mf
-      void setMulticastInterface(MultiSend::OldMulticastInterface * mf)
+      void setMulticastInterface(T_Mcastinterface * mf)
       {
         _msendInterface = mf;
       }
 
-      MultiSend::OldMulticastInterface *getMulticastInterface()
+      T_Mcastinterface *getMulticastInterface()
       {
         return _msendInterface;
       }
@@ -482,16 +480,16 @@ namespace CCMI
       ///
       /// \bf Query functions 
       ///
-      inline AllreduceState * getAllreduceState ()
+      inline AllreduceState<T_Mcastrecv> * getAllreduceState ()
       {
         return &_astate; 
       }
 
-      inline XMI_Op    getOp ()
+      inline xmi_op    getOp ()
       {
         return  _astate.getOp();
       }
-      inline XMI_Dt    getDt ()
+      inline xmi_dt    getDt ()
       {
         return  _astate.getDt();
       }
@@ -501,9 +499,11 @@ namespace CCMI
       }       
       static inline void _compile_time_assert_ ()
       {
+#if 0
         // Compile time assert
         // SendState storage must must fit in a request 
         COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase::SendState) <= sizeof(XMI_CollectiveRequest_t));
+#endif
       }
     }; // AllreduceBase
   } // Executor
@@ -541,8 +541,8 @@ inline void CCMI::Executor::AllreduceBase::advance ()
     void *src1 = (void *) (((_curIdx==0)&&(_curPhase==_firstCombinePhase)) ? _srcbuf : reducebuf); 
     void *src2 = NULL;
 
-    XMI_Op op = _astate.getOp();
-    XMI_Dt dt = _astate.getDt();
+    xmi_op op = _astate.getOp();
+    xmi_dt dt = _astate.getDt();
     unsigned count = _astate.getCount();
 
     if(op == XMI_SUM && dt == XMI_SIGNED_INT)
@@ -683,7 +683,7 @@ inline void CCMI::Executor::AllreduceBase::sendMessage
     s_state->sndInfo._op      = _astate.getOp();
     s_state->sndInfo._iteration = _astate.getIteration();
     s_state->sndInfo._root    = (unsigned)_astate.getRoot();
-    _msend_data.setInfo ((XMIQuad *)(void *)&s_state->sndInfo, 1);
+    _msend_data.setInfo ((xmi_quad_t *)(void *)&s_state->sndInfo, 1);
   }
 
   TRACE_MSG ((stderr, "<%#.8X>Executor::AllreduceBase::sendMessage connid %#X curphase:%#X " 
@@ -737,7 +737,7 @@ inline void CCMI::Executor::AllreduceBase::start()
 
 inline void CCMI::Executor::AllreduceBase::notifyRecv 
 (unsigned                     src, 
- const XMIQuad             & info, 
+ const xmi_quad_t             & info, 
  char                       * buf, 
  unsigned                     bytes)
 {
@@ -759,7 +759,7 @@ inline void CCMI::Executor::AllreduceBase::notifyRecv
 
 
 inline void CCMI::Executor::AllreduceBase::notifySendDone 
-( const XMIQuad & info)
+( const xmi_quad_t & info)
 {
   // update state
   TRACE_MSG((stderr, "<%#.8X>Executor::AllreduceBase::notifySendDone, cur phase %#X\n", 
@@ -800,7 +800,7 @@ inline void CCMI::Executor::AllreduceBase::postReceives ()
 
 inline XMI_Request_t * 
 CCMI::Executor::AllreduceBase::notifyRecvHead 
-(const XMIQuad  * info,
+(const xmi_quad_t  * info,
  unsigned          count,
  unsigned          peer,
  unsigned          sndlen,

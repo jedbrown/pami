@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "interface/xmi_types.h"
+#include "sys/xmi_types.h"
 
 /** \brief The maximum number of sources based on the number of cores */
 #define MATH_MAX_NSRC	4
@@ -163,7 +163,7 @@ extern void *math_op_funcs[XMI_OP_COUNT][XMI_DT_COUNT][MATH_MAX_NSRC];
  * \param nsrc	Number of input buffers
  * \return	Pointer to coremath function
  */
-static inline coremath MATH_OP_FUNCS(XMI_Dt dt, XMI_Op op, int nsrc) {
+static inline coremath MATH_OP_FUNCS(xmi_dt dt, xmi_op op, int nsrc) {
 	/* assert(nsrc >= 2); */
 	int n = nsrc - 1;
 	return (coremath)(math_op_funcs[op][dt][n] ?

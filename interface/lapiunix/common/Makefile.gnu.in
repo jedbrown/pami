@@ -1,4 +1,0 @@
-VPATH		= @abs_srcdir@
-SUBDIRS		= hbrd include smp tsp
-NOTBUILT        =
-include @abs_top_builddir@/Build.rules

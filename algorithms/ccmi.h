@@ -63,6 +63,42 @@ typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 typedef xmi_quad_t XMI_Request_t[XMI_REQUEST_NQUADS];
 typedef xmi_event_function XMI_Callback_t;
 
+
+//--------------------------------------------------
+//----- Communication CCMI_Subtasks ---------------------
+//----- Each communication operation is split ------
+//----- into phases of one or more sub tasks -------
+//--------------------------------------------------  
+#define  LINE_BCAST_MASK    (CCMI_LINE_BCAST_XP|CCMI_LINE_BCAST_XM|	\
+                             CCMI_LINE_BCAST_YP|CCMI_LINE_BCAST_YM|	\
+                             CCMI_LINE_BCAST_ZP|CCMI_LINE_BCAST_ZM)
+typedef enum
+{
+  CCMI_PT_TO_PT_SUBTASK           =  0,      //Send a pt-to-point message
+  CCMI_LINE_BCAST_XP              =  0x20,   //Bcast along x+
+  CCMI_LINE_BCAST_XM              =  0x10,   //Bcast along x-
+  CCMI_LINE_BCAST_YP              =  0x08,   //Bcast along y+
+  CCMI_LINE_BCAST_YM              =  0x04,   //Bcast along y-
+  CCMI_LINE_BCAST_ZP              =  0x02,   //Bcast along z+
+  CCMI_LINE_BCAST_ZM              =  0x01,   //Bcast along z-
+  CCMI_COMBINE_SUBTASK            =  0x0100,   //Combine the incoming message
+  //with the local state
+  CCMI_GI_BARRIER                 =  0x0200,
+  CCMI_LOCKBOX_BARRIER            =  0x0300,
+  CCMI_TREE_BARRIER               =  0x0400,
+  CCMI_TREE_BCAST                 =  0x0500,
+  CCMI_TREE_ALLREDUCE             =  0x0600,
+  CCMI_REDUCE_RECV_STORE          =  0x0700,
+  CCMI_REDUCE_RECV_NOSTORE        =  0x0800,
+  CCMI_BCAST_RECV_STORE           =  0x0900,
+  CCMI_BCAST_RECV_NOSTORE         =  0x0a00,
+  CCMI_LOCALCOPY                  =  0x0b00,
+    
+  CCMI_UNDEFINED_SUBTASK          =  (~LINE_BCAST_MASK),
+} CCMI_Subtask;
+
+
+
 ///
 ///\brief CCMI definitions
 ///
@@ -112,6 +148,14 @@ typedef struct _cheader_data
 #ifndef CCMI_GEOMETRY_SIZE
 #define CCMI_GEOMETRY_SIZE	32
 #endif
+
+typedef enum
+{
+  CCMI_FLAGS_UNSET                =  0,
+  CCMI_PERSISTENT_MESSAGE         =  1,
+} CCMI_MulticastFlags_t;
+
+
 
 typedef xmi_quad_t CCMI_Geometry_t [CCMI_GEOMETRY_SIZE];
 typedef xmi_quad_t XMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];/// \todo XMI_Prototol_t?

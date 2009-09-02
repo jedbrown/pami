@@ -15,7 +15,6 @@
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"
-#include "interface/MultiSend.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"
@@ -53,6 +52,7 @@ namespace CCMI
     /// This class allocates storage for receive buffers and schedule data.  
     /// 
 
+    template<class T_mcastrecv>
     class AllreduceState
     {
     public:
@@ -73,7 +73,7 @@ namespace CCMI
         unsigned     sconnId;      // # sender connection id for this phase
         unsigned  *  dstPes;       // destination ranks
         unsigned  *  dstHints;     // hints, one per destination
-        MultiSend::CCMI_OldMulticastRecv_t   *mrecv;
+        T_mcastrecv  *mrecv;
       } PhaseState __attribute__((__aligned__(16))); ///Achieve better cache blocking
 
     protected:
@@ -102,7 +102,7 @@ namespace CCMI
       unsigned     *_all_dstHints;
       unsigned     *_all_chunks  ;
       unsigned     *_nextActivePhase;  //convert to dynamic vector
-      MultiSend::CCMI_OldMulticastRecv_t   *_all_mrecvs;
+      T_mcastrecv  *_all_mrecvs;
 
       /// dynamically allocated buffer space (for received data)
       void             * _receiveAllocation;
@@ -146,8 +146,8 @@ namespace CCMI
       unsigned                                _commid;   /// Communicator identifier
       unsigned                                _color;    /// Color of the collective
 
-      XMI_Op                                 _op;         /// allreduce operation 
-      XMI_Dt                                 _dt;         /// allreduce datatype
+      xmi_op                                 _op;         /// allreduce operation 
+      xmi_dt                                 _dt;         /// allreduce datatype
       unsigned                                _iteration;   /// allreduce async iteration 
       Executor                              * _executor;   /// Pointer to executor which is needed to 
       /// set up the receive callback data objects
@@ -171,11 +171,11 @@ namespace CCMI
         else CCMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION NULL",NULL , 0);
       }
 #endif
-      inline XMI_Op getOp()
+      inline xmi_op getOp()
       {
         return _op;
       }
-      inline XMI_Dt getDt()
+      inline xmi_dt getDt()
       {
         return _dt;
       }
@@ -324,7 +324,7 @@ namespace CCMI
       {
         return _phaseVec[index].totalChunksRcvd;
       }
-      inline  MultiSend::CCMI_OldMulticastRecv_t  *   getPhaseMcastRecv(unsigned index,unsigned jindex)
+      inline T_mcastrecv  *   getPhaseMcastRecv(unsigned index,unsigned jindex)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::getPhaseMcastRecv _phaseVec[%#X].recvBufs[%#X]=%#X _phaseVec[%#X].mrecv[%#X].rcvbuf=%#X\n",
                      (int)this,
@@ -666,8 +666,8 @@ namespace CCMI
       inline void setDataFunc(unsigned         pipelineWidth,
                               unsigned         count,
                               unsigned         sizeOfType,
-                              XMI_Op          op,
-                              XMI_Dt          dt)
+                              xmi_op          op,
+                              xmi_dt          dt)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() enter\n",(int)this));
         CCMI_assert(pipelineWidth % sizeOfType == 0);
@@ -730,7 +730,7 @@ namespace CCMI
           for(int phase = _startPhase; phase <= _endPhase; phase++)
             for(unsigned scount = 0; scount < _phaseVec[phase].numSrcPes; scount ++)
             {
-              MultiSend::CCMI_OldMulticastRecv_t *mrecv = &(_phaseVec[phase].mrecv[scount]); 
+              T_mcastrecv *mrecv = &(_phaseVec[phase].mrecv[scount]); 
               mrecv->bytes = _bytes;
               mrecv->pipelineWidth = _pipelineWidth;
               //mrecv->opcode = (CCMI_Subtask) _phaseVec[phase].srcHints[scount];
@@ -739,47 +739,51 @@ namespace CCMI
 
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() exit\n",(int)this));
       }
+
+      inline void resetPhaseData()
+        {
+          // Do nothing if the config hasn't changed.
+          if(!_isConfigChanged) return;
+          
+          constructPhaseData ();
+        }
+
+      inline void resetReceives(unsigned infoRequired)
+        {
+          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::resetReceives() enter\n",(int)this));
+          //  CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
+          CCMI_assert(_bytes > 0);
+          CCMI_assert(_sched);
+          
+          // Do minimal setup if the config hasn't changed.
+          if(!_isConfigChanged)
+              {
+                int idx = 0;
+                //Make xlc happy as it thinks _all_chunks may overwrite the this
+                //pointer
+                unsigned *chunks = _all_chunks;
+                for(idx = 0; idx < _numSrcPes; idx++)
+                  chunks [idx] = 0;
+                
+                for(idx = _startPhase; idx <= _endPhase; idx++)
+                    {
+                      _phaseVec[idx].chunksSent = 0;        
+                      _phaseVec[idx].totalChunksRcvd = 0;        
+                    }
+                return;
+              }
+          
+          setupReceives (infoRequired);
+          return;
+        }
     }; // Allreduce
   };
 };// CCMI::Executor
 
-inline void CCMI::Executor::AllreduceState::resetPhaseData()
-{
-  // Do nothing if the config hasn't changed.
-  if(!_isConfigChanged) return;
-
-  constructPhaseData ();
-}
 
 
-inline void CCMI::Executor::AllreduceState::resetReceives(unsigned infoRequired)
-{
-  TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::resetReceives() enter\n",(int)this));
-  //  CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
-  CCMI_assert(_bytes > 0);
-  CCMI_assert(_sched);
 
-  // Do minimal setup if the config hasn't changed.
-  if(!_isConfigChanged)
-  {
-    int idx = 0;
-    //Make xlc happy as it thinks _all_chunks may overwrite the this
-    //pointer
-    unsigned *chunks = _all_chunks;
-    for(idx = 0; idx < _numSrcPes; idx++)
-      chunks [idx] = 0;
 
-    for(idx = _startPhase; idx <= _endPhase; idx++)
-    {
-      _phaseVec[idx].chunksSent = 0;        
-      _phaseVec[idx].totalChunksRcvd = 0;        
-    }
-    return;
-  }
-
-  setupReceives (infoRequired);
-  return;
-}
 
 
 #endif /* __allreduce_state_h__ */

@@ -15,9 +15,9 @@
 #define  __schedule_h__
 
 #include "util/ccmi_util.h"
-#include "interface/CollectiveMapping.h"
-#include "algorithms/ccmi.h"
 #include "util/ccmi_debug.h"
+#include "algorithms/ccmi.h"
+
 
 /*-------------------------------------------------*/
 /*     Basic utility classes collectives           */

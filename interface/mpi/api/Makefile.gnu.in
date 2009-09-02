@@ -1,6 +1,0 @@
-VPATH		= @abs_srcdir@
-SUBDIRS		= 
-NOTBUILT        =                  
-@LIBNAME@-""-CCMIAPI_SOURCES=Mapping.cc
-DEVICENAME     = @LIBNAME@-""-CCMIAPI
-include @abs_top_builddir@/Build.rules
