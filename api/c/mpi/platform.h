@@ -7,5 +7,6 @@
 #include "components/devices/mpi/mpimulticombinemodel.h"
 #include "components/devices/mpi/mpimultisyncmodel.h"
 #include "components/mapping/mpi/mpimapping.h"
+#include "components/time/mpi/mpitime.h"
 
 
