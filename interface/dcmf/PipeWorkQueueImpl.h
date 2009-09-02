@@ -21,7 +21,7 @@
 #ifdef __bgp__
 
 #include "ppc450_inlines.h"
-#define mem_sync()	_bgp_msync()
+#define mem_sync()	//_bgp_msync()
 #define mem_barrier()	_bgp_mbar()
 
 #else /* !__bgp__ */
@@ -86,11 +86,11 @@ class _PipeWorkQueueImpl {
 
 public:
 	_PipeWorkQueueImpl() :
+	_pmask(0),
+	_sharedqueue(NULL), 
 	_qsize(0),
 	_isize(0),
-	_pmask(0),
-	_buffer(NULL),
-	_sharedqueue(NULL) {
+	_buffer(NULL) {
 	}
 
 #ifdef USE_FLAT_BUFFER
@@ -540,13 +540,13 @@ public:
 	}
 
 private:
-	void *_sysdep;	// possible pointer to system-dependencies (platform specifics)
-	unsigned _qsize;
-	unsigned _isize;
-	unsigned _pmask;
+	workqueue_t   __sq;
+	unsigned      _pmask;
+	workqueue_t * _sharedqueue;
+	void        * _sysdep;   // possible pointer to system-dependencies (platform specifics)
+	unsigned      _qsize;
+	unsigned      _isize;
 	volatile char *_buffer;
-	workqueue_t *_sharedqueue;
-	workqueue_t __sq;
 }; // class _PipeWorkQueueImpl
 
 class _ShadrWorkQueueImpl {
