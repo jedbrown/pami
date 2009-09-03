@@ -55,7 +55,7 @@ extern "C"
      * \param[in] options    Dispatch registration assertions
      *
      */
-    xmi_result_t XMI_Dispatch_set (xmi_context_t            * context,
+    xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
                                    xmi_dispatch_t             dispatch,
                                    xmi_dispatch_callback_fn   fn,
                                    void                     * cookie,
