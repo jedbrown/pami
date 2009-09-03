@@ -1,0 +1,109 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/PacketModel.h
+ * \brief ???
+ */
+
+#ifndef __components_device_Oldmulticastmodel_h__
+#define __components_device_Oldmulticastmodel_h__
+
+#include "sys/xmi.h"
+
+namespace XMI
+{
+    namespace Device
+    {
+        namespace Interface
+        {
+            template <class T_Model, class T_Device, class T_Object>
+            class OldmulticastModel
+            {
+            public:
+                OldmulticastModel (T_Device & device) {};
+                ~OldmulticastModel () {};
+                inline void setConnectionId (unsigned conn);
+                inline void setRoles (unsigned roles);
+                inline void setSendData (xmi_pipeworkqueue_t *src, size_t bytes);
+                inline void setSendRanks (xmi_topology_t *src_participants);
+                inline void setRecvData (xmi_pipeworkqueue_t *dst, size_t bytes);
+                inline void setRecvRanks (xmi_topology_t *dst_participants);
+                inline void setCallback (void (*fn) (void *, xmi_result_t *),  void *cd);
+                inline void setInfo (xmi_quad_t *info, int count);
+                inline bool postmulticast (T_Object * obj);
+            };
+            template <class T_Model, class T_Device, class T_Object>
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setConnectionId (unsigned conn)
+            {
+                static_cast<T_Model*>(this)->setConnectionId_impl(conn);
+            }
+        
+            template <class T_Model, class T_Device, class T_Object>
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setRoles (unsigned roles)
+            {
+                static_cast<T_Model*>(this)->setRoles_impl(roles);
+            }
+        
+            template <class T_Model, class T_Device, class T_Object>
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setSendData (xmi_pipeworkqueue_t *src,
+                                                                           size_t bytes)
+            {
+                static_cast<T_Model*>(this)->setSendData_impl(src, bytes);
+            }
+
+            template <class T_Model, class T_Device, class T_Object>
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setSendRanks (xmi_topology_t *src_participants)
+            {
+                static_cast<T_Model*>(this)->setSendRanks_impl(src_participants);
+            }
+
+            template <class T_Model, class T_Device, class T_Object>
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setRecvData (xmi_pipeworkqueue_t *dst,
+                                                                           size_t bytes)
+            {
+                static_cast<T_Model*>(this)->setRecvData_impl(dst,bytes);
+            }
+        
+            template <class T_Model, class T_Device, class T_Object>        
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setRecvRanks (xmi_topology_t *dst_participants)
+            {
+                static_cast<T_Model*>(this)->setRecvRanks_impl(dst_participants);
+            }
+        
+            template <class T_Model, class T_Device, class T_Object>
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setCallback (void (*fn) (void *, xmi_result_t *),
+                                                                           void *cd)
+            {
+                static_cast<T_Model*>(this)->setCallback_impl(fn, cd);
+            }
+        
+            template <class T_Model, class T_Device, class T_Object>
+            void OldmulticastModel<T_Model, T_Device, T_Object>::setInfo (xmi_quad_t *info, int count)
+            {
+                static_cast<T_Model*>(this)->setInfo_impl(info, count);
+            }
+        
+            template <class T_Model, class T_Device, class T_Object>
+            bool OldmulticastModel<T_Model, T_Device, T_Object>::postmulticast (T_Object * obj)
+            {
+                static_cast<T_Model*>(this)->postmulticast_impl(obj);
+            }
+
+        };
+    };
+};
+#endif // __components_device_packetmodel_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//
