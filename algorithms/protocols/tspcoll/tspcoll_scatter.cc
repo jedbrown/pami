@@ -77,7 +77,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
       }
     else
       {	  
-      unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
+      unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = this->_comm->absrankof (i);
       XMI_Callback_t cb_done;
       cb_done.function        = (void (*)(void*, xmi_result_t*))cb_senddone;
@@ -87,7 +87,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
 	     this->_sbuf, &this->_header,this->_header.tag, this->_header.id));
       mcast_iface->send (&_req[i],
 			 &cb_done,
-			 CCMI_MATCH_CONSISTENCY,
+			 XMI_MATCH_CONSISTENCY,
 			 (xmi_quad_t*)&this->_header,
 			 CCMIQuad_sizeof(this->_header),
 			 0,
@@ -173,7 +173,7 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 			     this->_lengths[i],
 			     this->cb_senddone, &this->_header);
 #endif
-	unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
+	unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
 	unsigned        ranks   = this->_comm->absrankof (i);
 	XMI_Callback_t cb_done;
 	cb_done.function        = (void (*)(void*, xmi_result_t*))this->cb_senddone;
@@ -181,7 +181,7 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 	void * r = NULL;
 	mcast_iface->send (&this->_req[i],
 			   &cb_done,
-			   CCMI_MATCH_CONSISTENCY,
+			   XMI_MATCH_CONSISTENCY,
 			   (xmi_quad_t*)&this->_header,
 			   CCMIQuad_sizeof(this->_header),
 			   0,

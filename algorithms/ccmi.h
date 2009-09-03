@@ -92,64 +92,8 @@ static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
 
 
 typedef xmi_quad_t XMI_Request_t[XMI_REQUEST_NQUADS];
-typedef struct XMI_Callback_t
-{
-  xmi_event_function  function;
-  void               *clientdata;
-}XMI_Callback_t;
+typedef xmi_callback_t XMI_Callback_t;
 
-
-//--------------------------------------------------
-//----- Communication CCMI_Subtasks ---------------------
-//----- Each communication operation is split ------
-//----- into phases of one or more sub tasks -------
-//--------------------------------------------------  
-#define  LINE_BCAST_MASK    (CCMI_LINE_BCAST_XP|CCMI_LINE_BCAST_XM|	\
-                             CCMI_LINE_BCAST_YP|CCMI_LINE_BCAST_YM|	\
-                             CCMI_LINE_BCAST_ZP|CCMI_LINE_BCAST_ZM)
-typedef enum
-{
-  CCMI_PT_TO_PT_SUBTASK           =  0,      //Send a pt-to-point message
-  CCMI_LINE_BCAST_XP              =  0x20,   //Bcast along x+
-  CCMI_LINE_BCAST_XM              =  0x10,   //Bcast along x-
-  CCMI_LINE_BCAST_YP              =  0x08,   //Bcast along y+
-  CCMI_LINE_BCAST_YM              =  0x04,   //Bcast along y-
-  CCMI_LINE_BCAST_ZP              =  0x02,   //Bcast along z+
-  CCMI_LINE_BCAST_ZM              =  0x01,   //Bcast along z-
-  CCMI_COMBINE_SUBTASK            =  0x0100,   //Combine the incoming message
-  //with the local state
-  CCMI_GI_BARRIER                 =  0x0200,
-  CCMI_LOCKBOX_BARRIER            =  0x0300,
-  CCMI_TREE_BARRIER               =  0x0400,
-  CCMI_TREE_BCAST                 =  0x0500,
-  CCMI_TREE_ALLREDUCE             =  0x0600,
-  CCMI_REDUCE_RECV_STORE          =  0x0700,
-  CCMI_REDUCE_RECV_NOSTORE        =  0x0800,
-  CCMI_BCAST_RECV_STORE           =  0x0900,
-  CCMI_BCAST_RECV_NOSTORE         =  0x0a00,
-  CCMI_LOCALCOPY                  =  0x0b00,
-    
-  CCMI_UNDEFINED_SUBTASK          =  (~LINE_BCAST_MASK),
-} CCMI_Subtask;
-
-
-
-///
-///\brief CCMI definitions
-///
-
-#ifndef __ccmi_consistency_defined__
-#define __ccmi_consistency_defined__
-typedef enum
-{
-  CCMI_UNDEFINED_CONSISTENCY = -1,
-  CCMI_RELAXED_CONSISTENCY,
-  CCMI_MATCH_CONSISTENCY,
-  CCMI_WEAK_CONSISTENCY,
-  CCMI_CONSISTENCY_COUNT
-}
-  CCMI_Consistency;
-#endif
 
 //Descriptive quad of data that identifies each collective
 typedef struct _cheader_data

@@ -38,7 +38,7 @@ namespace CCMI
       {
         _cb_done      =  NULL;
         _clientdata   =  NULL;
-        _consistency  =  CCMI_UNDEFINED_CONSISTENCY;
+        _consistency  =  XMI_UNDEFINED_CONSISTENCY;
       }
 
       /**
@@ -88,12 +88,12 @@ namespace CCMI
         _clientdata =   cd;
       }
 
-      void setConsistency  (CCMI_Consistency consistency)
+      void setConsistency  (xmi_consistency_t consistency)
       {
         _consistency = consistency;
       }
 
-      CCMI_Consistency getConsistency  ()
+      xmi_consistency_t getConsistency  ()
       {
         return _consistency;
       }
@@ -108,7 +108,7 @@ namespace CCMI
       ///
       ///  \brief Consistency required to perform the collective
       ///
-      CCMI_Consistency      _consistency;
+      xmi_consistency_t      _consistency;
     };  //--  Executor class
   };  //-- Executor Name Space
 };  //-- CCMI

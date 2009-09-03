@@ -340,11 +340,11 @@ namespace CCMI
                _op == BROADCAST_OP ||
                _op == BARRIER_OP)
             {
-              *subtasks = CCMI_PT_TO_PT_SUBTASK;
+              *subtasks = XMI_PT_TO_PT_SUBTASK;
             }
             else
             {
-              *subtasks = CCMI_COMBINE_SUBTASK;
+              *subtasks = XMI_COMBINE_SUBTASK;
             }
           }
           nsrc = 1;
@@ -376,7 +376,7 @@ namespace CCMI
         if(dst < _nranks)
         {
           *dstpes = REL_TO_RANK(dst);
-          *subtasks = CCMI_PT_TO_PT_SUBTASK;
+          *subtasks = XMI_PT_TO_PT_SUBTASK;
           ndst = 1;
         }
         else

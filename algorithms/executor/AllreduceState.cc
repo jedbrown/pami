@@ -85,9 +85,9 @@ void CCMI::Executor::AllreduceState<T_mcastrecv>::constructPhaseData()
       unsigned idx = 0;
       ///find the last combine phase
       for(idx = 0; idx < iNumSrcPes; idx++)
-        if(iSrcHints [idx] == CCMI_COMBINE_SUBTASK ||
-           iSrcHints [idx] == CCMI_REDUCE_RECV_STORE ||
-           iSrcHints [idx] == CCMI_REDUCE_RECV_NOSTORE)
+        if(iSrcHints [idx] == XMI_COMBINE_SUBTASK ||
+           iSrcHints [idx] == XMI_REDUCE_RECV_STORE ||
+           iSrcHints [idx] == XMI_REDUCE_RECV_NOSTORE)
           _lastCombinePhase = i;
 
         ///Broadcast recv phase is the last non-combine recv phase.  
@@ -95,9 +95,9 @@ void CCMI::Executor::AllreduceState<T_mcastrecv>::constructPhaseData()
       if(i > _startPhase)
       {
         for(idx = 0; idx < iNumSrcPes; idx++)
-          if(iSrcHints [idx] != CCMI_COMBINE_SUBTASK &&
-             iSrcHints [idx] != CCMI_REDUCE_RECV_STORE &&
-             iSrcHints [idx] != CCMI_REDUCE_RECV_NOSTORE)
+          if(iSrcHints [idx] != XMI_COMBINE_SUBTASK &&
+             iSrcHints [idx] != XMI_REDUCE_RECV_STORE &&
+             iSrcHints [idx] != XMI_REDUCE_RECV_NOSTORE)
           {
             _bcastRecvPhase = i;  
             break;
@@ -227,7 +227,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv>::constructPhaseData()
           mrecv->connection_id = connID;
           mrecv->bytes = _bytes;
           mrecv->pipelineWidth = _pipelineWidth;
-          mrecv->opcode = (CCMI_Subtask) _phaseVec[i].srcHints[scount];
+          mrecv->opcode = (xmi_subtask_t) _phaseVec[i].srcHints[scount];
         }
 
         indexSrcPe += _phaseVec[i].numSrcPes;
@@ -236,7 +236,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv>::constructPhaseData()
         // final answer.  
         // Since the dstbuf changes external to this class, we will set the phase index and the 
         // executor will use this to setup the dstbuff appropriately.
-        if(_phaseVec[i].srcHints[0] != CCMI_COMBINE_SUBTASK)
+        if(_phaseVec[i].srcHints[0] != XMI_COMBINE_SUBTASK)
           _dstPhase = i;  // No combine? Our target buffer will be the final dstbuf.
         else; // Leave it as previously set to: &_all_recvBufs[indexSrcPe];
       }

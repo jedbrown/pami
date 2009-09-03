@@ -116,7 +116,7 @@ namespace CCMI
                         unsigned             size,
                         unsigned           * dstPes,
                         unsigned             ndstPes,
-                        CCMI_Subtask            * hints,
+                        xmi_subtask_t      * hints,
                         unsigned             phase,
                         SendState          * state);
 
@@ -207,7 +207,7 @@ namespace CCMI
       ///  By default it only needs one connection manager
       AllreduceBase(T_Mapping *map,
                     ConnectionManager::ConnectionManager  * connmgr,
-                    CCMI_Consistency                        consistency,
+                    xmi_consistency_t                       consistency,
                     const unsigned                          commID,
                     unsigned                                iteration,
                     bool                                    enable_pipe=false):
@@ -549,7 +549,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
     {
       for(; (_curIdx < nsrcpes) && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0); _curIdx ++)
       {
-        if(_astate.getPhaseSrcHints(_curPhase, _curIdx) == CCMI_COMBINE_SUBTASK)
+        if(_astate.getPhaseSrcHints(_curPhase, _curIdx) == XMI_COMBINE_SUBTASK)
         {
           src2 = _astate.getPhaseRecvBufs (_curPhase, _curIdx);
           inline_math_isum (reducebuf, src1, src2, op, dt, count);
@@ -561,7 +561,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
     {
       for(; (_curIdx < nsrcpes) && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0); _curIdx ++)
       {
-        if(_astate.getPhaseSrcHints(_curPhase, _curIdx) == CCMI_COMBINE_SUBTASK)
+        if(_astate.getPhaseSrcHints(_curPhase, _curIdx) == XMI_COMBINE_SUBTASK)
         {
           src2 = _astate.getPhaseRecvBufs (_curPhase, _curIdx);
           inline_math_dsum (reducebuf, src1, src2, op, dt, count);
@@ -575,7 +575,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
             && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0);
           _curIdx ++)
       {
-        if(_astate.getPhaseSrcHints(_curPhase,_curIdx) == CCMI_COMBINE_SUBTASK)
+        if(_astate.getPhaseSrcHints(_curPhase,_curIdx) == XMI_COMBINE_SUBTASK)
         {
           src2 = _astate.getPhaseRecvBufs (_curPhase, _curIdx);
           inline_math_dmin (reducebuf, src1, src2, op, dt, count);
@@ -589,7 +589,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
             && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0);
           _curIdx ++)
       {
-        if(_astate.getPhaseSrcHints(_curPhase,_curIdx) == CCMI_COMBINE_SUBTASK)
+        if(_astate.getPhaseSrcHints(_curPhase,_curIdx) == XMI_COMBINE_SUBTASK)
         {
           src2 = _astate.getPhaseRecvBufs (_curPhase, _curIdx);
           inline_math_dmax (reducebuf, src1, src2, op, dt, count);
@@ -601,7 +601,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
     {
       for(; (_curIdx < nsrcpes) && (_astate.getPhaseChunksRcvd(_curPhase, _curIdx) > 0); _curIdx ++)
       {
-        if(_astate.getPhaseSrcHints(_curPhase, _curIdx) == CCMI_COMBINE_SUBTASK)
+        if(_astate.getPhaseSrcHints(_curPhase, _curIdx) == XMI_COMBINE_SUBTASK)
         {
           src2 =  _astate.getPhaseRecvBufs (_curPhase, _curIdx);    
           void * bufs[2];
@@ -637,7 +637,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
     if(ndstpes > 0)
     {
       unsigned *dstpes   = _astate.getPhaseDstPes (_curPhase);
-      CCMI_Subtask *dsthints  = (CCMI_Subtask *)_astate.getPhaseDstHints (_curPhase);    
+      xmi_subtask_t *dsthints  = (xmi_subtask_t *)_astate.getPhaseDstHints (_curPhase);    
       sendMessage (reducebuf, _astate.getBytes(), dstpes, ndstpes, dsthints, 
                    _curPhase, _sState);         
       //wait for send to finish 
@@ -658,7 +658,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
  unsigned                 bytes,
  unsigned               * dstpes,
  unsigned                 ndst,
- CCMI_Subtask                * dsthints,
+ xmi_subtask_t                * dsthints,
  unsigned                 sphase,
  SendState              * s_state)
 {
@@ -725,7 +725,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
   if(ndstpes)
   {
     unsigned *dstpes   = _astate.getPhaseDstPes (_curPhase);
-    CCMI_Subtask *dsthints  = (CCMI_Subtask *)_astate.getPhaseDstHints (_curPhase);    
+    xmi_subtask_t *dsthints  = (xmi_subtask_t *)_astate.getPhaseDstHints (_curPhase);    
     sendMessage (_srcbuf, _astate.getBytes(), dstpes, ndstpes, dsthints, 
                  _curPhase, _sState);         
   }

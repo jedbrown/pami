@@ -347,7 +347,7 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 				  CollExchange::cb_senddone,
 				  &_cmplt[phase]);
 #endif
-  unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
+  unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
   unsigned        ranks   = _dest[phase];
   XMI_Callback_t cb_done;
   cb_done.function   = CollExchange::cb_senddone;
@@ -362,7 +362,7 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 
   mcast_iface->send (&_req[phase],
 		     &cb_done,
-		     CCMI_MATCH_CONSISTENCY,
+		     XMI_MATCH_CONSISTENCY,
 		     (xmi_quad_t*)& _header[phase],
 		     CCMIQuad_sizeof(_header[phase]),
 		     0,

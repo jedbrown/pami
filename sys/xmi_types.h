@@ -48,7 +48,16 @@ extern "C"
                                        void          * cookie,
                                        xmi_result_t    result );
 
-  /**
+  typedef struct xmi_callback_t
+  {
+    xmi_event_function  function;
+    void               *clientdata;
+  }xmi_callback_t;
+
+
+
+
+/**
    * \brief Message layer operation types
    */
 

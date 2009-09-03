@@ -15,51 +15,63 @@
 #define __components_device_manytomanymodel_h__
 
 #include "sys/xmi.h"
+#include "algorithms/ccmi.h"  //for XMI_Callback_t...probably move this at some point
 namespace XMI
 {
-    namespace Device
+  namespace Device
+  {
+    namespace Interface
     {
-        namespace Interface
-        {
-            ///
-            /// \todo Need A LOT MORE documentation on this interface and its use
-            /// \param T_Model   Manytomany model template class
-            /// \param T_Device  Manytomany device template class
-            /// \param T_Object  Manytomany object template class
-            ///
-            /// \see Manytomany::Model
-            /// \see Manytomany::Device
-            ///
-            template <class T_Model, class T_Device, class T_Object>
-            class ManytomanyModel
-            {
-            public:
-                /// \param[in] device                Manytomany device reference
-                ManytomanyModel (T_Device & device) {};
-                ~ManytomanyModel () {};
+      template <class T_Model, class T_Device, class T_Object>
+      class ManytomanyModel
+      {
+      public:
+        /// \param[in] device                Manytomany device reference
+        ManytomanyModel (T_Device & device) {};
+        ~ManytomanyModel () {};
 
-                inline void setCallback (manytomany_recv cb_recv, void *arg);
-                inline void send  (XMI_Manytomany_t parameters);
-                
-                inline void postRecv (XMI_Request_t         * request,
-                                      const XMI_Callback_t  * cb_done,
-                                      unsigned                 connid,
-                                      char                   * buf,
-                                      unsigned               * sizes,
-                                      unsigned               * offsets,
-                                      unsigned               * counters,
-                                      unsigned                 nranks,
-                                      unsigned                 myindex) = 0;
-            };
-            template <class T_Model, class T_Device, class T_Object>
-            void ManytomanyModel<T_Model, T_Device, T_Object>::setRequestBuffer (XMI_Request_t *request,
-                                                                                size_t req_size)
-            {
-                static_cast<T_Model*>(this)->setRequestBuffer_impl(request, req_size);
-            }
-        
+        inline void setCallback (xmi_dispatch_manytomany_fn cb_recv, void *arg);
+        inline void send  (xmi_manytomany_t parameters);
+        inline void postRecv (T_Object              * request,
+                              const XMI_Callback_t  * cb_done,
+                              unsigned                 connid,
+                              char                   * buf,
+                              unsigned               * sizes,
+                              unsigned               * offsets,
+                              unsigned               * counters,
+                              unsigned                 nranks,
+                              unsigned                 myindex);
+      };
+      template <class T_Model, class T_Device, class T_Object>
+      void ManytomanyModel<T_Model, T_Device, T_Object>::setCallback (xmi_dispatch_manytomany_fn cb_recv,
+                                                                      void *arg)
+      {
+        static_cast<T_Model*>(this)->setCallback_impl(cb_recv, arg);
+      }
 
-        };
+      template <class T_Model, class T_Device, class T_Object>
+      void ManytomanyModel<T_Model, T_Device, T_Object>::send (xmi_manytomany_t parameters)
+      {
+        static_cast<T_Model*>(this)->send_impl(parameters);
+      }
+      
+      template <class T_Model, class T_Device, class T_Object>
+      void ManytomanyModel<T_Model, T_Device, T_Object>::postRecv (T_Object              * request,
+                                                                   const XMI_Callback_t  * cb_done,
+                                                                   unsigned                connid,
+                                                                   char                  * buf,
+                                                                   unsigned              * sizes,
+                                                                   unsigned              * offsets,
+                                                                   unsigned              * counters,
+                                                                   unsigned                nranks,
+                                                                   unsigned                myindex)
+      {
+        static_cast<T_Model*>(this)->postRecv_impl(request, cb_done, connid,
+                                                   buf, sizes, offsets, counters,
+                                                   nranks, myindex);
+      }
+      
     };
+  };
 };
 #endif // __components_device_manytomanymodel_h__
