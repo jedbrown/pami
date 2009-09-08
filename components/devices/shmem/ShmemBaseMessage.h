@@ -191,10 +191,11 @@ namespace XMI
 
 
       protected:
+        xmi_context_t        _context;
+
         // Client callback information.
         xmi_event_function   _fn;
         void               * _cookie;
-        xmi_context_t        _context;
 
         struct iovec    * _iov;
         size_t            _tiov;

@@ -46,6 +46,7 @@ namespace XMI
         inline BgpContext (xmi_client_t client) :
           Context<XMI::Context::BgpContext> (client),
           _client (client),
+          _context ((xmi_context_t)this),
           _sysdep (),
           _shmem ()
         {
@@ -69,14 +70,15 @@ namespace XMI
 
         inline size_t advance_impl (size_t maximum, xmi_result_t & result)
         {
-          result = XMI_EAGAIN;
+//          result = XMI_EAGAIN;
+          result = XMI_SUCCESS;
           size_t events = 0;
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
           {
             events += _shmem.advance_impl();
           }
-          if (events > 0) result = XMI_SUCCESS;
+          //if (events > 0) result = XMI_SUCCESS;
 
           return events;
         }
@@ -261,22 +263,18 @@ namespace XMI
                                            void                     * cookie,
                                            xmi_send_hint_t            options)
         {
-#warning implement this!
-#if 0
-          if (_dispatch[id] != NULL) return XMI_ERROR;
+          if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
 
           // Allocate memory for the protocol object.
-          _dispatch[id] = (void *) _request.allocateObject ();
+          _dispatch[(size_t)id] = (void *) _request.allocateObject ();
 
           // For now, only enable shmem short/eager sends.
           typedef XMI::Protocol::Send::EagerSimple <ShmemModel, ShmemDevice, ShmemMessage> EagerSimpleShmem;
-          
+
           xmi_result_t result;
-          new (_dispatch[id]) EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), result);
+          new (_dispatch[(size_t)id]) EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
 
           return result;
-#endif
-          return XMI_UNIMPL;
         }
 
         inline xmi_result_t multisend_getroles(xmi_dispatch_t  dispatch,
@@ -313,7 +311,8 @@ namespace XMI
 
       private:
 
-        xmi_client_t _client;
+        xmi_client_t  _client;
+        xmi_context_t _context;
 
         SysDep::BgpSysDep _sysdep;
 

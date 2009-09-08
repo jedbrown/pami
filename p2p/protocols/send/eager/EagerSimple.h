@@ -18,7 +18,9 @@
 #ifndef __xmi_p2p_protocol_send_eager_eagersimple_h__
 #define __xmi_p2p_protocol_send_eager_eagersimple_h__
 
-#include "../Simple.h"
+#include "p2p/protocols/send/Simple.h"
+
+#include "components/memory/MemoryAllocator.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -55,8 +57,8 @@ namespace XMI
           typedef struct send_state
           {
             T_Message            msg[2];
-            xmi_event_function * local_fn;
-            xmi_event_function * remote_fn;
+            xmi_event_function   local_fn;
+            xmi_event_function   remote_fn;
             void               * cookie;
           } send_state_t;
 
@@ -65,6 +67,9 @@ namespace XMI
             xmi_recv_t info;     ///< Application receive information.
             size_t     received; ///< Number of bytes received.
             size_t     sndlen;   ///< Number of bytes being sent from the origin rank.
+            T_Message  msg;
+            send_state_t * ackinfo;
+            EagerSimple<T_Model,T_Device,T_Message> * eager;
           } recv_state_t;
 
         public:
@@ -84,18 +89,20 @@ namespace XMI
                               void                     * cookie,
                               T_Device                 & device,
                               size_t                     origin_task,
+                              xmi_context_t              context,
                               xmi_result_t             & status) :
               XMI::Protocol::Send::Simple (),
-              _envelope_model (device),
-              _data_model (device),
-              _ack_model (device),
+              _envelope_model (device, context),
+              _data_model (device, context),
+              _ack_model (device, context),
               _msgDevice (device),
               _pktsize (device.getPacketPayloadSize ()),
               _fromRank (origin_task),
+              _context (context),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie)
           {
-            size_t mbytes = device->getPacketMetadataSize ();
+            size_t mbytes = device.getPacketMetadataSize ();
             TRACE_ERR((stderr, "Eager(), sizeof(short_metadata_t) = %zd, mbytes = %zd, _pktsize = %zd\n", sizeof(short_metadata_t), mbytes, _pktsize));
 
             if (mbytes < sizeof(short_metadata_t))
@@ -183,33 +190,33 @@ namespace XMI
 
           inline T_Device * getDevice()
           {
-            return _msgDevice;
+            return &_msgDevice;
           };
 
         protected:
           inline send_state_t * allocateSendState ()
           {
-            return (send_state_t *) _send_allocator[_context].allocateObject ();
+            return (send_state_t *) _send_allocator.allocateObject ();
           }
 
           inline void freeSendState (send_state_t * object)
           {
-            _send_allocator[_context].freeObject ((void *) object);
+            _send_allocator.returnObject ((void *) object);
           }
 
           inline recv_state_t * allocateRecvState ()
           {
-            return (recv_state_t *) _recv_allocator[_context].allocateObject ();
+            return (recv_state_t *) _recv_allocator.allocateObject ();
           }
 
           inline void freeRecvState (recv_state_t * object)
           {
-            _recv_allocator[_context].freeObject ((void *) object);
+            _recv_allocator.returnObject ((void *) object);
           }
 
           /// Maximum of 100 contexts
-          static MemoryAllocator < sizeof(send_state_t), 16 > _send_allocator[100];
-          static MemoryAllocator < sizeof(recv_state_t), 16 > _recv_allocator[100];
+          MemoryAllocator < sizeof(send_state_t), 16 > _send_allocator;
+          MemoryAllocator < sizeof(recv_state_t), 16 > _recv_allocator;
 
           T_Model         _envelope_model;
           T_Model         _data_model;
@@ -219,7 +226,7 @@ namespace XMI
           size_t          _pktsize;
           size_t          _fromRank;
 
-          size_t          _context; // Id .. not object
+          xmi_context_t   _context;
 
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
@@ -241,11 +248,10 @@ namespace XMI
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
             eager->freeSendState (state);
 
-#warning callbacks must provide the context
-            if (local_fn)  local_fn  (0, cookie, XMI_SUCCESS);
-            if (remote_fn) remote_fn (0, cookie, XMI_SUCCESS);
+            if (local_fn)  local_fn  (eager->_context, cookie, XMI_SUCCESS);
+            if (remote_fn) remote_fn (eager->_context, cookie, XMI_SUCCESS);
 
-            freeSendState (state);
+            eager->freeSendState (state);
 
             return 0;
           }
@@ -314,20 +320,21 @@ namespace XMI
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
+            state->eager = eager;
 
-            eager->dispatch_fn (eager->context,
-                                eager->cookie,
-                                m->fromRank, // origin rank
-                                payload,     // payload contain only msginfo metadata
-                                bytes,       // number of bytes of metadata
-                                NULL,        // No payload data
-                                0,           // No payload data
-                                (xmi_recv_t *) state);
+            eager->_dispatch_fn.p2p (eager->_context,
+                                     eager->_cookie,
+                                     m->fromRank, // origin rank
+                                     payload,     // payload contain only msginfo metadata
+                                     bytes,       // number of bytes of metadata
+                                     NULL,        // No payload data
+                                     0,           // No payload data
+                                     (xmi_recv_t *) state);
 
             state->received = 0;
             state->sndlen = m->bytes;
 
-            assert(state->recv.kind == XMI_AM_KIND_SIMPLE);
+            assert(state->info.kind == XMI_AM_KIND_SIMPLE);
 
             eager->getDevice()->setConnection (m->fromRank, (void *)state);
 
@@ -372,7 +379,7 @@ namespace XMI
             assert(state != NULL);
 
             size_t nbyte = state->received;
-            size_t nleft = state->recv.data.simple.bytes - nbyte;
+            size_t nleft = state->info.data.simple.bytes - nbyte;
             size_t ncopy = bytes;
 
 //fprintf (stderr, "(%zd) dispatch_data_direct(), fromRank = %zd, state->received = %zd, state->rcvlen = %zd, nleft = %zd, bytes = %zd\n", DCMF_Messager_rank(), fromRank, state->received, state->rcvlen, nleft, bytes);
@@ -382,7 +389,7 @@ namespace XMI
                 if (nleft < ncopy) ncopy = nleft;
 
                 ncopy = nleft > bytes ? bytes : nleft;
-                memcpy (state->recv.data.simple.addr + nbyte, payload, ncopy);
+                memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, ncopy);
               }
 
 //fprintf (stderr, "dispatch_data_direct(), nbyte = %zd, ncopy = %zd\n", nbyte, ncopy);
@@ -393,16 +400,16 @@ namespace XMI
 
 
 //fprintf (stderr, "dispatch_data_direct(),  after setConnection\n");
-                if (state->recv.local_fn) state->recv.local_fn (0, state->recv.cookie, XMI_SUCCESS);
+                if (state->info.local_fn) state->info.local_fn (eager->_context, state->info.cookie, XMI_SUCCESS);
 
                 // Send the acknowledgement.
                 eager->_ack_model.postPacket (&(state->msg),
                                        receive_complete,
                                        (void *) state,
                                        fromRank,
-                                       (void *) &(state->origin_object),
-                                       sizeof (void *),
-                                       NULL,
+                                       (void *) &(state->ackinfo),
+                                       sizeof (send_state_t *),
+                                       (void *)NULL,
                                        0);
 
                 return 0;
@@ -515,7 +522,7 @@ namespace XMI
           {
             recv_state_t * state = (recv_state_t *) cookie;
             EagerSimple<T_Model, T_Device, T_Message> * eager =
-              (EagerSimple<T_Model, T_Device, T_Message> *) state->factory;
+              (EagerSimple<T_Model, T_Device, T_Message> *) state->eager;
 
             eager->freeRecvState (state);
 

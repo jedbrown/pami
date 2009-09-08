@@ -1,5 +1,5 @@
 ///
-/// \file tests/client/hello.c
+/// \file tests/context/advance.c
 /// \brief Simple XMI_Context_advance() test
 ///
 

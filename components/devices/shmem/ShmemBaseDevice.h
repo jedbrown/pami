@@ -88,13 +88,11 @@ namespace XMI
         size_t getMessageMetadataSize_impl ();
 
         /// \see XMI::Device::Interface::MessageDevice::setConnection()
-        inline void setConnection_impl (int      channel,
-                                        size_t   fromRank,
+        inline void setConnection_impl (size_t   fromRank,
                                         void   * arg);
 
         /// \see XMI::Device::Interface::MessageDevice::getConnection()
-        inline void * getConnection_impl (int    channel,
-                                          size_t fromRank);
+        inline void * getConnection_impl (size_t fromRank);
 
         // ------------------------------------------
 
@@ -246,23 +244,21 @@ namespace XMI
 
     /// \see XMI::Device::Interface::MessageDevice::setConnection()
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::setConnection_impl (int      channel,
-                                                                size_t   fromRank,
-                                                                void   * arg)
+    void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::setConnection_impl (size_t   fromRank,
+                                                                          void   * arg)
     {
-      size_t global, local;
-      _sysdep->mapping.rank2node (fromRank, global, local);
-      _connection[channel][local] = arg;
+      size_t global, local=0;
+      _sysdep->mapping.task2node (fromRank, global, local);
+      _connection[0][local] = arg;
     }
 
     /// \see XMI::Device::Interface::MessageDevice::getConnection()
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    void * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::getConnection_impl (int    channel,
-                                                                  size_t fromRank)
+    void * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::getConnection_impl (size_t fromRank)
     {
-      size_t global, local;
-      _sysdep->mapping.rank2node (fromRank, global, local);
-      return _connection[channel][local];
+      size_t global, local=0;
+      _sysdep->mapping.task2node (fromRank, global, local);
+      return _connection[0][local];
     }
 
 

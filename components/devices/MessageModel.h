@@ -33,7 +33,11 @@ namespace XMI
       class MessageModel : public PacketModel<T_Model, T_Device, T_Object>
       {
         public:
-          MessageModel (T_Device & device) : PacketModel<T_Model, T_Device, T_Object> (device) {};
+          MessageModel (T_Device      & device,
+                        xmi_context_t   context) :
+            PacketModel<T_Model, T_Device, T_Object> (device, context)
+          {};
+
           ~MessageModel () {};
 
           ///

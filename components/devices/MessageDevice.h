@@ -70,14 +70,13 @@ namespace XMI
           /// \attention All packet device derived classes \b must
           ///            implement the setConnection_impl() method.
           ///
-          /// \param[in] channel Packet device channel
           /// \param[in] rank    Connection rank, typically the origin global rank
           /// \param[in] arg     Channel connection argument
           ///
           /// \see allocateConnection
           /// \see getConnection
           ///
-          inline void setConnection (int channel, size_t rank, void * arg);
+          inline void setConnection (size_t rank, void * arg);
 
           ///
           /// \brief Get the opaque connection data for a channel.
@@ -101,7 +100,6 @@ namespace XMI
           /// \attention All packet device derived classes \b must
           ///            implement the getConnection_impl() method.
           ///
-          /// \param[in] channel Packet device channel
           /// \param[in] rank    Connection rank, typically the origin global rank
           ///
           /// \return Channel connection argument
@@ -109,7 +107,7 @@ namespace XMI
           /// \see allocateConnection
           /// \see setConnection
           ///
-          inline void * getConnection (int channel, size_t rank);
+          inline void * getConnection (size_t rank);
       };
 
       template <class T>
@@ -119,15 +117,15 @@ namespace XMI
       }
 
       template <class T>
-      inline void MessageDevice<T>::setConnection (int channel, size_t rank, void * arg)
+      inline void MessageDevice<T>::setConnection (size_t rank, void * arg)
       {
-        static_cast<T*>(this)->setConnection_impl (channel, rank, arg);
+        static_cast<T*>(this)->setConnection_impl (rank, arg);
       }
 
       template <class T>
-      inline void * MessageDevice<T>::getConnection (int channel, size_t rank)
+      inline void * MessageDevice<T>::getConnection (size_t rank)
       {
-        return static_cast<T*>(this)->getConnection_impl (channel, rank);
+        return static_cast<T*>(this)->getConnection_impl (rank);
       }
     };
   };
