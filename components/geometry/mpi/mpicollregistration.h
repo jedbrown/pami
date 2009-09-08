@@ -18,7 +18,7 @@ namespace XMI
         {
         }
 
-      inline T_Collfactory * analyze(T_Geometry *geometry)
+      inline T_Collfactory * analyze_impl(T_Geometry *geometry)
         {
           return XMI_UNIMPL;
         }
