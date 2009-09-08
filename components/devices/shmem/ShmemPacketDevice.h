@@ -17,7 +17,7 @@
 #include "../MessageDevice.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  // fprintf x
+#define TRACE_ERR(x)  fprintf x
 #endif
 
 namespace XMI
@@ -42,14 +42,16 @@ namespace XMI
         /// \see XMI::Device::Interface::BaseDevice::init()
         inline int init_impl (T_SysDep * sysdep)
         {
-          return ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (sysdep);
-        }
+          TRACE_ERR((stderr, "(%zd) ShmemPacketDevice::init_impl (), this = %p\n", sysdep->mapping.task(), this));
+          //return ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (sysdep);
+          return this->init_internal (sysdep);
+        };
 
         /// \see XMI::Device::Interface::BaseDevice::advance()
         inline int advance_impl ()
         {
-          return ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_internal ();
-        }
+          return this->advance_internal ();
+        };
     };
   };
 };

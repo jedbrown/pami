@@ -1,9 +1,13 @@
 ///
-/// \file xmi/Context.h
-/// \brief XMI context implementation.
+/// \file components/context/Context.h
+/// \brief XMI context interface.
 ///
-#ifndef   __xmi_context_h__
-#define   __xmi_context_h__
+#ifndef   __components_context_context_h__
+#define   __components_context_context_h__
+
+#ifndef XMI_CONTEXT_CLASS
+#error XMI_CONTEXT_CLASS must be defined
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -383,4 +387,4 @@ namespace XMI
   }; // end namespace Context
 }; // end namespace XMI
 
-#endif // __xmi_context_h__
+#endif // __components_context_context_h__

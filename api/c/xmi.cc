@@ -70,8 +70,7 @@ unsigned long long XMI_Wtimebase()
 extern "C" xmi_result_t XMI_Client_initialize (char         * name,
                                                xmi_client_t * client)
 {
-  *client = (xmi_client_t) XMI_CLIENT_CLASS::generate (name);
-  return XMI_SUCCESS;
+  return XMI_CLIENT_CLASS::generate (name, client);
 }
 
 ///
@@ -91,9 +90,12 @@ extern "C" xmi_result_t XMI_Context_create (xmi_client_t           client,
                                             size_t                 count,
                                             xmi_context_t        * context)
 {
+  xmi_result_t result;
   XMI_CLIENT_CLASS * xmi = (XMI_CLIENT_CLASS *) client;
-  *context = (xmi_context_t) xmi->createContext (configuration, count);
-  return XMI_UNIMPL;
+
+  *context = xmi->createContext (configuration, count, result);
+
+  return result;
 }
 
 ///

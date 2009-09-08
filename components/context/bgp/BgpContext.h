@@ -5,6 +5,8 @@
 #ifndef   __components_context_bgp_bgpcontext_h__
 #define   __components_context_bgp_bgpcontext_h__
 
+#define XMI_CONTEXT_CLASS XMI::Context::BgpContext
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,7 +28,6 @@
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
 
-#define XMI_CONTEXT_CLASS XMI::Context::BgpContext
 
 namespace XMI
 {
@@ -68,14 +69,14 @@ namespace XMI
 
         inline size_t advance_impl (size_t maximum, xmi_result_t & result)
         {
-          result = XMI_ERROR;
-
+          result = XMI_EAGAIN;
           size_t events = 0;
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
           {
-            events += _shmem.advance();
+            events += _shmem.advance_impl();
           }
+          if (events > 0) result = XMI_SUCCESS;
 
           return events;
         }

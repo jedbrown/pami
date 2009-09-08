@@ -56,6 +56,7 @@ namespace XMI
             __doneQ (),
             __doneQMask (0)
         {
+          TRACE_ERR((stderr, "ShmemBaseDevice() constructor\n"));
         };
 
         inline ~ShmemBaseDevice () {};
@@ -147,7 +148,7 @@ namespace XMI
         ///
         inline bool isSendQueueEmpty (size_t peer);
 
-      protected:
+      //protected:
 
         int init_internal (T_SysDep * sysdep);
 
@@ -250,7 +251,7 @@ namespace XMI
                                                                 void   * arg)
     {
       size_t global, local;
-      _sysdep.mapping.rank2node (fromRank, global, local);
+      _sysdep->mapping.rank2node (fromRank, global, local);
       _connection[channel][local] = arg;
     }
 
@@ -260,7 +261,7 @@ namespace XMI
                                                                   size_t fromRank)
     {
       size_t global, local;
-      _sysdep.mapping.rank2node (fromRank, global, local);
+      _sysdep->mapping.rank2node (fromRank, global, local);
       return _connection[channel][local];
     }
 
@@ -284,7 +285,7 @@ namespace XMI
           hdr[0] = (uint8_t) dispatch_id;
 
           // Remaining header bytes are metadata.
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket () .. metadata = %p\n", DCMF_Messager_rank(), metadata));
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket () .. metadata = %p\n", _sysdep->mapping.task(), metadata));
           memcpy ((void *) &hdr[1], metadata, metasize);
 
           // Write the packet payload data
@@ -313,7 +314,7 @@ namespace XMI
                                                                       size_t   bytes1,
                                                                       size_t & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) >>\n", DCMF_Messager_rank(), fnum, dispatch_id));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) >>\n", _sysdep->mapping.task(), fnum, dispatch_id));
 
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
@@ -337,11 +338,11 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_SUCCESS\n", DCMF_Messager_rank(), fnum, dispatch_id));
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_SUCCESS\n", _sysdep->mapping.task(), fnum, dispatch_id));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_EAGAIN\n", DCMF_Messager_rank(), fnum, dispatch_id));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_EAGAIN\n", _sysdep->mapping.task(), fnum, dispatch_id));
       return XMI_EAGAIN;
     };
 
@@ -354,7 +355,7 @@ namespace XMI
                                                                       size_t         niov,
                                                                       size_t       & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", DCMF_Messager_rank(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", _sysdep->mapping.task(), fnum, dispatch_id, metadata, iov, niov));
 
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
@@ -383,11 +384,11 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", DCMF_Messager_rank(), fnum, dispatch_id, metadata, iov, niov));
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", _sysdep->mapping.task(), fnum, dispatch_id, metadata, iov, niov));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", DCMF_Messager_rank(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", _sysdep->mapping.task(), fnum, dispatch_id, metadata, iov, niov));
       return XMI_EAGAIN;
     };
 
@@ -396,7 +397,7 @@ namespace XMI
                                                                       ShmemBaseMessage<T_Packet> * msg,
                                                                       size_t                     & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) >>\n", DCMF_Messager_rank(), fnum, msg));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) >>\n", _sysdep->mapping.task(), fnum, msg));
 
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
@@ -431,18 +432,18 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_SUCCESS\n", DCMF_Messager_rank(), fnum, msg));
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_SUCCESS\n", _sysdep->mapping.task(), fnum, msg));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_EAGAIN\n", DCMF_Messager_rank(), fnum, msg));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_EAGAIN\n", _sysdep->mapping.task(), fnum, msg));
       return XMI_EAGAIN;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
     int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_internal ()
     {
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() >> ... __sendQMask = 0x%0x\n", DCMF_Messager_rank(), __sendQMask));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() >> ... __sendQMask = 0x%0x\n", _sysdep->mapping.task(), __sendQMask));
 
       // Advance any pending send messages.
       if (__sendQMask != 0) advance_sendQ ();
@@ -469,7 +470,7 @@ namespace XMI
           _rfifo->consumePacket (pkt);
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() <<\n", DCMF_Messager_rank()));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() <<\n", _sysdep->mapping.task()));
       return 0;
     }
 
@@ -481,7 +482,7 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushSendQueueTail (size_t peer, CCMI::QueueElem * element)
     {
-      TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", DCMF_Messager_rank(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
+      TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", _sysdep->mapping.task(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
       __sendQ[peer].pushTail (element);
       __sendQMask |= (1 << peer);
     }
@@ -508,7 +509,7 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushDoneQueueTail (size_t peer, CCMI::QueueElem * element)
     {
-      TRACE_ERR ((stderr, "(%zd) pushDoneQueueTail(%zd, %p), __doneQMask = %d -> %d\n", DCMF_Messager_rank(), peer, element, __doneQMask, __doneQMask | (1 << peer)));
+      TRACE_ERR ((stderr, "(%zd) pushDoneQueueTail(%zd, %p), __doneQMask = %d -> %d\n", _sysdep->mapping.task(), peer, element, __doneQMask, __doneQMask | (1 << peer)));
       __doneQ[peer].pushTail (element);
       __doneQMask |= (1 << peer);
     }

@@ -20,23 +20,30 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (T_SysDep * sysdep)
     {
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal ()\n", sysdep->mapping.task()));
       _sysdep = sysdep;
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () _sysdep = %p\n", sysdep->mapping.task(), _sysdep));
 
       unsigned i, j;
       _num_procs = _sysdep->mapping.numActiveTasksLocal ();
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 0\n", sysdep->mapping.task()));
 
       _global_task = _sysdep->mapping.task ();
       size_t global;
       _sysdep->mapping.task2node (_global_task, global, _local_task);
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 1\n", sysdep->mapping.task()));
 
       // Allocate a shared memory segment for the fifos
       size_t size = ((sizeof(T_Fifo) + 15) & 0xfff0) * _num_procs;
       sysdep->mm.memalign ((void **)&_fifo, 16, size);
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 2\n", sysdep->mapping.task()));
 
       // Initialize the fifo acting as the reception fifo for this local task
       _rfifo = &_fifo[_local_task];
       new (_rfifo) T_Fifo ();
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 3\n", sysdep->mapping.task()));
       _rfifo->init ();
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 4\n", sysdep->mapping.task()));
 
       // barrier ?
 
@@ -45,11 +52,13 @@ namespace XMI
       __sendQ = (CCMI::Queue *) malloc ((sizeof (CCMI::Queue) * _num_procs));
       __doneQ = (CCMI::Queue *) malloc ((sizeof (CCMI::Queue) * _num_procs));
 
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 5\n", sysdep->mapping.task()));
       for (i = 0; i < _num_procs; i++)
       {
         new (&__sendQ[i]) CCMI::Queue ();
         new (&__doneQ[i]) CCMI::Queue ();
       }
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 6\n", sysdep->mapping.task()));
 
       // Initialize the send and done queue masks to zero (empty).
       // There should be a queue mask associated with each channel.
@@ -66,6 +75,7 @@ namespace XMI
           _dispatch[i].function   = noop;
           _dispatch[i].clientdata = NULL;
         }
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 7\n", sysdep->mapping.task()));
 
       for (i = 0; i < 1; i++)
         {
@@ -74,6 +84,7 @@ namespace XMI
           for (j = 0; j < _num_procs; j++)
             _connection[i][j] = NULL;
         }
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 8\n", sysdep->mapping.task()));
 
       return 0;
     }
