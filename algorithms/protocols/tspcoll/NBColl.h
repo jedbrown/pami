@@ -9,18 +9,16 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+#include "platform.h"
 
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
-#include "platform.h"
-
 namespace TSPColl
 {
 //  class XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>;
   typedef unsigned char *           __pgasrt_local_addr_t;
   /* *********************************************************** */
   /* *********************************************************** */
-
   enum NBTag 
   { 
     BarrierTag=0,
@@ -128,6 +126,14 @@ namespace TSPColl
     void * operator new (size_t, void * addr) { return addr; }
   };
 };
+
+
+
+
+
+
+
+
 
 
 #endif

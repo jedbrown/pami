@@ -1,3 +1,6 @@
+#ifndef ___mpi___platform___
+#define ___mpi___platform___
+
 #include "components/client/mpi/mpiclient.h"
 #include "components/context/mpi/mpicontext.h"
 #include "components/geometry/common/commongeometry.h"
@@ -10,5 +13,10 @@
 #include "components/devices/mpi/mpimulticombinemodel.h"
 #include "components/devices/mpi/mpimultisyncmodel.h"
 #include "components/devices/mpi/mpimanytomanymodel.h"
+#include "components/devices/mpi/mpimodel.h"
+#include "components/devices/mpi/mpidevice.h"
 #include "components/mapping/mpi/mpimapping.h"
 #include "components/time/mpi/mpitime.h"
+#include "components/memory/heap/HeapMemoryManager.h"
+
+#endif

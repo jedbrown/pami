@@ -11,6 +11,7 @@
 #include <string.h>
 #include <mpi.h>
 #include "components/context/Context.h"
+#include "components/geometry/common/commongeometry.h"
 #include <platform.h>
 #include <new>
 

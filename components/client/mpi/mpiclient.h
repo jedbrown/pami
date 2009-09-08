@@ -11,6 +11,7 @@
 
 #include "components/client/Client.h"
 #include "components/context/mpi/mpicontext.h"
+#include "components/geometry/common/commongeometry.h"
 
 namespace XMI
 {
