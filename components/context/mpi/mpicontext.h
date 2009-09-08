@@ -5,14 +5,14 @@
 #ifndef   __xmi_mpi_mpicontext_h__
 #define   __xmi_mpi_mpicontext_h__
 
+#define XMI_CONTEXT_CLASS XMI::Context::MPI
+
 #include <stdlib.h>
 #include <string.h>
 #include <mpi.h>
 #include "components/context/Context.h"
 #include <platform.h>
 #include <new>
-
-#define XMI_CONTEXT_CLASS XMI::Context::MPI
 
 namespace XMI
 {

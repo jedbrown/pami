@@ -7,11 +7,10 @@
 
 #include <stdlib.h>
 
-#include "components/client/Client.h"
-
-#include "components/context/mpi/mpicontext.h"
-
 #define XMI_CLIENT_CLASS XMI::Client::MPI
+
+#include "components/client/Client.h"
+#include "components/context/mpi/mpicontext.h"
 
 namespace XMI
 {
@@ -20,8 +19,8 @@ namespace XMI
     class MPI : public Client<XMI::Client::MPI,XMI::Context::MPI>
     {
       public:
-        inline MPI (char * name) :
-          Client<XMI::Client::MPI,XMI::Context::MPI>(name),
+      inline MPI (char * name, xmi_result_t & result) :
+        Client<XMI::Client::MPI,XMI::Context::MPI>(name, result),
           _client ((xmi_client_t) this),
           _references (1)
         {
@@ -31,14 +30,14 @@ namespace XMI
         {
         }
 
-        static XMI::Client::MPI * generate_impl (char * name)
+        static xmi_result_t generate_impl (char * name, xmi_client_t * in_client)
         {
           int rc = 0;
 
           //__client_list->lock();
 
           // If a client with this name is not already initialized...
-          XMI::Client::MPI * client = NULL;
+          XMI::Client::MPI * client = (XMI::Client::MPI * )in_client;
           //if ((client = __client_list->contains (name)) == NULL)
           //{
           //            rc = posix_memalign((void **)&client, 16, sizeof (XMI::Client::MPI));
@@ -46,7 +45,8 @@ namespace XMI
           client = (XMI::Client::MPI *)malloc(sizeof (XMI::Client::MPI));
           assert(client != NULL);
           memset ((void *)client, 0x00, sizeof(XMI::Client::MPI));
-          new (client) XMI::Client::MPI (name);
+          xmi_result_t res;
+          new (client) XMI::Client::MPI (name, res);
           //__client_list->pushHead ((QueueElem *) client);
           //}
           //else
@@ -56,10 +56,10 @@ namespace XMI
 
           //__client_list->unlock();
 
-          return client;
+          return XMI_SUCCESS;
         }
 
-        static void destroy_impl (XMI::Client::MPI * client)
+        static void destroy_impl (xmi_client_t client)
         {
           //__client_list->lock ();
           //client->decReferenceCount ();
@@ -76,8 +76,9 @@ namespace XMI
           return "";
         }
 
-        inline XMI::Context::MPI * createContext_impl (xmi_configuration_t configuration[],
-                                                       size_t              count)
+        inline xmi_context_t createContext_impl (xmi_configuration_t configuration[],
+                                                 size_t              count,
+                                                 xmi_result_t       & result)
         {
           //_context_list->lock ();
 
@@ -95,7 +96,7 @@ namespace XMI
           return context;
         }
         
-        inline xmi_result_t destroyContext_impl (XMI::Context::MPI * context)
+        inline xmi_result_t destroyContext_impl (xmi_context_t context)
         {
           //_context_list->lock ();
           //_context_list->remove (context);
