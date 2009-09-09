@@ -76,8 +76,7 @@ namespace XMI
         /// \brief Atomic compare and swap operation
         ///
         /// If the current value of the atomic object is the \c compare value,
-        /// then write the \c swap value into the atomic object and return the
-        /// original value.
+        /// then write the \c swap value into the atomic object.
         ///
         /// \attention All atomic object derived classes \b must
         ///            implement the compare_and_swap_impl() method.

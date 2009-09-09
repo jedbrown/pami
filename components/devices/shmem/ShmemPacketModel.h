@@ -16,11 +16,11 @@
 
 #include "sys/xmi.h"
 
-#include "../MessageModel.h"
+#include "components/devices/MessageModel.h"
 #include "ShmemPacketDevice.h"
 #include "ShmemSysDep.h"
 
-#include "errno.h"
+#include <errno.h>
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x

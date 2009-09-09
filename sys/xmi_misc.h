@@ -90,7 +90,19 @@ extern "C"
         XMI_CHECK_PARAMS,    /**<  QU : xmi_bool_t        : check parameters                                                       */
         XMI_USER_KEYS,       /**<  Q  : xmi_user_key_t[]  : user-defined keys terminated with NULL                                 */
         XMI_USER_CONFIG,     /**<  QU : xmi_user_config_t : user-defined configuration key and value are shallow-copied for update */
-    } xmi_attribute_t;
+    } xmi_attribute_name_t;
+
+    typedef union
+    {
+      void              * pointer;
+      char              * string;
+      xmi_bool_t          boolean;
+      xmi_attribute_name_t   * attributes;
+      size_t              intval;
+      xmi_intr_mask_t     interrupts;
+      xmi_user_key_t    * keys;
+      xmi_user_config_t * configurations;
+    } xmi_attribute_value_t;
 
 #define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 
@@ -99,17 +111,16 @@ extern "C"
      */
     typedef struct
     {
-        xmi_attribute_t  attr;  /**< Attribute type */
-        void *           value; /**< Opaque pointer to attribute value. */
+        xmi_attribute_name_t  name;  /**< Attribute type */
+        xmi_attribute_value_t value; /**< Attribute value */
     } xmi_configuration_t;
 
 
     /**
      * \brief Query the value of an attribute
      *
-     * \param [in]  context    The XMI context
-     * \param [in]  attribute  The attribute of interest
-     * \param [out] value      Pointer to the retrieved value
+     * \param [in]     context        The XMI context
+     * \param [in,out] configuration  The configuration attribute of interest
      *
      * \note
      * \returns
@@ -118,16 +129,14 @@ extern "C"
      *   XMI_ERR_ATTRIBUTE
      *   XMI_ERR_VALUE
      */
-    xmi_result_t XMI_Configuration_query (xmi_context_t     context,
-                                          xmi_attribute_t   attribute,
-                                          void            * value);
+    xmi_result_t XMI_Configuration_query (xmi_context_t         context,
+                                          xmi_configuration_t * configuration);
 
     /**
      * \brief Update the value of an attribute
      *
-     * \param [in]  context    The XMI context
-     * \param [in]  attribute  The attribute of interest
-     * \param [in]  value      Pointer to the new value
+     * \param [in] context       The XMI context
+     * \param [in] configuration The configuration attribute to update
      *
      * \note
      * \returns
@@ -136,9 +145,8 @@ extern "C"
      *   XMI_ERR_ATTRIBUTE
      *   XMI_ERR_VALUE
      */
-    xmi_result_t XMI_Configuration_update (xmi_context_t     context,
-                                           xmi_attribute_t   attribute,
-                                           void            * value);
+    xmi_result_t XMI_Configuration_update (xmi_context_t         context,
+                                           xmi_configuration_t * configuration);
 
     /**
      * \brief Provides the detailed description of the most recent xmi result.

@@ -19,7 +19,9 @@
 #include "components/devices/shmem/fifo/FifoPacket.h"
 #include "components/devices/shmem/fifo/LinearFifo.h"
 
-#include "components/atomic/gcc/GccBuiltin.h"
+//#include "components/atomic/gcc/GccBuiltin.h"
+//#include "components/atomic/pthread/Pthread.h"
+#include "components/atomic/bgp/BgpAtomic.h"
 
 #include "components/memory/MemoryAllocator.h"
 
@@ -34,7 +36,9 @@ namespace XMI
   namespace Context
   {
     typedef Device::Fifo::FifoPacket <16,240> ShmemPacket;
-    typedef Device::Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
+    //typedef Device::Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
+    //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
+    typedef Device::Fifo::LinearFifo<Atomic::BgpAtomic,ShmemPacket,16> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
     typedef Device::ShmemPacketDevice<SysDep::BgpSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
@@ -60,8 +64,30 @@ namespace XMI
 
         inline xmi_result_t destroy_impl ()
         {
-          return XMI_UNIMPL;
+          //return XMI_UNIMPL;
+          return XMI_SUCCESS;
         }
+
+        inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
+        {
+          xmi_result_t result = XMI_ERROR;
+
+          switch (configuration->name)
+          {
+            case XMI_TASK_ID:
+              configuration->value.intval = _sysdep.mapping.task();
+              result = XMI_SUCCESS;
+              break;
+            case XMI_NUM_TASKS:
+              configuration->value.intval = _sysdep.mapping.size();
+              result = XMI_SUCCESS;
+              break;
+            default:
+              break;
+          };
+
+          return result;
+        };
 
         inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
         {
@@ -100,12 +126,11 @@ namespace XMI
 
         inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
         {
-#warning implement this!
-#if 0
-          assert (_dispatch[parameters->send.dispatch] != NULL);
+          size_t id = (size_t)(parameters->send.dispatch);
+          assert (_dispatch[id] != NULL);
 
           XMI::Protocol::Send::Simple * send =
-            (XMI::Protocol::Send::Simple *) _dispatch[parameters->send.dispatch];
+            (XMI::Protocol::Send::Simple *) _dispatch[id];
           send->start (parameters->simple.local_fn,
                        parameters->simple.remote_fn,
                        parameters->send.cookie,
@@ -114,7 +139,7 @@ namespace XMI
                        parameters->simple.bytes,
                        parameters->send.header.addr,
                        parameters->send.header.bytes);
-#endif
+
           return XMI_SUCCESS;
         }
 

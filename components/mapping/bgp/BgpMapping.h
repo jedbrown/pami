@@ -24,6 +24,10 @@
 
 extern XMI::SysDep::BgpPersonality __global_personality;
 
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+#endif
+
 namespace XMI
 {
   namespace Mapping
@@ -35,6 +39,19 @@ namespace XMI
                        public Interface::Torus<BgpMapping,4>,
                        public Interface::Node<BgpMapping>
     {
+      protected:
+
+        typedef struct nodeaddr
+        {
+          union
+          {
+            kernel_coords_t coords;
+            size_t          global;
+          };
+          size_t            local;
+        } nodeaddr_t;
+    
+    
       public:
         inline BgpMapping () :
 //            Interface::Base<BgpMapping<T_Memory>,T_Memory>(),
@@ -47,7 +64,12 @@ namespace XMI
             _z (__global_personality.zCoord()),
             _t (__global_personality.tCoord())
         {
-          
+          _nodeaddr.coords.x = _x;
+          _nodeaddr.coords.y = _y;
+          _nodeaddr.coords.z = _z;
+          _nodeaddr.coords.t =  0;
+          _nodeaddr.local    = _t;
+          TRACE_ERR((stderr,"BgpMapping::BgpMapping() .. torus: (%zd %zd %zd %zd), node: (%zd %zd)\n", _x, _y, _z, _t, _nodeaddr.global, _nodeaddr.local));
         };
 
         inline ~BgpMapping () {};
@@ -61,6 +83,8 @@ namespace XMI
         size_t _y;
         size_t _z;
         size_t _t;
+        
+        nodeaddr_t _nodeaddr;
         
         size_t _numActiveRanksLocal;
         size_t _numActiveRanksGlobal;
@@ -372,27 +396,38 @@ namespace XMI
         /// \return Dimension size
         inline xmi_result_t nodeSize_impl (size_t global, size_t & size)
         {
+          TRACE_ERR((stderr,"BgpMapping::nodeSize_impl(%zd) >>\n", global));
 #warning implement this!
+          TRACE_ERR((stderr,"BgpMapping::nodeSize_impl(%zd) <<\n", global));
           return XMI_UNIMPL;
         };
 
         /// \brief Get the node address for the local task
         inline void nodeAddr_impl (size_t & global, size_t & local)
         {
-#warning implement this!
+          TRACE_ERR((stderr,"BgpMapping::nodeAddr_impl() >>\n"));
+          global = _nodeaddr.global;
+          local  = _nodeaddr.local;
+          TRACE_ERR((stderr,"BgpMapping::nodeAddr_impl(%zd, %zd) <<\n", global, local));
         };
 
         /// \brief Get the node address for a specific task
         inline xmi_result_t task2node_impl (size_t task, size_t & global, size_t & local)
         {
-#warning implement this!
+          TRACE_ERR((stderr,"BgpMapping::task2node_impl(%zd) >>\n", task));
+          global = _mapcache[task] & 0xffffff00;
+          local  = _mapcache[task] & 0x000000ff;
+          TRACE_ERR((stderr,"BgpMapping::task2node_impl(%zd, %zd, %zd) <<\n", task, global, local));
           return XMI_UNIMPL;
         };
 
         /// \brief Get the task associated with a specific node address
         inline xmi_result_t node2task_impl (size_t global, size_t local, size_t & task)
         {
-#warning implement this!
+          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd) >>\n", global, local));
+          size_t estimated_task = (global << 8) | local;
+          task = _rankcache [estimated_task];
+          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd, %zd) <<\n", global, local, task));
           return XMI_UNIMPL;
         };
 
@@ -753,11 +788,6 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (XMI::Memory::SharedMemoryManag
 
   return XMI_SUCCESS;
 };
-
-
-
-
-
-
+#undef TRACE_ERR
 #endif // __components_mapping_bgp_bgpmapping_h__
 

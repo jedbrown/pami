@@ -21,19 +21,19 @@ extern "C" size_t XMI_Error_text (char * string, size_t length)
 ///
 /// \copydoc XMI_Configuration_query
 ///
-extern "C" xmi_result_t XMI_Configuration_query (xmi_context_t     context,
-                                                 xmi_attribute_t   attribute,
-                                                 void            * value)
+extern "C" xmi_result_t XMI_Configuration_query (xmi_context_t         context,
+                                                 xmi_configuration_t * configuration)
 {
-  return XMI_UNIMPL;
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+
+  return ctx->queryConfiguration (configuration);
 }
 
 ///
 /// \copydoc XMI_Configuration_update
 ///
-extern "C" xmi_result_t XMI_Configuration_update (xmi_context_t     context,
-                                                  xmi_attribute_t   attribute,
-                                                  void            * value)
+extern "C" xmi_result_t XMI_Configuration_update (xmi_context_t         context,
+                                                  xmi_configuration_t * configuration)
 {
   return XMI_UNIMPL;
 }

@@ -28,6 +28,8 @@ namespace XMI
 
         inline xmi_result_t destroy ();
 
+        inline xmi_result_t queryConfiguration (xmi_configuration_t * configuration);
+
         inline xmi_result_t post (xmi_event_function work_fn, void * cookie);
 
         inline size_t advance (size_t maximum, xmi_result_t & result);
@@ -134,6 +136,12 @@ namespace XMI
     xmi_result_t Context<T_Context>::destroy ()
     {
       return static_cast<T_Context*>(this)->destroy_impl();
+    }
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::queryConfiguration (xmi_configuration_t * configuration)
+    {
+      return static_cast<T_Context*>(this)->queryConfiguration_impl(configuration);
     }
 
     template <class T_Context>
