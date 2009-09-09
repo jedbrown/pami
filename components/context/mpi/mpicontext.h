@@ -69,6 +69,11 @@ namespace XMI
           // per the MPI spec.
         }
 
+      inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
+        {
+          return XMI_UNIMPL;
+        }      
+      
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
         {
           return XMI_UNIMPL;
