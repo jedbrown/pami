@@ -2,7 +2,7 @@
 #define __components_devices_mpi_mpioldmulticastmodel_h__
 
 #include "sys/xmi.h"
-#include "components/devices/OldmulticastModel.h"
+#include "components/devices/OldMulticastModel.h"
 
 namespace XMI
 {

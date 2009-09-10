@@ -2,7 +2,7 @@
 #define __components_sysdep_mpi_mpisysdep_h__
 
 #include "components/sysdep/SysDep.h"
-#include "components/mapping/mpi/MPIMapping.h"
+#include "components/mapping/mpi/mpimapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include "components/time/mpi/mpitime.h"
 
