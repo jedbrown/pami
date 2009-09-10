@@ -17,106 +17,111 @@ namespace XMI
 {
   namespace Client
   {
+
+    
     class MPI : public Client<XMI::Client::MPI,XMI::Context::MPI>
     {
-      public:
+    public:
+
+      static void shutdownfunc()
+        {
+          MPI_Finalize();
+        }
       inline MPI (char * name, xmi_result_t & result) :
         Client<XMI::Client::MPI,XMI::Context::MPI>(name, result),
-          _client ((xmi_client_t) this),
-          _references (1)
+        _client ((xmi_client_t) this),
+        _references (1)
         {
+          static int initialized = 0;
+          if(initialized==0)
+              {
+                int rc = MPI_Init(0, NULL);
+                if(rc != MPI_SUCCESS)
+                    {
+                      fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
+                      XMI_abort();
+                    }
+                initialized=1;
+                atexit(shutdownfunc);
+              }
+
         }
 
-        inline ~MPI ()
+      inline ~MPI ()
         {
         }
-
-        static xmi_result_t generate_impl (char * name, xmi_client_t * in_client)
+      
+      static xmi_result_t generate_impl (char * name, xmi_client_t * in_client)
         {
           int rc = 0;
-
-          //__client_list->lock();
-
-          // If a client with this name is not already initialized...
-          XMI::Client::MPI * client = (XMI::Client::MPI * )in_client;
-          //if ((client = __client_list->contains (name)) == NULL)
-          //{
-          //            rc = posix_memalign((void **)&client, 16, sizeof (XMI::Client::MPI));
-          //if (rc != 0) assert(0);
+          XMI::Client::MPI * client;
           client = (XMI::Client::MPI *)malloc(sizeof (XMI::Client::MPI));
           assert(client != NULL);
           memset ((void *)client, 0x00, sizeof(XMI::Client::MPI));
           xmi_result_t res;
           new (client) XMI::Client::MPI (name, res);
-          //__client_list->pushHead ((QueueElem *) client);
-          //}
-          //else
-          //{
-            //client->incReferenceCount ();
-          //}
-
-          //__client_list->unlock();
-
+          *in_client = (xmi_client_t*) client;
+          
+          MPI_Comm_rank(MPI_COMM_WORLD,&client->_myrank);
+          MPI_Comm_size(MPI_COMM_WORLD,&client->_mysize); 
+          client->_ranklist = (unsigned*)malloc(sizeof(unsigned)*client->_mysize);
+          for (int i=0; i<client->_mysize; i++) client->_ranklist[i]=i;
+          client->_world_geometry=
+            (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>*)
+            malloc(sizeof(*client->_world_geometry));
+          new(client->_world_geometry)
+            XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>(NULL,              // Mapping
+                                                        client->_ranklist, // Ranks
+                                                        client->_mysize,   // NumRanks
+                                                        0,                 // Comm id
+                                                        0,                 // numcolors
+                                                        1);                // isglobal?
           return XMI_SUCCESS;
         }
 
-        static void destroy_impl (xmi_client_t client)
+      static void destroy_impl (xmi_client_t client)
         {
-          //__client_list->lock ();
-          //client->decReferenceCount ();
-          //if (client->getReferenceCount () == 0)
-          //{
-            //__client_list->remove (client);
-            free (client);
-          //}
-          //__client_list->unlock ();
+          free (client);
         }
 
-        inline char * getName_impl ()
+      inline char * getName_impl ()
         {
           return "";
         }
 
-        inline xmi_context_t createContext_impl (xmi_configuration_t configuration[],
-                                                 size_t              count,
-                                                 xmi_result_t       & result)
+      inline xmi_context_t createContext_impl (xmi_configuration_t configuration[],
+                                               size_t              count,
+                                               xmi_result_t       & result)
         {
-          //_context_list->lock ();
-
           XMI::Context::MPI * context = NULL;
-          //int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::MPI));
-          //if (rc != 0) assert(0);
           context = (XMI::Context::MPI*) malloc(sizeof(XMI::Context::MPI));
           assert(context != NULL);
           memset ((void *)context, 0x00, sizeof(XMI::Context::MPI));
           new (context) XMI::Context::MPI (this->getClientId());
-          //_context_list->pushHead ((QueueElem *) context);
-
-          //_context_list->unlock ();
-
+          result = XMI_SUCCESS;
           return context;
         }
         
-        inline xmi_result_t destroyContext_impl (xmi_context_t context)
+      inline xmi_result_t destroyContext_impl (xmi_context_t context)
         {
-          //_context_list->lock ();
-          //_context_list->remove (context);
-            //return context->destroy ();
-          //_context_list->unlock ();
+          free(context);
+          return XMI_SUCCESS;
         }
         
-      protected:
+    protected:
       
-        inline xmi_client_t getClientId () const
+      inline xmi_client_t getClientId () const
         {
           return _client;
         }
 
-      private:
-
-        xmi_client_t _client;
-        size_t       _references;
-
+    private:
+      int          _myrank;
+      int          _mysize;
+      unsigned    *_ranklist;
+      xmi_client_t _client;
+      size_t       _references;
+      XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *_world_geometry;
     }; // end class XMI::Client::MPI
   }; // end namespace Client
 }; // end namespace XMI

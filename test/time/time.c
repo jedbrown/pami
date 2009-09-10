@@ -4,11 +4,13 @@
 ///
 
 #include "sys/xmi.h"
+#include <unistd.h>
 
 int main (int argc, char ** argv)
 {
   fprintf (stdout, "Before XMI_Wtime()\n");
   double t0 = XMI_Wtime ();
+  sleep(4);
   fprintf (stdout, "After first XMI_Wtime, value = %g\n", t0);
   double t1 = XMI_Wtime ();
   fprintf (stdout, "After second XMI_Wtime, value = %g\n", t1);

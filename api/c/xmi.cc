@@ -10,6 +10,9 @@
 // Functions from xmi_misc.h                                                  //
 ////////////////////////////////////////////////////////////////////////////////
 
+XMI_TIME_CLASS XMI_Time;
+
+
 ///
 /// \copydoc XMI_Error_text
 ///
@@ -44,7 +47,7 @@ extern "C" xmi_result_t XMI_Configuration_update (xmi_context_t         context,
 ///
 double XMI_Wtime ()
 {
-  return XMI_TIME_CLASS::time();
+  return XMI_Time.time();
 }
 
 ///
@@ -52,7 +55,7 @@ double XMI_Wtime ()
 ///
 double XMI_Wtick()
 {
-  return XMI_TIME_CLASS::tick();
+  return XMI_Time.tick();
 }
 
 ///
@@ -60,7 +63,7 @@ double XMI_Wtick()
 ///
 unsigned long long XMI_Wtimebase()
 {
-  return XMI_TIME_CLASS::timebase();
+  return XMI_Time.timebase();
 }
 
 

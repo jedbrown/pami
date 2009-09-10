@@ -44,34 +44,23 @@ namespace XMI
           ///
           /// \warning This returns \b mega hertz. Do not be confused.
           ///
-          static size_t clockMHz ()
-          {
-            return 0;
-          };
+          size_t clockMHz ();
 
           ///
           /// \brief Returns the number of "cycles" elapsed on the calling processor.
           ///
-          static unsigned long long timebase ()
-          {
-            return 0UL;
-          };
+          unsigned long long timebase ();
 
           ///
           /// \brief Computes the smallest clock resolution theoretically possible
           ///
-          static double tick ()
-          {
-            return 0.0;
-          };
+          double tick ();
+
 
           ///
           /// \brief Returns an elapsed time on the calling processor.
           ///
-          static double time ()
-          {
-            return 0.0;
-          };
+          double time ();
       };
 
       template <class T>
@@ -79,31 +68,30 @@ namespace XMI
       {
         return static_cast<T*>(this)->init_impl ();
       }
-#if 0
+
       template <class T>
       size_t BaseTime<T>::clockMHz ()
       {
-        return T::clockMHz_impl ();
+        return static_cast<T*>(this)->clockMHz_impl ();
       }
 
       template <class T>
       unsigned long long BaseTime<T>::timebase ()
       {
-        return T::timebase_impl ();
+        return static_cast<T*>(this)->timebase_impl ();
       }
 
       template <class T>
       double BaseTime<T>::tick ()
       {
-        return T::tick_impl ();
+        return static_cast<T*>(this)->tick_impl ();
       }
 
       template <class T>
-      double BaseTime<T>::timer ()
+      double BaseTime<T>::time ()
       {
-        return T::timer_impl ();
+        return static_cast<T*>(this)->time_impl ();
       }
-#endif
     };
   };
 };

@@ -26,35 +26,7 @@ namespace XMI
         Context<XMI::Context::MPI> (client),
         _client (client)
         {
-          // Initialize MPI.  We can only do this once
-          static int initialized = 0;
-          if(initialized==0)
-              {
-                int rc = MPI_Init(0, NULL);
-                if(rc != MPI_SUCCESS)
-                    {
-                      fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
-                      XMI_abort();
-                    }
-                initialized=1;
-              }
-          MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
-          MPI_Comm_size(MPI_COMM_WORLD,&_mysize); 
-
-          _ranklist = (unsigned*)malloc(sizeof(unsigned)*_mysize);
-          for (int i=0; i<_mysize; i++) _ranklist[i]=i;
-          
-          // Initialize Global Geometry for the context
-          _world_geometry =
-            (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>*)
-            malloc(sizeof(*_world_geometry));
-          new(_world_geometry)
-            XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>(NULL,        // Mapping
-                                                        _ranklist,   // Ranks
-                                                        _mysize,     // NumRanks
-                                                        0,           // Comm id
-                                                        0,           // numcolors
-                                                        1);          // isglobal?
+ 
         }
         
       inline xmi_client_t getClientId_impl ()
@@ -62,11 +34,12 @@ namespace XMI
           return _client;
         }
 
-      inline xmi_client_t destroy_impl ()
+      inline xmi_result_t destroy_impl ()
         {
           // Do not call finalize because if we do
           // it is not valid to call init again
           // per the MPI spec.
+          return XMI_SUCCESS;
         }
 
       inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
@@ -288,11 +261,7 @@ namespace XMI
 
     private:
       xmi_client_t _client;
-      int          _myrank;
-      int          _mysize;
-      unsigned    *_ranklist;
       void        *_dispatch[1024];
-      XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *_world_geometry;
     }; // end XMI::Context::MPI
   }; // end namespace Context
 }; // end namespace XMI
