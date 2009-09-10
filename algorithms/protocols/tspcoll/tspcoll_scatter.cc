@@ -11,6 +11,7 @@
 /* ************************************************************************* */
 
 #include "./Scatter.h"
+#include "algorithms/protocols/tspcoll/NBCollManager.h"
 //#define DEBUG_SCATTER 1
 #undef TRACE
 #ifdef DEBUG_SCATTER

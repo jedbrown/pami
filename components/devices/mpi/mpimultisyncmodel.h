@@ -1,8 +1,8 @@
-#ifndef __components_devices_mpi_mpimulticombinemodel_h__
-#define __components_devices_mpi_mpimulticombinemodel_h__
+#ifndef __components_devices_mpi_mpimultisyncmodel_h__
+#define __components_devices_mpi_mpimultisyncmodel_h__
 
 #include "sys/xmi.h"
-#include "components/devices/MulticombineModel.h"
+#include "components/devices/MultisyncModel.h"
 #include "components/devices/MessageModel.h"
 
 namespace XMI
@@ -10,14 +10,14 @@ namespace XMI
     namespace Device
     {
         template <class T_Device, class T_Message>
-        class MPIMulticombineModel : public Interface::MessageModel<MPIMulticombineModel<T_Device, T_Message>,T_Device, T_Message>
+        class MPIMultisyncModel : public Interface::MessageModel<MPIMultisyncModel<T_Device, T_Message>,T_Device, T_Message>
         {
         public:
-            MPIMulticombineModel (T_Device & device) :
-                Interface::MessageModel < MPIMulticombineModel<T_Device, T_Message>, T_Device, T_Message > (device)
+            MPIMultisyncModel (T_Device & device) :
+                Interface::MessageModel < MPIMultisyncModel<T_Device, T_Message>, T_Device, T_Message > (device)
                 {};
 
-            inline bool postMultisync_impl (T_Object * obj)
+            inline bool postMultisync_impl (T_Message * obj)
                 {
 
                 }
@@ -25,4 +25,4 @@ namespace XMI
         };
     };
 };
-#endif // __components_devices_mpi_mpimulticombinemodel_h__
+#endif // __components_devices_mpi_mpimultisyncmodel_h__

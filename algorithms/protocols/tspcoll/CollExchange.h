@@ -9,19 +9,12 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
-
 #ifndef __tspcoll_collbase_h__
 #define __tspcoll_collbase_h__
 
 #include "util/ccmi_debug.h"
-#include "NBColl.h"
 #include "algorithms/ccmi.h" //for request type
-
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
+#include "algorithms/protocols/tspcoll/NBColl.h"
 
 //#define DEBUG_TSPCOLL 1
 #undef TRACE
@@ -38,6 +31,7 @@
 
 namespace TSPColl
 {
+
   template<class T_Mcast>
   class CollExchange: public NBColl<T_Mcast>
   {
@@ -398,6 +392,9 @@ inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (void * arg, xmi_result_
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
+template <class T_Mcast>
+class NBCollManager;
+
 template <class T_Mcast>
 inline XMI_Request_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
 							   unsigned          count,

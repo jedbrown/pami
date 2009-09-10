@@ -13,8 +13,7 @@
 #ifndef __tspcoll_barrier_h__
 #define __tspcoll_barrier_h__
 
-#include "./CollExchange.h"
-#include "platform.h"
+#include "algorithms/protocols/tspcoll/CollExchange.h"
 
 #undef TRACE
 //#define DEBUG_TSPCOLL_BARRIER 1

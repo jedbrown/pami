@@ -18,9 +18,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "./Scatter.h"
-#include "./Allgatherv.h"
-#include "./Barrier.h"
+#include "algorithms/protocols/tspcoll/Scatter.h"
+#include "algorithms/protocols/tspcoll/Allgatherv.h"
+#include "algorithms/protocols/tspcoll/Barrier.h"
 // #define DEBUG_SCBCAST 1
 #undef TRACE
 #ifdef DEBUG_SCBCAST

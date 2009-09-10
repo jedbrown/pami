@@ -3,6 +3,8 @@
 
 #define XMI_COLLREGISTRATION_CLASS XMI::CollRegistration::MPI
 
+
+
 #include <map>
 #include "components/geometry/CollRegistration.h"
 #include "components/devices/mpi/oldmpimulticastmodel.h"
@@ -11,8 +13,8 @@
 #include "components/memory/heap/HeapMemoryManager.h"
 #include "components/mapping/mpi/mpimapping.h"
 #include "components/sysdep/mpi/mpisysdep.h"
+#include "algorithms/protocols/tspcoll/NBCollManager.h"
 
-#include "algorithms/protocols/tspcoll/NBColl.h"
 
 
 typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>, XMI::Device::MPIMessage> MPIMcastModel;

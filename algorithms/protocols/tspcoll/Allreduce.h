@@ -13,8 +13,7 @@
 #ifndef __tspcoll_Allreduce_h__
 #define __tspcoll_Allreduce_h__
 
-#include "platform.h"
-#include "./CollExchange.h"
+#include "algorithms/protocols/tspcoll/CollExchange.h"
 #include "math/math_coremath.h"
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
