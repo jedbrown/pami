@@ -22,6 +22,9 @@
 #include "components/sysdep/bgp/BgpPersonality.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 
+#define XMI_MAPPING_CLASS XMI::Mapping::BgpMapping
+#define XMI_MAPPING_MEMORY_CLASS XMI::Memory::SharedMemoryManager
+
 extern XMI::SysDep::BgpPersonality __global_personality;
 
 #ifndef TRACE_ERR
