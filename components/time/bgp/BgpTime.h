@@ -34,7 +34,6 @@ namespace XMI
             Interface::BaseTime<BgpTime> ()
         {};
 
-
         ///
         /// \brief Initialize the time object.
         ///
@@ -48,7 +47,7 @@ namespace XMI
         ///
         /// \warning This returns \b mega hertz. Do not be confused.
         ///
-        static size_t clockMHz ()
+        inline size_t clockMHz ()
         {
           return __global_personality.clockMHz ();
         };
@@ -56,7 +55,7 @@ namespace XMI
         ///
         /// \brief Returns the number of "cycles" elapsed on the calling processor.
         ///
-        static unsigned long long timebase ()
+        inline unsigned long long timebase ()
         {
           unsigned temp;
           union
@@ -79,7 +78,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         /// \brief Computes the smallest clock resolution theoretically possible
         ///
-        static double tick ()
+        inline double tick ()
         {
           return XMI::Time::BgpTime::seconds_per_cycle;
         };
@@ -87,7 +86,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         /// \brief Returns an elapsed time on the calling processor.
         ///
-        static double time ()
+        inline double time ()
         {
           return ((double)timebase() * XMI::Time::BgpTime::seconds_per_cycle);
         };

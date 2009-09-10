@@ -7,15 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/fifo/FifoPacket.h
+ * \file util/fifo/FifoPacket.h
  * \brief ???
- *
- * \todo Move this file out of the devices component directory. It is not
- *       explicitly tied to a device.
  */
 
-#ifndef __components_devices_shmem_fifo_fifopacket_h__
-#define __components_devices_shmem_fifo_fifopacket_h__
+#ifndef __util_fifo_fifopacket_h__
+#define __util_fifo_fifopacket_h__
 
 #include <stdint.h>
 
@@ -27,8 +24,6 @@
 
 namespace XMI
 {
-  namespace Device
-  {
     namespace Fifo
     {
       template <unsigned T_HeaderSize, unsigned T_PacketSize>
@@ -76,11 +71,10 @@ namespace XMI
         private:
           uint8_t _data[T_PacketSize];
       };
-    };
   };
 };
 #undef TRACE_ERR
-#endif // __components_devices_shmem_fifo_fifopacket_h__
+#endif // __util_fifo_fifopacket_h__
 
 
 //

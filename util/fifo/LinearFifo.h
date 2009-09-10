@@ -7,15 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/fifo/LinearFifo.h
+ * \file util/fifo/LinearFifo.h
  * \brief ???
- *
- * \todo Move this file out of the devices component directory. It is not
- *       explicitly tied to a device.
  */
 
-#ifndef __components_devices_shmem_fifo_linearfifo_h__
-#define __components_devices_shmem_fifo_linearfifo_h__
+#ifndef __util_fifo_linearfifo_h__
+#define __util_fifo_linearfifo_h__
 
 #include <string.h>
 
@@ -30,8 +27,6 @@
 
 namespace XMI
 {
-  namespace Device
-  {
     namespace Fifo
     {
       template <class T_Atomic, class T_Packet, unsigned T_FifoSize>
@@ -178,7 +173,6 @@ namespace XMI
 
         protected:
           LinearFifoPacket _packet[T_FifoSize];
-          //LinearFifoPacket _packet[1000];
           size_t           _head;
           T_Atomic         _tail;
 
@@ -186,10 +180,9 @@ namespace XMI
           size_t           _last_rec_sequence;
       };
     };
-  };
 };
 #undef TRACE_ERR
-#endif // __components_devices_shmem_fifo_linearfifo_h__
+#endif // __util_fifo_linearfifo_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

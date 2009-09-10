@@ -16,8 +16,8 @@
 #include "components/devices/shmem/ShmemPacketDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "components/devices/shmem/ShmemBaseMessage.h"
-#include "components/devices/shmem/fifo/FifoPacket.h"
-#include "components/devices/shmem/fifo/LinearFifo.h"
+#include "util/fifo/FifoPacket.h"
+#include "util/fifo/LinearFifo.h"
 
 //#include "components/atomic/gcc/GccBuiltin.h"
 //#include "components/atomic/pthread/Pthread.h"
@@ -35,10 +35,10 @@ namespace XMI
 {
   namespace Context
   {
-    typedef Device::Fifo::FifoPacket <16,240> ShmemPacket;
+    typedef Fifo::FifoPacket <16,240> ShmemPacket;
     //typedef Device::Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
     //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
-    typedef Device::Fifo::LinearFifo<Atomic::BgpAtomic,ShmemPacket,16> ShmemFifo;
+    typedef Fifo::LinearFifo<Atomic::BgpAtomic,ShmemPacket,16> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
     typedef Device::ShmemPacketDevice<SysDep::BgpSysDep,ShmemFifo,ShmemPacket> ShmemDevice;

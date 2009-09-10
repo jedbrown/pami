@@ -19,11 +19,11 @@
 #include "components/sysdep/SysDep.h"
 #include "util/queue/Queue.h"
 
-#include "../PacketDevice.h"
+#include "components/devices/PacketDevice.h"
 #include "ShmemSysDep.h"
 #include "ShmemBaseMessage.h"
-#include "fifo/LinearFifo.h"
-#include "fifo/FifoPacket.h"
+#include "util/fifo/LinearFifo.h"
+#include "util/fifo/FifoPacket.h"
 
 #include "components/atomic/AtomicObject.h"
 

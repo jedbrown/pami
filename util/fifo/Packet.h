@@ -7,15 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/fifo/Packet.h
+ * \file util/fifo/Packet.h
  * \brief ???
- *
- * \todo Move this file out of the devices component directory. It is not
- *       explicitly tied to a device.
  */
 
-#ifndef __components_devices_shmem_fifo_packet_h__
-#define __components_devices_shmem_fifo_packet_h__
+#ifndef __util_fifo_packet_h__
+#define __util_fifo_packet_h__
 
 #ifndef TRACE
 #define TRACE(x)
@@ -23,8 +20,6 @@
 
 namespace XMI
 {
-  namespace Device
-  {
     namespace Fifo
     {
       template <class T_Packet>
@@ -86,11 +81,10 @@ namespace XMI
       {
         static_cast<T_Packet*>(this)->copyPayload_impl (addr);
       }
-    };
   };
 };
 #undef TRACE
-#endif // __components_devices_shmem_fifo_packet_h__
+#endif // __util_fifo_packet_h__
 
 //
 // astyle info    http://astyle.sourceforge.net
