@@ -68,6 +68,15 @@ namespace XMI
         /// \see XMI::Device::Interface::BaseDevice::isInit()
         bool isInit_impl ();
 
+        /// \see XMI::Device::Interface::BaseDevice::isReliableNetwork()
+        bool isReliableNetwork_impl ();
+
+        /// \see XMI::Device::Interface::BaseDevice::peers()
+        inline size_t peers_impl ();
+
+        /// \see XMI::Device::Interface::BaseDevice::task2peer()
+        inline size_t task2peer_impl (size_t task);
+
         // ------------------------------------------
 
         /// \see XMI::Device::Interface::BaseDevice::readData()
@@ -191,7 +200,6 @@ namespace XMI
         T_Fifo * _rfifo; ///< Pointer to fifo to use as a reception fifo
 
         T_SysDep      * _sysdep;
-       // Mapping     *__mapping;
 
         dispatch_t  _dispatch[256];
         unsigned    _dispatch_count;
@@ -205,11 +213,6 @@ namespace XMI
         size_t            _num_procs;
         size_t            _global_task;
         size_t            _local_task;
-
-        // Connection array for local ranks on a channel. Currently, only
-        // one channel is defined. To add more channels the size of this
-        // this array must be increased.
-        void ** _connection[1];
 
         // Read state variables. See readData_impl()
         char     * _current_pkt_data_ptr;
@@ -241,26 +244,6 @@ namespace XMI
       abort();
       return 0;
     }
-
-    /// \see XMI::Device::Interface::MessageDevice::setConnection()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::setConnection_impl (size_t   fromRank,
-                                                                          void   * arg)
-    {
-      size_t global, local=0;
-      _sysdep->mapping.task2node (fromRank, global, local);
-      _connection[0][local] = arg;
-    }
-
-    /// \see XMI::Device::Interface::MessageDevice::getConnection()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    void * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::getConnection_impl (size_t fromRank)
-    {
-      size_t global, local=0;
-      _sysdep->mapping.task2node (fromRank, global, local);
-      return _connection[0][local];
-    }
-
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
     xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,

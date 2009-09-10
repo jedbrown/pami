@@ -22,6 +22,8 @@
 
 #include "components/memory/MemoryAllocator.h"
 
+#include "p2p/protocols/send/eager/EagerConnection.h"
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
@@ -34,13 +36,14 @@ namespace XMI
     {
 
       ///
-      /// \brief Eager simple send protocol class.
+      /// \brief Eager simple send protocol class for reliable network devices.
       ///
-      /// \param T_Model   Template packet model class
-      /// \param T_Device  Template packet device class
+      /// \tparam T_Model   Template packet model class
+      /// \tparam T_Device  Template packet device class
+      /// \tparam T_Message Template packet message class
       ///
-      /// \see Packet::Model
-      /// \see Packet::Device
+      /// \see XMI::Device::Interface::PacketModel
+      /// \see XMI::Device::Interface::PacketDevice
       ///
       template <class T_Model, class T_Device, class T_Message>
       class EagerSimple : public XMI::Protocol::Send::Simple
@@ -53,16 +56,17 @@ namespace XMI
             xmi_event_function   local_fn;
             xmi_event_function   remote_fn;
             void               * cookie;
+            EagerSimple<T_Model,T_Device,T_Message> * eager;
           } send_state_t;
 
           typedef struct recv_state
           {
-            T_Message  msg;
+            T_Message      msg;
             send_state_t * ackinfo;
             EagerSimple<T_Model,T_Device,T_Message> * eager;
-            xmi_recv_t info;     ///< Application receive information.
-            size_t     received; ///< Number of bytes received.
-            size_t     sndlen;   ///< Number of bytes being sent from the origin rank.
+            xmi_recv_t     info;     ///< Application receive information.
+            size_t         received; ///< Number of bytes received.
+            size_t         sndlen;   ///< Number of bytes being sent from the origin rank.
           } recv_state_t;
 
           typedef struct __attribute__((__packed__)) short_metadata
@@ -71,6 +75,7 @@ namespace XMI
             size_t         bytes;
             send_state_t * ackinfo;
           } short_metadata_t;
+
 
         public:
 
@@ -82,6 +87,7 @@ namespace XMI
           /// \param[in]  cookie       Opaque application dispatch data
           /// \param[in]  device       Device that implements the message interface
           /// \param[in]  origin_task  Origin task identifier
+          /// \param[in]  context      Communication context
           /// \param[out] status       Constructor status
           ///
           inline EagerSimple (xmi_dispatch_t             dispatch,
@@ -100,8 +106,19 @@ namespace XMI
               _fromRank (origin_task),
               _context (context),
               _dispatch_fn (dispatch_fn),
-              _cookie (cookie)
+              _cookie (cookie),
+              _connection ((void **)NULL),
+              _connection_manager (device)
           {
+            // This eager protocol requires reliable and deterministic networks
+            if (!device.isReliableNetwork() || !_envelope_model.isDeterministic())
+            {
+              status = XMI_ERROR;
+              return;
+            }
+
+            _connection = _connection_manager.getConnectionArray (context);
+
             size_t mbytes = device.getPacketMetadataSize ();
             TRACE_ERR((stderr, "EagerSimple(), sizeof(short_metadata_t) = %zd, mbytes = %zd, _pktsize = %zd\n", sizeof(short_metadata_t), mbytes, _pktsize));
 
@@ -112,9 +129,6 @@ namespace XMI
                 return;
               }
 
-            //_cb_null.function   = NULL;
-            //_cb_null.clientdata = NULL;
-
             TRACE_ERR((stderr, "EagerSimple() [0]\n"));
             status = _envelope_model.init (dispatch_envelope_direct, this,
                                            dispatch_envelope_read, this);
@@ -123,26 +137,20 @@ namespace XMI
             if (status == XMI_SUCCESS)
               {
                 status = _data_model.init (dispatch_data_direct, this,
-                                            dispatch_data_read, this);
+                                           dispatch_data_read, this);
                 TRACE_ERR((stderr, "EagerSimple() [2] status = %d\n", status));
 
                 if (status == XMI_SUCCESS)
                   {
                     status = _ack_model.init (dispatch_ack_direct, this,
-                                               dispatch_ack_read, this);
+                                              dispatch_ack_read, this);
                     TRACE_ERR((stderr, "EagerSimple() [3] status = %d\n", status));
-
-                    //if (status == XMI_SUCCESS) status = XMI_SUCCESS;
-
-                    //return;
                   }
               }
-
-            //status = XMI_ERROR;
           }
 
           ///
-          /// \brief Start a new simple send eager message.
+          /// \brief Start a new simple send eager operation.
           ///
           /// \see XMI::Protocol::Send:Simple::start
           ///
@@ -155,36 +163,71 @@ namespace XMI
                                       void               * msginfo,
                                       size_t               mbytes)
           {
-            //T_Message * msg = (T_Message *) request;
             TRACE_ERR((stderr, "EagerSimple::start() >>\n"));
 
+            // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
-            state->local_fn  = local_fn;
-            state->remote_fn = remote_fn;
-            state->cookie    = cookie;
-            TRACE_ERR((stderr, "EagerSimple::start() .. state = %p, state->local_fn = %p, state->remote_fn = %p\n", state, state->local_fn, state->remote_fn));
 
+            state->cookie   = cookie;
+            state->local_fn = local_fn;
+            state->eager    = this;
+
+            // Specify the protocol metadata to send with the application
+            // metadata in the envelope packet. This metadata is copied
+            // into the network by the device and, therefore, can be placed
+            // on the stack.
             short_metadata_t metadata;
             metadata.fromRank = _fromRank;
             metadata.bytes    = bytes;
-            metadata.ackinfo  = state;
 
-            TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket()\n"));
-            _envelope_model.postPacket (&(state->msg[0]),
-                                        NULL,
-                                        NULL,
-                                        peer,
-                                        (void *) &metadata,
-                                        sizeof (short_metadata_t),
-                                        msginfo,
-                                        mbytes);
-
-            if (bytes > 0)
+            // Set the acknowledgement information to the virtual address of
+            // send state object on the origin task if a local callback of the
+            // remote receive completion event is requested. If this is set to
+            // NULL no acknowledgement will be received by the origin task.
+            if (remote_fn != NULL)
             {
+              metadata.ackinfo = state;
+              state->remote_fn = remote_fn;
+            }
+            else
+            {
+              metadata.ackinfo = NULL;
+              state->remote_fn = NULL;
+            }
+
+            if (bytes == 0)
+            {
+              // In the unlikely event that this eager (i.e., multi-packet)
+              // protocol is being used to send zero bytes of application
+              // data, the envelope message completion must clean up the
+              // protocol resources and invoke the application local done
+              // callback function, as there will be no data message.
+              TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
+              _envelope_model.postPacket (&(state->msg[0]),
+                                          send_complete,
+                                          (void *) state,
+                                          peer,
+                                          (void *) &metadata,
+                                          sizeof (short_metadata_t),
+                                          msginfo,
+                                          mbytes);
+            }
+            else
+            {
+              TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
+              _envelope_model.postPacket (&(state->msg[0]),
+                                          NULL,
+                                          NULL,
+                                          peer,
+                                          (void *) &metadata,
+                                          sizeof (short_metadata_t),
+                                          msginfo,
+                                          mbytes);
+
               TRACE_ERR((stderr, "EagerSimple::start() .. before _data_model.postPacket()\n"));
               _data_model.postMessage (&(state->msg[1]),
-                                       NULL,
-                                       NULL,
+                                       send_complete,
+                                       (void *) state,
                                        peer,
                                        (void *) &metadata.fromRank,
                                        sizeof (size_t),
@@ -193,11 +236,6 @@ namespace XMI
             }
             TRACE_ERR((stderr, "EagerSimple::start() <<\n"));
             return XMI_SUCCESS;
-          };
-
-          inline T_Device * getDevice()
-          {
-            return &_msgDevice;
           };
 
         protected:
@@ -221,7 +259,27 @@ namespace XMI
             _recv_allocator.returnObject ((void *) object);
           }
 
-          /// Maximum of 100 contexts
+          inline void setConnection (size_t task, void * arg)
+          {
+            size_t peer = _msgDevice.task2peer (task);
+            assert(_connection[peer]==NULL);
+            _connection[peer] = arg;
+          }
+
+          inline void * getConnection (size_t task)
+          {
+            size_t peer = _msgDevice.task2peer (task);
+            assert(_connection[peer]!=NULL);
+            return _connection[peer];
+          }
+
+          inline void clearConnection (size_t task)
+          {
+            size_t peer = _msgDevice.task2peer (task);
+            _connection[peer] = NULL;
+          }
+
+
           MemoryAllocator < sizeof(send_state_t), 16 > _send_allocator;
           MemoryAllocator < sizeof(recv_state_t), 16 > _recv_allocator;
 
@@ -229,7 +287,6 @@ namespace XMI
           T_Model         _data_model;
           T_Model         _ack_model;
           T_Device      & _msgDevice;
-          //DCMF::Mapping & _mapping;
           size_t          _pktsize;
           size_t          _fromRank;
 
@@ -237,8 +294,11 @@ namespace XMI
 
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
-          //CM_Callback_t   _cb_null;
 
+          void ** _connection;
+          // Support up to 100 unique contexts.
+          //static eager_connection_t _eager_connection[];
+          EagerConnection<T_Device> _connection_manager;
 
           static int dispatch_ack_direct (void         * metadata,
                                           void         * payload,
@@ -248,20 +308,16 @@ namespace XMI
             TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() >> \n"));
             send_state_t * state = *((send_state_t **) metadata);
 
-            xmi_event_function local_fn  = state->local_fn;
             xmi_event_function remote_fn = state->remote_fn;
             void               * cookie  = state->cookie;
+            TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() .. state = %p, remote_fn = %p\n", state, remote_fn));
 
             EagerSimple<T_Model, T_Device, T_Message> * eager =
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
+
             eager->freeSendState (state);
 
-            TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() .. state = %p, local_fn = %p, remote_fn = %p\n", state, local_fn, remote_fn));
-
-            if (local_fn)  local_fn  (eager->_context, cookie, XMI_SUCCESS);
             if (remote_fn) remote_fn (eager->_context, cookie, XMI_SUCCESS);
-
-            eager->freeSendState (state);
 
             TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() << \n"));
             return 0;
@@ -292,25 +348,21 @@ namespace XMI
           }
 
           ///
-          /// \brief Direct multi-packet send envelope packet callback.
+          /// \brief Direct multi-packet send envelope packet dispatch.
           ///
-          /// The eager packet factory will register this dispatch function
-          /// if and only if the device \b does provide direct access to
-          /// data which has already been read from the network by the device.
+          /// The eager simple send protocol will register this dispatch
+          /// function if and only if the device \b does provide direct access
+          /// to data which has already been read from the network by the
+          /// device.
           ///
-          /// The dispatch function will invoke the registered user callback
-          /// with the 16-byte (CMQuad) aligned data pointers provided by
-          /// the CDI packet device.
+          /// The envelope dispatch function is invoked by the message device
+          /// to process the first packet of a multi-packet message. The eager
+          /// simple send protocol transfers protocol metadata and application
+          /// metadata in a single packet. Application data will arrive in
+          /// subsequent eager simple send data packets and will be processed
+          /// by the data dispatch function.
           ///
-          /// The envelope dispatch function is invoked by the packet device
-          /// to process the first packet of a multi-packet message. The CDI
-          /// eager protocol sends two iovec elements in the first packet for
-          /// the number of data bytes to follow and the msginfo metadata.
-          ///
-          /// \note The CDI packet device \b must provide 16-byte aligned
-          ///       iov_base fields in the iovec structure.
-          ///
-          /// \see DCMF::CDI::RecvFunction_t
+          /// \see XMI::Device::Interface::RecvFunction_t
           ///
           static int dispatch_envelope_direct (void         * metadata,
                                                void         * payload,
@@ -324,23 +376,19 @@ namespace XMI
             EagerSimple<T_Model, T_Device, T_Message> * eager =
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
-            // This packet device provides the data buffer(s) for the message.
-            // The dispatch function must provide the (CMQuad) aligned pointer(s)
-            // to the registered user callback.
-            assert(eager->getDevice()->getConnection (m->fromRank) == NULL);
-
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
             state->eager = eager;
             state->ackinfo = m->ackinfo;
 
-            eager->_dispatch_fn.p2p (eager->_context,
-                                     eager->_cookie,
-                                     m->fromRank, // origin rank
-                                     payload,     // payload contain only application metadata
-                                     bytes,       // number of bytes of application metadata
-                                     NULL,        // No payload data
-                                     0,           // No payload data
+            // Invoke the registered dispatch function.
+            eager->_dispatch_fn.p2p (eager->_context, // Communication context
+                                     eager->_cookie,  // Dispatch cookie
+                                     m->fromRank,     // Origin (sender) rank
+                                     payload,         // Application metadata
+                                     bytes,           // Metadata bytes
+                                     NULL,            // No payload data
+                                     0,               // No payload data
                                      (xmi_recv_t *) &(state->info));
 
             assert(state->info.kind == XMI_AM_KIND_SIMPLE);
@@ -377,8 +425,8 @@ namespace XMI
             state->received = 0;
             state->sndlen = m->bytes;
 
-
-            eager->getDevice()->setConnection (m->fromRank, (void *)state);
+            // Set the eager connection.
+            eager->setConnection (m->fromRank, (void *)state);
 
             return 0;
           };
@@ -388,19 +436,15 @@ namespace XMI
           ///
           /// Copies incoming packet data from the device to the destination buffer.
           ///
-          /// The eager packet factory will register this dispatch function
+          /// The eager simple send protocol will register this dispatch function
           /// if and only if the device \b does provide direct access to
           /// data which has already been read from the network by the device.
           ///
           /// The data dispatch function is invoked by the packet device
           /// to process the subsequent packets of a multi-packet message
-          /// after the first envelope packet. The CDI eager protocol sends
-          /// one iovec element in the data packets for the user data buffer.
+          /// after the first envelope packet.
           ///
-          /// \note The CDI packet device \b must provide 16-byte aligned
-          ///       iov_base fields in the iovec structure.
-          ///
-          /// \see DCMF::CDI::RecvFunction_t
+          /// \see XMI::Device::Interface::RecvFunction_t
           ///
           static int dispatch_data_direct   (void   * metadata,
                                              void   * payload,
@@ -413,11 +457,7 @@ namespace XMI
             size_t fromRank = *((size_t *)metadata);
             TRACE_ERR((stderr, "dispatch_data_direct(), fromRank = %zd, bytes = %zd\n", fromRank, bytes));
 
-            // This packet device provides the data buffer(s) for the message.
-            // The dispatch function must provide the (CMQuad) aligned pointer(s)
-            // to the registered user callback.
-
-            recv_state_t * state = (recv_state_t *) eager->getDevice()->getConnection (fromRank);
+            recv_state_t * state = (recv_state_t *) eager->getConnection (fromRank);
             assert(state != NULL);
 
             size_t nbyte = state->received;
@@ -437,11 +477,10 @@ namespace XMI
             TRACE_ERR((stderr, "dispatch_data_direct(), nbyte = %zd, ncopy = %zd\n", nbyte, ncopy));
             if ((nbyte + ncopy) == state->sndlen)
               {
-                TRACE_ERR((stderr, "dispatch_data_direct(), setConnection = NULL\n"));
-                eager->getDevice()->setConnection (fromRank, NULL);
+                TRACE_ERR((stderr, "dispatch_data_direct(), before clearConnection()\n"));
+                eager->clearConnection (fromRank);
+                TRACE_ERR((stderr, "dispatch_data_direct(),  after clearConnection()\n"));
 
-
-                TRACE_ERR((stderr, "dispatch_data_direct(),  after setConnection\n"));
                 if (state->info.local_fn)
                   state->info.local_fn (eager->_context,
                                         state->info.cookie,
@@ -564,6 +603,44 @@ namespace XMI
             return 0;
           };
 
+          ///
+          /// \brief Local send completion event callback.
+          ///
+          /// This callback will invoke the application local completion
+          /// callback function and, if notification of remote receive
+          /// completion is not required, free the send state memory.
+          ///
+          static void send_complete (xmi_context_t   context,
+                                     void          * cookie,
+                                     xmi_result_t    result)
+          {
+            TRACE_ERR((stderr, "EagerSimple::send_complete() >> \n"));
+            send_state_t * state = (send_state_t *) cookie;
+
+            EagerSimple<T_Model, T_Device, T_Message> * eager =
+              (EagerSimple<T_Model, T_Device, T_Message> *) state->eager;
+
+            if (state->local_fn != NULL)
+            {
+              state->local_fn (eager->_context, state->cookie, XMI_SUCCESS);
+            }
+
+            if (state->remote_fn == NULL)
+            {
+              eager->freeSendState (state);
+            }
+
+            TRACE_ERR((stderr, "EagerSimple::send_complete() << \n"));
+            return;
+          }
+
+          ///
+          /// \brief Local receive completion event callback.
+          /// 
+          /// This callback will invoke the application local receive
+          /// completion callback and free the receive state object
+          /// memory.
+          ///
           static void receive_complete (xmi_context_t   context,
                                         void          * cookie,
                                         xmi_result_t    result)

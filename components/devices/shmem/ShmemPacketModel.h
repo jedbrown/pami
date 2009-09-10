@@ -57,6 +57,11 @@ namespace XMI
             _context (context)
         {};
 
+        bool isDeterministic ()
+        {
+          return true;
+        };
+
         xmi_result_t init_impl (Interface::RecvFunction_t   direct_recv_func,
                                 void                      * direct_recv_func_parm,
                                 Interface::RecvFunction_t   read_recv_func,

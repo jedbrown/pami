@@ -13,8 +13,8 @@
 #define __components_devices_shmem_shmempacketdevice_h__
 
 #include "ShmemBaseDevice.h"
-#include "../BaseDevice.h"
-#include "../MessageDevice.h"
+#include "components/devices/BaseDevice.h"
+#include "components/devices/MessageDevice.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
@@ -43,7 +43,6 @@ namespace XMI
         inline int init_impl (T_SysDep * sysdep)
         {
           TRACE_ERR((stderr, "(%zd) ShmemPacketDevice::init_impl (), this = %p\n", sysdep->mapping.task(), this));
-          //return ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (sysdep);
           return this->init_internal (sysdep);
         };
 

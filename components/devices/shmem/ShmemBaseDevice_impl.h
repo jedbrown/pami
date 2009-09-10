@@ -77,15 +77,6 @@ namespace XMI
         }
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 7\n", sysdep->mapping.task()));
 
-      for (i = 0; i < 1; i++)
-        {
-          _connection[i] = (void **) malloc (sizeof(void *) * _num_procs);
-
-          for (j = 0; j < _num_procs; j++)
-            _connection[i][j] = NULL;
-        }
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 8\n", sysdep->mapping.task()));
-
       return 0;
     }
 
@@ -93,6 +84,29 @@ namespace XMI
     bool ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::isInit_impl ()
     {
       return true;
+    }
+
+    /// \see XMI::Device::Interface::BaseDevice::isReliableNetwork()
+    template <class T_SysDep, class T_Fifo, class T_Packet>
+    bool ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::isReliableNetwork_impl ()
+    {
+      return true;
+    }
+
+    /// \see XMI::Device::Interface::BaseDevice::peers()
+    template <class T_SysDep, class T_Fifo, class T_Packet>
+    size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::peers_impl ()
+    {
+      return _num_procs;
+    }
+
+    /// \see XMI::Device::Interface::BaseDevice::task2peer()
+    template <class T_SysDep, class T_Fifo, class T_Packet>
+    size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::task2peer_impl (size_t task)
+    {
+      size_t global, local;
+      _sysdep->mapping.task2node (task, global, local);
+      return local;
     }
 
     /// \see XMI::Device::Interface::PacketDevice::requiresRead()

@@ -55,9 +55,21 @@ namespace XMI
           /// \attention All device derived classes \b must
           ///            implement the isInit_impl() method.
           ///
-          /// \todo return type
-          ///
           inline bool isInit ();
+
+          ///
+          /// \brief Returns the reliable network attribute of this device
+          ///
+          /// \attention All device derived classes \b must implement the
+          ///            isReliableNetwork_impl() method.
+          ///
+          ///
+          inline bool isReliableNetwork ();
+
+
+          inline size_t peers ();
+
+          inline size_t task2peer (size_t task);
 
           ///
           /// \brief Advance routine for the device.
@@ -82,6 +94,24 @@ namespace XMI
       inline bool BaseDevice<T_Device, T_SysDep>::isInit ()
       {
         return static_cast<T_Device*>(this)->isInit_impl();
+      }
+
+      template <class T_Device, class T_SysDep>
+      inline bool BaseDevice<T_Device, T_SysDep>::isReliableNetwork ()
+      {
+        return static_cast<T_Device*>(this)->isReliableNetwork_impl();
+      }
+
+      template <class T_Device, class T_SysDep>
+      inline size_t BaseDevice<T_Device, T_SysDep>::peers ()
+      {
+        return static_cast<T_Device*>(this)->peers_impl();
+      }
+
+      template <class T_Device, class T_SysDep>
+      inline size_t BaseDevice<T_Device, T_SysDep>::task2peer (size_t task)
+      {
+        return static_cast<T_Device*>(this)->task2peer_impl(task);
       }
 
       template <class T_Device, class T_SysDep>

@@ -44,6 +44,20 @@ namespace XMI
           ~PacketModel () {};
 
           ///
+          /// \brief Returns the deterministic network attribute of this model
+          ///
+          /// A deterministic network "routes" all communication in a fixed,
+          /// deterministic, way such that messages are received by the remote
+          /// task in the same order as the messages were sent by the local
+          /// task.
+          ///
+          /// \attention All device derived classes \b must implement the
+          ///            isReliableNetwork_impl() method.
+          ///
+          ///
+          bool isDeterministic ();
+
+          ///
           /// \brief Base packet model initializer
           ///
           /// The packet device implementation will use the appropriate receive
@@ -153,6 +167,12 @@ namespace XMI
                                   struct iovec    * iov,
                                   size_t            niov);
       };
+
+      template <class T_Model, class T_Device, class T_Object>
+      bool PacketModel<T_Model, T_Device, T_Object>::isDeterministic ()
+      {
+        return static_cast<T_Model*>(this)->isDeterministic_impl ();
+      }
 
       template <class T_Model, class T_Device, class T_Object>
       xmi_result_t PacketModel<T_Model, T_Device, T_Object>::init (RecvFunction_t   direct_recv_func,
