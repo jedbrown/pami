@@ -25,7 +25,7 @@ namespace CCMI
     namespace Broadcast
     {
 
-      class BcastQueueElem : public CCMI::MatchQueueElem
+      class BcastQueueElem : public XMI::MatchQueueElem
       {
       protected:
         //matchq
@@ -45,7 +45,7 @@ namespace CCMI
         ///
         /// \brief Default constructor
         ///
-        BcastQueueElem (CCMI::Executor::Composite *c=NULL, unsigned root=-1) : CCMI::MatchQueueElem (root),
+        BcastQueueElem (CCMI::Executor::Composite *c=NULL, unsigned root=-1) : XMI::MatchQueueElem (root),
         _isFinished (false),
         _composite (c)
         {

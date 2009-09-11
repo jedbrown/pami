@@ -15,6 +15,8 @@
 #ifndef __math_math_internal_h__
 #define __math_math_internal_h__
 
+#include "util/common.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif /* C++ */

@@ -21,11 +21,11 @@ namespace XMI
   namespace Client
   {
     template <class T_Client, class T_Context>
-    class Client : public CCMI::QueueElem
+    class Client : public QueueElem
     {
       public:
         inline Client (char * name, xmi_result_t & result) :
-          CCMI::QueueElem ()
+          QueueElem ()
         {
           result = XMI_UNIMPL;
         }

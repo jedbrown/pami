@@ -15,47 +15,6 @@ extern "C"
 {
 #endif
 
-#define XMI_abort()		abort()
-#define XMI_abortf(fmt...)	{ fprintf(stderr, __FILE__ ":%d: ", __LINE__); fprintf(stderr, fmt); abort(); }
-
-#if ASSERT_LEVEL==0
-
-    /* No asserts at all */
-#define XMI_assert(expr)
-#define XMI_assertf(expr, fmt...)
-#define XMI_assert_debug(expr)
-#define XMI_assert_debugf(expr, fmt...)
-
-#elif ASSERT_LEVEL==1
-
-    /* No debug asserts, only "normal" ones */
-#define XMI_assert(expr)			assert(expr)
-#define XMI_assertf(expr, fmt...)	{ if (!(expr)) XMI_abortf(fmt); }
-#define XMI_assert_debug(expr)
-#define XMI_assert_debugf(expr, fmt...)
-
-#else /* ASSERT_LEVEL==2 */
-
-    /* all asserts */
-#define XMI_assert(expr)			assert(expr)
-#define XMI_assertf(expr, fmt...)	{ if (!(expr)) XMI_abortf(fmt); }
-#define XMI_assert_debug(expr)		XMI_assert(expr)
-#define XMI_assert_debugf(expr, fmt...)	XMI_assertf(expr, fmt)
-
-#endif /* ASSERT_LEVEL */
-
-
-    typedef enum {
-        DCMF_MATCH_CONSISTENCY,
-        DCMF_RELAXED_CONSISTENCY,
-        DCMF_SEQUENTIAL_CONSISTENCY,
-        DCMF_WEAK_CONSISTENCY
-    } DCMF_Consistency;
-#warning defining deprecated DCMF_Consistency
-
-
-
-
     /*****************************************************************************/
     /**
      * \defgroup configuration xmi configuration interface

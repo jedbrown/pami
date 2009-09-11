@@ -81,8 +81,8 @@ namespace XMI
                                                                      unsigned color=0);
             inline void                       setGlobalContext(bool context);
             inline void                       setNumColors(unsigned numcolors);
-            inline CCMI::MatchQueue          &asyncBcastPostQ();
-            inline CCMI::MatchQueue          &asyncBcastUnexpQ();
+            inline MatchQueue                &asyncBcastPostQ();
+            inline MatchQueue                &asyncBcastUnexpQ();
 #if 0
             static inline CCMI_GEOMETRY       getCachedGeometry (unsigned comm);
             static inline void                updateCachedGeometry (CCMI_GEOMETRY geometry, 
@@ -389,13 +389,13 @@ namespace XMI
         }
 
         template <class T_Geometry>
-        inline CCMI::MatchQueue &Geometry<T_Geometry>::asyncBcastPostQ()
+        inline MatchQueue &Geometry<T_Geometry>::asyncBcastPostQ()
         {
             return static_cast<T_Geometry*>(this)->asyncBcastPostQ_impl();
         }
 
         template <class T_Geometry>
-        inline CCMI::MatchQueue &Geometry<T_Geometry>::asyncBcastUnexpQ()
+        inline MatchQueue &Geometry<T_Geometry>::asyncBcastUnexpQ()
         {
             return static_cast<T_Geometry*>(this)->asyncBcastUnexpQ_impl();
         }

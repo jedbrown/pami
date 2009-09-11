@@ -180,7 +180,7 @@ namespace CCMI
           }
           else if(this->_isBuffered)
           {
-            CCMI::MatchQueue  & mqueue = geometry->asyncBcastUnexpQ();
+            XMI::MatchQueue  & mqueue = geometry->asyncBcastUnexpQ();
             BcastQueueElem * elem = (BcastQueueElem *) mqueue.findAndDelete(root);
 
             /// Try to match in unexpected queue
@@ -239,7 +239,7 @@ namespace CCMI
           CCMI::Adaptor::Geometry *geometry = (CCMI::Adaptor::Geometry *)
 	    factory->_cb_geometry(cdata->_comm);
 	  
-          CCMI::MatchQueue  &mqueue = geometry->asyncBcastPostQ();
+          XMI::MatchQueue  &mqueue = geometry->asyncBcastPostQ();
           BcastQueueElem *elem = (BcastQueueElem *) mqueue.findAndDelete(cdata->_root);
 
           T *bcast = NULL;

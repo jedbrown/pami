@@ -49,14 +49,14 @@ namespace XMI
 
       // Allocate memory for and construct the queue objects,
       // one for each local rank.
-      __sendQ = (CCMI::Queue *) malloc ((sizeof (CCMI::Queue) * _num_procs));
-      __doneQ = (CCMI::Queue *) malloc ((sizeof (CCMI::Queue) * _num_procs));
+      __sendQ = (Queue *) malloc ((sizeof (Queue) * _num_procs));
+      __doneQ = (Queue *) malloc ((sizeof (Queue) * _num_procs));
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 5\n", sysdep->mapping.task()));
       for (i = 0; i < _num_procs; i++)
       {
-        new (&__sendQ[i]) CCMI::Queue ();
-        new (&__doneQ[i]) CCMI::Queue ();
+        new (&__sendQ[i]) Queue ();
+        new (&__doneQ[i]) Queue ();
       }
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 6\n", sysdep->mapping.task()));
 
@@ -160,7 +160,7 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::post (size_t fnum, ShmemBaseMessage<T_Packet> * msg)
     {
-      pushSendQueueTail (fnum, (CCMI::QueueElem *) msg);
+      pushSendQueueTail (fnum, (QueueElem *) msg);
       return XMI_SUCCESS;
     };
 
@@ -226,7 +226,7 @@ namespace XMI
                       // of this message. Add the message to the done queue
                       // and check for completion again later.
                       msg->setSequenceId (sequence);
-                      pushDoneQueueTail (peer, (CCMI::QueueElem *) msg);
+                      pushDoneQueueTail (peer, (QueueElem *) msg);
                     }
                   }
                   else

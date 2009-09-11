@@ -161,13 +161,13 @@ namespace XMI
 
         inline int advance_internal ();
 
-        inline void pushSendQueueTail (size_t peer, CCMI::QueueElem * element);
+        inline void pushSendQueueTail (size_t peer, QueueElem * element);
 
-        inline CCMI::QueueElem * popSendQueueHead (size_t peer);
+        inline QueueElem * popSendQueueHead (size_t peer);
 
-        inline void pushDoneQueueTail (size_t peer, CCMI::QueueElem * element);
+        inline void pushDoneQueueTail (size_t peer, QueueElem * element);
 
-        inline CCMI::QueueElem * popDoneQueueHead (size_t peer);
+        inline QueueElem * popDoneQueueHead (size_t peer);
 
         ///
         /// \brief Advance the send queues and process any pending messages.
@@ -204,10 +204,10 @@ namespace XMI
         dispatch_t  _dispatch[256];
         unsigned    _dispatch_count;
 
-        CCMI::Queue * __sendQ;
+        Queue * __sendQ;
         unsigned          __sendQMask;
 
-        CCMI::Queue * __doneQ;
+        Queue * __doneQ;
         unsigned          __doneQMask;
 
         size_t            _num_procs;
@@ -459,7 +459,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushSendQueueTail (size_t peer, CCMI::QueueElem * element)
+    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushSendQueueTail (size_t peer, QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", _sysdep->mapping.task(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
       __sendQ[peer].pushTail (element);
@@ -472,10 +472,10 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline CCMI::QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popSendQueueHead (size_t peer)
+    inline QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popSendQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the sendQ\n"));
-      CCMI::QueueElem * tmp = __sendQ[peer].popHead();
+      QueueElem * tmp = __sendQ[peer].popHead();
       __sendQMask = __sendQMask & ~(__sendQ[peer].isEmpty() << peer);
       return tmp;
     }
@@ -486,7 +486,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushDoneQueueTail (size_t peer, CCMI::QueueElem * element)
+    inline void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::pushDoneQueueTail (size_t peer, QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushDoneQueueTail(%zd, %p), __doneQMask = %d -> %d\n", _sysdep->mapping.task(), peer, element, __doneQMask, __doneQMask | (1 << peer)));
       __doneQ[peer].pushTail (element);
@@ -499,10 +499,10 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    inline CCMI::QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popDoneQueueHead (size_t peer)
+    inline QueueElem * ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::popDoneQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the doneQ\n"));
-      CCMI::QueueElem * tmp = __doneQ[peer].popHead();
+      QueueElem * tmp = __doneQ[peer].popHead();
       __doneQMask = __doneQMask & ~(__doneQ[peer].isEmpty() << peer);
       return tmp;
     }

@@ -297,7 +297,7 @@ namespace XMI
           typedef XMI::Protocol::Send::EagerSimple <ShmemModel, ShmemDevice, ShmemMessage> EagerSimpleShmem;
 
           xmi_result_t result = XMI_ERROR;
-          new (_dispatch[(size_t)id]) EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+          new ((void *)_dispatch[(size_t)id]) EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
 
           return result;
         }

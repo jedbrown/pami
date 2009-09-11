@@ -24,7 +24,7 @@ namespace XMI
   namespace Device
   {
     template <class T_Packet>
-    class ShmemBaseMessage : public CCMI::QueueElem
+    class ShmemBaseMessage : public QueueElem
     {
       public:
         inline ShmemBaseMessage (xmi_context_t        context,
@@ -36,7 +36,7 @@ namespace XMI
                                  void               * src,
                                  size_t               bytes,
                                  bool                 packed) :
-            CCMI::QueueElem (),
+            QueueElem (),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -64,7 +64,7 @@ namespace XMI
                                  void            * src1,
                                  size_t            bytes1,
                                  bool              packed) :
-            CCMI::QueueElem (),
+            QueueElem (),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -92,7 +92,7 @@ namespace XMI
                                  struct iovec       * iov,
                                  size_t               niov,
                                  bool                 packed) :
-            CCMI::QueueElem (),
+            QueueElem (),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -113,7 +113,7 @@ namespace XMI
                                  uint8_t              dispatch_id,
                                  void               * metadata,
                                  size_t               metasize) :
-            CCMI::QueueElem (),
+            QueueElem (),
             _context (context),
             _fn (fn),
             _cookie (cookie),

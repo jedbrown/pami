@@ -152,10 +152,10 @@ namespace XMI
             inline void                      setNumColors_impl(unsigned numcolors)
                 {
                 }
-            inline CCMI::MatchQueue         &asyncBcastPostQ_impl()
+            inline MatchQueue               &asyncBcastPostQ_impl()
                 {
                 }
-            inline CCMI::MatchQueue         &asyncBcastUnexpQ_impl()
+            inline MatchQueue               &asyncBcastUnexpQ_impl()
                 {
                 }
 #if 0            
