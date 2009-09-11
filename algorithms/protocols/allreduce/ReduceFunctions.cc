@@ -11,7 +11,7 @@
  * \brief Support routines for allreduce operations
  */
 
-#include "util/ccmi_util.h"  // need this first to define throw() before stdlib.h is included (for xlC -noeh)
+#include "util/common.h"  // need this first to define throw() before stdlib.h is included (for xlC -noeh)
 #include "algorithms/ccmi.h"
 #include "util/ccmi_debug.h"
 //#include "algorithms/executor/AllreduceBase.h"

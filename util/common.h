@@ -14,7 +14,7 @@
 #define __util_common_h__
 
 #include <new>
-
+#include <stdint.h>
 #ifndef MIN
 #define MIN(a,b)  (((a)<(b))?(a):(b))
 #endif
