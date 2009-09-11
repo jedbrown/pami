@@ -14,14 +14,17 @@ namespace XMI
       inline HeapMemoryManager () :
         Interface::MemoryManager<HeapMemoryManager> ()
         {
-          assert(0);
         }
       
       inline xmi_result_t memalign_impl (void   ** memptr,
                                          size_t    alignment,
                                          size_t    bytes)
         {
-          assert(0);
+#ifdef USE_MEMALIGN
+          posix_memalign (memptr, alignment, bytes);
+#else
+          *memptr = malloc(bytes);
+#endif          
         }
       
     protected:

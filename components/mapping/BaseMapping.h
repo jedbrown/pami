@@ -44,33 +44,7 @@ namespace XMI
           ///
           inline size_t size ();
 
-          ///
-          /// \brief Number of physical active nodes in the partition.
-          ///
-          /// This is not necessarily the same as the number of active tasks.
-          ///
-          /// \see size()
-          ///
-          inline size_t numActiveNodesGlobal ();
-
-          ///
-          /// \brief Number of physical active tasks in the partition.
-          ///
-          /// This is the same as size.
-          ///
-          /// \see size()
-          ///
-          inline size_t numActiveTasksGlobal ();
-
-          ///
-          /// \brief Number of physical active tasks in the local node.
-          ///
-          inline size_t numActiveTasksLocal ();
-
-          ///
-          /// \brief Determines if two global task ids are located on the same physical node.
-          ///
-          inline bool isPeer (size_t task1, size_t task2);
+ 
 #if 0
           inline DCMF_Result network2rank (const DCMF_NetworkCoord_t  * addr,
                                            size_t                     * rank,
@@ -99,31 +73,7 @@ namespace XMI
       inline size_t Base<T_Mapping,T_Memory>::size ()
       {
         return static_cast<T_Mapping*>(this)->size_impl ();
-      }
-
-      template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::numActiveNodesGlobal ()
-      {
-        return static_cast<T_Mapping*>(this)->numActiveNodesGlobal_impl ();
-      }
-
-      template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::numActiveTasksGlobal ()
-      {
-        return static_cast<T_Mapping*>(this)->numActiveTasksGlobal_impl ();
-      }
-
-      template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::numActiveTasksLocal ()
-      {
-        return static_cast<T_Mapping*>(this)->numActiveTasksLocal_impl ();
-      }
-
-      template <class T_Mapping, class T_Memory>
-      inline bool Base<T_Mapping,T_Memory>::isPeer (size_t task1, size_t task2)
-      {
-        return static_cast<T_Mapping*>(this)->isPeer_impl (task1, task2);
-      }
+      } 
 #if 0
       template <class T_Mapping, class T_Memory>
       inline DCMF_Result Base<T_Mapping,T_Memory>::network2rank (const DCMF_NetworkCoord_t  * addr,

@@ -12,13 +12,27 @@
 #include <mpi.h>
 #include "components/context/Context.h"
 #include "components/geometry/common/commongeometry.h"
-#include <platform.h>
+#include "components/devices/mpi/mpidevice.h"
+#include "components/devices/mpi/mpimodel.h"
+#include "components/devices/mpi/mpimessage.h"
 #include <new>
+#include <map>
+
+#include "p2p/protocols/send/eager/EagerSimple.h"
+#include "components/sysdep/mpi/mpisysdep.h"
 
 namespace XMI
 {
   namespace Context
   {
+
+
+    typedef Device::MPIMessage MPIMessage;
+    typedef Device::MPIDevice<SysDep::MPISysDep> MPIDevice;
+    typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
+
+    
+    
     class MPI : public Context<XMI::Context::MPI>
     {
     public:
@@ -26,7 +40,7 @@ namespace XMI
         Context<XMI::Context::MPI> (client),
         _client (client)
         {
- 
+          
         }
         
       inline xmi_client_t getClientId_impl ()
@@ -44,72 +58,119 @@ namespace XMI
 
       inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
         {
-          return XMI_UNIMPL;
+          xmi_result_t result = XMI_ERROR;
+
+          switch (configuration->name)
+          {
+            case XMI_TASK_ID:
+              configuration->value.intval = _sysdep.mapping.task();
+              result = XMI_SUCCESS;
+              break;
+            case XMI_NUM_TASKS:
+              configuration->value.intval = _sysdep.mapping.size();
+              result = XMI_SUCCESS;
+              break;
+            default:
+              break;
+          };
+
+          return result;
         }      
       
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline size_t advance_impl (size_t maximum, xmi_result_t & result)
         {
-          result = XMI_UNIMPL;
-          return 0;
+          result = XMI_SUCCESS;
+          size_t events = 0;
+          unsigned i;
+          for (i=0; i<maximum && events==0; i++)
+          {
+            events += _mpi.advance_impl();
+          }
+          return events;
         }
 
       inline xmi_result_t lock_impl ()
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t trylock_impl ()
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t unlock_impl ()
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
         {
-          return XMI_UNIMPL;
+          size_t id = (size_t)(parameters->send.dispatch);
+          assert (_dispatch[id] != NULL);
+
+          XMI::Protocol::Send::Simple * send =
+            (XMI::Protocol::Send::Simple *) _dispatch[id];
+          send->start (parameters->simple.local_fn,
+                       parameters->simple.remote_fn,
+                       parameters->send.cookie,
+                       parameters->send.task,
+                       parameters->simple.addr,
+                       parameters->simple.bytes,
+                       parameters->send.header.addr,
+                       parameters->send.header.bytes);
+
+          return XMI_SUCCESS;
         }
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t put_impl (xmi_put_simple_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t put_typed_impl (xmi_put_typed_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t get_impl (xmi_get_simple_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t get_typed_impl (xmi_get_typed_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rmw_impl (xmi_rmw_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
@@ -117,11 +178,13 @@ namespace XMI
                                                    size_t            bytes,
                                                    xmi_memregion_t * memregion)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
       inline xmi_result_t memregion_deregister_impl (xmi_memregion_t * memregion)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
@@ -131,58 +194,69 @@ namespace XMI
                                                 size_t           * bytes,
                                                 size_t           * task)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
 
       inline xmi_result_t memregion_register_impl (xmi_rmw_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rput_impl (xmi_rput_simple_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rput_typed_impl (xmi_rput_typed_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rget_impl (xmi_rget_simple_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rget_typed_impl (xmi_rget_typed_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t purge_totask_impl (size_t * dest, size_t count)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t resume_totask_impl (size_t * dest, size_t count)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_begin_impl ()
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_end_impl ()
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
       inline xmi_result_t fence_all_impl (xmi_event_function   done_fn,
                                           void               * cookie)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
@@ -190,6 +264,7 @@ namespace XMI
                                             void               * cookie,
                                             size_t               task)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
@@ -198,12 +273,14 @@ namespace XMI
                                                     xmi_geometry_range_t * rank_slices,
                                                     unsigned               slice_count)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
             
 
       inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
@@ -211,17 +288,20 @@ namespace XMI
                                                    xmi_algorithm_t *algorithm,
                                                    int             *num)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
       inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
 
       inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
@@ -229,26 +309,31 @@ namespace XMI
                                                   int            *numRoles,
                                                   int            *replRole)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
       inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
       inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
         
       inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t multicombine_impl(xmi_multicombine_t *mcombineinfo)
         {
+          assert(0);
           return XMI_UNIMPL;
         }
       inline xmi_result_t dispatch_impl (xmi_dispatch_t             id,
@@ -256,12 +341,25 @@ namespace XMI
                                          void                     * cookie,
                                          xmi_send_hint_t            options)
         {
-          return XMI_UNIMPL;
+          typedef XMI::Protocol::Send::EagerSimple <MPIModel,MPIDevice,MPIMessage> EagerSimpleMPI;
+
+          if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
+          _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
+          xmi_result_t result        = XMI_ERROR;
+          new (_dispatch[(size_t)id]) EagerSimpleMPI (id, fn, cookie, _mpi, _sysdep.mapping.task(), _context, result);
+          return result;
         }
 
     private:
-      xmi_client_t _client;
-      void        *_dispatch[1024];
+      xmi_client_t              _client;
+      xmi_context_t             _context;
+      void                     *_dispatch[1024];
+      SysDep::MPISysDep         _sysdep;
+      MemoryAllocator<1024,16>  _request;
+      MPIDevice                 _mpi;
+
+
+      
     }; // end XMI::Context::MPI
   }; // end namespace Context
 }; // end namespace XMI

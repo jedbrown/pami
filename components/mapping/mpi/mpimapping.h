@@ -15,52 +15,29 @@ namespace XMI
   {
     class MPIMapping : public Interface::Base<MPIMapping,Memory::HeapMemoryManager>
     {
-      public:
-        inline MPIMapping () :
-            Interface::Base<MPIMapping,Memory::HeapMemoryManager>()
+    public:
+      inline MPIMapping () :
+        Interface::Base<MPIMapping,Memory::HeapMemoryManager>()
         {
+          MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
+          MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
         };
-        inline ~MPIMapping () {};
-      protected:
-        size_t    _task;
-        size_t    _size;
-        size_t    _nodes;
-        size_t    _peers;
-        size_t * _mapcache;
-        size_t * _rankcache;
-      public:
-        inline xmi_result_t init_impl(Memory::HeapMemoryManager & mm)
+      inline ~MPIMapping () {};
+    protected:
+      size_t    _task;
+      size_t    _size;
+    public:
+      inline xmi_result_t init_impl(Memory::HeapMemoryManager & mm)
         {
-          
+          return XMI_SUCCESS;
         }
-	inline size_t task_impl()
+      inline size_t task_impl()
         {
-          assert(0);
           return _task;
         }
-        inline size_t size_impl()
+      inline size_t size_impl()
         {
-          assert(0);
           return _size;
-        }
-        inline size_t numActiveNodesGlobal_impl ()
-        {
-          assert(0);
-          return _nodes;
-        }
-        inline size_t numActiveTasksGlobal_impl ()
-        {
-          assert(0);
-          return _size;
-        }
-        inline size_t numActiveTasksLocal_impl ()
-        {
-          assert(0);
-          return _peers;
-        }
-        inline bool isPeer_impl (size_t task1, size_t task2)
-        {
-
         }
     };
   };
