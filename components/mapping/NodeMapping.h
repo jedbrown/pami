@@ -31,9 +31,12 @@ namespace XMI
           ///
           /// \brief Get the number of possible tasks on a node
           ///
-          /// \return Dimension size
+          inline xmi_result_t nodeTasks (size_t global, size_t & tasks);
+
           ///
-          inline xmi_result_t nodeSize (size_t global, size_t & size);
+          /// \brief Get the number of peer tasks on the local node
+          ///
+          inline xmi_result_t nodePeers (size_t & peers);
 
           ///
           /// \brief Get the node address for the local task
@@ -63,9 +66,15 @@ namespace XMI
       };
 
       template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::nodeSize (size_t global, size_t & size)
+      inline xmi_result_t Node<T_Mapping>::nodeTasks (size_t global, size_t & tasks)
       {
-        return static_cast<T_Mapping*>(this)->nodeSize_impl (global, size);
+        return static_cast<T_Mapping*>(this)->nodeTasks_impl (global, tasks);
+      }
+
+      template <class T_Mapping>
+      inline xmi_result_t Node<T_Mapping>::nodePeers (size_t & peers)
+      {
+        return static_cast<T_Mapping*>(this)->nodePeers_impl (peers);
       }
 
       template <class T_Mapping>

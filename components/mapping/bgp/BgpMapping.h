@@ -121,7 +121,7 @@ namespace XMI
         {
           return _size;
         }
-
+#if 0
         ///
         /// \brief Number of physical active nodes in the partition.
         /// \see XMI::Mapping::Interface::Base::numActiveNodesGlobal()
@@ -139,16 +139,7 @@ namespace XMI
         {
           return _size;
         }
-
-        ///
-        /// \brief Number of physical active tasks in the local node.
-        /// \see XMI::Mapping::Interface::Base::numActiveRanksLocal()
-        ///
-        inline size_t numActiveTasksLocal_impl ()
-        {
-          return _peers;
-        }
-
+#endif
         ///
         /// \brief Determines if two global tasks are located on the same physical node.
         /// \see XMI::Mapping::Interface::Base::isPeer()
@@ -386,12 +377,22 @@ namespace XMI
 
         /// \brief Get the number of possible tasks on a node
         /// \return Dimension size
-        inline xmi_result_t nodeSize_impl (size_t global, size_t & size)
+        inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
         {
-          TRACE_ERR((stderr,"BgpMapping::nodeSize_impl(%zd) >>\n", global));
+          TRACE_ERR((stderr,"BgpMapping::nodeTasks_impl(%zd) >>\n", global));
 #warning implement this!
-          TRACE_ERR((stderr,"BgpMapping::nodeSize_impl(%zd) <<\n", global));
+          TRACE_ERR((stderr,"BgpMapping::nodeTasks_impl(%zd) <<\n", global));
           return XMI_UNIMPL;
+        };
+
+        ///
+        /// \brief Number of active tasks on the local node.
+        /// \see XMI::Mapping::Interface::Node::nodePeers()
+        ///
+        inline xmi_result_t nodePeers_impl (size_t & peers)
+        {
+          peers = _peers;
+          return XMI_SUCCESS;
         };
 
         /// \brief Get the node address for the local task

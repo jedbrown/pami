@@ -25,7 +25,7 @@ namespace XMI
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () _sysdep = %p\n", sysdep->mapping.task(), _sysdep));
 
       unsigned i, j;
-      _num_procs = _sysdep->mapping.numActiveTasksLocal ();
+      _sysdep->mapping.nodePeers (_num_procs);
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 0\n", sysdep->mapping.task()));
 
       _global_task = _sysdep->mapping.task ();
