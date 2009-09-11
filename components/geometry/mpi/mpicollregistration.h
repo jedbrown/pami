@@ -35,8 +35,6 @@ namespace XMI
           // Pgasrt broadcast call
           XMI_NBCollManager::instance()->multisend_reg(TSPColl::BcastTag, &_pgasrt_broadcast);
           
-          
-          
 #if 0
 //          XMI::Device::MPIDevice<MPISysDep> *dev
 //          XMI::Device::MPIDevice *dev
@@ -55,7 +53,7 @@ namespace XMI
 
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
         {
-          return XMI_UNIMPL;
+          return NULL;
         }
 
     public:

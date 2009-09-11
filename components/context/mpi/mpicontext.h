@@ -15,23 +15,24 @@
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpimodel.h"
 #include "components/devices/mpi/mpimessage.h"
-#include <new>
-#include <map>
-
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "components/sysdep/mpi/mpisysdep.h"
+#include "components/geometry/mpi/mpicollfactory.h"
+#include "components/geometry/mpi/mpicollregistration.h"
+#include <new>
+#include <map>
 
 namespace XMI
 {
   namespace Context
   {
-
-
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice<SysDep::MPISysDep> MPIDevice;
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
-
-    
+    typedef Geometry::Geometry<XMI::Geometry::Common> MPIGeometry;
+    typedef CollFactory::CollFactory<XMI::CollFactory::MPI> MPICollfactory;
+    typedef CollRegistration::CollRegistration<XMI::CollRegistration::MPI<MPIGeometry, MPICollfactory>,
+                                               MPIGeometry, MPICollfactory> MPICollreg;
     
     class MPI : public Context<XMI::Context::MPI>
     {
@@ -40,6 +41,21 @@ namespace XMI
         Context<XMI::Context::MPI> (client),
         _client (client)
         {
+          MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
+          MPI_Comm_size(MPI_COMM_WORLD,&_mysize); 
+          _ranklist = (unsigned*)malloc(sizeof(unsigned)*_mysize);
+          for (int i=0; i<_mysize; i++) _ranklist[i]=i;
+          _world_geometry=
+            (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>*)
+            malloc(sizeof(*_world_geometry));
+          new(_world_geometry)
+            XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>(NULL,              // Mapping
+                                                        _ranklist,         // Ranks
+                                                        _mysize,           // NumRanks
+                                                        0,                 // Comm id
+                                                        0,                 // numcolors
+                                                        1);                // isglobal?
+          _world_collfactory=_collreg.analyze(_world_geometry);
           
         }
         
@@ -61,18 +77,18 @@ namespace XMI
           xmi_result_t result = XMI_ERROR;
 
           switch (configuration->name)
-          {
-            case XMI_TASK_ID:
-              configuration->value.intval = _sysdep.mapping.task();
-              result = XMI_SUCCESS;
-              break;
-            case XMI_NUM_TASKS:
-              configuration->value.intval = _sysdep.mapping.size();
-              result = XMI_SUCCESS;
-              break;
-            default:
-              break;
-          };
+              {
+                  case XMI_TASK_ID:
+                    configuration->value.intval = _sysdep.mapping.task();
+                    result = XMI_SUCCESS;
+                    break;
+                  case XMI_NUM_TASKS:
+                    configuration->value.intval = _sysdep.mapping.size();
+                    result = XMI_SUCCESS;
+                    break;
+                  default:
+                    break;
+              };
 
           return result;
         }      
@@ -89,9 +105,9 @@ namespace XMI
           size_t events = 0;
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
-          {
-            events += _mpi.advance_impl();
-          }
+              {
+                events += _mpi.advance_impl();
+              }
           return events;
         }
 
@@ -357,9 +373,12 @@ namespace XMI
       SysDep::MPISysDep         _sysdep;
       MemoryAllocator<1024,16>  _request;
       MPIDevice                 _mpi;
-
-
-      
+      MPIGeometry              *_world_geometry;
+      MPICollreg                _collreg;
+      MPICollfactory           *_world_collfactory;
+      int                       _myrank;
+      int                       _mysize;
+      unsigned                 *_ranklist;
     }; // end XMI::Context::MPI
   }; // end namespace Context
 }; // end namespace XMI

@@ -35,12 +35,12 @@ namespace XMI
         class Common : public Geometry<XMI::Geometry::Common>
         {
         public:
-            inline Common(COLLECTIVE_MAPPING     *mapping,
-                          unsigned               *ranks,
-                          unsigned                nranks,
-                          unsigned                comm,
-                          unsigned                numcolors,
-                          bool                    globalcontext):
+          inline Common(COLLECTIVE_MAPPING     *mapping,
+                        unsigned               *ranks,
+                        unsigned                nranks,
+                        unsigned                comm,
+                        unsigned                numcolors,
+                        bool                    globalcontext):
                 Geometry<XMI::Geometry::Common>(mapping,ranks,nranks,comm,
                                                 numcolors,globalcontext)
                 {

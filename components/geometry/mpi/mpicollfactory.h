@@ -11,12 +11,11 @@ namespace XMI
 {
   namespace CollFactory
   {
-    template <class T_Geometry, class T_Collreg>
-    class MPI : public CollFactory<XMI::CollFactory::MPI<T_Geometry, T_Collreg>, T_Geometry, T_Collreg>
+    class MPI : public CollFactory<XMI::CollFactory::MPI>
     {
     public:      
-      inline MPI(T_Geometry *geometry, T_Collreg *reg):
-        CollFactory<XMI::CollFactory::MPI<T_Geometry, T_Collreg>, T_Geometry, T_Collreg>(geometry, reg)
+      inline MPI():
+        CollFactory<XMI::CollFactory::MPI>()
         {
         }
 

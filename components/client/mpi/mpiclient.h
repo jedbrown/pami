@@ -61,21 +61,6 @@ namespace XMI
           xmi_result_t res;
           new (client) XMI::Client::MPI (name, res);
           *in_client = (xmi_client_t*) client;
-          
-          MPI_Comm_rank(MPI_COMM_WORLD,&client->_myrank);
-          MPI_Comm_size(MPI_COMM_WORLD,&client->_mysize); 
-          client->_ranklist = (unsigned*)malloc(sizeof(unsigned)*client->_mysize);
-          for (int i=0; i<client->_mysize; i++) client->_ranklist[i]=i;
-          client->_world_geometry=
-            (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>*)
-            malloc(sizeof(*client->_world_geometry));
-          new(client->_world_geometry)
-            XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>(NULL,              // Mapping
-                                                        client->_ranklist, // Ranks
-                                                        client->_mysize,   // NumRanks
-                                                        0,                 // Comm id
-                                                        0,                 // numcolors
-                                                        1);                // isglobal?
           return XMI_SUCCESS;
         }
 
@@ -116,12 +101,8 @@ namespace XMI
         }
 
     private:
-      int          _myrank;
-      int          _mysize;
-      unsigned    *_ranklist;
       xmi_client_t _client;
       size_t       _references;
-      XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *_world_geometry;
     }; // end class XMI::Client::MPI
   }; // end namespace Client
 }; // end namespace XMI

@@ -29,7 +29,6 @@ namespace XMI
           return XMI_SUCCESS;
         };
 
-
       inline bool isDeterministic ()
         {
           return true;

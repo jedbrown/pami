@@ -20,7 +20,7 @@ namespace XMI
     template <class T_Collregistration, class T_Geometry, class T_Collfactory>
     inline T_Collfactory * CollRegistration<T_Collregistration,T_Geometry,T_Collfactory>::analyze(T_Geometry *geometry)
     {
-      return static_cast<T_Collregistration*>(this)->analyze_impl();
+      return static_cast<T_Collregistration*>(this)->analyze_impl(geometry);
     }
 
   }; // namespace CollRegistration

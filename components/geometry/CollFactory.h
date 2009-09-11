@@ -7,11 +7,11 @@ namespace XMI
 {
   namespace CollFactory
   {
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     class CollFactory
     {
     public:
-      inline CollFactory(T_Geometry *geometry, T_Collreg *reg)
+      inline CollFactory()
         {
         }
       inline xmi_result_t  algorithm       (xmi_xfer_t           *collective,
@@ -39,151 +39,151 @@ namespace XMI
       inline xmi_result_t  amreduce        (xmi_amreduce_t       *amreduce);
     }; // class CollFactory
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::algorithm(xmi_xfer_t      *collective,
+    CollFactory<T_Collfactory>::algorithm(xmi_xfer_t      *collective,
                                                                xmi_algorithm_t *alglist,
                                                                size_t          *num)
     {
       return static_cast<T_Collfactory*>(this)->algorithm_impl();
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline size_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::num_algorithm(xmi_xfer_t *collective)
+    CollFactory<T_Collfactory>::num_algorithm(xmi_xfer_t *collective)
     {
       return static_cast<T_Collfactory*>(this)->num_algorithm_impl();
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::collective(xmi_xfer_t *collective)
+    CollFactory<T_Collfactory>::collective(xmi_xfer_t *collective)
     {
       return static_cast<T_Collfactory*>(this)->collective_impl(collective);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::ibroadcast(xmi_broadcast_t *broadcast)
+    CollFactory<T_Collfactory>::ibroadcast(xmi_broadcast_t *broadcast)
     {
       return static_cast<T_Collfactory*>(this)->ibroadcast_impl(broadcast);
     }
     
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iallreduce(xmi_allreduce_t *allreduce)
+    CollFactory<T_Collfactory>::iallreduce(xmi_allreduce_t *allreduce)
     {
       return static_cast<T_Collfactory*>(this)->iallreduce_impl(allreduce);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::ireduce(xmi_reduce_t *reduce)
+    CollFactory<T_Collfactory>::ireduce(xmi_reduce_t *reduce)
     {
       return static_cast<T_Collfactory*>(this)->ireduce_impl(reduce);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iallgather(xmi_allgather_t *allgather)
+    CollFactory<T_Collfactory>::iallgather(xmi_allgather_t *allgather)
     {
       return static_cast<T_Collfactory*>(this)->iallgather_impl(allgather);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iallgatherv(xmi_allgatherv_t *allgatherv)
+    CollFactory<T_Collfactory>::iallgatherv(xmi_allgatherv_t *allgatherv)
     {
       return static_cast<T_Collfactory*>(this)->iallgatherv_impl(allgatherv);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iallgatherv_int(xmi_allgatherv_int_t *allgatherv_int)
+    CollFactory<T_Collfactory>::iallgatherv_int(xmi_allgatherv_int_t *allgatherv_int)
     {
       return static_cast<T_Collfactory*>(this)->iallgatherv_int_impl(allgatherv_int);
     }
     
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iscatter(xmi_scatter_t *scatter)
+    CollFactory<T_Collfactory>::iscatter(xmi_scatter_t *scatter)
     {
       return static_cast<T_Collfactory*>(this)->iscatter_impl(scatter);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iscatterv(xmi_scatterv_t *scatterv)
+    CollFactory<T_Collfactory>::iscatterv(xmi_scatterv_t *scatterv)
     {
       return static_cast<T_Collfactory*>(this)->iscatterv_impl(scatterv);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iscatterv_int(xmi_scatterv_int_t *scatterv_int)
+    CollFactory<T_Collfactory>::iscatterv_int(xmi_scatterv_int_t *scatterv_int)
     {
       return static_cast<T_Collfactory*>(this)->iscatterv_int_impl(scatterv_int);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::ibarrier(xmi_barrier_t *barrier)
+    CollFactory<T_Collfactory>::ibarrier(xmi_barrier_t *barrier)
     {
       return static_cast<T_Collfactory*>(this)->ibarrier_impl(barrier);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::ialltoall(xmi_alltoall_t *alltoall)
+    CollFactory<T_Collfactory>::ialltoall(xmi_alltoall_t *alltoall)
     {
       return static_cast<T_Collfactory*>(this)->ialltoall_impl(alltoall);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::ialltoallv(xmi_alltoallv_t *alltoallv)
+    CollFactory<T_Collfactory>::ialltoallv(xmi_alltoallv_t *alltoallv)
     {
       return static_cast<T_Collfactory*>(this)->ialltoallv_impl(alltoallv);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::ialltoallv_int(xmi_alltoallv_int_t *alltoallv_int)
+    CollFactory<T_Collfactory>::ialltoallv_int(xmi_alltoallv_int_t *alltoallv_int)
     {
       return static_cast<T_Collfactory*>(this)->ialltoallv_int_impl(alltoallv_int);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::iscan(xmi_scan_t *scan)
+    CollFactory<T_Collfactory>::iscan(xmi_scan_t *scan)
     {
       return static_cast<T_Collfactory*>(this)->iscan_impl(scan);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::ambroadcast(xmi_ambroadcast_t *ambroadcast)
+    CollFactory<T_Collfactory>::ambroadcast(xmi_ambroadcast_t *ambroadcast)
     {
       return static_cast<T_Collfactory*>(this)->ambroadcast_impl(ambroadcast);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::amscatter(xmi_amscatter_t *amscatter)
+    CollFactory<T_Collfactory>::amscatter(xmi_amscatter_t *amscatter)
     {
       return static_cast<T_Collfactory*>(this)->amscatter_impl(amscatter);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::amgather(xmi_amgather_t *amgather)
+    CollFactory<T_Collfactory>::amgather(xmi_amgather_t *amgather)
     {
       return static_cast<T_Collfactory*>(this)->amgather_impl(amgather);
     }
 
-    template <class T_Collfactory, class T_Geometry, class T_Collreg>
+    template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory,T_Geometry,T_Collreg>::amreduce(xmi_amreduce_t *amreduce)
+    CollFactory<T_Collfactory>::amreduce(xmi_amreduce_t *amreduce)
     {
       return static_cast<T_Collfactory*>(this)->amreduce_impl(amreduce);
     }
