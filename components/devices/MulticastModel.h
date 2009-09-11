@@ -42,11 +42,12 @@ namespace XMI
                 ~MulticastModel () {};
                 inline void setConnectionId (unsigned conn);
                 inline void setRoles (unsigned roles);
-                inline void setSendData (xmi_pipeworkqueue_t *src, size_t bytes);
+                inline void setBytes (size_t bytes);
+                inline void setSendData (xmi_pipeworkqueue_t *src);
                 inline void setSendRanks (xmi_topology_t *src_participants);
-                inline void setRecvData (xmi_pipeworkqueue_t *dst, size_t bytes);
+                inline void setRecvData (xmi_pipeworkqueue_t *dst);
                 inline void setRecvRanks (xmi_topology_t *dst_participants);
-                inline void setCallback (xmi_event_function fn,  void *cookie);
+                inline void setCallback (xmi_callback_t &cb_done);
                 inline void setInfo (xmi_quad_t *info, int count);
                 inline bool postMultiCast (T_Object * obj);
             };
@@ -63,10 +64,15 @@ namespace XMI
             }
         
             template <class T_Model, class T_Device, class T_Object>
-            void MulticastModel<T_Model, T_Device, T_Object>::setSendData (xmi_pipeworkqueue_t *src,
-                                                                           size_t bytes)
+            void MulticastModel<T_Model, T_Device, T_Object>::setBytes (size_t bytes)
             {
-                static_cast<T_Model*>(this)->setSendData_impl(src, bytes);
+                static_cast<T_Model*>(this)->setBytes_impl(bytes);
+            }
+        
+            template <class T_Model, class T_Device, class T_Object>
+            void MulticastModel<T_Model, T_Device, T_Object>::setSendData (xmi_pipeworkqueue_t *src)
+            {
+                static_cast<T_Model*>(this)->setSendData_impl(src);
             }
 
             template <class T_Model, class T_Device, class T_Object>
@@ -76,10 +82,9 @@ namespace XMI
             }
 
             template <class T_Model, class T_Device, class T_Object>
-            void MulticastModel<T_Model, T_Device, T_Object>::setRecvData (xmi_pipeworkqueue_t *dst,
-                                                                           size_t bytes)
+            void MulticastModel<T_Model, T_Device, T_Object>::setRecvData (xmi_pipeworkqueue_t *dst)
             {
-                static_cast<T_Model*>(this)->setRecvData_impl(dst,bytes);
+                static_cast<T_Model*>(this)->setRecvData_impl(dst);
             }
         
             template <class T_Model, class T_Device, class T_Object>        
@@ -89,9 +94,9 @@ namespace XMI
             }
         
             template <class T_Model, class T_Device, class T_Object>
-            void MulticastModel<T_Model, T_Device, T_Object>::setCallback (xmi_event_function fn, void *cookie)
+            void MulticastModel<T_Model, T_Device, T_Object>::setCallback (xmi_callback_t &cb_done)
             {
-                static_cast<T_Model*>(this)->setCallback_impl(fn, cookie);
+                static_cast<T_Model*>(this)->setCallback_impl(cb_done);
             }
         
             template <class T_Model, class T_Device, class T_Object>

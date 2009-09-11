@@ -1,0 +1,936 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+
+/**
+ * \file components/devices/bgp/collective_network/CNAllreduceShortMsg.h
+ * \brief Default collective network allreduce interface.
+ */
+#ifndef __dcmf_cdi_bgp_cnallreduceshortmsg_h__
+#define __dcmf_cdi_bgp_cnallreduceshortmsg_h__
+
+#include "Util.h"
+#include "components/devices/bgp/collective_network/CNDevice.h" // externs for env vars
+#include "components/devices/bgp/collective_network/CNAllreduce.h"
+#include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
+#include "components/devices/bgp/collective_network/Packet.h"
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "PipeWorkQueue.h"
+
+namespace XMI {
+namespace Device {
+namespace BGP {
+
+/**
+ * \brief Collective Network Allreduce Short-protocol Message base class
+ *
+ * Collective Network Allreduce with source/dest as pipe WQ.
+ *
+ * Note, normally these messages will never be posted on the device.  However,
+ * we can't ensure they won't need to be queued swo we can't optimize that away.
+ * But we optimize for the expected case and pay a bigger penalty if we have to post.
+ *
+ * We do know that each message/process will have only one role, so we can optimize that.
+ * We can also optimize for one (no) thread.
+ */
+
+class CNAllreduceShortModel;
+class CNAllreduceShortMessage;
+typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduceShortThread;
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceShortModel,CNDevice,CNAllreduceShortMessage,CNAllreduceShortThread,2> CNAllreduceShortDevice;
+
+};	// BGP
+};	// Device
+};	// XMI
+
+extern XMI::Device::BGP::CNAllreduceShortDevice _g_cnallreduceshort_dev;
+
+namespace XMI {
+namespace Device {
+namespace BGP {
+
+class CNAllreduceShortMessage : public XMI::Device::BGP::BaseGenericCNMessage {
+	enum roles {
+		NO_ROLE = 0,
+		INJECTION_ROLE = (1 << 0), // first role must be "injector"
+		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
+		LOCAL_ROLE = (1 << 2), // local-only work
+	};
+public:
+	CNAllreduceShortMessage(BaseDevice &qs,
+			XMI::PipeWorkQueue *swq,
+			XMI::PipeWorkQueue *rwq,
+			size_t bytes,
+			bool doStore,
+			unsigned roles,
+			const XMI_Callback_t cb,
+			unsigned dispatch_id,
+			XMI::Device::BGP::CNAllreduceSetup &tas) :
+	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb,
+				dispatch_id, tas._hhfunc, tas._opsize),
+	_roles(roles)
+	{
+	}
+
+	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
+	inline void complete();
+protected:
+	//friend class CNAllreduceShortDevice;
+	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceShortModel,CNDevice,CNAllreduceShortMessage,CNAllreduceShortThread,2>;
+
+	inline int __setThreads(CNAllreduceShortThread *t, int n) {
+		int nt = 0;
+		int maxnt = ((CNAllreduceShortDevice &)_QS).common()->getMaxThreads();
+		if (_roles & INJECTION_ROLE) {
+			t[nt].setMsg(this);
+			t[nt].setDone(false);
+			t[nt]._sender = true;
+			t[nt]._wq = _swq;
+			t[nt]._bytesLeft = _bytes;
+			t[nt]._cycles = 1;
+			++nt;
+		}
+		if (_roles & RECEPTION_ROLE) {
+			t[nt].setMsg(this);
+			t[nt].setDone(false);
+			t[nt]._sender = false;
+			t[nt]._wq = _rwq;
+			t[nt]._bytesLeft = _bytes;
+			t[nt]._cycles = DCMF_PERSISTENT_ADVANCE;
+			++nt;
+		}
+		// assert(nt > 0? && nt < n);
+		_nThreads = nt;
+		if (_bytes >= DCMF_TREE_HELPER_THRESH) {
+			setThreadsWanted(MIN(nt, maxnt));
+		}
+		return nt;
+	}
+
+	inline void __completeThread(CNAllreduceShortThread *thr);
+
+	///
+	/// Optimize for injecting entire message right now - or else do nothing.
+	///
+	///
+	///
+	inline XMI::Device::MessageStatus __advanceInj(CNAllreduceShortThread *thr) {
+		unsigned hcount = TREE_FIFO_SIZE, dcount = TREE_QUADS_PER_FIFO;
+		size_t avail = thr->_wq->bytesAvailableToConsume();
+		char *buf = thr->_wq->bufferToConsume();
+		bool aligned = (((unsigned)buf & 0x0f) == 0);
+		size_t did = 0;
+		if (avail < TREE_PKT_SIZE && avail < thr->_bytesLeft) {
+			return XMI::Device::Active;
+		}
+		// is this possible??
+		if (avail > thr->_bytesLeft) avail = thr->_bytesLeft;
+		if (__wait_send_fifo_to(thr, hcount, dcount, thr->_cycles)) {
+			return XMI::Device::Active;
+		}
+		__send_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
+		__send_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
+		thr->_wq->consumeBytes(did);
+		if (thr->_bytesLeft == 0) {
+			thr->setDone(true);
+			return XMI::Device::Done;
+		}
+		return XMI::Device::Active;
+	}
+		
+
+	inline XMI::Device::MessageStatus __advanceRcp(CNAllreduceShortThread *thr) {
+		if (thr->_bytesLeft == 0) return XMI::Device::Done;
+		unsigned hcount = 0, dcount = 0;
+		unsigned toCopy = thr->_bytesLeft >= TREE_PKT_SIZE ? TREE_PKT_SIZE : thr->_bytesLeft;
+		size_t avail = thr->_wq->bytesAvailableToProduce();
+		char *buf = thr->_wq->bufferToProduce();
+		bool aligned = (((unsigned)buf & 0x0f) == 0);
+		size_t did = 0;
+		if (avail < toCopy) {
+			return XMI::Device::Active;
+		}
+		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
+			return XMI::Device::Active;
+		}
+		__recv_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
+		__recv_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
+		thr->_wq->produceBytes(did);
+		if (thr->_bytesLeft == 0) {
+			thr->setDone(true);
+			return XMI::Device::Done;
+		}
+		return XMI::Device::Active;
+	}
+
+	inline XMI::Device::MessageStatus __advanceThread(CNAllreduceShortThread *thr) {
+		XMI::Device::MessageStatus ms;
+		if (thr->_sender) {
+			ms = __advanceInj(thr);
+		} else {
+			ms = __advanceRcp(thr);
+		}
+		if (ms == XMI::Device::Done) {
+			// thread is Done, maybe not message
+			__completeThread(thr);
+			return ms;
+		}
+		return ms;
+	}
+
+	static inline bool __inject_msg(DCMF::Device::WorkQueue::SharedWorkQueue *swqs,
+			DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+			char **bufs, char *sbuf,
+			char *results, size_t bytes, size_t count,
+			coremath _func, unsigned peer, unsigned npeers, unsigned &ndone
+			unsigned dispatch_id, XMI::Device::BGP::CNAllreduceSetup &tas,
+			bool doStore) {
+		// need to do a "while (__tsc() - t0 < cycles)..."
+		ndone = (1 << peer);
+		unsigned done = (1 << npeers) - 1;
+		unsigned i, curr;
+		// avg 700 cycles (also depends on arrival times)
+		while (ndone < done) {
+			for (i = 0; i < npeers; ++i) {
+				curr = (1 << i);
+				if (!(ndone & curr) &&
+			    	swqs[i].bytesAvailableToConsume() >= bytes) {
+					ndone |= curr;
+				}
+			}
+		}
+		// ~ 200-900 cycles (over range of _count)
+		func((void *)sbuf, (void **)bufs, npeers, count);
+
+		// ~170 cycles...
+		for (i = 0; i < npeers; ++i) {
+			if (i != peer) {
+				swqs[i]->consumeBytes(MAX_SHORT_MSG);
+			}
+		}
+		// Now, send "_sbuffer" on CN...
+		while (bytes > 0) {
+			rc = TreeAllreduceMessage::advance((unsigned)-1, ctx);
+			if (rc == XMI::Device::Tree::Done) {
+				break;
+			}
+		}
+
+		// wait for, and "recv", our data from Collective Network Recv core...
+		// This effectively provides a barrier, so we do it
+		// even if we don't want the data.  In that case it's
+		// only byte counts and no data is moved.
+		while (rwq->bytesAvailableToConsume(peer) < bytes);
+		if (doStore) {
+			memcpy(results, rwq->bufferToConsume(peer), bytes);
+		}
+		rwq->consumeBytes(MAX_SHORT_MSG, peer);
+		return true;
+	}
+
+	static inline bool __inject_msg_pre(DCMF::Device::WorkQueue::SharedWorkQueue *swqs,
+			DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+			char **bufs, char *sbuf,
+			char *results, size_t bytes, size_t count,
+			coremath _func, unsigned peer, unsigned npeers, unsigned &ndone
+			unsigned dispatch_id, XMI::Device::BGP::CNAllreduceSetup &tas,
+			bool doStore) {
+		// need to do a "while (__tsc() - t0 < cycles)..."
+		ndone = (1 << peer);
+		unsigned done = (1 << npeers) - 1;
+		unsigned i, curr;
+		// avg 700 cycles (also depends on arrival times)
+		while (ndone < done) {
+			for (i = 0; i < npeers; ++i) {
+				curr = (1 << i);
+				if (!(ndone & curr) &&
+			    	swqs[i].bytesAvailableToConsume() >= bytes) {
+					ndone |= curr;
+				}
+			}
+		}
+		// ~ 200-900 cycles (over range of _count)
+		func((void *)sbuf, (void **)bufs, npeers, count);
+
+		// ~170 cycles...
+		for (i = 0; i < npeers; ++i) {
+			if (i != peer) {
+				swqs[i].consumeBytes(MAX_SHORT_MSG);
+			}
+		}
+		// Now, send "_mybuf" on CN...
+		while (bytes > 0) {
+			rc = TreeAllreducePreMessage::advance((unsigned)-1, ctx);
+			if (rc == XMI::Device::Tree::Done) {
+				break;
+			}
+		}
+
+		// wait for, and "recv", our data from Collective Network Recv core...
+		// This effectively provides a barrier, so we do it
+		// even if we don't want the data.  In that case it's
+		// only byte counts and no data is moved.
+		while (rwq->bytesAvailableToConsume(peer) < bytes);
+		if (doStore) {
+    			memcpy(results, rwq->bufferToConsume(peer), bytes);
+		}
+		rwq->consumeBytes(MAX_SHORT_MSG, peer);
+		return true;
+	}
+
+	static inline bool __recept_msg(DCMF::Device::WorkQueue::SharedWorkQueue *swq,
+			DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+			char *data, char *results, size_t bytes, unsigned peer,
+			unsigned dispatch_id, XMI::Device::BGP::CNAllreduceSetup &tas,
+			bool &primed, bool doStore, bool doBcast) {
+		if (!primed) {
+			memcpy(swq->bufferToProduce(), data, bytes);
+			swq->produceBytes(MAX_SHORT_MSG);
+			primed = true;
+		}
+		do {
+			rc = TreeAllreduceRecvMessage::advance((unsigned)-1, ctx);
+		} while (rc != XMI::Device::Tree::Done);
+
+		// This effectively provides a barrier, so we do it
+		// even if we don't want the data.  In that case it's
+		// only byte counts and no data is moved.
+		rwq->produceBytes(MAX_SHORT_MSG);
+		if (doStore) {
+			memcpy(results, rwq->bufferToConsume(), bytes);
+		}
+		rwq->consumeBytes(MAX_SHORT_MSG, peer);
+        	return true;
+	}
+
+	static inline bool __recept_msg_post(DCMF::Device::WorkQueue::SharedWorkQueue *swq,
+			DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+			char *data, char *results, size_t bytes, unsigned peer,
+			unsigned dispatch_id, XMI::Device::BGP::CNAllreduceSetup &tas,
+			bool &primed, bool doStore, bool doBcast) {
+		if (!primed) {
+			memcpy(swq->bufferToProduce(), data, bytes);
+			swq->produceBytes(MAX_SHORT_MSG);
+			primed = true;
+		}
+		do {
+			rc = TreeAllreduceRecvPostMessage::advance((unsigned)-1, ctx);
+		} while (rc != XMI::Device::Tree::Done);
+		// This effectively provides a barrier, so we do it
+		// even if we don't want the data.  In that case it's
+		// only byte counts and no data is moved.
+		rwq->produceBytes(MAX_SHORT_MSG);
+		if (doStore) {
+			memcpy(results, rwq->bufferToConsume, bytes);
+		}
+		rwq->consumeBytes(MAX_SHORT_MSG, peer);
+        	return true;
+	}
+
+	/// This function does not return until done
+	static inline bool __local_msg(DCMF::Device::WorkQueue::SharedWorkQueue *swq,
+			DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+			char *data, char *results, size_t bytes, unsigned peer,
+			bool &primed, bool doStore) {
+		likely_if (!primed) {
+			memcpy(swq->bufferToProduce(), data, bytes);
+			swq->produceBytes(MAX_SHORT_MSG);
+			primed = true;
+		}
+		// wait for, and "recv", our data from Collective Network Recv core...
+		// This effectively provides a barrier, so we do it
+		// even if we don't want the data.  In that case it's
+		// only byte counts and no data is moved.
+		while (rwq->bytesAvailableToConsume(peer) < bytes);
+		if (doBcast) {
+	    		memcpy(results, rwq->bufferToConsume(peer), bytes);
+		}
+		rwq->consumeBytes(MAX_SHORT_MSG, _peer);
+		return true;
+	}
+
+	unsigned _roles;
+}; // class CNAllreduceShortMessage
+
+class CNAllreduceShortModel : public Impl::MulticombineModelImpl {
+public:
+	static const int NUM_ROLES = 3;
+	static const int REPL_ROLE = 2;
+
+	static const int MAX_SHORT_MSG = TREE_PKT_SIZE;
+
+	CNAllreduceShortModel(DCMF::SysDep *sysdep, XMI_Result &status) :
+	Impl::MulticombineModelImpl(status),
+	_swq(sysdep, NUM_CORES, MAX_SHORT_MSG)
+	{
+		_dispatch_id = _g_cnallreduceshort_dev.newDispID();
+		_me = sysdep->mapping().rank();
+		_npeers = _g_topology_local->size();
+		_me_ix = _g_topology_local->rank2Index(_me);
+		// at least one must do this
+		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
+		unsigned i;
+		_swq.reset();
+		for (i = 0; i < NUM_CORES; ++i) {
+			_bufs[i] = _swqs[i].bufferToConsume();
+		}
+	}
+
+	inline bool postMulticombine_impl(CNAllreduceShortMessage *msg);
+
+private:
+	size_t _me;
+	unsigned _npeers;
+	unsigned _me_ix;
+	unsigned _dispatch_id;
+	DCMF::Device::WorkQueue::SharedWorkQueue _swqs[NUM_CORES];
+	DCMF::Device::WorkQueue::SharedWorkQueue _rwq;
+	char *_bufs[NUM_CORES];
+	char _sbuffer[MAX_SHORT_MSG] __attribute__((__aligned__(16)));
+	static inline void compile_time_assert () {
+		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(CNAllreduceShortMessage));
+	}
+}; // class CNAllreduceShortModel
+
+inline void CNAllreduceShortMessage::__completeThread(CNAllreduceShortThread *thr) {
+	unsigned c = ((CNAllreduceShortDevice &)_QS).__completeThread(thr);
+	if (c >= _nThreads) {
+		setStatus(XMI::Device::Done);
+	}
+}
+
+void CNAllreduceShortMessage::complete() {
+	((CNAllreduceShortDevice &)_QS).__complete(this);
+	executeCallback();
+}
+
+XMI::Device::MessageStatus CNAllreduceShortMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
+	return __advanceThread((CNAllreduceShortThread *)t);
+}
+
+///
+/// Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")
+///
+/// If this routine is not externally protected from being called from
+/// multiple threads with the intent of operating different allreduces,
+/// then this code will have to determine 'first' differently (thread-safe).
+///
+inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage *msg) {
+	size_t bytes = _getCount() << xmi_dt_shift[_getDt()];
+	if (bytes > MAX_SHORT_MSG) {
+		return false;
+	}
+	XMI::Device::BGP::CNAllreduceSetup &tas = XMI::Device::BGP::CNAllreduceSetup::getCNAS(_getDt(), _getOp());
+	XMI::Topology *results_topo = (XMI::Topology *)_getResultsRanks();
+	bool doStore = (!results_topo || results_topo->isRankMember(_me));
+	bool doBcast = (!results_topo || results_topo->size() > 1);
+
+	bool first = (_g_cnallreduceshort_dev.common()->getCurrent() == NULL);
+	bool done = false;
+	bool primed = false;
+	likely_if (first && _getData()->bytesAvailableToConsume() >= bytes &&
+			_getResults()->bytesAvailableToProduce() >= bytes) {
+		XMI:PipeWorkQueue *data = (XMI:PipeWorkQueue *)_getData();
+		XMI:PipeWorkQueue *results = (XMI:PipeWorkQueue *)_getResults();
+		if (_getRoles() & CNAllreduceShortMessage::INJECTION_ROLE) {
+			_bufs[_me_ix] = data->bufferToConsume();
+			coremath func = MATH_OP_FUNCS(_getDt(), _getOp(), _npeers);
+			unsigned ndone = 0;
+			if (tas._pre) {
+				done = CNAllreduceShortMessage::__inject_msg_pre(_swqs, &_rwq, _bufs, _sbuf,
+					results->bufferToProduce(),
+					bytes, _getcount(), func, _me_ix, _npeers, ndone _dispatch_id, tas, doStore);
+			} else {
+				done = CNAllreduceShortMessage::__inject_msg(_swqs, &_rwq, _bufs, _sbuf,
+					results->bufferToProduce(),
+					bytes, _getcount(), func, _me_ix, _npeers, ndone _dispatch_id, tas, doStore);
+			}
+		} else if (_getRoles() & CNAllreduceShortMessage::RECEPTION_ROLE) {
+			if (tas._pre) {
+				done = CNAllreduceShortMessage::__recept_msg_post(&_swq[_me_ix], &_rwq,
+					data->bufferToConsume(), results->bufferToProduce(),
+					_dispatch_id, tas, _me_ix, doStore, doBcast);
+			} else {
+				done = CNAllreduceShortMessage::__recept_msg(&_swq[_me_ix], &_rwq,
+					data->bufferToConsume(), results->bufferToProduce(),
+					_dispatch_id, tas, _me_ix, doStore, doBcast);
+			}
+		} else /* if (roles & CNAllreduceShortMessage::LOCAL_ROLE) */ {
+			done = CNAllreduceShortMessage::__local_msg(&_swq[_me_ix], &_rwq,
+					data->bufferToConsume(), results->bufferToProduce(),
+					bytes, _me_ix, primed, doStore);
+
+		}
+		if (done) {
+			if (_getCallback().function) {
+				_getCallback().function(_getCallback().clientdata, NULL);
+			}
+			return true;
+		}
+		// we should never get here... as it works now...
+		// otherwise, we need to take the context of the (partial) advance
+		// above and pass it to the message constructor.
+		DCMF_abort();
+	}
+
+	// could try to complete allreduce before construction, but for now the code
+	// is too dependent on having message and thread structures to get/keep context.
+	// __post() will still try early advance... (after construction)
+	// details TBD...
+	new (msg) CNAllreduceShortMessage(_g_cnallreduceshort_dev,
+			(XMI::PipeWorkQueue *)_getData(),
+			(XMI::PipeWorkQueue *)_getResults(),
+			bytes, doStore, _getRoles(), _getCallback(), _dispatch_id, tas
+			// context from possible pre-ctor advance???
+			);
+	_g_cnallreduceshort_dev.__post(msg);
+	return true;
+}
+
+
+};	// BGP
+};	// Device
+};	// XMI
+
+#endif // __dcmf_cdi_bgp_cnallreduceshortmsg_h__
+#error CNAllreduceShortMsg.h is not ready
+
+/**
+ * \brief Collective Network Allreduce Send Message for Short allreduces
+ *
+ * Based on a TreeAllreduceMessage.
+ */
+class TreeAllreduceShortSendMessage :
+		public TreeAllreduceMessage {
+public:
+
+	/**
+	 * \brief Constructor for Tree Allreduce Send Message for Short allreduces
+	 *
+	 * \param[in] TreeQS	Tree Device
+	 * \param[in] swqs	Array of WQ used by local nodes to "send" us data
+	 * \param[in] rwq	WQ to use for receiving results
+	 * \param[in] root	Root node or -1 for allreduce
+	 * \param[in] peer	Our local node ID
+	 * \param[in] npeers	Number of local nodes
+	 * \param[in] func	Math function to use (4-way)
+	 * \param[in] bytes	Bytes to send from source
+	 * \param[in] consistency Consistency model for the transfer
+	 * \param[in] classroute Tree classroute value
+	 * \param[in] cb	Completion callback
+	 * \param[in] sbuffer	Source/Send buffer
+	 * \param[in] rbuffer	Dest/Recv buffer
+	 * \param[in] dt	Datatype
+	 * \param[in] op	Operation
+	 * \param[in] count	Number of elements
+	 * \param[in] dispatch_id Id for packet header
+	 * \param[in] tas	Tree Allreduce info
+	 */
+	inline TreeAllreduceShortSendMessage(
+		XMI::Device::Tree::Device    &TreeQS,
+		DCMF::Device::WorkQueue::SharedWorkQueue **swqs,
+		DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+		unsigned           root,
+		unsigned           peer,
+		unsigned           npeers,
+		coremath           func,
+		unsigned           bytes,
+		DCMF_Consistency   consistency,
+		unsigned           classroute,
+		XMI_Callback_t    cb,
+		char             * sbuffer,
+		char             * rbuffer,
+		XMI_Dt		dt,
+		XMI_Op		op,
+		unsigned           count,
+		unsigned           dispatch_id,
+		TreeAllreduceSetup tas) :
+	TreeAllreduceMessage(TreeQS, root,
+		swqs[peer]->bufferToProduce(),
+		bytes, dt, op, classroute,
+		dispatch_id, cb, tas),
+	_swqs (swqs),
+	_rwq (rwq),
+	_ibuffer (sbuffer),
+	_obuffer (rbuffer),
+	_peer (peer),
+	_npeers (npeers),
+	_bytesIn (bytes),
+	_count (count),
+	_func (func),
+	_doBcast(root == (unsigned)-1) {
+		// ~300 cycles. This code depends on 
+		// always consuming/producing the full WQ size.
+		// (i.e. bufferToConsume() must be constant)
+		unsigned i;
+		for (i = 0; i < _npeers; ++i) {
+			if (i == _peer) _bufs[i] = _ibuffer;
+			else _bufs[i] = _swqs[i]->bufferToConsume();
+		}
+		//  internal_restart ();
+	};
+
+	int reset(unsigned collid=0) { return internal_restart(collid); }
+
+	int advance(unsigned cycles, XMI::Device::Tree::TreeMsgContext ctx);
+private:
+
+	inline int internal_restart(unsigned collid) {
+		TreeAllreduceMessage::reset(collid);
+		_ndone = 0;
+		return 0;
+	}
+
+	DCMF::Device::WorkQueue::SharedWorkQueue **_swqs;
+	DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
+	char *_ibuffer;
+	char *_obuffer;
+	unsigned _peer;
+	unsigned _npeers;
+	unsigned _bytesIn;
+	unsigned _count;
+	coremath _func;
+	bool _doBcast;
+	unsigned _ndone;
+	char *_bufs[NUM_CORES];
+}; /* TreeAllreduceShortSendMessage */
+
+/**
+ * \brief Tree Allreduce Send Message for Short allreduces with pre-processing
+ */
+class TreeAllreduceShortSendPreMessage :
+		public TreeAllreducePreMessage {
+public:
+
+	/**
+	 * \brief Constructor for Tree Allreduce Send Message for Short allreduces with pre-processing
+	 *
+	 * \param[in] TreeQS	Tree Device
+	 * \param[in] swqs	Array of WQ used by local nodes to "send" us data
+	 * \param[in] rwq	WQ to use for receiving results
+	 * \param[in] root	Root node or -1 for allreduce
+	 * \param[in] peer	Our local node ID
+	 * \param[in] npeers	Number of local nodes
+	 * \param[in] func	Math function to use (4-way)
+	 * \param[in] bytes	Bytes to send from source
+	 * \param[in] consistency Consistency model for the transfer
+	 * \param[in] classroute Tree classroute value
+	 * \param[in] cb	Completion callback
+	 * \param[in] sbuffer	Source/Send buffer
+	 * \param[in] rbuffer	Dest/Recv buffer
+	 * \param[in] dt	Datatype
+	 * \param[in] op	Operation
+	 * \param[in] count	Number of elements
+	 * \param[in] dispatch_id Id for packet header
+	 * \param[in] tas	Tree Allreduce info
+	 */
+	inline TreeAllreduceShortSendPreMessage(
+		XMI::Device::Tree::Device    &TreeQS,
+		DCMF::Device::WorkQueue::SharedWorkQueue **swqs,
+		DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+		unsigned           root,
+		unsigned           peer,
+		unsigned           npeers,
+		coremath           func,
+		unsigned           bytes,
+		DCMF_Consistency   consistency,
+		unsigned           classroute,
+		XMI_Callback_t    cb,
+		char             * sbuffer,
+		char             * rbuffer,
+		XMI_Dt		dt,
+		XMI_Op		op,
+		unsigned           count,
+		unsigned           dispatch_id,
+		TreeAllreduceSetup tas) :
+	TreeAllreducePreMessage(TreeQS, root,
+		swqs[peer]->bufferToProduce(),
+		bytes, dt, op, classroute,
+		dispatch_id, cb, tas),
+	_swqs (swqs),
+	_rwq (rwq),
+	_ibuffer (sbuffer),
+	_obuffer (rbuffer),
+	_peer (peer),
+	_npeers (npeers),
+	_bytesIn (bytes),
+	_count (count),
+	_func (func),
+	_doBcast(root == (unsigned)-1) {
+		// ~300 cycles. This code depends on 
+		// always consuming/producing the full WQ size.
+		// (i.e. bufferToConsume() must be constant)
+		unsigned i;
+		for (i = 0; i < _npeers; ++i) {
+			if (i == _peer) _bufs[i] = _ibuffer;
+			else _bufs[i] = _swqs[i]->bufferToConsume();
+		}
+		//  internal_restart();
+	};
+
+	int reset(unsigned collid=0) { return internal_restart(collid); }
+
+	int advance(unsigned cycles, XMI::Device::Tree::TreeMsgContext ctx);
+private:
+
+	inline int internal_restart(unsigned collid) {
+		TreeAllreducePreMessage::reset(collid);
+		_ndone = 0;
+		return 0;
+	}
+
+	DCMF::Device::WorkQueue::SharedWorkQueue **_swqs;
+	DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
+	char *_ibuffer;
+	char *_obuffer;
+	unsigned _peer;
+	unsigned _npeers;
+	unsigned _bytesIn;
+	unsigned _count;
+	coremath _func;
+	bool _doBcast;
+	unsigned _ndone;
+	char *_bufs[NUM_CORES];
+}; /* TreeAllreduceShortSendPreMessage */
+
+/**
+ * \brief Tree Allreduce Recv Message for Short allreduces
+ */
+class TreeAllreduceShortRecvMessage :
+		public TreeAllreduceRecvMessage {
+public:
+
+	/**
+	 * \brief Constructor for Tree Allreduce Recv Message for Short allreduces
+	 *
+	 * \param[in] TreeQS	Tree Device
+	 * \param[in] swq	WQ used to send data
+	 * \param[in] rwq	WQ to use for receiving results
+	 * \param[in] root	Root node or -1 for allreduce
+	 * \param[in] peer	Our local node ID
+	 * \param[in] npeers	Number of local nodes
+	 * \param[in] bytes	Bytes to send from source
+	 * \param[in] pwidth	Pipeline width
+	 * \param[in] consistency Consistency model for the transfer
+	 * \param[in] cb	Completion callback
+	 * \param[in] sbuffer	Source/Send buffer
+	 * \param[in] rbuffer	Dest/Recv buffer
+	 * \param[in] dt	Datatype
+	 * \param[in] op	Operation
+	 * \param[in] recvcode	Store/NoStore
+	 * \param[in] tas	Tree Allreduce info
+	 */
+	inline TreeAllreduceShortRecvMessage(
+		XMI::Device::Tree::Device    &TreeQS,
+		DCMF::Device::WorkQueue::SharedWorkQueue *swq,
+		DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+		unsigned           root,
+		unsigned           peer,
+		unsigned           npeers,
+		unsigned           bytes,
+		unsigned           pwidth,
+		DCMF_Consistency   consistency,
+		XMI_Callback_t    cb,
+		char             * sbuffer,
+		char             * rbuffer,
+		XMI_Dt		dt,
+		XMI_Op		op,
+		XMI_Opcode_t      recvcode,
+		TreeAllreduceSetup tas) :
+	TreeAllreduceRecvMessage(TreeQS, cb, rwq->bufferToProduce(),
+		bytes, pwidth, dt, op, recvcode, tas),
+	_rwq (rwq),
+	_swq (swq),
+	_ibuffer (sbuffer),
+	_obuffer (rbuffer),
+	_peer (peer),
+	_npeers (npeers),
+	_bytesIn (bytes),
+	_doBcast(root == (unsigned)-1),
+	_primed(0) {
+		//  internal_restart();
+	};
+
+
+	int reset(unsigned collid=0) { return internal_restart(collid); }
+
+	int advance(unsigned cycles, XMI::Device::Tree::TreeMsgContext ctx);
+private:
+
+	inline int internal_restart(unsigned collid)
+	{
+		_primed = 0;
+		TreeAllreduceRecvMessage::reset(collid);
+		return 0;
+	}
+
+	DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
+	DCMF::Device::WorkQueue::SharedWorkQueue *_swq;
+	char *_ibuffer;
+	char *_obuffer;
+	unsigned _peer;
+	unsigned _npeers;
+	unsigned _bytesIn;
+	bool _doBcast;
+	unsigned _primed;
+}; /* TreeAllreduceShortRecvMessage */
+
+/**
+ * \brief Tree Allreduce Recv Message for Short allreduces with post-processing
+ */
+class TreeAllreduceShortRecvPostMessage :
+		public TreeAllreduceRecvPostMessage {
+public:
+
+	/**
+	 * \brief Constructor for Tree Allreduce Recv Message for Short allreduces with post-processing
+	 *
+	 * \param[in] TreeQS	Tree Device
+	 * \param[in] swq	WQ used to send data
+	 * \param[in] rwq	WQ to use for receiving results
+	 * \param[in] root	Root node or -1 for allreduce
+	 * \param[in] peer	Our local node ID
+	 * \param[in] npeers	Number of local nodes
+	 * \param[in] bytes	Bytes to send from source
+	 * \param[in] pwidth	Pipeline width
+	 * \param[in] consistency Consistency model for the transfer
+	 * \param[in] cb	Completion callback
+	 * \param[in] sbuffer	Source/Send buffer
+	 * \param[in] rbuffer	Dest/Recv buffer
+	 * \param[in] dt	Datatype
+	 * \param[in] op	Operation
+	 * \param[in] recvcode	Store/NoStore
+	 * \param[in] tas	Tree Allreduce info
+	 */
+	inline TreeAllreduceShortRecvPostMessage(
+		XMI::Device::Tree::Device    &TreeQS,
+		DCMF::Device::WorkQueue::SharedWorkQueue *swq,
+		DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+		unsigned           root,
+		unsigned           peer,
+		unsigned           npeers,
+		unsigned           bytes,
+		unsigned           pwidth,
+		DCMF_Consistency   consistency,
+		XMI_Callback_t    cb,
+		char             * sbuffer,
+		char             * rbuffer,
+		XMI_Dt		dt,
+		XMI_Op		op,
+		XMI_Opcode_t      recvcode,
+		TreeAllreduceSetup tas) :
+	TreeAllreduceRecvPostMessage(TreeQS, cb, rwq->bufferToProduce(),
+		bytes, pwidth, dt, op, recvcode, tas),
+	_rwq (rwq),
+	_swq (swq),
+	_ibuffer (sbuffer),
+	_obuffer (rbuffer),
+	_peer (peer),
+	_npeers (npeers),
+	_bytesIn (bytes),
+	_doBcast(root == (unsigned)-1),
+	_primed(0) {
+		//  internal_restart();
+	};
+
+
+	int reset(unsigned collid=0) { return internal_restart(collid); }
+
+	int advance(unsigned cycles, XMI::Device::Tree::TreeMsgContext ctx);
+private:
+
+	inline int internal_restart(unsigned collid) {
+		_primed = 0;
+		TreeAllreduceRecvPostMessage::reset(collid);
+		return 0;
+	}
+
+	DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
+	DCMF::Device::WorkQueue::SharedWorkQueue *_swq;
+	char *_ibuffer;
+	char *_obuffer;
+	unsigned _peer;
+	unsigned _npeers;
+	unsigned _bytesIn;
+	bool _doBcast;
+	unsigned _primed;
+}; /* TreeAllreduceShortRecvPostMessage */
+
+/**
+ * \brief Tree Allreduce Local Message for Short allreduces
+ *
+ * Does not actually send/recv on CN, only handles "local nodes" processing.
+ */
+class TreeAllreduceShortLocalMessage :
+		public XMI::Device::Tree::TreeMessage {
+public:
+
+	/**
+	 * \brief Constructor for Tree Allreduce Local Message for Short allreduces
+	 *
+	 * \param[in] TreeQS	Tree Device
+	 * \param[in] swq	WQ used to send data
+	 * \param[in] rwq	WQ to use for receiving results
+	 * \param[in] root	Root node or -1 for allreduce
+	 * \param[in] peer	Our local node ID
+	 * \param[in] npeers	Number of local nodes
+	 * \param[in] bytes	Bytes to send from source
+	 * \param[in] cb	Completion callback
+	 * \param[in] consistency Consistency model for the transfer
+	 * \param[in] sbuffer	Source/Send buffer
+	 * \param[in] rbuffer	Dest/Recv buffer
+	 */
+	inline TreeAllreduceShortLocalMessage(
+		XMI::Device::Tree::Device    &TreeQS,
+		DCMF::Device::WorkQueue::SharedWorkQueue *swq,
+		DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+		unsigned           root,
+		unsigned           peer,
+		unsigned           npeers,
+		unsigned           bytes,
+		XMI_Callback_t    cb,
+		DCMF_Consistency   consistency,
+		char             * sbuffer,
+		char             * rbuffer) :
+	TreeMessage(TreeQS, cb, bytes),
+	_rwq (rwq),	// Tree Recv side WQ
+	_swq (swq), // Tree Send side WQ
+	_ibuffer (sbuffer),
+	_obuffer (rbuffer),
+	_peer(peer),
+	_bytesIn (bytes),
+	_doBcast(root == (unsigned)-1),
+	_primed(0) {
+		//  internal_restart();
+	};
+
+	// This is actually neither PostRecv nor PreSend...
+	XMI_Result start() { ((XMI::Device::Tree::Device &)_QS).postPostRecv(*this); return XMI_SUCCESS; }
+
+	int reset(unsigned collid=0) { return internal_restart(collid); }
+
+	int advance(unsigned cycles, XMI::Device::Tree::TreeMsgContext ctx);
+private:
+
+	inline int internal_restart(unsigned collid) {
+		TreeMessage::reset(collid);
+		_primed = 0;
+		return 0;
+	}
+
+	DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
+	DCMF::Device::WorkQueue::SharedWorkQueue *_swq;
+	char *_ibuffer;
+	char *_obuffer;
+	unsigned _peer;
+	unsigned _bytesIn;
+	bool _doBcast;
+	unsigned _primed;
+}; /* TreeAllreduceShortLocalMessage */
