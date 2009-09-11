@@ -25,8 +25,10 @@ namespace XMI
           _client ((xmi_client_t) this),
           _references (1)
         {
+          // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
+
           result = XMI_SUCCESS;
         }
 
@@ -116,6 +118,7 @@ namespace XMI
       private:
 
         xmi_client_t _client;
+        
         size_t       _references;
         char         _name[256];
 

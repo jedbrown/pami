@@ -18,9 +18,7 @@
 #include "sys/xmi.h"
 
 #include "components/time/BaseTime.h"
-#include "components/sysdep/bgp/BgpPersonality.h"
-
-extern XMI::SysDep::BgpPersonality __global_personality;
+#include "components/sysdep/bgp/BgpGlobal.h"
 
 namespace XMI
 {
@@ -49,7 +47,7 @@ namespace XMI
         ///
         inline size_t clockMHz ()
         {
-          return __global_personality.clockMHz ();
+          return __global.personality.clockMHz ();
         };
 
         ///

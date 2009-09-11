@@ -4,20 +4,18 @@
 #include "sys/xmi.h"
 
 #include "components/mapping/BaseMapping.h"
-#include "components/memory/heap/HeapMemoryManager.h"
 
 #define XMI_MAPPING_CLASS XMI::Mapping::MPIMapping
-#define XMI_MAPPING_MEMORY_CLASS XMI::Memory::HeapMemoryManager
 
 namespace XMI
 {
   namespace Mapping
   {
-    class MPIMapping : public Interface::Base<MPIMapping,Memory::HeapMemoryManager>
+    class MPIMapping : public Interface::Base<MPIMapping>
     {
-    public:
-      inline MPIMapping () :
-        Interface::Base<MPIMapping,Memory::HeapMemoryManager>()
+      public:
+        inline MPIMapping () :
+            Interface::Base<MPIMapping>()
         {
           MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
           MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
@@ -27,7 +25,7 @@ namespace XMI
       size_t    _task;
       size_t    _size;
     public:
-      inline xmi_result_t init_impl(Memory::HeapMemoryManager & mm)
+      inline xmi_result_t init_impl()
         {
           return XMI_SUCCESS;
         }

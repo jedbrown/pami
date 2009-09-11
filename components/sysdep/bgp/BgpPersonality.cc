@@ -4,8 +4,6 @@
 
 #include "BgpPersonality.h"
 
-XMI::SysDep::BgpPersonality __global_personality;
-
 XMI::SysDep::BgpPersonality::BgpPersonality ()
 {
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;

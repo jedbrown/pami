@@ -15,17 +15,13 @@
 
 #include "sys/xmi.h"
 
-#include "../BaseMapping.h"
-#include "../TorusMapping.h"
-#include "../NodeMapping.h"
+#include "components/mapping/BaseMapping.h"
+#include "components/mapping/TorusMapping.h"
+#include "components/mapping/NodeMapping.h"
 
-#include "components/sysdep/bgp/BgpPersonality.h"
-#include "components/memory/shmem/SharedMemoryManager.h"
+#include "components/sysdep/bgp/BgpGlobal.h"
 
 #define XMI_MAPPING_CLASS XMI::Mapping::BgpMapping
-#define XMI_MAPPING_MEMORY_CLASS XMI::Memory::SharedMemoryManager
-
-extern XMI::SysDep::BgpPersonality __global_personality;
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -35,10 +31,7 @@ namespace XMI
 {
   namespace Mapping
   {
-    //template <class T_Memory>
-    //class BgpMapping : public Interface::Base<BgpMapping<T_Memory>,T_Memory>,
-    //                   public Interface::Torus<BgpMapping<T_Memory>,4>
-    class BgpMapping : public Interface::Base<BgpMapping,Memory::SharedMemoryManager>,
+    class BgpMapping : public Interface::Base<BgpMapping>,
                        public Interface::Torus<BgpMapping,4>,
                        public Interface::Node<BgpMapping>
     {
@@ -57,15 +50,15 @@ namespace XMI
     
       public:
         inline BgpMapping () :
-//            Interface::Base<BgpMapping<T_Memory>,T_Memory>(),
-//            Interface::Torus<BgpMapping<T_Memory>,4>(),
-            Interface::Base<BgpMapping,Memory::SharedMemoryManager>(),
+            Interface::Base<BgpMapping>(),
             Interface::Torus<BgpMapping,4>(),
             Interface::Node<BgpMapping> (),
-            _x (__global_personality.xCoord()),
-            _y (__global_personality.yCoord()),
-            _z (__global_personality.zCoord()),
-            _t (__global_personality.tCoord())
+            _x (__global.personality.xCoord()),
+            _y (__global.personality.yCoord()),
+            _z (__global.personality.zCoord()),
+            _t (__global.personality.tCoord()),
+            _mapcache (NULL),
+            _rankcache (NULL)
         {
           _nodeaddr.coords.x = _x;
           _nodeaddr.coords.y = _y;
@@ -89,10 +82,10 @@ namespace XMI
         
         nodeaddr_t _nodeaddr;
         
-        size_t _numActiveRanksLocal;
-        size_t _numActiveRanksGlobal;
-        size_t _numActiveNodesGlobal;
-        size_t _fullSize;
+        //size_t _numActiveRanksLocal;
+        //size_t _numActiveRanksGlobal;
+        //size_t _numActiveNodesGlobal;
+        //size_t _fullSize;
         
         size_t * _mapcache;
         size_t * _rankcache;
@@ -109,8 +102,7 @@ namespace XMI
         /// \brief Initialize the mapping
         /// \see XMI::Mapping::Interface::Base::init()
         ///
-        inline xmi_result_t init_impl(Memory::SharedMemoryManager & mm);
-        //inline xmi_result_t init_impl(T_Memory & mm);
+        inline xmi_result_t init_impl();
 
         ///
         /// \brief Return the BGP global task for this process
@@ -195,39 +187,39 @@ namespace XMI
         ///
         inline size_t x ()
         {
-          return __global_personality.xCoord();
+          return __global.personality.xCoord();
         }
         inline size_t y ()
         {
-          return __global_personality.yCoord();
+          return __global.personality.yCoord();
         }
         inline size_t z ()
         {
-          return __global_personality.zCoord();
+          return __global.personality.zCoord();
         }
         inline size_t t ()
         {
-          return __global_personality.tCoord();
+          return __global.personality.tCoord();
         }
         
         inline size_t xSize ()
         {
-          return __global_personality.xSize();
+          return __global.personality.xSize();
         }
         
         inline size_t ySize ()
         {
-          return __global_personality.ySize();
+          return __global.personality.ySize();
         }
         
         inline size_t zSize ()
         {
-          return __global_personality.zSize();
+          return __global.personality.zSize();
         }
         
         inline size_t tSize ()
         {
-          return __global_personality.tSize();
+          return __global.personality.tSize();
         }
         
         
@@ -241,7 +233,7 @@ namespace XMI
         template <>
         inline size_t torusCoord_impl<1> () const
         {
-          return __global_personality.yCoord();
+          return __global.personality.yCoord();
         }
 
         ///
@@ -252,7 +244,7 @@ namespace XMI
         template <>
         inline size_t torusCoord_impl<2> () const
         {
-          return __global_personality.zCoord();
+          return __global.personality.zCoord();
         }
 
         ///
@@ -263,7 +255,7 @@ namespace XMI
         template <>
         inline size_t torusCoord_impl<3> () const
         {
-          return __global_personality.tCoord();
+          return __global.personality.tCoord();
         }
 
         ///
@@ -274,7 +266,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<0> () const
         {
-          return __global_personality.xSize();
+          return __global.personality.xSize();
         }
 
         ///
@@ -285,7 +277,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<1> () const
         {
-          return __global_personality.ySize();
+          return __global.personality.ySize();
         }
 
         ///
@@ -296,7 +288,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<2> () const
         {
-          return __global_personality.zSize();
+          return __global.personality.zSize();
         }
 
         ///
@@ -306,7 +298,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<3> () const
         {
-          return __global_personality.tSize();
+          return __global.personality.tSize();
         }
 #endif
 #if 0
@@ -325,7 +317,6 @@ namespace XMI
         ///
         //template <>
         inline void torusAddr_impl (size_t (&addr)[4])
-        //inline void torusAddr_impl (Address & addr) const
         {
           addr[0] = _x;
           addr[1] = _y;
@@ -339,7 +330,6 @@ namespace XMI
         ///
         /// \todo Error path
         ///
-        //template <>
         inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[4])
         {
           unsigned xyzt = _mapcache[task];
@@ -356,13 +346,12 @@ namespace XMI
         ///
         /// \todo Error path
         ///
-        //template <>
         inline xmi_result_t torus2task_impl (size_t (&addr)[4], size_t & task)
         {
-          size_t xSize = __global_personality.xSize();
-          size_t ySize = __global_personality.ySize();
-          size_t zSize = __global_personality.zSize();
-          size_t tSize = __global_personality.tSize();
+          size_t xSize = __global.personality.xSize();
+          size_t ySize = __global.personality.ySize();
+          size_t zSize = __global.personality.zSize();
+          size_t tSize = __global.personality.tSize();
         
           if ((addr[0] >= xSize) ||
               (addr[1] >= ySize) ||
@@ -433,18 +422,16 @@ namespace XMI
           TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd, %zd) <<\n", global, local, task));
           return XMI_UNIMPL;
         };
-
-    
-    
-    
     };
   };
 };
 
-//template <class T_Memory>
-//xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
-xmi_result_t XMI::Mapping::BgpMapping::init_impl (XMI::Memory::SharedMemoryManager & mm)
+xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
 {
+  _mapcache  = __global.getMapCache();
+  _rankcache = __global.getRankCache();
+
+#if 0
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this constructor,
   // but exists there only for the duration of this constructor.  It
@@ -475,7 +462,7 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (XMI::Memory::SharedMemoryManag
   int err;
 
   //_processor_id = rts_get_processor_id();
-  //_pers = & __global_personality;
+  //_pers = & __global.personality;
   //_myNetworkCoord.network = CM_TORUS_NETWORK;
   //unsigned ix = 0;
   //_myNetworkCoord.n_torus.coords[ix++] = x();
@@ -788,7 +775,7 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (XMI::Memory::SharedMemoryManag
       }
   }
 #endif
-
+#endif
   return XMI_SUCCESS;
 };
 #undef TRACE_ERR

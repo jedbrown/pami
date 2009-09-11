@@ -33,7 +33,7 @@ namespace XMI
           mapping (),
           time ()
         {
-          mapping.init (mm);
+          mapping.init ();
         };
 
         T_Memory  mm;

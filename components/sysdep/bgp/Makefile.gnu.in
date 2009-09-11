@@ -1,6 +1,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
 NOTBUILT        =
-@LIBNAME@-""-COLLECTIVESGEOM_SOURCES=BgpPersonality.cc
+@LIBNAME@-""-COLLECTIVESGEOM_SOURCES=BgpPersonality.cc BgpGlobal.cc
 DEVICENAME     = @LIBNAME@-""-COLLECTIVESGEOM
 include @abs_top_builddir@/Build.rules
