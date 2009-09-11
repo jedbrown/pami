@@ -39,7 +39,6 @@ namespace XMI
       int registerRecvFunction (Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
         {
-          fprintf(stderr, "registering dispatch id=%d\n", _dispatch_id);
           _dispatch_table[_dispatch_id].recv_func=recv_func;
           _dispatch_table[_dispatch_id].recv_func_parm=recv_func_parm;
           _dispatch_lookup[_dispatch_id]=_dispatch_table[_dispatch_id];
@@ -61,7 +60,6 @@ namespace XMI
         };
       inline int advance_impl ()
         {
-
           int flag = 0;
           MPI_Status sts;
           std::list<MPIMessage*>::iterator it;
@@ -85,44 +83,18 @@ namespace XMI
                 int nbytes = 0;
                 MPI_Get_count(&sts, MPI_BYTE, &nbytes);
                 MPIMessage *msg = (MPIMessage *) malloc (nbytes);
-                int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.
+                int rc = MPI_Recv(&msg->_msg,nbytes,MPI_BYTE,sts.
                                   MPI_SOURCE,sts.MPI_TAG,
                                   MPI_COMM_WORLD,&sts);
                 assert(rc == MPI_SUCCESS);
                 size_t dispatch_id      = msg->_msg._dispatch_id;
                 mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
-
-                fprintf(stderr, "RECEIVED MSG=%d\n", dispatch_id);
-                
                 if(mdi.recv_func)
                   mdi.recv_func(msg->_msg._metadata,
                                 msg->_msg._payload,
                                 msg->_msg._payloadsize,
                                 mdi.recv_func_parm);
                 free(msg);
-                
-#if 0
-                unsigned         rcvlen;
-                char           * rcvbuf;
-                unsigned         pwidth;
-                XMI_Callback_t   cb_done;
-
-                _cb_async_head (&msg->_info[0], msg->_info_count, sts.MPI_SOURCE, msg->_size, msg->_conn,
-                                _async_arg, &rcvlen, &rcvbuf, &pwidth, &cb_done);
-
-                if(rcvlen)
-                  memcpy (rcvbuf, msg->buffer(), rcvlen);
-
-                if(pwidth == 0 && rcvlen == 0)
-                  if(cb_done.function)
-                    cb_done.function (cb_done.clientdata, NULL);
-
-                for(unsigned count = 0; count < rcvlen; count += pwidth)
-                  if(cb_done.function)
-                    cb_done.function (cb_done.clientdata, NULL);
-
-                CCMI_Free (msg);
-#endif                
               }
         };
 

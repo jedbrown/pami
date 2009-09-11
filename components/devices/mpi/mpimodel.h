@@ -46,8 +46,6 @@ namespace XMI
         {
           int rc;
           MPIMessage * msg = (MPIMessage *)obj;
-
-          fprintf(stderr, "Sending message with dispatch_id=%d target=%d\n", _dispatch_id, target_rank);
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
                              fn,
