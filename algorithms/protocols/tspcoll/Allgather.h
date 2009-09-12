@@ -39,7 +39,7 @@ namespace TSPColl
   public:
     static 
     void * operator new (size_t, void * addr)    { return addr; }
-    Allgather (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *, NBTag tag, int instID, int offset);
+    Allgather (XMI_GEOMETRY_CLASS *, NBTag tag, int instID, int offset);
     void reset (const void *, void *, size_t nbytes);
   private:
     char _dummy;
@@ -50,7 +50,7 @@ namespace TSPColl
 /*                   Allgather constructor                                 */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline TSPColl::Allgather<T_Mcast>::Allgather (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *comm, NBTag tag, 
+inline TSPColl::Allgather<T_Mcast>::Allgather (XMI_GEOMETRY_CLASS *comm, NBTag tag, 
 				      int instID, int offset):
   CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {

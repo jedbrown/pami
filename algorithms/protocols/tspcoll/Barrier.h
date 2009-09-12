@@ -34,7 +34,7 @@ namespace TSPColl
   {
   public:
     void * operator new (size_t, void * addr)    { return addr; }
-    Barrier (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset);
+    Barrier (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
     void reset () { CollExchange<T_Mcast>::reset(); }
   private:
     char _dummy;
@@ -47,7 +47,7 @@ namespace TSPColl
 
 template <class T_Mcast>
 inline TSPColl::Barrier<T_Mcast>::
-Barrier (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int offset) :
+Barrier (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n", 

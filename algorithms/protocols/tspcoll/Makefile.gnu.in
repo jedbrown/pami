@@ -1,7 +1,8 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		=
-NOTBUILT        = tspcoll_gather.cc                  
-@LIBNAME@-""-TSPCOLLECTIVES_SOURCES=tspcoll_nbcoll.cc tspcoll_shortallreduce.cc \
-		                    tspcoll_longallreduce.cc  tspcoll_scatter.cc
-DEVICENAME     = @LIBNAME@-""-TSPCOLLECTIVES
+NOTBUILT        = tspcoll_allreduce_exec.cc tspcoll_commsplit.cc tspcoll_longallreduce.cc tspcoll_scatter.cc \
+                  tspcoll_c_intf.cc tspcoll_gather.cc tspcoll_nbcoll.cc tspcoll_shortallreduce.cc            \
+                  tspcoll_gather.cc
+#@LIBNAME@-""-TSPCOLLECTIVES_SOURCES=
+#DEVICENAME     = @LIBNAME@-""-TSPCOLLECTIVES
 include @abs_top_builddir@/Build.rules

@@ -48,7 +48,7 @@ namespace TSPColl
     static void   amsend_reg       (T_Mcast *mcast_iface);
   protected:
 
-    CollExchange                   (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *, NBTag, 
+    CollExchange                   (XMI_GEOMETRY_CLASS *, NBTag, 
 				    int id, int off, bool strict=true,
 				    void (*cb_complete)(void *)=NULL,
 				    void * arg = NULL);
@@ -63,16 +63,16 @@ namespace TSPColl
     
     void          send                     (int phase,T_Mcast*mcast_iface);
     //static inline CCMI::MultiSend::DCMF_OldRecvMulticast cb_incoming;
-    static inline XMI_Request_t *cb_incoming(const xmi_quad_t  * hdr,
-							   unsigned          count,
-							   unsigned          peer,
-							   unsigned          sndlen,
-							   unsigned          conn_id,
-							   void            * arg,
-							   unsigned        * rcvlen,
-							   char           ** rcvbuf,
-							   unsigned        * pipewidth,
-							   XMI_Callback_t * cb_done);
+    static inline xmi_quad_t *cb_incoming(const xmi_quad_t  * hdr,
+                                          unsigned          count,
+                                          unsigned          peer,
+                                          unsigned          sndlen,
+                                          unsigned          conn_id,
+                                          void            * arg,
+                                          unsigned        * rcvlen,
+                                          char           ** rcvbuf,
+                                          unsigned        * pipewidth,
+                                          XMI_Callback_t * cb_done);
     
     static void   cb_recvcomplete (void * arg, xmi_result_t* error);
     static void   cb_senddone              (void *, xmi_result_t *err);
@@ -164,7 +164,7 @@ inline void TSPColl::CollExchange<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface)
 /* *********************************************************************** */
 template <class T_Mcast>
 inline TSPColl::CollExchange<T_Mcast>::
-CollExchange (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm,
+CollExchange (XMI_GEOMETRY_CLASS * comm,
                        NBTag tag, int id, int offset, 
                        bool strict, void (*cb_complete)(void *), void *arg):
 NBColl<T_Mcast> (comm, tag, id, cb_complete, arg), _strict(strict)
@@ -389,62 +389,6 @@ inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (void * arg, xmi_result_
   base->kick(base->_mcast_iface);
 }
 
-/* *********************************************************************** */
-/*                   incoming active message                               */
-/* *********************************************************************** */
-template <class T_Mcast>
-class NBCollManager;
-
-template <class T_Mcast>
-inline XMI_Request_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
-							   unsigned          count,
-							   unsigned          peer,
-							   unsigned          sndlen,
-							   unsigned          conn_id,
-							   void            * arg,
-							   unsigned        * rcvlen,
-							   char           ** rcvbuf,
-							   unsigned        * pipewidth,
-							   XMI_Callback_t * cb_done)
-
-{
-  struct AMHeader * header = (struct AMHeader *) hdr;
-  void * base0 = NBCollManager<T_Mcast>::instance()->find (header->tag, header->id);
-  if (base0 == NULL)
-    CCMI_FATALERROR (-1, "incoming: cannot find coll=<%d,%d>",
-		     header->tag, header->id);
-  
-  CollExchange * b = (CollExchange * ) ((char *)base0 + header->offset);
-  TRACE((stderr, "INC  tag=%d id=%d ctr=%d phase=%d nphases=%d "
-	 "msgctr=%d msgphase=%d\n",
-	 header->tag, header->id, b->_counter, 
-	 b->_phase, b->_numphases, 
-	 header->counter, header->phase));
-
-  assert (b->_header[0].id == header->id);
-  assert (b->_numphases > 0);
-  if (b->_strict)
-    {
-      if (header->counter != b->_counter || b->_phase >= b->_numphases) 
-	b->internalerror (header, __LINE__);
-    }
-  
-  b->_cmplt[header->phase].counter = header->counter;
-
-  // multisend stuff
-  *rcvbuf             = (char*)b->_rbuf[header->phase];
-  *rcvlen             = sndlen;
-  *pipewidth          = sndlen;
-  cb_done->function   = CollExchange::cb_recvcomplete;
-  cb_done->clientdata = &b->_cmplt[header->phase];
-  
-  //  *completionHandler = &CollExchange::cb_recvcomplete;
-  //  *arg = &b->_cmplt[header->phase];
-  //  __pgasrt_local_addr_t z = (__pgasrt_local_addr_t) b->_rbuf[header->phase];
-  //  if (z == NULL) b->internalerror (header, __LINE__);
-  //  return z;
-  return &b->_rreq[header->phase];
-}
 
 /* *********************************************************************** */
 /*                  active message reception complete                      */
@@ -493,6 +437,11 @@ TSPColl::CollExchange<T_Mcast>::internalerror (AMHeader * header, int lineno)
 	     _phase, _numphases, _counter);
   abort();
 }
+
+
+
+
+
 
 #undef TRACE
 #endif

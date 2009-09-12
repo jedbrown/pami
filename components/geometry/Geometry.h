@@ -3,8 +3,14 @@
 
 #include "sys/xmi.h"
 #include "util/queue/MatchQueue.h"
-//#include "algorithms/schedule/Rectangle.h"
+//  Need to make this work with platform.h!
+//  hitting some circ dependencies in ccmi...need to solve
+//.#include "components/mapping/mpi/mpimapping.h"
 
+
+//#include "platform.h"
+
+#if 0
 #define RECTANGLE_TYPE void*
 //#define RECTANGLE_TYPE CCMI::Schedule::Rectangle*
 
@@ -20,29 +26,28 @@
 #define CCMI_GEOMETRY void*
 //#define CCMI_GEOMETRY CCMI_Geometry_t*
 
-#define COLLECTIVE_MAPPING void*
-//#define COLLECTIVE_MAPPING XMI::CollectiveMapping*
+#endif
 
-#define MCAST_INTERFACE void*
-//#define MCAST_INTERFACE CCMI::MultiSend::OldMulticastInterface *
 
-#define PGASNBCOLL void*
-//#define PGASNBCOLL NBColl*
+
 
 namespace XMI
 {
     namespace Geometry
     {
-        template <class T_Geometry>
+      template <class T_Geometry, class T_Mapping>
         class Geometry
         {
         public:
-            inline Geometry(COLLECTIVE_MAPPING  *mapping,
+            inline Geometry(T_Mapping   *mapping,
                             unsigned            *ranks,
                             unsigned             nranks,
                             unsigned             comm,
                             unsigned             numcolors,
                             bool                 globalcontext) {}
+            inline Geometry (T_Mapping *mapping, int numranges, xmi_geometry_range_t rangelist[])
+            {
+            }
             // These methods were originally from the CCMI Geometry class
             inline int                        getColorsArray();
             inline void                       setAsyncAllreduceMode(unsigned value);
@@ -61,13 +66,23 @@ namespace XMI
             inline bool                       isGlobalContext();
             inline bool                       isGI();
             inline unsigned                   getNumColors();
+            inline unsigned                   getAllreduceIteration();
+            inline void                       freeAllocations ();
+            inline void                       setGlobalContext(bool context);
+            inline void                       setNumColors(unsigned numcolors);
+            inline MatchQueue                &asyncBcastPostQ();
+            inline MatchQueue                &asyncBcastUnexpQ();
+
+          // These are CCMI typed methods that introduce CCMI dependencies on
+          // the geometry interface
+          // Do these belong in some kind of cache object or elsewhere?
+#if 0
+            inline void                       setBarrierExecutor (EXECUTOR_TYPE bar);
             inline RECTANGLE_TYPE             rectangle();
             inline RECTANGLE_TYPE             rectangle_mesh();
             inline EXECUTOR_TYPE              getBarrierExecutor();
-            inline void                       setBarrierExecutor (EXECUTOR_TYPE bar);
             inline EXECUTOR_TYPE              getLocalBarrierExecutor ();
             inline void                       setLocalBarrierExecutor (EXECUTOR_TYPE bar);
-            inline unsigned                   getAllreduceIteration();
             inline CCMI_EXECUTOR_TYPE         getAllreduceCompositeStorage ();
             inline CCMI_EXECUTOR_TYPE         getAllreduceCompositeStorage(unsigned i);
             inline COMPOSITE_TYPE             getAllreduceComposite();
@@ -75,15 +90,9 @@ namespace XMI
             inline void                       setAllreduceComposite(COMPOSITE_TYPE c);
             inline void                       setAllreduceComposite(COMPOSITE_TYPE c, 
                                                                     unsigned i);
-            inline void                       freeAllocations ();
             inline EXECUTOR_TYPE              getCollectiveExecutor (unsigned color=0);
             inline void                       setCollectiveExecutor (EXECUTOR_TYPE exe,
                                                                      unsigned color=0);
-            inline void                       setGlobalContext(bool context);
-            inline void                       setNumColors(unsigned numcolors);
-            inline MatchQueue                &asyncBcastPostQ();
-            inline MatchQueue                &asyncBcastUnexpQ();
-#if 0
             static inline CCMI_GEOMETRY       getCachedGeometry (unsigned comm);
             static inline void                updateCachedGeometry (CCMI_GEOMETRY geometry, 
                                                                     unsigned comm);
@@ -91,323 +100,243 @@ namespace XMI
             // These methods were originally from the PGASRT Communicator class            
             inline int                        size       (void);
             inline int                        rank       (void);
-            inline int                        split      (int color, int rank, int * proclist);
             inline int                        absrankof  (int rank);
             inline int                        virtrankof (int rank);
-            inline PGASNBCOLL                 ibarrier    (MCAST_INTERFACE mcast_iface,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline void                       barrier     (MCAST_INTERFACE mcast_iface,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline PGASNBCOLL                 iallgather  (MCAST_INTERFACE mcast_iface,
-                                                           const void *s,void *d, size_t l,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline void                       allgather   (MCAST_INTERFACE mcast_iface,
-                                                           const void *s, void *d,size_t l,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline PGASNBCOLL                 iallgatherv (MCAST_INTERFACE mcast_iface,
-                                                           const void *s, void *d, size_t *l,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline void                       allgatherv  (MCAST_INTERFACE mcast_iface,
-                                                           const void *s, void *d, size_t *l,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline PGASNBCOLL                 ibcast      (MCAST_INTERFACE mcast_iface,
-                                                           int root, const void *s, void *d,
-                                                           size_t l,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline void                       bcast       (MCAST_INTERFACE mcast_iface,
-                                                           int root, const void *s, void *d,
-                                                           size_t l,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline PGASNBCOLL                 iallreduce  (MCAST_INTERFACE mcast_iface,
-                                                           const void        * s,
-                                                           void              * d, 
-                                                           xmi_op              op,
-                                                           xmi_dt              dtype, 
-                                                           unsigned            nelems,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline void                       allreduce   (MCAST_INTERFACE mcast_iface,
-                                                           const void        * s, 
-                                                           void              * d, 
-                                                           xmi_op             op,
-                                                           xmi_dt             dtype, 
-                                                           unsigned            nelems,
-                                                           void (*cb_complete)(void *)=NULL,
-                                                           void *arg=NULL);
-            inline PGASNBCOLL                 iscatter   (MCAST_INTERFACE info_barrier,
-                                                          MCAST_INTERFACE info_scatter,
-                                                          int root, const void *s, void *d,
-                                                          size_t l,
-                                                          void (*cb_complete)(void *)=NULL,
-                                                          void *arg=NULL);
-            inline void                       scatter    (MCAST_INTERFACE info_barrier,
-                                                          MCAST_INTERFACE info_scatter,
-                                                          int root, const void *s, void *d,
-                                                          size_t l,
-                                                          void (*cb_complete)(void *)=NULL,
-                                                          void *arg=NULL);
-            inline PGASNBCOLL                 iscatterv  (MCAST_INTERFACE info_barrier,
-                                                          MCAST_INTERFACE info_scatter,
-                                                          int root, const void *s, void *d,
-                                                          size_t *l,
-                                                          void (*cb_complete)(void *)=NULL,
-                                                          void *arg=NULL);
-            inline void                       scatterv   (MCAST_INTERFACE info_barrier,
-                                                          MCAST_INTERFACE info_scatter,
-                                                          int root, const void *s, void *d,
-                                                          size_t *l,
-                                                          void (*cb_complete)(void *)=NULL,
-                                                          void *arg=NULL);
-            inline void                       gather     (MCAST_INTERFACE mcast_iface,
-                                                          int root, const void *s,
-                                                          void *d, size_t l);
-            inline void                       gatherv    (MCAST_INTERFACE mcast_iface,
-                                                          int root, const void *s,
-                                                          void *d, size_t *l);
-            inline void                       nbwait     (PGASNBCOLL);
+
         }; // class Geometry
 
-        template <class T_Geometry>
-        inline int Geometry<T_Geometry>::getColorsArray()
+        template <class T_Geometry, class T_Mapping>
+        inline int Geometry<T_Geometry, T_Mapping>::getColorsArray()
         {
             return static_cast<T_Geometry*>(this)->getColorsArray_impl();
         }
 
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setAsyncAllreduceMode(unsigned value)
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setAsyncAllreduceMode(unsigned value)
         {
             static_cast<T_Geometry*>(this)->setAsyncAllreduceMode_impl(value);
         }
 
-        template <class T_Geometry>
-        inline unsigned Geometry<T_Geometry>::getAsyncAllreduceMode()
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned Geometry<T_Geometry, T_Mapping>::getAsyncAllreduceMode()
         {
             return static_cast<T_Geometry*>(this)->getAsyncAllreduceMode_impl();
         }
 
 
-        template <class T_Geometry>
-        inline unsigned Geometry<T_Geometry>::incrementAllreduceIteration()
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned Geometry<T_Geometry, T_Mapping>::incrementAllreduceIteration()
         {
             return static_cast<T_Geometry*>(this)->incrementAllreduceIteration_impl();
         }
 
-        template <class T_Geometry>
-        inline unsigned Geometry<T_Geometry>::comm()
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned Geometry<T_Geometry, T_Mapping>::comm()
         {
             return static_cast<T_Geometry*>(this)->comm_impl();
         }
 
-        template <class T_Geometry>
-        inline unsigned *Geometry<T_Geometry>::ranks()
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned *Geometry<T_Geometry, T_Mapping>::ranks()
         {
             return static_cast<T_Geometry*>(this)->ranks_impl();
         }
 
-        template <class T_Geometry>
-        inline unsigned Geometry<T_Geometry>::nranks()
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned Geometry<T_Geometry, T_Mapping>::nranks()
         {
             return static_cast<T_Geometry*>(this)->nranks_impl();
         }
 
-        template <class T_Geometry>
-        inline int Geometry<T_Geometry>::myIdx()
+        template <class T_Geometry, class T_Mapping>
+        inline int Geometry<T_Geometry, T_Mapping>::myIdx()
         {
             return static_cast<T_Geometry*>(this)->myIdx_impl();
         }
 
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::generatePermutation()
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::generatePermutation()
         {
             return static_cast<T_Geometry*>(this)->generatePermutation_impl();
         }
 
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::freePermutation()
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::freePermutation()
         {
             return static_cast<T_Geometry*>(this)->freePermutation_impl();
         }
 
-        template <class T_Geometry>
-        inline unsigned *Geometry<T_Geometry>::permutation()
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned *Geometry<T_Geometry, T_Mapping>::permutation()
         {
             return static_cast<T_Geometry*>(this)->permutation_impl();
         }
 
-        template <class T_Geometry>
-        inline bool Geometry<T_Geometry>::isRectangle()
+        template <class T_Geometry, class T_Mapping>
+        inline bool Geometry<T_Geometry, T_Mapping>::isRectangle()
         {
             return static_cast<T_Geometry*>(this)->isRectangle_impl();
         }
 
-        template <class T_Geometry>
-        inline bool Geometry<T_Geometry>::isTorus()
+        template <class T_Geometry, class T_Mapping>
+        inline bool Geometry<T_Geometry, T_Mapping>::isTorus()
         {
             return static_cast<T_Geometry*>(this)->isTorus_impl();
         }
 
-        template <class T_Geometry>
-        inline bool Geometry<T_Geometry>::isTree()
+        template <class T_Geometry, class T_Mapping>
+        inline bool Geometry<T_Geometry, T_Mapping>::isTree()
         {
             return static_cast<T_Geometry*>(this)->isTree_impl();
         }
 
-        template <class T_Geometry>
-        inline bool Geometry<T_Geometry>::isGlobalContext()
+        template <class T_Geometry, class T_Mapping>
+        inline bool Geometry<T_Geometry, T_Mapping>::isGlobalContext()
         {
             return static_cast<T_Geometry*>(this)->isGlobalContext_impl();
         }
 
-        template <class T_Geometry>
-        inline bool Geometry<T_Geometry>::isGI()
+        template <class T_Geometry, class T_Mapping>
+        inline bool Geometry<T_Geometry, T_Mapping>::isGI()
         {
             return static_cast<T_Geometry*>(this)->isGI_impl();
         }
 
-        template <class T_Geometry>
-        inline unsigned Geometry<T_Geometry>::getNumColors()
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned Geometry<T_Geometry, T_Mapping>::getNumColors()
         {
             return static_cast<T_Geometry*>(this)->getNumColors_impl();
         }
-
-        template <class T_Geometry>
-        inline RECTANGLE_TYPE Geometry<T_Geometry>::rectangle()
-        {
-            return static_cast<T_Geometry*>(this)->rectangle_impl();
-        }
-
-        template <class T_Geometry>
-        inline RECTANGLE_TYPE Geometry<T_Geometry>::rectangle_mesh()
-        {
-            return static_cast<T_Geometry*>(this)->rectangle_mesh_impl();
-        }
-
-        template <class T_Geometry>
-        inline EXECUTOR_TYPE Geometry<T_Geometry>::getBarrierExecutor()
-        {
-            return static_cast<T_Geometry*>(this)->getBarrierExecutor_impl();
-        }
-
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setBarrierExecutor (EXECUTOR_TYPE bar)
-        {
-            return static_cast<T_Geometry*>(this)->setBarrierExecutor_impl(bar);
-        }
-
-        template <class T_Geometry>
-        inline EXECUTOR_TYPE Geometry<T_Geometry>::getLocalBarrierExecutor ()
-        {
-            return static_cast<T_Geometry*>(this)->getLocalBarrierExecutor_impl();
-        }
-
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setLocalBarrierExecutor (EXECUTOR_TYPE bar)
-        {
-            return static_cast<T_Geometry*>(this)->setLocalBarrierExecutor_impl(bar);
-        }
-
-        template <class T_Geometry>
-        inline unsigned Geometry<T_Geometry>::getAllreduceIteration()
+      
+        template <class T_Geometry, class T_Mapping>
+        inline unsigned Geometry<T_Geometry, T_Mapping>::getAllreduceIteration()
         {
             return static_cast<T_Geometry*>(this)->getAllreduceIteration_impl();
         }
 
-        template <class T_Geometry>
-        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry>::getAllreduceCompositeStorage ()
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::freeAllocations ()
+        {
+            return static_cast<T_Geometry*>(this)->freeAllocations_impl();
+        }
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setGlobalContext(bool context)
+        {
+            return static_cast<T_Geometry*>(this)->setGlobalContext_impl(context);
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setNumColors(unsigned numcolors)
+        {
+            return static_cast<T_Geometry*>(this)->setNumColors_impl(numcolors);
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline MatchQueue &Geometry<T_Geometry, T_Mapping>::asyncBcastPostQ()
+        {
+            return static_cast<T_Geometry*>(this)->asyncBcastPostQ_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline MatchQueue &Geometry<T_Geometry, T_Mapping>::asyncBcastUnexpQ()
+        {
+            return static_cast<T_Geometry*>(this)->asyncBcastUnexpQ_impl();
+        }
+#if 0
+        template <class T_Geometry, class T_Mapping>
+        inline RECTANGLE_TYPE Geometry<T_Geometry, T_Mapping>::rectangle()
+        {
+            return static_cast<T_Geometry*>(this)->rectangle_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline RECTANGLE_TYPE Geometry<T_Geometry, T_Mapping>::rectangle_mesh()
+        {
+            return static_cast<T_Geometry*>(this)->rectangle_mesh_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getBarrierExecutor()
+        {
+            return static_cast<T_Geometry*>(this)->getBarrierExecutor_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setBarrierExecutor (EXECUTOR_TYPE bar)
+        {
+            return static_cast<T_Geometry*>(this)->setBarrierExecutor_impl(bar);
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getLocalBarrierExecutor ()
+        {
+            return static_cast<T_Geometry*>(this)->getLocalBarrierExecutor_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setLocalBarrierExecutor (EXECUTOR_TYPE bar)
+        {
+            return static_cast<T_Geometry*>(this)->setLocalBarrierExecutor_impl(bar);
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceCompositeStorage ()
         {
             return static_cast<T_Geometry*>(this)->getAllreduceCompositeStorage_impl();
         }
 
-        template <class T_Geometry>
-        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry>::getAllreduceCompositeStorage(unsigned i)
+        template <class T_Geometry, class T_Mapping>
+        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceCompositeStorage(unsigned i)
         {
             return static_cast<T_Geometry*>(this)->getAllreduceCompositeStorage_impl(i);
         }
 
-        template <class T_Geometry>
-        inline COMPOSITE_TYPE Geometry<T_Geometry>::getAllreduceComposite()
+        template <class T_Geometry, class T_Mapping>
+        inline COMPOSITE_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceComposite()
         {
-            return static_cast<T_Geometry*>(this)->_impl();
+            return static_cast<T_Geometry*>(this)->getAllreduceComposite_impl();
         }
 
-        template <class T_Geometry>
-        inline COMPOSITE_TYPE Geometry<T_Geometry>::getAllreduceComposite(unsigned i)
+        template <class T_Geometry, class T_Mapping>
+        inline COMPOSITE_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceComposite(unsigned i)
         {
             return static_cast<T_Geometry*>(this)->getAllreduceComposite_impl(i);
         }
 
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setAllreduceComposite(COMPOSITE_TYPE c)
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c)
         {
             return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c);
         }
 
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setAllreduceComposite(COMPOSITE_TYPE c, 
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c, 
                                                                 unsigned i)
         {
             return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c, i);
         }
 
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::freeAllocations ()
-        {
-            return static_cast<T_Geometry*>(this)->freeAllocations_impl();
-        }
-
-        template <class T_Geometry>
-        inline EXECUTOR_TYPE Geometry<T_Geometry>::getCollectiveExecutor (unsigned color)
+        template <class T_Geometry, class T_Mapping>
+        inline EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getCollectiveExecutor (unsigned color)
         {
             return static_cast<T_Geometry*>(this)->getCollectiveExecutor_impl(color);
         }
 
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setCollectiveExecutor (EXECUTOR_TYPE exe,
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setCollectiveExecutor (EXECUTOR_TYPE exe,
                                                                  unsigned color)
         {
             return static_cast<T_Geometry*>(this)->setCollectiveExecutor_impl(exe, color);
         }
-
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setGlobalContext(bool context)
-        {
-            return static_cast<T_Geometry*>(this)->setGlobalContext_impl(context);
-        }
-
-        template <class T_Geometry>
-        inline void Geometry<T_Geometry>::setNumColors(unsigned numcolors)
-        {
-            return static_cast<T_Geometry*>(this)->setNumColors_impl(numcolors);
-        }
-
-        template <class T_Geometry>
-        inline MatchQueue &Geometry<T_Geometry>::asyncBcastPostQ()
-        {
-            return static_cast<T_Geometry*>(this)->asyncBcastPostQ_impl();
-        }
-
-        template <class T_Geometry>
-        inline MatchQueue &Geometry<T_Geometry>::asyncBcastUnexpQ()
-        {
-            return static_cast<T_Geometry*>(this)->asyncBcastUnexpQ_impl();
-        }
-#if 0
-        template <class T_Geometry>
-        static inline CCMI_GEOMETRY Geometry<T_Geometry>::getCachedGeometry (unsigned comm)
+      
+        template <class T_Geometry, class T_Mapping>
+        static inline CCMI_GEOMETRY Geometry<T_Geometry, T_Mapping>::getCachedGeometry (unsigned comm)
         {
             return static_cast<T_Geometry*>(this)->getCachedGeometry_impl(comm);
         }
 
-        template <class T_Geometry>
-        static inline void Geometry<T_Geometry>::updateCachedGeometry (CCMI_GEOMETRY geometry, 
+        template <class T_Geometry, class T_Mapping>
+        static inline void Geometry<T_Geometry, T_Mapping>::updateCachedGeometry (CCMI_GEOMETRY geometry, 
                                                                        unsigned comm)
         {
             return static_cast<T_Geometry*>(this)->updateCachedGeometry_impl(geometry, comm);
@@ -415,181 +344,27 @@ namespace XMI
 #endif
 
         // These methods were originally from the PGASRT Communicator class
-        template <class T_Geometry>
-        inline int                        Geometry<T_Geometry>::size       (void)
+        template <class T_Geometry, class T_Mapping>
+        inline int                        Geometry<T_Geometry, T_Mapping>::size       (void)
         {
             return static_cast<T_Geometry*>(this)->size_impl();
         }
-        template <class T_Geometry>
-        inline int                        Geometry<T_Geometry>::rank       (void)
+        template <class T_Geometry, class T_Mapping>
+        inline int                        Geometry<T_Geometry, T_Mapping>::rank       (void)
         {
             return static_cast<T_Geometry*>(this)->rank_impl();
         }
-        template <class T_Geometry>
-        inline int                        Geometry<T_Geometry>::split      (int color, int rank, int * proclist)
-        {
-            return static_cast<T_Geometry*>(this)->split_impl();
-        }
-        template <class T_Geometry>
-        inline int                        Geometry<T_Geometry>::absrankof  (int rank)
+        template <class T_Geometry, class T_Mapping>
+        inline int                        Geometry<T_Geometry, T_Mapping>::absrankof  (int rank)
         {
             return static_cast<T_Geometry*>(this)->absrankof_impl();
         }
-        template <class T_Geometry>
-        inline int                        Geometry<T_Geometry>::virtrankof (int rank)
+        template <class T_Geometry, class T_Mapping>
+        inline int                        Geometry<T_Geometry, T_Mapping>::virtrankof (int rank)
         {
             return static_cast<T_Geometry*>(this)->virtrankof_impl();
         }
-        template <class T_Geometry>
-        inline PGASNBCOLL                 Geometry<T_Geometry>::ibarrier    (MCAST_INTERFACE mcast_iface,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->ibarrier_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::barrier     (MCAST_INTERFACE mcast_iface,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->barrier_impl();
-        }
-        template <class T_Geometry>
-        inline PGASNBCOLL                 Geometry<T_Geometry>::iallgather  (MCAST_INTERFACE mcast_iface,
-                                                                             const void *s,void *d, size_t l,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->iallgather_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::allgather   (MCAST_INTERFACE mcast_iface,
-                                                                             const void *s, void *d,size_t l,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->allgather_impl();
-        }
-        template <class T_Geometry>
-        inline PGASNBCOLL                 Geometry<T_Geometry>::iallgatherv (MCAST_INTERFACE mcast_iface,
-                                                                             const void *s, void *d, size_t *l,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->iallgatherv_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::allgatherv  (MCAST_INTERFACE mcast_iface,
-                                                                             const void *s, void *d, size_t *l,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->allgatherv_impl();
-        }
-        template <class T_Geometry>
-        inline PGASNBCOLL                 Geometry<T_Geometry>::ibcast      (MCAST_INTERFACE mcast_iface,
-                                                                             int root, const void *s, void *d,
-                                                                             size_t l,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->ibcast_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::bcast       (MCAST_INTERFACE mcast_iface,
-                                                                             int root, const void *s, void *d,
-                                                                             size_t l,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->bcast_impl();
-        }
-        template <class T_Geometry>
-        inline PGASNBCOLL                 Geometry<T_Geometry>::iallreduce  (MCAST_INTERFACE mcast_iface,
-                                                                             const void        * s,
-                                                                             void              * d, 
-                                                                             xmi_op              op,
-                                                                             xmi_dt              dtype, 
-                                                                             unsigned            nelems,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->iallreduce_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::allreduce   (MCAST_INTERFACE mcast_iface,
-                                                                             const void        * s, 
-                                                                             void              * d, 
-                                                                             xmi_op             op,
-                                                                             xmi_dt             dtype, 
-                                                                             unsigned           nelems,
-                                                                             void (*cb_complete)(void *),
-                                                                             void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->allreduce_impl();
-        }
-        template <class T_Geometry>
-        inline PGASNBCOLL                 Geometry<T_Geometry>::iscatter   (MCAST_INTERFACE info_barrier,
-                                                                            MCAST_INTERFACE info_scatter,
-                                                                            int root, const void *s, void *d,
-                                                                            size_t l,
-                                                                            void (*cb_complete)(void *),
-                                                                            void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->iscatter_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::scatter    (MCAST_INTERFACE info_barrier,
-                                                                            MCAST_INTERFACE info_scatter,
-                                                                            int root, const void *s, void *d,
-                                                                            size_t l,
-                                                                            void (*cb_complete)(void *),
-                                                                            void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->scatter_impl();
-        }
-        template <class T_Geometry>
-        inline PGASNBCOLL                 Geometry<T_Geometry>::iscatterv  (MCAST_INTERFACE info_barrier,
-                                                                            MCAST_INTERFACE info_scatter,
-                                                                            int root, const void *s, void *d,
-                                                                            size_t *l,
-                                                                            void (*cb_complete)(void *),
-                                                                            void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->iscatterv_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::scatterv   (MCAST_INTERFACE info_barrier,
-                                                                            MCAST_INTERFACE info_scatter,
-                                                                            int root, const void *s, void *d,
-                                                                            size_t *l,
-                                                                            void (*cb_complete)(void *),
-                                                                            void *arg)
-        {
-            return static_cast<T_Geometry*>(this)->scatterv_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::gather     (MCAST_INTERFACE mcast_iface,
-                                                                            int root, const void *s,
-                                                                            void *d, size_t l)
-        {
-            return static_cast<T_Geometry*>(this)->gather_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::gatherv    (MCAST_INTERFACE mcast_iface,
-                                                                            int root, const void *s,
-                                                                            void *d, size_t *l)
-        {
-            return static_cast<T_Geometry*>(this)->gatherv_impl();
-        }
-        template <class T_Geometry>
-        inline void                       Geometry<T_Geometry>::nbwait     (PGASNBCOLL)
-        {
-            return static_cast<T_Geometry*>(this)->nbwait_impl();
-        }
-
-        
-
+ 
     }; // namespace Geometry
 }; // namespace XMI
 

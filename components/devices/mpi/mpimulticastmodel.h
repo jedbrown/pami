@@ -34,7 +34,7 @@ namespace XMI
             inline void setRecvRanks_impl (xmi_topology_t *dst_participants)
                 {
                 }
-            inline void setCallback_impl (void (*fn) (void *, xmi_result_t *),  void *cd)
+            inline void setCallback_impl (xmi_event_function fn,  void *clientdata)
                 {
                 }
             inline void setInfo_impl (xmi_quad_t *info, int count)

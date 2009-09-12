@@ -19,6 +19,7 @@
 #include "components/sysdep/mpi/mpisysdep.h"
 #include "components/geometry/mpi/mpicollfactory.h"
 #include "components/geometry/mpi/mpicollregistration.h"
+#include "components/mapping/mpi/mpimapping.h"
 #include <new>
 #include <map>
 
@@ -29,10 +30,10 @@ namespace XMI
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice<SysDep::MPISysDep> MPIDevice;
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
-    typedef Geometry::Geometry<XMI::Geometry::Common> MPIGeometry;
+    typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
     typedef CollFactory::CollFactory<XMI::CollFactory::MPI> MPICollfactory;
-    typedef CollRegistration::CollRegistration<XMI::CollRegistration::MPI<MPIGeometry, MPICollfactory>,
-                                               MPIGeometry, MPICollfactory> MPICollreg;
+    typedef CollRegistration::CollRegistration<XMI::CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice>,
+                                               MPIGeometry, MPICollfactory, MPIDevice> MPICollreg;
     
     class MPI : public Context<XMI::Context::MPI>
     {
@@ -46,15 +47,16 @@ namespace XMI
           _ranklist = (unsigned*)malloc(sizeof(unsigned)*_mysize);
           for (int i=0; i<_mysize; i++) _ranklist[i]=i;
           _world_geometry=
-            (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>*)
+            (MPIGeometry*)
             malloc(sizeof(*_world_geometry));
           new(_world_geometry)
-            XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS>(NULL,              // Mapping
-                                                        _ranklist,         // Ranks
-                                                        _mysize,           // NumRanks
-                                                        0,                 // Comm id
-                                                        0,                 // numcolors
-                                                        1);                // isglobal?
+            MPIGeometry(NULL,              // Mapping
+                        _ranklist,         // Ranks
+                        _mysize,           // NumRanks
+                        0,                 // Comm id
+                        0,                 // numcolors
+                        1);                // isglobal?
+          _collreg.setup(&_mpi);
           _world_collfactory=_collreg.analyze(_world_geometry);
           
         }
@@ -373,8 +375,8 @@ namespace XMI
       SysDep::MPISysDep         _sysdep;
       MemoryAllocator<1024,16>  _request;
       MPIDevice                 _mpi;
-      MPIGeometry              *_world_geometry;
       MPICollreg                _collreg;
+      MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;
       int                       _myrank;
       int                       _mysize;

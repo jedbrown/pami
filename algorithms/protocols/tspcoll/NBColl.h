@@ -31,7 +31,7 @@ namespace TSPColl
   class NBColl
   {
   public:
-    NBColl (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID,
+    NBColl (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
 	    void (*cb_complete)(void *), void *arg);
 
   public:
@@ -42,7 +42,7 @@ namespace TSPColl
     virtual void setComplete (void (*cb_complete)(void *), void *arg);
 
   protected:
-    XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * _comm;
+    XMI_GEOMETRY_CLASS * _comm;
     NBTag          _tag;
     int            _instID;
     void        (* _cb_complete) (void *);
@@ -55,7 +55,7 @@ namespace TSPColl
 /*                 non-blocking collective constructor                      */
 /* ************************************************************************ */
   template <class T_Mcast>
-  TSPColl::NBColl<T_Mcast>::NBColl (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID,
+  TSPColl::NBColl<T_Mcast>::NBColl (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
                                     void (*cb_complete)(void *), void *arg):
     _comm (comm), _tag (tag), _instID (instID),
     _cb_complete (cb_complete), _arg(arg)

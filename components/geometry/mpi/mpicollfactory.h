@@ -6,6 +6,7 @@
 
 #include "sys/xmi.h"
 #include "components/geometry/CollFactory.h"
+#include "components/geometry/mpi/mpicollinfo.h"
 
 namespace XMI
 {
@@ -13,31 +14,192 @@ namespace XMI
   {
     class MPI : public CollFactory<XMI::CollFactory::MPI>
     {
-    public:      
+    public:
       inline MPI():
         CollFactory<XMI::CollFactory::MPI>()
         {
         }
 
-      inline xmi_result_t  algorithm_impl       (xmi_xfer_t           *collective,
-                                                 xmi_algorithm_t      *alglist,
-                                                 size_t               *num)
+      inline xmi_result_t  algorithm_impl(xmi_xfer_type_t       collective,
+                                          xmi_algorithm_t      *alglist,
+                                          size_t               *num)
         {
-          return XMI_UNIMPL;
+          switch (collective)
+              {
+                  case XMI_XFER_BROADCAST:
+                    break;
+                  case XMI_XFER_ALLREDUCE:
+                    break;
+                  case XMI_XFER_REDUCE:
+                    break;
+                  case XMI_XFER_ALLGATHER:
+                    break;
+                  case XMI_XFER_ALLGATHERV:
+                    break;
+                  case XMI_XFER_ALLGATHERV_INT:
+                    break;
+                  case XMI_XFER_SCATTER:
+                    break;
+                  case XMI_XFER_SCATTERV:
+                    break;
+                  case XMI_XFER_SCATTERV_INT:
+                    break;
+                  case XMI_XFER_BARRIER:
+                    break;
+                  case XMI_XFER_ALLTOALL:
+                    break;
+                  case XMI_XFER_ALLTOALLV:
+                    break;
+                  case XMI_XFER_ALLTOALLV_INT:
+                    break;
+                  case XMI_XFER_SCAN:
+                    break;
+                  case XMI_XFER_AMBROADCAST:
+                    break;
+                  case XMI_XFER_AMSCATTER:
+                    break;
+                  case XMI_XFER_AMGATHER:
+                    break;
+                  case XMI_XFER_AMREDUCE:
+                    break;
+                  default:
+                    return XMI_UNIMPL;
+              }
+          return XMI_SUCCESS;
         }
 
-      inline size_t        num_algorithm_impl   (xmi_xfer_t           *collective)
+      inline size_t        num_algorithm_impl   (xmi_xfer_type_t           collective)
         {
+          switch (collective)
+              {
+                  case XMI_XFER_BROADCAST:
+                    return _broadcasts.size();
+                    break;
+                  case XMI_XFER_ALLREDUCE:
+                    return _allreduces.size();
+                    break;
+                  case XMI_XFER_REDUCE:
+                    return 0;
+                    break;
+                  case XMI_XFER_ALLGATHER:
+                    return _allgathers.size();
+                    break;
+                  case XMI_XFER_ALLGATHERV:
+                    return _allgathervs.size();
+                    break;
+                  case XMI_XFER_ALLGATHERV_INT:
+                    return 0;
+                    break;
+                  case XMI_XFER_SCATTER:
+                    return _scatters.size();
+                    break;
+                  case XMI_XFER_SCATTERV:
+                    return _scattervs.size();
+                    break;
+                  case XMI_XFER_SCATTERV_INT:
+                    return 0;
+                    break;
+                  case XMI_XFER_BARRIER:
+                    return _barriers.size();
+                    break;
+                  case XMI_XFER_ALLTOALL:
+                    return 0;
+                    break;
+                  case XMI_XFER_ALLTOALLV:
+                    return 0;
+                    break;
+                  case XMI_XFER_ALLTOALLV_INT:
+                    return 0;
+                    break;
+                  case XMI_XFER_SCAN:
+                    return 0;
+                    break;
+                  case XMI_XFER_AMBROADCAST:
+                    return 0;
+                    break;
+                  case XMI_XFER_AMSCATTER:
+                    return 0;
+                    break;
+                  case XMI_XFER_AMGATHER:
+                    return 0;
+                    break;
+                  case XMI_XFER_AMREDUCE:
+                    return 0;
+                    break;
+                  default:
+                    assert(0);
+              }
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t  collective_impl      (xmi_xfer_t           *collective)
         {
+          switch (collective->xfer_type)
+              {
+                  case XMI_XFER_BROADCAST:
+                    return ibroadcast_impl(&collective->xfer_broadcast);
+                    break;
+                  case XMI_XFER_ALLREDUCE:
+                    return iallreduce_impl(&collective->xfer_allreduce);
+                    break;
+                  case XMI_XFER_REDUCE:
+                    return ireduce_impl(&collective->xfer_reduce);
+                    break;
+                  case XMI_XFER_ALLGATHER:
+                    return iallgather_impl(&collective->xfer_allgather);
+                    break;
+                  case XMI_XFER_ALLGATHERV:
+                    return iallgatherv_impl(&collective->xfer_allgatherv);
+                    break;
+                  case XMI_XFER_ALLGATHERV_INT:
+                    return iallgatherv_int_impl(&collective->xfer_allgatherv_int);
+                    break;
+                  case XMI_XFER_SCATTER:
+                    return iscatter_impl(&collective->xfer_scatter);
+                    break;
+                  case XMI_XFER_SCATTERV:
+                    return iscatterv_impl(&collective->xfer_scatterv);
+                    break;
+                  case XMI_XFER_SCATTERV_INT:
+                    return iscatterv_int_impl(&collective->xfer_scatterv_int);
+                    break;
+                  case XMI_XFER_BARRIER:
+                    return ibarrier_impl(&collective->xfer_barrier);
+                    break;
+                  case XMI_XFER_ALLTOALL:
+                    return ialltoall_impl(&collective->xfer_alltoall);
+                    break;
+                  case XMI_XFER_ALLTOALLV:
+                    return ialltoallv_impl(&collective->xfer_alltoallv);
+                    break;
+                  case XMI_XFER_ALLTOALLV_INT:
+                    return ialltoallv_int_impl(&collective->xfer_alltoallv_int);
+                    break;
+                  case XMI_XFER_SCAN:
+                    return iscan_impl(&collective->xfer_scan);
+                    break;
+                  case XMI_XFER_AMBROADCAST:
+                    return ambroadcast_impl(&collective->xfer_ambroadcast);
+                    break;
+                  case XMI_XFER_AMSCATTER:
+                    return amscatter_impl(&collective->xfer_amscatter);
+                    break;
+                  case XMI_XFER_AMGATHER:
+                    return amgather_impl(&collective->xfer_amgather);
+                    break;
+                  case XMI_XFER_AMREDUCE:
+                    return amreduce_impl(&collective->xfer_amreduce);
+                    break;
+                  default:
+                    return XMI_UNIMPL;
+              }
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t  ibroadcast_impl      (xmi_broadcast_t      *broadcast)
         {
+          XMI::CollInfo::PGBroadcastInfo *info = (XMI::CollInfo::PGBroadcastInfo *)_broadcasts[broadcast->algorithm];
+          info->start(broadcast);
           return XMI_UNIMPL;
         }
 
@@ -125,6 +287,14 @@ namespace XMI
         {
           return XMI_UNIMPL;
         }
+      RegQueue          _broadcasts;
+      RegQueue          _allgathers;
+      RegQueue          _allgathervs;
+      RegQueue          _scatters;
+      RegQueue          _scattervs;
+      RegQueue          _allreduces;
+      RegQueue          _barriers;
+      
     }; // class CollFactory
   };  // namespace CollFactory
 }; // namespace XMI

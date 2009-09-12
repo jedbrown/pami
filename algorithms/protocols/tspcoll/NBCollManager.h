@@ -38,11 +38,11 @@ namespace TSPColl
     /* external API     */
     /* ---------------- */
 
-    static void initialize ();
-    static NBCollManager * instance();
+    void initialize ();
+    NBCollManager<T_Mcast> * instance();
 
     NBColl<T_Mcast> * find (NBTag tag, int id); /* find an existing instance */
-    NBColl<T_Mcast> * allocate (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> *, NBTag tag);
+    NBColl<T_Mcast> * allocate (XMI_GEOMETRY_CLASS *, NBTag tag);
     void     multisend_reg (NBTag tag,T_Mcast *mcast_iface);
 
   private:
@@ -51,7 +51,7 @@ namespace TSPColl
     /* ------------ */
 
     Vector<NBColl<T_Mcast> *>        * _taglist[MAXTAG];
-    static NBCollManager    * _instance; 
+    NBCollManager<T_Mcast>           * _instance; 
 
   private:
     /* ------------ */
@@ -154,16 +154,13 @@ namespace TSPColl
   template <class T_Mcast>
   void TSPColl::NBCollManager<T_Mcast>::initialize (void)
   {
-    _instance = (NBCollManager<T_Mcast> *)malloc (sizeof(NBCollManager));
-    assert (_instance);
-    new (_instance) NBCollManager<T_Mcast>();
-    NBCollFactory<T_Mcast>::initialize();
+    _instance = this;
+    //NBCollFactory<T_Mcast>::initialize();
   }
 
   template <class T_Mcast>
   TSPColl::NBCollManager<T_Mcast> * TSPColl::NBCollManager<T_Mcast>::instance()
   {
-    if (_instance==NULL) initialize();
     return _instance;
   }
 
@@ -196,7 +193,7 @@ namespace TSPColl
 /* ************************************************************************ */
   template <class T_Mcast>
   TSPColl::NBColl<T_Mcast> * 
-  TSPColl::NBCollManager<T_Mcast>::allocate (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag)
+  TSPColl::NBCollManager<T_Mcast>::allocate (XMI_GEOMETRY_CLASS * comm, NBTag tag)
   {
     assert (0 <= tag && tag < MAXTAG);
     int nextID = _taglist[tag]->size();

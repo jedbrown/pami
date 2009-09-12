@@ -41,7 +41,7 @@ namespace TSPColl
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
-    ScBcast (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff);
+    ScBcast (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
     void reset (int root, const void * sbuf, void *buf, size_t);
     virtual void kick (T_Mcast *mcast_iface);
     virtual bool isdone (void) const;
@@ -71,7 +71,7 @@ namespace TSPColl
 /* *********************************************************************** */
 template <class T_Mcast>
 inline TSPColl::ScBcast<T_Mcast>::
-ScBcast(XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID, int tagoff) :
+ScBcast(XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
                NBColl<T_Mcast> (comm, tag, instID, NULL, NULL),
 	       _scatterv (comm, tag, instID, 
 			  (size_t)&_scatterv - (size_t) this + tagoff),

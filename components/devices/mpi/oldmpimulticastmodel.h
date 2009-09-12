@@ -15,31 +15,46 @@ namespace XMI
       MPIOldmulticastModel (T_Device & device) :
         Interface::OldmulticastModel<MPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message> (device)
         {};
-      inline void setConnectionId_impl (unsigned conn)
+              
+      inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
         {
         }
-      inline void setRoles_impl (unsigned roles)
+
+      inline unsigned  send   (XMI_Request_t             * request,
+                               const xmi_event_function  * cb_done,
+                               xmi_consistency_t           consistency,
+                               const xmi_quad_t          * info,
+                               unsigned                    info_count,
+                               unsigned                    connection_id,
+                               const char                * buf,
+                               unsigned                    size,
+                               unsigned                  * hints,
+                               unsigned                  * ranks,
+                               unsigned                    nranks,
+                               xmi_op                      op    = XMI_UNDEFINED_OP,
+                               xmi_dt                      dtype = XMI_UNDEFINED_DT )
         {
         }
-      inline void setSendData_impl (xmi_pipeworkqueue_t *src, size_t bytes)
+
+              
+      inline unsigned send (xmi_oldmulticast_t *mcastinfo)
         {
         }
-      inline void setSendRanks_impl (xmi_topology_t *src_participants)
+
+
+        inline unsigned postRecv (XMI_Request_t          * request,
+                                  const xmi_callback_t   * cb_done,
+                                  unsigned                 conn_id,
+                                  char                   * buf,
+                                  unsigned                 size,
+                                  unsigned                 pwidth,
+                                  unsigned                 hint   = XMI_UNDEFINED_SUBTASK,
+                                  xmi_op                   op     = XMI_UNDEFINED_OP,
+                                  xmi_dt                   dtype  = XMI_UNDEFINED_DT)
         {
         }
-      inline void setRecvData_impl (xmi_pipeworkqueue_t *dst, size_t bytes)
-        {
-        }
-      inline void setRecvRanks_impl (xmi_topology_t *dst_participants)
-        {
-        }
-      inline void setCallback_impl (void (*fn) (void *, xmi_result_t *),  void *cd)
-        {
-        }
-      inline void setInfo_impl (xmi_quad_t *info, int count)
-        {
-        }
-      inline bool postmulticast_impl (T_Message * obj)
+
+      inline unsigned postRecv (xmi_oldmulticast_recv_t  *mrecv)
         {
         }
     };

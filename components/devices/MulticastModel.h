@@ -46,7 +46,7 @@ namespace XMI
                 inline void setSendRanks (xmi_topology_t *src_participants);
                 inline void setRecvData (xmi_pipeworkqueue_t *dst, size_t bytes);
                 inline void setRecvRanks (xmi_topology_t *dst_participants);
-                inline void setCallback (void (*fn) (void *, xmi_result_t *),  void *cd);
+                inline void setCallback (xmi_event_function fn,  void *cookie);
                 inline void setInfo (xmi_quad_t *info, int count);
                 inline bool postMultiCast (T_Object * obj);
             };
@@ -89,10 +89,9 @@ namespace XMI
             }
         
             template <class T_Model, class T_Device, class T_Object>
-            void MulticastModel<T_Model, T_Device, T_Object>::setCallback (void (*fn) (void *, xmi_result_t *),
-                                                                           void *cd)
+            void MulticastModel<T_Model, T_Device, T_Object>::setCallback (xmi_event_function fn, void *cookie)
             {
-                static_cast<T_Model*>(this)->setCallback_impl(fn, cd);
+                static_cast<T_Model*>(this)->setCallback_impl(fn, cookie);
             }
         
             template <class T_Model, class T_Device, class T_Object>

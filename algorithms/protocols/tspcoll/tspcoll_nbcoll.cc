@@ -18,6 +18,7 @@
 #include "ScBcast.h"
 #include "Allreduce.h"
 #include "Scatter.h"
+#include "Callbacks.h"
 
 
 #include <stdio.h>

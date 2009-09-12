@@ -977,15 +977,16 @@ extern "C"
         xmi_reduce_t           xfer_reduce;
         xmi_allgather_t        xfer_allgather;
         xmi_allgatherv_t       xfer_allgatherv;
-        xmi_allgatherv_t       xfer_allgatherv_int;
+        xmi_allgatherv_int_t   xfer_allgatherv_int;
         xmi_scatter_t          xfer_scatter;
         xmi_scatterv_t         xfer_scatterv;
+        xmi_scatterv_int_t     xfer_scatterv_int;
         xmi_scatter_t          xfer_gather;
         xmi_scatter_t          xfer_gatherv;
         xmi_scatterv_t         xfer_gatherv_int;
         xmi_alltoall_t         xfer_alltoall;
         xmi_alltoallv_t        xfer_alltoallv;
-        xmi_alltoallv_t        xfer_alltoallv_int;
+        xmi_alltoallv_int_t    xfer_alltoallv_int;
         xmi_ambroadcast_t      xfer_ambroadcast;
         xmi_amscatter_t        xfer_amscatter;
         xmi_amgather_t         xfer_amgather;

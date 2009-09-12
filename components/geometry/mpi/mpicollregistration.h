@@ -3,79 +3,80 @@
 
 #define XMI_COLLREGISTRATION_CLASS XMI::CollRegistration::MPI
 
-
-
 #include <map>
-#include "components/geometry/CollRegistration.h"
-#include "components/devices/mpi/oldmpimulticastmodel.h"
-#include "components/devices/mpi/mpimessage.h"
-#include "collectives/components/devices/mpi/mpidevice.h"
-#include "components/memory/heap/HeapMemoryManager.h"
-#include "components/mapping/mpi/mpimapping.h"
-#include "components/sysdep/mpi/mpisysdep.h"
-#include "algorithms/protocols/tspcoll/NBCollManager.h"
-
-
-
-typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>, XMI::Device::MPIMessage> MPIMcastModel;
-typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
-
+#include <vector>
+#include "components/geometry/mpi/mpicollinfo.h"
 
 namespace XMI
 {
   namespace CollRegistration
   {
-    template <class T_Geometry, class T_Collfactory>
-    class MPI : public CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory>, T_Geometry, T_Collfactory>
+    template <class T_Geometry, class T_Collfactory, class T_Device>
+    class MPI : public CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device>, T_Geometry, T_Collfactory, T_Device>
     {
     public:
-      inline MPI(XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> *dev):
-        CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory>, T_Geometry, T_Collfactory>()
+      inline MPI():
+        CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device>, T_Geometry, T_Collfactory, T_Device>()
         {
-          // Pgasrt broadcast call
-          XMI_NBCollManager::instance()->multisend_reg(TSPColl::BcastTag, &_pgasrt_broadcast);
-          
-#if 0
-//          XMI::Device::MPIDevice<MPISysDep> *dev
-//          XMI::Device::MPIDevice *dev
-          CCMI::Adaptor::Generic::OldMulticastImpl *minfo = 
-            new(registration) CCMI::Adaptor::Generic::OldMulticastImpl();
-          COMPILE_TIME_ASSERT(sizeof(*minfo) < sizeof (*registration));
-          minfo->initialize(_g_generic_adaptor);
-          TSPColl::NBCollManager::instance()->multisend_reg(TSPColl::BcastTag, minfo);		    
-          return XMI_SUCCESS;
-#endif
-          
-          
-          
-          
         }
+      inline xmi_result_t setup_impl(T_Device *dev)
+        {
+          // Register and link each collective into a queue for analysis
+          _nbColl.instance()->multisend_reg(TSPColl::BcastTag, &_pgbroadcast._model);
+          _broadcasts.push_back(&_pgbroadcast);
 
+          _nbColl.instance()->multisend_reg(TSPColl::AllgatherTag, &_pgallgather._model);
+          _allgathers.push_back(&_pgallgather);
+          
+          _nbColl.instance()->multisend_reg(TSPColl::AllgathervTag, &_pgallgatherv._model);
+          _allgathervs.push_back(&_pgallgatherv);
+          
+          _nbColl.instance()->multisend_reg(TSPColl::ScatterTag, &_pgscatter._smodel);
+          _nbColl.instance()->multisend_reg(TSPColl::BarrierTag, &_pgscatter._bmodel);
+          _scatters.push_back(&_pgscatter);
+          
+          _nbColl.instance()->multisend_reg(TSPColl::ScattervTag, &_pgscatterv._smodel);
+          _nbColl.instance()->multisend_reg(TSPColl::BarrierTag, &_pgscatterv._bmodel);
+          _scattervs.push_back(&_pgscatterv);
+          
+          _nbColl.instance()->multisend_reg(TSPColl::ShortAllreduceTag, &_pgallreduce._model);
+          _allreduces.push_back(&_pgallreduce);
+
+          _nbColl.instance()->multisend_reg(TSPColl::BarrierTag, &_pgbarrier._model);
+          _barriers.push_back(&_pgbarrier);
+          
+          return XMI_UNIMPL;
+        }
+      
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
         {
           return NULL;
         }
 
     public:
-      std::map<MPIMcastModel*, int> collectiveid;
-      MPIMcastModel _ccmi_broadcast;
-      MPIMcastModel _pgasrt_broadcast;
-      MPIMcastModel _pgasrt_allgather;
-      MPIMcastModel _pgasrt_allgatherv;
-      MPIMcastModel _pgasrt_scatter;
-      MPIMcastModel _pgasrt_scatterv;
-      MPIMcastModel _ccmi_allreduce;
-      MPIMcastModel _pgasrt_allreduce;
-      MPIMcastModel _ccmi_alltoall;
-      MPIMcastModel _ccmi_barrier;
-      MPIMcastModel _pgasrt_barrier;
-      MPIMcastModel _ccmi_ambroadcast;
-
+      RegQueue          _broadcasts;
+      RegQueue          _allgathers;
+      RegQueue          _allgathervs;
+      RegQueue          _scatters;
+      RegQueue          _scattervs;
+      RegQueue          _allreduces;
+      RegQueue          _barriers;
       
-//      XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>, XMI::Device::MPIMessage> _ccmi_mcast;
-//      XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>, XMI::Device::MPIMessage> _pgasrt_mcast;
+      XMI_NBCollManager _nbColl;
+      XMI::CollInfo::PGBroadcastInfo   _pgbroadcast;
+      XMI::CollInfo::PGAllgatherInfo   _pgallgather;
+      XMI::CollInfo::PGAllgathervInfo  _pgallgatherv;
+      XMI::CollInfo::PGScatterInfo     _pgscatter;
+      XMI::CollInfo::PGScattervInfo    _pgscatterv;
+      XMI::CollInfo::PGAllreduceInfo   _pgallreduce;
+      XMI::CollInfo::PGBarrierInfo     _pgbarrier;
 
-      
+      MPIMcastModel     _ccmi_broadcast;      
+      MPIMcastModel     _ccmi_allreduce;
+      MPIMcastModel     _ccmi_alltoall;
+      MPIMcastModel     _ccmi_barrier;
+      MPIMcastModel     _ccmi_ambroadcast;
+
     }; // class Collregistration
   };  // namespace Collregistration
 }; // namespace XMI

@@ -14,10 +14,10 @@ namespace XMI
       inline CollFactory()
         {
         }
-      inline xmi_result_t  algorithm       (xmi_xfer_t           *collective,
+      inline xmi_result_t  algorithm       (xmi_xfer_type_t       collective,
                                             xmi_algorithm_t      *alglist,
                                             size_t               *num);
-      inline size_t        num_algorithm   (xmi_xfer_t           *collective);
+      inline size_t        num_algorithm   (xmi_xfer_t            collective);
       inline xmi_result_t  collective      (xmi_xfer_t           *collective);
       inline xmi_result_t  ibroadcast      (xmi_broadcast_t      *broadcast);
       inline xmi_result_t  iallreduce      (xmi_allreduce_t      *allreduce);
@@ -41,18 +41,18 @@ namespace XMI
 
     template <class T_Collfactory>
     inline xmi_result_t
-    CollFactory<T_Collfactory>::algorithm(xmi_xfer_t      *collective,
-                                                               xmi_algorithm_t *alglist,
-                                                               size_t          *num)
+    CollFactory<T_Collfactory>::algorithm(xmi_xfer_type_t      collective,
+                                          xmi_algorithm_t     *alglist,
+                                          size_t              *num)
     {
-      return static_cast<T_Collfactory*>(this)->algorithm_impl();
+      return static_cast<T_Collfactory*>(this)->algorithm_impl(collective,alglist,num);
     }
 
     template <class T_Collfactory>
     inline size_t
-    CollFactory<T_Collfactory>::num_algorithm(xmi_xfer_t *collective)
+    CollFactory<T_Collfactory>::num_algorithm(xmi_xfer_t collective)
     {
-      return static_cast<T_Collfactory*>(this)->num_algorithm_impl();
+      return static_cast<T_Collfactory*>(this)->num_algorithm_impl(collective);
     }
 
     template <class T_Collfactory>

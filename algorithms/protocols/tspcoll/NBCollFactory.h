@@ -4,10 +4,11 @@
 #include "algorithms/protocols/tspcoll/NBColl.h"
 #include "algorithms/protocols/tspcoll/Barrier.h"
 #include "algorithms/protocols/tspcoll/Allgather.h"
+#include "algorithms/protocols/tspcoll/Allreduce.h"
 #include "algorithms/protocols/tspcoll/Allgatherv.h"
 #include "algorithms/protocols/tspcoll/BinomBcast.h"
 #include "algorithms/protocols/tspcoll/ScBcast.h"
-#include "algorithms/protocols/tspcoll/Allreduce.h"
+
 #include "algorithms/protocols/tspcoll/Scatter.h"
 
 namespace TSPColl
@@ -16,8 +17,8 @@ namespace TSPColl
   class NBCollFactory
   {
   public:
-    static NBColl<T_Mcast> * create (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int id);
-    static void initialize();
+    NBColl<T_Mcast> * create (XMI_GEOMETRY_CLASS * comm, NBTag tag, int id);
+    void              initialize();
   };
 };
 
@@ -38,7 +39,7 @@ void TSPColl::NBCollFactory<T_Mcast>::initialize ()
 /* ************************************************************************ */
 template <class T_Mcast>
 TSPColl::NBColl<T_Mcast> * 
-TSPColl::NBCollFactory<T_Mcast>::create (XMI::Geometry::Geometry<XMI_GEOMETRY_CLASS> * comm, NBTag tag, int instID)
+TSPColl::NBCollFactory<T_Mcast>::create (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID)
 {
   switch (tag)
     {

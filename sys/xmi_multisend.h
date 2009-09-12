@@ -203,6 +203,17 @@ extern "C"
       XMI_UNDEFINED_SUBTASK          =  (~LINE_BCAST_MASK),
     } xmi_subtask_t;
 
+
+    typedef xmi_quad_t * (*xmi_olddispatch_multicast_fn) (const xmi_quad_t   * info,
+                                                          unsigned             count,
+                                                          unsigned             peer,
+                                                          unsigned             sndlen,
+                                                          unsigned             conn_id,
+                                                          void               * arg,
+                                                          unsigned           * rcvlen,
+                                                          char              ** rcvbuf,
+                                                          unsigned           * pipewidth,
+                                                          xmi_callback_t     * cb_done);
     typedef struct xmi_oldmulticast_t
     {
       xmi_callback_t      cb_done;

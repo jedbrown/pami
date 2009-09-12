@@ -2,8 +2,8 @@
 #define __components_mapping_mpi_mpimapping_h__
 
 #include "sys/xmi.h"
-
 #include "components/mapping/BaseMapping.h"
+#include <mpi.h>
 
 #define XMI_MAPPING_CLASS XMI::Mapping::MPIMapping
 
