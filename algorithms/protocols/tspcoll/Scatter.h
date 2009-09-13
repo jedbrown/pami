@@ -210,7 +210,7 @@ void TSPColl::Scatter<T_Mcast>::cb_senddone (void * arg)
   if (self->_cb_complete) 
       {
 	  free(self->_req);
-	  self->_cb_complete (self->_arg);
+	  self->_cb_complete (NULL, self->_arg, XMI_SUCCESS);
       }
 }
 

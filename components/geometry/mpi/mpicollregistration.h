@@ -17,7 +17,8 @@ namespace XMI
     {
     public:
       inline MPI():
-        CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device>, T_Geometry, T_Collfactory, T_Device>()
+      CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device>, T_Geometry, T_Collfactory, T_Device>(),
+	_nbColl()
         {
         }
       inline xmi_result_t setup_impl(T_Device *dev)
@@ -55,6 +56,7 @@ namespace XMI
           _nbColl.instance()->multisend_reg(TSPColl::BarrierTag, &_pgbarrier._model);
 	  _barriers.push_back(&_pgbarrier);
 
+	  _dev = dev;
           return XMI_SUCCESS;
         }
       
@@ -63,7 +65,7 @@ namespace XMI
 
 	XMI_COLLFACTORY_CLASS *f=(XMI_COLLFACTORY_CLASS *)_fact_alloc.allocateObject();
 	new(f)XMI_COLLFACTORY_CLASS();
-	f->setGeometry(geometry, &_nbColl);
+	f->setGeometry(geometry, &_nbColl, _dev);
 	f->add_collective(XMI_XFER_BROADCAST, &_pgbroadcast);
 	f->add_collective(XMI_XFER_ALLGATHER, &_pgallgather);
 	f->add_collective(XMI_XFER_ALLGATHERV, &_pgallgatherv);
@@ -75,6 +77,7 @@ namespace XMI
       }
 
     public:
+      T_Device                        *_dev;
       XMI_NBCollManager                _nbColl;
       XMI::CollInfo::PGBroadcastInfo   _pgbroadcast;
       XMI::CollInfo::PGAllgatherInfo   _pgallgather;

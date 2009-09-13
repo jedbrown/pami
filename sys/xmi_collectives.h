@@ -122,6 +122,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         char                     * sndbuf;
@@ -157,6 +158,7 @@ extern "C"
     {
         xmi_xfer_type_t           xfer_type;
         xmi_event_function        cb_done;
+        void                    * cookie;
         xmi_geometry_t            geometry;
         xmi_algorithm_t           algorithm;
         char                    * sndbuf;
@@ -191,6 +193,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         char                      * sndbuf;
@@ -223,6 +226,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         size_t                     root;
@@ -260,6 +264,7 @@ extern "C"
     {
         xmi_xfer_type_t           xfer_type;
         xmi_event_function        cb_done;
+        void                    * cookie;
         xmi_geometry_t            geometry;
         xmi_algorithm_t           algorithm;
         char                    * sbuffer;
@@ -292,6 +297,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         size_t                      root;
@@ -322,6 +328,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         char                      * src;
@@ -356,6 +363,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         size_t                      root;
@@ -392,6 +400,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         size_t                     root;
@@ -429,6 +438,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         int                        root;
@@ -465,6 +475,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         char                     * sndbuf;
@@ -499,6 +510,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         char                     * sndbuf;
@@ -534,6 +546,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         size_t                      root;
@@ -568,6 +581,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         size_t                      root;
@@ -603,6 +617,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         int                         root;
@@ -641,6 +656,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         char                     * sbuffer;
@@ -680,6 +696,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         char                     * sbuffer;
@@ -708,6 +725,7 @@ extern "C"
     {
         xmi_xfer_type_t            xfer_type;
         xmi_event_function         cb_done;
+        void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
     }xmi_barrier_t;
@@ -741,6 +759,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         void                      * user_header;
@@ -799,6 +818,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         void                      * headers;
         size_t                      headerlen;
@@ -860,6 +880,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         void                      * headers;
         size_t                      headerlen;
@@ -925,6 +946,7 @@ extern "C"
     {
         xmi_xfer_type_t             xfer_type;
         xmi_event_function          cb_done;
+        void                      * cookie;
         xmi_geometry_t              geometry;
         void                      * user_header;
         size_t                      headerlen;

@@ -50,7 +50,7 @@ namespace TSPColl
 
     CollExchange                   (XMI_GEOMETRY_CLASS *, NBTag, 
 				    int id, int off, bool strict=true,
-				    void (*cb_complete)(void *)=NULL,
+				    xmi_event_function cb_complete=NULL,
 				    void * arg = NULL);
     void          reset            (void);
 
@@ -165,7 +165,7 @@ template <class T_Mcast>
 inline TSPColl::CollExchange<T_Mcast>::
 CollExchange (XMI_GEOMETRY_CLASS * comm,
                        NBTag tag, int id, int offset, 
-                       bool strict, void (*cb_complete)(void *), void *arg):
+                       bool strict, xmi_event_function cb_complete, void *arg):
 NBColl<T_Mcast> (comm, tag, id, cb_complete, arg), _strict(strict)
 {
   _counter         = 0;
@@ -301,7 +301,7 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
 	      _phase++; 
 	      TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
 		     this->_cb_complete, this->_arg));
-	      this->_cb_complete (this->_arg); 
+	      this->_cb_complete (NULL, this->_arg, XMI_SUCCESS);
 	  }
   
  the_end:

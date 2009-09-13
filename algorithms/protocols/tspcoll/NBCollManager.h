@@ -15,7 +15,9 @@ namespace TSPColl
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
-    Vector() { _size = _max = 0; _v = NULL; }
+    Vector() { 
+      _size = _max = 0; _v = NULL; 
+    }
     T & operator[](int idx);
     int max() const { return _max; }
     int size() const { return _size; }
@@ -37,7 +39,8 @@ namespace TSPColl
     /* ---------------- */
     /* external API     */
     /* ---------------- */
-
+    
+    NBCollManager(void);
     void initialize ();
     NBCollManager<T_Mcast> * instance();
 
@@ -57,8 +60,6 @@ namespace TSPColl
     /* ------------ */
     /* constructors */
     /* ------------ */
-
-    NBCollManager (void);
     void * operator new (size_t, void * addr) { return addr; }
   };
 
@@ -154,8 +155,12 @@ namespace TSPColl
   template <class T_Mcast>
   void TSPColl::NBCollManager<T_Mcast>::initialize (void)
   {
+    for (int i=0; i<MAXTAG; i++)
+      {
+	_taglist [i] = (Vector<NBColl<T_Mcast> *> *) malloc (sizeof(Vector<NBColl<T_Mcast> *>));
+	new (_taglist[i]) Vector<NBColl<T_Mcast> *> ();
+      }
     _instance = this;
-    //NBCollFactory<T_Mcast>::initialize();
   }
 
   template <class T_Mcast>
@@ -170,11 +175,7 @@ namespace TSPColl
   template <class T_Mcast>
   TSPColl::NBCollManager<T_Mcast>::NBCollManager (void)
   {
-    for (int i=0; i<MAXTAG; i++)
-        {
-          _taglist [i] = (Vector<NBColl<T_Mcast> *> *) malloc (sizeof(Vector<NBColl<T_Mcast> *>));
-          new (_taglist[i]) Vector<NBColl<T_Mcast> *> ();
-        }
+ 
   }
 
 /* ************************************************************************ */

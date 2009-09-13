@@ -32,21 +32,21 @@ namespace TSPColl
   {
   public:
     NBColl (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
-	    void (*cb_complete)(void *), void *arg);
+	    xmi_event_function cb_complete, void *arg);
 
   public:
     virtual void  kick  (T_mcast *mcast_iface) {};
     virtual bool isdone () const { return false; } /* check completion */
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }
-    virtual void setComplete (void (*cb_complete)(void *), void *arg);
+    virtual void setComplete (xmi_event_function cb_complete, void *arg);
 
   protected:
-    XMI_GEOMETRY_CLASS * _comm;
-    NBTag          _tag;
-    int            _instID;
-    void        (* _cb_complete) (void *);
-    void         * _arg;
+    XMI_GEOMETRY_CLASS *_comm;
+    NBTag               _tag;
+    int                 _instID;
+    xmi_event_function  _cb_complete;
+    void               *_arg;
   };
 
   
@@ -56,7 +56,7 @@ namespace TSPColl
 /* ************************************************************************ */
   template <class T_Mcast>
   TSPColl::NBColl<T_Mcast>::NBColl (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
-                                    void (*cb_complete)(void *), void *arg):
+                                    xmi_event_function cb_complete, void *arg):
     _comm (comm), _tag (tag), _instID (instID),
     _cb_complete (cb_complete), _arg(arg)
   {
@@ -65,7 +65,7 @@ namespace TSPColl
 /* ************************************************************************ */
 /* ************************************************************************ */
   template <class T_Mcast>
-  void TSPColl::NBColl<T_Mcast>::setComplete (void (*cb_complete)(void *), void *arg)
+  void TSPColl::NBColl<T_Mcast>::setComplete (xmi_event_function cb_complete, void *arg)
   {
     _cb_complete = cb_complete;
     _arg = arg;

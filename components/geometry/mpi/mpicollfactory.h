@@ -2,7 +2,7 @@
 #define   __xmi_mpicollfactory__h__
 
 
-#define XMI_COLLFACTORY_CLASS XMI::CollFactory::MPI
+#define XMI_COLLFACTORY_CLASS XMI::CollFactory::MPI<Device::MPIDevice<SysDep::MPISysDep> >
 
 #include "sys/xmi.h"
 #include "components/geometry/CollFactory.h"
@@ -13,11 +13,12 @@ namespace XMI
 {
   namespace CollFactory
   {
-    class MPI : public CollFactory<XMI::CollFactory::MPI>
+    template <class T_Device>
+    class MPI : public CollFactory<XMI::CollFactory::MPI<T_Device> >
     {
     public:
       inline MPI():
-      CollFactory<XMI::CollFactory::MPI>()
+      CollFactory<XMI::CollFactory::MPI<T_Device> >()
         {
         }
 	
@@ -110,22 +111,19 @@ namespace XMI
 
 
 
-      inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g, XMI_NBCollManager *mgr)
+      inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g, XMI_NBCollManager *mgr, T_Device *dev)
       {
-#if 0
 	_geometry = g;
+	_dev      = dev;
 	_barrier    = mgr->allocate (g, TSPColl::BarrierTag);
-	_allgather  = NBCollManager::instance()->allocate (this, AllgatherTag);
-	_allgatherv = NBCollManager::instance()->allocate (this, AllgathervTag);
-	_bcast      = NBCollManager::instance()->allocate (this, BcastTag);
-	_bcast2     = NBCollManager::instance()->allocate (this, BcastTag2);
-	_sar        = NBCollManager::instance()->allocate (this, ShortAllreduceTag);
-	_lar        = NBCollManager::instance()->allocate (this, LongAllreduceTag);
-	_sct        = NBCollManager::instance()->allocate (this, ScatterTag);
-	_sctv       = NBCollManager::instance()->allocate (this, ScattervTag);
-#endif
-
-
+	_allgather  = mgr->allocate (g, TSPColl::AllgatherTag);
+	_allgatherv = mgr->allocate (g, TSPColl::AllgathervTag);
+	_bcast      = mgr->allocate (g, TSPColl::BcastTag);
+	_bcast2     = mgr->allocate (g, TSPColl::BcastTag2);
+	_sar        = mgr->allocate (g, TSPColl::ShortAllreduceTag);
+	_lar        = mgr->allocate (g, TSPColl::LongAllreduceTag);
+	_sct        = mgr->allocate (g, TSPColl::ScatterTag);
+	_sctv       = mgr->allocate (g, TSPColl::ScattervTag);
       }
 
       inline xmi_result_t  add_collective(xmi_xfer_type_t          collective,
@@ -205,7 +203,6 @@ namespace XMI
       inline xmi_result_t  ibroadcast_impl      (xmi_broadcast_t      *broadcast)
       {
 	XMI::CollInfo::PGBroadcastInfo *info = (XMI::CollInfo::PGBroadcastInfo *)_broadcasts[broadcast->algorithm];
-	info->start(broadcast);
 	return XMI_UNIMPL;
       }
 
@@ -251,7 +248,12 @@ namespace XMI
 
       inline xmi_result_t  ibarrier_impl        (xmi_barrier_t        *barrier)
       {
-	return XMI_UNIMPL;
+	XMI::CollInfo::PGBarrierInfo *info = (XMI::CollInfo::PGBarrierInfo *)_barriers[barrier->algorithm];
+	while(!_barrier->isdone()) _dev->advance();
+	((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
+	_barrier->setComplete(barrier->cb_done, barrier->cookie);
+	_barrier->kick(&info->_model);
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t  ialltoall_impl       (xmi_alltoall_t       *alltoall)
@@ -293,23 +295,21 @@ namespace XMI
       {
 	return XMI_UNIMPL;
       }
-      XMI_GEOMETRY_CLASS * _geometry;
-      RegQueue          _broadcasts;
-      RegQueue          _allgathers;
-      RegQueue          _allgathervs;
-      RegQueue          _scatters;
-      RegQueue          _scattervs;
-      RegQueue          _allreduces;
-      RegQueue          _barriers;
-
-      TSPColl::NBColl<MPIMcastModel> * _barrier;
-      TSPColl::NBColl<MPIMcastModel> * _allgather;
-      TSPColl::NBColl<MPIMcastModel> * _allgatherv;
-      TSPColl::NBColl<MPIMcastModel> * _bcast, *_bcast2;
-      TSPColl::NBColl<MPIMcastModel> * _sar, * _lar;
-      TSPColl::NBColl<MPIMcastModel> * _sct, * _sctv;
-
-      
+      T_Device                        *_dev;
+      XMI_GEOMETRY_CLASS              *_geometry;
+      RegQueue                         _broadcasts;
+      RegQueue                         _allgathers;
+      RegQueue                         _allgathervs;
+      RegQueue                         _scatters;
+      RegQueue                         _scattervs;
+      RegQueue                         _allreduces;
+      RegQueue                         _barriers;
+      TSPColl::NBColl<MPIMcastModel>  *_barrier;
+      TSPColl::NBColl<MPIMcastModel>  *_allgather;
+      TSPColl::NBColl<MPIMcastModel>  *_allgatherv;
+      TSPColl::NBColl<MPIMcastModel>  *_bcast, *_bcast2;
+      TSPColl::NBColl<MPIMcastModel>  *_sar,   *_lar;
+      TSPColl::NBColl<MPIMcastModel>  *_sct,   *_sctv;
     }; // class CollFactory
   };  // namespace CollFactory
 }; // namespace XMI
