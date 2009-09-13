@@ -32,63 +32,96 @@ namespace XMI
     }collinfo_type_t;
 
 
-
+    template <class T_Device>
     class CollInfo
     {
     public:
+      CollInfo(T_Device *dev) {}
       collinfo_type_t _colltype;
     };
-    class PGBroadcastInfo:public CollInfo
+    
+    template <class T_Device>
+    class PGBroadcastInfo:public CollInfo<T_Device>
     {
     public:
-      inline xmi_result_t start(xmi_broadcast_t *broadcast)
-        {
-
-        }
-        
-
-      MPIMcastModel _model;
-    };
-    class PGAllgatherInfo:public CollInfo
-    {
-    public:
+    PGBroadcastInfo(T_Device *dev):
+      CollInfo<T_Device>(dev),
+      _model(*dev){}
       MPIMcastModel _model;
     };
 
-    class PGAllgathervInfo:public CollInfo
+    template <class T_Device>
+    class PGAllgatherInfo:public CollInfo<T_Device>
     {
     public:
+    PGAllgatherInfo(T_Device *dev):
+      CollInfo<T_Device>(dev),
+	_model(*dev){}
       MPIMcastModel _model;
     };
 
-    class PGScatterInfo:public CollInfo
+    template <class T_Device>
+    class PGAllgathervInfo:public CollInfo<T_Device>
     {
     public:
+    PGAllgathervInfo(T_Device *dev):
+      CollInfo<T_Device>(dev),
+	_model(*dev){}
+      MPIMcastModel _model;
+    };
+
+    template <class T_Device>
+    class PGScatterInfo:public CollInfo<T_Device>
+    {
+    public:
+    PGScatterInfo(T_Device *dev):
+      CollInfo<T_Device>(dev),
+	_smodel(*dev),
+	_bmodel(*dev){}
+      
       MPIMcastModel _smodel;
       MPIMcastModel _bmodel;
     };
     
-    class PGScattervInfo:public CollInfo
+    template <class T_Device>
+    class PGScattervInfo:public CollInfo<T_Device>
     {
     public:
+      
+    PGScattervInfo(T_Device *dev):
+      CollInfo<T_Device>(dev),
+	_smodel(*dev),
+	_bmodel(*dev){}
+      
       MPIMcastModel _smodel;
       MPIMcastModel _bmodel;
     };
 
-    class PGAllreduceInfo:public CollInfo
+    template <class T_Device>
+    class PGAllreduceInfo:public CollInfo<T_Device>
     {
     public:
+    PGAllreduceInfo(T_Device *dev):
+      CollInfo<T_Device>(dev),
+	_model(*dev){}
+
       MPIMcastModel _model;
     };
 
-    class PGBarrierInfo:public CollInfo
+    template <class T_Device>
+    class PGBarrierInfo:public CollInfo<T_Device>
     {
     public:
+    PGBarrierInfo(T_Device *dev):
+      CollInfo<T_Device>(dev),
+	_model(*dev){}
+
       MPIMcastModel _model;
     };
-    typedef std::vector<CollInfo*> RegQueue;
+
   };
 };
-typedef std::vector<XMI::CollInfo::CollInfo*> RegQueue;
+typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;
+typedef std::vector<XMI::CollInfo::CollInfo<MPIDevice> *> RegQueue;
 
 #endif

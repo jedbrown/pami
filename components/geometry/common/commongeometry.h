@@ -7,6 +7,7 @@
 #define XMI_GEOMETRY_CLASS XMI::Geometry::Common<XMI_MAPPING_CLASS>
 
 #include "components/geometry/Geometry.h"
+#include <map>
 
 namespace XMI
 {
@@ -29,14 +30,15 @@ namespace XMI
       inline Common (T_Mapping           *mapping,
                      int                  numranges,
                      xmi_geometry_range_t rangelist[]):
-         Geometry<XMI::Geometry::Common<T_Mapping>, T_Mapping>(mapping, numranges, rangelist)
+	Geometry<XMI::Geometry::Common<T_Mapping>, T_Mapping>(mapping, numranges, rangelist),
+	_kvstore()
         {
           this->_rank      = mapping->task();
           this->_rangelist = rangelist;
           this->_numranges = numranges;
           this->_size      = 0;
           for(int i=0; i<numranges; i++)
-            this->_size+=(_rangelist[i].hi-rangelist[i].lo+1);
+            this->_size+=(this->_rangelist[i].hi-this->_rangelist[i].lo+1);
           assert (this->_size > 0);
         }
 
@@ -109,7 +111,7 @@ namespace XMI
       inline MatchQueue               &asyncBcastUnexpQ_impl()
         {
         }
-#if 0            
+#if 0
       inline RECTANGLE_TYPE            rectangle_impl()
         {
         }
@@ -144,7 +146,7 @@ namespace XMI
       inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c)
         {
         }
-      inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c, 
+      inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c,
                                                                   unsigned i)
         {
         }
@@ -160,12 +162,12 @@ namespace XMI
       static inline CCMI_Geometry_t   *getCachedGeometry_impl(unsigned comm)
         {
         }
-      static inline void               updateCachedGeometry_impl(CCMI_Geometry_t *geometry, 
+      static inline void               updateCachedGeometry_impl(CCMI_Geometry_t *geometry,
                                                                  unsigned comm)
         {
         }
 #endif
-      // These methods were originally from the PGASRT Communicator class            
+      // These methods were originally from the PGASRT Communicator class
       inline int                        size_impl       (void)
         {
           return _size;
@@ -200,13 +202,23 @@ namespace XMI
               }
           assert(0);
         }
+      inline void                       setKey(int key, void*value)
+      {
+	_kvstore[key]=value;
+      }
+      inline void                      *getKey(int key)
+      {
+	return _kvstore[key];
+      }
+
     private:
+      std::map <int, void*> _kvstore;
       int                   _numranges;
       xmi_geometry_range_t *_rangelist;
       int                   _rank;
       int                   _size;
-          
-          
+
+
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace XMI

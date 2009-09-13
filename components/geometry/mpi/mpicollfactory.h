@@ -127,7 +127,7 @@ namespace XMI
       }
 
       inline xmi_result_t  add_collective(xmi_xfer_type_t          collective,
-					  XMI::CollInfo::CollInfo* ci)
+					  XMI::CollInfo::CollInfo<T_Device>* ci)
       {
 	RegQueue *rq = getRegQ(collective);
 	if(rq==NULL)
@@ -202,7 +202,7 @@ namespace XMI
 
       inline xmi_result_t  ibroadcast_impl      (xmi_broadcast_t      *broadcast)
       {
-	XMI::CollInfo::PGBroadcastInfo *info = (XMI::CollInfo::PGBroadcastInfo *)_broadcasts[broadcast->algorithm];
+	XMI::CollInfo::PGBroadcastInfo<T_Device> *info = (XMI::CollInfo::PGBroadcastInfo<T_Device> *)_broadcasts[broadcast->algorithm];
 	return XMI_UNIMPL;
       }
 
@@ -248,7 +248,7 @@ namespace XMI
 
       inline xmi_result_t  ibarrier_impl        (xmi_barrier_t        *barrier)
       {
-	XMI::CollInfo::PGBarrierInfo *info = (XMI::CollInfo::PGBarrierInfo *)_barriers[barrier->algorithm];
+	XMI::CollInfo::PGBarrierInfo<T_Device> *info = (XMI::CollInfo::PGBarrierInfo<T_Device> *)_barriers[barrier->algorithm];
 	while(!_barrier->isdone()) _dev->advance();
 	((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
 	_barrier->setComplete(barrier->cb_done, barrier->cookie);

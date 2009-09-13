@@ -31,10 +31,14 @@ namespace XMI
     typedef Device::MPIDevice<SysDep::MPISysDep> MPIDevice;
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
-    typedef CollFactory::CollFactory<XMI::CollFactory::MPI<MPIDevice> > MPICollfactory;
-    typedef CollRegistration::CollRegistration<XMI::CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice>,
-                                               MPIGeometry, MPICollfactory, MPIDevice> MPICollreg;
-    
+    //    typedef CollFactory::CollFactory<XMI::CollFactory::MPI<MPIDevice> > MPICollfactory;
+    //    typedef CollRegistration::CollRegistration<XMI::CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice>,
+    //                                               MPIGeometry, MPICollfactory, MPIDevice> MPICollreg;
+
+    typedef CollFactory::MPI<MPIDevice> MPICollfactory;
+    typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice> MPICollreg;
+
+
     class MPI : public Context<XMI::Context::MPI>
     {
     public:
@@ -45,14 +49,16 @@ namespace XMI
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize); 
           _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
-
-
 	  _world_range.lo=0;
 	  _world_range.hi=_mysize-1;
           new(_world_geometry) MPIGeometry(&_sysdep.mapping,1,&_world_range);
-          _collreg.setup(&_mpi);
-          _world_collfactory=_collreg.analyze(_world_geometry);
-          
+	  
+	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
+	  new(_collreg) MPICollreg(&_mpi);
+	  //          _collreg->setup(&_mpi);
+
+          _world_collfactory=_collreg->analyze(_world_geometry);
+	  _world_geometry->setKey(XMI::Geometry::COLLFACTORY, _world_collfactory);
         }
         
       inline xmi_client_t getClientId_impl ()
@@ -285,7 +291,12 @@ namespace XMI
                                                     xmi_geometry_range_t * rank_slices,
                                                     unsigned               slice_count)
         {
-          assert(0);
+	  MPIGeometry              *new_geometry;
+	  MPICollfactory           *new_collfactory;
+          new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
+          new(_world_geometry) MPIGeometry(&_sysdep.mapping,slice_count,rank_slices);
+          new_collfactory=_collreg->analyze(new_geometry);
+	  new_geometry->setKey(XMI::Geometry::COLLFACTORY, new_collfactory);
           return XMI_UNIMPL;
         }
             
@@ -363,13 +374,14 @@ namespace XMI
         }
 
     private:
+      std::map <unsigned, xmi_geometry_t>   _geometry_id;
       xmi_client_t              _client;
       xmi_context_t             _context;
       void                     *_dispatch[1024];
       SysDep::MPISysDep         _sysdep;
       MemoryAllocator<1024,16>  _request;
       MPIDevice                 _mpi;
-      MPICollreg                _collreg;
+      MPICollreg               *_collreg;
       MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;
       xmi_geometry_range_t      _world_range;

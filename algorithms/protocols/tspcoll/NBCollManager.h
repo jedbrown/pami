@@ -42,8 +42,6 @@ namespace TSPColl
     
     NBCollManager(void);
     void initialize ();
-    NBCollManager<T_Mcast> * instance();
-
     NBColl<T_Mcast> * find (NBTag tag, int id); /* find an existing instance */
     NBColl<T_Mcast> * allocate (XMI_GEOMETRY_CLASS *, NBTag tag);
     void     multisend_reg (NBTag tag,T_Mcast *mcast_iface);
@@ -54,13 +52,8 @@ namespace TSPColl
     /* ------------ */
 
     Vector<NBColl<T_Mcast> *>        * _taglist[MAXTAG];
-    NBCollManager<T_Mcast>           * _instance; 
     NBCollFactory<T_Mcast>             _factory;
   private:
-    /* ------------ */
-    /* constructors */
-    /* ------------ */
-    void * operator new (size_t, void * addr) { return addr; }
   };
 
   
@@ -160,14 +153,8 @@ namespace TSPColl
 	_taglist [i] = (Vector<NBColl<T_Mcast> *> *) malloc (sizeof(Vector<NBColl<T_Mcast> *>));
 	new (_taglist[i]) Vector<NBColl<T_Mcast> *> ();
       }
-    _instance = this;
   }
 
-  template <class T_Mcast>
-  TSPColl::NBCollManager<T_Mcast> * TSPColl::NBCollManager<T_Mcast>::instance()
-  {
-    return _instance;
-  }
 
 /* ************************************************************************ */
 /*           NBColl life cycle manager: constructor                         */
@@ -175,7 +162,6 @@ namespace TSPColl
   template <class T_Mcast>
   TSPColl::NBCollManager<T_Mcast>::NBCollManager (void)
   {
- 
   }
 
 /* ************************************************************************ */

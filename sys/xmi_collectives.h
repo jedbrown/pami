@@ -12,7 +12,7 @@
 extern "C"
 {
 #endif
-    typedef size_t  xmi_geometry_t;
+    typedef void*   xmi_geometry_t;
     typedef size_t  xmi_algorithm_t;
 
     typedef struct

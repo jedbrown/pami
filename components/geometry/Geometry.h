@@ -35,6 +35,14 @@ namespace XMI
 {
     namespace Geometry
     {
+      typedef enum
+      {
+	COLLFACTORY = 0
+
+      }keys;
+
+
+
       template <class T_Geometry, class T_Mapping>
         class Geometry
         {
@@ -102,7 +110,8 @@ namespace XMI
             inline int                        rank       (void);
             inline int                        absrankof  (int rank);
             inline int                        virtrankof (int rank);
-
+	    inline void                       setKey(int key, void*value);
+	    inline void                      *getKey(int key);
         }; // class Geometry
 
         template <class T_Geometry, class T_Mapping>
@@ -364,6 +373,18 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->virtrankof_impl(rank);
         }
+        template <class T_Geometry, class T_Mapping>
+	inline void                        Geometry<T_Geometry, T_Mapping>::setKey (int key, void *value)
+        {
+	  static_cast<T_Geometry*>(this)->setKey_impl(key, value);
+        }
+        template <class T_Geometry, class T_Mapping>
+        inline void*                       Geometry<T_Geometry, T_Mapping>::getKey (int key)
+        {
+            return static_cast<T_Geometry*>(this)->getKey_impl(key);
+        }
+
+
  
     }; // namespace Geometry
 }; // namespace XMI

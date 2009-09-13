@@ -14,18 +14,9 @@ namespace XMI
       inline CollRegistration()
         {
         }      
-      inline xmi_result_t    setup(T_Device *device);
       inline T_Collfactory * analyze(T_Geometry * geometry);
 
     }; // class CollRegistration
-
-    
-    template <class T_Collregistration, class T_Geometry, class T_Collfactory, class T_Device>
-    inline xmi_result_t CollRegistration<T_Collregistration,T_Geometry,T_Collfactory,T_Device>::setup(T_Device *device)
-    {
-      return static_cast<T_Collregistration*>(this)->setup_impl(device);
-    }
-
 
     template <class T_Collregistration, class T_Geometry, class T_Collfactory, class T_Device>
     inline T_Collfactory * CollRegistration<T_Collregistration,T_Geometry,T_Collfactory, T_Device>::analyze(T_Geometry *geometry)
