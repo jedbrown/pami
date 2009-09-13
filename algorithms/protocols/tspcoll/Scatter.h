@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include "algorithms/ccmi.h" // for XMI_Request_t
 #include "./NBColl.h"
+#include "util/common.h"
 
 /* **************************************************************** */
 /*                      Scatter                                     */
@@ -173,7 +174,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
       unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = this->_comm->absrankof (i);
       XMI_Callback_t cb_done;
-      cb_done.function        = (void (*)(void*, xmi_result_t*))cb_senddone;
+      cb_done.function        = (void (*)(void*,void*, xmi_result_t))cb_senddone;
       cb_done.clientdata      = &this->_header;
       void * r = NULL;
       TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
@@ -182,7 +183,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
 			 &cb_done,
 			 XMI_MATCH_CONSISTENCY,
 			 (xmi_quad_t*)&this->_header,
-			 CCMIQuad_sizeof(this->_header),
+			 XMIQuad_sizeof(this->_header),
 			 0,
 			 (char*)(this->_sbuf + i * this->_length),
 			 (unsigned)this->_length,
@@ -269,14 +270,14 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 	unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
 	unsigned        ranks   = this->_comm->absrankof (i);
 	XMI_Callback_t cb_done;
-	cb_done.function        = (void (*)(void*, xmi_result_t*))this->cb_senddone;
+	cb_done.function        = (void (*)(void*, void*, xmi_result_t))this->cb_senddone;
 	cb_done.clientdata      = &this->_header;
 	void * r = NULL;
 	mcast_iface->send (&this->_req[i],
 			   &cb_done,
 			   XMI_MATCH_CONSISTENCY,
 			   (xmi_quad_t*)&this->_header,
-			   CCMIQuad_sizeof(this->_header),
+			   XMIQuad_sizeof(this->_header),
 			   0,
 			   (char*)(s),
 			   (unsigned)this->_lengths[i],

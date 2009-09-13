@@ -75,8 +75,7 @@ namespace TSPColl
                                           XMI_Callback_t * cb_done);
     
     static void   cb_recvcomplete (void * arg, xmi_result_t* error);
-    static void   cb_senddone              (void *, xmi_result_t *err);
-    
+    static void   cb_senddone     (void*, void*, xmi_result_t);
   protected:
     /* ------------------------------ */
     /* static: set by constructor     */
@@ -352,13 +351,13 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 	 _header[phase].tag,
 	 _header[phase].id,
 	 &_header[phase],
-	 CCMIQuad_sizeof(_header[phase])));
+	 XMIQuad_sizeof(_header[phase])));
 
   mcast_iface->send (&_req[phase],
 		     &cb_done,
 		     XMI_MATCH_CONSISTENCY,
 		     (xmi_quad_t*)& _header[phase],
-		     CCMIQuad_sizeof(_header[phase]),
+		     XMIQuad_sizeof(_header[phase]),
 		     0,
 		     (char*)_sbuf[phase],
 		     (unsigned)_sbufln[phase],
@@ -374,7 +373,7 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 /*                             send complete                               */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (void * arg, xmi_result_t *err)
+inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (void *ctxt, void * arg, xmi_result_t err)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   MUTEX_LOCK(&base->_mutex);

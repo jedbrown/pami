@@ -10,6 +10,7 @@
 #include "components/mapping/mpi/mpimapping.h"
 #include "components/sysdep/mpi/mpisysdep.h"
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
+#include "algorithms/protocols/tspcoll/NBColl.h"
 
 typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>, XMI::Device::MPIMessage> MPIMcastModel;
 typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
@@ -19,10 +20,23 @@ namespace XMI
 {
   namespace CollInfo
   {
+    typedef enum
+    {
+      CI_BROADCAST0=0,
+      CI_ALLGATHER0,
+      CI_ALLGATHERV0,
+      CI_SCATTER0,
+      CI_SCATTERV0,
+      CI_ALLREDUCE0,
+      CI_BARRIER0,
+    }collinfo_type_t;
+
+
+
     class CollInfo
     {
     public:
-      xmi_xfer_type_t _colltype;
+      collinfo_type_t _colltype;
     };
     class PGBroadcastInfo:public CollInfo
     {

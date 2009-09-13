@@ -21,7 +21,7 @@ namespace XMI
         }
 
       inline unsigned  send   (XMI_Request_t             * request,
-                               const xmi_event_function  * cb_done,
+                               const xmi_callback_t      * cb_done,
                                xmi_consistency_t           consistency,
                                const xmi_quad_t          * info,
                                unsigned                    info_count,

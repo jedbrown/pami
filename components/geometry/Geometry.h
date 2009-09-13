@@ -357,12 +357,12 @@ namespace XMI
         template <class T_Geometry, class T_Mapping>
         inline int                        Geometry<T_Geometry, T_Mapping>::absrankof  (int rank)
         {
-            return static_cast<T_Geometry*>(this)->absrankof_impl();
+            return static_cast<T_Geometry*>(this)->absrankof_impl(rank);
         }
         template <class T_Geometry, class T_Mapping>
         inline int                        Geometry<T_Geometry, T_Mapping>::virtrankof (int rank)
         {
-            return static_cast<T_Geometry*>(this)->virtrankof_impl();
+            return static_cast<T_Geometry*>(this)->virtrankof_impl(rank);
         }
  
     }; // namespace Geometry

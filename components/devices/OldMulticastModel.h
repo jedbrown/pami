@@ -19,7 +19,7 @@ namespace XMI
               
         inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg);
         inline unsigned  send   (XMI_Request_t            * request,
-                                 const xmi_event_function  * cb_done,
+                                 const xmi_callback_t     * cb_done,
                                  xmi_consistency_t            consistency,
                                  const xmi_quad_t          * info,
                                  unsigned                    info_count,
@@ -56,7 +56,7 @@ namespace XMI
       
       template <class T_Model, class T_Device, class T_Object>
       unsigned OldmulticastModel<T_Model, T_Device, T_Object>::send (XMI_Request_t             * request,
-                                                                     const xmi_event_function  * cb_done,
+                                                                     const xmi_callback_t      * cb_done,
                                                                      xmi_consistency_t           consistency,
                                                                      const xmi_quad_t          * info,
                                                                      unsigned                    info_count,

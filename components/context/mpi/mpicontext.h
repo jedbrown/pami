@@ -44,18 +44,12 @@ namespace XMI
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize); 
-          _ranklist = (unsigned*)malloc(sizeof(unsigned)*_mysize);
-          for (int i=0; i<_mysize; i++) _ranklist[i]=i;
-          _world_geometry=
-            (MPIGeometry*)
-            malloc(sizeof(*_world_geometry));
-          new(_world_geometry)
-            MPIGeometry(NULL,              // Mapping
-                        _ranklist,         // Ranks
-                        _mysize,           // NumRanks
-                        0,                 // Comm id
-                        0,                 // numcolors
-                        1);                // isglobal?
+          _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
+
+
+	  _world_range.lo=0;
+	  _world_range.hi=_mysize-1;
+          new(_world_geometry) MPIGeometry(&_sysdep.mapping,1,&_world_range);
           _collreg.setup(&_mpi);
           _world_collfactory=_collreg.analyze(_world_geometry);
           
@@ -378,9 +372,11 @@ namespace XMI
       MPICollreg                _collreg;
       MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;
+      xmi_geometry_range_t      _world_range;
       int                       _myrank;
       int                       _mysize;
       unsigned                 *_ranklist;
+      
     }; // end XMI::Context::MPI
   }; // end namespace Context
 }; // end namespace XMI

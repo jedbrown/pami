@@ -52,7 +52,7 @@ namespace TSPColl
 
     Vector<NBColl<T_Mcast> *>        * _taglist[MAXTAG];
     NBCollManager<T_Mcast>           * _instance; 
-
+    NBCollFactory<T_Mcast>             _factory;
   private:
     /* ------------ */
     /* constructors */
@@ -197,7 +197,7 @@ namespace TSPColl
   {
     assert (0 <= tag && tag < MAXTAG);
     int nextID = _taglist[tag]->size();
-    NBColl<T_Mcast> * retval = NBCollFactory<T_Mcast>::create (comm, tag, nextID);
+    NBColl<T_Mcast> * retval = _factory.create (comm, tag, nextID);
     (*_taglist[tag])[nextID] = retval;
     return retval;
   }
