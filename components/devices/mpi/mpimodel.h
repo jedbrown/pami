@@ -49,12 +49,12 @@ namespace XMI
                              this->_dispatch_id,
                              fn,
                              cookie);
-          msg->_msg._metadatasize=metasize;
-          msg->_msg._payloadsize =bytes;
-          memcpy(&msg->_msg._metadata[0], metadata, metasize);
-          memcpy(&msg->_msg._payload[0], payload, bytes);
-          rc = MPI_Isend (&msg->_msg,
-                          sizeof(msg->_msg),
+          msg->_p2p_msg._metadatasize=metasize;
+          msg->_p2p_msg._payloadsize =bytes;
+          memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
+          memcpy(&msg->_p2p_msg._payload[0], payload, bytes);
+          rc = MPI_Isend (&msg->_p2p_msg,
+                          sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_rank,
                           0,
@@ -108,13 +108,13 @@ namespace XMI
         };
 
     protected:
-      T_Device                  & _device;
-      xmi_context_t               _context;
-      size_t                      _dispatch_id;
-      Interface::RecvFunction_t   _direct_recv_func;
-      void                      * _direct_recv_func_parm;
-      Interface::RecvFunction_t   _read_recv_func;
-      void                      * _read_recv_func_parm;
+      T_Device                    & _device;
+      xmi_context_t                 _context;
+      size_t                        _dispatch_id;
+      Interface::RecvFunction_t     _direct_recv_func;
+      void                        * _direct_recv_func_parm;
+      Interface::RecvFunction_t     _read_recv_func;
+      void                        * _read_recv_func_parm;
     };
   };
 };

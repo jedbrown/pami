@@ -436,12 +436,13 @@ extern "C" xmi_result_t XMI_Geometry_world (xmi_context_t               context,
 /// \copydoc XMI_Geometry_algorithm
 ///
 extern "C" xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
-                                     xmi_geometry_t             geometry,
-                                     xmi_algorithm_t           *algorithm,
-                                     int                       *num)
+						xmi_xfer_type_t            colltype,
+						xmi_geometry_t             geometry,
+						xmi_algorithm_t           *algorithm,
+						int                       *num)
 {
   XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
-  return ctx->geometry_algorithm (geometry, algorithm, num);
+  return ctx->geometry_algorithm (colltype,geometry, algorithm, num);
 }
 
 ///

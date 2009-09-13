@@ -45,7 +45,7 @@ namespace TSPColl
     /* ------------------------------ */
     virtual void  kick             (T_Mcast *mcast_iface);
     virtual bool  isdone           () const;
-    static void   amsend_reg       (T_Mcast *mcast_iface);
+    static void   amsend_reg       (T_Mcast *mcast_iface, void *cd);
   protected:
 
     CollExchange                   (XMI_GEOMETRY_CLASS *, NBTag, 
@@ -74,7 +74,7 @@ namespace TSPColl
                                           unsigned        * pipewidth,
                                           XMI_Callback_t * cb_done);
     
-    static void   cb_recvcomplete (void * arg, xmi_result_t* error);
+    static void   cb_recvcomplete (void* context, void * arg, xmi_result_t error);
     static void   cb_senddone     (void*, void*, xmi_result_t);
   protected:
     /* ------------------------------ */
@@ -149,10 +149,10 @@ namespace TSPColl
 /*                  register collexchange                                  */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface)
+inline void TSPColl::CollExchange<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, void* cd)
 {
   
-  mcast_iface->setCallback(cb_incoming, NULL);
+  mcast_iface->setCallback(cb_incoming, cd);
   // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }
 
@@ -394,7 +394,7 @@ inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (void *ctxt, void * arg,
 /* *********************************************************************** */
 template <class T_Mcast>
 inline void 
-TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (void * arg, xmi_result_t* error)
+TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (void *context, void * arg, xmi_result_t error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;

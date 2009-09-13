@@ -65,47 +65,47 @@ namespace TSPColl
         {
             case BarrierTag:
             {
-              TSPColl::Barrier<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::Barrier<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case AllgatherTag:
             {
-              TSPColl::Allgather<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::Allgather<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case AllgathervTag:
             {
-              TSPColl::Allgatherv<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::Allgatherv<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case BcastTag:
             {
-              TSPColl::BinomBcast<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::BinomBcast<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case BcastTag2:
             {
-              TSPColl::ScBcast<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::ScBcast<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case ShortAllreduceTag:
             {
-              TSPColl::Allreduce::Short<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::Allreduce::Short<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case LongAllreduceTag:
             {
-              TSPColl::Allreduce::Long<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::Allreduce::Long<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case ScatterTag:
             {
-              TSPColl::Scatter<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::Scatter<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case ScattervTag:
             {
-              TSPColl::Scatterv<T_Mcast>::amsend_reg(mcast_iface);
+              TSPColl::Scatterv<T_Mcast>::amsend_reg(mcast_iface, this);
               break;
             }
             case GatherTag:
@@ -191,12 +191,7 @@ namespace TSPColl
 };
 
 
-
-
-
-
-
-
+#include "algorithms/protocols/tspcoll/NBCallbacks.h"
 
 
 #endif

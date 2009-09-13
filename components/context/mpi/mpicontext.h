@@ -31,10 +31,6 @@ namespace XMI
     typedef Device::MPIDevice<SysDep::MPISysDep> MPIDevice;
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
-    //    typedef CollFactory::CollFactory<XMI::CollFactory::MPI<MPIDevice> > MPICollfactory;
-    //    typedef CollRegistration::CollRegistration<XMI::CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice>,
-    //                                               MPIGeometry, MPICollfactory, MPIDevice> MPICollreg;
-
     typedef CollFactory::MPI<MPIDevice> MPICollfactory;
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice> MPICollreg;
 
@@ -55,10 +51,10 @@ namespace XMI
 	  
 	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
 	  new(_collreg) MPICollreg(&_mpi);
-	  //          _collreg->setup(&_mpi);
 
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::COLLFACTORY, _world_collfactory);
+
         }
         
       inline xmi_client_t getClientId_impl ()
@@ -297,22 +293,26 @@ namespace XMI
           new(_world_geometry) MPIGeometry(&_sysdep.mapping,slice_count,rank_slices);
           new_collfactory=_collreg->analyze(new_geometry);
 	  new_geometry->setKey(XMI::Geometry::COLLFACTORY, new_collfactory);
-          return XMI_UNIMPL;
+	  *geometry=(MPIGeometry*) new_geometry;
+          return XMI_SUCCESS;
         }
             
 
       inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
         {
-          assert(0);
-          return XMI_UNIMPL;
+	  *world_geometry = &_world_geometry;
+          return XMI_SUCCESS;
         }
 
-      inline xmi_result_t geometry_algorithm_impl (xmi_geometry_t   geometry,
+      inline xmi_result_t geometry_algorithm_impl (xmi_xfer_type_t  colltype,
+						   xmi_geometry_t   geometry,
                                                    xmi_algorithm_t *algorithm,
                                                    int             *num)
         {
-          assert(0);
-          return XMI_UNIMPL;
+	  MPICollfactory           *collfactory;
+	  MPIGeometry              *new_geometry;
+	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
+	  return collfactory->algorithm(colltype,algorithm,num);
         }
         
       inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
@@ -324,8 +324,10 @@ namespace XMI
 
       inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
         {
-          assert(0);
-          return XMI_UNIMPL;
+	  MPICollfactory           *collfactory;
+	  MPIGeometry              *new_geometry;
+	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
+          return collfactory->collective(parameters);
         }
         
       inline xmi_result_t multisend_getroles_impl(xmi_dispatch_t  dispatch,

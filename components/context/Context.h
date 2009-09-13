@@ -97,7 +97,8 @@ namespace XMI
 
         inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry);
 
-        inline xmi_result_t geometry_algorithm (xmi_geometry_t   geometry,
+        inline xmi_result_t geometry_algorithm (xmi_xfer_type_t  colltype,
+						xmi_geometry_t   geometry,
                                                 xmi_algorithm_t *algorithm,
                                                 int             *num);
         
@@ -331,11 +332,13 @@ namespace XMI
     }
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_algorithm (xmi_geometry_t   geometry,
+    xmi_result_t Context<T_Context>::geometry_algorithm (xmi_xfer_type_t  colltype,
+							 xmi_geometry_t   geometry,
                                                          xmi_algorithm_t *algorithm,
                                                          int             *num)
     {
-      return static_cast<T_Context*>(this)->geometry_algorithm_impl(geometry, 
+      return static_cast<T_Context*>(this)->geometry_algorithm_impl(colltype,
+								    geometry, 
                                                                     algorithm,
                                                                     num);
     }

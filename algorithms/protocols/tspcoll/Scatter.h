@@ -39,7 +39,7 @@ namespace TSPColl
     void reset   (int root, const void * sbuf, void * rbuf, size_t length);
     virtual void kick    (T_Mcast *mcast_iface);
     virtual bool isdone  (void) const { return _complete >= _counter; }
-    static void amsend_reg  (T_Mcast *mcast_iface);
+    static void amsend_reg  (T_Mcast *mcast_iface, void *cd);
   protected:
     XMI_Request_t                       *_req;
     XMI_Request_t                       _rreq;
@@ -64,6 +64,8 @@ namespace TSPColl
     _header;
     
   protected:
+    //    xmi_olddispatch_multicast_fn cb_incoming;
+    
     static  xmi_quad_t * cb_incoming(const xmi_quad_t  * hdr,
 					 unsigned          count,
 					 unsigned          peer,
@@ -74,14 +76,14 @@ namespace TSPColl
 					 char           ** rcvbuf,
 					 unsigned        * pipewidth,
 					 XMI_Callback_t * cb_done);
-    static void cb_recvcomplete (void *arg, xmi_result_t*err);
+    static void cb_recvcomplete (void* ctxt, void *arg, xmi_result_t err);
     static void cb_senddone (void *);
   };
 };
 template <class T_Mcast>
-inline void TSPColl::Scatter<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface)
+inline void TSPColl::Scatter<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, void *cd)
     {
-      mcast_iface->setCallback(TSPColl::Scatter<T_Mcast>::cb_incoming, NULL);
+      mcast_iface->setCallback(TSPColl::Scatter<T_Mcast>::cb_incoming, cd);
     }
 /* **************************************************************** */
 /*                    Scatterv                                      */
@@ -293,13 +295,12 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 /*           active message reception complete                      */
 /* **************************************************************** */
 template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::cb_recvcomplete (void *arg, xmi_result_t*err)
+void TSPColl::Scatter<T_Mcast>::cb_recvcomplete (void* ctxt, void *arg, xmi_result_t err)
 {
   Scatter * s = (Scatter *) arg;
   s->_complete++;
-  if (s->_cb_complete) s->_cb_complete (s->_arg);
+  if (s->_cb_complete) s->_cb_complete (ctxt, s->_arg, err);
 }
-
 
 
 

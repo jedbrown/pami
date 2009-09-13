@@ -10,18 +10,9 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 
-#include "NBColl.h"
-#include "Barrier.h"
-#include "Allgather.h"
-#include "Allgatherv.h"
-#include "BinomBcast.h"
-#include "ScBcast.h"
-#include "Allreduce.h"
-#include "Scatter.h"
-#include "Callbacks.h"
-
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
 

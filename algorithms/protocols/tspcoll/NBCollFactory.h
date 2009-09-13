@@ -126,10 +126,4 @@ TSPColl::NBCollFactory<T_Mcast>::create (XMI_GEOMETRY_CLASS * comm, NBTag tag, i
 }
 
 
-
-
-
-
-
-
 #endif

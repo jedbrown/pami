@@ -87,6 +87,7 @@ extern "C"
      * \retval        ?????      The protocol does not support the current geometry
      */
     xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
+					 xmi_xfer_type_t            colltype,
                                          xmi_geometry_t             geometry,
                                          xmi_algorithm_t           *algorithm,
                                          int                       *num);

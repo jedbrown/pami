@@ -45,7 +45,7 @@ namespace TSPColl
     void reset (int root, const void * sbuf, void *buf, size_t);
     virtual void kick (T_Mcast *mcast_iface);
     virtual bool isdone (void) const;
-    static void amsend_reg  (T_Mcast *mcast_iface);
+    static void amsend_reg  (T_Mcast *mcast_iface, void *cd);
   protected:
     T_Mcast *_mcast_iface;
   private:
@@ -200,10 +200,10 @@ inline bool TSPColl::ScBcast<T_Mcast>::isdone (void) const
   // return _barrier3.isdone();
 }
 template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface)
+inline void TSPColl::ScBcast<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, void *cd)
 {
   assert(0);
-  //  mcast_iface->setCallback(cb_incoming, NULL);
+  //   mcast_iface->setCallback(cb_incoming, cd);
   // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }
 

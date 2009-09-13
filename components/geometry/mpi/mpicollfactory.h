@@ -88,7 +88,7 @@ namespace XMI
 
       inline xmi_result_t  algorithm_impl(xmi_xfer_type_t       collective,
                                           xmi_algorithm_t      *alglist,
-                                          size_t               *num)
+                                          int                  *num)
       {
 	RegQueue *rq = getRegQ(collective);
 	if(rq==NULL)
