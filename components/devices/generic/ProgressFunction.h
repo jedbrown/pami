@@ -1,0 +1,179 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2008                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file devices/prod/generic/ProgressFunction.h
+ * \brief Add a general function to the progress engine loop/queue
+ */
+
+#ifndef  __components_devices_generic_progressfunction_h__
+#define  __components_devices_generic_progressfunction_h__
+
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/SubDevice.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "xmi.h"
+
+namespace XMI {
+namespace Device {
+
+class ProgressFunctionMdl;
+class ProgressFunctionMsg;
+
+typedef XMI::Device::Generic::GenericAdvanceThread ProgressFunctionThr;
+typedef XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionMdl,ProgressFunctionMsg,ProgressFunctionThr, NUM_CORES> ProgressFunctionDev;
+
+}; //-- Device
+}; //-- XMI
+
+extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
+
+namespace XMI {
+namespace Device {
+///
+/// \brief A local barrier message that takes advantage of the
+/// Load Linked and Store Conditional instructions
+///
+class ProgressFunctionMsg : public XMI::Device::Generic::GenericMessage {
+public:
+
+	/// \brief method to advance a portion of the message
+	///
+	/// If a message is split between multiple threads, each thread
+	/// is responsible for only part of the message.
+	///
+	/// \param in v An opaque pointer to indicate message portion
+	/// \param in l An opaque length to indicate message portion
+	/// \return Message status - typically either Active or Done.
+	///
+	/// status Active => Done
+	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
+
+	inline void complete();
+	inline size_t objsize_impl() { return sizeof(ProgressFunctionMsg); }
+
+protected:
+	friend class ProgressFunctionMdl;
+
+	ProgressFunctionMsg(BaseDevice &Generic_QS,
+		XMI_ProgressFunc *func,
+		void *clientdata,
+		XMI_Callback_t cb) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
+	_thread(),
+	_func(func),
+	_clientdata(clientdata),
+	_rc(XMI_SUCCESS)
+	{
+	}
+
+private:
+	//friend class ProgressFunctionDev;
+	friend class XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionMdl,ProgressFunctionMsg,ProgressFunctionThr, NUM_CORES>;
+
+	inline XMI::Device::MessageStatus __advanceThread(ProgressFunctionThr *thr) {
+		// TBD: optimize away virt func call - add method
+		// for a persistent advance?
+		int rc = _func(_clientdata);
+		if (rc == 0) {
+			setStatus(XMI::Device::Done);
+			return XMI::Device::Done;
+		} else if (rc < 0) {
+			_rc = (XMI_Result)-rc;
+			// GenericDevice will call complete()...
+			setStatus(XMI::Device::Done);
+			return XMI::Device::Done;
+		}
+		return XMI::Device::Active;
+	}
+
+	/// \todo for multithreading of this function, need a lot more
+	inline int __setThreads(ProgressFunctionThr *t, int n) {
+		// assert n >= 1 && t == NULL
+		_thread.setMsg(this);
+		_thread.setDone(false);
+		return 1;
+	}
+
+	inline ProgressFunctionThr *__getThreads() {
+		return &_thread;
+	}
+
+protected:
+	ProgressFunctionThr _thread;
+	XMI_ProgressFunc *_func;
+	void *_clientdata;
+	XMI_Result _rc;
+}; //-- ProgressFunctionMsg
+
+/// If this ever expands into multiple types, need to make this a subclass
+class ProgressFunctionMdl {
+
+public:
+	/// This model is typically never constructed, but rather just
+	/// generateMessage called directly.
+	ProgressFunctionMdl() {
+	}
+	/// In case someone constructs it the "standard" way, don't complain.
+	ProgressFunctionMdl(XMI::SysDep *sysdep, XMI_Result &status) {
+		status = XMI_SUCCESS;
+	}
+
+	inline void reset_impl() {}
+
+	inline bool generateMessage(XMI_ProgressFunc_t *pf);
+
+private:
+}; // class ProgressFunctionMdl
+
+}; //-- Device
+}; //-- XMI
+
+inline void XMI::Device::ProgressFunctionMsg::complete() {
+	((ProgressFunctionDev &)_QS).__complete(this);
+	likely_if (_rc == XMI_SUCCESS) {
+		executeCallback();
+	} else {
+		XMI_Error_t e = { _rc };
+		executeCallback(&e);
+	}
+}
+
+inline XMI::Device::MessageStatus XMI::Device::ProgressFunctionMsg::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
+	return __advanceThread((ProgressFunctionThr *)t);
+}
+
+inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t *pf) {
+
+	// can't afford to have some fail and not others, so even though
+	// we may not use 'msg' at all we must fail if it is too small.
+	ProgressFunctionMsg *msg = (ProgressFunctionMsg *)pf->request;
+	if (pf->req_size < sizeof(ProgressFunctionMsg)) {
+		return false;
+	}
+
+	int rc = pf->func(pf->clientdata);
+	likely_if (rc == 0) {
+		if (pf->cb_done.function) {
+			pf->cb_done.function(pf->cb_done.clientdata, NULL);
+		}
+		return true;
+	} else if (rc < 0) {
+		if (pf->cb_done.function) {
+			XMI_Error_t e = { (XMI_Result)-rc };
+			pf->cb_done.function(pf->cb_done.clientdata, &e);
+		}
+		return true;
+	}
+	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf->func, pf->clientdata, pf->cb_done);
+	_g_progfunc_dev.__post(msg);
+	return true;
+}
+
+#endif /* __components_devices_generic_progressfunction_h__ */
