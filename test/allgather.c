@@ -1,57 +1,26 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
+///
+/// \file tests/allgather.c
+/// \brief Simple Barrier test
+///
+
+#include "sys/xmi.h"
 #include <sys/time.h>
-#include <assert.h>
-#include "../interface/xmi_collectives.h"
+#include <unistd.h>
 
-
-#define BUFSIZE 131072
-
-void cb_barrier (void * clientdata);
-void cb_allgather (void * clientdata);
-
-// Barrier Data
-XMI_CollectiveProtocol_t _g_barrier;
+#define BUFSIZE 524288
 volatile unsigned       _g_barrier_active;
-XMI_CollectiveRequest_t  _g_barrier_request;
-XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
-			       (void *) &_g_barrier_active };
-XMI_Barrier_t  _xfer_barrier =
-    {
-	XMI_XFER_BARRIER,
-	&_g_barrier,
-	&_g_barrier_request,
-	_cb_barrier,
-	&XMI_World_Geometry
-    };
-
-// Allgather
-XMI_CollectiveProtocol_t _g_allgather;
 volatile unsigned       _g_allgather_active;
-XMI_CollectiveRequest_t  _g_allgather_request;
 
-XMI_Callback_t _cb_allgather   = {(void (*)(void*,XMI_Error_t*))cb_allgather,
-			       (void *) &_g_allgather_active };
-XMI_Allgather_t  _xfer_allgather =
-    {
-	XMI_XFER_ALLGATHER,
-	&_g_allgather,
-	&_g_allgather_request,
-	_cb_allgather,
-	&XMI_World_Geometry,
-	NULL,
-	NULL,
-	0
-    };
-
-XMI_Geometry_t *cb_geometry (int comm)
+void cb_barrier (void *ctxt, void * clientdata, xmi_result_t err)
 {
-    if(comm == 0)
-	return &XMI_World_Geometry;
-    else
-	assert(0);
+  int * active = (int *) clientdata;
+  (*active)--;
+}
+
+void cb_allgather (void *ctxt, void * clientdata, xmi_result_t err)
+{
+    int * active = (int *) clientdata;
+    (*active)--;
 }
 
 static double timer()
@@ -61,110 +30,189 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void cb_barrier (void * clientdata)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-void cb_allgather (void * clientdata)
-{
-    int * active = (int *) clientdata;
-    (*active)--;
-}
-
-
-void init__barriers ()
-{
-  XMI_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = XMI_CFG_BARRIER;
-  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
-  XMI_register(&_g_barrier,
-	      (XMI_CollectiveConfiguration_t*)&barrier_config,
-	      0);
-  _g_barrier_active = 0;
-}
-
-void init__allgathers ()
-{
-  XMI_Allgather_Configuration_t allgather_config;
-  allgather_config.cfg_type    = XMI_CFG_ALLGATHER;
-  allgather_config.protocol    = XMI_DEFAULT_ALLGATHER_PROTOCOL;
-  XMI_register(&_g_allgather,
-	      (XMI_CollectiveConfiguration_t*)&allgather_config,
-	      0);
-  _g_allgather_active = 0;
-}
-
-void _barrier ()
+void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
+  xmi_result_t result;
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);  
+  if (result != XMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
+      exit(1);
+    }
   while (_g_barrier_active)
-      XMI_Poll();
+    result = XMI_Context_advance (context, 1);
+
 }
 
-void _allgather (char            * src,
-		 char            * dst,
-		 unsigned          bytes)
+void _allgather (xmi_context_t context, xmi_allgather_t *allgather)
 {
-    _g_allgather_active++;
-    _xfer_allgather.src   = src;
-    _xfer_allgather.dst   = dst;
-    _xfer_allgather.bytes = bytes;
-    XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_allgather);
-    while (_g_allgather_active)
-	XMI_Poll();
+  _g_allgather_active++;
+  xmi_result_t result;
+  result = XMI_Collective(context, (xmi_xfer_t*)allgather);  
+  if (result != XMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to issue allgather collective. result = %d\n", result);
+      exit(1);
+    }
+  while (_g_allgather_active)
+    result = XMI_Context_advance (context, 1);
+
 }
 
-
-
-int main(int argc, char*argv[])
+int main (int argc, char ** argv)
 {
-  double tf,ti,usec;
-  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
-  init__barriers();
-  init__allgathers();
-  int rank  = XMI_Rank();
-  int sz    = XMI_Size();
-  char *buf = (char*)malloc(BUFSIZE*sz);
-  char *rbuf= (char*)malloc(BUFSIZE*sz);
-  int i,j,root = 0;
-#if 1
-  if (rank == root)
+  xmi_client_t  client;
+  xmi_context_t context;
+  xmi_result_t  result = XMI_ERROR;
+  
+  result = XMI_Client_initialize ("TEST", &client);
+  if (result != XMI_SUCCESS)
       {
-	  printf("# Allgather Bandwidth Test -- root = %d\n", root);
-	  printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-	  printf("# -----------      -----------    -----------    ---------\n");
+        fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+        return 1;
+      }
+  
+  result = XMI_Context_create (client, NULL, 0, &context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+        return 1;
       }
 
+
+  xmi_configuration_t configuration;
+  configuration.name = XMI_TASK_ID;
+  result = XMI_Configuration_query (context, &configuration);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+        return 1;
+      }
+  size_t task_id = configuration.value.intval;
+
+  configuration.name = XMI_NUM_TASKS;
+  result = XMI_Configuration_query (context, &configuration);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+        return 1;
+      }
+  size_t sz = configuration.value.intval;
+  
+
+  xmi_geometry_t  world_geometry;
+
+  result = XMI_Geometry_world (context, &world_geometry);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_algorithm_t algorithm[1];
+  int             num_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_BARRIER,
+				  world_geometry,
+				  &algorithm[0],
+				  &num_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query barrier algorithm. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_algorithm_t allgatheralgorithm[1];
+  int             allgathernum_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_ALLGATHER,
+				  world_geometry,
+				  &allgatheralgorithm[0],
+				  &allgathernum_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query allgather algorithm. result = %d\n", result);
+        return 1;
+      }
+  
+  
+  double ti, tf, usec;
+  char *buf = (char*)malloc(BUFSIZE*sz);
+  xmi_barrier_t barrier;
+  barrier.xfer_type = XMI_XFER_BARRIER;
+  barrier.cb_done   = cb_barrier;
+  barrier.cookie    = (void*)&_g_barrier_active;
+  barrier.geometry  = world_geometry;
+  barrier.algorithm = algorithm[0];
+  _barrier(context, &barrier);
+
+  
+  if (task_id == 0)
+      {
+        printf("# Allgather Bandwidth Test -- root\n");
+        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# -----------      -----------    -----------    ---------\n");
+      }
+
+  xmi_allgather_t allgather;
+  allgather.xfer_type  = XMI_XFER_ALLGATHER;
+  allgather.cb_done    = cb_allgather;
+  allgather.cookie     = (void*)&_g_allgather_active;
+  allgather.geometry   = world_geometry;
+  allgather.algorithm  = allgatheralgorithm[0];
+  allgather.src        = buf;
+  allgather.stype      = XMI_BYTE;
+  allgather.stypecount = 0;
+  allgather.rcv        = buf;
+  allgather.rtype      = XMI_BYTE;
+  allgather.rtypecount = 0;
+
+  int i,j;
   for(i=1; i<=BUFSIZE; i*=2)
       {
-	  long long dataSent = i;
-	  int          niter = 100;
-	  _barrier ();
-	  ti = timer();
-	  for (j=0; j<niter; j++)
-	      {
-		_allgather (buf,rbuf, i);
-	      }
-	  tf = timer();
-	  _barrier ();
+        long long dataSent = i;
+        int          niter = 100;
+        _barrier(context, &barrier);
+        ti = timer();
+        for (j=0; j<niter; j++)
+            {
+              allgather.stypecount = i;
+              allgather.rtypecount = i;
+              _allgather (context, &allgather);
+            }
+        tf = timer();
+        _barrier(context, &barrier);
 
-	  usec = (tf - ti)/(double)niter;
-	  if (rank == root)
-	      {
-
-		  printf("  %11lld %16lld %14.1f %12.2f\n",
-			 dataSent,
-			 0LL,
-			 (double)1e6*(double)dataSent/(double)usec,
-			 usec);
-//		  fprintf(stderr,"allgather: time=%f usec\n", usec/(double)niter);
-		  fflush(stdout);
-	      }
+        usec = (tf - ti)/(double)niter;
+        if (task_id == 0)
+            {
+              printf("  %11lld %16lld %14.1f %12.2f\n",
+                     dataSent,
+                     0LL,
+                     (double)1e6*(double)dataSent/(double)usec,
+                     usec);
+              fflush(stdout);
+            }
       }
-#endif
-  XMI_Collectives_finalize();
+
+  result = XMI_Context_destroy (context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+        return 1;
+      }
+    
+  result = XMI_Client_finalize (client);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+        return 1;
+      }
+
   return 0;
-}
+};
+
+
+
+
