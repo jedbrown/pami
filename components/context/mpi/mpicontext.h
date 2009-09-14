@@ -300,7 +300,7 @@ namespace XMI
 
       inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
         {
-	  *world_geometry = &_world_geometry;
+	  *world_geometry = _world_geometry;
           return XMI_SUCCESS;
         }
 
@@ -310,7 +310,7 @@ namespace XMI
                                                    int             *num)
         {
 	  MPICollfactory           *collfactory;
-	  MPIGeometry              *new_geometry;
+	  MPIGeometry              *new_geometry = (MPIGeometry*) geometry;
 	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
 	  return collfactory->algorithm(colltype,algorithm,num);
         }
@@ -325,7 +325,9 @@ namespace XMI
       inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
         {
 	  MPICollfactory           *collfactory;
-	  MPIGeometry              *new_geometry;
+	  // This is ok...we can avoid a switch because all the xmi structs 
+	  // have the same layout.let's just use barrier for now
+	  MPIGeometry              *new_geometry = (MPIGeometry*)parameters->xfer_barrier.geometry;
 	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
           return collfactory->collective(parameters);
         }

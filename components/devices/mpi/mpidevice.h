@@ -109,7 +109,7 @@ namespace XMI
 	    }
 
           flag = 0;
-          int rc = MPI_Iprobe (MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &sts);
+          int rc = MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &sts);
           assert (rc == MPI_SUCCESS);
           if(flag)
 	    {
