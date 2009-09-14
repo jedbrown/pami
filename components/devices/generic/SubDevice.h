@@ -9,7 +9,7 @@
 #ifndef __components_devices_generic_subdevice_h__
 #define __components_devices_generic_subdevice_h__
 
-#include "queueing/Queue.h"
+#include "util/queue/Queue.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/Device.h"

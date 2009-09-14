@@ -12,7 +12,7 @@
 
 #include "xmi.h"
 #include "components/devices/BaseDevice.h"
-#include "queueing/Message.h"
+#include "util/queue/Message.h"
 #include "components/devices/generis/AdvanceThread.h"
 
 ////////////////////////////////////////////////////////////////////////

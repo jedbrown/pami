@@ -10,7 +10,7 @@
 #ifndef __components_devices_generic_thread_h__
 #define __components_devices_generic_thread_h__
 
-#include "queueing/Queue.h"
+#include "util/queue/Queue.h"
 #include "logging/Logging.h"
 #include "components/devices/BaseDevice.h"
 #include "SysDep.h"

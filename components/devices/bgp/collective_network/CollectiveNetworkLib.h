@@ -14,7 +14,7 @@
 #define __components_devices_bgp_cnlib_h__
 
 #include "SysDep.h"
-#include "queueing/Message.h"
+#include "util/queue/Message.h"
 #include "workqueue/WorkQueue.h"
 #include "components/devices/bgp/collective_network/DblUtils.h"
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
