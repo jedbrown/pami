@@ -32,6 +32,8 @@ extern "C"
    */
   /*****************************************************************************/
 
+#define XMI_BYTE NULL
+  
   /**
    * \brief Create a new type for noncontiguous transfers
    *

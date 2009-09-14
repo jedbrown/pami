@@ -202,8 +202,16 @@ namespace XMI
 
       inline xmi_result_t  ibroadcast_impl      (xmi_broadcast_t      *broadcast)
       {
-	XMI::CollInfo::PGBroadcastInfo<T_Device> *info = (XMI::CollInfo::PGBroadcastInfo<T_Device> *)_broadcasts[broadcast->algorithm];
-	return XMI_UNIMPL;
+	XMI::CollInfo::PGBroadcastInfo<T_Device> *info =
+          (XMI::CollInfo::PGBroadcastInfo<T_Device> *)_broadcasts[broadcast->algorithm];
+        if (!_bcast->isdone()) _dev->advance();
+        ((TSPColl::BinomBcast<MPIMcastModel> *)_bcast)->reset (broadcast->root,
+                                       broadcast->buf,
+                                       broadcast->buf,
+                                       broadcast->typecount);
+        _bcast->setComplete(broadcast->cb_done, broadcast->cookie);
+        _bcast->kick(&info->_model);
+        return XMI_SUCCESS;
       }
 
       inline xmi_result_t  iallreduce_impl      (xmi_allreduce_t      *allreduce)
