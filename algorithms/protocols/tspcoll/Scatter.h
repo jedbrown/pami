@@ -34,7 +34,6 @@ namespace TSPColl
     static const int MAX_CONCURRENCY=10;
 
   public:
-    void * operator new (size_t, void * addr)    { return addr; }
     Scatter      (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
     void reset   (int root, const void * sbuf, void * rbuf, size_t length);
     virtual void kick    (T_Mcast *mcast_iface);
@@ -77,7 +76,7 @@ namespace TSPColl
 					 unsigned        * pipewidth,
 					 XMI_Callback_t * cb_done);
     static void cb_recvcomplete (void* ctxt, void *arg, xmi_result_t err);
-    static void cb_senddone (void *);
+    static void cb_senddone(void* ctxt, void *arg, xmi_result_t err);
   };
 };
 template <class T_Mcast>
@@ -95,7 +94,6 @@ namespace TSPColl
   class Scatterv: public Scatter<T_Mcast>
   {
   public:
-    void * operator new (size_t, void * addr)    { return addr; }
     Scatterv (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff):
       Scatter<T_Mcast> (comm, tag, instID, tagoff), _lengths(0) { }
     void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
@@ -167,17 +165,18 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
   _req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
     if (i == this->_comm->rank()) 
-      { 
-	memcpy (_rbuf, _sbuf+i*_length, _length); 
-	cb_senddone (&_header);
+      {
+	memcpy (_rbuf, _sbuf+i*_length, _length);
+        cb_senddone (NULL, &_header, XMI_SUCCESS);
       }
     else
       {	  
       unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = this->_comm->absrankof (i);
       XMI_Callback_t cb_done;
-      cb_done.function        = (void (*)(void*,void*, xmi_result_t))cb_senddone;
+      cb_done.function        = cb_senddone;
       cb_done.clientdata      = &this->_header;
+      
       void * r = NULL;
       TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
 	     this->_sbuf, &this->_header,this->_header.tag, this->_header.id));
@@ -199,7 +198,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
 /*               send completion in scatter                         */
 /* **************************************************************** */
 template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::cb_senddone (void * arg)
+void TSPColl::Scatter<T_Mcast>::cb_senddone (void* ctxt, void *arg, xmi_result_t err)
 {
   Scatter * self = ((struct scatter_header *)arg)->self;
   /* LOCK */
@@ -211,7 +210,7 @@ void TSPColl::Scatter<T_Mcast>::cb_senddone (void * arg)
   /* UNLOCK */
   if (self->_cb_complete) 
       {
-	  free(self->_req);
+          free(self->_req);
 	  self->_cb_complete (NULL, self->_arg, XMI_SUCCESS);
       }
 }
@@ -248,46 +247,39 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 
   this->_req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
-    {
-      const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
-      TRACE((stderr, "SCATTERV SEND ctr=%d cplt=%d (%d/%d) len=%d "
-	     "s=%p 0x%02x 0x%02x 0x%02x\n", 
-	     this->_counter, this->_complete, i, this->_comm->size(), this->_lengths[i],
-	     s, s[0], s[1], s[2]));
+      {
+        const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
+        TRACE((stderr, "SCATTERV SEND ctr=%d cplt=%d (%d/%d) len=%d "
+               "s=%p 0x%02x 0x%02x 0x%02x\n", 
+               this->_counter, this->_complete, i, this->_comm->size(), this->_lengths[i],
+               s, s[0], s[1], s[2]));
       
-      if (i == this->_comm->rank()) 
-	{
-	  memcpy (this->_rbuf, s, this->_lengths[i]);
-	  cb_senddone (&this->_header);
-	}
-      else
-	{
-#if 0
-	__pgasrt_tsp_amsend (this->_comm->absrankof (i),
-			     (__pgasrt_AMHeader_t *) &this->_header,
-			     (__pgasrt_local_addr_t) s,
-			     this->_lengths[i],
-			     this->cb_senddone, &this->_header);
-#endif
-	unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
-	unsigned        ranks   = this->_comm->absrankof (i);
-	XMI_Callback_t cb_done;
-	cb_done.function        = (void (*)(void*, void*, xmi_result_t))this->cb_senddone;
-	cb_done.clientdata      = &this->_header;
-	void * r = NULL;
-	mcast_iface->send (&this->_req[i],
-			   &cb_done,
-			   XMI_MATCH_CONSISTENCY,
-			   (xmi_quad_t*)&this->_header,
-			   XMIQuad_sizeof(this->_header),
-			   0,
-			   (char*)(s),
-			   (unsigned)this->_lengths[i],
-			   &hints,
-			   &ranks,
-			   1);
-	}
-    }
+        if (i == this->_comm->rank()) 
+            {
+              memcpy (this->_rbuf, s, this->_lengths[i]);
+              cb_senddone (NULL, &this->_header, XMI_SUCCESS);
+            }
+        else
+            {
+              unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
+              unsigned        ranks   = this->_comm->absrankof (i);
+              XMI_Callback_t cb_done;
+              cb_done.function        = this->cb_senddone;
+              cb_done.clientdata      = &this->_header;
+              void * r = NULL;
+              mcast_iface->send (&this->_req[i],
+                                 &cb_done,
+                                 XMI_MATCH_CONSISTENCY,
+                                 (xmi_quad_t*)&this->_header,
+                                 XMIQuad_sizeof(this->_header),
+                                 0,
+                                 (char*)(s),
+                                 (unsigned)this->_lengths[i],
+                                 &hints,
+                                 &ranks,
+                                 1);
+            }
+      }
 }
 
 

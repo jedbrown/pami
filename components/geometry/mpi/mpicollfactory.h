@@ -285,13 +285,29 @@ namespace XMI
       }
 
       inline xmi_result_t  iallgatherv_int_impl (xmi_allgatherv_int_t *allgatherv_int)
-      {
+      {        
 	return XMI_UNIMPL;
       }
 
       inline xmi_result_t  iscatter_impl        (xmi_scatter_t        *scatter)
       {
-	return XMI_UNIMPL;
+         XMI::CollInfo::PGScatterInfo<T_Device> *info =
+          (XMI::CollInfo::PGScatterInfo<T_Device> *)_scatters[scatter->algorithm];
+        if (!_sct->isdone()) _dev->advance();
+        ((TSPColl::Scatter<MPIMcastModel> *)_sct)->reset (scatter->root,
+                                                          scatter->sbuffer,
+                                                          scatter->rbuffer,
+                                                          scatter->stypecount);
+        _sct->setComplete(scatter->cb_done, scatter->cookie);
+
+        while(!_barrier->isdone()) _dev->advance();
+	((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
+	_barrier->setComplete(NULL, NULL);
+	_barrier->kick(&info->_bmodel);
+        while(!_barrier->isdone()) _dev->advance();
+        
+        _sct->kick(&info->_smodel);
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t  iscatterv_impl       (xmi_scatterv_t       *scatterv)

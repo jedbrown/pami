@@ -99,11 +99,6 @@ xmi_quad_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
   
 
   return (xmi_quad_t*)&s->_rreq;
-
-  //  *completionHandler = &Scatter::cb_recvcomplete;
-  //  *arg = s;
-  //  assert (s->_rbuf != NULL);
-  //  return (__pgasrt_local_addr_t) s->_rbuf;
 }
 
 

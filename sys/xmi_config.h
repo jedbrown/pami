@@ -20,7 +20,7 @@
 
 #ifdef PLATFORM_DUMMY
 #define XMI_PROTOCOL_NQUADS	48
-#define XMI_REQUEST_NQUADS	32
+#define XMI_REQUEST_NQUADS	512
 typedef struct xmi_quad_t
 {
     unsigned w0; /**< Word[0] */
