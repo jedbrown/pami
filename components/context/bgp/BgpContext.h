@@ -264,7 +264,8 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
-        inline xmi_result_t geometry_algorithm (xmi_geometry_t   geometry,
+        inline xmi_result_t geometry_algorithm (xmi_xfer_type_t  colltype,
+                                                xmi_geometry_t   geometry,
                                                 xmi_algorithm_t *algorithm,
                                                 int             *num)
         {
