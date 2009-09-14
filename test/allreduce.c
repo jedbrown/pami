@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <assert.h>
-#include "../interface/xmi_collectives.h"
+#include "sys/xmi.h"
+
 
 #define FULL_TEST  
 #define COUNT      65536
@@ -13,7 +14,7 @@
 #define NITERBW    10
 #define CUTOFF     65536
 
-XMI_Op op_array[] =
+xmi_op op_array[] =
     {
 	XMI_MAX,
 	XMI_MIN,
@@ -46,7 +47,7 @@ enum opNum
     };
 int op_count = OP_COUNT;
 
-XMI_Dt dt_array[] =
+xmi_dt dt_array[] =
     {
 	XMI_SIGNED_CHAR,
 	XMI_UNSIGNED_CHAR,
@@ -162,42 +163,15 @@ unsigned elemsize_array[] =
 	16, // XMI_LOC_2DOUBLE,
     };
 
-void cb_barrier (void * clientdata);
-void cb_allreduce (void * clientdata);
-// Barrier Data
-XMI_CollectiveProtocol_t _g_barrier;
 volatile unsigned       _g_barrier_active;
-XMI_CollectiveRequest_t  _g_barrier_request;
-XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
-			       (void *) &_g_barrier_active };
-XMI_Barrier_t  _xfer_barrier =
-    {
-	XMI_XFER_BARRIER,
-	&_g_barrier,
-	&_g_barrier_request,
-	_cb_barrier,
-	&XMI_World_Geometry
-    };
-
-// Allreduce
-XMI_CollectiveProtocol_t _g_allreduce;
 volatile unsigned       _g_allreduce_active;
-XMI_CollectiveRequest_t  _g_allreduce_request;
-XMI_Callback_t _cb_allreduce   = {(void (*)(void*,XMI_Error_t*))cb_allreduce,
-			       (void *) &_g_allreduce_active };
-XMI_Allreduce_t  _xfer_allreduce =
-    {
-	XMI_XFER_ALLREDUCE,
-	&_g_allreduce,
-	&_g_allreduce_request,
-	_cb_allreduce,
-	&XMI_World_Geometry,
-	NULL,
-	NULL,
-	0,
-	(XMI_Dt)-1,
-	(XMI_Op)-1
-    };
+
+void cb_barrier (void *ctxt, void * clientdata, xmi_result_t err)
+{
+  int * active = (int *) clientdata;
+  (*active)--;
+}
+
 
 static double timer()
 {
@@ -206,72 +180,44 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-XMI_Geometry_t *cb_geometry (int comm)
-{
-    if(comm == 0)
-	return &XMI_World_Geometry;
-    else
-	assert(0);
-}
 
-void cb_barrier (void * clientdata)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-void cb_allreduce (void * clientdata)
+void cb_allreduce (void *ctxt, void * clientdata, xmi_result_t err)
 {
     int * active = (int *) clientdata;
     (*active)--;
 }
 
-void init__barriers ()
-{
-  XMI_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = XMI_CFG_BARRIER;
-  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
-  XMI_register(&_g_barrier,
-	      (XMI_CollectiveConfiguration_t*)&barrier_config,
-	      0);
-  _g_barrier_active = 0;
-}
-
-void init__allreduces ()
-{
-  XMI_Allreduce_Configuration_t allreduce_config;
-  allreduce_config.cfg_type    = XMI_CFG_ALLREDUCE;
-  allreduce_config.protocol    = XMI_DEFAULT_ALLREDUCE_PROTOCOL;
-  XMI_register(&_g_allreduce,
-	      (XMI_CollectiveConfiguration_t*)&allreduce_config,
-	      0);
-  _g_allreduce_active = 0;
-}
-
-void _barrier ()
+void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
+  xmi_result_t result;
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);  
+  if (result != XMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
+      exit(1);
+    }
   while (_g_barrier_active)
-      XMI_Poll();
+    result = XMI_Context_advance (context, 1);
+
 }
 
-void _allreduce (char            * src,
-		 char            * dst,
-		 unsigned          count,
-		 XMI_Dt             dt,
-		 XMI_Op             op)
+void _allreduce (xmi_context_t context, xmi_allreduce_t *allreduce)
 {
-    _g_allreduce_active++;
-    _xfer_allreduce.src   = src;
-    _xfer_allreduce.dst   = dst;
-    _xfer_allreduce.count = count;
-    _xfer_allreduce.dt    = dt;
-    _xfer_allreduce.op    = op;
-    XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_allreduce);
-    while (_g_allreduce_active)
-	XMI_Poll();
+  _g_allreduce_active++;
+  xmi_result_t result;
+  result = XMI_Collective(context, (xmi_xfer_t*)allreduce);  
+  if (result != XMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to issue allreduce collective. result = %d\n", result);
+      exit(1);
+    }
+  while (_g_allreduce_active)
+    result = XMI_Context_advance (context, 1);
+
 }
+
+
 
 
 bool ** alloc2DContig(int nrows, int ncols)
@@ -294,14 +240,72 @@ int main(int argc, char*argv[])
   char buf[MAXBUFSIZE];
   char rbuf[MAXBUFSIZE];
   int  op, dt;
+  xmi_client_t  client;
+  xmi_context_t context;
+  xmi_result_t  result = XMI_ERROR;
+  
+  result = XMI_Client_initialize ("TEST", &client);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+        return 1;
+      }
+  
+  result = XMI_Context_create (client, NULL, 0, &context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+        return 1;
+      }
 
-  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
-  init__barriers();
-  init__allreduces();
-  int rank = XMI_Rank();
-  int i,j,root = 0;
+  xmi_configuration_t configuration;
+  configuration.name = XMI_TASK_ID;
+  result = XMI_Configuration_query (context, &configuration);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+        return 1;
+      }
+  size_t task_id = configuration.value.intval;
+  int    rank    = task_id;
+  int i,j,root   = 0;
 
+  xmi_geometry_t  world_geometry;
+  
+  result = XMI_Geometry_world (context, &world_geometry);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
+        return 1;
+      }
 
+  xmi_algorithm_t algorithm[1];
+  int             num_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_BARRIER,
+				  world_geometry,
+				  &algorithm[0],
+				  &num_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query barrier algorithm. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_algorithm_t allreducealgorithm[1];
+  int             allreducenum_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_ALLREDUCE,
+				  world_geometry,
+				  &allreducealgorithm[0],
+				  &allreducenum_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query broadcast algorithm. result = %d\n", result);
+        return 1;
+      }
+
+  
   bool** validTable=
   alloc2DContig(op_count,dt_count);
 #ifdef FULL_TEST
@@ -350,8 +354,28 @@ int main(int argc, char*argv[])
 	  printf("# Size(bytes)           cycles    bytes/sec    usec\n");
 	  printf("# -----------      -----------    -----------    ---------\n");
       }
-  _barrier();
 
+  xmi_barrier_t barrier;
+  barrier.xfer_type = XMI_XFER_BARRIER;
+  barrier.cb_done   = cb_barrier;
+  barrier.cookie    = (void*)&_g_barrier_active;
+  barrier.geometry  = world_geometry;
+  barrier.algorithm = algorithm[0];
+  _barrier(context, &barrier);
+
+  xmi_allreduce_t allreduce;
+  allreduce.xfer_type = XMI_XFER_ALLREDUCE;
+  allreduce.cb_done   = cb_allreduce;
+  allreduce.cookie    = (void*)&_g_allreduce_active;
+  allreduce.geometry  = world_geometry;
+  allreduce.algorithm = allreducealgorithm[0];
+  allreduce.sbuffer   = NULL;
+  allreduce.stype     = XMI_BYTE;
+  allreduce.stypecount= 0;
+  allreduce.rbuffer   = NULL;
+  allreduce.rtype     = XMI_BYTE;
+  allreduce.rtypecount= 0;
+  
   for(dt=0; dt<dt_count; dt++)
       for(op=0; op<op_count; op++)
 	  {
@@ -367,14 +391,21 @@ int main(int argc, char*argv[])
 				  niter = NITERLAT;
 			      else
 				  niter = NITERBW;
-			      _barrier ();
+                              
+                              _barrier(context, &barrier);
 			      ti = timer();
 			      for (j=0; j<niter; j++)
 				  {
-				      _allreduce (buf,rbuf,i,dt_array[dt],op_array[op]);
+                                    allreduce.sbuffer=buf;
+                                    allreduce.rbuffer=buf;
+                                    allreduce.stypecount=i;
+                                    allreduce.rtypecount=i;
+                                    allreduce.dt=dt_array[dt];
+                                    allreduce.op=op_array[op];
+                                    _allreduce(context, &allreduce);
 				  }
 			      tf = timer();
-			      _barrier ();
+                              _barrier(context, &barrier);
 
 			      usec = (tf - ti)/(double)niter;
 			      if (rank == root)
@@ -390,6 +421,20 @@ int main(int argc, char*argv[])
 		  }
 	  }
 #endif
-  XMI_Collectives_finalize();
+
+    result = XMI_Context_destroy (context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+        return 1;
+      }
+    
+  result = XMI_Client_finalize (client);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+        return 1;
+      }
+
   return 0;
 }

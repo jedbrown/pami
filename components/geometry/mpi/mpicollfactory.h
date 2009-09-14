@@ -215,9 +215,42 @@ namespace XMI
       }
 
       inline xmi_result_t  iallreduce_impl      (xmi_allreduce_t      *allreduce)
-      {
-	return XMI_UNIMPL;
-      }
+        {
+          XMI::CollInfo::PGAllreduceInfo<T_Device> *info =
+            (XMI::CollInfo::PGAllreduceInfo<T_Device> *)_allreduces[allreduce->algorithm];
+          unsigned datawidth;
+          coremath cb_allreduce;
+          CCMI::Adaptor::Allreduce::getReduceFunction(allreduce->dt,
+                                                      allreduce->op,
+                                                      allreduce->stypecount,
+                                                      datawidth,
+                                                      cb_allreduce);
+          if (datawidth * allreduce->stypecount < TSPColl::Allreduce::Short<MPIMcastModel>::MAXBUF)
+              {
+                if (!_sar->isdone()) _dev->advance();
+                ((TSPColl::Allreduce::Short<MPIMcastModel> *)_sar)->reset (allreduce->sbuffer,
+                                                                           allreduce->rbuffer,
+                                                                           allreduce->op,
+                                                                           allreduce->dt,
+                                                                           allreduce->stypecount);                
+                _sar->setComplete(allreduce->cb_done, allreduce->cookie);
+                _sar->kick(&info->_model);
+                return XMI_SUCCESS;
+              }
+          else
+              {
+                if (!_lar->isdone()) _dev->advance();
+                ((TSPColl::Allreduce::Long<MPIMcastModel> *)_lar)->reset (allreduce->sbuffer,
+                                                                          allreduce->rbuffer,
+                                                                          allreduce->op,
+                                                                          allreduce->dt,
+                                                                          allreduce->stypecount);
+                _lar->setComplete(allreduce->cb_done, allreduce->cookie);
+                _lar->kick(&info->_model);
+                return XMI_SUCCESS;
+              }
+          return XMI_SUCCESS;
+        }
 
       inline xmi_result_t  ireduce_impl         (xmi_reduce_t         *reduce)
       {
