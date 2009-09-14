@@ -139,6 +139,7 @@ int main (int argc, char ** argv)
   
   double ti, tf, usec;
   char *buf = (char*)malloc(BUFSIZE*sz);
+  char *rbuf = (char*)malloc(BUFSIZE*sz);
   xmi_barrier_t barrier;
   barrier.xfer_type = XMI_XFER_BARRIER;
   barrier.cb_done   = cb_barrier;
@@ -164,7 +165,7 @@ int main (int argc, char ** argv)
   allgather.src        = buf;
   allgather.stype      = XMI_BYTE;
   allgather.stypecount = 0;
-  allgather.rcv        = buf;
+  allgather.rcv        = rbuf;
   allgather.rtype      = XMI_BYTE;
   allgather.rtypecount = 0;
 

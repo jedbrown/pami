@@ -272,7 +272,16 @@ namespace XMI
 
       inline xmi_result_t  iallgatherv_impl     (xmi_allgatherv_t     *allgatherv)
       {
-	return XMI_UNIMPL;
+        
+        XMI::CollInfo::PGAllgathervInfo<T_Device> *info =
+          (XMI::CollInfo::PGAllgathervInfo<T_Device> *)_allgathervs[allgatherv->algorithm];
+        if (!_allgatherv->isdone()) _dev->advance();
+        ((TSPColl::Allgatherv<MPIMcastModel> *)_allgatherv)->reset (allgatherv->sndbuf,
+                                                                    allgatherv->rcvbuf,
+                                                                    allgatherv->rtypecounts);
+        _allgatherv->setComplete(allgatherv->cb_done, allgatherv->cookie);
+        _allgatherv->kick(&info->_model);
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t  iallgatherv_int_impl (xmi_allgatherv_int_t *allgatherv_int)
