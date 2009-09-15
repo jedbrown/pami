@@ -7,14 +7,14 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file atomic/gcc/GccBuiltin.h
+ * \file components/atomic/gcc/GccBuiltin.h
  * \brief ???
  */
 
-#ifndef __xmi_atomic_gcc_gccbuiltin_h__
-#define __xmi_atomic_gcc_gccbuiltin_h__
+#ifndef __components_atomic_gcc_gccbuiltin_h__
+#define __components_atomic_gcc_gccbuiltin_h__
 
-#include "../AtomicObject.h"
+#include "components/atomic/Counter.h"
 
 namespace XMI
 {
@@ -23,46 +23,46 @@ namespace XMI
     ///
     /// \brief CRTP interface for gcc builtins atomic objects.
     ///
-    class GccBuiltin : public AtomicObject <GccBuiltin>
+    class GccBuiltin : public Counter <GccBuiltin>
     {
       public:
         GccBuiltin () :
-            AtomicObject <GccBuiltin> ()
+            Counter <GccBuiltin> ()
         {}
 
         ~GccBuiltin () {}
 
-        /// \see XMI::Atomic::AtomicObject::init
+        /// \see XMI::Atomic::Interface::Counter::init
         void init_impl ()
         {
           fetch_and_clear_impl ();
         }
 
-        /// \see XMI::Atomic::AtomicObject::fetch
+        /// \see XMI::Atomic::Interface::Counter::fetch
         inline size_t fetch_impl ()
         {
           return __sync_fetch_and_or (&_atom, 0);
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_inc
+        /// \see XMI::Atomic::Interface::Counter::fetch_and_inc
         inline size_t fetch_and_inc_impl ()
         {
           return __sync_fetch_and_add (&_atom, 1);
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_dec
+        /// \see XMI::Atomic::Interface::Counter::fetch_and_dec
         inline size_t fetch_and_dec_impl ()
         {
           return __sync_fetch_and_sub (&_atom, 1);
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_clear
+        /// \see XMI::Atomic::Interface::Counter::fetch_and_clear
         inline size_t fetch_and_clear_impl ()
         {
           return __sync_fetch_and_and (&_atom, 0);
         };
 
-        /// \see XMI::Atomic::AtomicObject::compare_and_swap
+        /// \see XMI::Atomic::Interface::Counter::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           return __sync_bool_compare_and_swap (&_atom, compare, swap);
@@ -76,6 +76,6 @@ namespace XMI
 };
 
 
-#endif // __xmi_atomic_gcc_gccbuiltin_h__
+#endif // __components_atomic_gcc_gccbuiltin_h__
 
 

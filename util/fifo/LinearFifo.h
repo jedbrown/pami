@@ -16,7 +16,7 @@
 
 #include <string.h>
 
-#include "components/atomic/AtomicObject.h"
+#include "components/atomic/Counter.h"
 
 #include "Fifo.h"
 #include "Packet.h"

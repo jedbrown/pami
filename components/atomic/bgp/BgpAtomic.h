@@ -14,7 +14,7 @@
 #ifndef __xmi_atomic_bgp_bgpatomic_h__
 #define __xmi_atomic_bgp_bgpatomic_h__
 
-#include "components/atomic/AtomicObject.h"
+#include "components/atomic/Counter.h"
 
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
@@ -26,11 +26,11 @@ namespace XMI
     ///
     /// \brief CRTP interface for bgp atomic objects.
     ///
-    class BgpAtomic : public AtomicObject <BgpAtomic>
+    class BgpAtomic : public Interface::Counter <BgpAtomic>
     {
       public:
         BgpAtomic () :
-            AtomicObject <BgpAtomic> ()
+            Interface::Counter <BgpAtomic> ()
         {};
 
         ~BgpAtomic () {};

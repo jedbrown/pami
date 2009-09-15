@@ -25,7 +25,7 @@
 #include "util/fifo/LinearFifo.h"
 #include "util/fifo/FifoPacket.h"
 
-#include "components/atomic/AtomicObject.h"
+#include "components/atomic/Counter.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x

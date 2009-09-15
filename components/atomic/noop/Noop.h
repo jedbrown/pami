@@ -14,7 +14,8 @@
 #ifndef __xmi_atomic_noop_noop_h__
 #define __xmi_atomic_noop_noop_h__
 
-#include "../AtomicObject.h"
+#include "components/atomic/Counter.h"
+
 
 namespace XMI
 {
@@ -23,11 +24,11 @@ namespace XMI
     ///
     /// \brief CRTP interface for "noop" atomic objects.
     ///
-    class Noop : public AtomicObject <Noop>
+    class Noop : public Interface::Counter <Noop>
     {
       public:
         Noop () :
-            AtomicObject <Noop> ()
+            Interface::Counter <Noop> ()
         {};
 
         ~Noop () {};

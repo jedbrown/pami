@@ -7,68 +7,70 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file atomic/AtomicObject.h
+ * \file components/atomic/Counter.h
  * \brief ???
  */
 
-#ifndef __xmi_atomic_atomicobject_h__
-#define __xmi_atomic_atomicobject_h__
+#ifndef __components_atomic_counter_h__
+#define __components_atomic_counter_h__
 
 namespace XMI
 {
   namespace Atomic
   {
+  namespace Interface
+  {
     ///
-    /// \brief CRTP for all atomic objects.
+    /// \brief Inerface for all atomic counter objects.
     ///
-    /// \param T_Object  Atomic object template class
+    /// \param T_Object  Atomic counter object derived class
     ///
     template <class T_Object>
-    class AtomicObject
+    class Counter
     {
       public:
-        AtomicObject  () {}
-        ~AtomicObject () {}
+        Counter  () {}
+        ~Counter () {}
 
         void init ();
 
         ///
-        /// \brief Fetch the atomic object value
+        /// \brief Fetch the atomic counter object value
         ///
-        /// \attention All atomic object derived classes \b must
+        /// \attention All atomic counter object derived classes \b must
         ///            implement the fetch_impl() method.
         ///
-        /// \return Atomic object value
+        /// \return Atomic counter object value
         ///
         inline size_t fetch () const;
 
         ///
-        /// \brief Fetch, then increment the atomic object value
+        /// \brief Fetch, then increment the atomic counter object value
         ///
-        /// \attention All atomic object derived classes \b must
+        /// \attention All atomic counter object derived classes \b must
         ///            implement the fetch_and_inc_impl() method.
         ///
-        /// \return Atomic object value
+        /// \return Atomic counter object value
         ///
         inline size_t fetch_and_inc ();
 
         ///
-        /// \brief Fetch, then decrement the atomic object value
+        /// \brief Fetch, then decrement the atomic counter object value
         ///
-        /// \attention All atomic object derived classes \b must
+        /// \attention All atomic counter object derived classes \b must
         ///            implement the fetch_and_dec_impl() method.
         ///
-        /// \return Atomic object value
+        /// \return Atomic counter object value
         ///
         inline size_t fetch_and_dec ();
 
         ///
-        /// \brief Fetch, then clear the atomic object value
+        /// \brief Fetch, then clear the atomic counter object value
         ///
-        /// \attention All atomic object derived classes \b must
+        /// \attention All atomic counter object derived classes \b must
         ///            implement the fetch_and_clear_impl() method.
         ///
-        /// \return Atomic object value
+        /// \return Atomic counter object value
         ///
         inline size_t fetch_and_clear ();
 
@@ -78,52 +80,54 @@ namespace XMI
         /// If the current value of the atomic object is the \c compare value,
         /// then write the \c swap value into the atomic object.
         ///
-        /// \attention All atomic object derived classes \b must
+        /// \attention All atomic counter object derived classes \b must
         ///            implement the compare_and_swap_impl() method.
         ///
         /// \retval true Comparison was successful and swap value was written.
         ///
         inline bool compare_and_swap (size_t compare, size_t swap);
-    };
+
+    }; // XMI::Atomic::Interface::Counter class
 
     template <class T_Object>
-    inline void AtomicObject<T_Object>::init ()
+    inline void Counter<T_Object>::init ()
     {
       static_cast<T_Object*>(this)->init_impl();
     }
 
     template <class T_Object>
-    inline size_t AtomicObject<T_Object>::fetch () const
+    inline size_t Counter<T_Object>::fetch () const
     {
       return static_cast<T_Object*>(this)->fetch_impl();
     }
 
     template <class T_Object>
-    inline size_t AtomicObject<T_Object>::fetch_and_inc ()
+    inline size_t Counter<T_Object>::fetch_and_inc ()
     {
       return static_cast<T_Object*>(this)->fetch_and_inc_impl();
     }
 
     template <class T_Object>
-    inline size_t AtomicObject<T_Object>::fetch_and_dec ()
+    inline size_t Counter<T_Object>::fetch_and_dec ()
     {
       return static_cast<T_Object*>(this)->fetch_and_dec_impl();
     }
 
     template <class T_Object>
-    inline size_t AtomicObject<T_Object>::fetch_and_clear ()
+    inline size_t Counter<T_Object>::fetch_and_clear ()
     {
       return static_cast<T_Object*>(this)->fetch_and_clear_impl();
     }
 
     template <class T_Object>
-    inline bool AtomicObject<T_Object>::compare_and_swap (size_t compare, size_t swap)
+    inline bool Counter<T_Object>::compare_and_swap (size_t compare, size_t swap)
     {
       return static_cast<T_Object*>(this)->compare_and_swap_impl(compare, swap);
     }
-  };
-};
+    }; // XMI::Atomic::Interface namespace
+  };   // XMI::Atomic namespace
+};     // XMI namespace
 
-#endif // __xmi_atomic_atomicobject_h__
+#endif // __components_atomic_counter_h__
 
 

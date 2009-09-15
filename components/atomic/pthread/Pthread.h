@@ -14,7 +14,7 @@
 #ifndef __xmi_atomic_pthread_pthread_h__
 #define __xmi_atomic_pthread_pthread_h__
 
-#include "components/atomic/AtomicObject.h"
+#include "components/atomic/Counter.h"
 
 #include <pthread.h>
 
@@ -25,11 +25,11 @@ namespace XMI
     ///
     /// \brief CRTP interface for pthread atomic objects.
     ///
-    class Pthread : public AtomicObject <Pthread>
+    class Pthread : public Counter <Pthread>
     {
       public:
         Pthread () :
-            AtomicObject <Pthread> ()
+            Counter <Pthread> ()
         {}
 
         ~Pthread () {}
