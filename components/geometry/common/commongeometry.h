@@ -39,7 +39,6 @@ namespace XMI
           this->_size      = 0;
           for(int i=0; i<numranges; i++)
             this->_size+=(this->_rangelist[i].hi-this->_rangelist[i].lo+1);
-          assert (this->_size > 0);
         }
 
       inline int                       getColorsArray_impl()

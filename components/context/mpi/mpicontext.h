@@ -290,7 +290,7 @@ namespace XMI
 	  MPIGeometry              *new_geometry;
 	  MPICollfactory           *new_collfactory;
           new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
-          new(_world_geometry) MPIGeometry(&_sysdep.mapping,slice_count,rank_slices);
+          new(new_geometry) MPIGeometry(&_sysdep.mapping,slice_count,rank_slices);
           new_collfactory=_collreg->analyze(new_geometry);
 	  new_geometry->setKey(XMI::Geometry::COLLFACTORY, new_collfactory);
 	  *geometry=(MPIGeometry*) new_geometry;

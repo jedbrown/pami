@@ -123,13 +123,6 @@ int main(int argc, char*argv[])
 				  &world_algorithm[0],
 				  &num_algorithm);
 
-  
-  
-
-  if(rank == 0)
-    printf("Initializing Bottom Geometry\n");
-
-
   xmi_barrier_t world_barrier;
   world_barrier.xfer_type = XMI_XFER_BARRIER;
   world_barrier.cb_done   = cb_barrier;
@@ -152,6 +145,7 @@ int main(int argc, char*argv[])
   xmi_broadcast_t          top_broadcast;
   if(rank>=0 && rank<=half-1)
       {
+        fprintf(stderr, "%d:  Creating Bottom Geometry\n", (int)rank);
         bottom_range.lo =0;
         bottom_range.hi =half-1;
         result = XMI_Geometry_initialize (context,
@@ -194,13 +188,14 @@ int main(int argc, char*argv[])
       }
   else
       {
+        fprintf(stderr, "%d:  Creating Top Geometry\n", (int)rank);
         top_range.lo =half;
         top_range.hi =sz-1;
         result = XMI_Geometry_initialize (context,
                                           &top_geometry,
-                                          1,
+                                          2,
                                           &top_range,
-                                          2);
+                                          1);
         _barrier (context, &world_barrier);
         result = XMI_Geometry_algorithm(context,
                                         XMI_XFER_BARRIER,
@@ -239,7 +234,7 @@ int main(int argc, char*argv[])
   xmi_broadcast_t *broadcasts [] = {&bottom_broadcast, &top_broadcast};
   size_t           roots[]        = {0, half};
   int             i,j,k;
-  for(k=0; k<2; k++)
+  for(k=1; k>=0; k--)
       {
         if (rank == roots[k])
             {

@@ -205,10 +205,11 @@ namespace XMI
 	XMI::CollInfo::PGBroadcastInfo<T_Device> *info =
           (XMI::CollInfo::PGBroadcastInfo<T_Device> *)_broadcasts[broadcast->algorithm];
         if (!_bcast->isdone()) _dev->advance();
-        ((TSPColl::BinomBcast<MPIMcastModel> *)_bcast)->reset (broadcast->root,
-                                       broadcast->buf,
-                                       broadcast->buf,
-                                       broadcast->typecount);
+        
+        ((TSPColl::BinomBcast<MPIMcastModel> *)_bcast)->reset (_geometry->virtrankof(broadcast->root),
+                                                               broadcast->buf,
+                                                               broadcast->buf,
+                                                               broadcast->typecount);
         _bcast->setComplete(broadcast->cb_done, broadcast->cookie);
         _bcast->kick(&info->_model);
         return XMI_SUCCESS;
@@ -294,7 +295,7 @@ namespace XMI
          XMI::CollInfo::PGScatterInfo<T_Device> *info =
           (XMI::CollInfo::PGScatterInfo<T_Device> *)_scatters[scatter->algorithm];
         if (!_sct->isdone()) _dev->advance();
-        ((TSPColl::Scatter<MPIMcastModel> *)_sct)->reset (scatter->root,
+        ((TSPColl::Scatter<MPIMcastModel> *)_sct)->reset (_geometry->virtrankof(scatter->root),
                                                           scatter->sndbuf,
                                                           scatter->rcvbuf,
                                                           scatter->stypecount);
@@ -315,7 +316,7 @@ namespace XMI
          XMI::CollInfo::PGScattervInfo<T_Device> *info =
           (XMI::CollInfo::PGScattervInfo<T_Device> *)_scattervs[scatterv->algorithm];
         if (!_sctv->isdone()) _dev->advance();
-        ((TSPColl::Scatterv<MPIMcastModel> *)_sctv)->reset (scatterv->root,
+        ((TSPColl::Scatterv<MPIMcastModel> *)_sctv)->reset (_geometry->virtrankof(scatterv->root),
                                                             scatterv->sndbuf,
                                                             scatterv->rcvbuf,
                                                             scatterv->stypecounts);

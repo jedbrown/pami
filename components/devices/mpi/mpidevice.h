@@ -175,6 +175,10 @@ namespace XMI
 		  break;
 		}
 	    }
+          // This isn't performance sensitive because this device is just for testing
+          // but we want to play nice with other
+          // processes, so let's be nice and yield to them.
+          sched_yield();
         };
 
       // Implement MessageDevice Routines
