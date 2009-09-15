@@ -32,25 +32,25 @@ namespace XMI
                 inline bool postMultisync (T_Object * obj);
             };
             template <class T_Model, class T_Device, class T_Object>
-            bool MultisyncModel<T_Model, T_Device, T_Object>::setConnectionId (unsigned conn)
+            void MultisyncModel<T_Model, T_Device, T_Object>::setConnectionId (unsigned conn)
             {
                 static_cast<T_Model*>(this)->setConnectionId_impl(conn);
             }
 
             template <class T_Model, class T_Device, class T_Object>
-            bool MultisyncModel<T_Model, T_Device, T_Object>::setRoles(unsigned roles)
+            void MultisyncModel<T_Model, T_Device, T_Object>::setRoles(unsigned roles)
             {
                 static_cast<T_Model*>(this)->setRoles_impl(roles);
             }
 
             template <class T_Model, class T_Device, class T_Object>
-            bool MultisyncModel<T_Model, T_Device, T_Object>::setRanks(xmi_topology_t *participants)
+            void MultisyncModel<T_Model, T_Device, T_Object>::setRanks(xmi_topology_t *participants)
             {
                 static_cast<T_Model*>(this)->setRanks_impl(participants);
             }
 
             template <class T_Model, class T_Device, class T_Object>
-            bool MultisyncModel<T_Model, T_Device, T_Object>::setCallback(xmi_callback_t &cb_done)
+            void MultisyncModel<T_Model, T_Device, T_Object>::setCallback(xmi_callback_t &cb_done)
             {
                 static_cast<T_Model*>(this)->setCallback_impl(cb_done);
             }

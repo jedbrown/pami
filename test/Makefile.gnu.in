@@ -1,7 +1,7 @@
 VPATH		= @srcdir@
 SUBDIRS         = time client context p2p
 NOTBUILT        = 
-APPS            = barrier.${EXTENSION} bcast.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} scatter2.${EXTENSION}
+APPS            = barrier.${EXTENSION} bcast.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} scatter.${EXTENSION}
 #APPS            = barrier.${EXTENSION} bcast.${EXTENSION} bcast_subcomm.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} scatter.${EXTENSION} scatterv.${EXTENSION} ambcast.${EXTENSION} alltoall.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules

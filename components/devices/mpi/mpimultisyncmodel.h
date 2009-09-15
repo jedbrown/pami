@@ -7,22 +7,32 @@
 
 namespace XMI
 {
-    namespace Device
+  namespace Device
+  {
+    template <class T_Device, class T_Message>
+    class MPIMultisyncModel : public Interface::MessageModel<MPIMultisyncModel<T_Device, T_Message>,T_Device, T_Message>
     {
-        template <class T_Device, class T_Message>
-        class MPIMultisyncModel : public Interface::MessageModel<MPIMultisyncModel<T_Device, T_Message>,T_Device, T_Message>
+    public:
+      MPIMultisyncModel (T_Device & device) :
+        Interface::MessageModel < MPIMultisyncModel<T_Device, T_Message>, T_Device, T_Message > (device)
+        {};
+      inline void setConnectionId (unsigned conn)
         {
-        public:
-            MPIMultisyncModel (T_Device & device) :
-                Interface::MessageModel < MPIMultisyncModel<T_Device, T_Message>, T_Device, T_Message > (device)
-                {};
-
-            inline bool postMultisync_impl (T_Message * obj)
-                {
-
-                }
-            
-        };
+        }
+      inline void setRoles(unsigned roles)
+        {
+        }
+      inline void setRanks(xmi_topology_t *participants)
+        {
+        }
+      inline void setCallback(xmi_callback_t &cb_done)
+        {
+        }
+      inline bool postMultisync_impl (T_Message * obj)
+        {
+              
+        }
     };
+  };
 };
 #endif // __components_devices_mpi_mpimultisyncmodel_h__
