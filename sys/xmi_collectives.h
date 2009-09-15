@@ -75,8 +75,62 @@ extern "C"
      */
     xmi_result_t XMI_Geometry_world (xmi_context_t               context,
                                      xmi_geometry_t            * world_geometry);
+    /**
+     * \brief determines the number of algorithms available for a given op.
+     *
+     * \param[in]     context     xmi context.
+     * \param[in]     geometry    An input geometry to be analyzed.
+     * \param[in]     coll_type   type of collective op.
+     * \param[in/out] algorithm   default algorithm on this geometry.
+     *
+     * \retval        XMI_SUCCESS number of algorithms is determined.
+     * \retval        ?????       There is an error with input parameters
+     */
+    xmi_result_t XMI_Geometry_algorithm_default (xmi_context_t context,
+                                                 xmi_geometry_t geometry,
+                                                 xmi_xfer_type_t coll_type,
+                                                 xmi_algorithm_t *algorithm);
 
+    /**
+     * \brief determines the number of algorithms available for a given op
+     *        in the two different lists (always work list,
+     *        under-cetain conditions list).
+     *
+     * \param[in]     context       xmi context.
+     * \param[in]     geometry      An input geometry to be analyzed.
+     * \param[in]     coll_type     type of collective op.
+     * \param[in/out] lists_lengths array of 2 numbers representing all valid
+                                    algorithms and optimized algorithms.
+     * \retval        XMI_SUCCESS   number of algorithms is determined.
+     * \retval        ?????         There is an error with input parameters
+     */
+    xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
+                                              xmi_geometry_t geometry,
+                                              xmi_xfer_type_t coll_type,
+                                              int *lists_lengths);
 
+     /**
+     * \brief fills in the attributes for a given algorithm.
+     *
+     * \param[in]     context        xmi context.
+     * \param[in]     geometry       An input geometry to be analyzed.
+     * \param[in]     coll_type      type of collective op.
+     * \param[in]     algorithm      algorithm's id
+     * \param[in]     algorithm_type tells whether this an "always works"
+     *                               or "works under-condition"
+     * \param[out]    mdata          metadata to be filled in if algorithm is
+     *                               applicable.
+     * \retval        XMI_SUCCESS    algorithm is applicable to geometry.
+     * \retval        ?????          Error in input arguments or not applicable.
+     */
+
+    xmi_result_t XMI_Geometry_algorithm_info (xmi_context_t context,
+                                              xmi_geometry_t geometry,
+                                              xmi_xfer_type_t type,
+                                              xmi_algorithm_t algorithm,
+                                              int algorithm_type,
+                                              xmi_metadata_t *mdata);
+  
     /**
      * \brief Analyze a protocol to ensure that it will run on the specified geometry
      *
@@ -1019,6 +1073,22 @@ extern "C"
     }xmi_xfer_t;
 
     xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
+
+   /**
+    * \brief Invokes a given collective operation and utilizes the XMI advisor
+    *        client to execute the most efficient algorithm based on the state
+    *        (meta data) of the collective call site.
+    * \param[in]   context   xmi context
+    * \param[in]   cmd       collective paramaters
+    * \param[in]   cs_meta   call site meta data
+    *
+    * \retval     0            Success
+    *
+    * \todo doxygen
+    */
+    xmi_result_t XMI_Collective_via_advisor (xmi_context_t context,
+                                             xmi_xfer_t *cmd,
+                                             xmi_metadata_t cs_meta);  
 
 #ifdef __cplusplus
 };

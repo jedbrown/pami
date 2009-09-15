@@ -9,6 +9,17 @@
 #include <stddef.h>
 #include "xmi_config.h"
 /* #include "xmi_impl.h" */
+#include "compact_attributes.h"
+
+#define xmi_ca_list_t    ca_list
+#define xmi_ca_copy      CA_COPY
+#define xmi_ca_set       CA_SET
+#define xmi_ca_unset     CA_UNSET
+#define xmi_ca_isset     CA_ISSET
+#define xmi_ca_unset_all CA_UNSET_ALL
+#define xmi_ca_set_all   CA_SET_ALL
+#define xmi_ca_issubset  CA_ISSUBSET
+#define xmi_ca_print     CA_PRINT
 
 #ifdef __cplusplus
 extern "C"
@@ -168,7 +179,16 @@ extern "C"
     };
   } xmi_coord_t;
 
-
+  /**
+   * \brief A metadata structure to describe a collective protocol
+   */
+  typedef struct
+  {
+    xmi_ca_list_t geometry_attrs; /**< geometry attributes */
+    xmi_ca_list_t buffer_attrs;  /**< buffer attributes (contig, alignment) */
+    xmi_ca_list_t misc_attributes; /**< other attributes (i.e. threaded) */
+    char name[32]; /** < name of algorithm */
+  } xmi_metadata_t;
 
 #ifdef __cplusplus
 };
