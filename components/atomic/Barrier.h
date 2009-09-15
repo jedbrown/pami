@@ -6,64 +6,157 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-///
-/// \file components/atomic/Barrier.h
-/// \brief ???
-///
 #ifndef __components_atomic_barier_h__
 #define __components_atomic_barier_h__
 
 #include "sys/xmi.h"
 
+////////////////////////////////////////////////////////////////////////
+///  \file components/atomic/Barrier.h
+///  \brief Barrier Objects for Hardware and Software Barrieres
+///
+///  This object is a portability layer that abstracts local barriers
+///  - Access to the hardware barriers
+///  - Access to the software barriers
+///  - Enter methods provided
+///  - Allocation/Deallocation handled by constructor/destructor
+///
+///  Definitions:
+///  - Hardware Barrier:  a barrier that is assisted by hardware
+///  - Software Barrier, ie an atomic memory barrier
+///
+///  Namespace:  DCMF, the messaging namespace
+///  Notes:  This is currently indended for use only by the lock manager
+///
+////////////////////////////////////////////////////////////////////////
 namespace XMI
 {
-  namespace Atomic
-  {
-    namespace Interface
+namespace Atomic
+{
+namespace Interface
+{
+  typedef enum barrierPollStatus
+            {
+              Uninitialized=0,
+              Initialized,
+              Entered,
+              Done
+            };
+  typedef void  (* pollFcn)(void *);
+
+  ///
+  /// \brief Barrier object interface
+  ///
+  /// \param T  Barrier object derived class
+  ///
+  template <class T>
+  class Barrier
     {
+    public:
       ///
-      /// \brief Barrier object interface
+      /// \brief  Construct a barrier
       ///
-      /// \param T  Barrier object derived class
+      Barrier() { }
+
       ///
-      template <class T>
-      class Barrier
-      {
-        public:
-          Barrier  () {};
-          ~Barrier () {};
+      /// \brief  destruct a barrier
+      ///
+      ~Barrier() { /* need to call de_init... */}
 
-        ///
-        /// \brief Initialize the local barrier objecti
-        ///
-        /// \param[in] participants Number of participants for the barrier
-        ///
-        void init (size_t participants);
+      ///
+      /// \brief Initialize the local barrier objecti
+      ///
+      /// \param[in] participants Number of participants for the barrier
+      ///
+      inline void init(size_t participants);
 
-        ///
-        /// \brief Enter a local blocking barrier operation
-        ///
-        /// Does not return until all participants have entered the barrier.
-        ///
-        inline xmi_result_t enter ();
 
-      };  // XMI::Atomic::Interface::Barrier class
+      ///
+      /// \brief Enter a local blocking barrier operation
+      ///
+      /// Does not return until all participants have entered the barrier.
+      ///
+      inline xmi_result_t enter();
 
-      template <class T>
-      inline void Barrier<T>::init (size_t participants)
-      {
-        static_cast<T*>(this)->init_impl(participants);
-      };
+      ///
+      /// \brief  Enter a barrier and Poll
+      ///
+      /// This actually performs the barrier, does not return until
+      /// all participants have entered. But 'fcn' is called, with
+      /// 'arg', while polling completion of barrier.
+      ///
+      inline void enterPoll(pollFcn fcn, void *arg);
 
-      template <class T>
-      inline xmi_result_t Barrier<T>::enter ()
-      {
-        return static_cast<T*>(this)->enter_impl();
-      };
-    }; // XMI::Atomic::Interface namespace
-  };   // XMI::Atomic namespace
-};     // XMI namespace
+      ///
+      /// \brief  Enter/Init a barrier and return, nonblocking
+      ///
+      inline void pollInit();
+
+      ///
+      /// \brief   Poll an initialized barrier, nonblocking
+      /// \returns a polling status, "Done" when barrier is completed.
+      ///
+      inline lockPollStatus poll();
+
+      ///
+      /// \brief  Provide access to the raw barrier var/data
+      /// This is not a usefull method, as the thing returned
+      /// does not represent any externally-visible entity.
+      ///
+      inline void * returnBarrier();
+
+      ///
+      /// \brief  Debug routine to dump state of a barrier
+      ///
+      inline void dump(const char *string = NULL);
+
+    private:
+    }; // class Barrier
+
+template <class T>
+inline void Barrier<T>::init(size_t participants)
+{
+	static_cast<T*>(this)->init_impl(participants);
+}
+
+template <class T>
+inline xmi_result_t Barrier<T>::enter()
+{
+	return static_cast<T*>(this)->enter_impl();
+}
+
+template <class T>
+inline void Barrier<T>::dump(const char *string)
+{
+	static_cast<T*>(this)->dump_impl(string);
+}
+
+template <class T>
+inline void Barrier<T>::enterPoll(pollFcn fcn, void *arg)
+{
+	static_cast<T*>(this)->enterPoll_impl(fcn, arg);
+}
+
+template <class T>
+inline void Barrier<T>::pollInit()
+{
+	static_cast<T*>(this)->pollInit_impl();
+}
+
+template <class T>
+inline lockPollStatus Barrier<T>::poll()
+{
+	return static_cast<T*>(this)->poll_impl();
+}
+
+template <class T>
+inline void *Barrier<T>::returnBarrier()
+{
+	return static_cast<T*>(this)->returnBarrier_impl();
+}
+
+}; // namespace Interface
+}; // namespace Atomic
+}; // namespace XMI
 
 #endif // __components_atomic_barier_h__
-
-
