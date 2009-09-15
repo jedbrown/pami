@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= 
+NOTBUILT        =
+@LIBNAME@-""-COLLECTIVESGEOM_SOURCES=BgqPersonality.cc BgqGlobal.cc
+DEVICENAME     = @LIBNAME@-""-COLLECTIVESGEOM
+include @abs_top_builddir@/Build.rules

@@ -42,7 +42,7 @@ namespace XMI
           _size (0),
           _offset (0)
         {
-          char   * shmemfile = "/unique-xmi-shmem-file";
+          const char   * shmemfile = "/unique-xmi-shmem-file";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
 
