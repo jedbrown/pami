@@ -23,20 +23,20 @@ namespace XMI
     ///
     /// \brief CRTP interface for gcc builtins atomic objects.
     ///
-    class GccBuiltin : public Counter <GccBuiltin>
+    class GccBuiltin : public Interface::Counter <GccBuiltin>
     {
       public:
         GccBuiltin () :
-            Counter <GccBuiltin> ()
-        {}
+            Interface::Counter <GccBuiltin> ()
+        {};
 
-        ~GccBuiltin () {}
+        ~GccBuiltin () {};
 
         /// \see XMI::Atomic::Interface::Counter::init
         void init_impl ()
         {
           fetch_and_clear_impl ();
-        }
+        };
 
         /// \see XMI::Atomic::Interface::Counter::fetch
         inline size_t fetch_impl ()
@@ -66,7 +66,7 @@ namespace XMI
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           return __sync_bool_compare_and_swap (&_atom, compare, swap);
-        }
+        };
 
       protected:
 

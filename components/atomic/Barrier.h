@@ -30,8 +30,8 @@ namespace XMI
       class Barrier
       {
         public:
-          Barrier  () {}
-          ~Barrier () {}
+          Barrier  () {};
+          ~Barrier () {};
 
         ///
         /// \brief Initialize the local barrier objecti
@@ -53,13 +53,13 @@ namespace XMI
       inline void Barrier<T>::init (size_t participants)
       {
         static_cast<T*>(this)->init_impl(participants);
-      }
+      };
 
       template <class T>
       inline xmi_result_t Barrier<T>::enter ()
       {
-        static_cast<T*>(this)->enter_impl();
-      }
+        return static_cast<T*>(this)->enter_impl();
+      };
     }; // XMI::Atomic::Interface namespace
   };   // XMI::Atomic namespace
 };     // XMI namespace

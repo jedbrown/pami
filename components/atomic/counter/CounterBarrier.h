@@ -64,6 +64,8 @@ namespace XMI
 
           size_t parties = _participants;
           while (poll(phase, parties, participant) == XMI_EAGAIN);
+
+          return XMI_SUCCESS;
         };
 
       protected:
@@ -89,7 +91,7 @@ namespace XMI
           if (participant == 0)
           {
             // Flip the barrier phase.
-            if (barrier == 1)
+            if (phase == 1)
               _control.fetch_and_dec ();
             else
               _control.fetch_and_inc ();
@@ -116,6 +118,8 @@ namespace XMI
         T_Counter & _control;
         T_Counter * _lock;
         T_Counter * _status;
+
+        size_t      _participants;
 
     };  // XMI::Atomic::CounterBarrier class
   };   // XMI::Atomic namespace
