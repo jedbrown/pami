@@ -5,7 +5,7 @@
 #include "components/geometry/CollRegistration.h"
 #include "components/devices/mpi/oldmpimulticastmodel.h"
 #include "components/devices/mpi/mpimessage.h"
-#include "collectives/components/devices/mpi/mpidevice.h"
+#include "components/devices/mpi/mpidevice.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include "components/mapping/mpi/mpimapping.h"
 #include "components/sysdep/mpi/mpisysdep.h"
