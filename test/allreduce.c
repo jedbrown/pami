@@ -237,7 +237,7 @@ bool ** alloc2DContig(int nrows, int ncols)
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
-  char buf[MAXBUFSIZE];
+  char sbuf[MAXBUFSIZE];
   char rbuf[MAXBUFSIZE];
   int  op, dt;
   xmi_client_t  client;
@@ -369,10 +369,10 @@ int main(int argc, char*argv[])
   allreduce.cookie    = (void*)&_g_allreduce_active;
   allreduce.geometry  = world_geometry;
   allreduce.algorithm = allreducealgorithm[0];
-  allreduce.sbuffer   = NULL;
+  allreduce.sndbuf    = sbuf;
   allreduce.stype     = XMI_BYTE;
   allreduce.stypecount= 0;
-  allreduce.rbuffer   = NULL;
+  allreduce.rcvbuf    = rbuf;
   allreduce.rtype     = XMI_BYTE;
   allreduce.rtypecount= 0;
   
@@ -396,8 +396,6 @@ int main(int argc, char*argv[])
 			      ti = timer();
 			      for (j=0; j<niter; j++)
 				  {
-                                    allreduce.sbuffer=buf;
-                                    allreduce.rbuffer=buf;
                                     allreduce.stypecount=i;
                                     allreduce.rtypecount=i;
                                     allreduce.dt=dt_array[dt];

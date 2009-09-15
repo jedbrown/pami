@@ -231,10 +231,10 @@ extern "C"
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
         size_t                     root;
-        char                     * sbuffer;
+        char                     * sndbuf;
         xmi_type_t               * stype;
         size_t                     stypecount;
-        char                     * rbuffer;
+        char                     * rcvbuf;
         xmi_type_t               * rtype;
         size_t                     rtypecount;
         xmi_dt                     dt;
@@ -268,10 +268,10 @@ extern "C"
         void                    * cookie;
         xmi_geometry_t            geometry;
         xmi_algorithm_t           algorithm;
-        char                    * sbuffer;
+        char                    * sndbuf;
         xmi_type_t              * stype;
         size_t                    stypecount;
-        char                    * rbuffer;
+        char                    * rcvbuf;
         xmi_type_t              * rtype;
         size_t                    rtypecount;
         size_t                  * rcounts;
@@ -332,10 +332,10 @@ extern "C"
         void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
-        char                      * src;
+        char                      * sndbuf;
         xmi_type_t                * stype;
         size_t                      stypecount;
-        char                      * rcv;
+        char                      * rcvbuf;
         xmi_type_t                * rtype;
         size_t                      rtypecount;
     }xmi_allgather_t;
@@ -368,10 +368,10 @@ extern "C"
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         size_t                      root;
-        char                      * src;
+        char                      * sndbuf;
         xmi_type_t                * stype;
         size_t                      stypecount;
-        char                      * rcv;
+        char                      * rcvbuf;
         xmi_type_t                * rtype;
         size_t                      rtypecount;
     }xmi_gather_t;
@@ -551,10 +551,10 @@ extern "C"
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
         size_t                      root;
-        char                      * sbuffer;
+        char                      * sndbuf;
         xmi_type_t                * stype;
         size_t                      stypecount;
-        char                      * rbuffer;
+        char                      * rcvbuf;
         xmi_type_t                * rtype;
         size_t                      rtypecount;
     }xmi_scatter_t;
@@ -660,10 +660,10 @@ extern "C"
         void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
-        char                     * sbuffer;
+        char                     * sndbuf;
         xmi_type_t               * stype;
         size_t                     stypecount;
-        char                     * rbuffer;
+        char                     * rcvbuf;
         xmi_type_t               * rtype;
         size_t                     rtypecount;
         xmi_dt                     dt;
@@ -700,10 +700,10 @@ extern "C"
         void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
-        char                     * sbuffer;
+        char                     * sndbuf;
         xmi_type_t               * stype;
         size_t                     stypecount;
-        char                     * rbuffer;
+        char                     * rcvbuf;
         xmi_type_t               * rtype;
         size_t                     rtypecount;
         xmi_dt                     dt;
@@ -765,7 +765,7 @@ extern "C"
         xmi_algorithm_t             algorithm;
         void                      * user_header;
         size_t                      headerlen;
-        void                      * src;
+        void                      * sndbuf;
         xmi_type_t                * stype;
         size_t                      stypecount;
     }xmi_ambroadcast_t;
@@ -823,7 +823,7 @@ extern "C"
         xmi_geometry_t              geometry;
         void                      * headers;
         size_t                      headerlen;
-        void                      * src;
+        void                      * sndbuf;
         xmi_type_t                * stype;
         size_t                      stypecount;
     }xmi_amscatter_t;
@@ -910,7 +910,7 @@ extern "C"
                                               const unsigned       sndlen,
                                               void               * user_header,
                                               const size_t         headerlen,
-                                              void              ** sbuf,
+                                              void              ** sndbuf,
                                               xmi_type_t         * stype,
                                               size_t             * stypecount,
                                               xmi_event_function * const cb_info);
@@ -987,7 +987,7 @@ extern "C"
                                               xmi_op               op,
                                               void               * user_header,
                                               const size_t         headerlen,
-                                              void              ** sbuf,
+                                              void              ** sndbuf,
                                               xmi_type_t         * stype,
                                               size_t             * stypecount,
                                               xmi_event_function * const cb_info);

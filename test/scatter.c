@@ -159,16 +159,16 @@ int main (int argc, char ** argv)
       }
 
   xmi_scatter_t scatter;
-  scatter.xfer_type = XMI_XFER_SCATTER;
-  scatter.cb_done   = cb_scatter;
-  scatter.cookie    = (void*)&_g_scatter_active;
-  scatter.geometry  = world_geometry;
-  scatter.algorithm = scatteralgorithm[0];
-  scatter.root      = root;
-  scatter.sbuffer   = buf;
+  scatter.xfer_type  = XMI_XFER_SCATTER;
+  scatter.cb_done    = cb_scatter;
+  scatter.cookie     = (void*)&_g_scatter_active;
+  scatter.geometry   = world_geometry;
+  scatter.algorithm  = scatteralgorithm[0];
+  scatter.root       = root;
+  scatter.sndbuf     = buf;
   scatter.stype      = XMI_BYTE;
   scatter.stypecount = 0;
-  scatter.rbuffer    = rbuf;
+  scatter.rcvbuf     = rbuf;
   scatter.rtype      = XMI_BYTE;
   scatter.rtypecount = 0;
 

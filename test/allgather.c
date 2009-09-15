@@ -162,10 +162,10 @@ int main (int argc, char ** argv)
   allgather.cookie     = (void*)&_g_allgather_active;
   allgather.geometry   = world_geometry;
   allgather.algorithm  = allgatheralgorithm[0];
-  allgather.src        = buf;
+  allgather.sndbuf     = buf;
   allgather.stype      = XMI_BYTE;
   allgather.stypecount = 0;
-  allgather.rcv        = rbuf;
+  allgather.rcvbuf     = rbuf;
   allgather.rtype      = XMI_BYTE;
   allgather.rtypecount = 0;
 

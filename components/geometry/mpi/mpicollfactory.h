@@ -228,8 +228,8 @@ namespace XMI
           if (datawidth * allreduce->stypecount < TSPColl::Allreduce::Short<MPIMcastModel>::MAXBUF)
               {
                 if (!_sar->isdone()) _dev->advance();
-                ((TSPColl::Allreduce::Short<MPIMcastModel> *)_sar)->reset (allreduce->sbuffer,
-                                                                           allreduce->rbuffer,
+                ((TSPColl::Allreduce::Short<MPIMcastModel> *)_sar)->reset (allreduce->sndbuf,
+                                                                           allreduce->rcvbuf,
                                                                            allreduce->op,
                                                                            allreduce->dt,
                                                                            allreduce->stypecount);                
@@ -240,8 +240,8 @@ namespace XMI
           else
               {
                 if (!_lar->isdone()) _dev->advance();
-                ((TSPColl::Allreduce::Long<MPIMcastModel> *)_lar)->reset (allreduce->sbuffer,
-                                                                          allreduce->rbuffer,
+                ((TSPColl::Allreduce::Long<MPIMcastModel> *)_lar)->reset (allreduce->sndbuf,
+                                                                          allreduce->rcvbuf,
                                                                           allreduce->op,
                                                                           allreduce->dt,
                                                                           allreduce->stypecount);
@@ -262,8 +262,8 @@ namespace XMI
         XMI::CollInfo::PGAllgatherInfo<T_Device> *info =
           (XMI::CollInfo::PGAllgatherInfo<T_Device> *)_allgathers[allgather->algorithm];
         if (!_allgather->isdone()) _dev->advance();
-        ((TSPColl::Allgather<MPIMcastModel> *)_allgather)->reset (allgather->src,
-                                                                  allgather->rcv,
+        ((TSPColl::Allgather<MPIMcastModel> *)_allgather)->reset (allgather->sndbuf,
+                                                                  allgather->rcvbuf,
                                                                   allgather->stypecount);
         _allgather->setComplete(allgather->cb_done, allgather->cookie);
         _allgather->kick(&info->_model);
@@ -295,8 +295,8 @@ namespace XMI
           (XMI::CollInfo::PGScatterInfo<T_Device> *)_scatters[scatter->algorithm];
         if (!_sct->isdone()) _dev->advance();
         ((TSPColl::Scatter<MPIMcastModel> *)_sct)->reset (scatter->root,
-                                                          scatter->sbuffer,
-                                                          scatter->rbuffer,
+                                                          scatter->sndbuf,
+                                                          scatter->rcvbuf,
                                                           scatter->stypecount);
         _sct->setComplete(scatter->cb_done, scatter->cookie);
 
