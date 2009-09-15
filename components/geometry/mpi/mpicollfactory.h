@@ -312,7 +312,23 @@ namespace XMI
 
       inline xmi_result_t  iscatterv_impl       (xmi_scatterv_t       *scatterv)
       {
-	return XMI_UNIMPL;
+         XMI::CollInfo::PGScattervInfo<T_Device> *info =
+          (XMI::CollInfo::PGScattervInfo<T_Device> *)_scattervs[scatterv->algorithm];
+        if (!_sctv->isdone()) _dev->advance();
+        ((TSPColl::Scatterv<MPIMcastModel> *)_sctv)->reset (scatterv->root,
+                                                            scatterv->sndbuf,
+                                                            scatterv->rcvbuf,
+                                                            scatterv->stypecounts);
+        _sctv->setComplete(scatterv->cb_done, scatterv->cookie);
+
+        while(!_barrier->isdone()) _dev->advance();
+	((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
+	_barrier->setComplete(NULL, NULL);
+	_barrier->kick(&info->_bmodel);
+        while(!_barrier->isdone()) _dev->advance();
+        
+        _sctv->kick(&info->_smodel);
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t  iscatterv_int_impl   (xmi_scatterv_int_t   *scatterv)
