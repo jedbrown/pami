@@ -12,20 +12,22 @@ namespace XMI
 {
   namespace CollRegistration
   {
-    template <class T_Geometry, class T_Collfactory, class T_Device>
-    class MPI : public CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device>, T_Geometry, T_Collfactory, T_Device>
+    template <class T_Geometry, class T_Collfactory, class T_Device, class T_Sysdep>
+    class MPI : public CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
     {
     public:
-      inline MPI(T_Device *dev):
-      CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device>, T_Geometry, T_Collfactory, T_Device>(),
+      inline MPI(T_Device *dev, T_Sysdep *sd):
+        CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>(),
 	_dev(dev),
+        _sysdep(sd),
 	_pgbroadcast(dev),
 	_pgallgather(dev),
 	_pgallgatherv(dev),
 	_pgscatter(dev),
 	_pgscatterv(dev),
 	_pgallreduce(dev),
-	_pgbarrier(dev)
+	_pgbarrier(dev),
+        _ccmiambroadcast(dev, sd)
         {
 	  // Register and link each collective into a queue for analysis
 	  _nbCollMgr.initialize();
@@ -79,6 +81,7 @@ namespace XMI
 
     public:
       T_Device                        *_dev;
+      T_Sysdep                        *_sysdep; 
       XMI_NBCollManager                _nbCollMgr;
       MemoryAllocator<sizeof(XMI_COLLFACTORY_CLASS), 16> _fact_alloc;
 
@@ -89,7 +92,8 @@ namespace XMI
       XMI::CollInfo::PGScattervInfo<T_Device>     _pgscatterv;
       XMI::CollInfo::PGAllreduceInfo<T_Device>    _pgallreduce;
       XMI::CollInfo::PGBarrierInfo<T_Device>      _pgbarrier;
-      
+      XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep>  _ccmiambroadcast;
+
       RegQueue          _broadcasts;
       RegQueue          _allgathers;
       RegQueue          _allgathervs;

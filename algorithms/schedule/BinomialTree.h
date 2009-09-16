@@ -18,7 +18,6 @@
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
 #include "Schedule.h"
-#include "platform.h"
 
 namespace CCMI
 {
@@ -29,7 +28,7 @@ namespace CCMI
     //------ Supports a generic barrier and allreduce -------------
     //------ The number of phases is logrithmic with a max of 20 --
     //-------------------------------------------------------------
-
+    template <class T_SysDep>
     class BinomialTreeSchedule : public Schedule
     {
       unsigned _nphases;  /// \brief Number of phases total
@@ -247,7 +246,7 @@ namespace CCMI
 
     public:
 
-      static unsigned getMaxPhases(XMI_MAPPING_CLASS *mapping, unsigned nranks,
+      static unsigned getMaxPhases(T_SysDep *sysdep, unsigned nranks,
                                    unsigned *nbino = NULL)
       {
         unsigned nph;
@@ -285,11 +284,11 @@ namespace CCMI
       /**
        * \brief Constructor for list of ranks
        *
-       * \param[in] mapping	Simple mapping for ranks
+       * \param[in] sysdep	Simple sysdep for ranks
        * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
        */
-      BinomialTreeSchedule(XMI_MAPPING_CLASS *mapping, unsigned nranks,
+      BinomialTreeSchedule(T_SysDep *sysdep, unsigned nranks,
                            unsigned *ranks);
 
       /**
@@ -397,20 +396,21 @@ namespace CCMI
 /**
  * \brief Constructor for list of ranks
  *
- * \param[in] mapping	Simple mapping for ranks
+ * \param[in] sysdep	Simple sysdep for ranks
  * \param[in] nranks	Number of ranks in list
  * \param[in] ranks	Ranks list
  */
-inline CCMI::Schedule::BinomialTreeSchedule::
-BinomialTreeSchedule(XMI_MAPPING_CLASS *mapping, unsigned nranks, unsigned *ranks) : Schedule()
+template <class T_SysDep>
+inline CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+BinomialTreeSchedule(T_SysDep *sysdep, unsigned nranks, unsigned *ranks) : Schedule()
 {
 
   CCMI_assert(nranks > 0);
   CCMI_assert(ranks != NULL);
 
   /* find my index - my place in rank list */
-  unsigned rank = mapping->task();
-  CCMI::Schedule::BinomialTreeSchedule::
+  unsigned rank = sysdep->mapping.task();
+  CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
   initBinoSched(rank, 0, nranks - 1, ranks);
 }
 
@@ -421,12 +421,187 @@ BinomialTreeSchedule(XMI_MAPPING_CLASS *mapping, unsigned nranks, unsigned *rank
  * \param[in] x0	Minimum coord on line
  * \param[in] xN	Maximum coord on line
  */
-inline CCMI::Schedule::BinomialTreeSchedule::
+template <class T_SysDep>
+inline CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
 BinomialTreeSchedule(unsigned x, unsigned x0, unsigned xN) : Schedule()
 {
 
-  CCMI::Schedule::BinomialTreeSchedule::
+  CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
   initBinoSched(x, x0, xN);
+}
+/**
+ * \brief Setup binomial schedule context
+ *
+ * Computes important values for later use in building schedule
+ * phases/steps. This includes values used to handle non-powers of two.
+ * This computes values which require knowing the root node and/or
+ * type of collective (_op).
+ *
+ * \param[in] node	Our node number (index) in ranks[] array,
+ *			or position along line of nodes.
+ */
+template <class T_SysDep>
+inline void CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+setupContext(unsigned &startph, unsigned &nph)
+{
+  unsigned st, np;
+
+  bool peer = false;
+  bool outside = false;
+  if(_mynode < _pnranks)
+  {
+    // peer nodes to the outsiders
+    peer = true;
+  }
+  else if(_mynode < _hnranks)
+  {
+    // rest of the power of two nodes,
+    // or all nodes if a power of two
+  }
+  else
+  {
+    // the outsiders - only if non-power of two
+    outside = true;
+  }
+  _recvph = NO_PHASES;
+  _sendph = NO_PHASES;
+
+  // Assume (default) we are only performing as a
+  // power-of-two (standard binomial).
+  st = 1;
+  np = _nphbino;
+  _auxrecvph = NO_PHASES;
+  _auxsendph = NO_PHASES;
+
+  if(peer)
+  {
+    /* non-power of two */
+    switch(_op)
+    {
+    case BARRIER_OP:
+    case ALLREDUCE_OP:
+      st = 0;
+      np += 2;
+      _auxrecvph = st;
+      _auxsendph = _nphases - 1;
+      break;
+    case REDUCE_OP:
+      st = 0;
+      np += 1;
+      _auxrecvph = st;
+      break;
+    case BROADCAST_OP:
+      st = 1;
+      np += 1;
+      _auxsendph = _nphases - 1;
+      break;
+    }
+  }
+  if(outside)
+  {
+    /* non-power of two */
+    switch(_op)
+    {
+    case BARRIER_OP:
+    case ALLREDUCE_OP:
+      st = 0;
+      np += 2;
+      _auxsendph = 0;
+      _auxrecvph = _nphases - 1;
+      break;
+    case REDUCE_OP:
+      st = 0;
+      np = 1;
+      _auxsendph = 0;
+      break;
+    case BROADCAST_OP:
+      st = _nphases - 1;
+      np = 1;
+      _auxrecvph = st;
+      break;
+    }
+  }
+  else
+  {
+    /* might be power of two */
+    switch(_op)
+    {
+    case BARRIER_OP:
+    case ALLREDUCE_OP:
+      _sendph = ALL_PHASES;
+      _recvph = ALL_PHASES;
+      break;
+    case REDUCE_OP:
+      if(_mynode == 0) // root
+      {
+        _recvph = ALL_PHASES;
+        _sendph = NO_PHASES;
+      }
+      else
+      {
+        np = ffs(_mynode) + 1 - st;
+        _sendph = st + np - 1;
+        _recvph = NOT_SEND_PHASE;
+      }
+      break;
+    case BROADCAST_OP:
+      if(_mynode == 0) // root
+      {
+        _recvph = NO_PHASES;
+        _sendph = ALL_PHASES;
+      }
+      else
+      {
+        int n = (_nphbino - ffs(_mynode));
+        st += n;
+        np -= n;
+        _recvph = st;
+        _sendph = NOT_RECV_PHASE;
+      }
+      break;
+    }
+  }
+  startph = st;
+  nph = np;
+}
+
+/**
+ * \brief Initialize the final schedule
+ *
+ * \param[in] root	The root node (rank)
+ * \param[in] comm_op	The collective operation to perform
+ * \param[out] start	The starting phase for this node
+ * \param[out] nph	The number of phases for this node
+ * \param[out] nranks	The largest number of steps per phase
+ */
+template <class T_SysDep>
+inline void CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+init(int root, int comm_op, int &start, int &nph, int &nranks)
+{
+  unsigned st, np;
+
+  CCMI_assert(comm_op == BARRIER_OP ||
+              comm_op == ALLREDUCE_OP ||
+              comm_op == REDUCE_OP ||
+              comm_op == BROADCAST_OP);
+
+  _op = comm_op;
+  if(comm_op == BARRIER_OP || comm_op == ALLREDUCE_OP)
+  {
+    _rootindex = 0;
+  }
+  else
+  {
+    _rootindex = RANK_TO_IDX(root);
+  }
+  // can't compute this until we know root
+  _mynode = RANK_TO_REL(_myrank);
+
+  setupContext(st, np);
+
+  nph = np;
+  start = st;
+  nranks = np; // maximum number of recvs total
 }
 
 #endif /* !__binomial_tree_schedule__ */

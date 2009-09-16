@@ -18,61 +18,53 @@ namespace CCMI
 {
   namespace ConnectionManager
   {
-
-    ///
-    /// \brief A class to manage multisend connections for
-    /// collective protocols
-    ///
+    template <class T_ConnectionManager>
     class ConnectionManager
     {
-    protected:
-      int _numConnections;
-
-      void setNumConnections (int nconn)
-      {
-        _numConnections = nconn;
-      }
-
     public:
-
-      /// Constructor
-      ConnectionManager ()
-      {
-        _numConnections = -1;
-      }
-
-      /// Destructor
-      virtual ~ConnectionManager ()
-      {
-      }
-
-      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-      void operator delete(void * p)
-      {
-        CCMI_abort();
-      }
-
-      ///
-      /// \brief return the number of connections that multisend has
-      /// to support. The child class will set that up
-      ///
-
-      int getNumConnections()
-      {
-        return _numConnections;
-      }
-
-      ///
-      /// \brief return the connection id given a set of inputs
-      /// \param comm the communicator id of the collective
-      /// \param root the root of the collective operation
-      ///
-
-      virtual unsigned getConnectionId (unsigned comm, unsigned root,
-                                        unsigned color, unsigned phase, unsigned dst) = 0;
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, 
-                                            unsigned src, unsigned phase, unsigned color) = 0;
+      ConnectionManager () {}
+      inline void     setNumConnections (int nconn);
+      inline int      getNumConnections();
+      inline unsigned getConnectionId (unsigned comm, unsigned root,
+                                       unsigned color, unsigned phase, unsigned dst);
+      inline unsigned getRecvConnectionId (unsigned comm, unsigned root, 
+                                           unsigned src, unsigned phase, unsigned color);
     }; //- ConnectionManager
+
+
+    template <class T_ConnectionManager>
+    inline void ConnectionManager<T_ConnectionManager>::setNumConnections(int nconn)
+    {
+      static_cast<T_ConnectionManager*>(this)->setNumConnections_impl(nconn);
+    }
+
+    template <class T_ConnectionManager>
+    inline int      ConnectionManager<T_ConnectionManager>::getNumConnections()
+    {
+      return static_cast<T_ConnectionManager*>(this)->getNumConnections_impl();
+    }
+
+    template <class T_ConnectionManager>
+    inline unsigned ConnectionManager<T_ConnectionManager>::getConnectionId (unsigned comm, unsigned root,
+                                                                             unsigned color, unsigned phase, unsigned dst)
+    {
+      return static_cast<T_ConnectionManager*>(this)->getConnectionId_impl(comm,
+                                                                           root,
+                                                                           color,
+                                                                           phase,
+                                                                           dst);
+    }
+
+    template <class T_ConnectionManager>
+    inline unsigned ConnectionManager<T_ConnectionManager>::getRecvConnectionId (unsigned comm, unsigned root, 
+                                                                                 unsigned src, unsigned phase, unsigned color)
+    {
+      return static_cast<T_ConnectionManager*>(this)->getRecvConnectionId_impl(comm,
+                                                                               root,
+                                                                               src,
+                                                                               phase,
+                                                                               color);
+    }
   };  //- namespace ConnectionManager
 };  //- CCMI
 

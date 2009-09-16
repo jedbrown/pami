@@ -14,9 +14,6 @@
 #ifndef  __ccmi_adaptor_protocol_factory__
 #define  __ccmi_adaptor_protocol_factory__
 
-#include "interface/Geometry.h"
-
-
 namespace CCMI
 {
   namespace Adaptor
@@ -39,7 +36,7 @@ namespace CCMI
       }
       
       /// \brief All protocols determine if a given geometry is adequate
-      virtual bool Analyze(CCMI::Adaptor::Geometry *grequest) = 0;
+      virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest) = 0;
 
     };
   };

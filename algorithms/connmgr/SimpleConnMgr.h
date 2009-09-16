@@ -18,8 +18,8 @@ namespace CCMI
 {
   namespace ConnectionManager
   {
-
-    class SimpleConnMgr : public ConnectionManager
+    template <class T_Sysdep>
+    class SimpleConnMgr : public ConnectionManager<T_Sysdep>
     {
     protected:
       int   _connid;
@@ -30,10 +30,10 @@ namespace CCMI
       //   color.
       /* This class is really just a place holder for future extensions.  */
       SimpleConnMgr (int conn=0) 
-      : ConnectionManager() 
+        : ConnectionManager<T_Sysdep>() 
       , _connid(0)
       {
-        setNumConnections (conn == 0 ? 1 : conn );
+        this->setNumConnections (conn == 0 ? 1 : conn );
       }
 
       ///

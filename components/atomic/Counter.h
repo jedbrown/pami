@@ -14,8 +14,6 @@
 #ifndef __components_atomic_counter_h__
 #define __components_atomic_counter_h__
 
-#include "components/atomic/Atomics.h"
-
 namespace XMI
 {
   namespace Atomic

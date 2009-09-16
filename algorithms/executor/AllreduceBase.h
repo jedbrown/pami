@@ -26,7 +26,7 @@ namespace CCMI
 {
   namespace Executor
   {
-    template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+    template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
     class AllreduceBase : public Executor
     {
     public:
@@ -146,11 +146,11 @@ namespace CCMI
       Callback_t         _recvCallbackHandler;  
 
       T_Mcastinterface  * _msendInterface;
-      ConnectionManager::ConnectionManager * _rconnmgr;  ///Reduce connection manager
-      ConnectionManager::ConnectionManager * _bconnmgr;  ///Broadcast connction manager
+      ConnectionManager::ConnectionManager<T_Sysdep> * _rconnmgr;  ///Reduce connection manager
+      ConnectionManager::ConnectionManager<T_Sysdep> * _bconnmgr;  ///Broadcast connction manager
 
       T_Mcast             _msend_data;
-      AllreduceState<T_Mcastrecv>                         _astate;
+      AllreduceState<T_Mcastrecv, T_Sysdep>                         _astate;
 
       ///
       /// \brief Ids to the LogMgr table
@@ -205,8 +205,8 @@ namespace CCMI
 
       ///  Main constructor to initialize the executor
       ///  By default it only needs one connection manager
-      AllreduceBase(T_Mapping *map,
-                    ConnectionManager::ConnectionManager  * connmgr,
+      AllreduceBase(T_Sysdep *map,
+                    ConnectionManager::ConnectionManager<T_Sysdep>  * connmgr,
                     xmi_consistency_t                       consistency,
                     const unsigned                          commID,
                     unsigned                                iteration,
@@ -271,13 +271,13 @@ namespace CCMI
         _astate.setColor(color);
       }
 
-      void setReduceConnectionManager (ConnectionManager::ConnectionManager *cmgr)
+      void setReduceConnectionManager (ConnectionManager::ConnectionManager<T_Sysdep> *cmgr)
       {
         _rconnmgr = cmgr;
         _astate.setReduceConnectionManager (cmgr);
       }
 
-      void setBroadcastConnectionManager (ConnectionManager::ConnectionManager *cmgr)
+      void setBroadcastConnectionManager (ConnectionManager::ConnectionManager<T_Sysdep> *cmgr)
       {
         _bconnmgr = cmgr;     
         _astate.setBroadcastConnectionManager (cmgr);
@@ -480,7 +480,7 @@ namespace CCMI
       ///
       /// \bf Query functions 
       ///
-      inline AllreduceState<T_Mcastrecv> * getAllreduceState ()
+      inline AllreduceState<T_Mcastrecv, T_Sysdep> * getAllreduceState ()
       {
         return &_astate; 
       }
@@ -513,8 +513,8 @@ namespace CCMI
 /////////////////////////////////////////////
 ///   Protected Methods
 /////////////////////////////////////////////
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::advance ()
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::advance ()
 {
 
   Logging::LogMgr::getLogMgr()->startCounter (_log_advance);
@@ -652,8 +652,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
 ///
 ///  \brief Send the next message by calling the msend interface
 ///
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::sendMessage 
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::sendMessage 
 (const char             * buf, 
  unsigned                 bytes,
  unsigned               * dstpes,
@@ -707,8 +707,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
 ///  Public methods that can be called externally
 ///
 ////////////////////////////////////////////////////////
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::start()
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::start()
 {
   _initialized = true;    
   _sState->sndClientData.me        = this;
@@ -735,8 +735,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
   TRACE_INIT ((stderr,"<%#.8X>Executor::AllreduceBase start()\n",(int)this));
 }
 
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifyRecv 
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::notifyRecv 
 (unsigned                     src, 
  const xmi_quad_t             & info, 
  char                       * buf, 
@@ -758,8 +758,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
     advance();
 }
 
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifySendDone 
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::notifySendDone 
 ( const xmi_quad_t & info)
 {
   // update state
@@ -774,8 +774,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
   advance ();
 }
 
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::postReceives ()
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::postReceives ()
 {
   Logging::LogMgr::getLogMgr()->startCounter (_log_postrecv);
 
@@ -798,9 +798,9 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
               (int)this));  
 }
 
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
 inline XMI_Request_t * 
-CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifyRecvHead 
+CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::notifyRecvHead 
 (const xmi_quad_t  * info,
  unsigned          count,
  unsigned          peer,
@@ -913,9 +913,9 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>
 ///  \fast callback for short allreduce operations
 ///  This callback does not return a request
 ///
-template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Mapping>
+template<class T_Mcastinterface, class T_Mcast, class T_Mcastrecv, class T_Sysdep>
 inline void 
-CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Mapping>::notifyRecvShort 
+CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>::notifyRecvShort 
 (unsigned          phase,
  unsigned          sndlen,
  unsigned          srcindex,

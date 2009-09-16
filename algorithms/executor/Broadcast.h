@@ -18,7 +18,6 @@
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"
-#include "interface/MultiSend.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 
 #define MAX_PARALLEL 20
@@ -33,14 +32,14 @@ namespace CCMI
      * link. With rectangular schedule it will lead to a one color
      * broadcast. Also implements pipelining.
      */
+    template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
     class Broadcast : public Executor
     {
     protected:
-
-      CollectiveMapping                                   * _mapping;
-      Schedule::Schedule                        * _comm_schedule;
-      MultiSend::OldMulticastInterface             * _mInterface;
-      MultiSend::CCMI_OldMulticast_t         _msend;
+      T_Sysdep            * _sd;
+      Schedule::Schedule  * _comm_schedule;
+      T_Mcast             * _mInterface;
+      xmi_oldmulticast_t    _msend;
 
       int              _comm;
       unsigned         _root;
@@ -64,7 +63,7 @@ namespace CCMI
       XMI_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
 
       CollHeaderData           _mdata;
-      ConnectionManager::ConnectionManager     * _connmgr;
+      T_ConnectionManager    * _connmgr;
       unsigned                  _color;
       bool                      _postReceives;
 
@@ -92,9 +91,9 @@ namespace CCMI
 
     public:
 
-      static void staticSendDone (void *clientdata, XMI_Error_t *err)
+      static void staticSendDone (void *context, void *clientdata, xmi_result_t err)
       {
-        XMIQuad * info = NULL;
+        xmi_quad_t * info = NULL;
         Broadcast *bcast = (Broadcast *) clientdata;
         bcast->notifySendDone( *info );
       }
@@ -109,8 +108,8 @@ namespace CCMI
       {
       }
 
-      inline Broadcast (CollectiveMapping *map, unsigned comm,
-                        ConnectionManager::ConnectionManager *connmgr,
+      inline Broadcast (T_Sysdep *sd, unsigned comm,
+                        T_ConnectionManager *connmgr,
                         unsigned color, bool post_recvs = false):
       Executor(),
       _comm_schedule (NULL),
@@ -119,7 +118,6 @@ namespace CCMI
       _color(color),
       _postReceives (post_recvs)
       {
-
         _startphase     =   0;
         _nphases        =  -1;
         _clientdata     =   0;
@@ -131,23 +129,15 @@ namespace CCMI
         _pipelinewidth  =  -1;
         _curlen         =   0;
         _nmessages      =   0;
-
         _msend.cb_done.function   =   staticSendDone;
         _msend.cb_done.clientdata =   this;
-
-        _mapping             =   map;
-
-        _msend.setRequestBuffer(&_send_request);
-        _msend.setConsistency (CCMI_MATCH_CONSISTENCY);
-
-        XMIQuad *info = (_postReceives)?(NULL):(XMIQuad*)((void*)&_mdata);
-        _msend.setInfo(info,  1);
-        _msend.setFlags (MultiSend::CCMI_FLAGS_UNSET);
-
-        //	  _msend.setSendData (NULL, 0);
-        // _msend.setRanks (&_destrank, 1);
-        _msend.setOpcodes((CCMI_Subtask *) &_hints);
-
+        _sd           =   sd;
+        _msend.request     = &_send_request[0];
+        xmi_quad_t *info   = (_postReceives)?(NULL):(xmi_quad_t*)((void*)&_mdata);
+        _msend.msginfo     = info;
+        _msend.count       = 1;
+        _msend.flags       = 0;  //FLAGS_UNSET
+        _msend.opcodes     = (xmi_subtask_t*)&_hints;
       }
 
       inline unsigned bytesrecvd ()
@@ -170,7 +160,7 @@ namespace CCMI
         setPhase (phase);
       }
 
-      inline void setMulticastInterface (MultiSend::OldMulticastInterface *mf)
+      inline void setMulticastInterface (T_Mcast *mf)
       {
         _mInterface = mf;
       }
@@ -184,7 +174,7 @@ namespace CCMI
 
 	unsigned connid = 
 	  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-	_msend.setConnectionId (connid);      
+	_msend.connection_id = connid;      
       }
 
       inline void setPipelineWidth (int pwidth) {
@@ -205,8 +195,8 @@ namespace CCMI
       //------------------------------------------
 
       virtual void   start          ();
-      virtual void   notifySendDone ( const XMIQuad &info );
-      virtual void   notifyRecv     (unsigned src,  const XMIQuad &info,
+      virtual void   notifySendDone ( const xmi_quad_t &info );
+      virtual void   notifyRecv     (unsigned src,  const xmi_quad_t &info,
                                      char     *buf, unsigned bytes);
 
       //-----------------------------------------
@@ -225,9 +215,9 @@ namespace CCMI
       {
         return _pipelinewidth;
       }
-      inline CollectiveMapping       *getMapping ()
+      inline T_Sysdep       *getSysdep ()
       {
-        return _mapping;
+        return _sd;
       }
 
       int           startphase() { return _startphase; }
@@ -240,22 +230,23 @@ namespace CCMI
 ///
 /// \brief start sending broadcast data. Only active on the root node
 ///
-inline void  CCMI::Executor::Broadcast :: start ()
+template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: start ()
 {
   TRACE_FLOW ((stderr, "In Start with phase %d, num total phases %d\n", _startphase, _nphases));
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
-    _cb_done (_clientdata, NULL);
+    _cb_done (NULL, _clientdata, XMI_SUCCESS);
 
-  else if(_mapping->rank() == _root)
+  else if(_sd->mapping.task() == _root)
   {
     _bytesrecvd = _buflen;
     sendNext ();
   }
 }
-
-inline void  CCMI::Executor::Broadcast :: sendNext ()
+template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: sendNext ()
 {
 
   TRACE_FLOW ((stderr, "In Send Next %d, %d, %d\n", _startphase, _nphases, _nmessages));
@@ -264,7 +255,7 @@ inline void  CCMI::Executor::Broadcast :: sendNext ()
   if(_startphase == _nphases || _nmessages == 0)
   {
     if(_bytesrecvd == _buflen && _cb_done)
-      _cb_done (_clientdata, NULL);
+      _cb_done (NULL, _clientdata, XMI_SUCCESS);
     return;
   }
 
@@ -280,7 +271,7 @@ inline void  CCMI::Executor::Broadcast :: sendNext ()
   if(_bytessent == _buflen)
   {
     if(_cb_done)
-      _cb_done (_clientdata, NULL);
+      _cb_done (NULL, _clientdata, XMI_SUCCESS);
     return;
   }
 
@@ -310,15 +301,18 @@ inline void  CCMI::Executor::Broadcast :: sendNext ()
   //_msend.setConnectionId (connid);      
 
   if(_bytessent > 0)
-    _msend.setFlags (MultiSend::CCMI_PERSISTENT_MESSAGE);
+    _msend.flags = 1; //PERSISTENT_MESSAGE);
+
+  _msend.ranks  = _destpes;
+  _msend.nranks = _nmessages;
   
-  _msend.setRanks    (_destpes, _nmessages);
-  _msend.setSendData (_buf + _bytessent, _curlen);
+  _msend.src    = _buf + _bytessent;
+  _msend.bytes  = _curlen;
   _mInterface->send(&_msend);
 
 }
-
-inline void  CCMI::Executor::Broadcast :: notifySendDone ( const XMIQuad & info )
+template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: notifySendDone ( const xmi_quad_t & info )
 {
   TRACE_FLOW((stderr, "In notify send done %d\n", _nmessages));
 
@@ -329,10 +323,10 @@ inline void  CCMI::Executor::Broadcast :: notifySendDone ( const XMIQuad & info 
   sendNext ();
 }
 
-
-inline void  CCMI::Executor::Broadcast::notifyRecv
+template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager>::notifyRecv
 (unsigned        src,
- const XMIQuad  & info,
+ const xmi_quad_t  & info,
  char          * buf,
  unsigned        bytes)
 {

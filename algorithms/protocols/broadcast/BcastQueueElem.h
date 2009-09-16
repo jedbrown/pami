@@ -127,13 +127,13 @@ namespace CCMI
           memcpy (_appbuf, _rcvbuf, _bytes);
 
           if(_cb_done.function)
-            _cb_done.function(_cb_done.clientdata, NULL);
+            _cb_done.function(NULL, _cb_done.clientdata, XMI_SUCCESS);
         }
 
         void completePosted ()
         {
           if(_cb_done.function)
-            _cb_done.function(_cb_done.clientdata, NULL);
+            _cb_done.function(NULL, _cb_done.clientdata, XMI_SUCCESS);
         }
 
       } __attribute__((__aligned__(16))); //- BcastQueueElem

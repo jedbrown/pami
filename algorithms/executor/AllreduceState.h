@@ -52,7 +52,7 @@ namespace CCMI
     /// This class allocates storage for receive buffers and schedule data.  
     /// 
 
-    template<class T_mcastrecv>
+    template<class T_mcastrecv, class T_Sysdep>
     class AllreduceState
     {
     public:
@@ -140,8 +140,8 @@ namespace CCMI
       int           _bcastSendPhase;     //first broadcast send phase
       int           _lastCombinePhase;   //last phases where arithmatic needs to be done
 
-      ConnectionManager::ConnectionManager  * _rconnmgr;  /// the connection manager for reductions
-      ConnectionManager::ConnectionManager  * _bconnmgr;  /// the connection manager for broadcast
+      ConnectionManager::ConnectionManager<T_Sysdep>  * _rconnmgr;  /// the connection manager for reductions
+      ConnectionManager::ConnectionManager<T_Sysdep>  * _bconnmgr;  /// the connection manager for broadcast
 
       unsigned                                _commid;   /// Communicator identifier
       unsigned                                _color;    /// Color of the collective
@@ -573,13 +573,13 @@ namespace CCMI
       }
 
       /// \brief set the Connection manager
-      void setReduceConnectionManager (ConnectionManager::ConnectionManager  *connmgr)
+      void setReduceConnectionManager (ConnectionManager::ConnectionManager<T_Sysdep>  *connmgr)
       {
         _rconnmgr = connmgr;
       }
 
       /// \brief set the Connection manager
-      void setBroadcastConnectionManager (ConnectionManager::ConnectionManager  *connmgr)
+      void setBroadcastConnectionManager (ConnectionManager::ConnectionManager<T_Sysdep>  *connmgr)
       {
         _bconnmgr = connmgr;
       }

@@ -16,10 +16,8 @@
 
 #include "algorithms/executor/Broadcast.h"
 #include "algorithms/composite/Composite.h"
-#include "interface/MultiSend.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/RankBasedConnMgr.h"
-#include "interface/Geometry.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 
 namespace CCMI
@@ -31,18 +29,18 @@ namespace CCMI
       ///
       /// \brief choose if this protocol is supports the input geometry
       ///
-      typedef bool      (*AnalyzeFn)   (Geometry                  * g);
+      typedef bool      (*AnalyzeFn)   (XMI_GEOMETRY_CLASS                  * g);
 
-      inline bool true_analyze (Geometry *geometry)
+      inline bool true_analyze (XMI_GEOMETRY_CLASS *geometry)
       {
         return true;
       }
-      inline bool global_analyze   (Geometry *geometry)
+      inline bool global_analyze   (XMI_GEOMETRY_CLASS *geometry)
       {
         return(geometry->isGlobalContext()); 
       }      
 
-      inline bool rectangle_analyze (Geometry *geometry)
+      inline bool rectangle_analyze (XMI_GEOMETRY_CLASS *geometry)
       {
         return geometry->isRectangle();
       }      
@@ -63,7 +61,7 @@ namespace CCMI
 
 
         /// \brief All protocols determine if a given geometry is supported
-        virtual bool Analyze(CCMI::Adaptor::Geometry *grequest)
+        virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest)
         {
           CCMI_abort(); return 0;
         }
@@ -94,9 +92,9 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         XMI_Callback_t             cb_done,
-         CCMI_Consistency            consistency,
-         Geometry                  * geometry,
+         XMI_Callback_t              cb_done,
+         xmi_consistency_t           consistency,
+         XMI_GEOMETRY_CLASS        * geometry,
          unsigned                    root,
          char                      * src,
          unsigned                    bytes)=0;
@@ -106,30 +104,29 @@ namespace CCMI
       /// \brief Base factory class for synchronous broadcast factory
       ///  implementations.
       ///
-      template <class MAP>
+      template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
       class BroadcastFactory : public BaseBroadcastFactory
       {
       protected:
         ///
         /// \brief Multisend interface
         ///
-        CCMI::MultiSend::OldMulticastInterface   * _minterface;
+        T_Mcast   * _minterface;
 
         ///
         ///  \brief Connection Manager for the broadcast
         ///
-        CCMI::ConnectionManager::ConnectionManager   * _connmgr;
+        T_ConnectionManager   * _connmgr;
 
         ///
         /// \brief CollectiveMapping module
         ///
-        MAP                          * _mapping;
+        T_Sysdep                          * _sd;
 
         ///
         /// \brief async broadcast handler
         ///
-        CCMI_RecvAsyncBroadcast            _cb_async;
-
+        xmi_dispatch_ambroadcast_fn _cb_async;
         ///
         /// \brief get geometry from comm id
         ///
@@ -138,12 +135,12 @@ namespace CCMI
         ///
         /// \brief Callback for one-sided broadcasts
         ///
-        DCMF_OldRecvMulticast      _cb_head;
+         xmi_olddispatch_multicast_fn      _cb_head;
 
         ///
         /// \brief Callback for two-sided broadcasts
         ///
-        DCMF_OldRecvMulticast      _cb_head_buffered;  
+        xmi_olddispatch_multicast_fn      _cb_head_buffered;  
 
         bool                      _isBuffered;
 
@@ -158,13 +155,13 @@ namespace CCMI
         /// \brief Constructor for broadcast factory implementations.
         ///
         BroadcastFactory
-        (CCMI::MultiSend::OldMulticastInterface          * minterface,
-         MAP                                             * mapping,
-         CCMI::ConnectionManager::ConnectionManager      * connmgr,
-         unsigned                                          nconn,
-         DCMF_OldRecvMulticast          cb_head = NULL,
-         DCMF_OldRecvMulticast          cb_head_buffered = NULL ) :
-        _minterface (minterface), _connmgr(connmgr), _mapping (mapping),
+        (T_Mcast                        * minterface,
+         T_Sysdep                       * sd,
+         T_ConnectionManager            * connmgr,
+         unsigned                         nconn,
+         xmi_olddispatch_multicast_fn          cb_head = NULL,
+         xmi_olddispatch_multicast_fn          cb_head_buffered = NULL ) :
+        _minterface (minterface), _connmgr(connmgr), _sd (sd),
         _cb_async(NULL), _cb_geometry(NULL), _cb_head(cb_head), 
         _cb_head_buffered (cb_head_buffered), _isBuffered (true)    
         {
@@ -173,9 +170,9 @@ namespace CCMI
         ///
         /// \brief Utility functions
         ///
-        void setAsyncInfo (bool                     is_buffered,
-                           CCMI_RecvAsyncBroadcast  cb_async,
-                           CCMI_mapIdToGeometry     cb_geometry)
+        void setAsyncInfo (bool                          is_buffered,
+                           xmi_olddispatch_multicast_fn  cb_async,
+                           CCMI_mapIdToGeometry          cb_geometry)
         {
           _isBuffered = is_buffered;
 
@@ -191,7 +188,7 @@ namespace CCMI
           _cb_geometry =  cb_geometry;
         }
 
-        void setConnectionManager (CCMI::ConnectionManager::ConnectionManager  * connmgr)
+        void setConnectionManager (CCMI::ConnectionManager::ConnectionManager<T_Sysdep>  * connmgr)
         {
           _connmgr = connmgr;
         }

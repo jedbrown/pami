@@ -839,16 +839,18 @@ extern "C"
      *
      * \todo doxygen
      */
-    typedef void (*xmi_dispatch_ambroadcast_fn) (unsigned              root,
-                                                 xmi_geometry_t        geometry,
-                                                 const unsigned        sndlen,
-                                                 void                * user_header,
-                                                 const size_t          headerlen,
-                                                 void               ** rcvbuf,
-                                                 xmi_type_t          * rtype,
-                                                 size_t              * rtypecount,
-                                                 xmi_event_function  * const cb_info);
-
+     typedef void (*xmi_dispatch_ambroadcast_fn) (xmi_context_t         context,
+                                                  unsigned              root,
+                                                  xmi_geometry_t        geometry,
+                                                  const unsigned        sndlen,
+                                                  void                * user_header,
+                                                  const size_t          headerlen,
+                                                  void               ** rcvbuf,
+                                                  xmi_type_t          * rtype,
+                                                  size_t              * rtypecount,
+                                                  xmi_event_function  * const cb_info,
+                                                  void                * cookie);
+  
 
     /**
      * \brief Create and post a non-blocking active message scatter operation.

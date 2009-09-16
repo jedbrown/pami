@@ -144,15 +144,12 @@ typedef xmi_quad_t XMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];/// \todo XMI_P
 typedef xmi_quad_t XMI_CollectiveRequest_t  [XMI_REQUEST_NQUADS*8*4];
 typedef xmi_quad_t CCMI_Executor_t           [XMI_REQUEST_NQUADS*4];
 
-#ifndef __ccmi_recvasynccallback_defined__
 typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
                                            unsigned           comm,
                                            const unsigned     sndlen,
                                            unsigned         * rcvlen,
                                            char            ** rcvbuf,
                                            XMI_Callback_t  * const cb_info);
-#define __ccmi_recvasynccallback_defined__
-#endif
 
 
 /**

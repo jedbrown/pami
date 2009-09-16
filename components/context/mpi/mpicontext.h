@@ -32,7 +32,7 @@ namespace XMI
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
     typedef CollFactory::MPI<MPIDevice> MPICollfactory;
-    typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice> MPICollreg;
+    typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep::MPISysDep> MPICollreg;
 
 
     class MPI : public Context<XMI::Context::MPI>
@@ -50,7 +50,7 @@ namespace XMI
           new(_world_geometry) MPIGeometry(&_sysdep.mapping,1,&_world_range);
 	  
 	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
-	  new(_collreg) MPICollreg(&_mpi);
+	  new(_collreg) MPICollreg(&_mpi, &_sysdep);
 
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::COLLFACTORY, _world_collfactory);

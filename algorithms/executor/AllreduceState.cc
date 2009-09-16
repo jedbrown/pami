@@ -14,8 +14,8 @@
 //#include "AllreduceState.h"
 #include "AllreduceBase.h"
 
-template<class T_mcastrecv>
-void CCMI::Executor::AllreduceState<T_mcastrecv>::constructPhaseData()
+template<class T_mcastrecv, class T_Sysdep>
+void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
 {
 
   TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reset\n",(int)this));
@@ -399,8 +399,8 @@ void CCMI::Executor::AllreduceState<T_mcastrecv>::constructPhaseData()
   TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() exit\n",(int)this));
 }
 
-template<class T_mcastrecv>
-void  CCMI::Executor::AllreduceState<T_mcastrecv>::setupReceives(unsigned infoRequired)
+template<class T_mcastrecv, class T_Sysdep>
+void  CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::setupReceives(unsigned infoRequired)
 {
 
   TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setupReceives ALERT: Receive data being reset\n",(int)this));
