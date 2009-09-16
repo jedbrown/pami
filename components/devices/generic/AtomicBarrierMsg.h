@@ -11,6 +11,30 @@
  * \brief Barrier that uses whatever Atomic Barrier object  is specified
  */
 
+/// \page atomic_barrier_usage
+///
+/// Typical usage to instantiate a "generic" barrier based on an atomic object:
+///
+/// #include "components/atomic/bgp/LockBoxBarrier.h"
+/// // Change this line to switch to different barrier implementations...
+/// typedef XMI::Barrier::BGP::LockBoxBarrier<> MY_BARRIER_TYPE;
+///
+/// typedef XMI::Atomic::Interface::Barrier<MY_BARRIER_TYPE> MY_BARRIER;
+///
+/// typedef XMI::Device::AtomicBarrierMdl<MY_BARRIER> MY_BARRIER_MODEL;
+/// typedef XMI::Device::AtomicBarrierMsg<MY_BARRIER> MY_BARRIER_MESSAGE;
+///
+/// xmi_result_t status;
+/// MY_BARRIER_MODEL _barrier(status);
+/// if (status != XMI_SUCCESS) abort();
+/// MY_BARRIER_MESSAGE _msg;
+/// _barrier.setCallback(...);
+/// _barrier.setRoles(...);
+/// _barrier.setRanks(...);
+///
+/// _barrier.postMultisync(&_msg);
+///
+
 #ifndef  __components_devices_generic_atomicbarrier_h__
 #define  __components_devices_generic_atomicbarrier_h__
 
@@ -21,10 +45,6 @@
 #include "components/devices/MultisyncModel.h"
 #include "components/atomic/Barrier.h"
 #include "xmi.h"
-
-#ifdef __bgp__
-#include "components/atomic/bgp/LockBoxBarrier.h"
-#endif
 
 namespace XMI {
 namespace Device {
@@ -101,16 +121,18 @@ protected:
 }; //-- AtomicBarrierMsg
 
 template <class T_Barrier>
-class AtomicBarrierMdl {
+class AtomicBarrierMdl : XMI::Device::Interface::MultisyncModel {
 public:
-	AtomicBarrierMdl(XMI::SysDep *sysdep, xmi_result_t &status)
+	AtomicBarrierMdl(xmi_result_t &status) :
+	XMI::Device::Interface::MultisyncModel(status)
 	{
 		// "default" barrier: all local processes...
 		_barrier.init(_g_topology_local->size());
 		// participants = _g_topology_local
+		// if I need sysdep, use _g_lmbarrier_dev.sysdep()...
 	}
 
-	inline bool postMultisync_impl(AtomicBarrierMsg<T_Barrier> *msg);
+	inline bool postMultisync_impl(xmi_multisync_t *msync);
 
 private:
 	T_Barrier _barrier;
@@ -131,18 +153,20 @@ inline XMI::Device::MessageStatus XMI::Device::AtomicBarrierMsg<T_Barrier>::adva
 }
 
 template <class T_Barrier>
-inline bool XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(AtomicBarrierMsg<T_Barrier> *msg) {
-
+inline bool XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(xmi_multisync_t *msync) {
 	_barrier.pollInit();
 	// See if we can complete the barrier immediately...
 	for (int x = 0; x < 32; ++x) {
 		if (_barrier.poll() == XMI::Atomic::Interface::Done) {
-			_executeCallback();
+			if (msync.cb_done.function) {
+				msync.cb_done.function(msync.cb_done.function, XMI_SUCCESS);
+			}
 			return true;
 		}
 	}
 	// must "continue" current barrier, not start new one!
-	new (msg) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, _getCallback());
+	AtomicBarrierMsg<T_Barrier> *msg;
+	msg = new (msync.request) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync.cb_done);
 	_g_lmbarrier_dev.__post(msg);
 	return true;
 }

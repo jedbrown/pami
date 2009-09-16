@@ -12,53 +12,23 @@ namespace XMI
             ///
             /// \todo Need A LOT MORE documentation on this interface and its use
             /// \param T_Model   Multisync model template class
-            /// \param T_Device  Multisync device template class
-            /// \param T_Object  Multisync object template class
             ///
             /// \see Multisync::Model
-            /// \see Multisync::Device
             ///
-            template <class T_Model, class T_Device, class T_Object>
+            template <class T_Model>
             class MultisyncModel
             {
             public:
                 /// \param[in] device                Multisync device reference
-                MultisyncModel (T_Device & device) {};
+                MultisyncModel (xmi_result_t &status) { status = XMI_SUCCESS; };
                 ~MultisyncModel () {};
-		inline void setConnectionId (unsigned conn);
-		inline void setRoles(unsigned roles);
-		inline void setRanks(xmi_topology_t *participants);
-		inline void setCallback(xmi_callback_t &cb_done);
-                inline bool postMultisync (T_Object * obj);
+                inline bool postMultisync (xmi_multisync_t *msync);
             };
-            template <class T_Model, class T_Device, class T_Object>
-            void MultisyncModel<T_Model, T_Device, T_Object>::setConnectionId (unsigned conn)
-            {
-                static_cast<T_Model*>(this)->setConnectionId_impl(conn);
-            }
 
-            template <class T_Model, class T_Device, class T_Object>
-            void MultisyncModel<T_Model, T_Device, T_Object>::setRoles(unsigned roles)
+            template <class T_Model>
+            bool MultisyncModel<T_Model>::postMultisync (xmi_multisync_t *msync)
             {
-                static_cast<T_Model*>(this)->setRoles_impl(roles);
-            }
-
-            template <class T_Model, class T_Device, class T_Object>
-            void MultisyncModel<T_Model, T_Device, T_Object>::setRanks(xmi_topology_t *participants)
-            {
-                static_cast<T_Model*>(this)->setRanks_impl(participants);
-            }
-
-            template <class T_Model, class T_Device, class T_Object>
-            void MultisyncModel<T_Model, T_Device, T_Object>::setCallback(xmi_callback_t &cb_done)
-            {
-                static_cast<T_Model*>(this)->setCallback_impl(cb_done);
-            }
-
-            template <class T_Model, class T_Device, class T_Object>
-            bool MultisyncModel<T_Model, T_Device, T_Object>::postMultisync (T_Object * obj)
-            {
-                static_cast<T_Model*>(this)->postMultisync_impl(obj);
+                static_cast<T_Model*>(this)->postMultisync_impl(msync);
             }
 
         };
