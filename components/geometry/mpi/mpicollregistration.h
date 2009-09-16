@@ -69,7 +69,7 @@ namespace XMI
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
       {
 	XMI_COLLFACTORY_CLASS *f=(XMI_COLLFACTORY_CLASS *)_fact_alloc.allocateObject();
-	new(f)XMI_COLLFACTORY_CLASS();
+	new(f)XMI_COLLFACTORY_CLASS(_sysdep);
 	f->setGeometry(geometry, &_nbCollMgr, _dev);
 	f->add_collective(XMI_XFER_BROADCAST, &_pgbroadcast);
 	f->add_collective(XMI_XFER_ALLGATHER, &_pgallgather);

@@ -18,8 +18,8 @@ namespace XMI
     class MPI : public CollFactory<XMI::CollFactory::MPI<T_Device, T_Sysdep> >
     {
     public:
-      inline MPI():
-        CollFactory<XMI::CollFactory::MPI<T_Device, T_Sysdep> >(T_Sysdep *sd),
+      inline MPI(T_Sysdep *sd):
+        CollFactory<XMI::CollFactory::MPI<T_Device, T_Sysdep> >(),
         _sd(sd)
         {
         }
@@ -378,6 +378,7 @@ namespace XMI
             ambroadcast->cb_done(NULL, ambroadcast->cookie, XMI_SUCCESS);
           else
               {
+#if 0
 //                CCMI_assert (((CCMI::Adaptor::Geometry *) geometry)->getBarrierExecutor() != NULL);
                 xmi_callback_t cb_done_ccmi;
                 cb_done_ccmi.function   = ambroadcast->cb_done;
@@ -391,6 +392,7 @@ namespace XMI
                                   _sd.mapping->task(), //root
                                   ambroadcast->sndbuf,
                                   ambroadcast->stypecount);
+#endif
               }
           return XMI_SUCCESS;
         }
