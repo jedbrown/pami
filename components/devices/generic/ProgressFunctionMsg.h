@@ -64,7 +64,7 @@ protected:
 	ProgressFunctionMsg(BaseDevice &Generic_QS,
 		XMI_ProgressFunc *func,
 		void *clientdata,
-		XMI_Callback_t cb) :
+		xmi_callback_t cb) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
 	_thread(),
 	_func(func),
@@ -85,7 +85,7 @@ private:
 			setStatus(XMI::Device::Done);
 			return XMI::Device::Done;
 		} else if (rc < 0) {
-			_rc = (XMI_Result)-rc;
+			_rc = (xmi_result_t)-rc;
 			// GenericDevice will call complete()...
 			setStatus(XMI::Device::Done);
 			return XMI::Device::Done;
@@ -109,7 +109,7 @@ protected:
 	ProgressFunctionThr _thread;
 	XMI_ProgressFunc *_func;
 	void *_clientdata;
-	XMI_Result _rc;
+	xmi_result_t _rc;
 }; //-- ProgressFunctionMsg
 
 /// If this ever expands into multiple types, need to make this a subclass
@@ -121,7 +121,7 @@ public:
 	ProgressFunctionMdl() {
 	}
 	/// In case someone constructs it the "standard" way, don't complain.
-	ProgressFunctionMdl(XMI::SysDep *sysdep, XMI_Result &status) {
+	ProgressFunctionMdl(XMI::SysDep *sysdep, xmi_result_t &status) {
 		status = XMI_SUCCESS;
 	}
 
@@ -137,12 +137,7 @@ private:
 
 inline void XMI::Device::ProgressFunctionMsg::complete() {
 	((ProgressFunctionDev &)_QS).__complete(this);
-	likely_if (_rc == XMI_SUCCESS) {
-		executeCallback();
-	} else {
-		XMI_Error_t e = { _rc };
-		executeCallback(&e);
-	}
+	executeCallback(_rc);
 }
 
 inline XMI::Device::MessageStatus XMI::Device::ProgressFunctionMsg::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
@@ -165,10 +160,7 @@ inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t
 		}
 		return true;
 	} else if (rc < 0) {
-		if (pf->cb_done.function) {
-			XMI_Error_t e = { (XMI_Result)-rc };
-			pf->cb_done.function(pf->cb_done.clientdata, &e);
-		}
+		_executeCallback((xmi_result_t)-rc);
 		return true;
 	}
 	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf->func, pf->clientdata, pf->cb_done);

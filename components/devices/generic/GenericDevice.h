@@ -22,7 +22,7 @@
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
 extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
-extern XMI::Device::LockManagerBarrierDev _g_lmbarrier_dev;
+extern XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 extern XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 extern XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 extern XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
