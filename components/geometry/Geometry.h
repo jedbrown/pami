@@ -3,12 +3,12 @@
 
 #include "sys/xmi.h"
 #include "util/queue/MatchQueue.h"
-//  Need to make this work with platform.h!
+//  Need to make this work with config.h!
 //  hitting some circ dependencies in ccmi...need to solve
 //.#include "components/mapping/mpi/mpimapping.h"
 
 
-//#include "platform.h"
+//#include "config.h"
 
 #if 0
 #define RECTANGLE_TYPE void*

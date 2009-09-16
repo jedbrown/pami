@@ -15,7 +15,7 @@
 #define  __ring_schedule__
 
 #include "Schedule.h" 
-#include "platform.h"
+#include "config.h"
 //#include "Rectangle.h"
 
 #define TRACE_RING(x)   

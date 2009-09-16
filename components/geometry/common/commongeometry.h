@@ -1,7 +1,7 @@
 #ifndef   __xmi_commongeometry__h__
 #define   __xmi_commongeometry__h__
 
-//#include "platform.h"
+//#include "config.h"
 
 //#include "components/mapping/mpi/mpimapping.h"
 #define XMI_GEOMETRY_CLASS XMI::Geometry::Common<XMI_MAPPING_CLASS>
