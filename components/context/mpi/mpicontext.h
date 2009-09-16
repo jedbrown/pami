@@ -31,7 +31,7 @@ namespace XMI
     typedef Device::MPIDevice<SysDep::MPISysDep> MPIDevice;
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
-    typedef CollFactory::MPI<MPIDevice> MPICollfactory;
+    typedef CollFactory::MPI<MPIDevice, SysDep::MPISysDep> MPICollfactory;
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep::MPISysDep> MPICollreg;
 
 

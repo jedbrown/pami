@@ -496,7 +496,7 @@ extern "C"
         void                     * cookie;
         xmi_geometry_t             geometry;
         xmi_algorithm_t            algorithm;
-        int                        root;
+        size_t                     root;
         char                     * sndbuf;
         xmi_type_t               * stype;
         int                        stypecount;
@@ -675,7 +675,7 @@ extern "C"
         void                      * cookie;
         xmi_geometry_t              geometry;
         xmi_algorithm_t             algorithm;
-        int                         root;
+        size_t                      root;
         char                      * sndbuf;
         xmi_type_t                * stype;
         int                       * stypecounts;
@@ -840,16 +840,16 @@ extern "C"
      * \todo doxygen
      */
      typedef void (*xmi_dispatch_ambroadcast_fn) (xmi_context_t         context,
-                                                  unsigned              root,
+                                                  size_t                root,
                                                   xmi_geometry_t        geometry,
-                                                  const unsigned        sndlen,
+                                                  const size_t          sndlen,
                                                   void                * user_header,
                                                   const size_t          headerlen,
                                                   void               ** rcvbuf,
                                                   xmi_type_t          * rtype,
                                                   size_t              * rtypecount,
                                                   xmi_event_function  * const cb_info,
-                                                  void                * cookie);
+                                                  void               ** cookie);
   
 
     /**
@@ -899,7 +899,7 @@ extern "C"
      *
      * \todo doxygen
      */
-    typedef void (*xmi_dispatch_amscatter_fn) (unsigned             root,
+    typedef void (*xmi_dispatch_amscatter_fn) (size_t               root,
                                                xmi_geometry_t       geometry,
                                                const unsigned       sndlen,
                                                void               * user_header,
@@ -961,7 +961,7 @@ extern "C"
      *
      * \todo doxygen
      */
-    typedef void (*xmi_dispatch_amgather_fn) (unsigned             root,
+    typedef void (*xmi_dispatch_amgather_fn) (size_t               root,
                                               xmi_geometry_t       geometry_id,
                                               const unsigned       sndlen,
                                               void               * user_header,
@@ -1036,7 +1036,7 @@ extern "C"
      *
      * \todo doxygen
      */
-    typedef void (*xmi_dispatch_amreduce_fn) (unsigned             root,
+    typedef void (*xmi_dispatch_amreduce_fn) (size_t               root,
                                               xmi_geometry_t       geometry_id,
                                               const unsigned       sndlen,
                                               xmi_dt               dt,

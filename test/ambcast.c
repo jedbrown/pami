@@ -4,86 +4,41 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "../interface/xmi_collectives.h"
+#include "sys/xmi.h"
 
 
 #define BUFSIZE 524288
 #define NITER   1000
-void cb_barrier (void * clientdata);
-void cb_broadcast (void * clientdata);
-// Barrier Data
-XMI_CollectiveProtocol_t _g_barrier;
-volatile unsigned       _g_barrier_active;
-XMI_CollectiveRequest_t  _g_barrier_request;
-XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
-			       (void *) &_g_barrier_active };
-XMI_Barrier_t  _xfer_barrier =
-    {
-	XMI_XFER_BARRIER,
-	&_g_barrier,
-	&_g_barrier_request,
-	_cb_barrier,
-	&XMI_World_Geometry
-    };
 
-// Broadcast
-XMI_CollectiveProtocol_t _g_broadcast;
+volatile unsigned       _g_barrier_active;
 volatile unsigned       _g_broadcast_active;
 volatile unsigned       _g_total_broadcasts;
-XMI_CollectiveRequest_t  _g_broadcast_request;
 char                   *_g_recv_buffer;
 
-XMI_Callback_t _cb_broadcast   = {(void (*)(void*,XMI_Error_t*))cb_broadcast,
-			       (void *) &_g_broadcast_active };
-XMI_Ambroadcast_t  _xfer_broadcast =
-    {
-	XMI_XFER_AMBROADCAST,
-	&_g_broadcast,
-	&_g_broadcast_request,
-	_cb_broadcast,
-	&XMI_World_Geometry,
-	NULL,
-	NULL,
-	0
-    };
-
-void cb_ambcast_done (void * clientdata, XMI_Error_t*err)
+void cb_ambcast_done (void *context, void * clientdata, xmi_result_t err)
 {
   _g_total_broadcasts++;
   free(clientdata);
 }
 
-typedef struct ambcast_unexpected_t
+
+void cb_bcast_recv  (xmi_context_t         context,
+                     unsigned              root,
+                     xmi_geometry_t        geometry,
+                     const size_t          sndlen,
+                     void                * user_header,
+                     const size_t          headerlen,
+                     void               ** rcvbuf,
+                     xmi_type_t          * rtype,
+                     size_t              * rtypecount,
+                     xmi_event_function  * const cb_info,
+                     void                ** cookie)
 {
-  XMI_CollectiveRequest_t  req;
-  void                   *buf;
-};
-
-
-void * cb_bcast_recv(unsigned           root,
-		     unsigned           comm,
-		     const unsigned     sndlen,
-		     unsigned         * rcvlen,
-		     char            ** rcvbuf,
-		     XMI_Callback_t    * const cb_done)
-{
-  *rcvlen                        = sndlen;
-  *rcvbuf                        = _g_recv_buffer;
-  cb_done->function              = cb_ambcast_done;
-  ambcast_unexpected_t  *reqdata = (ambcast_unexpected_t*)malloc(sizeof(ambcast_unexpected_t)+sndlen);
-  reqdata->buf                   = &reqdata[1];
-  cb_done->clientdata            = reqdata;
-  return (void*)&reqdata->req;
-}
-
-
-
-XMI_Geometry_t *cb_geometry (int comm)
-{
-    if(comm == 0)
-	return &XMI_World_Geometry;
-    else
-	assert(0);
+  *rcvbuf                        = malloc(sndlen);
+  *rtype                         = XMI_BYTE;
+  *rtypecount                    = sndlen;
+  *cb_info                       = cb_ambcast_done;
+  *cookie                        = (void*)rcvbuf;
 }
 
 static double timer()
@@ -93,56 +48,44 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void cb_barrier (void * clientdata)
+void cb_barrier (void *context, void * clientdata, xmi_result_t res)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void cb_broadcast (void * clientdata)
+void cb_broadcast (void *context, void * clientdata, xmi_result_t res)
 {
     int * active = (int *) clientdata;
     (*active)--;
 }
 
-void init__barriers ()
-{
-  XMI_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = XMI_CFG_BARRIER;
-  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
-  XMI_register(&_g_barrier,
-	      (XMI_CollectiveConfiguration_t*)&barrier_config,
-	      0);
-  _g_barrier_active = 0;
-}
-
-void init__broadcasts ()
-{
-  XMI_AMBroadcast_Configuration_t broadcast_config;
-  broadcast_config.cfg_type    = XMI_CFG_AMBROADCAST;
-  broadcast_config.cb_recv     = cb_bcast_recv;
-  broadcast_config.protocol    = XMI_DEFAULT_AMBROADCAST_PROTOCOL;
-  XMI_register(&_g_broadcast,
-	      (XMI_CollectiveConfiguration_t*)&broadcast_config,
-	      0);
-  _g_broadcast_active = 0;
-}
-
-void _barrier ()
+void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
+  xmi_result_t result;
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);  
+  if (result != XMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
+      exit(1);
+    }
   while (_g_barrier_active)
-      XMI_Poll();
+    result = XMI_Context_advance (context, 1);
+
 }
 
-void _broadcast (char            * src,
-		 unsigned          bytes)
+
+void _broadcast (xmi_context_t context, xmi_ambroadcast_t *broadcast)
 {
-    _g_broadcast_active++;
-    _xfer_broadcast.src   = src;
-    _xfer_broadcast.bytes = bytes;
-    XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_broadcast);
+  _g_broadcast_active++;
+  xmi_result_t result;
+  result = XMI_Collective(context, (xmi_xfer_t*)broadcast);  
+  if (result != XMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to issue broadcast collective. result = %d\n", result);
+      exit(1);
+    }
 }
 
 
@@ -150,62 +93,153 @@ void _broadcast (char            * src,
 int main(int argc, char*argv[])
 {
   double tf,ti,usec;
+  xmi_client_t  client;
+  xmi_context_t context;
+  xmi_result_t  result = XMI_ERROR;
   char buf[BUFSIZE];
   char rbuf[BUFSIZE];
+  
+  result = XMI_Client_initialize ("TEST", &client);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+        return 1;
+      }
+  
+  result = XMI_Context_create (client, NULL, 0, &context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_configuration_t configuration;
+  configuration.name = XMI_TASK_ID;
+  result = XMI_Configuration_query (context, &configuration);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+        return 1;
+      }
+  size_t task_id = configuration.value.intval;
+
+
+  xmi_geometry_t  world_geometry;
+  result = XMI_Geometry_world (context, &world_geometry);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_algorithm_t algorithm[1];
+  int             num_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_BARRIER,
+				  world_geometry,
+				  &algorithm[0],
+				  &num_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query barrier algorithm. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_algorithm_t bcastalgorithm[1];
+  int             bcastnum_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_BROADCAST,
+				  world_geometry,
+				  &bcastalgorithm[0],
+				  &bcastnum_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query broadcast algorithm. result = %d\n", result);
+        return 1;
+      }
+
+  unsigned     rank = task_id;
+  unsigned i,j,root = 0;
   _g_recv_buffer = rbuf;
 
-  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
-  init__barriers();
-  init__broadcasts();
-  unsigned     rank = XMI_Rank();
-  unsigned i,j,root = 0;
-#if 1
+
   if (rank == root)
-    {
-      printf("# Broadcast Bandwidth Test -- root = %d\n", root);
-      printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-      printf("# -----------      -----------    -----------    ---------\n");
-    }
-  _barrier ();
-  for(i=1; i<=BUFSIZE; i*=2)
-    {
-      long long dataSent = i;
-      unsigned     niter = NITER;
+      {
+        printf("# Broadcast Bandwidth Test -- root = %d\n", root);
+        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# -----------      -----------    -----------    ---------\n");
+      }
 
-      if(rank==root)
-	{
+  xmi_barrier_t barrier;
+  barrier.xfer_type = XMI_XFER_BARRIER;
+  barrier.cb_done   = cb_barrier;
+  barrier.cookie    = (void*)&_g_barrier_active;
+  barrier.geometry  = world_geometry;
+  barrier.algorithm = algorithm[0];
+  _barrier(context, &barrier);
 
-	  ti = timer();
-	  for (j=0; j<niter; j++)
-	    {
-	      _broadcast (buf, i);
-	    }
-	  while (_g_broadcast_active)
-	    XMI_Poll();
 
-	  _barrier();
-	  tf = timer();
-	  usec = (tf - ti)/(double)niter;
-	  printf("  %11lld %16lld %14.1f %12.2f\n",
-		 dataSent,
-		 0LL,
-		 (double)1e6*(double)dataSent/(double)usec,
-		 usec);
-	  fflush(stdout);
-	}
-      else
-	{
-	  while(_g_total_broadcasts < niter)
-	    XMI_Poll();
-	  _g_total_broadcasts = 0;
-	  _barrier();
+  xmi_ambroadcast_t broadcast;
+  broadcast.xfer_type = XMI_XFER_BROADCAST;
+  broadcast.cb_done   = cb_broadcast;
+  broadcast.cookie    = (void*)&_g_broadcast_active;
+  broadcast.geometry  = world_geometry;
+  broadcast.algorithm = bcastalgorithm[0];
+  broadcast.user_header  = NULL;
+  broadcast.headerlen    = 0;
+  broadcast.sndbuf       = buf;
+  broadcast.stype        = XMI_BYTE;
+  broadcast.stypecount   = 0;
 
-	}
-    }
   
+    _barrier (context, &barrier);
+  for(i=1; i<=BUFSIZE; i*=2)
+      {
+        long long dataSent = i;
+        unsigned     niter = NITER;
+        if(rank==root)
+            {
+              ti = timer();
+              for (j=0; j<niter; j++)
+                  {
+                    broadcast.stypecount = 0;
+                    _broadcast (context,&broadcast);
+                  }
+              while (_g_broadcast_active)
+                result = XMI_Context_advance (context, 1);
 
+              _barrier(context, &barrier);
+              tf = timer();
+              usec = (tf - ti)/(double)niter;
+              printf("  %11lld %16lld %14.1f %12.2f\n",
+                     dataSent,
+                     0LL,
+                     (double)1e6*(double)dataSent/(double)usec,
+                     usec);
+              fflush(stdout);
+            }
+        else
+            {
+              while(_g_total_broadcasts < niter)
+                result = XMI_Context_advance (context, 1);
+              _g_total_broadcasts = 0;
+              _barrier(context, &barrier);
 
-#endif
-  XMI_Collectives_finalize();
+            }
+      }
+  
+  result = XMI_Context_destroy (context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+        return 1;
+      }
+    
+  result = XMI_Client_finalize (client);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+        return 1;
+      }
   return 0;
 }

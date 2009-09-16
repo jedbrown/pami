@@ -61,7 +61,9 @@ namespace XMI
 	  _pgbarrier._colltype=XMI::CollInfo::CI_BARRIER0;
           _nbCollMgr.multisend_reg(TSPColl::BarrierTag, &_pgbarrier._model);
 	  _barriers.push_back(&_pgbarrier);
-
+          
+          _ccmiambroadcast._colltype=XMI::CollInfo::CI_AMBROADCAST0;
+	  _ambroadcasts.push_back(&_ccmiambroadcast);
         }
 
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
@@ -95,6 +97,7 @@ namespace XMI
       XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep>  _ccmiambroadcast;
 
       RegQueue          _broadcasts;
+      RegQueue          _ambroadcasts;
       RegQueue          _allgathers;
       RegQueue          _allgathervs;
       RegQueue          _scatters;

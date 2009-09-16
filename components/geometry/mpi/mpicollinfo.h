@@ -37,6 +37,7 @@ namespace XMI
       CI_SCATTERV0,
       CI_ALLREDUCE0,
       CI_BARRIER0,
+      CI_AMBROADCAST0,
     }collinfo_type_t;
 
 
