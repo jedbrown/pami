@@ -7,18 +7,20 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __xmi_bgp_lockboxfactory_h__
-#define __xmi_bgp_lockboxfactory_h__
+#ifndef __xmi_bgq_l2atomicfactory_h__
+#define __xmi_bgq_l2atomicfactory_h__
 
 #include <spi/bgp_SPI.h>
+// not sure what this should be yet...
+#define MapL2AtomicRegion(v)	((uintptr_t)v)
 
 // These define the range of lockboxes we're allowed to use.
-#define LBX_MIN_LOCKBOX		0
-#define LBX_MAX_NUMLOCKBOX	256
+#define L2A_MIN_L2ATOMIC	0
+#define L2A_MAX_NUML2ATOMIC	256
 
 ////////////////////////////////////////////////////////////////////////
-///  \file sysdep/prod/BGP/LockBoxFactory.h
-///  \brief Implementation of BGP AtomicFactory scheme(s).
+///  \file components/sysdep/bgq/L2AtomicFactory.h
+///  \brief Implementation of BGQ AtomicFactory scheme(s).
 ///
 ///  This object is a portability layer that implements allocation
 ///  of lockboxes for use in Mutexes, Barriers, and Atomic (counters).
@@ -29,13 +31,26 @@
 ////////////////////////////////////////////////////////////////////////
 namespace XMI {
 namespace Atomic {
-namespace BGP {
+namespace BGQ {
 	// These may need to be put in a (more) common header... somewhere...
 	typedef enum {
-		LBX_NODE_SCOPE,
-		LBX_NODE_PROC_SCOPE,
-		LBX_NODE_CORE_SCOPE,
-		LBX_PROC_SCOPE,
+		L2A_NODE_SCOPE,
+		L2A_NODE_PROC_SCOPE,
+		L2A_NODE_PTHREAD_SCOPE,
+		L2A_NODE_CORE_SCOPE,
+		L2A_NODE_SMT_SCOPE,
+
+		L2A_PROC_SCOPE,
+		L2A_PROC_CORE_SCOPE,
+		L2A_PROC_SMT_SCOPE,
+		L2A_PROC_PTHREAD_SCOPE,
+
+		L2A_CORE_SCOPE,
+		L2A_CORE_SMT_SCOPE,
+
+		L2A_SMT_SCOPE,
+
+		L2A_PTHREAD_SCOPE,
 	} lbx_scope_t;
 	/**
 	 * \brief Structure used to pass implementation parameters
@@ -48,17 +63,34 @@ namespace BGP {
 		unsigned coreXlat[NUM_CORES]; /**< translate process to core */
 		int coreShift;		/**< translate core to process */
 	};
-	static const int MAX_NUMLOCKBOXES = 5;
+	static const int MAX_NUML2ATOMICS = 5;
 
-	class LockBoxFactory {
+	class L2AtomicFactory {
 	private:
 		/// \brief Storage for the implementation parameters
 		atomic_factory_t _factory;
 		size_t __masterRank;
 		int __numProc;
 		bool __isMasterRank;
+		struct {
+			size_t size;
+			void *virt;
+			uintptr_t arena;
+			size_t next;
+		} _l2atomic;
 	public:
-		LockBoxFactory(XMI::BgpSysDep *sd) {
+		L2AtomicFactory(XMI::BgpSysDep *sd) {
+			// Must coordinate with all other processes on this node,
+			// and arrive at a common chunk of physical address memory
+			// which we all will use for allocating "lockboxes" from.
+			// One sure way to do this is to allocate shared memory.
+			_l2atomic.size = sizeof(uint64_t) * L2A_MAX_NUML2ATOMIC;
+			_l2atomic.virt = sd->memoryManager().scratchpad_dynamic_area_malloc(_l2atomic.size);
+			XMI_assertf(_l2atomic.virt, "Out of shared memory in L2AtomicFactory");
+			_l2atomic.arena = MapL2AtomicRegion(_l2atomic.virt);
+			_l2atomic.next = 0;
+			// ...something like that...
+
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
 			XMI_Coord_t coord;
@@ -98,10 +130,10 @@ namespace BGP {
 			__isMasterRank = (__masterRank == sd->mapping().rank());
 		}
 
-		~LockBoxFactory() {}
+		~L2AtomicFactory() {}
 
 		/**
-		 * \brief Generic LockBox allocation
+		 * \brief Generic L2Atomic allocation
 		 *
 		 *
 		 * Warning: this allocation scheme must be used in the same way,
@@ -113,14 +145,14 @@ namespace BGP {
 		 * When process-scoped lockboxes are requested, each
 		 * process on the node will request a different lockbox
 		 * number. This is accomplished by adding
-		 * numLockBoxes * lm->myProc to the desired lockbox
+		 * numL2Atomics * lm->myProc to the desired lockbox
 		 * number and multiplying lockSpan by lm->numProc.
 		 * In this way, each process will be asking for different
 		 * lockboxes, even if they have to iterate to find a
 		 * free lockbox (set). In order to ensure all processes
 		 * stay in agreement on the next lockbox number, after
 		 * allocation the (next) lockbox number will have
-		 * numLockBoxes * lm->myProc subtracted from it.
+		 * numL2Atomics * lm->myProc subtracted from it.
 		 *
 		 * Only one core from each process can allocate
 		 * lockboxes, and it must be the lowest-numbered
@@ -130,29 +162,26 @@ namespace BGP {
 		 *
 		 * \param[in] lm	Implementation parameters
 		 * \param[out] p	Place to record lockbox id(s)
-		 * \param[in] numLockBoxes Number of lockboxes to get
+		 * \param[in] numL2Atomics Number of lockboxes to get
 		 * \param[in] scope	Scope of lockboxes
 		 */
-		static inline void lbx_alloc(void **p, int numLockBoxes,
+		static inline void lbx_alloc(void **p, int numL2Atomics,
 					lbx_scope_t scope) {
-			static int desiredLock = LBX_MIN_LOCKBOX;
-			static uint32_t *lockp[NUM_CORES * MAX_NUMLOCKBOXES];
-			int lockSpan = numLockBoxes;
-			unsigned flags = 0;
-			XMI_assert_debug(numLockBoxes <= MAX_NUMLOCKBOXES);
+			static int desiredLock = L2A_MIN_L2ATOMIC;
+			static uint64_t *lockp[NUM_CORES * MAX_NUML2ATOMICS];
+			int lockSpan = numL2Atomics;
+			XMI_assert_debug(numL2Atomics <= MAX_NUML2ATOMICS);
 			switch(scope) {
-			case LBX_NODE_SCOPE:
-			case LBX_NODE_PROC_SCOPE:
-			case LBX_NODE_CORE_SCOPE:
+			case L2A_NODE_SCOPE:
+			case L2A_NODE_PROC_SCOPE:
+			case L2A_NODE_CORE_SCOPE:
 				// Node-scoped lockboxes...
-				flags = (_factory.coreXlat[_factory.masterProc] << 4) | _factory.numProc | LOCKBOX_ORDERED_ALLOC;
-				
+				local_barrier(_factory.coreXlat[_factory.masterProc], _factory.numProc);
 				break;
-			case LBX_PROC_SCOPE:
+			case L2A_PROC_SCOPE:
 				// Process-scoped lockboxes...
 				// Allocate the entire block on all processes, but
 				// only return our specific lock(s).
-				flags = (_factory.coreXlat[_factory.myProc] << 4) | 1;
 				// ensure all get different lockboxes
 				lockSpan *= _factory.numProc;
 				break;
@@ -162,11 +191,12 @@ namespace BGP {
 			}
 			*p = NULL;
 			int rc = 0;
-			while (desiredLock < LBX_MAX_NUMLOCKBOX) {
-				rc = Kernel_AllocateLockBox(desiredLock,
-						lockSpan,
-						lockp,
-						flags);
+			while (desiredLock < L2A_MAX_NUML2ATOMIC) {
+				// this can't be right...
+				for (x = 0; x < lockSpan; ++x) {
+					lockp[x] = _l2atomic.arena++ + (_l2atomic.next * sizeof(uintptr_t))
+				}
+				rc = 0;
 				desiredLock += lockSpan;
 				if (rc == EAGAIN) {
 					continue;
@@ -175,17 +205,18 @@ namespace BGP {
 					XMI_abortf("Fatal: allocLockBoxes(%d) rc=%d p=%p", desiredLock-1, rc, p);
 				}
 				switch(scope) {
-				case LBX_NODE_SCOPE:
-				case LBX_NODE_PROC_SCOPE:
-				case LBX_NODE_CORE_SCOPE:
+				case L2A_NODE_SCOPE:
+				case L2A_NODE_PROC_SCOPE:
+				case L2A_NODE_CORE_SCOPE:
 					// Node-scoped lockboxes...
 					// we get exactly what we asked for.
-					memcpy(p, &lockp[0], numLockBoxes * sizeof(*p));
+					local_barrier(_factory.coreXlat[_factory.masterProc], _factory.numProc);
+					memcpy(p, &lockp[0], numL2Atomics * sizeof(*p));
 					break;
-				case LBX_PROC_SCOPE:
+				case L2A_PROC_SCOPE:
 					// Process-scoped lockboxes...
 					// Take our specific lock out of the entire block.
-					memcpy(p, &lockp[numLockBoxes * _factory.myProc], numLockBoxes * sizeof(*p));
+					memcpy(p, &lockp[numL2Atomics * _factory.myProc], numL2Atomics * sizeof(*p));
 					break;
 				default:
 					XMI_abortf("Unsupported lockbox scope");
@@ -195,10 +226,10 @@ namespace BGP {
 			}
 			XMI_abortf("Fatal: Kernel_AllocateLockBox: no available lockboxes");
 		}
-	}; // class LockBoxFactory
+	}; // class L2AtomicFactory
 
-}; // namespace BGP
+}; // namespace BGQ
 }; // namespace Atomic
 }; // namespace XMI
 
-#endif /* __xmi_bgp_lockboxfactory_h__ */
+#endif // __xmi_bgq_l2atomicfactory_h__

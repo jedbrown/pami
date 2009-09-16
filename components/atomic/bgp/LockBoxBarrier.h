@@ -20,9 +20,8 @@
  */
 #include "SysDep.h"
 #include "components/sysdep/bgp/LockBoxFactory.h"
-#include "components/barrier/BarrierObject.h"
+#include "components/atomic/Barrier.h"
 #include <spi/bgp_SPI.h>
-#include <bpcore/bgp_atomic_ops.h>
 
 namespace XMI {
 namespace Barrier {
@@ -31,7 +30,7 @@ namespace BGP {
  * This class cannot be used directly. The super class must accocate the
  * particular type of lockbox based on desired scope.
  */
-class LockBoxBarrier {
+class _LockBoxBarrier {
 private:
 	/**
 	 * \brief Base structure for lockbox barrier
@@ -55,11 +54,11 @@ private:
 	};
 #define lbx_lkboxes	lbx_u.lkboxes		/**< shortcut for lkboxes */
 #define lbx_ctrl_lock	lbx_u.lbx_s.ctrl_lock	/**< shortcut for ctrl_lock */
-#define lbx_lock		lbx_u.lbx_s.lock	/**< shortcut for lock */
+#define lbx_lock	lbx_u.lbx_s.lock	/**< shortcut for lock */
 #define lbx_status	lbx_u.lbx_s.status	/**< shortcut for status */
 public:
-	LockBoxBarrier() { }
-	~LockBoxBarrier() { }
+	_LockBoxBarrier() { }
+	~_LockBoxBarrier() { }
 
 	inline void init_impl();
 
@@ -81,11 +80,11 @@ public:
 		lockup = LockBox_Query(_barrier.lbx_ctrl_lock);
 		LockBox_FetchAndInc(_barrier.lbx_lock[lockup]);
 		_data = (void*)lockup;
-		__status = Entered;
+		_status = Entered;
 	}
 
 	inline lockPollStatus poll_impl() {
-		DCMF_assert(__status == Entered);
+		DCMF_assert(_status == Entered);
 		uint32_t lockup, value;
 		lockup = (unsigned)_data;
 		if (LockBox_Query(_barrier.lbx_lock[lockup]) < _barrier.nparties) {
@@ -112,27 +111,25 @@ public:
 			// wait until master releases the barrier by clearing the lock
 			while (LockBox_Query(_barrier.lbx_lock[lockup]) > 0);
 		}
-		__status = Initialized;
+		_status = Initialized;
 		return Done;
 	}
 	// With 5 lockboxes used... which one should be returned?
 	inline void *returnBarrier_impl() { return _barrier.lbx_ctrl_lock; }
 
 	inline void init_impl() {
-		XMI_abortf("XMI::Barrier::BGP::LockBoxBarrier must be a subclass");
+		XMI_abortf("_LockBoxBarrier class must be subclass");
 	}
 private:
 	LockBox_Barrier_s _barrier;
 	void *_data;
-	lockPollStatus __status;
+	lockPollStatus _status;
+}; // class _LockBoxBarrier
 
-}; // class LockBoxBarrier
-/*
- */
-class LockBoxNodeBarrier : public LockBoxBarrier {
+class LockBoxNodeCoreBarrier : public _LockBoxBarrier {
 public:
-	LockBoxNodeBarrier() : LockBoxBarrier() { }
-
+	LockBoxNodeCoreBarrier() : _LockBoxBarrier() {}
+	~LockBoxNodeCoreBarrier() {}
 	inline void init_impl() {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
@@ -141,17 +138,17 @@ public:
 		_barrier.master = lm->masterProc << lm->coreShift;
 		_barrier.coreshift = 0;
 		_barrier.nparties = lm->numCore;
-		DCMF::LockBoxFactory::lbx_alloc(lm, (void **)_barrier.lbx_lkboxes, 5, scope);
-		__status = Initialized;
+		XMI::Atomic::BGP::LockBoxFactory::lbx_alloc(
+						(void **)_barrier.lbx_lkboxes, 5,
+						XMI::Atomic::BGP::LBX_NODE_SCOPE);
+		_status = Initialized;
 	}
-private:
-}; // class LockBoxNodeBarrier
-/*
- */
-class LockBoxProcBarrier : public LockBoxBarrier {
-public:
-	LockBoxProcBarrier() : LockBoxBarrier() { }
+}; // class LockBoxNodeCoreBarrier
 
+class LockBoxNodeProcBarrier : public _LockBoxBarrier
+public:
+	LockBoxNodeProcBarrier() : _LockBoxBarrier() {}
+	~LockBoxNodeProcBarrier() {}
 	inline void init_impl() {
 		// For proc-granularity, must convert
 		// between core id and process id,
@@ -160,11 +157,12 @@ public:
 		_barrier.master = lm->coreXlat[lm->masterProc] >> lm->coreShift;
 		_barrier.coreshift = lm->coreShift;
 		_barrier.nparties = lm->numProc;
-		DCMF::LockBoxFactory::lbx_alloc(lm, (void **)_barrier.lbx_lkboxes, 5, scope);
-		__status = Initialized;
+		XMI::Atomic::BGP::LockBoxFactory::lbx_alloc(
+						(void **)_barrier.lbx_lkboxes, 5,
+						XMI::Atomic::BGP::LBX_PROC_SCOPE);
+		_status = Initialized;
 	}
-private:
-}; // class LockBoxProcBarrier
+}; // class LockBoxNodeProcBarrier
 
 }; // BGP namespace
 }; // Barrier namespace
