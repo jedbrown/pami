@@ -93,11 +93,14 @@ public:
 	BaseDevice(),
 	_hasBlockingAdvance(false),
 	_nRoles(nRoles),
-	_repl(repl)
+	_repl(repl),
+	_sd(NULL)
 	{
 	}
 
 	virtual ~GenericSubDevice() { }
+
+	inline XMI::SysDep *getSysdep() { return _sd; }
 
 	inline int advanceRecv(int channel = -1);
 
@@ -175,6 +178,10 @@ public:
 	}
 
 protected:
+	inline void ___init(XMI::SysDep &sd) {
+		_sd = &sd;
+	}
+
 	/// \brief tell whether messages support blocking advance
 	///
 	/// \param[in] f	Boolean indicating support for blocking advance calls
@@ -200,6 +207,7 @@ protected:
 	bool _hasBlockingAdvance;
 	int _nRoles;
 	int _repl;
+	XMI::SysDep *_sd;
 }; /* class GenericSubDevice */
 
 /// \brief Simple Sub-Device where no threading is used.
@@ -210,7 +218,7 @@ protected:
 ///
 /// Supports only one active message at a time.
 ///
-template <class T_Model, class T_Message, class T_Thread>
+template <class T_Thread>
 class SimpleSubDevice : public GenericSubDevice {
 	static const int NUM_THREADS = 1;
 public:
@@ -224,7 +232,7 @@ public:
 	}
 
 private:
-	inline void __start_msg(T_Message *msg) {
+	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {
 		// While threads aren't used, a thread object is needed
 		// for the advance queue
 		int t = msg->__setThreads(&_threads[0], NUM_THREADS);
@@ -232,8 +240,8 @@ private:
 		XMI_assert_debug(t == NUM_THREADS); t = t;
 	}
 
-	inline void __post_msg(T_Message *msg) {
-		_generic->post((XMI::Device::Generic::GenericMessage *)msg, &_threads[0], sizeof(_threads[0]), NUM_THREADS);
+	inline void __post_msg(XMI::Device::Generic::GenericMessage *msg) {
+		_generic->post(msg, &_threads[0], sizeof(_threads[0]), NUM_THREADS);
 	}
 
 protected:
@@ -242,18 +250,18 @@ protected:
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
 		_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
+		___init(sd);
 	}
 
 	inline int advanceRecv(int channel = -1) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.
-	//friend class T_Message;
 	//friend class T_Model;
 	// So, we need to make this public until we figure it out.
 public: // temporary
 
-	inline void __post(T_Message *msg) {
+	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		bool first = (getCurrent() == NULL);
 		if (first) { 
 			__start_msg(msg);
@@ -264,13 +272,13 @@ public: // temporary
 			}
 			__post_msg(msg);
 		}
-		XMI::Device::Generic::GenericSubDevice::post((XMI::Device::Generic::GenericMessage *)msg);    
+		XMI::Device::Generic::GenericSubDevice::post(msg);    
 	}
 
-	inline void __complete(T_Message *msg) {
+	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
 		/* assert msg == dequeue(); */
 		dequeue();
-		T_Message *nxt = (T_Message *)getCurrent();
+		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
 		if (nxt) {
 			__start_msg(nxt);
 			// could try to advance here?
@@ -325,6 +333,7 @@ protected:
 		_doneThreads = (Atomic *)_atomic_buf;
 		_doneThreads->fetchClear();
 		_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
+		___init(sd);
 	}
 
 	inline int advanceRecv(int channel = -1) { return 0; }
@@ -432,6 +441,7 @@ protected:
 		_doneThreads = (Atomic *)_atomic_buf;
 		_doneThreads->fetchClear();
 		//_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
+		___init(sd);
 	}
 
 	inline int advanceRecv(int channel = -1) { return 0; }
@@ -538,6 +548,7 @@ public:
 		_doneThreads = (Atomic *)_atomic_buf;
 		_doneThreads->fetchClear();
 		_init = 1;
+		___init(sd);
 	}
 
 	inline void post_msg(XMI::Device::Generic::GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
