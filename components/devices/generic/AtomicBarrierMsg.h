@@ -21,18 +21,21 @@
 ///
 /// typedef XMI::Atomic::Interface::Barrier<MY_BARRIER_TYPE> MY_BARRIER;
 ///
+/// #include "components/devices/generic/AtomicBarrierMsg.h"
 /// typedef XMI::Device::AtomicBarrierMdl<MY_BARRIER> MY_BARRIER_MODEL;
 /// typedef XMI::Device::AtomicBarrierMsg<MY_BARRIER> MY_BARRIER_MESSAGE;
 ///
 /// xmi_result_t status;
 /// MY_BARRIER_MODEL _barrier(status);
 /// if (status != XMI_SUCCESS) abort();
-/// MY_BARRIER_MESSAGE _msg;
-/// _barrier.setCallback(...);
-/// _barrier.setRoles(...);
-/// _barrier.setRanks(...);
 ///
-/// _barrier.postMultisync(&_msg);
+/// xmi_multisync_t _msync;
+/// MY_BARRIER_MESSAGE _msg;
+/// _msync.request = &_msg;
+/// _msync.cb_done = ...;
+/// _msync.roles = ...;
+/// _msync.participants = ...;
+/// _barrier.postMultisync(&_msync);
 ///
 
 #ifndef  __components_devices_generic_atomicbarrier_h__
