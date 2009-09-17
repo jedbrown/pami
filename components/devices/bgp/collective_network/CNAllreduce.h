@@ -54,9 +54,9 @@ static inline int allreduce_setup(XMI_Dt            dt,
 class CNAllreduceSetup {
 	static CNAllreduceSetup CNAllreduceSetupCache[XMI_OP_COUNT][XMI_DT_COUNT];
 public:
-       
+
         CNAllreduceSetup() {}
-        CNAllreduceSetup(XMI_Dt dt, XMI_Op op) 
+        CNAllreduceSetup(XMI_Dt dt, XMI_Op op)
 		{
 
 		int rc = allreduce_setup(dt, op, &_pre, &_post,

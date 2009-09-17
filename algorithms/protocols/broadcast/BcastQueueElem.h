@@ -30,7 +30,7 @@ namespace CCMI
       protected:
         //matchq
         unsigned            _bytes;  ///Bytes in the broadcast
-        XMI_Callback_t     _cb_done;///Application completion callback   
+        XMI_Callback_t     _cb_done;///Application completion callback
 
         char              * _rcvbuf;  ///buffer to receive bcast
         char              * _appbuf;  ///App buffer which will be
@@ -38,7 +38,7 @@ namespace CCMI
                                       ///unexpected bcast
 
         bool                _isFinished;  ///Bcast completed locally?
-        CCMI::Executor::Composite   * _composite;  ///Executor Composite associated with this queue elem	
+        CCMI::Executor::Composite   * _composite;  ///Executor Composite associated with this queue elem
 
       public:
 
@@ -60,7 +60,7 @@ namespace CCMI
           _cb_done.function = NULL;
           _cb_done.clientdata = NULL;
 
-          CCMI_assert(bytes > 0);   
+          CCMI_assert(bytes > 0);
         }
 
         void initPostMsg (unsigned bytes, char *rcvbuf, XMI_Callback_t &cb)

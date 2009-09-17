@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/time/bgp/BgpTime.h
+/// \file components/time/mpi/mpitime.h
 /// \brief ???
 ///
 #ifndef __components_time_mpi_mpitime_h__
@@ -26,7 +26,7 @@ namespace XMI
   namespace Time
   {
 #if defined(__i386) || defined(__amd64__)
-    static inline uint64_t tb() 
+    static inline uint64_t tb()
     {
       uint32_t lo, hi;
       __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
@@ -55,7 +55,7 @@ namespace XMI
     static inline uint64_t tb() { assert(0); return 0;}
 #endif
 
-    static unsigned long timeGetTime( void ) 
+    static unsigned long timeGetTime( void )
     {
       struct timeval tv;
       gettimeofday( &tv, 0 );
@@ -180,4 +180,3 @@ namespace XMI
   };
 };
 #endif // __components_time_time_h__
-

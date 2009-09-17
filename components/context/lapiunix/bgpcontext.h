@@ -1,5 +1,5 @@
 ///
-/// \file xmi/bgp/bgpcontext.h
+/// \file components/context/lapiunix/bgpcontext.h
 /// \brief XMI BGP specific context implementation.
 ///
 #ifndef   __xmi_bgp_bgpcontext_h__
@@ -24,7 +24,7 @@ namespace XMI
           _client (client)
         {
         }
-        
+
         inline xmi_client_t getClientId_impl ()
         {
           return _client;
@@ -108,10 +108,10 @@ namespace XMI
 
 
 
-        
+
 
       private:
-      
+
         xmi_client_t _client;
 
         void * _dispatch[1024];

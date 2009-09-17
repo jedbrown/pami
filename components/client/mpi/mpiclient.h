@@ -1,5 +1,5 @@
 ///
-/// \file xmi/mpi/mpiclient.h
+/// \file components/client/mpi/mpiclient.h
 /// \brief XMI client interface specific for the MPI platform.
 ///
 #ifndef   __xmi_mpi_mpiclient_h__
@@ -18,7 +18,7 @@ namespace XMI
   namespace Client
   {
 
-    
+
     class MPI : public Client<XMI::Client::MPI,XMI::Context::MPI>
     {
     public:
@@ -50,7 +50,7 @@ namespace XMI
       inline ~MPI ()
         {
         }
-      
+
       static xmi_result_t generate_impl (char * name, xmi_client_t * in_client)
         {
           int rc = 0;
@@ -86,15 +86,15 @@ namespace XMI
           result = XMI_SUCCESS;
           return context;
         }
-        
+
       inline xmi_result_t destroyContext_impl (xmi_context_t context)
         {
           free(context);
           return XMI_SUCCESS;
         }
-        
+
     protected:
-      
+
       inline xmi_client_t getClientId () const
         {
           return _client;

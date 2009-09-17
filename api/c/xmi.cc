@@ -1,5 +1,5 @@
 /**
- * \file xmi.cc
+ * \file api/c/xmi.cc
  * \brief XMI C interface common implementation
  */
 
@@ -604,10 +604,10 @@ extern "C" xmi_result_t XMI_Type_destroy (xmi_type_t type)
 ///
 /// \copydoc XMI_Type_pack_data
 ///
-extern "C" xmi_result_t XMI_Type_pack_data (xmi_type_t src_type, 
+extern "C" xmi_result_t XMI_Type_pack_data (xmi_type_t src_type,
                                             size_t     src_offset,
-                                            void     * src_addr, 
-                                            void     * dst_addr, 
+                                            void     * src_addr,
+                                            void     * dst_addr,
                                             size_t     dst_size)
 {
   return XMI_UNIMPL;
@@ -616,10 +616,10 @@ extern "C" xmi_result_t XMI_Type_pack_data (xmi_type_t src_type,
 ///
 /// \copydoc XMI_Type_unpack_data
 ///
-extern "C" xmi_result_t XMI_Type_unpack (xmi_type_t dst_type, 
-                                         size_t     dst_offset, 
-                                         void     * dst_addr, 
-                                         void     * src_addr, 
+extern "C" xmi_result_t XMI_Type_unpack (xmi_type_t dst_type,
+                                         size_t     dst_offset,
+                                         void     * dst_addr,
+                                         void     * src_addr,
                                          size_t     src_size)
 {
   return XMI_UNIMPL;
@@ -729,7 +729,7 @@ void XMI_PipeWorkQueue_dump(xmi_pipeworkqueue_t *wq,
                             const char          *prefix)
 {
     XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
-    pwq->dump (prefix);    
+    pwq->dump (prefix);
 }
 
 ///
@@ -739,7 +739,7 @@ void XMI_PipeWorkQueue_setConsumerWakeup(xmi_pipeworkqueue_t *wq,
                                          void                *vec)
 {
     XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
-    pwq->setConsumerWakeup (vec);    
+    pwq->setConsumerWakeup (vec);
 }
 
 ///
@@ -749,7 +749,7 @@ void XMI_PipeWorkQueue_setProducerWakeup(xmi_pipeworkqueue_t *wq,
                                          void                *vec)
 {
     XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
-    pwq->setProducerWakeup (vec);    
+    pwq->setProducerWakeup (vec);
 }
 
 ///
@@ -758,7 +758,7 @@ void XMI_PipeWorkQueue_setProducerWakeup(xmi_pipeworkqueue_t *wq,
 size_t XMI_PipeWorkQueue_bytesAvailableToProduce(xmi_pipeworkqueue_t *wq)
 {
     XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
-    return pwq->bytesAvailableToProduce ();    
+    return pwq->bytesAvailableToProduce ();
 }
 
 ///
@@ -832,7 +832,7 @@ void XMI_PipeWorkQueue_consumeBytes(xmi_pipeworkqueue_t *wq,
 int XMI_PipeWorkQueue_available(xmi_pipeworkqueue_t *wq)
 {
     XMI_PIPEWORKQUEUE_CLASS * pwq = (XMI_PIPEWORKQUEUE_CLASS *) wq;
-    return pwq->available ();    
+    return pwq->available ();
 }
 
 
@@ -924,7 +924,7 @@ xmi_topology_type_t xmi_topology_type(xmi_topology_t *topo)
 size_t XMI_Topology_index2Rank(xmi_topology_t *topo, size_t ix)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
-    return t->index2Rank(ix);    
+    return t->index2Rank(ix);
 }
 
 ///
@@ -990,7 +990,7 @@ void XMI_Topology_getNthDims(xmi_topology_t *topo, unsigned n,
                              unsigned *c0, unsigned *cn, unsigned char *tl)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
-    return t->getNthDims(n,c0,cn,tl);    
+    return t->getNthDims(n,c0,cn,tl);
 }
 
 ///
@@ -999,7 +999,7 @@ void XMI_Topology_getNthDims(xmi_topology_t *topo, unsigned n,
 int XMI_Topology_isRankMember(xmi_topology_t *topo, size_t rank)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
-    return t->isRankMember(rank);    
+    return t->isRankMember(rank);
 }
 
 ///
@@ -1017,7 +1017,7 @@ int XMI_Topology_isCoordMember(xmi_topology_t *topo, xmi_coord_t *c0)
 void XMI_Topology_sub_LocalToMe(xmi_topology_t *_new, xmi_topology_t *topo)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
-    t->subTopologyLocalToMe((XMI_TOPOLOGY_CLASS *)_new);    
+    t->subTopologyLocalToMe((XMI_TOPOLOGY_CLASS *)_new);
 }
 
 ///
@@ -1026,7 +1026,7 @@ void XMI_Topology_sub_LocalToMe(xmi_topology_t *_new, xmi_topology_t *topo)
 void XMI_Topology_sub_NthGlobal(xmi_topology_t *_new, xmi_topology_t *topo, int n)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
-    t->subTopologyNthGlobal((XMI_TOPOLOGY_CLASS *)_new, n);    
+    t->subTopologyNthGlobal((XMI_TOPOLOGY_CLASS *)_new, n);
 }
 
 ///

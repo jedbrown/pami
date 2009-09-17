@@ -99,18 +99,18 @@ namespace CCMI
                               Geometry                                   * geometry,
                               unsigned                                     root,
                               char                                       * src,
-                              unsigned                                     bytes) : 
+                              unsigned                                     bytes) :
         CCMI::Executor::Composite (), _doneCount(0), _numColors(0), _cb_done(cb_done), _mapping(map)
         {
           pwcfn (geometry, bytes, _colors, _numColors, _pipewidth);
 
           _srcbufs [0] = src;
-          _bytecounts[0] = bytes;   
+          _bytecounts[0] = bytes;
           _nComplete = _numColors + 1;
 
           if(_numColors > 1)
           {
-            unsigned aligned_bytes = (bytes/_numColors) & (0xFFFFFFF0); 
+            unsigned aligned_bytes = (bytes/_numColors) & (0xFFFFFFF0);
             _bytecounts[0] =  aligned_bytes;
             for(unsigned c = 1; c < _numColors; ++c)
             {
@@ -123,11 +123,11 @@ namespace CCMI
           for(unsigned c = 0; c < _numColors; c++)
           {
             CCMI_assert (c < NUMCOLORS);
-            CCMI::Executor::Broadcast *bcast  = 
-            new (& _executors[c]) CCMI::Executor::Broadcast (map, 
-                                                             geometry->comm(), 
-                                                             cmgr, 
-                                                             _colors[c], 
+            CCMI::Executor::Broadcast *bcast  =
+            new (& _executors[c]) CCMI::Executor::Broadcast (map,
+                                                             geometry->comm(),
+                                                             cmgr,
+                                                             _colors[c],
                                                              true);
 
             bcast->setMulticastInterface (mf);
@@ -143,7 +143,7 @@ namespace CCMI
         }
 
         ///
-        /// \brief initialize the schedule based on input geometry. 
+        /// \brief initialize the schedule based on input geometry.
         ///   Template implementation must specialize this function.
         ///
 
@@ -153,7 +153,7 @@ namespace CCMI
                                  CCMI::Schedule::Color       color) {CCMI_abort();};
         void setDoneCallback (XMI_Callback_t  cb_done) { _cb_done = cb_done;}
 
-        void SyncBcastPost(Geometry                                     * geometry, 
+        void SyncBcastPost(Geometry                                     * geometry,
                            unsigned                                       root,
                            CCMI::ConnectionManager::ConnectionManager   * cmgr,
                            CCMI::MultiSend::OldMulticastInterface          * minterface)
@@ -172,10 +172,10 @@ namespace CCMI
             {
               mrecv.bytes   = _bytecounts[c];
               mrecv.rcvbuf  = _srcbufs[c];
-              mrecv.request = _executors[c].getRecvRequest();       
-              mrecv.connection_id = cmgr->getConnectionId (geometry->comm(), root, _colors[c], 
-                                                           (unsigned)-1, (unsigned)-1); 
-              mrecv.cb_done.clientdata = &_executors[c]; 
+              mrecv.request = _executors[c].getRecvRequest();
+              mrecv.connection_id = cmgr->getConnectionId (geometry->comm(), root, _colors[c],
+                                                           (unsigned)-1, (unsigned)-1);
+              mrecv.cb_done.clientdata = &_executors[c];
               minterface->postRecv (&mrecv);
             }
           }
@@ -187,15 +187,15 @@ namespace CCMI
         ///
         static void cb_barrier_done(void *me, XMI_Error_t *err)
         {
-          MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;   
-          CCMI_assert (bcast_composite != NULL);    
+          MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
+          CCMI_assert (bcast_composite != NULL);
 
           for(unsigned i=0; i < bcast_composite->_numColors; ++i)
           {
             bcast_composite->getExecutor(i)->start();
           }
 
-          CCMI_assert (bcast_composite->_doneCount <  bcast_composite->_nComplete);   
+          CCMI_assert (bcast_composite->_doneCount <  bcast_composite->_nComplete);
           ++bcast_composite->_doneCount;
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
@@ -206,15 +206,15 @@ namespace CCMI
         static void cb_bcast_done(void *me, XMI_Error_t *err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
-          CCMI_assert (bcast_composite != NULL);    
+          CCMI_assert (bcast_composite != NULL);
 
-          CCMI_assert (bcast_composite->_doneCount <  bcast_composite->_nComplete);   
+          CCMI_assert (bcast_composite->_doneCount <  bcast_composite->_nComplete);
           ++bcast_composite->_doneCount;
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
             bcast_composite->_cb_done.function(bcast_composite->_cb_done.clientdata, NULL);
           }
-        } 
+        }
       };  //-- MultiColorCompositeT
 
 
@@ -222,7 +222,7 @@ namespace CCMI
       /// \brief Base factory class for broadcast factory implementations.
       ///
       template <class B, AnalyzeFn afn, class MAP>
-      class MultiColorBroadcastFactoryT : public BroadcastFactory<MAP> 
+      class MultiColorBroadcastFactoryT : public BroadcastFactory<MAP>
       {
       public:
 
@@ -274,19 +274,19 @@ namespace CCMI
          unsigned                    bytes)
         {
           XMI_assert(rsize >= sizeof(B));
-          B  *composite = 
+          B  *composite =
           new (request_buf)
           B (this->_mapping,
              this->_connmgr,
              cb_done,
-             consistency, 
+             consistency,
              this->_minterface,
-             geometry, 
-             root, 
-             src, 
+             geometry,
+             root,
+             src,
              bytes);
 
-          composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface); 
+          composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
 
           CCMI::Executor::Executor *barrier = geometry->getBarrierExecutor();
           CCMI_assert(barrier != NULL);

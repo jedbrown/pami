@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file connmgr/ShortTorusConnMgr.h
+ * \file algorithms/connmgr/ShortTorusConnMgr.h
  * \brief ???
  */
 
@@ -26,7 +26,7 @@ namespace CCMI
     protected:
       TorusCollectiveMapping *_mapping;
 
-    public: 
+    public:
       /// Constructor
       ShortTorusConnMgr (TorusCollectiveMapping *map) : ConnectionManager(), _mapping(map)
       {
@@ -74,7 +74,7 @@ namespace CCMI
       }
 
 
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, 
+      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
                                             unsigned src, unsigned phase, unsigned color)
       {
         unsigned* my_coords = _mapping->Coords();
@@ -82,9 +82,9 @@ namespace CCMI
 
         CCMI_assert (src != (unsigned)-1);
 
-        _mapping->Rank2Torus(&(coords[0]), src);        
+        _mapping->Rank2Torus(&(coords[0]), src);
 
-        unsigned conn = (unsigned) -1;    
+        unsigned conn = (unsigned) -1;
 
         if(coords[CCMI_X_DIM] != my_coords[CCMI_X_DIM])
           return my_coords[CCMI_X_DIM];

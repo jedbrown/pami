@@ -1,3 +1,15 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/tests/generic/binomialbarrier.c
+ * \brief ???
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,8 +118,8 @@ int main(int argc, char **argv)
 
   XMI_CollectiveProtocol_t             * bar_p = & bar_reg, * local_bar_p = & local_bar_reg;
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
-                                                           &bar_p, 1, 
-                                                           &bar_p, 1, 
+                                                           &bar_p, 1,
+                                                           &bar_p, 1,
                                                            &request, 0, 1)) != XMI_SUCCESS)
     fprintf(stderr,"CCMI_Geometry_initialize failed %d\n",ccmiResult);
 
@@ -122,11 +134,11 @@ int main(int argc, char **argv)
 
   tf = BarrierTime();
 
-  barrier();  
+  barrier();
   barrier();
 
   printf("rank = %d Average Barrier Time %lf us\n", rank,tf*1e6);
-  
+
   MPI_Finalize ();
 
   return 0;

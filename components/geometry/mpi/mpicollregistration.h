@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/geometry/mpi/mpicollregistration.h
+ * \brief ???
+ */
+
 #ifndef   __xmi_mpicollregistration__h__
 #define   __xmi_mpicollregistration__h__
 
@@ -61,7 +74,7 @@ namespace XMI
 	  _pgbarrier._colltype=XMI::CollInfo::CI_BARRIER0;
           _nbCollMgr.multisend_reg(TSPColl::BarrierTag, &_pgbarrier._model);
 	  _barriers.push_back(&_pgbarrier);
-          
+
           _ccmiambroadcast._colltype=XMI::CollInfo::CI_AMBROADCAST0;
 	  _ambroadcasts.push_back(&_ccmiambroadcast);
         }
@@ -83,7 +96,7 @@ namespace XMI
 
     public:
       T_Device                        *_dev;
-      T_Sysdep                        *_sysdep; 
+      T_Sysdep                        *_sysdep;
       XMI_NBCollManager                _nbCollMgr;
       MemoryAllocator<sizeof(XMI_COLLFACTORY_CLASS), 16> _fact_alloc;
 
@@ -104,9 +117,9 @@ namespace XMI
       RegQueue          _scattervs;
       RegQueue          _allreduces;
       RegQueue          _barriers;
-      
+
 #if 0
-      MPIMcastModel     _ccmi_broadcast;      
+      MPIMcastModel     _ccmi_broadcast;
       MPIMcastModel     _ccmi_allreduce;
       MPIMcastModel     _ccmi_alltoall;
       MPIMcastModel     _ccmi_barrier;

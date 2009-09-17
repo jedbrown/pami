@@ -1,5 +1,5 @@
 /**
- * \file xmi_ext_percs.h
+ * \file sys/xmi_ext_percs.h
  * \brief platform-specific messaging interface
  * \todo  put this into percs subdir and rename to xmi_ext.h
  */

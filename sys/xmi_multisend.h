@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file xmi_multisend.h
+ * \file sys/xmi_multisend.h
  * \brief Multisend interface.
  *
  * A multisend operation allows many message passing transactions to
@@ -138,7 +138,7 @@ extern "C"
                                               size_t               *rcvlen,
                                               xmi_pipeworkqueue_t **rcvbuf,
                                               xmi_event_function   *cb_done);
-    
+
     /**
      * \brief The new structure to pass parameters for the multisend multicast operation.
      *
@@ -175,7 +175,7 @@ extern "C"
     XMI_WEAK_CONSISTENCY,
     XMI_CONSISTENCY_COUNT
   }xmi_consistency_t;
-  
+
  #define  LINE_BCAST_MASK    (XMI_LINE_BCAST_XP|XMI_LINE_BCAST_XM|	\
                               XMI_LINE_BCAST_YP|XMI_LINE_BCAST_YM|	\
                               XMI_LINE_BCAST_ZP|XMI_LINE_BCAST_ZM)
@@ -228,7 +228,7 @@ extern "C"
       unsigned            count;
       unsigned            flags;
     }xmi_oldmulticast_t;
-  
+
     typedef struct xmi_oldmulticast_recv_t
     {
       xmi_callback_t      cb_done;
@@ -242,7 +242,7 @@ extern "C"
     }xmi_oldmulticast_recv_t;
     /**********************************************************************/
 
-  
+
 
     /**
      * \brief Sub-structure used to represent a vectored buffer for many-to-many.
@@ -295,7 +295,7 @@ extern "C"
                                                xmi_manytomanybuf_t **recv,
                                                size_t               *myIndex,
                                                xmi_event_function   *cb_done);
-    
+
     /**
      * \brief Structure of parameters used to initiate a ManyToMany
      *
@@ -329,7 +329,7 @@ extern "C"
     /******************************************************************************
      *       Multisync Personalized synchronization/coordination
      ******************************************************************************/
-    
+
     /**
      * \brief Recv callback for Multisync.
      *
@@ -399,7 +399,7 @@ extern "C"
         xmi_dt               dtype;		      /**< Datatype of elements */
         size_t              count;		      /**< Number of elements */
     } xmi_multicombine_t;
-    
+
     /**
      * \brief Allreduce, Reduce, etc. (may include some specialized Broadcasts, too)
      *

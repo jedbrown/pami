@@ -1,5 +1,5 @@
 /**
- * \file xmi_dgs.h
+ * \file sys/unused/xmi_dgs.h
  * \brief XMI Data Gather Scatter functions
  * \todo This is meant to be a component that has no dependency on XMI.
  *       Need to clean up the syntax.
@@ -19,11 +19,11 @@ typedef void *        xmi_type_t;
 int XMI_Type_create(xmi_type_t *type);
 
 /* Add simple buffers */
-int XMI_Type_add_simple(xmi_type_t type, size_t bytes, 
+int XMI_Type_add_simple(xmi_type_t type, size_t bytes,
         size_t offset, size_t reps, size_t stride);
 
 /* Add typed buffers */
-int XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type, 
+int XMI_Type_add_typed(xmi_type_t type, xmi_type_t sub_type,
         size_t offset, size_t reps, size_t stride);
 
 /* Complete the type, which can no longer be modified afterwards */

@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/Scatter.h
+ * \brief ???
+ */
 
 #ifndef __tspcoll_scatter_h__
 #define __tspcoll_scatter_h__
@@ -51,7 +55,7 @@ namespace TSPColl
     unsigned        _counter;      /* instance counter */
     unsigned        _complete;     /* instance completion counter */
     int             _sendidx;      /* message counter in each execution */
-    
+
     struct scatter_header
     {
       NBTag               tag;
@@ -61,10 +65,10 @@ namespace TSPColl
       Scatter           * self;
     }
     _header;
-    
+
   protected:
     //    xmi_olddispatch_multicast_fn cb_incoming;
-    
+
     static  xmi_quad_t * cb_incoming(const xmi_quad_t  * hdr,
 					 unsigned          count,
 					 unsigned          peer,
@@ -99,7 +103,7 @@ namespace TSPColl
     void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
     virtual void kick (T_Mcast *mcast_iface);
   protected:
-    size_t * _lengths;  
+    size_t * _lengths;
   };
 };
 
@@ -118,7 +122,7 @@ namespace TSPColl
 /*                 Scatterv constructor                             */
 /* **************************************************************** */
 template<class T_Mcast>
-TSPColl::Scatter<T_Mcast>::Scatter (XMI_GEOMETRY_CLASS * comm, NBTag tag, 
+TSPColl::Scatter<T_Mcast>::Scatter (XMI_GEOMETRY_CLASS * comm, NBTag tag,
 			   int instID, int tagoff):
   NBColl<T_Mcast> (comm, tag, instID, NULL, NULL)
 {
@@ -161,22 +165,22 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
 {
   _mcast_iface = mcast_iface;
   TRACE((stderr, "SCATTER KICK START\n"));
-  if (!_isroot) return;  
+  if (!_isroot) return;
   _req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
-    if (i == this->_comm->rank()) 
+    if (i == this->_comm->rank())
       {
 	memcpy (_rbuf, _sbuf+i*_length, _length);
         cb_senddone (NULL, &_header, XMI_SUCCESS);
       }
     else
-      {	  
+      {
       unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = this->_comm->absrankof (i);
       XMI_Callback_t cb_done;
       cb_done.function        = cb_senddone;
       cb_done.clientdata      = &this->_header;
-      
+
       void * r = NULL;
       TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
 	     this->_sbuf, &this->_header,this->_header.tag, this->_header.id));
@@ -208,7 +212,7 @@ void TSPColl::Scatter<T_Mcast>::cb_senddone (void* ctxt, void *arg, xmi_result_t
   self->_sendidx = 0;
   self->_complete++;
   /* UNLOCK */
-  if (self->_cb_complete) 
+  if (self->_cb_complete)
       {
           free(self->_req);
 	  self->_cb_complete (NULL, self->_arg, XMI_SUCCESS);
@@ -250,11 +254,11 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
       {
         const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
         TRACE((stderr, "SCATTERV SEND ctr=%d cplt=%d (%d/%d) len=%d "
-               "s=%p 0x%02x 0x%02x 0x%02x\n", 
+               "s=%p 0x%02x 0x%02x 0x%02x\n",
                this->_counter, this->_complete, i, this->_comm->size(), this->_lengths[i],
                s, s[0], s[1], s[2]));
-      
-        if (i == this->_comm->rank()) 
+
+        if (i == this->_comm->rank())
             {
               memcpy (this->_rbuf, s, this->_lengths[i]);
               cb_senddone (NULL, &this->_header, XMI_SUCCESS);

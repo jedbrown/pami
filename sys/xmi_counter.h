@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file xmi_counter.h
+ * \file sys/xmi_counter.h
  * \brief ???
  */
 

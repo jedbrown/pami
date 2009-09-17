@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/mpi/mpidevice.h
+ * \brief ???
+ */
+
 #ifndef __components_devices_mpi_mpidevice_h__
 #define __components_devices_mpi_mpidevice_h__
 
@@ -22,8 +35,8 @@ namespace XMI
       xmi_olddispatch_multicast_fn  recv_func;
       void                         *async_arg;
     }mpi_mcast_dispatch_info_t;
-      
-    
+
+
     template <class T_SysDep>
     class MPIDevice : public Interface::BaseDevice<MPIDevice<T_SysDep>, T_SysDep>,
                       public Interface::MessageDevice<MPIDevice<T_SysDep> >
@@ -38,7 +51,7 @@ namespace XMI
         };
 
       // Implement BaseDevice Routines
-      
+
       inline ~MPIDevice () {};
 
 
@@ -59,7 +72,7 @@ namespace XMI
           _mcast_dispatch_lookup[_mcast_dispatch_id]=_mcast_dispatch_table[_mcast_dispatch_id];
           return _mcast_dispatch_id++;
         }
-      
+
       inline xmi_result_t init_impl (T_SysDep * sysdep)
         {
           assert(0);
@@ -156,22 +169,22 @@ namespace XMI
 				   sts.MPI_SOURCE,
 				   msg->_size,
 				   msg->_conn,
-				   mdi.async_arg, 
-				   &rcvlen, 
-				   &rcvbuf, 
-				   &pwidth, 
+				   mdi.async_arg,
+				   &rcvlen,
+				   &rcvbuf,
+				   &pwidth,
 				   &cb_done);
 		    if(rcvlen)
 		      memcpy (rcvbuf, msg->buffer(), rcvlen);
-		    
+
 		    if(pwidth == 0 && rcvlen == 0)
 		      if(cb_done.function)
 			cb_done.function (&msg->_context, cb_done.clientdata, XMI_SUCCESS);
-		    
+
 		    for(unsigned count = 0; count < rcvlen; count += pwidth)
 		      if(cb_done.function)
 			cb_done.function (&msg->_context, cb_done.clientdata, XMI_SUCCESS);
-		    
+
 		    free (msg);
 		  }
 		  break;
@@ -199,7 +212,7 @@ namespace XMI
 	  return NULL;
         }
 
-      // Implement Packet Device Routines 
+      // Implement Packet Device Routines
       inline int    readData_impl(void * dst, size_t bytes)
         {
           assert(0);
@@ -218,7 +231,7 @@ namespace XMI
         {
           return 224;
         }
-      
+
       inline size_t peers_impl ()
         {
           return _peers;
@@ -238,7 +251,7 @@ namespace XMI
         {
           _mcastsendQ.push_front(msg);
         }
-      
+
       size_t                              _peers;
       size_t                              _dispatch_id;
       size_t                              _mcast_dispatch_id;

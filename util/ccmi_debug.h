@@ -82,7 +82,7 @@ inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer
 #else // CCMI_DEBUG not defined
   #define TRACE_DATA(x)
   #ifndef TRACE_BUF
-    #define TRACE_BUF(x) 
+    #define TRACE_BUF(x)
   #endif
 #endif
 

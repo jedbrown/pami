@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/bcast_subcomm.c
+ * \brief ???
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -52,7 +65,7 @@ void _broadcast (xmi_context_t    context,
 {
   _g_broadcast_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)broadcast);  
+  result = XMI_Collective(context, (xmi_xfer_t*)broadcast);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to issue broadcast collective. result = %d\n", result);
@@ -72,21 +85,21 @@ int main(int argc, char*argv[])
   double        tf,ti,usec;
   char          buf[BUFSIZE];
   char          rbuf[BUFSIZE];
-  char          cl_string[] = "TEST";  
+  char          cl_string[] = "TEST";
   result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
         return 1;
       }
-  
+
   result = XMI_Context_create (client, NULL, 0, &context);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
         return 1;
       }
-  
+
 
   xmi_configuration_t configuration;
   configuration.name = XMI_TASK_ID;
@@ -131,13 +144,13 @@ int main(int argc, char*argv[])
   world_barrier.algorithm = world_algorithm[0];
   _barrier(context, &world_barrier);
 
-  
+
   xmi_geometry_t           bottom_geometry;
   xmi_geometry_range_t     bottom_range;
   xmi_algorithm_t          bottom_algorithm[1];
   xmi_barrier_t            bottom_barrier;
   xmi_broadcast_t          bottom_broadcast;
-  
+
   xmi_geometry_t           top_geometry;
   xmi_geometry_range_t     top_range;
   xmi_algorithm_t          top_algorithm[1];
@@ -224,12 +237,12 @@ int main(int argc, char*argv[])
         top_broadcast.type      = XMI_BYTE;
         top_broadcast.typecount = 0;
 
-         
+
         set[0]=0;
         set[1]=1;
       }
- 
-  
+
+
   xmi_barrier_t   *barriers   [] = {&bottom_barrier, &top_barrier};
   xmi_broadcast_t *broadcasts [] = {&bottom_broadcast, &top_broadcast};
   size_t           roots[]        = {0, half};
@@ -284,7 +297,7 @@ int main(int argc, char*argv[])
         fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
         return 1;
       }
-    
+
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)
       {

@@ -26,7 +26,7 @@ namespace CCMI
         return true;
       }
 
-      typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule, binomial_analyze, CCMI::CollectiveMapping> BinomialBarrier;      
+      typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule, binomial_analyze, CCMI::CollectiveMapping> BinomialBarrier;
 
       typedef OldBarrierFactoryT <BinomialBarrier, CCMI::CollectiveMapping>            BinomialBarrierFactory;
 

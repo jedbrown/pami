@@ -38,20 +38,20 @@ namespace CCMI
       /// \brief Binomial allreduce protocol
       ///
       /// Use the BinomialTreeSchedule
-      /// 
+      ///
       namespace Binomial
       {
-        typedef AsyncCompositeT 
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> AsyncComposite;      
+        typedef AsyncCompositeT
+        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> AsyncComposite;
 
-        typedef AsyncFactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::AsyncComposite,CCMI::CollectiveMapping> AsyncFactory;      
+        typedef AsyncFactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::AsyncComposite,CCMI::CollectiveMapping> AsyncFactory;
       };
       // Specializations for Binomial templates.
       ///
       /// \brief Binomial allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* Binomial::AsyncComposite::name="Binomial";
       template<> inline bool Binomial::AsyncComposite::analyze(Geometry *geometry){ return true;};
@@ -65,20 +65,20 @@ namespace CCMI
       /// \brief Binomial short allreduce protocol
       ///
       /// Use the BinomialTreeSchedule
-      /// 
+      ///
       namespace ShortBinomial
       {
-        typedef AsyncCompositeT 
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase,CCMI::CollectiveMapping> AsyncComposite;      
+        typedef AsyncCompositeT
+        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase,CCMI::CollectiveMapping> AsyncComposite;
 
-        typedef AsyncFactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::AsyncComposite,CCMI::CollectiveMapping> AsyncFactory;      
+        typedef AsyncFactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::AsyncComposite,CCMI::CollectiveMapping> AsyncFactory;
       };
       // Specializations for Binomial templates.
       ///
       /// \brief Binomial short allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* ShortBinomial::AsyncComposite::name="ShortBinomial";
       template<> inline bool ShortBinomial::AsyncComposite::analyze(Geometry *geometry){ return true;};

@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/Gather.h
+ * \brief ???
+ */
 
 #ifndef __tspcoll_gather_h__
 #define __tspcoll_gather_h__
@@ -42,11 +46,11 @@ namespace TSPColl
     size_t          _length;       /* msg length     */
     int             _root;         /* root thread ID */
     int             _incoming;     /* how many messages I got */
-    
-    int             _commID;       /* communicator   */  
+
+    int             _commID;       /* communicator   */
     unsigned        _counter;      /* instance counter */
     unsigned        _complete;     /* instance completion counter */
-    
+
     struct gather_header
     {
       __pgasrt_AMHeader_t hdr;
@@ -57,10 +61,10 @@ namespace TSPColl
       size_t              offset;   /* message offset in recv buffer */
     }
     _header __attribute__((__aligned__(16)));
-    
+
   protected:
     static void cb_senddone (void *arg);
-    static __pgasrt_local_addr_t 
+    static __pgasrt_local_addr_t
       cb_incoming (const struct __pgasrt_AMHeader_t *,
 		   void (**)(void *,void *), void **);
     static void cb_recvcomplete (void * unused, void * arg);
@@ -79,7 +83,7 @@ namespace TSPColl
   {
   public:
     void * operator new (size_t, void * addr)    { return addr; }
-    Gatherv (int comm, int tag, int id, int tagoff): 
+    Gatherv (int comm, int tag, int id, int tagoff):
     Gather(comm, tag, id, tagoff) { }
     void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
   };

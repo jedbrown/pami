@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/geometry/Geometry.h
+ * \brief ???
+ */
+
 #ifndef   __xmi_geometry__h__
 #define   __xmi_geometry__h__
 
@@ -96,16 +109,16 @@ namespace XMI
             inline COMPOSITE_TYPE             getAllreduceComposite();
             inline COMPOSITE_TYPE             getAllreduceComposite(unsigned i);
             inline void                       setAllreduceComposite(COMPOSITE_TYPE c);
-            inline void                       setAllreduceComposite(COMPOSITE_TYPE c, 
+            inline void                       setAllreduceComposite(COMPOSITE_TYPE c,
                                                                     unsigned i);
             inline EXECUTOR_TYPE              getCollectiveExecutor (unsigned color=0);
             inline void                       setCollectiveExecutor (EXECUTOR_TYPE exe,
                                                                      unsigned color=0);
             static inline CCMI_GEOMETRY       getCachedGeometry (unsigned comm);
-            static inline void                updateCachedGeometry (CCMI_GEOMETRY geometry, 
+            static inline void                updateCachedGeometry (CCMI_GEOMETRY geometry,
                                                                     unsigned comm);
 #endif
-            // These methods were originally from the PGASRT Communicator class            
+            // These methods were originally from the PGASRT Communicator class
             inline int                        size       (void);
             inline int                        rank       (void);
             inline int                        absrankof  (int rank);
@@ -216,7 +229,7 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->getNumColors_impl();
         }
-      
+
         template <class T_Geometry, class T_Mapping>
         inline unsigned Geometry<T_Geometry, T_Mapping>::getAllreduceIteration()
         {
@@ -319,7 +332,7 @@ namespace XMI
         }
 
         template <class T_Geometry, class T_Mapping>
-        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c, 
+        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c,
                                                                 unsigned i)
         {
             return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c, i);
@@ -337,7 +350,7 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->setCollectiveExecutor_impl(exe, color);
         }
-      
+
         template <class T_Geometry, class T_Mapping>
         static inline CCMI_GEOMETRY Geometry<T_Geometry, T_Mapping>::getCachedGeometry (unsigned comm)
         {
@@ -345,7 +358,7 @@ namespace XMI
         }
 
         template <class T_Geometry, class T_Mapping>
-        static inline void Geometry<T_Geometry, T_Mapping>::updateCachedGeometry (CCMI_GEOMETRY geometry, 
+        static inline void Geometry<T_Geometry, T_Mapping>::updateCachedGeometry (CCMI_GEOMETRY geometry,
                                                                        unsigned comm)
         {
             return static_cast<T_Geometry*>(this)->updateCachedGeometry_impl(geometry, comm);
@@ -385,7 +398,7 @@ namespace XMI
         }
 
 
- 
+
     }; // namespace Geometry
 }; // namespace XMI
 

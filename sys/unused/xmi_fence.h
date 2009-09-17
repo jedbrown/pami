@@ -1,5 +1,5 @@
 /**
- * \file xmi_fence.h
+ * \file sys/unused/xmi_fence.h
  * \brief XMI memory synchronization interface
  * \defgroup sync Memory synchronization and data fence interface
  * \{

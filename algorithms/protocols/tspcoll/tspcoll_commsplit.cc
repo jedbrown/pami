@@ -9,11 +9,15 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/tspcoll_commsplit.cc
+ * \brief ???
+ */
 
 #include "interface/Communicator.h"
 
-struct Split 
-{ 
+struct Split
+{
   Split (int c, int r, int g) { color=c; rank=r; absrank=g; }
   int color, rank, absrank;
 };
@@ -40,8 +44,8 @@ int TSPColl::Communicator::split (int color, int rank, int * proclist)
   /* -------------------------------------------------------------- */
 
   for (int i=0; i<this->size(); i++) proclist[i] = -1;
-  
-  int commsize = 0; 
+
+  int commsize = 0;
   for (int i=0; i<this->size(); i++)
     if (dstbuf[i].color == color)
       {
@@ -54,8 +58,8 @@ int TSPColl::Communicator::split (int color, int rank, int * proclist)
   /*             test new proc list for consistency                 */
   /* -------------------------------------------------------------- */
 
-  for (int i=0; i<commsize; i++) 
-    if (proclist[i] == -1) 
+  for (int i=0; i<commsize; i++)
+    if (proclist[i] == -1)
         CCMI_FATALERROR (-1, "SPLIT: Invalid new communicator");
 
   return commsize;

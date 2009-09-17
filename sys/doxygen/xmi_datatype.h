@@ -1,5 +1,5 @@
 /**
- * \file doxygen/xmi_datatype.h
+ * \file sys/doxygen/xmi_datatype.h
  * \brief Detailed doxygen documentation for xmi non-contiguous datatype interface
  */
 #ifndef __doxygen_xmi_datatype_h__

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocol/send/eager/EagerConnection.h
+/// \file p2p/protocols/send/eager/EagerConnection.h
 /// \brief Connection class for reliable, deterministic eager protocols
 ///
 #ifndef __xmi_p2p_protocol_send_eager_eagerconnection_h__

@@ -9,6 +9,9 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/tspcoll_scatter.cc
+ * \brief ???
+ */
 
 #include "./Scatter.h"
-

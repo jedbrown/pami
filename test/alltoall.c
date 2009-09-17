@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/alltoall.c
+ * \brief ???
+ */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,13 +28,13 @@
 #define MSGSIZE       4096
 
 
-#define BUFSIZE        (MSGSIZE * MAX_COMM_SIZE)      
+#define BUFSIZE        (MSGSIZE * MAX_COMM_SIZE)
 
 
 //#define INIT_BUFS(r)
 #define INIT_BUFS(r) init_bufs(r)
 
-//#define CHCK_BUFS 
+//#define CHCK_BUFS
 #define CHCK_BUFS    check_bufs()
 
 
@@ -38,10 +51,10 @@ unsigned rdispls[ MAX_COMM_SIZE ];
 
 void init_bufs(int r)
 {
-  for ( unsigned k = 0; k < sndlens[r]; k++ ) 
-    {                    
-      sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);              
-      rbuf[ rdispls[r] + k ] = 0xff; 
+  for ( unsigned k = 0; k < sndlens[r]; k++ )
+    {
+      sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+      rbuf[ rdispls[r] + k ] = 0xff;
     }
 }
 
@@ -50,17 +63,17 @@ void check_bufs()
 {
   unsigned myrank = XMI_Rank();
   for ( int r = 0; r < XMI_Size(); r++ )
-    for ( unsigned k = 0; k < rcvlens[r]; k++ ) 
-      {				
-	if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) ) 
-	  {		
+    for ( unsigned k = 0; k < rcvlens[r]; k++ )
+      {
+	if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
+	  {
 	    printf("%d: (E) rbuf[%d]:%02x instead of %02x (r:%d)\n",
 		   XMI_Rank(),
-		   rdispls[r] + k, 
-		   rbuf[ rdispls[r] + k ], 
-		   ((r + k) & 0xff), 
-		   r );	
-	    exit(1); 
+		   rdispls[r] + k,
+		   rbuf[ rdispls[r] + k ],
+		   ((r + k) & 0xff),
+		   r );
+	    exit(1);
 	  }
       }
 }
@@ -78,7 +91,7 @@ static double timer()
 }
 
 
-// ------ Barrier 
+// ------ Barrier
 
 void cb_barrier (void * clientdata);
 XMI_CollectiveProtocol_t _g_barrier;
@@ -221,7 +234,7 @@ int main(int argc, char*argv[])
 	  long long dataSent = i;
 
 	  int niter = (i < 1024 ? 100 : 10);
-	  
+
 	  for ( j = 0; j < size; j++ )
 	    {
 	      sndlens[j] = rcvlens[j] = i;
@@ -246,7 +259,7 @@ int main(int argc, char*argv[])
 	  usec = (tf - ti)/(double)niter;
 	  if (rank == 0)
 	      {
-		  
+
 		  printf("  %11lld %16lld %14.1f %12.2f\n",
 			 dataSent,
 			 0LL,
@@ -259,5 +272,3 @@ int main(int argc, char*argv[])
   XMI_Collectives_finalize();
   return 0;
 }
-
-

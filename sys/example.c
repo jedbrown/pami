@@ -1,3 +1,15 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file sys/example.c
+ * \brief ???
+ */
 
 typedef struct
 {
@@ -22,7 +34,7 @@ MPI_Init(......)
       XMI_Geometry_algorithm_applicable (context,
                                          geometry,
                                          XMI_XFER_BROADCAST,
-                                         i, 
+                                         i,
                                          &bcast_repo[i].mdata);
   }
   ....
@@ -39,9 +51,9 @@ xmi_result_t XMI_Geometry_algorithm_applicable (xmi_context_t context,
   // see if it is applicable to the geometry and context
   ...
   ...
-  
-  xmi_ca_list_t *geometry_attr = mdata->geometry_attr; 
-  xmi_ca_list_t *buffer_attr = mdata->buffer_attr; 
+
+  xmi_ca_list_t *geometry_attr = mdata->geometry_attr;
+  xmi_ca_list_t *buffer_attr = mdata->buffer_attr;
   xmi_ca_list_t *misc_attr = mdata->misc_attr;
 
   //fill in geometry/topology fields
@@ -49,14 +61,14 @@ xmi_result_t XMI_Geometry_algorithm_applicable (xmi_context_t context,
   xmi_ca_set(geometry_attr, XMI_GEOMETRY_TORUS);
   ...
   ...
-    
+
   //fill in buffer requirement for this algorithm
   // assume this algorithm works only on aligned data types
   xmi_ca_set(buffer_attr, XMI_ALIGNED_BUFF);
   ...
   ...
 
-    
+
   //fill in misc attributes
   // assume this algorithm works only in single thread modes
   xmi_ca_set(misc_attr, XMI_MODE_UNTHREADED);

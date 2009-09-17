@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/allreduce/tree/TreeReduceFunctions.cc
+ * \file algorithms/protocols/allreduce/TreeReduceFunctions.cc
  * \brief Support functions for the tree operations
  */
 

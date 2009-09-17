@@ -1,5 +1,5 @@
 /**
- * \file doxygen/xmi_rma.h
+ * \file sys/doxygen/xmi_rma.h
  * \brief Detailed doxygen documentation for xmi remote memory access interface
  */
 #ifndef __doxygen_xmi_rma_h__

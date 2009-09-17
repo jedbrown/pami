@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/protocols/allreduce/BaseComposite.h
- * \brief CCMI base composite adaptor for allreduce with factory and 
+ * \brief CCMI base composite adaptor for allreduce with factory and
  * restart support
  */
 
@@ -35,11 +35,11 @@ namespace CCMI
         ///
         CollectiveProtocolFactory               * _factory;
 
-      public: 
+      public:
 
         BaseComposite (CollectiveProtocolFactory *factory) : Composite (), _factory (factory)
         {
-        } 
+        }
 
         CollectiveProtocolFactory * getFactory ()
         {
@@ -58,7 +58,7 @@ namespace CCMI
                                      size_t                      count,
                                      XMI_Dt                     dtype,
                                      XMI_Op                     op,
-                                     size_t                      root = (size_t)-1) = 0;  
+                                     size_t                      root = (size_t)-1) = 0;
         virtual ~BaseComposite()
         {
         }

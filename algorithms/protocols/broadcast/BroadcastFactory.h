@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/./BroadcastFactory.h
+ * \file algorithms/protocols/broadcast/BroadcastFactory.h
  * \brief ???
  */
 
@@ -37,13 +37,13 @@ namespace CCMI
       }
       inline bool global_analyze   (XMI_GEOMETRY_CLASS *geometry)
       {
-        return(geometry->isGlobalContext()); 
-      }      
+        return(geometry->isGlobalContext());
+      }
 
       inline bool rectangle_analyze (XMI_GEOMETRY_CLASS *geometry)
       {
         return geometry->isRectangle();
-      }      
+      }
 
       ///
       /// \brief Base virtual factory class for synchronous broadcast factory
@@ -72,8 +72,8 @@ namespace CCMI
         ///
         /// \param[in]  request      Opaque memory to maintain
         ///                          internal message state.
-        /// \param[in] rsize         size of the request object. 
-        ///                          In async broadcast smaller buffer can be 
+        /// \param[in] rsize         size of the request object.
+        ///                          In async broadcast smaller buffer can be
         ///                          passed in as it doesent use multiple colors.
         /// \param[in]  cb_done      Callback to invoke when
         ///				 message is complete.
@@ -88,7 +88,7 @@ namespace CCMI
         ///
         /// \retval     0            Success
         /// \retval     1            Unavailable in geometry
-        ///	
+        ///
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
@@ -140,7 +140,7 @@ namespace CCMI
         ///
         /// \brief Callback for two-sided broadcasts
         ///
-        xmi_olddispatch_multicast_fn      _cb_head_buffered;  
+        xmi_olddispatch_multicast_fn      _cb_head_buffered;
 
         bool                      _isBuffered;
 
@@ -162,8 +162,8 @@ namespace CCMI
          xmi_olddispatch_multicast_fn          cb_head = NULL,
          xmi_olddispatch_multicast_fn          cb_head_buffered = NULL ) :
         _minterface (minterface), _connmgr(connmgr), _sd (sd),
-        _cb_async(NULL), _cb_geometry(NULL), _cb_head(cb_head), 
-        _cb_head_buffered (cb_head_buffered), _isBuffered (true)    
+        _cb_async(NULL), _cb_geometry(NULL), _cb_head(cb_head),
+        _cb_head_buffered (cb_head_buffered), _isBuffered (true)
         {
         };
 

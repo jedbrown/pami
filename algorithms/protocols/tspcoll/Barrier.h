@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/Barrier.h
+ * \brief ???
+ */
 
 #ifndef __tspcoll_barrier_h__
 #define __tspcoll_barrier_h__
@@ -50,13 +54,13 @@ inline TSPColl::Barrier<T_Mcast>::
 Barrier (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
-  TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n", 
+  TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n",
 	 PGASRT_MYNODE, _comm->rank(), _comm->size()));
-  
+
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   this->_sendcomplete = this->_numphases;
   this->_phase        = this->_numphases;
-  
+
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */

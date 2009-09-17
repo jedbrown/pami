@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/barrier/BarrierT.h
+ * \file algorithms/protocols/barrier/BarrierR.h
  * \brief ???
  */
 
@@ -90,7 +90,7 @@ namespace CCMI
         bool Analyze(Geometry *geometry)
         {
           return T::analyze (geometry);
-        } 
+        }
 
         ///
         /// \brief Generate a non-blocking barrier message.
@@ -103,7 +103,7 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         Geometry                  * geometry)  
+         Geometry                  * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
           return new (request) T (this->_mapping, this->_msyncInterface, geometry);
@@ -176,7 +176,7 @@ namespace CCMI
         bool Analyze(Geometry *geometry)
         {
           return T::analyze (geometry);
-        } 
+        }
 
         ///
         /// \brief Generate a non-blocking barrier message.
@@ -189,7 +189,7 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         Geometry                  * geometry)  
+         Geometry                  * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);

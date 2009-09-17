@@ -1,5 +1,5 @@
 ///
-/// \file tests/barrier.c
+/// \file test/barrier.c
 /// \brief Simple Barrier test
 ///
 
@@ -26,7 +26,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);  
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
@@ -44,14 +44,14 @@ int main (int argc, char ** argv)
   xmi_client_t  client;
   xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
-  char          cl_string[] = "TEST";  
+  char          cl_string[] = "TEST";
   result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
       return 1;
     }
-  
+
   result = XMI_Context_create (client, NULL, 0, &context);
   if (result != XMI_SUCCESS)
     {
@@ -69,7 +69,7 @@ int main (int argc, char ** argv)
       return 1;
     }
   size_t task_id = configuration.value.intval;
-  
+
 
   xmi_geometry_t  world_geometry;
 
@@ -92,8 +92,8 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);
       return 1;
     }
-  
-  
+
+
   xmi_barrier_t barrier;
   barrier.xfer_type = XMI_XFER_BARRIER;
   barrier.cb_done   = cb_barrier;
@@ -106,17 +106,17 @@ int main (int argc, char ** argv)
   _barrier(context, &barrier);
   if(!task_id)
     fprintf(stderr, "Test Barrier 2, then correctness\n");
-  _barrier(context, &barrier);  
+  _barrier(context, &barrier);
   _barrier(context, &barrier);
 
   double ti, tf, usec;
   if(!task_id)
     {
       ti=timer();
-      _barrier(context, &barrier);  
+      _barrier(context, &barrier);
       tf=timer();
       usec = tf - ti;
-      
+
       if(usec < 1800000.0 || usec > 2200000.0)
 	fprintf(stderr, "Barrier error: usec=%f want between %f and %f!\n", usec, 1800000.0, 2200000.0);
       else
@@ -125,34 +125,34 @@ int main (int argc, char ** argv)
   else
     {
       sleep(2);
-      _barrier(context, &barrier);  
+      _barrier(context, &barrier);
     }
 
 
   if(!task_id)
     fprintf(stderr, "Test Barrier Performance\n");
   int niter=10000;
-  _barrier(context, &barrier);  
+  _barrier(context, &barrier);
 
 
   ti=timer();
   for(int i=0; i<niter; i++)
-    _barrier(context, &barrier);  
+    _barrier(context, &barrier);
 
   tf=timer();
   usec = tf - ti;
-  
+
   if(!task_id)
     fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
 
-    
+
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
       return 1;
     }
-    
+
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)
     {
@@ -162,7 +162,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

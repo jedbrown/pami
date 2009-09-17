@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file tests/generic/ringallreduce2.cc
+ * \file algorithms/tests/generic/ringallreduce2.cc
  * \brief allreduce for different counts
  */
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
   allocate_buffers();
 
   // Simple functional run:
-  // 
+  //
   // Try different counts: 1, 2, 4, 8 ... count
   for(unsigned i = 1; i <= count; i*=2)
   {

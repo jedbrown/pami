@@ -124,7 +124,7 @@ namespace CCMI
                                   dstbuf,
                                   count,
                                   dtype,
-                                  op, 
+                                  op,
                                   root );
 
               if(status == XMI_SUCCESS)

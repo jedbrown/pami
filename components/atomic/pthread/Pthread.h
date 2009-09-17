@@ -109,5 +109,3 @@ namespace XMI
 
 
 #endif // __xmi_atomic_pthread_pthread_h__
-
-

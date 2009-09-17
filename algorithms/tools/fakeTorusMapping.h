@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file tools/fakeTorusMapping.h
+ * \file algorithms/tools/fakeTorusMapping.h
  * \brief ???
  */
 
@@ -183,7 +183,7 @@ namespace CCMI
     {
       return &(_coords[0]);
     }
-    
+
     unsigned* DimsLengths()
     {
       return &(_sizes[0]);

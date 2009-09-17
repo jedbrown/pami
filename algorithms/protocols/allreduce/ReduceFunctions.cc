@@ -25,21 +25,21 @@ namespace CCMI
     namespace Allreduce
     {
       ///
-      ///  \brief Stub in a function for double complex that 
+      ///  \brief Stub in a function for double complex that
       /// will just call double float sum with count*2.
-      /// 
-      inline void double_complex_sum(double *dst, const double **srcs, 
-                                     int nsrc, int count) 
+      ///
+      inline void double_complex_sum(double *dst, const double **srcs,
+                                     int nsrc, int count)
       {
         Core_fp64_sum(dst, srcs, nsrc, count*2);
       }
 
       ///
-      ///  \brief Stub in a function for single complex that 
+      ///  \brief Stub in a function for single complex that
       /// will just call float sum with count*2.
-      /// 
-      inline void single_complex_sum (float *dst, const float **srcs, 
-                                      int nsrc, int count) 
+      ///
+      inline void single_complex_sum (float *dst, const float **srcs,
+                                      int nsrc, int count)
       {
         Core_fp32_sum(dst, srcs, nsrc, count*2);
       }

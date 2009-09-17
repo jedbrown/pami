@@ -1,5 +1,5 @@
 /**
- * \file xmi_topology.h
+ * \file sys/xmi_topology.h
  * \brief Topology interface.
  */
 #ifndef __xmi_topology_h__

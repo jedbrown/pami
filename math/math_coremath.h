@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file include/math_coremath.h
+ * \file math/math_coremath.h
  * \brief Prototypes for all the msglayer math functions
  *
  * This file is the user interface to the core math routines.

@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/allreduce.c
+ * \brief ???
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -7,7 +20,7 @@
 #include "sys/xmi.h"
 
 
-#define FULL_TEST  
+#define FULL_TEST
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
@@ -191,7 +204,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);  
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
@@ -206,7 +219,7 @@ void _allreduce (xmi_context_t context, xmi_allreduce_t *allreduce)
 {
   _g_allreduce_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)allreduce);  
+  result = XMI_Collective(context, (xmi_xfer_t*)allreduce);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue allreduce collective. result = %d\n", result);
@@ -243,14 +256,14 @@ int main(int argc, char*argv[])
   xmi_client_t  client;
   xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
-  char          cl_string[] = "TEST";    
+  char          cl_string[] = "TEST";
   result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
         return 1;
       }
-  
+
   result = XMI_Context_create (client, NULL, 0, &context);
   if (result != XMI_SUCCESS)
       {
@@ -271,7 +284,7 @@ int main(int argc, char*argv[])
   int i,j,root   = 0;
 
   xmi_geometry_t  world_geometry;
-  
+
   result = XMI_Geometry_world (context, &world_geometry);
   if (result != XMI_SUCCESS)
       {
@@ -305,7 +318,7 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  
+
   bool** validTable=
   alloc2DContig(op_count,dt_count);
 #ifdef FULL_TEST
@@ -375,7 +388,7 @@ int main(int argc, char*argv[])
   allreduce.rcvbuf    = rbuf;
   allreduce.rtype     = XMI_BYTE;
   allreduce.rtypecount= 0;
-  
+
   for(dt=0; dt<dt_count; dt++)
       for(op=0; op<op_count; op++)
 	  {
@@ -391,7 +404,7 @@ int main(int argc, char*argv[])
 				  niter = NITERLAT;
 			      else
 				  niter = NITERBW;
-                              
+
                               _barrier(context, &barrier);
 			      ti = timer();
 			      for (j=0; j<niter; j++)
@@ -426,7 +439,7 @@ int main(int argc, char*argv[])
         fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
         return 1;
       }
-    
+
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)
       {

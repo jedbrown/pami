@@ -264,7 +264,7 @@ _masterRank(CCMI_UNDEFINED_RANK)
   unsigned i, t_min;
   unsigned coords[CCMI_TORUS_NDIMS];
   unsigned* my_coords;
-  
+
   CCMI_assert (map != NULL);
   _mapping  =  map;
 

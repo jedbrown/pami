@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/mapping/mpi/mpimapping.h
+ * \brief ???
+ */
+
 #ifndef __components_mapping_mpi_mpimapping_h__
 #define __components_mapping_mpi_mpimapping_h__
 
@@ -41,4 +54,3 @@ namespace XMI
   };
 };
 #endif // __components_mapping_mpi_mpimapping_h__
-

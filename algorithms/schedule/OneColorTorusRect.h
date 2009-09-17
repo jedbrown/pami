@@ -27,21 +27,21 @@
 ///
 /// \brief This schedule implements the following broadcast algorithm
 /// on 1-3 dimensional meshes and tori. The following is the schematic
-/// of an X color broadcast on a 2D mesh in SMP mode. 
+/// of an X color broadcast on a 2D mesh in SMP mode.
 ///
 ///    1Y  2G  1Y  1Y
 ///    1Y  2G  1Y  1Y
 ///    0X   R  0X  0X
 ///    1Y  2G  1Y  1Y
-///  
+///
 ///  R : Root
 ///  0X : Processor receives data in phase 0 from dimension X
 ///  1Y : Processor receives data in phase 1 from dimension Y
-///  2G : As the root needs to use the Y links for another color, we have ghost nodes that 
-///       dont get data in the first two phases of a 2D mesh broadcast. Their neigbors 
+///  2G : As the root needs to use the Y links for another color, we have ghost nodes that
+///       dont get data in the first two phases of a 2D mesh broadcast. Their neigbors
 ///       have to send them data in phase 2
 ///
-///     In modes where there are more than one core per node the peer of the root 
+///     In modes where there are more than one core per node the peer of the root
 ///     locally broadcasts data to all the cores.
 ///
 
@@ -52,7 +52,7 @@ namespace CCMI
 
 
     ///Utility Macros
-    
+
 #define MY_X    _mapping->GetCoord(CCMI_X_DIM)
 #define MY_Y    _mapping->GetCoord(CCMI_Y_DIM)
 #define MY_Z    _mapping->GetCoord(CCMI_Z_DIM)
@@ -64,24 +64,24 @@ namespace CCMI
 #define ROOT_Z  _root_coords[CCMI_Z_DIM]
 #define ROOT_T  _root_coords[CCMI_T_DIM]
 
-    static const unsigned _hints[6] = {CCMI_LINE_BCAST_XP, 
-				       CCMI_LINE_BCAST_YP, 
-				       CCMI_LINE_BCAST_ZP, 
-				       CCMI_LINE_BCAST_XM, 
-				       CCMI_LINE_BCAST_YM, 
-				       CCMI_LINE_BCAST_ZM}; 
+    static const unsigned _hints[6] = {CCMI_LINE_BCAST_XP,
+				       CCMI_LINE_BCAST_YP,
+				       CCMI_LINE_BCAST_ZP,
+				       CCMI_LINE_BCAST_XM,
+				       CCMI_LINE_BCAST_YM,
+				       CCMI_LINE_BCAST_ZM};
 
     //Allocate a 10-way table to convert colors to dimensions
     static const unsigned _color_to_axis[16] = { (unsigned) -1,
-						 0, 1, 2, 
 						 0, 1, 2,
-						 0, 1, 2, 
+						 0, 1, 2,
+						 0, 1, 2,
                                                  0, 1, 2,
                                                  0, 1, 2};
 
     class OneColorTorusRect : public Schedule
     {
-    protected:        
+    protected:
 
       ///
       /// \brief Find the startphase based coordinates of the root
@@ -98,7 +98,7 @@ namespace CCMI
        * \param[out] ndst	Number of destination nodes (and subtasks)
        * \return	nothing (else).
        */
-      void  setupBroadcast (unsigned phase,  unsigned *dstranks, 
+      void  setupBroadcast (unsigned phase,  unsigned *dstranks,
                             unsigned *subtasks, unsigned &ndst);
 
       /**
@@ -108,7 +108,7 @@ namespace CCMI
        * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
        * \param[out] ndst	Number of destination nodes (and subtasks)
        * \return	nothing (else).
-       */ 
+       */
       void setupGhost (unsigned *dstranks, unsigned *subtasks, unsigned &ndst);
 
 
@@ -123,7 +123,7 @@ namespace CCMI
       void setupT (unsigned *dstranks, unsigned *subtasks, unsigned &ndst);
 
     public:
-      
+
       ///
       /// \brief The class constructor
       ///
@@ -133,7 +133,7 @@ namespace CCMI
       /// \brief The class constructor
       ///
       OneColorTorusRect (TorusCollectiveMapping *map, unsigned color, const Rectangle &rect):
-      _rect(&rect) 
+      _rect(&rect)
       {
 
         TRACE_ERR((stderr, "In One Color Torus Rect Bcast Constructor\n"));
@@ -192,8 +192,8 @@ namespace CCMI
        * \param op : the collective operation
        * \param startphase : the phase where I become active
        * \param nphases : number of phases
-       * \param maxranks : total number of processors to communicate 
-       *  with. Mainly needed in the executor to allocate queues 
+       * \param maxranks : total number of processors to communicate
+       *  with. Mainly needed in the executor to allocate queues
        *  and other resources
        */
       virtual void init(int root, int op, int &start, int &nphases,
@@ -212,7 +212,7 @@ namespace CCMI
       void      setColor (unsigned c)
       {
         _color  = c;
-      }     
+      }
 
       /**
        * \brief Get colors that make sense for this rectangle.
@@ -229,7 +229,7 @@ namespace CCMI
         const unsigned  *sizes     = &rect.xs;
         const unsigned  *is_torus  = &rect.isTorusX;
 
-        ideal = 0;    
+        ideal = 0;
         for(x = 0; x < CCMI_TORUS_NDIMS -1; x++)
           if(sizes[x] > 1)
             colors[ideal ++] = (Color)_MK_COLOR(x,P_DIR);
@@ -256,10 +256,10 @@ namespace CCMI
       unsigned          _root_coords[CCMI_TORUS_NDIMS];
       const Rectangle * _rect;
       unsigned          _startphase;
-      TorusCollectiveMapping    * _mapping; 
+      TorusCollectiveMapping    * _mapping;
 
       unsigned        * _my_coord;
-    };  //-- OneColorTorusRect    
+    };  //-- OneColorTorusRect
   };  //-- Schedule
 }; //-- CCMI
 
@@ -291,13 +291,13 @@ inline void CCMI::Schedule::OneColorTorusRect::initStartPhase (unsigned root)
 
   const unsigned *r_coord  = _root_coords;
 
-  if(_my_coord[axis1] == r_coord[axis1] && 
+  if(_my_coord[axis1] == r_coord[axis1] &&
      _my_coord[axis2] == r_coord[axis2]) //line
     _startphase = 0;
   else if(_my_coord[axis2] == r_coord[axis2] &&
           _my_coord[axis0] != r_coord[axis0]) //plane - ghost
     _startphase = 1;
-  else //neighbor of ghost 
+  else //neighbor of ghost
     _startphase = 2;
 }
 
@@ -308,13 +308,13 @@ inline void CCMI::Schedule::OneColorTorusRect::initStartPhase (unsigned root)
  * \param op : the collective operation
  * \param startphase : the phase where I become active
  * \param nphases : number of phases
- * \param maxranks : total number of processors to communicate 
- *  with. Mainly needed in the executor to allocate queues 
+ * \param maxranks : total number of processors to communicate
+ *  with. Mainly needed in the executor to allocate queues
  *  and other resources
  */
-inline void CCMI::Schedule::OneColorTorusRect::init(int    root, 
-                                                    int    op, 
-                                                    int   &start, 
+inline void CCMI::Schedule::OneColorTorusRect::init(int    root,
+                                                    int    op,
+                                                    int   &start,
                                                     int   &nphases,
                                                     int   &nmessages)
 {
@@ -322,15 +322,15 @@ inline void CCMI::Schedule::OneColorTorusRect::init(int    root,
 
   _root = root;
 
-  initStartPhase(root);  
-  start = _startphase; 
+  initStartPhase(root);
+  start = _startphase;
   nphases = (CCMI_TORUS_NDIMS+1) - start;
 
   //every phase has one message on a torus and 2 on a line
-  nmessages = _rect->ts + 1;  
+  nmessages = _rect->ts + 1;
 
-  TRACE_ERR ((stderr, "%d: Calling Init with color %d, root %d startphase %d\n", 
-              MY_RANK, _color, root, _startphase));    
+  TRACE_ERR ((stderr, "%d: Calling Init with color %d, root %d startphase %d\n",
+              MY_RANK, _color, root, _startphase));
 
 }
 
@@ -343,9 +343,9 @@ inline void CCMI::Schedule::OneColorTorusRect::init(int    root,
  * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
  * \return	nothing (else).
  */
-inline void CCMI::Schedule::OneColorTorusRect::getDstPeList(unsigned    phase, 
+inline void CCMI::Schedule::OneColorTorusRect::getDstPeList(unsigned    phase,
                                                             unsigned  * dstranks,
-                                                            unsigned  & ndst, 
+                                                            unsigned  & ndst,
                                                             unsigned  * subtasks)
 {
   CCMI_assert (phase >= _startphase);
@@ -384,9 +384,9 @@ inline void CCMI::Schedule::OneColorTorusRect::getDstPeList(unsigned    phase,
  * \param[out] ndst	Number of destination nodes (and subtasks)
  * \return	nothing (else).
  */
-inline void CCMI::Schedule::OneColorTorusRect::setupBroadcast (unsigned     phase,  
-                                                               unsigned   * dstranks, 
-                                                               unsigned   * subtasks, 
+inline void CCMI::Schedule::OneColorTorusRect::setupBroadcast (unsigned     phase,
+                                                               unsigned   * dstranks,
+                                                               unsigned   * subtasks,
                                                                unsigned   & ndst)
 {
   ///Find the axis to do the line broadcast on
@@ -448,10 +448,10 @@ inline void CCMI::Schedule::OneColorTorusRect::setupBroadcast (unsigned     phas
     }
   }
 
-#ifdef RECTBCAST_DEBUG 
+#ifdef RECTBCAST_DEBUG
   if(ndst > 0)
   {
-    fprintf (stderr, "%d: setupBroadcast phase = %d, color = %d, dstranks[0] = %d, subtasks[0] = %d\n", 
+    fprintf (stderr, "%d: setupBroadcast phase = %d, color = %d, dstranks[0] = %d, subtasks[0] = %d\n",
              MY_RANK, phase, _color, dstranks[0], subtasks[0]);
   }
 #endif
@@ -464,14 +464,14 @@ inline void CCMI::Schedule::OneColorTorusRect::setupBroadcast (unsigned     phas
  * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
  * \param[out] ndst	Number of destination nodes (and subtasks)
  * \return	nothing (else).
- */ 
-inline void CCMI::Schedule::OneColorTorusRect::setupGhost (unsigned  * dstranks, 
-                                                           unsigned  * subtasks, 
+ */
+inline void CCMI::Schedule::OneColorTorusRect::setupGhost (unsigned  * dstranks,
+                                                           unsigned  * subtasks,
                                                            unsigned  & ndst)
 {
   unsigned axis = (_color - 1) % ( CCMI_TORUS_NDIMS - 1 );
 
-  const unsigned *sizes    = &_rect->xs;  
+  const unsigned *sizes    = &_rect->xs;
   CCMI_assert (sizes [axis] > 1);
 
   int dir = 1;
@@ -501,7 +501,7 @@ inline void CCMI::Schedule::OneColorTorusRect::setupGhost (unsigned  * dstranks,
   else
   {
     dir = 1;
-    dst_coord[axis] = r_coord[axis] + 1;    
+    dst_coord[axis] = r_coord[axis] + 1;
     if(dst_coord[axis] >= (int)(sizes[axis] + s_coord[axis]))
     {
       dst_coord[axis] = r_coord[axis] - 1;    //sizes > 1, so either dir or -dir should exist
@@ -516,7 +516,7 @@ inline void CCMI::Schedule::OneColorTorusRect::setupGhost (unsigned  * dstranks,
   //just before them have to send data to them
   if((int)_my_coord[axis] == dst_coord[axis])
   {
-    unsigned dstrank = -1;    
+    unsigned dstrank = -1;
     dst_coord[axis]  = r_coord[axis];
     (void)_mapping->Torus2Rank((unsigned*)dst_coord, &dstrank);
     if(dstrank != _root)
@@ -527,10 +527,10 @@ inline void CCMI::Schedule::OneColorTorusRect::setupGhost (unsigned  * dstranks,
     }
   }
 
-#ifdef RECTBCAST_DEBUG 
+#ifdef RECTBCAST_DEBUG
   if(ndst > 0)
   {
-    fprintf (stderr, "%d: setupGhost color = %d, dstranks[0] = %d, subtasks[0] = %d\n", 
+    fprintf (stderr, "%d: setupGhost color = %d, dstranks[0] = %d, subtasks[0] = %d\n",
              MY_RANK, _color, dstranks[0], subtasks[0]);
   }
 #endif
@@ -545,11 +545,11 @@ inline void CCMI::Schedule::OneColorTorusRect::setupGhost (unsigned  * dstranks,
  * \param[out] ndst	Number of destination nodes (and subtasks)
  * \return	nothing (else).
  */
-inline void CCMI::Schedule::OneColorTorusRect::setupT (unsigned   * dstranks, 
-                                                       unsigned   * subtasks, 
+inline void CCMI::Schedule::OneColorTorusRect::setupT (unsigned   * dstranks,
+                                                       unsigned   * subtasks,
                                                        unsigned   & ndst)
 {
-  unsigned count = 0;  
+  unsigned count = 0;
   if(_rect->ts > 1 && MY_T == ROOT_T)
   {
     unsigned* coords_ptr = _mapping->Coords();
@@ -557,7 +557,7 @@ inline void CCMI::Schedule::OneColorTorusRect::setupT (unsigned   * dstranks,
 
     for (count = 0; count < CCMI_TORUS_NDIMS; count++)
       tmp_coords[count] = coords_ptr[count];
-    
+
     for(count = _rect->t0; count < (_rect->t0+_rect->ts); count++)
       if(MY_T != count)
       {
@@ -567,10 +567,10 @@ inline void CCMI::Schedule::OneColorTorusRect::setupT (unsigned   * dstranks,
         ndst ++;
       }
 
-#ifdef RECTBCAST_DEBUG 
+#ifdef RECTBCAST_DEBUG
     if(ndst > 0)
     {
-      fprintf (stderr, "%d: setupT color = %d, dstranks[0] = %d, subtasks[0] = %d\n", 
+      fprintf (stderr, "%d: setupT color = %d, dstranks[0] = %d, subtasks[0] = %d\n",
                MY_RANK, _color, dstranks[0], subtasks[0]);
     }
 #endif

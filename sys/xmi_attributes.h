@@ -1,6 +1,6 @@
 /*  (C)Copyright IBM Corp.  2007 - 2009  */
 /**
- * \file include/xmi_attributes.h
+ * \file sys/xmi_attributes.h
  * \brief ???
  */
 

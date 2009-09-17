@@ -1,5 +1,5 @@
 /**
- * \file xmi_lock.h
+ * \file sys/unused/xmi_lock.h
  * \brief xmi application lock interface
  * \defgroup lock Application context locks
  * \{

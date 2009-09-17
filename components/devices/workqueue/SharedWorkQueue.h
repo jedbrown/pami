@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/workqueue/SharedWorkQueue.h
+ * \file components/devices/workqueue/SharedWorkQueue.h
  * \brief ???
  */
 
@@ -42,8 +42,8 @@
 //#define QSIZE (WORKSIZE*4)
 
 #if defined(__bgq__)
-#define LQU(x, y, z) 
-#define SQU(x, y, z)  
+#define LQU(x, y, z)
+#define SQU(x, y, z)
 #endif
 
 namespace DCMF
@@ -210,7 +210,7 @@ namespace DCMF
 #warning need some sort of optimized bgq memcopy someday
 		isaligned = isaligned;
 		ismultiple256 = ismultiple256;
-#endif 
+#endif
             {
               memcpy (dst, src, n);
             }

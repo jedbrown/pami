@@ -1,5 +1,5 @@
 ///
-/// \file xmi/mpi/mpicontext.h
+/// \file components/context/mpi/mpicontext.h
 /// \brief XMI MPI specific context implementation.
 ///
 #ifndef   __xmi_mpi_mpicontext_h__
@@ -43,12 +43,12 @@ namespace XMI
         _client (client)
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
-          MPI_Comm_size(MPI_COMM_WORLD,&_mysize); 
+          MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
           _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
 	  _world_range.lo=0;
 	  _world_range.hi=_mysize-1;
           new(_world_geometry) MPIGeometry(&_sysdep.mapping,1,&_world_range);
-	  
+
 	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
 	  new(_collreg) MPICollreg(&_mpi, &_sysdep);
 
@@ -56,7 +56,7 @@ namespace XMI
 	  _world_geometry->setKey(XMI::Geometry::COLLFACTORY, _world_collfactory);
 
         }
-        
+
       inline xmi_client_t getClientId_impl ()
         {
           return _client;
@@ -89,8 +89,8 @@ namespace XMI
               };
 
           return result;
-        }      
-      
+        }
+
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
         {
           assert(0);
@@ -195,7 +195,7 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
       inline xmi_result_t memregion_deregister_impl (xmi_memregion_t * memregion)
         {
           assert(0);
@@ -211,7 +211,7 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
 
       inline xmi_result_t memregion_register_impl (xmi_rmw_t * parameters)
         {
@@ -266,14 +266,14 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
       inline xmi_result_t fence_all_impl (xmi_event_function   done_fn,
                                           void               * cookie)
         {
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
       inline  xmi_result_t fence_task_impl (xmi_event_function   done_fn,
                                             void               * cookie,
                                             size_t               task)
@@ -281,7 +281,7 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
       inline xmi_result_t geometry_initialize_impl (xmi_geometry_t       * geometry,
                                                     unsigned               id,
                                                     xmi_geometry_range_t * rank_slices,
@@ -296,7 +296,7 @@ namespace XMI
 	  *geometry=(MPIGeometry*) new_geometry;
           return XMI_SUCCESS;
         }
-            
+
 
       inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
         {
@@ -314,7 +314,7 @@ namespace XMI
 	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
 	  return collfactory->algorithm(colltype,algorithm,num);
         }
-        
+
       inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
         {
           assert(0);
@@ -325,13 +325,13 @@ namespace XMI
       inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
         {
 	  MPICollfactory           *collfactory;
-	  // This is ok...we can avoid a switch because all the xmi structs 
+	  // This is ok...we can avoid a switch because all the xmi structs
 	  // have the same layout.let's just use barrier for now
 	  MPIGeometry              *new_geometry = (MPIGeometry*)parameters->xfer_barrier.geometry;
 	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
           return collfactory->collective(parameters);
         }
-        
+
       inline xmi_result_t multisend_getroles_impl(xmi_dispatch_t  dispatch,
                                                   int            *numRoles,
                                                   int            *replRole)
@@ -339,19 +339,19 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
       inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
         {
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
       inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
         {
           assert(0);
           return XMI_UNIMPL;
         }
-        
+
       inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
         {
           assert(0);
@@ -392,7 +392,7 @@ namespace XMI
       int                       _myrank;
       int                       _mysize;
       unsigned                 *_ranklist;
-      
+
     }; // end XMI::Context::MPI
   }; // end namespace Context
 }; // end namespace XMI

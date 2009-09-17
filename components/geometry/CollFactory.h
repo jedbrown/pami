@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/geometry/CollFactory.h
+ * \brief ???
+ */
+
 #ifndef   __xmi_collfactory__h__
 #define   __xmi_collfactory__h__
 
@@ -68,7 +81,7 @@ namespace XMI
     {
       return static_cast<T_Collfactory*>(this)->ibroadcast_impl(broadcast);
     }
-    
+
     template <class T_Collfactory>
     inline xmi_result_t
     CollFactory<T_Collfactory>::iallreduce(xmi_allreduce_t *allreduce)
@@ -103,7 +116,7 @@ namespace XMI
     {
       return static_cast<T_Collfactory*>(this)->iallgatherv_int_impl(allgatherv_int);
     }
-    
+
     template <class T_Collfactory>
     inline xmi_result_t
     CollFactory<T_Collfactory>::iscatter(xmi_scatter_t *scatter)

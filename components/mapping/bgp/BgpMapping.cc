@@ -1,3 +1,15 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/mapping/bgp/BgpMapping.cc
+ * \brief ???
+ */
 
 #if 0
 #include "BgpMapping.h"
@@ -79,7 +91,7 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
     {
       // If this t is the first one we found, and it is us, then we are the
       // master.
-      if ( (num_t == 0) && (tt == tCoord) ) 
+      if ( (num_t == 0) && (tt == tCoord) )
       {
         meMaster = true;
         cacheAnchorsPtr->done[tt] = 1; // Indicate this t is done so we
@@ -179,24 +191,24 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
           y = mapCacheElement.y;
           z = mapCacheElement.z;
           t = mapCacheElement.t;
-          
+
           // Increment the rank count on this node.
           rarray[x][y][z]++;
-          
+
           // Increment the number of global ranks.
           cacheAnchorsPtr->numActiveRanksGlobal++;
-          
+
           // If the rank count on this node is '1', this is the first
           // rank encountered on this node. Increment the number of active nodes.
           if (rarray[x][y][z] == 1) cacheAnchorsPtr->numActiveNodesGlobal++;
-          
+
           size_t estimated_rank =
             t * (xSize() * ySize() * zSize()) +
             z * (xSize() * ySize()) +
             y * (xSize()) + x;
-            
+
           _rankcache[estimated_rank] = i;
-           
+
           // because of "for (i..." this will give us MAX after loop.
           max_rank = i;
           if (min_rank == (size_t)-1) min_rank = i;
@@ -213,7 +225,7 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
 #endif
         }
       }
-      
+
       cacheAnchorsPtr->maxRank = max_rank;
       cacheAnchorsPtr->minRank = min_rank;
 #if 0
@@ -256,13 +268,13 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
        cacheAnchorsPtr->numActiveRanksLocal=rarray[x()][y()][z()];
     }
 
-    // Now that the map and rank caches have been initialized, 
+    // Now that the map and rank caches have been initialized,
     // store their pointers into the shared memory cache pointer area so the
     // other nodes see these pointers.
     cacheAnchorsPtr->mapCachePtr  = _mapcache;
     cacheAnchorsPtr->rankCachePtr = _rankcache;
 
-    // Copy the rank counts into the mapping object.    
+    // Copy the rank counts into the mapping object.
     _numActiveRanksLocal  = cacheAnchorsPtr->numActiveRanksLocal;
     _numActiveRanksGlobal = cacheAnchorsPtr->numActiveRanksGlobal;
     _numActiveNodesGlobal = cacheAnchorsPtr->numActiveNodesGlobal;
@@ -278,7 +290,7 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
 	_bgp_msync();
       }
     }
-    
+
     // Now that all nodes have seen the cache pointers, zero out the cache
     // anchor structure for others who expect this area to be zero.
     memset ((void*)cacheAnchorsPtr, 0x00, sizeof(cacheAnchors_t));
@@ -300,26 +312,26 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
     while ( cacheAnchorsPtr->rankCachePtr == NULL )
     {
       _bgp_msync();
-    } 
+    }
     _rankcache = (unsigned*)(cacheAnchorsPtr->rankCachePtr);
-    
+
     _numActiveRanksLocal  = cacheAnchorsPtr->numActiveRanksLocal;
     _numActiveRanksGlobal = cacheAnchorsPtr->numActiveRanksGlobal;
     _numActiveNodesGlobal = cacheAnchorsPtr->numActiveNodesGlobal;
     max_rank = cacheAnchorsPtr->maxRank;
     min_rank = cacheAnchorsPtr->minRank;
-    
+
 #if 0
     // why can't these just be assigned???
     memcpy(&ll, (void *)&cacheAnchorsPtr->activeLLCorner, sizeof(ll));
     memcpy(&ur, (void *)&cacheAnchorsPtr->activeURCorner, sizeof(ur));
 #endif
     _bgp_mbar();
-   
+
     cacheAnchorsPtr->done[tCoord] = 1;  // Indicate we have seen the info.
   }
-  
-  
+
+
 #if 0
   // This is other gunk .. used by collectives?
   size_t rectsize = (ur.n_torus.coords[0] - ll.n_torus.coords[0] + 1) *
@@ -334,7 +346,7 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
   } else {
     // wait for COMM_WORLD so we don't allocate yet-another ranks list?
     // actually, COMM_WORLD should use our rank list...
-    // does this ever happen for "COMM_WORLD"? 
+    // does this ever happen for "COMM_WORLD"?
     // _g_topology_world = new (&__topology_w) LL::Topology(ranks, nranks);
     fprintf(stderr, "failed to build comm-world topology\n");
   }
@@ -357,5 +369,3 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
 };
 
 #endif
-
-

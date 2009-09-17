@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file connmgr/ColorConnMgr.h
+ * \file algorithms/connmgr/ColorConnMgr.h
  * \brief ???
  */
 
@@ -45,7 +45,7 @@ namespace CCMI
         return color;
       }
 
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, 
+      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
                                             unsigned src, unsigned phase, unsigned color)
       {
         return color;

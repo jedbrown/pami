@@ -1,5 +1,5 @@
 ///
-/// \file tests/time/time.c
+/// \file test/time/time.c
 /// \brief Simple XMI_Wtime() test before XMI_Client_initialize()
 ///
 
@@ -19,7 +19,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

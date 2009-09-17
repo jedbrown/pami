@@ -29,8 +29,8 @@ namespace CCMI
       ///
       /// \brief Allreduce protocol composite
       ///
-      /// 
-      /// 
+      ///
+      ///
       template <class SCHEDULE, class EXECUTOR, class MAP> class CompositeT : public CCMI::Adaptor::Allreduce::Composite
       {
       protected:
@@ -64,12 +64,12 @@ namespace CCMI
                     int                         root = -1,
                     CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
         CCMI::Adaptor::Allreduce::Composite( flags, geometry->getBarrierExecutor(), factory, cb_done),
-        _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())        
+        _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
         {
           create_schedule(map, geometry, color);
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::CompositeT() ALERT\n",(int)this,name));
           addExecutor (&_executor);
-          initialize (&_executor, req, srcbuf, dstbuf, count, 
+          initialize (&_executor, req, srcbuf, dstbuf, count,
                       dtype, op, root);
           _executor.setMulticastInterface (mf);
           _executor.setSchedule ((SCHEDULE*)&_schedule);

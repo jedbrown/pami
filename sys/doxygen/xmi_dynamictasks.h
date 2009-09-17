@@ -1,5 +1,5 @@
 /**
- * \file doxygen/xmi_dynamictasks.h
+ * \file sys/doxygen/xmi_dynamictasks.h
  * \brief Detailed doxygen documentation for xmi dynamic tasks interface
  */
 #ifndef __doxygen_xmi_dynamictasks_h__

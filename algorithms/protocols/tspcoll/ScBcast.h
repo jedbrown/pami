@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/ScBcast.h
+ * \brief ???
+ */
 
 #ifndef __tspcoll_scatter_bcast_h__
 #define __tspcoll_scatter_bcast_h__
@@ -73,7 +77,7 @@ template <class T_Mcast>
 inline TSPColl::ScBcast<T_Mcast>::
 ScBcast(XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
                NBColl<T_Mcast> (comm, tag, instID, NULL, NULL),
-	       _scatterv (comm, tag, instID, 
+	       _scatterv (comm, tag, instID,
 			  (size_t)&_scatterv - (size_t) this + tagoff),
 	       _barrier (comm, tag, instID,
 			 (size_t)&_barrier - (size_t) this + tagoff),
@@ -107,7 +111,7 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
 {
   int myoffset = -1;
   size_t pernodelen = CEIL (len, this->_comm->size());
-  for (int i=0, current = 0; i<this->_comm->size(); i++) 
+  for (int i=0, current = 0; i<this->_comm->size(); i++)
     {
       if (this->_comm->rank() == i) myoffset = current;
       current += (_lengths[i] = MIN (pernodelen, len - current));

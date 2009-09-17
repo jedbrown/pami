@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/mpi/oldmpimulticastmodel.h
+ * \brief ???
+ */
+
 #ifndef __components_devices_mpi_mpioldmulticastmodel_h__
 #define __components_devices_mpi_mpioldmulticastmodel_h__
 
@@ -20,7 +33,7 @@ namespace XMI
         Interface::OldmulticastModel<MPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message> (device),
 	  _device(device)
 	  {};
-              
+
 	inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
         {
 	  _dispatch_id = _device.registerMcastRecvFunction (cb_recv, arg);
@@ -40,7 +53,7 @@ namespace XMI
 				 xmi_op                      op    = XMI_UNDEFINED_OP,
 				 xmi_dt                      dtype = XMI_UNDEFINED_DT )
         {
-	  
+
 	  MPIMcastMessage *hdr = (MPIMcastMessage *) malloc (sizeof (MPIMcastMessage) + size);
           XMI_assert( hdr != NULL );
           hdr->_dispatch_id = _dispatch_id;
@@ -87,7 +100,7 @@ namespace XMI
 
         }
 
-              
+
 	inline unsigned send (xmi_oldmulticast_t *mcastinfo)
         {
 	  assert(0);

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common.h
+ * \file algorithms/tests/generic/common.h
  * \brief common routines for ccmi tests
  */
 
@@ -37,7 +37,7 @@ int repetitions = 50; // default performance loop
 // Optionally limits some of the output with some criteria
 //#define TERSE_OUTPUT if(rank == 0 || rank == 1)
 #ifndef TERSE_OUTPUT
- #define TERSE_OUTPUT 
+ #define TERSE_OUTPUT
 #endif
 
 //#define TRACE_TEST(x)  if(rank == 0 || rank == 1) fprintf x
@@ -158,7 +158,7 @@ void setup(int argc, char **argv, unsigned override_default_max_count = 0)
     {
     case 'c': // count
       count  = atoi(optarg);
-      // Exceeding override_default_max_count is dangerous.  
+      // Exceeding override_default_max_count is dangerous.
       // Presumably the testcase knew something if it used this override (like short protocol limits)
       if((override_default_max_count) && (count > override_default_max_count))
         if(rank == 0) printf("%s: WARNING specified count(%d) exceeds override max count(%d)\n", argv0, count, override_default_max_count);
@@ -194,7 +194,7 @@ void setup(int argc, char **argv, unsigned override_default_max_count = 0)
     }
   }
 
-  char* tmp = strrchr(argv0, '/'); 
+  char* tmp = strrchr(argv0, '/');
   if(tmp) argv0 = tmp+1;
 
   for(int i = 0; i < (int) size; i++) ranks[i] = i;
@@ -223,8 +223,8 @@ void initialize_common(CCMI_Barrier_Protocol barrier_protocol,
 
   XMI_CollectiveProtocol_t  * bar_p = & barrier_reg, * local_bar_p = & local_barrier_reg;
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
-                                                           &bar_p, 1, 
-                                                           &local_bar_p, 1, 
+                                                           &bar_p, 1,
+                                                           &local_bar_p, 1,
                                                            &request, 0, 1)) != XMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Geometry_initialize failed %d\n",ccmiResult);
 
@@ -238,12 +238,12 @@ void allocate_buffers()
   bytes = count * sizeof(unsigned);
 
   // Padded so we can put padding around data and check for out of bounds overflows
-  allocSrcBuf = (unsigned *)malloc(bytes + 5*sizeof(unsigned)); 
-  allocDstBuf = (unsigned *)malloc(bytes + 5*sizeof(unsigned)); 
+  allocSrcBuf = (unsigned *)malloc(bytes + 5*sizeof(unsigned));
+  allocDstBuf = (unsigned *)malloc(bytes + 5*sizeof(unsigned));
   assert ( allocSrcBuf && allocDstBuf );
   srcbuf = allocSrcBuf + 4;
   dstbuf = allocDstBuf + 4;
-  allocSrcBuf[0] = allocSrcBuf[1] = allocSrcBuf[2] = allocSrcBuf[3] = 
+  allocSrcBuf[0] = allocSrcBuf[1] = allocSrcBuf[2] = allocSrcBuf[3] =
     allocDstBuf[0] = allocDstBuf[1] = allocDstBuf[2] = allocDstBuf[3] = -1;
 
   TRACE_TEST((stderr, "%s:  Number of Ranks:%d, Repetitions:%d, BwCount:%d\n", argv0,
@@ -264,7 +264,7 @@ void print_performance(double latency_time, double bandwidth_time)
     if(rank == 0) printf("%32.32s \t\t        \tbytes/cycle\n", argv0);
     if(rank == 0) printf("%32.32s \t\t%d\t      \t\t%5.3f\t\t%d\n", argv0,
                          size,
-                         //latency_time/repetitions, 
+                         //latency_time/repetitions,
                          ((double)bytes * repetitions)/bandwidth_time,
                          bytes );
   }
@@ -276,7 +276,7 @@ void print_performance(double latency_time, double bandwidth_time)
                          size,
                          latency_time/repetitions
                          //((double)bytes * repetitions)/bandwidth_time,
-                         //bytes 
+                         //bytes
                          );
   }
   else
@@ -285,7 +285,7 @@ void print_performance(double latency_time, double bandwidth_time)
     if(rank == 0) printf("%32.32s \t\t\t(us)\t\tMB/s\n", argv0);
     if(rank == 0) printf("%32.32s \t\t%d\t%5.3g\t\t%5.3g\t\t%d\n", argv0,
                          size,
-                         latency_time*1e6/repetitions, 
+                         latency_time*1e6/repetitions,
                          ((double)bytes * repetitions * 1e-6)/bandwidth_time,
                          bytes );
   }

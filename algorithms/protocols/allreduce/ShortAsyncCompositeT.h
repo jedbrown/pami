@@ -9,8 +9,8 @@
 /**
  * \file algorithms/protocols/allreduce/ShortAsyncCompositeT.h
  * \brief CCMI allreduce async composite template
- *  
- * \todo AsyncCompositeT and CompositeT are very similar and could be combined. 
+ *
+ * \todo AsyncCompositeT and CompositeT are very similar and could be combined.
  */
 
 #ifndef __ccmi_adaptor_allreduce_shortasynccompositet_h__
@@ -28,9 +28,9 @@ namespace CCMI
       ///
       /// \brief Allreduce protocol composite
       ///
-      /// 
-      /// 
-      template <class SCHEDULE, class EXECUTOR, class MAP> class ShortAsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR,MAP> 
+      ///
+      ///
+      template <class SCHEDULE, class EXECUTOR, class MAP> class ShortAsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR,MAP>
       {
       protected:
         unsigned _my_coord   [5]; //T,X,Y,Z,T
@@ -89,7 +89,7 @@ namespace CCMI
         {
           unsigned coord = _my_coord [phase];
           unsigned rstart = _rect_start[phase];
-          TRACE_ADAPTOR((stderr, 
+          TRACE_ADAPTOR((stderr,
                          "<%#.8X>Allreduce::Short::%s::AsyncCompositeT::getSrcPeIndex phase%d, connid %d\n",
                          (int)this, CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR>::name, phase, connid));
           CCMI_assert (connid != coord); //A node cant receive a message from itself

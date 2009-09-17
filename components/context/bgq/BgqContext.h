@@ -309,19 +309,19 @@ namespace XMI
         {
           return XMI_UNIMPL;
         };
-        
+
         inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
         {
           return XMI_UNIMPL;
         };
 
-        
+
         inline xmi_result_t manytomany(xmi_manytomany_t *m2minfo)
         {
           return XMI_UNIMPL;
         };
 
-        
+
         inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
         {
           return XMI_UNIMPL;

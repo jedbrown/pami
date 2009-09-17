@@ -29,10 +29,10 @@ namespace CCMI
     {
       extern inline bool global_analyze(Geometry *geometry)
       {
-        return(geometry->isGlobalContext() && geometry->isGI()); 
-      }      
+        return(geometry->isGlobalContext() && geometry->isGI());
+      }
 
-      typedef BarrierT <CCMI::Schedule::GiSchedule, global_analyze, CCMI::TorusCollectiveMapping>             GiBarrier;      
+      typedef BarrierT <CCMI::Schedule::GiSchedule, global_analyze, CCMI::TorusCollectiveMapping>             GiBarrier;
       typedef BarrierT <CCMI::Schedule::LockboxBarrierSchedule, global_analyze, CCMI::TorusCollectiveMapping> LockboxBarrier;
       typedef OldBarrierT <CCMI::Schedule::TreeSchedule, global_analyze, CCMI::TorusCollectiveMapping>        TreeBarrier;
       typedef OldBarrierR <CCMI::Schedule::ShortRectangleSchedule, CCMI::TorusCollectiveMapping>              RectangleBarrier;
@@ -40,7 +40,7 @@ namespace CCMI
       typedef BarrierFactoryT <GiBarrier, CCMI::TorusCollectiveMapping>                  GiBarrierFactory;
       typedef OldBarrierFactoryT <TreeBarrier, CCMI::TorusCollectiveMapping>             TreeBarrierFactory;
       typedef BarrierFactoryT <LockboxBarrier, CCMI::TorusCollectiveMapping>             LockboxBarrierFactory;
-      typedef OldBarrierFactoryR <RectangleBarrier, CCMI::TorusCollectiveMapping>        RectangleBarrierFactory;            
+      typedef OldBarrierFactoryR <RectangleBarrier, CCMI::TorusCollectiveMapping>        RectangleBarrierFactory;
 
       ///
       /// \brief Rectangle lockbox barrier
@@ -65,8 +65,8 @@ namespace CCMI
                                   CCMI::MultiSend::OldMulticastInterface    * mInterface,
                                   Geometry                               * geometry) :
         OldBarrier (geometry->nranks(), geometry->ranks(), geometry->comm(), 0, mInterface),
-        _myschedule (mapping, 
-                     *geometry->rectangle(), 
+        _myschedule (mapping,
+                     *geometry->rectangle(),
                      (geometry->rectangle()->ts ==
                       mapping->GetDimLength(CCMI_T_DIM)))
         {

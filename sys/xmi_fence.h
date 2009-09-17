@@ -1,5 +1,5 @@
   /**
- * \file xmi_fence.h
+ * \file sys/xmi_fence.h
  * \brief fence interface
  */
 #ifndef __xmi_fence_h__

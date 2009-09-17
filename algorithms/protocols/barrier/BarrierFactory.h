@@ -126,7 +126,7 @@ namespace CCMI
                                              unsigned        * pipewidth,
                                              XMI_Callback_t * cb_done)
         {
-          CollHeaderData  *cdata = (CollHeaderData *) info;      
+          CollHeaderData  *cdata = (CollHeaderData *) info;
           OldBarrierFactory *factory = (OldBarrierFactory *) arg;
 
           Geometry *geometry = (Geometry *) Geometry::getCachedGeometry(cdata->_comm);

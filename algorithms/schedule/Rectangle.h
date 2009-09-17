@@ -46,7 +46,7 @@ namespace CCMI
 // reset indentation
     typedef enum
     {
-      OneColor = 1, TwoColor = 2, ThreeColor = 3, 
+      OneColor = 1, TwoColor = 2, ThreeColor = 3,
       FourColor = 4, FiveColor = 5, SixColor = 6
     } NumColors;
 
@@ -537,27 +537,27 @@ namespace CCMI
        * \param[out] max	The maximum number of colors (returned in colors)
        * \param[out] colors	(optional) Array of enum Color's usable on rect
        */
-      
+
       static void getColors(const Rectangle &rect,
                             int &ideal, int &max, Color *colors = NULL) {
         int n = 0, x,y;
         unsigned dims[NUM_STD_AXIS];
         axis_rect *r = (axis_rect *)&rect;
-        
+
         for (x = 0; x < NUM_STD_AXIS; ++x) {
           dims[x] = x;
         }
 
         /* List the dimensions in sorted order, via bubble sort */
         for (x = 0; x < NUM_STD_AXIS; ++x) {
-          for (y = x+1; y < NUM_STD_AXIS; ++y) 
+          for (y = x+1; y < NUM_STD_AXIS; ++y)
             if (r->xs[dims[x]] > r->xs[dims[y]]) {
               unsigned tmp = dims[x];
               dims[x] = dims[y];
               dims[y] = tmp;
             }
         }
-        
+
         /* Positive direction, "normal" colors. */
         for (x = 0; x < NUM_STD_AXIS; ++x) {
           if (r->xs[dims[x]] > 1) colors[n++] = MK_COLOR(dims[x],P_DIR);
@@ -582,8 +582,8 @@ namespace CCMI
           ideal = max = n;
         }
       }
-      
-      
+
+
     protected:
       Color _color;   /** \brief color to use (pri axis) */
       unsigned _op;   /** \brief operation, BROADCAST_OP... */
@@ -1279,7 +1279,7 @@ namespace CCMI
 #define MAX_SUB_SCHEDULE_SIZE sizeof(CCMI::Schedule::BinomialTreeSchedule) >    \
                                  sizeof(CCMI::Schedule::RingSchedule)?            \
                                    sizeof(CCMI::Schedule::BinomialTreeSchedule) : \
-                                   sizeof(CCMI::Schedule::RingSchedule)           
+                                   sizeof(CCMI::Schedule::RingSchedule)
 
 
 
@@ -1293,7 +1293,7 @@ namespace CCMI
       {
 
         if(_subScheduleType == Binomial)
-        { 
+        {
           COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(BinomialTreeSchedule));
           _subschedule[axis] = new (&_subschedule_storage[axis])
                                BinomialTreeSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
@@ -1643,7 +1643,7 @@ namespace CCMI
        * \param[in] rect	Rectangle of geom
        */
       inline OneColorRectAllredSched(XMI_MAPPING_CLASS *mapping,
-                                     Color color, const Rectangle &rect, 
+                                     Color color, const Rectangle &rect,
                                      CCMI::Schedule::OneColorRectRedSched::Subschedule subschedule=CCMI::Schedule::OneColorRectRedSched::Binomial) :
       OneColorRectangle(mapping, color, rect)
       {
@@ -1732,7 +1732,7 @@ namespace CCMI
         //r = coord2rank(_mapping, _rect->x0);
         unsigned coords[CCMI_TORUS_NDIMS];
         CCMI_COPY_COORDS(coords, _rect->x0);
-        coords[CCMI_T_DIM] += (_color % _rect->xs[CCMI_T_DIM]); 
+        coords[CCMI_T_DIM] += (_color % _rect->xs[CCMI_T_DIM]);
         _mapping->Torus2Rank(coords, &r);
 
         CCMI::Schedule::OneColorRectangle::init(r, op,

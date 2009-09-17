@@ -1,5 +1,5 @@
 /**
- * \file doxygen/xmi_sync.h
+ * \file sys/doxygen/xmi_sync.h
  * \brief Detailed doxygen documentation for xmi memory synchronization and data fence interface
  */
 #ifndef __doxygen_xmi_sync_h__

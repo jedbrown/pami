@@ -90,14 +90,14 @@ namespace CCMI
                                 unsigned  &nsrc, unsigned *subtasks=NULL)
       {
 
-        nsrc = 0;  //We have nothing to receive	  	  
+        nsrc = 0;  //We have nothing to receive
 
         //Use a fast memory barrier and hence nothing to recv in the
         //local phases
         if( _useLocalBarrier && (phase == LOCAL_BCAST || phase == LOCAL_REDUCE) )
           return;
 
-        unsigned sub_task = ((_op == BARRIER_OP || phase == LOCAL_BCAST) ? CCMI_PT_TO_PT_SUBTASK : 
+        unsigned sub_task = ((_op == BARRIER_OP || phase == LOCAL_BCAST) ? CCMI_PT_TO_PT_SUBTASK :
                              CCMI_COMBINE_SUBTASK);
 
         //We are using message passing for local phases
@@ -126,7 +126,7 @@ namespace CCMI
         //If my t coord is t0 then I need to recv local messages and
         //then participate in the torus phases
         if(phase == LOCAL_REDUCE)
-          dir = 3; // the t phase	    
+          dir = 3; // the t phase
 
         const unsigned  *start     = &_rect->x0;
         const unsigned  *sizes     = &_rect->xs;
@@ -139,13 +139,13 @@ namespace CCMI
         unsigned dst_coord [4];
         CCMI_COPY_COORDS(dst_coord, my_coord);
 
-        nsrc = 0; 
+        nsrc = 0;
         for(unsigned count = 0; count < sizes[dir]; count ++)
         {
           if(start[dir] + count != my_coord[dir])
           {
             dst_coord[dir] = start[dir] + count;
-            _mapping->Torus2Rank(dst_coord, &srcpes[nsrc]);        
+            _mapping->Torus2Rank(dst_coord, &srcpes[nsrc]);
             subtasks[nsrc++] =  sub_task;
           }
         }
@@ -194,7 +194,7 @@ namespace CCMI
         }
         // t0 processors only - at this point
         if(phase <= LOCAL_REDUCE)
-          return; // t0 processors have no dst in LOCAL_REDUCE 
+          return; // t0 processors have no dst in LOCAL_REDUCE
 
 
         //t == 0 and phase is the last local bcast phase
@@ -233,8 +233,8 @@ namespace CCMI
         //Am I a corner node in the lower left corner
         if(my_coord[dir] == start[dir])
         {
-          ndst = 1;     
-          dest[dir] = start[dir] + sizes[dir] - 1;     
+          ndst = 1;
+          dest[dir] = start[dir] + sizes[dir] - 1;
           subtasks[0] = _hints[dir]; //start of the line to the end in +ve dir
 
           _mapping->Torus2Rank(dest, dstpes);
@@ -242,8 +242,8 @@ namespace CCMI
         //Am I a corner node at the top right corner
         else if(my_coord[dir] == start[dir] + sizes[dir] - 1)
         {
-          ndst = 1;     
-          dest[dir] = start[dir]; 
+          ndst = 1;
+          dest[dir] = start[dir];
           subtasks[0] = _hints[dir + SR_MAX_NUM_DIMENSIONS];  //-ve direction
           _mapping->Torus2Rank(dest, dstpes);
         }
@@ -254,7 +254,7 @@ namespace CCMI
           {
             ndst = 1;
             dest[dir] = my_coord[dir] - 1;
-            subtasks[0] = _hints[dir];  //+ve direction to my_coord - 1 
+            subtasks[0] = _hints[dir];  //+ve direction to my_coord - 1
             _mapping->Torus2Rank(dest, dstpes);
           }
           else
@@ -292,7 +292,7 @@ namespace CCMI
         if(op != BARRIER_OP)
           _useLocalBarrier = false;
 
-        startphase = PHASE_X;   
+        startphase = PHASE_X;
         nphases = SR_MAX_NUM_DIMENSIONS;
 
         if(_rect->ts > 1)

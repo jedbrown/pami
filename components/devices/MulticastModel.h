@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/PacketModel.h
+ * \file components/devices/MulticastModel.h
  * \brief ???
  */
 

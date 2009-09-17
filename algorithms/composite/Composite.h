@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interface/Composite.h
+ * \file algorithms/composite/Composite.h
  * \brief An executor composite class which supports optional barriers
  */
 
@@ -44,7 +44,7 @@ namespace CCMI
       {
         _barrier = NULL;
         for(int count = 0; count < MAX_EXECUTORS; count ++)
-          _executors[count] = NULL; 
+          _executors[count] = NULL;
         _numExecutors = 0;
       }
 
@@ -53,8 +53,8 @@ namespace CCMI
       {
         for(unsigned count = 0; count < _numExecutors; count ++)
         {
-          _executors[count]->~Executor(); 
-          _executors[count] = NULL; 
+          _executors[count]->~Executor();
+          _executors[count] = NULL;
         }
         _numExecutors = 0;
       }
@@ -66,7 +66,7 @@ namespace CCMI
 
       void addExecutor (Executor *exec)
       {
-        CCMI_assert (_numExecutors < MAX_EXECUTORS);    
+        CCMI_assert (_numExecutors < MAX_EXECUTORS);
         _executors [_numExecutors] = exec;
         _numExecutors ++;
       }

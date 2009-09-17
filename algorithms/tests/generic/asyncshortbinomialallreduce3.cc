@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file tests/generic/asyncshortbinomialallreduce3.cc
+ * \file algorithms/tests/generic/asyncshortbinomialallreduce3.cc
  * \brief allreduce MPI_IN_PLACE for different counts
  */
 
@@ -30,10 +30,10 @@ int main(int argc, char **argv)
              CCMI_BINOMIAL_BARRIER_PROTOCOL,
              CCMI_ASYNC_SHORT_BINOMIAL_ALLREDUCE_PROTOCOL); // protocol to test
 
-  allocate_buffers(); 
+  allocate_buffers();
 
   // Simple functional run:
-  // 
+  //
   // Try different counts: 1, 2, 4, 8 ... count with MPI_IN_PLACE
   for(unsigned i = 1; i <= count; i*=2)
   {

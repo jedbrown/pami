@@ -1,5 +1,5 @@
 /**
- * \file examples/xmi_send.c
+ * \file sys/examples/xmi_send.c
  * \brief Example XMI_Send source code.
  *
  * ***** need more description of this example ***

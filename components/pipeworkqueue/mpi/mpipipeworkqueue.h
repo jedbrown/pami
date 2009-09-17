@@ -1,5 +1,5 @@
 ///
-/// \file xmi/mpi/mpiPipeWorkQueue.h
+/// \file components/pipeworkqueue/mpi/mpipipeworkqueue.h
 /// \brief XMI MPI specific PipeWorkQueue implementation.
 ///
 #ifndef   __xmi_mpi_mpipipeworkqueue_h__
@@ -30,7 +30,7 @@ namespace XMI
             inline ~MPI()
                 {
                 }
-            
+
             inline void configure_impl(void *sysdep, size_t bufsize)
                 {
                 }
@@ -115,7 +115,7 @@ namespace XMI
                 {
 		  return false;
                 }
-            
+
         }; // end XMI::PipeWorkQueue::MPI
     }; // end namespace PipeWorkQueue
 }; // end namespace XMI

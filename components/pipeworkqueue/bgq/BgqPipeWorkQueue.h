@@ -1,5 +1,5 @@
 ///
-/// \file componented/pipeworkqueue/bgq/BgqPipeWorkQueue.h
+/// \file components/pipeworkqueue/bgq/BgqPipeWorkQueue.h
 /// \brief XMI BG/P specific PipeWorkQueue implementation.
 ///
 #ifndef   __components_pipeworkqueue_bgq_bgqpipeworkqueue_h__
@@ -30,7 +30,7 @@ namespace XMI
             inline ~BgqPipeWorkQueue()
                 {
                 }
-            
+
             inline void configure_impl(void *sysdep, size_t bufsize)
                 {
                 }
@@ -115,7 +115,7 @@ namespace XMI
                 {
                   return false;
                 }
-            
+
         }; // end XMI::PipeWorkQueue::BgqPipeWorkQueue
     }; // end namespace PipeWorkQueue
 }; // end namespace XMI

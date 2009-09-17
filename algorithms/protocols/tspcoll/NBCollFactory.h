@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/tspcoll/NBCollFactory.h
+ * \brief ???
+ */
+
 #ifndef __tspcoll_nbcollfactory_h__
 #define __tspcoll_nbcollfactory_h__
 
@@ -38,7 +51,7 @@ void TSPColl::NBCollFactory<T_Mcast>::initialize ()
 /*                     Collective factory                                   */
 /* ************************************************************************ */
 template <class T_Mcast>
-TSPColl::NBColl<T_Mcast> * 
+TSPColl::NBColl<T_Mcast> *
 TSPColl::NBCollFactory<T_Mcast>::create (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID)
 {
   switch (tag)

@@ -31,8 +31,8 @@ namespace CCMI
         ///
         /// \brief Tree broadcast protocol for short msg in VN mode
         ///
-        /// 
-        class ShortTreeBcast 
+        ///
+        class ShortTreeBcast
         {
 
           //static const unsigned MaxDataBytes = 4096;
@@ -44,7 +44,7 @@ namespace CCMI
             //const void * srcs[ MAX_NUM_CORES ];
             char pad[32];
 
-            struct 
+            struct
             {
               volatile unsigned isSrcReady;
               volatile unsigned isDstReady;
@@ -111,7 +111,7 @@ namespace CCMI
             a->_shared->client[ 2 ].isDstReady = 1;
             a->_shared->client[ 3 ].isDstReady = 1;
 
-            // local completion 
+            // local completion
             a->done();
           }
 
@@ -136,7 +136,7 @@ namespace CCMI
               else
               {
                 memcpy( _dstbuf, _shared->dst, _bytes );
-              }  
+              }
             }
 
             // completion callback
@@ -151,7 +151,7 @@ namespace CCMI
                                                 CCMI_Consistency            consistency,
                                                 char                      * buf,
                                                 unsigned                    count,
-                                                int                         root ) 
+                                                int                         root )
           {
             TRACE_ADAPTOR((stderr,"Broadcast::Tree::ShortTreeBcast::restart(), root:%d\n ",root));
 
@@ -159,7 +159,7 @@ namespace CCMI
             _cb_done.clientdata = cb_done.clientdata;
 
             _dstbuf = buf;
-            _bytes  = count; 
+            _bytes  = count;
 
 
             if(_bytes > MaxDataBytes)
@@ -182,8 +182,8 @@ namespace CCMI
 
               TRACE_ADAPTOR((stderr,"Waiting for the master\n "));
 
-              // (busy) wait for the result 
-              while((volatile unsigned)_shared->client[ tCoord ].isDstReady == 0); 
+              // (busy) wait for the result
+              while((volatile unsigned)_shared->client[ tCoord ].isDstReady == 0);
 
               // reset result ready flag for the next run
               _shared->client[ tCoord ].isDstReady = 0;
@@ -192,14 +192,14 @@ namespace CCMI
             }
             else // master core writing/reading the tree
             {
-              // wait for peers to copy  src data into the shared buffer 
+              // wait for peers to copy  src data into the shared buffer
               volatile unsigned num;
               do
               {
-                num = 
+                num =
                 (volatile unsigned)_shared->client[ 1 ].isSrcReady +
                 (volatile unsigned)_shared->client[ 2 ].isSrcReady +
-                (volatile unsigned)_shared->client[ 3 ].isSrcReady;       
+                (volatile unsigned)_shared->client[ 3 ].isSrcReady;
               } while(num < _numCores - 1);
               // reset shared src buffer ready flags for the next run
               _shared->client[ 1 ].isSrcReady = 0;
@@ -259,7 +259,7 @@ namespace CCMI
             }
 
             return XMI_SUCCESS;
-          } 
+          }
 
           bool is_vn_peer(unsigned rank, unsigned &root_tcoord){
             unsigned* my_coords = _mapping->Coords();
@@ -296,7 +296,7 @@ namespace CCMI
       }
     }
   }
-} 
+}
 
 
 

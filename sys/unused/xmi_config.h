@@ -1,5 +1,5 @@
 /**
- * \file xmi_config.h
+ * \file sys/unused/xmi_config.h
  * \brief messaging interface
  * \example config/xmi_config_test.c
  */

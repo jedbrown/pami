@@ -172,9 +172,9 @@ namespace CCMI
         _buflen         =  len;
         _buf            =  buf;
 
-	unsigned connid = 
+	unsigned connid =
 	  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-	_msend.connection_id = connid;      
+	_msend.connection_id = connid;
       }
 
       inline void setPipelineWidth (int pwidth) {
@@ -296,16 +296,16 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
     TRACE_FLOW ((stderr, "Calling multisend to %d for size %d\n", _destpes[dcount], _curlen));
 
   //Moved to setInfo call
-  //unsigned connid = 
+  //unsigned connid =
   //_connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-  //_msend.setConnectionId (connid);      
+  //_msend.setConnectionId (connid);
 
   if(_bytessent > 0)
     _msend.flags = 1; //PERSISTENT_MESSAGE);
 
   _msend.ranks  = _destpes;
   _msend.nranks = _nmessages;
-  
+
   _msend.src    = _buf + _bytessent;
   _msend.bytes  = _curlen;
   _mInterface->send(&_msend);

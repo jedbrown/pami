@@ -69,7 +69,7 @@ namespace CCMI
         /// later
         ///
         _minterface->postRecv (&_rreq, &_my_cb_done, 0, rcvbuf, rcvlens,
-                               rdispls, rcvcounters, geometry->nranks(), 
+                               rdispls, rcvcounters, geometry->nranks(),
                                // we want myIdx, not COMM_WORLD rank.
                                geometry->myIdx());
 
@@ -129,9 +129,9 @@ namespace CCMI
 
       //virtual ~AlltoallFactory () {}
       //void operator delete (void *p) {CCMI_abort();}
-      virtual bool Analyze(Geometry *geometry) 
+      virtual bool Analyze(Geometry *geometry)
       {
-        return(geometry->isTorus());      
+        return(geometry->isTorus());
       }
 
       virtual unsigned generate (XMI_CollectiveRequest_t   * request,

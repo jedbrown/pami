@@ -1,5 +1,5 @@
 /**
- * \file xmi_putget.h
+ * \file sys/unused/xmi_putget.h
  * \brief XMI remote memory access interface
  * \defgroup rma Remote Memory Access data transfer operations
  * \{

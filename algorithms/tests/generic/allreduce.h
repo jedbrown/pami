@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file allreduce.h
+ * \file algorithms/tests/generic/allreduce.h
  * \brief ccmi allreduce common routines
  */
 

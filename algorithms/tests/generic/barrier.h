@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file barrier.h
+ * \file algorithms/tests/generic/barrier.h
  * \brief ccmi barrier common routines
  */
 

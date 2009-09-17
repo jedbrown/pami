@@ -118,7 +118,7 @@ public:
 	inline void setStatus(MessageStatus status) {_status = status;}
 
 	//////////////////////////////////////////////////////////////////
-	/// \brief     Returns the done status of the message 
+	/// \brief     Returns the done status of the message
 	//////////////////////////////////////////////////////////////////
 	inline bool isDone() {return (getStatus() == Done);}
 

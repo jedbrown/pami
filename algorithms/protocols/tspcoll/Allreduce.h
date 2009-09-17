@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/Allreduce.h
+ * \brief ???
+ */
 
 #ifndef __tspcoll_Allreduce_h__
 #define __tspcoll_Allreduce_h__
@@ -18,7 +22,7 @@
 #include <string.h>
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(xmi_dt, xmi_op, unsigned, 
+      extern void getReduceFunction(xmi_dt, xmi_op, unsigned,
 				    unsigned&, coremath&);
     }}};
 namespace TSPColl
@@ -31,7 +35,7 @@ namespace TSPColl
     typedef void (*cb_Allreduce_t) (const void *, void *, unsigned);
     //    cb_Allreduce_t  getcallback (__pgasrt_ops_t, __pgasrt_dtypes_t);
     //    size_t          datawidthof (__pgasrt_dtypes_t);
-    
+
     /* ******************************************************************* */
     /*      short allreduce (up to 1000 bytes of exchanged data)           */
     /* ******************************************************************* */
@@ -43,7 +47,7 @@ namespace TSPColl
       static const int MAXBUF = 1000;
       void * operator new (size_t, void * addr) { return addr; }
       Short(XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
-      void reset (const void        * s, 
+      void reset (const void        * s,
 		  void              * d,
 		  xmi_op             op,
 		  xmi_dt             dt,
@@ -57,10 +61,10 @@ namespace TSPColl
       //void       (* _cb_allreduce) (const void *, void *, unsigned);
       coremath _cb_allreduce;
       char          _dummy;
-      
+
     protected:
       typedef char PhaseBufType[MAXBUF] __attribute__((__aligned__(16)));
-      PhaseBufType  _phasebuf[MAX_PHASES][2];   
+      PhaseBufType  _phasebuf[MAX_PHASES][2];
       int           _bufctr  [MAX_PHASES]; /* 0 or 1 */
     }; /* Short Allreduce */
 
@@ -80,7 +84,7 @@ namespace TSPColl
 
     protected:
       static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
-      
+
     protected:
       int           _nelems, _logMaxBF;
       void        * _dbuf;
@@ -132,7 +136,7 @@ Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
       this->_bufctr  [phase] = 0;
       phase ++;
     }
-  
+
   /* -------------------------------------------- */
   /* butterfly phases                             */
   /* -------------------------------------------- */
@@ -149,7 +153,7 @@ Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
       this->_bufctr  [phase] = 0;
       phase ++;
     }
-  
+
   /* -------------------------------------------- */
   /*  last phase: rebroadcast to non-power-of-2   */
   /* -------------------------------------------- */
@@ -215,7 +219,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
   /* --------------------------------------------------- */
 
   _dbuf   = dbuf;
-  _nelems = nelems;  
+  _nelems = nelems;
   unsigned datawidth;
   //  size_t datawidth = datawidthof (dt);
   CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, nelems, datawidth,_cb_allreduce);
@@ -236,7 +240,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
-  
+
   /* -------------------------------------------- */
   /* butterfly phases                             */
   /* -------------------------------------------- */
@@ -247,7 +251,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
-  
+
 
   /* -------------------------------------------- */
   /*  last phase: rebroadcast to non-power-of-2   */
@@ -355,7 +359,7 @@ Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   /* -------------------------------------------- */
   /*  last phase: rebroadcast to non-power-of-2   */
   /* -------------------------------------------- */
-  
+
   if (nonBF > 0)
     {
       /* send permission slips */
@@ -401,8 +405,8 @@ cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
 /*                      start a long allreduce operation                     */
 /* ************************************************************************* */
 template <class T_Mcast>
-void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf, 
-				      void               * dbuf, 
+void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
+				      void               * dbuf,
 				      xmi_op              op,
 				      xmi_dt              dt,
 				      unsigned             nelems)
@@ -440,7 +444,7 @@ void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
-  
+
   for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       phase ++;
@@ -449,7 +453,7 @@ void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
-  
+
   if (nonBF > 0)   /*  last phase: collect results */
     {
       phase ++;
@@ -468,4 +472,3 @@ void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
 
 
 #endif /* __tspcoll_Allreduce_h__ */
-

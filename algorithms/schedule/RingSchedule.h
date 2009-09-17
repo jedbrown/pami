@@ -14,14 +14,14 @@
 #ifndef  __ring_schedule__
 #define  __ring_schedule__
 
-#include "Schedule.h" 
+#include "Schedule.h"
 #include "config.h"
 //#include "Rectangle.h"
 
-#define TRACE_RING(x)   
+#define TRACE_RING(x)
 
 /////////////////////////////////////////////////////////////////////
-///  
+///
 ///  In this schedule we place the nodes on a topological Ring in the
 ///  order in which the nodes are listed. The root node is the head
 ///  node and modulo root-1 is the tail. Data moves from the tail to
@@ -40,7 +40,7 @@ namespace CCMI
     class RingSchedule : public Schedule
     {
 
-    public: 
+    public:
       /**
        * \brief Constructor
        */
@@ -48,7 +48,7 @@ namespace CCMI
       {
       }
 
-      RingSchedule (XMI_MAPPING_CLASS *map, unsigned nranks, unsigned *ranks); 
+      RingSchedule (XMI_MAPPING_CLASS *map, unsigned nranks, unsigned *ranks);
       RingSchedule (unsigned x, unsigned x0, unsigned xN);
       //RingSchedule (Rectangle  *rect, XMI_MAPPING_CLASS *map);
 
@@ -114,7 +114,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _prev : _next;
           *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE(("Sending reduce message to %d\n", *dstpes));	
+          TRACE_SCHEDULE(("Sending reduce message to %d\n", *dstpes));
         }
       }
 
@@ -159,7 +159,7 @@ namespace CCMI
           head_idx = _root - _x0;
 
         return head_idx;
-      } 
+      }
 
       unsigned prevIdx ()
       {
@@ -173,7 +173,7 @@ namespace CCMI
         return(my_idx < (_nranks-1)) ? (my_idx + 1) : 0;
       }
 
-      void local_init (int root, int op, int &startphase, 
+      void local_init (int root, int op, int &startphase,
                        int &nphases, int &maxranks)
       {
         if(root >= 0)
@@ -183,14 +183,14 @@ namespace CCMI
 
         unsigned head_idx=0, tail_idx = 0, my_idx=0;
 
-        my_idx = myIdx ();       
+        my_idx = myIdx ();
 
         head_idx = headIdx ();
 
         // compute tail
         if(head_idx != _nranks - 1)
         {
-          tail_idx = (head_idx + _nranks - 1) % _nranks; 
+          tail_idx = (head_idx + _nranks - 1) % _nranks;
           _dir = 0;
         }
         else// We flip the direction of the ring, to allow
@@ -222,7 +222,7 @@ namespace CCMI
           {
             // The tail node does one send and no recv. Others receive
             // on one phase and send in the next phase
-            nphases = (_isTail || _isHead) ? 1 : 2;  
+            nphases = (_isTail || _isHead) ? 1 : 2;
           }
 
           if(op == ALLREDUCE_OP)
@@ -242,7 +242,7 @@ namespace CCMI
             else //everyone else
             {
               _bcastStart = _startPhase + 2 * (_nranks - 2 - _startPhase);
-              nphases = _bcastStart + 2 - _startPhase;  
+              nphases = _bcastStart + 2 - _startPhase;
             }
           }
         }
@@ -253,18 +253,18 @@ namespace CCMI
           else if(!_dir)
             _startPhase = (my_idx - head_idx + _nranks - 1) % _nranks;
           else //tail == 0
-            _startPhase = head_idx - my_idx - 1;      
+            _startPhase = head_idx - my_idx - 1;
 
-          _bcastStart = _startPhase;            
+          _bcastStart = _startPhase;
 
           // The tail node does one send and no recv. Others receive
           // on one phase and send in the next phase
-          nphases = (_isTail || _isHead) ? 1 : 2;  
+          nphases = (_isTail || _isHead) ? 1 : 2;
         }
         else
           XMI_abort();
 
-        startphase = _startPhase;   
+        startphase = _startPhase;
 
         TRACE_RING (("%d: Initializing schedule %d, %d, %d, "
                      "idxes = (%d, %d, %d) \n", idxToRank (my_idx),
@@ -273,7 +273,7 @@ namespace CCMI
       }
 
       /**
-       * \brief Get the upstream processors. Source processors 
+       * \brief Get the upstream processors. Source processors
        * that send messages to me in this collective operation
        * \param [in] phase  : phase of the collective
        * \param [out] srcpes : List of source processors
@@ -282,7 +282,7 @@ namespace CCMI
        */
 
       virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
-                                 unsigned  &nsrc, unsigned *subtasks) 
+                                 unsigned  &nsrc, unsigned *subtasks)
       {
         nsrc = 0;
         switch(_op)
@@ -313,8 +313,8 @@ namespace CCMI
        * \param ndst :  number of source processors
        * \param subtasks : what operations to perform? pt-to-pt, line bcast
        */
-      virtual void getDstPeList (unsigned  phase, unsigned *dstpes, 
-                                 unsigned  &ndst, unsigned *subtasks) 
+      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                 unsigned  &ndst, unsigned *subtasks)
       {
         ndst = 0;
 
@@ -330,7 +330,7 @@ namespace CCMI
           if(phase < _bcastStart)
             getReduceDestinations (phase, dstpes, ndst, subtasks);
           else
-            getBroadcastDestinations (phase, dstpes, ndst, subtasks);     
+            getBroadcastDestinations (phase, dstpes, ndst, subtasks);
           break;
 
         case BARRIER_OP:
@@ -347,24 +347,24 @@ namespace CCMI
        * \param root : the root of the collective
        * \param startphase : The phase where I become active
        * \param nphases : number of phases
-       * \param maxranks : total number of processors to communicate 
-       *  with. Mainly needed in the executor to allocate queues 
+       * \param maxranks : total number of processors to communicate
+       *  with. Mainly needed in the executor to allocate queues
        *  and other resources
        */
 
-      virtual void init (int root, int op, int &startphase, int &nphases, 
-                         int &maxranks) 
+      virtual void init (int root, int op, int &startphase, int &nphases,
+                         int &maxranks)
       {
         startphase = 0;
         nphases = 0;
-        maxranks = 2;   
+        maxranks = 2;
 
         CCMI_assert (op != BARRIER_OP);
 
-        _op  =  op;       
+        _op  =  op;
         _startPhase = ((unsigned) -1);
         _bcastStart = ((unsigned) -1);
-        _root       = ((unsigned)-1);  
+        _root       = ((unsigned)-1);
         _isHead     = false;
         _isTail     = false;
         _prev       = ((unsigned) -1);
@@ -383,16 +383,16 @@ namespace CCMI
 
 
     protected:
-      XMI_MAPPING_CLASS              * _mapping;  
+      XMI_MAPPING_CLASS              * _mapping;
       unsigned   short       _op;
-      unsigned               _root; 
-      unsigned               _startPhase; 
-      unsigned               _bcastStart; 
-      bool                   _isHead, _isTail;   
+      unsigned               _root;
+      unsigned               _startPhase;
+      unsigned               _bcastStart;
+      bool                   _isHead, _isTail;
 
       //for the ring reduce
       unsigned           _next;
-      unsigned           _prev; 
+      unsigned           _prev;
 
       unsigned         * _ranks;
       unsigned           _nranks;
@@ -406,49 +406,49 @@ namespace CCMI
 };
 
 
-inline CCMI::Schedule::RingSchedule::RingSchedule 
-(XMI_MAPPING_CLASS       * map, 
- unsigned        nranks, 
+inline CCMI::Schedule::RingSchedule::RingSchedule
+(XMI_MAPPING_CLASS       * map,
+ unsigned        nranks,
  unsigned      * ranks) :
-_mapping (map), 
-_isHead (false), _isTail (false), 
+_mapping (map),
+_isHead (false), _isTail (false),
 _ranks(ranks), _nranks(nranks),
 _x0((unsigned) -1), _my_x ((unsigned) -1)
 {
   CCMI_assert (map != NULL);
 
   _startPhase = ((unsigned) -1);
-  _root = ((unsigned)-1); 
+  _root = ((unsigned)-1);
   _dir = 0;
   //_rectangle = NULL;
 }
 
 ///
 /// \brief constructor with in a line of consequitive processors as
-/// inputs. 
+/// inputs.
 ///
 /// \param x    my rank
 /// \param x0   the first rank
 /// \param xN   the last rank
 ///
-inline CCMI::Schedule::RingSchedule::RingSchedule 
-(unsigned        x, 
- unsigned        x0, 
+inline CCMI::Schedule::RingSchedule::RingSchedule
+(unsigned        x,
+ unsigned        x0,
  unsigned        xN) :
-_mapping (NULL),_isHead (false), _isTail (false), 
+_mapping (NULL),_isHead (false), _isTail (false),
 _ranks(NULL), _nranks(xN - x0 + 1),
 _x0 (x0), _my_x (x)
 {
   _startPhase = ((unsigned) -1);
-  _root = ((unsigned)-1);  
+  _root = ((unsigned)-1);
   _dir = 0;
   //_rectangle = NULL;
 }
 
 #if 0
-inline CCMI::Schedule::RingSchedule::RingSchedule 
-(Rectangle  *rect, XMI_MAPPING_CLASS *map) : 
-_mapping (map), _isHead (false), _isTail (false), _ranks(NULL), 
+inline CCMI::Schedule::RingSchedule::RingSchedule
+(Rectangle  *rect, XMI_MAPPING_CLASS *map) :
+_mapping (map), _isHead (false), _isTail (false), _ranks(NULL),
 _nranks((unsigned)-1), _x0((unsigned) -1), _my_x ((unsigned) -1)
 {
   _startPhase = ((unsigned) -1);

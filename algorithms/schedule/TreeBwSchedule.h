@@ -14,7 +14,7 @@
 #ifndef  __tree_bw_schedule__
 #define  __tree_bw_schedule__
 
-#include "Schedule.h" 
+#include "Schedule.h"
 #include "util/ccmi_util.h"
 #include "interface/TorusCollectiveMapping.h"
 
@@ -26,7 +26,7 @@ namespace CCMI
     class TreeBwSchedule : public Schedule
     {
 
-    public: 
+    public:
       /**
        * \brief Constructor
        */
@@ -34,13 +34,13 @@ namespace CCMI
       {
       }
 
-      TreeBwSchedule (TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks); 
+      TreeBwSchedule (TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks);
 
       void getBroadcastSources (unsigned  phase, unsigned *srcpes,
-                                unsigned  &nsrc, unsigned *tasks) 
+                                unsigned  &nsrc, unsigned *tasks)
       {
-        //fprintf (stdout, 
-        //   "%d: Broadcast::getSrcPeList %d, startbcastphase %d\n", 
+        //fprintf (stdout,
+        //   "%d: Broadcast::getSrcPeList %d, startbcastphase %d\n",
         //   _mapping->rank(), phase, _startBcastPhase);
 
         nsrc = 0;
@@ -62,7 +62,7 @@ namespace CCMI
 
       /// Spray broadcast
       void getBroadcastDestinations (unsigned phase, unsigned *dstpes,
-                                     unsigned &ndest, unsigned *subtasks) 
+                                     unsigned &ndest, unsigned *subtasks)
       {
         ndest = 0;
 
@@ -83,7 +83,7 @@ namespace CCMI
           {
             dstpes [count]   = _peers[count];
             subtasks [count] = CCMI_PT_TO_PT_SUBTASK;
-          }     
+          }
         }
       }
 
@@ -150,7 +150,7 @@ namespace CCMI
         *tasks    =  CCMI_TREE_BARRIER;
       }
 
-      void getBarrierDestinations (unsigned  phase, unsigned *dstpes, 
+      void getBarrierDestinations (unsigned  phase, unsigned *dstpes,
                                    unsigned  &ndst, unsigned *subtasks)
       {
         ndst = 0;
@@ -174,12 +174,12 @@ namespace CCMI
 
         default:
           CCMI_abort();
-          break;    
+          break;
         };
       }
 
 
-      void local_init (int root, int op, int &startphase, 
+      void local_init (int root, int op, int &startphase,
                        int &nphases, int &maxranks)
       {
         if(root >= 0)
@@ -192,7 +192,7 @@ namespace CCMI
 
         _mapping->Rank2Torus (&(coords[0]), _root);
         root_t = coords[CCMI_T_DIM];
-        
+
         if(my_coords[CCMI_T_DIM] == root_t) {
           _isHead = true;
 	  _head   = _mapping->rank();
@@ -203,7 +203,7 @@ namespace CCMI
 	  _mapping->Torus2Rank (coords, &_head);
 	}
 
-        maxranks += 4;    
+        maxranks += 4;
 
         if(op == BARRIER_OP)
         {
@@ -217,29 +217,29 @@ namespace CCMI
         }
         else if(op == REDUCE_OP)
         {
-	  unsigned tail_t = (root_t + _mapping->GetDimLength(CCMI_T_DIM) - 1) % 
-	    (_mapping->GetDimLength(CCMI_T_DIM));    
-	  
+	  unsigned tail_t = (root_t + _mapping->GetDimLength(CCMI_T_DIM) - 1) %
+	    (_mapping->GetDimLength(CCMI_T_DIM));
+
 	  if(my_coords[CCMI_T_DIM] == tail_t)
 	    _isTail = true;
-	  
+
 	  int next_t = my_coords[CCMI_T_DIM] +
             ((root_t <= my_coords[CCMI_T_DIM]) ? 1 : (-1));
 	  if(next_t < 0)
 	    next_t += _mapping->GetDimLength(CCMI_T_DIM);
-          
+
           CCMI_COPY_COORDS(coords, my_coords);
           coords[CCMI_T_DIM] = next_t;
 	  _mapping->Torus2Rank (coords, &_next);
-	  
+
 	  int prev_t = my_coords[CCMI_T_DIM] +
             ((root_t <= my_coords[CCMI_T_DIM]) ? (-1) : 1);
 	  if(prev_t < 0)
 	    prev_t += _mapping->GetDimLength(CCMI_T_DIM);
-          
+
           coords[CCMI_T_DIM] = prev_t;
 	  _mapping->Torus2Rank (coords, &_prev);
-	  
+
           int tsize = _mapping->GetDimLength(CCMI_T_DIM);
           /// Non tail nodes have an extra receive phase
           if(_isHead)
@@ -249,7 +249,7 @@ namespace CCMI
 
           /// The head node does two sends
           nphases = _nReducePhases = (_isHead) ?
-            (_mapping->GetDimLength(CCMI_T_DIM)) : 2; 
+            (_mapping->GetDimLength(CCMI_T_DIM)) : 2;
 
           _startPhase = _startReducePhase;
         }
@@ -258,12 +258,12 @@ namespace CCMI
 
         startphase = _startPhase;
 
-        // printf ("Initializing schedule %d, %d, %d\n", _prev, 
+        // printf ("Initializing schedule %d, %d, %d\n", _prev,
         // _next, _startphase);
       }
 
       /**
-       * \brief Get the upstream processors. Source processors 
+       * \brief Get the upstream processors. Source processors
        * that send messages to me in this collective operation
        * \param [in] phase  : phase of the collective
        * \param [out] srcpes : List of source processors
@@ -272,7 +272,7 @@ namespace CCMI
        */
 
       virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
-                                 unsigned  &nsrc, unsigned *subtasks) 
+                                 unsigned  &nsrc, unsigned *subtasks)
       {
         nsrc = 0;
         switch(_op)
@@ -305,12 +305,12 @@ namespace CCMI
        * \param ndst :  number of source processors
        * \param subtasks : what operations to perform? pt-to-pt, line bcast
        */
-      virtual void getDstPeList (unsigned  phase, unsigned *dstpes, 
-                                 unsigned  &ndst, unsigned *subtasks) 
+      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                 unsigned  &ndst, unsigned *subtasks)
       {
         ndst = 0;
 
-        //fprintf (stdout, "%d: Allreduce::getDstPeList %d, op=%d\n", 
+        //fprintf (stdout, "%d: Allreduce::getDstPeList %d, op=%d\n",
         //   _mapping->rank(), phase, _op);
 
         switch(_op)
@@ -345,19 +345,19 @@ namespace CCMI
        * \param root : the root of the collective
        * \param startphase : The phase where I become active
        * \param nphases : number of phases
-       * \param maxranks : total number of processors to communicate 
-       *  with. Mainly needed in the executor to allocate queues 
+       * \param maxranks : total number of processors to communicate
+       *  with. Mainly needed in the executor to allocate queues
        *  and other resources
        */
 
-      virtual void init (int root, int op, int &startphase, int &nphases, 
-                         int &maxranks) 
+      virtual void init (int root, int op, int &startphase, int &nphases,
+                         int &maxranks)
       {
         startphase = 0;
         nphases = 0;
         maxranks = 0;
 
-        _op  =  op;   
+        _op  =  op;
         _isHead = false;
         _isTail = false;
 
@@ -380,8 +380,8 @@ namespace CCMI
             local_init (root, BROADCAST_OP, b_startphase, b_nphases, maxranks);
 
             // add the broadcast phases
-            nphases = _mapping->GetDimLength(CCMI_T_DIM) - 1 + _startBcastPhase + 
-                      b_nphases - _startReducePhase; 
+            nphases = _mapping->GetDimLength(CCMI_T_DIM) - 1 + _startBcastPhase +
+                      b_nphases - _startReducePhase;
             startphase = _startPhase = _startReducePhase;
             _startBcastPhase += _mapping->GetDimLength(CCMI_T_DIM) - 1;
           }
@@ -390,11 +390,11 @@ namespace CCMI
 
         default:
           CCMI_abort();
-        }   
+        }
       }
 
     protected:
-      TorusCollectiveMapping         * _mapping;  
+      TorusCollectiveMapping         * _mapping;
       unsigned   short       _op;
       unsigned               _root;
       unsigned               _head; //the core with the same local rank as root
@@ -403,11 +403,11 @@ namespace CCMI
       unsigned   short       _startReducePhase;
       unsigned   short       _nReducePhases;
 
-      bool                   _isHead, _isTail;   
+      bool                   _isHead, _isTail;
 
       //for the ring reduce
       unsigned               _next;
-      unsigned               _prev; 
+      unsigned               _prev;
       unsigned               _peers [4];
     };
   };
@@ -415,9 +415,9 @@ namespace CCMI
 
 
 
-inline CCMI::Schedule::TreeBwSchedule::TreeBwSchedule 
-(TorusCollectiveMapping       * map, 
- unsigned             nranks, 
+inline CCMI::Schedule::TreeBwSchedule::TreeBwSchedule
+(TorusCollectiveMapping       * map,
+ unsigned             nranks,
  unsigned           * ranks) :
 _mapping (map),_isHead (false), _isTail (false)
 {
@@ -432,11 +432,11 @@ _mapping (map),_isHead (false), _isTail (false)
   unsigned* my_coords = _mapping->Coords();
   unsigned coords[CCMI_TORUS_NDIMS];
   CCMI_COPY_COORDS(coords, my_coords);
-  
+
   for(unsigned count = 0; count < _mapping->GetDimLength(CCMI_T_DIM); count++)
     if(count != _mapping->GetCoord(CCMI_T_DIM))
     {
-      coords[CCMI_T_DIM] = count; 
+      coords[CCMI_T_DIM] = count;
       _mapping->Torus2Rank (coords, &_peers [idx]);
       idx ++;
     }

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file connmgr/RankBasedConnMgr.h
+ * \file algorithms/connmgr/RankBasedConnMgr.h
  * \brief ???
  */
 
@@ -44,9 +44,9 @@ namespace CCMI
         {
           return _sysdep->mapping.task();
         }
-      
+
       inline unsigned getRecvConnectionId_impl (unsigned comm,
-                                                unsigned root, 
+                                                unsigned root,
                                                 unsigned src,
                                                 unsigned phase,
                                                 unsigned color)

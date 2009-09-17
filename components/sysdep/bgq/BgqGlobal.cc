@@ -14,5 +14,3 @@
 #include "BgqGlobal.h"
 
 XMI::SysDep::BgqGlobal __global;
-
-

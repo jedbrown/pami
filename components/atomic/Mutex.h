@@ -12,7 +12,7 @@
 #include "components/atomic/Atomics.h"
 
 ///
-///  \file components/mutex/Mutex.h
+///  \file components/atomic/Mutex.h
 ///  \brief Mutex Objects for Hardware and Software Mutexes
 ///
 ///  This object is a portability layer that abstracts atomic locking

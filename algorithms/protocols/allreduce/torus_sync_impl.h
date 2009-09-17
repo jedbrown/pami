@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/allreduce/sync_impl.h
+ * \file algorithms/protocols/allreduce/torus_sync_impl.h
  * \brief CCMI composite template implementations
  */
 
@@ -38,21 +38,21 @@ namespace CCMI
       /// \brief Rectangle allreduce protocol
       ///
       /// Use the OneColorRectAllredSched with the binomial subschedule
-      /// 
+      ///
       namespace Rectangle
       {
-        typedef CompositeT 
-        <CCMI::Schedule::OneColorRectAllredSched,CCMI::Executor::Allreduce,CCMI::TorusCollectiveMapping> Composite;      
+        typedef CompositeT
+        <CCMI::Schedule::OneColorRectAllredSched,CCMI::Executor::Allreduce,CCMI::TorusCollectiveMapping> Composite;
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Rectangle::Composite,CCMI::TorusCollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Rectangle::Composite,CCMI::TorusCollectiveMapping> Factory;
       };
       // Specializations for Rectangle allreduce templates.
       ///
       /// \brief Rectangle reduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
       /// Implement the factory getOneColor
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* Rectangle::Composite::name="Rectangle";
       template<> bool Rectangle::Composite::analyze(Geometry *geometry){return(geometry->isRectangle() && (geometry->nranks() > 2));};
@@ -73,21 +73,21 @@ namespace CCMI
       /// \brief Rectangle reduce protocol
       ///
       /// Use the OneColorRectRedSched with the binomial subschedule
-      /// 
+      ///
       namespace RectangleReduce
       {
-        typedef CompositeT 
-        <CCMI::Schedule::OneColorRectRedSched,CCMI::Executor::Allreduce,CCMI::TorusCollectiveMapping> Composite;      
+        typedef CompositeT
+        <CCMI::Schedule::OneColorRectRedSched,CCMI::Executor::Allreduce,CCMI::TorusCollectiveMapping> Composite;
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RectangleReduce::Composite,CCMI::TorusCollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RectangleReduce::Composite,CCMI::TorusCollectiveMapping> Factory;
       };
       // Specializations for Rectangle reduce templates.
       ///
       /// \brief Rectangle reduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
       /// Implement the factory getOneColor
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* RectangleReduce::Composite::name="RectangleReduce";
       template<> bool RectangleReduce::Composite::analyze(Geometry *geometry){return(geometry->isRectangle() && (geometry->nranks() > 2));};
@@ -108,21 +108,21 @@ namespace CCMI
       /// \brief Rectangle Ring allreduce protocol
       ///
       /// Use the OneColorRectAllredSched with the ring subschedule
-      /// 
+      ///
       namespace RectangleRing
       {
-        typedef CompositeT 
-        <CCMI::Schedule::OneColorRectAllredSched,CCMI::Executor::PipelinedAllreduce,CCMI::TorusCollectiveMapping> Composite;      
+        typedef CompositeT
+        <CCMI::Schedule::OneColorRectAllredSched,CCMI::Executor::PipelinedAllreduce,CCMI::TorusCollectiveMapping> Composite;
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RectangleRing::Composite,CCMI::TorusCollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RectangleRing::Composite,CCMI::TorusCollectiveMapping> Factory;
       };
       // Specializations for Rectangle Ring templates.
       ///
       /// \brief Rectangle ring allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
       /// Implement the factory getOneColor
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* RectangleRing::Composite::name="RectangleRing";
       template<> bool RectangleRing::Composite::analyze(Geometry *geometry){return(geometry->isRectangle() && (geometry->nranks() > 2));};
@@ -143,14 +143,14 @@ namespace CCMI
       /// \brief Rectangle Ring reduce protocol
       ///
       /// Use the OneColorRectRedSched with the ring subschedule
-      /// 
+      ///
       namespace RectangleRingReduce
       {
-        typedef CompositeT 
+        typedef CompositeT
         <CCMI::Schedule::OneColorRectRedSched,CCMI::Executor::PipelinedAllreduce,CCMI::TorusCollectiveMapping> Composite;      //? pipelined or not?
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RectangleRingReduce::Composite,CCMI::TorusCollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RectangleRingReduce::Composite,CCMI::TorusCollectiveMapping> Factory;
       };
       // Specializations for Rectangle Ring templates.
       ///

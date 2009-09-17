@@ -32,7 +32,7 @@ namespace CCMI
         /// \brief Tree allreduce protocol
         ///
         /// Optimizes allreduce for large messages
-        /// 
+        ///
         template <class SCHEDULE, class EXECUTOR> class CompositeT : public CCMI::Adaptor::Allreduce::Composite
         {
         protected:
@@ -118,7 +118,7 @@ namespace CCMI
           /// It means this composite (and kernel executor) is done, but
           /// the client done isn't called until both the composite and
           /// both barriers are done.
-          /// 
+          ///
           static void cb_reduceCompositeDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
@@ -147,7 +147,7 @@ namespace CCMI
           /// the first barrier finishes (on reduce only)
           ///
           /// Start the [all]reduce now.  Start the ending/second barrier.
-          /// 
+          ///
           static void cb_endBarrierDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
@@ -163,7 +163,7 @@ namespace CCMI
           /// the first barrier finishes (on reduce only)
           ///
           /// Start the [all]reduce now.  Start the ending/second barrier.
-          /// 
+          ///
           static void cb_barrierDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,

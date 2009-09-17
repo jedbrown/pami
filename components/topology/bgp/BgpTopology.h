@@ -22,7 +22,7 @@ namespace XMI
             inline BgpTopology():
                 Topology<XMI::Topology::BgpTopology>()
                 {}
-             
+
             inline BgpTopology(xmi_coord_t *ll, xmi_coord_t *ur,
                        unsigned char *tl = NULL):
                 Topology<XMI::Topology::BgpTopology>(ll,ur,tl)
@@ -135,7 +135,7 @@ namespace XMI
             inline void subtractTopology(XMI::Topology::BgpTopology *_new, XMI::Topology::BgpTopology *other)
                 {
                 }
-        
+
         }; // end XMI::Topology::BgpTopology
     }; // end namespace Topology
 }; // end namespace XMI

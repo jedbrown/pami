@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/geometry/mpi/mpicollinfo.h
+ * \brief ???
+ */
+
 #ifndef   __xmi_mpicollinfo__h__
 #define   __xmi_mpicollinfo__h__
 
@@ -48,7 +61,7 @@ namespace XMI
       CollInfo(T_Device *dev) {}
       collinfo_type_t _colltype;
     };
-    
+
     template <class T_Device>
     class PGBroadcastInfo:public CollInfo<T_Device>
     {
@@ -87,21 +100,21 @@ namespace XMI
       CollInfo<T_Device>(dev),
 	_smodel(*dev),
 	_bmodel(*dev){}
-      
+
       MPIMcastModel _smodel;
       MPIMcastModel _bmodel;
     };
-    
+
     template <class T_Device>
     class PGScattervInfo:public CollInfo<T_Device>
     {
     public:
-      
+
     PGScattervInfo(T_Device *dev):
       CollInfo<T_Device>(dev),
 	_smodel(*dev),
 	_bmodel(*dev){}
-      
+
       MPIMcastModel _smodel;
       MPIMcastModel _bmodel;
     };
@@ -143,10 +156,10 @@ namespace XMI
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
-    
 
 
-    
+
+
   };
 };
 typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;

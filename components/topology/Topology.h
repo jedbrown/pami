@@ -1,5 +1,5 @@
 ///
-/// \file xmi/Topology.h
+/// \file components/topology/Topology.h
 /// \brief XMI topology implementation.
 ///
 #ifndef   __xmi_component_topology_h__
@@ -268,12 +268,12 @@ namespace XMI
             ///
             inline void subtractTopology(Topology *_new, Topology *other);
         }; // end XMI::Topology::Topology
-       
+
         template <class T_Topology>
-	unsigned Topology<T_Topology>::size_of() 
+	unsigned Topology<T_Topology>::size_of()
         {
             return static_cast<T_Topology*>(this)->size_of_impl();
-        }       
+        }
 
         template <class T_Topology>
         size_t Topology<T_Topology>::size()
@@ -342,80 +342,80 @@ namespace XMI
         {
             return static_cast<T_Topology*>(this)->isGlobal_impl();
         }
-        
+
         template <class T_Topology>
 	bool Topology<T_Topology>::isRectSeg()
         {
             return static_cast<T_Topology*>(this)->isRectSeg_impl();
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::getNthDims(unsigned n, unsigned *c0, unsigned *cn,
                                               unsigned char *tl)
         {
             return static_cast<T_Topology*>(this)->getNthDims_impl(n,c0,cn,tl);
         }
-        
+
         template <class T_Topology>
 	bool Topology<T_Topology>::isRankMember(size_t rank)
         {
             return static_cast<T_Topology*>(this)->isRankMember_impl(rank);
         }
-        
+
         template <class T_Topology>
 	bool Topology<T_Topology>::isCoordMember(xmi_coord_t *c0)
         {
             return static_cast<T_Topology*>(this)->isCoordMember_impl(c0);
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::subTopologyLocalToMe(T_Topology *_new)
         {
             return static_cast<T_Topology*>(this)->subTopologyLocalToMe_impl(_new);
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::subTopologyNthGlobal(T_Topology *_new, int n)
         {
             return static_cast<T_Topology*>(this)->subTopologyNthGlobal_impl(_new, n);
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::subTopologyReduceDims(T_Topology *_new, xmi_coord_t *fmt)
         {
             return static_cast<T_Topology*>(this)->subTopologyReduceDims_impl(_new, fmt);
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::getRankList(size_t max, size_t *ranks, size_t *nranks)
         {
             return static_cast<T_Topology*>(this)->getRankList_impl(max,ranks,nranks);
         }
-        
+
         template <class T_Topology>
 	bool Topology<T_Topology>::analyzeTopology()
         {
             return static_cast<T_Topology*>(this)->analyzeTopology_impl();
         }
-        
+
         template <class T_Topology>
 	bool Topology<T_Topology>::convertTopology(xmi_topology_type_t new_type)
         {
             return static_cast<T_Topology*>(this)->convertTopology_impl(new_type);
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::unionTopology(Topology *_new, Topology *other)
         {
             return static_cast<T_Topology*>(this)->unionTopology_impl(_new, other);
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::intersectTopology(Topology *_new, Topology *other)
         {
             return static_cast<T_Topology*>(this)->intersectTopology_impl(_new, other);
         }
-        
+
         template <class T_Topology>
 	void Topology<T_Topology>::subtractTopology(Topology *_new, Topology *other)
         {

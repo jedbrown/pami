@@ -29,16 +29,16 @@ namespace CCMI
     {
 
       // Forward declare prototype
-      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned, 
+      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned,
                                     unsigned&, coremath&) __attribute__((noinline));
 
       //-- AsyncComposite
       /// \brief The Async Composite for the Allreduce kernel executor.
-      /// 
+      ///
       /// It does common initialization for all subclasses (protocols)
       /// such as mapping the operator and datatype to a function and
       /// calling various setXXX() functions in the kernel executor.
-      /// 
+      ///
       class AsyncComposite : public BaseComposite
       {
       protected:
@@ -49,10 +49,10 @@ namespace CCMI
         ///
         int                             _doneCountdown;
 
-        /// \brief The asynchronous state of the operation.  
+        /// \brief The asynchronous state of the operation.
         /// Idle/Done - no operation in progress
         /// Started - a local operation has started
-        /// Queueing - a unexpected/asynchronous message arrived before 
+        /// Queueing - a unexpected/asynchronous message arrived before
         /// a local operation has started
         int                             _asyncState;
         static const int                _isIdle     = 0;
@@ -73,7 +73,7 @@ namespace CCMI
         void                * _myClientData;
       public:
 
-#ifdef CCMI_DEBUG 
+#ifdef CCMI_DEBUG
         unsigned                          _count;
         XMI_Dt                           _dt;
         XMI_Op                           _op;
@@ -114,8 +114,8 @@ namespace CCMI
           return _asyncState == _isQueueing;
         }
 
-        AsyncComposite () : 
-        BaseComposite (NULL), 
+        AsyncComposite () :
+        BaseComposite (NULL),
         _doneCountdown(1),  // default to just a composite done needed
         _asyncState(_isIdle)
         {
@@ -130,7 +130,7 @@ namespace CCMI
         _doneCountdown(1),  // default to just a composite done needed
         _asyncState(_isIdle),
         _flags(flags),
-        _myClientFunction (cb_done.function), 
+        _myClientFunction (cb_done.function),
         _myClientData (cb_done.clientdata)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::ctor() ALERT:\n",(int)this));
@@ -153,7 +153,7 @@ namespace CCMI
         ///
         /// \brief initialize should be called after the executors
         /// have been added to the composite
-        ///	  
+        ///
         void initialize ( CCMI::Executor::AllreduceBase * allreduce,
                           XMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
@@ -163,18 +163,18 @@ namespace CCMI
                           XMI_Op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, XMI_Error_t *) = cb_compositeDone, 
+                          void                           (* cb_done)(void *, XMI_Error_t *) = cb_compositeDone,
                           void                            * cd = NULL
                         )
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::initialize()\n",(int)this));
           allreduce->setSendState(request);
-          allreduce->setRoot( root );    
+          allreduce->setRoot( root );
           allreduce->setDataInfo(srcbuf, dstbuf);
 
           allreduce->setDoneCallback( cb_done, cd == NULL? this: cd );
 
-          if((op != allreduce->getOp()) || (dtype != allreduce->getDt()) || 
+          if((op != allreduce->getOp()) || (dtype != allreduce->getDt()) ||
              (count != allreduce->getCount()))
           {
             coremath func;
@@ -195,16 +195,16 @@ namespace CCMI
                First, the function parameter overrides the config value.
             */
             unsigned pwidth = pipelineWidth ? pipelineWidth : _flags.pipeline_override;
-            /* 
+            /*
                If -1, disable pipelining or use specified value
             */
-            pwidth = (pwidth == (unsigned)-1)? count*sizeOfType : pwidth; 
-            /* 
-               Use specified (non-zero) value or calculate (if zero is specified)  
+            pwidth = (pwidth == (unsigned)-1)? count*sizeOfType : pwidth;
+            /*
+               Use specified (non-zero) value or calculate (if zero is specified)
             */
             pwidth = pwidth ? pwidth : computePipelineWidth (count, sizeOfType, min_pwidth);
 
-            allreduce->setReduceInfo ( count, pwidth, sizeOfType, 
+            allreduce->setReduceInfo ( count, pwidth, sizeOfType,
                                        func, op, dtype );
           }
         }
@@ -226,7 +226,7 @@ namespace CCMI
 
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::computePipelineWidth() pwidth %#X\n",(int)this,
                          pwidth));
-          return pwidth;      
+          return pwidth;
         }
 
         ///
@@ -241,7 +241,7 @@ namespace CCMI
                                      size_t                      count,
                                      XMI_Dt                     dtype,
                                      XMI_Op                     op,
-                                     size_t                      root = (size_t)-1) 
+                                     size_t                      root = (size_t)-1)
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::restart()\n",(int)this));
           _myClientFunction = cb_done.function;
@@ -249,10 +249,10 @@ namespace CCMI
 
           CCMI_assert_debug (getNumExecutors() == 1);
           CCMI::Executor::AllreduceBase * allreduce =
-          (CCMI::Executor::AllreduceBase *) getExecutor(0);   
+          (CCMI::Executor::AllreduceBase *) getExecutor(0);
 
-          initialize (allreduce, request, srcbuf, dstbuf, 
-                      count, dtype, op, root);    
+          initialize (allreduce, request, srcbuf, dstbuf,
+                      count, dtype, op, root);
           if(isIdle())
           {
             allreduce->reset();
@@ -289,13 +289,13 @@ namespace CCMI
                                         unsigned                    count,
                                         XMI_Dt                     dtype,
                                         XMI_Op                     op,
-                                        int                         root=-1) 
+                                        int                         root=-1)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::restartAsync() ALERT:\n",(int)this));
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::restartAsync()\n",(int)this));
 
           initialize (allreduce,(XMI_CollectiveRequest_t  *) NULL, NULL, NULL,
-                      count, dtype, op, root);    
+                      count, dtype, op, root);
           if(isIdle())
           {
             allreduce->reset();
@@ -321,7 +321,7 @@ namespace CCMI
           _doneCountdown --;
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::done() "
                          "_doneCountdown:%#X %#X/%#X \n",(int)this,
-                         _doneCountdown,(int)_myClientFunction,  
+                         _doneCountdown,(int)_myClientFunction,
                          (int)_myClientData));
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
           {
@@ -338,7 +338,7 @@ namespace CCMI
         /// [all]reduce finishes
         ///
         /// It means this composite (and kernel executor) is done
-        /// 
+        ///
         static void cb_compositeDone(void *me, XMI_Error_t *err)
         {
           TRACE_ADAPTOR((stderr,

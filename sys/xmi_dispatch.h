@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file xmi_dispatch.h
+ * \file sys/xmi_dispatch.h
  * \brief messaging interface
  */
 

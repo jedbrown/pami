@@ -12,7 +12,7 @@
 #include "AtomicFactory.h"
 
 ////////////////////////////////////////////////////////////////////////
-///  \file sysdep/Barrier.h
+///  \file components/barrier/BarrierObject.h
 ///  \brief Barrier Objects for Hardware and Software Barrieres
 ///
 ///  This object is a portability layer that abstracts local barriers

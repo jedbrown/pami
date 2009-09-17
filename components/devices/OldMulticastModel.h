@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/OldMulticastModel.h
+ * \brief ???
+ */
+
 #ifndef __components_device_Oldmulticastmodel_h__
 #define __components_device_Oldmulticastmodel_h__
 
@@ -16,7 +29,7 @@ namespace XMI
       public:
         OldmulticastModel (T_Device & device) {};
         ~OldmulticastModel () {};
-              
+
         inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg);
         inline unsigned  send   (XMI_Request_t            * request,
                                  const xmi_callback_t     * cb_done,
@@ -31,7 +44,7 @@ namespace XMI
                                  unsigned                    nranks,
                                  xmi_op                      op    = XMI_UNDEFINED_OP,
                                  xmi_dt                      dtype = XMI_UNDEFINED_DT );
-              
+
         inline unsigned send (xmi_oldmulticast_t  *mcastinfo);
 
         inline unsigned postRecv (XMI_Request_t          * request,
@@ -47,13 +60,13 @@ namespace XMI
       };
 
 
-      
+
       template <class T_Model, class T_Device, class T_Object>
       void OldmulticastModel<T_Model, T_Device, T_Object>::setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
       {
         static_cast<T_Model*>(this)->setCallback_impl(cb_recv, arg);
       }
-      
+
       template <class T_Model, class T_Device, class T_Object>
       unsigned OldmulticastModel<T_Model, T_Device, T_Object>::send (XMI_Request_t             * request,
                                                                      const xmi_callback_t      * cb_done,

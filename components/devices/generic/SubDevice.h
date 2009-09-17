@@ -16,7 +16,7 @@
 #include "xmi.h"
 
 ////////////////////////////////////////////////////////////////////////
-///  \file devices/prod/generic/Device.h
+///  \file components/devices/generic/SubDevice.h
 ///  \brief Generic Device
 ///
 ///  The Generic classes implement a QueueSystem and a Message object
@@ -263,7 +263,7 @@ public: // temporary
 
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		bool first = (getCurrent() == NULL);
-		if (first) { 
+		if (first) {
 			__start_msg(msg);
 			msg->__advanceThread(&_threads[0]);
 			if (msg->getStatus() == XMI::Device::Done) {
@@ -272,7 +272,7 @@ public: // temporary
 			}
 			__post_msg(msg);
 		}
-		XMI::Device::Generic::GenericSubDevice::post(msg);    
+		XMI::Device::Generic::GenericSubDevice::post(msg);
 	}
 
 	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
@@ -346,7 +346,7 @@ private:
 
 	inline void __post(T_Message *msg) {
 		bool first = (getCurrent() == NULL);
-		if (first) { 
+		if (first) {
 			__start_msg(msg);
 			// Don't check each thread for "Done", we only care about msg
 			for (int x = 0; x < _nActiveThreads; ++x) {
@@ -358,7 +358,7 @@ private:
 			}
 			__post_msg(msg);
 		}
-		XMI::Device::Generic::GenericSubDevice::post((XMI::Device::Generic::GenericMessage *)msg);    
+		XMI::Device::Generic::GenericSubDevice::post((XMI::Device::Generic::GenericMessage *)msg);
 	}
 
 	inline unsigned __completeThread(T_Thread *thr) {
@@ -458,7 +458,7 @@ public:
 		__start_msg(msg);
 		__post_msg(msg);
 		// Don't queue locally... all are active
-		//XMI::Device::Generic::GenericSubDevice::post((XMI::Device::Generic::GenericMessage *)msg);    
+		//XMI::Device::Generic::GenericSubDevice::post((XMI::Device::Generic::GenericMessage *)msg);
 	}
 
 	inline unsigned __completeThread(T_Thread *thr) {
@@ -656,7 +656,7 @@ public:	// temporary?
 
 	inline void __post(T_Message *msg) {
 		bool first = (_common->getCurrent() == NULL);
-		if (first) { 
+		if (first) {
 			__start_msg(msg);
 			// Don't check each thread for "Done", we only care about msg
 			for (int x = 0; x < _nActiveThreads; ++x) {
@@ -668,7 +668,7 @@ public:	// temporary?
 			}
 			__post_msg(msg);
 		}
-		_common->post((XMI::Device::Generic::GenericMessage *)msg);    
+		_common->post((XMI::Device::Generic::GenericMessage *)msg);
 	}
 
 	inline unsigned __completeThread(T_Thread *thr) {

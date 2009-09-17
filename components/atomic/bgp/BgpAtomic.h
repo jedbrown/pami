@@ -82,5 +82,3 @@ namespace XMI
 
 
 #endif // __xmi_atomic_bgp_bgpatomic_h__
-
-

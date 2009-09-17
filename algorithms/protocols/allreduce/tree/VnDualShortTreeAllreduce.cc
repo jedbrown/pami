@@ -109,9 +109,9 @@ namespace CCMI
 
           TRACE_ADAPTOR((stderr,"<        >Allreduce::Tree::VnDualShortTreeAllreduce::init "
                          "minTCoord:%d numPeers:%d t:%d srcs[0]:%#.8X srcs[1]:%#.8X "
-                         "srcs[2]:%#.8X srcs[3]:%#.8X\n", 
-                         _minTCoord, 
-                         _numPeers, 
+                         "srcs[2]:%#.8X srcs[3]:%#.8X\n",
+                         _minTCoord,
+                         _numPeers,
                          mapping->GetCoord(CCMI_T_DIM),
                          (int)_shared->srcs[0],
                          (int)_shared->srcs[1],
@@ -128,7 +128,7 @@ namespace CCMI
                                        size_t                      count,
                                        XMI_Dt                     dtype,
                                        XMI_Op                     op,
-                                       size_t                      root) 
+                                       size_t                      root)
           {
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce::restart() "
                            "srcbuf[0]:%d srcbuf:%#.8X\n", (int)this,
@@ -158,9 +158,9 @@ namespace CCMI
               else
               {
                 _reduceOpSelect = OPT_FUN;
-                _reduceFunc = (coremath)MATH_OP_FUNCS( (XMI_Dt)dtype, 
-                                                              (XMI_Op)op, 
-                                                              _numPeers );  
+                _reduceFunc = (coremath)MATH_OP_FUNCS( (XMI_Dt)dtype,
+                                                              (XMI_Op)op,
+                                                              _numPeers );
               }
 
               _sizeOfType = dcmf_dt_shift[dtype];
@@ -171,7 +171,7 @@ namespace CCMI
 
             if (_count != count)
             {
-              _bytes  = count << _sizeOfType; 
+              _bytes  = count << _sizeOfType;
               _count = count;
 
               if (_bytes > MaxDataBytes)// || (root != -1)) // short allreduce only
@@ -203,8 +203,8 @@ namespace CCMI
                              "slave2 srcbuf[0]:%d shared.src[0]:%d tcoord:%d\n", (int)this,
                              ((int*)srcbuf)[0],((int*)_shared->client[tCoord - 1].src)[0],tCoord ));
 
-              // (busy) wait for the result 
-              while ((volatile unsigned)_shared->client[_myPeer - 1].isDstReady == 0); 
+              // (busy) wait for the result
+              while ((volatile unsigned)_shared->client[_myPeer - 1].isDstReady == 0);
 
               TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce slave3\n", (int)this));
 
@@ -221,14 +221,14 @@ namespace CCMI
 	      _swq.reset();
 
 
-              // wait for peers to copy  src data into the shared buffer 
+              // wait for peers to copy  src data into the shared buffer
               volatile unsigned num;
               do
               {
-                num = 
-                (volatile unsigned)_shared->client[0].isSrcReady + 
+                num =
+                (volatile unsigned)_shared->client[0].isSrcReady +
                 (volatile unsigned)_shared->client[1].isSrcReady +
-                (volatile unsigned)_shared->client[2].isSrcReady;       
+                (volatile unsigned)_shared->client[2].isSrcReady;
               } while (num < _numPeers - 1);
 
               if (_dstbuf) {
@@ -254,7 +254,7 @@ namespace CCMI
               {
                 for (unsigned i = 0; i < _count; i++)
                 {
-                  ((int *)(_swq_buf))[i] = 
+                  ((int *)(_swq_buf))[i] =
                   	((int *)(_shared->srcs[0]))[i] +
                   	((int *)(_shared->srcs[1]))[i] +
                   	((int *)(_shared->srcs[2]))[i] +
@@ -265,7 +265,7 @@ namespace CCMI
               {
                 for (unsigned i = 0; i < _count; i++)
                 {
-                  ((double *)(_swq_buf))[i] = 
+                  ((double *)(_swq_buf))[i] =
                   	((double *)(_shared->srcs[0]))[i] +
                   	((double *)(_shared->srcs[1]))[i] +
                   	((double *)(_shared->srcs[2]))[i] +
@@ -292,7 +292,7 @@ namespace CCMI
             }
 
             return XMI_SUCCESS;
-          } 
+          }
 
       } /* Tree */
     } /* Allreduce */

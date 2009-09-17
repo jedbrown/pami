@@ -131,7 +131,7 @@ protected:
 		}
 		return XMI::Device::Active;
 	}
-		
+
 
 	inline XMI::Device::MessageStatus __advanceRcp(CNAllreducePPThread *thr) {
 		if (thr->_bytesLeft == 0) return XMI::Device::Done;

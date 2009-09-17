@@ -99,7 +99,7 @@ namespace XMI
           result = XMI_SUCCESS;
           return (xmi_context_t) context;
         }
-        
+
         inline xmi_result_t destroyContext_impl (xmi_context_t context)
         {
           //_context_list->lock ();
@@ -107,9 +107,9 @@ namespace XMI
           return ((XMI::Context::BgpContext *)context)->destroy ();
           //_context_list->unlock ();
         }
-        
+
       protected:
-      
+
         inline xmi_client_t getClientId () const
         {
           return _client;
@@ -118,7 +118,7 @@ namespace XMI
       private:
 
         xmi_client_t _client;
-        
+
         size_t       _references;
         char         _name[256];
 

@@ -144,7 +144,7 @@ protected:
 		}
 		return XMI::Device::Active;
 	}
-		
+
 
 	inline XMI::Device::MessageStatus __advanceRcp(CNAllreduceShortThread *thr) {
 		if (thr->_bytesLeft == 0) return XMI::Device::Done;
@@ -566,7 +566,7 @@ public:
 	_count (count),
 	_func (func),
 	_doBcast(root == (unsigned)-1) {
-		// ~300 cycles. This code depends on 
+		// ~300 cycles. This code depends on
 		// always consuming/producing the full WQ size.
 		// (i.e. bufferToConsume() must be constant)
 		unsigned i;
@@ -664,7 +664,7 @@ public:
 	_count (count),
 	_func (func),
 	_doBcast(root == (unsigned)-1) {
-		// ~300 cycles. This code depends on 
+		// ~300 cycles. This code depends on
 		// always consuming/producing the full WQ size.
 		// (i.e. bufferToConsume() must be constant)
 		unsigned i;

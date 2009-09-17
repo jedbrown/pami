@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-///  \file queue/Queue.h
+///  \file util/queue/Queue.h
 ///  \brief QueueElem and Queue Classes
 ///
 ///  These classes implement a base queue element and queues constructed
@@ -605,17 +605,17 @@ inline void XMI::MultiQueue<numElems, elemNum>::remove(MultiQueueElem<numElems> 
 {
   MultiQueueElem<numElems> *prev = (MultiQueueElem<numElems> *)item->prev(elemNum);
   MultiQueueElem<numElems> *next = (MultiQueueElem<numElems> *)item->next(elemNum);
-  
+
   if(prev!=NULL)
     prev->setNext(next, elemNum);
   else
     _head = next;
-  
+
   if(next!=NULL)
     next->setPrev(prev, elemNum);
   else
     _tail = prev;
-  
+
   _size--;
 }
 

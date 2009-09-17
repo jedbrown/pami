@@ -71,7 +71,7 @@
 	STFPDUX (t4, saved_fprs_base_p, sixteen);	\
 	STFPDUX (t5, saved_fprs_base_p, sixteen);	\
 	STFPDUX (t6, saved_fprs_base_p, sixteen);	\
-	STFPDUX (t7, saved_fprs_base_p, sixteen); 
+	STFPDUX (t7, saved_fprs_base_p, sixteen);
 
 
 /// \brief Restore higher 8 FP registers (we actually only need f12-f15 saved)
@@ -332,7 +332,7 @@ if (((uint32_t)f0 | (uint32_t)f1 | (uint32_t)f2) & 0x0f) {
 	f0 -= 2; // adjust for LFPDUX(...16)
 	f1 -= 2;
 	f2 -= 2;
-	size128--;   
+	size128--;
 
 	LFPDUX(s0, f0, sixteen);
 	LFPDUX(s1, f0, sixteen);
@@ -346,7 +346,7 @@ if (((uint32_t)f0 | (uint32_t)f1 | (uint32_t)f2) & 0x0f) {
 
 	OP3(t0, r0, s0);
 
-	while (size128--) {    
+	while (size128--) {
 		LFPDUX(s4, f0, sixteen);
 		LFPDUX(r4, f1, sixteen);
 		OP3(t1, r1, s1);
@@ -363,7 +363,7 @@ if (((uint32_t)f0 | (uint32_t)f1 | (uint32_t)f2) & 0x0f) {
 		STFPDUX(t2, f2, sixteen);
 
 		LFPDUX(s7, f0, sixteen);
-		LFPDUX(r7, f1, sixteen);      
+		LFPDUX(r7, f1, sixteen);
 		OP3(t4, r4, s4);
 		STFPDUX(t3, f2, sixteen);
 

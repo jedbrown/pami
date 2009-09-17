@@ -28,7 +28,7 @@
 #define MAX_REG_THREADS	16	// >= total max threads in all subdevices
 
 ////////////////////////////////////////////////////////////////////////
-///  \file devices/prod/generic/Device.h
+///  \file components/devices/generic/Device.h
 ///  \brief Generic Device
 ///
 ///  The Generic classes implement a BaseDevice and a Message object

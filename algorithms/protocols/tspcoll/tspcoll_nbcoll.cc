@@ -9,10 +9,11 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
-
+/**
+ * \file algorithms/protocols/tspcoll/tspcoll_nbcoll.cc
+ * \brief ???
+ */
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-
-

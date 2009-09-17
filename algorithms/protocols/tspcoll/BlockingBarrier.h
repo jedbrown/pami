@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/BlockingBarrier.h
+ * \brief ???
+ */
 
 #ifndef __tspcoll_blockingbarrier_h__
 #define __tspcoll_blockingbarrier_h__
@@ -34,11 +38,11 @@ namespace TSPColl
     void execute();
 
   private:
-    static __pgasrt_local_addr_t 
+    static __pgasrt_local_addr_t
       cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
 		   void (** cH)(void *, void *),
 		   void ** arg);
-    
+
 
   private:
     int _counter;
@@ -101,7 +105,7 @@ inline void TSPColl::BlockingBarrier::execute (CCMI::MultiSend::OldMulticastInte
       XMI_Callback_t cb_done;
       cb_done.function        = NULL;
       cb_done.clientdata     =  NULL;
-      
+
       void * r = mcast_iface->send (&_req,
 				    cb_done,
 				    CCMI_MATCH_CONSISTENCY,

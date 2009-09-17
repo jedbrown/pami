@@ -1,5 +1,5 @@
 /**
- * \file xmi_types.h
+ * \file sys/xmi_types.h
  * \brief Common external collectives message layer types.
  */
 #ifndef __xmi_types_h__

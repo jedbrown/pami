@@ -24,12 +24,12 @@ namespace CCMI
   {
     namespace Broadcast
     {
-      typedef 
+      typedef
       AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
                        XMI_COLL_SYSDEP_CLASS,
                        XMI_COLL_MCAST_CLASS,
                        CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> > AsyncBinomialComposite;
-      template<> 
+      template<>
       void AsyncBinomialComposite::create_schedule(void                      * buf,
                                                    unsigned                    size,
                                                    unsigned                    root,
@@ -39,7 +39,7 @@ namespace CCMI
         new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>(map, g->nranks(), g->ranks());
       }
 
-      typedef AsyncCompositeFactoryT <AsyncBinomialComposite, true_analyze,XMI_COLL_SYSDEP_CLASS,XMI_COLL_MCAST_CLASS> 
+      typedef AsyncCompositeFactoryT <AsyncBinomialComposite, true_analyze,XMI_COLL_SYSDEP_CLASS,XMI_COLL_MCAST_CLASS>
       AsyncBinomialFactory;
     };
   };

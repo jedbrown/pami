@@ -94,9 +94,9 @@ namespace CCMI
 
           TRACE_ADAPTOR((stderr,"<        >Broadcast::Tree::ShortTreeBcast::init "
                          "minTCoord:%d numPeers:%d t:%d srcs[0]:%#.8X srcs[1]:%#.8X "
-                         "srcs[2]:%#.8X srcs[3]:%#.8X\n", 
-                         _minTCoord, 
-                         _numPeers, 
+                         "srcs[2]:%#.8X srcs[3]:%#.8X\n",
+                         _minTCoord,
+                         _numPeers,
                          mapping->GetCoord(CCMI_T_DIM),
                          (int)_shared->srcs[0],
                          (int)_shared->srcs[1],

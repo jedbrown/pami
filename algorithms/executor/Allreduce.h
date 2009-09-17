@@ -25,9 +25,9 @@ namespace CCMI
 #define CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE -1
 
 /// Arbitrary maximum number of simultaneously active sends.  We reserve the last
-/// one (CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_SEND_INDEX) for the 
+/// one (CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_SEND_INDEX) for the
 /// initial (non-pipelined) startup send (if there is one defined in the schedule).
-/// The others (CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS) are for 
+/// The others (CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS) are for
 /// pipelined sends.
 #define CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS 5
 #define CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS 4
@@ -39,19 +39,19 @@ namespace CCMI
     ///
     /// This should work for any reasonable schedule and tries not to make any
     /// assumptions about what's expected in the schedule other than :
-    /// 
+    ///
     /// - send before receive in a phase.
-    /// 
+    ///
     /// It may be used with expected or unexpected receive/multisend processing.
-    /// 
+    ///
     /// For expected multisend processing, call postReceives() before calling start() on
     /// any rank.
-    /// 
+    ///
     /// For unexpected multisend processing, call setupReceives() and create an
-    /// unexpected callback function that calls notifyRecvHead() before calling start() 
+    /// unexpected callback function that calls notifyRecvHead() before calling start()
     /// on any rank.
-    /// 
-    /// This executor stores persistent state/phase data, including buffer allocation, 
+    ///
+    /// This executor stores persistent state/phase data, including buffer allocation,
     /// in an external class - AllreduceState.  The client should manage this class
     /// and free allocations when appropriate (AllreduceState::freeAllocations()).
 
@@ -100,7 +100,7 @@ namespace CCMI
       inline void reset()
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::reset() enter\n",(int)this));
-        _state->resetPhaseData ();    
+        _state->resetPhaseData ();
         _state->setDstBuf (&_dstbuf);
 
         CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
@@ -134,7 +134,7 @@ namespace CCMI
       }
 
       /// \brief Default Destructor
-      virtual ~Allreduce () 
+      virtual ~Allreduce ()
       {
         TRACE_ALERT((stderr,"<%#.8X>Executor::Allreduce::dtor() ALERT:\n",(int)this));
 #ifdef CCMI_DEBUG
@@ -150,7 +150,7 @@ namespace CCMI
       }
       /// \brief Default Constructor
       inline Allreduce () :
-      AllreduceBase(), 
+      AllreduceBase(),
       _state(&_astate),
       _nextRecvData(0),
       //_sState[].sndReq        uninitialzed opaque storage
@@ -207,8 +207,8 @@ namespace CCMI
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::ctor() enter\n",(int)this));
 #ifdef CCMI_DEBUG
         TRACE_MSG((stderr, "<%#.8X>Executor::Allreduce::ctor() "
-                   "Allreduce %X, AllreduceBase %X, Executor %X\n",(int)this, 
-                   sizeof(CCMI::Executor::Allreduce), 
+                   "Allreduce %X, AllreduceBase %X, Executor %X\n",(int)this,
+                   sizeof(CCMI::Executor::Allreduce),
                    sizeof(CCMI::Executor::AllreduceBase),
                    sizeof(CCMI::Executor::Executor)));
         TRACE_DATA(("this",(const char*)this, sizeof(*this)));
@@ -312,7 +312,7 @@ namespace CCMI
       /// \param[out]  rcvbuf     buffer to receive datatype
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
-      /// 
+      ///
       inline XMI_Request_t *   notifyRecvHead(const XMIQuad  * info,
                                                unsigned          count,
                                                unsigned          peer,
@@ -326,7 +326,7 @@ namespace CCMI
       static inline void _compile_time_assert_ ()
       {
         // Compile time assert
-        // SendState array must must fit in a request 
+        // SendState array must must fit in a request
         COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(XMI_CollectiveRequest_t));
       }
     }; // Allreduce
@@ -334,7 +334,7 @@ namespace CCMI
 };// CCMI::Executor
 
 
-inline XMI_Request_t * 
+inline XMI_Request_t *
 CCMI::Executor::Allreduce::notifyRecvHead(const XMIQuad    * info,
                                           unsigned          count,
                                           unsigned          peer,
@@ -373,18 +373,18 @@ CCMI::Executor::Allreduce::notifyRecvHead(const XMIQuad    * info,
   CCMI_assert(arg && rcvlen && rcvbuf && pipewidth && cb_done);
 
   // Schedule misbehavior patch:
-  // src and dst phases *should* match but some schedules 
+  // src and dst phases *should* match but some schedules
   // have problems and we'll try to tolerate it
   // Here, if the sender is sending something past our end phase,
   // assume they meant end phase and see if it works out.
   if(cdata->_phase > (unsigned)_state->getEndPhase()) cdata->_phase = (unsigned)_state->getEndPhase();
 
   // Schedule misbehavior patch:
-  // src and dst phases *should* match but some schedules 
+  // src and dst phases *should* match but some schedules
   // send (dst) in phase n and receive (src) in phase n+1.
-  // Allow this, I guess, by looking for the next src phase 
+  // Allow this, I guess, by looking for the next src phase
   // and assuming that's the one we want.  This only works if
-  // there are no src's in the specified phase.  If there are, 
+  // there are no src's in the specified phase.  If there are,
   // then we expect a match.
   while((!_state->getPhaseNumSrcPes(cdata->_phase)) && (cdata->_phase < (unsigned)_state->getEndPhase()))
   {
@@ -394,11 +394,11 @@ CCMI::Executor::Allreduce::notifyRecvHead(const XMIQuad    * info,
   }
   CCMI_assert(_state->getPhaseNumSrcPes(cdata->_phase));
 
-  // Find the matching srcPeIndex for this peer in this phase.  (Usually 0 but there could be multiple 
+  // Find the matching srcPeIndex for this peer in this phase.  (Usually 0 but there could be multiple
   //  src pe's).
-  for(_state->setRecvClientSrcPeIndex( _nextRecvData,0); 
-     (_state->getPhaseSrcPes(cdata->_phase,_state->getRecvClientSrcPeIndex( _nextRecvData)) != peer) && 
-     (_state->getRecvClientSrcPeIndex( _nextRecvData) < _state->getPhaseNumSrcPes(cdata->_phase)); 
+  for(_state->setRecvClientSrcPeIndex( _nextRecvData,0);
+     (_state->getPhaseSrcPes(cdata->_phase,_state->getRecvClientSrcPeIndex( _nextRecvData)) != peer) &&
+     (_state->getRecvClientSrcPeIndex( _nextRecvData) < _state->getPhaseNumSrcPes(cdata->_phase));
      _state->incrementRecvClientSrcPeIndex( _nextRecvData))
     TRACE_MSG((stderr,"<%#.8X>Executor::Allreduce::notifyRecvHead(%#X) srcPeIndex : %#X srcPe:%#X\n",
                (int)this,
@@ -418,7 +418,7 @@ CCMI::Executor::Allreduce::notifyRecvHead(const XMIQuad    * info,
   *pipewidth = _state->getPipelineWidth();
 
   // Get start of this peer's receive buffer and offset to the next pipeline width
-  *rcvbuf    = _state->getPhaseRecvBufs(cdata->_phase,_state->getRecvClientSrcPeIndex( _nextRecvData )) + 
+  *rcvbuf    = _state->getPhaseRecvBufs(cdata->_phase,_state->getRecvClientSrcPeIndex( _nextRecvData )) +
                (_state->getPhaseChunksRcvd(cdata->_phase,_state->getRecvClientSrcPeIndex( _nextRecvData )) * (*pipewidth));
 
   cb_done->function   = staticNotifyReceiveDone;
@@ -505,8 +505,8 @@ inline void CCMI::Executor::Allreduce::start()
   // Kick off - send local contribution if there is one.
   if(_state->getPhaseNumDstPes( _state->getStartPhase()) > 0)
   {
-    // We should send to EVERY destination that needs it. So look through the schedule for 
-    // all phases with a dstPe and no srcPe (no new chunk).  Combine them into one  
+    // We should send to EVERY destination that needs it. So look through the schedule for
+    // all phases with a dstPe and no srcPe (no new chunk).  Combine them into one
     // multisend.
     int nextSrcPhase = _state->getStartPhase();
     while((nextSrcPhase < _state->getEndPhase()) &&
@@ -520,7 +520,7 @@ inline void CCMI::Executor::Allreduce::start()
       // 5      0         2           y
       // 6      1         1           y (send before receiving)
       // 7      0         1           n (not sent until 6 is received)
-      // 
+      //
       if(_state->getPhaseNumDstPes(nextSrcPhase+1) != 0)
       {
         TRACE_INIT((stderr, "<%#.8X>Executor::Allreduce::start() compressing phase %#X, phase %#X\n",
@@ -562,7 +562,7 @@ inline void CCMI::Executor::Allreduce::start()
                "_sState[].sndClientData %#.8X\n",
                (int)this,
                (int)&_sState[sndIndex].sndReq,
-               _curRcvPhase,_curRcvChunk, 
+               _curRcvPhase,_curRcvChunk,
                _numActiveSends,
                _state->getBytes(), _sendConnectionID,
                _state->getPhaseNumDstPes(_state->getStartPhase()),
@@ -611,10 +611,10 @@ inline void CCMI::Executor::Allreduce::start()
   _curRcvChunk    = 0;
   _curSrcPeIndex = 0;
 
-  // Advance now in case the notifyRecv()'s are already done.  They 
+  // Advance now in case the notifyRecv()'s are already done.  They
   // would have no-op'd before the start phase so they need a kick start now.  There
   // might not be another cb_done if we don't and it would stall.
-  // 
+  //
   // Also, we might have delayed a send done callback advance (_delayAdvance) so
   // always advance now.
   advance();
@@ -710,7 +710,7 @@ void CCMI::Executor::Allreduce::advance()
                  _state->getPhaseNumSrcPes(_curRcvPhase),
                  (_curRcvPhase <= _state->getEndPhase()) && _state->getPhaseNumSrcPes(_curRcvPhase)? _state->getPhaseChunksRcvd(_curRcvPhase,_curSrcPeIndex): -1,
                  _curRcvChunk));
-  // If our current active send is done and our current receive phase received some data, then 
+  // If our current active send is done and our current receive phase received some data, then
   // do reduction and maybe another send
   while(_sState[curSndIndex].sndClientData.isDone &&
         _curRcvPhase <= _state->getEndPhase() &&
@@ -729,7 +729,7 @@ void CCMI::Executor::Allreduce::advance()
     {
       //char * localbuf    = _curRcvPhase == _startRcvPhase ? (char*)_srcbuf : reduceBuf;
       //Suggested change from BRC as a fix for ShortRectangle.h (SK 07/29/08)
-      char * localbuf    = ((_curRcvPhase == _startRcvPhase) && (_curSrcPeIndex == 0)) ? 
+      char * localbuf    = ((_curRcvPhase == _startRcvPhase) && (_curSrcPeIndex == 0)) ?
                            (char*)_srcbuf : reduceBuf;
 
       TRACE_REDUCEOP((stderr,"<%#.8X>Executor::Allreduce::advance() OP curphase:%#X curChunk:%#X "
@@ -770,8 +770,8 @@ void CCMI::Executor::Allreduce::advance()
       if((nextActivePhase <= _state->getEndPhase()) && (_state->getPhaseNumDstPes(nextActivePhase) > 0))
       {
         // Since we are (partially) driven by receiving "chunks", we need to send this
-        // chunk to EVERY destination that needs it. So look through the schedule for 
-        // all phases with a dstPe and no srcPe (no new chunk).  Combine them into one  
+        // chunk to EVERY destination that needs it. So look through the schedule for
+        // all phases with a dstPe and no srcPe (no new chunk).  Combine them into one
         // multisend.
         int nextSrcPhase = nextActivePhase;
         while((nextSrcPhase < _state->getEndPhase()) &&
@@ -785,7 +785,7 @@ void CCMI::Executor::Allreduce::advance()
           // 5      0         2           y
           // 6      1         1           y (send before receiving)
           // 7      0         1           n (not sent until 6 is received)
-          // 
+          //
           if(_state->getPhaseNumDstPes(nextSrcPhase+1) != 0)
           {
             // Move this DstPes back to nextActivePhase by manipulating numDstPes.
@@ -796,12 +796,12 @@ void CCMI::Executor::Allreduce::advance()
           }
           ++nextSrcPhase;
         }
-        // nextSrcPhase should point to a src phase or be > endphase. Never point 
+        // nextSrcPhase should point to a src phase or be > endphase. Never point
         // to a valid non-src phase.  i.e. handle this:
         // Phase  numSrcPes numDstPes   Combined
-        // 6      0         1           y 
+        // 6      0         1           y
         // 7      0         1           y
-        // 
+        //
         // _state->getEndPhase() = 7.  nextSrcPhase = 7 from the loop above.  Increment it.
         if((nextSrcPhase == _state->getEndPhase()) && (_state->getPhaseNumSrcPes(nextSrcPhase) == 0))
           ++nextSrcPhase;
@@ -876,7 +876,7 @@ void CCMI::Executor::Allreduce::advance()
       } //((nextActivePhase <= _state->getEndPhase()) && (_state->getPhaseNumDstPes(nextActivePhase) > 0))
       _curRcvChunk++;
 
-      // Remember, we send before we receive in a phase.  So this phase must be complete if 
+      // Remember, we send before we receive in a phase.  So this phase must be complete if
       // we received all our chunks in this phase.  Enter the next phase
       if(_curRcvChunk > _state->getLastChunk())
       {

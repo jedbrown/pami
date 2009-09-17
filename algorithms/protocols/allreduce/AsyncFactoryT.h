@@ -8,10 +8,10 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/protocols/allreduce/AsyncFactoryT.h
- * \brief  CCMI factory for async [all]reduce compositeT 
- *  
- * \todo AsyncFactoryT and FactoryT are very similar and could be combined. 
- * \todo should the mapping be a template parameter?  CollectiveMapping vs CollectiveMapping 
+ * \brief  CCMI factory for async [all]reduce compositeT
+ *
+ * \todo AsyncFactoryT and FactoryT are very similar and could be combined.
+ * \todo should the mapping be a template parameter?  CollectiveMapping vs CollectiveMapping
  */
 
 #ifndef __ccmi_adaptor_allreduce_asyncfactoryt_h__
@@ -30,7 +30,7 @@ namespace CCMI
       /// \brief Factory template class for CompositeT
       ///
       /// This factory will generate a CompositeT [all]reduce.
-      /// 
+      ///
       template <class CONNMGR, class COMPOSITE, class MAP> class AsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactory<MAP>
       {
       protected:
@@ -66,11 +66,11 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline AsyncFactoryT(MAP *mapping, 
-                             CCMI::MultiSend::OldMulticastInterface *mf, 
+        inline AsyncFactoryT(MAP *mapping,
+                             CCMI::MultiSend::OldMulticastInterface *mf,
                              CCMI_mapIdToGeometry cb_geometry,
                              ConfigFlags flags) :
-        CCMI::Adaptor::Allreduce::AsyncFactory<MAP>(mapping, mf, cb_geometry, flags), 
+        CCMI::Adaptor::Allreduce::AsyncFactory<MAP>(mapping, mf, cb_geometry, flags),
         _sconnmgr(mapping)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT() ALERT:\n",(int)this, COMPOSITE::name));
@@ -101,7 +101,7 @@ namespace CCMI
          int                        root = -1 )
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, COMPOSITE::name, 
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, COMPOSITE::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
           //CCMI_assert(geometry->getAsyncAllreduceMode());
@@ -113,13 +113,13 @@ namespace CCMI
                     this->_mapping, &this->_sconnmgr, cb_done,
                     consistency, this->_minterface, geometry,
                     srcbuf, dstbuf, 0, count, dtype, op,
-                    this->_flags, this, 
+                    this->_flags, this,
                     geometry->getAllreduceIteration(),
                     root,
                     getOneColor(geometry)
                    );
 
-          geometry->setAllreduceComposite (allreduce);      
+          geometry->setAllreduceComposite (allreduce);
           allreduce->start();
 
           return allreduce;
@@ -138,7 +138,7 @@ namespace CCMI
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generateAsync() ALERT:\n",(int)this, COMPOSITE::name));
           TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generateAsync() %#X,"
-                          " geometry %#X comm %#X iteration %#X\n",(int)this, COMPOSITE::name, 
+                          " geometry %#X comm %#X iteration %#X\n",(int)this, COMPOSITE::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm(), iteration));
 
           XMI_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
@@ -149,10 +149,10 @@ namespace CCMI
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
           COMPOSITE *allreduce = new (c_request)
           COMPOSITE((XMI_CollectiveRequest_t*)NULL, // restart will reset this
-                    this->_mapping, &this->_sconnmgr, 
+                    this->_mapping, &this->_sconnmgr,
                     temp_cb_done, // bogus temporary cb, restart will reset it.
                     (CCMI_Consistency) CCMI_MATCH_CONSISTENCY, // restart may reset this
-                    this->_minterface, 
+                    this->_minterface,
                     geometry,
                     NULL, // restart will reset src buffer
                     NULL, // restart will reset dst buffer
@@ -162,7 +162,7 @@ namespace CCMI
                     getOneColor(geometry)
                    );
 
-          geometry->setAllreduceComposite(allreduce,iteration);      
+          geometry->setAllreduceComposite(allreduce,iteration);
 
           return allreduce;
         }

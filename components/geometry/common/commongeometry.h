@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/geometry/common/commongeometry.h
+ * \brief ???
+ */
+
 #ifndef   __xmi_commongeometry__h__
 #define   __xmi_commongeometry__h__
 
@@ -242,7 +255,7 @@ namespace XMI
       int                   _size;
       MatchQueue            _ue;
       MatchQueue            _post;
-      
+
 
     }; // class Geometry
   };  // namespace Geometry

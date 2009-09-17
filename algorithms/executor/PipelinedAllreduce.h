@@ -33,7 +33,7 @@ namespace CCMI
     {
 
     private:
-      /// Static function to be passed into the done of multisend send  
+      /// Static function to be passed into the done of multisend send
       static void pipeAllreduceNotifySend (void *cd, XMI_Error_t *err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
@@ -48,11 +48,11 @@ namespace CCMI
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         XMIQuad *info = (XMIQuad *)cd;
 
-        ((PipelinedAllreduce *)cdata->allreduce)->PipelinedAllreduce::notifyRecv 
+        ((PipelinedAllreduce *)cdata->allreduce)->PipelinedAllreduce::notifyRecv
         ((unsigned)-1, *info, NULL, (unsigned)-1);
       }
 
-    protected:  
+    protected:
 
       void processDone ()
       {
@@ -62,7 +62,7 @@ namespace CCMI
 
         if(_donecount == 2 && _cb_done)
         {
-          _cb_done (_clientdata, NULL); 
+          _cb_done (_clientdata, NULL);
           //_curSendPhase = -1;
           //_curRecvPhase = -1;
         }
@@ -71,7 +71,7 @@ namespace CCMI
       void advanceSend  (); // __attribute__((noinline));
       void advanceRecv  (); // __attribute__((noinline));
       void advanceBcast ();
-      void sendMessage  (const char             * buf, 
+      void sendMessage  (const char             * buf,
                          unsigned                 offset,
                          unsigned                 bytes,
                          unsigned               * dstpes,
@@ -82,7 +82,7 @@ namespace CCMI
       //Squeeze local state in one cache line
       unsigned         _curRecvPhase;
       unsigned         _curRecvChunk;
-      unsigned         _curSendPhase; 
+      unsigned         _curSendPhase;
       unsigned         _curSendChunk;
 
       unsigned        _numActiveSends;
@@ -92,14 +92,14 @@ namespace CCMI
 
       unsigned        _log_advancesend;
       unsigned        _log_advancerecv;
-      unsigned        _log_notifyrecv;  
+      unsigned        _log_notifyrecv;
 
       bool            _inadvancesend;
-    public: 
+    public:
 
       /// Default Constructor
       PipelinedAllreduce () : AllreduceBase(),
-      _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1), 
+      _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1),
       _curSendPhase ((unsigned) -1), _curSendChunk((unsigned) -1),
       _lastReducePhase((unsigned) -1)
       {
@@ -111,14 +111,14 @@ namespace CCMI
       }
 
       ///  Main constructor to initialize the executor
-      PipelinedAllreduce 
+      PipelinedAllreduce
       (CollectiveMapping *map,
        ConnectionManager::ConnectionManager  * connmgr,
        CCMI_Consistency                        consistency,
        const unsigned                          commID,
        unsigned                                iteration):
       AllreduceBase(map,connmgr, consistency, commID, iteration, true),
-      _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1), 
+      _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1),
       _curSendPhase ((unsigned) -1), _curSendChunk((unsigned) -1),
       _donecount (0), _lastReducePhase((unsigned) -1)
       {
@@ -136,7 +136,7 @@ namespace CCMI
 
       virtual void notifySendDone( const XMIQuad &info );
 
-      virtual void notifyRecv(unsigned src, const XMIQuad &info, 
+      virtual void notifyRecv(unsigned src, const XMIQuad &info,
                               char * buf, unsigned bytes);
 
       /// start allreduce
@@ -148,10 +148,10 @@ namespace CCMI
 
         //The previous allreduce could have enabled this
         _msend_data.setFlags (MultiSend::CCMI_FLAGS_UNSET);
-        _initialized = false; 
+        _initialized = false;
         _inadvancesend = false;
         _curRecvPhase=_curSendPhase = _astate.getStartPhase();
-        _curRecvChunk = _curSendChunk = 0;    
+        _curRecvChunk = _curSendChunk = 0;
         _lastReducePhase = _astate.getLastReducePhase();
         _donecount = 0;
 
@@ -161,7 +161,7 @@ namespace CCMI
           _numBcastChunksSent = _astate.getLastChunk() + 1;
 
         TRACE_INIT ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::reset "
-                     "_numBcastChunksSent:%d, numDstPes:%d\n", 
+                     "_numBcastChunksSent:%d, numDstPes:%d\n",
                      (int)this,ThreadID(), _numBcastChunksSent,_astate.getBcastNumDstPes()));
       }
 
@@ -177,7 +177,7 @@ namespace CCMI
             phase --;
         }
         TRACE_INIT ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::findPrevRecvPhase "
-                     "phase  %d, _startPhase %d\n", 
+                     "phase  %d, _startPhase %d\n",
                      (int)this,ThreadID(), phase, _startPhase));
 
         return phase;
@@ -190,13 +190,13 @@ namespace CCMI
 
 inline void CCMI::Executor::PipelinedAllreduce::start()
 {
-  _initialized = true; 
+  _initialized = true;
   _numActiveSends   = XMI_MAX_ACTIVE_SENDS;
 
   unsigned count;
   for(count = 0; count < _numActiveSends; count++)
   {
-    // reset send info	  
+    // reset send info
     _sState[count].sndClientData.me        = this;
     _sState[count].sndClientData.isDone    = true;
   }
@@ -204,15 +204,15 @@ inline void CCMI::Executor::PipelinedAllreduce::start()
   CCMI_assert (_startPhase != (unsigned) -1);
   CCMI_assert (_curSendPhase != (unsigned) -1);
 
-  unsigned ndstpes = _astate.getPhaseNumDstPes (_startPhase);  
+  unsigned ndstpes = _astate.getPhaseNumDstPes (_startPhase);
 
   // kick off - send local contribution
   if(ndstpes > 0)
   {
     unsigned *dstpes   = _astate.getPhaseDstPes (_startPhase);
-    CCMI_Subtask *dsthints = (CCMI_Subtask *)_astate.getPhaseDstHints (_startPhase);    
-    sendMessage (_srcbuf, 0, _astate.getBytes(), dstpes, ndstpes, dsthints, 
-                 _startPhase);     
+    CCMI_Subtask *dsthints = (CCMI_Subtask *)_astate.getPhaseDstHints (_startPhase);
+    sendMessage (_srcbuf, 0, _astate.getBytes(), dstpes, ndstpes, dsthints,
+                 _startPhase);
 
     /// There is only one phase, use a shortcut
     if(_startPhase == _endPhase)
@@ -221,7 +221,7 @@ inline void CCMI::Executor::PipelinedAllreduce::start()
 
   TRACE_INIT((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::start() "
               " _startPhase %d,_curSendPhase %d "
-              " _curSendchunk %d, _curRecvchunk %d\n", (int)this,ThreadID(), 
+              " _curSendchunk %d, _curRecvchunk %d\n", (int)this,ThreadID(),
               _startPhase, _curSendPhase,_curSendChunk, _curRecvChunk));
 
   //Process the notify recvs we got before start
@@ -229,21 +229,21 @@ inline void CCMI::Executor::PipelinedAllreduce::start()
     advanceRecv ();
 
   TRACE_INIT((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::start() "
-              "_curSendchunk %d, _curRecvchunk %d\n", (int)this,ThreadID(), 
+              "_curSendchunk %d, _curRecvchunk %d\n", (int)this,ThreadID(),
               _curSendChunk, _curRecvChunk));
 }
 
 
-inline void CCMI::Executor::PipelinedAllreduce::notifyRecv 
-(unsigned                     src, 
- const XMIQuad             & info, 
- char                       * buf, 
+inline void CCMI::Executor::PipelinedAllreduce::notifyRecv
+(unsigned                     src,
+ const XMIQuad             & info,
+ char                       * buf,
  unsigned                     bytes)
 {
   RecvCallbackData * cdata = (RecvCallbackData *)(&info);
 
   TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::notifyRecv "
-              "_initialized %d, bytes %d, srcPeIndex %d, cdata->phase %d,_lastReducePhase %d\n", 
+              "_initialized %d, bytes %d, srcPeIndex %d, cdata->phase %d,_lastReducePhase %d\n",
               (int)this,ThreadID(), _initialized, bytes, cdata->srcPeIndex,cdata->phase,_lastReducePhase));
 
   // update state  (we dont support multiple sources per phase yet)
@@ -266,7 +266,7 @@ inline void CCMI::Executor::PipelinedAllreduce::notifyRecv
 }
 
 
-inline void CCMI::Executor::PipelinedAllreduce::notifySendDone 
+inline void CCMI::Executor::PipelinedAllreduce::notifySendDone
 ( const XMIQuad & info)
 {
   // update state
@@ -276,7 +276,7 @@ inline void CCMI::Executor::PipelinedAllreduce::notifySendDone
               _numActiveSends,_inadvancesend,_astate.getLastChunk(),_curSendChunk,_numBcastChunksSent));
 
   SendCallbackData * cdata = (SendCallbackData *)(&info);
-  cdata->isDone = true;  
+  cdata->isDone = true;
   _numActiveSends ++;
 
   //short message fast path, may call notifysendone in the send call
@@ -287,7 +287,7 @@ inline void CCMI::Executor::PipelinedAllreduce::notifySendDone
   unsigned last_chunk = _astate.getLastChunk();
 
   if((_curSendChunk > last_chunk)       &&
-     (_numBcastChunksSent > last_chunk) && 
+     (_numBcastChunksSent > last_chunk) &&
      (_numActiveSends == XMI_MAX_ACTIVE_SENDS))
     processDone();
   else
@@ -328,7 +328,7 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
         ||  (!cur_nsrc))
   {
 
-    if(( cur_nsrc ) && 
+    if(( cur_nsrc ) &&
        (_astate.getPhaseSrcHints(_curRecvPhase, 0) == CCMI_COMBINE_SUBTASK))
     {
       if(_curRecvPhase == _startPhase)
@@ -336,17 +336,17 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
       else
       {
         unsigned phase = findPrevRecvPhase (_curRecvPhase - 1);
-        mysrcbuf = _astate.getPhaseRecvBufs (phase, 0);         
-      } 
-      CCMI_assert (mysrcbuf != NULL); 
+        mysrcbuf = _astate.getPhaseRecvBufs (phase, 0);
+      }
+      CCMI_assert (mysrcbuf != NULL);
 
-      //mydstbuf  = (_curRecvPhase != _endPhase) ? 
+      //mydstbuf  = (_curRecvPhase != _endPhase) ?
       //  _astate.getPhaseRecvBufs (_curRecvPhase, 0) : _dstbuf;
 
-      mydstbuf  = (_curRecvPhase != (unsigned)_astate.getLastCombinePhase()) ? 
+      mydstbuf  = (_curRecvPhase != (unsigned)_astate.getLastCombinePhase()) ?
                   _astate.getPhaseRecvBufs (_curRecvPhase, 0) : _dstbuf;
 
-      count     = (_curRecvChunk < last_chunk) ? 
+      count     = (_curRecvChunk < last_chunk) ?
                   _astate.getFullChunkCount() : _astate.getLastChunkCount();
       bufOffset = _curRecvChunk * _astate.getPipelineWidth();
 
@@ -364,7 +364,7 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
       TRACE_DATA(("reduceBuf", mydstbuf + bufOffset, 1));  // Just to trace the input pointer
       _reduceFunc( mydstbuf  + bufOffset,
                    bufs, 2,
-                   count); 
+                   count);
       TRACE_DATA(("reduceBuf", mydstbuf + bufOffset, count*_astate.getSizeOfType()));
       TRACE_REDUCEOP((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::advance() OP reducebuf %#X, "
                       "reduceBuf[0]:%#X\n",(int)this,ThreadID(),((int)mydstbuf+bufOffset),
@@ -375,7 +375,7 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
    _curRecvPhase = _astate.getNextActivePhase (_curRecvPhase);
     if(_curRecvPhase > _lastReducePhase)
     {
-      _curRecvChunk ++;      
+      _curRecvChunk ++;
       _curRecvPhase = _startPhase;
     }
 //  TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv loop 2"
@@ -390,7 +390,7 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
 
     if(_curRecvChunk > last_chunk)
     {
-      ///We have no broadcast messages to receive    
+      ///We have no broadcast messages to receive
       if(_lastReducePhase == _endPhase)
         processDone ();
       break;
@@ -399,7 +399,7 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
     cur_nsrc = _astate.getPhaseNumSrcPes(_curRecvPhase);
     TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv endloop "
                "cur_nsrc %d, _astate.getPhaseChunksRcvd(_curRecvPhase, 0) %d,"
-               "_curRecvPhase%d, _curRecvChunk %d\n", (int)this,ThreadID(), 
+               "_curRecvPhase%d, _curRecvChunk %d\n", (int)this,ThreadID(),
                cur_nsrc,cur_nsrc?_astate.getPhaseChunksRcvd(_curRecvPhase, 0):-2,_curRecvPhase, _curRecvChunk));
   }
 
@@ -415,20 +415,20 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
   _inadvancesend = true;
 
   TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceSend "
-             "_numActiveSends %d\n", (int)this,ThreadID(), 
+             "_numActiveSends %d\n", (int)this,ThreadID(),
              _numActiveSends));
 
-  CCMI_assert_debug (_initialized == true);  
-  unsigned last_chunk  = _astate.getLastChunk();  
+  CCMI_assert_debug (_initialized == true);
+  unsigned last_chunk  = _astate.getLastChunk();
   CCMI_assert (_curSendChunk <= last_chunk);
 
   while(_numActiveSends > 0)
   {
     TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceSend "
                 "_curRecvPhase, %d, _curRecvChunk %d, "
-                "_curSendPhase %d, _curSendChunk %d, _astate.getPhaseChunksSent (_curSendPhase) %d\n", 
-                (int)this,ThreadID(), 
-                _curRecvPhase, _curRecvChunk, 
+                "_curSendPhase %d, _curSendChunk %d, _astate.getPhaseChunksSent (_curSendPhase) %d\n",
+                (int)this,ThreadID(),
+                _curRecvPhase, _curRecvChunk,
                 _curSendPhase, _curSendChunk,
                 _astate.getPhaseChunksSent (_curSendPhase)));
 
@@ -438,7 +438,7 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
         break;
 
     //Dont send messages in the first phase
-    if((_curSendPhase != _startPhase) && 
+    if((_curSendPhase != _startPhase) &&
        (_astate.getPhaseNumDstPes(_curSendPhase) > 0) &&
        (_curSendChunk == _astate.getPhaseChunksSent(_curSendPhase)))
     {
@@ -452,22 +452,22 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
       if(npw == 0) npw = 1;
 
       unsigned phase = findPrevRecvPhase (_curSendPhase - 1);
-      char *rcv_buf = (phase != (unsigned)_astate.getLastCombinePhase())? 
-                      _astate.getPhaseRecvBufs (phase, 0) :  _dstbuf;      
+      char *rcv_buf = (phase != (unsigned)_astate.getLastCombinePhase())?
+                      _astate.getPhaseRecvBufs (phase, 0) :  _dstbuf;
       CCMI_assert (rcv_buf != NULL);
 
       unsigned bufOffset = _curSendChunk * _astate.getPipelineWidth();
 
-      unsigned count     = 0;       
+      unsigned count     = 0;
       if((_curSendChunk + npw) <= last_chunk)
         count = _astate.getFullChunkCount()*npw;
       else
         count =_astate.getFullChunkCount()*(npw-1)+_astate.getLastChunkCount();
 
-      Logging::LogMgr::getLogMgr()->stopCounter (_log_advancesend, 0);      
+      Logging::LogMgr::getLogMgr()->stopCounter (_log_advancesend, 0);
 
       sendMessage (rcv_buf, bufOffset, count * _astate.getSizeOfType(),
-                   _astate.getPhaseDstPes(_curSendPhase), 
+                   _astate.getPhaseDstPes(_curSendPhase),
                    _astate.getPhaseNumDstPes(_curSendPhase),
                    (CCMI_Subtask *)_astate.getPhaseDstHints (_curSendPhase),
                    _curSendPhase);
@@ -488,7 +488,7 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
       {
         ///All sends done and all broadcasts done and no messages in
         ///flight
-        if(_numActiveSends == XMI_MAX_ACTIVE_SENDS 
+        if(_numActiveSends == XMI_MAX_ACTIVE_SENDS
            && _numBcastChunksSent > last_chunk)
           processDone();
         break;
@@ -502,8 +502,8 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceSend()
 }
 
 
-inline void CCMI::Executor::PipelinedAllreduce::sendMessage 
-(const char             * buf, 
+inline void CCMI::Executor::PipelinedAllreduce::sendMessage
+(const char             * buf,
  unsigned                 offset,
  unsigned                 bytes,
  unsigned               * dstpes,
@@ -517,8 +517,8 @@ inline void CCMI::Executor::PipelinedAllreduce::sendMessage
 
   _numActiveSends --;
 
-  TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::sendMessage _curSendChunk %d,_numActiveSends %d, offset %d,bytes %d\n", 
-              (int)this,ThreadID(), 
+  TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::sendMessage _curSendChunk %d,_numActiveSends %d, offset %d,bytes %d\n",
+              (int)this,ThreadID(),
               _curSendChunk,_numActiveSends, offset, bytes));
 
   int index = XMI_MAX_ACTIVE_SENDS - 1;
@@ -526,7 +526,7 @@ inline void CCMI::Executor::PipelinedAllreduce::sendMessage
   {
     while((index --) && (!_sState[index].sndClientData.isDone));
   }
-  //we must find an available request 
+  //we must find an available request
   CCMI_assert (index >= 0);
 
   if(offset == 0)
@@ -535,12 +535,12 @@ inline void CCMI::Executor::PipelinedAllreduce::sendMessage
     _msend_data.setFlags (MultiSend::CCMI_PERSISTENT_MESSAGE);
 
   _msend_data.setRequestBuffer (&(_sState[index].sndReq));
-  _msend_data.setCallback (_sendCallbackHandler, 
-                           &_sState[index].sndClientData);  
+  _msend_data.setCallback (_sendCallbackHandler,
+                           &_sState[index].sndClientData);
 
   CCMI_assert (offset + bytes <= _astate.getBytes());
 
-  AllreduceBase::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints, 
+  AllreduceBase::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints,
                               sphase, &_sState[index]);
 }
 
@@ -549,8 +549,8 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceBcast ()
   unsigned bcastRecvPhase = _astate.getBcastRecvPhase();
   TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceBcast "
               "bcastRecvPhase%d, _numActiveSends %d,"
-              "_astate.getPhaseChunksRcvd(bcastRecvPhase, 0) %d,_numBcastChunksSent %d\n", 
-              (int)this,ThreadID(), 
+              "_astate.getPhaseChunksRcvd(bcastRecvPhase, 0) %d,_numBcastChunksSent %d\n",
+              (int)this,ThreadID(),
               bcastRecvPhase, _numActiveSends,
               _astate.getPhaseChunksRcvd(bcastRecvPhase, 0),_numBcastChunksSent));
 
@@ -564,7 +564,7 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceBcast ()
   {
     unsigned * dstpes     = _astate.getBcastDstPes();
     CCMI_Subtask  * dsthints   = (CCMI_Subtask *) _astate.getBcastDstHints();
-    unsigned   ndst       = _astate.getBcastNumDstPes();    
+    unsigned   ndst       = _astate.getBcastNumDstPes();
     unsigned   last_chunk = _astate.getLastChunk();
 
     int npw = _astate.getPhaseChunksRcvd(bcastRecvPhase,0)-_numBcastChunksSent;
@@ -574,15 +574,15 @@ inline void CCMI::Executor::PipelinedAllreduce::advanceBcast ()
     if(_astate.getPhaseChunksRcvd (bcastRecvPhase, 0) <= last_chunk)
       count = npw * _astate.getFullChunkCount();
     else
-      count = (npw - 1) * _astate.getFullChunkCount() 
+      count = (npw - 1) * _astate.getFullChunkCount()
               + _astate.getLastChunkCount();
 
-    unsigned bcast_offset = _numBcastChunksSent *  
+    unsigned bcast_offset = _numBcastChunksSent *
                             _astate.getPipelineWidth();
 
     _numBcastChunksSent += npw;
 
-    sendMessage (_dstbuf, bcast_offset, count*sizeOfType, 
+    sendMessage (_dstbuf, bcast_offset, count*sizeOfType,
                  dstpes, ndst, dsthints, _astate.getBcastSendPhase());
   }
 }

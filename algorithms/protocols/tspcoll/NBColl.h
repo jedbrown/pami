@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/tspcoll/NBColl.h
+ * \brief ???
+ */
+
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
 
@@ -8,8 +21,8 @@ namespace TSPColl
   typedef unsigned char *           __pgasrt_local_addr_t;
   /* *********************************************************** */
   /* *********************************************************** */
-  enum NBTag 
-  { 
+  enum NBTag
+  {
     BarrierTag=0,
     AllgatherTag,
     AllgathervTag,
@@ -23,7 +36,7 @@ namespace TSPColl
     LongAllreduceTag,
     MAXTAG
   };
-  
+
   /* *********************************************************** */
   /*        a generic non-blocking transport collective          */
   /* *********************************************************** */
@@ -50,7 +63,7 @@ namespace TSPColl
     void               *_arg;
   };
 
-  
+
 
 /* ************************************************************************ */
 /*                 non-blocking collective constructor                      */

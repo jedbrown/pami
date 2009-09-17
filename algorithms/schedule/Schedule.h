@@ -30,7 +30,7 @@ namespace CCMI
   //-------------------------------------------------
   //-- Supported communication operations -----------
   //\todo:  this typedef is common to the scheduler
-  //        and executor.  
+  //        and executor.
   //        It seems like overkill to give it its own
   //        common header file
   //-------------------------------------------------

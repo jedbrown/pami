@@ -1,5 +1,5 @@
 /**
- * \file doxygen/xmi_configuration.h
+ * \file sys/doxygen/xmi_configuration.h
  * \brief Detailed doxygen documentation for xmi configuration interface
  */
 #ifndef __doxygen_xmi_configuration_h__

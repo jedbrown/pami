@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocol/send/eager/EagerSimple.h
+/// \file p2p/protocols/send/eager/EagerSimple.h
 /// \brief Simple eager send protocol for reliable devices.
 ///
 /// The EagerSimple class defined in this file uses C++ templates and
@@ -636,7 +636,7 @@ namespace XMI
 
           ///
           /// \brief Local receive completion event callback.
-          /// 
+          ///
           /// This callback will invoke the application local receive
           /// completion callback and free the receive state object
           /// memory.

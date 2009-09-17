@@ -10,7 +10,7 @@
 #define __xmi_mutex_object_h__
 
 ////////////////////////////////////////////////////////////////////////
-///  \file components/mutex/Mutex.h
+///  \file components/mutex/MutexObject.h
 ///  \brief Mutex Objects for Hardware and Software Mutexes
 ///
 ///  This object is a portability layer that abstracts atomic locking

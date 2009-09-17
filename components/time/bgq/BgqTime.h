@@ -101,4 +101,3 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
   };
 };
 #endif // __components_time_bgq_bgqtime_h__
-

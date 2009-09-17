@@ -1,5 +1,5 @@
 /**
- * \file xmi_ext.h
+ * \file sys/xmi_ext.h
  * \brief platform-specific messaging interface
  */
 #ifndef __xmi_ext_h__

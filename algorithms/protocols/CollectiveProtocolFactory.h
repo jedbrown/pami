@@ -24,17 +24,17 @@ namespace CCMI
       CollectiveProtocolFactory ()
       {
       }
-      
+
       virtual ~CollectiveProtocolFactory ()
       {
       }
-      
+
       /// NOTE: This is required to make "C" programs link successfully with virtual destructors
       void operator delete(void * p)
       {
         CCMI_abort();
       }
-      
+
       /// \brief All protocols determine if a given geometry is adequate
       virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest) = 0;
 

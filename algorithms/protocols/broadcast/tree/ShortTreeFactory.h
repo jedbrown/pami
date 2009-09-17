@@ -87,7 +87,7 @@ namespace CCMI
            char                      * src,
            unsigned                    bytes)
           {
-            TRACE_ADAPTOR ((stderr, "Tree Broadcast Generate\n"));      
+            TRACE_ADAPTOR ((stderr, "Tree Broadcast Generate\n"));
 
             XMI_assert(rsize >= sizeof(ShortTreeBcast));
             new (_request)ShortTreeBcast(_mf, _map, request, cb_done, consistency, src, bytes, root);
@@ -95,18 +95,18 @@ namespace CCMI
           }
 
 		  private:
-		
+
 		  //ShortTreeBcast tree_bcast;
           CCMI::TorusCollectiveMapping                         * _map;
           CCMI::MultiSend::OldMulticastInterface        * _mf;
           XMI_Request_t    _request __attribute__((__aligned__(16)));
 
-				
+
         };
 
-      };  
-    };  
-  };  
-};  
+      };
+    };
+  };
+};
 
 #endif

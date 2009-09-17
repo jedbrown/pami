@@ -1,5 +1,5 @@
 ///
-/// \file tests/time/timebase.c
+/// \file test/time/timebase.c
 /// \brief Simple XMI_Wtimebase() test before XMI_Client_initialize()
 ///
 
@@ -17,7 +17,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

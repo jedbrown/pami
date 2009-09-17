@@ -61,21 +61,21 @@ namespace CCMI
           else if((bytes) >= 32*1024)
             pwidth = 2 * min_pipeline_width;
           else
-            pwidth = min_pipeline_width;        
+            pwidth = min_pipeline_width;
         }
 
-        typedef MultiColorCompositeT<1, CCMI::Schedule::TreeBwSchedule, 
+        typedef MultiColorCompositeT<1, CCMI::Schedule::TreeBwSchedule,
         get_colors_tree, CCMI::TorusCollectiveMapping>  TreeBaseComposite;
 
         ///
-        /// \brief Tree broadcast protocol. We Enhance the MultiColorComposite with a 
-        ///        new SyncBcastPost method 
+        /// \brief Tree broadcast protocol. We Enhance the MultiColorComposite with a
+        ///        new SyncBcastPost method
         ///
         class TreeBcastComposite : public TreeBaseComposite
         {
         protected:
           bool                _toDummySend;
-          bool                _toDummyRecv;      
+          bool                _toDummyRecv;
           bool                _toAppRecv;
           unsigned            _appHints;
 
@@ -96,7 +96,7 @@ namespace CCMI
 
             // posts a receive on connection given by connection mgr
             minterface->send (&_tmpRequest, &newcb,
-                              CCMI_MATCH_CONSISTENCY, NULL, 1, 0, NULL, _bytecounts[0], 
+                              CCMI_MATCH_CONSISTENCY, NULL, 1, 0, NULL, _bytecounts[0],
                               &opcode, &dstrank, nranks, XMI_UNDEFINED_OP, XMI_UNDEFINED_DT);
           }
 
@@ -119,17 +119,17 @@ namespace CCMI
           ///
           void postAppRecv (CCMI::MultiSend::OldMulticastInterface  * minterface)
           {
-            //Support only broadcast 
+            //Support only broadcast
             XMI_Callback_t newcb = {staticRecvFn, getExecutor(0)};
             //bcast connection manger should be phase independent
-            unsigned  tconnid = 0; 
-            //cmgr->getConnectionId (_comm, _root, _color, (unsigned)-1, (unsigned)-1); 
+            unsigned  tconnid = 0;
+            //cmgr->getConnectionId (_comm, _root, _color, (unsigned)-1, (unsigned)-1);
             TRACE_ADAPTOR ((stderr, "Sync Broadcast post recv with bcast %x, len %d, connid %d\n",
                         (int)this, _buflen, tconnid));
 
             // posts a receive on connection given by connection mgr
-            minterface->postRecv (_executors[0].getRecvRequest(), 
-                                  &newcb, tconnid, _srcbufs[0], 
+            minterface->postRecv (_executors[0].getRecvRequest(),
+                                  &newcb, tconnid, _srcbufs[0],
                                   _bytecounts[0], _pipewidth, _appHints);
           }
 
@@ -149,21 +149,21 @@ namespace CCMI
                               char                      * src,
                               unsigned                    bytes)
           : TreeBaseComposite (map, cmgr, cb_done, consistency, mf, geometry, root,
-                               src, bytes), 
-          _toDummySend(false), _toDummyRecv(false), _toAppRecv(false), 
+                               src, bytes),
+          _toDummySend(false), _toDummyRecv(false), _toAppRecv(false),
           _appHints(CCMI_PT_TO_PT_SUBTASK), _cb_app_done(cb_app_done), _geometry(geometry)
           {
-          }       
+          }
 
           ///
           /// \brief Initialize flags to indicate if dummy sends/recvs have to be posted
           ///
           void initSMP (unsigned root)
           {
-            _pipewidth = _bytecounts[0];  //Disable pipelning 
+            _pipewidth = _bytecounts[0];  //Disable pipelning
             _executors[0].setPipelineWidth (_bytecounts[0]);
 
-            //I am the root	      
+            //I am the root
             if(_mapping->rank() == root)
               _toDummyRecv = true;
             else
@@ -173,7 +173,7 @@ namespace CCMI
               _appHints    = CCMI_BCAST_RECV_STORE;
             }
             //Wait for the dummy message as well
-            _nComplete ++;        
+            _nComplete ++;
           }
 
           ///
@@ -233,9 +233,9 @@ namespace CCMI
 
 
           ///
-          /// \brief Post dma data receives 
+          /// \brief Post dma data receives
           ///
-          void SyncBcastPost(Geometry                                     * geometry, 
+          void SyncBcastPost(Geometry                                     * geometry,
                              unsigned                                       root,
                              CCMI::ConnectionManager::ConnectionManager   * cmgr,
                              CCMI::MultiSend::OldMulticastInterface          * minterface)
@@ -312,8 +312,8 @@ namespace CCMI
            char                      * src,
            unsigned                    bytes)
           {
-            TRACE_ADAPTOR ((stderr, "Tree Broadcast Generate\n"));      
-            XMI_Callback_t  cb_app_done = cb_done;     
+            TRACE_ADAPTOR ((stderr, "Tree Broadcast Generate\n"));
+            XMI_Callback_t  cb_app_done = cb_done;
 
             if(_mapping->GetDimLength(CCMI_T_DIM) > 1)  //Enable second barrier after bcast
             {
@@ -322,43 +322,43 @@ namespace CCMI
             }
 
             XMI_assert(rsize >= sizeof(TreeBcastComposite));
-            TreeBcastComposite  *composite = 
+            TreeBcastComposite  *composite =
             new (request)
             TreeBcastComposite (_mapping,
                                 _connmgr,
                                 cb_done,
                                 cb_app_done,
-                                consistency, 
+                                consistency,
                                 _minterface,
-                                geometry, 
-                                root, 
-                                src, 
-                                bytes);     
+                                geometry,
+                                root,
+                                src,
+                                bytes);
 
             if(_mapping->GetDimLength(CCMI_T_DIM) > 1)
             {
               composite->initVnDual(root);
-              composite->SyncBcastPost (geometry, root, _connmgr, _minterface); 
+              composite->SyncBcastPost (geometry, root, _connmgr, _minterface);
               CCMI::Executor::Executor *barrier = geometry->getLocalBarrierExecutor();
               CCMI_assert(barrier != NULL);
               barrier->setDoneCallback (TreeBcastComposite::cb_barrier_done, composite);
               barrier->setConsistency (consistency);
               barrier->start();
-              composite->SyncBcastTreePost (_minterface); 
+              composite->SyncBcastTreePost (_minterface);
             }
             else
             {
-              composite->initSMP(root);       
+              composite->initSMP(root);
               TreeBcastComposite::cb_barrier_done (composite, NULL);
               //Post recvs after send
-              composite->SyncBcastTreePost (_minterface); 
+              composite->SyncBcastTreePost (_minterface);
             }
 
             return composite;
           }
         };
 
-      };  
+      };
         template<> void Tree::TreeBaseComposite::create_schedule ( void                      * buf,
                                                unsigned                    size,
                                                Geometry                  * g,
@@ -366,8 +366,8 @@ namespace CCMI
       {
         new (buf) CCMI::Schedule::TreeBwSchedule (_mapping, g->nranks(), g->ranks());
       }
-    };  
-  };  
-};  
+    };
+  };
+};
 
 #endif

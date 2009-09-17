@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/Allgather.h
+ * \brief ???
+ */
 
 #ifndef __pgasrt_tspcoll_allgather_h__
 #define __pgasrt_tspcoll_allgather_h__
@@ -37,7 +41,7 @@ namespace TSPColl
   class Allgather: public CollExchange<T_Mcast>
   {
   public:
-    static 
+    static
     void * operator new (size_t, void * addr)    { return addr; }
     Allgather (XMI_GEOMETRY_CLASS *, NBTag tag, int instID, int offset);
     void reset (const void *, void *, size_t nbytes);
@@ -50,7 +54,7 @@ namespace TSPColl
 /*                   Allgather constructor                                 */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline TSPColl::Allgather<T_Mcast>::Allgather (XMI_GEOMETRY_CLASS *comm, NBTag tag, 
+inline TSPColl::Allgather<T_Mcast>::Allgather (XMI_GEOMETRY_CLASS *comm, NBTag tag,
 				      int instID, int offset):
   CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {

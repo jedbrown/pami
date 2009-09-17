@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file connmgr/ColorGeometryConnMgr.h
+ * \file algorithms/connmgr/ColorGeometryConnMgr.h
  * \brief ???
  */
 
@@ -34,8 +34,8 @@ namespace CCMI
       //   will still only have one connection manager this parm will be the last
       //   color.
       /* This class is really just a place holder for future extensions.  */
-      ColorGeometryConnMgr (int conn=0) 
-      : ConnectionManager() 
+      ColorGeometryConnMgr (int conn=0)
+      : ConnectionManager()
       {
         setNumConnections (conn == 0 ? 1 : conn );
       }
@@ -68,10 +68,10 @@ namespace CCMI
         else
           assert(color <= 6);
 
-        return connid;  
+        return connid;
       }
 
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, 
+      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
                                             unsigned src, unsigned phase, unsigned color)
       {
         return getConnectionId (comm, root, color, phase);

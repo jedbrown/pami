@@ -28,7 +28,7 @@ namespace CCMI
     /// \brief Default for reuse_storage_limit is currently MAXINT/2G-1
 #define CCMI_DEFAULT_REUSE_STORAGE_LIMIT ((unsigned)2*1024*1024*1024 - 1)
     /// \brief configuration flags/options for creating the factory
-    typedef struct 
+    typedef struct
     {
 /*      unsigned reuse_storage:1;  // save allocated storage across calls
       unsigned reserved:31; */
@@ -40,22 +40,22 @@ namespace CCMI
     {
 
       // Forward declare prototype
-      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned, 
+      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned,
                                     unsigned&, coremath&) __attribute__((noinline));
 
       //-- Composite
       /// \brief The Composite for the Allreduce (and reduce)
       /// kernel executor.
-      /// 
+      ///
       /// It does common initialization for all subclasses (protocols)
       /// such as mapping the operator and datatype to a function and
       /// calling various setXXX() functions in the kernel executor.
-      /// 
+      ///
       /// It also adds support for an optional barrier to synchronize
       /// the kernel executor.  It coordinates the barrier done
       /// callback and the [all]reduce done callback to call the
       /// client done callback.
-      /// 
+      ///
       class Composite : public BaseComposite
       {
       protected:
@@ -78,8 +78,8 @@ namespace CCMI
         void               (* _myClientFunction)(void *, XMI_Error_t *);
         void                * _myClientData;
       public:
-        Composite () : 
-        BaseComposite (NULL), 
+        Composite () :
+        BaseComposite (NULL),
         _doneCountdown(1)  // default to just a composite done needed
         {
           CCMI_abort();
@@ -93,7 +93,7 @@ namespace CCMI
         BaseComposite (factory),
         _doneCountdown(1),  // default to just a composite done needed
         _flags(flags),
-        _myClientFunction (cb_done.function), 
+        _myClientFunction (cb_done.function),
         _myClientData (cb_done.clientdata)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::Composite::ctor() ALERT:\n",(int)this));
@@ -118,7 +118,7 @@ namespace CCMI
         void initializeBarrier (CCMI::Executor::Barrier *barrier)
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::initializeBarrier barrier(%#X,%#X)\n",(int)this,(int)barrier,(int)this));
-          addBarrier (barrier); 
+          addBarrier (barrier);
           //Setup barrier
           _barrier->setDoneCallback (cb_barrierDone, this);
         }
@@ -126,7 +126,7 @@ namespace CCMI
         ///
         /// \brief initialize should be called after the executors
         /// have been added to the composite
-        ///	  
+        ///
         void initialize ( CCMI::Executor::AllreduceBase * allreduce,
                           XMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
@@ -136,18 +136,18 @@ namespace CCMI
                           XMI_Op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, XMI_Error_t *) = cb_compositeDone, 
+                          void                           (* cb_done)(void *, XMI_Error_t *) = cb_compositeDone,
                           void                            * cd = NULL
                         )
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::initialize()\n",(int)this));
           allreduce->setSendState(request);
-          allreduce->setRoot( root );    
+          allreduce->setRoot( root );
           allreduce->setDataInfo(srcbuf, dstbuf);
 
           allreduce->setDoneCallback( cb_done, cd == NULL? this: cd );
 
-          if((op != allreduce->getOp()) || (dtype != allreduce->getDt()) || 
+          if((op != allreduce->getOp()) || (dtype != allreduce->getDt()) ||
              (count != allreduce->getCount()))
           {
             coremath func;
@@ -168,16 +168,16 @@ namespace CCMI
                First, the function parameter overrides the config value.
             */
             unsigned pwidth = pipelineWidth ? pipelineWidth : _flags.pipeline_override;
-            /* 
+            /*
                If -1, disable pipelining or use specified value
             */
-            pwidth = (pwidth == (unsigned)-1)? count*sizeOfType : pwidth; 
-            /* 
-               Use specified (non-zero) value or calculate (if zero is specified)  
+            pwidth = (pwidth == (unsigned)-1)? count*sizeOfType : pwidth;
+            /*
+               Use specified (non-zero) value or calculate (if zero is specified)
             */
             pwidth = pwidth ? pwidth : computePipelineWidth (count, sizeOfType, min_pwidth);
 
-            allreduce->setReduceInfo ( count, pwidth, sizeOfType, 
+            allreduce->setReduceInfo ( count, pwidth, sizeOfType,
                                        func, op, dtype );
           }
         }
@@ -199,7 +199,7 @@ namespace CCMI
 
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::computePipelineWidth() pwidth %#X\n",(int)this,
                          pwidth));
-          return pwidth;      
+          return pwidth;
         }
 
         ///
@@ -214,7 +214,7 @@ namespace CCMI
                                      size_t                      count,
                                      XMI_Dt                     dtype,
                                      XMI_Op                     op,
-                                     size_t                      root = (size_t)-1) 
+                                     size_t                      root = (size_t)-1)
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::restart()\n",(int)this));
           _myClientFunction = cb_done.function;
@@ -222,10 +222,10 @@ namespace CCMI
 
           CCMI_assert_debug (getNumExecutors() == 1);
           CCMI::Executor::AllreduceBase * allreduce =
-          (CCMI::Executor::AllreduceBase *) getExecutor(0);   
+          (CCMI::Executor::AllreduceBase *) getExecutor(0);
 
-          initialize (allreduce, request, srcbuf, dstbuf, 
-                      count, dtype, op, root);    
+          initialize (allreduce, request, srcbuf, dstbuf,
+                      count, dtype, op, root);
           allreduce->setConsistency(consistency);
           allreduce->reset();
           //allreduce->resetReceives ();
@@ -254,7 +254,7 @@ namespace CCMI
           _doneCountdown --;
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::done() "
                          "_doneCountdown:%#X %#X/%#X \n",(int)this,
-                         _doneCountdown,(int)_myClientFunction,  
+                         _doneCountdown,(int)_myClientFunction,
                          (int)_myClientData));
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
           {
@@ -270,10 +270,10 @@ namespace CCMI
         /// barrier finishes
         ///
         /// Start the [all]reduce now.
-        /// 
+        ///
         /// It means the is done, but the client done isn't called
         /// until both the composite and (optional) barrier are done.
-        /// 
+        ///
         static void cb_barrierDone(void *me, XMI_Error_t *err)
         {
 
@@ -282,7 +282,7 @@ namespace CCMI
                          (int)me));
 
           Composite *composite = (Composite *) me;
-          CCMI::Executor::AllreduceBase *allreduce = 
+          CCMI::Executor::AllreduceBase *allreduce =
           (CCMI::Executor::AllreduceBase *) composite->getExecutor(0);
           allreduce->start();
           composite->done();
@@ -298,7 +298,7 @@ namespace CCMI
         /// It means this composite (and kernel executor) is done, but
         /// the client done isn't called until both the composite and
         /// (optional) barrier are done.
-        /// 
+        ///
         static void cb_compositeDone(void *me, XMI_Error_t *err)
         {
           TRACE_ADAPTOR((stderr,

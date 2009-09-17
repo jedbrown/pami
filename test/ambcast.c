@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/ambcast.c
+ * \brief ???
+ */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,7 +77,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);  
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
@@ -80,7 +93,7 @@ void _broadcast (xmi_context_t context, xmi_ambroadcast_t *broadcast)
 {
   _g_broadcast_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)broadcast);  
+  result = XMI_Collective(context, (xmi_xfer_t*)broadcast);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue broadcast collective. result = %d\n", result);
@@ -98,14 +111,14 @@ int main(int argc, char*argv[])
   xmi_result_t  result = XMI_ERROR;
   char buf[BUFSIZE];
   char rbuf[BUFSIZE];
-  char          cl_string[] = "TEST";    
+  char          cl_string[] = "TEST";
   result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
         return 1;
       }
-  
+
   result = XMI_Context_create (client, NULL, 0, &context);
   if (result != XMI_SUCCESS)
       {
@@ -191,7 +204,7 @@ int main(int argc, char*argv[])
   broadcast.stype        = XMI_BYTE;
   broadcast.stypecount   = 0;
 
-  
+
     _barrier (context, &barrier);
   for(i=1; i<=BUFSIZE; i*=2)
       {
@@ -227,14 +240,14 @@ int main(int argc, char*argv[])
 
             }
       }
-  
+
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
         return 1;
       }
-    
+
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)
       {

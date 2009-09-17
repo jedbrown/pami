@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file interface/ccmi_internal.h
+ * \file algorithms/ccmi.h
  * \brief ???
  */
 
@@ -36,11 +36,11 @@ const unsigned MIN_PIPELINE_WIDTH_SUM2P = 5040;
 
 /// On a torus we can use a smaller pipeline width that can allow
 /// better performance for shorter messages. We use 480 bytes
-/// which is 2 packets 
+/// which is 2 packets
 const unsigned MIN_PIPELINE_WIDTH_TORUS = 480;
 
 /// This is the default allreduce min torus pipeline width, set to 1920
-const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;    
+const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;
 
 typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 #define __ccmi_recv_multicast_callback_defined__

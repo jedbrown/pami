@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2008                               */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/workqueue/WQRingReduceMsg.h
+ * \file components/devices/workqueue/WQRingReduceMsg.h
  * \brief ???
  */
 
@@ -136,11 +136,11 @@ protected:
 	}
 
 	/// \brief arrange to be woken up when inputs/outputs become "ready"
-	/// 
+	///
 	/// This is very simple - we wake up if any input/output becomes
 	/// ready and it might be a false wakeup if any other input/output
 	/// is not (yet) ready.
-	/// 
+	///
 	/// \param[in] thr      The thread which wishes to be woken
 	///
 	inline void __setWakeup(WQRingReduceThr *thr) {

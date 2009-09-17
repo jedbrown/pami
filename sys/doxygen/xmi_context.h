@@ -1,5 +1,5 @@
 /**
- * \file doxygen/xmi_context.h
+ * \file sys/doxygen/xmi_context.h
  * \brief Detailed doxygen documentation for xmi multi-context interface
  */
 #ifndef __doxygen_xmi_context_h__

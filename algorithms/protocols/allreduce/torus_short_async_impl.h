@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/allreduce/short_async_impl.h
+ * \file algorithms/protocols/allreduce/torus_short_async_impl.h
  * \brief Composite template implementations
  */
 
@@ -32,11 +32,11 @@ namespace CCMI
 
       namespace ShortRectangle
       {
-        typedef AsyncCompositeT 
+        typedef AsyncCompositeT
         <CCMI::Schedule::ShortRectangleSchedule,CCMI::Executor::AllreduceBase,CCMI::TorusCollectiveMapping> AsyncComposite;
-        
-        typedef AsyncFactoryT 
-        <CCMI::ConnectionManager::ShortTorusConnMgr,CCMI::Adaptor::Allreduce::ShortRectangle::AsyncComposite,CCMI::TorusCollectiveMapping> AsyncFactory;      
+
+        typedef AsyncFactoryT
+        <CCMI::ConnectionManager::ShortTorusConnMgr,CCMI::Adaptor::Allreduce::ShortRectangle::AsyncComposite,CCMI::TorusCollectiveMapping> AsyncFactory;
       };
 
       // Specializations for Short Async Rectangle templates.
@@ -56,14 +56,14 @@ namespace CCMI
       /// \brief Short Rectangle allreduce protocol specifications
       ///
       /// Use the ShortRectangleSchedule
-      /// 
+      ///
       namespace ShortRectangle
       {
-        typedef ShortAsyncCompositeT 
+        typedef ShortAsyncCompositeT
         <CCMI::Schedule::ShortRectangleSchedule,CCMI::Executor::AllreduceBase,CCMI::TorusCollectiveMapping> ShortAsyncComposite;
 
-        typedef ShortAsyncFactoryT 
-        <CCMI::ConnectionManager::ShortTorusConnMgr,CCMI::Adaptor::Allreduce::ShortRectangle::ShortAsyncComposite,CCMI::TorusCollectiveMapping> ShortAsyncFactory;      
+        typedef ShortAsyncFactoryT
+        <CCMI::ConnectionManager::ShortTorusConnMgr,CCMI::Adaptor::Allreduce::ShortRectangle::ShortAsyncComposite,CCMI::TorusCollectiveMapping> ShortAsyncFactory;
       };
     };
   };

@@ -34,11 +34,11 @@ namespace CCMI
         ///
         /// This factory will generate a rectangle ring allreduce.  It differs from
         /// the rectangle ring reduce only in what schedule it uses.
-        /// 
-        /// It uses unexpected message multisend processing.  
-        /// 
+        ///
+        /// It uses unexpected message multisend processing.
+        ///
         /// It uses a barrier to synchronize the ranks so that receive processing is ready
-        /// 
+        ///
         class Factory : public CCMI::Adaptor::Allreduce::Factory<CCMI::TorusCollectiveMapping>
         {
         protected:
@@ -49,11 +49,11 @@ namespace CCMI
           ///
           /// \brief Constructor for allreduce factory implementations.
           ///
-          Factory(CCMI::TorusCollectiveMapping *mapping, 
-                  CCMI::MultiSend::OldMulticastInterface *mof, 
+          Factory(CCMI::TorusCollectiveMapping *mapping,
+                  CCMI::MultiSend::OldMulticastInterface *mof,
                   CCMI_mapIdToGeometry cb_geometry,
                   ConfigFlags flags ) :
-          CCMI::Adaptor::Allreduce::Factory<CCMI::TorusCollectiveMapping>(mapping, mof, NULL, cb_geometry, flags), 
+          CCMI::Adaptor::Allreduce::Factory<CCMI::TorusCollectiveMapping>(mapping, mof, NULL, cb_geometry, flags),
           _tconnmgr(mapping), _cconnmgr()
           {
             TRACE_ALERT((stderr,"<%#.8X>Allreduce::RectangleRingDput::Factory::ctor() ALERT:\n",(int)this));
@@ -84,12 +84,12 @@ namespace CCMI
            int                        root = -1 )
           {
             TRACE_ALERT((stderr,"<%#.8X>Allreduce::RectangleRingDput::Factory::generate() ALERT:\n",(int)this));
-            TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::RectangleRingDput::Factory::generate() %#X, geometry %#X comm %#X\n",(int)this, 
+            TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::RectangleRingDput::Factory::generate() %#X, geometry %#X comm %#X\n",(int)this,
                             sizeof(*this),(int) geometry, (int) geometry->comm()));
 
             int ideal, max;
-            CCMI::Schedule::Color colors[6] = { CCMI::Schedule::NO_COLOR, CCMI::Schedule::NO_COLOR, 
-              CCMI::Schedule::NO_COLOR, CCMI::Schedule::NO_COLOR, 
+            CCMI::Schedule::Color colors[6] = { CCMI::Schedule::NO_COLOR, CCMI::Schedule::NO_COLOR,
+              CCMI::Schedule::NO_COLOR, CCMI::Schedule::NO_COLOR,
               CCMI::Schedule::NO_COLOR, CCMI::Schedule::NO_COLOR};
 
             CCMI::Schedule::OneColorRectangle::getColors(*geometry->rectangle(), ideal, max, colors);
@@ -100,18 +100,18 @@ namespace CCMI
 
             CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
 
-            COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= 
+            COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >=
                                 sizeof(CCMI::Adaptor::Allreduce::RectangleRingDput::Composite));
-            CCMI::Adaptor::Allreduce::RectangleRingDput::Composite *allreduce = 
+            CCMI::Adaptor::Allreduce::RectangleRingDput::Composite *allreduce =
             new (c_request)
             Composite(request,
-                      _mapping, &_tconnmgr, 
+                      _mapping, &_tconnmgr,
                       &_cconnmgr, cb_done,
                       consistency, _moldinterface, geometry,
                       srcbuf, dstbuf, 0, count, dtype, op,
                       _flags, this, numcolors, colors, root);
 
-            geometry->setAllreduceComposite (allreduce);      
+            geometry->setAllreduceComposite (allreduce);
             allreduce->startBarrier (consistency);
 
             return allreduce;

@@ -27,8 +27,8 @@ namespace XMI
       template <class T_Mapping, unsigned T_Dimensions>
       class Torus
       {
-      
-      
+
+
         public:
 #if 0
           ///

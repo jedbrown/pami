@@ -1,5 +1,5 @@
 /**
- * \file xmi_send.h
+ * \file sys/unused/xmi_send.h
  * \brief messaging interface
  */
 #ifndef __xmi_send_h__

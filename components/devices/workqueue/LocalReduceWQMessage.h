@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/workqueue/LocalReduceWQMessage.h
+ * \file components/devices/workqueue/LocalReduceWQMessage.h
  * \brief ???
  */
 
@@ -111,19 +111,19 @@ private:
 		volatile coremath1 shmcpy = (coremath1) DCMF::Device::WorkQueue::SharedWorkQueue::shmemcpy;
 		if (_iscopypeer) {
 			_shared.Q2Q (_source, shmcpy, 0);
-	
+
 			// If all bytes have been copied from the local source buffer into
 			// the shared queue then this peer is done.
 			if (_source.bytesAvailableToConsume () == 0) setStatus(DCMF::Queueing::Done);
 		} else if (_isrootpeer) {
 			_shared.reduce2Q (_source, _result, _func, _dtshift);
-	
+
 			// If all bytes have been copied from the shared queue into the
 			// local result buffer then the root is done.
 			if (_result.bytesAvailableToProduce () == 0) setStatus(DCMF::Queueing::Done);
 		} else {
 			_shared.reduceInPlace (_source, _func, _dtshift);
-	
+
 			// If all bytes have been copied from the local source buffer into
 			// the shared queue then this peer is done.
 			if (_source.bytesAvailableToConsume () == 0) setStatus(DCMF::Queueing::Done);

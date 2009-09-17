@@ -451,7 +451,7 @@ namespace CCMI
  * \param[in] ranks	List of ranks in geometry
  */
 inline CCMI::Schedule::TreeSchedule::
-TreeSchedule(TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks) 
+TreeSchedule(TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks)
 {
   unsigned i, t_size;
   unsigned tmp_coords[CCMI_TORUS_NDIMS];
@@ -466,11 +466,11 @@ TreeSchedule(TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks)
   {
     _npeers = 0;
     unsigned trank;
-    CCMI_COPY_COORDS(tmp_coords, _mapping->Coords());    
+    CCMI_COPY_COORDS(tmp_coords, _mapping->Coords());
     for(i = 0; i < t_size; ++i)
     {
       tmp_coords[CCMI_T_DIM] = i;
-      if(XMI_SUCCESS  == 
+      if(XMI_SUCCESS  ==
          _mapping->Torus2Rank(tmp_coords, &trank))
         _peer_ranks[_npeers++] = trank;
     }

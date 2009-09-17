@@ -229,6 +229,3 @@ namespace XMI
 };
 
 #endif // __xmi_components_sysdep_bgq_bgqpersonnality_h__
-
-
-

@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2008                               */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -16,7 +16,7 @@
 #include "components/devices/generis/AdvanceThread.h"
 
 ////////////////////////////////////////////////////////////////////////
-///  \file devices/prod/generic/Device.h
+///  \file components/devices/generic/Message.h
 ///  \brief Generic Device
 ///
 ///  The Generic classes implement a QueueSystem and a Message object

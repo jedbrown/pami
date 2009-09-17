@@ -1,5 +1,5 @@
 ///
-/// \file tests/context/advance.c
+/// \file test/context/advance.c
 /// \brief Simple XMI_Context_advance() test
 ///
 
@@ -14,14 +14,14 @@ int main (int argc, char ** argv)
   xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
-  
+
   result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
     return 1;
   }
-  
+
   result = XMI_Context_create (client, configuration, 0, &context);
   if (result != XMI_SUCCESS)
   {
@@ -52,7 +52,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

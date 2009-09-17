@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/geometry/mpi/mpicollfactory.h
+ * \brief ???
+ */
+
 #ifndef   __xmi_mpicollfactory__h__
 #define   __xmi_mpicollfactory__h__
 
@@ -23,12 +36,12 @@ namespace XMI
         _sd(sd)
         {
         }
-	
+
       inline RegQueue * getRegQ(xmi_xfer_type_t       collective)
         {
           RegQueue *rq = NULL;
           switch (collective)
-              {				
+              {
                   case XMI_XFER_BROADCAST:
                     rq = &_broadcasts;
                     break;
@@ -98,7 +111,7 @@ namespace XMI
           int i = rq->size();
           *num = MIN(*num, i);
           for(i=0; i<*num; i++)
-            alglist[i] = (size_t)i;	  
+            alglist[i] = (size_t)i;
           return XMI_SUCCESS;
         }
 
@@ -208,7 +221,7 @@ namespace XMI
           XMI::CollInfo::PGBroadcastInfo<T_Device> *info =
             (XMI::CollInfo::PGBroadcastInfo<T_Device> *)_broadcasts[broadcast->algorithm];
           if (!_bcast->isdone()) _dev->advance();
-        
+
           ((TSPColl::BinomBcast<MPIMcastModel> *)_bcast)->reset (_geometry->virtrankof(broadcast->root),
                                                                  broadcast->buf,
                                                                  broadcast->buf,
@@ -236,7 +249,7 @@ namespace XMI
                                                                            allreduce->rcvbuf,
                                                                            allreduce->op,
                                                                            allreduce->dt,
-                                                                           allreduce->stypecount);                
+                                                                           allreduce->stypecount);
                 _sar->setComplete(allreduce->cb_done, allreduce->cookie);
                 _sar->kick(&info->_model);
                 return XMI_SUCCESS;
@@ -276,7 +289,7 @@ namespace XMI
 
       inline xmi_result_t  iallgatherv_impl     (xmi_allgatherv_t     *allgatherv)
         {
-        
+
           XMI::CollInfo::PGAllgathervInfo<T_Device> *info =
             (XMI::CollInfo::PGAllgathervInfo<T_Device> *)_allgathervs[allgatherv->algorithm];
           if (!_allgatherv->isdone()) _dev->advance();
@@ -289,7 +302,7 @@ namespace XMI
         }
 
       inline xmi_result_t  iallgatherv_int_impl (xmi_allgatherv_int_t *allgatherv_int)
-        {        
+        {
           return XMI_UNIMPL;
         }
 
@@ -309,7 +322,7 @@ namespace XMI
           _barrier->setComplete(NULL, NULL);
           _barrier->kick(&info->_bmodel);
           while(!_barrier->isdone()) _dev->advance();
-        
+
           _sct->kick(&info->_smodel);
           return XMI_SUCCESS;
         }
@@ -330,7 +343,7 @@ namespace XMI
           _barrier->setComplete(NULL, NULL);
           _barrier->kick(&info->_bmodel);
           while(!_barrier->isdone()) _dev->advance();
-        
+
           _sctv->kick(&info->_smodel);
           return XMI_SUCCESS;
         }
@@ -374,7 +387,7 @@ namespace XMI
         {
           XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep> *info =
             (XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep> *)_ambroadcasts[ambroadcast->algorithm];
-          
+
           if(ambroadcast->stypecount == 0)
             ambroadcast->cb_done(NULL, ambroadcast->cookie, XMI_SUCCESS);
           else
@@ -386,7 +399,7 @@ namespace XMI
                 cb_done_ccmi.clientdata = ambroadcast->cookie;
                 XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
                 factory->generate(req,
-                                  sizeof(XMI_CollectiveRequest_t), 
+                                  sizeof(XMI_CollectiveRequest_t),
                                   cb_done_ccmi,
                                   XMI_MATCH_CONSISTENCY,
                                   _geometry,

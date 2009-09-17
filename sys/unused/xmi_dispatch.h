@@ -1,5 +1,5 @@
 /**
- * \file xmi_dispatch.h
+ * \file sys/unused/xmi_dispatch.h
  * \brief xmi active messaging interface
  * \defgroup dispatch Dispatch stuff
  * \{

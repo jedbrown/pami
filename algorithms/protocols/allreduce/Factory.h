@@ -60,7 +60,7 @@ namespace CCMI
       /// It provides the unexpected multisend callback and the basic
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
-      /// 
+      ///
       template<class MAP>
       class Factory : public BaseFactory
       {
@@ -123,7 +123,7 @@ namespace CCMI
           _moldinterface->setCallback (cb_receiveHead, this);
         }
 
-        inline void setConnectionManager 
+        inline void setConnectionManager
         (CCMI::ConnectionManager::ConnectionManager  * connmgr)
         {
           _connmgr = connmgr;
@@ -143,13 +143,13 @@ namespace CCMI
                                                  unsigned        * pipewidth,
                                                  XMI_Callback_t * cb_done)
         {
-          TRACE_ADAPTOR((stderr, 
+          TRACE_ADAPTOR((stderr,
                          "<%#.8X>Allreduce::Factory::cb_receiveHead peer %d, conn_id %d\n",
                          (int)arg, peer, conn_id));
           CCMI_assert (info && arg);
           CollHeaderData  *cdata = (CollHeaderData *) info;
           Factory *factory = (Factory *) arg;
-          CCMI::Executor::AllreduceBase *allreduce = 
+          CCMI::Executor::AllreduceBase *allreduce =
           factory->getAllreduce(cdata->_comm, cdata->_iteration);
 
           CCMI_assert (allreduce != NULL);
@@ -168,10 +168,10 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::AllreduceBase * getAllreduce(unsigned comm, 
+        CCMI::Executor::AllreduceBase * getAllreduce(unsigned comm,
                                                unsigned color)
         {
-          CCMI::Executor::Composite *composite = 
+          CCMI::Executor::Composite *composite =
           ((Geometry *)_cb_geometry(comm))->getAllreduceComposite(color);
           CCMI::Executor::AllreduceBase *executor = (composite)?
                                               (CCMI::Executor::AllreduceBase *) composite->getExecutor (0):
@@ -180,7 +180,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::Factory::"
                          "getAllreduce(comm id %#X, color %#X)"
                          " callback %#X, composite %#.8X  executor %#.8X\n",
-                         (int)this, comm, color, 
+                         (int)this, comm, color,
                          (int) _cb_geometry,
                          (int) composite,
                          (int) executor));

@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/tspcoll_allreduce_exec.cc
+ * \brief ???
+ */
 
 #include "Allreduce.h"
 
@@ -164,7 +168,7 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
   switch (optype)
     {
 
-    case PGASRT_OP_ADD: 
+    case PGASRT_OP_ADD:
       {
 	switch (dtype)
 	  {
@@ -182,9 +186,9 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 	  }
       }
 
-    case PGASRT_OP_MUL: 
+    case PGASRT_OP_MUL:
       {
-	switch (dtype) 
+	switch (dtype)
 	  {
 	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  mul);
 	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   mul);
@@ -200,9 +204,9 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 	  }
       }
 
-    case PGASRT_OP_DIV: 
+    case PGASRT_OP_DIV:
       {
-	switch (dtype) 
+	switch (dtype)
 	  {
 	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  div);
 	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   div);
@@ -218,9 +222,9 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 	  }
       }
 
-    case PGASRT_OP_AND: 
+    case PGASRT_OP_AND:
       {
-	switch (dtype) 
+	switch (dtype)
 	  {
 	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  and);
 	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   and);
@@ -234,9 +238,9 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 	  }
       }
 
-    case PGASRT_OP_OR: 
+    case PGASRT_OP_OR:
       {
-	switch (dtype) 
+	switch (dtype)
 	  {
 	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  or);
 	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   or);
@@ -250,9 +254,9 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 	  }
       }
 
-    case PGASRT_OP_XOR: 
+    case PGASRT_OP_XOR:
       {
-	switch (dtype) 
+	switch (dtype)
 	  {
 	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  xor);
 	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   xor);
@@ -266,9 +270,9 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 	  }
       }
 
-    case PGASRT_OP_MAX: 
+    case PGASRT_OP_MAX:
       {
-	switch (dtype) 
+	switch (dtype)
 	  {
 	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  max);
 	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   max);
@@ -285,9 +289,9 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 	  }
       }
 
-    case PGASRT_OP_MIN: 
+    case PGASRT_OP_MIN:
       {
-	switch (dtype) 
+	switch (dtype)
 	  {
 	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  min);
 	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   min);
@@ -329,7 +333,3 @@ size_t TSPColl::Allreduce::datawidthof (__pgasrt_dtypes_t dtype)
     }
   return 0;
 }
-
-
-
-

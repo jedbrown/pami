@@ -27,7 +27,7 @@ namespace CCMI
       inline int      getNumConnections();
       inline unsigned getConnectionId (unsigned comm, unsigned root,
                                        unsigned color, unsigned phase, unsigned dst);
-      inline unsigned getRecvConnectionId (unsigned comm, unsigned root, 
+      inline unsigned getRecvConnectionId (unsigned comm, unsigned root,
                                            unsigned src, unsigned phase, unsigned color);
     }; //- ConnectionManager
 
@@ -56,7 +56,7 @@ namespace CCMI
     }
 
     template <class T_ConnectionManager>
-    inline unsigned ConnectionManager<T_ConnectionManager>::getRecvConnectionId (unsigned comm, unsigned root, 
+    inline unsigned ConnectionManager<T_ConnectionManager>::getRecvConnectionId (unsigned comm, unsigned root,
                                                                                  unsigned src, unsigned phase, unsigned color)
     {
       return static_cast<T_ConnectionManager*>(this)->getRecvConnectionId_impl(comm,

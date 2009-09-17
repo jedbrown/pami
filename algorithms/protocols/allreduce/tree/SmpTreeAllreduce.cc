@@ -35,7 +35,7 @@ namespace CCMI
                                        size_t                      count,
                                        XMI_Dt                     dtype,
                                        XMI_Op                     op,
-                                       size_t                      root) 
+                                       size_t                      root)
           {
 	    struct _req {
 		XMI_Request_t _msg;
@@ -43,7 +43,7 @@ namespace CCMI
 		XMI::PipeWorkQueue _swq;
 		XMI::PipeWorkQueue _rwq;
 	    } *req = (struct _req *)request;
-            // call tree multisend directly	      
+            // call tree multisend directly
             //TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::SmpTreeAllreduce::restart\n", (int)this));
 
             if((_dt != dtype) || (_count != count))
@@ -75,9 +75,9 @@ namespace CCMI
             _mcomb->DCMF::Collectives::MultiSend::MulticombineImpl::generate(&_mcombArgs);
 
             return XMI_SUCCESS;
-          }   
+          }
 
       }
     }
   }
-} 
+}

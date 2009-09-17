@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/cdi/DmaMemregion.h
+ * \file components/memregion/MemRegion.h
  * \brief ???
  */
 

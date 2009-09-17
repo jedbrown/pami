@@ -117,7 +117,3 @@ inline void* operator new(size_t obj_size, void* pointer)
 
 
 #endif // __util_common_h__
-
-
-
-

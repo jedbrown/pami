@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file xmi_datatypes.h
+ * \file sys/xmi_datatypes.h
  * \brief ???
  */
 
@@ -33,7 +33,7 @@ extern "C"
   /*****************************************************************************/
 
 #define XMI_BYTE NULL
-  
+
   /**
    * \brief Create a new type for noncontiguous transfers
    *

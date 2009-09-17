@@ -1,5 +1,5 @@
 /**
- * \file xmi_collectives.h
+ * \file sys/xmi_collectives.h
  * \brief Common external collective layer interface.
  */
 
@@ -130,7 +130,7 @@ extern "C"
                                               xmi_algorithm_t algorithm,
                                               int algorithm_type,
                                               xmi_metadata_t *mdata);
-  
+
     /**
      * \brief Analyze a protocol to ensure that it will run on the specified geometry
      *
@@ -850,7 +850,7 @@ extern "C"
                                                   size_t              * rtypecount,
                                                   xmi_event_function  * const cb_info,
                                                   void               ** cookie);
-  
+
 
     /**
      * \brief Create and post a non-blocking active message scatter operation.
@@ -1090,7 +1090,7 @@ extern "C"
     */
     xmi_result_t XMI_Collective_via_advisor (xmi_context_t context,
                                              xmi_xfer_t *cmd,
-                                             xmi_metadata_t cs_meta);  
+                                             xmi_metadata_t cs_meta);
 
 #ifdef __cplusplus
 };

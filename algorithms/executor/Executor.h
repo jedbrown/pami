@@ -44,7 +44,7 @@ namespace CCMI
       /**
        * \brief  Destructor
        */
-      virtual ~Executor () 
+      virtual ~Executor ()
       {
 //           _cb_done      =  NULL;
 //           _clientdata   =  NULL;

@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/tspcoll/NBCollManager.h
+ * \brief ???
+ */
+
 #ifndef __tspcoll_nbcollmanager_h__
 #define __tspcoll_nbcollmanager_h__
 
@@ -15,8 +28,8 @@ namespace TSPColl
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
-    Vector() { 
-      _size = _max = 0; _v = NULL; 
+    Vector() {
+      _size = _max = 0; _v = NULL;
     }
     T & operator[](int idx);
     int max() const { return _max; }
@@ -39,7 +52,7 @@ namespace TSPColl
     /* ---------------- */
     /* external API     */
     /* ---------------- */
-    
+
     NBCollManager(void);
     void initialize ();
     NBColl<T_Mcast> * find (NBTag tag, int id); /* find an existing instance */
@@ -56,7 +69,7 @@ namespace TSPColl
   private:
   };
 
-  
+
   template <class T_Mcast>
   void
   TSPColl::NBCollManager<T_Mcast>::multisend_reg (NBTag tag,T_Mcast *mcast_iface)
@@ -168,7 +181,7 @@ namespace TSPColl
 /*              find an instance                                            */
 /* ************************************************************************ */
   template <class T_Mcast>
-  TSPColl::NBColl<T_Mcast> * 
+  TSPColl::NBColl<T_Mcast> *
   TSPColl::NBCollManager<T_Mcast>::find (NBTag tag, int id)
   {
     assert (0 <= tag && tag < MAXTAG);
@@ -179,7 +192,7 @@ namespace TSPColl
 /*            reserve an instance or create a new one                       */
 /* ************************************************************************ */
   template <class T_Mcast>
-  TSPColl::NBColl<T_Mcast> * 
+  TSPColl::NBColl<T_Mcast> *
   TSPColl::NBCollManager<T_Mcast>::allocate (XMI_GEOMETRY_CLASS * comm, NBTag tag)
   {
     assert (0 <= tag && tag < MAXTAG);

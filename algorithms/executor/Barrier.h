@@ -41,21 +41,21 @@ namespace CCMI
 
       class ScheduleCache
       {
-      protected:      
+      protected:
         unsigned          _start;      //Start phase
         unsigned          _nphases;    //Number of phases
 
         ///Combined list of all destinations
-        size_t          _dstranks    [MAX_PHASES];      
+        size_t          _dstranks    [MAX_PHASES];
         ///Combined list of all subtasks
-        size_t          _dstsubtasks [MAX_PHASES];      
+        size_t          _dstsubtasks [MAX_PHASES];
 
         ///Number or sources that send data in each phase
-        unsigned   char   _nsrcranks   [MAX_PHASES];         
+        unsigned   char   _nsrcranks   [MAX_PHASES];
         ///Number or destinations we send data to in each phase
-        unsigned   char   _ndstranks   [MAX_PHASES];      
+        unsigned   char   _ndstranks   [MAX_PHASES];
         ///Where are my destinations and subtasks stored
-        unsigned   char   _dstoffsets  [MAX_PHASES];      
+        unsigned   char   _dstoffsets  [MAX_PHASES];
 
       public:
         ScheduleCache ()
@@ -65,7 +65,7 @@ namespace CCMI
         void init(Schedule::Schedule *schedule)
         {
           int start, nph, nmessages = 0;
-          schedule->init (-1, BARRIER_OP, start, nph, nmessages); 
+          schedule->init (-1, BARRIER_OP, start, nph, nmessages);
           _start = start;
           _nphases = nph;
 
@@ -81,11 +81,11 @@ namespace CCMI
             unsigned srcranks[MAX_RANKS], nsrc=0, dstranks[MAX_RANKS], ndst=0, subtasks[MAX_RANKS];
             schedule->getSrcPeList(count, srcranks, nsrc, subtasks);
 
-            //CCMI_assert(nsrc <= 1);	
+            //CCMI_assert(nsrc <= 1);
             _nsrcranks [count]    = nsrc;
 
-            schedule->getDstPeList(count, dstranks, ndst, subtasks);        
-            CCMI_assert (dstindex + ndst < MAX_PHASES);   
+            schedule->getDstPeList(count, dstranks, ndst, subtasks);
+            CCMI_assert (dstindex + ndst < MAX_PHASES);
 
             MEMCPY(&_dstranks[dstindex], dstranks, ndst *sizeof(int));
             MEMCPY(&_dstsubtasks[dstindex], subtasks, ndst *sizeof(int));
@@ -93,32 +93,32 @@ namespace CCMI
             _ndstranks[count]  = ndst;
             _dstoffsets[count] = dstindex;
             dstindex += ndst;
-          } 
+          }
         }
 
         unsigned  getSrcNumRanks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
-          return _nsrcranks[phase]; 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
+          return _nsrcranks[phase];
         }
 
         size_t getDstNumRanks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
-          return _ndstranks[phase]; 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
+          return _ndstranks[phase];
         }
 
         size_t  *getDstRanks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
           return &_dstranks[_dstoffsets[phase]];
         }
 
         size_t  *getDstSubtasks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
           return &_dstsubtasks[_dstoffsets[phase]];
-        }      
+        }
 
         unsigned  getStartPhase()
         {
@@ -140,7 +140,7 @@ namespace CCMI
       unsigned             _phase;     /// Which phase am I in ?
       unsigned             _nphases;   /// Number of phases
       unsigned             _connid;    ///Connection id for multisend
-      unsigned             _iteration:1; ///The Red or black iteration   
+      unsigned             _iteration:1; ///The Red or black iteration
 
       CollHeaderData                 _cdata;
       MultiSend::CCMI_Multisync_t    _minfo;
@@ -153,7 +153,7 @@ namespace CCMI
       ScheduleCache         _cache;
 
       /// \brief Request for the multisend msg
-      XMI_Request_t        _request __attribute__((__aligned__(16)));   
+      XMI_Request_t        _request __attribute__((__aligned__(16)));
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -167,7 +167,7 @@ namespace CCMI
       ///
       void decrementVector()
       {
-        CCMI_assert(_phase == _start + _nphases);  
+        CCMI_assert(_phase == _start + _nphases);
         _phase     =   _start;
         _iteration ++;  //1 bit itertation count that can wrap
 
@@ -223,7 +223,7 @@ namespace CCMI
 
         _minfo.setRequestBuffer(& _request, sizeof(_request));
         //_minfo.setInfo((XMIQuad *)((void *) &_cdata),  1);
-        _minfo.setConnectionId(_connid);      
+        _minfo.setConnectionId(_connid);
         _minfo.setRoles((unsigned)-1);
         _minfo.setRanks(NULL);
 
@@ -296,7 +296,7 @@ inline void CCMI::Executor::Barrier::sendNext()
     _cdata._iteration = _iteration;  //Send the last bit of iteration
 
     //if last receive has arrived before the last send dont call executor notifySendDone rather app done callback
-    if( (_phase == (_start + _nphases - 1)) && 
+    if( (_phase == (_start + _nphases - 1)) &&
         (_phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase)) )
     {
       TRACE_ERR((stderr,"<%X>Executor::Barrier::sendNext set callback %X\n",(int)this, (int)_cb_done));
@@ -316,7 +316,7 @@ inline void CCMI::Executor::Barrier::sendNext()
   {
     XMIQuad * info = NULL;
     //nothing to do, skip this phase
-    notifySendDone( *info );    
+    notifySendDone( *info );
   }
 }
 
@@ -342,7 +342,7 @@ inline void CCMI::Executor::Barrier::notifyRecv(unsigned          src,
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] ++;
 
-  TRACE_ERR((stderr,"<%X>Executor::Barrier::notifyRecv phase %d, vec %d\n",(int)this, 
+  TRACE_ERR((stderr,"<%X>Executor::Barrier::notifyRecv phase %d, vec %d\n",(int)this,
              hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration]));
 
   //Start has not been called, just record recv and return
@@ -395,21 +395,21 @@ namespace CCMI
 
       class ScheduleCache
       {
-      protected:      
+      protected:
         unsigned          _start;      //Start phase
         unsigned          _nphases;    //Number of phases
 
         ///Combined list of all destinations
-        unsigned          _dstranks    [MAX_PHASES];      
+        unsigned          _dstranks    [MAX_PHASES];
         ///Combined list of all subtasks
-        unsigned          _dstsubtasks [MAX_PHASES];      
+        unsigned          _dstsubtasks [MAX_PHASES];
 
         ///Number or sources that send data in each phase
-        unsigned   char   _nsrcranks   [MAX_PHASES];         
+        unsigned   char   _nsrcranks   [MAX_PHASES];
         ///Number or destinations we send data to in each phase
-        unsigned   char   _ndstranks   [MAX_PHASES];      
+        unsigned   char   _ndstranks   [MAX_PHASES];
         ///Where are my destinations and subtasks stored
-        unsigned   char   _dstoffsets  [MAX_PHASES];      
+        unsigned   char   _dstoffsets  [MAX_PHASES];
 
       public:
         ScheduleCache ()
@@ -419,7 +419,7 @@ namespace CCMI
         void init(Schedule::Schedule *schedule)
         {
           int start, nph, nmessages = 0;
-          schedule->init (-1, BARRIER_OP, start, nph, nmessages); 
+          schedule->init (-1, BARRIER_OP, start, nph, nmessages);
           _start = start;
           _nphases = nph;
 
@@ -435,11 +435,11 @@ namespace CCMI
             unsigned srcranks[MAX_RANKS], nsrc=0, dstranks[MAX_RANKS], ndst=0, subtasks[MAX_RANKS];
             schedule->getSrcPeList(count, srcranks, nsrc, subtasks);
 
-            //CCMI_assert(nsrc <= 1);	
+            //CCMI_assert(nsrc <= 1);
             _nsrcranks [count]    = nsrc;
 
-            schedule->getDstPeList(count, dstranks, ndst, subtasks);        
-            CCMI_assert (dstindex + ndst < MAX_PHASES);   
+            schedule->getDstPeList(count, dstranks, ndst, subtasks);
+            CCMI_assert (dstindex + ndst < MAX_PHASES);
 
             MEMCPY(&_dstranks[dstindex], dstranks, ndst *sizeof(int));
             MEMCPY(&_dstsubtasks[dstindex], subtasks, ndst *sizeof(int));
@@ -447,32 +447,32 @@ namespace CCMI
             _ndstranks[count]  = ndst;
             _dstoffsets[count] = dstindex;
             dstindex += ndst;
-          } 
+          }
         }
 
         unsigned  getSrcNumRanks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
-          return _nsrcranks[phase]; 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
+          return _nsrcranks[phase];
         }
 
         unsigned  getDstNumRanks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
-          return _ndstranks[phase]; 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
+          return _ndstranks[phase];
         }
 
         unsigned  *getDstRanks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
           return &_dstranks[_dstoffsets[phase]];
         }
 
         unsigned  *getDstSubtasks (unsigned phase)
         {
-          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases)); 
+          CCMI_assert ( (phase >= _start) && (phase < _start + _nphases));
           return &_dstsubtasks[_dstoffsets[phase]];
-        }      
+        }
 
         unsigned  getStartPhase()
         {
@@ -494,7 +494,7 @@ namespace CCMI
       unsigned             _phase;     /// Which phase am I in ?
       unsigned             _nphases;   /// Number of phases
       unsigned             _connid;    ///Connection id for multisend
-      unsigned             _iteration:1; ///The Red or black iteration   
+      unsigned             _iteration:1; ///The Red or black iteration
 
       CollHeaderData                 _cdata;
       MultiSend::CCMI_OldMulticast_t    _minfo;
@@ -507,7 +507,7 @@ namespace CCMI
       ScheduleCache         _cache;
 
       /// \brief Request for the multisend msg
-      XMI_Request_t        _request __attribute__((__aligned__(16)));   
+      XMI_Request_t        _request __attribute__((__aligned__(16)));
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -521,7 +521,7 @@ namespace CCMI
       ///
       void decrementVector()
       {
-        CCMI_assert(_phase == _start + _nphases);  
+        CCMI_assert(_phase == _start + _nphases);
         _phase     =   _start;
         _iteration ++;  //1 bit itertation count that can wrap
 
@@ -578,7 +578,7 @@ namespace CCMI
 	_minfo.setRequestBuffer(& _request);
 	_minfo.setConsistency (CCMI_MATCH_CONSISTENCY);
         _minfo.setInfo((XMIQuad *)((void *) &_cdata),  1);
-        _minfo.setConnectionId(_connid);      
+        _minfo.setConnectionId(_connid);
 	_minfo.setSendData (NULL, 0);
 	_minfo.setRanks (NULL, 0);
 	_minfo.setOpcodes(NULL);
@@ -651,7 +651,7 @@ inline void CCMI::Executor::OldBarrier::sendNext()
     _cdata._iteration = _iteration;  //Send the last bit of iteration
 
     //if last receive has arrived before the last send dont call executor notifySendDone rather app done callback
-    if( (_phase == (_start + _nphases - 1)) && 
+    if( (_phase == (_start + _nphases - 1)) &&
         (_phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase)) )
     {
       TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext set callback %X\n",(int)this, (int)_cb_done));
@@ -671,7 +671,7 @@ inline void CCMI::Executor::OldBarrier::sendNext()
   {
     XMIQuad * info = NULL;
     //nothing to do, skip this phase
-    notifySendDone( *info );    
+    notifySendDone( *info );
   }
 }
 
@@ -697,7 +697,7 @@ inline void CCMI::Executor::OldBarrier::notifyRecv(unsigned          src,
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] ++;
 
-  TRACE_ERR((stderr,"<%X>Executor::OldBarrier::notifyRecv phase %d, vec %d\n",(int)this, 
+  TRACE_ERR((stderr,"<%X>Executor::OldBarrier::notifyRecv phase %d, vec %d\n",(int)this,
              hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration]));
 
   //Start has not been called, just record recv and return

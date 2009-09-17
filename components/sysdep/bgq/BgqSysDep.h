@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/sysdep/bgq/BgqSysdep.h
+/// \file components/sysdep/bgq/BgqSysDep.h
 /// \brief ???
 ///
 #ifndef __components_sysdep_bgq_bgqsysdep_h__

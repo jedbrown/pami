@@ -30,7 +30,7 @@ namespace CCMI
         ///
         /// \brief Tree allreduce protocol for SMP mode
         ///
-        /// 
+        ///
         class SmpTreeAllreduce : public CCMI::Adaptor::Allreduce::BaseComposite
         {
         public:
@@ -62,7 +62,7 @@ namespace CCMI
                                        XMI_Op                     op,
                                        size_t                      root = (size_t)-1);
 
-        private:    
+        private:
           inline void reset( XMI_Dt dtype, unsigned count ) __attribute__((noinline));
 
           //16 bytes of class vars
@@ -82,7 +82,7 @@ namespace CCMI
       }
     }
   }
-} 
+}
 
 
 inline void CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce::reset( XMI_Dt dtype, unsigned count )

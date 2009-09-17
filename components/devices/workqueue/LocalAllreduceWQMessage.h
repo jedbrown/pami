@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/workqueue/LocalAllreduceWQMessage.h
+ * \file components/devices/workqueue/LocalAllreduceWQMessage.h
  * \brief ???
  */
 

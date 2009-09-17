@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file connmgr/PhaseBasedConnMgr.h
+ * \file algorithms/connmgr/PhaseBasedConnMgr.h
  * \brief ???
  */
 
@@ -52,7 +52,7 @@ namespace CCMI
       {
         return phase;
       }
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, unsigned src, 
+      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, unsigned src,
                                             unsigned phase, unsigned color)
       {
         return phase;

@@ -60,12 +60,12 @@ namespace XMI
         {
           return _mapcache.getMapCache();
         };
-        
+
         inline size_t * getRankCache ()
         {
           return _mapcache.getRankCache();
         };
-        
+
      private:
 
         inline void allocateMemory ()
@@ -112,7 +112,7 @@ namespace XMI
       public:
 
         BgpPersonality       personality;
-        
+
       private:
 
         Mapping::BgpMapCache _mapcache;
@@ -125,5 +125,3 @@ namespace XMI
 extern XMI::SysDep::BgpGlobal __global;
 
 #endif // __xmi_components_sysdep_bgp_bgpglobal_h__
-
-

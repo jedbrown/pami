@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/BinomBcast.h
+ * \brief ???
+ */
 
 #ifndef __tspcoll_binom_bcast_h__
 #define __tspcoll_binom_bcast_h__

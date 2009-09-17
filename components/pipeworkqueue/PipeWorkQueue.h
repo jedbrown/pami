@@ -1,5 +1,5 @@
 ///
-/// \file xmi/PipeWorkQueue.h
+/// \file components/pipeworkqueue/PipeWorkQueue.h
 /// \brief XMI pipeworkqueue implementation.
 ///
 #ifndef   __xmi_component_pipeworkqueue_h__
@@ -16,7 +16,7 @@ namespace XMI
         {
         public:
             inline PipeWorkQueue() {}
-            
+
             ///
             /// \brief Clone constructor.
             ///
@@ -126,7 +126,7 @@ namespace XMI
             /// \return   success of the export operation
             ///
             inline xmi_result_t exp(xmi_pipeworkqueue_ext_t *exp);
-	
+
             ///
             /// \brief Import
             ///
@@ -238,23 +238,23 @@ namespace XMI
             /// \return	boolean indicate workqueue readiness
             ///
             inline bool available();
-            
+
         }; // end XMI::Pipeworkqueue::Pipeworkqueue
-       
+
         template <class T_PipeWorkQueue>
         void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep,
                                                        size_t bufsize)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep,bufsize);
         }
-        
+
         template <class T_PipeWorkQueue>
         void PipeWorkQueue<T_PipeWorkQueue>::reset()
         {
             return static_cast<T_PipeWorkQueue*>(this)->reset_impl();
         }
-        
-        template <class T_PipeWorkQueue>        
+
+        template <class T_PipeWorkQueue>
         void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep,
                                                        char *buffer,
                                                        size_t bufsize)
@@ -268,7 +268,7 @@ namespace XMI
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep, buffer,bufsize,bufinit);
         }
-        
+
         template <class T_PipeWorkQueue>
         void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep, char *buffer, xmi_type_t *type,
                                                        size_t typecount, size_t typeinit)

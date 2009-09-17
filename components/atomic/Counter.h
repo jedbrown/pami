@@ -129,5 +129,3 @@ namespace XMI
 };     // XMI namespace
 
 #endif // __components_atomic_counter_h__
-
-

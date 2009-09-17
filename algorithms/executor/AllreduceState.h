@@ -26,7 +26,7 @@ namespace CCMI
   {
 
 /// Arbitrary maximum number PE's per phase.  (In practice it's < 4)
-/// This is used for examining the PE lists from the schedule.  If a 
+/// This is used for examining the PE lists from the schedule.  If a
 /// schedule ever returns more than 16, we'll assert.
 #define CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE 128
 
@@ -49,18 +49,18 @@ namespace CCMI
 
     ///
     /// \brief Allreduce (and Reduce) persistent state data
-    /// This class allocates storage for receive buffers and schedule data.  
-    /// 
+    /// This class allocates storage for receive buffers and schedule data.
+    ///
 
     template<class T_mcastrecv, class T_Sysdep>
     class AllreduceState
     {
     public:
-      /// per phase state 
+      /// per phase state
       /// Params have been re-organized for cache
       /// performance. For example numSrcPes and numDstPes are the
       /// most commonly used  SK 10/30
-      typedef struct _phase_state    //XLC complains about anonymous structs SK 10/30	    
+      typedef struct _phase_state    //XLC complains about anonymous structs SK 10/30
       {
         unsigned     numSrcPes;    // # of source ranks
         unsigned     numDstPes;    // # of destination ranks
@@ -109,7 +109,7 @@ namespace CCMI
       unsigned           _receiveAllocationSize;
 
       /// pointers into the receive allocation
-      char             * _tempBuf; 
+      char             * _tempBuf;
       char             * _bufs;
       XMI_Request_t   * _recvReq;
       RecvCallbackData * _recvClientData;
@@ -120,7 +120,7 @@ namespace CCMI
       int          _endPhase;
       int          _dstPhase;  /// Phase in which the dstbuf is the receive destination
       int          _numSrcPes;
-      int          _numDstPes; 
+      int          _numDstPes;
 
       // "Chunk"s are pipelined data blocks
       unsigned     _pipelineWidth;
@@ -146,10 +146,10 @@ namespace CCMI
       unsigned                                _commid;   /// Communicator identifier
       unsigned                                _color;    /// Color of the collective
 
-      xmi_op                                 _op;         /// allreduce operation 
+      xmi_op                                 _op;         /// allreduce operation
       xmi_dt                                 _dt;         /// allreduce datatype
-      unsigned                                _iteration;   /// allreduce async iteration 
-      Executor                              * _executor;   /// Pointer to executor which is needed to 
+      unsigned                                _iteration;   /// allreduce async iteration
+      Executor                              * _executor;   /// Pointer to executor which is needed to
       /// set up the receive callback data objects
 
     public:
@@ -257,14 +257,14 @@ namespace CCMI
       {
         return _myRank;
       }
-      
+
       inline int getNextActivePhase (int phase)
       {
         CCMI_assert (phase >= _startPhase);
         CCMI_assert (phase <= _endPhase);
         return _nextActivePhase [phase];
       }
-      
+
       inline void setProtocol(unsigned protocol)
       {
         if(_protocol != protocol)
@@ -357,7 +357,7 @@ namespace CCMI
       {
         return _phaseVec[index].chunksSent;
       }
-      inline unsigned               getPhaseSendConnectionId (unsigned index) 
+      inline unsigned               getPhaseSendConnectionId (unsigned index)
       {
         return _phaseVec[index].sconnId;
       }
@@ -369,7 +369,7 @@ namespace CCMI
       {
         return _phaseVec[index].numDstPes;
       }
-      inline  void              compressPhaseNumDstPes(unsigned index, unsigned jindex) 
+      inline  void              compressPhaseNumDstPes(unsigned index, unsigned jindex)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::compressPhaseNumDstPes() phase[%#X].numDstPes %#X <- phase[%#X].numDstPes %#X\n",
                      (int)this, index, _phaseVec[index].numDstPes, jindex, _phaseVec[jindex].numDstPes));
@@ -380,7 +380,7 @@ namespace CCMI
       inline void                  incrementPhaseChunksRcvd(unsigned index,unsigned jindex,unsigned val=1)
       {
         _phaseVec[index].chunksRcvd[jindex] += val;
-        _phaseVec[index].totalChunksRcvd += val;    
+        _phaseVec[index].totalChunksRcvd += val;
       }
       inline void                  incrementPhaseChunksSent(unsigned index,unsigned val=1)
       {
@@ -428,7 +428,7 @@ namespace CCMI
       ///
       /// \param[in]  root  default/-1 indicates allreduce, any other
       ///                   root indicates reduce
-      /// 
+      ///
       inline void setRoot(int root=-1)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setRoot(%#X) enter\n",(int)this, root));
@@ -454,7 +454,7 @@ namespace CCMI
       }
 
       /// \brief Reset our phase state data based on changes to the schedule.
-      /// 
+      ///
       inline void resetPhaseData();
 
       ///
@@ -465,7 +465,7 @@ namespace CCMI
       void constructPhaseData ();
 
       /// \ brief Set the final receive buffer to be the dstbuf, if appropriate.
-      /// 
+      ///
       /// \param[in]  pdstbuf pointer to the destination buffer pointer.
       inline void setDstBuf(char** pdstbuf)
       {
@@ -475,10 +475,10 @@ namespace CCMI
           // We only use the destination buffer if we're a root or it's allreduce.  Otherwise we use
           // a temporary buffer.
           _phaseVec[_dstPhase].recvBufs = ((_root == -1) | (_root == (int)_myRank))?
-                                          pdstbuf :  // Our target is the final buffer 
+                                          pdstbuf :  // Our target is the final buffer
                                           &_tempBuf; // Our target is a temp buffer
 
-          // The mrecv structure has to match, but we assume this only works for 1 src pe?  We 
+          // The mrecv structure has to match, but we assume this only works for 1 src pe?  We
           // only have a dst phase, not a dst src pe index (so mrecv[0]).  How would a final multi-
           // src receive phase work?  Probably not an issue, but assert anyway.
           CCMI_assert(_phaseVec[_dstPhase].numSrcPes == 1);
@@ -497,7 +497,7 @@ namespace CCMI
       /// the configuration has changed.
       ///
       /// Call resetPhaseData() before resetReceives() to setup the
-      void resetReceives(unsigned infoRequired);  
+      void resetReceives(unsigned infoRequired);
 
       /// \brief Setup receive structures and allocate buffers
       ///
@@ -594,7 +594,7 @@ namespace CCMI
       void setColor (unsigned  color)
       {
         _color = color;
-      }   
+      }
 
       /// \brief Default Constructor
       AllreduceState (unsigned iteration, unsigned rank) :
@@ -634,7 +634,7 @@ namespace CCMI
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::ctor(void) enter\n",(int)this));
         TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::ctor ALERT: Constructor\n",(int)this));
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::ctor(void) exit\n",(int)this));
-        _nextActivePhase = 0;        
+        _nextActivePhase = 0;
       }
       /// Default Destructor
       virtual ~AllreduceState ()
@@ -730,7 +730,7 @@ namespace CCMI
           for(int phase = _startPhase; phase <= _endPhase; phase++)
             for(unsigned scount = 0; scount < _phaseVec[phase].numSrcPes; scount ++)
             {
-              T_mcastrecv *mrecv = &(_phaseVec[phase].mrecv[scount]); 
+              T_mcastrecv *mrecv = &(_phaseVec[phase].mrecv[scount]);
               mrecv->bytes = _bytes;
               mrecv->pipelineWidth = _pipelineWidth;
               //mrecv->opcode = (CCMI_Subtask) _phaseVec[phase].srcHints[scount];
@@ -744,7 +744,7 @@ namespace CCMI
         {
           // Do nothing if the config hasn't changed.
           if(!_isConfigChanged) return;
-          
+
           constructPhaseData ();
         }
 
@@ -754,7 +754,7 @@ namespace CCMI
           //  CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
           CCMI_assert(_bytes > 0);
           CCMI_assert(_sched);
-          
+
           // Do minimal setup if the config hasn't changed.
           if(!_isConfigChanged)
               {
@@ -764,15 +764,15 @@ namespace CCMI
                 unsigned *chunks = _all_chunks;
                 for(idx = 0; idx < _numSrcPes; idx++)
                   chunks [idx] = 0;
-                
+
                 for(idx = _startPhase; idx <= _endPhase; idx++)
                     {
-                      _phaseVec[idx].chunksSent = 0;        
-                      _phaseVec[idx].totalChunksRcvd = 0;        
+                      _phaseVec[idx].chunksSent = 0;
+                      _phaseVec[idx].totalChunksRcvd = 0;
                     }
                 return;
               }
-          
+
           setupReceives (infoRequired);
           return;
         }

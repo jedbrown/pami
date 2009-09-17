@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file connmgr/TorusConnMgr.h
+ * \file algorithms/connmgr/TorusConnMgr.h
  * \brief ???
  */
 
@@ -91,7 +91,7 @@ namespace CCMI
       }
 
 
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, 
+      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
                                             unsigned src, unsigned phase, unsigned color)
       {
         CCMI_assert (color <= 3);
@@ -101,7 +101,7 @@ namespace CCMI
         unsigned* my_coords = _mapping->Coords();
         _mapping->Rank2Torus (&(coords[0]), src);
 
-        unsigned conn = (unsigned) -1;    
+        unsigned conn = (unsigned) -1;
 
         if(coords[CCMI_X_DIM] != my_coords[CCMI_X_DIM])
         {
@@ -127,7 +127,7 @@ namespace CCMI
         else if(coords[CCMI_T_DIM] != my_coords[CCMI_T_DIM])
           conn = TCONN + color - 1;
 
-        CCMI_assert (conn != (unsigned)-1);   
+        CCMI_assert (conn != (unsigned)-1);
         return conn;
       }
     };

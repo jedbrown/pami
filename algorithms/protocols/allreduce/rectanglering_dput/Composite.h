@@ -32,16 +32,16 @@ namespace CCMI
         ///
         /// \brief Rectangle allreduce protocol
         ///
-        /// Specifies the OneColorRectAllredSched with the 
+        /// Specifies the OneColorRectAllredSched with the
         ///  CCMI::Schedule::OneColorRectRedSched::Ring subschedule
-        /// 
+        ///
         class Composite : public CCMI::Adaptor::Allreduce::Composite
         {
         protected:
           CCMI::Schedule::Rectangle               * _rect;
           unsigned                                    _ideal;
           unsigned                                    _ncolors;
-          CCMI_Executor_t                           * _executor_buf;    
+          CCMI_Executor_t                           * _executor_buf;
           CCMI::TorusCollectiveMapping                              * _mapping;
           CCMI::Schedule::Color                     _colors[MAX_DPUT_ARED_COLORS];
 
@@ -49,7 +49,7 @@ namespace CCMI
           {
             CCMI::Executor::PipelinedAllreduce       _executor;
             CCMI::Schedule::OneColorRectAllredSched  _schedule;
-          } ScheduleExec;   
+          } ScheduleExec;
 
         public:
           /// Default Destructor
@@ -66,7 +66,7 @@ namespace CCMI
 
               CCMI_Free (_executor_buf);
 
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::dtor() ALERT, %X\n", 
+              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::dtor() ALERT, %X\n",
                          (int)this, (unsigned)_executor_buf));
               TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::dtor()\n",(int)this));
 
@@ -118,20 +118,20 @@ namespace CCMI
               ScheduleExec *se = (ScheduleExec *) (_executor_buf + idx);
 
               new (& se->_executor)
-              CCMI::Executor::PipelinedAllreduce (map, NULL, 
-                                            consistency, 
-                                            geometry->comm(), 
+              CCMI::Executor::PipelinedAllreduce (map, NULL,
+                                            consistency,
+                                            geometry->comm(),
                                             geometry->getAllreduceIteration());
               new (& se->_schedule)
-              CCMI::Schedule::OneColorRectAllredSched (map, colors[idx], 
-                                                 *geometry->rectangle(), 
+              CCMI::Schedule::OneColorRectAllredSched (map, colors[idx],
+                                                 *geometry->rectangle(),
                                                  CCMI::Schedule::OneColorRectRedSched::Ring);
 
               addExecutor (& se->_executor);
               se->_executor.setSchedule (& se->_schedule, colors[idx]);
               se->_executor.setMulticastInterface (mf);
-              se->_executor.setReduceConnectionManager (rcmgr);         
-              se->_executor.setBroadcastConnectionManager (bcmgr);        
+              se->_executor.setReduceConnectionManager (rcmgr);
+              se->_executor.setBroadcastConnectionManager (bcmgr);
 
               _colors[idx] = colors[idx];
             }
@@ -155,8 +155,8 @@ namespace CCMI
             coremath func;
             unsigned sizeOfType;
             CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op, count,
-                                                        sizeOfType, func);            
-            unsigned bytes = count * sizeOfType;     
+                                                        sizeOfType, func);
+            unsigned bytes = count * sizeOfType;
             unsigned pwidth = compute_pwidth(bytes / _ideal, CCMI::Schedule::XP_Y_Z);
 
             _ncolors = _ideal;
@@ -189,7 +189,7 @@ namespace CCMI
                 rvec[idx] = rvec[idx-1] + sizeof(CCMI::Executor::AllreduceBase::SendState) * XMI_MAX_ACTIVE_SENDS;
                 nexts[idx] = (char *)(((unsigned)nexts[idx-1] + (bytes/_ncolors)) & 0xFFFFFFF0);
                 byteCnt[idx-1] = (unsigned)(nexts[idx] - nexts[idx-1]);
-                nextd[idx] = nextd[idx-1] + byteCnt[idx-1]; 
+                nextd[idx] = nextd[idx-1] + byteCnt[idx-1];
                 TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::internal_restart rvec[%#X] %#X,nexts[%#X] %#X,byteCnt[%#X] %#X,nextd[%#X] %#X\n",(int)this,
                                idx,
                                (int)rvec[idx],
@@ -206,7 +206,7 @@ namespace CCMI
 
             for(idx = 0; idx < _ncolors; idx ++)
             {
-              pwidth = compute_pwidth(bytes / _ncolors, _colors[idx]);        
+              pwidth = compute_pwidth(bytes / _ncolors, _colors[idx]);
               TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::internal_restart bytes %#X, _ncolors %#X, _colors[%#X] %#X, pwidth %#X, byteCnt[%#X] %#X\n",(int)this,
                              bytes,
                              _ncolors,
@@ -216,8 +216,8 @@ namespace CCMI
                              idx,
                              byteCnt[idx]/sizeOfType));
               CCMI::Executor::PipelinedAllreduce *allreduce = (CCMI::Executor::PipelinedAllreduce *) getExecutor(idx);
-              initialize (allreduce, (XMI_CollectiveRequest_t *)rvec[idx], 
-                          nexts[idx], nextd[idx], byteCnt[idx]/sizeOfType, 
+              initialize (allreduce, (XMI_CollectiveRequest_t *)rvec[idx],
+                          nexts[idx], nextd[idx], byteCnt[idx]/sizeOfType,
                           dtype, op, -1, pwidth, cb_mc_compositeDone, this);
 
               allreduce->reset ();
@@ -235,7 +235,7 @@ namespace CCMI
                                        unsigned                    count,
                                        XMI_Dt                     dtype,
                                        XMI_Op                     op,
-                                       int                         root=-1) 
+                                       int                         root=-1)
           {
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::restart()\n",(int)this));
             _myClientFunction = cb_done.function;
@@ -278,7 +278,7 @@ namespace CCMI
           /// It means this composite (and kernel executor) is done, but
           /// the client done isn't called until both the composite and
           /// (optional) barrier are done.
-          /// 
+          ///
           static void cb_mc_compositeDone(void *me, XMI_Error_t *err)
           {
             Composite *composite = (Composite *) me;
@@ -290,10 +290,10 @@ namespace CCMI
           /// barrier finishes
           ///
           /// Start the [all]reduce now.
-          /// 
+          ///
           /// It means the is done, but the client done isn't called
           /// until both the composite and (optional) barrier are done.
-          /// 
+          ///
           static void cb_mc_barrierDone(void *me, XMI_Error_t *err)
           {
             Composite *composite = (Composite *) me;
@@ -301,7 +301,7 @@ namespace CCMI
             TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::cb_mc_barrierDone\n",(int)me));
             for(unsigned idx =0; idx < composite->_ncolors; idx ++)
             {
-              CCMI::Executor::AllreduceBase *allreduce = 
+              CCMI::Executor::AllreduceBase *allreduce =
               (CCMI::Executor::AllreduceBase *) composite->getExecutor(idx);
               allreduce->start();
             }

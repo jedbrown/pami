@@ -1,5 +1,5 @@
 /**
- * \file xmi_am.h
+ * \file sys/unused/xmi_am.h
  * \brief xmi active messaging interface
  * \defgroup activemessage Active message
  * \{

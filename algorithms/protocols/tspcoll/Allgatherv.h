@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/Allgatherv.h
+ * \brief ???
+ */
 
 #ifndef __pgasrt_tspcoll_allgatherv_h__
 #define __pgasrt_tspcoll_allgatherv_h__
@@ -42,7 +46,7 @@ namespace TSPColl
 /*                   Allgather constructor                                 */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline TSPColl::Allgatherv<T_Mcast>::Allgatherv (XMI_GEOMETRY_CLASS * comm, NBTag tag, 
+inline TSPColl::Allgatherv<T_Mcast>::Allgatherv (XMI_GEOMETRY_CLASS * comm, NBTag tag,
 					int instID, int off):
   CollExchange<T_Mcast> (comm, tag, instID, off, false)
 {
@@ -68,10 +72,10 @@ inline void TSPColl::
 Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
 {
   size_t allsumbytes= 0;
-  for(int i=0;i<this->_comm->size();i++) 
+  for(int i=0;i<this->_comm->size();i++)
     allsumbytes+=lengths[i];
 
-  size_t mysumbytes = 0; 
+  size_t mysumbytes = 0;
   for(int i=0;i<this->_comm->rank();i++)
     mysumbytes +=lengths[i];
 
@@ -93,8 +97,8 @@ Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
       this->_sbuf[phase]   = (char *)rbuf + mysumbytes;
       this->_sbuf[phase+1]   = (char *)rbuf;
 
-      size_t phasesumbytes=0; 
-      for (int n=0; n < (1<<i); n++) 
+      size_t phasesumbytes=0;
+      for (int n=0; n < (1<<i); n++)
 	phasesumbytes += lengths[(this->_comm->rank()+n)%this->_comm->size()];
 
       this->_rbuf[phase]   = (char *)rbuf+ ((mysumbytes + phasesumbytes) % allsumbytes);

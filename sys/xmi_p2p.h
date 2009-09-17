@@ -1,5 +1,5 @@
 /**
- * \file xmi_p2p.h
+ * \file sys/xmi_p2p.h
  * \brief messaging interface
  * \todo API style - all lowercase types? mixed-case? all uppercase?
  * \todo API style - abbreviated or explicit method/type/variable names ?

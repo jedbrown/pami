@@ -39,7 +39,7 @@ namespace CCMI
       /// It provides the unexpected multisend callback and the basic
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
-      /// 
+      ///
       template <class MAP> class AsyncFactory : public CollectiveProtocolFactory
       {
       protected:
@@ -82,7 +82,7 @@ namespace CCMI
                                                unsigned        * pipewidth,
                                                XMI_Callback_t * cb_done)
       {
-        TRACE_ADAPTOR((stderr, 
+        TRACE_ADAPTOR((stderr,
                        "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead peer %d, conn_id %d\n",
                        (int)arg, peer, conn_id));
         CCMI_assert (info && arg);
@@ -90,19 +90,19 @@ namespace CCMI
         AsyncFactory *factory = (AsyncFactory *) arg;
 
         Geometry *geometry = (Geometry *)factory->_cb_geometry(cdata->_comm);
-        CCMI::Adaptor::Allreduce::AsyncComposite *composite = 
+        CCMI::Adaptor::Allreduce::AsyncComposite *composite =
         factory->getAllreduceComposite(geometry, cdata->_iteration);
 
-        CCMI::Executor::AllreduceBase *allreduce = 
+        CCMI::Executor::AllreduceBase *allreduce =
         factory->getAllreduce(geometry, cdata->_iteration);
 
-        TRACE_ADAPTOR((stderr, 
+        TRACE_ADAPTOR((stderr,
                        "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead "
                        "comm %#X, root %#X, count %#X, dt %#X, op %#X, iteration %#X,"
                        "composite %#.8X, executor %#.8X %s\n",
                        (int)factory, cdata->_comm, cdata->_root, cdata->_count,
                        cdata->_dt, cdata->_op, cdata->_iteration,
-                       (int)composite, (int)allreduce, 
+                       (int)composite, (int)allreduce,
                        (composite == NULL?" ":
                         ((composite->isIdle())?"(Idle)":" "))));
 
@@ -161,7 +161,7 @@ namespace CCMI
           _minterface->setCallback(cb_receiveHead, this);
         }
 
-        inline void setConnectionManager 
+        inline void setConnectionManager
         (CCMI::ConnectionManager::ConnectionManager  * connmgr)
         {
           _connmgr = connmgr;
@@ -214,10 +214,10 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::AllreduceBase * getAllreduce(Geometry *geometry, 
+        CCMI::Executor::AllreduceBase * getAllreduce(Geometry *geometry,
                                                      unsigned iter)
         {
-          CCMI::Executor::Composite *composite = 
+          CCMI::Executor::Composite *composite =
           geometry->getAllreduceComposite(iter);
 
           CCMI::Executor::AllreduceBase *executor = (composite)?
@@ -227,8 +227,8 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
                          "getAllreduce(comm id X, color %#X)"
                          " callback %#X, composite %#.8X  executor %#.8X\n",
-                         (int)this,// comm, 
-                         iter, 
+                         (int)this,// comm,
+                         iter,
                          (int) _cb_geometry,
                          (int) composite,
                          (int) executor));
@@ -239,7 +239,7 @@ namespace CCMI
         /// iteration id).  It is expected to be associated with this Factory,
         /// otherwise destroy it and return NULL.
         ///
-        CCMI::Adaptor::Allreduce::AsyncComposite * getAllreduceComposite(Geometry *geometry, 
+        CCMI::Adaptor::Allreduce::AsyncComposite * getAllreduceComposite(Geometry *geometry,
                                                                          unsigned iteration)
         {
           CCMI::Adaptor::Allreduce::AsyncComposite *composite = (CCMI::Adaptor::Allreduce::AsyncComposite *)
@@ -248,8 +248,8 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
                          "getAllreduceComposite(comm id X, iteration %#X)"
                          " callback %#X, composite's factory %#.8X  composite %#.8X\n",
-                         (int)this, //comm, 
-                         iteration, 
+                         (int)this, //comm,
+                         iteration,
                          (int) _cb_geometry,
                          (int) (composite? composite->getFactory(): NULL),
                          (int)composite));

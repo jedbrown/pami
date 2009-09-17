@@ -148,8 +148,8 @@ namespace XMI
 #warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
           //_mapcache = (size_t *) mm.scratchpad_dynamic_area_memalign (16, sizeof(kernel_coords_t) * _fullSize );
           result = mm.memalign((void **) & _mapcache, 16, sizeof(kernel_coords_t) * _fullSize);
-          
-          
+
+
 
           // Allocate the rank cache from shared memory (in DUAL or VN modes) or from
           // heap (in SMP mode).
@@ -455,5 +455,4 @@ namespace XMI
   };   // XMI::Mapping
 };     // XMI
 
-#endif // 
-
+#endif //

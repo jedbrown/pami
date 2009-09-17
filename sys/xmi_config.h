@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file xmi_config.h
+ * \file sys/xmi_config.h
  * \brief ???
  */
 

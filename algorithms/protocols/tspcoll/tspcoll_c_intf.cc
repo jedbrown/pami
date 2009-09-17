@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/tspcoll_c_intf.cc
+ * \brief ???
+ */
 
 #include "interface/Communicator.h"
 
@@ -65,7 +69,7 @@ extern "C" __pgasrt_thread_t __pgasrt_tspcoll_comm_rank (int commID)
 /*                    rank of any ID in a communicator                      */
 /* ************************************************************************ */
 
-extern "C" __pgasrt_thread_t 
+extern "C" __pgasrt_thread_t
 __pgasrt_tspcoll_comm_rankof (int commID, __pgasrt_thread_t rank)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
@@ -165,7 +169,7 @@ extern "C" void __pgasrt_tspcoll_barrier (int commID)
 
 extern "C" void __pgasrt_tspcoll_allgather (int commID,
 					    const void * sbuf,
-					    void * rbuf, 
+					    void * rbuf,
 					    size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
@@ -179,7 +183,7 @@ extern "C" void __pgasrt_tspcoll_allgather (int commID,
 
 extern "C" void __pgasrt_tspcoll_allgatherv (int commID,
 					    const void * sbuf,
-					    void * rbuf, 
+					    void * rbuf,
 					     size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
@@ -194,7 +198,7 @@ extern "C" void __pgasrt_tspcoll_allgatherv (int commID,
 extern "C" void __pgasrt_tspcoll_scatter (int commID,
 					  int root,
 					  const void * sbuf,
-					  void * rbuf, 
+					  void * rbuf,
 					  size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
@@ -209,7 +213,7 @@ extern "C" void __pgasrt_tspcoll_scatter (int commID,
 extern "C" void __pgasrt_tspcoll_scatterv (int commID,
 					   int root,
 					   const void * sbuf,
-					   void * rbuf, 
+					   void * rbuf,
 					   size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
@@ -224,7 +228,7 @@ extern "C" void __pgasrt_tspcoll_scatterv (int commID,
 extern "C" void __pgasrt_tspcoll_bcast (int commID,
 					int root,
 					const void * sbuf,
-					void * rbuf, 
+					void * rbuf,
 					size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
@@ -268,11 +272,10 @@ extern "C" void __pgasrt_tspcoll_gather (int commID,
 extern "C" void __pgasrt_tspcoll_gatherv (int commID,
 					  int root,
 					  const void * sbuf,
-					  void * rbuf, 
+					  void * rbuf,
 					  size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
   _tspcoll[commID]->gatherv (root, sbuf, rbuf, lengths);
 }
-

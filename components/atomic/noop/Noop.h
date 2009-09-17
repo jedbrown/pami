@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file atomic/noop/Noop.h
+ * \file components/atomic/noop/Noop.h
  * \brief ???
  */
 
@@ -74,5 +74,3 @@ namespace XMI
 
 
 #endif // __xmi_atomic_noop_noop_h__
-
-

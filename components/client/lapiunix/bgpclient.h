@@ -1,5 +1,5 @@
 ///
-/// \file xmi/bgp/bgpclient.h
+/// \file components/client/lapiunix/bgpclient.h
 /// \brief XMI client interface specific for the BGP platform.
 ///
 #ifndef   __xmi_bgp_bgpclient_h__
@@ -90,7 +90,7 @@ namespace XMI
 
           return context;
         }
-        
+
         inline void destroyContext_impl (XMI::Context::BGP * context)
         {
           //_context_list->lock ();
@@ -98,9 +98,9 @@ namespace XMI
           context->destroy ();
           //_context_list->unlock ();
         }
-        
+
       protected:
-      
+
         inline xmi_client_t getClientId () const
         {
           return _client;

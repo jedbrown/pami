@@ -1,5 +1,5 @@
 ///
-/// \file xmi/Client.h
+/// \file components/client/Client.h
 /// \brief XMI client interface.
 ///
 #ifndef   __xmi_client_h__

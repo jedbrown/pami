@@ -63,7 +63,7 @@ static inline unsigned long __tsc() {
 #endif // __bgp__
 
 ////////////////////////////////////////////////////////////////////////
-///  \file devices/prod/generic/GenericDevice.h
+///  \file components/devices/generic/GenericDevice.h
 ///  \brief Generic Device - actual implementation
 ///
 ///  The Generic classes implement a QueueSystem and a Message object
@@ -178,7 +178,7 @@ namespace Generic {
 		default:
 			XMI_abort();
 		}
-		
+
 		static int opcd[NUM_CORES] = {
 			COMMTHRD_OPCODE_CORE0,
 			COMMTHRD_OPCODE_CORE1,
@@ -305,7 +305,7 @@ namespace Generic {
 	///
 	inline int Device::__advanceRecv() {
 		int events = 0;
-		// not all devices actually have "unexpected" messages, but we call anyway. 
+		// not all devices actually have "unexpected" messages, but we call anyway.
 		// Presumably, empty functions will be optimized away by the compiler.
 		// Has no concept of recv at all: _g_progfunc_dev
 		events += _g_lmbarrier_dev.advanceRecv();
@@ -341,7 +341,7 @@ namespace Generic {
 		int events = 0;
 		// No subdevices use recv channels, yet...
 		// _g_some_dev.advanceRecv(channel);
-		return events; 
+		return events;
 	}
 
 	//////////////////////////////////////////////////////////////////

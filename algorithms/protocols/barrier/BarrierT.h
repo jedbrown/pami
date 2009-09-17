@@ -30,7 +30,7 @@ namespace CCMI
 
       ///
       /// \brief Binomial barrier
-      ///  
+      ///
       template <class S, AnalyzeFn afn, class MAP> class BarrierT : public CCMI::Executor::Barrier
       {
         ///
@@ -91,7 +91,7 @@ namespace CCMI
         bool Analyze(Geometry *geometry)
         {
           return T::analyze (geometry);
-        } 
+        }
 
         ///
         /// \brief Generate a non-blocking barrier message.
@@ -104,7 +104,7 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         Geometry                  * geometry)  
+         Geometry                  * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
           return new (request) T (this->_mapping, this->_msyncInterface, geometry);
@@ -116,7 +116,7 @@ namespace CCMI
 
       ///
       /// \brief Binomial barrier
-      ///  
+      ///
       template <class S, AnalyzeFn afn, class MAP> class OldBarrierT : public CCMI::Executor::OldBarrier
       {
         ///
@@ -178,7 +178,7 @@ namespace CCMI
         bool Analyze(Geometry *geometry)
         {
           return T::analyze (geometry);
-        } 
+        }
 
         ///
         /// \brief Generate a non-blocking barrier message.
@@ -191,7 +191,7 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         Geometry                  * geometry)  
+         Geometry                  * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);

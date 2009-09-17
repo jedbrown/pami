@@ -1,5 +1,5 @@
 ///
-/// \file tests/client/hello.c
+/// \file test/context/create.c
 /// \brief Simple XMI_Context_create() test
 ///
 
@@ -46,7 +46,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

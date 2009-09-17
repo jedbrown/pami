@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file logging/LogMgr.h
+ * \file util/logging/LogMgr.h
  * \brief ???
  */
 
@@ -32,15 +32,15 @@ namespace CCMI
       inline LogMgr ()
       {
         reset ();
-      } 
+      }
 
       inline void reset ()
       {
 #if ENABLE_PROFILING
         for(int count = 0; count < NTIMERS; count ++)
         {
-          _start [count] = 0;     
-          _count [count] = 0;    
+          _start [count] = 0;
+          _count [count] = 0;
           _sum [count] = 0;
         }
 
@@ -83,10 +83,10 @@ namespace CCMI
         for(int idx = 0; idx < NTIMERS; idx ++)
         {
           if(_count [idx] > 0)
-            fprintf (fp, 
-                     "%d: Event %s has overhead of %d cycles over %d calls\n", 
+            fprintf (fp,
+                     "%d: Event %s has overhead of %d cycles over %d calls\n",
                      map->rank(),
-                     _logHandle[idx], (unsigned)(_sum[idx]/_count[idx]),  
+                     _logHandle[idx], (unsigned)(_sum[idx]/_count[idx]),
                      _count[idx]);
         }
 #endif
@@ -105,7 +105,7 @@ namespace CCMI
       char                    _logHandle [NTIMERS][256];
       unsigned long long      _start [NTIMERS];
       unsigned long long      _sum   [NTIMERS];
-      unsigned                _count [NTIMERS];     
+      unsigned                _count [NTIMERS];
       unsigned                _curIndex;
 
 

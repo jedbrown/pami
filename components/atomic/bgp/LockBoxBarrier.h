@@ -11,7 +11,7 @@
 #define __xmi_bgp_lockboxbarrier_h__
 
 /**
- * \file sysdep/prod/BGP/BarrierImpl.h
+ * \file components/atomic/bgp/LockBoxBarrier.h
  * \brief LockBox implementation of a Node-scoped Barrier
  * This implementation is different from, and incompatible with,
  * the BGP SPI LockBox_Barrier implementation. Support for core

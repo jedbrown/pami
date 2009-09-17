@@ -51,8 +51,8 @@ namespace CCMI
       }
 
 
-      typedef MultiColorCompositeT <1, CCMI::Schedule::BinomialTreeSchedule, 
-      get_colors,CCMI::CollectiveMapping> BinomialBcastComposite;      
+      typedef MultiColorCompositeT <1, CCMI::Schedule::BinomialTreeSchedule,
+      get_colors,CCMI::CollectiveMapping> BinomialBcastComposite;
       template<> void BinomialBcastComposite::create_schedule ( void                      * buf,
                                                                 unsigned                    size,
                                                                 Geometry                  * g,
@@ -62,12 +62,12 @@ namespace CCMI
       }
 
 
-      //typedef MultiColorCompositeT < MAX_BCAST_COLORS, CCMI::Schedule::OneColorRectBcastSched, 
-      //create_rschedule<CCMI::Schedule::OneColorRectBcastSched>, 
-      //get_rcolors<CCMI::Schedule::OneColorRectangle> > RectangleBcastComposite;      
+      //typedef MultiColorCompositeT < MAX_BCAST_COLORS, CCMI::Schedule::OneColorRectBcastSched,
+      //create_rschedule<CCMI::Schedule::OneColorRectBcastSched>,
+      //get_rcolors<CCMI::Schedule::OneColorRectangle> > RectangleBcastComposite;
 
-      typedef MultiColorCompositeT <1, CCMI::Schedule::RingSchedule, 
-      get_colors,CCMI::CollectiveMapping> RingBcastComposite;      
+      typedef MultiColorCompositeT <1, CCMI::Schedule::RingSchedule,
+      get_colors,CCMI::CollectiveMapping> RingBcastComposite;
       template<> void RingBcastComposite::create_schedule ( void                      * buf,
                                                             unsigned                    size,
                                                             Geometry                  * g,

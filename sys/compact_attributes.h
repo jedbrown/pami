@@ -1,6 +1,6 @@
 /*  (C)Copyright IBM Corp.  2007, 2008  */
 /**
- * \file include/defines.h
+ * \file sys/compact_attributes.h
  * \brief ???
  */
 
@@ -15,7 +15,7 @@
 typedef int CA_Mask;
 
 #define CA_BYTE_SIZE       (sizeof(char))
-#define CA_MASK_NUM_BYTES  (sizeof(CA_Mask))                        
+#define CA_MASK_NUM_BYTES  (sizeof(CA_Mask))
 #define CA_TOTAL_BITS      (CA_BYTE_SIZE * CA_MASK_NUM_BYTES)
 #define CA_NUM_ELEMENTS    1
 
@@ -106,7 +106,7 @@ typedef struct
         break;                                                                \
       }                                                                       \
   } while (0)                                                                 \
-    
+
 /* this sets multiple attributes in a list in a single call */
 /* extern void CA_MSET(ca_list *list, ...);*/
 

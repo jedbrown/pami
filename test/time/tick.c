@@ -1,5 +1,5 @@
 ///
-/// \file tests/time/tick.c
+/// \file test/time/tick.c
 /// \brief Simple XMI_Wtick() test before XMI_Client_initialize()
 ///
 
@@ -13,7 +13,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

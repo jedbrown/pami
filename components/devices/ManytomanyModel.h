@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/PacketModel.h
+ * \file components/devices/ManytomanyModel.h
  * \brief ???
  */
 
@@ -54,7 +54,7 @@ namespace XMI
       {
         static_cast<T_Model*>(this)->send_impl(parameters);
       }
-      
+
       template <class T_Model, class T_Device, class T_Object>
       void ManytomanyModel<T_Model, T_Device, T_Object>::postRecv (T_Object              * request,
                                                                    const XMI_Callback_t  * cb_done,
@@ -70,7 +70,7 @@ namespace XMI
                                                    buf, sizes, offsets, counters,
                                                    nranks, myindex);
       }
-      
+
     };
   };
 };

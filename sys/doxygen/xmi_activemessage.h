@@ -1,5 +1,5 @@
 /**
- * \file doxygen/xmi_activemessage.h
+ * \file sys/doxygen/xmi_activemessage.h
  * \brief Detailed doxygen documentation for xmi active message interface
  */
 #ifndef __doxygen_xmi_activemessage_h__

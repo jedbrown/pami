@@ -60,7 +60,7 @@ namespace CCMI
         ///
         void allocateAsync (CCMI_Executor_t  ** exec,
                             char             ** rcvbuf,
-                            unsigned            bytes) 
+                            unsigned            bytes)
         {
           if(bytes < MAX_PREALLOCATED_BYTES &&
              ! _bufferPool.isEmpty())
@@ -85,7 +85,7 @@ namespace CCMI
         /// allocateAsync. Enqueue to pool if size is less than
         /// MAX_PREALLOCATED_BYTES
         ///
-        void freeAsync (BcastQueueElem *elem, unsigned bytes) 
+        void freeAsync (BcastQueueElem *elem, unsigned bytes)
         {
           if(bytes < MAX_PREALLOCATED_BYTES &&
              _bufferPool.size() < MAX_NUM_PREALLOCATED)

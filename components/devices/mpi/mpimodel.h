@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/mpi/mpimodel.h
+ * \brief ???
+ */
+
 #ifndef __components_devices_mpi_mpipacketmodel_h__
 #define __components_devices_mpi_mpipacketmodel_h__
 
@@ -33,7 +46,7 @@ namespace XMI
         {
           return true;
         }
-      
+
       inline bool postPacket_impl (T_Message          * obj,
                                    xmi_event_function   fn,
                                    void               * cookie,
@@ -62,7 +75,7 @@ namespace XMI
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
-          
+
           return true;
         };
 

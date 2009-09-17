@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/workqueue/LocalBcastWQMessage.h
+ * \file components/devices/workqueue/LocalBcastWQMessage.h
  * \brief ???
  */
 
@@ -129,7 +129,7 @@ public:
 			return;
 		}
 		_shared.setProducers(1, 0);
-		_shared.setConsumers(_npeers - 1, 0); 
+		_shared.setConsumers(_npeers - 1, 0);
 		reset_impl();
 	}
 

@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/sysdep/mpi/mpisysdep.h
+ * \brief ???
+ */
+
 #ifndef __components_sysdep_mpi_mpisysdep_h__
 #define __components_sysdep_mpi_mpisysdep_h__
 

@@ -50,4 +50,3 @@ namespace XMI
 };
 
 #endif // __xmi_components_memory_memorymanager_h__
-

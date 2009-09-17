@@ -38,20 +38,20 @@ namespace CCMI
       /// \brief Binomial allreduce protocol
       ///
       /// Use the BinomialTreeSchedule
-      /// 
+      ///
       namespace Binomial
       {
-        typedef CompositeT 
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> Composite;      
+        typedef CompositeT
+        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> Composite;
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::Composite,CCMI::CollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::Composite,CCMI::CollectiveMapping> Factory;
       };
       // Specializations for Binomial templates.
       ///
       /// \brief Binomial allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* Binomial::Composite::name="Binomial";
       template<> inline bool Binomial::Composite::analyze(Geometry *geometry){ return true;};
@@ -65,20 +65,20 @@ namespace CCMI
       /// \brief Binomial short allreduce protocol
       ///
       /// Use the BinomialTreeSchedule
-      /// 
+      ///
       namespace ShortBinomial
       {
-        typedef CompositeT 
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase,CCMI::CollectiveMapping> Composite;      
+        typedef CompositeT
+        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase,CCMI::CollectiveMapping> Composite;
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::Composite,CCMI::CollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::Composite,CCMI::CollectiveMapping> Factory;
       };
       // Specializations for Binomial templates.
       ///
       /// \brief Binomial short allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* ShortBinomial::Composite::name="ShortBinomial";
       template<> inline bool ShortBinomial::Composite::analyze(Geometry *geometry){ return true;};
@@ -92,21 +92,21 @@ namespace CCMI
       /// \brief Ring allreduce protocol
       ///
       /// Use the RingSchedule
-      /// 
+      ///
       namespace Ring
       {
-        typedef CompositeT 
-        <CCMI::Schedule::RingSchedule,CCMI::Executor::PipelinedAllreduce,CCMI::CollectiveMapping> Composite;      
+        typedef CompositeT
+        <CCMI::Schedule::RingSchedule,CCMI::Executor::PipelinedAllreduce,CCMI::CollectiveMapping> Composite;
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Ring::Composite,CCMI::CollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Ring::Composite,CCMI::CollectiveMapping> Factory;
       };
       // Specializations for Ring templates.
       ///
       /// \brief Ring allreduce protocol specializations
       /// Implement the correct analyze and schedule ctor.
       /// Implement the factory getOneColor
-      /// 
+      ///
       // Specify the static name in the class (for debug)
       template<> const char* Ring::Composite::name="Ring";
       template<> inline bool Ring::Composite::analyze(Geometry *geometry){ return true;};
@@ -120,14 +120,14 @@ namespace CCMI
       /// \brief Ring reduce protocol
       ///
       /// Use the OneColorRectRedSched with the ring subschedule
-      /// 
+      ///
       namespace RingReduce
       {
-        typedef CompositeT 
+        typedef CompositeT
         <CCMI::Schedule::RingSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> Composite;      //? pipelined or not?
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RingReduce::Composite,CCMI::CollectiveMapping> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RingReduce::Composite,CCMI::CollectiveMapping> Factory;
       };
       // Specializations for Ring templates.
       ///

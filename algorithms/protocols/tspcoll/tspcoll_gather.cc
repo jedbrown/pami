@@ -9,6 +9,10 @@
 /* of its trade secrets, irrespective of what has been deposited with the    */
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
+/**
+ * \file algorithms/protocols/tspcoll/tspcoll_gather.cc
+ * \brief ???
+ */
 
 #include "./Gather.h"
 #include "./TagList.h"
@@ -81,10 +85,10 @@ void TSPColl::Gather::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 {
   Communicator * comm = TSPColl::_commlist[_commID];
 
-  TRACE((stderr, "%d: Sending %d bytes to %d/%d\n", 
+  TRACE((stderr, "%d: Sending %d bytes to %d/%d\n",
 	 comm->rank(), _length, _root, comm->absrankof(_root)));
-  
-  if (comm->rank() == _root) 
+
+  if (comm->rank() == _root)
     {
       memcpy ((__pgasrt_local_addr_t)_rbuf + _header.offset, _sbuf, _length);
       if (--_incoming <= 0) _complete ++;
@@ -112,7 +116,7 @@ void TSPColl::Gather::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
 				    &hints,
 				    &ranks,
 				    1);
-      
+
     }
 }
 

@@ -1,5 +1,5 @@
 /**
- * \file xmi_context.h
+ * \file sys/unused/xmi_context.h
  * \brief xmi multi-context messaging interface
  * \example config/xmi_config_test.c
  * \defgroup context Application and communication context and progress

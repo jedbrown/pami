@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/async_impl.h
+ * \file algorithms/protocols/broadcast/torus_async_impl.h
  * \brief ???
  */
 
@@ -25,9 +25,9 @@ namespace CCMI
     namespace Broadcast
     {
 
-      typedef 
-      AsyncCompositeT < CCMI::Schedule::OneColorTorusRect, CCMI::TorusCollectiveMapping> AsyncTorusRectComposite;         
-      template<> 
+      typedef
+      AsyncCompositeT < CCMI::Schedule::OneColorTorusRect, CCMI::TorusCollectiveMapping> AsyncTorusRectComposite;
+      template<>
       void AsyncTorusRectComposite::create_schedule(void                      * buf,
                                                     unsigned                      size,
                                                     unsigned                      root,
@@ -49,10 +49,10 @@ namespace CCMI
       }
 
       //typedef AsyncCompositeT < CCMI::Schedule::OneColorRectBcastSched, CCMI::TorusCollectiveMapping>
-      // AsyncTorusRectComposite;         
+      // AsyncTorusRectComposite;
 
 
-      typedef AsyncCompositeFactoryT <AsyncTorusRectComposite, rectangle_analyze, CCMI::TorusCollectiveMapping> 
+      typedef AsyncCompositeFactoryT <AsyncTorusRectComposite, rectangle_analyze, CCMI::TorusCollectiveMapping>
       AsyncTorusRectFactory;
     };
   };

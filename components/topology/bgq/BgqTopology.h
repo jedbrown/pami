@@ -22,7 +22,7 @@ namespace XMI
             inline BgqTopology():
                 Topology<XMI::Topology::BgqTopology>()
                 {}
-             
+
             inline BgqTopology(xmi_coord_t *ll, xmi_coord_t *ur,
                        unsigned char *tl = NULL):
                 Topology<XMI::Topology::BgqTopology>(ll,ur,tl)
@@ -135,7 +135,7 @@ namespace XMI
             inline void subtractTopology(XMI::Topology::BgqTopology *_new, XMI::Topology::BgqTopology *other)
                 {
                 }
-        
+
         }; // end XMI::Topology::BgqTopology
     }; // end namespace Topology
 }; // end namespace XMI

@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/mpi/mpimessage.h
+ * \brief ???
+ */
+
 #ifndef __components_devices_mpi_mpimessage_h__
 #define __components_devices_mpi_mpimessage_h__
 
@@ -51,8 +64,8 @@ namespace XMI
       MPI_Request    *_req;
       int            _num;
       xmi_callback_t _cb_done;
-      inline void *buffer() { return ((char *)this + sizeof (*this)); } 
-      inline int  totalsize () { return _size + sizeof (*this); } 
+      inline void *buffer() { return ((char *)this + sizeof (*this)); }
+      inline int  totalsize () { return _size + sizeof (*this); }
     };
   };
 };

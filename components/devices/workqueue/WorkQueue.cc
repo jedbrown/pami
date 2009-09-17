@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/workqueue/WorkQueue.cc
+ * \file components/devices/workqueue/WorkQueue.cc
  * \brief ???
  */
 

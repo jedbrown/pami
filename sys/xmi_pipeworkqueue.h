@@ -1,5 +1,5 @@
 /**
- * \file xmi_pipeworkqueue.h
+ * \file sys/xmi_pipeworkqueue.h
  * \brief PipeWorkQueue interface.
  */
 #ifndef __xmi_pipeworkqueue_h__

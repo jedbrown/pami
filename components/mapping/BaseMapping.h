@@ -44,7 +44,7 @@ namespace XMI
           ///
           inline size_t size ();
 
- 
+
 #if 0
           inline DCMF_Result network2rank (const DCMF_NetworkCoord_t  * addr,
                                            size_t                     * rank,
@@ -73,7 +73,7 @@ namespace XMI
       inline size_t Base<T_Mapping>::size ()
       {
         return static_cast<T_Mapping*>(this)->size_impl ();
-      } 
+      }
 #if 0
       template <class T_Mapping>
       inline DCMF_Result Base<T_Mapping>::network2rank (const DCMF_NetworkCoord_t  * addr,

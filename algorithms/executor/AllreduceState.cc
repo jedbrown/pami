@@ -57,29 +57,29 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
   _lastReducePhase  =  _endPhase;
   _lastCombinePhase =  _endPhase;
   _bcastRecvPhase   = -1;  //should we set it to UNDEFINED_PHASE
-  _bcastSendPhase   = -1;  
+  _bcastSendPhase   = -1;
 
   // maxranks is useless to us, loop through the phases and count numDstPe's and numSrcPe's.
   _numSrcPes = _numDstPes = 0;
   for(int i = _startPhase; i <= _endPhase; i++)
   {
-    unsigned iNumSrcPes, iNumDstPes, 
-    iSrcPes[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE], 
+    unsigned iNumSrcPes, iNumDstPes,
+    iSrcPes[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
     iSrcHints[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-    iDstPes[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE], 
+    iDstPes[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
     iDstHints[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
 
     _sched->getSrcPeList(i, iSrcPes, iNumSrcPes, iSrcHints);
     _sched->getDstPeList(i, iDstPes, iNumDstPes, iDstHints);
-    CCMI_assert(iNumSrcPes <= CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE && 
-                iNumDstPes <= CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE); 
+    CCMI_assert(iNumSrcPes <= CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE &&
+                iNumDstPes <= CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE);
     _numSrcPes += iNumSrcPes;
     _numDstPes += iNumDstPes;
 
     ///SK 11/01
     ///Does the phase have a local combine recv. We dont handle the
     ///behaviour when a phase has both a combine recv and a
-    ///non-combine recv. 
+    ///non-combine recv.
     if(_root == -1)  //allreduce and not reduce
     {
       unsigned idx = 0;
@@ -90,7 +90,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
            iSrcHints [idx] == XMI_REDUCE_RECV_NOSTORE)
           _lastCombinePhase = i;
 
-        ///Broadcast recv phase is the last non-combine recv phase.  
+        ///Broadcast recv phase is the last non-combine recv phase.
         ///This is an assumption that should hold across all schedules
       if(i > _startPhase)
       {
@@ -99,7 +99,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
              iSrcHints [idx] != XMI_REDUCE_RECV_STORE &&
              iSrcHints [idx] != XMI_REDUCE_RECV_NOSTORE)
           {
-            _bcastRecvPhase = i;  
+            _bcastRecvPhase = i;
             break;
           }
       }
@@ -116,12 +116,12 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
   {
     _bcastSendPhase = _bcastRecvPhase + 1;
 
-    // Find the first broadcast send phase, starting the phase after 
+    // Find the first broadcast send phase, starting the phase after
     // the last reduce phase
     for(; _bcastSendPhase <= _endPhase; _bcastSendPhase++)
     {
-      unsigned iNumDstPes, 
-      iDstPes [CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE], 
+      unsigned iNumDstPes,
+      iDstPes [CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
       iDstHints [CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
       _sched->getDstPeList(_bcastSendPhase, iDstPes, iNumDstPes, iDstHints);
       if(iNumDstPes > 0) break;
@@ -134,7 +134,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
   }
 
   /// \todo skip phases before start phase?  This means changing the allocation below
-  ///  to nphases AND changing the indexing throughout the code to _phaseVec[phase-_startPhase] 
+  ///  to nphases AND changing the indexing throughout the code to _phaseVec[phase-_startPhase]
   ///  instead of _phaseVec[phase]
 
   /// Calculate how much storage we need for all our algorithms/schedule/phase data.
@@ -160,7 +160,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
 
     if(_scheduleAllocation)
       CCMI_Free(_scheduleAllocation);
-    _scheduleAllocation = CCMI_Alloc(allocationNewSize);   
+    _scheduleAllocation = CCMI_Alloc(allocationNewSize);
 
 #ifdef CCMI_DEBUG
     memset(_scheduleAllocation, 0xFD, allocationNewSize);
@@ -217,13 +217,13 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
         for(unsigned scount = 0; scount < _phaseVec[i].numSrcPes; scount ++)
         {
           unsigned srcrank  =  _phaseVec[i].srcPes[scount];
-          unsigned connID   =  (unsigned) -1;   
+          unsigned connID   =  (unsigned) -1;
           if(i <= _lastReducePhase)
             connID = _rconnmgr->getRecvConnectionId (_commid, _root, srcrank, i, _color);
           else
-            connID = _bconnmgr->getRecvConnectionId (_commid, _root, srcrank, i, _color);   
+            connID = _bconnmgr->getRecvConnectionId (_commid, _root, srcrank, i, _color);
 
-          T_mcastrecv *mrecv = &(_phaseVec[i].mrecv[scount]); 
+          T_mcastrecv *mrecv = &(_phaseVec[i].mrecv[scount]);
           mrecv->connection_id = connID;
           mrecv->bytes = _bytes;
           mrecv->pipelineWidth = _pipelineWidth;
@@ -233,8 +233,8 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
         indexSrcPe += _phaseVec[i].numSrcPes;
 
         // If this is a non-combine phase, use the destination buffers.  We must be receiving the
-        // final answer.  
-        // Since the dstbuf changes external to this class, we will set the phase index and the 
+        // final answer.
+        // Since the dstbuf changes external to this class, we will set the phase index and the
         // executor will use this to setup the dstbuff appropriately.
         if(_phaseVec[i].srcHints[0] != XMI_COMBINE_SUBTASK)
           _dstPhase = i;  // No combine? Our target buffer will be the final dstbuf.
@@ -322,8 +322,8 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
                     (int)this, i,
                     (int)&_phaseVec[i],
                     (int)_phaseVec[i].dstPes,
-                    (int)_phaseVec[i].dstHints, 
-                    (int)_phaseVec[i].sconnId));     
+                    (int)_phaseVec[i].dstHints,
+                    (int)_phaseVec[i].sconnId));
     }
     else // Better be no destination/send processing this phase.
     {
@@ -383,19 +383,19 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
 
   if (_nextActivePhase)
     CCMI_Free(_nextActivePhase);
-  
+
   _nextActivePhase = (unsigned *) CCMI_Alloc (sizeof(unsigned) * (_endPhase + 1));
 
   //the next active phase after endphase is a dummy place holder
   int cur_active_phase = _endPhase + 1;
 
-  for (int p = _endPhase; p >= _startPhase; p --) {    
+  for (int p = _endPhase; p >= _startPhase; p --) {
     _nextActivePhase[p] = cur_active_phase;
     if ((getPhaseNumSrcPes(p) > 0) || (getPhaseNumDstPes(p) > 0)) {
       cur_active_phase = p;
     }
   }
-    
+
   TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() exit\n",(int)this));
 }
 
@@ -407,14 +407,14 @@ void  CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::setupReceives(unsig
 
   // setup/allocate receive request objects and bufs
 
-  // How many requests might we receive per srcPe?  "infoRequired" indicates we 
-  // are using recv head callback and need 1 per chunk per srcPE.  Otherwise we're doing postReceive 
+  // How many requests might we receive per srcPe?  "infoRequired" indicates we
+  // are using recv head callback and need 1 per chunk per srcPE.  Otherwise we're doing postReceive
   // processing which means only one postReceive per srcPE.
   /// \todo we have over allocated callback mode when we start reusing these:
-  ///         _phaseVec[p].mrecv[scount].request = request; 
+  ///         _phaseVec[p].mrecv[scount].request = request;
   ///         _phaseVec[p].mrecv[scount].cb_done.clientdata = rdata;
 
-  unsigned numRequests = infoRequired? (_lastChunk + 1) : 1; 
+  unsigned numRequests = infoRequired? (_lastChunk + 1) : 1;
 
   unsigned alignedBytes = ((_bytes + 15)/16) * 16; // Buffers need to be 16 byte aligned
 
@@ -452,7 +452,7 @@ void  CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::setupReceives(unsig
     _sizeOfBuffers = alignedBytes;
   }
   else
-    // We don't want to change (shrink) the sizeOfBuffers unless we have to.  So the next two if's are 
+    // We don't want to change (shrink) the sizeOfBuffers unless we have to.  So the next two if's are
     // a little weird, but necessary.  They handle being here for schedule changes that may affect
     // how many buffers we have carved the allocation into.
     if(_sizeOfBuffers <= alignedBytes)
@@ -499,14 +499,14 @@ void  CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::setupReceives(unsig
 
   for(int idx = _startPhase; idx <= _endPhase; idx++)
   {
-    _phaseVec[idx].chunksSent = 0;        
-    _phaseVec[idx].totalChunksRcvd = 0;        
-  }    
+    _phaseVec[idx].chunksSent = 0;
+    _phaseVec[idx].totalChunksRcvd = 0;
+  }
 
   unsigned nextRecvData = 0;
   int p = _startPhase;
   unsigned pwidth = getPipelineWidth();
-  unsigned bytes  = getBytes();  
+  unsigned bytes  = getBytes();
 
   for(p = _startPhase; p <= _endPhase; p++)
   {
@@ -529,7 +529,7 @@ void  CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::setupReceives(unsig
         _phaseVec[p].mrecv[scount].pipelineWidth = pwidth;
 
         nextRecvData ++;
-      }  
+      }
     }
   }
 }

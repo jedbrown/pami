@@ -35,20 +35,20 @@ namespace CCMI
       namespace Tree
       {
 
-        typedef CompositeT 
+        typedef CompositeT
         <CCMI::Schedule::TreeSchedule,CCMI::Executor::AllreduceBase> Composite;
 
-        typedef FactoryT 
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Tree::Composite> Factory;      
+        typedef FactoryT
+        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Tree::Composite> Factory;
 
         namespace Pipelined
         {
 
-          typedef CompositeT 
+          typedef CompositeT
           <CCMI::Schedule::TreeBwSchedule,CCMI::Executor::PipelinedAllreduce> Composite;
 
-          typedef FactoryT 
-          <CCMI::ConnectionManager::PhaseBasedConnMgr,CCMI::Adaptor::Allreduce::Tree::Pipelined::Composite> Factory;      
+          typedef FactoryT
+          <CCMI::ConnectionManager::PhaseBasedConnMgr,CCMI::Adaptor::Allreduce::Tree::Pipelined::Composite> Factory;
 
         };
       };

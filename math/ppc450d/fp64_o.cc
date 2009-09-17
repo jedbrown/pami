@@ -63,7 +63,7 @@ void _core_fp64_max2(double *dst, const double **srcs, int nsrc, int count) {
 	const double *f1 = srcs[1];
 	double *f2 = dst;
 	if (size128 > 0) {
-#define OP2(a,b)  a=(((a)>(b))?(a):(b)) 
+#define OP2(a,b)  a=(((a)>(b))?(a):(b))
 #define OP3(a,b,c)	asm volatile ("fpsub %0, %1, %2" : "=f"(a) : "f"(b), "f"(c)); \
 	                asm volatile ("fpsel %0, %1, %2, %3" : "=f"(a) : "f"(a), "f"(b), "f"(c))
 #include "ppc450d/_optim_fp64_dual_src.x.h"
@@ -72,7 +72,7 @@ void _core_fp64_max2(double *dst, const double **srcs, int nsrc, int count) {
 	}
 	int n;
 	for (n = 0; n < remainder; ++n) {
-	  f2[n] = (((f0[n])>(f1[n]))?(f0[n]):(f1[n])); 
+	  f2[n] = (((f0[n])>(f1[n]))?(f0[n]):(f1[n]));
 	}
 	return;
 }
@@ -94,7 +94,7 @@ void _core_fp64_min2(double *dst, const double **srcs, int nsrc, int count) {
 	const double *f1 = srcs[1];
 	double *f2 = dst;
 	if (size128 > 0) {
-#define OP2(a,b)  a=(((a)>(b))?(b):(a)) 
+#define OP2(a,b)  a=(((a)>(b))?(b):(a))
 #define OP3(a,b,c)	asm volatile ("fpsub %0, %1, %2" : "=f"(a) : "f"(b), "f"(c)); \
 	                asm volatile ("fpsel %0, %1, %2, %3" : "=f"(a) : "f"(a), "f"(c), "f"(b))
 #include "ppc450d/_optim_fp64_dual_src.x.h"
@@ -103,9 +103,9 @@ void _core_fp64_min2(double *dst, const double **srcs, int nsrc, int count) {
 	}
 	int n;
 	for (n = 0; n < remainder; ++n) {
-	  f2[n] = (((f0[n])>(f1[n]))?(f1[n]):(f0[n])); 
+	  f2[n] = (((f0[n])>(f1[n]))?(f1[n]):(f0[n]));
 	}
-	return;  
+	return;
 }
 
 

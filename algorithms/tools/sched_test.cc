@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file tools/sched_test.cc
+ * \file algorithms/tools/sched_test.cc
  * \brief Program to build schedules and display (or graph) them.
  */
 

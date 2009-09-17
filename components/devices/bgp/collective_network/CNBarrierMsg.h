@@ -88,7 +88,7 @@ namespace DCMF
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file protocols/prod/multisend/bgp/tree/TreeBarrier.cc
+/// \file components/devices/bgp/collective_network/CNBarrierMsg.h
 /// \brief Tree barrier implementation.
 ///
 #define __INLINE__ inline

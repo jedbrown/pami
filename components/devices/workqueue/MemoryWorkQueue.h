@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/workqueue/MemoryWorkQueue.h
+ * \file components/devices/workqueue/MemoryWorkQueue.h
  * \brief ???
  */
 

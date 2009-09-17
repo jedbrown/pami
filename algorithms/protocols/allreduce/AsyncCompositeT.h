@@ -9,8 +9,8 @@
 /**
  * \file algorithms/protocols/allreduce/AsyncCompositeT.h
  * \brief CCMI allreduce async composite template
- *  
- * \todo AsyncCompositeT and CompositeT are very similar and could be combined. 
+ *
+ * \todo AsyncCompositeT and CompositeT are very similar and could be combined.
  */
 
 #ifndef __ccmi_adaptor_allreduce_asynccompositet_h__
@@ -28,8 +28,8 @@ namespace CCMI
       ///
       /// \brief Allreduce protocol composite
       ///
-      /// 
-      /// 
+      ///
+      ///
       template <class SCHEDULE, class EXECUTOR, class MAP> class AsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncComposite
       {
       protected:
@@ -64,12 +64,12 @@ namespace CCMI
                          int                         root = -1,
                          CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
         CCMI::Adaptor::Allreduce::AsyncComposite( flags, factory, cb_done),
-        _executor(map, cmgr, consistency, geometry->comm(), iteration)        
+        _executor(map, cmgr, consistency, geometry->comm(), iteration)
         {
           create_schedule(map, geometry, color);
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncCompositeT() ALERT\n",(int)this,name));
           addExecutor (&_executor);
-          initialize (&_executor, req, srcbuf, dstbuf, count, 
+          initialize (&_executor, req, srcbuf, dstbuf, count,
                       dtype, op, root);
           _executor.setMulticastInterface (mf);
           _executor.setSchedule ((SCHEDULE*)&_schedule);

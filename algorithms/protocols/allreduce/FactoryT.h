@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/protocols/allreduce/FactoryT.h
- * \brief  CCMI factory for sync [all]reduce compositeT 
+ * \brief  CCMI factory for sync [all]reduce compositeT
   */
 
 #ifndef __ccmi_adaptor_allreduce_factoryt_h__
@@ -27,7 +27,7 @@ namespace CCMI
       /// \brief Factory template class for CompositeT
       ///
       /// This factory will generate a CompositeT [all]reduce.
-      /// 
+      ///
       template <class CONNMGR, class COMPOSITE, class MAP> class FactoryT : public CCMI::Adaptor::Allreduce::Factory<MAP>
       {
       protected:
@@ -41,12 +41,12 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline FactoryT(MAP *mapping, 
-                        CCMI::MultiSend::OldMulticastInterface *mof, 
-                        CCMI::MultiSend::MulticombineInterface *mf, 
+        inline FactoryT(MAP *mapping,
+                        CCMI::MultiSend::OldMulticastInterface *mof,
+                        CCMI::MultiSend::MulticombineInterface *mf,
                         CCMI_mapIdToGeometry cb_geometry,
                         ConfigFlags flags) :
-        CCMI::Adaptor::Allreduce::Factory<MAP>(mapping, mof, mf, cb_geometry, flags), 
+        CCMI::Adaptor::Allreduce::Factory<MAP>(mapping, mof, mf, cb_geometry, flags),
         _sconnmgr(mapping)
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT() ALERT:\n",(int)this, COMPOSITE::name));
@@ -77,7 +77,7 @@ namespace CCMI
          int                        root = -1 )
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, COMPOSITE::name, 
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, COMPOSITE::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
@@ -93,7 +93,7 @@ namespace CCMI
                     getOneColor(geometry)
                     );
 
-          geometry->setAllreduceComposite (allreduce);      
+          geometry->setAllreduceComposite (allreduce);
           allreduce->startBarrier (consistency);
 
           return allreduce;

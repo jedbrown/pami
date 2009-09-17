@@ -1,5 +1,5 @@
 ///
-/// \file xmi/mpi/mpitopology.h
+/// \file components/topology/mpi/mpitopology.h
 /// \brief XMI MPI specific topology implementation.
 ///
 #ifndef   __xmi_mpi_mpitopology_h__
@@ -22,7 +22,7 @@ namespace XMI
             inline MPI():
                 Topology<XMI::Topology::MPI>()
                 {}
-             
+
             inline MPI(xmi_coord_t *ll, xmi_coord_t *ur,
                        unsigned char *tl = NULL):
                 Topology<XMI::Topology::MPI>(ll,ur,tl)
@@ -134,7 +134,7 @@ namespace XMI
             inline void subtractTopology(XMI::Topology::MPI *_new, XMI::Topology::MPI *other)
                 {
                 }
-        
+
         }; // end XMI::Topology::MPI
     }; // end namespace Topology
 }; // end namespace XMI

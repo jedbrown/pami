@@ -30,7 +30,7 @@ namespace CCMI
         ///
         /// \brief Tree allreduce protocol for short msg in VN mode
         ///
-        /// 
+        ///
         class VnDualShortTreeAllreduce : public CCMI::Adaptor::Allreduce::BaseComposite
         {
 
@@ -42,7 +42,7 @@ namespace CCMI
             void * srcs[ MAX_NUM_CORES ];
             char pad[32];
 
-            struct 
+            struct
             {
               volatile unsigned isSrcReady;
               volatile unsigned isDstReady;
@@ -95,7 +95,7 @@ namespace CCMI
             _shared->client[1].isDstReady = 1;
             _shared->client[2].isDstReady = 1;
 
-            // local completion 
+            // local completion
             a->done();
           }
 
@@ -211,6 +211,6 @@ namespace CCMI
       }
     }
   }
-} 
+}
 
 #endif // __ccmi_adaptor_allreduce_vn_dual_short_tree_h__

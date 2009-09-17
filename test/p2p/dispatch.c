@@ -1,5 +1,5 @@
 ///
-/// \file tests/p2p/dispatch.c
+/// \file test/p2p/dispatch.c
 /// \brief Simple point-topoint XMI_Dispatch_set() test
 ///
 
@@ -79,7 +79,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

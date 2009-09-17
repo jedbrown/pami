@@ -1,3 +1,15 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/tests/generic/asyncbinomialbcast.cc
+ * \brief ???
+ */
 
 #include "asyncbcast.h"
 
@@ -11,15 +23,15 @@ int main(int argc, char **argv)
   initialize(CCMI_BINOMIAL_BARRIER_PROTOCOL,
              CCMI_BINOMIAL_BARRIER_PROTOCOL,
              CCMI_ASYNCBINOMIAL_BROADCAST_PROTOCOL);  // protocol to test
-  
+
   allocate_buffers();
-  
+
   if(rank == 0) TRACE_TEST((stdout,"%s:  AsyncBcast begin performance runs\n", argv0));
-  
+
   // Performance run latency (count = 1);
   int i;
   double t, latencyt = 0, bandwidtht = 0;
-  
+
   for(i = 0; i < warmup_repetitions; i++) asyncbcast_advance (srcbuf,1,0);
 
   barrier_advance();

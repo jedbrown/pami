@@ -17,7 +17,7 @@
 #define LBX_MAX_NUMLOCKBOX	256
 
 ////////////////////////////////////////////////////////////////////////
-///  \file sysdep/prod/BGP/LockBoxFactory.h
+///  \file components/sysdep/bgp/LockBoxFactory.h
 ///  \brief Implementation of BGP AtomicFactory scheme(s).
 ///
 ///  This object is a portability layer that implements allocation
@@ -146,7 +146,7 @@ namespace BGP {
 			case LBX_NODE_CORE_SCOPE:
 				// Node-scoped lockboxes...
 				flags = (_factory.coreXlat[_factory.masterProc] << 4) | _factory.numProc | LOCKBOX_ORDERED_ALLOC;
-				
+
 				break;
 			case LBX_PROC_SCOPE:
 				// Process-scoped lockboxes...

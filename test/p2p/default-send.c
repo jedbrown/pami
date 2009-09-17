@@ -1,5 +1,5 @@
 ///
-/// \file tests/p2p/default-send.c
+/// \file test/p2p/default-send.c
 /// \brief Simple point-topoint XMI_send() test
 ///
 
@@ -63,7 +63,7 @@ int main (int argc, char ** argv)
   volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
 
-  
+
   xmi_client_t client;
   xmi_context_t context;
   //xmi_configuration_t * configuration = NULL;
@@ -132,7 +132,7 @@ int main (int argc, char ** argv)
   parameters.simple.bytes = 0;
   parameters.simple.local_fn  = send_done_local;
   parameters.simple.remote_fn = send_done_remote;
-  
+
   if (task_id == 0)
   {
     fprintf (stderr, "before send ...\n");
@@ -165,12 +165,12 @@ int main (int argc, char ** argv)
       }
     }
     fprintf (stderr, "... after recv advance loop\n");
-    
+
     fprintf (stderr, "before send ...\n");
     parameters.send.task = 0;
     result = XMI_Send (context, &parameters);
     fprintf (stderr, "... after send.\n");
-    
+
     fprintf (stderr, "before send advance loop ...\n");
     while (send_active)
     {
@@ -202,7 +202,3 @@ int main (int argc, char ** argv)
 
   return 0;
 };
-
-
-
-

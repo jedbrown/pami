@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/bgp/collective_network/Device.h
+ * \file components/devices/bgp/collective_network/CNDevice.h
  * \brief Collective Network Device interface
  */
 #ifndef __components_devices_bgp_cndevice_h__
@@ -40,7 +40,7 @@
  * - XMI_PERSISTENT_ADVANCE -
  *	Number of cycles to persist in the advance loop waiting for
  *	a (the first) receive packet to arrive.
- *      - Default is a value computed from the partition size 
+ *      - Default is a value computed from the partition size
  *        (Collective network depth).
  *
  * - XMI_PERSIST_MAX -
@@ -68,7 +68,7 @@
  * - XMI_CN_VN_DEEP -
  *	Boolean indicating whether to use the "Deep" protocol
  *	for receiving a message in virtual node mode. Currently
- *	not used.  
+ *	not used.
  *      Possible values:
  *      - 0 (false) - The "Deep" protocol is not used.
  *      - 1 (true)  - The "Deep" protocol is used.

@@ -54,12 +54,12 @@ namespace XMI
           // subsequent barriers from corrupting active counters.
 
           size_t phase = _control.fetch ();
-          
+
           // Enter the barrier by incrementing the lock counter. This
           // participant is the master if the value returned is zero.
 
           size_t participant = _lock[phase].fetch_and_inc ();
-          
+
           // Busy wait until all participants have entered the barrier.
 
           size_t parties = _participants;
@@ -75,25 +75,25 @@ namespace XMI
         inline void dump_impl(char *string) { XMI_abort(); }
 
       protected:
-      
+
         inline xmi_result_t poll (size_t phase, size_t parties, size_t participant)
         {
           // Return immediately if not all participants have checked in by
           // incrementing the lock.
-          
+
           if (_lock[phase].fetch() < parties) return XMI_EAGAIN;
-          
+
           size_t value = 0;
 
           // All participants have entered the barrier and must block until the
           // master participant atomically clears the lock and exits.
-          
+
           _lock[phase].fetch_and_inc ();
           do
           {
             value = _lock[phase].fetch ();
           } while (value > 0 && value < (2 * parties));
-          
+
           if (participant == 0)
           {
             // Flip the barrier phase.
@@ -104,7 +104,7 @@ namespace XMI
 
             // Clear the status counters. .... why?
             _status[phase].fetch_and_clear ();
-            
+
             // Clear the lock. This allows the other participants to exit.
             _lock[phase].fetch_and_clear ();
           }
@@ -113,14 +113,14 @@ namespace XMI
             // Wait until master releases the barrier by clearing the lock
             while (_lock[phase].fetch() > 0);
           }
-          
+
           return XMI_SUCCESS;
         };
-        
+
       private:
 
         T_Counter   _counter[5];
-        
+
         T_Counter & _control;
         T_Counter * _lock;
         T_Counter * _status;
@@ -132,8 +132,3 @@ namespace XMI
 };     // XMI namespace
 
 #endif // __components_atomic_counter_counterbarier_h__
-
-
-
-
-

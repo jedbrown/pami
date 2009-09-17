@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/geometry/CollRegistration.h
+ * \brief ???
+ */
+
 #ifndef   __xmi_collregistration__h__
 #define   __xmi_collregistration__h__
 
@@ -13,7 +26,7 @@ namespace XMI
     public:
       inline CollRegistration()
         {
-        }      
+        }
       inline T_Collfactory * analyze(T_Geometry * geometry);
 
     }; // class CollRegistration
@@ -24,7 +37,7 @@ namespace XMI
       return static_cast<T_Collregistration*>(this)->analyze_impl(geometry);
     }
 
-    
+
   }; // namespace CollRegistration
 }; // namespace XMI
 

@@ -1,5 +1,5 @@
 ///
-/// \file xmi/mpi/mpimemregion.h
+/// \file components/memregion/mpi/mpimemregion.h
 /// \brief XMI MPI specific memregion implementation.
 ///
 #ifndef   __xmi_mpi_mpimemregion_h__
@@ -37,7 +37,7 @@ namespace XMI
               return XMI_UNIMPL;
           }
 
-          inline xmi_result_t getInfo (size_t * bytes, 
+          inline xmi_result_t getInfo (size_t * bytes,
                                        void ** base)
           {
               return XMI_UNIMPL;
@@ -48,8 +48,8 @@ namespace XMI
           {
               return NULL;
           }
-          
-          
+
+
 
       private:
         xmi_context_t _context;

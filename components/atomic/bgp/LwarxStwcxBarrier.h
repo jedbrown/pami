@@ -11,7 +11,7 @@
 #define __xmi_bgp_lwarxstwcxbarrier_h__
 
 /**
- * \file sysdep/prod/BGP/BarrierImpl.h
+ * \file components/atomic/bgp/LwarxStwcxBarrier.h
  * \brief LockBox implementation of a Node-scoped Barrier
  * This implementation is different from, and incompatible with,
  * the BGP SPI LockBox_Barrier implementation. Support for core
@@ -134,7 +134,7 @@ namespace BGP {
 	public:
 		LwarxStwcxNodeProcBarrier() : _LwarxStwcxNodeBarrier() {}
 		~LwarxStwcxNodeProcBarrier() {}
-		
+
 		inline void init_impl() {
 			// For proc-granularity, must convert
 			// between core id and process id,
@@ -151,7 +151,7 @@ namespace BGP {
 	public:
 		LwarxStwcxNodeCoreBarrier() : _LwarxStwcxNodeBarrier() {}
 		~LwarxStwcxNodeCoreBarrier() {}
-		
+
 		inline void init_impl() {
 			// For core-granularity, everything is
 			// a core number. Assume the master core

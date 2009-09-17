@@ -11,7 +11,7 @@
 #define __components_atomic_bgp_lwarxstwcxmutex_h__
 
 /**
- * \file sysdep/prod/BGP/MutexImpl.h
+ * \file components/atomic/bgp/LwarxStwcxMutex.h
  * \brief BGP implementation of Node- or Process-scoped Mutexes
  *
  * LockBox is the only implementation, currently. Additional implementations

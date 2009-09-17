@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file connmgr/SimpleConnMgr.h
+ * \file algorithms/connmgr/SimpleConnMgr.h
  * \brief ???
  */
 
@@ -29,8 +29,8 @@ namespace CCMI
       //   will still only have one connection manager this parm will be the last
       //   color.
       /* This class is really just a place holder for future extensions.  */
-      SimpleConnMgr (int conn=0) 
-        : ConnectionManager<T_Sysdep>() 
+      SimpleConnMgr (int conn=0)
+        : ConnectionManager<T_Sysdep>()
       , _connid(0)
       {
         this->setNumConnections (conn == 0 ? 1 : conn );
@@ -47,7 +47,7 @@ namespace CCMI
         return _connid;
       }
 
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, 
+      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
                                             unsigned src, unsigned phase, unsigned color)
       {
         return _connid;

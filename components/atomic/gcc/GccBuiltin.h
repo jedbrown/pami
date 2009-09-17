@@ -77,5 +77,3 @@ namespace XMI
 
 
 #endif // __components_atomic_gcc_gccbuiltin_h__
-
-

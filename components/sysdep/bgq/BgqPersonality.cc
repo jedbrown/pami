@@ -1,6 +1,15 @@
-
-
-
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/sysdep/bgq/BgqPersonality.cc
+ * \brief ???
+ */
 
 #include "BgqPersonality.h"
 
@@ -177,4 +186,3 @@ void XMI::SysDep::BgqPersonality::dumpPersonality ()
   return;
 #endif
 };
-

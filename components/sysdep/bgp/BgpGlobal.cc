@@ -14,5 +14,3 @@
 #include "BgpGlobal.h"
 
 XMI::SysDep::BgpGlobal __global;
-
-

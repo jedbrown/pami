@@ -1,5 +1,5 @@
 ///
-/// \file tests/client/hello.c
+/// \file test/client/hello.c
 /// \brief Simple hello after XMI_Client_initialize()
 ///
 
@@ -16,14 +16,10 @@ int main (int argc, char ** argv)
   fprintf (stdout, "Before XMI_Client_initialize()\n");
   result = XMI_Client_initialize (cl_string, &client);
   fprintf (stdout, "After XMI_Client_initialize(), result = %d\n", result);
-  
+
   fprintf (stdout, "Before XMI_Client_finalize()\n");
   result = XMI_Client_finalize (client);
   fprintf (stdout, "After XMI_Client_finalize(), result = %d\n", result);
 
   return 0;
 };
-
-
-
-

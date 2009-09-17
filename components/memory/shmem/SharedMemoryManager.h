@@ -52,7 +52,7 @@ namespace XMI
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
           //size_t size = (bytes + T_PageSize - 1) & ~(T_PageSize - 1);
 //          size_t size = (bytes + 4096 - 1) & ~(4096 - 1);
-          
+
           int fd, rc;
           size_t n = bytes;
 
@@ -72,10 +72,10 @@ namespace XMI
               }
             }
           }
-          
+
           return;
         }
-        
+
         inline xmi_result_t memalign_impl (void   ** memptr,
                                            size_t    alignment,
                                            size_t    bytes)
@@ -102,9 +102,9 @@ namespace XMI
           return XMI_ERROR;
 
         }
-        
+
         protected:
-        
+
           void * _location;
           size_t _size;
           size_t _offset;
@@ -113,5 +113,3 @@ namespace XMI
 };
 
 #endif // __xmi_components_memory_shmem_sharedmemorymanager_h__
-
-

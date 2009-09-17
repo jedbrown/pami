@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/multi_color_impl.h
+ * \file algorithms/protocols/broadcast/torus_multi_color_impl.h
  * \brief ???
  */
 
@@ -34,13 +34,13 @@ namespace CCMI
         unsigned ideal = 0, max = 0;
         R::getColors (*g->rectangle(), ideal, max, colors);
 
-        unsigned numEnvColors = g->getNumColors();       
+        unsigned numEnvColors = g->getNumColors();
         if( numEnvColors > 0  && ideal > numEnvColors )
           ideal = numEnvColors;
 
         CCMI_assert (ideal >= 1);
 
-        pwidth = MIN_PIPELINE_WIDTH_TORUS;       
+        pwidth = MIN_PIPELINE_WIDTH_TORUS;
 
         if((bytes / ideal) > MIN_PIPELINE_WIDTH_TORUS * 256)
           pwidth = 32 * MIN_PIPELINE_WIDTH_TORUS;
@@ -55,7 +55,7 @@ namespace CCMI
 
         if(bytes < ideal * pwidth)
         {
-          ideal = bytes / pwidth;       
+          ideal = bytes / pwidth;
           if(ideal == 0)
             ideal = 1;
         }
@@ -65,8 +65,8 @@ namespace CCMI
         ncolors = ideal;
       }
 
-      typedef MultiColorCompositeT < MAX_BCAST_COLORS, CCMI::Schedule::OneColorTorusRect, 
-      get_rcolors<CCMI::Schedule::OneColorTorusRect> ,CCMI::TorusCollectiveMapping> TorusRectComposite;            
+      typedef MultiColorCompositeT < MAX_BCAST_COLORS, CCMI::Schedule::OneColorTorusRect,
+      get_rcolors<CCMI::Schedule::OneColorTorusRect> ,CCMI::TorusCollectiveMapping> TorusRectComposite;
       template<> void TorusRectComposite::create_schedule  ( void                      * buf,
                                                              unsigned                    size,
                                                              Geometry                  * g,
