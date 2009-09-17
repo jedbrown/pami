@@ -1,24 +1,11 @@
 # Perl module for loading schedules into perl arrays and hashes.
-# begin_generated_IBM_copyright_prolog                             
-#                                                                  
-# This is an automatically generated copyright prolog.             
-# After initializing,  DO NOT MODIFY OR MOVE                       
-# ---------------------------------------------------------------- 
-# IBM Confidential                                                 
-#                                                                  
-# Licensed Machine Code Source Materials                           
-#                                                                  
-# Product(s):                                                      
-#     Blue Gene/P Licensed Machine Code                            
-#                                                                  
-# (C) Copyright IBM Corp.  2007, 2007                              
-#                                                                  
-# The Source code for this program is not published  or otherwise  
-# divested of its trade secrets,  irrespective of what has been    
-# deposited with the U.S. Copyright Office.                        
-#  --------------------------------------------------------------- 
-#                                                                  
-# end_generated_IBM_copyright_prolog                               
+
+=head1 COPYRIGHT
+
+(C)Copyright IBM Corp.  2007, 2009
+IBM CPL License
+
+=cut
 
 # A set of subroutines to help with processing schedules dumped
 # from "sched_test -V".
