@@ -21,6 +21,7 @@
 #include "algorithms/protocols/tspcoll/Scatter.h"
 #include "algorithms/protocols/tspcoll/Allgatherv.h"
 #include "algorithms/protocols/tspcoll/Barrier.h"
+#include "util/common.h"
 // #define DEBUG_SCBCAST 1
 #undef TRACE
 #ifdef DEBUG_SCBCAST
@@ -99,9 +100,6 @@ ScBcast(XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
 /* *********************************************************************** */
 /*               reset the broadcast                                       */
 /* *********************************************************************** */
-
-#define CEIL(x,y) (((x)+(y)-1)/(y))
-#define MIN(x,y) (((x)<(y))?(x):(y))
 
 template <class T_Mcast>
 inline void TSPColl::ScBcast<T_Mcast>::

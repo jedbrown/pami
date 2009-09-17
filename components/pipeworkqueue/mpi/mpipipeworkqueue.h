@@ -57,10 +57,12 @@ namespace XMI
 
             inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp)
                 {
+		  return XMI_UNIMPL;
                 }
 
             inline xmi_result_t import_impl(xmi_pipeworkqueue_ext_t *import)
                 {
+		  return XMI_UNIMPL;
                 }
 
             inline void setConsumerWakeup_impl(void *vec)
@@ -73,22 +75,27 @@ namespace XMI
 
             inline size_t bytesAvailableToProduce_impl()
                 {
+		  return -1;
                 }
 
             inline size_t bytesAvailableToConsume_impl()
                 {
+		  return -1;
                 }
 
             inline size_t getBytesProduced_impl()
                 {
+		  return -1;
                 }
 
             inline size_t getBytesConsumed_impl()
                 {
+		  return -1;
                 }
 
             inline char *bufferToProduce_impl()
                 {
+		  return NULL;
                 }
 
             inline void produceBytes_impl(size_t bytes)
@@ -97,6 +104,7 @@ namespace XMI
 
             inline char *bufferToConsume_impl()
                 {
+		  return NULL;
                 }
 
             inline void consumeBytes_impl(size_t bytes)
@@ -105,6 +113,7 @@ namespace XMI
 
             inline bool available_impl()
                 {
+		  return false;
                 }
             
         }; // end XMI::PipeWorkQueue::MPI

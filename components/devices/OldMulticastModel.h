@@ -2,7 +2,7 @@
 #define __components_device_Oldmulticastmodel_h__
 
 #include "sys/xmi.h"
-#include "algorithms/ccmi.h"  query
+#include "algorithms/ccmi.h"
 
 namespace XMI
 {
@@ -69,7 +69,7 @@ namespace XMI
                                                                      xmi_op                      op,
                                                                      xmi_dt                      dtype)
       {
-        static_cast<T_Model*>(this)->send_impl(request, cb_done, consistency, info, info_count,
+        return static_cast<T_Model*>(this)->send_impl(request, cb_done, consistency, info, info_count,
                                                connection_id, buf, size, hints, ranks, nranks,
                                                op, dtype);
       }

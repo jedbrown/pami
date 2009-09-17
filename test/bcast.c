@@ -65,8 +65,8 @@ int main (int argc, char ** argv)
   xmi_client_t  client;
   xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
-  
-  result = XMI_Client_initialize ("TEST", &client);
+  char          cl_string[] = "TEST";    
+  result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
@@ -142,7 +142,7 @@ int main (int argc, char ** argv)
 
   
   int root = 0;
-  if (task_id == root)
+  if (task_id == (size_t)root)
       {
         printf("# Broadcast Bandwidth Test -- root = %d\n", root);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
@@ -176,7 +176,7 @@ int main (int argc, char ** argv)
         _barrier(context, &barrier);
 
         usec = (tf - ti)/(double)niter;
-        if (task_id == root)
+        if (task_id == (size_t)root)
             {
               printf("  %11lld %16lld %14.1f %12.2f\n",
                      dataSent,

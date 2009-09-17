@@ -17,7 +17,7 @@
 //#define throw() // Needed for xlC -noeh processing
 //#include <config.h>
 
-#include <new.h>
+#include <new>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

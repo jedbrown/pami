@@ -332,7 +332,7 @@ namespace CCMI
 	    factory->_cb_geometry(cdata->_comm);
 
           //Application callback
-#warning "callback is not delivering header"
+	  // todo:  WARNING:  callback is not appropriately delivered to user (header for example)
           XMI_Callback_t cb_client_done;
           xmi_type_t     user_type;
 //          CCMI_Executor_t *request =  (CCMI_Executor_t *)
@@ -347,7 +347,7 @@ namespace CCMI
                               (size_t*)rcvlen,      // receive length
                               &cb_client_done.function,
                               &cb_client_done.clientdata);
-#warning "ensure this storage is freed"          
+	  // todo:  WARNING:  we need to make sure this storage is freed!
           CCMI_Executor_t *request = (CCMI_Executor_t *)malloc(sizeof(*request));
           
           *pipewidth = sndlen+1;

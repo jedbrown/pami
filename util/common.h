@@ -23,6 +23,10 @@
 #define MAX(a,b)  (((a)>(b))?(a):(b))
 #endif
 
+#ifndef CEIL
+#define CEIL(x,y) (((x)+(y)-1)/(y))
+#endif
+
 #define XMIQuad_sizeof(x)  ((sizeof(x)+15)>>4)
 
 /// abort macros defined for all assertion levels

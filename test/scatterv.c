@@ -65,8 +65,8 @@ int main (int argc, char ** argv)
   xmi_client_t  client;
   xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
-  
-  result = XMI_Client_initialize ("TEST", &client);
+  char          cl_string[] = "TEST";    
+  result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
@@ -175,12 +175,12 @@ int main (int argc, char ** argv)
   scatterv.rtype      = XMI_BYTE;
   scatterv.rtypecount = 0;
 
-  int i,j;
+  size_t i,j;
   for(i=1; i<=BUFSIZE; i*=2)
       {
         long long dataSent = i;
-        int          niter = 100;
-        int              k = 0;
+        size_t       niter = 100;
+        size_t           k = 0;
         
         for(k=0;k<sz;k++)
             {

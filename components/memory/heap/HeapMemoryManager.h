@@ -25,6 +25,7 @@ namespace XMI
 #else
           *memptr = malloc(bytes);
 #endif          
+	  return XMI_SUCCESS;
         }
       
     protected:

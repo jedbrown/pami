@@ -42,7 +42,7 @@ namespace XMI
             template <class T_Model>
             bool MulticastModel<T_Model>::postMultiCast (xmi_multicast_t *mcast)
             {
-                static_cast<T_Model*>(this)->postMultiCast_impl(mcast);
+	      return static_cast<T_Model*>(this)->postMultiCast_impl(mcast);
             }
 
         };

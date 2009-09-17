@@ -28,7 +28,7 @@ namespace XMI
             template <class T_Model>
             bool MultisyncModel<T_Model>::postMultisync (xmi_multisync_t *msync)
             {
-                static_cast<T_Model*>(this)->postMultisync_impl(msync);
+	      return static_cast<T_Model*>(this)->postMultisync_impl(msync);
             }
 
         };

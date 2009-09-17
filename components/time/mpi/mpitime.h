@@ -82,7 +82,7 @@ namespace XMI
         {
           _clockMHz      = clockMHz()/1e6;
           _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
-          if(_clockMHz == -1)
+          if(_clockMHz == -1ULL)
             return XMI_ERROR;
           else
             return XMI_SUCCESS;

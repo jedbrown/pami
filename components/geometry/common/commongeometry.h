@@ -43,72 +43,95 @@ namespace XMI
 
       inline int                       getColorsArray_impl()
         {
+	  return 0;
         }
       inline void                      setAsyncAllreduceMode_impl(unsigned value)
         {
+	  return;
         }
       inline unsigned                  getAsyncAllreduceMode_impl()
         {
+	  return 0;
         }
       inline unsigned                  incrementAllreduceIteration_impl()
         {
+	  return 0;
         }
       inline unsigned                  comm_impl()
         {
+	  return 0;
         }
       inline unsigned                 *ranks_impl()
         {
+	  return NULL;
         }
       inline unsigned                  nranks_impl()
         {
+	  return 0;
         }
       inline int                       myIdx_impl()
         {
+	  return 0;
         }
       inline void                      generatePermutation_impl()
         {
+	  return;
         }
       inline void                      freePermutation_impl()
         {
+	  return;
         }
       inline unsigned                 *permutation_impl()
         {
+	  return NULL;
         }
       inline bool                      isRectangle_impl()
         {
+	  return false;
         }
       inline bool                      isTorus_impl()
         {
+	  return false;
         }
       inline bool                      isTree_impl()
         {
+	  return false;
         }
       inline bool                      isGlobalContext_impl()
         {
+	  return false;
         }
       inline bool                      isGI_impl()
         {
+	  return false;
         }
       inline unsigned                  getNumColors_impl()
         {
+	  return 0;
         }
       inline unsigned                  getAllreduceIteration_impl()
         {
+	  return 0;
         }
       inline void                      freeAllocations_impl()
         {
+	  return;
         }
       inline void                      setGlobalContext_impl(bool context)
         {
+	  return;
         }
       inline void                      setNumColors_impl(unsigned numcolors)
         {
+	  return;
         }
       inline MatchQueue               &asyncBcastPostQ_impl()
         {
+	  return _post;
         }
       inline MatchQueue               &asyncBcastUnexpQ_impl()
         {
+	  return _ue;
         }
 #if 0
       inline RECTANGLE_TYPE            rectangle_impl()
@@ -192,11 +215,12 @@ namespace XMI
         }
       inline int                        virtrankof_impl (int rank)
         {
-          int sz=0;
+          int      sz=0;
+	  unsigned r = rank;
           for(int i=0; i<_numranges; i++)
               {
-                if(rank>=_rangelist[i].lo && rank<=_rangelist[i].hi)
-                  return sz + (rank - _rangelist[i].lo);
+                if(r>=_rangelist[i].lo && r<=_rangelist[i].hi)
+                  return sz + (r - _rangelist[i].lo);
                 sz+=(_rangelist[i].hi-_rangelist[i].lo+1);
               }
           assert(0);
@@ -216,7 +240,9 @@ namespace XMI
       xmi_geometry_range_t *_rangelist;
       int                   _rank;
       int                   _size;
-
+      MatchQueue            _ue;
+      MatchQueue            _post;
+      
 
     }; // class Geometry
   };  // namespace Geometry

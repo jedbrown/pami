@@ -44,8 +44,8 @@ int main (int argc, char ** argv)
   xmi_client_t  client;
   xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
-  
-  result = XMI_Client_initialize ("TEST", &client);
+  char          cl_string[] = "TEST";  
+  result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);

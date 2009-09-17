@@ -90,6 +90,8 @@ namespace XMI
               
 	inline unsigned send (xmi_oldmulticast_t *mcastinfo)
         {
+	  assert(0);
+	  return 0;
         }
 
 
@@ -103,10 +105,14 @@ namespace XMI
                                   xmi_op                   op     = XMI_UNDEFINED_OP,
                                   xmi_dt                   dtype  = XMI_UNDEFINED_DT)
         {
+	  assert(0);
+	  return 0;
         }
 
 	inline unsigned postRecv (xmi_oldmulticast_recv_t  *mrecv)
         {
+	  assert(0);
+	  return 0;
         }
 
 

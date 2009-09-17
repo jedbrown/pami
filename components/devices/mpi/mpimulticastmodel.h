@@ -42,6 +42,7 @@ namespace XMI
                 }
             inline bool postMultiCast_impl (T_Message * obj)
                 {
+		  return false;
                 }
         };
     };

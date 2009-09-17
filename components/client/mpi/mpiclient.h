@@ -71,7 +71,7 @@ namespace XMI
 
       inline char * getName_impl ()
         {
-          return "";
+          return '\0';
         }
 
       inline xmi_context_t createContext_impl (xmi_configuration_t configuration[],

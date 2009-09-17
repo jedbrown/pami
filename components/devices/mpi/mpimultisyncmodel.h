@@ -30,7 +30,7 @@ namespace XMI
         }
       inline bool postMultisync_impl (T_Message * obj)
         {
-              
+	  return false;
         }
     };
   };

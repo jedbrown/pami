@@ -43,7 +43,7 @@ namespace XMI
             template <class T_Model>
             bool MulticombineModel<T_Model>::postMulticombine (xmi_multicombine_t *mcomb)
             {
-                static_cast<T_Model*>(this)->postMulticombine_impl(mcomb);
+	      return static_cast<T_Model*>(this)->postMulticombine_impl(mcomb);
             }
 
         };

@@ -60,14 +60,16 @@ namespace XMI
           return _mcast_dispatch_id++;
         }
       
-      inline int init_impl (T_SysDep * sysdep)
+      inline xmi_result_t init_impl (T_SysDep * sysdep)
         {
           assert(0);
+	  return XMI_UNIMPL;
         };
 
       inline bool isInit_impl ()
         {
           assert(0);
+	  return false;
         };
       inline bool isReliableNetwork ()
         {
@@ -179,6 +181,7 @@ namespace XMI
           // but we want to play nice with other
           // processes, so let's be nice and yield to them.
           sched_yield();
+	  return 0;
         };
 
       // Implement MessageDevice Routines
@@ -193,16 +196,19 @@ namespace XMI
       inline void * getConnection_impl (int channel, size_t rank)
         {
           assert(0);
+	  return NULL;
         }
 
       // Implement Packet Device Routines 
       inline int    readData_impl(void * dst, size_t bytes)
         {
           assert(0);
+	  return -1;
         }
       inline bool   requiresRead_impl()
         {
           assert(0);
+	  return false;
         }
       inline size_t getPacketMetadataSize_impl()
         {

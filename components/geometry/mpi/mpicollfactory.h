@@ -26,7 +26,7 @@ namespace XMI
 	
       inline RegQueue * getRegQ(xmi_xfer_type_t       collective)
         {
-          RegQueue *rq;
+          RegQueue *rq = NULL;
           switch (collective)
               {				
                   case XMI_XFER_BROADCAST:
@@ -126,6 +126,7 @@ namespace XMI
           _lar        = mgr->allocate (g, TSPColl::LongAllreduceTag);
           _sct        = mgr->allocate (g, TSPColl::ScatterTag);
           _sctv       = mgr->allocate (g, TSPColl::ScattervTag);
+	  return XMI_SUCCESS;
         }
 
       inline xmi_result_t  add_collective(xmi_xfer_type_t          collective,
@@ -228,7 +229,7 @@ namespace XMI
                                                       allreduce->stypecount,
                                                       datawidth,
                                                       cb_allreduce);
-          if (datawidth * allreduce->stypecount < TSPColl::Allreduce::Short<MPIMcastModel>::MAXBUF)
+          if (datawidth * allreduce->stypecount < (unsigned)TSPColl::Allreduce::Short<MPIMcastModel>::MAXBUF)
               {
                 if (!_sar->isdone()) _dev->advance();
                 ((TSPColl::Allreduce::Short<MPIMcastModel> *)_sar)->reset (allreduce->sndbuf,
