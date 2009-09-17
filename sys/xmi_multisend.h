@@ -354,6 +354,7 @@ extern "C"
     typedef struct {
         size_t             req_size;		/**< space available in request, bytes */
         xmi_event_function cb_done;		/**< User's completion callback */
+        void              *cookie;              /**< event function argument    */
         unsigned           connection_id;	/**< (remove?) differentiate data streams */
         unsigned           roles;		/**< bitmap of roles to perform */
         xmi_topology_t    *participants;	/**< Ranks involved in synchronization */

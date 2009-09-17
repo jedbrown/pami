@@ -36,6 +36,7 @@ typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 #define XMI_COLL_SYSDEP_CLASS XMI::SysDep::MPISysDep
 
 #include "algorithms/protocols/broadcast/async_impl.h"
+#include "algorithms/protocols/barrier/impl.h"
 
 namespace XMI
 {
@@ -156,10 +157,20 @@ namespace XMI
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
-
-
-
-
+    template <class T_Device, class T_Sysdep>
+    class CCMIBinomBarrierInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIBinomBarrierInfo(T_Device *dev, T_Sysdep * sd, CCMI_mapIdToGeometry fcn):
+        CollInfo<T_Device>(dev),
+	_model(*dev),
+        _barrier_registration(&_model,sd,sd->mapping.size(), fcn)
+        {
+        }
+      XMI_Request_t                                  _request;
+      MPIMcastModel                                  _model;
+      CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
+    };
   };
 };
 typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;

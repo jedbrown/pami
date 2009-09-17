@@ -101,7 +101,6 @@ namespace XMI
             inline void                       setBarrierExecutor (EXECUTOR_TYPE bar);
             inline RECTANGLE_TYPE             rectangle();
             inline RECTANGLE_TYPE             rectangle_mesh();
-            inline EXECUTOR_TYPE              getBarrierExecutor();
             inline EXECUTOR_TYPE              getLocalBarrierExecutor ();
             inline void                       setLocalBarrierExecutor (EXECUTOR_TYPE bar);
             inline CCMI_EXECUTOR_TYPE         getAllreduceCompositeStorage ();
@@ -114,11 +113,13 @@ namespace XMI
             inline EXECUTOR_TYPE              getCollectiveExecutor (unsigned color=0);
             inline void                       setCollectiveExecutor (EXECUTOR_TYPE exe,
                                                                      unsigned color=0);
-            static inline CCMI_GEOMETRY       getCachedGeometry (unsigned comm);
-            static inline void                updateCachedGeometry (CCMI_GEOMETRY geometry,
-                                                                    unsigned comm);
 #endif
-            // These methods were originally from the PGASRT Communicator class
+            inline void                      *getBarrierExecutor();
+            static inline T_Geometry         *getCachedGeometry (unsigned comm);
+            static inline void                updateCachedGeometry (T_Geometry *geometry,
+                                                                    unsigned comm);
+
+          // These methods were originally from the PGASRT Communicator class
             inline int                        size       (void);
             inline int                        rank       (void);
             inline int                        absrankof  (int rank);
@@ -278,12 +279,6 @@ namespace XMI
         }
 
         template <class T_Geometry, class T_Mapping>
-        inline EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getBarrierExecutor()
-        {
-            return static_cast<T_Geometry*>(this)->getBarrierExecutor_impl();
-        }
-
-        template <class T_Geometry, class T_Mapping>
         inline void Geometry<T_Geometry, T_Mapping>::setBarrierExecutor (EXECUTOR_TYPE bar)
         {
             return static_cast<T_Geometry*>(this)->setBarrierExecutor_impl(bar);
@@ -350,20 +345,26 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->setCollectiveExecutor_impl(exe, color);
         }
-
-        template <class T_Geometry, class T_Mapping>
-        static inline CCMI_GEOMETRY Geometry<T_Geometry, T_Mapping>::getCachedGeometry (unsigned comm)
-        {
-            return static_cast<T_Geometry*>(this)->getCachedGeometry_impl(comm);
-        }
-
-        template <class T_Geometry, class T_Mapping>
-        static inline void Geometry<T_Geometry, T_Mapping>::updateCachedGeometry (CCMI_GEOMETRY geometry,
-                                                                       unsigned comm)
-        {
-            return static_cast<T_Geometry*>(this)->updateCachedGeometry_impl(geometry, comm);
-        }
 #endif
+        template <class T_Geometry, class T_Mapping>
+        inline void * Geometry<T_Geometry, T_Mapping>::getBarrierExecutor()
+        {
+            return static_cast<T_Geometry*>(this)->getBarrierExecutor_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline T_Geometry *Geometry<T_Geometry, T_Mapping>::getCachedGeometry (unsigned comm)
+        {
+            return T_Geometry::getCachedGeometry_impl(comm);
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::updateCachedGeometry (T_Geometry *geometry,
+                                                                           unsigned comm)
+        {
+            return T_Geometry::updateCachedGeometry_impl(geometry, comm);
+        }
+
 
         // These methods were originally from the PGASRT Communicator class
         template <class T_Geometry, class T_Mapping>

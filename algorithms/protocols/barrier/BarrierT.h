@@ -15,10 +15,8 @@
 #define __ccmi_collectives_barrier_factory_template_h__
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
-#include "./BarrierFactory.h"
-#include "interface/CollectiveMapping.h"
+#include "algorithms/protocols/barrier/BarrierFactory.h"
 #include "algorithms/executor/Barrier.h"
-#include "interface/Geometry.h"
 
 namespace CCMI
 {
@@ -26,17 +24,18 @@ namespace CCMI
   {
     namespace Barrier
     {
-      typedef bool (*AnalyzeFn) (Geometry *g);
+      typedef bool (*AnalyzeFn) (XMI_GEOMETRY_CLASS *g);
 
       ///
       /// \brief Binomial barrier
       ///
-      template <class S, AnalyzeFn afn, class MAP> class BarrierT : public CCMI::Executor::Barrier
+      template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Msync, class T_Topology>
+      class BarrierT : public CCMI::Executor::Barrier<T_Msync, T_Topology>
       {
         ///
         /// \brief The schedule for binomial barrier protocol
         ///
-        S                             _myschedule;
+        T_Schedule                             _myschedule;
 
       public:
         ///
@@ -46,19 +45,22 @@ namespace CCMI
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-
-        BarrierT  (MAP                     * mapping,
-                   CCMI::MultiSend::MultisyncInterface    * mInterface,
-                   Geometry                               * geometry) :
-        Barrier (geometry->nranks(), geometry->ranks(), geometry->comm(), 0, mInterface),
-        _myschedule (mapping, geometry->nranks(), geometry->ranks())
+        BarrierT  (T_Sysdep                     * mapping,
+                   T_Msync                      * mInterface,
+                   XMI_GEOMETRY_CLASS           * geometry) :
+          CCMI::Executor::Barrier<T_Msync, T_Topology> (geometry->nranks(),
+                                                        geometry->ranks(),
+                                                        geometry->comm(),
+                                                        0,
+                                                        mInterface),
+          _myschedule (mapping, geometry->nranks(), geometry->ranks())
         {
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
                      (int)this, geometry->comm()));
           setCommSchedule (&_myschedule);
         }
 
-        static bool analyze (Geometry *geometry)
+        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
         {
           return((AnalyzeFn) afn)(geometry);
         }
@@ -68,8 +70,8 @@ namespace CCMI
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template <class T, class MAP>
-      class BarrierFactoryT : private BarrierFactory<MAP>
+      template <class T, class T_Sysdep, class T_Msync>
+      class BarrierFactoryT : private BarrierFactory<T_Sysdep, T_Msync>
       {
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -81,14 +83,14 @@ namespace CCMI
         ///
         /// \brief Constructor for barrier factory implementations.
         ///
-        BarrierFactoryT (CCMI::MultiSend::MultisyncInterface    * minterface,
-                         MAP                          * map,
-                         CCMI_mapIdToGeometry                     cb_geometry) :
-        BarrierFactory<MAP> (minterface, map, cb_geometry)
+        BarrierFactoryT (T_Msync              * minterface,
+                         T_Sysdep             * map,
+                         CCMI_mapIdToGeometry   cb_geometry) :
+          BarrierFactory<T_Sysdep, T_Msync> (minterface, map, cb_geometry)
         {
         }
 
-        bool Analyze(Geometry *geometry)
+        bool Analyze(XMI_GEOMETRY_CLASS *geometry)
         {
           return T::analyze (geometry);
         }
@@ -104,7 +106,7 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         Geometry                  * geometry)
+         XMI_GEOMETRY_CLASS                  * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
           return new (request) T (this->_mapping, this->_msyncInterface, geometry);
@@ -117,12 +119,13 @@ namespace CCMI
       ///
       /// \brief Binomial barrier
       ///
-      template <class S, AnalyzeFn afn, class MAP> class OldBarrierT : public CCMI::Executor::OldBarrier
+      template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Mcast>
+      class OldBarrierT : public CCMI::Executor::OldBarrier<T_Mcast>
       {
         ///
         /// \brief The schedule for binomial barrier protocol
         ///
-        S                             _myschedule;
+        T_Schedule                             _myschedule;
 
       public:
         ///
@@ -133,10 +136,14 @@ namespace CCMI
         /// \param[in] geometry    Geometry object
         ///
 
-        OldBarrierT  (MAP                     * mapping,
-                   CCMI::MultiSend::OldMulticastInterface    * mInterface,
-                   Geometry                               * geometry) :
-        OldBarrier (geometry->nranks(), geometry->ranks(), geometry->comm(), 0, mInterface),
+        OldBarrierT  (T_Sysdep                     * mapping,
+                      T_Mcast  * mInterface,
+                      XMI_GEOMETRY_CLASS                               * geometry) :
+          CCMI::Executor::OldBarrier<T_Mcast> (geometry->nranks(),
+                                               geometry->ranks(),
+                                               geometry->comm(),
+                                               0,
+                                               mInterface),
         _myschedule (mapping, geometry->nranks(), geometry->ranks())
         {
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
@@ -144,7 +151,7 @@ namespace CCMI
           setCommSchedule (&_myschedule);
         }
 
-        static bool analyze (Geometry *geometry)
+        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
         {
           return((AnalyzeFn) afn)(geometry);
         }
@@ -155,8 +162,8 @@ namespace CCMI
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template <class T, class MAP>
-      class OldBarrierFactoryT : private OldBarrierFactory<MAP>
+      template <class T, class T_Sysdep, class T_Mcast>
+      class OldBarrierFactoryT : private OldBarrierFactory<T_Sysdep, T_Mcast>
       {
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -168,14 +175,14 @@ namespace CCMI
         ///
         /// \brief Constructor for barrier factory implementations.
         ///
-        OldBarrierFactoryT (CCMI::MultiSend::OldMulticastInterface    * minterface,
-                         MAP                          * map,
-                         CCMI_mapIdToGeometry                     cb_geometry) :
-        OldBarrierFactory<MAP> (minterface, map, cb_geometry)
+        OldBarrierFactoryT (T_Mcast              *minterface,
+                            T_Sysdep             *map,
+                            CCMI_mapIdToGeometry  cb_geometry) :
+          OldBarrierFactory<T_Sysdep, T_Mcast> (minterface, map, cb_geometry)
         {
         }
 
-        bool Analyze(Geometry *geometry)
+        bool Analyze(XMI_GEOMETRY_CLASS *geometry)
         {
           return T::analyze (geometry);
         }
@@ -191,7 +198,7 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         Geometry                  * geometry)
+         XMI_GEOMETRY_CLASS                  * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);

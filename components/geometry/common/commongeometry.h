@@ -56,94 +56,117 @@ namespace XMI
 
       inline int                       getColorsArray_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline void                      setAsyncAllreduceMode_impl(unsigned value)
         {
+          assert(0);
 	  return;
         }
       inline unsigned                  getAsyncAllreduceMode_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline unsigned                  incrementAllreduceIteration_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline unsigned                  comm_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline unsigned                 *ranks_impl()
         {
+          assert(0);
 	  return NULL;
         }
       inline unsigned                  nranks_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline int                       myIdx_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline void                      generatePermutation_impl()
         {
+          assert(0);
 	  return;
         }
       inline void                      freePermutation_impl()
         {
+          assert(0);
 	  return;
         }
       inline unsigned                 *permutation_impl()
         {
+          assert(0);
 	  return NULL;
         }
       inline bool                      isRectangle_impl()
         {
+          assert(0);
 	  return false;
         }
       inline bool                      isTorus_impl()
         {
+          assert(0);
 	  return false;
         }
       inline bool                      isTree_impl()
         {
+          assert(0);
 	  return false;
         }
       inline bool                      isGlobalContext_impl()
         {
+          assert(0);
 	  return false;
         }
       inline bool                      isGI_impl()
         {
+          assert(0);
 	  return false;
         }
       inline unsigned                  getNumColors_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline unsigned                  getAllreduceIteration_impl()
         {
+          assert(0);
 	  return 0;
         }
       inline void                      freeAllocations_impl()
         {
+          assert(0);
 	  return;
         }
       inline void                      setGlobalContext_impl(bool context)
         {
+          assert(0);
 	  return;
         }
       inline void                      setNumColors_impl(unsigned numcolors)
         {
+          assert(0);
 	  return;
         }
       inline MatchQueue               &asyncBcastPostQ_impl()
         {
+          assert(0);
 	  return _post;
         }
       inline MatchQueue               &asyncBcastUnexpQ_impl()
         {
+          assert(0);
 	  return _ue;
         }
 #if 0
@@ -151,9 +174,6 @@ namespace XMI
         {
         }
       inline RECTANGLE_TYPE            rectangle_mesh_impl()
-        {
-        }
-      inline EXECUTOR_TYPE             getBarrierExecutor_impl()
         {
         }
       inline void                      setBarrierExecutor_impl(EXECUTOR_TYPE bar)
@@ -194,15 +214,26 @@ namespace XMI
         {
         }
 
-      static inline CCMI_Geometry_t   *getCachedGeometry_impl(unsigned comm)
-        {
-        }
-      static inline void               updateCachedGeometry_impl(CCMI_Geometry_t *geometry,
-                                                                 unsigned comm)
-        {
-        }
 #endif
-      // These methods were originally from the PGASRT Communicator class
+      inline void            *getBarrierExecutor_impl()
+        {
+          assert(0);
+          return NULL;
+        }
+
+      static inline Common   *getCachedGeometry_impl(unsigned comm)
+        {
+          assert(0);
+          return NULL;
+        }
+      static inline void               updateCachedGeometry_impl(Common *geometry,
+                                                                 unsigned comm)        
+        {
+          assert(0);
+        }
+
+
+     // These methods were originally from the PGASRT Communicator class
       inline int                        size_impl       (void)
         {
           return _size;
