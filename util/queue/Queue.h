@@ -200,7 +200,9 @@ namespace XMI
       /// \returns:   The size of the queue
       //////////////////////////////////////////////////////////////////
       void dump(const char *str, int n) const;
+#ifdef VALIDATE_ON
       void validate();
+#endif
 
     private:
       //////////////////////////////////////////////////////////////////
@@ -283,7 +285,7 @@ inline XMI::QueueElem * XMI::Queue::popTail()
   _size--;
   return p;
 }
-
+#ifdef VALIDATE_ON
 inline void XMI::Queue::validate()
 {
   QueueElem *t = _tail;
@@ -324,7 +326,7 @@ inline void XMI::Queue::validate()
       XMI_assert(a == _size && b == _size);
     }
 }
-
+#endif
 inline int XMI::Queue::size() const
 {
   return _size;
@@ -515,8 +517,9 @@ namespace XMI
           //////////////////////////////////////////////////////////////////
           void dump(const char *str, int n) const;
 
+#ifdef VALIDATE_ON
           void validate();
-
+#endif
           //////////////////////////////////////////////////////////////////
           /// \brief allocate a new element, assuming storage is available
           /// \param size: ignored
@@ -616,7 +619,7 @@ inline void XMI::MultiQueue<numElems, elemNum>::remove(MultiQueueElem<numElems> 
   _size--;
 }
 
-
+#ifdef VALIDATE_ON
 template<int numElems, int elemNum>
 inline void XMI::MultiQueue<numElems, elemNum>::validate() {
 	MultiQueueElem<numElems> *t = _tail;
@@ -647,7 +650,7 @@ inline void XMI::MultiQueue<numElems, elemNum>::validate() {
 		XMI_assert(a == _size && b == _size);
 	}
 }
-
+#endif
 template<int numElems, int elemNum>
 inline int XMI::MultiQueue<numElems, elemNum>::size() const
 {
