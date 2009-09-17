@@ -34,16 +34,13 @@
 ///
 /// How to use a Barrier atomic object:
 ///
-/// #include "collectives/components/atomic/Barrier.h"
 /// // following changes with desired type of barrier...
 /// #include "collectives/components/atomic/bgp/LockBoxBarrier.h"
-/// typedef XMI::Barrier::BGP::LockBoxNodeCoreBarrier MY_BARRIER_TYPE;
-///
-/// typedef XMI::Atomic::Interface::Barrier<MY_BARRIER_TYPE> MY_BARRIER;
+/// typedef XMI::Barrier::BGP::LockBoxNodeCoreBarrier MY_BARRIER;
 ///
 /// MY_BARRIER _barrier;
 /// xmi_result_t status;
-/// _barrier.init(sysdep, status);
+/// _barrier.init(sysdep, status); // get 'sysdep' wherever you can...
 /// XMI_assert(status == XMI_SUCCESS);
 ///
 /// _barrier.enter(); // perform actual barrier

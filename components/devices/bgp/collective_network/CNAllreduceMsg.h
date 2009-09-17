@@ -25,6 +25,26 @@
 #include "components/devices/common/MulticombineModelImpl.h"
 #include "PipeWorkQueue.h"
 
+/// \page xmi_multicombine_examples
+///
+/// #include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
+/// typedef XMI::Device::BGP::CNAllreduceModel   MY_ALLREDUCE_MODEL;
+/// typedef XMI::Device::BGP::CNAllreduceMessage MY_ALLREDUCE_MEGSSAGE;
+///
+/// xmi_result_t status;
+/// MY_ALLREDUCE_MODEL _allreduce(status);
+/// XMI_assert(status == XMI_SUCCESS);
+///
+/// xmi_multicombine_t _mcomb;
+/// MY_ALLREDUCE_MEGSSAGE _msg;
+/// _mcomb.request = &_msg;
+/// _mcomb.cb_done = ...;
+/// _mcomb.roles = ...;
+/// _mcomb.data = ...;
+/// ...
+/// _allreduce.postMulticombine(&_mcomb);
+///
+
 namespace XMI {
 namespace Device {
 namespace BGP {

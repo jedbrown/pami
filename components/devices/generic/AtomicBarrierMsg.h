@@ -17,9 +17,7 @@
 ///
 /// #include "components/atomic/bgp/LockBoxBarrier.h"
 /// // Change this line to switch to different barrier implementations...
-/// typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier MY_BARRIER_TYPE;
-///
-/// typedef XMI::Atomic::Interface::Barrier<MY_BARRIER_TYPE> MY_BARRIER;
+/// typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier MY_BARRIER;
 ///
 /// #include "components/devices/generic/AtomicBarrierMsg.h"
 /// typedef XMI::Device::AtomicBarrierMdl<MY_BARRIER> MY_BARRIER_MODEL;
@@ -27,7 +25,7 @@
 ///
 /// xmi_result_t status;
 /// MY_BARRIER_MODEL _barrier(status);
-/// if (status != XMI_SUCCESS) abort();
+/// XMI_assert(status == XMI_SUCCESS);
 ///
 /// xmi_multisync_t _msync;
 /// MY_BARRIER_MESSAGE _msg;
