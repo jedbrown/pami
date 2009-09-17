@@ -70,7 +70,7 @@ namespace XMI
 
         inline void enterPoll_impl(pollFcn fcn, void *arg) { XMI_abort(); }
         inline void pollInit_impl() { XMI_abort(); }
-        inline lockPollStatus poll_impl() { XMI_abort(); }
+        inline barrierPollStatus poll_impl() { XMI_abort(); }
         inline void * returnBarrier_impl() { XMI_abort(); }
         inline void dump_impl(char *string) { XMI_abort(); }
 

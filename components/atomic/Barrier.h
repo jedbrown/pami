@@ -116,7 +116,7 @@ namespace Interface
       /// \brief   Poll an initialized barrier, nonblocking
       /// \returns a polling status, "Done" when barrier is completed.
       ///
-      inline lockPollStatus poll();
+      inline barrierPollStatus poll();
 
       ///
       /// \brief  Provide access to the raw barrier var/data
@@ -164,7 +164,7 @@ inline void Barrier<T>::pollInit()
 }
 
 template <class T>
-inline lockPollStatus Barrier<T>::poll()
+inline barrierPollStatus Barrier<T>::poll()
 {
 	return static_cast<T*>(this)->poll_impl();
 }

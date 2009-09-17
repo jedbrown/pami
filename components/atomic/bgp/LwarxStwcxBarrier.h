@@ -89,7 +89,7 @@ namespace BGP {
 			__status = Entered;
 		}
 
-		inline DCMF::lockPollStatus poll_impl() {
+		inline DCMF::barrierPollStatus poll_impl() {
 			DCMF_assert(__status == Entered);
 			uint32_t lockup, value;
 			lockup = (uint32_t)_data;

@@ -83,7 +83,7 @@ public:
 		_status = Entered;
 	}
 
-	inline lockPollStatus poll_impl() {
+	inline barrierPollStatus poll_impl() {
 		DCMF_assert(_status == Entered);
 		uint32_t lockup, value;
 		lockup = (unsigned)_data;
@@ -123,12 +123,14 @@ public:
 private:
 	LockBox_Barrier_s _barrier;
 	void *_data;
-	lockPollStatus _status;
+	barrierPollStatus _status;
 }; // class _LockBoxBarrier
 
-class LockBoxNodeCoreBarrier : public _LockBoxBarrier {
+class LockBoxNodeCoreBarrier :
+		public XMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
+		public _LockBoxBarrier {
 public:
-	LockBoxNodeCoreBarrier() : _LockBoxBarrier() {}
+	LockBoxNodeCoreBarrier() {}
 	~LockBoxNodeCoreBarrier() {}
 	inline void init_impl() {
 		// For core-granularity, everything is
@@ -145,9 +147,11 @@ public:
 	}
 }; // class LockBoxNodeCoreBarrier
 
-class LockBoxNodeProcBarrier : public _LockBoxBarrier
+class LockBoxNodeProcBarrier :
+		public XMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
+		public _LockBoxBarrier {
 public:
-	LockBoxNodeProcBarrier() : _LockBoxBarrier() {}
+	LockBoxNodeProcBarrier() {}
 	~LockBoxNodeProcBarrier() {}
 	inline void init_impl() {
 		// For proc-granularity, must convert
