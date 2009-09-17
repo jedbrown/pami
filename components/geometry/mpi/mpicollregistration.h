@@ -19,12 +19,15 @@
 #include <map>
 #include <vector>
 #include "components/geometry/mpi/mpicollinfo.h"
+#include "components/geometry/mpi/mpicollfactory.h"
 #include "components/memory/MemoryAllocator.h"
 
 namespace XMI
 {
   namespace CollRegistration
   {
+    extern std::map<unsigned, xmi_geometry_t> geometry_map;
+    
     template <class T_Geometry, class T_Collfactory, class T_Device, class T_Sysdep>
     class MPI : public CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
     {
@@ -40,8 +43,10 @@ namespace XMI
 	_pgscatterv(dev),
 	_pgallreduce(dev),
 	_pgbarrier(dev),
-        _ccmiambroadcast(dev, sd)
+        _ccmiambroadcast(dev, sd),
+        _ccmibarrier(dev, sd, mapidtogeometry)
         {
+          
 	  // Register and link each collective into a queue for analysis
 	  _nbCollMgr.initialize();
 
@@ -77,6 +82,9 @@ namespace XMI
 
           _ccmiambroadcast._colltype=XMI::CollInfo::CI_AMBROADCAST0;
 	  _ambroadcasts.push_back(&_ccmiambroadcast);
+
+          _ccmibarrier._colltype=XMI::CollInfo::CI_BARRIER1;
+          _barriers.push_back(&_ccmiambroadcast);
         }
 
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
@@ -84,16 +92,23 @@ namespace XMI
 	XMI_COLLFACTORY_CLASS *f=(XMI_COLLFACTORY_CLASS *)_fact_alloc.allocateObject();
 	new(f)XMI_COLLFACTORY_CLASS(_sysdep);
 	f->setGeometry(geometry, &_nbCollMgr, _dev);
-	f->add_collective(XMI_XFER_BROADCAST, &_pgbroadcast);
-	f->add_collective(XMI_XFER_ALLGATHER, &_pgallgather);
+	f->add_collective(XMI_XFER_BROADCAST,  &_pgbroadcast);
+	f->add_collective(XMI_XFER_ALLGATHER,  &_pgallgather);
 	f->add_collective(XMI_XFER_ALLGATHERV, &_pgallgatherv);
-	f->add_collective(XMI_XFER_SCATTER, &_pgscatter);
-	f->add_collective(XMI_XFER_SCATTERV, &_pgscatterv);
-	f->add_collective(XMI_XFER_ALLREDUCE, &_pgallreduce);
-	f->add_collective(XMI_XFER_BARRIER, &_pgbarrier);
+	f->add_collective(XMI_XFER_SCATTER,    &_pgscatter);
+	f->add_collective(XMI_XFER_SCATTERV,   &_pgscatterv);
+	f->add_collective(XMI_XFER_ALLREDUCE,  &_pgallreduce);
+	f->add_collective(XMI_XFER_BARRIER,    &_pgbarrier);
+        f->add_collective(XMI_XFER_BARRIER,    &_ccmibarrier);
+        f->add_collective(XMI_XFER_AMBROADCAST,&_ccmiambroadcast);
 	return f;
       }
-
+      
+      static xmi_geometry_t mapidtogeometry (int comm)
+        {
+          return geometry_map[comm];
+        }
+      
     public:
       T_Device                        *_dev;
       T_Sysdep                        *_sysdep;
@@ -108,7 +123,8 @@ namespace XMI
       XMI::CollInfo::PGAllreduceInfo<T_Device>    _pgallreduce;
       XMI::CollInfo::PGBarrierInfo<T_Device>      _pgbarrier;
       XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep>  _ccmiambroadcast;
-
+      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep> _ccmibarrier;
+      
       RegQueue          _broadcasts;
       RegQueue          _ambroadcasts;
       RegQueue          _allgathers;

@@ -61,12 +61,15 @@ namespace XMI
         {
         public:
             inline Geometry(T_Mapping   *mapping,
-                            unsigned            *ranks,
-                            unsigned             nranks,
-                            unsigned             comm,
-                            unsigned             numcolors,
-                            bool                 globalcontext) {}
-            inline Geometry (T_Mapping *mapping, int numranges, xmi_geometry_range_t rangelist[])
+                            unsigned    *ranks,
+                            unsigned     nranks,
+                            unsigned     comm,
+                            unsigned     numcolors,
+                            bool         globalcontext) {}
+            inline Geometry (T_Mapping *mapping,
+                             unsigned   comm,
+                             int        numranges,
+                             xmi_geometry_range_t rangelist[])
             {
             }
             // These methods were originally from the CCMI Geometry class

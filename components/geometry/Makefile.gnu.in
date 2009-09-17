@@ -1,0 +1,4 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= @TARGET@
+NOTBUILT        =
+include @abs_top_builddir@/Build.rules

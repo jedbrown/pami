@@ -41,10 +41,12 @@ namespace XMI
         {
         }
       inline Common (T_Mapping           *mapping,
+                     unsigned             comm,
                      int                  numranges,
                      xmi_geometry_range_t rangelist[]):
-	Geometry<XMI::Geometry::Common<T_Mapping>, T_Mapping>(mapping, numranges, rangelist),
-	_kvstore()
+	Geometry<XMI::Geometry::Common<T_Mapping>, T_Mapping>(mapping, comm, numranges, rangelist),
+	_kvstore(),
+        _commid(comm)
         {
           this->_rank      = mapping->task();
           this->_rangelist = rangelist;
@@ -280,6 +282,7 @@ namespace XMI
 
     private:
       std::map <int, void*> _kvstore;
+      int                   _commid;
       int                   _numranges;
       xmi_geometry_range_t *_rangelist;
       int                   _rank;

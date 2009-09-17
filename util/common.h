@@ -15,6 +15,7 @@
 
 #include <new>
 #include <stdint.h>
+#include "sys/xmi.h"
 #ifndef MIN
 #define MIN(a,b)  (((a)<(b))?(a):(b))
 #endif
@@ -114,6 +115,8 @@ inline void* operator new(size_t obj_size, void* pointer)
  * \endcode
  */
 #define COMPILE_TIME_ASSERT(expr) switch(0){case 0:case expr:;}
+
+typedef xmi_geometry_t (*xmi_mapidtogeometry_fn) (int comm);
 
 
 #endif // __util_common_h__

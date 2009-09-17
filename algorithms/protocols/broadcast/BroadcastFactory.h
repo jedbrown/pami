@@ -130,7 +130,7 @@ namespace CCMI
         ///
         /// \brief get geometry from comm id
         ///
-        CCMI_mapIdToGeometry               _cb_geometry;
+        xmi_mapidtogeometry_fn               _cb_geometry;
 
         ///
         /// \brief Callback for one-sided broadcasts
@@ -172,7 +172,7 @@ namespace CCMI
         ///
         void setAsyncInfo (bool                          is_buffered,
                            xmi_olddispatch_multicast_fn  cb_async,
-                           CCMI_mapIdToGeometry          cb_geometry)
+                           xmi_mapidtogeometry_fn          cb_geometry)
         {
           _isBuffered = is_buffered;
 

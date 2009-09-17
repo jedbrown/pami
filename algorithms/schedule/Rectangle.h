@@ -36,7 +36,6 @@ typedef unsigned axii_t[NUM_AXIS];
 #include "Schedule.h"
 #include "./BinomialTree.h"
 #include "./RingSchedule.h"
-#include "config.h"
 
 namespace CCMI
 {

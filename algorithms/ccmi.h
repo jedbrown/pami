@@ -158,7 +158,5 @@ typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
  *  between geometry id's and geometry structures.
  */
 
-typedef CCMI_Geometry_t * (*CCMI_mapIdToGeometry) (int comm);
-
 
 #endif

@@ -53,7 +53,7 @@ namespace CCMI
         protected:
           T_Msync               * _msyncInterface;
           T_Sysdep              * _mapping;
-          CCMI_mapIdToGeometry    _cb_geometry;
+          xmi_mapidtogeometry_fn    _cb_geometry;
 
         public:
           /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -67,7 +67,7 @@ namespace CCMI
           ///
           BarrierFactory (T_Msync               * minterface,
                           T_Sysdep              * map,
-                          CCMI_mapIdToGeometry    cb_geometry) :
+                          xmi_mapidtogeometry_fn    cb_geometry) :
           _msyncInterface (minterface),
           _mapping (map),
           _cb_geometry (cb_geometry)
@@ -90,7 +90,7 @@ namespace CCMI
       protected:
         T_Mcast                * _mcastInterface;
         T_Sysdep               * _mapping;
-        CCMI_mapIdToGeometry     _cb_geometry;
+        xmi_mapidtogeometry_fn     _cb_geometry;
 
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -104,7 +104,7 @@ namespace CCMI
         ///
         OldBarrierFactory (T_Mcast      * minterface,
                            T_Sysdep     * map,
-                           CCMI_mapIdToGeometry                       cb_geometry) :
+                           xmi_mapidtogeometry_fn                       cb_geometry) :
         _mcastInterface (minterface),
         _mapping (map),
         _cb_geometry (cb_geometry)

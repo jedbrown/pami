@@ -569,9 +569,11 @@ namespace CCMI
       }
 
       /// Main constructor to initialize the executor
-      OldBarrier(unsigned nranks, unsigned *ranks,unsigned comm,
-                 unsigned connid,
-                 T_Mcast  minterface):
+      OldBarrier(unsigned  nranks,
+                 unsigned *ranks,
+                 unsigned  comm,
+                 unsigned  connid,
+                 T_Mcast  *minterface):
       Executor(),
       _mcastInterface(minterface),
       _connid(connid)
@@ -595,7 +597,7 @@ namespace CCMI
 //	_minfo.setRanks (NULL, 0);
 //	_minfo.setOpcodes(NULL);
 
-        _minfo.request=&_request;
+        _minfo.request=(xmi_quad_t*)&_request;
         _minfo.msginfo=(xmi_quad_t *)((void *) &_cdata);
         _minfo.count  =1;
         _minfo.bytes  =0;
@@ -650,7 +652,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
     TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext DONE _cb_done %X, _phase %d, _clientdata %X\n",
                (int) this, (int)_cb_done, _phase, (int)_clientdata));
     if(_cb_done)
-      _cb_done(_clientdata, NULL);
+      _cb_done(NULL, _clientdata, XMI_SUCCESS);
     _senddone = false;
 
     return;
@@ -672,7 +674,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
 
     //if last receive has arrived before the last send dont call executor notifySendDone rather app done callback
     if( (_phase == (_start + _nphases - 1)) &&
-        (_phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase)) )
+        ((size_t)_phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase)) )
     {
       TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext set callback %X\n",(int)this, (int)_cb_done));
       //_minfo.setCallback (_cb_done, _clientdata);
@@ -734,7 +736,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::notifyRecv(unsigned          sr
     return;
 
   ///Check the current iteration's number of messages received. Have we received all messages
-  if(_phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase))
+  if((size_t)_phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase))
   {
     if(_senddone)
     {
@@ -756,7 +758,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::internalNotifySendDone( const x
   _senddone = true;
 
   //Message for that phase has been received
-  if( _phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase) )
+  if( (size_t)_phasevec[_phase][_iteration] >= _cache.getSrcNumRanks(_phase) )
   {
     _phase ++;
     sendNext();

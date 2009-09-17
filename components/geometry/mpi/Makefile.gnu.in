@@ -1,0 +1,6 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= @TARGET@
+NOTBUILT        =
+@LIBNAME@-""-COLLECTIVESMPIGEOM_SOURCES=mpigeometrytable.cc
+DEVICENAME     = @LIBNAME@-""-COLLECTIVESMPIGEOM
+include @abs_top_builddir@/Build.rules

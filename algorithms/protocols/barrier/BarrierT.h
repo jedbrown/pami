@@ -85,7 +85,7 @@ namespace CCMI
         ///
         BarrierFactoryT (T_Msync              * minterface,
                          T_Sysdep             * map,
-                         CCMI_mapIdToGeometry   cb_geometry) :
+                         xmi_mapidtogeometry_fn   cb_geometry) :
           BarrierFactory<T_Sysdep, T_Msync> (minterface, map, cb_geometry)
         {
         }
@@ -136,15 +136,15 @@ namespace CCMI
         /// \param[in] geometry    Geometry object
         ///
 
-        OldBarrierT  (T_Sysdep                     * mapping,
-                      T_Mcast  * mInterface,
-                      XMI_GEOMETRY_CLASS                               * geometry) :
+        OldBarrierT  (T_Sysdep            * mapping,
+                      T_Mcast             * mInterface,
+                      XMI_GEOMETRY_CLASS  * geometry) :
           CCMI::Executor::OldBarrier<T_Mcast> (geometry->nranks(),
                                                geometry->ranks(),
                                                geometry->comm(),
-                                               0,
+                                               0U,
                                                mInterface),
-        _myschedule (mapping, geometry->nranks(), geometry->ranks())
+          _myschedule (mapping, geometry->nranks(), geometry->ranks())
         {
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
                      (int)this, geometry->comm()));
@@ -175,9 +175,9 @@ namespace CCMI
         ///
         /// \brief Constructor for barrier factory implementations.
         ///
-        OldBarrierFactoryT (T_Mcast              *minterface,
-                            T_Sysdep             *map,
-                            CCMI_mapIdToGeometry  cb_geometry) :
+        OldBarrierFactoryT (T_Mcast                *minterface,
+                            T_Sysdep               *map,
+                            xmi_mapidtogeometry_fn  cb_geometry) :
           OldBarrierFactory<T_Sysdep, T_Mcast> (minterface, map, cb_geometry)
         {
         }

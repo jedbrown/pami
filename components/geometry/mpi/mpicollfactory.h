@@ -139,6 +139,13 @@ namespace XMI
           _lar        = mgr->allocate (g, TSPColl::LongAllreduceTag);
           _sct        = mgr->allocate (g, TSPColl::ScatterTag);
           _sctv       = mgr->allocate (g, TSPColl::ScattervTag);
+#if 0
+          CCMI::Executor::Executor *exe = NULL;
+          exe = _barrier_factory.generate(&_barrier_executors[0], &_ccmi_geometry);
+          _ccmi_geometry.setBarrierExecutor(exe);
+          exe = _barrier_factory.generate(&_barrier_executors[1], &_ccmi_geometry);
+          _ccmi_geometry.setLocalBarrierExecutor(exe);
+#endif
 	  return XMI_SUCCESS;
         }
 

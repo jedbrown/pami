@@ -19,9 +19,10 @@
 #include "components/devices/mpi/oldmpimulticastmodel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "components/devices/mpi/mpidevice.h"
+#include "components/sysdep/mpi/mpisysdep.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include "components/mapping/mpi/mpimapping.h"
-#include "components/sysdep/mpi/mpisysdep.h"
+
 
 // PGASRT includes
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
@@ -29,7 +30,8 @@
 
 // CCMI includes
 
-typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>, XMI::Device::MPIMessage> MPIMcastModel;
+typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>,
+                                          XMI::Device::MPIMessage> MPIMcastModel;
 typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 
 #define XMI_COLL_MCAST_CLASS  MPIMcastModel
@@ -51,6 +53,7 @@ namespace XMI
       CI_SCATTERV0,
       CI_ALLREDUCE0,
       CI_BARRIER0,
+      CI_BARRIER1,
       CI_AMBROADCAST0,
     }collinfo_type_t;
 
@@ -161,15 +164,20 @@ namespace XMI
     class CCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
     public:
-      CCMIBinomBarrierInfo(T_Device *dev, T_Sysdep * sd, CCMI_mapIdToGeometry fcn):
+      CCMIBinomBarrierInfo(T_Device *dev,
+                           T_Sysdep * sd,
+                           xmi_mapidtogeometry_fn fcn):
         CollInfo<T_Device>(dev),
 	_model(*dev),
-        _barrier_registration(&_model,sd,sd->mapping.size(), fcn)
+        _barrier_registration(&_model,
+                              sd,
+                              fcn)
         {
         }
       XMI_Request_t                                  _request;
       MPIMcastModel                                  _model;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
+      CCMI_Executor_t                                _barrier_executor;
     };
   };
 };

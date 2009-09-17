@@ -47,7 +47,7 @@ namespace XMI
           _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
 	  _world_range.lo=0;
 	  _world_range.hi=_mysize-1;
-          new(_world_geometry) MPIGeometry(&_sysdep.mapping,1,&_world_range);
+          new(_world_geometry) MPIGeometry(&_sysdep.mapping,0, 1,&_world_range);
 
 	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
 	  new(_collreg) MPICollreg(&_mpi, &_sysdep);
@@ -290,7 +290,7 @@ namespace XMI
 	  MPIGeometry              *new_geometry;
 	  MPICollfactory           *new_collfactory;
           new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
-          new(new_geometry) MPIGeometry(&_sysdep.mapping,slice_count,rank_slices);
+          new(new_geometry) MPIGeometry(&_sysdep.mapping,id, slice_count,rank_slices);
           new_collfactory=_collreg->analyze(new_geometry);
 	  new_geometry->setKey(XMI::Geometry::COLLFACTORY, new_collfactory);
 	  *geometry=(MPIGeometry*) new_geometry;
