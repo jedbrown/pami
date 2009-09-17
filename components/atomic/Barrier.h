@@ -29,6 +29,26 @@
 ///  Notes:  This is currently indended for use only by the lock manager
 ///
 ////////////////////////////////////////////////////////////////////////
+
+/// \page xmi_atomic_examples
+///
+/// How to use a Barrier atomic object:
+///
+/// #include "collectives/components/atomic/Barrier.h"
+/// // following changes with desired type of barrier...
+/// #include "collectives/components/atomic/bgp/LockBoxBarrier.h"
+/// typedef XMI::Barrier::BGP::LockBoxNodeCoreBarrier MY_BARRIER_TYPE;
+///
+/// typedef XMI::Atomic::Interface::Barrier<MY_BARRIER_TYPE> MY_BARRIER;
+///
+/// MY_BARRIER _barrier;
+/// xmi_result_t status;
+/// _barrier.init(sysdep, status);
+/// XMI_assert(status == XMI_SUCCESS);
+///
+/// _barrier.enter(); // perform actual barrier
+///
+///
 namespace XMI
 {
 namespace Atomic

@@ -17,7 +17,7 @@
 ///
 /// #include "components/atomic/bgp/LockBoxBarrier.h"
 /// // Change this line to switch to different barrier implementations...
-/// typedef XMI::Barrier::BGP::LockBoxBarrier<> MY_BARRIER_TYPE;
+/// typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier MY_BARRIER_TYPE;
 ///
 /// typedef XMI::Atomic::Interface::Barrier<MY_BARRIER_TYPE> MY_BARRIER;
 ///
@@ -130,7 +130,7 @@ public:
 	XMI::Device::Interface::MultisyncModel(status)
 	{
 		// "default" barrier: all local processes...
-		_barrier.init(_g_topology_local->size());
+		_barrier.init(_g_lmbarrier_dev.getSysdep(), _g_topology_local->size());
 		// participants = _g_topology_local
 		// if need sysdep, use _g_lmbarrier_dev.getSysdep()...
 	}
