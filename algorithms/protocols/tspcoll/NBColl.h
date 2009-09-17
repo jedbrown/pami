@@ -40,7 +40,8 @@ namespace TSPColl
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }
     virtual void setComplete (xmi_event_function cb_complete, void *arg);
-
+// compiler gets cranky if this isn't here
+    virtual ~NBColl() {}
   protected:
     XMI_GEOMETRY_CLASS *_comm;
     NBTag               _tag;
