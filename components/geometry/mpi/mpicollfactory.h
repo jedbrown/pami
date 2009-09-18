@@ -133,6 +133,7 @@ namespace XMI
         {
           _geometry = g;
           _dev      = dev;
+	  // Setup PGAS style collectives
           _barrier    = mgr->allocate (g, TSPColl::BarrierTag);
           _allgather  = mgr->allocate (g, TSPColl::AllgatherTag);
           _allgatherv = mgr->allocate (g, TSPColl::AllgathervTag);
@@ -143,18 +144,13 @@ namespace XMI
           _sct        = mgr->allocate (g, TSPColl::ScatterTag);
           _sctv       = mgr->allocate (g, TSPColl::ScattervTag);
 
+	  // Setup CCMI style collectives
           _ccmi_bar   = default_bar;
 	  CCMI::Executor::Executor *exe = NULL;
           exe = default_bar->_barrier_registration.generate(&_barrier_executors[0],g);
           g->setKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR, (void*)exe);
           exe = default_bar->_barrier_registration.generate(&_barrier_executors[1],g);
           g->setKey(XMI::Geometry::XMI_GKEY_LOCALBARRIEREXECUTOR, (void*)exe);
-#if 0            
-          exe = _barrier_factory.generate(&_barrier_executors[0], &_ccmi_geometry);
-          g.setBarrierExecutor(exe);
-          exe = _barrier_factory.generate(&_barrier_executors[1], &_ccmi_geometry);
-          _ccmi_geometry.setLocalBarrierExecutor(exe);
-#endif
 	  return XMI_SUCCESS;
         }
 
@@ -371,11 +367,37 @@ namespace XMI
 
       inline xmi_result_t  ibarrier_impl        (xmi_barrier_t        *barrier)
         {
-          XMI::CollInfo::PGBarrierInfo<T_Device> *info = (XMI::CollInfo::PGBarrierInfo<T_Device> *)_barriers[barrier->algorithm];
-          while(!_barrier->isdone()) _dev->advance();
-          ((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
-          _barrier->setComplete(barrier->cb_done, barrier->cookie);
-          _barrier->kick(&info->_model);
+	  XMI::CollInfo::CollInfo<T_Device> *info = 
+	    (XMI::CollInfo::CollInfo<T_Device> *)_barriers[barrier->algorithm];
+	  
+	  switch(info->_colltype)
+	    {
+	    case XMI::CollInfo::CI_BARRIER0:
+	      {
+		XMI::CollInfo::PGBarrierInfo<T_Device> *binfo = 
+		  (XMI::CollInfo::PGBarrierInfo<T_Device> *)info;
+		while(!_barrier->isdone()) _dev->advance();
+		((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
+		_barrier->setComplete(barrier->cb_done, barrier->cookie);
+		_barrier->kick(&binfo->_model);
+	      }
+	      break;
+	    case XMI::CollInfo::CI_BARRIER1:
+	      {
+		xmi_callback_t cb_done_ccmi;
+		cb_done_ccmi.function   = barrier->cb_done;
+		cb_done_ccmi.clientdata = barrier->cookie;
+		CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor *)
+		  _geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
+		_c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
+		_c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
+		_c_bar->start();
+	      }
+	      break;
+	    default:
+	      return XMI_UNIMPL;
+	    }
+
           return XMI_SUCCESS;
         }
 
