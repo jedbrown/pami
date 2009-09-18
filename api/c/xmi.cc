@@ -465,6 +465,37 @@ extern "C" xmi_result_t XMI_Collective (xmi_context_t   context,
   return ctx->collective (parameters);
 }
 
+/// \copydoc XMI_Geometry_algorithms_num
+///
+extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
+                                                     xmi_geometry_t geometry,
+                                                     xmi_xfer_type_t coll_type,
+                                                     int *lists_lengths)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->geometry_algorithms_num (context,
+                                      geometry,
+                                      coll_type,
+                                      lists_lengths);  
+}
+
+extern "C"  xmi_result_t XMI_Geometry_algorithm_info (xmi_context_t context,
+                                                      xmi_geometry_t geometry,
+                                                      xmi_xfer_type_t type,
+                                                      xmi_algorithm_t algorithm,
+                                                      int algorithm_type,
+                                                      xmi_metadata_t *mdata)
+{
+  XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
+  return ctx->geometry_algorithm_info (context,
+                                       geometry,
+                                       type,
+                                       algorithm,
+                                       algorithm_type,
+                                       mdata);    
+}
+///
+
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from xmi_multisend.h                                             //
 ////////////////////////////////////////////////////////////////////////////////

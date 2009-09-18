@@ -107,7 +107,23 @@ namespace XMI
         }
 
 
-
+        inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
+                                                          xmi_geometry_t geometry,
+                                                          xmi_xfer_type_t ctype,
+                                                          int *lists_lengths)
+        {
+          return XMI_UNIMPL;
+        }
+      
+        inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
+                                                          xmi_geometry_t geometry,
+                                                          xmi_xfer_type_t type,
+                                                          xmi_algorithm_t algorithm,
+                                                          int algorithm_type,
+                                                          xmi_metadata_t *mdata)
+        {
+          return XMI_UNIMPL;
+        }
 
 
       private:

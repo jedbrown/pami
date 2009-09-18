@@ -12,14 +12,100 @@
 extern "C"
 {
 #endif
-    typedef void*   xmi_geometry_t;
-    typedef size_t  xmi_algorithm_t;
 
-    typedef struct
-    {
-        size_t lo;
-        size_t hi;
-    }xmi_geometry_range_t;
+/* we should probably put these in like xmi_util.h
+   these values need to change later                                          */
+  #define XMI_BROADCAST_ALGORITHM_DEFAULT                                      0
+  #define XMI_ALLREDUCE_ALGORITHM_DEFAULT                                      0
+  #define XMI_REDUCE_ALGORITHM_DEFAULT                                         0
+  #define XMI_ALLGATHER_ALGORITHM_DEFAULT                                      0
+  #define XMI_ALLGATHERV_ALGORITHM_DEFAULT                                     0
+  #define XMI_ALLGATHERV_INT_ALGORITHM_DEFAULT                                 0
+  #define XMI_SCATTER_ALGORITHM_DEFAULT                                        0
+  #define XMI_SCATTERV_ALGORITHM_DEFAULT                                       0
+  #define XMI_SCATTERV_INT_ALGORITHM_DEFAULT                                   0
+  #define XMI_BARRIER_ALGORITHM_DEFAULT                                        0
+  #define XMI_ALLTOALL_ALGORITHM_DEFAULT                                       0
+  #define XMI_ALLTOALLV_ALGORITHM_DEFAULT                                      0
+  #define XMI_ALLTOALLV_INT_ALGORITHM_DEFAULT                                  0
+  #define XMI_SCAN_ALGORITHM_DEFAULT                                           0
+  #define XMI_AMBROADCAST_ALGORITHM_DEFAULT                                    0
+  #define XMI_AMSCATTER_ALGORITHM_DEFAULT                                      0
+  #define XMI_AMGATHER_ALGORITHM_DEFAULT                                       0
+  #define XMI_AMREDUCE_ALGORITHM_DEFAULT                                       0
+
+  /**
+   * \brief Macro to set a collective algorithm pointed by 'algorithm' to
+   *        default protocol for a given transfer type.
+   *
+   * \param[in]      coll_type  Type of xmi transfer operation
+   * \param[in/out]  algorithm  variable to set the default protocol to.
+   */  
+  #define XMI_COLLECTIVE_ALGORITHM_DEFAULT(coll_type, algorithm)               \
+  do                                                                           \
+  {                                                                            \
+    switch(coll_type)                                                          \
+    {                                                                          \
+      case XMI_XFER_BROADCAST:                                                 \
+        algorithm = XMI_BROADCAST_ALGORITHM_DEFAULT;                           \
+        break;                                                                 \
+      case XMI_XFER_ALLREDUCE:                                                 \
+        algorithm = XMI_ALLREDUCE_ALGORITHM_DEFAULT;                           \
+        break;                                                                 \
+      case XMI_XFER_REDUCE:                                                    \
+        algorithm = XMI_REDUCE_ALGORITHM_DEFAULT;                              \
+        break;                                                                 \
+      case XMI_XFER_ALLGATHER:                                                 \
+        algorithm = XMI_ALLGATHER_ALGORITHM_DEFAULT;                           \
+        break;                                                                 \
+      case XMI_XFER_ALLGATHERV:                                                \
+        algorithm = XMI_ALLGATHERV_ALGORITHM_DEFAULT;                          \
+        break;                                                                 \
+      case XMI_XFER_ALLGATHERV_INT:                                            \
+        algorithm = XMI_ALLGATHERV_INT_ALGORITHM_DEFAULT;                      \
+        break;                                                                 \
+      case XMI_XFER_SCATTERV:                                                  \
+        algorithm = XMI_SCATTERV_ALGORITHM_DEFAULT;                            \
+        break;                                                                 \
+      case XMI_XFER_SCATTER:                                                   \
+        algorithm = XMI_SCATTER_ALGORITHM_DEFAULT;                             \
+        break;                                                                 \
+      case XMI_XFER_SCATTER_INT:                                               \
+        algorithm = XMI_SCATTER_INT_ALGORITHM_DEFAULT;                         \
+        break;                                                                 \
+      case XMI_XFER_BARRIER:                                                   \
+        algorithm = XMI_BARRIER_ALGORITHM_DEFAULT;                             \
+        break;                                                                 \
+      case XMI_XFER_ALLTOALL:                                                  \
+        algorithm = XMI_ALLTOALL_ALGORITHM_DEFAULT;                            \
+        break;                                                                 \
+      case XMI_XFER_ALLTOALLV:                                                 \
+        algorithm = XMI_ALLTOALLV_ALGORITHM_DEFAULT;                           \
+        break;                                                                 \
+      case XMI_XFER_ALLTOALLV_INT:                                             \
+        algorithm = XMI_ALLTOALLV_INT_ALGORITHM_DEFAULT;                       \
+        break;                                                                 \
+      case XMI_XFER_SCAN:                                                      \
+        algorithm = XMI_SCAN_ALGORITHM_DEFAULT;                                \
+        break;                                                                 \
+      case XMI_XFER_AMBROADCAST:                                               \
+        algorithm = XMI_AMBROADCAST_ALGORITHM_DEFAULT;                         \
+        break;                                                                 \
+      case XMI_XFER_AMSCATTER:                                                 \
+        algorithm = XMI_AMSCATTER_ALGORITHM_DEFAULT;                           \
+        break;                                                                 \
+      case XMI_XFER_AMGATHER:                                                  \
+        algorithm = XMI_AMGATHER_ALGORITHM_DEFAULT;                            \
+        break;                                                                 \
+      case XMI_XFER_AMREDUCE:                                                  \
+        algorithm = XMI_AMREDUCE_ALGORITHM_DEFAULT;                            \
+        break;                                                                 \
+      default:                                                                 \
+        printf("XMI: invalid xmi_xfer_type\n");                                \
+        break;                                                                 \
+    }                                                                          \
+  }                                                                            \
+  while (0);                                                                   \
 
     /* ************************************************************************* */
     /* ********* Transfer Types, used by geometry and xfer routines ************ */
@@ -75,21 +161,6 @@ extern "C"
      */
     xmi_result_t XMI_Geometry_world (xmi_context_t               context,
                                      xmi_geometry_t            * world_geometry);
-    /**
-     * \brief determines the number of algorithms available for a given op.
-     *
-     * \param[in]     context     xmi context.
-     * \param[in]     geometry    An input geometry to be analyzed.
-     * \param[in]     coll_type   type of collective op.
-     * \param[in/out] algorithm   default algorithm on this geometry.
-     *
-     * \retval        XMI_SUCCESS number of algorithms is determined.
-     * \retval        ?????       There is an error with input parameters
-     */
-    xmi_result_t XMI_Geometry_algorithm_default (xmi_context_t context,
-                                                 xmi_geometry_t geometry,
-                                                 xmi_xfer_type_t coll_type,
-                                                 xmi_algorithm_t *algorithm);
 
     /**
      * \brief determines the number of algorithms available for a given op
@@ -1075,22 +1146,6 @@ extern "C"
     }xmi_xfer_t;
 
     xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
-
-   /**
-    * \brief Invokes a given collective operation and utilizes the XMI advisor
-    *        client to execute the most efficient algorithm based on the state
-    *        (meta data) of the collective call site.
-    * \param[in]   context   xmi context
-    * \param[in]   cmd       collective paramaters
-    * \param[in]   cs_meta   call site meta data
-    *
-    * \retval     0            Success
-    *
-    * \todo doxygen
-    */
-    xmi_result_t XMI_Collective_via_advisor (xmi_context_t context,
-                                             xmi_xfer_t *cmd,
-                                             xmi_metadata_t cs_meta);
 
 #ifdef __cplusplus
 };

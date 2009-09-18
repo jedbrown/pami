@@ -127,6 +127,16 @@ extern "C"
   }
   xmi_dt;
 
+  typedef void*   xmi_geometry_t;
+  typedef size_t  xmi_algorithm_t;
+  
+  typedef struct
+  {
+    size_t lo;
+    size_t hi;
+  }
+  xmi_geometry_range_t;
+  
 
   /**
    * \brief Network type

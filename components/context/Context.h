@@ -106,6 +106,17 @@ namespace XMI
 
         inline xmi_result_t collective (xmi_xfer_t * parameters);
 
+      inline xmi_result_t geometry_algorithms_num (xmi_context_t context,
+                                                   xmi_geometry_t geometry,
+                                                   xmi_xfer_type_t ctype,
+                                                   int *lists_lengths);
+      
+      inline xmi_result_t geometry_algorithm_info (xmi_context_t context,
+                                                   xmi_geometry_t geometry,
+                                                   xmi_xfer_type_t type,
+                                                   xmi_algorithm_t algorithm,
+                                                   int algorithm_type,
+                                                   xmi_metadata_t *mdata);        
         inline xmi_result_t multisend_getroles(xmi_dispatch_t  dispatch,
                                                int            *numRoles,
                                                int            *replRole);
@@ -355,6 +366,36 @@ namespace XMI
       return static_cast<T_Context*>(this)->collective_impl(parameters);
     }
 
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::geometry_algorithms_num (xmi_context_t context,
+                                                              xmi_geometry_t geometry,
+                                                              xmi_xfer_type_t coll_type,
+                                                              int *lists_lengths)
+    {
+      return static_cast<T_Context*>(this)->geometry_algorithms_num_impl(context,
+                                                                         geometry, 
+                                                                         coll_type,
+                                                                         lists_lengths);
+    }
+
+
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::geometry_algorithm_info (xmi_context_t context,
+                                                                 xmi_geometry_t geometry,
+                                                                 xmi_xfer_type_t type,
+                                                                 xmi_algorithm_t algorithm,
+                                                                 int algorithm_type,
+                                                                 xmi_metadata_t *mdata)
+    {
+      return static_cast<T_Context*>(this)->geometry_algorithm_info(context,
+                                                                    geometry, 
+                                                                    type,
+                                                                    algorithm,
+                                                                    algorithm_type,
+                                                                    mdata);
+    
+    }
+    
     template <class T_Context>
     xmi_result_t Context<T_Context>::multisend_getroles(xmi_dispatch_t  dispatch,
                                                         int            *numRoles,
