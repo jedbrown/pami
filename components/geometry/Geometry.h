@@ -51,7 +51,8 @@ namespace XMI
       typedef enum
       {
 	XMI_GKEY_COLLFACTORY     = 0,
-	XMI_GKEY_BARRIEREXECUTOR
+	XMI_GKEY_BARRIEREXECUTOR,
+	XMI_GKEY_LOCALBARRIEREXECUTOR
       }keys;
 
 

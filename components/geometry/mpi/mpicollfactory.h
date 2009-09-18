@@ -147,7 +147,8 @@ namespace XMI
 	  CCMI::Executor::Executor *exe = NULL;
           exe = default_bar->_barrier_registration.generate(&_barrier_executors[0],g);
           g->setKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR, (void*)exe);
-
+          exe = default_bar->_barrier_registration.generate(&_barrier_executors[1],g);
+          g->setKey(XMI::Geometry::XMI_GKEY_LOCALBARRIEREXECUTOR, (void*)exe);
 #if 0            
           exe = _barrier_factory.generate(&_barrier_executors[0], &_ccmi_geometry);
           g.setBarrierExecutor(exe);
