@@ -136,7 +136,7 @@ namespace CCMI
           }
 
           CCMI::Executor::OldBarrier<T_Mcast> *executor = (CCMI::Executor::OldBarrier<T_Mcast>*)
-                                              geometry->getBarrierExecutor();
+	    geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
           CCMI_assert (executor != NULL);
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
                      (int)factory,cdata->_comm,(int)executor));

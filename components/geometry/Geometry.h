@@ -50,8 +50,8 @@ namespace XMI
     {
       typedef enum
       {
-	COLLFACTORY = 0
-
+	XMI_GKEY_COLLFACTORY     = 0,
+	XMI_GKEY_BARRIEREXECUTOR
       }keys;
 
 
@@ -116,8 +116,8 @@ namespace XMI
             inline EXECUTOR_TYPE              getCollectiveExecutor (unsigned color=0);
             inline void                       setCollectiveExecutor (EXECUTOR_TYPE exe,
                                                                      unsigned color=0);
-#endif
             inline void                      *getBarrierExecutor();
+#endif
             static inline T_Geometry         *getCachedGeometry (unsigned comm);
             static inline void                updateCachedGeometry (T_Geometry *geometry,
                                                                     unsigned comm);
@@ -348,13 +348,14 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->setCollectiveExecutor_impl(exe, color);
         }
-#endif
+
         template <class T_Geometry, class T_Mapping>
         inline void * Geometry<T_Geometry, T_Mapping>::getBarrierExecutor()
         {
             return static_cast<T_Geometry*>(this)->getBarrierExecutor_impl();
         }
 
+#endif
         template <class T_Geometry, class T_Mapping>
         inline T_Geometry *Geometry<T_Geometry, T_Mapping>::getCachedGeometry (unsigned comm)
         {
@@ -367,7 +368,6 @@ namespace XMI
         {
             return T_Geometry::updateCachedGeometry_impl(geometry, comm);
         }
-
 
         // These methods were originally from the PGASRT Communicator class
         template <class T_Geometry, class T_Mapping>

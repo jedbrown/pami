@@ -126,7 +126,10 @@ namespace XMI
 
 
 
-      inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g, XMI_NBCollManager *mgr, T_Device *dev)
+      inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g,
+                                       XMI_NBCollManager  *mgr,
+                                       T_Device           *dev,
+                                       XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep> *default_bar)
         {
           _geometry = g;
           _dev      = dev;
@@ -139,10 +142,15 @@ namespace XMI
           _lar        = mgr->allocate (g, TSPColl::LongAllreduceTag);
           _sct        = mgr->allocate (g, TSPColl::ScatterTag);
           _sctv       = mgr->allocate (g, TSPColl::ScattervTag);
-#if 0
-          CCMI::Executor::Executor *exe = NULL;
+
+          _ccmi_bar   = default_bar;
+	  CCMI::Executor::Executor *exe = NULL;
+          exe = default_bar->_barrier_registration.generate(&_barrier_executors[0],g);
+          g->setKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR, (void*)exe);
+
+#if 0            
           exe = _barrier_factory.generate(&_barrier_executors[0], &_ccmi_geometry);
-          _ccmi_geometry.setBarrierExecutor(exe);
+          g.setBarrierExecutor(exe);
           exe = _barrier_factory.generate(&_barrier_executors[1], &_ccmi_geometry);
           _ccmi_geometry.setLocalBarrierExecutor(exe);
 #endif
@@ -449,6 +457,8 @@ namespace XMI
       TSPColl::NBColl<MPIMcastModel>  *_bcast, *_bcast2;
       TSPColl::NBColl<MPIMcastModel>  *_sar,   *_lar;
       TSPColl::NBColl<MPIMcastModel>  *_sct,   *_sctv;
+      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep> *_ccmi_bar;
+      CCMI_Executor_t                           _barrier_executors[2];
     }; // class CollFactory
   };  // namespace CollFactory
 }; // namespace XMI

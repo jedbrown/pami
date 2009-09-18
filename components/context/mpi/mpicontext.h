@@ -53,7 +53,7 @@ namespace XMI
 	  new(_collreg) MPICollreg(&_mpi, &_sysdep);
 
           _world_collfactory=_collreg->analyze(_world_geometry);
-	  _world_geometry->setKey(XMI::Geometry::COLLFACTORY, _world_collfactory);
+	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
 
         }
 
@@ -292,7 +292,7 @@ namespace XMI
           new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
           new(new_geometry) MPIGeometry(&_sysdep.mapping,id, slice_count,rank_slices);
           new_collfactory=_collreg->analyze(new_geometry);
-	  new_geometry->setKey(XMI::Geometry::COLLFACTORY, new_collfactory);
+	  new_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, new_collfactory);
 	  *geometry=(MPIGeometry*) new_geometry;
           return XMI_SUCCESS;
         }
@@ -311,7 +311,7 @@ namespace XMI
         {
 	  MPICollfactory           *collfactory;
 	  MPIGeometry              *new_geometry = (MPIGeometry*) geometry;
-	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
+	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
 	  return collfactory->algorithm(colltype,algorithm,num);
         }
 
@@ -328,7 +328,7 @@ namespace XMI
 	  // This is ok...we can avoid a switch because all the xmi structs
 	  // have the same layout.let's just use barrier for now
 	  MPIGeometry              *new_geometry = (MPIGeometry*)parameters->xfer_barrier.geometry;
-	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::COLLFACTORY);
+	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
           return collfactory->collective(parameters);
         }
 

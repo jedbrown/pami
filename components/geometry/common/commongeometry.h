@@ -216,13 +216,12 @@ namespace XMI
         {
         }
 
-#endif
       inline void            *getBarrierExecutor_impl()
         {
           assert(0);
           return NULL;
         }
-
+#endif
       static inline Common   *getCachedGeometry_impl(unsigned comm)
         {
           assert(0);
@@ -233,7 +232,6 @@ namespace XMI
         {
           assert(0);
         }
-
 
      // These methods were originally from the PGASRT Communicator class
       inline int                        size_impl       (void)
@@ -271,11 +269,11 @@ namespace XMI
               }
           assert(0);
         }
-      inline void                       setKey(int key, void*value)
+      inline void                       setKey_impl(int key, void*value)
       {
 	_kvstore[key]=value;
       }
-      inline void                      *getKey(int key)
+      inline void                      *getKey_impl(int key)
       {
 	return _kvstore[key];
       }
