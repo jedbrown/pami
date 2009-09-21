@@ -11,39 +11,39 @@
  * \brief ???
  */
 
-#ifndef __generic_wq_reduce_h_
-#define __generic_wq_reduce_h_
+#ifndef __components_devices_workqueue_wqringreducemsg_h__
+#define __components_devices_workqueue_wqringreducemsg_h__
 
-#include "generic/Device.h"
-#include "generic/Message.h"
-#include "generic/AdvanceThread.h"
-#include "dcmf.h"
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "xmi.h"
 #include "PipeWorkQueue.h"
-#include "prod/cdi/ReduceModel.h"
+#include "components/devices/MulticombineModel.h"
 #include "math_coremath.h"
 
 extern XMI::Topology *_g_topology_local;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 
 class WQRingReduceMdl;
 class WQRingReduceMsg;
-typedef DCMF::Queueing::Generic::SimpleAdvanceThread WQRingReduceThr;
-typedef DCMF::Queueing::Generic::SimpleSubDevice<WQRingReduceMdl,WQRingReduceMsg,WQRingReduceThr> WQRingReduceDev;
+typedef XMI::Device::Generic::SimpleAdvanceThread WQRingReduceThr;
+typedef XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr> WQRingReduceDev;
 
-}; //-- CDI
-}; //-- DCMF
+}; //-- Device
+}; //-- XMI
 
-extern DCMF::CDI::WQRingReduceDev _g_wqreduce_dev;
+extern XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 ///
 /// \brief A local barrier message that takes advantage of the
 /// Load Linked and Store Conditional instructions
 ///
-class WQRingReduceMsg : public DCMF::Queueing::Generic::GenericMessage {
+class WQRingReduceMsg : public XMI::Device::Generic::GenericMessage {
 private:
 	enum roles {
 		NO_ROLE = 0,
@@ -56,11 +56,11 @@ public:
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
 		XMI::PipeWorkQueue *rwq,
-		XMI_Op op,
-		XMI_Dt dt,
+		xmi_op op,
+		xmi_dt dt,
 		size_t count,
-		XMI_Callback_t cb) :
-	DCMF::Queueing::Generic::GenericMessage(Generic_QS, cb),
+		xmi_callback_t cb) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
 	_iwq(iwq),
 	_swq(swq), // might be NULL
 	_rwq(rwq),
@@ -80,11 +80,11 @@ public:
 	// complaints about multiple definitions.
 	inline void complete();
 
-	inline DCMF::Queueing::MessageStatus advanceThread(DCMF::Queueing::Generic::GenericAdvanceThread *t);
+	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
 
 protected:
 	//friend class WQRingReduceDev;
-	friend class DCMF::Queueing::Generic::SimpleSubDevice<WQRingReduceMdl,WQRingReduceMsg,WQRingReduceThr>;
+	friend class XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr>;
 
 	inline int __setThreads(WQRingReduceThr *t, int n) {
 		int nt = 0;
@@ -98,7 +98,7 @@ protected:
 		return nt;
 	}
 
-	inline DCMF::Queueing::MessageStatus __advanceThread(WQRingReduceThr *thr) {
+	inline XMI::Device::MessageStatus __advanceThread(WQRingReduceThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _rwq->bytesAvailableToProduce();
 		if (wq < min) min = wq;
@@ -109,14 +109,14 @@ protected:
 			wq = _swq->bytesAvailableToConsume();
 			if (wq < min) min = wq;
 			if (min == 0) {
-				return DCMF::Queueing::Active;
+				return XMI::Device::Active;
 			}
 			void *buf[2] = { _iwq->bufferToConsume(), _swq->bufferToConsume() };
 			_func(_rwq->bufferToProduce(), buf, 2, min >> _shift);
 			_swq->consumeBytes(min);
 		} else {
 			if (min == 0) {
-				return DCMF::Queueing::Active;
+				return XMI::Device::Active;
 			}
 			memcpy(_rwq->bufferToProduce(), _iwq->bufferToConsume(), min);
 		}
@@ -129,10 +129,10 @@ protected:
 #ifdef USE_WAKEUP_VECTORS
 			__clearWakeup(thr);
 #endif /* USE_WAKEUP_VECTORS */
-			setStatus(DCMF::Queueing::Done);
-			return DCMF::Queueing::Done;
+			setStatus(XMI::Device::Done);
+			return XMI::Device::Done;
 		}
-		return DCMF::Queueing::Active;
+		return XMI::Device::Active;
 	}
 
 	/// \brief arrange to be woken up when inputs/outputs become "ready"
@@ -173,21 +173,21 @@ protected:
 	coremath _func;
 }; //-- WQRingReduceMsg
 //
-class WQRingReduceMdl : public Reduce::Model<WQRingReduceMdl,WQRingReduceDev,WQRingReduceMsg> {
+class WQRingReduceMdl : public XMI::Device::Interface::MulticombineModel<WQRingReduceMdl> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
-	WQRingReduceMdl(DCMF::SysDep *sysdep, XMI_Result &status) :
-	Reduce::Model<WQRingReduceMdl,WQRingReduceDev,WQRingReduceMsg>(_g_wqreduce_dev, status)
+	WQRingReduceMdl(xmi_result_t &status) :
+	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl>(status)
 	{
-		_me = DCMF_Messager_rank();
+		_me = _g_wqreduce_dev.getSysdep()->mapping()->rank();
 		size_t tz = _g_topology_local->size();
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
-			_wq[x].configure(sysdep, USE_FLAT_BUFFER, 0);
+			_wq[x].configure(_g_wqreduce_dev.getSysdep(), USE_FLAT_BUFFER, 0);
 #else /* ! USE_FLAT_BUFFER */
-			_wq[x].configure(sysdep, 8192);
+			_wq[x].configure(_g_wqreduce_dev.getSysdep(), 8192);
 #endif /* ! USE_FLAT_BUFFER */
 			_wq[x].reset();
 		}
@@ -195,15 +195,11 @@ public:
 
 	inline void reset_impl() {}
 
-	inline bool generateMessage_impl(XMI_Multicombine_t *mcomb);
+	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
 
 private:
 	size_t _me;
 	XMI::PipeWorkQueue _wq[NUM_CORES /* * NUM_THREADS */];
-
-	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(WQRingReduceMsg));
-	}
 }; // class WQRingReduceMdl
 
 void WQRingReduceMsg::complete() {
@@ -211,14 +207,11 @@ void WQRingReduceMsg::complete() {
 	executeCallback();
 }
 
-inline DCMF::Queueing::MessageStatus WQRingReduceMsg::advanceThread(DCMF::Queueing::Generic::GenericAdvanceThread *t) {
+inline XMI::Device::MessageStatus WQRingReduceMsg::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
 	return __advanceThread((WQRingReduceThr *)t);
 }
 
-inline bool WQRingReduceMdl::generateMessage_impl(XMI_Multicombine_t *mcomb) {
-	if (mcomb->req_size < sizeof(WQRingReduceMsg)) {
-		return false;
-	}
+inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	XMI::Topology *data_topo = (XMI::Topology *)mcomb->data_participants;
 	XMI::Topology *results_topo = (XMI::Topology *)mcomb->results_participants;
 	// data_participants will be all local nodes...
@@ -227,7 +220,7 @@ inline bool WQRingReduceMdl::generateMessage_impl(XMI_Multicombine_t *mcomb) {
 	// we keep WQs for all local ranks so that we can adapt
 	// to whatever those others are.
 	//
-	// DCMF_assert_debug(mcomb_info->results_participants->size() == 1);
+	// XMI_assert_debug(mcomb_info->results_participants->size() == 1);
 	//
 	// Simple "ring" reduce... .e.g:
 	//
@@ -256,13 +249,13 @@ inline bool WQRingReduceMdl::generateMessage_impl(XMI_Multicombine_t *mcomb) {
 	if (results_topo->isRankMember(_me)) {
 		// I am root - downstream from eveyone.
 		// _input (op) _wq[meix_1] => _output
-		// DCMF_assert(roles == ROOT_ROLE);
+		// XMI_assert(roles == ROOT_ROLE);
 		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev,
 					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (XMI::PipeWorkQueue *)mcomb->results,
 					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
 	} else if (results_topo->isRankMember(me_1)) {
 		// I am head of stream.
-		// DCMF_assert(roles == NON_ROOT_ROLE);
+		// XMI_assert(roles == NON_ROOT_ROLE);
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
@@ -271,7 +264,7 @@ inline bool WQRingReduceMdl::generateMessage_impl(XMI_Multicombine_t *mcomb) {
 					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
 	} else {
 		// I am upstream of root, but not head.
-		// DCMF_assert(roles == NON_ROOT_ROLE);
+		// XMI_assert(roles == NON_ROOT_ROLE);
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
@@ -283,7 +276,7 @@ inline bool WQRingReduceMdl::generateMessage_impl(XMI_Multicombine_t *mcomb) {
 	return true;
 }
 
-}; //-- CDI
-}; //-- DCMF
+}; //-- Device
+}; //-- XMI
 
-#endif /* __generic_wq_reduce_h_ */
+#endif // __components_devices_workqueue_wqringreducemsg_h__

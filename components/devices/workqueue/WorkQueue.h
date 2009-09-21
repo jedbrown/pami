@@ -11,15 +11,15 @@
  * \brief ???
  */
 
-#ifndef __dcmf_device_workqueue_workqueue_h__
-#define __dcmf_device_workqueue_workqueue_h__
+#ifndef __components_devices_workqueue_workqueue_h__
+#define __components_devices_workqueue_workqueue_h__
 
 #include "math_coremath.h"
-#include "Types.h"
+#include "xmi.h"
 #include "Util.h"
 #include "PipeWorkQueue.h"
 
-namespace DCMF
+namespace XMI
 {
   namespace Device
   {
@@ -104,10 +104,10 @@ namespace DCMF
           ///
           inline void setProducers (unsigned producers, unsigned producer)
           {
-            DCMF_assert_debug(producers > 0);
-            DCMF_assert_debug(producers <= NUM_CORES);
-            DCMF_assert_debug(producer >= 0);
-            DCMF_assert_debug(producer < producers);
+            XMI_assert_debug(producers > 0);
+            XMI_assert_debug(producers <= NUM_CORES);
+            XMI_assert_debug(producer >= 0);
+            XMI_assert_debug(producer < producers);
 
             _producers = producers;
             _producer  = producer;
@@ -128,10 +128,10 @@ namespace DCMF
           ///
           inline void setConsumers (unsigned consumers, unsigned consumer)
           {
-            DCMF_assert_debug(consumers > 0);
-            DCMF_assert_debug(consumers <= NUM_CORES);
-            DCMF_assert_debug(consumer >= 0);
-            DCMF_assert_debug(consumer < consumers);
+            XMI_assert_debug(consumers > 0);
+            XMI_assert_debug(consumers <= NUM_CORES);
+            XMI_assert_debug(consumer >= 0);
+            XMI_assert_debug(consumer < consumers);
 
             _consumers = consumers;
             _consumer  = consumer;
@@ -746,7 +746,7 @@ namespace DCMF
 
     }; /* namespace WorkQueue */
   }; /* namespace Device */
-}; /* namespace DCMF */
+}; /* namespace XMI */
 
 
-#endif
+#endif // __components_devices_workqueue_workqueue_h__

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __generic_wq_bcast_h_
-#define __generic_wq_bcast_h_
+#ifndef __components_devices_workqueue_wqringbcastmsg_h__
+#define __components_devices_workqueue_wqringbcastmsg_h__
 
 #include "generic/Device.h"
 #include "generic/Message.h"
@@ -23,27 +23,27 @@
 
 extern XMI::Topology *_g_topology_local;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 
 class WQRingBcastMdl;
 class WQRingBcastMsg;
-typedef DCMF::Queueing::Generic::SimpleAdvanceThread WQRingBcastThr;
-typedef DCMF::Queueing::Generic::SimpleSubDevice<WQRingBcastMdl,WQRingBcastMsg,WQRingBcastThr> WQRingBcastDev;
+typedef XMI::Device::Generic::SimpleAdvanceThread WQRingBcastThr;
+typedef XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr> WQRingBcastDev;
 
-}; //-- CDI
-}; //-- DCMF
+}; //-- Device
+}; //-- XMI
 
-extern DCMF::CDI::WQRingBcastDev _g_wqbcast_dev;
+extern XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 
 ///
 /// \brief A local bcast message that takes advantage of the
 /// shared-memory workqueues
 ///
-class WQRingBcastMsg : public DCMF::Queueing::Generic::GenericMessage {
+class WQRingBcastMsg : public XMI::Device::Generic::GenericMessage {
 private:
 	enum roles {
 		NO_ROLE = 0,
@@ -56,8 +56,8 @@ public:
 		XMI::PipeWorkQueue *swq,
 		XMI::PipeWorkQueue *rwq,
 		size_t bytes,
-		XMI_Callback_t cb) :
-	DCMF::Queueing::Generic::GenericMessage(Generic_QS, cb),
+		xmi_callback_t cb) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
 	_iwq(iwq),
 	_swq(swq), // might be NULL
 	_rwq(rwq), // might be NULL (but not both)
@@ -69,11 +69,11 @@ public:
 	// complaints about multiple definitions.
 	inline void complete();
 
-	inline DCMF::Queueing::MessageStatus advanceThread(DCMF::Queueing::Generic::GenericAdvanceThread *t);
+	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
 
 protected:
 	//friend class WQRingBcastDev; // Until C++ catches up with real programming languages:
-	friend class DCMF::Queueing::Generic::SimpleSubDevice<WQRingBcastMdl,WQRingBcastMsg,WQRingBcastThr>;
+	friend class XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr>;
 
 	inline int __setThreads(WQRingBcastThr *t, int n) {
 		int nt = 0;
@@ -87,7 +87,7 @@ protected:
 		return nt;
 	}
 
-	inline DCMF::Queueing::MessageStatus __advanceThread(WQRingBcastThr *thr) {
+	inline XMI::Device::MessageStatus __advanceThread(WQRingBcastThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _iwq->bytesAvailableToConsume();
 		if (wq < min) min = wq;
@@ -100,7 +100,7 @@ protected:
 			if (wq < min) min = wq;
 		}
 		if (min == 0) {
-			return DCMF::Queueing::Active;
+			return XMI::Device::Active;
 		}
 		if (_rwq) {
 			memcpy(_rwq->bufferToProduce(), _iwq->bufferToConsume(), min);
@@ -118,10 +118,10 @@ protected:
 #ifdef USE_WAKEUP_VECTORS
 			__clearWakeup(thr);
 #endif /* USE_WAKEUP_VECTORS */
-			setStatus(DCMF::Queueing::Done);
-			return DCMF::Queueing::Done;
+			setStatus(XMI::Device::Done);
+			return XMI::Device::Done;
 		}
-		return DCMF::Queueing::Active;
+		return XMI::Device::Active;
 	}
 
 	/// \brief arrange to be woken up when inputs/outputs become "ready"
@@ -164,37 +164,31 @@ protected:
 	size_t _bytes;
 }; //-- WQRingBcastMsg
 
-class WQRingBcastMdl : public Broadcast::Model<WQRingBcastMdl,WQRingBcastDev,WQRingBcastMsg> {
+class WQRingBcastMdl : public XMI::Device::Interface::Multicastmodel<WQRingBcastMdl> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
-	WQRingBcastMdl(DCMF::SysDep *sysdep, XMI_Result &status) :
-	Broadcast::Model<WQRingBcastMdl,WQRingBcastDev,WQRingBcastMsg>(_g_wqbcast_dev, status)
+	WQRingBcastMdl(xmi_result_t &status) :
+	XMI::Device::Interface::Multicastmodel<WQRingBcastMdl>(status)
 	{
-		_me = DCMF_Messager_rank();
+		_me = _g_wqbcast_dev.getSysdep()->mapping()->rank();
 		size_t tz = _g_topology_local->size();
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
-			_wq[x].configure(sysdep, USE_FLAT_BUFFER, 0);
+			_wq[x].configure(_g_wqbcast_dev.getSysdep(), USE_FLAT_BUFFER, 0);
 #else /* ! USE_FLAT_BUFFER */
-			_wq[x].configure(sysdep, 8192);
+			_wq[x].configure(_g_wqbcast_dev.getSysdep(), 8192);
 #endif /* ! USE_FLAT_BUFFER */
 			_wq[x].reset();
 		}
 	}
 
-	inline void reset_impl() {}
-
-	inline bool generateMessage_impl(XMI_Multicast_t *mcast);
+	inline bool postMulticast_impl(xmi_multicast_t *mcast);
 
 private:
 	size_t _me;
 	XMI::PipeWorkQueue _wq[NUM_CORES /* * NUM_THREADS */];
-
-	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(WQRingBcastMsg));
-	}
 }; // class WQRingBcastMdl
 
 void WQRingBcastMsg::complete() {
@@ -202,14 +196,11 @@ void WQRingBcastMsg::complete() {
 	executeCallback();
 }
 
-inline DCMF::Queueing::MessageStatus WQRingBcastMsg::advanceThread(DCMF::Queueing::Generic::GenericAdvanceThread *t) {
+inline XMI::Device::MessageStatus WQRingBcastMsg::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
 	return __advanceThread((WQRingBcastThr *)t);
 }
 
-inline bool WQRingBcastMdl::generateMessage_impl(XMI_Multicast_t *mcast) {
-	if (mcast->req_size < sizeof(WQRingBcastMsg)) {
-		return false;
-	}
+inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
 	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
 	size_t meix = dst_topo->rank2Index(_me);
@@ -221,7 +212,7 @@ inline bool WQRingBcastMdl::generateMessage_impl(XMI_Multicast_t *mcast) {
 	WQRingBcastMsg *msg;
 	if (src_topo->isRankMember(_me)) {      // I am root
 		// I am root - at head of stream
-		// DCMF_assert(roles == ROOT_ROLE);
+		// XMI_assert(roles == ROOT_ROLE);
 		// _input ===> _wq[meix]
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
@@ -230,12 +221,12 @@ inline bool WQRingBcastMdl::generateMessage_impl(XMI_Multicast_t *mcast) {
 					(XMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
 	} else if (src_topo->isRankMember(me_1)) {
 		// I am tail of stream - no one is downstream from me.
-		// DCMF_assert(roles == NON_ROOT_ROLE);
+		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] ===> results
 		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
 					&_wq[meix], NULL, (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
 	} else {
-		// DCMF_assert(roles == NON_ROOT_ROLE);
+		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] =+=> results
 		//              +=> _wq[meix]
 #ifdef USE_FLAT_BUFFER
@@ -248,7 +239,7 @@ inline bool WQRingBcastMdl::generateMessage_impl(XMI_Multicast_t *mcast) {
 	return true;
 }
 
-}; //-- CDI
-}; //-- DCMF
+}; //-- Device
+}; //-- XMI
 
-#endif /* __generic_wq_bcast_h_ */
+#endif // __components_devices_workqueue_wqringbcastmsg_h__

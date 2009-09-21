@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __dcmf_device_workqueue_sharedworkqueue_h__
-#define __dcmf_device_workqueue_sharedworkqueue_h__
+#ifndef __components_devices_workqueue_sharedworkqueue_h__
+#define __components_devices_workqueue_sharedworkqueue_h__
 
 #include "WorkQueue.h"
 #include "SysDep.h"
@@ -46,7 +46,7 @@
 #define SQU(x, y, z)
 #endif
 
-namespace DCMF
+namespace XMI
 {
   namespace Device
   {
@@ -83,7 +83,7 @@ namespace DCMF
           ///
           /// \param[in] queue Location of the workqueue structure in shared memory.
           ///
-          SharedWorkQueue (DCMF::SysDep * sysdep, unsigned workunits = 32, unsigned worksize = 8192) :
+          SharedWorkQueue (XMI::SysDep * sysdep, unsigned workunits = 32, unsigned worksize = 8192) :
             WorkQueue (),
             _qsize (workunits * worksize),
             _worksize (worksize),
@@ -91,8 +91,8 @@ namespace DCMF
           {
             size_t size = sizeof(workqueue_t) + _qsize;
             _sharedqueue = (workqueue_t *)  sysdep->memoryManager().scratchpad_dynamic_area_memalign(16, size);
-		DCMF_assert_debug(_sharedqueue);
-		DCMF_assert_debug((_qsize & (_qsize - 1)) == 0);
+		XMI_assert_debug(_sharedqueue);
+		XMI_assert_debug((_qsize & (_qsize - 1)) == 0);
 		_qmask = _qsize - 1;
           }
 
@@ -450,4 +450,4 @@ namespace DCMF
     };
   };
 };
-#endif
+#endif // __components_devices_workqueue_sharedworkqueue_h__

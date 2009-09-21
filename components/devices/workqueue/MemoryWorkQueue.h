@@ -11,12 +11,12 @@
  * \brief ???
  */
 
-#ifndef __dcmf_device_workqueue_memoryworkqueue_h__
-#define __dcmf_device_workqueue_memoryworkqueue_h__
+#ifndef __components_devices_workqueue_memoryworkqueue_h__
+#define __components_devices_workqueue_memoryworkqueue_h__
 
-#include "WorkQueue.h"
+#include "components/devices/workqueue/WorkQueue.h"
 
-namespace DCMF
+namespace XMI
 {
   namespace Device
   {
@@ -91,7 +91,7 @@ namespace DCMF
             _consumed (0),
             _input (input)
           {
-            DCMF_assert_debug(_consumers == 1);
+            XMI_assert_debug(_consumers == 1);
             if (input) _produced = length;
           }
 #endif
@@ -134,7 +134,7 @@ namespace DCMF
 
           inline size_t bytesAvailableToProduce (unsigned producer)
           {
-            DCMF_abort();
+            XMI_abort();
             return 0;
           }
 
@@ -162,7 +162,7 @@ namespace DCMF
 
           inline size_t bytesAvailableToConsume (unsigned consumer)
           {
-            DCMF_assert_debug(0);
+            XMI_assert_debug(0);
             return 0;
           }
 
@@ -187,7 +187,7 @@ namespace DCMF
 
           inline size_t getBytesProduced (unsigned producer)
           {
-            DCMF_assert_debug(0);
+            XMI_assert_debug(0);
             return 0;
           }
 
@@ -198,7 +198,7 @@ namespace DCMF
 
           inline size_t getBytesConsumed (unsigned consumer)
           {
-            DCMF_assert_debug(0);
+            XMI_assert_debug(0);
             return 0;
           }
 
@@ -224,7 +224,7 @@ namespace DCMF
 
           inline char * bufferToProduce (unsigned producer)
           {
-            DCMF_assert_debug(0);
+            XMI_assert_debug(0);
             return NULL;
           }
 
@@ -235,7 +235,7 @@ namespace DCMF
 
           inline void produceBytes (size_t bytes, unsigned producer)
           {
-            DCMF_assert_debug(0);
+            XMI_assert_debug(0);
           }
 
           inline void produceBytes (size_t bytes)
@@ -245,7 +245,7 @@ namespace DCMF
 
           inline char * bufferToConsume (unsigned consumer)
           {
-            DCMF_assert_debug(0);
+            XMI_assert_debug(0);
             return NULL;
           }
 
@@ -256,7 +256,7 @@ namespace DCMF
 
           inline void consumeBytes (size_t bytes, unsigned consumer)
           {
-            DCMF_assert_debug(0);
+            XMI_assert_debug(0);
           }
 
           inline void consumeBytes (size_t bytes)
@@ -274,4 +274,4 @@ namespace DCMF
   };
 };
 
-#endif
+#dendif // __components_devices_workqueue_memoryworkqueue_h__

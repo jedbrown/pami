@@ -11,38 +11,38 @@
  * \brief ???
  */
 
-#ifndef __dcmf_workqueue_localbcastwqmsg_h__
-#define __dcmf_workqueue_localbcastwqmsg_h__
+#ifndef __xmi_components_devices_workqueue_localbcastwqmsg_h__
+#define __xmi_components_devices_workqueue_localbcastwqmsg_h__
 
-#include "workqueue/SharedWorkQueue.h"
-#include "workqueue/MemoryWorkQueue.h"
+#include "components/devices/workqueue/SharedWorkQueue.h"
+#include "components/devices/workqueue/MemoryWorkQueue.h"
 #include "math_coremath.h"
 #include "SysDep.h"
-#include "generic/Device.h"
-#include "generic/SubDevice.h"
-#include "generic/Message.h"
-#include "generic/AdvanceThread.h"
-#include "prod/cdi/BroadcastModel.h"
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/SubDevice.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "components/devices/MulticastModel.h"
 
 extern XMI::Topology *_g_topology_local;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 
 class LocalBcastWQModel;
 class LocalBcastWQMessage;
-typedef DCMF::Queueing::Generic::GenericAdvanceThread LocalBcastWQThread;
-typedef DCMF::Queueing::Generic::SimpleSubDevice<LocalBcastWQModel,LocalBcastWQMessage,LocalBcastWQThread> LocalBcastWQDevice;
+typedef XMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
+typedef XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread> LocalBcastWQDevice;
 
-}; // namespace CDI
-}; // namespace DCMF
+}; // namespace Device
+}; // namespace XMI
 
-extern DCMF::CDI::LocalBcastWQDevice _g_l_bcastwq_dev;
+extern XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 
-class LocalBcastWQMessage : public DCMF::Queueing::Generic::GenericMessage {
+class LocalBcastWQMessage : public XMI::Device::Generic::GenericMessage {
 public:
 
           ///
@@ -58,13 +58,13 @@ public:
           ///                         broadcast buffer
           ///
           inline LocalBcastWQMessage(BaseDevice &device,
-                                      XMI_Callback_t   cb,
-                                      DCMF::Device::WorkQueue::SharedWorkQueue & workqueue,
+                                      xmi_callback_t   cb,
+                                      XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole,
                                       XMI::PipeWorkQueue   * sbuffer,
                                       XMI::PipeWorkQueue   * rbuffer,
                                       size_t            nbytes) :
-            DCMF::Queueing::Generic::GenericMessage (device, cb),
+            XMI::Device::Generic::GenericMessage (device, cb),
             _isrootrole (isrootrole),
             _sbuffer (*sbuffer),
             _rbuffer (*rbuffer),
@@ -72,29 +72,29 @@ public:
           {
           }
 
-	inline DCMF::Queueing::MessageStatus advanceThread(DCMF::Queueing::Generic::GenericAdvanceThread *t);
+	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
 
 	inline void complete();
 
 private:
 	//friend class LocalBcastWQDevice;
-	friend class DCMF::Queueing::Generic::SimpleSubDevice<LocalBcastWQModel,LocalBcastWQMessage,LocalBcastWQThread>;
+	friend class XMI::Device::Generic::SimpleSubDevice<LocalBcastWQModel,LocalBcastWQMessage,LocalBcastWQThread>;
 
-	inline DCMF::Queueing::MessageStatus __advanceThread(LocalBcastWQThread *thr) {
+	inline XMI::Device::MessageStatus __advanceThread(LocalBcastWQThread *thr) {
 		// This works around a bug with "g++ -fPIC -O3"...
-		coremath1 func = (coremath1) DCMF::Device::WorkQueue::SharedWorkQueue::shmemcpy;
+		coremath1 func = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
 		if (_isrootrole) {
 			// "broadcast" the source buffer into the shared queue.
 			_shared.Q2Q(_sbuffer, func, 0);
 
 			// If all bytes have been copied to the shared queue then the root is done.
-			if (_sbuffer.bytesAvailableToConsume() == 0) setStatus(DCMF::Queueing::Done);
+			if (_sbuffer.bytesAvailableToConsume() == 0) setStatus(XMI::Device::Done);
 		} else {
 			// read bytes from the shared queue into the local result buffer.
 			_shared.Q2Qr(_rbuffer, func, 0);
 
 			// If all bytes have been copied from the shared queue then the recv is done.
-			if (_rbuffer.bytesAvailableToProduce() == 0) setStatus(DCMF::Queueing::Done);
+			if (_rbuffer.bytesAvailableToProduce() == 0) setStatus(XMI::Device::Done);
 		}
 
 		return getStatus();
@@ -110,18 +110,18 @@ private:
           bool              _isrootrole;
           XMI::PipeWorkQueue   &_sbuffer;
           XMI::PipeWorkQueue   &_rbuffer;
-          DCMF::Device::WorkQueue::SharedWorkQueue & _shared;
+          XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalBcastWQMessage
 
-class LocalBcastWQModel : public Broadcast::Model<LocalBcastWQModel,LocalBcastWQDevice,LocalBcastWQMessage> {
+class LocalBcastWQModel : public XMI::Device::Interface::Multicastmodel<LocalBcastWQModel> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
-	LocalBcastWQModel(DCMF::SysDep *sysdep, XMI_Result &status) :
-	Broadcast::Model<LocalBcastWQModel,LocalBcastWQDevice,LocalBcastWQMessage>(_g_l_bcastwq_dev, status),
-	_shared(sysdep),
-	_peer(_g_topology_local->rank2Index(sysdep->mapping().rank())),
+	LocalBcastWQModel(xmi_result_t &status) :
+	XMI::Device::Interface::Multicastmodel<LocalBcastWQModel>(status),
+	_shared(_g_l_bcastwq_dev.getSysdep()),
+	_peer(_g_topology_local->rank2Index(_g_l_bcastwq_dev.getSysdep()->mapping().rank())),
 	_npeers(_g_topology_local->size())
 	{
 		if (!_shared.available()) {
@@ -139,9 +139,9 @@ public:
 		}
 	}
 
-	inline bool generateMessage_impl(XMI_Multicast_t *mcast);
+	inline bool popstMulticast_impl(xmi_multicast_t *mcast);
 private:
-	DCMF::Device::WorkQueue::SharedWorkQueue _shared;
+	XMI::Device::WorkQueue::SharedWorkQueue _shared;
 	unsigned _peer;
 	unsigned _npeers;
 }; // class LocalBcastWQModel
@@ -151,14 +151,11 @@ void LocalBcastWQMessage::complete() {
         executeCallback();
 }
 
-inline DCMF::Queueing::MessageStatus LocalBcastWQMessage::advanceThread(DCMF::Queueing::Generic::GenericAdvanceThread *t) {
+inline XMI::Device::MessageStatus LocalBcastWQMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
 	return __advanceThread((LocalBcastWQThread *)t);
 }
 
-inline bool LocalBcastWQModel::generateMessage_impl(XMI_Multicast_t *mcast) {
-	if (mcast->req_size < sizeof(LocalBcastWQMessage)) {
-		return false;
-	}
+inline bool LocalBcastWQModel::popstMulticast_impl(xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
 	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
@@ -176,7 +173,7 @@ inline bool LocalBcastWQModel::generateMessage_impl(XMI_Multicast_t *mcast) {
 	return true;
 }
 
-}; // namespace CDI
-}; // namespace DCMF
+}; // namespace Device
+}; // namespace XMI
 
-#endif // __dcmf_workqueue_localbcastwqmsg_h__
+#endif // __xmi_components_devices_workqueue_localbcastwqmsg_h__

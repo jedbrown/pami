@@ -26,23 +26,23 @@
 
 extern XMI::Topology *_g_topology_local;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 
 class LocalAllreduceWQModel;
 class LocalAllreduceWQMessage;
-typedef DCMF::Queueing::Generic::GenericAdvanceThread LocalAllreduceWQThread;
-typedef DCMF::Queueing::Generic::SimpleSubDevice<LocalAllreduceWQModel,LocalAllreduceWQMessage,LocalAllreduceWQThread> LocalAllreduceWQDevice;
+typedef XMI::Device::Generic::GenericAdvanceThread LocalAllreduceWQThread;
+typedef XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread> LocalAllreduceWQDevice;
 
-}; // namespace CDI
-}; // namespace DCMF
+}; // namespace Device
+}; // namespace XMI
 
-extern DCMF::CDI::LocalAllreduceWQDevice _g_l_allreducewq_dev;
+extern XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 
-namespace DCMF {
-namespace CDI {
+namespace XMI {
+namespace Device {
 
-class LocalAllreduceWQMessage : public DCMF::Queueing::Generic::GenericMessage {
+class LocalAllreduceWQMessage : public XMI::Device::Generic::GenericMessage {
 private:
 	enum roles {
 		NO_ROLE = 0,
@@ -67,7 +67,7 @@ public:
           ///
           inline LocalAllreduceWQMessage (BaseDevice      & device,
                                           XMI_Callback_t   cb,
-                                          DCMF::Device::WorkQueue::SharedWorkQueue & workqueue,
+                                          XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
                                           unsigned          npeers,
                                           XMI::PipeWorkQueue *swq,
@@ -75,7 +75,7 @@ public:
                                           unsigned          count,
                                           coremath          func,
                                           int               dtshift) :
-            DCMF::Queueing::Generic::GenericMessage (device, cb),
+            XMI::Device::Generic::GenericMessage (device, cb),
             _peer (peer),
             _func (func),
             _dtshift (dtshift),
@@ -89,27 +89,27 @@ public:
 
 protected:
 	//friend class LocalAllreduceWQDevice;
-	friend class DCMF::Queueing::Generic::SimpleSubDevice<LocalAllreduceWQModel,LocalAllreduceWQMessage,LocalAllreduceWQThread>;
+	friend class XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread>;
 
           ///
           /// \brief Advance the allreduce shared memory message
           ///
-          inline DCMF::Queueing::MessageStatus advanceThread(LocalAllreduceWQThread *thr);
+          inline XMI::Device::MessageStatus advanceThread(LocalAllreduceWQThread *thr);
 
-	inline DCMF::Queueing::MessageStatus __advanceThread(LocalAllreduceWQThread *thr) {
+	inline XMI::Device::MessageStatus __advanceThread(LocalAllreduceWQThread *thr) {
 		if (_peer == 0) {
-			_shared.Q2Q (*_source, (coremath1) DCMF::Device::WorkQueue::SharedWorkQueue::shmemcpy, 0);
+			_shared.Q2Q (*_source, (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy, 0);
 		} else {
 			_shared.reduceInPlace (*_source, _func, _dtshift);
 		}
 
-		_shared.Q2Qr (*_result, (coremath1) DCMF::Device::WorkQueue::SharedWorkQueue::shmemcpy, 0);
+		_shared.Q2Qr (*_result, (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy, 0);
 
 		// If all bytes have been copied from the shared queue into the
 		// local result buffer then the peer is done.
 		// NOTE! This assumes the result WQ is a "flat buffer" and thus
 		// actually has a "hard stop".
-		if (_result->bytesAvailableToProduce() == 0) setStatus(DCMF::Queueing::Done);
+		if (_result->bytesAvailableToProduce() == 0) setStatus(XMI::Device::Done);
 
 		return getStatus();
 	}
@@ -127,18 +127,18 @@ private:
           int               _dtshift;
           XMI::PipeWorkQueue   *_source;
           XMI::PipeWorkQueue   *_result;
-          DCMF::Device::WorkQueue::SharedWorkQueue & _shared;
+          XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalAllreduceWQMessage
 
-class LocalAllreduceWQModel : public Reduce::Model<LocalAllreduceWQModel,LocalAllreduceWQDevice,LocalAllreduceWQMessage> {
+class LocalAllreduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
-	LocalAllreduceWQModel(DCMF::SysDep *sysdep, XMI_Result &status) :
-	Reduce::Model<LocalAllreduceWQModel,LocalAllreduceWQDevice,LocalAllreduceWQMessage>(_g_l_allreducewq_dev, status),
-	_shared(sysdep),
-	_peer(_g_topology_local->rank2Index(sysdep->mapping().rank())),
+	LocalAllreduceWQModel(XMI_Result &status) :
+	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel>(status),
+	_shared(_g_l_allreducewq_dev.getSysdep()),
+	_peer(_g_topology_local->rank2Index(_g_l_allreducewq_dev.getSysdep()->mapping().rank())),
 	_npeers(_g_topology_local->size())
 	{
 		if (!_shared.available()) {
@@ -156,10 +156,10 @@ public:
 		}
 	}
 
-	inline bool generateMessage_impl(XMI_Multicombine_t *mcomb);
+	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
 
 private:
-	DCMF::Device::WorkQueue::SharedWorkQueue _shared;
+	XMI::Device::WorkQueue::SharedWorkQueue _shared;
 	unsigned _peer;
 	unsigned _npeers;
 
@@ -173,14 +173,11 @@ void LocalAllreduceWQMessage::complete() {
 	executeCallback();
 }
 
-inline DCMF::Queueing::MessageStatus LocalAllreduceWQMessage::advanceThread(LocalAllreduceWQThread *thr) {
+inline XMI::Device::MessageStatus LocalAllreduceWQMessage::advanceThread(LocalAllreduceWQThread *thr) {
 	return __advanceThread(thr);
 }
 
-inline bool LocalAllreduceWQModel::generateMessage_impl(XMI_Multicombine_t *mcomb) {
-	if (mcomb->req_size < sizeof(LocalAllreduceWQMessage)) {
-		return false;
-	}
+inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	// assert((data_topo .U. results_topo).size() == _npeers);
 	int dtshift = dcmf_dt_shift[mcomb->dtype];
 	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
@@ -195,7 +192,7 @@ inline bool LocalAllreduceWQModel::generateMessage_impl(XMI_Multicombine_t *mcom
 	return true;
 }
 
-}; // namespace CDI
-}; // namespace DCMF
+}; // namespace Device
+}; // namespace XMI
 
 #endif // __dcmf_workqueue_localallreducewqmsg_h__
