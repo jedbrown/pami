@@ -395,6 +395,7 @@ namespace XMI
 	      }
 	      break;
 	    default:
+              assert(0);
 	      return XMI_UNIMPL;
 	    }
 

@@ -24,6 +24,8 @@
 
 namespace XMI
 {
+  extern std::map<unsigned, xmi_geometry_t> geometry_map;
+  extern std::map<unsigned, xmi_geometry_t> cached_geometry;
   namespace Geometry
   {
     template <class T_Mapping>
@@ -46,14 +48,31 @@ namespace XMI
                      xmi_geometry_range_t rangelist[]):
 	Geometry<XMI::Geometry::Common<T_Mapping>, T_Mapping>(mapping, comm, numranges, rangelist),
 	_kvstore(),
-        _commid(comm)
+        _commid(comm),
+        _nranks(0)
         {
           this->_rank      = mapping->task();
           this->_rangelist = rangelist;
           this->_numranges = numranges;
           this->_size      = 0;
-          for(int i=0; i<numranges; i++)
+          int i;
+          for(i=0; i<numranges; i++)            
             this->_size+=(this->_rangelist[i].hi-this->_rangelist[i].lo+1);
+
+          for(i=0; i<numranges; i++)
+	    _nranks+=rangelist[i].hi-rangelist[i].lo+1;
+
+          _ranks = (unsigned int *)malloc(_nranks*sizeof(*_ranks));
+          int k = 0;
+          for(i=0; i<numranges; i++)
+              {
+                int range = rangelist[i].hi-rangelist[i].lo+1;
+		int j     = 0;
+		for(j=0;j<range;j++,k++)
+                  _ranks[k] = rangelist[i].lo + j;
+              }
+          geometry_map[_commid]=this;
+
         }
 
       inline int                       getColorsArray_impl()
@@ -78,18 +97,15 @@ namespace XMI
         }
       inline unsigned                  comm_impl()
         {
-          assert(0);
-	  return 0;
+          return _commid;
         }
       inline unsigned                 *ranks_impl()
         {
-          assert(0);
-	  return NULL;
+          return _ranks;
         }
       inline unsigned                  nranks_impl()
         {
-          assert(0);
-	  return 0;
+          return _nranks;
         }
       inline int                       myIdx_impl()
         {
@@ -224,13 +240,13 @@ namespace XMI
 #endif
       static inline Common   *getCachedGeometry_impl(unsigned comm)
         {
-          assert(0);
-          return NULL;
+          return (Common*)cached_geometry[comm];
         }
       static inline void               updateCachedGeometry_impl(Common *geometry,
                                                                  unsigned comm)        
         {
-          assert(0);
+          assert(geometry!=NULL);
+          cached_geometry[comm]=(void*)geometry;
         }
 
      // These methods were originally from the PGASRT Communicator class
@@ -270,12 +286,13 @@ namespace XMI
           assert(0);
         }
       inline void                       setKey_impl(int key, void*value)
-      {
+        {
 	_kvstore[key]=value;
-      }
+        }
       inline void                      *getKey_impl(int key)
       {
-	return _kvstore[key];
+        void * value = _kvstore[key];
+	return value;
       }
 
     private:
@@ -287,6 +304,8 @@ namespace XMI
       int                   _size;
       MatchQueue            _ue;
       MatchQueue            _post;
+      unsigned             *_ranks;
+      int                   _nranks;
 
 
     }; // class Geometry

@@ -24,10 +24,9 @@
 
 namespace XMI
 {
+  extern std::map<unsigned, xmi_geometry_t> geometry_map;
   namespace CollRegistration
   {
-    extern std::map<unsigned, xmi_geometry_t> geometry_map;
-    
     template <class T_Geometry, class T_Collfactory, class T_Device, class T_Sysdep>
     class MPI : public CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
     {
@@ -45,8 +44,7 @@ namespace XMI
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
         _ccmibarrier(dev, sd, mapidtogeometry)
-        {
-          
+        {          
 	  // Register and link each collective into a queue for analysis
 	  _nbCollMgr.initialize();
 
@@ -106,7 +104,8 @@ namespace XMI
       
       static xmi_geometry_t mapidtogeometry (int comm)
         {
-          return geometry_map[comm];
+          xmi_geometry_t g = geometry_map[comm];
+          return g;
         }
       
     public:

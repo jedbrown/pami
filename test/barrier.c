@@ -80,8 +80,8 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-  xmi_algorithm_t algorithm[1];
-  int             num_algorithm = 1;
+  xmi_algorithm_t algorithm[20];
+  int             num_algorithm = 20;
   result = XMI_Geometry_algorithm(context,
 				  XMI_XFER_BARRIER,
 				  world_geometry,
@@ -109,42 +109,46 @@ int main (int argc, char ** argv)
   _barrier(context, &barrier);
   _barrier(context, &barrier);
 
-  double ti, tf, usec;
-  if(!task_id)
-    {
-      ti=timer();
-      _barrier(context, &barrier);
-      tf=timer();
-      usec = tf - ti;
+  int algo;
+  for(algo=0; algo<num_algorithm; algo++)
+      {
+        double ti, tf, usec;
+        barrier.algorithm = algorithm[algo];
+        if(!task_id)
+            {
+              ti=timer();
+              _barrier(context, &barrier);
+              tf=timer();
+              usec = tf - ti;
 
-      if(usec < 1800000.0 || usec > 2200000.0)
-	fprintf(stderr, "Barrier error: usec=%f want between %f and %f!\n", usec, 1800000.0, 2200000.0);
-      else
-	fprintf(stderr, "Barrier correct!\n");
-    }
-  else
-    {
-      sleep(2);
-      _barrier(context, &barrier);
-    }
+              if(usec < 1800000.0 || usec > 2200000.0)
+                fprintf(stderr, "Barrier error: usec=%f want between %f and %f!\n",
+                        usec, 1800000.0, 2200000.0);
+              else
+                fprintf(stderr, "Barrier correct!\n");
+            }
+        else
+            {
+              sleep(2);
+              _barrier(context, &barrier);
+            }
 
+        if(!task_id)
+          fprintf(stderr, "Test Barrier Performance %d of %d algorithms\n",
+                  algo+1, num_algorithm);
+        int niter=10000;
+        _barrier(context, &barrier);
 
-  if(!task_id)
-    fprintf(stderr, "Test Barrier Performance\n");
-  int niter=10000;
-  _barrier(context, &barrier);
+        ti=timer();
+        for(int i=0; i<niter; i++)
+          _barrier(context, &barrier);
 
+        tf=timer();
+        usec = tf - ti;
 
-  ti=timer();
-  for(int i=0; i<niter; i++)
-    _barrier(context, &barrier);
-
-  tf=timer();
-  usec = tf - ti;
-
-  if(!task_id)
-    fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
-
+        if(!task_id)
+          fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
+      }
 
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)

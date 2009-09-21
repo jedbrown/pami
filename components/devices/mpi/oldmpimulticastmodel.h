@@ -95,16 +95,23 @@ namespace XMI
 	      XMI_assert (rc == MPI_SUCCESS);
 	    }
 	  _device.enqueue(hdr);
-	  //          _g_sendreq_list.push_front(hdr);
           return rc;
-
         }
 
 
 	inline unsigned send (xmi_oldmulticast_t *mcastinfo)
         {
-	  assert(0);
-	  return 0;
+          return this->send((XMI_Request_t*)mcastinfo->request,
+                            &mcastinfo->cb_done,
+                            XMI_MATCH_CONSISTENCY,
+                            mcastinfo->msginfo,
+                            mcastinfo->count,
+                            mcastinfo->connection_id,
+                            mcastinfo->src,
+                            mcastinfo->bytes,
+                            (unsigned *)mcastinfo->opcodes,
+                            mcastinfo->ranks,
+                            mcastinfo->nranks);
         }
 
 
