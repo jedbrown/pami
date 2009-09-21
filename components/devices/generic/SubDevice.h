@@ -100,7 +100,7 @@ public:
 
 	virtual ~GenericSubDevice() { }
 
-	inline XMI::SysDep *getSysdep() { return _sd; }
+	inline const XMI::SysDep *getSysdep() { return _sd; }
 
 	inline int advanceRecv(int channel = -1);
 
@@ -207,7 +207,7 @@ protected:
 	bool _hasBlockingAdvance;
 	int _nRoles;
 	int _repl;
-	XMI::SysDep *_sd;
+	const XMI::SysDep *_sd;
 }; /* class GenericSubDevice */
 
 /// \brief Simple Sub-Device where no threading is used.

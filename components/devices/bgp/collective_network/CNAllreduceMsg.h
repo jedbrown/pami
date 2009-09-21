@@ -200,21 +200,22 @@ protected:
 	unsigned _nThreads;
 }; // class CNAllreduceMessage
 
-class CNAllreduceModel : public Impl::MulticombineModelImpl {
+class CNAllreduceModel : public XMI::Device::Interface::MulticombineModel<CNAllreduceModel> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 
-	CNAllreduceModel(XMI::SysDep *sysdep, XMI_Result &status) :
-	Impl::MulticombineModelImpl(status)
+	CNAllreduceModel(XMI_Result &status) :
+	XMI::Device::Interface::MulticombineModel<CNAllreduceModel>(status)
 	{
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
 		_me = sysdep->mapping().rank();
 		// at least one must do this
 		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
+		// if we need sysdep, use _g_cnallreduce_dev.getSysdep()...
 	}
 
-	inline bool postMulticombine_impl(CNAllreduceMessage *msg);
+	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
 
 private:
 	size_t _me;
@@ -241,23 +242,24 @@ XMI::Device::MessageStatus CNAllreduceMessage::advanceThread(XMI::Device::Generi
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")
-inline bool CNAllreduceModel::postMulticombine_impl(CNAllreduceMessage *msg) {
-	XMI::Device::BGP::CNAllreduceSetup &tas = XMI::Device::BGP::CNAllreduceSetup::getCNAS(_getDt(), _getOp());
+inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
+	XMI::Device::BGP::CNAllreduceSetup &tas = XMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
 	// assert(tas._pre == NULL);
 	if (tas._pre) {
 		return false;
 	}
-	XMI::Topology *result_topo = (XMI::Topology *)_getResultsRanks();
+	XMI::Topology *result_topo = (XMI::Topology *)mcomb->results_participants();
 	bool doStore = (!result_topo || result_topo->isRankMember(_me));
-	size_t bytes = _getCount() << xmi_dt_shift[_getDt()];
+	size_t bytes = mcomb->count << xmi_dt_shift[mcomb->dtype];
 
 	// could try to complete allreduce before construction, but for now the code
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
-	new (msg) CNAllreduceMessage(_g_cnallreduce_dev,
-			(XMI::PipeWorkQueue *)_getData(),
-			(XMI::PipeWorkQueue *)_getResults(),
-			bytes, doStore, _getRoles(), _getCallback(), _dispatch_id, tas);
+	CNAllreduceMessage *msg;
+	msg = new (mcomb->request) CNAllreduceMessage(_g_cnallreduce_dev,
+			(XMI::PipeWorkQueue *)mcomb->data,
+			(XMI::PipeWorkQueue *)mcomb->results,
+			bytes, doStore, mcomb->roles, mcomb->cb_done, _dispatch_id, tas);
 	_g_cnallreduce_dev.__post(msg);
 	return true;
 }

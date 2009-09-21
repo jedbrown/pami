@@ -122,10 +122,10 @@ protected:
 }; //-- AtomicBarrierMsg
 
 template <class T_Barrier>
-class AtomicBarrierMdl : XMI::Device::Interface::MultisyncModel {
+class AtomicBarrierMdl : public XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl> {
 public:
 	AtomicBarrierMdl(xmi_result_t &status) :
-	XMI::Device::Interface::MultisyncModel(status)
+	XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl>(status)
 	{
 		// "default" barrier: all local processes...
 		_barrier.init(_g_lmbarrier_dev.getSysdep(), _g_topology_local->size());

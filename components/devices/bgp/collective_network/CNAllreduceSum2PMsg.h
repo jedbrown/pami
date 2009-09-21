@@ -280,24 +280,24 @@ private:
 	unsigned _nThreads;
 }; // class CNAllreduce2PMessage
 
-class CNAllreduce2PModel : public Impl::MulticombineModelImpl {
+class CNAllreduce2PModel : public XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 
-	CNAllreduce2PModel(XMI::SysDep *sysdep, XMI_Result &status) :
-	Impl::MulticombineModelImpl(status),
+	CNAllreduce2PModel(XMI_Result &status) :
+	XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel>(status),
 	// we depend on doing consumeBytes(bytesAvailableToConsume()) in order
 	// to "jump" to next "boundary" so we maintain alignment for each cycle.
 	// this requires the WQ behavior based on workunits and worksize that
 	// creates artificial "boundaries" at those points.
-	_ewq(sysdep, EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
-	_mwq(sysdep, EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE),
-	_xwq(sysdep, EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
+	_ewq(_g_cnallreduce2p_dev.getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
+	_mwq(_g_cnallreduce2p_dev.getSysdep(), EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE),
+	_xwq(_g_cnallreduce2p_dev.getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
 	_dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
 	_dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
 	{
-		_me = sysdep->mapping().rank();
+		_me = _g_cnallreduce2p_dev.getSysdep()->mapping().rank();
 		_ewq.setConsumers(1, 0);
 		_ewq.setProducers(1, 0);
 		_mwq.setConsumers(1, 0);
@@ -313,7 +313,7 @@ public:
 		_xwq.reset();
 	}
 
-	inline bool postMulticombine_impl(CNAllreduce2PMessage *msg);
+	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
 
 private:
 	XMI::Device::WorkQueue::SharedWorkQueue _ewq;
@@ -348,19 +348,19 @@ XMI::Device::MessageStatus CNAllreduce2PMessage::advanceThread(XMI::Device::Gene
 	return __advanceThread((CNAllreduce2PThread *)t);
 }
 
-inline bool CNAllreduce2PModel::postMulticombine_impl(CNAllreduce2PMessage *msg) {
+inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	// we don't need CNAllreduceSetup since we know this is DOUBLE-SUM
-	XMI::Topology *results_topo = (XMI::Topology *)_getResultsRanks();
+	XMI::Topology *results_topo = (XMI::Topology *)mcomb->results_participants;
 	bool doStore = (!results_topo || results_topo->isRankMember(_me));
-	size_t bytes = _getcount() << xmi_dt_shift[_getDt()];
+	size_t bytes = mcomb->count << xmi_dt_shift[mcomb->dtype];
 	// could try to complete allreduce before construction, but for now the code
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	new (msg) CNAllreduce2PMessage(_g_cnallreduce2p_dev,
 			_ewq, _mwq, _xwq,
-			(XMI::PipeWorkQueue *)_getData(),
-			(XMI::PipeWorkQueue *)_getResults(),
-			bytes, doStore, _getRoles(), _getCallback(),
+			(XMI::PipeWorkQueue *)mcomb->data,
+			(XMI::PipeWorkQueue *)mcomb->results,
+			bytes, doStore, mcomb->roles, mcomb->cb_done,
 			_dispatch_id_e, _dispatch_id_m);
 	_g_cnallreduce2p_dev.__post(msg);
 	return true;

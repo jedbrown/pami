@@ -194,19 +194,19 @@ protected:
 	unsigned _nThreads;
 }; // class CNBroadcastMessage
 
-class CNBroadcastModel : public Impl::MultisyncModelImpl {
+class CNBroadcastModel : public XMI::Device::Interface::MulticastModel<CNBroadcastModel> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 
-	CNBroadcastModel(XMI::SysDep *sysdep, XMI_Result &status) :
-	Impl::MultisyncModelImpl(status)
+	CNBroadcastModel(XMI_Result &status) :
+	XMI::Device::Interface::MulticastModel<CNBroadcastModel>(status)
 	{
 		_dispatch_id = _g_cnbroadcast_dev.newDispID();
-		_me = sysdep->mapping().rank();
+		_me = _g_cnbroadcast_dev.getSysdep()->mapping().rank();
 	}
 
-	inline bool postMulticombine_impl(CNBroadcastMessage *msg);
+	inline bool postMulticast_impl(xmi_multicast_t *mcast);
 
 private:
 	size_t _me;
@@ -232,19 +232,20 @@ XMI::Device::MessageStatus CNBroadcastMessage::advanceThread(XMI::Device::Generi
 	return __advanceThread((CNBroadcastThread *)t);
 }
 
-inline bool CNBroadcastModel::postMulticombine_impl(CNBroadcastMessage *msg) {
-	XMI::Topology *src_topo = (XMI::Topology *)_getSendRanks();
-	XMI::Topology *dst_topo = (XMI::Topology *)_getRecvRanks();
+inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
+	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
+	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
 	bool doData = (!src_topo || src_topo->isRankMember(_me));
 	bool doStore = (!dst_topo || dst_topo->isRankMember(_me));
 
 	// could try to complete broadcast before construction, but for now the code
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
-	new (msg) CNBroadcastMessage(_g_cnbroadcast_dev,
-			(XMI::PipeWorkQueue *)_getSendData(),
-			(XMI::PipeWorkQueue *)_getRecvData(), _getBytes(),
-			doStore, doData, _getRoles(), _getCallback(), _dispatch_id);
+	CNBroadcastMessage *msg;
+	msg = new (mcast->request) CNBroadcastMessage(_g_cnbroadcast_dev,
+			(XMI::PipeWorkQueue *)mcast->src;
+			(XMI::PipeWorkQueue *)mcast->dst, mcast->bytes,
+			doStore, doData, mcast->roles, mcast->cb_done, _dispatch_id);
 	_g_cnbroadcast_dev.__post(msg);
 	return true;
 }
