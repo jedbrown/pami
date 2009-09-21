@@ -141,12 +141,6 @@ namespace XMI
           
 
           return;
-
-          size_t bytes_used =
-            initializeMapCache (personality,
-                                _memptr,
-                                _memsize,
-                                _mapcache);
         };
 
 
@@ -298,17 +292,15 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
 
       // Initialize the task and peer mappings to -1 (== "not mapped")
       memset (mapcache->torus.coords2task, (uint32_t)-1, sizeof(uint32_t) * fullSize);
-      memset (mapcache->node.peer2task, (size_t)-1, sizeof(size_t) * peerSize);
+      memset (mapcache->node.peer2task, (uint8_t)-1, sizeof(size_t) * peerSize);
 
-      size_t aSize = personality.aSize();
-      size_t bSize = personality.bSize();
-      size_t cSize = personality.cSize();
-      size_t dSize = personality.dSize();
-      size_t eSize = personality.eSize();
-      size_t tSize = personality.pSize();
-      size_t pSize = personality.tSize();
-
-      size_t a,b,c,d,e,p,t;
+      size_t a = 0;
+      size_t b = 0;
+      size_t c = 0;
+      size_t d = 0;
+      size_t e = 0;
+      size_t t = 0;
+      size_t p = 0;
 
       /* Fill in the _mapcache array in a single syscall.
        * It is indexed by rank, dimensioned to be the full size of the

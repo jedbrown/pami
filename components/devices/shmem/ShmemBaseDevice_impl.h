@@ -119,7 +119,7 @@ namespace XMI
       XMI::Mapping::Interface::nodeaddr_t address;
       _sysdep->mapping.task2node (task, address);
 
-      size_t peer;
+      size_t peer = 0;
       _sysdep->mapping.node2peer (address, peer);
 
       return peer;
