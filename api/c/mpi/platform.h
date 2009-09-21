@@ -14,6 +14,7 @@
 #ifndef ___mpi___platform___
 #define ___mpi___platform___
 
+#include "mpi.h"
 #include "components/client/mpi/mpiclient.h"
 #include "components/mapping/mpi/mpimapping.h"
 #include "components/time/mpi/mpitime.h"
