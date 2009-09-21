@@ -9,6 +9,8 @@
  * \brief ???
  */
 
+#include "components/mapping/NodeMapping.h"
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
 #endif
@@ -28,9 +30,19 @@ namespace XMI
       _sysdep->mapping.nodePeers (_num_procs);
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 0\n", sysdep->mapping.task()));
 
-      _global_task = _sysdep->mapping.task ();
-      size_t global;
-      _sysdep->mapping.task2node (_global_task, global, _local_task);
+      //_global_task = _sysdep->mapping.task ();
+      
+      
+      //size_t global;
+      XMI::Mapping::Interface::nodeaddr_t nodeaddr;
+      _sysdep->mapping.nodeAddr (nodeaddr);
+      _global_task = nodeaddr.global;
+      _local_task  = nodeaddr.local;
+      
+      //_sysdep->mapping.task2node (_global_task, &nodeaddr);
+      
+      //_local_task = _peercache[nodeaddr.local];
+      
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 1\n", sysdep->mapping.task()));
 
       // Allocate a shared memory segment for the fifos
@@ -104,9 +116,13 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::task2peer_impl (size_t task)
     {
-      size_t global, local;
-      _sysdep->mapping.task2node (task, global, local);
-      return local;
+      XMI::Mapping::Interface::nodeaddr_t address;
+      _sysdep->mapping.task2node (task, address);
+
+      size_t peer;
+      _sysdep->mapping.node2peer (address, peer);
+
+      return peer;
     }
 
     /// \see XMI::Device::Interface::PacketDevice::requiresRead()

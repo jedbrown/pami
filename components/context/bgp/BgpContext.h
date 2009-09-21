@@ -54,7 +54,12 @@ namespace XMI
           _sysdep (),
           _shmem ()
         {
+          //fprintf(stderr, "BgpContext() >>\n");
+          XMI::Mapping::Interface::nodeaddr_t addr;
+          _sysdep.mapping.task2node (1, addr);
           _shmem.init (&_sysdep);
+          _sysdep.mapping.task2node (1, addr);
+          //fprintf(stderr, "BgpContext() <<\n");
         }
 
         inline xmi_client_t getClientId_impl ()

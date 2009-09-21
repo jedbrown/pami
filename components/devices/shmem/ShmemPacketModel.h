@@ -80,10 +80,14 @@ namespace XMI
                                      void               * payload,
                                      size_t               bytes)
         {
-          size_t global, peer, sequence;
-          _device._sysdep->mapping.task2node (target_rank, global, peer);
+          size_t peer, sequence;
+          XMI::Mapping::Interface::nodeaddr_t addr;
+          //_device._sysdep->mapping.task2node (target_rank, global, peer);
+          _device._sysdep->mapping.task2node (target_rank, addr);
+          _device._sysdep->mapping.node2peer (addr, peer);
+          //fprintf (stderr, "ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, addr = {%zd, %zd} peer = %zd\n", target_rank, addr.global, addr.local, peer);
 
-          TRACE_ERR((stderr,"ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, global = %zd, peer = %zd\n", target_rank, global, peer));
+          TRACE_ERR((stderr,"ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, global, peer));
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
                                          payload, bytes, sequence) == XMI_SUCCESS)
@@ -171,8 +175,13 @@ namespace XMI
                                       void             * src,
                                       size_t             bytes)
         {
-          size_t global, peer, sequence;
-          _device._sysdep->mapping.task2node (target_rank, global, peer);
+          size_t sequence;
+
+          XMI::Mapping::Interface::nodeaddr_t address;
+          _device._sysdep->mapping.task2node (target_rank, address);
+
+          size_t peer;
+          _device._sysdep->mapping.node2peer (address, peer);
 
           new (obj) T_Message (_context, fn, cookie, _dispatch_id, metadata, metasize, src, bytes, false);
 

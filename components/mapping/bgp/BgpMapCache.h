@@ -56,7 +56,7 @@ namespace XMI
 #endif
           } cacheAnchors_t;
 
-          size_t myRank, mySize;
+          //size_t myRank, mySize;
 
           volatile cacheAnchors_t * cacheAnchorsPtr;
           bool meMaster = false;
@@ -122,8 +122,8 @@ namespace XMI
                   // If this t is us, save the rank and size in the mapping object.
                   if ( tt == tCoord )
                     {
-                      myRank = rank; // Save our task rank in the mapping object.
-                      mySize = size; // Save the size in the mapping object.
+                      _task = rank; // Save our task rank in the mapping object.
+                      _size = size; // Save the size in the mapping object.
                     }
 
                   // Count the t's on our physical node.
@@ -442,8 +442,20 @@ namespace XMI
           return _rankcache;
         };
 
+        inline size_t getTask ()
+        {
+          return _task;
+        };
+
+        inline size_t getSize ()
+        {
+          return _size;
+        };
+
       private:
 
+        size_t   _size;
+        size_t   _task;
         size_t * _mapcache;
         size_t * _rankcache;
 

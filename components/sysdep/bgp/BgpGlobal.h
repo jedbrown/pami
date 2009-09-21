@@ -45,11 +45,55 @@ namespace XMI
           _memptr (NULL),
           _memsize (0)
         {
-          allocateMemory ();
+          //allocateMemory ();
 
-          size_t bytes_used = _mapcache.init (personality,
-                                              _memptr,
-                                              _memsize);
+          char   * shmemfile = "/unique-xmi-global-shmem-file";
+          size_t   bytes     = 1024*1024;
+          size_t   pagesize  = 4096;
+
+          // Round up to the page size
+          size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+
+          int fd, rc;
+          size_t n = bytes;
+
+          fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          if ( fd != -1 )
+          {
+            rc = ftruncate( fd, n );
+            if ( rc != -1 )
+            {
+              void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+              if ( ptr != MAP_FAILED )
+              {
+                _memptr  = ptr;
+                _memsize = n;
+                
+                size_t bytes_used = _mapcache.init (personality,
+                                                    _memptr,
+                                                    _memsize);
+                // Round up to the page size
+                size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
+               
+                // Truncate to this size.
+                rc = ftruncate( fd, size );
+                if (rc != -1) return;
+              }
+            }
+          }
+
+          // There was a failure obtaining the shared memory segment, most
+          // likely because the applicatino is running in SMP mode. Allocate
+          // memory from the heap instead.
+          //
+          // TODO - verify the run mode is actually SMP.
+          size_t buffer[bytes];
+          size_t bytes_used = _mapcache.init (personality, buffer, bytes);
+
+          posix_memalign ((void **)&_memptr, 16, bytes_used);
+          memcpy (_memptr, buffer, bytes_used);
+          //memset (_memptr, 0, bytes);
+          _memsize = bytes_used;
         };
 
 
@@ -60,17 +104,26 @@ namespace XMI
         {
           return _mapcache.getMapCache();
         };
-
+        
         inline size_t * getRankCache ()
         {
           return _mapcache.getRankCache();
         };
-
-     private:
-
+        
+        inline size_t getTask ()
+        {
+          return _mapcache.getTask();
+        };
+        
+        inline size_t getSize ()
+        {
+          return _mapcache.getSize();
+        };
+        
+#if 0
         inline void allocateMemory ()
         {
-          char   * shmemfile = "/unique-xmi-shmem-file";
+          char   * shmemfile = "/unique-xmi-shmem-file-foo";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
 
@@ -107,17 +160,17 @@ namespace XMI
 
           return;
         };
-
+#endif
 
       public:
 
         BgpPersonality       personality;
-
+        
       private:
 
-        Mapping::BgpMapCache _mapcache;
-        void            * _memptr;
-        size_t            _memsize;
+        Mapping::BgpMapCache   _mapcache;
+        void                 * _memptr;
+        size_t                 _memsize;
     }; // XMI::SysDep::BgpGlobal
   };   // XMI::SysDep
 };     // XMI

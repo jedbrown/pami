@@ -182,7 +182,7 @@ namespace XMI
           /// \retval DCMF_INVAL   Invalid torus address used as an input
           ///
 //          template <int T_Dimension>
-          inline xmi_result_t torus2task (size_t (&addr)[T_Dimensions], size_t & task) const;
+          inline xmi_result_t torus2task (size_t (&addr)[T_Dimensions], size_t & task);
 #if 0
         //protected:
           ///
@@ -288,7 +288,7 @@ namespace XMI
 
       template <class T_Mapping, unsigned T_Dimensions>
       //template <int T_Dimension>
-      inline xmi_result_t Torus<T_Mapping,T_Dimensions>::torus2task (size_t (&addr)[T_Dimensions], size_t & task) const
+      inline xmi_result_t Torus<T_Mapping,T_Dimensions>::torus2task (size_t (&addr)[T_Dimensions], size_t & task)
       {
         return static_cast<T_Mapping*>(this)->torus2task_impl (addr, task);
       }

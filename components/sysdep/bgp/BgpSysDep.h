@@ -24,6 +24,12 @@ namespace XMI
 {
   namespace SysDep
   {
+    // TODO -- need to make a different shared memory manager so that multiple
+    // contexts can get shared memory .. right now the second context to call
+    // mm.init() will fail.
+  
+  
+  
     typedef SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping::BgpMapping, XMI::Time::BgpTime> BgpSysDep;
  //  typedef SysDep<XMI::Memory::SharedMemoryManager,
    //                XMI::Mapping::BgpMapping<XMI::Memory::SharedMemoryManager > BgpSysDep;

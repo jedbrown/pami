@@ -31,15 +31,15 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-//#include <spi/kernel_interface.h>
-//#include <common/bgq_personality.h>
-//#include <common/bgq_personality_inlines.h>
+#include <firmware/include/personality.h>
+#include <kernel/location.h>
+#include <kernel/process.h>
 
 namespace XMI
 {
   namespace SysDep
   {
-    class BgqPersonality //: public _BGP_Personality_t
+    class BgqPersonality : public Personality_t
     {
       public:
 
@@ -49,57 +49,104 @@ namespace XMI
         void dumpPersonality ();
 
         ///
-        /// \brief Retreives the x coordinate of the node
-        /// \return X coordinate
+        /// \brief Retreives the rank of the task in this job.
         ///
-        size_t xCoord() const { return _x; }
+        size_t rank() const { return Network_Config.Rank; }
+
 
         ///
-        /// \brief Retreives the y coordinate of the node
-        /// \return Y coordinate
+        /// \brief Retreives the 'A' coordinate of the node
         ///
-        size_t yCoord() const { return _y; }
+        size_t aCoord() const { return Network_Config.Acoord; }
 
         ///
-        /// \brief Retreives the z coordinate of the node
-        /// \return Z coordinate
+        /// \brief Retreives the 'B' coordinate of the node
         ///
-        size_t zCoord() const { return _z; }
+        size_t bCoord() const { return Network_Config.Bcoord; }
 
         ///
-        /// \brief Retreives the t coordinate of the node
-        /// \return T coordinate
+        /// \brief Retreives the 'C' coordinate of the node
         ///
-        size_t tCoord() const { return _t; }
+        size_t cCoord() const { return Network_Config.Ccoord; }
 
         ///
-        /// \brief Retreives the x size of the partition.  Does not
-        ///        consider the mapping.
-        /// \return x size
+        /// \brief Retreives the 'D' coordinate of the node
         ///
-        size_t xSize()  const { return _Xnodes; }
+        size_t dCoord() const { return Network_Config.Dcoord; }
 
         ///
-        /// \brief Retreives the y size of the partition.  Does not
-        ///        consider the mapping.
-        /// \return y size
+        /// \brief Retreives the 'E' coordinate of the node
         ///
-        size_t ySize()  const { return _Ynodes; }
+        size_t eCoord() const { return Network_Config.Ecoord; }
 
         ///
-        /// \brief Retreives the z size of the partition.  Does not
-        ///        consider the mapping.
-        /// \return z size
+        /// \brief Retreives the 'P' coordinate of the node
         ///
-        size_t zSize()  const { return _Znodes; }
+        /// a.k.a. the processor (core) id.
+        ///
+        size_t pCoord() const { return _core; }
 
         ///
-        /// \brief Retreives the t size of the partition.  Does not
-        ///        consider the mapping.
-        /// \return t size
+        /// \brief Retreives the 'T' coordinate of the node
         ///
-        size_t tSize()  const { return _Tnodes; }
+        /// a.k.a. the hardware thread id on the core
+        ///
+        size_t tCoord() const { return _hwthread; }
 
+
+
+
+
+
+        ///
+        /// \brief Retreives the size of the 'A' dimension.
+        /// \note  Does not consider the mapping.
+        ///
+        size_t aSize()  const { return Network_Config.Anodes; }
+
+        ///
+        /// \brief Retreives the size of the 'B' dimension.
+        /// \note  Does not consider the mapping.
+        ///
+        size_t bSize()  const { return Network_Config.Bnodes; }
+
+        ///
+        /// \brief Retreives the size of the 'C' dimension.
+        /// \note  Does not consider the mapping.
+        ///
+        size_t cSize()  const { return Network_Config.Cnodes; }
+
+        ///
+        /// \brief Retreives the size of the 'D' dimension.
+        /// \note  Does not consider the mapping.
+        ///
+        size_t dSize()  const { return Network_Config.Dnodes; }
+
+        ///
+        /// \brief Retreives the size of the 'E' dimension.
+        /// \note  Does not consider the mapping.
+        ///
+        size_t eSize()  const { return Network_Config.Enodes; }
+
+        ///
+        /// \brief Retreives the size of the 'P' dimension.
+        ///
+        /// The 'P' coordinate identifies the processor core.
+        ///
+        /// \note  Does not consider the mapping.
+        ///
+        size_t pSize()  const { return _cores; }
+
+        ///
+        /// \brief Retreives the size of the 'T' dimension.
+        ///
+        /// The 'T' coordinate identifies the hardware thread.
+        ///
+        /// \note  Does not consider the mapping.
+        ///
+        size_t tSize()  const { return _hwthreads; }
+
+#if 0
         ///
         /// \brief Returns if the partition is a torus
         /// \return boolean true if the partition is a torus in the X dimension
@@ -139,26 +186,26 @@ namespace XMI
         /// \return Maximum number of threads
         ///
         size_t getMaxThreads() const { return _maxThreads; }
-
+#endif
         ///
         /// \brief Get the size of NODE memory
         /// \return _node_ memory size in MiB
         ///
-        size_t  memSize()  const { return _memSize;}
+        size_t  memSize()  const { return DDR_Config.DDRSizeMB;}
 
         ///
         /// \brief Gets the clock speed in MEGA-Hz
         /// \return MHz
         ///
-        size_t  clockMHz()  const { return _clockMHz; }
-
+        size_t  clockMHz()  const { return Kernel_Config.FreqMHz; }
+#if 0
         ///
         /// \brief Returns if the partition is in high throughput
         ///        computing mode
         /// \return boolean true if the partition in in HTC mode
         ///
         bool isHTCmode ()    const { return _isHTCmode; }
-
+#endif
 #if 0
         ///
         /// \brief Returns if the partition has GI enabled
@@ -166,7 +213,7 @@ namespace XMI
         ///
         bool hasGI ()    const { return _hasGI; }
 #endif
-
+#if 0
         ///
         /// \brief Retrives the rank in the pset
         /// \return rank
@@ -184,6 +231,7 @@ namespace XMI
         /// \return size of pset
         ///
         unsigned  sizePset()  const { return _sizepset; }
+#endif
 #if 0
         ///
         /// \brief Retrives p2p tree adress of the IO node
@@ -200,7 +248,19 @@ namespace XMI
 
 
       protected:
-
+      
+        size_t _core;
+        size_t _hwthread;
+        
+        bool   _torusA;
+        bool   _torusB;
+        bool   _torusC;
+        bool   _torusD;
+        bool   _torusE;
+        
+        size_t _cores;
+        size_t _hwthreads;
+#if 0
         size_t   _x;
         size_t   _y;
         size_t   _z;
@@ -224,6 +284,7 @@ namespace XMI
         //int      _treeaddr;
         bool     _isHTCmode;
         //bool     _hasGI;
+#endif
     };
   };
 };

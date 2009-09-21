@@ -60,11 +60,11 @@ namespace XMI
             _mapcache (NULL),
             _rankcache (NULL)
         {
-          _nodeaddr.coords.x = _x;
-          _nodeaddr.coords.y = _y;
-          _nodeaddr.coords.z = _z;
-          _nodeaddr.coords.t =  0;
-          _nodeaddr.local    = _t;
+//          _nodeaddr.coords.x = _x;
+  //        _nodeaddr.coords.y = _y;
+    //      _nodeaddr.coords.z = _z;
+      //    _nodeaddr.coords.t =  0;
+        //  _nodeaddr.local    = _t;
           TRACE_ERR((stderr,"BgpMapping::BgpMapping() .. torus: (%zd %zd %zd %zd), node: (%zd %zd)\n", _x, _y, _z, _t, _nodeaddr.global, _nodeaddr.local));
         };
 
@@ -79,9 +79,9 @@ namespace XMI
         size_t _y;
         size_t _z;
         size_t _t;
-
-        nodeaddr_t _nodeaddr;
-
+        
+        XMI::Mapping::Interface::nodeaddr_t _nodeaddr;
+        
         //size_t _numActiveRanksLocal;
         //size_t _numActiveRanksGlobal;
         //size_t _numActiveNodesGlobal;
@@ -89,7 +89,8 @@ namespace XMI
 
         size_t * _mapcache;
         size_t * _rankcache;
-
+        size_t   _peercache[4];
+        
       public:
 
         /////////////////////////////////////////////////////////////////////////
@@ -396,32 +397,45 @@ namespace XMI
         };
 
         /// \brief Get the node address for the local task
-        inline void nodeAddr_impl (size_t & global, size_t & local)
+        inline void nodeAddr_impl (XMI::Mapping::Interface::nodeaddr_t & addr)
         {
           TRACE_ERR((stderr,"BgpMapping::nodeAddr_impl() >>\n"));
-          global = _nodeaddr.global;
-          local  = _nodeaddr.local;
+          addr = _nodeaddr;
+          //global = _nodeaddr.global;
+          //local  = _nodeaddr.local;
           TRACE_ERR((stderr,"BgpMapping::nodeAddr_impl(%zd, %zd) <<\n", global, local));
         };
 
         /// \brief Get the node address for a specific task
-        inline xmi_result_t task2node_impl (size_t task, size_t & global, size_t & local)
+        inline xmi_result_t task2node_impl (size_t task, XMI::Mapping::Interface::nodeaddr_t & addr)
         {
           TRACE_ERR((stderr,"BgpMapping::task2node_impl(%zd) >>\n", task));
-          global = _mapcache[task] & 0xffffff00;
-          local  = _mapcache[task] & 0x000000ff;
-          TRACE_ERR((stderr,"BgpMapping::task2node_impl(%zd, %zd, %zd) <<\n", task, global, local));
-          return XMI_UNIMPL;
+          //fprintf(stderr, "BgpMapping::task2node_impl() .. _mapcache[%zd] = 0x%08x &_mapcache[%zd] = %p\n", task, _mapcache[task], task, &_mapcache[task]);
+          addr.global = _mapcache[task] & 0xffffff00;
+          addr.local  = _mapcache[task] & 0x000000ff;
+          TRACE_ERR((stderr,"BgpMapping::task2node_impl(%zd, %zd, %zd) <<\n", task, addr.global, addr.local));
+          return XMI_SUCCESS;
         };
 
         /// \brief Get the task associated with a specific node address
-        inline xmi_result_t node2task_impl (size_t global, size_t local, size_t & task)
+        inline xmi_result_t node2task_impl (XMI::Mapping::Interface::nodeaddr_t addr, size_t & task)
         {
-          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd) >>\n", global, local));
-          size_t estimated_task = (global << 8) | local;
+          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd) >>\n", addr.global, addr.local));
+          size_t estimated_task = (addr.global << 8) | addr.local;
           task = _rankcache [estimated_task];
-          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd, %zd) <<\n", global, local, task));
-          return XMI_UNIMPL;
+          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, task));
+          return XMI_SUCCESS;
+        };
+
+        /// \brief Get the peer identifier associated with a specific node address
+        inline xmi_result_t node2peer_impl (XMI::Mapping::Interface::nodeaddr_t & addr, size_t & peer)
+        {
+          TRACE_ERR((stderr,"BgpMapping::node2peer_impl(%zd, %zd) >>\n", addr.global, addr.local));
+
+          peer = _peercache[addr.local];
+
+          TRACE_ERR((stderr,"BgpMapping::node2peer_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, peer));
+          return XMI_SUCCESS;
         };
     };
   };
@@ -429,8 +443,31 @@ namespace XMI
 
 xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
 {
+  //fprintf (stderr, "BgpMapping::init_impl >>\n");
   _mapcache  = __global.getMapCache();
   _rankcache = __global.getRankCache();
+  _task = __global.getTask();
+  _size = __global.getSize();
+
+  unsigned i;
+  for (i=0; i<_size; i++) task2node (i, _nodeaddr);
+
+  task2node (_task, _nodeaddr);
+  
+  size_t peer = 0;
+  size_t task;
+  size_t addr[4];
+  addr[0] = _x;
+  addr[1] = _y;
+  addr[2] = _z;
+  for (addr[3]=0; addr[3]<__global.personality.tSize(); addr[3]++)
+  {
+    if (torus2task(addr, task) == XMI_SUCCESS)
+    {
+      //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", addr[3], peer);
+      _peercache[addr[3]] = peer++;
+    }
+  }
 
 #if 0
   // This structure anchors pointers to the map cache and rank cache.
@@ -777,6 +814,9 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
   }
 #endif
 #endif
+  
+  //fprintf (stderr, "BgpMapping::init_impl <<\n");
+  
   return XMI_SUCCESS;
 };
 #undef TRACE_ERR

@@ -22,6 +22,19 @@ namespace XMI
     namespace Interface
     {
       ///
+      /// \brief Task node address structure
+      ///
+      /// A task on a node is identified with two coordinates. The first
+      /// coordinate globally identifies the physical node, and the second
+      /// coordinate identifies the task on the node.
+      ///
+      typedef struct nodeaddr
+      {
+        size_t global; ///< Global node coordinate
+        size_t local;  ///< Local node coordinate
+      } nodeaddr_t;
+
+      ///
       /// \param T_Mapping Node mapping template class
       ///
       template <class T_Mapping>
@@ -29,7 +42,7 @@ namespace XMI
       {
         public:
           ///
-          /// \brief Get the number of possible tasks on a node
+          /// \brief Get the number of possible tasks on any node
           ///
           inline xmi_result_t nodeTasks (size_t global, size_t & tasks);
 
@@ -39,30 +52,49 @@ namespace XMI
           inline xmi_result_t nodePeers (size_t & peers);
 
           ///
-          /// \brief Get the node address for the local task
+          /// \brief Determines if two tasks are located on the same node
           ///
-          /// \param[out] global Node global identifier
-          /// \param[out] local  Node local identifier
-          ///
-          inline void nodeAddr (size_t & global, size_t & local);
+          inline bool isPeer (size_t task1, size_t task2);
 
           ///
-          /// \brief Get the node address for a specific task
+          /// \brief Node address for the local task
           ///
-          /// \param[in]  task   Global task identifier
-          /// \param[out] global Node global identifier
-          /// \param[out] local  Node local identifier
+          /// \param[out] address Node address
           ///
-          inline xmi_result_t task2node (size_t task, size_t & global, size_t & local);
+          inline void nodeAddr (nodeaddr_t & address);
 
           ///
-          /// \brief Get the task associated with a specific node address
+          /// \brief Node address for a specific task
           ///
-          /// \param[in]  global Node global identifier
-          /// \param[in]  local  Node local identifier
-          /// \param[out] task   Global task identifier
+          /// The global task identifier monotonically increases from zero to
+          /// XMI::Mapping::Interface::Base.size() - 1.
           ///
-          inline xmi_result_t node2task (size_t global, size_t local, size_t & task);
+          /// \param[in]  task    Global task identifier
+          /// \param[out] address Node address
+          ///
+          inline xmi_result_t task2node (size_t task, nodeaddr_t & address);
+
+          ///
+          /// \brief Global task identifier associated with a specific node address
+          ///
+          /// The global task identifier monotonically increases from zero to
+          /// XMI::Mapping::Interface::Base.size() - 1.
+          ///
+          /// \param[in]  address Node address
+          /// \param[out] task    Global task identifier
+          ///
+          inline xmi_result_t node2task (nodeaddr_t & address, size_t & task);
+
+          ///
+          /// \brief Peer identifier associated with a specific node address
+          ///
+          /// The local peer identifier monotonically increases from zero to
+          /// XMI::Mapping::Interface::Node.nodePeers() - 1.
+          ///
+          /// \param[in]  address Node address
+          /// \param[out] peer    peer identifier
+          ///
+          inline xmi_result_t node2peer (nodeaddr_t & address, size_t & peer);
       };
 
       template <class T_Mapping>
@@ -78,21 +110,33 @@ namespace XMI
       }
 
       template <class T_Mapping>
-      inline void Node<T_Mapping>::nodeAddr (size_t & global, size_t & local)
+      inline bool Node<T_Mapping>::isPeer (size_t task1, size_t task2)
       {
-        return static_cast<T_Mapping*>(this)->nodeAddr_impl (global, local);
+        return static_cast<T_Mapping*>(this)->isPeer_impl (task1, task2);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::task2node (size_t task, size_t & global, size_t & local)
+      inline void Node<T_Mapping>::nodeAddr (nodeaddr_t & address)
       {
-        return static_cast<T_Mapping*>(this)->task2node_impl (task, global, local);
+        return static_cast<T_Mapping*>(this)->nodeAddr_impl (address);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::node2task (size_t global, size_t local, size_t & task)
+      inline xmi_result_t Node<T_Mapping>::task2node (size_t task, nodeaddr_t & address)
       {
-        return static_cast<T_Mapping*>(this)->node2task_impl (global, local, task);
+        return static_cast<T_Mapping*>(this)->task2node_impl (task, address);
+      }
+
+      template <class T_Mapping>
+      inline xmi_result_t Node<T_Mapping>::node2task (nodeaddr_t & address, size_t & task)
+      {
+        return static_cast<T_Mapping*>(this)->node2task_impl (address, task);
+      }
+
+      template <class T_Mapping>
+      inline xmi_result_t Node<T_Mapping>::node2peer (nodeaddr_t & address, size_t & peer)
+      {
+        return static_cast<T_Mapping*>(this)->node2peer_impl (address, peer);
       }
     };
   };
