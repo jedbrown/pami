@@ -78,9 +78,9 @@ namespace XMI
     class PGBroadcastInfo:public CollInfo<T_Device>
     {
     public:
-    PGBroadcastInfo(T_Device *dev):
-      CollInfo<T_Device>(dev),
-      _model(*dev){}
+      PGBroadcastInfo(T_Device *dev):
+        CollInfo<T_Device>(dev),
+        _model(*dev){}
       MPIMcastModel _model;
     };
 
@@ -88,8 +88,8 @@ namespace XMI
     class PGAllgatherInfo:public CollInfo<T_Device>
     {
     public:
-    PGAllgatherInfo(T_Device *dev):
-      CollInfo<T_Device>(dev),
+      PGAllgatherInfo(T_Device *dev):
+        CollInfo<T_Device>(dev),
 	_model(*dev){}
       MPIMcastModel _model;
     };
@@ -98,8 +98,8 @@ namespace XMI
     class PGAllgathervInfo:public CollInfo<T_Device>
     {
     public:
-    PGAllgathervInfo(T_Device *dev):
-      CollInfo<T_Device>(dev),
+      PGAllgathervInfo(T_Device *dev):
+        CollInfo<T_Device>(dev),
 	_model(*dev){}
       MPIMcastModel _model;
     };
@@ -108,8 +108,8 @@ namespace XMI
     class PGScatterInfo:public CollInfo<T_Device>
     {
     public:
-    PGScatterInfo(T_Device *dev):
-      CollInfo<T_Device>(dev),
+      PGScatterInfo(T_Device *dev):
+        CollInfo<T_Device>(dev),
 	_smodel(*dev),
 	_bmodel(*dev){}
 
@@ -122,8 +122,8 @@ namespace XMI
     {
     public:
 
-    PGScattervInfo(T_Device *dev):
-      CollInfo<T_Device>(dev),
+      PGScattervInfo(T_Device *dev):
+        CollInfo<T_Device>(dev),
 	_smodel(*dev),
 	_bmodel(*dev){}
 
@@ -135,8 +135,8 @@ namespace XMI
     class PGAllreduceInfo:public CollInfo<T_Device>
     {
     public:
-    PGAllreduceInfo(T_Device *dev):
-      CollInfo<T_Device>(dev),
+      PGAllreduceInfo(T_Device *dev):
+        CollInfo<T_Device>(dev),
 	_model(*dev){}
 
       MPIMcastModel _model;
@@ -146,8 +146,8 @@ namespace XMI
     class PGBarrierInfo:public CollInfo<T_Device>
     {
     public:
-    PGBarrierInfo(T_Device *dev):
-      CollInfo<T_Device>(dev),
+      PGBarrierInfo(T_Device *dev):
+        CollInfo<T_Device>(dev),
 	_model(*dev){}
 
       MPIMcastModel _model;
@@ -190,27 +190,27 @@ namespace XMI
 
 
     template <class T_Device, class T_Sysdep>
-      class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
+    class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
     {
     public:
-    CCMIBinomBroadcastInfo(T_Device *dev,
-                           T_Sysdep * sd,
-                           xmi_mapidtogeometry_fn fcn):
-      CollInfo<T_Device>(dev),
-	_model(*dev),
-	_broadcast_registration(sd,
-				&_model,
-				_connmgr,
-				65535)
-	  {
-	  }
+      CCMIBinomBroadcastInfo(T_Device *dev,
+                             T_Sysdep * sd,
+                             xmi_mapidtogeometry_fn fcn):
+        CollInfo<T_Device>(dev),
+        _model(*dev),
+        _connmgr(65535),
+        _broadcast_registration(sd,
+                                &_model,
+                                &_connmgr,
+                                65535)
+        {
+        }
       XMI_Request_t                                           _request;
       MPIMcastModel                                           _model;
-      CCMI::Adaptor::Broadcast::BinomialBcastFactory          _broadcast_registration;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
+      CCMI::Adaptor::Broadcast::BinomialBcastFactory          _broadcast_registration;
       CCMI_Executor_t                                         _broadcast_executor;
     };
-
   };
 };
 typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;

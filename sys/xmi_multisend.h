@@ -231,6 +231,7 @@ extern "C"
 
     typedef struct xmi_oldmulticast_recv_t
     {
+      xmi_quad_t        * request;
       xmi_callback_t      cb_done;
       unsigned            connection_id;
       unsigned            bytes;

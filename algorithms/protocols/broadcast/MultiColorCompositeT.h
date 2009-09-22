@@ -65,7 +65,7 @@ namespace CCMI
         ///
         /// \brief Pointer to mapping
         ///
-        T_Sysdep                              *  _mapping;
+        T_Sysdep                              *  _sd;
 
         CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager>
                                                       _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
@@ -81,7 +81,7 @@ namespace CCMI
       ///
       /// \brief Receive the broadcast message and notify the executor
       ///
-        static void staticRecvFn (void *executor, xmi_result_t *err)
+        static void staticRecvFn (void *ctxt, void *executor, xmi_result_t err)
           {
             xmi_quad_t *info = NULL;
             
@@ -102,7 +102,7 @@ namespace CCMI
                               unsigned                                     root,
                               char                                       * src,
                               unsigned                                     bytes) :
-        CCMI::Executor::Composite (), _doneCount(0), _numColors(0), _cb_done(cb_done), _mapping(map)
+        CCMI::Executor::Composite (), _doneCount(0), _numColors(0), _cb_done(cb_done), _sd(map)
         {
           pwcfn (geometry, bytes, _colors, _numColors, _pipewidth);
 
@@ -155,17 +155,17 @@ namespace CCMI
                                  CCMI::Schedule::Color       color) {CCMI_abort();};
         void setDoneCallback (XMI_Callback_t  cb_done) { _cb_done = cb_done;}
 
-        void SyncBcastPost(XMI_GEOMETRY_CLASS                                     * geometry,
-                           unsigned                                       root,
+        void SyncBcastPost(XMI_GEOMETRY_CLASS    * geometry,
+                           unsigned                root,
                            T_ConnectionManager   * cmgr,
                            T_Mcast               * minterface)
         {
-          if(_mapping->rank() != root)
+          if(_sd->mapping.task() != root)
           { //post receive on non root nodes
             //posts a receive on connection given by connection
             //mgr, bcast connmgrs shouldnt care about phases
 
-            T_Mcast  mrecv;
+            xmi_oldmulticast_recv_t  mrecv;
             mrecv.cb_done.function = staticRecvFn;
             mrecv.pipelineWidth = _pipewidth;
             mrecv.opcode = XMI_PT_TO_PT_SUBTASK;
@@ -174,7 +174,7 @@ namespace CCMI
             {
               mrecv.bytes   = _bytecounts[c];
               mrecv.rcvbuf  = _srcbufs[c];
-              mrecv.request = _executors[c].getRecvRequest();
+              mrecv.request = (xmi_quad_t*)_executors[c].getRecvRequest();
               mrecv.connection_id = cmgr->getConnectionId (geometry->comm(), root, _colors[c],
                                                            (unsigned)-1, (unsigned)-1);
               mrecv.cb_done.clientdata = &_executors[c];
@@ -205,7 +205,7 @@ namespace CCMI
           }
         }
 
-        static void cb_bcast_done(void *me, xmi_result_t *err)
+        static void cb_bcast_done(void *ctxt, void *me, xmi_result_t err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -214,7 +214,7 @@ namespace CCMI
           ++bcast_composite->_doneCount;
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
-            bcast_composite->_cb_done.function(bcast_composite->_cb_done.clientdata, NULL);
+            bcast_composite->_cb_done.function(NULL, bcast_composite->_cb_done.clientdata, XMI_SUCCESS);
           }
         }
       };  //-- MultiColorCompositeT
@@ -278,7 +278,7 @@ namespace CCMI
           XMI_assert(rsize >= sizeof(B));
           B  *composite =
           new (request_buf)
-          B (this->_mapping,
+          B (this->_sd,
              this->_connmgr,
              cb_done,
              consistency,

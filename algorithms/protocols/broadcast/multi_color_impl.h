@@ -56,14 +56,15 @@ namespace CCMI
                                     CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
                                     get_colors,
                                     XMI_COLL_SYSDEP_CLASS,
-                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS>,
-                                    XMI_COLL_MCAST_CLASS> BinomialBcastComposite;
+                                    XMI_COLL_MCAST_CLASS,
+                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> >
+                                    BinomialBcastComposite;
       template<> void BinomialBcastComposite::create_schedule ( void                      * buf,
                                                                 unsigned                    size,
                                                                 XMI_GEOMETRY_CLASS                  * g,
                                                                 CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS> (_mapping, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
       }
 
 
@@ -75,14 +76,15 @@ namespace CCMI
                                     CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS>,
                                     get_colors,
                                     XMI_COLL_SYSDEP_CLASS,
-                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS>,
-                                    XMI_COLL_MCAST_CLASS> RingBcastComposite;
+                                    XMI_COLL_MCAST_CLASS,
+                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> >
+                                    RingBcastComposite;
       template<> void RingBcastComposite::create_schedule ( void                      * buf,
                                                             unsigned                    size,
                                                             XMI_GEOMETRY_CLASS        * g,
                                                             CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS> (_mapping, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
       }
 
 
