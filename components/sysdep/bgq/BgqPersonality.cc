@@ -17,17 +17,40 @@ XMI::SysDep::BgqPersonality::BgqPersonality ()
 {
   Personality_t * p = (Personality_t *) this;
 
+#ifndef FAKE_PERSONALITY
   //if (Kernel_GetPersonality(p, sizeof(Personality_t))) != 0)
   if (Kernel_GetPersonality(p, sizeof(Personality_t)) != 0)
     XMI_abort();
+#else
+  Kernel_GetPersonality(p, sizeof(Personality_t));
+
+  Network_Config.Anodes = 1;
+  Network_Config.Bnodes = 1;
+  Network_Config.Cnodes = 1;
+  Network_Config.Dnodes = 1;
+  Network_Config.Enodes = 1;
+
+  Network_Config.Acoord = 0;
+  Network_Config.Bcoord = 0;
+  Network_Config.Ccoord = 0;
+  Network_Config.Dcoord = 0;
+  Network_Config.Ecoord = 0;
+#endif
     
   size_t num_local_processes = Kernel_ProcessCount();
   
   // Set the core id of this process [0..16]
   _core = Kernel_PhysicalProcessorID();
   
+  // Set the number of active process cores on this node [0..16]
+  _cores = Kernel_ProcessCount();
+
   // Set the hardware thread id of this process [0..3]
   _hwthread = Kernel_PhysicalHWThreadID();
+
+  // Set the number of active process hardware threads on this node [0..3]
+  //_hwthreads = Kernel_PhysicalHWThreadID();
+  _hwthreads = 1;
     
     
   _torusA = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);

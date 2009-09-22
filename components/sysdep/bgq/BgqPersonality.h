@@ -35,6 +35,9 @@
 #include <kernel/location.h>
 #include <kernel/process.h>
 
+
+#define FAKE_PERSONALITY
+
 namespace XMI
 {
   namespace SysDep

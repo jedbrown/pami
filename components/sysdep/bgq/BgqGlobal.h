@@ -27,8 +27,10 @@
 
 #include "util/common.h"
 #include "components/sysdep/bgq/BgqPersonality.h"
-//#include "components/mapping/bgq/BgqMapCache.h"
-//#include "components/mapping/bgq/BgqMapping.h"
+
+#ifndef TRACE_ERR
+#define TRACE_ERR(x)  //fprintf x
+#endif
 
 namespace XMI
 {
@@ -95,50 +97,51 @@ namespace XMI
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
           int fd, rc;
-          size_t n = bytes;
+          size_t n = size;
 
+          TRACE_ERR((stderr, "BgqGlobal() .. size = %zd\n", size));
           fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          TRACE_ERR((stderr, "BgqGlobal() .. after shm_open, fd = %d\n", fd));
           if ( fd != -1 )
           {
             rc = ftruncate( fd, n );
+            TRACE_ERR((stderr, "BgqGlobal() .. after ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
             if ( rc != -1 )
             {
               void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+              TRACE_ERR((stderr, "BgqGlobal() .. after mmap, ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED));
               if ( ptr != MAP_FAILED )
               {
                 _memptr  = ptr;
                 _memsize = n;
                 
+                TRACE_ERR((stderr, "BgqGlobal() .. _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
                 size_t bytes_used =
-                  initializeMapCache (personality,
-                                      _memptr,
-                                      _memsize,
-                                      _mapcache);
+                  initializeMapCache (personality);
                                       
                 // Round up to the page size
                 size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
                 
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
+                TRACE_ERR((stderr, "BgqGlobal() .. after second ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
                 if (rc != -1) return;
               }
             }
           }
 
           // There was a failure obtaining the shared memory segment, most
-          // likely because the applicatino is running in SMP mode. Allocate
+          // likely because the application is running in SMP mode. Allocate
           // memory from the heap instead.
           //
           // TODO - verify the run mode is actually SMP.
           posix_memalign ((void **)&_memptr, 16, bytes);
           memset (_memptr, 0, bytes);
           _memsize = bytes;
-          size_t bytes_used =
-            initializeMapCache (personality,
-                                _memptr,
-                                _memsize,
-                                _mapcache);
-          
+          TRACE_ERR((stderr, "BgqGlobal() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
+          size_t bytes_used = initializeMapCache (personality);
+
+          TRACE_ERR((stderr, "BgqGlobal() <<\n"));
 
           return;
         };
@@ -149,55 +152,17 @@ namespace XMI
 
         inline bgq_mapcache_t * getMapCache ()
         {
-          return _mapcache;
+          return &_mapcache;
         };
+        
+        inline size_t size ()
+        {
+          return _size;
+        }
         
      private:
 
-        inline void allocateMemory ()
-        {
-          const char   * shmemfile = "/unique-xmi-shmem-file";
-          size_t   bytes     = 1024*1024;
-          size_t   pagesize  = 4096;
-
-          // Round up to the page size
-          size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-
-          int fd, rc;
-          size_t n = bytes;
-
-          fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-          if ( fd != -1 )
-          {
-            rc = ftruncate( fd, n );
-            if ( rc != -1 )
-            {
-              void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-              if ( ptr != MAP_FAILED )
-              {
-                _memptr  = ptr;
-                _memsize = n;
-                return;
-              }
-            }
-          }
-
-          // There was a failure obtaining the shared memory segment, most
-          // likely because the applicatino is running in SMP mode. Allocate
-          // memory from the heap instead.
-          //
-          // TODO - verify the run mode is actually SMP.
-          posix_memalign ((void **)&_memptr, 16, bytes);
-          memset (_memptr, 0, bytes);
-          _memsize = bytes;
-
-          return;
-        };
-
-        inline size_t initializeMapCache (BgqPersonality  & personality,
-                                          void                    * ptr,
-                                          size_t                    bytes,
-                                          bgq_mapcache_t          * mapcache);
+        inline size_t initializeMapCache (BgqPersonality  & personality);
 
       public:
 
@@ -207,16 +172,19 @@ namespace XMI
 
         void           * _memptr;
         size_t           _memsize;
-        bgq_mapcache_t * _mapcache;
+        bgq_mapcache_t   _mapcache;
+        size_t           _size;
     }; // XMI::SysDep::BgqGlobal
   };   // XMI::SysDep
 };     // XMI
 
-size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality,
-                                                   void            * ptr,
-                                                   size_t            bytes,
-                                                   bgq_mapcache_t  * mapcache)
+size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality)
 {
+  void            * ptr      = _memptr;
+  size_t            bytes    = _memsize;
+  bgq_mapcache_t  * mapcache = &_mapcache;
+
+  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, bytes, mapcache);
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this
   // constructor, but exists there only for the duration of this
@@ -237,9 +205,9 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
     volatile size_t minRank;       // Smallest valid rank
   } cacheAnchors_t;
 
-  volatile cacheAnchors_t * cacheAnchorsPtr;
+  volatile cacheAnchors_t * cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
 
-  size_t myRank, mySize;
+  size_t myRank;
 
   size_t tt, num_t = 0, rank, size;
   int err;
@@ -255,7 +223,7 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
   size_t pSize  = personality.pSize ();
   size_t tSize  = personality.tSize ();
 
-  cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
+  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. p=%zd t=%zd {%zd %zd %zd %zd %zd}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize);
 
   // Notify all other tasks on the node that this task has entered the
   // map cache initialization function.  If the value returned is zero
@@ -266,7 +234,10 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
     Fetch_and_Add ((uint64_t *) & (cacheAnchorsPtr->atomic.enter), 1);
 
   myRank = personality.rank();
-#warning set 'mySize' ?
+
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant);
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize);
+
 
   // Calculate the number of potential tasks in this partition.
   size_t fullSize = aSize * bSize * cSize * dSize * eSize * pSize * tSize;
@@ -274,10 +245,24 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
   // Calculate the number of potential tasks on a node in this partition.
   size_t peerSize = pSize * tSize;
 
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize);
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->torus.task2coords = %p\n", mapcache->torus.task2coords);
+ 
   mapcache->torus.task2coords = (bgq_coords_t *) (cacheAnchorsPtr + 1);
+  
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task);
+ 
   mapcache->torus.coords2task = (uint32_t *) (mapcache->torus.task2coords + fullSize);
+  
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task);
+ 
   mapcache->node.local2peer   = (size_t *) (mapcache->torus.coords2task + peerSize);
+  
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task);
+ 
   mapcache->node.peer2task    = (size_t *) (mapcache->node.local2peer + peerSize);
+  
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task);
 
   size_t max_rank = 0, min_rank = (size_t) - 1;
 
@@ -325,11 +310,12 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
          * 4. Number of active ranks on each compute node.
          */
         size_t i;
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. fullSize = %zd\n", fullSize);
 
         for (i = 0; i < fullSize; i++)
           {
             //if ( (int)_mapcache[i] != -1 )
-              {
+            //  {
                 //bgq_coords_t mapCacheElement = *((bgq_coords_t*) & _mapcache[i]);
                 a = mapcache->torus.task2coords[i].a;
                 b = mapcache->torus.task2coords[i].b;
@@ -338,6 +324,8 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
                 e = mapcache->torus.task2coords[i].e;
                 p = mapcache->torus.task2coords[i].core;
                 t = mapcache->torus.task2coords[i].thread;
+
+ //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a,b,c,d,e,p,t);
 
                 // Increment the rank count on this node.
                 rarray[a][b][c][d][e]++;
@@ -365,7 +353,7 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
                 max_rank = i;
 
                 if (min_rank == (size_t) - 1) min_rank = i;
-              }
+            //  }
           }
 
         cacheAnchorsPtr->maxRank = max_rank;
@@ -503,17 +491,22 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
       Fetch_and_Add ((uint64_t *)&(cacheAnchorsPtr->atomic.exit), 1);
     }
 
-  return sizeof(cacheAnchors_t) +
+  _size = cacheAnchorsPtr->numActiveRanksGlobal;
+
+  size_t mapsize = sizeof(cacheAnchors_t) +
          (sizeof(bgq_coords_t) + sizeof(uint32_t)) * fullSize +
          (sizeof(size_t)*2) * peerSize;
 
+  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() << mapsize = %zd\n", mapsize);
+
+  return mapsize;
 };
 
 
 
 
 extern XMI::SysDep::BgqGlobal __global;
-
+#undef TRACE_ERR
 #endif // __xmi_components_sysdep_bgq_bgqglobal_h__
 
 

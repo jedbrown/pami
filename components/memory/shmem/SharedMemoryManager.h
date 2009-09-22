@@ -25,8 +25,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-//#include <spi/bgp_SPI.h>
-//#include <cnk/bgp_SysCall_Extensions.h>
+#ifndef TRACE_ERR
+#define TRACE_ERR(x)  //fprintf x
+#endif
 
 namespace XMI
 {
@@ -54,25 +55,35 @@ namespace XMI
 //          size_t size = (bytes + 4096 - 1) & ~(4096 - 1);
 
           int fd, rc;
-          size_t n = bytes;
+          size_t n = size;
 
+          TRACE_ERR((stderr, "SharedMemoryManager() .. size = %zd\n", size));
           fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          TRACE_ERR((stderr, "SharedMemoryManager() .. after shm_open, fd = %d\n", fd));
           if ( fd != -1 )
           {
             rc = ftruncate( fd, n );
+            TRACE_ERR((stderr, "SharedMemoryManager() .. after ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
             if ( rc != -1 )
             {
               void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+              TRACE_ERR((stderr, "SharedMemoryManager() .. after mmap, ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED));
               if ( ptr != MAP_FAILED )
               {
                 _location = ptr;
                 _size     = n;
+                TRACE_ERR((stderr, "SharedMemoryManager() .. _location = %p, _size = %zd\n", _location, _size));
                 result = XMI_SUCCESS;
                 return;
               }
             }
           }
 
+          TRACE_ERR((stderr, "SharedMemoryManager() .. FAILED, fake shmem on the heap\n"));
+          
+          posix_memalign ((void **)&_location, 16, n);
+          _size = n;
+          
           return;
         }
 
@@ -111,5 +122,5 @@ namespace XMI
     };
   };
 };
-
+#undef TRACE_ERR
 #endif // __xmi_components_memory_shmem_sharedmemorymanager_h__

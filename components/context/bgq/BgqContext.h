@@ -35,7 +35,7 @@ namespace XMI
 {
   namespace Context
   {
-    typedef Fifo::FifoPacket <16,240> ShmemPacket;
+    typedef Fifo::FifoPacket <32,992> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
     //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
     //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;

@@ -84,23 +84,6 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-
-  xmi_dispatch_t dispatch = 0;
-  xmi_dispatch_callback_fn fn;
-  fn.p2p = test_dispatch;
-  xmi_send_hint_t options;
-  fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active);
-  result = XMI_Dispatch_set (context,
-                             dispatch,
-                             (xmi_dispatch_callback_fn) fn,
-                             (void *)&recv_active,
-                             options);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
-    return 1;
-  }
-
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
@@ -122,6 +105,27 @@ int main (int argc, char ** argv)
   }
   size_t num_tasks = configuration.value.intval;
   fprintf (stderr, "Number of tasks = %zd\n", num_tasks);
+  if (num_tasks != 2)
+  {
+    fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zd\n", num_tasks);
+    return 1;
+  }
+
+  xmi_dispatch_t dispatch = 0;
+  xmi_dispatch_callback_fn fn;
+  fn.p2p = test_dispatch;
+  xmi_send_hint_t options;
+  fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active);
+  result = XMI_Dispatch_set (context,
+                             dispatch,
+                             (xmi_dispatch_callback_fn) fn,
+                             (void *)&recv_active,
+                             options);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+    return 1;
+  }
 
   xmi_send_simple_t parameters;
   parameters.send.dispatch = dispatch;

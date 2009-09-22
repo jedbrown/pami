@@ -70,10 +70,10 @@ namespace XMI
           _coords.reserved =  0;
           _coords.core     = _p;
 
-//          { _t, _a, _b, _c, _d, _e, 0, _p };
-
           coord2node (_t, _a, _b, _c, _d, _e, _p,
                       _nodeaddr.global, _nodeaddr.local);
+
+          _size = __global.size();;
 
           TRACE_ERR((stderr, "BgqMapping::BgqMapping() .. coords: (%zd %zd %zd %zd %zd %zd), node: (%zd %zd)\n", _a, _b, _c, _d, _e, _t, _p, _nodeaddr.global, _nodeaddr.local));
         };
@@ -322,7 +322,7 @@ namespace XMI
           // Can this just be:  address = _nodeaddr; ???
           address.global = _nodeaddr.global;
           address.local  = _nodeaddr.local;
-          TRACE_ERR((stderr, "BgqMapping::nodeAddr_impl(%zd, %zd) <<\n", global, local));
+          TRACE_ERR((stderr, "BgqMapping::nodeAddr_impl(%zd, %zd) <<\n", address.global, address.local));
         };
 
         /// \see XMI::Mapping::Interface::Node::task2node()
@@ -726,6 +726,7 @@ xmi_result_t XMI::Mapping::BgqMapping::init_impl ()
 {
   //_mapcache  = __global.getMapCache();
   //_rankcache = __global.getRankCache();
+  
 
 #if 0
   // This structure anchors pointers to the map cache and rank cache.
