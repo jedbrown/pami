@@ -55,6 +55,7 @@ namespace XMI
     {
       CI_BROADCAST0=0,
       CI_BROADCAST1,
+      CI_BROADCAST2,
       CI_ALLGATHER0,
       CI_ALLGATHERV0,
       CI_SCATTER0,
@@ -211,6 +212,31 @@ namespace XMI
       CCMI::Adaptor::Broadcast::BinomialBcastFactory          _broadcast_registration;
       CCMI_Executor_t                                         _broadcast_executor;
     };
+
+    template <class T_Device, class T_Sysdep>
+    class CCMIRingBroadcastInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIRingBroadcastInfo(T_Device *dev,
+                             T_Sysdep * sd,
+                             xmi_mapidtogeometry_fn fcn):
+        CollInfo<T_Device>(dev),
+        _model(*dev),
+        _connmgr(65535),
+        _broadcast_registration(sd,
+                                &_model,
+                                &_connmgr,
+                                65535)
+        {
+        }
+      XMI_Request_t                                           _request;
+      MPIMcastModel                                           _model;
+      CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
+      CCMI::Adaptor::Broadcast::RingBcastFactory              _broadcast_registration;
+      CCMI_Executor_t                                         _broadcast_executor;
+    };
+
+    
   };
 };
 typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;

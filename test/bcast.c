@@ -114,8 +114,8 @@ int main (int argc, char ** argv)
         return 1;
       }
 
-  xmi_algorithm_t bcastalgorithm[1];
-  int             bcastnum_algorithm = 1;
+  xmi_algorithm_t bcastalgorithm[20];
+  int             bcastnum_algorithm = 20;
   result = XMI_Geometry_algorithm(context,
 				  XMI_XFER_BROADCAST,
 				  world_geometry,
@@ -140,53 +140,55 @@ int main (int argc, char ** argv)
   barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
 
-
-  int root = 0;
-  if (task_id == (size_t)root)
+  int niter = 0;
+  for(niter=0; niter<bcastnum_algorithm; niter++)
       {
-        printf("# Broadcast Bandwidth Test -- root = %d\n", root);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-        printf("# -----------      -----------    -----------    ---------\n");
-      }
-
-  xmi_broadcast_t broadcast;
-  broadcast.xfer_type = XMI_XFER_BROADCAST;
-  broadcast.cb_done   = cb_broadcast;
-  broadcast.cookie    = (void*)&_g_broadcast_active;
-  broadcast.geometry  = world_geometry;
-  broadcast.algorithm = bcastalgorithm[0];
-  broadcast.root      = root;
-  broadcast.buf       = buf;
-  broadcast.type      = XMI_BYTE;
-  broadcast.typecount = 0;
-
-  int i,j;
-  for(i=1; i<=BUFSIZE; i*=2)
-      {
-        long long dataSent = i;
-        int          niter = 100;
-        _barrier(context, &barrier);
-        ti = timer();
-        for (j=0; j<niter; j++)
-            {
-              broadcast.typecount = i;
-              _broadcast (context, &broadcast);
-            }
-        tf = timer();
-        _barrier(context, &barrier);
-
-        usec = (tf - ti)/(double)niter;
+        int root = 0;
         if (task_id == (size_t)root)
             {
-              printf("  %11lld %16lld %14.1f %12.2f\n",
-                     dataSent,
-                     0LL,
-                     (double)1e6*(double)dataSent/(double)usec,
-                     usec);
-              fflush(stdout);
+              printf("# Broadcast Bandwidth Test -- root = %d\n", root);
+              printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+              printf("# -----------      -----------    -----------    ---------\n");
+            }
+
+        xmi_broadcast_t broadcast;
+        broadcast.xfer_type = XMI_XFER_BROADCAST;
+        broadcast.cb_done   = cb_broadcast;
+        broadcast.cookie    = (void*)&_g_broadcast_active;
+        broadcast.geometry  = world_geometry;
+        broadcast.algorithm = bcastalgorithm[niter];
+        broadcast.root      = root;
+        broadcast.buf       = buf;
+        broadcast.type      = XMI_BYTE;
+        broadcast.typecount = 0;
+
+        int i,j;
+        for(i=1; i<=BUFSIZE; i*=2)
+            {
+              long long dataSent = i;
+              int          niter = 100;
+              _barrier(context, &barrier);
+              ti = timer();
+              for (j=0; j<niter; j++)
+                  {
+                    broadcast.typecount = i;
+                    _broadcast (context, &broadcast);
+                  }
+              tf = timer();
+              _barrier(context, &barrier);
+
+              usec = (tf - ti)/(double)niter;
+              if (task_id == (size_t)root)
+                  {
+                    printf("  %11lld %16lld %14.1f %12.2f\n",
+                           dataSent,
+                           0LL,
+                           (double)1e6*(double)dataSent/(double)usec,
+                           usec);
+                    fflush(stdout);
+                  }
             }
       }
-
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)
       {

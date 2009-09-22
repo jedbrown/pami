@@ -112,6 +112,7 @@ namespace XMI
           *num = MIN(*num, i);
           for(i=0; i<*num; i++)
             alglist[i] = (size_t)i;
+          fprintf(stderr, "alg_impl sz=%d\n",i);
           return XMI_SUCCESS;
         }
 
@@ -233,38 +234,63 @@ namespace XMI
           XMI::CollInfo::PGBroadcastInfo<T_Device> *info =
             (XMI::CollInfo::PGBroadcastInfo<T_Device> *)_broadcasts[broadcast->algorithm];
 	  switch(info->_colltype)
-	    {
-	    case XMI::CollInfo::CI_BROADCAST0:
-	      {
-		if (!_bcast->isdone()) _dev->advance();
+              {
+                  case XMI::CollInfo::CI_BROADCAST0:
+                  {
+                    if (!_bcast->isdone()) _dev->advance();
 		
-		((TSPColl::BinomBcast<MPIMcastModel> *)_bcast)->reset (_geometry->virtrankof(broadcast->root),
-								       broadcast->buf,
-								       broadcast->buf,
-								       broadcast->typecount);
-		_bcast->setComplete(broadcast->cb_done, broadcast->cookie);
-		_bcast->kick(&info->_model);
+                    ((TSPColl::BinomBcast<MPIMcastModel> *)_bcast)->reset (_geometry->virtrankof(broadcast->root),
+                                                                           broadcast->buf,
+                                                                           broadcast->buf,
+                                                                           broadcast->typecount);
+                    _bcast->setComplete(broadcast->cb_done, broadcast->cookie);
+                    _bcast->kick(&info->_model);
+                  }
+                  break;
+                  case XMI::CollInfo::CI_BROADCAST1:
+                  {
 
-	      }
-	      break;
-	    case XMI::CollInfo::CI_BROADCAST1:
-	      {
-#if 0
-		xmi_callback_t cb_done_ccmi;
-		cb_done_ccmi.function   = barrier->cb_done;
-		cb_done_ccmi.clientdata = barrier->cookie;
-		CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor *)
-		  _geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
-		_c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
-		_c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
-		_c_bar->start();
-#endif
-	      }
-	      break;
-	    default:
-              assert(0);
-	      return XMI_UNIMPL;
-	    }
+                    fprintf(stderr, "ccmi broadcast ring!\n");
+                    XMI_Callback_t cb_done;
+                    cb_done.function   = broadcast->cb_done;
+                    cb_done.clientdata = broadcast->cookie;
+                    XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
+                      (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    cinfo->_broadcast_registration.generate(req,
+                                                            sizeof(XMI_CollectiveRequest_t),
+                                                            cb_done,
+                                                            XMI_MATCH_CONSISTENCY,
+                                                            _geometry,
+                                                            broadcast->root,
+                                                            broadcast->buf,
+                                                            broadcast->typecount);
+                  }
+                  break;
+                  case XMI::CollInfo::CI_BROADCAST2:
+                  {
+
+                    fprintf(stderr, "ccmi broadcast binomial!\n");
+                    XMI_Callback_t cb_done;
+                    cb_done.function   = broadcast->cb_done;
+                    cb_done.clientdata = broadcast->cookie;
+                    XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
+                      (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    cinfo->_broadcast_registration.generate(req,
+                                                           sizeof(XMI_CollectiveRequest_t),
+                                                           cb_done,
+                                                           XMI_MATCH_CONSISTENCY,
+                                                           _geometry,
+                                                           broadcast->root,
+                                                           broadcast->buf,
+                                                           broadcast->typecount);
+                  }
+                  break;
+                  default:
+                    assert(0);
+                    return XMI_UNIMPL;
+              }
           return XMI_SUCCESS;
         }
 
@@ -396,33 +422,33 @@ namespace XMI
 	    (XMI::CollInfo::CollInfo<T_Device> *)_barriers[barrier->algorithm];
 	  
 	  switch(info->_colltype)
-	    {
-	    case XMI::CollInfo::CI_BARRIER0:
-	      {
-		XMI::CollInfo::PGBarrierInfo<T_Device> *binfo = 
-		  (XMI::CollInfo::PGBarrierInfo<T_Device> *)info;
-		while(!_barrier->isdone()) _dev->advance();
-		((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
-		_barrier->setComplete(barrier->cb_done, barrier->cookie);
-		_barrier->kick(&binfo->_model);
-	      }
-	      break;
-	    case XMI::CollInfo::CI_BARRIER1:
-	      {
-		xmi_callback_t cb_done_ccmi;
-		cb_done_ccmi.function   = barrier->cb_done;
-		cb_done_ccmi.clientdata = barrier->cookie;
-		CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor *)
-		  _geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
-		_c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
-		_c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
-		_c_bar->start();
-	      }
-	      break;
-	    default:
-              assert(0);
-	      return XMI_UNIMPL;
-	    }
+              {
+                  case XMI::CollInfo::CI_BARRIER0:
+                  {
+                    XMI::CollInfo::PGBarrierInfo<T_Device> *binfo = 
+                      (XMI::CollInfo::PGBarrierInfo<T_Device> *)info;
+                    while(!_barrier->isdone()) _dev->advance();
+                    ((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
+                    _barrier->setComplete(barrier->cb_done, barrier->cookie);
+                    _barrier->kick(&binfo->_model);
+                  }
+                  break;
+                  case XMI::CollInfo::CI_BARRIER1:
+                  {
+                    xmi_callback_t cb_done_ccmi;
+                    cb_done_ccmi.function   = barrier->cb_done;
+                    cb_done_ccmi.clientdata = barrier->cookie;
+                    CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor *)
+                      _geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
+                    _c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
+                    _c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
+                    _c_bar->start();
+                  }
+                  break;
+                  default:
+                    assert(0);
+                    return XMI_UNIMPL;
+              }
 
           return XMI_SUCCESS;
         }

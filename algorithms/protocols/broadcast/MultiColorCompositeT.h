@@ -187,7 +187,7 @@ namespace CCMI
         /// \brief For sync broadcasts, the done call back to be called
         ///        when barrier finishes
         ///
-        static void cb_barrier_done(void *me, xmi_result_t *err)
+        static void cb_barrier_done(void *ctxt, void *me, xmi_result_t err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -201,7 +201,7 @@ namespace CCMI
           ++bcast_composite->_doneCount;
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
-            bcast_composite->_cb_done.function(bcast_composite->_cb_done.clientdata,NULL);
+            bcast_composite->_cb_done.function(NULL, bcast_composite->_cb_done.clientdata,XMI_SUCCESS);
           }
         }
 
@@ -290,16 +290,13 @@ namespace CCMI
 
           composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
 
-// assert here until we have some method to issue a barrier from the geometry!
-          assert(0);
-          
-#if 0
-          CCMI::Executor::Executor *barrier = geometry->getBarrierExecutor();
+//          CCMI::Executor::Executor *barrier = geometry->getBarrierExecutor();
+  
+          CCMI::Executor::Executor *barrier = (CCMI::Executor::Executor *)geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
           CCMI_assert(barrier != NULL);
           barrier->setDoneCallback (B::cb_barrier_done, composite);
           barrier->setConsistency (consistency);
           barrier->start();
-#endif         
 
           return composite;
         }
