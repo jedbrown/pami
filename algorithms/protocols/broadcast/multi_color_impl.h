@@ -17,7 +17,8 @@
 #include "algorithms/schedule/Rectangle.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/schedule/RingSchedule.h"
-#include "./MultiColorCompositeT.h"
+#include "algorithms/protocols/broadcast/MultiColorCompositeT.h"
+#include "algorithms/connmgr/ColorGeometryConnMgr.h"
 
 namespace CCMI
 {
@@ -27,7 +28,7 @@ namespace CCMI
     {
 
 
-      inline void get_colors (Geometry                  * g,
+      inline void get_colors (XMI_GEOMETRY_CLASS                  * g,
                               unsigned                    bytes,
                               CCMI::Schedule::Color     * colors,
                               unsigned                  & ncolors,
@@ -39,7 +40,7 @@ namespace CCMI
       }
 
       //This method is for schedules/executors that dont use pipelining
-      inline void get_colors_nopw (Geometry                  * g,
+      inline void get_colors_nopw (XMI_GEOMETRY_CLASS                  * g,
                                    unsigned                    bytes,
                                    CCMI::Schedule::Color     * colors,
                                    unsigned                  & ncolors,
@@ -51,14 +52,18 @@ namespace CCMI
       }
 
 
-      typedef MultiColorCompositeT <1, CCMI::Schedule::BinomialTreeSchedule,
-      get_colors,CCMI::CollectiveMapping> BinomialBcastComposite;
+      typedef MultiColorCompositeT <1,
+                                    CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
+                                    get_colors,
+                                    XMI_COLL_SYSDEP_CLASS,
+                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS>,
+                                    XMI_COLL_MCAST_CLASS> BinomialBcastComposite;
       template<> void BinomialBcastComposite::create_schedule ( void                      * buf,
                                                                 unsigned                    size,
-                                                                Geometry                  * g,
+                                                                XMI_GEOMETRY_CLASS                  * g,
                                                                 CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::BinomialTreeSchedule (_mapping, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS> (_mapping, g->nranks(), g->ranks());
       }
 
 
@@ -66,20 +71,32 @@ namespace CCMI
       //create_rschedule<CCMI::Schedule::OneColorRectBcastSched>,
       //get_rcolors<CCMI::Schedule::OneColorRectangle> > RectangleBcastComposite;
 
-      typedef MultiColorCompositeT <1, CCMI::Schedule::RingSchedule,
-      get_colors,CCMI::CollectiveMapping> RingBcastComposite;
+      typedef MultiColorCompositeT <1,
+                                    CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS>,
+                                    get_colors,
+                                    XMI_COLL_SYSDEP_CLASS,
+                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS>,
+                                    XMI_COLL_MCAST_CLASS> RingBcastComposite;
       template<> void RingBcastComposite::create_schedule ( void                      * buf,
                                                             unsigned                    size,
-                                                            Geometry                  * g,
+                                                            XMI_GEOMETRY_CLASS        * g,
                                                             CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::RingSchedule (_mapping, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS> (_mapping, g->nranks(), g->ranks());
       }
 
 
-      typedef MultiColorBroadcastFactoryT <BinomialBcastComposite, true_analyze,CCMI::CollectiveMapping> BinomialBcastFactory;
+      typedef MultiColorBroadcastFactoryT <BinomialBcastComposite,
+                                           true_analyze,
+                                           XMI_COLL_SYSDEP_CLASS,
+                                           XMI_COLL_MCAST_CLASS,
+                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> > BinomialBcastFactory;
       //typedef MultiColorBroadcastFactoryT <RectangleBcastComposite, rectangle_analyze> RectBcastFactory;
-      typedef MultiColorBroadcastFactoryT <RingBcastComposite, true_analyze,CCMI::CollectiveMapping> RingBcastFactory;
+      typedef MultiColorBroadcastFactoryT <RingBcastComposite,
+                                           true_analyze,
+                                           XMI_COLL_SYSDEP_CLASS,
+                                           XMI_COLL_MCAST_CLASS,
+                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> > RingBcastFactory;
     };
   };
 };

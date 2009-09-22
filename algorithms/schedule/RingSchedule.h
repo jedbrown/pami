@@ -35,7 +35,7 @@ namespace CCMI
 {
   namespace Schedule
   {
-
+    template <class T_Sysdep>
     class RingSchedule : public Schedule
     {
 
@@ -47,9 +47,9 @@ namespace CCMI
       {
       }
 
-      RingSchedule (XMI_MAPPING_CLASS *map, unsigned nranks, unsigned *ranks);
+      RingSchedule (T_Sysdep *map, unsigned nranks, unsigned *ranks);
       RingSchedule (unsigned x, unsigned x0, unsigned xN);
-      //RingSchedule (Rectangle  *rect, XMI_MAPPING_CLASS *map);
+      //RingSchedule (Rectangle  *rect, T_Sysdep *map);
 
       //Ring broadcast: Send to next and recv from prev
       void getBroadcastSources (unsigned  phase, unsigned *srcpes,
@@ -128,7 +128,7 @@ namespace CCMI
         if(_ranks != NULL)
         {
           for(idx = 0; idx < _nranks; idx++)
-            if(_mapping->task() == _ranks[idx])
+            if(_sysdep->mapping.task() == _ranks[idx])
               return idx;
 
           return(unsigned)-1;
@@ -375,14 +375,14 @@ namespace CCMI
         TRACE_SCHEDULE(("In Ring Schedule _prev = %d, _next = %d\n", _prev, _next));
       }
 
-      static unsigned getMaxPhases (XMI_MAPPING_CLASS *map, unsigned nranks)
+      static unsigned getMaxPhases (T_Sysdep *map, unsigned nranks)
       {
         return nranks - 1;
       }
 
 
     protected:
-      XMI_MAPPING_CLASS              * _mapping;
+      T_Sysdep              * _sysdep;
       unsigned   short       _op;
       unsigned               _root;
       unsigned               _startPhase;
@@ -404,12 +404,12 @@ namespace CCMI
   };
 };
 
-
-inline CCMI::Schedule::RingSchedule::RingSchedule
-(XMI_MAPPING_CLASS       * map,
+template <class T_Sysdep>
+inline CCMI::Schedule::RingSchedule<T_Sysdep>::RingSchedule
+(T_Sysdep       * map,
  unsigned        nranks,
  unsigned      * ranks) :
-_mapping (map),
+_sysdep (map),
 _isHead (false), _isTail (false),
 _ranks(ranks), _nranks(nranks),
 _x0((unsigned) -1), _my_x ((unsigned) -1)
@@ -430,11 +430,12 @@ _x0((unsigned) -1), _my_x ((unsigned) -1)
 /// \param x0   the first rank
 /// \param xN   the last rank
 ///
-inline CCMI::Schedule::RingSchedule::RingSchedule
+template <class T_Sysdep>
+inline CCMI::Schedule::RingSchedule<T_Sysdep>::RingSchedule
 (unsigned        x,
  unsigned        x0,
  unsigned        xN) :
-_mapping (NULL),_isHead (false), _isTail (false),
+_sysdep (NULL),_isHead (false), _isTail (false),
 _ranks(NULL), _nranks(xN - x0 + 1),
 _x0 (x0), _my_x (x)
 {
@@ -446,8 +447,8 @@ _x0 (x0), _my_x (x)
 
 #if 0
 inline CCMI::Schedule::RingSchedule::RingSchedule
-(Rectangle  *rect, XMI_MAPPING_CLASS *map) :
-_mapping (map), _isHead (false), _isTail (false), _ranks(NULL),
+(Rectangle  *rect, T_Sysdep *map) :
+_sysdep (map), _isHead (false), _isTail (false), _ranks(NULL),
 _nranks((unsigned)-1), _x0((unsigned) -1), _my_x ((unsigned) -1)
 {
   _startPhase = ((unsigned) -1);

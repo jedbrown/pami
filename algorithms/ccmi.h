@@ -60,10 +60,25 @@ typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 #define __ccmi_callback_defined__
 
 
-#define CCMI_X_DIM 0
-#define CCMI_Y_DIM 1
-#define CCMI_Z_DIM 2
-#define CCMI_T_DIM 3
+#define XMI_X_DIM 0
+#define XMI_Y_DIM 1
+#define XMI_Z_DIM 2
+#define XMI_T_DIM 3
+
+// TODO:  generalize this using mappings
+
+#define XMI_TORUS_NDIMS 1
+
+#define XMI_COPY_COORDS(a,b)               \
+{                                           \
+  int _i;                                   \
+  for (_i = 0; _i < XMI_TORUS_NDIMS; _i++) \
+    a[_i] = b[_i];                          \
+}
+
+
+
+
 
 #include <pthread.h>
 
@@ -116,9 +131,9 @@ typedef struct _cheader_data
 #define CCMI_Free(x)   free(x)
 #endif
 
-#define CCMI_UNDEFINED_PHASE ((unsigned)-1)
+#define XMI_UNDEFINED_PHASE ((unsigned)-1)
 
-#define  CCMI_UNDEFINED_RANK ((unsigned)-1)
+#define  XMI_UNDEFINED_RANK ((unsigned)-1)
 
 #ifndef CCMI_PROTOCOL_SIZE
 #define CCMI_PROTOCOL_SIZE	64

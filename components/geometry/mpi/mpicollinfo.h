@@ -38,7 +38,14 @@ typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 #define XMI_COLL_SYSDEP_CLASS XMI::SysDep::MPISysDep
 
 #include "algorithms/protocols/broadcast/async_impl.h"
+#include "algorithms/protocols/broadcast/multi_color_impl.h"
+#include "algorithms/protocols/broadcast/async_impl.h"
+#include "algorithms/connmgr/ColorGeometryConnMgr.h"
 #include "algorithms/protocols/barrier/impl.h"
+
+
+
+
 
 namespace XMI
 {
@@ -47,6 +54,7 @@ namespace XMI
     typedef enum
     {
       CI_BROADCAST0=0,
+      CI_BROADCAST1,
       CI_ALLGATHER0,
       CI_ALLGATHERV0,
       CI_SCATTER0,
@@ -179,6 +187,30 @@ namespace XMI
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                _barrier_executor;
     };
+
+
+    template <class T_Device, class T_Sysdep>
+      class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
+    {
+    public:
+    CCMIBinomBroadcastInfo(T_Device *dev,
+                           T_Sysdep * sd,
+                           xmi_mapidtogeometry_fn fcn):
+      CollInfo<T_Device>(dev),
+	_model(*dev),
+	_broadcast_registration(sd,
+				&_model,
+				_connmgr,
+				65535)
+	  {
+	  }
+      XMI_Request_t                                           _request;
+      MPIMcastModel                                           _model;
+      CCMI::Adaptor::Broadcast::BinomialBcastFactory          _broadcast_registration;
+      CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
+      CCMI_Executor_t                                         _broadcast_executor;
+    };
+
   };
 };
 typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;

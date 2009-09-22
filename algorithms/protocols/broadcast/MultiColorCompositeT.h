@@ -18,9 +18,7 @@
 #include "algorithms/composite/Composite.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/RankBasedConnMgr.h"
-#include "interface/Geometry.h"
-#include "./BroadcastFactory.h"
-//#include "algorithms/schedule/Rectangle.h"
+#include "algorithms/protocols/broadcast/BroadcastFactory.h"
 
 namespace CCMI
 {
@@ -34,31 +32,19 @@ namespace CCMI
       ///
       /// \brief Get pipeline width and optimal colors based on bytes and schedule
       ///
-      typedef void      (*PWColorsFn) (Geometry                  * g,
+      typedef void      (*PWColorsFn) (XMI_GEOMETRY_CLASS                  * g,
                                        unsigned                    bytes,
                                        CCMI::Schedule::Color     * colors,
                                        unsigned                  & ncolors,
                                        unsigned                  & pwidth);
 
-      ///
-      /// \brief Receive the broadcast message and notify the executor
-      ///
-      static void staticRecvFn (void *executor, XMI_Error_t *err)
-      {
-        XMIQuad *info = NULL;
 
-        CCMI::Executor::Broadcast *exe =
-        (CCMI::Executor::Broadcast *) executor;
-
-        TRACE_ADAPTOR((stderr, "In static notify recv, exe=%p\n",exe));
-
-        exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
-      }
 
       ///
       ///  \brief Base class for synchronous broadcasts
       ///
-      template <int NUMCOLORS, class S, PWColorsFn pwcfn, class MAP>
+//      <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      template <int NUMCOLORS, class S, PWColorsFn pwcfn, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
       class MultiColorCompositeT : public CCMI::Executor::Composite
       {
       protected:
@@ -79,24 +65,40 @@ namespace CCMI
         ///
         /// \brief Pointer to mapping
         ///
-        MAP                              *  _mapping;
+        T_Sysdep                              *  _mapping;
 
-        CCMI::Executor::Broadcast                     _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
+        CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager>
+                                                      _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
         S                                             _schedules  [NUMCOLORS];
         char *                                        _srcbufs    [NUMCOLORS];
         unsigned                                      _bytecounts [NUMCOLORS];
 
-      public:
+      public:        
         MultiColorCompositeT () : CCMI::Executor::Composite (), _doneCount(0), _nComplete(0)
         {
         }
 
-        MultiColorCompositeT (MAP                              * map,
-                              CCMI::ConnectionManager::ConnectionManager * cmgr,
+      ///
+      /// \brief Receive the broadcast message and notify the executor
+      ///
+        static void staticRecvFn (void *executor, xmi_result_t *err)
+          {
+            xmi_quad_t *info = NULL;
+            
+            CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *exe =
+              (CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *) executor;
+            
+            TRACE_ADAPTOR((stderr, "In static notify recv, exe=%p\n",exe));
+            
+            exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
+          }
+        
+        MultiColorCompositeT (T_Sysdep                              * map,
+                              T_ConnectionManager * cmgr,
                               XMI_Callback_t                              cb_done,
-                              CCMI_Consistency                             consistency,
-                              CCMI::MultiSend::OldMulticastInterface        * mf,
-                              Geometry                                   * geometry,
+                              xmi_consistency_t                      consistency,
+                              T_Mcast                              * mf,
+                              XMI_GEOMETRY_CLASS                                   * geometry,
                               unsigned                                     root,
                               char                                       * src,
                               unsigned                                     bytes) :
@@ -123,12 +125,12 @@ namespace CCMI
           for(unsigned c = 0; c < _numColors; c++)
           {
             CCMI_assert (c < NUMCOLORS);
-            CCMI::Executor::Broadcast *bcast  =
-            new (& _executors[c]) CCMI::Executor::Broadcast (map,
-                                                             geometry->comm(),
-                                                             cmgr,
-                                                             _colors[c],
-                                                             true);
+            CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *bcast  =
+            new (& _executors[c]) CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager> (map,
+                                                                                                   geometry->comm(),
+                                                                                                   cmgr,
+                                                                                                   _colors[c],
+                                                                                                   true);
 
             bcast->setMulticastInterface (mf);
             bcast->setInfo (root, _pipewidth, _srcbufs[c], _bytecounts[c]);
@@ -149,24 +151,24 @@ namespace CCMI
 
         void      create_schedule(void                      * buf,
                                  unsigned                    size,
-                                 Geometry                  * g,
+                                 XMI_GEOMETRY_CLASS                  * g,
                                  CCMI::Schedule::Color       color) {CCMI_abort();};
         void setDoneCallback (XMI_Callback_t  cb_done) { _cb_done = cb_done;}
 
-        void SyncBcastPost(Geometry                                     * geometry,
+        void SyncBcastPost(XMI_GEOMETRY_CLASS                                     * geometry,
                            unsigned                                       root,
-                           CCMI::ConnectionManager::ConnectionManager   * cmgr,
-                           CCMI::MultiSend::OldMulticastInterface          * minterface)
+                           T_ConnectionManager   * cmgr,
+                           T_Mcast               * minterface)
         {
           if(_mapping->rank() != root)
           { //post receive on non root nodes
             //posts a receive on connection given by connection
             //mgr, bcast connmgrs shouldnt care about phases
 
-            CCMI::MultiSend::CCMI_OldMulticastRecv_t  mrecv;
+            T_Mcast  mrecv;
             mrecv.cb_done.function = staticRecvFn;
             mrecv.pipelineWidth = _pipewidth;
-            mrecv.opcode = CCMI_PT_TO_PT_SUBTASK;
+            mrecv.opcode = XMI_PT_TO_PT_SUBTASK;
 
             for(unsigned c = 0; c < _numColors; c++)
             {
@@ -185,7 +187,7 @@ namespace CCMI
         /// \brief For sync broadcasts, the done call back to be called
         ///        when barrier finishes
         ///
-        static void cb_barrier_done(void *me, XMI_Error_t *err)
+        static void cb_barrier_done(void *me, xmi_result_t *err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -203,7 +205,7 @@ namespace CCMI
           }
         }
 
-        static void cb_bcast_done(void *me, XMI_Error_t *err)
+        static void cb_bcast_done(void *me, xmi_result_t *err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -221,8 +223,8 @@ namespace CCMI
       ///
       /// \brief Base factory class for broadcast factory implementations.
       ///
-      template <class B, AnalyzeFn afn, class MAP>
-      class MultiColorBroadcastFactoryT : public BroadcastFactory<MAP>
+      template <class B, AnalyzeFn afn, class T_Sysdep,class T_Mcast, class T_ConnectionManager>
+      class MultiColorBroadcastFactoryT : public BroadcastFactory<T_Sysdep, T_Mcast, T_ConnectionManager>
       {
       public:
 
@@ -230,15 +232,15 @@ namespace CCMI
         /// \brief Constructor for broadcast factory implementations.
         ///
         MultiColorBroadcastFactoryT
-        (MAP *map,
-         CCMI::MultiSend::OldMulticastInterface *mf,
-         CCMI::ConnectionManager::ConnectionManager *cmgr,
+        (T_Sysdep *map,
+         T_Mcast *mf,
+         T_ConnectionManager *cmgr,
          unsigned nconn)
-        : BroadcastFactory<MAP> (mf, map, cmgr, nconn)
+          : BroadcastFactory<T_Sysdep, T_Mcast, T_ConnectionManager> (mf, map, cmgr, nconn)
         {
         }
 
-        virtual bool Analyze(Geometry *geometry)
+        virtual bool Analyze(XMI_GEOMETRY_CLASS *geometry)
         {
           return  afn(geometry);
         }
@@ -266,9 +268,9 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         XMI_Callback_t             cb_done,
-         CCMI_Consistency            consistency,
-         Geometry                  * geometry,
+         XMI_Callback_t              cb_done,
+         xmi_consistency_t           consistency,
+         XMI_GEOMETRY_CLASS        * geometry,
          unsigned                    root,
          char                      * src,
          unsigned                    bytes)
@@ -288,11 +290,16 @@ namespace CCMI
 
           composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
 
+// assert here until we have some method to issue a barrier from the geometry!
+          assert(0);
+          
+#if 0
           CCMI::Executor::Executor *barrier = geometry->getBarrierExecutor();
           CCMI_assert(barrier != NULL);
           barrier->setDoneCallback (B::cb_barrier_done, composite);
           barrier->setConsistency (consistency);
           barrier->start();
+#endif         
 
           return composite;
         }

@@ -16,6 +16,8 @@
 
 #include "sys/xmi.h"
 #include "components/mapping/BaseMapping.h"
+#include "components/mapping/TorusMapping.h"
+#include "components/mapping/NodeMapping.h"
 #include <mpi.h>
 
 #define XMI_MAPPING_CLASS XMI::Mapping::MPIMapping
@@ -24,11 +26,17 @@ namespace XMI
 {
   namespace Mapping
   {
-    class MPIMapping : public Interface::Base<MPIMapping>
+#define MPI_DIMS 1
+    class MPIMapping : public Interface::Base<MPIMapping>,
+                       public Interface::Torus<MPIMapping, MPI_DIMS>,
+                       public Interface::Node<MPIMapping>
     {
-      public:
-        inline MPIMapping () :
-            Interface::Base<MPIMapping>()
+	
+    public:
+      inline MPIMapping () : 
+        Interface::Base<MPIMapping>(),
+        Interface::Torus<MPIMapping, MPI_DIMS>(),
+        Interface::Node<MPIMapping>()
         {
           MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
           MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
@@ -49,6 +57,62 @@ namespace XMI
       inline size_t size_impl()
         {
           return _size;
+        }
+      inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
+        {
+          assert(0);
+          return XMI_UNIMPL;
+        }
+      inline xmi_result_t nodePeers_impl (size_t & peers)
+        {
+          assert(0);
+          return XMI_UNIMPL;
+        }
+      inline bool isPeer_impl (size_t task1, size_t task2)
+        {
+          assert(0);
+          return XMI_UNIMPL;
+        }
+      inline void nodeAddr_impl (Interface::nodeaddr_t & address)
+        {
+          assert(0);
+        }
+      inline xmi_result_t task2node_impl (size_t task, Interface::nodeaddr_t & address)
+        {
+          address.global=task;
+          address.local =0;
+          return XMI_SUCCESS;
+        }
+      inline xmi_result_t node2task_impl (Interface::nodeaddr_t & address, size_t & task)
+        {
+          task = address.global;
+          return XMI_SUCCESS;
+        }
+      inline xmi_result_t node2peer_impl (Interface::nodeaddr_t & address, size_t & peer)
+        {
+          assert(0);
+          return XMI_UNIMPL;
+        }
+      inline void torusAddr_impl (size_t (&addr)[MPI_DIMS])
+        {
+          addr[0]=_task;
+        }
+      inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[MPI_DIMS])
+        {
+          addr[0] = task;
+          return XMI_SUCCESS;
+        }
+
+      inline xmi_result_t torus2task_impl (size_t (&addr)[MPI_DIMS], size_t & task)
+        {
+          task = addr[0];
+          return XMI_SUCCESS;
+        }
+      inline size_t       torusgetcoord_impl (size_t dimension)
+        {
+          if(dimension >= MPI_DIMS)
+            abort();
+          return _task;
         }
     };
   };

@@ -19,6 +19,7 @@
 #include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
+#include "util/common.h"
 
 namespace CCMI
 {
@@ -28,7 +29,7 @@ namespace CCMI
 /// Arbitrary maximum number PE's per phase.  (In practice it's < 4)
 /// This is used for examining the PE lists from the schedule.  If a
 /// schedule ever returns more than 16, we'll assert.
-#define CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE 128
+#define XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE 128
 
     /// client data for multisend receive done callback
     typedef struct RecvCallbackData_t
@@ -155,20 +156,20 @@ namespace CCMI
     public:
 
 
-#ifdef CCMI_DEBUG
+#ifdef XMI_DEBUG
       inline void checkCorruption()
       {
         if(_receiveAllocation)
         {
-          CCMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION",(((char*)_receiveAllocation)-8), 16);
+          XMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION",(((char*)_receiveAllocation)-8), 16);
         }
-        else CCMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION NULL",NULL , 0);
+        else XMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION NULL",NULL , 0);
         if(_scheduleAllocation)
         {
-          CCMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION",(((char*)_scheduleAllocation)-8), 16);
-          CCMI_ADAPTOR_DEBUG_trace_data("CHECK PHASE VECTOR CORRUPTION",(char*)_phaseVec, 128);
+          XMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION",(((char*)_scheduleAllocation)-8), 16);
+          XMI_ADAPTOR_DEBUG_trace_data("CHECK PHASE VECTOR CORRUPTION",(char*)_phaseVec, 128);
         }
-        else CCMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION NULL",NULL , 0);
+        else XMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION NULL",NULL , 0);
       }
 #endif
       inline xmi_op getOp()
@@ -260,8 +261,8 @@ namespace CCMI
 
       inline int getNextActivePhase (int phase)
       {
-        CCMI_assert (phase >= _startPhase);
-        CCMI_assert (phase <= _endPhase);
+        XMI_assert (phase >= _startPhase);
+        XMI_assert (phase <= _endPhase);
         return _nextActivePhase [phase];
       }
 
@@ -469,8 +470,8 @@ namespace CCMI
       /// \param[in]  pdstbuf pointer to the destination buffer pointer.
       inline void setDstBuf(char** pdstbuf)
       {
-        CCMI_assert(_scheduleAllocationSize);
-        if(_dstPhase != (int) CCMI_UNDEFINED_PHASE)
+        XMI_assert(_scheduleAllocationSize);
+        if(_dstPhase != (int) XMI_UNDEFINED_PHASE)
         {
           // We only use the destination buffer if we're a root or it's allreduce.  Otherwise we use
           // a temporary buffer.
@@ -481,7 +482,7 @@ namespace CCMI
           // The mrecv structure has to match, but we assume this only works for 1 src pe?  We
           // only have a dst phase, not a dst src pe index (so mrecv[0]).  How would a final multi-
           // src receive phase work?  Probably not an issue, but assert anyway.
-          CCMI_assert(_phaseVec[_dstPhase].numSrcPes == 1);
+          XMI_assert(_phaseVec[_dstPhase].numSrcPes == 1);
           _phaseVec[_dstPhase].mrecv[0].rcvbuf = *_phaseVec[_dstPhase].recvBufs;
 
           TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDstBuf(%#X) dstPhase(%#X) _phaseVec[_dstPhase].recvBufs(%#X)\n",
@@ -512,7 +513,7 @@ namespace CCMI
         {
           TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %#X(%#X bytes), %#X(%#X bytes)\n",(int)this,
                        limit, (int)_scheduleAllocation, _scheduleAllocationSize, (int)_receiveAllocation, _receiveAllocationSize));
-#ifdef CCMI_DEBUG
+#ifdef XMI_DEBUG
           memset(_scheduleAllocation, 0xFB, _scheduleAllocationSize);
           memset(_receiveAllocation, 0xFC, _receiveAllocationSize);
 #endif
@@ -547,20 +548,20 @@ namespace CCMI
           _recvReq       = NULL;
           _recvClientData= NULL;
 
-          _dstPhase = CCMI_UNDEFINED_PHASE;
+          _dstPhase = XMI_UNDEFINED_PHASE;
           if (_nextActivePhase)
           {
             CCMI_Free(_nextActivePhase);
             _nextActivePhase = NULL;
           }
-#ifdef CCMI_DEBUG
+#ifdef XMI_DEBUG
           _all_srcPes    = (unsigned*)0xFFFFFFF0;
           _all_srcHints  = (unsigned*)0xFFFFFFF1;
           _all_recvBufs  = (char**)0xFFFFFFF2;
           _all_dstPes    = (unsigned*)0xFFFFFFF3;
           _all_dstHints  = (unsigned*)0xFFFFFFF4;
           _all_chunks    = (unsigned*)0xFFFFFFF5;
-          _all_mrecvs    = (MultiSend::CCMI_OldMulticastRecv_t*)0xFFFFFFF6;
+          _all_mrecvs    = (MultiSend::XMI_OldMulticastRecv_t*)0xFFFFFFF6;
 
           _phaseVec      = (PhaseState*)0xFFFFFFF7;
 
@@ -615,7 +616,7 @@ namespace CCMI
       _phaseVec(NULL),
       _startPhase(-1),
       _endPhase(-1),
-      _dstPhase(CCMI_UNDEFINED_PHASE),
+      _dstPhase(XMI_UNDEFINED_PHASE),
       _numSrcPes(0),
       _numDstPes(0),
       _pipelineWidth(0),
@@ -646,7 +647,7 @@ namespace CCMI
       /// NOTE: This is required to make "C" programs link successfully with virtual destructors
       inline void operator delete(void * p)
       {
-        CCMI_abort();
+        XMI_abort();
       }
 
       inline void setExecutor (Executor *exe)
@@ -670,7 +671,7 @@ namespace CCMI
                               xmi_dt          dt)
       {
         TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() enter\n",(int)this));
-        CCMI_assert(pipelineWidth % sizeOfType == 0);
+        XMI_assert(pipelineWidth % sizeOfType == 0);
 
         _op = op;
         _dt = dt;
@@ -733,7 +734,7 @@ namespace CCMI
               T_mcastrecv *mrecv = &(_phaseVec[phase].mrecv[scount]);
               mrecv->bytes = _bytes;
               mrecv->pipelineWidth = _pipelineWidth;
-              //mrecv->opcode = (CCMI_Subtask) _phaseVec[phase].srcHints[scount];
+              //mrecv->opcode = (XMI_Subtask) _phaseVec[phase].srcHints[scount];
             }
         }
 
@@ -751,9 +752,9 @@ namespace CCMI
       inline void resetReceives(unsigned infoRequired)
         {
           TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::resetReceives() enter\n",(int)this));
-          //  CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
-          CCMI_assert(_bytes > 0);
-          CCMI_assert(_sched);
+          //  XMI_assert(_curRcvPhase == XMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
+          XMI_assert(_bytes > 0);
+          XMI_assert(_sched);
 
           // Do minimal setup if the config hasn't changed.
           if(!_isConfigChanged)

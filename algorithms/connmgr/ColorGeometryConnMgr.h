@@ -20,8 +20,8 @@ namespace CCMI
 {
   namespace ConnectionManager
   {
-
-    class ColorGeometryConnMgr : public ConnectionManager
+    template <class T_Sysdep>
+    class ColorGeometryConnMgr : public ConnectionManager<ColorGeometryConnMgr<T_Sysdep> >
     {
     public:
       enum
@@ -35,17 +35,23 @@ namespace CCMI
       //   color.
       /* This class is really just a place holder for future extensions.  */
       ColorGeometryConnMgr (int conn=0)
-      : ConnectionManager()
+        : ConnectionManager<ColorGeometryConnMgr<T_Sysdep> >()
       {
-        setNumConnections (conn == 0 ? 1 : conn );
+        setNumConnections_impl (conn == 0 ? 1 : conn );
       }
+
+      inline void setNumConnections_impl (size_t sz)
+        {
+          _numConnections = sz;
+        }
+
       ///
       /// \brief return the connection id given a set of inputs
       /// \param comm the communicator id of the collective
       /// \param root the root of the collective operation
       /// \param color the dimension of the collective operation
-      virtual unsigned getConnectionId (unsigned comm, unsigned root,
-                                        unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
+      inline unsigned getConnectionId_impl (unsigned comm, unsigned root,
+                                            unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
       {
 
         assert(_numConnections != 0);
@@ -71,11 +77,13 @@ namespace CCMI
         return connid;
       }
 
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
+      inline unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
                                             unsigned src, unsigned phase, unsigned color)
       {
-        return getConnectionId (comm, root, color, phase);
+        return getConnectionId_impl (comm, root, color, phase);
       }
+    private:
+      size_t    _numConnections;
     };
   };
 };

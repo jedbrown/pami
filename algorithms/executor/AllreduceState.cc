@@ -21,7 +21,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
   TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reset\n",(int)this));
   TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() enter\n",(int)this));
 
-  _dstPhase = (int) CCMI_UNDEFINED_PHASE;
+  _dstPhase = (int) XMI_UNDEFINED_PHASE;
 
   int startphase, nphases, maxranks;
 
@@ -39,8 +39,8 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
                "startphase:%#X nphases:%#X maxranks:%#X\n",(int)this,
                _root,startphase,nphases,maxranks));
 
-  CCMI_assert(nphases > 0);
-  CCMI_assert(startphase >= 0);
+  XMI_assert(nphases > 0);
+  XMI_assert(startphase >= 0);
 
   _startPhase = startphase;
   _endPhase   = _startPhase + nphases - 1;
@@ -64,15 +64,15 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
   for(int i = _startPhase; i <= _endPhase; i++)
   {
     unsigned iNumSrcPes, iNumDstPes,
-    iSrcPes[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-    iSrcHints[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-    iDstPes[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-    iDstHints[CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
+    iSrcPes[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+    iSrcHints[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+    iDstPes[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+    iDstHints[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
 
     _sched->getSrcPeList(i, iSrcPes, iNumSrcPes, iSrcHints);
     _sched->getDstPeList(i, iDstPes, iNumDstPes, iDstHints);
-    CCMI_assert(iNumSrcPes <= CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE &&
-                iNumDstPes <= CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE);
+    XMI_assert(iNumSrcPes <= XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE &&
+                iNumDstPes <= XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE);
     _numSrcPes += iNumSrcPes;
     _numDstPes += iNumDstPes;
 
@@ -121,8 +121,8 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
     for(; _bcastSendPhase <= _endPhase; _bcastSendPhase++)
     {
       unsigned iNumDstPes,
-      iDstPes [CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-      iDstHints [CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
+      iDstPes [XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+      iDstHints [XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
       _sched->getDstPeList(_bcastSendPhase, iDstPes, iNumDstPes, iDstHints);
       if(iNumDstPes > 0) break;
     }
@@ -162,14 +162,14 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
       CCMI_Free(_scheduleAllocation);
     _scheduleAllocation = CCMI_Alloc(allocationNewSize);
 
-#ifdef CCMI_DEBUG
+#ifdef XMI_DEBUG
     memset(_scheduleAllocation, 0xFD, allocationNewSize);
 
     if(!_scheduleAllocation)
       fprintf(stderr,"<%#.8X>CCMI_Alloc failed<%#.8X> free'd %#X, malloc'd %#X\n",(int)this,
               (int)_scheduleAllocation,_scheduleAllocationSize, allocationNewSize);
 #endif
-    CCMI_assert(_scheduleAllocation);
+    XMI_assert(_scheduleAllocation);
 
     _scheduleAllocationSize = allocationNewSize;
   }
@@ -302,7 +302,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
             bcast_phase = true;
         }
 
-        ///CCMI_assert (_color > 0); /// Most protocols set color to undefined, which we should change in the long run
+        ///XMI_assert (_color > 0); /// Most protocols set color to undefined, which we should change in the long run
 
         if(bcast_phase)
           //Use the broadcast connection manager
@@ -342,7 +342,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
                     _phaseVec[i].numDstPes ,
                     _phaseVec[i].numDstPes ? _phaseVec[i].dstPes[0]:-1,
                     _phaseVec[i].numDstPes ? _phaseVec[i].dstHints[0]:-1));
-#ifdef CCMI_DEBUG_SCHEDULE
+#ifdef XMI_DEBUG_SCHEDULE
     for(unsigned j = 1; j < _phaseVec[i].numSrcPes; ++j)
       TRACE_SCHEDULE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() src[%#X]:%#X srchints:%#X\n",(int)this,j,
                       _phaseVec[i].srcPes[j],_phaseVec[i].srcHints[j]));
@@ -350,7 +350,7 @@ void CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::constructPhaseData()
     for(unsigned j = 1; j < _phaseVec[i].numDstPes; ++j)
       TRACE_SCHEDULE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() dst[%#X]:%#X dsthints:%#X\n",(int)this,j,
                       _phaseVec[i].dstPes[j],_phaseVec[i].dstHints[j]));
-#endif // CCMI_DEBUG_SCHEDULE
+#endif // XMI_DEBUG_SCHEDULE
   } // for(int i = _startPhase; i <= _endPhase; i++)
 
 
@@ -439,14 +439,14 @@ void  CCMI::Executor::AllreduceState<T_mcastrecv, T_Sysdep>::setupReceives(unsig
     if(_receiveAllocation) CCMI_Free(_receiveAllocation);
     _receiveAllocation = CCMI_Alloc(allocationNewSize);
 
-#ifdef CCMI_DEBUG
+#ifdef XMI_DEBUG
     memset(_receiveAllocation, 0xFE, allocationNewSize);
 
     if(!_receiveAllocation)
       fprintf(stderr,"<%#.8X>CCMI_Alloc failed<%#.8X> free'd %#X, malloc'd %#X\n",(int)this,
               (int)_receiveAllocation,_receiveAllocationSize, allocationNewSize);
 #endif
-    CCMI_assert(_receiveAllocation);
+    XMI_assert(_receiveAllocation);
 
     _receiveAllocationSize = allocationNewSize;
     _sizeOfBuffers = alignedBytes;

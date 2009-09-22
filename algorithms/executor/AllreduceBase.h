@@ -164,7 +164,7 @@ namespace CCMI
       virtual ~AllreduceBase ()
       {
         TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceBase::dtor() ALERT:\n",(int)this));
-#ifdef CCMI_DEBUG
+#ifdef XMI_DEBUG
         _curPhase=(unsigned) -1;
         _curIdx=(unsigned) -1;
         _startPhase=(unsigned) -1;
@@ -198,7 +198,7 @@ namespace CCMI
       _srcbuf (NULL), _dstbuf (NULL),
       _reduceFunc (NULL),
       _msendInterface (NULL), _rconnmgr (NULL), _bconnmgr(NULL), _msend_data(),
-      _astate(-1,CCMI_UNDEFINED_RANK)
+      _astate(-1,XMI_UNDEFINED_RANK)
       {
         TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceBase::ctor() ALERT:\n",(int)this));
       }
@@ -256,8 +256,8 @@ namespace CCMI
                     (int)storage,(int)&_sState->sndReq,(int)&_sState->sndClientData,(int)&_sState->sndInfo));
 
         // Must be 16 byte aligned
-        CCMI_assert ((((unsigned long)&_sState->sndReq) & 0x0f)== 0);
-        CCMI_assert ((((unsigned long)&_sState->sndInfo) & 0x0f)== 0);
+        XMI_assert ((((unsigned long)&_sState->sndReq) & 0x0f)== 0);
+        XMI_assert ((((unsigned long)&_sState->sndInfo) & 0x0f)== 0);
 
         _msend_data.setRequestBuffer (&(_sState->sndReq));
 
@@ -376,7 +376,7 @@ namespace CCMI
         TRACE_INIT((stderr,"<%#.8X>Executor::AllreduceBase::setReduceInfo() "
                     "count %#X, pipelineWidth %#X, sizeOfType %#X, func %#X, op %#X, dt %#X\n",
                     (int)this,count,pipelineWidth,sizeOfType,(int)func,op,dt));
-        CCMI_assert (pipelineWidth % sizeOfType == 0);
+        XMI_assert (pipelineWidth % sizeOfType == 0);
 
         _reduceFunc    = func;
 
@@ -469,12 +469,12 @@ namespace CCMI
         if((_astate.getRoot()!=-1) && (_firstCombinePhase > _endPhase))
           _firstCombinePhase = _startPhase;
 
-        CCMI_assert (_firstCombinePhase <= _endPhase);
+        XMI_assert (_firstCombinePhase <= _endPhase);
       }
 
       void operator delete(void * p)
       {
-        CCMI_abort();
+        XMI_abort();
       }
 
       ///
@@ -522,8 +522,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
   TRACE_MSG ((stderr, "<%#.8X>Executor::AllreduceBase::advance _curPhase %d,_endPhase %d,_curIdx %d\n", (int) this,
               _curPhase,_endPhase,_curIdx));
 
-  CCMI_assert_debug (_initialized);
-  CCMI_assert_debug (_sState->sndClientData.isDone == true);
+  XMI_assert_debug (_initialized);
+  XMI_assert_debug (_sState->sndClientData.isDone == true);
 
   char * reducebuf = NULL;
 
@@ -663,9 +663,9 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
  SendState              * s_state)
 {
   //Request buffer and callback set in setSendState !!
-  CCMI_assert (ndst > 0);
-  CCMI_assert (dstpes != NULL);
-  CCMI_assert (dsthints != NULL);
+  XMI_assert (ndst > 0);
+  XMI_assert (dstpes != NULL);
+  XMI_assert (dsthints != NULL);
 
   _msend_data.setConnectionId (_astate.getPhaseSendConnectionId (sphase));
   _msend_data.setSendData (buf, bytes);
@@ -714,8 +714,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv
   _sState->sndClientData.me        = this;
   _sState->sndClientData.isDone    = true;
 
-  //CCMI_assert_debug (_startPhase != (unsigned) -1);
-  //CCMI_assert_debug (_curPhase != (unsigned) -1);
+  //XMI_assert_debug (_startPhase != (unsigned) -1);
+  //XMI_assert_debug (_curPhase != (unsigned) -1);
 
   // Skip bogus initial phase(s)
   while(!_astate.getPhaseNumDstPes (_curPhase) && !_astate.getPhaseNumSrcPes (_curPhase))
@@ -812,8 +812,8 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>:
  unsigned        * pipewidth,
  XMI_Callback_t * cb_done)
 {
-  CCMI_assert_debug(count == 1);
-  CCMI_assert_debug(info);
+  XMI_assert_debug(count == 1);
+  XMI_assert_debug(info);
   CollHeaderData *cdata = (CollHeaderData*) info;
 
   TRACE_MSG((stderr,"<%#.8X>Executor::AllreduceBase::notifyRecvHead() count: %#X "
@@ -828,14 +828,14 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>:
              _astate.getBytes(),
              _astate.getPipelineWidth()));
 
-  CCMI_assert_debug(cdata->_comm == _commID);
-  CCMI_assert_debug(cdata->_root == (unsigned) _astate.getRoot());
+  XMI_assert_debug(cdata->_comm == _commID);
+  XMI_assert_debug(cdata->_root == (unsigned) _astate.getRoot());
 
-  CCMI_assert_debug(cdata->_phase >= (unsigned)_astate.getStartPhase());
-  //CCMI_assert_debug(conn_id == _rconnmgr->getRecvConnectionId(cdata->_comm, (unsigned)-1, peer, cdata->_phase, (unsigned) -1));
+  XMI_assert_debug(cdata->_phase >= (unsigned)_astate.getStartPhase());
+  //XMI_assert_debug(conn_id == _rconnmgr->getRecvConnectionId(cdata->_comm, (unsigned)-1, peer, cdata->_phase, (unsigned) -1));
 
-  CCMI_assert(arg && rcvlen && rcvbuf && pipewidth && cb_done);
-  //CCMI_assert (cdata->_phase <= _endPhase);
+  XMI_assert(arg && rcvlen && rcvbuf && pipewidth && cb_done);
+  //XMI_assert (cdata->_phase <= _endPhase);
 
   if(cdata->_phase > _endPhase)
     cdata->_phase = _endPhase;
@@ -858,7 +858,7 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>:
       cdata->_phase++;
     }
   }
-  CCMI_assert(_astate.getPhaseNumSrcPes(cdata->_phase) > 0);
+  XMI_assert(_astate.getPhaseNumSrcPes(cdata->_phase) > 0);
 
   TRACE_MSG ((stderr, "<%#.8X>Executor::AllreduceBase::notifyRecvHead phase %#X, numsrcpes %#X\n", (int) this,
               cdata->_phase, _astate.getPhaseNumSrcPes(cdata->_phase)));
@@ -867,7 +867,7 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>:
   // Assert we found a match in less than numSrcPes
   // Later we need to compute the srcpeindex
   unsigned srcPeIndex = 0;
-  CCMI_assert(_astate.getPhaseSrcPes(cdata->_phase, srcPeIndex) == peer);
+  XMI_assert(_astate.getPhaseSrcPes(cdata->_phase, srcPeIndex) == peer);
 
   unsigned index = 0;
   unsigned nchunks = 0;
@@ -883,7 +883,7 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Mcast, T_Mcastrecv, T_Sysdep>:
          _astate.getRecvClientSrcPeIndex(index) == srcPeIndex)
         break;
 
-    CCMI_assert (index < _nAsyncRcvd);
+    XMI_assert (index < _nAsyncRcvd);
   }
 
   RecvCallbackData *rdata = _astate.getRecvClient(index);

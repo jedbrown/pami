@@ -26,16 +26,18 @@
 
 /*@}*/
 /** \brief Number of axii on BG Torus/Mesh network. */
-#define NUM_STD_AXIS	3
+
+// TODO:  make these queryable by the mapping
+#define NUM_STD_AXIS	1
 /** \brief Total number of axii on BG (includes local cores). */
-#define NUM_AXIS	4
+#define NUM_AXIS	1
 
 /** \brief Type which holds a set of coordinates (axii - X,Y,Z,T) */
-typedef unsigned axii_t[NUM_AXIS];
+typedef size_t axii_t[NUM_AXIS];
 
 #include "Schedule.h"
-#include "./BinomialTree.h"
-#include "./RingSchedule.h"
+#include "algorithms/schedule/BinomialTree.h"
+#include "algorithms/schedule/RingSchedule.h"
 
 namespace CCMI
 {
@@ -119,10 +121,11 @@ namespace CCMI
  *	[CCMI_Z_DIM][N_DIR] = CCMI_LINEBCAST_ZM,
  * };
  */
+// \todo:  make this work from a query of axis size and num directions!
     static unsigned short line_bcast[NUM_STD_AXIS][NUM_DIR] = {
-      { CCMI_LINE_BCAST_XP, CCMI_LINE_BCAST_XM},
-      { CCMI_LINE_BCAST_YP, CCMI_LINE_BCAST_YM},
-      { CCMI_LINE_BCAST_ZP, CCMI_LINE_BCAST_ZM},
+      { XMI_LINE_BCAST_XP, XMI_LINE_BCAST_XM},
+//      { XMI_LINE_BCAST_YP, XMI_LINE_BCAST_YM},
+//      { XMI_LINE_BCAST_ZP, XMI_LINE_BCAST_ZM},
     };
 
 
@@ -205,12 +208,12 @@ namespace CCMI
     typedef enum  /* Torus colors */
     {
       NO_COLOR = 0,       ///< "null" color value
-      XP_Y_Z = _MK_COLOR(CCMI_X_DIM,P_DIR), ///< X+ vector
-      YP_Z_X = _MK_COLOR(CCMI_Y_DIM,P_DIR), ///< Y+ vector
-      ZP_X_Y = _MK_COLOR(CCMI_Z_DIM,P_DIR), ///< Z+ vector
-      XN_Y_Z = _MK_COLOR(CCMI_X_DIM,N_DIR), ///< X- vector
-      YN_Z_X = _MK_COLOR(CCMI_Y_DIM,N_DIR), ///< Y- vector
-      ZN_X_Y = _MK_COLOR(CCMI_Z_DIM,N_DIR), ///< Z- vector
+      XP_Y_Z = _MK_COLOR(XMI_X_DIM,P_DIR), ///< X+ vector
+      YP_Z_X = _MK_COLOR(XMI_Y_DIM,P_DIR), ///< Y+ vector
+      ZP_X_Y = _MK_COLOR(XMI_Z_DIM,P_DIR), ///< Z+ vector
+      XN_Y_Z = _MK_COLOR(XMI_X_DIM,N_DIR), ///< X- vector
+      YN_Z_X = _MK_COLOR(XMI_Y_DIM,N_DIR), ///< Y- vector
+      ZN_X_Y = _MK_COLOR(XMI_Z_DIM,N_DIR), ///< Z- vector
       MAX_COLOR,        ///< Number of colors, incl. null
     } Color;
 
@@ -245,9 +248,9 @@ namespace CCMI
  */
     static inline unsigned coord2rank(XMI_MAPPING_CLASS *map, axii_t x)
     {
-      unsigned rank = CCMI_UNDEFINED_RANK;
-      xmi_result_t rc = map->Torus2Rank(x, &rank);
-      return(rc == XMI_SUCCESS ? rank : CCMI_UNDEFINED_RANK);
+      size_t rank = XMI_UNDEFINED_RANK;
+      xmi_result_t rc = map->task2torus(rank, (size_t (&)[NUM_STD_AXIS])x);
+      return(rc == XMI_SUCCESS ? rank : XMI_UNDEFINED_RANK);
     }
 
 /**
@@ -258,9 +261,9 @@ namespace CCMI
  * \param[out] x	Coordinates to return
  * \return	nothing
  */
-    static inline void rank2coord(XMI_MAPPING_CLASS *map, unsigned rank, axii_t x)
+    static inline void rank2coord(XMI_MAPPING_CLASS *map, size_t rank, axii_t x)
     {
-      map->Rank2Torus(&(x[0]), rank);
+      map->torus2task((size_t (&)[NUM_STD_AXIS])x, rank);
     }
 
 /**
@@ -274,10 +277,11 @@ namespace CCMI
  */
     static inline void get_my_coord(XMI_MAPPING_CLASS *map, axii_t x)
     {
-      x[CCMI_X_DIM] = map->GetCoord(CCMI_X_DIM);
-      x[CCMI_Y_DIM] = map->GetCoord(CCMI_Y_DIM);
-      x[CCMI_Z_DIM] = map->GetCoord(CCMI_Z_DIM);
-      x[CCMI_T_DIM] = map->GetCoord(CCMI_T_DIM);
+      rank2coord(map, map->task(), x);
+//      x[XMI_X_DIM] = map->GetCoord(XMI_X_DIM);
+//      x[XMI_Y_DIM] = map->GetCoord(XMI_Y_DIM);
+//      x[XMI_Z_DIM] = map->GetCoord(XMI_Z_DIM);
+//      x[XMI_T_DIM] = map->GetCoord(XMI_T_DIM);
     }
 
 /**
@@ -392,12 +396,12 @@ namespace CCMI
        */
       inline void setPhase(unsigned phase)
       {
-        CCMI_assert_debug(phase != PHASE_NONE && phase < NUM_PHASES);
+        XMI_assert_debug(phase != PHASE_NONE && phase < NUM_PHASES);
         if(_startsend == PHASE_NONE) _startsend = phase;
       }
       inline void setRecv(unsigned phase)
       {
-        CCMI_assert_debug(phase != PHASE_NONE && phase < NUM_PHASES);
+        XMI_assert_debug(phase != PHASE_NONE && phase < NUM_PHASES);
         if(_startrecv == PHASE_NONE) _startrecv = phase;
       }
 
@@ -462,7 +466,7 @@ namespace CCMI
        */
 //      inline void * operator new(size_t size, void *addr)
 //      {
-//        CCMI_assert(size >= sizeof(OneColorRectangle));
+//        XMI_assert(size >= sizeof(OneColorRectangle));
 //        return addr;
 //      }
 
@@ -476,7 +480,7 @@ namespace CCMI
        */
       void operator delete(void *p)
       {
-        CCMI_abort();
+        XMI_abort();
       }
 
       /*
@@ -587,7 +591,7 @@ namespace CCMI
       Color _color;   /** \brief color to use (pri axis) */
       unsigned _op;   /** \brief operation, BROADCAST_OP... */
       const axis_rect *_rect; /** \brief pointer to rectangle structure */
-      CCMI::XMI_MAPPING_CLASS *_mapping; /** \brief saved pointer to mapping
+      XMI_MAPPING_CLASS *_mapping; /** \brief saved pointer to mapping
                * for this partition */
       unsigned _startrecv;  /** \brief Starting recv phase for this node */
       unsigned _startsend;  /** \brief Starting send phase for this node */
@@ -641,8 +645,8 @@ namespace CCMI
         setPivotPoint(x, f); // root axis changes this
         setPivotPoint(y, r[y]);
         setPivotPoint(z, r[z]);
-        setPivotPoint(CCMI_T_DIM, r[CCMI_T_DIM]);
-        if(_root == _mapping->rank())
+        setPivotPoint(XMI_T_DIM, r[XMI_T_DIM]);
+        if(_root == _mapping->task())
         {
           _recv_axis = -1;  // no receives
           setPivotPoint(x, r[x]);
@@ -659,9 +663,9 @@ namespace CCMI
         {
           bool on_axis, on_perp, on_face;
 
-          if(_mapping->GetCoord(CCMI_T_DIM) != r[CCMI_T_DIM])
+          if(_mapping->torusgetcoord(XMI_T_DIM) != r[XMI_T_DIM])
           {
-            _recv_axis = CCMI_T_DIM;
+            _recv_axis = XMI_T_DIM;
             //return NODE_SET_T;
             is_T = 1;
           }
@@ -748,10 +752,10 @@ namespace CCMI
         _startrecv = PHASE_NONE;
         _startsend = PHASE_NONE;
 
-        _me._my[CCMI_X_DIM] = _mapping->GetCoord(CCMI_X_DIM);
-        _me._my[CCMI_Y_DIM] = _mapping->GetCoord(CCMI_Y_DIM);
-        _me._my[CCMI_Z_DIM] = _mapping->GetCoord(CCMI_Z_DIM);
-        _me._my[CCMI_T_DIM] = _mapping->GetCoord(CCMI_T_DIM);
+        _me._my[XMI_X_DIM] = _mapping->torusgetcoord(XMI_X_DIM);
+        _me._my[XMI_Y_DIM] = _mapping->torusgetcoord(XMI_Y_DIM);
+        _me._my[XMI_Z_DIM] = _mapping->torusgetcoord(XMI_Z_DIM);
+        _me._my[XMI_T_DIM] = _mapping->torusgetcoord(XMI_T_DIM);
         for(unsigned x = 0; x < NUM_AXIS; ++x)
         {
           _me._mx[x] = _rect->x0[x] + _rect->xs[x] - 1;
@@ -875,31 +879,31 @@ namespace CCMI
         case NODE_SET_A:
           setPhase(PHASE_ONE);
           nsnd += 1;
-          nsnd += (_rect->xs[CCMI_T_DIM] > 1);
+          nsnd += (_rect->xs[XMI_T_DIM] > 1);
           break;
         case NODE_SET_B:
           setRecv(PHASE_ONE);
           setPhase(PHASE_TWO);
           nsnd += 2;
-          nsnd += (_rect->xs[CCMI_T_DIM] > 1);
+          nsnd += (_rect->xs[XMI_T_DIM] > 1);
           break;
         case NODE_SET_C:
           setRecv(PHASE_ONE);
-          nsnd += (_rect->xs[CCMI_T_DIM] > 1);
-          if(_rect->xs[CCMI_T_DIM] > 1)
+          nsnd += (_rect->xs[XMI_T_DIM] > 1);
+          if(_rect->xs[XMI_T_DIM] > 1)
             setPhase(PHASE_TWO);
           break;
         case NODE_SET_D:
           setRecv(PHASE_TWO);
           setPhase(PHASE_THREE);
           nsnd += 2;
-          nsnd += (_rect->xs[CCMI_T_DIM] > 1);
+          nsnd += (_rect->xs[XMI_T_DIM] > 1);
           break;
         case NODE_SET_E:
           setRecv(PHASE_THREE);
           setPhase(PHASE_FOUR);
           nsnd += 1;
-          nsnd += (_rect->xs[CCMI_T_DIM] > 1);
+          nsnd += (_rect->xs[XMI_T_DIM] > 1);
           break;
         case NODE_SET_F:
           /*
@@ -907,8 +911,8 @@ namespace CCMI
            * they get the data. But, we all must receive
            * anyway, so just set phase.
            */
-          nsnd += (_rect->xs[CCMI_T_DIM] > 1);
-          if(_rect->xs[CCMI_T_DIM] > 1)
+          nsnd += (_rect->xs[XMI_T_DIM] > 1);
+          if(_rect->xs[XMI_T_DIM] > 1)
             setPhase(PHASE_FIVE);
           setRecv(PHASE_FOUR);
           break;
@@ -980,7 +984,7 @@ namespace CCMI
        */
 //      inline void * operator new(size_t size, void *addr)
 //      {
-//        CCMI_assert(size >= sizeof(OneColorRectBcastSched));
+//        XMI_assert(size >= sizeof(OneColorRectBcastSched));
 //        return addr;
 //      }
       /**
@@ -992,7 +996,7 @@ namespace CCMI
        */
       void operator delete(void *p)
       {
-        CCMI_abort();
+        XMI_abort();
       }
 
       /**
@@ -1027,7 +1031,7 @@ namespace CCMI
             }
             else
             {
-              *subtasks = r > _mapping->rank() ?
+              *subtasks = r > _mapping->task() ?
                           line_bcast[_recv_axis][N_DIR] :
                           line_bcast[_recv_axis][P_DIR];
             }
@@ -1179,19 +1183,19 @@ namespace CCMI
           /* add phases for local core-to-core transfers */
           if(last)
           {
-            for(unsigned dt = _me._mn[CCMI_T_DIM];
-               dt <= _me._mx[CCMI_T_DIM]; ++dt)
+            for(unsigned dt = _me._mn[XMI_T_DIM];
+               dt <= _me._mx[XMI_T_DIM]; ++dt)
             {
-              if(dt == _me._my[CCMI_T_DIM])
+              if(dt == _me._my[XMI_T_DIM])
               {
                 continue;
               }
-              x[CCMI_T_DIM] = dt;
+              x[XMI_T_DIM] = dt;
               dstpes[np] = coord2rank(_mapping, x);
-              subtasks[np] = CCMI_PT_TO_PT_SUBTASK;
+              subtasks[np] = XMI_PT_TO_PT_SUBTASK;
               ++np;
             }
-            x[CCMI_T_DIM] = _me._my[CCMI_T_DIM];
+            x[XMI_T_DIM] = _me._my[XMI_T_DIM];
           }
         }
         ndst = np;
@@ -1264,23 +1268,23 @@ namespace CCMI
 /* NODE_SET_AB */ { true, false,  true,  true,  true},
 /* NODE_SET_T */  { true, false, false, false, false},
     };
-
-    class OneColorRectRedSched : public OneColorRectangle
-    {
-    public:
       /** Allow different sub schedules (currently Binomial or Ring) */
       typedef enum
       {
         Binomial, Ring
       } Subschedule;
+
+    
+    template <class T_Sysdep, class T_Schedule>
+    class OneColorRectRedSched : public OneColorRectangle
+    {
+    public:
     protected:
       Subschedule _subScheduleType;
-#define MAX_SUB_SCHEDULE_SIZE sizeof(CCMI::Schedule::BinomialTreeSchedule) >    \
-                                 sizeof(CCMI::Schedule::RingSchedule)?            \
-                                   sizeof(CCMI::Schedule::BinomialTreeSchedule) : \
-                                   sizeof(CCMI::Schedule::RingSchedule)
-
-
+#define MAX_SUB_SCHEDULE_SIZE sizeof(CCMI::Schedule::BinomialTreeSchedule<T_Sysdep>) > \
+                              sizeof(CCMI::Schedule::RingSchedule<T_Sysdep>)?          \
+                              sizeof(CCMI::Schedule::BinomialTreeSchedule<T_Sysdep>) : \
+                              sizeof(CCMI::Schedule::RingSchedule<T_Sysdep>)
 
       /**
        * \brief Create a sub schedule based on the desired type
@@ -1293,15 +1297,15 @@ namespace CCMI
 
         if(_subScheduleType == Binomial)
         {
-          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(BinomialTreeSchedule));
+          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(BinomialTreeSchedule<T_Sysdep>));
           _subschedule[axis] = new (&_subschedule_storage[axis])
-                               BinomialTreeSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
+            BinomialTreeSchedule<T_Sysdep>(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
         else
         {
-          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(RingSchedule));
+          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(RingSchedule<T_Sysdep>));
           _subschedule[axis] = new (&_subschedule_storage[axis])
-                               RingSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
+            RingSchedule<T_Sysdep>(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
 
       }
@@ -1312,21 +1316,21 @@ namespace CCMI
        * \param[in] nranks	number of ranks on the axis
        * \return	number of phases
        */
-      unsigned getMaxPhases(CollectiveMapping *mapping, unsigned nranks)
+      unsigned getMaxPhases(T_Sysdep *mapping, unsigned nranks)
       {
         // These are static functions so we need to class them based on type
         if(_subScheduleType == Binomial)
         {
-          return BinomialTreeSchedule::getMaxPhases(mapping,nranks);
+          return BinomialTreeSchedule<T_Sysdep>::getMaxPhases(mapping,nranks);
         }
         else
         {
-          return RingSchedule::getMaxPhases(mapping, nranks);
+          return RingSchedule<T_Sysdep>::getMaxPhases(mapping, nranks);
         }
       }
 
       /** \brief array of sub-schedules, one for each rectangle line */
-      CCMI::Schedule::Schedule* _subschedule[NUM_AXIS];
+      T_Schedule _subschedule[NUM_AXIS];
       /** \brief storage for sub-schedules, one for each rectangle line */
       char _subschedule_storage[NUM_AXIS][MAX_SUB_SCHEDULE_SIZE];
 
@@ -1363,7 +1367,7 @@ namespace CCMI
         maxph += max;
         if(used)
         {
-          CCMI_assert(axis < NUM_AXIS);
+          XMI_assert(axis < NUM_AXIS);
           createSubSchedule(axis);
           _subschedule[axis]->init(_pivot[axis], REDUCE_OP, start, nph, nr);
         }
@@ -1401,7 +1405,7 @@ namespace CCMI
           }
           p -= _maxph[i];
         }
-        return CCMI_UNDEFINED_PHASE;
+        return XMI_UNDEFINED_PHASE;
       }
 
 
@@ -1427,7 +1431,7 @@ namespace CCMI
          * offsets for use when calling the sub schedule(s),
          * and also when continuing with the rectangle broadcast.
          */
-        lineReduStep(PHASE_ONE, CCMI_T_DIM, m);
+        lineReduStep(PHASE_ONE, XMI_T_DIM, m);
         lineReduStep(PHASE_TWO, NEXT_COLOR_AXIS(_color,3), m);
         lineReduStep(PHASE_THREE, NEXT_COLOR_AXIS(_color,2), m);
         lineReduStep(PHASE_FOUR, NEXT_COLOR_AXIS(_color,1), m);
@@ -1476,7 +1480,7 @@ namespace CCMI
        */
 //      inline void * operator new(size_t size, void *addr)
 //      {
-//        CCMI_assert(size >= sizeof(OneColorRectRedSched));
+//        XMI_assert(size >= sizeof(OneColorRectRedSched));
 //        return addr;
 //      }
       /**
@@ -1488,7 +1492,7 @@ namespace CCMI
        */
       void operator delete(void *p)
       {
-        CCMI_abort();
+        XMI_abort();
       }
 
       /**
@@ -1506,7 +1510,7 @@ namespace CCMI
         unsigned axis, p;
 
         p = xlatPhase(phase, axis);
-        if(p == CCMI_UNDEFINED_PHASE)
+        if(p == XMI_UNDEFINED_PHASE)
         {
           nsrc = 0;
           return;
@@ -1541,7 +1545,7 @@ namespace CCMI
         unsigned axis, p;
 
         p = xlatPhase(phase, axis);
-        if(p == CCMI_UNDEFINED_PHASE)
+        if(p == XMI_UNDEFINED_PHASE)
         {
           ndst = 0;
           return;
@@ -1623,11 +1627,11 @@ namespace CCMI
       }
 
     }; /* OneColorRectRedSched */
-
+    template <class T_Sysdep, class T_Schedule>
     class OneColorRectAllredSched : public OneColorRectangle
     {
     protected:
-      CCMI::Schedule::OneColorRectRedSched _reduce;
+      CCMI::Schedule::OneColorRectRedSched<T_Sysdep, T_Schedule> _reduce;
       CCMI::Schedule::OneColorRectBcastSched _bcast;
       unsigned _midphase;
 
@@ -1643,14 +1647,16 @@ namespace CCMI
        */
       inline OneColorRectAllredSched(XMI_MAPPING_CLASS *mapping,
                                      Color color, const Rectangle &rect,
-                                     CCMI::Schedule::OneColorRectRedSched::Subschedule subschedule=CCMI::Schedule::OneColorRectRedSched::Binomial) :
+                                     Subschedule subschedule=Binomial) :
       OneColorRectangle(mapping, color, rect)
       {
-        COMPILE_TIME_ASSERT(sizeof(_reduce) >= sizeof(OneColorRectRedSched));
-        new (&_reduce) OneColorRectRedSched(mapping, color, rect, subschedule);
+        COMPILE_TIME_ASSERT(sizeof(_reduce) >= sizeof(OneColorRectRedSched<T_Sysdep, T_Schedule>));
+        new (&_reduce) OneColorRectRedSched<T_Sysdep, T_Schedule>(mapping, color, rect, subschedule);
         COMPILE_TIME_ASSERT(sizeof(_bcast) >= sizeof(OneColorRectBcastSched));
         new (&_bcast)  OneColorRectBcastSched(mapping, color, rect);
         _midphase = PHASE_NONE;
+
+//        =CCMI::Schedule::OneColorRectRedSched::Binomial
       }
 
       /**
@@ -1726,13 +1732,13 @@ namespace CCMI
         int str, npr, nmr;
         int stb, npb, nmb;
 
-        CCMI_assert(op == ALLREDUCE_OP);
+        XMI_assert(op == ALLREDUCE_OP);
         // We can pick our own root node...
         //r = coord2rank(_mapping, _rect->x0);
-        unsigned coords[CCMI_TORUS_NDIMS];
-        CCMI_COPY_COORDS(coords, _rect->x0);
-        coords[CCMI_T_DIM] += (_color % _rect->xs[CCMI_T_DIM]);
-        _mapping->Torus2Rank(coords, &r);
+        unsigned coords[XMI_TORUS_NDIMS];
+        XMI_COPY_COORDS(coords, _rect->x0);
+        coords[XMI_T_DIM] += (_color % _rect->xs[XMI_T_DIM]);
+        _mapping->torus2task(coords, r);
 
         CCMI::Schedule::OneColorRectangle::init(r, op,
                                                 /* not used: */ start, nphases, nmessages);
