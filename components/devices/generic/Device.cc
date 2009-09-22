@@ -19,8 +19,11 @@
 #include "Util.h"
 #include "components/devices/generic/GenericDevice.h"
 
+// All sub-devices must be instantiated here, but are otherwise unused in
+// this particular source file (see GenericDevice.h).
+//
 XMI::Device::ProgressFunctionDev _g_progfunc_dev;
-XMI::Device::LockManagerBarrierDev _g_lmbarrier_dev;
+XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
@@ -28,8 +31,10 @@ XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 
 #ifdef __bgp__
+#ifdef NOT_YET
 XMI::Device::BGP::MemoryBarrierDev _g_mbarrier_dev;
 XMI::Device::BGP::LLSCDev _g_llscbarrier_dev;
+#endif
 XMI::Device::BGP::giDevice _g_gibarrier_dev;
 
 // All the CollectiveNetwork message variations share the same hardware (queue)...

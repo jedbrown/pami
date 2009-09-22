@@ -25,10 +25,11 @@ namespace Device {
 namespace Generic {
 
 //////////////////////////////////////////////////////////////////////
-///  \brief A Device implmentation of a Queuesystem
-///  This class implements a queue system. The user posts to the queue
-///  and the interprocess communications are called in order until all of them
-///  have been executed.
+///  \brief A Generic Device implmentation of a thread.
+///  This class implements a base thread object.
+///  Normally, this class is not used directly by a sub-device
+/// as the device's thread, but all actual working threads inherit
+/// from this class.
 //////////////////////////////////////////////////////////////////////
 class GenericMessage;
 class GenericAdvanceThread : public QueueElem {
@@ -67,6 +68,13 @@ protected:
 	bool _done;
 }; /* class GenericAdvanceThread */
 
+//////////////////////////////////////////////////////////////////////
+///  \brief A Generic Device implmentation of a thread.
+///  This class implements a useable, simple, thread object.
+///  Other, more complex, thread classes are implemented in specific
+///  sub-devices.  For example, see bgp/collective_network/CollectiveNetworkLib.h
+///  and class BaseGenericCNThread.
+//////////////////////////////////////////////////////////////////////
 class SimpleAdvanceThread : public GenericAdvanceThread {
 public:
 	SimpleAdvanceThread() :

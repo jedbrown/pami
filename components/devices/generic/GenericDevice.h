@@ -9,12 +9,28 @@
 #ifndef __components_devices_generic_genericdevice_h__
 #define __components_devices_generic_genericdevice_h__
 
+// This file implements the interfaces used by messaging (advance).
+// See generic/Device.h for interfaces used by sub-devices.
+
 #undef USE_WAKEUP_VECTORS
 
 #include "components/devices/generic/Device.h"
 
+// All sub-devices are instantiated in generic/Device.cc, but are
+// used here. There must be a call to the init() for each sub-device,
+// and a call to advance?_recv() for every sub-device that requires
+// recv polling - convention is to call *all* sub-device advanceRecv()
+// routines, the compiler will optimize away any that are simply "return 0".
+// (Note, advanceRecv() methods are inlined) See Device::__advanceRecv(),
+// and also Device::init(). Note, there are two __advanceRecv(), one which
+// takes a "channel" arg - this one is used for sub-devices that have multiple
+// recv channels and must poll only one channel at a time. It is up to the
+// sub-device to understand how "channel" relates to it's recv resources.
+// Typically, an association is made during init().
+// [ Not used yet - This may require changes in order to make it work ]
+//
 #include "components/devices/generic/ProgressFunction.h"
-#include "components/lockmanager/LockManagerBarrierMsg.h"
+#include "components/devices/generic/AtomicBarrierMsg.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/WQRingBcastMsg.h"
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
@@ -30,20 +46,26 @@ extern XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 extern XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 
 #ifdef __bgp__
-#include "components/devices/bgp/memory/MemoryBarrierMsg.h"
-#include "components/devices/bgp/memory/LLSCMsg.h"
-#include "components/devices/bgp/gi/Device.h"
+// These are needed in order to use the Collective Network sub-devices.
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
+
+#ifdef NOT_YET
+#include "components/devices/bgp/memory/MemoryBarrierMsg.h"
+#include "components/devices/bgp/memory/LLSCMsg.h"
+#endif
+#include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
 #include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
 //#include "components/devices/bgp/collective_network/CNAllreduceShortMsg.h"
 #include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
 #include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 
+#ifdef NOT_YET
 extern XMI::Device::BGP::MemoryBarrierDev _g_mbarrier_dev;
 extern XMI::Device::BGP::LLSCDev _g_llscbarrier_dev;
+#endif
 extern XMI::Device::BGP::giDevice _g_gibarrier_dev;
 extern XMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev;
 //extern XMI::Device::BGP::CNAllreduceShortDevice _g_cnallreduceshort_dev;
@@ -157,6 +179,9 @@ namespace Generic {
 		// These threads are used only by the Tree device,
 		// even though this code is fairly abstract. Use of
 		// comm_threads by other subdevices is probably risky.
+		// This is also not the way to do parallelism in general.
+		// Something else should cause separate threads to advance
+		// each channel in parallel.
 		unsigned cores = 0;
 		switch (sd.personality().tSize()) {
 		case 1: // SMP mode
@@ -259,8 +284,10 @@ namespace Generic {
 		_g_l_bcastwq_dev.init(sd, this);
 
 #ifdef __bgp__
+#ifdef NOT_YET
 		_g_mbarrier_dev.init(sd, this);
 		_g_llscbarrier_dev.init(sd, this);
+#endif
 		_g_gibarrier_dev.init(sd, this);
 
 		_g_cnallreduce_dev.init(sd, this);
@@ -316,8 +343,10 @@ namespace Generic {
 		events += _g_l_bcastwq_dev.advanceRecv();
 
 #ifdef __bgp__
+#ifdef NOT_YET
 		events += _g_mbarrier_dev.advanceRecv();
 		events += _g_llscbarrier_dev.advanceRecv();
+#endif
 		events += _g_gibarrier_dev.advanceRecv();
 
 		events += _g_cnallreduce_dev.advanceRecv();
