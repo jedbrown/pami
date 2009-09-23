@@ -98,13 +98,6 @@ namespace XMI
       return true;
     }
 
-    /// \see XMI::Device::Interface::BaseDevice::isReliableNetwork()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    bool ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::isReliableNetwork_impl ()
-    {
-      return true;
-    }
-
     /// \see XMI::Device::Interface::BaseDevice::peers()
     template <class T_SysDep, class T_Fifo, class T_Packet>
     size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::peers_impl ()
@@ -130,27 +123,6 @@ namespace XMI
     bool ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::requiresRead_impl ()
     {
       return false;
-    };
-
-    /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::getPacketMetadataSize_impl ()
-    {
-      return T_Packet::headerSize_impl;
-    };
-
-    /// \see XMI::Device::Interface::PacketDevice::getPacketPayloadSize()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::getPacketPayloadSize_impl ()
-    {
-      return T_Packet::payloadSize_impl;
-    };
-
-    /// \see XMI::Device::Interface::PacketDevice::getMessageMetadataSize()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::getMessageMetadataSize_impl ()
-    {
-      return T_Packet::headerSize_impl - 1;
     };
 
     ///

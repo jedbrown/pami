@@ -1,7 +1,7 @@
 VPATH		= @srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = dispatch.${EXTENSION} default-send.${EXTENSION}
+APPS            = dispatch.${EXTENSION} default-send.${EXTENSION} immediate_send.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 

@@ -12,9 +12,9 @@
 #ifndef __components_devices_shmem_shmempacketdevice_h__
 #define __components_devices_shmem_shmempacketdevice_h__
 
-#include "ShmemBaseDevice.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/MessageDevice.h"
+#include "components/devices/shmem/ShmemBaseDevice.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x

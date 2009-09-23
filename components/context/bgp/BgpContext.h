@@ -27,6 +27,7 @@
 
 #include "components/sysdep/bgp/BgpSysDep.h"
 
+#include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
 
@@ -44,6 +45,23 @@ namespace XMI
     typedef Device::ShmemPacketDevice<SysDep::BgpSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
 
+
+
+    //
+    // >> Point-to-point protocol typedefs and dispatch registration.
+    //
+    typedef XMI::Protocol::Send::EagerSimple <ShmemModel, ShmemDevice, ShmemMessage> EagerSimpleShmem;
+    typedef XMI::Protocol::Send::EagerImmediate <ShmemModel, ShmemDevice, ShmemMessage> EagerImmediateShmem;
+
+    typedef struct
+    {
+      EagerSimpleShmem    send_simple_shmem;
+      EagerImmediateShmem send_immediate_shmem;
+    } protocol_t;
+    //
+    // << Point-to-point protocol typedefs and dispatch registration.
+    //
+
     class BgpContext : public Context<XMI::Context::BgpContext>
     {
       public:
@@ -56,9 +74,7 @@ namespace XMI
         {
           //fprintf(stderr, "BgpContext() >>\n");
           XMI::Mapping::Interface::nodeaddr_t addr;
-          _sysdep.mapping.task2node (1, addr);
           _shmem.init (&_sysdep);
-          _sysdep.mapping.task2node (1, addr);
           //fprintf(stderr, "BgpContext() <<\n");
         }
 
@@ -134,23 +150,30 @@ namespace XMI
           size_t id = (size_t)(parameters->send.dispatch);
           assert (_dispatch[id] != NULL);
 
-          XMI::Protocol::Send::Simple * send =
-            (XMI::Protocol::Send::Simple *) _dispatch[id];
-          send->start (parameters->simple.local_fn,
-                       parameters->simple.remote_fn,
-                       parameters->send.cookie,
-                       parameters->send.task,
-                       parameters->simple.addr,
-                       parameters->simple.bytes,
-                       parameters->send.header.addr,
-                       parameters->send.header.bytes);
+          _dispatch[id]->send_simple_shmem.start (parameters->simple.local_fn,
+                                                     parameters->simple.remote_fn,
+                                                     parameters->send.cookie,
+                                                     parameters->send.task,
+                                                     parameters->simple.addr,
+                                                     parameters->simple.bytes,
+                                                     parameters->send.header.addr,
+                                                     parameters->send.header.bytes);
 
           return XMI_SUCCESS;
         }
 
         inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
-          return XMI_UNIMPL;
+          size_t id = (size_t)(parameters->send.dispatch);
+          assert (_dispatch[id] != NULL);
+
+          _dispatch[id]->send_immediate_shmem.start (parameters->send.task,
+                                                        parameters->immediate.addr,
+                                                        parameters->immediate.bytes,
+                                                        parameters->send.header.addr,
+                                                        parameters->send.header.bytes);
+
+          return XMI_SUCCESS;
         }
 
         inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
@@ -312,17 +335,22 @@ namespace XMI
                                            void                     * cookie,
                                            xmi_send_hint_t            options)
         {
-          if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
+          size_t index = (size_t) id;
 
-          // Allocate memory for the protocol object.
-          _dispatch[(size_t)id] = (void *) _request.allocateObject ();
+          if (_dispatch[index] != NULL) return XMI_ERROR;
 
-          // For now, only enable shmem short/eager sends.
-          typedef XMI::Protocol::Send::EagerSimple <ShmemModel, ShmemDevice, ShmemMessage> EagerSimpleShmem;
+          // Allocate memory for the protocol objects.
+          protocol_t * p = (protocol_t *) _protocol.allocateObject ();
 
           xmi_result_t result = XMI_ERROR;
-          new ((void *)_dispatch[(size_t)id]) EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
 
+          new ((void *)&(p->send_simple_shmem))
+            EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+
+          new ((void *)&(p->send_immediate_shmem))
+            EagerImmediateShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+
+          _dispatch[index] = p;
           return result;
         }
 
@@ -368,8 +396,8 @@ namespace XMI
         // devices...
         ShmemDevice _shmem;
 
-        void * _dispatch[1024];
-        MemoryAllocator<1024,16> _request;
+        protocol_t * _dispatch[1024];
+        MemoryAllocator<sizeof(protocol_t),16> _protocol;
 
     }; // end XMI::Context::BgpContext
   }; // end namespace Context

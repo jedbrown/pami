@@ -56,14 +56,14 @@ namespace XMI
             xmi_event_function   local_fn;
             xmi_event_function   remote_fn;
             void               * cookie;
-            EagerSimple<T_Model,T_Device,T_Message> * eager;
+            EagerSimple<T_Model, T_Device, T_Message> * eager;
           } send_state_t;
 
           typedef struct recv_state
           {
             T_Message      msg;
             send_state_t * ackinfo;
-            EagerSimple<T_Model,T_Device,T_Message> * eager;
+            EagerSimple<T_Model, T_Device, T_Message> * eager;
             xmi_recv_t     info;     ///< Application receive information.
             size_t         received; ///< Number of bytes received.
             size_t         sndlen;   ///< Number of bytes being sent from the origin rank.
@@ -74,7 +74,7 @@ namespace XMI
             size_t         fromRank;
             size_t         bytes;
             send_state_t * ackinfo;
-          } short_metadata_t;
+        } short_metadata_t;
 
 
         public:
@@ -110,24 +110,7 @@ namespace XMI
               _connection ((void **)NULL),
               _connection_manager (device)
           {
-            // This eager protocol requires reliable and deterministic networks
-            if (!device.isReliableNetwork() || !_envelope_model.isDeterministic())
-            {
-              status = XMI_ERROR;
-              return;
-            }
-
             _connection = _connection_manager.getConnectionArray (context);
-
-            size_t mbytes = device.getPacketMetadataSize ();
-            TRACE_ERR((stderr, "EagerSimple(), sizeof(short_metadata_t) = %zd, mbytes = %zd, _pktsize = %zd\n", sizeof(short_metadata_t), mbytes, _pktsize));
-
-            if (mbytes < sizeof(short_metadata_t))
-              {
-                // Not handled right now !!
-                assert(0);
-                return;
-              }
 
             TRACE_ERR((stderr, "EagerSimple() [0]\n"));
             status = _envelope_model.init (dispatch_envelope_direct, this,
@@ -185,55 +168,56 @@ namespace XMI
             // remote receive completion event is requested. If this is set to
             // NULL no acknowledgement will be received by the origin task.
             if (remote_fn != NULL)
-            {
-              metadata.ackinfo = state;
-              state->remote_fn = remote_fn;
-            }
+              {
+                metadata.ackinfo = state;
+                state->remote_fn = remote_fn;
+              }
             else
-            {
-              metadata.ackinfo = NULL;
-              state->remote_fn = NULL;
-            }
+              {
+                metadata.ackinfo = NULL;
+                state->remote_fn = NULL;
+              }
 
             if (bytes == 0)
-            {
-              // In the unlikely event that this eager (i.e., multi-packet)
-              // protocol is being used to send zero bytes of application
-              // data, the envelope message completion must clean up the
-              // protocol resources and invoke the application local done
-              // callback function, as there will be no data message.
-              TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
-              _envelope_model.postPacket (&(state->msg[0]),
-                                          send_complete,
-                                          (void *) state,
-                                          peer,
-                                          (void *) &metadata,
-                                          sizeof (short_metadata_t),
-                                          msginfo,
-                                          mbytes);
-            }
+              {
+                // In the unlikely event that this eager (i.e., multi-packet)
+                // protocol is being used to send zero bytes of application
+                // data, the envelope message completion must clean up the
+                // protocol resources and invoke the application local done
+                // callback function, as there will be no data message.
+                TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
+                _envelope_model.postPacket (&(state->msg[0]),
+                                            send_complete,
+                                            (void *) state,
+                                            peer,
+                                            (void *) &metadata,
+                                            sizeof (short_metadata_t),
+                                            msginfo,
+                                            mbytes);
+              }
             else
-            {
-              TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
-              _envelope_model.postPacket (&(state->msg[0]),
-                                          NULL,
-                                          NULL,
-                                          peer,
-                                          (void *) &metadata,
-                                          sizeof (short_metadata_t),
-                                          msginfo,
-                                          mbytes);
+              {
+                TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
+                _envelope_model.postPacket (&(state->msg[0]),
+                                            NULL,
+                                            NULL,
+                                            peer,
+                                            (void *) &metadata,
+                                            sizeof (short_metadata_t),
+                                            msginfo,
+                                            mbytes);
 
-              TRACE_ERR((stderr, "EagerSimple::start() .. before _data_model.postPacket()\n"));
-              _data_model.postMessage (&(state->msg[1]),
-                                       send_complete,
-                                       (void *) state,
-                                       peer,
-                                       (void *) &metadata.fromRank,
-                                       sizeof (size_t),
-                                       src,
-                                       bytes);
-            }
+                TRACE_ERR((stderr, "EagerSimple::start() .. before _data_model.postPacket()\n"));
+                _data_model.postMessage (&(state->msg[1]),
+                                         send_complete,
+                                         (void *) state,
+                                         peer,
+                                         (void *) &metadata.fromRank,
+                                         sizeof (size_t),
+                                         src,
+                                         bytes);
+              }
+
             TRACE_ERR((stderr, "EagerSimple::start() <<\n"));
             return XMI_SUCCESS;
           };
@@ -262,14 +246,14 @@ namespace XMI
           inline void setConnection (size_t task, void * arg)
           {
             size_t peer = _msgDevice.task2peer (task);
-            assert(_connection[peer]==NULL);
+            assert(_connection[peer] == NULL);
             _connection[peer] = arg;
           }
 
           inline void * getConnection (size_t task)
           {
             size_t peer = _msgDevice.task2peer (task);
-            assert(_connection[peer]!=NULL);
+            assert(_connection[peer] != NULL);
             return _connection[peer];
           }
 
@@ -394,33 +378,34 @@ namespace XMI
             assert(state->info.kind == XMI_AM_KIND_SIMPLE);
 
             if (m->bytes == 0)
-            {
-              // No data packets will follow this envelope packet. Invoke the
-              // recv done callback and, if an acknowledgement packet was
-              // requested send the acknowledgement. Otherwise return the recv
-              // state memory which was allocated above.
-              TRACE_ERR((stderr, "EagerSimple::dispatch_envelope_direct() .. state->info.local_fn = %p\n", state->info.local_fn));
-              if (state->info.local_fn)
-                state->info.local_fn (eager->_context,
-                                      state->info.cookie,
-                                      XMI_SUCCESS);
+              {
+                // No data packets will follow this envelope packet. Invoke the
+                // recv done callback and, if an acknowledgement packet was
+                // requested send the acknowledgement. Otherwise return the recv
+                // state memory which was allocated above.
+                TRACE_ERR((stderr, "EagerSimple::dispatch_envelope_direct() .. state->info.local_fn = %p\n", state->info.local_fn));
 
-              if (state->ackinfo != NULL)
-              {
-                eager->_ack_model.postPacket (&(state->msg),
-                                              receive_complete,
-                                              (void *) state,
-                                              m->fromRank,
-                                              (void *) &(state->ackinfo),
-                                              sizeof (send_state_t *),
-                                              (void *)NULL,
-                                              0);
+                if (state->info.local_fn)
+                  state->info.local_fn (eager->_context,
+                                        state->info.cookie,
+                                        XMI_SUCCESS);
+
+                if (state->ackinfo != NULL)
+                  {
+                    eager->_ack_model.postPacket (&(state->msg),
+                                                  receive_complete,
+                                                  (void *) state,
+                                                  m->fromRank,
+                                                  (void *) &(state->ackinfo),
+                                                  sizeof (send_state_t *),
+                                                  (void *)NULL,
+                                                  0);
+                  }
+                else
+                  {
+                    eager->freeRecvState (state);
+                  }
               }
-              else
-              {
-                eager->freeRecvState (state);
-              }
-            }
 
             state->received = 0;
             state->sndlen = m->bytes;
@@ -465,6 +450,7 @@ namespace XMI
             size_t ncopy = bytes;
 
             TRACE_ERR((stderr, "dispatch_data_direct(), fromRank = %zd, state->received = %zd, nleft = %zd, bytes = %zd\n", fromRank, state->received, nleft, bytes));
+
             if (nleft > 0)
               {
                 // Copy data from the packet buffer into the receive buffer.
@@ -475,6 +461,7 @@ namespace XMI
               }
 
             TRACE_ERR((stderr, "dispatch_data_direct(), nbyte = %zd, ncopy = %zd\n", nbyte, ncopy));
+
             if ((nbyte + ncopy) == state->sndlen)
               {
                 TRACE_ERR((stderr, "dispatch_data_direct(), before clearConnection()\n"));
@@ -488,16 +475,16 @@ namespace XMI
 
                 // Send the acknowledgement.
                 if (state->ackinfo != NULL)
-                {
-                  eager->_ack_model.postPacket (&(state->msg),
-                                                receive_complete,
-                                                (void *) state,
-                                                fromRank,
-                                                (void *) &(state->ackinfo),
-                                                sizeof (send_state_t *),
-                                                (void *)NULL,
-                                                0);
-                }
+                  {
+                    eager->_ack_model.postPacket (&(state->msg),
+                                                  receive_complete,
+                                                  (void *) state,
+                                                  fromRank,
+                                                  (void *) &(state->ackinfo),
+                                                  sizeof (send_state_t *),
+                                                  (void *)NULL,
+                                                  0);
+                  }
 
                 return 0;
               }
@@ -621,14 +608,14 @@ namespace XMI
               (EagerSimple<T_Model, T_Device, T_Message> *) state->eager;
 
             if (state->local_fn != NULL)
-            {
-              state->local_fn (eager->_context, state->cookie, XMI_SUCCESS);
-            }
+              {
+                state->local_fn (eager->_context, state->cookie, XMI_SUCCESS);
+              }
 
             if (state->remote_fn == NULL)
-            {
-              eager->freeSendState (state);
-            }
+              {
+                eager->freeSendState (state);
+              }
 
             TRACE_ERR((stderr, "EagerSimple::send_complete() << \n"));
             return;
@@ -654,6 +641,20 @@ namespace XMI
 
             TRACE_ERR((stderr, "EagerSimple::receive_complete() << \n"));
             return;
+          };
+
+        private:
+
+          static inline void compile_time_assert ()
+          {
+            // This protocol only works with reliable networks.
+            COMPILE_TIME_ASSERT(T_Device::reliable_network == true);
+
+            // This protcol only works with deterministic models.
+            COMPILE_TIME_ASSERT(T_Model::deterministic == true);
+
+            // Verify that there is enough space for the protocol metadata.
+            COMPILE_TIME_ASSERT(sizeof(short_metadata_t) <= T_Device::packet_metadata_size);
           };
       };
     };

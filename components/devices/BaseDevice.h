@@ -60,15 +60,28 @@ namespace XMI
           ///
           /// \brief Returns the reliable network attribute of this device
           ///
-          /// \attention All device derived classes \b must implement the
-          ///            isReliableNetwork_impl() method.
+          /// \attention All device derived classes \b must contain a static
+          ///            const data member named 'bool reliable_network'.
           ///
           ///
-          inline bool isReliableNetwork ();
+          static const bool isReliableNetwork ();
 
-
+          ///
+          /// \brief Number of addressable 'peer' tasks for this device
+          ///
+          /// \attention All device derived classes \b must
+          ///            implement the peers_impl() method.
+          ///
           inline size_t peers ();
 
+          ///
+          /// \brief Converts a global task id to a device peer id.
+          ///
+          /// The device peer ids monotonically increase from zero to peers-1.
+          ///
+          /// \attention All device derived classes \b must
+          ///            implement the task2peer_impl() method.
+          ///
           inline size_t task2peer (size_t task);
 
           ///
@@ -97,9 +110,9 @@ namespace XMI
       }
 
       template <class T_Device, class T_SysDep>
-      inline bool BaseDevice<T_Device, T_SysDep>::isReliableNetwork ()
+      const bool BaseDevice<T_Device, T_SysDep>::isReliableNetwork ()
       {
-        return static_cast<T_Device*>(this)->isReliableNetwork_impl();
+        return T_Device::reliable_network;
       }
 
       template <class T_Device, class T_SysDep>

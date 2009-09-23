@@ -14,13 +14,13 @@
 #ifndef __components_devices_shmem_shmempacketmodel_h__
 #define __components_devices_shmem_shmempacketmodel_h__
 
+#include <errno.h>
+
 #include "sys/xmi.h"
 
 #include "components/devices/MessageModel.h"
-#include "ShmemPacketDevice.h"
-#include "ShmemSysDep.h"
-
-#include <errno.h>
+#include "components/devices/shmem/ShmemPacketDevice.h"
+#include "components/devices/shmem/ShmemSysDep.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -57,10 +57,7 @@ namespace XMI
             _context (context)
         {};
 
-        bool isDeterministic ()
-        {
-          return true;
-        };
+        static const bool deterministic = true;
 
         xmi_result_t init_impl (Interface::RecvFunction_t   direct_recv_func,
                                 void                      * direct_recv_func_parm,
@@ -82,12 +79,11 @@ namespace XMI
         {
           size_t peer, sequence;
           XMI::Mapping::Interface::nodeaddr_t addr;
-          //_device._sysdep->mapping.task2node (target_rank, global, peer);
           _device._sysdep->mapping.task2node (target_rank, addr);
           _device._sysdep->mapping.node2peer (addr, peer);
-          //fprintf (stderr, "ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, addr = {%zd, %zd} peer = %zd\n", target_rank, addr.global, addr.local, peer);
 
-          TRACE_ERR((stderr,"ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, global, peer));
+          TRACE_ERR((stderr, "ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, global, peer));
+
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
                                          payload, bytes, sequence) == XMI_SUCCESS)
@@ -166,9 +162,31 @@ namespace XMI
           return false;
         };
 
+        inline bool postPacketImmediate_impl (size_t   target_rank,
+                                              void   * metadata,
+                                              size_t   metasize,
+                                              void   * payload0,
+                                              size_t   bytes0,
+                                              void   * payload1,
+                                              size_t   bytes1)
+        {
+          size_t peer, sequence;
+          XMI::Mapping::Interface::nodeaddr_t addr;
+          _device._sysdep->mapping.task2node (target_rank, addr);
+          _device._sysdep->mapping.node2peer (addr, peer);
+
+          TRACE_ERR((stderr, "ShmemPacketModel::postPacketImmediate_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, peer));
+          return (_device.isSendQueueEmpty (peer) &&
+                  _device.writeSinglePacket (peer, _dispatch_id,
+                                             metadata, metasize,
+                                             payload0, bytes0,
+                                             payload1, bytes1,
+                                             sequence) == XMI_SUCCESS);
+        };
+
         inline bool postMessage_impl (T_Message        * obj,
-                                     xmi_event_function   fn,
-                                     void               * cookie,
+                                      xmi_event_function   fn,
+                                      void               * cookie,
                                       size_t             target_rank,
                                       void             * metadata,
                                       size_t             metasize,

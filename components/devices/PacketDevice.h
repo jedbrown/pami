@@ -94,22 +94,22 @@ namespace XMI
           ///
           /// \brief Get the maximum packet metadata size in bytes.
           ///
-          /// \attention All packet device derived classes \b must
-          ///            implement the getPacketMetadataSize_impl() method.
+          /// \attention All device derived classes \b must contain a static
+          ///            const data member named 'size_t packet_metadata_size'.
           ///
           /// \return Maximum packet metadata size in bytes
           ///
-          inline size_t getPacketMetadataSize ();
+          static const size_t getPacketMetadataSize ();
 
           ///
           /// \brief Get the maximum packet payload size in bytes.
           ///
-          /// \attention All packet device derived classes \b must
-          ///            implement the getPacketPayloadSize_impl() method.
+          /// \attention All device derived classes \b must contain a static
+          ///            const data member named 'size_t packet_payload_size'.
           ///
           /// \return Maximum packet payload size in bytes
           ///
-          inline size_t getPacketPayloadSize ();
+          static const size_t getPacketPayloadSize ();
 
       };
 
@@ -126,15 +126,15 @@ namespace XMI
       }
 
       template <class T>
-      inline size_t PacketDevice<T>::getPacketMetadataSize ()
+      const size_t PacketDevice<T>::getPacketMetadataSize ()
       {
-        return static_cast<T*>(this)->getPacketMetadataSize_impl ();
+        return T::packet_metadata_size;
       }
 
       template <class T>
-      inline size_t PacketDevice<T>::getPacketPayloadSize ()
+      const size_t PacketDevice<T>::getPacketPayloadSize ()
       {
-        return static_cast<T*>(this)->getPacketPayloadSize_impl ();
+        return T::packet_payload_size;
       }
     };
   };
