@@ -18,7 +18,7 @@
  * granularity barriers is added here, in a way that makes the
  * barrier code common for all granularities.
  */
-#include "SysDep.h"
+#include "components/sysdep/SysDep.h"
 #include "components/atomic/Barrier.h"
 #include <bpcore/bgp_atomic_ops.h>
 

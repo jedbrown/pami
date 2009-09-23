@@ -19,7 +19,7 @@
  *
  *
  */
-#include "SysDep.h"
+#include "components/sysdep/SysDep.h"
 #include "components/sysdep/bgp/LockBoxFactory.h"
 #include "components/atomic/Mutex.h"
 #include <spi/bgp_SPI.h>
@@ -54,11 +54,11 @@ namespace Atomic {
 			return (LockBox_Query((LockBox_Counter_t)_addr) > 0) ? true : false;
 		}
 		void *returnLock_impl() { return _addr; }
-	private:
+	protected:
 		void *_addr;
 	}; // class _LockBoxMutex
 
-	class _FairLockBoxMutex : public Mutex {
+	class _FairLockBoxMutex {
 	public:
 		_FairLockBoxMutex() { _addr = NULL; }
 		inline void init_impl() {
@@ -102,7 +102,7 @@ namespace Atomic {
 			return (LockBox_Query((LockBox_Counter_t)_addr) > 0) ? true : false;
 		}
 		void *returnLock_impl() { return _addr; }
-	private:
+	protected:
 		void *_addr;
 	}; // class _FairLockBoxMutex
 

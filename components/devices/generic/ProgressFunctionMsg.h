@@ -18,7 +18,7 @@
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI {
 namespace Device {
@@ -61,7 +61,7 @@ public:
 protected:
 	friend class ProgressFunctionMdl;
 
-	ProgressFunctionMsg(BaseDevice &Generic_QS,
+	ProgressFunctionMsg(BaseGenericDevice &Generic_QS,
 		XMI_ProgressFunc *func,
 		void *clientdata,
 		xmi_callback_t cb) :

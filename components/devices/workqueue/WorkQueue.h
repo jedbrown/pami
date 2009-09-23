@@ -14,10 +14,10 @@
 #ifndef __components_devices_workqueue_workqueue_h__
 #define __components_devices_workqueue_workqueue_h__
 
-#include "math_coremath.h"
-#include "xmi.h"
-#include "Util.h"
-#include "PipeWorkQueue.h"
+#include "math/math_coremath.h"
+#include "sys/xmi.h"
+#include "util/common.h"
+#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 namespace XMI
 {

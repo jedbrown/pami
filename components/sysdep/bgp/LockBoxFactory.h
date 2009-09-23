@@ -10,6 +10,7 @@
 #ifndef __xmi_bgp_lockboxfactory_h__
 #define __xmi_bgp_lockboxfactory_h__
 
+#include "components/sysdep/bgp/BgpMapping.h"
 #include <spi/bgp_SPI.h>
 
 // These define the range of lockboxes we're allowed to use.
@@ -58,14 +59,14 @@ namespace BGP {
 		int __numProc;
 		bool __isMasterRank;
 	public:
-		LockBoxFactory(XMI::BgpSysDep *sd) {
+		LockBoxFactory(XMI::SysDep::BgpMapping *mapping) {
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
-			XMI_Coord_t coord;
-			int ranks[4];
-			int i;
+			xmi_coord_t coord;
+			size_t i;
 			int ncores = Kernel_ProcessorCount();
-			int t = sd->mapping().vnpeers(ranks);
+			size_t t;
+			XMI_assert(XMI_SUCCESS == mapping->nodePeers(&t));
 			_factory.numCore = 0;
 			_factory.numProc = 0;
 			_factory.masterProc = (unsigned)-1;
@@ -80,22 +81,25 @@ namespace BGP {
 			int shift = (ncores == 4 ? 2 : (ncores == 2 ? 1 : 0));
 			_factory.coreShift = shift;
 			for (i = 0; i < t; ++i) {
-				if (ranks[i] >= 0) {
+				size_t r;
+				XMI_assert(XMI_SUCCESS == mapping->node2peer(
+					(XMI::Mapping::Interface::nodeaddr_t){0, i}, &r));
+				if (r >= 0) {
 					_factory.numCore += ncores;
 					++_factory.numProc;
-					sd->mapping().rank2Network((size_t)ranks[i], &coord, XMI_TORUS_NETWORK);
+					mapping->task2network(r, &coord, XMI_TORUS_NETWORK);
 					_factory.coreXlat[i] = coord.torus.t << shift;
-					if ((size_t)ranks[i] == sd->mapping().rank()) {
+					if (r == mapping->task()) {
 						_factory.myProc = i;
 					}
 					if (_factory.masterProc == (unsigned)-1) {
-						__masterRank = ranks[i];
+						__masterRank = r;
 						_factory.masterProc = i;
 					}
 				}
 			}
 			__numProc = _factory.numProc;
-			__isMasterRank = (__masterRank == sd->mapping().rank());
+			__isMasterRank = (__masterRank == mapping->task());
 		}
 
 		~LockBoxFactory() {}
@@ -133,7 +137,7 @@ namespace BGP {
 		 * \param[in] numLockBoxes Number of lockboxes to get
 		 * \param[in] scope	Scope of lockboxes
 		 */
-		static inline void lbx_alloc(void **p, int numLockBoxes,
+		inline void lbx_alloc(void **p, int numLockBoxes,
 					lbx_scope_t scope) {
 			static int desiredLock = LBX_MIN_LOCKBOX;
 			static uint32_t *lockp[NUM_CORES * MAX_NUMLOCKBOXES];

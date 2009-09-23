@@ -14,15 +14,15 @@
 #ifndef __dcmf_workqueue_localallreducewqmsg_h__
 #define __dcmf_workqueue_localallreducewqmsg_h__
 
-#include "prod/cdi/ReduceModel.h"
-#include "workqueue/SharedWorkQueue.h"
-#include "workqueue/MemoryWorkQueue.h"
-#include "math_coremath.h"
-#include "SysDep.h"
-#include "generic/Device.h"
-#include "generic/SubDevice.h"
-#include "generic/Message.h"
-#include "generic/AdvanceThread.h"
+#include "components/devices/MulticombineModel.h"
+#include "components/devices/workqueue/SharedWorkQueue.h"
+#include "components/devices/workqueue/MemoryWorkQueue.h"
+#include "math/math_coremath.h"
+#include "components/sysdep/SysDep.h"
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/SubDevice.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
 
 extern XMI::Topology *_g_topology_local;
 
@@ -65,8 +65,8 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalAllreduceWQMessage (BaseDevice      & device,
-                                          XMI_Callback_t   cb,
+          inline LocalAllreduceWQMessage (BaseGenericDevice      & device,
+                                          xmi_callback_t   cb,
                                           XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
                                           unsigned          npeers,
@@ -135,7 +135,7 @@ public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
-	LocalAllreduceWQModel(XMI_Result &status) :
+	LocalAllreduceWQModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel>(status),
 	_shared(_g_l_allreducewq_dev.getSysdep()),
 	_peer(_g_topology_local->rank2Index(_g_l_allreducewq_dev.getSysdep()->mapping().rank())),
@@ -164,7 +164,7 @@ private:
 	unsigned _npeers;
 
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(LocalAllreduceWQMessage));
+		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(LocalAllreduceWQMessage));
 	}
 }; // class LocalAllreduceWQModel
 

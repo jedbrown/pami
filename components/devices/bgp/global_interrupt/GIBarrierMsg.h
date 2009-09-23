@@ -9,12 +9,8 @@
 #ifndef __components_devices_bgp_gibarriermsg_h__
 #define __components_devices_bgp_gibarriermsg_h__
 
-#include "components/devices/BaseDevice.h"
-#include "util/queue/Message.h"
-#include "logging/Logging.h"
-#include "SysDep.h"
-
-#include "Util.h"
+#include "components/sysdep/SysDep.h"
+#include "util/common.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
@@ -83,7 +79,7 @@ protected:
 	/// \brief  GI Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	giMessage(BaseDevice &GI_QS, XMI_Callback_t cb) :
+	giMessage(BaseGenericDevice &GI_QS, xmi_callback_t cb) :
 	XMI::Device::Generic::GenericMessage(GI_QS, cb)
 	{
 	}
@@ -135,13 +131,13 @@ protected:
 
 class giModel : public XMI::Device::Interface::MultisyncModel<giModel> {
 public:
-	giModel(XMI_Result &status) :
+	giModel(xmi_result_t &status) :
 	XMI::Device::Interface::MultisyncModel<giModel>(status)
 	{
 		// if we need sysdep, use _g_gibarrier_dev.getSysdep()...
 	}
 
-	inline bool postMultisync_impl(XMI_Multisync_t *msync);
+	inline bool postMultisync_impl(xmi_multisync_t *msync);
 
 private:
 }; // class giModel
@@ -159,7 +155,7 @@ inline XMI::Device::MessageStatus XMI::Device::BGP::giMessage::advanceThread(XMI
 	return __advanceThread((giThread *)t);
 }
 
-inline bool XMI::Device::BGP::giModel::postMultisync_impl(XMI_Multisync_t *msync) {
+inline bool XMI::Device::BGP::giModel::postMultisync_impl(xmi_multisync_t *msync) {
 	// assert(participants == ctor topology)
 	giMessage *msg;
 

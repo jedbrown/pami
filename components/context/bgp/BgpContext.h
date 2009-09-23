@@ -13,6 +13,9 @@
 #include "sys/xmi.h"
 #include "../Context.h"
 
+#include "components/devices/generic/GenericDevice.h"
+
+#warning shmem device must become sub-device of generic device
 #include "components/devices/shmem/ShmemPacketDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "components/devices/shmem/ShmemBaseMessage.h"
@@ -73,8 +76,10 @@ namespace XMI
           _client (client),
           _context ((xmi_context_t)this),
           _sysdep (),
+	  _generic(_sysdep),
           _shmem ()
         {
+          _generic.init (&_sysdep);
           _shmem.init (&_sysdep);
         }
 
@@ -123,6 +128,7 @@ namespace XMI
           for (i=0; i<maximum && events==0; i++)
           {
             events += _shmem.advance_impl();
+	    events += _generic.advance();
           }
           //if (events > 0) result = XMI_SUCCESS;
 
@@ -398,6 +404,7 @@ namespace XMI
 
         // devices...
         ShmemDevice _shmem;
+        Generic::Device _generic;
 
         protocol_t * _dispatch[1024];
         MemoryAllocator<sizeof(protocol_t),16> _protocol;

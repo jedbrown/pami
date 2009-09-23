@@ -18,7 +18,7 @@
  * granularity barriers is added here, in a way that makes the
  * barrier code common for all granularities.
  */
-#include "SysDep.h"
+#include "components/sysdep/SysDep.h"
 #include "components/sysdep/bgp/LockBoxFactory.h"
 #include "components/atomic/Barrier.h"
 #include <spi/bgp_SPI.h>
@@ -27,7 +27,7 @@ namespace XMI {
 namespace Barrier {
 namespace BGP {
 /*
- * This class cannot be used directly. The super class must accocate the
+ * This class cannot be used directly. The super class must allocate the
  * particular type of lockbox based on desired scope.
  */
 class _LockBoxBarrier {
@@ -60,7 +60,7 @@ public:
 	_LockBoxBarrier() { }
 	~_LockBoxBarrier() { }
 
-	inline void init_impl();
+	inline void init_impl(XMI::SysDep::BgpSysDep *sd);
 
 	inline void enter_impl() {
 		pollInit_impl();
@@ -117,7 +117,7 @@ public:
 	// With 5 lockboxes used... which one should be returned?
 	inline void *returnBarrier_impl() { return _barrier.lbx_ctrl_lock; }
 
-	inline void init_impl() {
+	inline void init_impl(XMI::SysDep::BgpSysDep *sd) {
 		XMI_abortf("_LockBoxBarrier class must be subclass");
 	}
 private:
@@ -132,7 +132,7 @@ class LockBoxNodeCoreBarrier :
 public:
 	LockBoxNodeCoreBarrier() {}
 	~LockBoxNodeCoreBarrier() {}
-	inline void init_impl() {
+	inline void init_impl(XMI::SysDep::BgpSysDep *sd) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
@@ -140,8 +140,7 @@ public:
 		_barrier.master = lm->masterProc << lm->coreShift;
 		_barrier.coreshift = 0;
 		_barrier.nparties = lm->numCore;
-		XMI::Atomic::BGP::LockBoxFactory::lbx_alloc(
-						(void **)_barrier.lbx_lkboxes, 5,
+		sd->lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
 						XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		_status = Initialized;
 	}
@@ -153,7 +152,7 @@ class LockBoxNodeProcBarrier :
 public:
 	LockBoxNodeProcBarrier() {}
 	~LockBoxNodeProcBarrier() {}
-	inline void init_impl() {
+	inline void init_impl(XMI::SysDep::BgpSysDep *sd) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will
@@ -161,8 +160,7 @@ public:
 		_barrier.master = lm->coreXlat[lm->masterProc] >> lm->coreShift;
 		_barrier.coreshift = lm->coreShift;
 		_barrier.nparties = lm->numProc;
-		XMI::Atomic::BGP::LockBoxFactory::lbx_alloc(
-						(void **)_barrier.lbx_lkboxes, 5,
+		sd->lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
 						XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		_status = Initialized;
 	}

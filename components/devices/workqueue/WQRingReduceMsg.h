@@ -17,10 +17,10 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "xmi.h"
-#include "PipeWorkQueue.h"
+#include "sys/xmi.h"
+#include "components/pipeworkqueue/PipeWorkQueue.h"
 #include "components/devices/MulticombineModel.h"
-#include "math_coremath.h"
+#include "math/math_coremath.h"
 
 extern XMI::Topology *_g_topology_local;
 
@@ -52,7 +52,7 @@ private:
 	};
 
 public:
-	WQRingReduceMsg(BaseDevice &Generic_QS,
+	WQRingReduceMsg(BaseGenericDevice &Generic_QS,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
 		XMI::PipeWorkQueue *rwq,

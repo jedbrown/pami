@@ -13,10 +13,9 @@
 #ifndef __components_devices_bgp_cnlib_h__
 #define __components_devices_bgp_cnlib_h__
 
-#include "SysDep.h"
-#include "util/queue/Message.h"
-#include "workqueue/WorkQueue.h"
-#include "components/devices/bgp/collective_network/DblUtils.h"
+#include "components/sysdep/SysDep.h"
+#include "components/devices/workqueue/WorkQueue.h"
+#include "math/bgp/collective_network/DblUtils.h"
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
@@ -74,7 +73,7 @@ public:
 	// on BG/P we only use one classroute, the global one.
 	static const unsigned classroute = 3;
 
-	BaseGenericCNMessage(BaseDevice &qs,
+	BaseGenericCNMessage(BaseGenericDevice &qs,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
@@ -338,7 +337,7 @@ protected:
 /// Collective Network Message with Pre/Post-processing of packets
 class BaseGenericCNPPMessage : public BaseGenericCNMessage {
 public:
-	BaseGenericCNPPMessage(BaseDevice &qs,
+	BaseGenericCNPPMessage(BaseGenericDevice &qs,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
@@ -458,7 +457,7 @@ protected:
 
 class BaseGenericCN2PMessage : public BaseGenericCNMessage {
 public:
-	BaseGenericCN2PMessage(BaseDevice &qs,
+	BaseGenericCN2PMessage(BaseGenericDevice &qs,
 			XMI::Device::WorkQueue::WorkQueue &ewq,
 			XMI::Device::WorkQueue::WorkQueue &mwq,
 			XMI::Device::WorkQueue::WorkQueue &xwq,

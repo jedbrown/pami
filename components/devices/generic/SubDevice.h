@@ -10,10 +10,10 @@
 #define __components_devices_generic_subdevice_h__
 
 #include "util/queue/Queue.h"
-#include "components/devices/BaseDevice.h"
+#include "components/devices/generic/BaseGenericDevice.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/Device.h"
-#include "xmi.h"
+#include "sys/xmi.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/SubDevice.h
@@ -78,11 +78,11 @@ public:
 protected:
 }; // class GenericSubDevSendq
 
-class GenericSubDevice : public BaseDevice {
+class GenericSubDevice : public BaseGenericDevice {
 private:
 public:
 	GenericSubDevice() :
-	BaseDevice(),
+	BaseGenericDevice(),
 	_hasBlockingAdvance(false),
 	_nRoles(1),
 	_repl(-1)
@@ -90,7 +90,7 @@ public:
 	}
 
 	GenericSubDevice(int nRoles, int repl) :
-	BaseDevice(),
+	BaseGenericDevice(),
 	_hasBlockingAdvance(false),
 	_nRoles(nRoles),
 	_repl(repl),
@@ -328,7 +328,7 @@ private:
 protected:
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
-		XMI_Result rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
+		xmi_result_t rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
 		XMI_assert(rc == XMI_SUCCESS); rc = rc;
 		_doneThreads = (Atomic *)_atomic_buf;
 		_doneThreads->fetchClear();
@@ -436,7 +436,7 @@ protected:
 
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
-		XMI_Result rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
+		xmi_result_t rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
 		XMI_assert(rc == XMI_SUCCESS); rc = rc;
 		_doneThreads = (Atomic *)_atomic_buf;
 		_doneThreads->fetchClear();
@@ -543,7 +543,7 @@ public:
 	///
 	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
-		XMI_Result rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
+		xmi_result_t rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
 		XMI_assert(rc == XMI_SUCCESS); rc = rc;
 		_doneThreads = (Atomic *)_atomic_buf;
 		_doneThreads->fetchClear();
@@ -602,13 +602,13 @@ private:
 /// and so we must have the _threads[] array here, where we know the exact Thread type.
 ///
 template <class T_Model, class T_CommonDevice, class T_Message, class T_Thread, int N_Threads>
-class SharedQueueSubDevice : public BaseDevice {
+class SharedQueueSubDevice : public BaseGenericDevice {
 	static const int NUM_THREADS = N_Threads;
 public:
 	// Note, 'common' must have been constructed but otherwised untouched.
 	// The first SharedQueueSubDevice to encounter it will initialize it.
 	SharedQueueSubDevice(T_CommonDevice *common) :
-	BaseDevice(),
+	BaseGenericDevice(),
 	_common(common)
 	{
 	}

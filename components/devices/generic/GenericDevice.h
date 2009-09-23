@@ -29,7 +29,7 @@
 // Typically, an association is made during init().
 // [ Not used yet - This may require changes in order to make it work ]
 //
-#include "components/devices/generic/ProgressFunction.h"
+#include "components/devices/generic/ProgressFunctionMsg.h"
 #include "components/devices/generic/AtomicBarrierMsg.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/WQRingBcastMsg.h"
@@ -164,7 +164,7 @@ namespace Generic {
 		for (int x = 0; x < MAX_THREADS_PER_PROC; ++x) {
 			new (&__GenericQueue[x]) MultiQueue<2, 1>();
 		}
-		XMI_Result rc;
+		xmi_result_t rc;
 		int y = 0;
 
 #ifdef USE_WAKEUP_VECTORS
@@ -243,7 +243,7 @@ namespace Generic {
 				COMMTHRD_OPCODE_CALLFUNC |
 				COMMTHRD_OPCODE_DISABLEINTONENTRY |
 				COMMTHRD_OPCODE_ENABLEINTONPOOF;
-			rc = (XMI_Result)Kernel_SetCommThreadConfig(id, op,
+			rc = (xmi_result_t)Kernel_SetCommThreadConfig(id, op,
 				(uint32_t *)ct,
 				advanceHelper,
 				(uint32_t)this,

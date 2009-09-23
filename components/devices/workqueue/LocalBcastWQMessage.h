@@ -16,8 +16,8 @@
 
 #include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/workqueue/MemoryWorkQueue.h"
-#include "math_coremath.h"
-#include "SysDep.h"
+#include "math/math_coremath.h"
+#include "components/sysdep/SysDep.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Message.h"
@@ -57,7 +57,7 @@ public:
           /// \param[in] consumers    Number of consumers that will recieve the
           ///                         broadcast buffer
           ///
-          inline LocalBcastWQMessage(BaseDevice &device,
+          inline LocalBcastWQMessage(BaseGenericDevice &device,
                                       xmi_callback_t   cb,
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole,

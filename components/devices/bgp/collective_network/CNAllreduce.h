@@ -14,12 +14,12 @@
 #ifndef __components_devices_bgp_cnallreduce_h__
 #define __components_devices_bgp_cnallreduce_h__
 
-#include "Util.h"
+#include "util/common.h"
 #include "components/devices/MulticombineModel.h"
-#include "components/devices/bgp/collective_network/Packet.h"
-#include "workqueue/WorkQueue.h"
-#include "xmi_bg_math.h"
-#include "FloatUtil.h"
+#include "components/devices/bgp/collective_network/CNPacket.h"
+#include "components/devices/workqueue/WorkQueue.h"
+#include "math/bgp/collective_network/xmi_optibgmath.h"
+#include "math/FloatUtil.h"
 
 extern int xmi_dt_shift[XMI_DT_COUNT];
 

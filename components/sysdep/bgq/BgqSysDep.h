@@ -19,6 +19,8 @@
 #include "components/memory/shmem/SharedMemoryManager.h"
 #include "components/time/bgq/BgqTime.h"
 
+#define NUM_CORES 16
+#define NUM_THREADS 4
 
 namespace XMI
 {

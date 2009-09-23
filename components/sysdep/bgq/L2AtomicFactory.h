@@ -10,7 +10,6 @@
 #ifndef __xmi_bgq_l2atomicfactory_h__
 #define __xmi_bgq_l2atomicfactory_h__
 
-#include <spi/bgp_SPI.h>
 // not sure what this should be yet...
 #define MapL2AtomicRegion(v)	((uintptr_t)v)
 
@@ -79,7 +78,7 @@ namespace BGQ {
 			size_t next;
 		} _l2atomic;
 	public:
-		L2AtomicFactory(XMI::BgpSysDep *sd) {
+		L2AtomicFactory(XMI::BgqSysDep *sd) {
 			// Must coordinate with all other processes on this node,
 			// and arrive at a common chunk of physical address memory
 			// which we all will use for allocating "lockboxes" from.

@@ -16,7 +16,7 @@
  * - Add call from init()
  * - Add call from __advanceRecv()
  */
-#include "Util.h"
+#include "util/common.h"
 #include "components/devices/generic/GenericDevice.h"
 
 // All sub-devices must be instantiated here, but are otherwise unused in

@@ -14,12 +14,12 @@
 #ifndef __components_devices_workqueue_wqringbcastmsg_h__
 #define __components_devices_workqueue_wqringbcastmsg_h__
 
-#include "generic/Device.h"
-#include "generic/Message.h"
-#include "generic/AdvanceThread.h"
-#include "dcmf.h"
-#include "PipeWorkQueue.h"
-#include "prod/cdi/BroadcastModel.h"
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "sys/xmi.h"
+#include "components/pipeworkqueue/PipeWorkQueue.h"
+#include "components/devices/MulticastModel.h"
 
 extern XMI::Topology *_g_topology_local;
 
@@ -51,7 +51,7 @@ private:
 		NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
 	};
 public:
-	WQRingBcastMsg(BaseDevice &Generic_QS,
+	WQRingBcastMsg(BaseGenericDevice &Generic_QS,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
 		XMI::PipeWorkQueue *rwq,

@@ -14,11 +14,11 @@
 #ifndef __components_devices_bgp_cnbroadcastmsg_h__
 #define __components_devices_bgp_cnbroadcastmsg_h__
 
-#include "Util.h"
-#include "components/devices/common/MulticastModelImpl.h"
+#include "util/common.h"
+#include "components/devices/MulticastModel.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
-#include "components/devices/bgp/collective_network/Packet.h"
-#include "PipeWorkQueue.h"
+#include "components/devices/bgp/collective_network/CNPacket.h"
+#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 /**
  * \page cn_bcast Collective Network Broadcast
@@ -61,14 +61,14 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNBroadcastMessage(BaseDevice &qs,
+	CNBroadcastMessage(BaseGenericDevice &qs,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
 			bool doData,
 			unsigned roles,
-			const XMI_Callback_t cb,
+			const xmi_callback_t cb,
 			unsigned dispatch_id) :
 	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb,
 		dispatch_id, XMI::Device::BGP::COMBINE_OP_OR, BGPCN_PKT_SIZE),
@@ -199,7 +199,7 @@ public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 
-	CNBroadcastModel(XMI_Result &status) :
+	CNBroadcastModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticastModel<CNBroadcastModel>(status)
 	{
 		_dispatch_id = _g_cnbroadcast_dev.newDispID();
@@ -212,7 +212,7 @@ private:
 	size_t _me;
 	unsigned _dispatch_id;
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(CNBroadcastMessage));
+		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNBroadcastMessage));
 	}
 }; // class CNBroadcastModel
 

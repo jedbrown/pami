@@ -14,12 +14,14 @@
 // used by messaging (advance).
 
 #include "components/devices/BaseDevice.h"
-#include "logging/Logging.h"
-#include "SysDep.h"
+#include "components/sysdep/SysDep.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
-#include "Mutex.h"
-#include "xmi.h"
+#include "components/atomic/Mutex.h"
+#include "components/atomic/bgp/LockBoxMutex.h"
+#include "sys/xmi.h"
+
+typedef XMI::Mutex::LockBoxMutex GenericDeviceMutex;
 
 #ifdef __bgp__
 #include "spi/kernel_interface.h"
@@ -58,17 +60,16 @@ class ThreadQueue : public Queue {
 public:
 	ThreadQueue() : Queue() { }
 
-	ThreadQueue(SysDep &sd) : Queue()
+	ThreadQueue(XMI::SysDep::BgpSysDep &sd) : Queue()
 	{
-		XMI_Result rc = sd.lockManager().dupLockManagerObject(_mutex,
-			sizeof(_mutex), XMI::LockManager::GENERIC_THRMTX_TEMPLATE);
-		XMI_assert(rc == XMI_SUCCESS); rc = rc;
+		// need status/result here...
+		_mutex.init(&sd);
 	}
 
-	XMI::Mutex *mutex() { return (XMI::Mutex *)_mutex; }
+	GenericDeviceMutex *mutex() { return &_mutex; }
 
 protected:
-	char _mutex[LM_MAX_SIZEOF_MUTEX] __attribute__((__aligned__(16)));
+	GenericDeviceMutex _mutex;
 }; /* class ThreadQueue */
 
 //////////////////////////////////////////////////////////////////////
@@ -85,7 +86,7 @@ public:
 	//////////////////////////////////////////////////////////////////
 	inline Device(SysDep &sd);
 
-	inline void init(SysDep &sd);
+	inline void init(XMI::SysDep &sd);
 
 	inline bool isAdvanceNeeded();
 

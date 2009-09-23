@@ -11,9 +11,8 @@
 #define __components_devices_generic_thread_h__
 
 #include "util/queue/Queue.h"
-#include "logging/Logging.h"
 #include "components/devices/BaseDevice.h"
-#include "SysDep.h"
+#include "components/sysdep/SysDep.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/AdvanceThread.h

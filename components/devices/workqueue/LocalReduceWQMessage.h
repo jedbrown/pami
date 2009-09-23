@@ -14,15 +14,15 @@
 #ifndef __components_devices_workqueue_localreducewqmsg_h__
 #define __components_devices_workqueue_localreducewqmsg_h__
 
-#include "workqueue/SharedWorkQueue.h"
-#include "workqueue/MemoryWorkQueue.h"
-#include "math_coremath.h"
-#include "SysDep.h"
-#include "generic/Device.h"
-#include "generic/SubDevice.h"
-#include "generic/Message.h"
-#include "generic/AdvanceThread.h"
-#include "prod/cdi/ReduceModel.h"
+#include "components/devices/workqueue/SharedWorkQueue.h"
+#include "components/devices/workqueue/MemoryWorkQueue.h"
+#include "math/math_coremath.h"
+#include "components/sysdep/SysDep.h"
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/SubDevice.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "components/devices/MulticombineModel.h"
 
 extern XMI::Topology *_g_topology_local;
 
@@ -62,7 +62,7 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalReduceWQMessage (BaseDevice &device,
+          inline LocalReduceWQMessage (BaseGenericDevice &device,
                                        xmi_callback_t   cb,
                                        XMI::Device::WorkQueue::SharedWorkQueue &workqueue,
                                        unsigned          peer,

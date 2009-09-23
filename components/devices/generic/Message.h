@@ -10,10 +10,10 @@
 #ifndef __components_devices_generic_message_h__
 #define __components_devices_generic_message_h__
 
-#include "xmi.h"
-#include "components/devices/BaseDevice.h"
-#include "util/queue/Message.h"
-#include "components/devices/generis/AdvanceThread.h"
+#include "sys/xmi.h"
+#include "components/devices/generic/BaseGenericDevice.h"
+#include "util/queue/Queue.h"
+#include "components/devices/generic/AdvanceThread.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/Message.h
@@ -35,6 +35,136 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 namespace XMI {
+
+////////////////////////////////////////////////////////////////////////
+///  \brief Message Class for insertion into queues
+///
+///  These classes implement a message class for insertion into queues
+///
+///  Definitions:
+///  - Message:    A communication object that can be inserted into a q
+///  - advance():  A method that makes the queue make progress
+///  - start():    A method that starts progress
+///  - reset():    A method that resets/reinitializes a message
+///
+///  Namespace:  DCMF, the messaging namespace.
+///  Namespace:  Queueing, the queueing namespace
+///
+////////////////////////////////////////////////////////////////////////
+enum MessageStatus {
+	Uninitialized = 0,
+	Initialized,
+	Active,
+	Done
+};
+
+//////////////////////////////////////////////////////////////////////
+///  \brief Base Class for Messages
+//////////////////////////////////////////////////////////////////////
+class Message : public QueueElem {
+public:
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Constructor
+	//////////////////////////////////////////////////////////////////////
+	Message(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb) :
+	QueueElem(),
+	_status(0),
+	_QS(QS),
+	_cb(cb)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Reset a message
+	///  \returns a return code to indicate reset status
+	//////////////////////////////////////////////////////////////////////
+	virtual int reset() = 0;
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief posts a message and begins the send
+	//////////////////////////////////////////////////////////////////////
+	virtual xmi_result_t start() = 0;
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief advance function
+	///  \returns a return code to indicate progress was made
+	//////////////////////////////////////////////////////////////////////
+	virtual int advance() = 0;
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Query function to determine message state
+	///  \returns an integer indicating status
+	//////////////////////////////////////////////////////////////////////
+	int getStatus() {return _status;}
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Sets the callback
+	//////////////////////////////////////////////////////////////////////
+	void setCallback(xmi_callback_t cb) {_cb = cb;}
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Executes the callback
+	///  \returns a return code to indicate reset status
+	//////////////////////////////////////////////////////////////////////
+	void executeCallback(xmi_result_t err = XMI_SUCCESS) {if(_cb.function) _cb.function(NULL, _cb.clientdata, err);}
+
+protected:
+	int _status;
+	Device::Generic::BaseGenericDevice &_QS;
+	xmi_callback_t _cb;
+}; /* class Message */
+
+//////////////////////////////////////////////////////////////////////
+///  \brief Base Class for Messages
+//////////////////////////////////////////////////////////////////////
+template <int numElems>
+class MultiQueueMessage : public MultiQueueElem<numElems> {
+public:
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Constructor
+	//////////////////////////////////////////////////////////////////////
+	MultiQueueMessage(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb) :
+	MultiQueueElem<numElems>(),
+	_status(Uninitialized),
+	_QS(QS),
+	_cb(cb)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Query function to determine message state
+	///  \returns an integer indicating status
+	//////////////////////////////////////////////////////////////////////
+	inline MessageStatus getStatus() {return _status;}
+	inline void setStatus(MessageStatus status) {_status = status;}
+
+	//////////////////////////////////////////////////////////////////
+	/// \brief     Returns the done status of the message
+	//////////////////////////////////////////////////////////////////
+	inline bool isDone() {return (getStatus() == Done);}
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Sets the callback
+	//////////////////////////////////////////////////////////////////////
+	void setCallback(xmi_callback_t cb) {_cb = cb;}
+
+	//////////////////////////////////////////////////////////////////////
+	///  \brief Executes the callback
+	///  \returns a return code to indicate reset status
+	//////////////////////////////////////////////////////////////////////
+	void executeCallback(xmi_result_t err = XMI_SUCCESS) {
+		if(_cb.function) _cb.function(NULL, _cb.clientdata, err);
+	}
+
+	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }
+
+protected:
+	MessageStatus _status;
+	Device::Generic::BaseGenericDevice &_QS;
+	xmi_callback_t _cb;
+}; /* class MultiQueueMessage */
+
+// still in namespace XMI...
 namespace Device {
 namespace Generic {
 
@@ -49,7 +179,7 @@ public:
 	/// \brief  Generic Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	GenericMessage(BaseDevice &Generic_QS, XMI_Callback_t cb) :
+	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb) :
 	MultiQueueMessage<2>(Generic_QS, cb),
 	_threadsWanted(0)
 	{
@@ -79,7 +209,7 @@ protected:
 template <class T>
 class GenericCDIMessage : public GenericMessage {
 public:
-	GenericCDIMessage(BaseDevice &Packet_QS, XMI_Callback_t cb, struct iovec *iov, size_t iov_len, size_t msg_len) :
+	GenericCDIMessage(BaseGenericDevice &Packet_QS, xmi_callback_t cb, struct iovec *iov, size_t iov_len, size_t msg_len) :
 	GenericMessage(Packet_QS, cb),
 	__user_iov(iov),
 	__user_iovlen(iov_len),
@@ -87,7 +217,7 @@ public:
 	{
 	}
 
-	inline void executeCallback(XMI_Error_t *err = NULL) {
+	inline void executeCallback(xmi_result_t err = XMI_SUCCESS) {
 		GenericMessage::executeCallback(err);
 	}
 protected:

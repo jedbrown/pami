@@ -14,16 +14,16 @@
 #ifndef __components_devices_bgp_cnallreducemsg_h__
 #define __components_devices_bgp_cnallreducemsg_h__
 
-#include "Util.h"
+#include "util/common.h"
 #include "components/devices/bgp/collective_network/CNDevice.h" // externs for env vars
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
-#include "components/devices/bgp/collective_network/Packet.h"
+#include "components/devices/bgp/collective_network/CNPacket.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "components/devices/common/MulticombineModelImpl.h"
-#include "PipeWorkQueue.h"
+#include "components/devices/MulticombineModel.h"
+#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 /// \page xmi_multicombine_examples
 ///
@@ -77,13 +77,13 @@ class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduceMessage(BaseDevice &qs,
+	CNAllreduceMessage(BaseGenericDevice &qs,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			const XMI_Callback_t cb,
+			const xmi_callback_t cb,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup &tas) :
 	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb,
@@ -205,7 +205,7 @@ public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 
-	CNAllreduceModel(XMI_Result &status) :
+	CNAllreduceModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<CNAllreduceModel>(status)
 	{
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
@@ -221,7 +221,7 @@ private:
 	size_t _me;
 	unsigned _dispatch_id;
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(CNAllreduceMessage));
+		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNAllreduceMessage));
 	}
 }; // class CNAllreduceModel
 

@@ -15,17 +15,17 @@
 #ifndef __components_devices_bgp_cnallreduce2psummsg_h__
 #define __components_devices_bgp_cnallreduce2psummsg_h__
 
-#include "Util.h"
-#include "workqueue/SharedWorkQueue.h"
+#include "util/common.h"
+#include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/bgp/collective_network/CNDevice.h" // externs for env vars
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
-#include "components/devices/bgp/collective_network/Packet.h"
+#include "components/devices/bgp/collective_network/CNPacket.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "math_coremath.h"
-#include "components/devices/bgp/collective_network/DblUtils.h"
+#include "math/math_coremath.h"
+#include "math/bgp/collective_network/DblUtils.h"
 
 /**
  * \page twopass_dblsum The 2-Pass DOUBLE-SUM algorithm
@@ -124,7 +124,7 @@ class CNAllreduce2PMessage : public XMI::Device::BGP::BaseGenericCN2PMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduce2PMessage(BaseDevice &qs,
+	CNAllreduce2PMessage(BaseGenericDevice &qs,
 		XMI::Device::WorkQueue::WorkQueue &ewq,
 		XMI::Device::WorkQueue::WorkQueue &mwq,
 		XMI::Device::WorkQueue::WorkQueue &xwq,
@@ -133,7 +133,7 @@ public:
 		size_t bytes,
 		bool doStore,
 		unsigned roles,
-		const XMI_Callback_t cb,
+		const xmi_callback_t cb,
 		unsigned dispatch_id_e,
 		unsigned dispatch_id_m) :
 	BaseGenericCN2PMessage(qs, ewq, mwq, xwq, swq, rwq, bytes, doStore,
@@ -285,7 +285,7 @@ public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 
-	CNAllreduce2PModel(XMI_Result &status) :
+	CNAllreduce2PModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel>(status),
 	// we depend on doing consumeBytes(bytesAvailableToConsume()) in order
 	// to "jump" to next "boundary" so we maintain alignment for each cycle.
@@ -324,7 +324,7 @@ private:
 	size_t _me;
 
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(CNAllreduce2PMessage));
+		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNAllreduce2PMessage));
 		COMPILE_TIME_ASSERT(EXPO_WQ_SIZE >= EXPCOUNT);
 		COMPILE_TIME_ASSERT((EXPO_WQ_SIZE & (EXPO_WQ_SIZE - 1)) == 0);
 		COMPILE_TIME_ASSERT(MANT_WQ_FACT * EXPO_WQ_SIZE >= EXPO_MANT_FACTOR * EXPCOUNT);

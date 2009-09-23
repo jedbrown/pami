@@ -14,15 +14,15 @@
 #ifndef __dcmf_cdi_bgp_cnallreduceshortmsg_h__
 #define __dcmf_cdi_bgp_cnallreduceshortmsg_h__
 
-#include "Util.h"
+#include "util/common.h"
 #include "components/devices/bgp/collective_network/CNDevice.h" // externs for env vars
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
-#include "components/devices/bgp/collective_network/Packet.h"
+#include "components/devices/bgp/collective_network/CNPacket.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "PipeWorkQueue.h"
+#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 namespace XMI {
 namespace Device {
@@ -63,14 +63,14 @@ class CNAllreduceShortMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 		LOCAL_ROLE = (1 << 2), // local-only work
 	};
-public:
-	CNAllreduceShortMessage(BaseDevice &qs,
+public
+	CNAllreduceShortMessage(BaseGenericDevice &qs,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			const XMI_Callback_t cb,
+			const xmi_callback_t cb,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup &tas) :
 	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb,
@@ -366,7 +366,7 @@ public:
 
 	static const int MAX_SHORT_MSG = TREE_PKT_SIZE;
 
-	CNAllreduceShortModel(DCMF::SysDep *sysdep, XMI_Result &status) :
+	CNAllreduceShortModel(DCMF::SysDep *sysdep, xmi_result_t &status) :
 	Impl::MulticombineModelImpl(status),
 	_swq(sysdep, NUM_CORES, MAX_SHORT_MSG)
 	{
@@ -395,7 +395,7 @@ private:
 	char *_bufs[NUM_CORES];
 	char _sbuffer[MAX_SHORT_MSG] __attribute__((__aligned__(16)));
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(XMI_Request_t) >= sizeof(CNAllreduceShortMessage));
+		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNAllreduceShortMessage));
 	}
 }; // class CNAllreduceShortModel
 
@@ -544,11 +544,11 @@ public:
 		unsigned           bytes,
 		DCMF_Consistency   consistency,
 		unsigned           classroute,
-		XMI_Callback_t    cb,
+		xmi_callback_t    cb,
 		char             * sbuffer,
 		char             * rbuffer,
-		XMI_Dt		dt,
-		XMI_Op		op,
+		xmi_dt		dt,
+		xmi_op		op,
 		unsigned           count,
 		unsigned           dispatch_id,
 		TreeAllreduceSetup tas) :
@@ -642,11 +642,11 @@ public:
 		unsigned           bytes,
 		DCMF_Consistency   consistency,
 		unsigned           classroute,
-		XMI_Callback_t    cb,
+		xmi_callback_t    cb,
 		char             * sbuffer,
 		char             * rbuffer,
-		XMI_Dt		dt,
-		XMI_Op		op,
+		xmi_dt		dt,
+		xmi_op		op,
 		unsigned           count,
 		unsigned           dispatch_id,
 		TreeAllreduceSetup tas) :
@@ -737,11 +737,11 @@ public:
 		unsigned           bytes,
 		unsigned           pwidth,
 		DCMF_Consistency   consistency,
-		XMI_Callback_t    cb,
+		xmi_callback_t    cb,
 		char             * sbuffer,
 		char             * rbuffer,
-		XMI_Dt		dt,
-		XMI_Op		op,
+		xmi_dt		dt,
+		xmi_op		op,
 		XMI_Opcode_t      recvcode,
 		TreeAllreduceSetup tas) :
 	TreeAllreduceRecvMessage(TreeQS, cb, rwq->bufferToProduce(),
@@ -819,11 +819,11 @@ public:
 		unsigned           bytes,
 		unsigned           pwidth,
 		DCMF_Consistency   consistency,
-		XMI_Callback_t    cb,
+		xmi_callback_t    cb,
 		char             * sbuffer,
 		char             * rbuffer,
-		XMI_Dt		dt,
-		XMI_Op		op,
+		xmi_dt		dt,
+		xmi_op		op,
 		XMI_Opcode_t      recvcode,
 		TreeAllreduceSetup tas) :
 	TreeAllreduceRecvPostMessage(TreeQS, cb, rwq->bufferToProduce(),
@@ -895,7 +895,7 @@ public:
 		unsigned           peer,
 		unsigned           npeers,
 		unsigned           bytes,
-		XMI_Callback_t    cb,
+		xmi_callback_t    cb,
 		DCMF_Consistency   consistency,
 		char             * sbuffer,
 		char             * rbuffer) :
@@ -912,7 +912,7 @@ public:
 	};
 
 	// This is actually neither PostRecv nor PreSend...
-	XMI_Result start() { ((XMI::Device::Tree::Device &)_QS).postPostRecv(*this); return XMI_SUCCESS; }
+	xmi_result_t start() { ((XMI::Device::Tree::Device &)_QS).postPostRecv(*this); return XMI_SUCCESS; }
 
 	int reset(unsigned collid=0) { return internal_restart(collid); }
 

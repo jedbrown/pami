@@ -9,8 +9,6 @@
 #ifndef __xmi_mutex_object_h__
 #define __xmi_mutex_object_h__
 
-#include "components/atomic/Atomics.h"
-
 ///
 ///  \file components/atomic/Mutex.h
 ///  \brief Mutex Objects for Hardware and Software Mutexes

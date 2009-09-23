@@ -45,7 +45,7 @@
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/atomic/Barrier.h"
-#include "xmi.h"
+#include "sys/xmi.h"
 
 namespace XMI {
 namespace Device {
@@ -86,7 +86,7 @@ public:
 protected:
 	friend class AtomicBarrierMdl<T_Barrier>;
 
-	AtomicBarrierMsg(BaseDevice &Generic_QS,
+	AtomicBarrierMsg(BaseGenericDevice &Generic_QS,
 		T_Barrier *barrier,
 		xmi_callback_t cb) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, cb),

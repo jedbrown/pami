@@ -14,12 +14,12 @@
 #ifndef __components_devices_workqueue_sharedworkqueue_h__
 #define __components_devices_workqueue_sharedworkqueue_h__
 
-#include "WorkQueue.h"
-#include "SysDep.h"
+#include "components/devices/workqueue/WorkQueue.h"
+#include "components/sysdep/SysDep.h"
 
 #ifdef __bgp__
 
-#include <ppc450_inlines.h>
+#include <bpcore/ppc450_inlines.h>
 #define mem_sync()	_bgp_msync()
 #define mem_barrier()	_bgp_mbar()
 

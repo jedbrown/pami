@@ -10,8 +10,10 @@
  * \file components/devices/bgp/collective_network/CNDevice.cc
  * \brief Collective Network Device implementation
  */
-#include "Util.h"
-#include "Barrier.h"
+#include "util/common.h"
+#include "components/sysdep/bgp/BgpSysDep.h"
+#include "components/atomic/Barrier.h"
+#include "components/atomic/bgp/LockBoxBarrier.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
 
 extern "C" unsigned _g_min_peers;
@@ -54,11 +56,13 @@ unsigned XMI_CN_HELPER_THRESH = 16384; // a guess
  */
 int XMI_CN_VN_DEEP = 1;
 
+typedef XMI::Barrier::BGP::LockBoxBarrier CNDevceInitBarrier;
+
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-	void CNDevice::init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
+	void CNDevice::init(XMI::SysDep::BgpSysDep &sd, XMI::Device::Generic::Device *device) {
 		__init(sd, device);
 		char *s;
 		/*
@@ -83,19 +87,19 @@ namespace BGP {
 		 * to share the results of the measurements.
 		 */
 		unsigned *loc = NULL;
-		Barrier *lbb = NULL;
+		CNDevceInitBarrier lbb;
 		/*
 		 * This is used by TreeMessage objects pre/post
 		 * math routines to account for changes to
 		 * bitfields in the data.
 		 */
-		_g_num_active_nodes = sd.mapping().numActiveNodesGlobal();
-		unsigned peers = sd.mapping().numActiveRanksLocal();
-		if (sd.mapping().numActiveRanksLocal() > 1) {
-			loc = (unsigned *)sd.memoryManager().scratchpad_static_area_start();
-			lbb = &sd.lockManager().getBarrier(XMI::LockManager::CN_INIT);
+		_g_num_active_nodes = sd.mapping.numActiveNodesGlobal();
+		unsigned peers = sd.mapping.numActiveRanksLocal();
+		if (sd.mapping.numActiveRanksLocal() > 1) {
+			lbb.init(&sd, sd.mapping.numActiveRanksLocal());
+			loc = (unsigned *)sd.mm.scratchpad_static_area_start();
 		}
-		if (sd.lockManager().isMasterRank()) {
+		if (sd.lockboxFactory.isMasterRank()) {
 			static char pkt[BGPCN_PKT_SIZE]__attribute__((__aligned__(16)));
 			_BGP_TreeHwHdr hdr;
 			register unsigned hc, dc, ih, id;
@@ -130,7 +134,7 @@ namespace BGP {
 			CollectiveRawReceivePacket(VIRTUAL_CHANNEL, &hdr, pkt);
 			// retrieve the MAX xmit time for all nodes
 			__tree_times[1] = *((unsigned *)pkt);
-			if (sd.mapping().numActiveRanksLocal() > 1) {
+			if (sd.mapping.numActiveRanksLocal() > 1) {
 				// "broadcast" results to other cores
 				loc[0] = __tree_times[0];
 				loc[1] = __tree_times[1];
@@ -138,11 +142,11 @@ namespace BGP {
 				loc[3] = _g_max_peers;
 			}
 		}
-		if (sd.mapping().numActiveRanksLocal() > 1) {
+		if (sd.mapping.numActiveRanksLocal() > 1) {
 			// complete the "broadcast" by barriering and
 			// picking up the results from shared memory.
-			lbb->enter();
-			if (!sd.lockManager().isMasterRank()) {
+			lbb.enter();
+			if (!sd.lockboxFactory.isMasterRank()) {
 				__tree_times[0] = loc[0];
 				__tree_times[1] = loc[1];
 				_g_min_peers = loc[2];
@@ -195,7 +199,7 @@ namespace BGP {
 		}
 		// this will need to be more generic if number of
 		// cores becomes larger.
-		switch (sd.personality().tSize()) {
+		switch (sd.mapping.tSize()) {
 		case 1: // SMP mode
 			if (XMI_THREADED_CN) {
 				_threadRoles = 2; // two roles may use comm_threads

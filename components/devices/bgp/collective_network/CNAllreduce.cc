@@ -12,7 +12,7 @@
  * \brief Collective Network allreduce implementation.
  */
 
-#include <Util.h>
+#include <util/common.h>
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "spi/bgp_SPI.h"

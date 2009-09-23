@@ -274,4 +274,4 @@ namespace XMI
   };
 };
 
-#dendif // __components_devices_workqueue_memoryworkqueue_h__
+#endif // __components_devices_workqueue_memoryworkqueue_h__

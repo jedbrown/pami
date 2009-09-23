@@ -157,7 +157,7 @@ namespace CCMI
       return _nRanks;
     }
 
-    XMI_Result Torus2Rank(unsigned *coords, unsigned *rank)
+    xmi_result_t Torus2Rank(unsigned *coords, unsigned *rank)
     {
       *rank = ((coords[CCMI_Z_DIM] * _maxs[CCMI_Y_DIM] + coords[CCMI_Y_DIM]) * _maxs[CCMI_X_DIM] + coords[CCMI_X_DIM]) * _maxs[CCMI_T_DIM] + coords[CCMI_T_DIM];
       return XMI_SUCCESS;
