@@ -18,6 +18,7 @@
 #include "components/mapping/bgp/BgpMapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 #include "components/time/bgp/BgpTime.h"
+#include "components/sysdep/bgp/LockBoxFactory.h"
 
 #define NUM_CORES 4
 #define NUM_THREADS 1
@@ -47,7 +48,7 @@ namespace XMI
 		BgpSysDep() {}
 		~BgpSysDep() {}
 
-		XMI::SysDep::LockBoxFactory lockboxFactory(&this->mapping);
+		XMI::Atomic::BGP::LockBoxFactory lockboxFactory(&this->mapping);
 	}; // class BgpSysDep
   };
 };
