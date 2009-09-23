@@ -42,6 +42,7 @@ namespace XMI
                       public Interface::MessageDevice<MPIDevice<T_SysDep> >
     {
     public:
+      static const size_t packet_payload_size = 224;
       inline MPIDevice () :
         Interface::BaseDevice<MPIDevice<T_SysDep>, T_SysDep> (),
         Interface::MessageDevice<MPIDevice<T_SysDep> >(),
