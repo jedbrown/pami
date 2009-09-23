@@ -10,7 +10,7 @@
 #ifndef __xmi_bgp_lockboxfactory_h__
 #define __xmi_bgp_lockboxfactory_h__
 
-#include "components/sysdep/bgp/BgpMapping.h"
+#include "components/mapping/bgp/BgpMapping.h"
 #include <spi/bgp_SPI.h>
 
 // These define the range of lockboxes we're allowed to use.

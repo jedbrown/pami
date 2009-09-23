@@ -64,7 +64,7 @@ public:
 public:
 	unsigned _roles;
 	bool _sender;
-	XMI::PipeWorkQueue *_wq;
+	XMI_PIPEWORKQUEUE_CLASS *_wq;
 	unsigned _cycles;
 }; // class BaseGenericCNThread
 
@@ -74,8 +74,8 @@ public:
 	static const unsigned classroute = 3;
 
 	BaseGenericCNMessage(BaseGenericDevice &qs,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			XMI_PIPEWORKQUEUE_CLASS *swq,
+			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
@@ -326,8 +326,8 @@ public:
 		}
 	}
 protected:
-	XMI::PipeWorkQueue *_swq;
-	XMI::PipeWorkQueue *_rwq;
+	XMI_PIPEWORKQUEUE_CLASS *_swq;
+	XMI_PIPEWORKQUEUE_CLASS *_rwq;
 	size_t _bytes;
 	unsigned _roles;
 	bool _doStore;
@@ -338,8 +338,8 @@ protected:
 class BaseGenericCNPPMessage : public BaseGenericCNMessage {
 public:
 	BaseGenericCNPPMessage(BaseGenericDevice &qs,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			XMI_PIPEWORKQUEUE_CLASS *swq,
+			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
@@ -461,8 +461,8 @@ public:
 			XMI::Device::WorkQueue::WorkQueue &ewq,
 			XMI::Device::WorkQueue::WorkQueue &mwq,
 			XMI::Device::WorkQueue::WorkQueue &xwq,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			XMI_PIPEWORKQUEUE_CLASS *swq,
+			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,

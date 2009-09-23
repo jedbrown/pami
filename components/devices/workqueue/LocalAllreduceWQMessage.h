@@ -24,8 +24,6 @@
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
 
-extern XMI::Topology *_g_topology_local;
-
 namespace XMI {
 namespace Device {
 
@@ -70,8 +68,8 @@ public:
                                           XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
                                           unsigned          npeers,
-                                          XMI::PipeWorkQueue *swq,
-                                          XMI::PipeWorkQueue *rwq,
+                                          XMI_PIPEWORKQUEUE_CLASS *swq,
+                                          XMI_PIPEWORKQUEUE_CLASS *rwq,
                                           unsigned          count,
                                           coremath          func,
                                           int               dtshift) :
@@ -125,8 +123,8 @@ private:
           unsigned          _peer;
           coremath          _func;
           int               _dtshift;
-          XMI::PipeWorkQueue   *_source;
-          XMI::PipeWorkQueue   *_result;
+          XMI_PIPEWORKQUEUE_CLASS   *_source;
+          XMI_PIPEWORKQUEUE_CLASS   *_result;
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalAllreduceWQMessage
 
@@ -185,8 +183,8 @@ inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mco
 	LocalAllreduceWQMessage *msg =
 		new (mcomb->request) LocalAllreduceWQMessage(_g_l_allreducewq_dev,
 					mcomb->cb_done, _shared, _peer, _npeers,
-					(XMI::PipeWorkQueue *)mcomb->data,
-					(XMI::PipeWorkQueue *)mcomb->results,
+					(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data,
+					(XMI_PIPEWORKQUEUE_CLASS *)mcomb->results,
 					mcomb->count, func, dtshift);
 	_g_l_allreducewq_dev.__post<LocalAllreduceWQMessage>(msg);
 	return true;

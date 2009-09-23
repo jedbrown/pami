@@ -50,9 +50,9 @@ private:
 	};
 public:
 	WQRingBcastMsg(BaseGenericDevice &Generic_QS,
-		XMI::PipeWorkQueue *iwq,
-		XMI::PipeWorkQueue *swq,
-		XMI::PipeWorkQueue *rwq,
+		XMI_PIPEWORKQUEUE_CLASS *iwq,
+		XMI_PIPEWORKQUEUE_CLASS *swq,
+		XMI_PIPEWORKQUEUE_CLASS *rwq,
 		size_t bytes,
 		xmi_callback_t cb) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
@@ -156,9 +156,9 @@ protected:
 	}
 
 	unsigned _nThreads;
-	XMI::PipeWorkQueue *_iwq;
-	XMI::PipeWorkQueue *_swq;
-	XMI::PipeWorkQueue *_rwq;
+	XMI_PIPEWORKQUEUE_CLASS *_iwq;
+	XMI_PIPEWORKQUEUE_CLASS *_swq;
+	XMI_PIPEWORKQUEUE_CLASS *_rwq;
 	size_t _bytes;
 }; //-- WQRingBcastMsg
 
@@ -187,7 +187,7 @@ public:
 
 private:
 	size_t _me;
-	XMI::PipeWorkQueue _wq[NUM_CORES /* * NUM_THREADS */];
+	XMI_PIPEWORKQUEUE_CLASS _wq[NUM_CORES /* * NUM_THREADS */];
 }; // class WQRingBcastMdl
 
 void WQRingBcastMsg::complete() {
@@ -200,8 +200,8 @@ inline XMI::Device::MessageStatus WQRingBcastMsg::advanceThread(XMI::Device::Gen
 }
 
 inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
-	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
-	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
+	XMI_TOPOLOGY_CLASS *dst_topo = (XMI_TOPOLOGY_CLASS *)mcast->dst_participants;
+	XMI_TOPOLOGY_CLASS *src_topo = (XMI_TOPOLOGY_CLASS *)mcast->src_participants;
 	size_t meix = dst_topo->rank2Index(_me);
 	size_t meix_1 = meix + 1;
 	if (meix_1 >= dst_topo->size()) {
@@ -217,13 +217,13 @@ inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
 		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
-					(XMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
+					(XMI_PIPEWORKQUEUE_CLASS *)mcast->src, &_wq[meix_1], (XMI_PIPEWORKQUEUE_CLASS *)mcast->dst, mcast->bytes, mcast->cb_done);
 	} else if (src_topo->isRankMember(me_1)) {
 		// I am tail of stream - no one is downstream from me.
 		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] ===> results
 		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
-					&_wq[meix], NULL, (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
+					&_wq[meix], NULL, (XMI_PIPEWORKQUEUE_CLASS *)mcast->dst, mcast->bytes, mcast->cb_done);
 	} else {
 		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] =+=> results
@@ -232,7 +232,7 @@ inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
 		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
-					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
+					&_wq[meix], &_wq[meix_1], (XMI_PIPEWORKQUEUE_CLASS *)mcast->dst, mcast->bytes, mcast->cb_done);
 	}
 	_g_wqbcast_dev.__post<WQRingBcastMsg>(msg);
 	return true;

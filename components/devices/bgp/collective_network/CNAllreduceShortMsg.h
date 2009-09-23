@@ -65,8 +65,8 @@ class CNAllreduceShortMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	};
 public
 	CNAllreduceShortMessage(BaseGenericDevice &qs,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			XMI_PIPEWORKQUEUE_CLASS *swq,
+			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
@@ -428,7 +428,7 @@ inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage
 		return false;
 	}
 	XMI::Device::BGP::CNAllreduceSetup &tas = XMI::Device::BGP::CNAllreduceSetup::getCNAS(_getDt(), _getOp());
-	XMI::Topology *results_topo = (XMI::Topology *)_getResultsRanks();
+	XMI_TOPOLOGY_CLASS *results_topo = (XMI_TOPOLOGY_CLASS *)_getResultsRanks();
 	bool doStore = (!results_topo || results_topo->isRankMember(_me));
 	bool doBcast = (!results_topo || results_topo->size() > 1);
 
@@ -485,8 +485,8 @@ inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage
 	// __post() will still try early advance... (after construction)
 	// details TBD...
 	new (msg) CNAllreduceShortMessage(_g_cnallreduceshort_dev,
-			(XMI::PipeWorkQueue *)_getData(),
-			(XMI::PipeWorkQueue *)_getResults(),
+			(XMI_PIPEWORKQUEUE_CLASS *)_getData(),
+			(XMI_PIPEWORKQUEUE_CLASS *)_getResults(),
 			bytes, doStore, _getRoles(), _getCallback(), _dispatch_id, tas
 			// context from possible pre-ctor advance???
 			);

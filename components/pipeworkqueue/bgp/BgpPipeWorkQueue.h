@@ -11,6 +11,7 @@
 #include "components/pipeworkqueue/PipeWorkQueue.h"
 
 #define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue::BgpPipeWorkQueue
+#warning BGP PipeWorkQueue include
 
 namespace XMI
 {

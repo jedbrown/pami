@@ -23,7 +23,6 @@
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MulticombineModel.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 /// \page xmi_multicombine_examples
 ///
@@ -78,8 +77,8 @@ class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	};
 public:
 	CNAllreduceMessage(BaseGenericDevice &qs,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			XMI_PIPEWORKQUEUE_CLASS *swq,
+			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
@@ -248,7 +247,7 @@ inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	if (tas._pre) {
 		return false;
 	}
-	XMI::Topology *result_topo = (XMI::Topology *)mcomb->results_participants();
+	XMI_TOPOLOGY_CLASS *result_topo = (XMI_TOPOLOGY_CLASS *)mcomb->results_participants();
 	bool doStore = (!result_topo || result_topo->isRankMember(_me));
 	size_t bytes = mcomb->count << xmi_dt_shift[mcomb->dtype];
 
@@ -257,8 +256,8 @@ inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	// __post() will still try early advance... (after construction)
 	CNAllreduceMessage *msg;
 	msg = new (mcomb->request) CNAllreduceMessage(_g_cnallreduce_dev,
-			(XMI::PipeWorkQueue *)mcomb->data,
-			(XMI::PipeWorkQueue *)mcomb->results,
+			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data,
+			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->results,
 			bytes, doStore, mcomb->roles, mcomb->cb_done, _dispatch_id, tas);
 	_g_cnallreduce_dev.__post(msg);
 	return true;

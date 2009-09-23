@@ -18,7 +18,6 @@
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "sys/xmi.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
 #include "components/devices/MulticombineModel.h"
 #include "math/math_coremath.h"
 
@@ -51,9 +50,9 @@ private:
 
 public:
 	WQRingReduceMsg(Generic::BaseGenericDevice &Generic_QS,
-		XMI::PipeWorkQueue *iwq,
-		XMI::PipeWorkQueue *swq,
-		XMI::PipeWorkQueue *rwq,
+		XMI_PIPEWORKQUEUE_CLASS *iwq,
+		XMI_PIPEWORKQUEUE_CLASS *swq,
+		XMI_PIPEWORKQUEUE_CLASS *rwq,
 		xmi_op op,
 		xmi_dt dt,
 		size_t count,
@@ -163,9 +162,9 @@ protected:
 	}
 
 	unsigned _nThreads;
-	XMI::PipeWorkQueue *_iwq;
-	XMI::PipeWorkQueue *_swq;
-	XMI::PipeWorkQueue *_rwq;
+	XMI_PIPEWORKQUEUE_CLASS *_iwq;
+	XMI_PIPEWORKQUEUE_CLASS *_swq;
+	XMI_PIPEWORKQUEUE_CLASS *_rwq;
 	size_t _count;
 	int _shift;
 	coremath _func;
@@ -198,7 +197,7 @@ public:
 
 private:
 	size_t _me;
-	XMI::PipeWorkQueue _wq[NUM_CORES /* * NUM_THREADS */];
+	XMI_PIPEWORKQUEUE_CLASS _wq[NUM_CORES /* * NUM_THREADS */];
 }; // class WQRingReduceMdl
 
 void WQRingReduceMsg::complete() {
@@ -211,8 +210,8 @@ inline XMI::Device::MessageStatus WQRingReduceMsg::advanceThread(XMI::Device::Ge
 }
 
 inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
-	XMI::Topology *data_topo = (XMI::Topology *)mcomb->data_participants;
-	XMI::Topology *results_topo = (XMI::Topology *)mcomb->results_participants;
+	XMI_TOPOLOGY_CLASS *data_topo = (XMI_TOPOLOGY_CLASS *)mcomb->data_participants;
+	XMI_TOPOLOGY_CLASS *results_topo = (XMI_TOPOLOGY_CLASS *)mcomb->results_participants;
 	// data_participants will be all local nodes...
 	// results_participants should be one only.
 	// both MUST be local-only topologies. we don't verify.
@@ -250,7 +249,7 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 		// _input (op) _wq[meix_1] => _output
 		// XMI_assert(roles == ROOT_ROLE);
 		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev,
-					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (XMI::PipeWorkQueue *)mcomb->results,
+					(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data, &_wq[meix_1], (XMI_PIPEWORKQUEUE_CLASS *)mcomb->results,
 					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
 	} else if (results_topo->isRankMember(me_1)) {
 		// I am head of stream.
@@ -259,7 +258,7 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
 		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev,
-					(XMI::PipeWorkQueue *)mcomb->data, NULL, &_wq[meix],
+					(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data, NULL, &_wq[meix],
 					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
 	} else {
 		// I am upstream of root, but not head.
@@ -268,7 +267,7 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
 		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev,
-					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix],
+					(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data, &_wq[meix_1], &_wq[meix],
 					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
 	}
 	_g_wqreduce_dev.__post<WQRingReduceMsg>(msg);

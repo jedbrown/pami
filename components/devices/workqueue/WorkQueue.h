@@ -17,7 +17,6 @@
 #include "math/math_coremath.h"
 #include "sys/xmi.h"
 #include "util/common.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 namespace XMI
 {
@@ -373,7 +372,7 @@ namespace XMI
             return nbytes;
           }
           // Q2Q using PipeWorkQueue as 'in' (should use template?)
-          inline unsigned Q2Q (XMI::PipeWorkQueue & in,
+          inline unsigned Q2Q (XMI_PIPEWORKQUEUE_CLASS & in,
                                coremath1   func,
                                int         dtshift)
           {
@@ -401,7 +400,7 @@ namespace XMI
             return nbytes;
           }
           // reverse-direction Q2Q, using PipeWorkQueue as 'out'
-          inline unsigned Q2Qr (XMI::PipeWorkQueue &out,
+          inline unsigned Q2Qr (XMI_PIPEWORKQUEUE_CLASS &out,
                                coremath1   func,
                                int         dtshift)
           {
@@ -485,8 +484,8 @@ namespace XMI
           }
 
           /// PipeWorkQueue version... "this" is the SharedWorkQueue...
-          inline unsigned reduce2Q (XMI::PipeWorkQueue &in,
-                                    XMI::PipeWorkQueue &out,
+          inline unsigned reduce2Q (XMI_PIPEWORKQUEUE_CLASS &in,
+                                    XMI_PIPEWORKQUEUE_CLASS &out,
                                     coremath    func,
                                     int         dtshift)
           {
@@ -547,7 +546,7 @@ namespace XMI
           }
 
           // reduceInPlace using PipeWorkQueue as 'in' (should use template?)
-          inline unsigned reduceInPlace (XMI::PipeWorkQueue & in,
+          inline unsigned reduceInPlace (XMI_PIPEWORKQUEUE_CLASS & in,
                                          coremath    func,
                                          int         dtshift)
           {
