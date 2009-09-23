@@ -140,8 +140,8 @@ int main (int argc, char ** argv)
   barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
 
-  int niter = 0;
-  for(niter=0; niter<bcastnum_algorithm; niter++)
+  int nalg = 0;
+  for(nalg=0; nalg<bcastnum_algorithm; nalg++)
       {
         int root = 0;
         if (task_id == (size_t)root)
@@ -156,7 +156,7 @@ int main (int argc, char ** argv)
         broadcast.cb_done   = cb_broadcast;
         broadcast.cookie    = (void*)&_g_broadcast_active;
         broadcast.geometry  = world_geometry;
-        broadcast.algorithm = bcastalgorithm[niter];
+        broadcast.algorithm = bcastalgorithm[nalg];
         broadcast.root      = root;
         broadcast.buf       = buf;
         broadcast.type      = XMI_BYTE;

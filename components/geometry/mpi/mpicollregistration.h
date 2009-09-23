@@ -44,8 +44,8 @@ namespace XMI
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
         _ccmibarrier(dev, sd, mapidtogeometry),
-        _ccmiringbroadcast(dev, sd, mapidtogeometry),
-        _ccmibinombroadcast(dev, sd, mapidtogeometry)
+        _ccmibinombroadcast(dev, sd, mapidtogeometry),
+        _ccmiringbroadcast(dev, sd, mapidtogeometry)
         {          
 	  // Register and link each collective into a queue for analysis
 	  _nbCollMgr.initialize();
@@ -86,11 +86,11 @@ namespace XMI
           _ccmibarrier._colltype=XMI::CollInfo::CI_BARRIER1;
           _barriers.push_back(&_ccmiambroadcast);
 
-          _ccmiringbroadcast._colltype=XMI::CollInfo::CI_BROADCAST1;
+          _ccmibinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST1;
           _broadcasts.push_back(&_ccmibinombroadcast);
-          
-          _ccmibinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST2;
-          _broadcasts.push_back(&_ccmibinombroadcast);
+
+          _ccmiringbroadcast._colltype=XMI::CollInfo::CI_BROADCAST2;
+          _broadcasts.push_back(&_ccmiringbroadcast);
         }
 
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
@@ -134,8 +134,8 @@ namespace XMI
       XMI::CollInfo::PGBarrierInfo<T_Device>      _pgbarrier;
       XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep>    _ccmiambroadcast;
       XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>   _ccmibarrier;
-      XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> _ccmiringbroadcast;
       XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> _ccmibinombroadcast;
+      XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>  _ccmiringbroadcast;
       
       RegQueue          _broadcasts;
       RegQueue          _ambroadcasts;

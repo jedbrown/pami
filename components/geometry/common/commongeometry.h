@@ -72,6 +72,7 @@ namespace XMI
                   _ranks[k] = rangelist[i].lo + j;
               }
           geometry_map[_commid]=this;
+          updateCachedGeometry(this, _commid);
 
         }
 

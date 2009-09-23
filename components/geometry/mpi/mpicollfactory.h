@@ -112,7 +112,6 @@ namespace XMI
           *num = MIN(*num, i);
           for(i=0; i<*num; i++)
             alglist[i] = (size_t)i;
-          fprintf(stderr, "alg_impl sz=%d\n",i);
           return XMI_SUCCESS;
         }
 
@@ -249,28 +248,6 @@ namespace XMI
                   break;
                   case XMI::CollInfo::CI_BROADCAST1:
                   {
-
-                    fprintf(stderr, "ccmi broadcast ring!\n");
-                    XMI_Callback_t cb_done;
-                    cb_done.function   = broadcast->cb_done;
-                    cb_done.clientdata = broadcast->cookie;
-                    XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
-                      (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
-                    cinfo->_broadcast_registration.generate(req,
-                                                            sizeof(XMI_CollectiveRequest_t),
-                                                            cb_done,
-                                                            XMI_MATCH_CONSISTENCY,
-                                                            _geometry,
-                                                            broadcast->root,
-                                                            broadcast->buf,
-                                                            broadcast->typecount);
-                  }
-                  break;
-                  case XMI::CollInfo::CI_BROADCAST2:
-                  {
-
-                    fprintf(stderr, "ccmi broadcast binomial!\n");
                     XMI_Callback_t cb_done;
                     cb_done.function   = broadcast->cb_done;
                     cb_done.clientdata = broadcast->cookie;
@@ -285,6 +262,24 @@ namespace XMI
                                                            broadcast->root,
                                                            broadcast->buf,
                                                            broadcast->typecount);
+                  }
+                  break;
+                  case XMI::CollInfo::CI_BROADCAST2:
+                  {
+                    XMI_Callback_t cb_done;
+                    cb_done.function   = broadcast->cb_done;
+                    cb_done.clientdata = broadcast->cookie;
+                    XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
+                      (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    cinfo->_broadcast_registration.generate(req,
+                                                            sizeof(XMI_CollectiveRequest_t),
+                                                            cb_done,
+                                                            XMI_MATCH_CONSISTENCY,
+                                                            _geometry,
+                                                            broadcast->root,
+                                                            broadcast->buf,
+                                                            broadcast->typecount);
                   }
                   break;
                   default:

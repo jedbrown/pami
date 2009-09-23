@@ -23,8 +23,6 @@ namespace XMI
 {
   namespace Device
   {
-
-
     template <class T_Device, class T_Message>
       class MPIOldmulticastModel : public Interface::OldmulticastModel<MPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message>
       {
@@ -32,11 +30,13 @@ namespace XMI
 	MPIOldmulticastModel (T_Device & device) :
         Interface::OldmulticastModel<MPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message> (device),
 	  _device(device)
-	  {};
-
+	  {
+            _dispatch_id = _device.initMcast();
+          };
+        
 	inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
         {
-	  _dispatch_id = _device.registerMcastRecvFunction (cb_recv, arg);
+          _device.registerMcastRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
 	inline unsigned  send   (XMI_Request_t             * request,
@@ -58,8 +58,8 @@ namespace XMI
           XMI_assert( hdr != NULL );
           hdr->_dispatch_id = _dispatch_id;
           hdr->_info_count  = info_count;
-          hdr->_size = size;
-          hdr->_conn = connection_id;
+          hdr->_size        = size;
+          hdr->_conn        = connection_id;
           if( info )
 	    {
 	      memcpy (&hdr->_info[0], info, info_count * sizeof (xmi_quad_t));
@@ -125,13 +125,33 @@ namespace XMI
                                   xmi_op                   op     = XMI_UNDEFINED_OP,
                                   xmi_dt                   dtype  = XMI_UNDEFINED_DT)
         {
-	  assert(0);
+
+          MPIMcastRecvMessage *msg = (MPIMcastRecvMessage*)malloc(sizeof(*msg));
+          msg->_dispatch_id = _dispatch_id;
+          msg->_conn     = conn_id;
+          msg->_done_fn  = cb_done->function;
+          msg->_cookie   = cb_done->clientdata;
+          msg->_buf      = buf;
+          msg->_size     = size;
+          msg->_pwidth   = pwidth;
+//          msg->_hint     = hint;
+//          msg->_op       = op;
+//          msg->_dtype    = dtype;
+          _device.enqueue(msg);
 	  return 0;
         }
 
 	inline unsigned postRecv (xmi_oldmulticast_recv_t  *mrecv)
         {
-	  assert(0);
+          postRecv((XMI_Request_t*)mrecv->request,
+                   &mrecv->cb_done,
+                   mrecv->connection_id,
+                   mrecv->rcvbuf,
+                   mrecv->bytes,
+                   mrecv->pipelineWidth,
+                   mrecv->opcode,
+                   mrecv->op,
+                   mrecv->dt);
 	  return 0;
         }
 

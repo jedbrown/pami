@@ -216,7 +216,6 @@ namespace CCMI
         _senddone       =  false;
         _cdata._phase   = 0;
         _cdata._comm    = comm;
-
         MEMSET(_phasevec, 0, sizeof(_phasevec));
 
 //_minfo.setInfo((XMIQuad *)((void *) &_cdata),  1);
@@ -586,7 +585,6 @@ namespace CCMI
         _senddone       =  false;
         _cdata._phase   = 0;
         _cdata._comm    = comm;
-
         MEMSET(_phasevec, 0, sizeof(_phasevec));
 
 //	_minfo.setRequestBuffer(& _request);
@@ -646,7 +644,6 @@ template <class T_Mcast>
 inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
 {
   CCMI_assert(_phase <= (_start + _nphases));
-
   if(_phase == (_start + _nphases))
   {
     TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext DONE _cb_done %X, _phase %d, _clientdata %X\n",
@@ -695,6 +692,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
     _minfo.nranks=ndest;
     ///Initiate multisend
     _mcastInterface->send (&_minfo);
+//    sleep(1);
   }
   else
   {

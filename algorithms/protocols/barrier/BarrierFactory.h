@@ -127,14 +127,14 @@ namespace CCMI
         {
           CollHeaderData  *cdata = (CollHeaderData *) info;
           OldBarrierFactory *factory = (OldBarrierFactory *) arg;
-
+          
           XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *) XMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
           if(geometry == NULL)
           {
             geometry = (XMI_GEOMETRY_CLASS *) factory->_cb_geometry (cdata->_comm);
             XMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
           }
-
+          assert(geometry != NULL);
           CCMI::Executor::OldBarrier<T_Mcast> *executor = (CCMI::Executor::OldBarrier<T_Mcast>*)
 	    geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
           CCMI_assert (executor != NULL);

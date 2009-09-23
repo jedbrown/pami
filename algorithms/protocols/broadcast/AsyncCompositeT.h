@@ -170,7 +170,6 @@ namespace CCMI
          unsigned                    bytes)
         {
           //fprintf (stderr, "Async Broadcast Generate %d, %d\n", sizeof(T_Schedule), sizeof(CCMI_Executor_t));
-
           T_Schedule* a_bcast = NULL;
 
           XMI_assert(rsize > sizeof(T_Schedule));
@@ -237,7 +236,7 @@ namespace CCMI
          XMI_Callback_t * cb_done)
         {
           TRACE_ADAPTOR ((stderr, "Broadcast Async Handler\n"));
-
+          fprintf(stderr, "Broadcast Async Handler!\n");
           AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;
           CollHeaderData *cdata = (CollHeaderData *) info;
 

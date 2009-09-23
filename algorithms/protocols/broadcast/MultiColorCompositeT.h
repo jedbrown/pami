@@ -15,6 +15,7 @@
 #define __ccmi_adaptor_broadcast_multicolor_sync_composite_h__
 
 #include "algorithms/executor/Broadcast.h"
+#include "algorithms/executor/Barrier.h"
 #include "algorithms/composite/Composite.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/RankBasedConnMgr.h"
@@ -212,9 +213,10 @@ namespace CCMI
 
           CCMI_assert (bcast_composite->_doneCount <  bcast_composite->_nComplete);
           ++bcast_composite->_doneCount;
+          
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
-            bcast_composite->_cb_done.function(NULL, bcast_composite->_cb_done.clientdata, XMI_SUCCESS);
+            bcast_composite->_cb_done.function(ctxt, bcast_composite->_cb_done.clientdata, XMI_SUCCESS);
           }
         }
       };  //-- MultiColorCompositeT
@@ -287,13 +289,11 @@ namespace CCMI
              root,
              src,
              bytes);
-
           composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
-
-//          CCMI::Executor::Executor *barrier = geometry->getBarrierExecutor();
-  
-          CCMI::Executor::Executor *barrier = (CCMI::Executor::Executor *)geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
+          CCMI::Executor::OldBarrier<T_Mcast> *barrier = (CCMI::Executor::OldBarrier<T_Mcast>*)
+            geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
           CCMI_assert(barrier != NULL);
+
           barrier->setDoneCallback (B::cb_barrier_done, composite);
           barrier->setConsistency (consistency);
           barrier->start();

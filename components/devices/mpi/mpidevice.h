@@ -64,13 +64,20 @@ namespace XMI
           return _dispatch_id++;
         }
 
-      int registerMcastRecvFunction (xmi_olddispatch_multicast_fn  recv_func,
-				     void                         *async_arg)
+      
+
+      int initMcast()
         {
-          _mcast_dispatch_table[_mcast_dispatch_id].recv_func=recv_func;
-          _mcast_dispatch_table[_mcast_dispatch_id].async_arg=async_arg;
-          _mcast_dispatch_lookup[_mcast_dispatch_id]=_mcast_dispatch_table[_mcast_dispatch_id];
           return _mcast_dispatch_id++;
+        }
+      
+      void registerMcastRecvFunction (int                           dispatch_id,
+                                     xmi_olddispatch_multicast_fn  recv_func,
+                                     void                         *async_arg)
+        {
+          _mcast_dispatch_table[dispatch_id].recv_func=recv_func;
+          _mcast_dispatch_table[dispatch_id].async_arg=async_arg;
+          _mcast_dispatch_lookup[dispatch_id]=_mcast_dispatch_table[dispatch_id];
         }
 
       inline xmi_result_t init_impl (T_SysDep * sysdep)
@@ -155,6 +162,7 @@ namespace XMI
 		    int nbytes = 0;
 		    MPI_Get_count(&sts, MPI_BYTE, &nbytes);
 		    MPIMcastMessage *msg = (MPIMcastMessage *) malloc (nbytes);
+                    assert(msg != NULL);
 		    int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, MPI_COMM_WORLD,&sts);
 		    XMI_assert (rc == MPI_SUCCESS);
 		    unsigned         rcvlen;
@@ -164,28 +172,66 @@ namespace XMI
 		    size_t dispatch_id      = msg->_dispatch_id;
 		    mpi_mcast_dispatch_info_t mdi = _mcast_dispatch_lookup[dispatch_id];
 
-		    mdi.recv_func (&msg->_info[0],
-				   msg->_info_count,
-				   sts.MPI_SOURCE,
-				   msg->_size,
-				   msg->_conn,
-				   mdi.async_arg,
-				   &rcvlen,
-				   &rcvbuf,
-				   &pwidth,
-				   &cb_done);
-		    if(rcvlen)
-		      memcpy (rcvbuf, msg->buffer(), rcvlen);
+                    MPIMcastRecvMessage *mcast;
+                    std::list<MPIMcastRecvMessage*>::iterator it;
+                    int found=0;
+                    for(it=_mcastrecvQ.begin();it != _mcastrecvQ.end(); it++)
+                        {
+                          if( (*it)->_conn == msg->_conn &&
+                              (*it)->_dispatch_id == msg->_dispatch_id)
+                              {
+                                found = 1;
+                                break;
+                              }
+                        }
+                    MPIMcastRecvMessage _m_store;
+                    if( !found )
+                        {
+                          mdi.recv_func (&msg->_info[0],
+                                         msg->_info_count,
+                                         sts.MPI_SOURCE,
+                                         msg->_size,
+                                         msg->_conn,
+                                         mdi.async_arg,
+                                         &rcvlen,
+                                         &rcvbuf,
+                                         &pwidth,
+                                         &cb_done);
+                          assert(rcvlen <= (size_t)msg->_size);
+//                          mcast = (MPIMcastRecvMessage*)malloc(sizeof(*mcast));
+                          mcast = &_m_store;
+                          assert(mcast != NULL);
+                          mcast->_conn     = msg->_conn;
+                          mcast->_done_fn  = cb_done.function;
+                          mcast->_cookie   = cb_done.clientdata;
+                          mcast->_buf      = rcvbuf;
+                          mcast->_size     = rcvlen;
+                          mcast->_pwidth   = pwidth;
+                          mcast->_hint     = XMI_PT_TO_PT_SUBTASK;
+                          mcast->_op       = XMI_UNDEFINED_OP;
+                          mcast->_dtype    = XMI_UNDEFINED_DT;
+                          enqueue(mcast);
+                        }
+                    else
+                        {
+                          mcast = (*it);
+                        }
 
-		    if(pwidth == 0 && rcvlen == 0)
-		      if(cb_done.function)
-			cb_done.function (&msg->_context, cb_done.clientdata, XMI_SUCCESS);
+		    if(mcast->_size)
+		      memcpy (mcast->_buf, msg->buffer(), mcast->_size);
 
-		    for(unsigned count = 0; count < rcvlen; count += pwidth)
-		      if(cb_done.function)
-			cb_done.function (&msg->_context, cb_done.clientdata, XMI_SUCCESS);
+		    if(mcast->_pwidth == 0 && mcast->_buf == 0)
+		      if(mcast->_done_fn)
+                        mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
 
+		    for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
+		      if(mcast->_done_fn)
+                        mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+
+                    _mcastrecvQ.remove(mcast);
 		    free (msg);
+                    if(found)
+                      free (mcast);
 		  }
 		  break;
 		}
@@ -252,6 +298,23 @@ namespace XMI
           _mcastsendQ.push_front(msg);
         }
 
+      inline void enqueue(MPIMcastRecvMessage *msg)
+        {
+          _mcastrecvQ.push_front(msg);
+        }
+
+      inline void create_recvreq(unsigned                 connid,
+                                 const xmi_callback_t   * cb_done,
+                                 char                   * buf,
+                                 unsigned                 size,
+                                 unsigned                 nranks )
+        {
+          assert(0);
+        }
+      
+
+      
+      
       size_t                              _peers;
       size_t                              _dispatch_id;
       size_t                              _mcast_dispatch_id;
@@ -259,6 +322,7 @@ namespace XMI
       std::map<int, mpi_mcast_dispatch_info_t>  _mcast_dispatch_lookup;
       std::list<MPIMessage*>              _sendQ;
       std::list<MPIMcastMessage*>         _mcastsendQ;
+      std::list<MPIMcastRecvMessage*>     _mcastrecvQ;
       mpi_dispatch_info_t                 _dispatch_table[256];
       mpi_mcast_dispatch_info_t           _mcast_dispatch_table[256];
     };

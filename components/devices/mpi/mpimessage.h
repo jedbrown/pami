@@ -30,7 +30,7 @@ namespace XMI
                          size_t              dispatch_id,
                          xmi_event_function  done_fn,
                          void               *cookie):
-      _context(context),
+        _context(context),
         _done_fn(done_fn),
         _cookie(cookie)
         {
@@ -60,13 +60,30 @@ namespace XMI
       xmi_quad_t     _info[2];
       int            _info_count;
       int            _size;
-      int            _conn;
+      unsigned       _conn;
       MPI_Request    *_req;
       int            _num;
       xmi_callback_t _cb_done;
       inline void *buffer() { return ((char *)this + sizeof (*this)); }
       inline int  totalsize () { return _size + sizeof (*this); }
     };
+
+    class MPIMcastRecvMessage
+    {
+    public:
+      size_t              _dispatch_id;
+      unsigned            _conn;
+      xmi_event_function  _done_fn;
+      void               *_cookie;
+      char               *_buf;
+      size_t              _size;
+      size_t              _pwidth;
+      unsigned            _nranks;
+      unsigned            _hint;
+      xmi_op              _op;
+      xmi_dt              _dtype;
+    };
+    
   };
 };
 

@@ -330,7 +330,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager>::
  char          * buf,
  unsigned        bytes)
 {
-  TRACE_FLOW((stderr, "In notify recv for %d\n", bytes));
+  TRACE_FLOW((stderr, "In Broadcast notify recv for %d\n", bytes));
 
   //buffer has changed
   if(buf != NULL)
