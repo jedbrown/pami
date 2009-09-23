@@ -40,6 +40,10 @@ namespace XMI
         T_Mapping mapping;
         T_Time    time;
     };
+
+    class NullSysDep
+    {
+    }; // class NullSysDep
   };
 };
 #endif // __components_sysdep_sysdep_h__

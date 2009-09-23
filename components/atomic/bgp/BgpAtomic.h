@@ -26,17 +26,18 @@ namespace XMI
     ///
     /// \brief CRTP interface for bgp atomic objects.
     ///
-    class BgpAtomic : public Interface::Counter <BgpAtomic>
+    template <T_Sysdep>
+    class BgpAtomic : public Interface::Counter <T_SysDep, BgpAtomic>
     {
       public:
         BgpAtomic () :
-            Interface::Counter <BgpAtomic> ()
+            Interface::Counter <T_SysDep, BgpAtomic> ()
         {};
 
         ~BgpAtomic () {};
 
         /// \see XMI::Atomic::AtomicObject::init
-        void init_impl ()
+        void init_impl (T_SysDep *sd)
         {
           //_atom = _BGP_ATOMIC_INIT(0);
           fetch_and_clear_impl ();

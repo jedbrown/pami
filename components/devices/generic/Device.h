@@ -21,10 +21,10 @@
 #include "components/atomic/bgp/LockBoxMutex.h"
 #include "sys/xmi.h"
 
-typedef XMI::Mutex::LockBoxMutex GenericDeviceMutex;
-
 #ifdef __bgp__
 #include "spi/kernel_interface.h"
+#include "components/sysdep/bgp/BgpSysDep.h"
+typedef XMI::Mutex::LockBoxMutex<XMI::SysDep::BgpSysDep> GenericDeviceMutex;
 #endif /* __bgp__ */
 
 // For BG/P, NUM_CORES is the max number of threads.

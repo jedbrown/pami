@@ -66,7 +66,7 @@ namespace Interface
   ///
   /// \param T  Barrier object derived class
   ///
-  template <class T>
+  template <class T_Sysdep, class T>
   class Barrier
     {
     public:
@@ -85,7 +85,7 @@ namespace Interface
       ///
       /// \param[in] participants Number of participants for the barrier
       ///
-      inline void init(size_t participants);
+      inline void init(T_Sysdep *sd, size_t participants);
 
 
       ///
@@ -130,44 +130,44 @@ namespace Interface
     private:
     }; // class Barrier
 
-template <class T>
-inline void Barrier<T>::init(size_t participants)
+template <class T_Sysdep, class T>
+inline void Barrier<T_Sysdep, T>::init(T_Sysdep *sd, size_t participants)
 {
-	static_cast<T*>(this)->init_impl(participants);
+	static_cast<T*>(this)->init_impl(sd, participants);
 }
 
-template <class T>
-inline xmi_result_t Barrier<T>::enter()
+template <class T_Sysdep, class T>
+inline xmi_result_t Barrier<T_Sysdep, T>::enter()
 {
 	return static_cast<T*>(this)->enter_impl();
 }
 
-template <class T>
-inline void Barrier<T>::dump(const char *string)
+template <class T_Sysdep, class T>
+inline void Barrier<T_Sysdep, T>::dump(const char *string)
 {
 	static_cast<T*>(this)->dump_impl(string);
 }
 
-template <class T>
-inline void Barrier<T>::enterPoll(pollFcn fcn, void *arg)
+template <class T_Sysdep, class T>
+inline void Barrier<T_Sysdep, T>::enterPoll(pollFcn fcn, void *arg)
 {
 	static_cast<T*>(this)->enterPoll_impl(fcn, arg);
 }
 
-template <class T>
-inline void Barrier<T>::pollInit()
+template <class T_Sysdep, class T>
+inline void Barrier<T_Sysdep, T>::pollInit()
 {
 	static_cast<T*>(this)->pollInit_impl();
 }
 
-template <class T>
-inline barrierPollStatus Barrier<T>::poll()
+template <class T_Sysdep, class T>
+inline barrierPollStatus Barrier<T_Sysdep, T>::poll()
 {
 	return static_cast<T*>(this)->poll_impl();
 }
 
-template <class T>
-inline void *Barrier<T>::returnBarrier()
+template <class T_Sysdep, class T>
+inline void *Barrier<T_Sysdep, T>::returnBarrier()
 {
 	return static_cast<T*>(this)->returnBarrier_impl();
 }

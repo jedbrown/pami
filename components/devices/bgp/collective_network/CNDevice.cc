@@ -56,7 +56,7 @@ unsigned XMI_CN_HELPER_THRESH = 16384; // a guess
  */
 int XMI_CN_VN_DEEP = 1;
 
-typedef XMI::Barrier::BGP::LockBoxBarrier CNDevceInitBarrier;
+typedef XMI::Barrier::BGP::LockBoxBarrier<XMI::SysDep::BgpSysDep> CNDevceInitBarrier;
 
 namespace XMI {
 namespace Device {

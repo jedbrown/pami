@@ -24,12 +24,12 @@ namespace XMI
     ///
     /// \param T_Counter  Atomic counter object derived class
     ///
-    template <class T_Counter>
-    class CounterBarrier : public Interface::Barrier<CounterBarrier<T_Counter> >
+    template <class T_Sysdep, class T_Counter>
+    class CounterBarrier : public Interface::Barrier<T_Sysdep, CounterBarrier<T_Sysdep, T_Counter> >
     {
       public:
         CounterBarrier () :
-          Interface::Barrier<CounterBarrier<T_Counter> > (),
+          Interface::Barrier<T_Sysdep, CounterBarrier<T_Sysdep, T_Counter> > (),
           _control (_counter[0]),
           _lock (&_counter[1]),
           _status (&_counter[3]),
@@ -39,10 +39,10 @@ namespace XMI
         ~CounterBarrier () {};
 
         /// \see XMI::Atomic::Interface::Barrier::init()
-        void init_impl (size_t participants)
+        void init_impl (T_Sysdep *sd, size_t participants)
         {
           unsigned i;
-          for (i=0; i<5; i++) _counter[i].init();
+          for (i=0; i<5; i++) _counter[i].init(sd);
 
           _participants = participants;
         };

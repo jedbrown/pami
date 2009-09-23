@@ -23,7 +23,8 @@ namespace XMI
     ///
     /// \brief CRTP interface for gcc builtins atomic objects.
     ///
-    class GccBuiltin : public Interface::Counter <GccBuiltin>
+    template <class T_Sysdep>
+    class GccBuiltin : public Interface::Counter <T_Sysdep, GccBuiltin>
     {
       public:
         GccBuiltin () :
@@ -33,7 +34,7 @@ namespace XMI
         ~GccBuiltin () {};
 
         /// \see XMI::Atomic::Interface::Counter::init
-        void init_impl ()
+        void init_impl (T_Sysdep *sd)
         {
           fetch_and_clear_impl ();
         };

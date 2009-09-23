@@ -210,7 +210,7 @@ namespace Generic {
 			COMMTHRD_OPCODE_CORE2,
 			COMMTHRD_OPCODE_CORE3,
 		};
-		static char _mtx[NUM_CORES][LM_MAX_SIZEOF_MUTEX] __attribute__((__aligned__(16)));
+		static XMI::Mutex::LockBoxMutex<XMI::SysDep::BgpSysDep> _mtx[NUM_CORES];
 
 		void *ct;
 		int id, op;
@@ -230,15 +230,8 @@ namespace Generic {
 			if (!(cores & (1 << x))) continue;
 			id = Kernel_MkInterruptID(0, 24 + x);
 			// Note! this must be setup as a lockbox mutex!
-			rc = __sysdep.lockManager().dupLockManagerObject(_mtx[y],
-				sizeof(_mtx[y]),
-				XMI::LockManager::GENERIC_THRMTX_TEMPLATE);
-			if (rc != XMI_SUCCESS) {
-				fprintf(stderr, "failed to dup comm_thread Mutex\n");
-				continue;
-			}
-			XMI::Mutex *mx = (XMI::Mutex *)_mtx[y];
-			ct = mx->returnLock();
+			_mtx[y].init(&__sysdep);
+			ct = _mtx[y].returnLock();
 			op = opcd[x] |
 				COMMTHRD_OPCODE_CALLFUNC |
 				COMMTHRD_OPCODE_DISABLEINTONENTRY |
