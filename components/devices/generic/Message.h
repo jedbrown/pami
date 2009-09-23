@@ -35,6 +35,7 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 namespace XMI {
+namespace Device {
 
 ////////////////////////////////////////////////////////////////////////
 ///  \brief Message Class for insertion into queues
@@ -164,8 +165,7 @@ protected:
 	xmi_callback_t _cb;
 }; /* class MultiQueueMessage */
 
-// still in namespace XMI...
-namespace Device {
+// still in namespace XMI::Device...
 namespace Generic {
 
 //////////////////////////////////////////////////////////////////////
@@ -205,26 +205,6 @@ public:
 protected:
 	int _threadsWanted;
 }; /* class GenericMessage */
-
-template <class T>
-class GenericCDIMessage : public GenericMessage {
-public:
-	GenericCDIMessage(BaseGenericDevice &Packet_QS, xmi_callback_t cb, struct iovec *iov, size_t iov_len, size_t msg_len) :
-	GenericMessage(Packet_QS, cb),
-	__user_iov(iov),
-	__user_iovlen(iov_len),
-	__send_bytes(msg_len)
-	{
-	}
-
-	inline void executeCallback(xmi_result_t err = XMI_SUCCESS) {
-		GenericMessage::executeCallback(err);
-	}
-protected:
-	struct iovec *__user_iov;
-	size_t __user_iovlen;
-	size_t __send_bytes;
-}; /* class GenericCDIMessage */
 
 }; /* namespace Generic */
 }; /* namespace Device */

@@ -32,7 +32,7 @@ namespace Device {
 class LocalReduceWQModel;
 class LocalReduceWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalReduceWQThread;
-typedef XMI::Device::Generic::SimpleSubDevice<LocalReduceWQModel,LocalReduceWQMessage,LocalReduceWQThread> LocalReduceWQDevice;
+typedef XMI::Device::Generic::SimpleSubDevice<LocalReduceWQThread> LocalReduceWQDevice;
 
 }; // namespace Device
 }; // namespace XMI
@@ -104,7 +104,7 @@ if (!(producer < peers-1)) fprintf(stderr, "LocalReduceWQMessage %d %d %d %d\n",
 
 private:
 	// friend class LocalReduceWQDevice;
-	friend class XMI::Device::Generic::SimpleSubDevice<LocalReduceWQModel,LocalReduceWQMessage,LocalReduceWQThread>;
+	friend class XMI::Device::Generic::SimpleSubDevice<LocalReduceWQThread>;
 
 	inline XMI::Device::MessageStatus __advanceThread(LocalReduceWQThread *thr) {
 		// workaround for GNU compiler -fPIC -O3 bug
@@ -183,7 +183,7 @@ private:
 }; // class LocalReduceWQModel
 
 void LocalReduceWQMessage::complete() {
-	((LocalReduceWQDevice &)_QS).__complete(this);
+	((LocalReduceWQDevice &)_QS).__complete<LocalReduceWQMessage>(this);
 	executeCallback();
 }
 inline XMI::Device::MessageStatus LocalReduceWQMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
@@ -207,7 +207,7 @@ inline bool LocalReduceWQModel::generateMessage_impl(xmi_multicombine_t *mcomb) 
 				(XMI::PipeWorkQueue *)mcomb->data,
 				(XMI::PipeWorkQueue *)mcomb->results,
 				mcomb->count, func, dtshift);
-	_g_l_reducewq_dev.__post(msg);
+	_g_l_reducewq_dev.__post<LocalReduceWQMessage>(msg);
 	return true;
 }
 

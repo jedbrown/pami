@@ -15,12 +15,13 @@
 
 #include "components/sysdep/SysDep.h"
 
+// These must be defined early
+#define NUM_CORES 16
+#define NUM_SMT 4
+
 #include "components/mapping/bgq/BgqMapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 #include "components/time/bgq/BgqTime.h"
-
-#define NUM_CORES 16
-#define NUM_THREADS 4
 
 namespace XMI
 {

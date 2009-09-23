@@ -50,6 +50,8 @@
 namespace XMI {
 namespace Device {
 
+template <class T_Barrier> class AtomicBarrierMsg;
+template <class T_Barrier> class AtomicBarrierMdl;
 typedef XMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
 typedef XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr> AtomicBarrierDev;
 
@@ -86,7 +88,7 @@ public:
 protected:
 	friend class AtomicBarrierMdl<T_Barrier>;
 
-	AtomicBarrierMsg(BaseGenericDevice &Generic_QS,
+	AtomicBarrierMsg(Generic::BaseGenericDevice &Generic_QS,
 		T_Barrier *barrier,
 		xmi_callback_t cb) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
@@ -122,13 +124,15 @@ protected:
 }; //-- AtomicBarrierMsg
 
 template <class T_Barrier>
-class AtomicBarrierMdl : public XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl> {
+class AtomicBarrierMdl : public XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier> > {
 public:
 	AtomicBarrierMdl(xmi_result_t &status) :
-	XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl>(status)
+	XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier> >(status)
 	{
 		// "default" barrier: all local processes...
-		_barrier.init(_g_lmbarrier_dev.getSysdep(), _g_topology_local->size());
+		size_t peers;
+		_g_lmbarrier_dev.getSysdep()->mapping.nodePeers(peers);
+		_barrier.init(_g_lmbarrier_dev.getSysdep(), peers);
 		// participants = _g_topology_local
 		// if need sysdep, use _g_lmbarrier_dev.getSysdep()...
 	}
@@ -144,7 +148,7 @@ private:
 
 template <class T_Barrier>
 inline void XMI::Device::AtomicBarrierMsg<T_Barrier>::complete() {
-	((AtomicBarrierDev &)_QS).__complete(this);
+	((AtomicBarrierDev &)_QS).__complete<AtomicBarrierMsg<T_Barrier> >(this);
 	executeCallback();
 }
 
@@ -159,16 +163,16 @@ inline bool XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(xmi_mul
 	// See if we can complete the barrier immediately...
 	for (int x = 0; x < 32; ++x) {
 		if (_barrier.poll() == XMI::Atomic::Interface::Done) {
-			if (msync.cb_done.function) {
-				msync.cb_done.function(msync.cb_done.function, XMI_SUCCESS);
+			if (msync->cb_done.function) {
+				msync->cb_done.function(msync->cb_done.function, XMI_SUCCESS);
 			}
 			return true;
 		}
 	}
 	// must "continue" current barrier, not start new one!
 	AtomicBarrierMsg<T_Barrier> *msg;
-	msg = new (msync.request) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync.cb_done);
-	_g_lmbarrier_dev.__post(msg);
+	msg = new (msync->request) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync->cb_done);
+	_g_lmbarrier_dev.__post<AtomicBarrierMsg<T_Barrier> >(msg);
 	return true;
 }
 

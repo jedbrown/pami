@@ -146,8 +146,8 @@ extern "C"
      * (src, etc) cannot be re-used until cb_done.
      */
     typedef struct {
-        size_t               req_size;	       /**< space available in request, bytes */
-        xmi_event_function   cb_done;          /**< Completion callback */
+        void                *request; 	       /**< space available in request, bytes */
+        xmi_callback_t       cb_done;          /**< Completion callback */
         unsigned             connection_id;    /**< A connection is a distinct stream of
                                                    traffic. The connection id identifies the
                                                    connection */
@@ -298,7 +298,7 @@ extern "C"
                                                unsigned              metacount,
                                                xmi_manytomanybuf_t **recv,
                                                size_t               *myIndex,
-                                               xmi_event_function   *cb_done);
+                                               xmi_callback_t       *cb_done);
 
     /**
      * \brief Structure of parameters used to initiate a ManyToMany
@@ -307,8 +307,8 @@ extern "C"
      * for indexing into the recv parameter arrays (lengths and offsets).
      */
     typedef struct {
-        size_t               req_size;	     /**< space available in request, bytes */
-        xmi_event_function   cb_done;	     /**< User's completion callback */
+        void                *request; 	     /**< space available in request, bytes */
+        xmi_callback_t       cb_done;	     /**< User's completion callback */
         unsigned             connection_id;  /**< differentiate data streams */
         unsigned             roles;          /**< bitmap of roles to perform */
         size_t              *rankIndex;	     /**< Index of send in recv parameters */
@@ -356,9 +356,8 @@ extern "C"
      * \brief structure defining interface to Multisync
      */
     typedef struct {
-        size_t             req_size;		/**< space available in request, bytes */
-        xmi_event_function cb_done;		/**< User's completion callback */
-        void              *cookie;              /**< event function argument    */
+        void              *request;	        /**< space available in request, bytes */
+        xmi_callback_t     cb_done;		/**< User's completion callback */
         unsigned           connection_id;	/**< (remove?) differentiate data streams */
         unsigned           roles;		/**< bitmap of roles to perform */
         xmi_topology_t    *participants;	/**< Ranks involved in synchronization */
@@ -393,16 +392,16 @@ extern "C"
      * type of multicombine being registered/used.
      */
     typedef struct {
-        size_t              req_size;	              /**< space available in request, bytes */
-        xmi_event_function  cb_done;	              /**< User's completion callback */
-        unsigned            roles;		      /**< bitmap of roles to perform */
+        void                *request;	              /**< space available in request, bytes */
+        xmi_callback_t       cb_done;	              /**< User's completion callback */
+        unsigned             roles;		      /**< bitmap of roles to perform */
         xmi_pipeworkqueue_t *data;		      /**< Data source */
         xmi_topology_t      *data_participants;	      /**< Ranks contributing data */
         xmi_pipeworkqueue_t *results;	              /**< Results destination */
         xmi_topology_t      *results_participants;    /**< Ranks receiving results */
         xmi_op               optor;		      /**< Operation to perform on data */
         xmi_dt               dtype;		      /**< Datatype of elements */
-        size_t              count;		      /**< Number of elements */
+        size_t               count;		      /**< Number of elements */
     } xmi_multicombine_t;
 
     /**

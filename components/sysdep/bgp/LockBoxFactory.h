@@ -59,7 +59,7 @@ namespace BGP {
 		int __numProc;
 		bool __isMasterRank;
 	public:
-		LockBoxFactory(XMI::SysDep::BgpMapping *mapping) {
+		LockBoxFactory(XMI::Mapping::BgpMapping *mapping) {
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
 			xmi_coord_t coord;

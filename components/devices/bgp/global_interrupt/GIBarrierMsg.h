@@ -86,7 +86,7 @@ protected:
 
 private:
 	//friend class giDevice;
-	friend class XMI::Device::Generic::SimpleSubDevice<giModel,giMessage,giThread>;
+	friend class XMI::Device::Generic::SimpleSubDevice<giThread>;
 
 	static const int GI_CHANNEL = 0;
 
@@ -147,7 +147,7 @@ private:
 }; // namespace XMI
 
 inline void XMI::Device::BGP::giMessage::complete() {
-	((XMI::Device::BGP::giDevice &)_QS).__complete(this);
+	((XMI::Device::BGP::giDevice &)_QS).__complete<giMessage>(this);
 	executeCallback();
 }
 
@@ -160,7 +160,7 @@ inline bool XMI::Device::BGP::giModel::postMultisync_impl(xmi_multisync_t *msync
 	giMessage *msg;
 
 	msg = new (msync->request) giMessage(_g_gibarrier_dev, msync->cb_done);
-	_g_gibarrier_dev.__post(msg);
+	_g_gibarrier_dev.__post<giMessage>(msg);
 	return true;
 }
 

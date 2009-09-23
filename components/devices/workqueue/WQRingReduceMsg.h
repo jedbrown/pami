@@ -22,8 +22,6 @@
 #include "components/devices/MulticombineModel.h"
 #include "math/math_coremath.h"
 
-extern XMI::Topology *_g_topology_local;
-
 namespace XMI {
 namespace Device {
 
@@ -52,7 +50,7 @@ private:
 	};
 
 public:
-	WQRingReduceMsg(BaseGenericDevice &Generic_QS,
+	WQRingReduceMsg(Generic::BaseGenericDevice &Generic_QS,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
 		XMI::PipeWorkQueue *rwq,
@@ -181,8 +179,9 @@ public:
 	WQRingReduceMdl(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl>(status)
 	{
-		_me = _g_wqreduce_dev.getSysdep()->mapping()->rank();
-		size_t tz = _g_topology_local->size();
+		_me = _g_wqreduce_dev.getSysdep()->mapping.task();
+		size_t tz;
+		_g_wqreduce_dev.getSysdep()->mapping.nodePeers(&tz);
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
 			_wq[x].configure(_g_wqreduce_dev.getSysdep(), USE_FLAT_BUFFER, 0);
@@ -203,7 +202,7 @@ private:
 }; // class WQRingReduceMdl
 
 void WQRingReduceMsg::complete() {
-	((WQRingReduceDev &)_QS).__complete(this);
+	((WQRingReduceDev &)_QS).__complete<WQRingReduceMsg>(this);
 	executeCallback();
 }
 
@@ -272,7 +271,7 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix],
 					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
 	}
-	_g_wqreduce_dev.__post(msg);
+	_g_wqreduce_dev.__post<WQRingReduceMsg>(msg);
 	return true;
 }
 

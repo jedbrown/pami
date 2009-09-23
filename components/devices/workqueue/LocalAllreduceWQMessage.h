@@ -169,7 +169,7 @@ private:
 }; // class LocalAllreduceWQModel
 
 void LocalAllreduceWQMessage::complete() {
-	((LocalAllreduceWQDevice &)_QS).__complete(this);
+	((LocalAllreduceWQDevice &)_QS).__complete<LocalAllreduceWQMessage>(this);
 	executeCallback();
 }
 
@@ -188,7 +188,7 @@ inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mco
 					(XMI::PipeWorkQueue *)mcomb->data,
 					(XMI::PipeWorkQueue *)mcomb->results,
 					mcomb->count, func, dtshift);
-	_g_l_allreducewq_dev.__post(msg);
+	_g_l_allreducewq_dev.__post<LocalAllreduceWQMessage>(msg);
 	return true;
 }
 

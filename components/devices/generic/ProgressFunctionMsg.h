@@ -36,6 +36,17 @@ extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
 namespace XMI {
 namespace Device {
+
+// also needs context?
+typedef int XMI_ProgressFunc(void *clientdata);
+
+typedef struct {
+	void *request;
+	XMI_ProgressFunc *func;
+	void *clientdata;
+	xmi_callback_t cb_done;
+} XMI_ProgressFunc_t;
+
 ///
 /// \brief A local barrier message that takes advantage of the
 /// Load Linked and Store Conditional instructions
@@ -61,7 +72,7 @@ public:
 protected:
 	friend class ProgressFunctionMdl;
 
-	ProgressFunctionMsg(BaseGenericDevice &Generic_QS,
+	ProgressFunctionMsg(Generic::BaseGenericDevice &Generic_QS,
 		XMI_ProgressFunc *func,
 		void *clientdata,
 		xmi_callback_t cb) :
@@ -121,7 +132,7 @@ public:
 	ProgressFunctionMdl() {
 	}
 	/// In case someone constructs it the "standard" way, don't complain.
-	ProgressFunctionMdl(XMI::SysDep *sysdep, xmi_result_t &status) {
+	ProgressFunctionMdl(xmi_result_t &status) {
 		status = XMI_SUCCESS;
 	}
 
@@ -149,18 +160,17 @@ inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t
 	// can't afford to have some fail and not others, so even though
 	// we may not use 'msg' at all we must fail if it is too small.
 	ProgressFunctionMsg *msg = (ProgressFunctionMsg *)pf->request;
-	if (pf->req_size < sizeof(ProgressFunctionMsg)) {
-		return false;
-	}
 
 	int rc = pf->func(pf->clientdata);
-	likely_if (rc == 0) {
+	if (rc == 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(pf->cb_done.clientdata, NULL);
+			pf->cb_done.function(NULL, pf->cb_done.clientdata, XMI_SUCCESS);
 		}
 		return true;
 	} else if (rc < 0) {
-		_executeCallback((xmi_result_t)-rc);
+		if (pf->cb_done.function) {
+			pf->cb_done.function(NULL, pf->cb_done.clientdata, (xmi_result_t)-rc);
+		}
 		return true;
 	}
 	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf->func, pf->clientdata, pf->cb_done);

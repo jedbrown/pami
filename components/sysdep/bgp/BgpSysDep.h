@@ -15,13 +15,14 @@
 
 #include "components/sysdep/SysDep.h"
 
+// These must be defined early
+#define NUM_CORES 4
+#define NUM_SMT 1
+
 #include "components/mapping/bgp/BgpMapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 #include "components/time/bgp/BgpTime.h"
 #include "components/sysdep/bgp/LockBoxFactory.h"
-
-#define NUM_CORES 4
-#define NUM_THREADS 1
 
 namespace XMI
 {
@@ -45,10 +46,10 @@ namespace XMI
 
 	class BgpSysDep : public SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping::BgpMapping, XMI::Time::BgpTime> {
 	public:
-		BgpSysDep() {}
+		BgpSysDep() : lockboxFactory(&this->mapping) {}
 		~BgpSysDep() {}
 
-		XMI::Atomic::BGP::LockBoxFactory lockboxFactory(&this->mapping);
+		XMI::Atomic::BGP::LockBoxFactory lockboxFactory;
 	}; // class BgpSysDep
   };
 };

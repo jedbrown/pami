@@ -19,13 +19,17 @@
 #include "components/devices/generic/Message.h"
 #include "components/atomic/Mutex.h"
 #include "components/atomic/bgp/LockBoxMutex.h"
+#include "components/atomic/bgp/LockBoxCounter.h"
 #include "sys/xmi.h"
 
 #ifdef __bgp__
 #include "spi/kernel_interface.h"
 #include "components/sysdep/bgp/BgpSysDep.h"
-typedef XMI::Mutex::LockBoxMutex<XMI::SysDep::BgpSysDep> GenericDeviceMutex;
+typedef XMI::SysDep::BgpSysDep T_SYSDEP;
+typedef XMI::Mutex::LockBoxProcMutex<T_SYSDEP> GenericDeviceMutex;
+typedef XMI::Counter::LockBoxProcCounter<T_SYSDEP> GenericDeviceCounter;
 #endif /* __bgp__ */
+
 
 // For BG/P, NUM_CORES is the max number of threads.
 #define NUM_PROCESSES	NUM_CORES	// at most
@@ -60,7 +64,7 @@ class ThreadQueue : public Queue {
 public:
 	ThreadQueue() : Queue() { }
 
-	ThreadQueue(XMI::SysDep::BgpSysDep &sd) : Queue()
+	ThreadQueue(T_SYSDEP &sd) : Queue()
 	{
 		// need status/result here...
 		_mutex.init(&sd);
@@ -84,9 +88,9 @@ public:
 	//////////////////////////////////////////////////////////////////
 	/// \brief  A device
 	//////////////////////////////////////////////////////////////////
-	inline Device(SysDep &sd);
+	inline Device(T_SYSDEP &sd);
 
-	inline void init(XMI::SysDep &sd);
+	inline void init(T_SYSDEP &sd);
 
 	inline bool isAdvanceNeeded();
 
@@ -210,7 +214,7 @@ private:
 	//////////////////////////////////////////////////////////////////
 	/// \brief Lockmanager object for local barrier calls
 	//////////////////////////////////////////////////////////////////
-	SysDep &__sysdep;
+	T_SYSDEP &__sysdep;
 
 }; /* class Device */
 

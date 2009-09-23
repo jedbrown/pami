@@ -78,7 +78,7 @@ public:
 
 private:
 	//friend class LocalBcastWQDevice;
-	friend class XMI::Device::Generic::SimpleSubDevice<LocalBcastWQModel,LocalBcastWQMessage,LocalBcastWQThread>;
+	friend class XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread>;
 
 	inline XMI::Device::MessageStatus __advanceThread(LocalBcastWQThread *thr) {
 		// This works around a bug with "g++ -fPIC -O3"...
@@ -147,7 +147,7 @@ private:
 }; // class LocalBcastWQModel
 
 void LocalBcastWQMessage::complete() {
-        ((LocalBcastWQDevice &)_QS).__complete(this);
+        ((LocalBcastWQDevice &)_QS).__complete<LocalBcastWQMessage>(this);
         executeCallback();
 }
 
@@ -169,7 +169,7 @@ inline bool LocalBcastWQModel::popstMulticast_impl(xmi_multicast_t *mcast) {
 			mcast->cb_done, _shared, isrootrole,
 			(XMI::PipeWorkQueue *)mcast->src, (XMI::PipeWorkQueue *)mcast->dst,
 			mcast->bytes);
-	_g_l_bcastwq_dev.__post(msg);
+	_g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
 	return true;
 }
 

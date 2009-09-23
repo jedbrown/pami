@@ -100,7 +100,7 @@ public:
 
 	virtual ~GenericSubDevice() { }
 
-	inline const XMI::SysDep *getSysdep() { return _sd; }
+	inline const T_SYSDEP *getSysdep() { return _sd; }
 
 	inline int advanceRecv(int channel = -1);
 
@@ -178,7 +178,7 @@ public:
 	}
 
 protected:
-	inline void ___init(XMI::SysDep &sd) {
+	inline void ___init(T_SYSDEP &sd) {
 		_sd = &sd;
 	}
 
@@ -207,7 +207,7 @@ protected:
 	bool _hasBlockingAdvance;
 	int _nRoles;
 	int _repl;
-	const XMI::SysDep *_sd;
+	const T_SYSDEP *_sd;
 }; /* class GenericSubDevice */
 
 /// \brief Simple Sub-Device where no threading is used.
@@ -232,10 +232,11 @@ public:
 	}
 
 private:
+	template <class T_Message>
 	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {
 		// While threads aren't used, a thread object is needed
 		// for the advance queue
-		int t = msg->__setThreads(&_threads[0], NUM_THREADS);
+		int t = static_cast<T_Message*>(msg)->__setThreads(&_threads[0], NUM_THREADS);
 		msg->setStatus(XMI::Device::Initialized);
 		XMI_assert_debug(t == NUM_THREADS); t = t;
 	}
@@ -247,7 +248,7 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
+	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
 		_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		___init(sd);
@@ -261,11 +262,12 @@ private:
 	// So, we need to make this public until we figure it out.
 public: // temporary
 
+	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		bool first = (getCurrent() == NULL);
 		if (first) {
-			__start_msg(msg);
-			msg->__advanceThread(&_threads[0]);
+			__start_msg<T_Message>(msg);
+			static_cast<T_Message*>(msg)->__advanceThread(&_threads[0]);
 			if (msg->getStatus() == XMI::Device::Done) {
 				msg->executeCallback();
 				return;
@@ -275,18 +277,19 @@ public: // temporary
 		XMI::Device::Generic::GenericSubDevice::post(msg);
 	}
 
+	template <class T_Message>
 	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
 		/* assert msg == dequeue(); */
 		dequeue();
 		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
 		if (nxt) {
-			__start_msg(nxt);
+			__start_msg<T_Message>(nxt);
 			// could try to advance here?
 			__post_msg(nxt);
 		}
 	}
 
-private:
+protected:
 	XMI::Device::Generic::Device *_generic;
 	T_Thread _threads[NUM_THREADS];
 }; // class SimpleSubDevice
@@ -315,7 +318,7 @@ public:
 
 private:
 	inline void __start_msg(T_Message *msg) {
-		_doneThreads->fetchClear();
+		_doneThreads.fetch_and_clear();
 		int t = msg->__setThreads(&_threads[0], NUM_THREADS);
 		msg->setStatus(XMI::Device::Initialized);
 		_nActiveThreads = t;
@@ -326,12 +329,10 @@ private:
 	}
 
 protected:
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
+	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
-		xmi_result_t rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
-		XMI_assert(rc == XMI_SUCCESS); rc = rc;
-		_doneThreads = (Atomic *)_atomic_buf;
-		_doneThreads->fetchClear();
+		_doneThreads.init(&sd);
+		_doneThreads.fetch_and_clear();
 		_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		___init(sd);
 	}
@@ -365,7 +366,7 @@ private:
 		// fetchIncr() returns value *before* increment,
 		// and we need to return total number of threads completed,
 		// so we return "+1".
-		return _doneThreads->fetchIncr() + 1;
+		return _doneThreads.fetch_and_inc() + 1;
 	}
 
 	inline void __complete(T_Message *msg) {
@@ -385,7 +386,7 @@ private:
 	T_Thread _threads[NUM_THREADS];
 	int _nActiveThreads;
 	XMI::Device::Generic::Device *_generic;
-	Atomic *_doneThreads;
+	GenericDeviceCounter _doneThreads;
 }; // class ThreadedSubDevice
 
 /// \brief Multi Threaded Sub-Device
@@ -412,7 +413,7 @@ public:
 
 private:
 	inline void __start_msg(T_Message *msg) {
-		_doneThreads->fetchClear();
+		_doneThreads.fetch_and_clear();
 		int t = msg->__setThreads(NULL, NUM_THREADS);
 		msg->setStatus(XMI::Device::Initialized);
 		_nActiveThreads = t;
@@ -434,12 +435,10 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
+	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
-		xmi_result_t rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
-		XMI_assert(rc == XMI_SUCCESS); rc = rc;
-		_doneThreads = (Atomic *)_atomic_buf;
-		_doneThreads->fetchClear();
+		_doneThreads.init(&sd);
+		_doneThreads.fetch_and_clear();
 		//_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		___init(sd);
 	}
@@ -465,7 +464,7 @@ public:
 		// fetchIncr() returns value *before* increment,
 		// and we need to return total number of threads completed,
 		// so we return "+1".
-		return _doneThreads->fetchIncr() + 1;
+		return _doneThreads.fetch_and_inc() + 1;
 	}
 
 	inline void __complete(T_Message *msg) {
@@ -481,11 +480,10 @@ public:
 	}
 
 private:
-	char _atomic_buf[ATOMIC_BUF_SIZE] __attribute__((__aligned__(16)));
 	int _nActiveThreads;
 	int _nextChan;
 	XMI::Device::Generic::Device *_generic;
-	Atomic *_doneThreads;
+	GenericDeviceCounter _doneThreads;
 }; // class MultiThrdSubDevice
 
 ///
@@ -531,7 +529,7 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) = 0;
+	virtual void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -541,12 +539,10 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
+	inline void __init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
-		xmi_result_t rc = sd.lockManager().dupLockManagerObject(_atomic_buf, sizeof(_atomic_buf), XMI::LockManager::GEN_THRATM_TEMPLATE);
-		XMI_assert(rc == XMI_SUCCESS); rc = rc;
-		_doneThreads = (Atomic *)_atomic_buf;
-		_doneThreads->fetchClear();
+		_doneThreads.init(&sd);
+		_doneThreads.fetch_and_clear();
 		_init = 1;
 		___init(sd);
 	}
@@ -556,14 +552,14 @@ public:
 	}
 
 	inline void __resetThreads() {
-		_doneThreads->fetchClear();
+		_doneThreads.fetch_and_clear();
 	}
 
 	inline unsigned __completeThread(GenericAdvanceThread *t) {
 		// fetchIncr() returns value *before* increment,
 		// and we need to return total number of threads completed,
 		// so we return "+1".
-		return _doneThreads->fetchIncr() + 1;
+		return _doneThreads.fetch_and_inc() + 1;
 	}
 
 	///
@@ -583,10 +579,9 @@ public:
 	}
 
 private:
-	char _atomic_buf[ATOMIC_BUF_SIZE] __attribute__((__aligned__(16)));
 	int _init;
 	XMI::Device::Generic::Device *_generic;
-	Atomic *_doneThreads;
+	GenericDeviceCounter _doneThreads;
 	unsigned _dispatch_id;
 }; // class CommonQueueSubDevice
 
@@ -634,7 +629,7 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
+	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
 		// do this now so we don't have to every time we post
 //		for (int x = 0; x < NUM_THREADS; ++x) {
 //			//_threads[x].setPolled(true);

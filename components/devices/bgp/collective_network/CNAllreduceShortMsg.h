@@ -339,7 +339,7 @@ protected:
 			DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
 			char *data, char *results, size_t bytes, unsigned peer,
 			bool &primed, bool doStore) {
-		likely_if (!primed) {
+		if (!primed) {
 			memcpy(swq->bufferToProduce(), data, bytes);
 			swq->produceBytes(MAX_SHORT_MSG);
 			primed = true;
@@ -435,7 +435,7 @@ inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage
 	bool first = (_g_cnallreduceshort_dev.common()->getCurrent() == NULL);
 	bool done = false;
 	bool primed = false;
-	likely_if (first && _getData()->bytesAvailableToConsume() >= bytes &&
+	if (first && _getData()->bytesAvailableToConsume() >= bytes &&
 			_getResults()->bytesAvailableToProduce() >= bytes) {
 		XMI:PipeWorkQueue *data = (XMI:PipeWorkQueue *)_getData();
 		XMI:PipeWorkQueue *results = (XMI:PipeWorkQueue *)_getResults();

@@ -21,8 +21,6 @@
 #include "components/pipeworkqueue/PipeWorkQueue.h"
 #include "components/devices/MulticastModel.h"
 
-extern XMI::Topology *_g_topology_local;
-
 namespace XMI {
 namespace Device {
 
@@ -173,7 +171,8 @@ public:
 	XMI::Device::Interface::Multicastmodel<WQRingBcastMdl>(status)
 	{
 		_me = _g_wqbcast_dev.getSysdep()->mapping()->rank();
-		size_t tz = _g_topology_local->size();
+		size_t tz;
+		_g_wqbcast_dev.getSysdep()->mapping()->nodePeers(&tz);
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
 			_wq[x].configure(_g_wqbcast_dev.getSysdep(), USE_FLAT_BUFFER, 0);
@@ -192,7 +191,7 @@ private:
 }; // class WQRingBcastMdl
 
 void WQRingBcastMsg::complete() {
-	((WQRingBcastDev &)_QS).__complete(this);
+	((WQRingBcastDev &)_QS).__complete<WQRingBcastMsg>(this);
 	executeCallback();
 }
 
@@ -235,7 +234,7 @@ inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
 					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
 	}
-	_g_wqbcast_dev.__post(msg);
+	_g_wqbcast_dev.__post<WQRingBcastMsg>(msg);
 	return true;
 }
 
