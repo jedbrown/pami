@@ -55,12 +55,12 @@ namespace CCMI
     /// in an external class - AllreduceState.  The client should manage this class
     /// and free allocations when appropriate (AllreduceState::freeAllocations()).
     template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-    class Allreduce : public AllreduceBase<T_Mcast, T_Sysdep>
+    class Allreduce : public AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>
     {
     protected:
 
       // my persistent state data
-      AllreduceState<T_Mcast, T_Sysdep>*                        _state;
+      AllreduceState<T_Sysdep>*                        _state;
 
       unsigned _nextRecvData;
 
@@ -150,7 +150,7 @@ namespace CCMI
       }
       /// \brief Default Constructor
       inline Allreduce () :
-        AllreduceBase<T_Mcast, T_Sysdep>(),
+        AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(),
       _state(&this->_astate),
       _nextRecvData(0),
       //_sState[].sndReq        uninitialzed opaque storage
@@ -188,7 +188,7 @@ namespace CCMI
                        xmi_consistency_t                        consistency,
                        const unsigned                          commID,
                        unsigned                                iteration) :
-        AllreduceBase<T_Mcast, T_Sysdep>(map,connmgr,consistency,commID,iteration,true),
+        AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(map,connmgr,consistency,commID,iteration,true),
       _state(&this->_astate),
       _nextRecvData(0),
       //_sState[].sndReq        uninitialzed opaque storage
@@ -331,7 +331,7 @@ namespace CCMI
       {
         // Compile time assert
         // SendState array must must fit in a request
-        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep>::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(XMI_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(XMI_CollectiveRequest_t));
       }
     }; // Allreduce
   };

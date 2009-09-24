@@ -213,7 +213,6 @@ namespace XMI
       MPIMcastModel                                           _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::BinomialBcastFactory          _broadcast_registration;
-      CCMI_Executor_t                                         _broadcast_executor;
     };
 
     template <class T_Device, class T_Sysdep>
@@ -236,9 +235,31 @@ namespace XMI
       MPIMcastModel                                           _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::RingBcastFactory              _broadcast_registration;
-      CCMI_Executor_t                                         _broadcast_executor;
     };
 
+
+    template <class T_Device, class T_Sysdep>
+    class CCMIRingAllreduceInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIRingAllreduceInfo(T_Device *dev,
+                            T_Sysdep * sd,
+                            xmi_mapidtogeometry_fn fcn):
+        CollInfo<T_Device>(dev),
+        _model(*dev),
+        _allreduce_registration(sd,
+                                &_model,
+                                fcn,
+                                (CCMI::Adaptor::ConfigFlags){0, 0})
+        {
+        }
+      XMI_Request_t                                           _request;
+      MPIMcastModel                                           _model;
+      CCMI::Adaptor::Allreduce::Ring::Factory                 _allreduce_registration;
+    };
+
+
+    
     
   };
 };

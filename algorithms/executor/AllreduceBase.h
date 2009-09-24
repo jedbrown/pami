@@ -16,7 +16,6 @@
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"
-#include "algorithms/connmgr/ConnectionManager.h"
 #include "util/ccmi_debug.h"
 #include "math/math_coremath.h"
 #include "algorithms/executor/AllreduceState.h"
@@ -25,7 +24,7 @@ namespace CCMI
 {
   namespace Executor
   {
-    template<class T_Mcastinterface, class T_Sysdep>
+    template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
     class AllreduceBase : public Executor
     {
     public:
@@ -37,7 +36,7 @@ namespace CCMI
       } __attribute__((__aligned__(16)));
     private:
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (void *cd, xmi_result_t *err)
+      static void staticNotifySendDone (void *ctxt, void *cd, xmi_result_t err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
         xmi_quad_t *info = (xmi_quad_t *)cd;
@@ -47,7 +46,7 @@ namespace CCMI
       }
 
       /// \brief Static function to be passed into the done of multisend postRecv
-      static void staticNotifyReceiveDone (void *cd, xmi_result_t *err)
+      static void staticNotifyReceiveDone (void *ctxt, void *cd, xmi_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
@@ -57,7 +56,7 @@ namespace CCMI
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
       }
 
-      static void short_recv_done (void *me, xmi_result_t *)
+      static void short_recv_done (void *ctxt, void *me, xmi_result_t res)
       {
         AllreduceBase *allreduce = (AllreduceBase *)me;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::short_recv_done enter\n", (int)allreduce));
@@ -67,7 +66,7 @@ namespace CCMI
       }
 
     protected:
-      typedef void (*Callback_t) (void *, xmi_result_t *);
+      typedef void (*Callback_t) (void* ctxt, void *cd, xmi_result_t res);
 
       void inline_math_isum (void *dst, void *src1, void *src2, xmi_op op, xmi_dt dt, unsigned count)
       {
@@ -145,11 +144,11 @@ namespace CCMI
       Callback_t         _recvCallbackHandler;
 
       T_Mcastinterface  * _msendInterface;
-      ConnectionManager::ConnectionManager<T_Sysdep> * _rconnmgr;  ///Reduce connection manager
-      ConnectionManager::ConnectionManager<T_Sysdep> * _bconnmgr;  ///Broadcast connction manager
+      T_ConnectionManager * _rconnmgr;  ///Reduce connection manager
+      T_ConnectionManager * _bconnmgr;  ///Broadcast connction manager
 
       xmi_oldmulticast_t  _msend_data;
-      AllreduceState<T_Mcastinterface, T_Sysdep>                         _astate;
+      AllreduceState<T_ConnectionManager>                         _astate;
 
       ///
       /// \brief Ids to the LogMgr table
@@ -205,7 +204,7 @@ namespace CCMI
       ///  Main constructor to initialize the executor
       ///  By default it only needs one connection manager
       AllreduceBase(T_Sysdep *map,
-                    ConnectionManager::ConnectionManager<T_Sysdep>  * connmgr,
+                    T_ConnectionManager  * connmgr,
                     xmi_consistency_t                       consistency,
                     const unsigned                          commID,
                     unsigned                                iteration,
@@ -221,7 +220,7 @@ namespace CCMI
       _srcbuf (NULL), _dstbuf (NULL),
       _reduceFunc (NULL),
       _msendInterface (NULL), _rconnmgr (connmgr), _bconnmgr(connmgr), _msend_data(),
-      _astate(iteration, map->rank())
+      _astate(iteration, map->mapping.task())
       {
         TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceBase::ctor() ALERT:\n",(int)this));
 
@@ -264,7 +263,7 @@ namespace CCMI
 //        _msend_data.setRequestBuffer (&(_sState->sndReq));
 //        _msend_data.setCallback (_sendCallbackHandler,
 //                                 &_sState->sndClientData);
-        _msend_data.request = &(_sState->sndReq);
+        _msend_data.request = (xmi_quad_t*)&(_sState->sndReq);
         _msend_data.cb_done.function   = _sendCallbackHandler;
         _msend_data.cb_done.clientdata = &_sState->sndClientData;
         
@@ -276,13 +275,13 @@ namespace CCMI
         _astate.setColor(color);
       }
 
-      void setReduceConnectionManager (ConnectionManager::ConnectionManager<T_Sysdep> *cmgr)
+      void setReduceConnectionManager (T_ConnectionManager *cmgr)
       {
         _rconnmgr = cmgr;
         _astate.setReduceConnectionManager (cmgr);
       }
 
-      void setBroadcastConnectionManager (ConnectionManager::ConnectionManager<T_Sysdep> *cmgr)
+      void setBroadcastConnectionManager (T_ConnectionManager *cmgr)
       {
         _bconnmgr = cmgr;
         _astate.setBroadcastConnectionManager (cmgr);
@@ -486,7 +485,7 @@ namespace CCMI
       ///
       /// \bf Query functions
       ///
-      inline AllreduceState<T_Mcastinterface, T_Sysdep> * getAllreduceState ()
+      inline AllreduceState<T_ConnectionManager> * getAllreduceState ()
       {
         return &_astate;
       }
@@ -519,8 +518,8 @@ namespace CCMI
 /////////////////////////////////////////////
 ///   Protected Methods
 /////////////////////////////////////////////
-template<class T_Mcastinterface, class T_Sysdep>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep>::advance ()
+template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep, T_ConnectionManager>::advance ()
 {
 
 //  Logging::LogMgr::getLogMgr()->startCounter (_log_advance);
@@ -631,7 +630,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep>::advance (
     {
       // Call application done callback
       if(_cb_done)
-        _cb_done (_clientdata, NULL);
+        _cb_done (NULL, _clientdata, XMI_SUCCESS);
 
       break;
     }
@@ -658,8 +657,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep>::advance (
 ///
 ///  \brief Send the next message by calling the msend interface
 ///
-template<class T_Mcastinterface,  class T_Sysdep>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep>::sendMessage
+template<class T_Mcastinterface,  class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep,T_ConnectionManager>::sendMessage
 (const char             * buf,
  unsigned                 bytes,
  unsigned               * dstpes,
@@ -722,8 +721,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep>::sendMessa
 ///  Public methods that can be called externally
 ///
 ////////////////////////////////////////////////////////
-template<class T_Mcastinterface, class T_Sysdep>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::start()
+template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::start()
 {
   _initialized = true;
   _sState->sndClientData.me        = this;
@@ -750,8 +749,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::start()
   TRACE_INIT ((stderr,"<%#.8X>Executor::AllreduceBase start()\n",(int)this));
 }
 
-template<class T_Mcastinterface,  class T_Sysdep>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::notifyRecv
+template<class T_Mcastinterface,  class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::notifyRecv
 (unsigned                     src,
  const xmi_quad_t             & info,
  char                       * buf,
@@ -773,8 +772,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::notifyRe
     advance();
 }
 
-template<class T_Mcastinterface, class T_Sysdep>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep>::notifySendDone
+template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep,T_ConnectionManager>::notifySendDone
 ( const xmi_quad_t & info)
 {
   // update state
@@ -789,8 +788,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep>::notifySen
   advance ();
 }
 
-template<class T_Mcastinterface, class T_Sysdep>
-inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::postReceives ()
+template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::postReceives ()
 {
 //  Logging::LogMgr::getLogMgr()->startCounter (_log_postrecv);
 
@@ -813,9 +812,9 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::postRece
               (int)this));
 }
 
-template<class T_Mcastinterface,  class T_Sysdep>
+template<class T_Mcastinterface,  class T_Sysdep, class T_ConnectionManager>
 inline XMI_Request_t *
-CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::notifyRecvHead
+CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::notifyRecvHead
 (const xmi_quad_t  * info,
  unsigned          count,
  unsigned          peer,
@@ -928,9 +927,9 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::notifyRecvHead
 ///  \fast callback for short allreduce operations
 ///  This callback does not return a request
 ///
-template<class T_Mcastinterface, class T_Sysdep>
+template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
 inline void
-CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep>::notifyRecvShort
+CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::notifyRecvShort
 (unsigned          phase,
  unsigned          sndlen,
  unsigned          srcindex,

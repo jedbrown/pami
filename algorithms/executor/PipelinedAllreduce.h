@@ -29,12 +29,12 @@ namespace CCMI
   namespace Executor
   {
     template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-    class PipelinedAllreduce : public AllreduceBase<T_Mcast, T_Sysdep>
+    class PipelinedAllreduce : public AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>
     {
 
     private:
       /// Static function to be passed into the done of multisend send
-      static void pipeAllreduceNotifySend (void *cd, xmi_result_t *err)
+      static void pipeAllreduceNotifySend (void *ctxt, void *cd, xmi_result_t err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
         xmi_quad_t *info = (xmi_quad_t *)cd;
@@ -43,7 +43,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend postRecv
-      static void pipeAllreduceNotifyReceive (void *cd, xmi_result_t *err)
+      static void pipeAllreduceNotifyReceive (void *ctxt, void *cd, xmi_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         xmi_quad_t *info = (xmi_quad_t *)cd;
@@ -62,7 +62,7 @@ namespace CCMI
 
         if(_donecount == 2 && this->_cb_done)
         {
-          this->_cb_done (this->_clientdata, NULL);
+          this->_cb_done (NULL, this->_clientdata, XMI_SUCCESS);
           //_curSendPhase = -1;
           //_curRecvPhase = -1;
         }
@@ -98,7 +98,7 @@ namespace CCMI
     public:
 
       /// Default Constructor
-      PipelinedAllreduce () : AllreduceBase<T_Mcast, T_Sysdep>(),
+      PipelinedAllreduce () : AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>(),
       _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1),
       _curSendPhase ((unsigned) -1), _curSendChunk((unsigned) -1),
       _lastReducePhase((unsigned) -1)
@@ -117,7 +117,7 @@ namespace CCMI
        xmi_consistency_t      consistency,
        const unsigned         commID,
        unsigned               iteration):
-        AllreduceBase<T_Mcast, T_Sysdep>(map,connmgr, consistency, commID, iteration, true),
+        AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>(map,connmgr, consistency, commID, iteration, true),
       _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1),
       _curSendPhase ((unsigned) -1), _curSendChunk((unsigned) -1),
       _donecount (0), _lastReducePhase((unsigned) -1)
@@ -144,7 +144,7 @@ namespace CCMI
 
       virtual void reset ()
       {
-        AllreduceBase<T_Mcast, T_Sysdep>::reset ();
+        AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>::reset ();
 
         //The previous allreduce could have enabled this
 //        _msend_data.setFlags (MultiSend::CCMI_FLAGS_UNSET);
@@ -540,13 +540,13 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 //  _msend_data.setRequestBuffer (&(_sState[index].sndReq));
 //  _msend_data.setCallback (_sendCallbackHandler,
 //                           &_sState[index].sndClientData);
-  this->_msend_data.request            = (&(this->_sState[index].sndReq));
+  this->_msend_data.request            = (xmi_quad_t*)(&(this->_sState[index].sndReq));
   this->_msend_data.cb_done.function   = this->_sendCallbackHandler;
   this->_msend_data.cb_done.clientdata = &this->_sState[index].sndClientData;
 
   CCMI_assert (offset + bytes <= this->_astate.getBytes());
 
-  AllreduceBase<T_Mcast, T_Sysdep>::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints,
+  AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints,
                                                  sphase, &this->_sState[index]);
 }
 

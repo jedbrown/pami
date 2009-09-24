@@ -39,7 +39,7 @@ namespace CCMI
       /// such as mapping the operator and datatype to a function and
       /// calling various setXXX() functions in the kernel executor.
       ///
-      template <class T_Mcast, class T_Sysdep>
+      template <class T_Mcast, class T_Sysdep, class T_ConnectionManager>
       class AsyncComposite : public BaseComposite
       {
       protected:
@@ -155,7 +155,7 @@ namespace CCMI
         /// \brief initialize should be called after the executors
         /// have been added to the composite
         ///
-        void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * allreduce,
+        void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
                           XMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
@@ -249,8 +249,8 @@ namespace CCMI
           _myClientData     = cb_done.clientdata;
 
           CCMI_assert_debug (getNumExecutors() == 1);
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * allreduce =
-          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) getExecutor(0);
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce =
+          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) getExecutor(0);
 
           initialize (allreduce, request, srcbuf, dstbuf,
                       count, dtype, op, root);
@@ -286,7 +286,7 @@ namespace CCMI
         /// \brief At this level we only support single color
         /// collectives
         ///
-        virtual unsigned restartAsync ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * allreduce,
+        virtual unsigned restartAsync ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
                                         unsigned                    count,
                                         xmi_dt                      dtype,
                                         xmi_op                      op,
@@ -328,7 +328,7 @@ namespace CCMI
           {
             setDone();
             if(_myClientFunction) (*_myClientFunction) (_myClientData, NULL);
-            ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
+            ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::DONE() \n",
                            (int)this));
           }

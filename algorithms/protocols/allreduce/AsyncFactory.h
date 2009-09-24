@@ -90,10 +90,10 @@ namespace CCMI
         AsyncFactory *factory = (AsyncFactory *) arg;
 
         XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *)factory->_cb_geometry(cdata->_comm);
-        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *composite =
+        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *composite =
         factory->getAllreduceComposite(geometry, cdata->_iteration);
 
-        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *allreduce =
+        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *allreduce =
         factory->getAllreduce(geometry, cdata->_iteration);
 
         TRACE_ADAPTOR((stderr,
@@ -109,7 +109,7 @@ namespace CCMI
         if((allreduce == NULL) || (composite == NULL))
         {
           composite = factory->buildComposite (geometry, cdata);
-          allreduce = (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor (0);
+          allreduce = (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) composite->getExecutor (0);
         }
         else if(composite->isIdle())
         {
@@ -195,10 +195,10 @@ namespace CCMI
          int                        root = -1 ) = 0;
 
 
-        AsyncComposite<T_Mcast, T_Sysdep>          * buildComposite (XMI_GEOMETRY_CLASS         * geometry,
+        AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager>          * buildComposite (XMI_GEOMETRY_CLASS         * geometry,
                                                   CollHeaderData   * cdata)
         {
-          AsyncComposite<T_Mcast, T_Sysdep> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *)
+          AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *)
                                       generateAsync(geometry,
                                                     cdata->_count,
                                                     (xmi_dt)(cdata->_dt),
@@ -214,15 +214,15 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * getAllreduce(XMI_GEOMETRY_CLASS *geometry,
+        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * getAllreduce(XMI_GEOMETRY_CLASS *geometry,
                                                      unsigned iter)
         {
           CCMI::Executor::Composite *composite =
           geometry->getAllreduceComposite(iter);
 
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *executor = (composite)?
-                                                    (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor (0):
-                                                    (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *)NULL;
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *executor = (composite)?
+                                                    (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) composite->getExecutor (0):
+                                                    (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *)NULL;
 
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
                          "getAllreduce(comm id X, color %#X)"
@@ -239,10 +239,10 @@ namespace CCMI
         /// iteration id).  It is expected to be associated with this Factory,
         /// otherwise destroy it and return NULL.
         ///
-        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> * getAllreduceComposite(XMI_GEOMETRY_CLASS *geometry,
+        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> * getAllreduceComposite(XMI_GEOMETRY_CLASS *geometry,
                                                                          unsigned iteration)
         {
-          CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *)
+          CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *)
                                                                 geometry->getAllreduceComposite(iteration);
 
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"

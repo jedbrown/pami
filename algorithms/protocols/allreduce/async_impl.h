@@ -79,7 +79,7 @@ namespace CCMI
       {
         typedef AsyncCompositeT
         <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
-         CCMI::Executor::AllreduceBase<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::AllreduceBase<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >,
          XMI_COLL_SYSDEP_CLASS,
          XMI_COLL_MCAST_CLASS,
          CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >

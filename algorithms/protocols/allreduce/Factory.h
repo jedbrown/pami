@@ -131,7 +131,7 @@ namespace CCMI
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
-        static XMI_Request_t *   cb_receiveHead(const xmi_quad_t  * info,
+        static xmi_quad_t *   cb_receiveHead(const xmi_quad_t  * info,
                                                  unsigned          count,
                                                  unsigned          peer,
                                                  unsigned          sndlen,
@@ -148,7 +148,7 @@ namespace CCMI
           CCMI_assert (info && arg);
           CollHeaderData  *cdata = (CollHeaderData *) info;
           Factory *factory = (Factory *) arg;
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *allreduce =
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *allreduce =
           factory->getAllreduce(cdata->_comm, cdata->_iteration);
 
           CCMI_assert (allreduce != NULL);
@@ -156,25 +156,25 @@ namespace CCMI
                          "cb_receiveHead(%#X,%#.8X)\n",
                          (int)factory,cdata->_comm,(int)allreduce));
 
-          return allreduce->notifyRecvHead (info,      count,
-                                            peer,      sndlen,
-                                            conn_id,   arg,
-                                            rcvlen,    rcvbuf,
-                                            pipewidth, cb_done);
+          return (xmi_quad_t*)allreduce->notifyRecvHead (info,      count,
+                                                         peer,      sndlen,
+                                                         conn_id,   arg,
+                                                         rcvlen,    rcvbuf,
+                                                         pipewidth, cb_done);
         };
 
         ///
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * getAllreduce(unsigned comm,
+        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> * getAllreduce(unsigned comm,
                                                unsigned color)
         {
-          CCMI::Executor::Composite *composite =
+          CCMI::Executor::Composite *composite =(CCMI::Executor::Composite *)
           ((XMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *executor = (composite)?
-                                              (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor (0):
-                                              (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *)NULL;
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *executor = (composite)?
+                                              (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor (0):
+                                              (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *)NULL;
 
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::Factory::"
                          "getAllreduce(comm id %#X, color %#X)"

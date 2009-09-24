@@ -45,7 +45,8 @@ namespace XMI
         _ccmiambroadcast(dev, sd),
         _ccmibarrier(dev, sd, mapidtogeometry),
         _ccmibinombroadcast(dev, sd, mapidtogeometry),
-        _ccmiringbroadcast(dev, sd, mapidtogeometry)
+        _ccmiringbroadcast(dev, sd, mapidtogeometry),
+        _ccmiringallreduce(dev, sd, mapidtogeometry)
         {          
 	  // Register and link each collective into a queue for analysis
 	  _nbCollMgr.initialize();
@@ -136,7 +137,8 @@ namespace XMI
       XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>   _ccmibarrier;
       XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> _ccmibinombroadcast;
       XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>  _ccmiringbroadcast;
-      
+      XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>  _ccmiringallreduce;
+
       RegQueue          _broadcasts;
       RegQueue          _ambroadcasts;
       RegQueue          _allgathers;

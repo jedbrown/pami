@@ -31,7 +31,7 @@ namespace CCMI
       ///
       ///
       template <class T_Schedule, class T_Executor, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-      class AsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep>
+      class AsyncCompositeT : public CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager>
       {
       protected:
         T_Executor  _executor;
@@ -64,7 +64,7 @@ namespace CCMI
                          unsigned                    iteration,
                          int                         root = -1,
                          CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
-          CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep>( flags, factory, cb_done),
+          CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager>( flags, factory, cb_done),
         _executor(map, cmgr, consistency, geometry->comm(), iteration)
         {
           create_schedule(map, geometry, color);

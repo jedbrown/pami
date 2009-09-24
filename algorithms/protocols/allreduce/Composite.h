@@ -55,7 +55,7 @@ namespace CCMI
       /// callback and the [all]reduce done callback to call the
       /// client done callback.
       ///
-      template <class T_Mcast, class T_Sysdep>
+      template <class T_Mcast, class T_Sysdep, class T_ConnectionManager>
       class Composite : public BaseComposite
       {
       protected:
@@ -75,7 +75,7 @@ namespace CCMI
         /// \brief Client's callback to call when the allreduce has
         /// finished
         ///
-        void               (* _myClientFunction)(void *, xmi_result_t *);
+        void               (* _myClientFunction)(void*, void *, xmi_result_t );
         void                * _myClientData;
       public:
         Composite () :
@@ -127,7 +127,7 @@ namespace CCMI
         /// \brief initialize should be called after the executors
         /// have been added to the composite
         ///
-        void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * allreduce,
+        void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
                           XMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
@@ -136,7 +136,7 @@ namespace CCMI
                           xmi_op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, xmi_result_t *) = cb_compositeDone,
+                          void                           (* cb_done)(void *, void *, xmi_result_t ) = cb_compositeDone,
                           void                            * cd = NULL
                         )
         {
@@ -221,8 +221,8 @@ namespace CCMI
           _myClientData     = cb_done.clientdata;
 
           CCMI_assert_debug (getNumExecutors() == 1);
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * allreduce =
-          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) getExecutor(0);
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce =
+          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) getExecutor(0);
 
           initialize (allreduce, request, srcbuf, dstbuf,
                       count, dtype, op, root);
@@ -258,8 +258,8 @@ namespace CCMI
                          (int)_myClientData));
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
           {
-            if(_myClientFunction) (*_myClientFunction) (_myClientData, NULL);
-            ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
+            if(_myClientFunction) (*_myClientFunction) (NULL, _myClientData, XMI_SUCCESS);
+            ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::DONE() \n",
                            (int)this));
           }
@@ -274,7 +274,7 @@ namespace CCMI
         /// It means the is done, but the client done isn't called
         /// until both the composite and (optional) barrier are done.
         ///
-        static void cb_barrierDone(void *me, xmi_result_t *err)
+        static void cb_barrierDone(void *ctxt, void *me, xmi_result_t err)
         {
 
           TRACE_ADAPTOR((stderr,
@@ -282,8 +282,8 @@ namespace CCMI
                          (int)me));
 
           Composite *composite = (Composite *) me;
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *allreduce =
-          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor(0);
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *allreduce =
+          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor(0);
           allreduce->start();
           composite->done();
           TRACE_ADAPTOR((stderr,
@@ -299,7 +299,7 @@ namespace CCMI
         /// the client done isn't called until both the composite and
         /// (optional) barrier are done.
         ///
-        static void cb_compositeDone(void *me, xmi_result_t *err)
+        static void cb_compositeDone(void *ctxt, void *me, xmi_result_t err)
         {
           TRACE_ADAPTOR((stderr,
                          "<%#.8X>Allreduce::Composite::cb_compositeDone()\n",

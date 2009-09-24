@@ -1738,7 +1738,7 @@ namespace CCMI
         unsigned coords[XMI_TORUS_NDIMS];
         XMI_COPY_COORDS(coords, _rect->x0);
         coords[XMI_T_DIM] += (_color % _rect->xs[XMI_T_DIM]);
-        _mapping->torus2task(coords, r);
+        _mapping->torus2task((size_t (&)[NUM_STD_AXIS])coords, (size_t)r);
 
         CCMI::Schedule::OneColorRectangle::init(r, op,
                                                 /* not used: */ start, nphases, nmessages);

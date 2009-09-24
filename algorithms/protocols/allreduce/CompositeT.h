@@ -30,7 +30,7 @@ namespace CCMI
       ///
       ///
       template <class T_Schedule, class T_Executor, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-      class CompositeT : public CCMI::Adaptor::Allreduce::Composite<T_Sysdep, T_Mcast>
+      class CompositeT : public CCMI::Adaptor::Allreduce::Composite<T_Mcast, T_Sysdep, T_ConnectionManager>
       {
       protected:
         T_Executor  _executor;
@@ -62,8 +62,8 @@ namespace CCMI
                     CollectiveProtocolFactory * factory,
                     int                         root = -1,
                     CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
-          CCMI::Adaptor::Allreduce::Composite<T_Sysdep, T_Mcast>(flags,
-                                                                 geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR),
+          CCMI::Adaptor::Allreduce::Composite<T_Mcast, T_Sysdep,T_ConnectionManager>(flags,
+                                                                 (CCMI::Executor::Executor*)geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR),
                                                                  factory, cb_done),
         _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
         {

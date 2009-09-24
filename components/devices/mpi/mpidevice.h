@@ -19,6 +19,7 @@
 #include "components/devices/mpi/mpimessage.h"
 #include <map>
 #include <list>
+#include <sched.h>
 
 namespace XMI
 {

@@ -14,12 +14,10 @@
 #ifndef __ccmi_adaptor_allreduce_sync_impl_h__
 #define __ccmi_adaptor_allreduce_sync_impl_h__
 
-#include "./CompositeT.h"
-#include "./FactoryT.h"
-
+#include "algorithms/protocols/allreduce/CompositeT.h"
+#include "algorithms/protocols/allreduce/FactoryT.h"
 #include "algorithms/executor/PipelinedAllreduce.h"
 #include "algorithms/executor/Allreduce.h"
-
 #include "algorithms/schedule/BinomialTree.h"
 //#include "algorithms/schedule/Rectangle.h"
 //#include "algorithms/schedule/TreeBwSchedule.h"
@@ -78,7 +76,7 @@ namespace CCMI
       {
         typedef CompositeT
         <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
-         CCMI::Executor::AllreduceBase<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::AllreduceBase<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >,
          XMI_COLL_SYSDEP_CLASS,
          XMI_COLL_MCAST_CLASS,
          CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
@@ -156,6 +154,7 @@ namespace CCMI
          XMI_COLL_MCAST_CLASS,
          CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
           Composite;      //? pipelined or not?
+
         typedef FactoryT
         <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
          CCMI::Adaptor::Allreduce::RingReduce::Composite,

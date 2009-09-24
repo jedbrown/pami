@@ -85,7 +85,7 @@ namespace CCMI
           TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
-          CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
+          CCMI_Executor_t *c_request = (CCMI_Executor_t *)geometry->getAllreduceCompositeStorage();
 
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
           T_Composite *allreduce = new (c_request)
