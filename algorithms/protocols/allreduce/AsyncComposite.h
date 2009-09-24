@@ -76,8 +76,8 @@ namespace CCMI
 
 #ifdef CCMI_DEBUG
         unsigned                          _count;
-        XMI_Dt                           _dt;
-        XMI_Op                           _op;
+        xmi_dt                            _dt;
+        xmi_op                            _op;
         unsigned                          _iteration;
         unsigned                          _root;
 #endif // CCMI_DEBUG

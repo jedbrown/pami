@@ -172,7 +172,7 @@ namespace CCMI
         this->_recvCallbackHandler = staticNotifyReceiveDone;
 
         TRACE_INIT((stderr, "<%#.8X>Executor::Allreduce::ctor(void) _sendCallbackHandler %#X, _recvCallbackHandler %#X\n",(int)this,
-                    (int)_sendCallbackHandler,(int) _recvCallbackHandler));
+                    (int)this->_sendCallbackHandler,(int) this->_recvCallbackHandler));
 
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::ctor(void) exit\n",(int)this));
       }
@@ -208,8 +208,8 @@ namespace CCMI
 #ifdef CCMI_DEBUG
         TRACE_MSG((stderr, "<%#.8X>Executor::Allreduce::ctor() "
                    "Allreduce %X, AllreduceBase %X, Executor %X\n",(int)this,
-                   sizeof(CCMI::Executor::Allreduce),
-                   sizeof(CCMI::Executor::AllreduceBase),
+                   sizeof(CCMI::Executor::Allreduce<T_Mcast,T_Sysdep,T_ConnectionManager>),
+                   sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep>),
                    sizeof(CCMI::Executor::Executor)));
         TRACE_DATA(("this",(const char*)this, sizeof(*this)));
 #endif
@@ -218,7 +218,7 @@ namespace CCMI
         this->_recvCallbackHandler = staticNotifyReceiveDone;
 
         TRACE_INIT((stderr, "<%#.8X>Executor::Allreduce::ctor(void) _sendCallbackHandler %#X, _recvCallbackHandler %#X\n",(int)this,
-                    (int)_sendCallbackHandler,(int) _recvCallbackHandler));
+                    (int)this->_sendCallbackHandler,(int) this->_recvCallbackHandler));
         /// \todo could be moved to state
         this->_sendConnectionID = this->_rconnmgr->getConnectionId(this->_commID,
                                                                    (unsigned)-1,
@@ -570,29 +570,29 @@ inline void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::s
                "comm %#X, dt %#X, op %#X, count %#X, iteration %#X, phase %#X, root %#X, "
                "_sState[].sndClientData %#.8X\n",
                (int)this,
-               (int)&_sState[sndIndex].sndReq,
-               _curRcvPhase,_curRcvChunk,
-               _numActiveSends,
-               _state->getBytes(), _sendConnectionID,
-               _state->getPhaseNumDstPes(_state->getStartPhase()),
-               _state->getPhaseDstPes(_state->getStartPhase(),0),
-               _state->getPhaseNumDstPes(_state->getStartPhase()) > 1? _state->getPhaseDstPes(_state->getStartPhase(),1):-1,
-               _state->getPhaseNumDstPes(_state->getStartPhase()) > 2? _state->getPhaseDstPes(_state->getStartPhase(),2):-1,
-               _state->getPhaseNumDstPes(_state->getStartPhase()) > 3? _state->getPhaseDstPes(_state->getStartPhase(),3):-1,
-               _state->getPhaseDstHints(_state->getStartPhase(),0),
-               _state->getPhaseNumDstPes(_state->getStartPhase()) > 1? _state->getPhaseDstHints(_state->getStartPhase(),1):-1,
-               _state->getPhaseNumDstPes(_state->getStartPhase()) > 2? _state->getPhaseDstHints(_state->getStartPhase(),2):-1,
-               _state->getPhaseNumDstPes(_state->getStartPhase()) > 3? _state->getPhaseDstHints(_state->getStartPhase(),3):-1,
-               _consistency,
-               (int)(_sndInfoRequired?&_sState[sndIndex].sndInfo:NULL),
-               (_sndInfoRequired?_sState[sndIndex].sndInfo._comm:-1),
-               (_sndInfoRequired?_sState[sndIndex].sndInfo._dt:-1),
-               (_sndInfoRequired?_sState[sndIndex].sndInfo._op:-1),
-               (_sndInfoRequired?_sState[sndIndex].sndInfo._count:-1),
-               (_sndInfoRequired?_sState[sndIndex].sndInfo._iteration:-1),
-               (_sndInfoRequired?_sState[sndIndex].sndInfo._phase:-1),
-               (_sndInfoRequired?_sState[sndIndex].sndInfo._root:-1),
-               (int)&_sState[sndIndex].sndClientData));
+               (int)&(this->_sState[sndIndex].sndReq),
+               this->_curRcvPhase,this->_curRcvChunk,
+               this->_numActiveSends,
+               this->_state->getBytes(), this->_sendConnectionID,
+               this->_state->getPhaseNumDstPes(this->_state->getStartPhase()),
+               this->_state->getPhaseDstPes(this->_state->getStartPhase(),0),
+               this->_state->getPhaseNumDstPes(this->_state->getStartPhase()) > 1? this->_state->getPhaseDstPes(this->_state->getStartPhase(),1):-1,
+               this->_state->getPhaseNumDstPes(this->_state->getStartPhase()) > 2? this->_state->getPhaseDstPes(this->_state->getStartPhase(),2):-1,
+               this->_state->getPhaseNumDstPes(this->_state->getStartPhase()) > 3? this->_state->getPhaseDstPes(this->_state->getStartPhase(),3):-1,
+               this->_state->getPhaseDstHints(this->_state->getStartPhase(),0),
+               this->_state->getPhaseNumDstPes(this->_state->getStartPhase()) > 1? this->_state->getPhaseDstHints(this->_state->getStartPhase(),1):-1,
+               this->_state->getPhaseNumDstPes(this->_state->getStartPhase()) > 2? this->_state->getPhaseDstHints(this->_state->getStartPhase(),2):-1,
+               this->_state->getPhaseNumDstPes(this->_state->getStartPhase()) > 3? this->_state->getPhaseDstHints(this->_state->getStartPhase(),3):-1,
+               this->_consistency,
+               (int)(this->_sndInfoRequired?&this->_sState[sndIndex].sndInfo:NULL),
+               (this->_sndInfoRequired?this->_sState[sndIndex].sndInfo._comm:-1),
+               (this->_sndInfoRequired?this->_sState[sndIndex].sndInfo._dt:-1),
+               (this->_sndInfoRequired?this->_sState[sndIndex].sndInfo._op:-1),
+               (this->_sndInfoRequired?this->_sState[sndIndex].sndInfo._count:-1),
+               (this->_sndInfoRequired?this->_sState[sndIndex].sndInfo._iteration:-1),
+               (this->_sndInfoRequired?this->_sState[sndIndex].sndInfo._phase:-1),
+               (this->_sndInfoRequired?this->_sState[sndIndex].sndInfo._root:-1),
+               (int)&(this->_sState[sndIndex].sndClientData)));
 
     this->_msendInterface->send(&this->_sState[sndIndex].sndReq,
                           &cb_done,
@@ -645,7 +645,7 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRe
              "chunksRcvd:%#X curSndIndex :%#X cur_cData:%#.8X\n",(int)this,
              rphase, srcPeIndex, _state->getPipelineWidth(), _state->getPhaseChunksRcvd(rphase,srcPeIndex),
              _curRcvChunk % (CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS),
-             (unsigned)(&_sState[_curRcvChunk%(CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS)].sndClientData)));
+             (unsigned)(&this->_sState[_curRcvChunk%(CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS)].sndClientData)));
   CCMI_assert((_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE) || (rphase >= (unsigned)_curRcvPhase));
   TRACE_DATA(("received buf",_state->getPhaseRecvBufs(rphase,srcPeIndex) + (_state->getPhaseChunksRcvd(rphase,srcPeIndex) * _state->getPipelineWidth()), (_state->getPhaseChunksRcvd(rphase,srcPeIndex) <  _state->getLastChunk()  ? _state->getFullChunkCount() : _state->getLastChunkCount())*_state->getSizeOfType()));
   advance();
@@ -667,7 +667,7 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifySe
              "curSndIndex :%#X cur_cData:%#.8X\n",(int)this,
              _curRcvPhase,_curRcvChunk,_curSrcPeIndex, (unsigned)cdata, _numActiveSends,
              _curRcvChunk % (CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS),
-             (unsigned)(&_sState[_curRcvChunk%(CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS)].sndClientData)));
+             (unsigned)(&this->_sState[_curRcvChunk%(CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PIPELINED_SENDS)].sndClientData)));
 
   advance();
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::notifySendDone() exit\n",(int)this));
@@ -712,7 +712,7 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance(
                  " curRcvPhase %#X _state->getEndPhase() %#X"
                  " _curSrcPeIndex %#X numSrcPes %#X chunksRcvd %#X > _curRcvChunk %#X\n",(int)this,
                  curSndIndex,
-                 _sState[curSndIndex].sndClientData.isDone,
+                 this->_sState[curSndIndex].sndClientData.isDone,
                  _curRcvPhase,
                  _state->getEndPhase(),
                  _curSrcPeIndex,
@@ -744,7 +744,7 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance(
       TRACE_REDUCEOP((stderr,"<%#.8X>Executor::Allreduce::advance() OP curphase:%#X curChunk:%#X "
                       "curSrcIndex :%#X func(%#X), count = %#X\n",(int)this,
                       _curRcvPhase, _curRcvChunk, _curSrcPeIndex,
-                      (int)_reduceFunc,count));
+                      (int)this->_reduceFunc,count));
       TRACE_DATA(("localbuf",localbuf  + bufOffset, count*_state->getSizeOfType()));
       TRACE_DATA(("input buf",_state->getPhaseRecvBufs(_curRcvPhase,_curSrcPeIndex) + bufOffset, count*_state->getSizeOfType()));
       TRACE_DATA(("reduceBuf",reduceBuf + bufOffset, 1));  // Just to trace the input pointer
@@ -841,7 +841,7 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance(
                    "comm %#X, dt %#X, op %#X, count %#X, iteration %#X, phase %#X, root %#X, "
                    "_sState[].sndClientData %#.8X\n",
                    (int)this,
-                   (int)&_sState[curSndIndex].sndReq,
+                   (int)&this->_sState[curSndIndex].sndReq,
                    nextActivePhase, _curRcvChunk, curSndIndex, _numActiveSends,
                    count * _state->getSizeOfType(), _sendConnectionID,
                    _state->getPhaseNumDstPes(nextActivePhase),
@@ -853,16 +853,16 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance(
                    _state->getPhaseNumDstPes(nextActivePhase) > 1? _state->getPhaseDstHints(nextActivePhase,1):-1,
                    _state->getPhaseNumDstPes(nextActivePhase) > 2? _state->getPhaseDstHints(nextActivePhase,2):-1,
                    _state->getPhaseNumDstPes(nextActivePhase) > 3? _state->getPhaseDstHints(nextActivePhase,3):-1,
-                   _consistency,
-                   (int)(_sndInfoRequired?&_sState[curSndIndex].sndInfo:NULL),
-                   (_sndInfoRequired?_sState[curSndIndex].sndInfo._comm:-1),
-                   (_sndInfoRequired?_sState[curSndIndex].sndInfo._dt:-1),
-                   (_sndInfoRequired?_sState[curSndIndex].sndInfo._op:-1),
-                   (_sndInfoRequired?_sState[curSndIndex].sndInfo._count:-1),
-                   (_sndInfoRequired?_sState[curSndIndex].sndInfo._iteration:-1),
-                   (_sndInfoRequired?_sState[curSndIndex].sndInfo._phase:-1),
-                   (_sndInfoRequired?_sState[curSndIndex].sndInfo._root:-1),
-                   (int)&_sState[curSndIndex].sndClientData));
+                   this->_consistency,
+                   (int)(_sndInfoRequired?&this->_sState[curSndIndex].sndInfo:NULL),
+                   (_sndInfoRequired?this->_sState[curSndIndex].sndInfo._comm:-1),
+                   (_sndInfoRequired?this->_sState[curSndIndex].sndInfo._dt:-1),
+                   (_sndInfoRequired?this->_sState[curSndIndex].sndInfo._op:-1),
+                   (_sndInfoRequired?this->_sState[curSndIndex].sndInfo._count:-1),
+                   (_sndInfoRequired?this->_sState[curSndIndex].sndInfo._iteration:-1),
+                   (_sndInfoRequired?this->_sState[curSndIndex].sndInfo._phase:-1),
+                   (_sndInfoRequired?this->_sState[curSndIndex].sndInfo._root:-1),
+                   (int)&this->_sState[curSndIndex].sndClientData));
 
         this->_msendInterface->send(&this->_sState[curSndIndex].sndReq,
                               &cb_done,
@@ -899,7 +899,7 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance(
                    " curRcvPhase %#X _state->getEndPhase() %#X"
                    " _curSrcPeIndex %#X chunksRcvd %#X > _curRcvChunk %#X\n",(int)this,
                    curSndIndex,
-                   _sState[curSndIndex].sndClientData.isDone,
+                   this->_sState[curSndIndex].sndClientData.isDone,
                    _curRcvPhase,
                    _state->getEndPhase(),
                    _curSrcPeIndex,
@@ -924,11 +924,11 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance(
   if(_numActiveSends == 0 && _curRcvPhase > _state->getEndPhase())
   {
     TRACE_ADVANCE((stderr,"<%#.8X>Executor::Allreduce::advance() DONE %#X/%#X\n",(int)this,
-                   (int)_cb_done, (int)_clientdata));
+                   (int)this->_cb_done, (int)this->_clientdata));
     if(this->_cb_done) (*this->_cb_done)(this->_clientdata, NULL);
     _curRcvPhase = CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE; // executer is done
     if((_state->getRoot() == -1) | (_state->getRoot() == (int)_state->getMyRank()))
-      TRACE_DATA(("_dstbuf",_dstbuf, _state->getBytes()));
+      TRACE_DATA(("_dstbuf",this->_dstbuf, _state->getBytes()));
     return;
   }
 

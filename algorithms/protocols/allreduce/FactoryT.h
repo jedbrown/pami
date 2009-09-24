@@ -56,7 +56,7 @@ namespace CCMI
         {
           TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT() ALERT:\n",(int)this, T_Composite::name));
           TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT() mf<%#X>\n",(int)this, T_Composite::name,
-                          (int) mf));
+                          (int) mof));
           setConnectionManager(&_sconnmgr);
         }
 

@@ -18,7 +18,7 @@
 #include "algorithms/protocols/allreduce/BaseComposite.h"
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/executor/AllreduceBase.h"
-#include "math/math_coremath.h"s
+#include "math/math_coremath.h"
 
 namespace CCMI
 {

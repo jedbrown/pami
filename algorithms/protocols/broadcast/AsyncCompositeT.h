@@ -98,7 +98,7 @@ namespace CCMI
           xmi_quad_t *info = NULL;
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
 
-          TRACE_ADAPTOR((stderr, "In static notify recv, exe=%p\n",exe));
+          TRACE_ADAPTOR((stderr, "In static notify recv, exe=%p\n",composite));
           composite->executor().CCMI::Executor::Broadcast<T_Sysdep, T_Mcast,T_ConnectionManager>::notifyRecv ((unsigned)-1, *info, NULL,
                                                                                           composite->executor().getPwidth());
         }

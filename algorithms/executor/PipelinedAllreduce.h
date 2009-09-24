@@ -163,7 +163,7 @@ namespace CCMI
 
         TRACE_INIT ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::reset "
                      "_numBcastChunksSent:%d, numDstPes:%d\n",
-                     (int)this,ThreadID(), _numBcastChunksSent,_astate.getBcastNumDstPes()));
+                     (int)this,ThreadID(), _numBcastChunksSent,this->_astate.getBcastNumDstPes()));
       }
 
       ///Utility functions
@@ -179,7 +179,7 @@ namespace CCMI
         }
         TRACE_INIT ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::findPrevRecvPhase "
                      "phase  %d, _startPhase %d\n",
-                     (int)this,ThreadID(), phase, _startPhase));
+                     (int)this,ThreadID(), phase, this->_startPhase));
 
         return phase;
       };
@@ -245,7 +245,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::notifyRecv "
               "_initialized %d, bytes %d, srcPeIndex %d, cdata->phase %d,_lastReducePhase %d\n",
-              (int)this,ThreadID(), _initialized, bytes, cdata->srcPeIndex,cdata->phase,_lastReducePhase));
+              (int)this,ThreadID(), this->_initialized, bytes, cdata->srcPeIndex,cdata->phase,this->_lastReducePhase));
 
   // update state  (we dont support multiple sources per phase yet)
   this->_astate.incrementPhaseChunksRcvd(cdata->phase, 0 /*cdata->srcPeIndex*/);
@@ -358,8 +358,8 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
       };
       TRACE_REDUCEOP((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::advance() OP curphase:%#X curChunk:%#X "
                       "bufs[0] %#X, bufs[1] %#X, func(%#X), count = %#X\n",(int)this,ThreadID(),
-                      _curRecvPhase, _curRecvChunk, (int) bufs[0], (int) bufs[1],
-                      (int)_reduceFunc,count));
+                      this->_curRecvPhase, this->_curRecvChunk, (int) bufs[0], (int) bufs[1],
+                      (int)this->_reduceFunc,count));
       TRACE_DATA(("localbuf",(const char*)bufs[0], count*this->_astate.getSizeOfType()));
       TRACE_DATA(("input buf",(const char*)bufs[1], count*this->_astate.getSizeOfType()));
       TRACE_DATA(("reduceBuf", mydstbuf + bufOffset, 1));  // Just to trace the input pointer

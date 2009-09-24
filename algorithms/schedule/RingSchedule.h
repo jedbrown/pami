@@ -79,7 +79,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _next : _prev;
           *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE(("Sending bcast message to %d\n", *dstpes));
+          TRACE_SCHEDULE((stderr,"Sending bcast message to %d\n", *dstpes));
         }
       }
 
@@ -113,7 +113,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _prev : _next;
           *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE(("Sending reduce message to %d\n", *dstpes));
+          TRACE_SCHEDULE((stderr,"Sending reduce message to %d\n", *dstpes));
         }
       }
 
@@ -372,7 +372,7 @@ namespace CCMI
 
         local_init (root, op, startphase, nphases, maxranks);
 
-        TRACE_SCHEDULE(("In Ring Schedule _prev = %d, _next = %d\n", _prev, _next));
+        TRACE_SCHEDULE((stderr,"In Ring Schedule _prev = %d, _next = %d\n", _prev, _next));
       }
 
       static unsigned getMaxPhases (T_Sysdep *map, unsigned nranks)
