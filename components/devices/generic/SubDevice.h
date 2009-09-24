@@ -100,7 +100,7 @@ public:
 
 	virtual ~GenericSubDevice() { }
 
-	inline const T_SYSDEP *getSysdep() { return _sd; }
+	inline XMI_SYSDEP_CLASS *getSysdep() { return _sd; }
 
 	inline int advanceRecv(int channel = -1);
 
@@ -178,7 +178,7 @@ public:
 	}
 
 protected:
-	inline void ___init(T_SYSDEP &sd) {
+	inline void ___init(XMI_SYSDEP_CLASS &sd) {
 		_sd = &sd;
 	}
 
@@ -207,7 +207,7 @@ protected:
 	bool _hasBlockingAdvance;
 	int _nRoles;
 	int _repl;
-	const T_SYSDEP *_sd;
+	XMI_SYSDEP_CLASS *_sd;
 }; /* class GenericSubDevice */
 
 /// \brief Simple Sub-Device where no threading is used.
@@ -248,7 +248,7 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
 		_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		___init(sd);
@@ -329,7 +329,7 @@ private:
 	}
 
 protected:
-	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
@@ -397,7 +397,7 @@ private:
 ///
 /// Supports only one active message at a time.
 ///
-template <class T_Model, class T_Message, class T_Thread, int N_Threads>
+template <class T_Thread, int N_Threads>
 class MultiThrdSubDevice : public GenericSubDevice {
 	static const int NUM_THREADS = N_Threads;
 	#define ATOMIC_BUF_SIZE	16
@@ -412,14 +412,15 @@ public:
 	}
 
 private:
-	inline void __start_msg(T_Message *msg) {
+	template <class T_Message>
+	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {
 		_doneThreads.fetch_and_clear();
-		int t = msg->__setThreads(NULL, NUM_THREADS);
+		int t = static_cast<T_Message*>(msg)->__setThreads(NULL, NUM_THREADS);
 		msg->setStatus(XMI::Device::Initialized);
 		_nActiveThreads = t;
 	}
 
-	inline void __post_msg(T_Message *msg) {
+	inline void __post_msg(XMI::Device::Generic::GenericMessage *msg) {
 		T_Thread *thr = msg->__getThreads();
 		int x, y;
 		y = _nextChan;
@@ -435,7 +436,7 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
@@ -452,12 +453,13 @@ public:
 	//friend class T_Model;
 	// So, must allow this to be public!
 
-	inline void __post(T_Message *msg) {
+	template <class T_Message>
+	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		// assume early advance already tried... just queue it up
-		__start_msg(msg);
+		__start_msg<T_Message>(msg);
 		__post_msg(msg);
 		// Don't queue locally... all are active
-		//XMI::Device::Generic::GenericSubDevice::post((XMI::Device::Generic::GenericMessage *)msg);
+		//XMI::Device::Generic::GenericSubDevice::post(msg);
 	}
 
 	inline unsigned __completeThread(T_Thread *thr) {
@@ -467,13 +469,14 @@ public:
 		return _doneThreads.fetch_and_inc() + 1;
 	}
 
-	inline void __complete(T_Message *msg) {
+	template <class T_Message>
+	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
 		/* assert msg == dequeue(); */
 		//_nActiveThreads = 0;
 		//dequeue();
-//		T_Message *nxt;
-//		while (nxt = (T_Message *)getCurrent()) {
-//			__start_msg(nxt);
+//		XMI::Device::Generic::GenericMessage *nxt;
+//		while (nxt = getCurrent()) {
+//			__start_msg<T_Message>(nxt);
 //			// could try to advance here?
 //			__post_msg(nxt);
 //		}
@@ -529,7 +532,7 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	virtual void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) = 0;
+	virtual void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -539,7 +542,7 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	inline void __init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
+	inline void __init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
@@ -596,7 +599,7 @@ private:
 /// but each Model/Device/Message/Thread tuple could have a different sized Thread class
 /// and so we must have the _threads[] array here, where we know the exact Thread type.
 ///
-template <class T_Model, class T_CommonDevice, class T_Message, class T_Thread, int N_Threads>
+template <class T_CommonDevice, class T_Thread, int N_Threads>
 class SharedQueueSubDevice : public BaseGenericDevice {
 	static const int NUM_THREADS = N_Threads;
 public:
@@ -614,22 +617,23 @@ public:
 
 	inline T_CommonDevice *common() { return _common; }
 private:
-	inline void __start_msg(T_Message *msg) {
+	template <class T_Message>
+	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {
 		int n;
 		_common->__resetThreads();
 		msg->setStatus(XMI::Device::Initialized);
-		n = msg->__setThreads(&_threads[0], NUM_THREADS);
+		n = static_cast<T_Message*>(msg)->__setThreads(&_threads[0], NUM_THREADS);
 		_nActiveThreads = n;
 	}
 
-	inline void __post_msg(T_Message *msg) {
-		_common->post_msg((XMI::Device::Generic::GenericMessage *)msg, &_threads[0], sizeof(_threads[0]), _nActiveThreads);
+	inline void __post_msg(XMI::Device::Generic::GenericMessage *msg) {
+		_common->post_msg(msg, &_threads[0], sizeof(_threads[0]), _nActiveThreads);
 	}
 
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(T_SYSDEP &sd, XMI::Device::Generic::Device *device) {
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
 		// do this now so we don't have to every time we post
 //		for (int x = 0; x < NUM_THREADS; ++x) {
 //			//_threads[x].setPolled(true);
@@ -649,13 +653,14 @@ private:
 	// So, need to make it public for now...
 public:	// temporary?
 
-	inline void __post(T_Message *msg) {
+	template <class T_Message>
+	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		bool first = (_common->getCurrent() == NULL);
 		if (first) {
-			__start_msg(msg);
+			__start_msg<T_Message>(msg);
 			// Don't check each thread for "Done", we only care about msg
 			for (int x = 0; x < _nActiveThreads; ++x) {
-				msg->__advanceThread(&_threads[x]);
+				static_cast<T_Message*>(msg)->__advanceThread(&_threads[x]);
 			}
 			if (msg->getStatus() == XMI::Device::Done) {
 				msg->executeCallback();
@@ -663,18 +668,19 @@ public:	// temporary?
 			}
 			__post_msg(msg);
 		}
-		_common->post((XMI::Device::Generic::GenericMessage *)msg);
+		_common->post(msg);
 	}
 
 	inline unsigned __completeThread(T_Thread *thr) {
 		return _common->__completeThread(thr);
 	}
 
+	template <class T_Message>
 	inline void __complete(T_Message *msg) {
 		_nActiveThreads = 0;
 		T_Message *nxt = (T_Message *)_common->__complete(msg);
 		if (nxt) {
-			__start_msg(nxt);
+			__start_msg<T_Message>(nxt);
 			// could try to advance here?
 			__post_msg(nxt);
 		}

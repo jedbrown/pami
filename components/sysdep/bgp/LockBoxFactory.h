@@ -66,7 +66,7 @@ namespace BGP {
 			size_t i;
 			int ncores = Kernel_ProcessorCount();
 			size_t t;
-			XMI_assert(XMI_SUCCESS == mapping->nodePeers(&t));
+			XMI_assert(XMI_SUCCESS == mapping->nodePeers(t));
 			_factory.numCore = 0;
 			_factory.numProc = 0;
 			_factory.masterProc = (unsigned)-1;

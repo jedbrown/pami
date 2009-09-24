@@ -22,7 +22,6 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
 #include "math/bgp/collective_network/xmi_optibgmath.h"
 
 namespace XMI {
@@ -38,7 +37,7 @@ namespace BGP {
 class CNAllreducePPModel;
 class CNAllreducePPMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreducePPThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNAllreducePPModel,CNDevice,CNAllreducePPMessage,CNAllreducePPThread,2> CNAllreducePPDevice;
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2> CNAllreducePPDevice;
 
 };	// BGP
 };	// Device
@@ -57,7 +56,7 @@ class CNAllreducePPMessage : public XMI::Device::BGP::BaseGenericCNPPMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreducePPMessage(BaseGenericDevice &qs,
+	CNAllreducePPMessage(Generic::BaseGenericDevice &qs,
 			XMI_PIPEWORKQUEUE_CLASS *swq,
 			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,

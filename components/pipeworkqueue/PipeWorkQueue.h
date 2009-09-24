@@ -44,7 +44,7 @@ namespace XMI
             /// \param[in] sysdep	System dependent methods
             /// \param[in] bufsize	Size of buffer to allocate
             ///
-            inline void configure(void *sysdep, size_t bufsize);
+            inline void configure(XMI_SYSDEP_CLASS *sysdep, size_t bufsize);
 
             ///
             /// \brief Configure for User-supplied Circular Buffer variety.
@@ -59,7 +59,7 @@ namespace XMI
             /// \param[in] buffer	Buffer to use
             /// \param[in] bufsize	Size of buffer
             ///
-            inline void configure(void *sysdep, char *buffer, size_t bufsize);
+            inline void configure(XMI_SYSDEP_CLASS *sysdep, char *buffer, size_t bufsize);
 
             ///
             /// \brief Configure for Memeory (flat buffer) variety.
@@ -75,7 +75,7 @@ namespace XMI
             /// \param[in] bufsize	Size of buffer
             /// \param[in] bufinit	Amount of data initially in buffer
             ///
-            inline void configure(void *sysdep, char *buffer, size_t bufsize, size_t bufinit);
+            inline void configure(XMI_SYSDEP_CLASS *sysdep, char *buffer, size_t bufsize, size_t bufinit);
 
             ///
             /// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
@@ -97,7 +97,7 @@ namespace XMI
             /// \param[in] typecount      Number of repetitions of buffer units
             /// \param[in] typeinit       Number of units initially in buffer
             ///
-            inline void configure(void *sysdep, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit);
+            inline void configure(XMI_SYSDEP_CLASS *sysdep, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit);
 
             ///
             /// \brief Reset this shared memory work queue.
@@ -242,7 +242,7 @@ namespace XMI
         }; // end XMI::Pipeworkqueue::Pipeworkqueue
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI_SYSDEP_CLASS *sysdep,
                                                        size_t bufsize)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep,bufsize);
@@ -255,7 +255,7 @@ namespace XMI
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI_SYSDEP_CLASS *sysdep,
                                                        char *buffer,
                                                        size_t bufsize)
         {
@@ -263,14 +263,14 @@ namespace XMI
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep, char *buffer,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI_SYSDEP_CLASS *sysdep, char *buffer,
                                                        size_t bufsize, size_t bufinit)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep, buffer,bufsize,bufinit);
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(void *sysdep, char *buffer, xmi_type_t *type,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI_SYSDEP_CLASS *sysdep, char *buffer, xmi_type_t *type,
                                                        size_t typecount, size_t typeinit)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(sysdep, buffer, type,

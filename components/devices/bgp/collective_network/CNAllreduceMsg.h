@@ -57,7 +57,7 @@ namespace BGP {
 class CNAllreduceModel;
 class CNAllreduceMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduceThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceModel,CNDevice,CNAllreduceMessage,CNAllreduceThread,2> CNAllreduceDevice;
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> CNAllreduceDevice;
 
 };	// BGP
 };	// Device
@@ -76,7 +76,7 @@ class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduceMessage(BaseGenericDevice &qs,
+	CNAllreduceMessage(Generic::BaseGenericDevice &qs,
 			XMI_PIPEWORKQUEUE_CLASS *swq,
 			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
@@ -95,7 +95,7 @@ public:
 	inline void complete();
 protected:
 	//friend class CNAllreduceDevice;
-	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceModel,CNDevice,CNAllreduceMessage,CNAllreduceThread,2>;
+	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2>;
 
 	inline int __setThreads(CNAllreduceThread *t, int n) {
 		int nt = 0;
@@ -120,7 +120,7 @@ protected:
 		}
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
-		if (_bytes >= 16384; // DCMF_TREE_HELPER_THRESH) {
+		if (_bytes >= 16384 /* DCMF_TREE_HELPER_THRESH */) {
 			setThreadsWanted(MIN(nt, maxnt));
 		}
 		return nt;
@@ -208,7 +208,7 @@ public:
 	XMI::Device::Interface::MulticombineModel<CNAllreduceModel>(status)
 	{
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
-		_me = sysdep->mapping().rank();
+		_me = _g_cnallreduce_dev.getSysdep()->mapping.task();
 		// at least one must do this
 		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
 		// if we need sysdep, use _g_cnallreduce_dev.getSysdep()...
@@ -219,9 +219,6 @@ public:
 private:
 	size_t _me;
 	unsigned _dispatch_id;
-	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNAllreduceMessage));
-	}
 }; // class CNAllreduceModel
 
 inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
@@ -247,7 +244,7 @@ inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	if (tas._pre) {
 		return false;
 	}
-	XMI_TOPOLOGY_CLASS *result_topo = (XMI_TOPOLOGY_CLASS *)mcomb->results_participants();
+	XMI_TOPOLOGY_CLASS *result_topo = (XMI_TOPOLOGY_CLASS *)mcomb->results_participants;
 	bool doStore = (!result_topo || result_topo->isRankMember(_me));
 	size_t bytes = mcomb->count << xmi_dt_shift[mcomb->dtype];
 

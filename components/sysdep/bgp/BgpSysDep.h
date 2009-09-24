@@ -19,6 +19,9 @@
 #define NUM_CORES 4
 #define NUM_SMT 1
 
+#define XMI_SYSDEP_CLASS XMI::SysDep::BgpSysDep
+
+#include "components/topology/bgp/BgpTopology.h"
 #include "components/mapping/bgp/BgpMapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 #include "components/time/bgp/BgpTime.h"
@@ -50,6 +53,7 @@ namespace XMI
 		~BgpSysDep() {}
 
 		XMI::Atomic::BGP::LockBoxFactory lockboxFactory;
+		XMI::Topology::BgpTopology topology_local;
 	}; // class BgpSysDep
   };
 };

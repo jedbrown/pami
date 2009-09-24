@@ -38,7 +38,7 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 
-namespace XMIF {
+namespace XMI {
 namespace Device {
 namespace BGP {
 
@@ -53,7 +53,7 @@ typedef XMI::Device::Generic::SimpleSubDevice<giThread> giDevice;
 
 extern XMI::Device::BGP::giDevice _g_gibarrier_dev;
 
-namespace XMIF {
+namespace XMI {
 namespace Device {
 namespace BGP {
 
@@ -79,7 +79,7 @@ protected:
 	/// \brief  GI Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	giMessage(BaseGenericDevice &GI_QS, xmi_callback_t cb) :
+	giMessage(Generic::BaseGenericDevice &GI_QS, xmi_callback_t cb) :
 	XMI::Device::Generic::GenericMessage(GI_QS, cb)
 	{
 	}

@@ -18,7 +18,6 @@
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "sys/xmi.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
 #include "components/devices/MulticastModel.h"
 
 namespace XMI {
@@ -49,7 +48,7 @@ private:
 		NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
 	};
 public:
-	WQRingBcastMsg(BaseGenericDevice &Generic_QS,
+	WQRingBcastMsg(Generic::BaseGenericDevice &Generic_QS,
 		XMI_PIPEWORKQUEUE_CLASS *iwq,
 		XMI_PIPEWORKQUEUE_CLASS *swq,
 		XMI_PIPEWORKQUEUE_CLASS *rwq,
@@ -162,22 +161,23 @@ protected:
 	size_t _bytes;
 }; //-- WQRingBcastMsg
 
-class WQRingBcastMdl : public XMI::Device::Interface::Multicastmodel<WQRingBcastMdl> {
+class WQRingBcastMdl : public XMI::Device::Interface::MulticastModel<WQRingBcastMdl> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
 	WQRingBcastMdl(xmi_result_t &status) :
-	XMI::Device::Interface::Multicastmodel<WQRingBcastMdl>(status)
+	XMI::Device::Interface::MulticastModel<WQRingBcastMdl>(status)
 	{
-		_me = _g_wqbcast_dev.getSysdep()->mapping()->rank();
+		XMI_SYSDEP_CLASS *sd = _g_wqbcast_dev.getSysdep();
+		_me = sd->mapping.task();
 		size_t tz;
-		_g_wqbcast_dev.getSysdep()->mapping()->nodePeers(&tz);
+		sd->mapping.nodePeers(tz);
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
-			_wq[x].configure(_g_wqbcast_dev.getSysdep(), USE_FLAT_BUFFER, 0);
+			_wq[x].configure(sd, USE_FLAT_BUFFER, 0);
 #else /* ! USE_FLAT_BUFFER */
-			_wq[x].configure(_g_wqbcast_dev.getSysdep(), 8192);
+			_wq[x].configure(sd, 8192);
 #endif /* ! USE_FLAT_BUFFER */
 			_wq[x].reset();
 		}

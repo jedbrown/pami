@@ -24,14 +24,6 @@
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
 
-#ifndef __defined__tsc__
-static inline unsigned long __tsc() {
-	unsigned long tsc;
-	asm volatile ("mfspr %0,%1" : "=r" (tsc) : "i" (SPRN_TBRL));
-	return tsc;
-}
-#endif /* ! __defined__tsc__ */
-
 namespace XMI {
 namespace Atomic {
 namespace BGP {

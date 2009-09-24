@@ -27,6 +27,7 @@
 #include <bpcore/bgp_atomic_ops.h>
 
 #ifndef __defined__tsc__
+#define __defined__tsc__
 static inline unsigned long __tsc() {
 	unsigned long tsc;
 	asm volatile ("mfspr %0,%1" : "=r" (tsc) : "i" (SPRN_TBRL));

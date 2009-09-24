@@ -60,7 +60,7 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalReduceWQMessage (BaseGenericDevice &device,
+          inline LocalReduceWQMessage (Generic::BaseGenericDevice &device,
                                        xmi_callback_t   cb,
                                        XMI::Device::WorkQueue::SharedWorkQueue &workqueue,
                                        unsigned          peer,
@@ -146,16 +146,16 @@ protected:
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalReduceWQMessage
 
-class LocalReduceWQModel : public Reduce::Model<LocalReduceWQModel,LocalReduceWQDevice,LocalReduceWQMessage> {
+class LocalReduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalReduceWQModel> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
-	LocalReduceWQModel(XMI::SysDep *sysdep, xmi_result_t &status) :
-	Reduce::Model<LocalReduceWQModel,LocalReduceWQDevice,LocalReduceWQMessage>(_g_l_reducewq_dev, status),
-	_shared(sysdep),
-	_peer(_g_topology_local->rank2Index(sysdep->mapping().rank())),
-	_npeers(_g_topology_local->size())
+	LocalReduceWQModel(xmi_result_t &status) :
+	XMI::Device::Interface::MulticombineModel<LocalReduceWQModel>(status),
+	_shared(_g_l_reducewq_dev.getSysdep()),
+	_peer(_g_l_reducewq_dev.getSysdep()->topology_local.rank2Index(_g_l_reducewq_dev.getSysdep()->mapping.task())),
+	_npeers(_g_l_reducewq_dev.getSysdep()->topology_local.size())
 	{
 		if (!_shared.available()) {
 			status = XMI_ERROR;
@@ -172,7 +172,7 @@ public:
 		}
 	}
 
-	inline bool generateMessage_impl(xmi_multicombine_t *mcomb);
+	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
 
 private:
 	XMI::Device::WorkQueue::SharedWorkQueue _shared;
@@ -188,17 +188,14 @@ inline XMI::Device::MessageStatus LocalReduceWQMessage::advanceThread(XMI::Devic
 	return __advanceThread((LocalReduceWQThread *)t);
 }
 
-inline bool LocalReduceWQModel::generateMessage_impl(xmi_multicombine_t *mcomb) {
-	if (mcomb->req_size < sizeof(LocalReduceWQMessage)) {
-		return false;
-	}
+inline bool LocalReduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	XMI_TOPOLOGY_CLASS *results_topo = (XMI_TOPOLOGY_CLASS *)mcomb->results_participants;
 	// assert((data_topo .U. results_topo).size() == _npeers);
 	// This is a LOCAL reduce, results_topo must be a valid local rank!
 	// assert(_g_topology_local->rank2Index(results_topo->index2Rank(0)) != -1);
-	int dtshift = dcmf_dt_shift[mcomb->dtype];
+	int dtshift = xmi_dt_shift[mcomb->dtype];
 	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
-	unsigned rootpeer = _g_topology_local->rank2Index(results_topo->index2Rank(0));
+	unsigned rootpeer = _g_l_reducewq_dev.getSysdep()->topology_local.rank2Index(results_topo->index2Rank(0));
 	LocalReduceWQMessage *msg =
 		new (mcomb->request) LocalReduceWQMessage(_g_l_reducewq_dev,
 				mcomb->cb_done, _shared, _peer, _npeers, rootpeer,

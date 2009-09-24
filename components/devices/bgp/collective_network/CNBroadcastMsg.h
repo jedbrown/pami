@@ -18,7 +18,6 @@
 #include "components/devices/MulticastModel.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "components/devices/bgp/collective_network/CNPacket.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 /**
  * \page cn_bcast Collective Network Broadcast
@@ -61,7 +60,7 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNBroadcastMessage(BaseGenericDevice &qs,
+	CNBroadcastMessage(Generic::BaseGenericDevice &qs,
 			XMI_PIPEWORKQUEUE_CLASS *swq,
 			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,

@@ -23,6 +23,8 @@
 #include "components/memory/shmem/SharedMemoryManager.h"
 #include "components/time/bgq/BgqTime.h"
 
+#define XMI_SYSDEP_CLASS XMI::SysDep::BgqSysDep
+
 namespace XMI
 {
   namespace SysDep

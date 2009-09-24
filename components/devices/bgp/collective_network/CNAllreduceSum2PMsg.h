@@ -124,7 +124,7 @@ class CNAllreduce2PMessage : public XMI::Device::BGP::BaseGenericCN2PMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduce2PMessage(BaseGenericDevice &qs,
+	CNAllreduce2PMessage(Generic::BaseGenericDevice &qs,
 		XMI::Device::WorkQueue::WorkQueue &ewq,
 		XMI::Device::WorkQueue::WorkQueue &mwq,
 		XMI::Device::WorkQueue::WorkQueue &xwq,
@@ -297,7 +297,7 @@ public:
 	_dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
 	_dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
 	{
-		_me = _g_cnallreduce2p_dev.getSysdep()->mapping().rank();
+		_me = _g_cnallreduce2p_dev.getSysdep()->mapping.task();
 		_ewq.setConsumers(1, 0);
 		_ewq.setProducers(1, 0);
 		_mwq.setConsumers(1, 0);

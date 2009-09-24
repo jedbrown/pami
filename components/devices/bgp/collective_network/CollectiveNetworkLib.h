@@ -25,7 +25,7 @@
 #define VIRTUAL_CHANNEL 0
 #define BGPCN_PKT_SIZE   256
 #define BGPCN_FIFO_SIZE  8
-#define BGPCN_QUADS_PER_PKT      (BGPCN_PKT_SIZE / sizeof(XMIQuad))
+#define BGPCN_QUADS_PER_PKT      (BGPCN_PKT_SIZE / sizeof(xmi_quad_t))
 #define BGPCN_QUADS_PER_FIFO     (BGPCN_FIFO_SIZE * BGPCN_QUADS_PER_PKT)
 
 #ifndef __defined__tsc__
@@ -73,13 +73,13 @@ public:
 	// on BG/P we only use one classroute, the global one.
 	static const unsigned classroute = 3;
 
-	BaseGenericCNMessage(BaseGenericDevice &qs,
+	BaseGenericCNMessage(Generic::BaseGenericDevice &qs,
 			XMI_PIPEWORKQUEUE_CLASS *swq,
 			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			XMI_Callback_t cb,
+			xmi_callback_t cb,
 			unsigned disp_id,
 			unsigned hhfunc,
 			unsigned opsize) :
@@ -337,13 +337,13 @@ protected:
 /// Collective Network Message with Pre/Post-processing of packets
 class BaseGenericCNPPMessage : public BaseGenericCNMessage {
 public:
-	BaseGenericCNPPMessage(BaseGenericDevice &qs,
+	BaseGenericCNPPMessage(Generic::BaseGenericDevice &qs,
 			XMI_PIPEWORKQUEUE_CLASS *swq,
 			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			XMI_Callback_t cb,
+			xmi_callback_t cb,
 			unsigned disp_id,
 			XMI::Device::BGP::CNAllreduceSetup &tas) :
 	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb, disp_id,
@@ -457,7 +457,7 @@ protected:
 
 class BaseGenericCN2PMessage : public BaseGenericCNMessage {
 public:
-	BaseGenericCN2PMessage(BaseGenericDevice &qs,
+	BaseGenericCN2PMessage(Generic::BaseGenericDevice &qs,
 			XMI::Device::WorkQueue::WorkQueue &ewq,
 			XMI::Device::WorkQueue::WorkQueue &mwq,
 			XMI::Device::WorkQueue::WorkQueue &xwq,
@@ -466,7 +466,7 @@ public:
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			const XMI_Callback_t cb,
+			const xmi_callback_t cb,
 			unsigned dispatch_id_e,
 			unsigned dispatch_id_m) :
 	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb, 0, 0, 0),

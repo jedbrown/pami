@@ -11,8 +11,9 @@
  * \brief ???
  */
 
-#include "components/client/bgp/BgpClient.h"
-#include "components/context/bgp/BgpContext.h"
+/* Ordering is important here. */
 #include "components/pipeworkqueue/bgp/BgpPipeWorkQueue.h"
 #include "components/topology/bgp/BgpTopology.h"
 #include "components/time/bgp/BgpTime.h"
+#include "components/client/bgp/BgpClient.h"
+#include "components/context/bgp/BgpContext.h"

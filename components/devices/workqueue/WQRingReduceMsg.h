@@ -62,7 +62,7 @@ public:
 	_swq(swq), // might be NULL
 	_rwq(rwq),
 	_count(count),
-	_shift(dcmf_dt_shift[dt])
+	_shift(xmi_dt_shift[dt])
 	{
 		if (_swq) {
 			// full combine...
@@ -178,14 +178,15 @@ public:
 	WQRingReduceMdl(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl>(status)
 	{
-		_me = _g_wqreduce_dev.getSysdep()->mapping.task();
+		XMI_SYSDEP_CLASS *sd = _g_wqreduce_dev.getSysdep();
+		_me = sd->mapping.task();
 		size_t tz;
-		_g_wqreduce_dev.getSysdep()->mapping.nodePeers(&tz);
+		sd->mapping.nodePeers(tz);
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
-			_wq[x].configure(_g_wqreduce_dev.getSysdep(), USE_FLAT_BUFFER, 0);
+			_wq[x].configure(sd, USE_FLAT_BUFFER, 0);
 #else /* ! USE_FLAT_BUFFER */
-			_wq[x].configure(_g_wqreduce_dev.getSysdep(), 8192);
+			_wq[x].configure(sd, 8192);
 #endif /* ! USE_FLAT_BUFFER */
 			_wq[x].reset();
 		}

@@ -63,7 +63,7 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalAllreduceWQMessage (BaseGenericDevice      & device,
+          inline LocalAllreduceWQMessage (Generic::BaseGenericDevice      & device,
                                           xmi_callback_t   cb,
                                           XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
@@ -136,8 +136,8 @@ public:
 	LocalAllreduceWQModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel>(status),
 	_shared(_g_l_allreducewq_dev.getSysdep()),
-	_peer(_g_topology_local->rank2Index(_g_l_allreducewq_dev.getSysdep()->mapping().rank())),
-	_npeers(_g_topology_local->size())
+	_peer(_g_l_allreducewq_dev.getSysdep()->topology_local.rank2Index(_g_l_allreducewq_dev.getSysdep()->mapping.task())),
+	_npeers(_g_l_allreducewq_dev.getSysdep()->topology_local.size())
 	{
 		if (!_shared.available()) {
 			status = XMI_ERROR;
@@ -160,10 +160,6 @@ private:
 	XMI::Device::WorkQueue::SharedWorkQueue _shared;
 	unsigned _peer;
 	unsigned _npeers;
-
-	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(LocalAllreduceWQMessage));
-	}
 }; // class LocalAllreduceWQModel
 
 void LocalAllreduceWQMessage::complete() {
@@ -177,7 +173,7 @@ inline XMI::Device::MessageStatus LocalAllreduceWQMessage::advanceThread(LocalAl
 
 inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	// assert((data_topo .U. results_topo).size() == _npeers);
-	int dtshift = dcmf_dt_shift[mcomb->dtype];
+	int dtshift = xmi_dt_shift[mcomb->dtype];
 	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
 
 	LocalAllreduceWQMessage *msg =

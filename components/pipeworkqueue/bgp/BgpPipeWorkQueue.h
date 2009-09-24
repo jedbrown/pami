@@ -8,10 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "components/sysdep/bgp/BgpSysDep.h"
 #include "components/pipeworkqueue/PipeWorkQueue.h"
 
 #define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue::BgpPipeWorkQueue
-#warning BGP PipeWorkQueue include
 
 namespace XMI
 {
@@ -32,19 +32,19 @@ namespace XMI
                 {
                 }
 
-            inline void configure_impl(void *sysdep, size_t bufsize)
+            inline void configure_impl(XMI_SYSDEP_CLASS *sysdep, size_t bufsize)
                 {
                 }
 
-            inline void configure_impl(void *sysdep, char *buffer, size_t bufsize)
+            inline void configure_impl(XMI_SYSDEP_CLASS *sysdep, char *buffer, size_t bufsize)
                 {
                 }
 
-            inline void configure_impl(void *sysdep, char *buffer, size_t bufsize, size_t bufinit)
+            inline void configure_impl(XMI_SYSDEP_CLASS *sysdep, char *buffer, size_t bufsize, size_t bufinit)
                 {
                 }
 
-            inline void configure_impl(void *sysdep, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit)
+            inline void configure_impl(XMI_SYSDEP_CLASS *sysdep, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit)
                 {
                 }
 

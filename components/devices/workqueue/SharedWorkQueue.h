@@ -22,11 +22,17 @@
 #include <bpcore/ppc450_inlines.h>
 #define mem_sync()	_bgp_msync()
 #define mem_barrier()	_bgp_mbar()
+#define LQU(x, ptr, incr) \
+asm volatile ("lfpdux %0,%1,%2" : "=f"(x), "+Ob"(ptr) : "r"(incr) : "memory")
+#define SQU(x, ptr, incr) \
+asm volatile ("stfpdux %2,%0,%1": "+Ob" (ptr) : "r" (incr), "f" (x) : "memory")
 
 #elif defined(__bgq__)
 
 #include "bqc/A2_inlines.h"
 #define mem_sync ppc_msync
+#define LQU(x, y, z)
+#define SQU(x, y, z)
 
 #else
 
@@ -40,11 +46,6 @@
 //#define WORKSIZE (16*1024)
 //#define QSIZE (WORKSIZE*32)
 //#define QSIZE (WORKSIZE*4)
-
-#if defined(__bgq__)
-#define LQU(x, y, z)
-#define SQU(x, y, z)
-#endif
 
 namespace XMI
 {
@@ -83,14 +84,14 @@ namespace XMI
           ///
           /// \param[in] queue Location of the workqueue structure in shared memory.
           ///
-          SharedWorkQueue (XMI::SysDep * sysdep, unsigned workunits = 32, unsigned worksize = 8192) :
+          SharedWorkQueue (XMI_SYSDEP_CLASS *sysdep, unsigned workunits = 32, unsigned worksize = 8192) :
             WorkQueue (),
             _qsize (workunits * worksize),
             _worksize (worksize),
             _sharedqueue (NULL)
           {
-            size_t size = sizeof(workqueue_t) + _qsize;
-            _sharedqueue = (workqueue_t *)  sysdep->memoryManager().scratchpad_dynamic_area_memalign(16, size);
+                size_t size = sizeof(workqueue_t) + _qsize;
+                sysdep->mm.memalign((void **)&_sharedqueue, 16, size);
 		XMI_assert_debug(_sharedqueue);
 		XMI_assert_debug((_qsize & (_qsize - 1)) == 0);
 		_qmask = _qsize - 1;
@@ -183,9 +184,9 @@ namespace XMI
             {
               //fprintf (stderr, "SharedWorkQueue::shmemcpy() do dhummer memcpy\n");
               // src and dst are 16-byte aligned and the length is an entire work unit
-              register unsigned i16 = sizeof(XMIQuad);
-              register XMIQuad *d = ((XMIQuad *)dst) - 1;
-              register XMIQuad *s = ((XMIQuad *)src) - 1;
+              register unsigned i16 = sizeof(xmi_quad_t);
+              register xmi_quad_t *d = ((xmi_quad_t *)dst) - 1;
+              register xmi_quad_t *s = ((xmi_quad_t *)src) - 1;
               register double r0, r1, r2, r3, r4, r5, r6, r7, r8;
 
               unsigned i, loop = n >> 8; // --> n/256

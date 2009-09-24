@@ -19,8 +19,6 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 
-#include "components/sysdep/SysDep.h"
-
 /**
  * \page env_vars Environment Variables
  *
@@ -112,7 +110,7 @@ public:
 	 *
 	 * All environment variables are sampled at this point.
 	 */
-	void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device);
+	void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device);
 
 	inline int getMaxThreads() { return _threadRoles; }
 

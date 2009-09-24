@@ -55,7 +55,7 @@ public:
           /// \param[in] consumers    Number of consumers that will recieve the
           ///                         broadcast buffer
           ///
-          inline LocalBcastWQMessage(BaseGenericDevice &device,
+          inline LocalBcastWQMessage(Generic::BaseGenericDevice &device,
                                       xmi_callback_t   cb,
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole,
@@ -111,16 +111,16 @@ private:
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalBcastWQMessage
 
-class LocalBcastWQModel : public XMI::Device::Interface::Multicastmodel<LocalBcastWQModel> {
+class LocalBcastWQModel : public XMI::Device::Interface::MulticastModel<LocalBcastWQModel> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 
 	LocalBcastWQModel(xmi_result_t &status) :
-	XMI::Device::Interface::Multicastmodel<LocalBcastWQModel>(status),
+	XMI::Device::Interface::MulticastModel<LocalBcastWQModel>(status),
 	_shared(_g_l_bcastwq_dev.getSysdep()),
-	_peer(_g_topology_local->rank2Index(_g_l_bcastwq_dev.getSysdep()->mapping().rank())),
-	_npeers(_g_topology_local->size())
+	_peer(_g_l_bcastwq_dev.getSysdep()->topology_local.rank2Index(_g_l_bcastwq_dev.getSysdep()->mapping.task())),
+	_npeers(_g_l_bcastwq_dev.getSysdep()->topology_local.size())
 	{
 		if (!_shared.available()) {
 			status = XMI_ERROR;
@@ -157,7 +157,7 @@ inline bool LocalBcastWQModel::popstMulticast_impl(xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
 	XMI_TOPOLOGY_CLASS *src_topo = (XMI_TOPOLOGY_CLASS *)mcast->src_participants;
-	unsigned rootpeer = _g_topology_local->rank2Index(src_topo->index2Rank(0));
+	unsigned rootpeer = _g_l_bcastwq_dev.getSysdep()->topology_local.rank2Index(src_topo->index2Rank(0));
 	bool isrootrole = (_peer == rootpeer);
 	unsigned consumer = (_peer - (_peer > rootpeer));
 	if (isrootrole) consumer = 0; // hack!

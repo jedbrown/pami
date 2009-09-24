@@ -22,7 +22,6 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
 
 namespace XMI {
 namespace Device {
@@ -64,7 +63,7 @@ class CNAllreduceShortMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		LOCAL_ROLE = (1 << 2), // local-only work
 	};
 public
-	CNAllreduceShortMessage(BaseGenericDevice &qs,
+	CNAllreduceShortMessage(Generic::BaseGenericDevice &qs,
 			XMI_PIPEWORKQUEUE_CLASS *swq,
 			XMI_PIPEWORKQUEUE_CLASS *rwq,
 			size_t bytes,

@@ -25,9 +25,8 @@
 #ifdef __bgp__
 #include "spi/kernel_interface.h"
 #include "components/sysdep/bgp/BgpSysDep.h"
-typedef XMI::SysDep::BgpSysDep T_SYSDEP;
-typedef XMI::Mutex::LockBoxProcMutex<T_SYSDEP> GenericDeviceMutex;
-typedef XMI::Counter::LockBoxProcCounter<T_SYSDEP> GenericDeviceCounter;
+typedef XMI::Mutex::LockBoxProcMutex<XMI_SYSDEP_CLASS> GenericDeviceMutex;
+typedef XMI::Counter::LockBoxProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
 #endif /* __bgp__ */
 
 
@@ -64,7 +63,7 @@ class ThreadQueue : public Queue {
 public:
 	ThreadQueue() : Queue() { }
 
-	ThreadQueue(T_SYSDEP &sd) : Queue()
+	ThreadQueue(XMI_SYSDEP_CLASS &sd) : Queue()
 	{
 		// need status/result here...
 		_mutex.init(&sd);
@@ -88,9 +87,9 @@ public:
 	//////////////////////////////////////////////////////////////////
 	/// \brief  A device
 	//////////////////////////////////////////////////////////////////
-	inline Device(T_SYSDEP &sd);
+	inline Device(XMI_SYSDEP_CLASS &sd);
 
-	inline void init(T_SYSDEP &sd);
+	inline void init(XMI_SYSDEP_CLASS &sd);
 
 	inline bool isAdvanceNeeded();
 
@@ -214,7 +213,7 @@ private:
 	//////////////////////////////////////////////////////////////////
 	/// \brief Lockmanager object for local barrier calls
 	//////////////////////////////////////////////////////////////////
-	T_SYSDEP &__sysdep;
+	XMI_SYSDEP_CLASS &__sysdep;
 
 }; /* class Device */
 

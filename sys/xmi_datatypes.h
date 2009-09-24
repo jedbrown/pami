@@ -143,6 +143,8 @@ extern "C"
                                      size_t     src_size);
   /** \} */ /* end of "datatype" group */
 
+extern int xmi_dt_shift[XMI_DT_COUNT];
+
 #ifdef __cplusplus
 };
 #endif
