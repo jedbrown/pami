@@ -48,6 +48,7 @@
 #define XMI_MSIZE_RANGE_8                                                     15
 
 /******************************************************************************/
+#warning This comment is wrong, since these attributes have nothing to do with buffers
 /* Buffer/Operation/Datatype/msg_size ranges attributes                       */
 /******************************************************************************/
 #define XMI_MODE_SMP                                                           0
