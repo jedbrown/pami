@@ -205,26 +205,6 @@ namespace XMI
         {
         }
 
-      inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
-        {
-        }
-      inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
-        {
-        }
-      inline COMPOSITE_TYPE            getAllreduceComposite_impl()
-        {
-        }
-      inline COMPOSITE_TYPE            getAllreduceComposite_impl(unsigned i)
-        {
-        }
-      inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c)
-        {
-        }
-      inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c,
-                                                                  unsigned i)
-        {
-        }
-
       inline EXECUTOR_TYPE             getCollectiveExecutor_impl(unsigned color=0)
         {
         }
@@ -239,6 +219,39 @@ namespace XMI
           return NULL;
         }
 #endif
+
+      inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
+        {
+          assert(0);
+          return NULL;
+        }
+      inline COMPOSITE_TYPE            getAllreduceComposite_impl(unsigned i)
+        {
+          assert(0);
+          return NULL;
+        }
+      inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c)
+        {
+          assert(0);
+        }
+      inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c,
+                                                                  unsigned i)
+        {
+          assert(0);
+        }
+      inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
+        {
+          assert(0);
+          return NULL;
+        }
+
+      inline COMPOSITE_TYPE            getAllreduceComposite_impl()
+        {
+          assert(0);
+          return NULL;
+        }
+
+
       static inline Common   *getCachedGeometry_impl(unsigned comm)
         {
           return (Common*)cached_geometry[comm];
@@ -286,11 +299,11 @@ namespace XMI
               }
           assert(0);
         }
-      inline void                       setKey_impl(int key, void*value)
+      inline void                       setKey_impl(keys_t key, void*value)
         {
 	_kvstore[key]=value;
         }
-      inline void                      *getKey_impl(int key)
+      inline void                      *getKey_impl(keys_t key)
       {
         void * value = _kvstore[key];
 	return value;

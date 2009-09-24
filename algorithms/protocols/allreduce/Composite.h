@@ -15,11 +15,10 @@
 #ifndef __ccmi_collectives_allreduce_composite_h__
 #define __ccmi_collectives_allreduce_composite_h__
 
-#include "./BaseComposite.h"
-//  #include "Geometry.h"
+#include "algorithms/protocols/allreduce/BaseComposite.h"
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/executor/AllreduceBase.h"
-#include "math/math_coremath.h"
+#include "math/math_coremath.h"s
 
 namespace CCMI
 {
@@ -38,11 +37,11 @@ namespace CCMI
 
     namespace Allreduce
     {
-
+#if 0
       // Forward declare prototype
-      extern void getReduceFunction(XMI_Dt, XMI_Op, unsigned,
+      extern void getReduceFunction(xmi_dt, xmi_op, unsigned,
                                     unsigned&, coremath&) __attribute__((noinline));
-
+#endif
       //-- Composite
       /// \brief The Composite for the Allreduce (and reduce)
       /// kernel executor.
@@ -56,6 +55,7 @@ namespace CCMI
       /// callback and the [all]reduce done callback to call the
       /// client done callback.
       ///
+      template <class T_Mcast, class T_Sysdep>
       class Composite : public BaseComposite
       {
       protected:
@@ -75,7 +75,7 @@ namespace CCMI
         /// \brief Client's callback to call when the allreduce has
         /// finished
         ///
-        void               (* _myClientFunction)(void *, XMI_Error_t *);
+        void               (* _myClientFunction)(void *, xmi_result_t *);
         void                * _myClientData;
       public:
         Composite () :
@@ -100,7 +100,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::ctor() flags(%#X) barrier(%#X) factory(%#X)\n",(int)this,
                          *(unsigned*)&flags, (int) barrier, (int) factory));
           if(barrier)
-            initializeBarrier ((CCMI::Executor::Barrier *) barrier);
+            initializeBarrier ((CCMI::Executor::OldBarrier<T_Mcast> *) barrier);
         }
 
         /// Default Destructor
@@ -115,7 +115,7 @@ namespace CCMI
           CCMI_abort();
         }
 
-        void initializeBarrier (CCMI::Executor::Barrier *barrier)
+        void initializeBarrier (CCMI::Executor::OldBarrier<T_Mcast> *barrier)
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::initializeBarrier barrier(%#X,%#X)\n",(int)this,(int)barrier,(int)this));
           addBarrier (barrier);
@@ -127,16 +127,16 @@ namespace CCMI
         /// \brief initialize should be called after the executors
         /// have been added to the composite
         ///
-        void initialize ( CCMI::Executor::AllreduceBase * allreduce,
+        void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * allreduce,
                           XMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
                           unsigned                          count,
-                          XMI_Dt                           dtype,
-                          XMI_Op                           op,
+                          xmi_dt                           dtype,
+                          xmi_op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, XMI_Error_t *) = cb_compositeDone,
+                          void                           (* cb_done)(void *, xmi_result_t *) = cb_compositeDone,
                           void                            * cd = NULL
                         )
         {
@@ -208,12 +208,12 @@ namespace CCMI
         ///
         virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
                                      XMI_Callback_t           & cb_done,
-                                     CCMI_Consistency            consistency,
+                                     xmi_consistency_t            consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
                                      size_t                      count,
-                                     XMI_Dt                     dtype,
-                                     XMI_Op                     op,
+                                     xmi_dt                     dtype,
+                                     xmi_op                     op,
                                      size_t                      root = (size_t)-1)
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::restart()\n",(int)this));
@@ -221,8 +221,8 @@ namespace CCMI
           _myClientData     = cb_done.clientdata;
 
           CCMI_assert_debug (getNumExecutors() == 1);
-          CCMI::Executor::AllreduceBase * allreduce =
-          (CCMI::Executor::AllreduceBase *) getExecutor(0);
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * allreduce =
+          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) getExecutor(0);
 
           initialize (allreduce, request, srcbuf, dstbuf,
                       count, dtype, op, root);
@@ -259,7 +259,7 @@ namespace CCMI
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
           {
             if(_myClientFunction) (*_myClientFunction) (_myClientData, NULL);
-            ((CCMI::Executor::AllreduceBase *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
+            ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
             TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::DONE() \n",
                            (int)this));
           }
@@ -274,7 +274,7 @@ namespace CCMI
         /// It means the is done, but the client done isn't called
         /// until both the composite and (optional) barrier are done.
         ///
-        static void cb_barrierDone(void *me, XMI_Error_t *err)
+        static void cb_barrierDone(void *me, xmi_result_t *err)
         {
 
           TRACE_ADAPTOR((stderr,
@@ -282,8 +282,8 @@ namespace CCMI
                          (int)me));
 
           Composite *composite = (Composite *) me;
-          CCMI::Executor::AllreduceBase *allreduce =
-          (CCMI::Executor::AllreduceBase *) composite->getExecutor(0);
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *allreduce =
+          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor(0);
           allreduce->start();
           composite->done();
           TRACE_ADAPTOR((stderr,
@@ -299,7 +299,7 @@ namespace CCMI
         /// the client done isn't called until both the composite and
         /// (optional) barrier are done.
         ///
-        static void cb_compositeDone(void *me, XMI_Error_t *err)
+        static void cb_compositeDone(void *me, xmi_result_t *err)
         {
           TRACE_ADAPTOR((stderr,
                          "<%#.8X>Allreduce::Composite::cb_compositeDone()\n",
@@ -315,7 +315,7 @@ namespace CCMI
         /// \brief Setup and start the (optional) barrier.  It's done callback
         /// will start the [all]reduce.
         ///
-        void startBarrier(CCMI_Consistency             consistency)
+        void startBarrier(xmi_consistency_t             consistency)
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::startBarrier() barrier(%#X)\n",
                          (int)this,(int)_barrier));

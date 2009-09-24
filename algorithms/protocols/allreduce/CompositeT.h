@@ -14,9 +14,7 @@
 #ifndef __ccmi_collectives_allreduce_compositet_h__
 #define __ccmi_collectives_allreduce_compositet_h__
 
-#include "./Composite.h"
-
-/// \todo remote color/torus rectangle requirements
+#include "algorithms/protocols/allreduce/Composite.h"
 #include "algorithms/schedule/Rectangle.h"
 
 namespace CCMI
@@ -31,11 +29,12 @@ namespace CCMI
       ///
       ///
       ///
-      template <class SCHEDULE, class EXECUTOR, class MAP> class CompositeT : public CCMI::Adaptor::Allreduce::Composite
+      template <class T_Schedule, class T_Executor, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      class CompositeT : public CCMI::Adaptor::Allreduce::Composite<T_Sysdep, T_Mcast>
       {
       protected:
-        EXECUTOR  _executor;
-        char  _schedule[sizeof(SCHEDULE)];
+        T_Executor  _executor;
+        char  _schedule[sizeof(T_Schedule)];
       public:
         static const char* name;
         /// Default Destructor
@@ -46,24 +45,26 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        CompositeT (XMI_CollectiveRequest_t  * req,
-                    MAP        * map,
-                    CCMI::ConnectionManager::ConnectionManager *cmgr,
-                    XMI_Callback_t             cb_done,
-                    CCMI_Consistency            consistency,
-                    CCMI::MultiSend::OldMulticastInterface *mf,
-                    Geometry                  * geometry,
+        CompositeT (XMI_CollectiveRequest_t   * req,
+                    T_Sysdep                  * map,
+                    T_ConnectionManager       * cmgr,
+                    XMI_Callback_t              cb_done,
+                    xmi_consistency_t           consistency,
+                    T_Mcast                   * mf,
+                    XMI_GEOMETRY_CLASS        * geometry,
                     char                      * srcbuf,
                     char                      * dstbuf,
                     unsigned                    offset,
                     unsigned                    count,
-                    XMI_Dt                     dtype,
-                    XMI_Op                     op,
+                    xmi_dt                      dtype,
+                    xmi_op                      op,
                     ConfigFlags                 flags,
-                    CollectiveProtocolFactory           * factory,
+                    CollectiveProtocolFactory * factory,
                     int                         root = -1,
                     CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
-        CCMI::Adaptor::Allreduce::Composite( flags, geometry->getBarrierExecutor(), factory, cb_done),
+          CCMI::Adaptor::Allreduce::Composite<T_Sysdep, T_Mcast>(flags,
+                                                                 geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR),
+                                                                 factory, cb_done),
         _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
         {
           create_schedule(map, geometry, color);
@@ -72,18 +73,18 @@ namespace CCMI
           initialize (&_executor, req, srcbuf, dstbuf, count,
                       dtype, op, root);
           _executor.setMulticastInterface (mf);
-          _executor.setSchedule ((SCHEDULE*)&_schedule);
+          _executor.setSchedule ((T_Schedule*)&_schedule);
           _executor.reset ();
         }
         // Template implementation must specialize this function.
-        void create_schedule(MAP        * map,
-                             Geometry                  * geometry,
+        void create_schedule(T_Sysdep        * map,
+                             XMI_GEOMETRY_CLASS                  * geometry,
                              CCMI::Schedule::Color       color)
         {
           CCMI_abort();
         }
         // Template implementation must specialize this function.
-        static bool analyze (Geometry *geometry)
+        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
         {
           CCMI_abort();
           return false;

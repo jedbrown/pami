@@ -15,8 +15,7 @@
 #ifndef __ccmi_adaptor_allreduce_async_factory_h__
 #define __ccmi_adaptor_allreduce_async_factory_h__
 
-#include "./AsyncComposite.h"
-#include "interface/Geometry.h"
+#include "algorithms/protocols/allreduce/AsyncComposite.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "math/math_coremath.h"
 
@@ -28,7 +27,7 @@ namespace CCMI
     {
       // A temporary callback for asynchronous generates. The local
       // restart will set the true callback and replace this one.
-      void temp_done_callback(void* cd, XMI_Error_t *err)
+      void temp_done_callback(void* cd, xmi_result_t *err)
       {
         CCMI_abort();
       }
@@ -40,28 +39,29 @@ namespace CCMI
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
       ///
-      template <class MAP> class AsyncFactory : public CollectiveProtocolFactory
+      template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      class AsyncFactory : public CollectiveProtocolFactory
       {
       protected:
         ///
         /// \brief Multisend interface
         ///
-        CCMI::MultiSend::OldMulticastInterface   * _minterface;
+        T_Mcast   * _minterface;
 
         ///
         ///  \brief Connection Manager for the allreduce
         ///
-        CCMI::ConnectionManager::ConnectionManager   * _connmgr;
+        T_ConnectionManager   * _connmgr;
 
         ///
         /// \brief get geometry from comm id
         ///
-        CCMI_mapIdToGeometry               _cb_geometry;
+        xmi_mapidtogeometry_fn               _cb_geometry;
 
         ///
         /// \brief mapping module
         ///
-        MAP                          * _mapping;
+        T_Sysdep                          * _mapping;
 
         ///
         /// \brief Configuration flags
@@ -71,7 +71,7 @@ namespace CCMI
       ///
       /// \brief Generate a non-blocking allreduce message.
       ///
-      static XMI_Request_t *   cb_receiveHead(const XMIQuad    * info,
+      static XMI_Request_t *   cb_receiveHead(const xmi_quad_t    * info,
                                                unsigned          count,
                                                unsigned          peer,
                                                unsigned          sndlen,
@@ -89,11 +89,11 @@ namespace CCMI
         CollHeaderData  *cdata = (CollHeaderData *) info;
         AsyncFactory *factory = (AsyncFactory *) arg;
 
-        Geometry *geometry = (Geometry *)factory->_cb_geometry(cdata->_comm);
-        CCMI::Adaptor::Allreduce::AsyncComposite *composite =
+        XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *)factory->_cb_geometry(cdata->_comm);
+        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *composite =
         factory->getAllreduceComposite(geometry, cdata->_iteration);
 
-        CCMI::Executor::AllreduceBase *allreduce =
+        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *allreduce =
         factory->getAllreduce(geometry, cdata->_iteration);
 
         TRACE_ADAPTOR((stderr,
@@ -109,14 +109,14 @@ namespace CCMI
         if((allreduce == NULL) || (composite == NULL))
         {
           composite = factory->buildComposite (geometry, cdata);
-          allreduce = (CCMI::Executor::AllreduceBase *) composite->getExecutor (0);
+          allreduce = (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor (0);
         }
         else if(composite->isIdle())
         {
           composite->restartAsync(allreduce,
                                   cdata->_count,
-                                  (XMI_Dt)(cdata->_dt),
-                                  (XMI_Op)(cdata->_op),
+                                  (xmi_dt)(cdata->_dt),
+                                  (xmi_op)(cdata->_op),
                                   cdata->_root);
         }
 
@@ -144,9 +144,9 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline AsyncFactory(MAP                                           * mapping,
-                            CCMI::MultiSend::OldMulticastInterface        * minterface,
-                            CCMI_mapIdToGeometry                           cb_geometry,
+        inline AsyncFactory(T_Sysdep                                           * mapping,
+                            T_Mcast        * minterface,
+                            xmi_mapidtogeometry_fn                           cb_geometry,
                             ConfigFlags                                   flags ) :
         _minterface (minterface),
         _connmgr    (NULL),
@@ -162,7 +162,7 @@ namespace CCMI
         }
 
         inline void setConnectionManager
-        (CCMI::ConnectionManager::ConnectionManager  * connmgr)
+        (T_ConnectionManager  * connmgr)
         {
           _connmgr = connmgr;
         }
@@ -173,13 +173,13 @@ namespace CCMI
         virtual CCMI::Executor::Composite *generate
         (XMI_CollectiveRequest_t * request,
          XMI_Callback_t            cb_done,
-         CCMI_Consistency           consistency,
-         Geometry                 * geometry,
+         xmi_consistency_t           consistency,
+         XMI_GEOMETRY_CLASS                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         XMI_Dt                      dtype,
-         XMI_Op                      op,
+         xmi_dt                      dtype,
+         xmi_op                      op,
          int                        root = -1 ) = 0;
 
         ///
@@ -187,22 +187,22 @@ namespace CCMI
         /// without starting it.
         ///
         virtual CCMI::Executor::Composite *generateAsync
-        (Geometry                 * geometry,
+        (XMI_GEOMETRY_CLASS                 * geometry,
          unsigned                   count,
-         XMI_Dt                      dtype,
-         XMI_Op                      op,
+         xmi_dt                      dtype,
+         xmi_op                      op,
          unsigned                   iteration,
          int                        root = -1 ) = 0;
 
 
-        AsyncComposite          * buildComposite (Geometry         * geometry,
+        AsyncComposite<T_Mcast, T_Sysdep>          * buildComposite (XMI_GEOMETRY_CLASS         * geometry,
                                                   CollHeaderData   * cdata)
         {
-          AsyncComposite *composite = (CCMI::Adaptor::Allreduce::AsyncComposite *)
+          AsyncComposite<T_Mcast, T_Sysdep> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *)
                                       generateAsync(geometry,
                                                     cdata->_count,
-                                                    (XMI_Dt)(cdata->_dt),
-                                                    (XMI_Op)(cdata->_op),
+                                                    (xmi_dt)(cdata->_dt),
+                                                    (xmi_op)(cdata->_op),
                                                     cdata->_iteration);
           composite->setQueueing();
 
@@ -214,15 +214,15 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::AllreduceBase * getAllreduce(Geometry *geometry,
+        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * getAllreduce(XMI_GEOMETRY_CLASS *geometry,
                                                      unsigned iter)
         {
           CCMI::Executor::Composite *composite =
           geometry->getAllreduceComposite(iter);
 
-          CCMI::Executor::AllreduceBase *executor = (composite)?
-                                                    (CCMI::Executor::AllreduceBase *) composite->getExecutor (0):
-                                                    (CCMI::Executor::AllreduceBase *)NULL;
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *executor = (composite)?
+                                                    (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor (0):
+                                                    (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *)NULL;
 
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
                          "getAllreduce(comm id X, color %#X)"
@@ -239,10 +239,10 @@ namespace CCMI
         /// iteration id).  It is expected to be associated with this Factory,
         /// otherwise destroy it and return NULL.
         ///
-        CCMI::Adaptor::Allreduce::AsyncComposite * getAllreduceComposite(Geometry *geometry,
+        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> * getAllreduceComposite(XMI_GEOMETRY_CLASS *geometry,
                                                                          unsigned iteration)
         {
-          CCMI::Adaptor::Allreduce::AsyncComposite *composite = (CCMI::Adaptor::Allreduce::AsyncComposite *)
+          CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep> *)
                                                                 geometry->getAllreduceComposite(iteration);
 
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
@@ -257,7 +257,7 @@ namespace CCMI
           if(composite && (composite->getFactory() != this))
           {
             CCMI_assert(!composite->isQueueing() && !composite->isStarted());//unfinished operation?
-            composite->~AsyncComposite();
+//            composite->~AsyncComposite();
             composite = NULL;
             geometry->setAllreduceComposite(composite, iteration);
           }

@@ -40,9 +40,12 @@ typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/protocols/broadcast/multi_color_impl.h"
 #include "algorithms/protocols/broadcast/async_impl.h"
+
 #include "algorithms/connmgr/ColorGeometryConnMgr.h"
 #include "algorithms/protocols/barrier/impl.h"
 
+#include "algorithms/protocols/allreduce/sync_impl.h"
+#include "algorithms/protocols/allreduce/async_impl.h"
 
 
 

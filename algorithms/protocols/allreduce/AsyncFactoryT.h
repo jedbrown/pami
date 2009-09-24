@@ -31,10 +31,11 @@ namespace CCMI
       ///
       /// This factory will generate a CompositeT [all]reduce.
       ///
-      template <class CONNMGR, class COMPOSITE, class MAP> class AsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactory<MAP>
+      template <class T_ConnectionManager, class T_Composite, class T_Sysdep, class T_Mcast>
+      class AsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactory<T_Sysdep, T_Mcast, T_ConnectionManager>
       {
       protected:
-        CONNMGR     _sconnmgr;
+        T_ConnectionManager     _sconnmgr;
 //      static XMI_Request_t *   cb_asyncReceiveHead(const XMIQuad    * info,
 //                                                    unsigned          count,
 //                                                    unsigned          peer,
@@ -61,20 +62,20 @@ namespace CCMI
       public:
         virtual ~AsyncFactoryT()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~AsyncFactoryT() ALERT\n",(int)this,COMPOSITE::name));
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~AsyncFactoryT() ALERT\n",(int)this,T_Composite::name));
         }
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline AsyncFactoryT(MAP *mapping,
-                             CCMI::MultiSend::OldMulticastInterface *mf,
-                             CCMI_mapIdToGeometry cb_geometry,
+        inline AsyncFactoryT(T_Sysdep *mapping,
+                             T_Mcast *mf,
+                             xmi_mapidtogeometry_fn cb_geometry,
                              ConfigFlags flags) :
-        CCMI::Adaptor::Allreduce::AsyncFactory<MAP>(mapping, mf, cb_geometry, flags),
+          CCMI::Adaptor::Allreduce::AsyncFactory<T_Sysdep, T_Mcast, T_ConnectionManager>(mapping, mf, cb_geometry, flags),
         _sconnmgr(mapping)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT() ALERT:\n",(int)this, COMPOSITE::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT() mf<%#X>\n",(int)this, COMPOSITE::name,
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT() ALERT:\n",(int)this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT() mf<%#X>\n",(int)this, T_Composite::name,
                           (int) mf));
           setConnectionManager(&_sconnmgr);
         }
@@ -91,25 +92,25 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (XMI_CollectiveRequest_t * request,
          XMI_Callback_t            cb_done,
-         CCMI_Consistency           consistency,
-         Geometry                 * geometry,
+         xmi_consistency_t           consistency,
+         XMI_GEOMETRY_CLASS                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         XMI_Dt                    dtype,
-         XMI_Op                    op,
+         xmi_dt                    dtype,
+         xmi_op                    op,
          int                        root = -1 )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, COMPOSITE::name,
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",(int)this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
           //CCMI_assert(geometry->getAsyncAllreduceMode());
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
 
-          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
-          COMPOSITE *allreduce = new (c_request)
-          COMPOSITE(request,
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
+          T_Composite *allreduce = new (c_request)
+          T_Composite(request,
                     this->_mapping, &this->_sconnmgr, cb_done,
                     consistency, this->_minterface, geometry,
                     srcbuf, dstbuf, 0, count, dtype, op,
@@ -129,16 +130,16 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite * generateAsync
-        (Geometry                 * geometry,
+        (XMI_GEOMETRY_CLASS                 * geometry,
          unsigned                   count,
-         XMI_Dt                    dtype,
-         XMI_Op                    op,
+         xmi_dt                    dtype,
+         xmi_op                    op,
          unsigned                   iteration,
          int                        root = -1 )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generateAsync() ALERT:\n",(int)this, COMPOSITE::name));
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generateAsync() ALERT:\n",(int)this, T_Composite::name));
           TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generateAsync() %#X,"
-                          " geometry %#X comm %#X iteration %#X\n",(int)this, COMPOSITE::name,
+                          " geometry %#X comm %#X iteration %#X\n",(int)this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm(), iteration));
 
           XMI_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
@@ -146,12 +147,12 @@ namespace CCMI
           //CCMI_assert(geometry->getAsyncAllreduceMode());
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage(iteration);
 
-          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
-          COMPOSITE *allreduce = new (c_request)
-          COMPOSITE((XMI_CollectiveRequest_t*)NULL, // restart will reset this
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
+          T_Composite *allreduce = new (c_request)
+          T_Composite((XMI_CollectiveRequest_t*)NULL, // restart will reset this
                     this->_mapping, &this->_sconnmgr,
                     temp_cb_done, // bogus temporary cb, restart will reset it.
-                    (CCMI_Consistency) CCMI_MATCH_CONSISTENCY, // restart may reset this
+                    (xmi_consistency_t) XMI_MATCH_CONSISTENCY, // restart may reset this
                     this->_minterface,
                     geometry,
                     NULL, // restart will reset src buffer
@@ -168,22 +169,22 @@ namespace CCMI
         }
 
         // Template implementation should specialize this function if they want a color
-        CCMI::Schedule::Color getOneColor(Geometry * geometry)
+        CCMI::Schedule::Color getOneColor(XMI_GEOMETRY_CLASS * geometry)
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::getOneColor() NO_COLOR\n",(int)this, COMPOSITE::name));
+          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::getOneColor() NO_COLOR\n",(int)this, T_Composite::name));
           return CCMI::Schedule::NO_COLOR;
         }
-        bool Analyze( Geometry * geometry )
+        bool Analyze( XMI_GEOMETRY_CLASS * geometry )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::Analyze() ALERT: %s\n",(int)this, COMPOSITE::name,
-                       COMPOSITE::analyze(geometry)? "true":"false"));
-          return COMPOSITE::analyze(geometry);
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::Analyze() ALERT: %s\n",(int)this, T_Composite::name,
+                       T_Composite::analyze(geometry)? "true":"false"));
+          return T_Composite::analyze(geometry);
         }
 
         static inline void _compile_time_assert_ ()
         {
           // Compile time assert
-          COMPILE_TIME_ASSERT(sizeof(COMPOSITE) <= sizeof(CCMI_Executor_t));
+          COMPILE_TIME_ASSERT(sizeof(T_Composite) <= sizeof(CCMI_Executor_t));
         }
       }; // class AsyncFactoryT
     };

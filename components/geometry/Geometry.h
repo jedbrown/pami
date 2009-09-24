@@ -30,16 +30,17 @@
 #define EXECUTOR_TYPE  void*
 //#define EXECUTOR_TYPE  CCMI::Executor::Executor*
 
-#define CCMI_EXECUTOR_TYPE void*
 //#define CCMI_EXECUTOR_TYPE CCMI_Executor_t*
 
-#define COMPOSITE_TYPE void*
 //#define COMPOSITE_TYPE CCMI::Executor::Composite*
 
 #define CCMI_GEOMETRY void*
 //#define CCMI_GEOMETRY CCMI_Geometry_t*
-
 #endif
+
+#define CCMI_EXECUTOR_TYPE void*
+#define COMPOSITE_TYPE void*
+
 
 
 
@@ -53,7 +54,7 @@ namespace XMI
 	XMI_GKEY_COLLFACTORY     = 0,
 	XMI_GKEY_BARRIEREXECUTOR,
 	XMI_GKEY_LOCALBARRIEREXECUTOR
-      }keys;
+      }keys_t;
 
 
 
@@ -107,18 +108,21 @@ namespace XMI
             inline RECTANGLE_TYPE             rectangle_mesh();
             inline EXECUTOR_TYPE              getLocalBarrierExecutor ();
             inline void                       setLocalBarrierExecutor (EXECUTOR_TYPE bar);
-            inline CCMI_EXECUTOR_TYPE         getAllreduceCompositeStorage ();
-            inline CCMI_EXECUTOR_TYPE         getAllreduceCompositeStorage(unsigned i);
-            inline COMPOSITE_TYPE             getAllreduceComposite();
-            inline COMPOSITE_TYPE             getAllreduceComposite(unsigned i);
-            inline void                       setAllreduceComposite(COMPOSITE_TYPE c);
-            inline void                       setAllreduceComposite(COMPOSITE_TYPE c,
-                                                                    unsigned i);
             inline EXECUTOR_TYPE              getCollectiveExecutor (unsigned color=0);
             inline void                       setCollectiveExecutor (EXECUTOR_TYPE exe,
                                                                      unsigned color=0);
             inline void                      *getBarrierExecutor();
 #endif
+
+            inline CCMI_EXECUTOR_TYPE         getAllreduceCompositeStorage(unsigned i);
+            inline CCMI_EXECUTOR_TYPE         getAllreduceCompositeStorage ();
+            inline COMPOSITE_TYPE             getAllreduceComposite(unsigned i);
+            inline COMPOSITE_TYPE             getAllreduceComposite();
+            inline void                       setAllreduceComposite(COMPOSITE_TYPE c);
+            inline void                       setAllreduceComposite(COMPOSITE_TYPE c,
+                                                                    unsigned i);
+
+          
             static inline T_Geometry         *getCachedGeometry (unsigned comm);
             static inline void                updateCachedGeometry (T_Geometry *geometry,
                                                                     unsigned comm);
@@ -128,8 +132,8 @@ namespace XMI
             inline int                        rank       (void);
             inline int                        absrankof  (int rank);
             inline int                        virtrankof (int rank);
-	    inline void                       setKey(int key, void*value);
-	    inline void                      *getKey(int key);
+	    inline void                       setKey(keys_t key, void*value);
+	    inline void                      *getKey(keys_t key);
         }; // class Geometry
 
         template <class T_Geometry, class T_Mapping>
@@ -301,43 +305,6 @@ namespace XMI
         }
 
         template <class T_Geometry, class T_Mapping>
-        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceCompositeStorage ()
-        {
-            return static_cast<T_Geometry*>(this)->getAllreduceCompositeStorage_impl();
-        }
-
-        template <class T_Geometry, class T_Mapping>
-        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceCompositeStorage(unsigned i)
-        {
-            return static_cast<T_Geometry*>(this)->getAllreduceCompositeStorage_impl(i);
-        }
-
-        template <class T_Geometry, class T_Mapping>
-        inline COMPOSITE_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceComposite()
-        {
-            return static_cast<T_Geometry*>(this)->getAllreduceComposite_impl();
-        }
-
-        template <class T_Geometry, class T_Mapping>
-        inline COMPOSITE_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceComposite(unsigned i)
-        {
-            return static_cast<T_Geometry*>(this)->getAllreduceComposite_impl(i);
-        }
-
-        template <class T_Geometry, class T_Mapping>
-        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c)
-        {
-            return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c);
-        }
-
-        template <class T_Geometry, class T_Mapping>
-        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c,
-                                                                unsigned i)
-        {
-            return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c, i);
-        }
-
-        template <class T_Geometry, class T_Mapping>
         inline EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getCollectiveExecutor (unsigned color)
         {
             return static_cast<T_Geometry*>(this)->getCollectiveExecutor_impl(color);
@@ -357,6 +324,43 @@ namespace XMI
         }
 
 #endif
+           template <class T_Geometry, class T_Mapping>
+        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceCompositeStorage(unsigned i)
+        {
+            return static_cast<T_Geometry*>(this)->getAllreduceCompositeStorage_impl(i);
+        }
+      
+        template <class T_Geometry, class T_Mapping>
+        inline COMPOSITE_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceComposite(unsigned i)
+        {
+            return static_cast<T_Geometry*>(this)->getAllreduceComposite_impl(i);
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c)
+        {
+            return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c);
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::setAllreduceComposite(COMPOSITE_TYPE c,
+                                                                unsigned i)
+        {
+            return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c, i);
+        }
+      
+        template <class T_Geometry, class T_Mapping>
+        inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceCompositeStorage ()
+        {
+            return static_cast<T_Geometry*>(this)->getAllreduceCompositeStorage_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline COMPOSITE_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceComposite()
+        {
+            return static_cast<T_Geometry*>(this)->getAllreduceComposite_impl();
+        }
+
         template <class T_Geometry, class T_Mapping>
         inline T_Geometry *Geometry<T_Geometry, T_Mapping>::getCachedGeometry (unsigned comm)
         {
@@ -392,12 +396,12 @@ namespace XMI
             return static_cast<T_Geometry*>(this)->virtrankof_impl(rank);
         }
         template <class T_Geometry, class T_Mapping>
-	inline void                        Geometry<T_Geometry, T_Mapping>::setKey (int key, void *value)
+	inline void                        Geometry<T_Geometry, T_Mapping>::setKey (keys_t key, void *value)
         {
 	  static_cast<T_Geometry*>(this)->setKey_impl(key, value);
         }
         template <class T_Geometry, class T_Mapping>
-        inline void*                       Geometry<T_Geometry, T_Mapping>::getKey (int key)
+        inline void*                       Geometry<T_Geometry, T_Mapping>::getKey (keys_t key)
         {
             return static_cast<T_Geometry*>(this)->getKey_impl(key);
         }

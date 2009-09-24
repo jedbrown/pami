@@ -42,10 +42,19 @@ namespace CCMI
       namespace Binomial
       {
         typedef AsyncCompositeT
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> AsyncComposite;
-
+        <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::Allreduce<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS,
+         CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
+          AsyncComposite;
+        
         typedef AsyncFactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::AsyncComposite,CCMI::CollectiveMapping> AsyncFactory;
+        <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Adaptor::Allreduce::Binomial::AsyncComposite,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS>
+        AsyncFactory;
       };
       // Specializations for Binomial templates.
       ///
@@ -54,10 +63,10 @@ namespace CCMI
       ///
       // Specify the static name in the class (for debug)
       template<> const char* Binomial::AsyncComposite::name="Binomial";
-      template<> inline bool Binomial::AsyncComposite::analyze(Geometry *geometry){ return true;};
-      template<> inline void Binomial::AsyncComposite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color _not_used_)
+      template<> inline bool Binomial::AsyncComposite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
+      template<> inline void Binomial::AsyncComposite::create_schedule(XMI_COLL_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color _not_used_)
       {
-        new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
 
       // class ShortBinomial::AsyncComposite and ShortBinomial::AsyncFactory
@@ -69,10 +78,19 @@ namespace CCMI
       namespace ShortBinomial
       {
         typedef AsyncCompositeT
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase,CCMI::CollectiveMapping> AsyncComposite;
+        <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::AllreduceBase<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS>,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS,
+         CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
+        AsyncComposite;
 
         typedef AsyncFactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::AsyncComposite,CCMI::CollectiveMapping> AsyncFactory;
+        <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Adaptor::Allreduce::ShortBinomial::AsyncComposite,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS>
+        AsyncFactory;
       };
       // Specializations for Binomial templates.
       ///
@@ -81,10 +99,10 @@ namespace CCMI
       ///
       // Specify the static name in the class (for debug)
       template<> const char* ShortBinomial::AsyncComposite::name="ShortBinomial";
-      template<> inline bool ShortBinomial::AsyncComposite::analyze(Geometry *geometry){ return true;};
-      template<> inline void ShortBinomial::AsyncComposite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color _not_used_)
+      template<> inline bool ShortBinomial::AsyncComposite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
+      template<> inline void ShortBinomial::AsyncComposite::create_schedule(XMI_COLL_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color _not_used_)
       {
-        new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
 
     };

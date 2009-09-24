@@ -52,12 +52,12 @@ namespace CCMI
         ///
         virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
                                      XMI_Callback_t           & cb_done,
-                                     CCMI_Consistency            consistency,
+                                     xmi_consistency_t          consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
                                      size_t                      count,
-                                     XMI_Dt                     dtype,
-                                     XMI_Op                     op,
+                                     xmi_dt                      dtype,
+                                     xmi_op                      op,
                                      size_t                      root = (size_t)-1) = 0;
         virtual ~BaseComposite()
         {

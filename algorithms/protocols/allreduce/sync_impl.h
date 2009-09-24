@@ -42,10 +42,18 @@ namespace CCMI
       namespace Binomial
       {
         typedef CompositeT
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> Composite;
+        <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::Allreduce<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS,
+         CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> > Composite;
 
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Binomial::Composite,CCMI::CollectiveMapping> Factory;
+        <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Adaptor::Allreduce::Binomial::Composite,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS>
+        Factory;
       };
       // Specializations for Binomial templates.
       ///
@@ -54,10 +62,10 @@ namespace CCMI
       ///
       // Specify the static name in the class (for debug)
       template<> const char* Binomial::Composite::name="Binomial";
-      template<> inline bool Binomial::Composite::analyze(Geometry *geometry){ return true;};
-      template<> inline void Binomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool Binomial::Composite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
+      template<> inline void Binomial::Composite::create_schedule(XMI_COLL_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
 
       // class ShortBinomial::Composite and ShortBinomial::Factory
@@ -69,10 +77,19 @@ namespace CCMI
       namespace ShortBinomial
       {
         typedef CompositeT
-        <CCMI::Schedule::BinomialTreeSchedule,CCMI::Executor::AllreduceBase,CCMI::CollectiveMapping> Composite;
+        <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::AllreduceBase<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS>,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS,
+         CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
+        Composite;
 
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::ShortBinomial::Composite,CCMI::CollectiveMapping> Factory;
+        <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Adaptor::Allreduce::ShortBinomial::Composite,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS>
+        Factory;
       };
       // Specializations for Binomial templates.
       ///
@@ -81,10 +98,10 @@ namespace CCMI
       ///
       // Specify the static name in the class (for debug)
       template<> const char* ShortBinomial::Composite::name="ShortBinomial";
-      template<> inline bool ShortBinomial::Composite::analyze(Geometry *geometry){ return true;};
-      template<> inline void ShortBinomial::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool ShortBinomial::Composite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
+      template<> inline void ShortBinomial::Composite::create_schedule(XMI_COLL_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::BinomialTreeSchedule(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
 
       // class Ring::Composite and Ring::Factory
@@ -96,10 +113,19 @@ namespace CCMI
       namespace Ring
       {
         typedef CompositeT
-        <CCMI::Schedule::RingSchedule,CCMI::Executor::PipelinedAllreduce,CCMI::CollectiveMapping> Composite;
+        <CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::PipelinedAllreduce<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS,
+         CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
+        Composite;
 
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::Ring::Composite,CCMI::CollectiveMapping> Factory;
+        <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Adaptor::Allreduce::Ring::Composite,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS>
+        Factory;
       };
       // Specializations for Ring templates.
       ///
@@ -109,10 +135,10 @@ namespace CCMI
       ///
       // Specify the static name in the class (for debug)
       template<> const char* Ring::Composite::name="Ring";
-      template<> inline bool Ring::Composite::analyze(Geometry *geometry){ return true;};
-      template<> inline void Ring::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool Ring::Composite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
+      template<> inline void Ring::Composite::create_schedule(XMI_COLL_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
 
       // class RingReduce::Composite and RingReduce::Factory
@@ -124,10 +150,17 @@ namespace CCMI
       namespace RingReduce
       {
         typedef CompositeT
-        <CCMI::Schedule::RingSchedule,CCMI::Executor::Allreduce,CCMI::CollectiveMapping> Composite;      //? pipelined or not?
-
+        <CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Executor::Allreduce<XMI_COLL_MCAST_CLASS,XMI_COLL_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS,
+         CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
+          Composite;      //? pipelined or not?
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr,CCMI::Adaptor::Allreduce::RingReduce::Composite,CCMI::CollectiveMapping> Factory;
+        <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
+         CCMI::Adaptor::Allreduce::RingReduce::Composite,
+         XMI_COLL_SYSDEP_CLASS,
+         XMI_COLL_MCAST_CLASS> Factory;
       };
       // Specializations for Ring templates.
       ///
@@ -136,10 +169,10 @@ namespace CCMI
       /// Implement the factory getOneColor
       // Specify the static name in the class (for debug)
       template<> const char* RingReduce::Composite::name="RingReduce";
-      template<> inline bool RingReduce::Composite::analyze(Geometry *geometry){ return true;};
-      template<> inline void RingReduce::Composite::create_schedule(CCMI::CollectiveMapping * map,Geometry * geometry,CCMI::Schedule::Color color)
+      template<> inline bool RingReduce::Composite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
+      template<> inline void RingReduce::Composite::create_schedule(XMI_COLL_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::RingSchedule(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
     };
   };

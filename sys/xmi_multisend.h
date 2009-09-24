@@ -227,6 +227,9 @@ extern "C"
       const xmi_quad_t  * msginfo;
       unsigned            count;
       unsigned            flags;
+      xmi_op              op;
+      xmi_dt              dt;
+
     }xmi_oldmulticast_t;
 
     typedef struct xmi_oldmulticast_recv_t

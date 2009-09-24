@@ -28,29 +28,34 @@ namespace CCMI
       ///
       /// This factory will generate a CompositeT [all]reduce.
       ///
-      template <class CONNMGR, class COMPOSITE, class MAP> class FactoryT : public CCMI::Adaptor::Allreduce::Factory<MAP>
+      template <class T_ConnectionManager, class T_Composite, class T_Sysdep, class T_Mcast>
+      class FactoryT : public CCMI::Adaptor::Allreduce::Factory<T_Sysdep, T_Mcast, T_ConnectionManager>
       {
       protected:
-        CONNMGR     _sconnmgr;
+        T_ConnectionManager     _sconnmgr;
 
       public:
         virtual ~FactoryT()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~FactoryT() ALERT\n",(int)this,COMPOSITE::name));
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~FactoryT() ALERT\n",(int)this,T_Composite::name));
         }
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline FactoryT(MAP *mapping,
-                        CCMI::MultiSend::OldMulticastInterface *mof,
-                        CCMI::MultiSend::MulticombineInterface *mf,
-                        CCMI_mapIdToGeometry cb_geometry,
+        inline FactoryT(T_Sysdep *mapping,
+                        T_Mcast  *mof,
+//                        CCMI::MultiSend::MulticombineInterface *mf,
+                        xmi_mapidtogeometry_fn cb_geometry,
                         ConfigFlags flags) :
-        CCMI::Adaptor::Allreduce::Factory<MAP>(mapping, mof, mf, cb_geometry, flags),
-        _sconnmgr(mapping)
+          CCMI::Adaptor::Allreduce::Factory<T_Sysdep, T_Mcast, T_ConnectionManager>(mapping,
+                                                                                    mof,
+//                                                    mf,
+                                                                                    cb_geometry,
+                                                                                    flags),
+          _sconnmgr(mapping)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT() ALERT:\n",(int)this, COMPOSITE::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT() mf<%#X>\n",(int)this, COMPOSITE::name,
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT() ALERT:\n",(int)this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT() mf<%#X>\n",(int)this, T_Composite::name,
                           (int) mf));
           setConnectionManager(&_sconnmgr);
         }
@@ -67,24 +72,24 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (XMI_CollectiveRequest_t * request,
          XMI_Callback_t            cb_done,
-         CCMI_Consistency           consistency,
-         Geometry                 * geometry,
+         xmi_consistency_t           consistency,
+         XMI_GEOMETRY_CLASS                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         XMI_Dt                    dtype,
-         XMI_Op                    op,
+         xmi_dt                    dtype,
+         xmi_op                    op,
          int                        root = -1 )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, COMPOSITE::name,
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::generate() ALERT:\n",(int)this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage();
 
-          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
-          COMPOSITE *allreduce = new (c_request)
-          COMPOSITE(request,
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
+          T_Composite *allreduce = new (c_request)
+          T_Composite(request,
                     this->_mapping, &this->_sconnmgr, cb_done,
                     consistency, this->_moldinterface, geometry,
                     srcbuf, dstbuf, 0, count, dtype, op,
@@ -99,21 +104,21 @@ namespace CCMI
           return allreduce;
         }
 
-        CCMI::Schedule::Color getOneColor(Geometry * geometry)
+        CCMI::Schedule::Color getOneColor(XMI_GEOMETRY_CLASS * geometry)
         {
           return CCMI::Schedule::NO_COLOR;
         }
-        bool Analyze( Geometry * geometry )
+        bool Analyze( XMI_GEOMETRY_CLASS * geometry )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::Analyze() ALERT: %s\n",(int)this, COMPOSITE::name,
-                      COMPOSITE::analyze(geometry)? "true":"false"));
-          return COMPOSITE::analyze(geometry);
+          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::Analyze() ALERT: %s\n",(int)this, T_Composite::name,
+                      T_Composite::analyze(geometry)? "true":"false"));
+          return T_Composite::analyze(geometry);
         }
 
         static inline void _compile_time_assert_ ()
         {
           // Compile time assert
-          COMPILE_TIME_ASSERT(sizeof(COMPOSITE) <= sizeof(CCMI_Executor_t));
+          COMPILE_TIME_ASSERT(sizeof(T_Composite) <= sizeof(CCMI_Executor_t));
         }
       }; // class FactoryT
     };

@@ -456,7 +456,7 @@ namespace CCMI
 
       /// \brief Reset our phase state data based on changes to the schedule.
       ///
-      inline void resetPhaseData();
+//      inline void resetPhaseData();
 
       ///
       ///  \brief Move the code for reading phase state to an
@@ -498,7 +498,7 @@ namespace CCMI
       /// the configuration has changed.
       ///
       /// Call resetPhaseData() before resetReceives() to setup the
-      void resetReceives(unsigned infoRequired);
+//      void resetReceives(unsigned infoRequired);
 
       /// \brief Setup receive structures and allocate buffers
       ///

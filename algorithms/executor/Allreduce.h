@@ -54,13 +54,13 @@ namespace CCMI
     /// This executor stores persistent state/phase data, including buffer allocation,
     /// in an external class - AllreduceState.  The client should manage this class
     /// and free allocations when appropriate (AllreduceState::freeAllocations()).
-
-    class Allreduce : public AllreduceBase
+    template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
+    class Allreduce : public AllreduceBase<T_Mcast, T_Sysdep>
     {
     protected:
 
       // my persistent state data
-      AllreduceState*                        _state;
+      AllreduceState<T_Mcast, T_Sysdep>*                        _state;
 
       unsigned _nextRecvData;
 
@@ -89,9 +89,9 @@ namespace CCMI
       int         _delayAdvance;
 
       /// \brief Member function to be called by multisend cb_done static function
-      inline void notifySendDone(const XMIQuad &info);
+      inline void notifySendDone(const xmi_quad_t &info);
       /// \brief Member function to be called by postRecv cb_done static function
-      inline void notifyRecv(unsigned src, const XMIQuad &info, char * buf, unsigned bytes);
+      inline void notifyRecv(unsigned src, const xmi_quad_t &info, char * buf, unsigned bytes);
       /// \brief Advance the [all]reduce progress
       inline void advance();
     public:
@@ -101,7 +101,7 @@ namespace CCMI
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::reset() enter\n",(int)this));
         _state->resetPhaseData ();
-        _state->setDstBuf (&_dstbuf);
+        _state->setDstBuf (&this->_dstbuf);
 
         CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
         CCMI_assert(_state->getBytes() > 0);
@@ -114,20 +114,20 @@ namespace CCMI
       inline void postReceives();
 
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (void *cd, XMI_Error_t *err)
+      static void staticNotifySendDone (void *cd, xmi_result_t *err)
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifySendDone() enter\n",(int)((SendCallbackData *)cd)->me));
-        ((SendCallbackData *)cd)->me->notifySendDone (*(XMIQuad *)cd);
+        ((SendCallbackData *)cd)->me->notifySendDone (*(xmi_quad_t *)cd);
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifySendDone() exit\n",(int)((SendCallbackData *)cd)->me));
       }
 
       /// \brief Static function to be passed into the done of multisend postRecv
 
-      static void staticNotifyReceiveDone (void *cd, XMI_Error_t *err)
+      static void staticNotifyReceiveDone (void *cd, xmi_result_t *err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
-        XMIQuad *info = (XMIQuad *)cd;
+        xmi_quad_t *info = (xmi_quad_t *)cd;
 
         cdata->allreduce->notifyRecv((unsigned)-1, *info, NULL, (unsigned)-1);
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
@@ -150,8 +150,8 @@ namespace CCMI
       }
       /// \brief Default Constructor
       inline Allreduce () :
-      AllreduceBase(),
-      _state(&_astate),
+        AllreduceBase<T_Mcast, T_Sysdep>(),
+      _state(&this->_astate),
       _nextRecvData(0),
       //_sState[].sndReq        uninitialzed opaque storage
       //_sState[].sndClientData initialized at start
@@ -168,8 +168,8 @@ namespace CCMI
         TRACE_ALERT((stderr,"<%#.8X>Executor::Allreduce::ctor() ALERT:\n",(int)this));
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::ctor(void) enter\n",(int)this));
 
-        _sendCallbackHandler = staticNotifySendDone;
-        _recvCallbackHandler = staticNotifyReceiveDone;
+        this->_sendCallbackHandler = staticNotifySendDone;
+        this->_recvCallbackHandler = staticNotifyReceiveDone;
 
         TRACE_INIT((stderr, "<%#.8X>Executor::Allreduce::ctor(void) _sendCallbackHandler %#X, _recvCallbackHandler %#X\n",(int)this,
                     (int)_sendCallbackHandler,(int) _recvCallbackHandler));
@@ -183,13 +183,13 @@ namespace CCMI
       /// \param[in] connmgr the connection manager to use
       /// \param[in] state   the persistent state/phase data
       /// \param[in] comm    the communicator id of the collective
-      inline Allreduce(CollectiveMapping *map,
-                       ConnectionManager::ConnectionManager  * connmgr,
-                       CCMI_Consistency                        consistency,
+      inline Allreduce(T_Sysdep *map,
+                       T_ConnectionManager  * connmgr,
+                       xmi_consistency_t                        consistency,
                        const unsigned                          commID,
                        unsigned                                iteration) :
-      AllreduceBase(map,connmgr,consistency,commID,iteration,true),
-      _state(&_astate),
+        AllreduceBase<T_Mcast, T_Sysdep>(map,connmgr,consistency,commID,iteration,true),
+      _state(&this->_astate),
       _nextRecvData(0),
       //_sState[].sndReq        uninitialzed opaque storage
       //_sState[].sndClientData initialized at start
@@ -214,13 +214,17 @@ namespace CCMI
         TRACE_DATA(("this",(const char*)this, sizeof(*this)));
 #endif
 
-        _sendCallbackHandler = staticNotifySendDone;
-        _recvCallbackHandler = staticNotifyReceiveDone;
+        this->_sendCallbackHandler = staticNotifySendDone;
+        this->_recvCallbackHandler = staticNotifyReceiveDone;
 
         TRACE_INIT((stderr, "<%#.8X>Executor::Allreduce::ctor(void) _sendCallbackHandler %#X, _recvCallbackHandler %#X\n",(int)this,
                     (int)_sendCallbackHandler,(int) _recvCallbackHandler));
         /// \todo could be moved to state
-        _sendConnectionID = _rconnmgr->getConnectionId(_commID, (unsigned)-1, (unsigned)-1, _curRcvPhase, (unsigned)-1);
+        this->_sendConnectionID = this->_rconnmgr->getConnectionId(this->_commID,
+                                                                   (unsigned)-1,
+                                                                   (unsigned)-1,
+                                                                   _curRcvPhase,
+                                                                   (unsigned)-1);
 
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::ctor() exit\n",(int)this));
       }
@@ -240,16 +244,16 @@ namespace CCMI
                               unsigned         count,
                               unsigned         sizeOfType,
                               coremath  func,
-                              XMI_Op          op = XMI_UNDEFINED_OP,
-                              XMI_Dt          dt = XMI_UNDEFINED_DT)
+                              xmi_op          op = XMI_UNDEFINED_OP,
+                              xmi_dt          dt = XMI_UNDEFINED_DT)
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::setDataFunc() enter\n",(int)this));
         CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
         CCMI_assert(pipelineWidth % sizeOfType == 0);
 
-        _srcbuf        = (char *)srcbuf;
-        _dstbuf        = (char *)dstbuf;
-        _reduceFunc    = func;
+        this->_srcbuf        = (char *)srcbuf;
+        this->_dstbuf        = (char *)dstbuf;
+        this->_reduceFunc    = func;
 
         _state->setDataFunc(pipelineWidth,count,sizeOfType,op,dt);
 
@@ -285,10 +289,10 @@ namespace CCMI
       /// \brief Register the multicast interface
       ///
       /// \param[in]  mf
-      inline void setMulticastInterface(MultiSend::OldMulticastInterface * mf)
+      inline void setMulticastInterface(T_Mcast * mf)
       {
         CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
-        _msendInterface = mf;
+        this->_msendInterface = mf;
       }
 
       /// \brief Start [all]reduce
@@ -313,7 +317,7 @@ namespace CCMI
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
       ///
-      inline XMI_Request_t *   notifyRecvHead(const XMIQuad  * info,
+      inline XMI_Request_t *   notifyRecvHead(const xmi_quad_t  * info,
                                                unsigned          count,
                                                unsigned          peer,
                                                unsigned          sndlen,
@@ -327,15 +331,16 @@ namespace CCMI
       {
         // Compile time assert
         // SendState array must must fit in a request
-        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(XMI_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep>::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(XMI_CollectiveRequest_t));
       }
     }; // Allreduce
   };
 };// CCMI::Executor
 
 
+template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
 inline XMI_Request_t *
-CCMI::Executor::Allreduce::notifyRecvHead(const XMIQuad    * info,
+CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecvHead(const xmi_quad_t    * info,
                                           unsigned          count,
                                           unsigned          peer,
                                           unsigned          sndlen,
@@ -439,8 +444,8 @@ CCMI::Executor::Allreduce::notifyRecvHead(const XMIQuad    * info,
   return _state->getRecvReq()+_nextRecvData++;
 };
 
-
-inline void CCMI::Executor::Allreduce::postReceives()
+template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::postReceives()
 {
   // If receives are posted, sends do not require the info field.
   _sndInfoRequired = 0;
@@ -456,7 +461,11 @@ inline void CCMI::Executor::Allreduce::postReceives()
     for(unsigned j = 0; j < _state->getPhaseNumSrcPes(i); j++)
     {
       unsigned   srcrank = _state->getPhaseSrcPes(i,j);
-      unsigned   connID  = _rconnmgr->getRecvConnectionId(_commID, (unsigned)-1, srcrank, _curRcvPhase, (unsigned)-1);
+      unsigned   connID  = this->_rconnmgr->getRecvConnectionId(this->_commID,
+                                                                (unsigned)-1,
+                                                                srcrank,
+                                                                _curRcvPhase,
+                                                                (unsigned)-1);
       char     * buf     = _state->getPhaseRecvBufs(i,j);
 
       _state->setRecvClientAllreduce( _nextRecvData, this);
@@ -464,14 +473,14 @@ inline void CCMI::Executor::Allreduce::postReceives()
       _state->setRecvClientSrcPeIndex( _nextRecvData, j);
       cb_done.clientdata = _state->getRecvClient(_nextRecvData);
 
-      _msendInterface->postRecv(_state->getRecvReq()+_nextRecvData,
-                                &cb_done,
-                                connID,
-                                buf,
-                                _state->getBytes(),
-                                _state->getPipelineWidth(),
-                                _state->getPhaseSrcHints(i,j),
-                                _state->getOp(), _state->getDt());
+      this->_msendInterface->postRecv(_state->getRecvReq()+_nextRecvData,
+                                      &cb_done,
+                                      connID,
+                                      buf,
+                                      _state->getBytes(),
+                                      _state->getPipelineWidth(),
+                                      _state->getPhaseSrcHints(i,j),
+                                      _state->getOp(), _state->getDt());
 
       TRACE_INIT((stderr,"<%#.8X>Executor::Allreduce::postReceives() connID:%#X phase:%#X srcPeIndex :%#X buf:%#.8X bytes:%#X "
                   "pipelineWidth:%#X hints:%#X\n",(int)this,
@@ -482,8 +491,8 @@ inline void CCMI::Executor::Allreduce::postReceives()
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::postReceives() exit\n",(int)this));
 }
 
-
-inline void CCMI::Executor::Allreduce::start()
+template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
+inline void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::start()
 {
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::start() enter\n",(int)this));
   CCMI_assert(_state->getSchedule());
@@ -493,8 +502,8 @@ inline void CCMI::Executor::Allreduce::start()
   // reset send info
   for(int i = 0; i < CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS; i++)
   {
-    _sState[i].sndClientData.me        = this;
-    _sState[i].sndClientData.isDone    = true;
+    this->_sState[i].sndClientData.me        = this;
+    this->_sState[i].sndClientData.isDone    = true;
   }
 
   _numActiveSends   = 0;
@@ -536,20 +545,20 @@ inline void CCMI::Executor::Allreduce::start()
     unsigned sndIndex  = CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_SEND_INDEX;
 
     cb_done.function   = staticNotifySendDone;
-    cb_done.clientdata = &_sState[sndIndex].sndClientData;
+    cb_done.clientdata = &this->_sState[sndIndex].sndClientData;
 
-    _sState[sndIndex].sndClientData.isDone = false;
+    this->_sState[sndIndex].sndClientData.isDone = false;
 
     if(_sndInfoRequired)
     {
       // Setup the unexpected message header in case it's needed.
-      _sState[sndIndex].sndInfo._comm = _commID;
-      _sState[sndIndex].sndInfo._count  = _state->getCount();
-      _sState[sndIndex].sndInfo._phase= _state->getStartPhase();
-      _sState[sndIndex].sndInfo._dt = _state->getDt();
-      _sState[sndIndex].sndInfo._op = _state->getOp();
-      _sState[sndIndex].sndInfo._iteration = _state->getIteration();
-      _sState[sndIndex].sndInfo._root = _state->getRoot();
+      this->_sState[sndIndex].sndInfo._comm = this->_commID;
+      this->_sState[sndIndex].sndInfo._count  = _state->getCount();
+      this->_sState[sndIndex].sndInfo._phase= _state->getStartPhase();
+      this->_sState[sndIndex].sndInfo._dt = _state->getDt();
+      this->_sState[sndIndex].sndInfo._op = _state->getOp();
+      this->_sState[sndIndex].sndInfo._iteration = _state->getIteration();
+      this->_sState[sndIndex].sndInfo._root = _state->getRoot();
     }
 
     CCMI_assert(!_delayAdvance);
@@ -585,18 +594,18 @@ inline void CCMI::Executor::Allreduce::start()
                (_sndInfoRequired?_sState[sndIndex].sndInfo._root:-1),
                (int)&_sState[sndIndex].sndClientData));
 
-    _msendInterface->send(&_sState[sndIndex].sndReq,
+    this->_msendInterface->send(&this->_sState[sndIndex].sndReq,
                           &cb_done,
-                          _consistency,
-                          (XMIQuad *)(void *)(_sndInfoRequired?&_sState[sndIndex].sndInfo:NULL),
+                          this->_consistency,
+                          (xmi_quad_t *)(void *)(_sndInfoRequired?&this->_sState[sndIndex].sndInfo:NULL),
                           1,
-                          _sendConnectionID,
-                          _srcbuf,
-                          _state->getBytes(),
-                          _state->getPhaseDstHints(_state->getStartPhase()),
-                          _state->getPhaseDstPes(_state->getStartPhase()),
-                          _state->getPhaseNumDstPes(_state->getStartPhase()),
-                          _state->getOp(), _state->getDt());
+                          this->_sendConnectionID,
+                          this->_srcbuf,
+                          this->_state->getBytes(),
+                          this->_state->getPhaseDstHints(_state->getStartPhase()),
+                          this->_state->getPhaseDstPes(_state->getStartPhase()),
+                          this->_state->getPhaseNumDstPes(_state->getStartPhase()),
+                          this->_state->getOp(), _state->getDt());
     _delayAdvance = 0;  // advance() again
 
   }
@@ -622,8 +631,8 @@ inline void CCMI::Executor::Allreduce::start()
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::start() exit\n",(int)this));
 }
 
-
-void CCMI::Executor::Allreduce::notifyRecv(unsigned src, const XMIQuad & info, char * buf, unsigned bytes)
+template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
+void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecv(unsigned src, const xmi_quad_t & info, char * buf, unsigned bytes)
 {
   RecvCallbackData * cdata = (RecvCallbackData *)(&info);
   unsigned rphase = cdata->phase;
@@ -643,8 +652,8 @@ void CCMI::Executor::Allreduce::notifyRecv(unsigned src, const XMIQuad & info, c
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::notifyRecv() exit\n",(int)this));
 }
 
-
-void CCMI::Executor::Allreduce::notifySendDone(const XMIQuad & info)
+template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
+void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifySendDone(const xmi_quad_t & info)
 {
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::notifySendDone() enter\n",(int)this));
 
@@ -664,8 +673,8 @@ void CCMI::Executor::Allreduce::notifySendDone(const XMIQuad & info)
   TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::notifySendDone() exit\n",(int)this));
 }
 
-
-void CCMI::Executor::Allreduce::advance()
+template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
+void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance()
 {
   // Don't advance.  Probably in advance up the stack and doing a callback.  Delay it.
   if(_delayAdvance)
@@ -684,8 +693,8 @@ void CCMI::Executor::Allreduce::advance()
 
   // Don't advance (reduce) MPI_IN_PLACE until any initial send completes or we may reduce right
   // over what we're (still) sending.
-  if((_srcbuf ==_dstbuf) &&                      // MPI_IN_PLACE
-     !(_sState[CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_SEND_INDEX].sndClientData.isDone) // initial send is not done
+  if((this->_srcbuf ==this->_dstbuf) &&                      // MPI_IN_PLACE
+     !(this->_sState[CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_SEND_INDEX].sndClientData.isDone) // initial send is not done
     )
   {
     TRACE_ADVANCE((stderr,"<%#.8X>Executor::Allreduce::advance() MPI_IN_PLACE send not done\n",(int)this));
@@ -712,7 +721,7 @@ void CCMI::Executor::Allreduce::advance()
                  _curRcvChunk));
   // If our current active send is done and our current receive phase received some data, then
   // do reduction and maybe another send
-  while(_sState[curSndIndex].sndClientData.isDone &&
+  while(this->_sState[curSndIndex].sndClientData.isDone &&
         _curRcvPhase <= _state->getEndPhase() &&
         _state->getPhaseChunksRcvd(_curRcvPhase,_curSrcPeIndex) > _curRcvChunk)
   {
@@ -721,16 +730,16 @@ void CCMI::Executor::Allreduce::advance()
     unsigned numSrc    = _state->getPhaseNumSrcPes(_curRcvPhase);
     // Don't touch the dstbuf unless we're the root (or an allreduce)
     char * reduceBuf   = ((_state->getRoot() == -1) | (_state->getRoot() == (int)_state->getMyRank()))?
-                         _dstbuf : _state->getTempBuf();
+                         this->_dstbuf : _state->getTempBuf();
 
     // Reduce, if the schedule tells us to, otherwise we're just receiving or maybe multisend
     // did the reduce for us.
-    if(_state->getPhaseSrcHints(_curRcvPhase,_curSrcPeIndex) == CCMI_COMBINE_SUBTASK)
+    if(_state->getPhaseSrcHints(_curRcvPhase,_curSrcPeIndex) == XMI_COMBINE_SUBTASK)
     {
       //char * localbuf    = _curRcvPhase == _startRcvPhase ? (char*)_srcbuf : reduceBuf;
       //Suggested change from BRC as a fix for ShortRectangle.h (SK 07/29/08)
       char * localbuf    = ((_curRcvPhase == _startRcvPhase) && (_curSrcPeIndex == 0)) ?
-                           (char*)_srcbuf : reduceBuf;
+                           (char*)this->_srcbuf : reduceBuf;
 
       TRACE_REDUCEOP((stderr,"<%#.8X>Executor::Allreduce::advance() OP curphase:%#X curChunk:%#X "
                       "curSrcIndex :%#X func(%#X), count = %#X\n",(int)this,
@@ -742,7 +751,7 @@ void CCMI::Executor::Allreduce::advance()
       void *bufs[2] = { localbuf + bufOffset,
         _state->getPhaseRecvBufs(_curRcvPhase,_curSrcPeIndex) + bufOffset,
       };
-      _reduceFunc(reduceBuf + bufOffset,
+      this->_reduceFunc(reduceBuf + bufOffset,
                   bufs, 2,
                   count);
       TRACE_DATA(("reduceBuf",reduceBuf + bufOffset, count*_state->getSizeOfType()));
@@ -809,19 +818,19 @@ void CCMI::Executor::Allreduce::advance()
 
         if(_sndInfoRequired)
         {
-          _sState[curSndIndex].sndInfo._comm  = _commID;
-          _sState[curSndIndex].sndInfo._count   = _state->getCount();
-          _sState[curSndIndex].sndInfo._phase = nextActivePhase;
-          _sState[curSndIndex].sndInfo._dt    = _state->getDt();
-          _sState[curSndIndex].sndInfo._op    = _state->getOp();
-          _sState[curSndIndex].sndInfo._iteration = _state->getIteration();
-          _sState[curSndIndex].sndInfo._root  = _state->getRoot();
+          this->_sState[curSndIndex].sndInfo._comm  = this->_commID;
+          this->_sState[curSndIndex].sndInfo._count   =this-> _state->getCount();
+          this->_sState[curSndIndex].sndInfo._phase = nextActivePhase;
+          this->_sState[curSndIndex].sndInfo._dt    = this->_state->getDt();
+          this->_sState[curSndIndex].sndInfo._op    = this->_state->getOp();
+          this->_sState[curSndIndex].sndInfo._iteration = this->_state->getIteration();
+          this->_sState[curSndIndex].sndInfo._root  = this->_state->getRoot();
         }
 
         XMI_Callback_t cb_done;
-        _sState[curSndIndex].sndClientData.isDone = false;
+        this->_sState[curSndIndex].sndClientData.isDone = false;
         cb_done.function   = staticNotifySendDone;
-        cb_done.clientdata =  &(_sState[curSndIndex].sndClientData);
+        cb_done.clientdata =  &(this->_sState[curSndIndex].sndClientData);
 
         CCMI_assert(!_delayAdvance);
         _delayAdvance = 1;  // Don't let send callback all the way back into advance()
@@ -855,10 +864,10 @@ void CCMI::Executor::Allreduce::advance()
                    (_sndInfoRequired?_sState[curSndIndex].sndInfo._root:-1),
                    (int)&_sState[curSndIndex].sndClientData));
 
-        _msendInterface->send(&_sState[curSndIndex].sndReq,
+        this->_msendInterface->send(&this->_sState[curSndIndex].sndReq,
                               &cb_done,
-                              _consistency,
-                              (XMIQuad *)(void *)(_sndInfoRequired?&_sState[curSndIndex].sndInfo:NULL),
+                              this->_consistency,
+                              (xmi_quad_t *)(void *)(_sndInfoRequired?&this->_sState[curSndIndex].sndInfo:NULL),
                               1,
                               _sendConnectionID,
                               reduceBuf + bufOffset,
@@ -916,7 +925,7 @@ void CCMI::Executor::Allreduce::advance()
   {
     TRACE_ADVANCE((stderr,"<%#.8X>Executor::Allreduce::advance() DONE %#X/%#X\n",(int)this,
                    (int)_cb_done, (int)_clientdata));
-    if(_cb_done) (*_cb_done)(_clientdata, NULL);
+    if(this->_cb_done) (*this->_cb_done)(this->_clientdata, NULL);
     _curRcvPhase = CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE; // executer is done
     if((_state->getRoot() == -1) | (_state->getRoot() == (int)_state->getMyRank()))
       TRACE_DATA(("_dstbuf",_dstbuf, _state->getBytes()));

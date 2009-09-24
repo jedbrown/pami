@@ -15,8 +15,7 @@
 #ifndef __ccmi_adaptor_allreduce_factory_h__
 #define __ccmi_adaptor_allreduce_factory_h__
 
-#include "./Composite.h"
-#include "interface/Geometry.h"
+#include "algorithms/protocols/allreduce/Composite.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "math/math_coremath.h"
 
@@ -42,15 +41,15 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite *generate
-        (XMI_CollectiveRequest_t * request,
-         XMI_Callback_t            cb_done,
-         CCMI_Consistency           consistency,
-         Geometry                 * geometry,
+        (XMI_CollectiveRequest_t  * request,
+         XMI_Callback_t             cb_done,
+         xmi_consistency_t          consistency,
+         XMI_GEOMETRY_CLASS       * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         XMI_Dt                    dtype,
-         XMI_Op                    op,
+         xmi_dt                     dtype,
+         xmi_op                     op,
          int                        root = -1 ) = 0;
       }; // class BaseFactory
 
@@ -61,30 +60,30 @@ namespace CCMI
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
       ///
-      template<class MAP>
+      template<class T_Sysdep, class T_Mcast, class T_ConnectionManager>
       class Factory : public BaseFactory
       {
       protected:
         ///
         /// \brief Multisend interface
         ///
-        CCMI::MultiSend::OldMulticastInterface   * _moldinterface;
-        CCMI::MultiSend::MulticombineInterface   * _minterface;
+        T_Mcast   * _moldinterface;
+//        CCMI::MultiSend::MulticombineInterface   * _minterface;
 
         ///
         ///  \brief Connection Manager for the allreduce
         ///
-        CCMI::ConnectionManager::ConnectionManager   * _connmgr;
+        T_ConnectionManager   * _connmgr;
 
         ///
         /// \brief get geometry from comm id
         ///
-        CCMI_mapIdToGeometry               _cb_geometry;
+        xmi_mapidtogeometry_fn               _cb_geometry;
 
         ///
         /// \brief mapping module
         ///
-        MAP                          * _mapping;
+        T_Sysdep                          * _mapping;
 
         ///
         /// \brief Configuration flags
@@ -104,13 +103,13 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline Factory(MAP                                           * mapping,
-                       CCMI::MultiSend::OldMulticastInterface        * moldinterface,
-                       CCMI::MultiSend::MulticombineInterface        * minterface,
-                       CCMI_mapIdToGeometry                           cb_geometry,
-                       ConfigFlags                                   flags ) :
+        inline Factory(T_Sysdep                               * mapping,
+                       T_Mcast                                * moldinterface,
+//                       CCMI::MultiSend::MulticombineInterface        * minterface,
+                       xmi_mapidtogeometry_fn                            cb_geometry,
+                       ConfigFlags                                     flags ) :
         _moldinterface (moldinterface),
-        _minterface (minterface),
+//        _minterface (minterface),
         _connmgr    (NULL),
         _cb_geometry(cb_geometry),
         _mapping    (mapping),
@@ -124,7 +123,7 @@ namespace CCMI
         }
 
         inline void setConnectionManager
-        (CCMI::ConnectionManager::ConnectionManager  * connmgr)
+        (T_ConnectionManager  * connmgr)
         {
           _connmgr = connmgr;
         }
@@ -132,7 +131,7 @@ namespace CCMI
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
-        static XMI_Request_t *   cb_receiveHead(const XMIQuad  * info,
+        static XMI_Request_t *   cb_receiveHead(const xmi_quad_t  * info,
                                                  unsigned          count,
                                                  unsigned          peer,
                                                  unsigned          sndlen,
@@ -149,7 +148,7 @@ namespace CCMI
           CCMI_assert (info && arg);
           CollHeaderData  *cdata = (CollHeaderData *) info;
           Factory *factory = (Factory *) arg;
-          CCMI::Executor::AllreduceBase *allreduce =
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *allreduce =
           factory->getAllreduce(cdata->_comm, cdata->_iteration);
 
           CCMI_assert (allreduce != NULL);
@@ -168,14 +167,14 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::AllreduceBase * getAllreduce(unsigned comm,
+        CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> * getAllreduce(unsigned comm,
                                                unsigned color)
         {
           CCMI::Executor::Composite *composite =
-          ((Geometry *)_cb_geometry(comm))->getAllreduceComposite(color);
-          CCMI::Executor::AllreduceBase *executor = (composite)?
-                                              (CCMI::Executor::AllreduceBase *) composite->getExecutor (0):
-                                              (CCMI::Executor::AllreduceBase *)NULL;
+          ((XMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
+          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *executor = (composite)?
+                                              (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *) composite->getExecutor (0):
+                                              (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep> *)NULL;
 
           TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::Factory::"
                          "getAllreduce(comm id %#X, color %#X)"
