@@ -28,7 +28,7 @@ namespace XMI
 
       unsigned i, j;
       _sysdep->mapping.nodePeers (_num_procs);
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 0\n", sysdep->mapping.task()));
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 0 _num_procs = %zd\n", sysdep->mapping.task(), _num_procs));
 
       //_global_task = _sysdep->mapping.task ();
       
@@ -168,10 +168,12 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_sendQ ()
     {
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ () >> _num_procs = %zd\n", _sysdep->mapping.task(), _num_procs));
       unsigned peer;
 
       for (peer = 0; peer < _num_procs; peer++)
         advance_sendQ (peer);
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ () <<\n", _sysdep->mapping.task()));
     }
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
@@ -180,12 +182,15 @@ namespace XMI
       ShmemBaseMessage<T_Packet> * msg;
       size_t sequence;
 
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ (%zd) >>\n", _sysdep->mapping.task(), peer));
       while (!__sendQ[peer].isEmpty())
         {
           // There is a pending message on the send queue.
           msg = (ShmemBaseMessage<T_Packet> *) __sendQ[peer].peekHead ();
 
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ (%zd) .. before writeSinglePacket()\n", _sysdep->mapping.task(), peer));
           xmi_result_t result = writeSinglePacket (peer, msg, sequence);
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ (%zd) ..  after writeSinglePacket(), result = %zd\n", _sysdep->mapping.task(), peer, result));
 
           if (result == XMI_SUCCESS)
             {

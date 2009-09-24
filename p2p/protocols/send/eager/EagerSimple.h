@@ -246,21 +246,27 @@ namespace XMI
           inline void setConnection (size_t task, void * arg)
           {
             size_t peer = _msgDevice.task2peer (task);
-            assert(_connection[peer] == NULL);
+            TRACE_ERR((stderr, ">> EagerSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", task, arg, peer, _connection[peer]));
+            XMI_assert(_connection[peer] == NULL);
             _connection[peer] = arg;
+            TRACE_ERR((stderr, "<< EagerSimple::setConnection(%zd, %p)\n", task, arg));
           }
 
           inline void * getConnection (size_t task)
           {
             size_t peer = _msgDevice.task2peer (task);
-            assert(_connection[peer] != NULL);
+            TRACE_ERR((stderr, ">> EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
+            XMI_assert(_connection[peer] != NULL);
+            TRACE_ERR((stderr, "<< EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
             return _connection[peer];
           }
 
           inline void clearConnection (size_t task)
           {
             size_t peer = _msgDevice.task2peer (task);
+            TRACE_ERR((stderr, ">> EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
             _connection[peer] = NULL;
+            TRACE_ERR((stderr, "<< EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
           }
 
 
@@ -355,7 +361,7 @@ namespace XMI
           {
             short_metadata_t * m = (short_metadata_t *) metadata;
 
-            TRACE_ERR ((stderr, "dispatch_envelope_direct(), m->fromRank = %zd, m->bytes = %zd, m->ackinfo = %p\n", m->fromRank, m->bytes, m->ackinfo));
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->fromRank = %zd, m->bytes = %zd, m->ackinfo = %p\n", m->fromRank, m->bytes, m->ackinfo));
 
             EagerSimple<T_Model, T_Device, T_Message> * eager =
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
@@ -406,12 +412,16 @@ namespace XMI
                     eager->freeRecvState (state);
                   }
               }
+            else
+            {
+              state->received = 0;
+              state->sndlen = m->bytes;
 
-            state->received = 0;
-            state->sndlen = m->bytes;
+              // Set the eager connection.
+              eager->setConnection (m->fromRank, (void *)state);
+            }
 
-            // Set the eager connection.
-            eager->setConnection (m->fromRank, (void *)state);
+            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct()\n"));
 
             return 0;
           };
@@ -440,16 +450,19 @@ namespace XMI
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
             size_t fromRank = *((size_t *)metadata);
-            TRACE_ERR((stderr, "dispatch_data_direct(), fromRank = %zd, bytes = %zd\n", fromRank, bytes));
+            TRACE_ERR((stderr, ">> dispatch_data_direct(), fromRank = %zd, bytes = %zd\n", fromRank, bytes));
 
             recv_state_t * state = (recv_state_t *) eager->getConnection (fromRank);
-            assert(state != NULL);
+            XMI_assert(state != NULL);
 
             size_t nbyte = state->received;
             size_t nleft = state->info.data.simple.bytes - nbyte;
             size_t ncopy = bytes;
 
-            TRACE_ERR((stderr, "dispatch_data_direct(), fromRank = %zd, state->received = %zd, nleft = %zd, bytes = %zd\n", fromRank, state->received, nleft, bytes));
+            TRACE_ERR((stderr, "   dispatch_data_direct(), state->received = %zd, state->info.data.simple.bytes = %zd\n", state->received, state->info.data.simple.bytes));
+
+
+            TRACE_ERR((stderr, "   dispatch_data_direct(), fromRank = %zd, state->received = %zd, nleft = %zd, bytes = %zd\n", fromRank, state->received, nleft, bytes));
 
             if (nleft > 0)
               {
@@ -460,13 +473,13 @@ namespace XMI
                 memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, ncopy);
               }
 
-            TRACE_ERR((stderr, "dispatch_data_direct(), nbyte = %zd, ncopy = %zd\n", nbyte, ncopy));
+            TRACE_ERR((stderr, "   dispatch_data_direct(), nbyte = %zd, ncopy = %zd\n", nbyte, ncopy));
 
             if ((nbyte + ncopy) == state->sndlen)
               {
-                TRACE_ERR((stderr, "dispatch_data_direct(), before clearConnection()\n"));
+                TRACE_ERR((stderr, "   dispatch_data_direct(), before clearConnection()\n"));
                 eager->clearConnection (fromRank);
-                TRACE_ERR((stderr, "dispatch_data_direct(),  after clearConnection()\n"));
+                TRACE_ERR((stderr, "   dispatch_data_direct(),  after clearConnection()\n"));
 
                 if (state->info.local_fn)
                   state->info.local_fn (eager->_context,
@@ -486,11 +499,13 @@ namespace XMI
                                                   0);
                   }
 
+                TRACE_ERR((stderr, "<< dispatch_data_direct(), fromRank = %zd ... send completed\n", fromRank));
                 return 0;
               }
 
             state->received += ncopy;
 
+            TRACE_ERR((stderr, "<< dispatch_data_direct(), fromRank = %zd ... wait for more data\n", fromRank));
             return 0;
           };
 

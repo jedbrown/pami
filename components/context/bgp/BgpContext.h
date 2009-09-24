@@ -31,6 +31,9 @@
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
 
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+#endif
 
 namespace XMI
 {
@@ -39,7 +42,7 @@ namespace XMI
     typedef Fifo::FifoPacket <16,240> ShmemPacket;
     //typedef Device::Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
     //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
-    typedef Fifo::LinearFifo<Atomic::BgpAtomic,ShmemPacket,16> ShmemFifo;
+    typedef Fifo::LinearFifo<Atomic::BgpAtomic,ShmemPacket,128> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
     typedef Device::ShmemPacketDevice<SysDep::BgpSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
@@ -72,10 +75,7 @@ namespace XMI
           _sysdep (),
           _shmem ()
         {
-          //fprintf(stderr, "BgpContext() >>\n");
-          XMI::Mapping::Interface::nodeaddr_t addr;
           _shmem.init (&_sysdep);
-          //fprintf(stderr, "BgpContext() <<\n");
         }
 
         inline xmi_client_t getClientId_impl ()
@@ -85,7 +85,6 @@ namespace XMI
 
         inline xmi_result_t destroy_impl ()
         {
-          //return XMI_UNIMPL;
           return XMI_SUCCESS;
         }
 
@@ -148,7 +147,8 @@ namespace XMI
         inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
         {
           size_t id = (size_t)(parameters->send.dispatch);
-          assert (_dispatch[id] != NULL);
+          TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+          XMI_assert (_dispatch[id] != NULL);
 
           _dispatch[id]->send_simple_shmem.start (parameters->simple.local_fn,
                                                      parameters->simple.remote_fn,
@@ -159,6 +159,7 @@ namespace XMI
                                                      parameters->send.header.addr,
                                                      parameters->send.header.bytes);
 
+          TRACE_ERR((stderr, "<< send_impl('simple')\n"));
           return XMI_SUCCESS;
         }
 
@@ -335,22 +336,24 @@ namespace XMI
                                            void                     * cookie,
                                            xmi_send_hint_t            options)
         {
-          size_t index = (size_t) id;
-
-          if (_dispatch[index] != NULL) return XMI_ERROR;
-
-          // Allocate memory for the protocol objects.
-          protocol_t * p = (protocol_t *) _protocol.allocateObject ();
-
           xmi_result_t result = XMI_ERROR;
+          size_t index = (size_t) id;
+          TRACE_ERR((stderr, ">> dispatch_impl(), index = %zd\n", index));
+          if (_dispatch[index] == NULL)
+          {
+            // Allocate memory for the protocol objects.
+            protocol_t * p = (protocol_t *) _protocol.allocateObject ();
 
-          new ((void *)&(p->send_simple_shmem))
-            EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+            new ((void *)&(p->send_simple_shmem))
+              EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
 
-          new ((void *)&(p->send_immediate_shmem))
-            EagerImmediateShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+            new ((void *)&(p->send_immediate_shmem))
+              EagerImmediateShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
 
-          _dispatch[index] = p;
+            _dispatch[index] = p;
+          }
+
+          TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index]));
           return result;
         }
 
@@ -403,4 +406,5 @@ namespace XMI
   }; // end namespace Context
 }; // end namespace XMI
 
+#undef TRACE_ERR
 #endif // __components_context_bgp_bgpcontext_h__

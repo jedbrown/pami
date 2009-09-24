@@ -428,14 +428,18 @@ namespace XMI
       // Advance any pending send messages.
       if (__sendQMask != 0) advance_sendQ ();
 
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... __doneQMask = 0x%0x\n", _sysdep->mapping.task(), __doneQMask));
+
       // Advance any pending done messages.
       if (__doneQMask != 0) advance_doneQ ();
 
       // Advance any pending receive messages.
       T_Packet * pkt = NULL;
 
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before _rfifo->nextRecPacket()\n", _sysdep->mapping.task()));
       while ((pkt = _rfifo->nextRecPacket()) != NULL)
         {
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before pkt->getHeader()\n", _sysdep->mapping.task()));
           uint8_t * hdr = (uint8_t *) pkt->getHeader ();
 
           uint8_t id  = hdr[0];
@@ -447,8 +451,11 @@ namespace XMI
           _dispatch[id].function (meta, data, pkt->payloadSize(), _dispatch[id].clientdata);
 
           // Complete this message/packet and increment the fifo head.
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before _rfifo->consumePacket()\n", _sysdep->mapping.task()));
           _rfifo->consumePacket (pkt);
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ...  after _rfifo->consumePacket()\n", _sysdep->mapping.task()));
         }
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ...  after _rfifo->nextRecPacket()\n", _sysdep->mapping.task()));
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() <<\n", _sysdep->mapping.task()));
       return 0;

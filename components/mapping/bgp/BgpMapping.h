@@ -53,6 +53,10 @@ namespace XMI
             Interface::Base<BgpMapping>(),
             Interface::Torus<BgpMapping,4>(),
             Interface::Node<BgpMapping> (),
+            _task (0),
+            _size (0),
+            _nodes (0),
+            _peers (0),
             _x (__global.personality.xCoord()),
             _y (__global.personality.yCoord()),
             _z (__global.personality.zCoord()),
@@ -60,12 +64,6 @@ namespace XMI
             _mapcache (NULL),
             _rankcache (NULL)
         {
-//          _nodeaddr.coords.x = _x;
-  //        _nodeaddr.coords.y = _y;
-    //      _nodeaddr.coords.z = _z;
-      //    _nodeaddr.coords.t =  0;
-        //  _nodeaddr.local    = _t;
-          TRACE_ERR((stderr,"BgpMapping::BgpMapping() .. torus: (%zd %zd %zd %zd), node: (%zd %zd)\n", _x, _y, _z, _t, _nodeaddr.global, _nodeaddr.local));
         };
 
         inline ~BgpMapping () {};
@@ -453,10 +451,11 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
   for (i=0; i<_size; i++) task2node (i, _nodeaddr);
 
   task2node (_task, _nodeaddr);
-  
+
   size_t peer = 0;
   size_t task;
   size_t addr[4];
+  _peers = 0;
   addr[0] = _x;
   addr[1] = _y;
   addr[2] = _z;
@@ -466,6 +465,7 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
     {
       //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", addr[3], peer);
       _peercache[addr[3]] = peer++;
+      _peers++;
     }
   }
 
