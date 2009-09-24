@@ -1,4 +1,4 @@
-CFLAGS=-I.. -Wall -O3 -g
+CFLAGS=-I..
 all: xmi_adi.o
 clean:
 	${RM} *.o
