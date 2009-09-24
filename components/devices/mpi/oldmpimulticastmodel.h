@@ -134,6 +134,7 @@ namespace XMI
           msg->_buf      = buf;
           msg->_size     = size;
           msg->_pwidth   = pwidth;
+	  msg->_counter  = 0;
 //          msg->_hint     = hint;
 //          msg->_op       = op;
 //          msg->_dtype    = dtype;

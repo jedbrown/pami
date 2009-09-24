@@ -82,6 +82,7 @@ namespace XMI
       unsigned            _hint;
       xmi_op              _op;
       xmi_dt              _dtype;
+      size_t              _counter;
     };
     
   };

@@ -188,6 +188,8 @@ namespace XMI
                     MPIMcastRecvMessage _m_store;
                     if( !found )
                         {
+			  XMI_assert (mpi.recv_func != NULL);
+			  
                           mdi.recv_func (&msg->_info[0],
                                          msg->_info_count,
                                          sts.MPI_SOURCE,
@@ -211,6 +213,8 @@ namespace XMI
                           mcast->_hint     = XMI_PT_TO_PT_SUBTASK;
                           mcast->_op       = XMI_UNDEFINED_OP;
                           mcast->_dtype    = XMI_UNDEFINED_DT;
+			  mcast->_counter = 0;
+			  mcast->_dispatch_id = dispatch_id;
                           enqueue(mcast);
                         }
                     else
@@ -218,22 +222,46 @@ namespace XMI
                           mcast = (*it);
                         }
 
-		    if(mcast->_size)
-		      memcpy (mcast->_buf, msg->buffer(), mcast->_size);
-
-		    if(mcast->_pwidth == 0 && mcast->_buf == 0)
+		    if(mcast->_pwidth == 0 && mcast->_buf == 0) {
 		      if(mcast->_done_fn)
                         mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
+		      
+		      _mcastrecvQ.remove(mcast);
+		      free (msg);
+		      if(found)
+			free (mcast);
 
-		    for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
-		      if(mcast->_done_fn)
-                        mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+		      break;
+		    }
 
-                    _mcastrecvQ.remove(mcast);
+		    int bytes = mcast->_size - mcast->_counter;
+		    if (bytes > msg->_size) bytes = msg->_size;
+		    if(mcast->_size)
+		      memcpy (mcast->_buf + mcast->_counter, msg->buffer(), bytes);
+		    
+		    //printf ("dispatch %d matched posted receive %d %d %d %d\n", 
+		    //	    dispatch_id,
+		    //	    nbytes, mcast->_pwidth, mcast->_counter,
+		    //	    mcast->_size);
+		    
+		    //for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
+		    //if(mcast->_done_fn)
+		    //  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+		    
+		    XMI_assert (nbytes <= mcast->_pwidth);
+		    
+		    mcast->_counter += mcast->_pwidth;
+		    if(mcast->_done_fn)
+		      mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+		    
+		    if (mcast->_counter >= mcast->_size) {
+		      _mcastrecvQ.remove(mcast);
+		      if(found)
+			free (mcast);
+		    }
+
 		    free (msg);
-                    if(found)
-                      free (mcast);
-		  }
+		  }	      
 		  break;
 		}
 	    }
