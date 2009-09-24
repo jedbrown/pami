@@ -15,7 +15,7 @@
 #include "internal.h"
 
 
-void _core_int32_band(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_band(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&(b))
 
 #define TYPE int32_t
@@ -24,7 +24,7 @@ void _core_int32_band(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_bor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_bor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)|(b))
 
 #define TYPE int32_t
@@ -33,7 +33,7 @@ void _core_int32_bor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_bxor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_bxor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)^(b))
 
 #define TYPE int32_t
@@ -42,7 +42,7 @@ void _core_int32_bxor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_land(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_land(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&&(b))
 
 #define TYPE int32_t
@@ -51,7 +51,7 @@ void _core_int32_land(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_lor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_lor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)||(b))
 
 #define TYPE int32_t
@@ -60,7 +60,7 @@ void _core_int32_lor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_lxor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_lxor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)&&(!b))||((!a)&&(b)))
 
 #define TYPE int32_t
@@ -69,7 +69,7 @@ void _core_int32_lxor(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_max(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_max(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE int32_t
@@ -78,7 +78,7 @@ void _core_int32_max(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_min(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_min(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE int32_t
@@ -87,7 +87,7 @@ void _core_int32_min(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_prod(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_prod(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE int32_t
@@ -96,7 +96,7 @@ void _core_int32_prod(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_sum(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_sum(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)+(b))
 
 #define TYPE int32_t
@@ -105,7 +105,7 @@ void _core_int32_sum(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_int32_maxloc(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_int32_maxloc(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 > src1
@@ -120,7 +120,7 @@ void _core_int32_int32_maxloc(int32_int32_t *dst, const int32_int32_t **srcs, in
 	}
 }
 
-void _core_int32_int32_minloc(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_int32_minloc(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 < src1

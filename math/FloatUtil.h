@@ -12,8 +12,8 @@
  *
  * Detailed description.
  */
-#ifndef __core_FloatUtil_impl_h__
-#define __core_FloatUtil_impl_h__
+#ifndef __xmi_core_FloatUtil_impl_h__
+#define __xmi_core_FloatUtil_impl_h__
 #include <stdint.h>
 /* ********************************************************* */
 /* Datatype-to-tree conversion macros                        */

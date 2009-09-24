@@ -15,19 +15,19 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _core_uint64_band2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint32_band2((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count << 1);
+void _xmi_core_uint64_band2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+  _xmi_core_uint32_band2((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count << 1);
 }
 
-void _core_uint64_bor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint32_bor2((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count << 1);
+void _xmi_core_uint64_bor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+  _xmi_core_uint32_bor2((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count << 1);
 }
 
-void _core_uint64_bxor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
-  _core_uint32_bxor2((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count << 1);
+void _xmi_core_uint64_bxor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+  _xmi_core_uint32_bxor2((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count << 1);
 }
 
-void _core_uint64_land2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_land2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 
   uint64_t *dp = (uint64_t *)dst;
   const uint64_t *s0 = (const uint64_t *)srcs[0];
@@ -100,7 +100,7 @@ void _core_uint64_land2(uint64_t *dst, const uint64_t **srcs, int nsrc, int coun
   return;
 }
 
-void _core_uint64_lor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_lor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 
   uint64_t *dp = (uint64_t *)dst;
   const uint64_t *s0 = (const uint64_t *)srcs[0];
@@ -173,7 +173,7 @@ void _core_uint64_lor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
   return;
 }
 
-void _core_uint64_lxor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_lxor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 
   uint64_t *dp = (uint64_t *)dst;
   const uint64_t *s0 = (const uint64_t *)srcs[0];
@@ -246,7 +246,7 @@ void _core_uint64_lxor2(uint64_t *dst, const uint64_t **srcs, int nsrc, int coun
   return;
 }
 
-void _core_uint64_sum2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_sum2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 
   uint64_t *dp = (uint64_t *) dst;
   const uint64_t *s0 = (const uint64_t *) srcs[0];
@@ -304,7 +304,7 @@ void _core_uint64_sum2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
   return;
 }
 
-void _core_uint64_max2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_max2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE uint64_t
@@ -313,7 +313,7 @@ void _core_uint64_max2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
 #undef OP
 }
 
-void _core_uint64_min2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_min2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE uint64_t
@@ -322,7 +322,7 @@ void _core_uint64_min2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
 #undef OP
 }
 
-void _core_uint64_prod2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_prod2(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE uint64_t

@@ -15,7 +15,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _core_int32_max2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_max2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
   int32_t *dp = (int32_t *)dst;
   const int32_t *s0 = (const int32_t *)srcs[0];
@@ -95,7 +95,7 @@ void _core_int32_max2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_int32_min2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_min2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
   int32_t *dp = (int32_t *)dst;
   const int32_t *s0 = (const int32_t *)srcs[0];
@@ -165,7 +165,7 @@ void _core_int32_min2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_int32_prod2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_prod2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
 	const int32_t *s0 = srcs[0];
 	const int32_t *s1 = srcs[1];
@@ -244,7 +244,7 @@ void _core_int32_prod2(int32_t *dst, const int32_t **srcs, int nsrc, int count) 
 	return;
 }
 
-void _core_int32_sum2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_sum2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
 	const int32_t *s0 = srcs[0];
 	const int32_t *s1 = srcs[1];
@@ -323,7 +323,7 @@ void _core_int32_sum2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 	return;
 }
 
-void _core_int32_band4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_band4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 const int32_t *src0 = srcs[0];
 const int32_t *src1 = srcs[1];
 const int32_t *src2 = srcs[2];
@@ -336,7 +336,7 @@ const int32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_int32_bor4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_bor4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 const int32_t *src0 = srcs[0];
 const int32_t *src1 = srcs[1];
 const int32_t *src2 = srcs[2];
@@ -349,7 +349,7 @@ const int32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_int32_bxor4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_bxor4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 const int32_t *src0 = srcs[0];
 const int32_t *src1 = srcs[1];
 const int32_t *src2 = srcs[2];
@@ -362,7 +362,7 @@ const int32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_int32_max4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_max4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 const int32_t *src0 = srcs[0];
 const int32_t *src1 = srcs[1];
 const int32_t *src2 = srcs[2];
@@ -375,7 +375,7 @@ const int32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_int32_min4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_min4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 const int32_t *src0 = srcs[0];
 const int32_t *src1 = srcs[1];
 const int32_t *src2 = srcs[2];
@@ -388,7 +388,7 @@ const int32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_int32_prod4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_prod4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 const int32_t *src0 = srcs[0];
 const int32_t *src1 = srcs[1];
 const int32_t *src2 = srcs[2];
@@ -401,7 +401,7 @@ const int32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_int32_sum4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_sum4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 const int32_t *src0 = srcs[0];
 const int32_t *src1 = srcs[1];
 const int32_t *src2 = srcs[2];
@@ -414,7 +414,7 @@ const int32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_int32_band2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_band2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&(b))
 
 #define TYPE int32_t
@@ -423,7 +423,7 @@ void _core_int32_band2(int32_t *dst, const int32_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int32_bor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_bor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)|(b))
 
 #define TYPE int32_t
@@ -432,7 +432,7 @@ void _core_int32_bor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_bxor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_bxor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)^(b))
 
 #define TYPE int32_t
@@ -441,7 +441,7 @@ void _core_int32_bxor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int32_land2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_land2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&&(b))
 
 #define TYPE int32_t
@@ -450,7 +450,7 @@ void _core_int32_land2(int32_t *dst, const int32_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int32_lor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_lor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)||(b))
 
 #define TYPE int32_t
@@ -459,7 +459,7 @@ void _core_int32_lor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int32_lxor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_lxor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)&&(!b))||((!a)&&(b)))
 
 #define TYPE int32_t
@@ -468,7 +468,7 @@ void _core_int32_lxor2(int32_t *dst, const int32_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int32_int32_maxloc2(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_int32_maxloc2(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
   const int32_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -483,7 +483,7 @@ void _core_int32_int32_maxloc2(int32_int32_t *dst, const int32_int32_t **srcs, i
     }
 }
 
-void _core_int32_int32_minloc2(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int32_int32_minloc2(int32_int32_t *dst, const int32_int32_t **srcs, int nsrc, int count) {
   const int32_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)

@@ -15,7 +15,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _core_uint8_band2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_band2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   const uint8_t *s[2] = {srcs[0],srcs[1]};
   uint8_t *dp = (uint8_t *)dst;
@@ -28,12 +28,12 @@ void _core_uint8_band2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) 
     dp++;
   }
 
-  _core_uint32_band2((uint32_t *)dp, (const uint32_t **)s, nsrc, (count >> 2));
+  _xmi_core_uint32_band2((uint32_t *)dp, (const uint32_t **)s, nsrc, (count >> 2));
 
   return;
 }
 
-void _core_uint8_bor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_bor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   const uint8_t *s[2] = {srcs[0],srcs[1]};
   uint8_t *dp = (uint8_t *)dst;
@@ -46,12 +46,12 @@ void _core_uint8_bor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
     dp++;
   }
 
-  _core_uint32_bor2((uint32_t *)dp, (const uint32_t **)s, nsrc, (count >> 2));
+  _xmi_core_uint32_bor2((uint32_t *)dp, (const uint32_t **)s, nsrc, (count >> 2));
 
   return;
 }
 
-void _core_uint8_bxor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_bxor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   const uint8_t *s[2] = {srcs[0],srcs[1]};
   uint8_t *dp = (uint8_t *)dst;
@@ -64,12 +64,12 @@ void _core_uint8_bxor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) 
     dp++;
   }
 
-  _core_uint32_bxor2((uint32_t *)dp, (const uint32_t **)s, nsrc, (count >> 2));
+  _xmi_core_uint32_bxor2((uint32_t *)dp, (const uint32_t **)s, nsrc, (count >> 2));
 
   return;
 }
 
-void _core_uint8_land2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_land2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   uint8_t *dp = (uint8_t *)dst;
   const uint8_t *s0 = (const uint8_t *)srcs[0];
@@ -144,7 +144,7 @@ void _core_uint8_land2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) 
   return;
 }
 
-void _core_uint8_lor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_lor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   uint8_t *dp = (uint8_t *)dst;
   const uint8_t *s0 = (const uint8_t *)srcs[0];
@@ -206,7 +206,7 @@ void _core_uint8_lor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_uint8_lxor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_lxor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   uint8_t *dp = (uint8_t *)dst;
   const uint8_t *s0 = (const uint8_t *)srcs[0];
@@ -289,7 +289,7 @@ void _core_uint8_lxor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) 
   return;
 }
 
-void _core_uint8_max2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_max2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
   uint8_t *dp = (uint8_t *)dst;
   const uint8_t *s0 = (const uint8_t *)srcs[0];
   const uint8_t *s1 = (const uint8_t *)srcs[1];
@@ -371,7 +371,7 @@ void _core_uint8_max2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_uint8_min2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_min2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
   uint8_t *dp = (uint8_t *)dst;
   const uint8_t *s0 = (const uint8_t *)srcs[0];
   const uint8_t *s1 = (const uint8_t *)srcs[1];
@@ -436,7 +436,7 @@ void _core_uint8_min2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_uint8_prod2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_prod2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   uint8_t *dp = (uint8_t *)dst;
   const uint8_t *s0 = (const uint8_t *)srcs[0];
@@ -498,7 +498,7 @@ void _core_uint8_prod2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) 
   return;
 }
 
-void _core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
+void _xmi_core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, int count) {
 
   const uint8_t *s0 = (const uint8_t *)srcs[0];
   const uint8_t *s1 = (const uint8_t *)srcs[1];

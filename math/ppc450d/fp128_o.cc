@@ -16,7 +16,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _core_fp128_max2(long double *dst, const long double **srcs, int nsrc, int count) {
+void _xmi_core_fp128_max2(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE long double
@@ -25,7 +25,7 @@ void _core_fp128_max2(long double *dst, const long double **srcs, int nsrc, int 
 #undef OP
 }
 
-void _core_fp128_min2(long double *dst, const long double **srcs, int nsrc, int count) {
+void _xmi_core_fp128_min2(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE long double
@@ -34,7 +34,7 @@ void _core_fp128_min2(long double *dst, const long double **srcs, int nsrc, int 
 #undef OP
 }
 
-void _core_fp128_prod2(long double *dst, const long double **srcs, int nsrc, int count) {
+void _xmi_core_fp128_prod2(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE long double
@@ -43,7 +43,7 @@ void _core_fp128_prod2(long double *dst, const long double **srcs, int nsrc, int
 #undef OP
 }
 
-void _core_fp128_sum2(long double *dst, const long double **srcs, int nsrc, int count) {
+void _xmi_core_fp128_sum2(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)+(b))
 
 #define TYPE long double

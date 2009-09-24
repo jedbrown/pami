@@ -15,7 +15,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _core_uint32_band2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_band2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 	const uint32_t *s0 = srcs[0];
 	const uint32_t *s1 = srcs[1];
 	int num;
@@ -93,7 +93,7 @@ void _core_uint32_band2(uint32_t *dst, const uint32_t **srcs, int nsrc, int coun
 	return;
 }
 
-void _core_uint32_bor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_bor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 	const uint32_t *s0 = srcs[0];
 	const uint32_t *s1 = srcs[1];
 	int num;
@@ -171,7 +171,7 @@ void _core_uint32_bor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count
 	return;
 }
 
-void _core_uint32_bxor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_bxor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 	const uint32_t *s0 = srcs[0];
 	const uint32_t *s1 = srcs[1];
 	int num;
@@ -249,7 +249,7 @@ void _core_uint32_bxor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int coun
 	return;
 }
 
-void _core_uint32_land2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_land2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 
   uint32_t *dp = (uint32_t *)dst;
   const uint32_t *s0 = (const uint32_t *)srcs[0];
@@ -378,7 +378,7 @@ void _core_uint32_land2(uint32_t *dst, const uint32_t **srcs, int nsrc, int coun
   return;
 }
 
-void _core_uint32_lor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_lor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 
   const uint32_t *s0 = (const uint32_t *)srcs[0];
   const uint32_t *s1 = (const uint32_t *)srcs[1];
@@ -488,7 +488,7 @@ void _core_uint32_lor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count
   return;
 }
 
-void _core_uint32_lxor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_lxor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 
   uint32_t *dp = (uint32_t *)dst;
   const uint32_t *s0 = (const uint32_t *)srcs[0];
@@ -625,7 +625,7 @@ void _core_uint32_lxor2(uint32_t *dst, const uint32_t **srcs, int nsrc, int coun
   return;
 }
 
-void _core_uint32_max2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_max2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 
   uint32_t *dp = (uint32_t *)dst;
   const uint32_t *s0 = (const uint32_t *)srcs[0];
@@ -704,7 +704,7 @@ void _core_uint32_max2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count
   return;
 }
 
-void _core_uint32_min2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_min2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 
   uint32_t *dp = (uint32_t *)dst;
   const uint32_t *s0 = (const uint32_t *)srcs[0];
@@ -787,7 +787,7 @@ void _core_uint32_min2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count
   return;
 }
 
-void _core_uint32_prod2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_prod2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 	const uint32_t *s0 = srcs[0];
 	const uint32_t *s1 = srcs[1];
 	int num;
@@ -864,7 +864,7 @@ void _core_uint32_prod2(uint32_t *dst, const uint32_t **srcs, int nsrc, int coun
 	return;
 }
 
-void _core_uint32_sum2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_sum2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 	//fprintf (stderr, ">> Core_uint32_sum()\n");
 
 	const uint32_t *s0 = srcs[0];
@@ -944,7 +944,7 @@ void _core_uint32_sum2(uint32_t *dst, const uint32_t **srcs, int nsrc, int count
 	return;
 }
 
-void _core_uint32_band4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_band4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 const uint32_t *src0 = srcs[0];
 const uint32_t *src1 = srcs[1];
 const uint32_t *src2 = srcs[2];
@@ -957,7 +957,7 @@ const uint32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_uint32_bor4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_bor4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 const uint32_t *src0 = srcs[0];
 const uint32_t *src1 = srcs[1];
 const uint32_t *src2 = srcs[2];
@@ -970,7 +970,7 @@ const uint32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_uint32_bxor4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_bxor4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 const uint32_t *src0 = srcs[0];
 const uint32_t *src1 = srcs[1];
 const uint32_t *src2 = srcs[2];
@@ -983,7 +983,7 @@ const uint32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_uint32_max4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_max4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 const uint32_t *src0 = srcs[0];
 const uint32_t *src1 = srcs[1];
 const uint32_t *src2 = srcs[2];
@@ -996,7 +996,7 @@ const uint32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_uint32_min4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_min4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 const uint32_t *src0 = srcs[0];
 const uint32_t *src1 = srcs[1];
 const uint32_t *src2 = srcs[2];
@@ -1009,7 +1009,7 @@ const uint32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_uint32_prod4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_prod4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 const uint32_t *src0 = srcs[0];
 const uint32_t *src1 = srcs[1];
 const uint32_t *src2 = srcs[2];
@@ -1022,7 +1022,7 @@ const uint32_t *src3 = srcs[3];
 	return;
 }
 
-void _core_uint32_sum4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
+void _xmi_core_uint32_sum4(uint32_t *dst, const uint32_t **srcs, int nsrc, int count) {
 const uint32_t *src0 = srcs[0];
 const uint32_t *src1 = srcs[1];
 const uint32_t *src2 = srcs[2];

@@ -16,7 +16,7 @@
 #include "FloatUtil.h"
 #include "internal.h"
 
-void _core_fp32_max(float *dst, const float **srcs, int nsrc, int count) {
+void _xmi_core_fp32_max(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE float
@@ -25,7 +25,7 @@ void _core_fp32_max(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_fp32_min(float *dst, const float **srcs, int nsrc, int count) {
+void _xmi_core_fp32_min(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE float
@@ -34,7 +34,7 @@ void _core_fp32_min(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_fp32_prod(float *dst, const float **srcs, int nsrc, int count) {
+void _xmi_core_fp32_prod(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE float
@@ -43,7 +43,7 @@ void _core_fp32_prod(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_fp32_sum(float *dst, const float **srcs, int nsrc, int count) {
+void _xmi_core_fp32_sum(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)+(b))
 
 #define TYPE float
@@ -52,7 +52,7 @@ void _core_fp32_sum(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 > src1
@@ -67,7 +67,7 @@ void _core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int n
 	}
 }
 
-void _core_fp32_fp32_maxloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
+void _xmi_core_fp32_fp32_maxloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 > src1
@@ -82,7 +82,7 @@ void _core_fp32_fp32_maxloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc
 	}
 }
 
-void _core_fp32_int32_minloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_fp32_int32_minloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 < src1
@@ -97,7 +97,7 @@ void _core_fp32_int32_minloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int n
 	}
 }
 
-void _core_fp32_fp32_minloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
+void _xmi_core_fp32_fp32_minloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 < src1

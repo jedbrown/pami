@@ -15,7 +15,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _core_int16_max2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_max2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 
   int16_t *dp = (int16_t *)dst;
   const int16_t *s0 = (const int16_t *)srcs[0];
@@ -96,7 +96,7 @@ void _core_int16_max2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_int16_min2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_min2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 
   int16_t *dp = (int16_t *)dst;
   const int16_t *s0 = (const int16_t *)srcs[0];
@@ -176,7 +176,7 @@ void _core_int16_min2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_int16_prod2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_prod2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 
   int16_t *dp = (int16_t *)dst;
   const int16_t *s0 = (const int16_t *)srcs[0];
@@ -291,7 +291,7 @@ void _core_int16_prod2(int16_t *dst, const int16_t **srcs, int nsrc, int count) 
   return;
 }
 
-void _core_int16_sum2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_sum2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 
   const int16_t *s0 = (const int16_t *)srcs[0];
   const int16_t *s1 = (const int16_t *)srcs[1];
@@ -357,7 +357,7 @@ void _core_int16_sum2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
   return;
 }
 
-void _core_int16_band2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_band2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&(b))
 
 #define TYPE int16_t
@@ -366,7 +366,7 @@ void _core_int16_band2(int16_t *dst, const int16_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int16_bor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_bor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)|(b))
 
 #define TYPE int16_t
@@ -375,7 +375,7 @@ void _core_int16_bor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int16_bxor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_bxor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)^(b))
 
 #define TYPE int16_t
@@ -384,7 +384,7 @@ void _core_int16_bxor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int16_land2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_land2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&&(b))
 
 #define TYPE int16_t
@@ -393,7 +393,7 @@ void _core_int16_land2(int16_t *dst, const int16_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int16_lor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_lor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)||(b))
 
 #define TYPE int16_t
@@ -402,7 +402,7 @@ void _core_int16_lor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _core_int16_lxor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_lxor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)&&(!b))||((!a)&&(b)))
 
 #define TYPE int16_t
@@ -411,7 +411,7 @@ void _core_int16_lxor2(int16_t *dst, const int16_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _core_int16_int32_maxloc2(int16_int32_t *dst, const int16_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_int32_maxloc2(int16_int32_t *dst, const int16_int32_t **srcs, int nsrc, int count) {
   const int16_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -426,7 +426,7 @@ void _core_int16_int32_maxloc2(int16_int32_t *dst, const int16_int32_t **srcs, i
     }
 }
 
-void _core_int16_int32_minloc2(int16_int32_t *dst, const int16_int32_t **srcs, int nsrc, int count) {
+void _xmi_core_int16_int32_minloc2(int16_int32_t *dst, const int16_int32_t **srcs, int nsrc, int count) {
   const int16_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)

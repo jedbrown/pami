@@ -14,7 +14,7 @@
 #include "math_coremath.h"
 #include "internal.h"
 
-void _core_uint64_band(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_band(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&(b))
 
 #define TYPE uint64_t
@@ -23,7 +23,7 @@ void _core_uint64_band(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
 #undef OP
 }
 
-void _core_uint64_bor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_bor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)|(b))
 
 #define TYPE uint64_t
@@ -32,7 +32,7 @@ void _core_uint64_bor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _core_uint64_bxor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_bxor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)^(b))
 
 #define TYPE uint64_t
@@ -41,7 +41,7 @@ void _core_uint64_bxor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
 #undef OP
 }
 
-void _core_uint64_land(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_land(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&&(b))
 
 #define TYPE uint64_t
@@ -50,7 +50,7 @@ void _core_uint64_land(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
 #undef OP
 }
 
-void _core_uint64_lor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_lor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)||(b))
 
 #define TYPE uint64_t
@@ -59,7 +59,7 @@ void _core_uint64_lor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _core_uint64_lxor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_lxor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)&&(!b))||((!a)&&(b)))
 
 #define TYPE uint64_t
@@ -68,7 +68,7 @@ void _core_uint64_lxor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
 #undef OP
 }
 
-void _core_uint64_max(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_max(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE uint64_t
@@ -77,7 +77,7 @@ void _core_uint64_max(uint64_t *dst, const uint64_t **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _core_uint64_min(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_min(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE uint64_t
@@ -86,7 +86,7 @@ void _core_uint64_min(uint64_t *dst, const uint64_t **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _core_uint64_prod(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_prod(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE uint64_t
@@ -95,7 +95,7 @@ void _core_uint64_prod(uint64_t *dst, const uint64_t **srcs, int nsrc, int count
 #undef OP
 }
 
-void _core_uint64_sum(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
+void _xmi_core_uint64_sum(uint64_t *dst, const uint64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)+(b))
 
 #define TYPE uint64_t
