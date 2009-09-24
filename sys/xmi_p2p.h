@@ -51,14 +51,14 @@ extern "C"
    */
   typedef struct
   {
-    xmi_dispatch_t         dispatch; /**< Dispatch identifier */
-    xmi_send_hint_t        hints;    /**< Hints for sending the message */
-    size_t                 task;     /**< Destination task */
-    void                 * cookie;   /**< Argument to \b all event callbacks */
+    size_t            dispatch; /**< Dispatch identifier */
+    xmi_send_hint_t   hints;    /**< Hints for sending the message */
+    size_t            task;     /**< Destination task */
+    void            * cookie;   /**< Argument to \b all event callbacks */
     struct
     {
-      size_t               bytes;    /**< Header buffer size in bytes */
-      void               * addr;     /**< Header buffer address */
+      size_t          bytes;    /**< Header buffer size in bytes */
+      void          * addr;     /**< Header buffer address */
     } header;                        /**< Send message metadata header */
   } xmi_send_t;
 

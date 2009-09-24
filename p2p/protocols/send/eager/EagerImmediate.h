@@ -77,7 +77,7 @@ namespace XMI
           /// \param[in]  context      Communication context
           /// \param[out] status       Constructor status
           ///
-          inline EagerImmediate (xmi_dispatch_t             dispatch,
+          inline EagerImmediate (size_t                     dispatch,
                                  xmi_dispatch_callback_fn   dispatch_fn,
                                  void                     * cookie,
                                  T_Device                 & device,

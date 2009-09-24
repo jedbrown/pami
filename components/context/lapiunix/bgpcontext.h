@@ -75,7 +75,7 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
-        inline xmi_result_t dispatch_impl (xmi_dispatch_t             id,
+        inline xmi_result_t dispatch_impl (size_t                     id,
                                            xmi_dispatch_callback_fn   fn,
                                            void                     * cookie,
                                            xmi_send_hint_t            options)

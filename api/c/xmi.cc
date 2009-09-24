@@ -505,7 +505,7 @@ extern "C"  xmi_result_t XMI_Geometry_algorithm_info (xmi_context_t context,
 /// \copydoc XMI_Multisend_getroles
 ///
 extern "C" xmi_result_t XMI_Multisend_getroles(xmi_context_t   context,
-                                               xmi_dispatch_t  dispatch,
+                                               size_t          dispatch,
                                                int            *numRoles,
                                                int            *replRole)
 {
@@ -562,7 +562,7 @@ extern "C" xmi_result_t XMI_Multicombine(xmi_context_t       context,
 /// \copydoc XMI_Dispatch_set
 ///
 extern "C" xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
-                                          xmi_dispatch_t             dispatch,
+                                          size_t                     dispatch,
                                           xmi_dispatch_callback_fn   fn,
                                           void                     * cookie,
                                           xmi_send_hint_t            options)

@@ -111,7 +111,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  xmi_dispatch_t dispatch = 0;
+  size_t dispatch = 0;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options;

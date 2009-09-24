@@ -45,7 +45,6 @@ extern "C"
   typedef void* xmi_client_t;   /**< ??? */
   typedef void* xmi_context_t;  /**< ??? */
   typedef void* xmi_hint_t;     /**< ??? */
-  typedef void* xmi_dispatch_t; /**< ??? */
   typedef void* xmi_type_t;     /**< ??? */
 
   /**

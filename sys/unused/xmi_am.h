@@ -91,7 +91,7 @@ typedef struct {
  * \brief Active message send parameter structure
  */
 typedef struct {
-  xmi_dispatch_t         dispatch; /**< Dispatch identifier */
+  size_t                 dispatch; /**< Dispatch identifier */
   xmi_send_hint_t        hints;    /**< Hints for sending the message */
   size_t                 task;     /**< Destination task */
   void                 * cookie;   /**< Argument to \b all event callbacks */

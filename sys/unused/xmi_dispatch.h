@@ -31,7 +31,7 @@ typedef enum
  *
  */
 xmi_result_t XMI_Dispatch_set (xmi_context_t           * context,
-                               xmi_dispatch_t            dispatch,
+                               size_t                    dispatch,
                                xmi_dispatch_callback_t   fn,
                                void                    * cookie,
                                xmi_option_t              options);

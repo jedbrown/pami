@@ -105,10 +105,10 @@ extern "C"
      *				or -1 if no additional roles are used.
      * \return	success or failure
      */
-    xmi_result_t XMI_Multisend_getroles(xmi_context_t   context,
-                                        xmi_dispatch_t  dispatch,
-                                        int            *numRoles,
-                                        int            *replRole);
+    xmi_result_t XMI_Multisend_getroles(xmi_context_t  context,
+                                        size_t         dispatch,
+                                        int           *numRoles,
+                                        int           *replRole);
 
     /**
      * \brief Recv callback for Multicast

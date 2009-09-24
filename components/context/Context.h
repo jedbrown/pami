@@ -110,14 +110,14 @@ namespace XMI
                                                    xmi_geometry_t geometry,
                                                    xmi_xfer_type_t ctype,
                                                    int *lists_lengths);
-      
+
       inline xmi_result_t geometry_algorithm_info (xmi_context_t context,
                                                    xmi_geometry_t geometry,
                                                    xmi_xfer_type_t type,
                                                    xmi_algorithm_t algorithm,
                                                    int algorithm_type,
-                                                   xmi_metadata_t *mdata);        
-        inline xmi_result_t multisend_getroles(xmi_dispatch_t  dispatch,
+                                                   xmi_metadata_t *mdata);
+        inline xmi_result_t multisend_getroles(size_t          dispatch,
                                                int            *numRoles,
                                                int            *replRole);
 
@@ -130,7 +130,7 @@ namespace XMI
         inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo);
 
 
-        inline xmi_result_t dispatch (xmi_dispatch_t             dispatch,
+        inline xmi_result_t dispatch (size_t                     dispatch,
                                       xmi_dispatch_callback_fn   fn,
                                       void                     * cookie,
                                       xmi_send_hint_t            options);
@@ -373,7 +373,7 @@ namespace XMI
                                                               int *lists_lengths)
     {
       return static_cast<T_Context*>(this)->geometry_algorithms_num_impl(context,
-                                                                         geometry, 
+                                                                         geometry,
                                                                          coll_type,
                                                                          lists_lengths);
     }
@@ -388,16 +388,16 @@ namespace XMI
                                                                  xmi_metadata_t *mdata)
     {
       return static_cast<T_Context*>(this)->geometry_algorithm_info(context,
-                                                                    geometry, 
+                                                                    geometry,
                                                                     type,
                                                                     algorithm,
                                                                     algorithm_type,
                                                                     mdata);
-    
+
     }
-    
+
     template <class T_Context>
-    xmi_result_t Context<T_Context>::multisend_getroles(xmi_dispatch_t  dispatch,
+    xmi_result_t Context<T_Context>::multisend_getroles(size_t          dispatch,
                                                         int            *numRoles,
                                                         int            *replRole)
     {
@@ -429,7 +429,7 @@ namespace XMI
     }
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::dispatch (xmi_dispatch_t             dispatch,
+    xmi_result_t Context<T_Context>::dispatch (size_t                     dispatch,
                                                xmi_dispatch_callback_fn   fn,
                                                void                     * cookie,
                                                xmi_send_hint_t            options)

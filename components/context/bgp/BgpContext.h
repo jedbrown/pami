@@ -330,7 +330,7 @@ namespace XMI
 
 
 
-        inline xmi_result_t dispatch_impl (xmi_dispatch_t             id,
+        inline xmi_result_t dispatch_impl (size_t                     id,
                                            xmi_dispatch_callback_fn   fn,
                                            void                     * cookie,
                                            xmi_send_hint_t            options)
@@ -354,7 +354,7 @@ namespace XMI
           return result;
         }
 
-        inline xmi_result_t multisend_getroles(xmi_dispatch_t  dispatch,
+        inline xmi_result_t multisend_getroles(size_t          dispatch,
                                                int            *numRoles,
                                                int            *replRole)
         {

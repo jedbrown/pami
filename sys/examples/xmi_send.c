@@ -201,7 +201,7 @@ void do_test ()
      function needs to be initialized, however, this single dispatch function
      must handle both cases - synchronous and asynchronous.
    */
-  xmi_dispatch_t generic_id = 1;
+  size_t generic_id = 1;
   result = XMI_Dispatch_set (&context,
                              generic_id,
                              generic_recv_fn,
@@ -252,7 +252,7 @@ void do_test ()
      if a synchronous receive is dispatched to this asynchronous function the
      code will assert or otherwise fail. This case is considered a program error.
    */
-  xmi_dispatch_t async_id = 2;
+  size_t async_id = 2;
   result = XMI_Dispatch_set (&context,
                              async_id,
                              async_recv_fn,
@@ -288,7 +288,7 @@ void do_test ()
      if an asynchronous receive is dispatched to this synchronous function the
      code will assert or otherwise fail. This case is considered a program error.
    */
-  xmi_dispatch_t sync_id = 3;
+  size_t sync_id = 3;
   result = XMI_Dispatch_set (&context,
                              sync_id,
                              sync_recv_fn,
