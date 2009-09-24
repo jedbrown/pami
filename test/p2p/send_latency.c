@@ -41,7 +41,7 @@ volatile unsigned _recv_active;
 volatile unsigned _recv_iteration;
 char              _recv_buffer[BUFSIZE] __attribute__ ((__aligned__(16)));
 
-xmi_dispatch_t _dispatch[100];
+size_t         _dispatch[100];
 unsigned       _dispatch_count;
 
 size_t _my_rank;
@@ -112,7 +112,7 @@ void recv_once (xmi_context_t context)
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (xmi_context_t context, xmi_dispatch_t dispatch, size_t sndlen, size_t myrank)
+unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, size_t myrank)
 {
   TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
   _recv_active = 1;
@@ -184,7 +184,7 @@ int main ()
   double clockMHz = 850.0;
 
   TRACE_ERR((stderr, "... before barrier_init()\n"));
-  barrier_init (context, (xmi_dispatch_t)0);
+  barrier_init (context, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));
 
 
@@ -193,9 +193,9 @@ int main ()
   unsigned i, j, k = 0;
   _dispatch_count = 0;
 
-  _dispatch[_dispatch_count] = (void *) (_dispatch_count + 1);
+  _dispatch[_dispatch_count] = _dispatch_count + 1;
 
-  xmi_dispatch_t dispatch = (void *)1;
+  size_t dispatch = 1;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options;

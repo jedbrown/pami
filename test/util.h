@@ -38,7 +38,7 @@ size_t __barrier_size;
 size_t __barrier_task;
 size_t __barrier_next_task;
 
-xmi_dispatch_t __barrier_dispatch;
+size_t         __barrier_dispatch;
 xmi_context_t  __barrier_context;
 
 
@@ -124,7 +124,7 @@ void barrier ()
   return;
 }
 
-void barrier_init (xmi_context_t context, xmi_dispatch_t dispatch)
+void barrier_init (xmi_context_t context, size_t dispatch)
 {
   TRACE_ERR((stderr, "enter barrier_init() ...\n"));
   
