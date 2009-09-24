@@ -6,13 +6,13 @@
 #ifndef __xmi_collective_advisor_h__
 #define __xmi_collective_advisor_h__
 
-#include "xmi_types.h"
+#include "xmi.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-  
+
   typedef struct
   {
     xmi_algorithm_t algorithm;
@@ -24,7 +24,7 @@ extern "C"
   xmi_result_t XMI_Collective_Advisor_finalize (xmi_context_t context);
   xmi_result_t XMI_Collective_via_advisor (xmi_context_t context,
                                            xmi_xfer_t *cmd,
-                                           xmi_metadata_t cs_meta);  
+                                           xmi_metadata_t cs_meta);
 
 
   /**
@@ -41,7 +41,7 @@ extern "C"
    */
   xmi_result_t XMI_Collective_via_advisor (xmi_context_t context,
                                            xmi_xfer_t *cmd,
-                                           xmi_metadata_t cs_meta);  
+                                           xmi_metadata_t cs_meta);
 
 #ifdef __cplusplus
 };

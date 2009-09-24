@@ -1,4 +1,4 @@
 CFLAGS=-I../..
-all: xmi_config_test.o
+all:
 clean:
 	${RM} *.o
