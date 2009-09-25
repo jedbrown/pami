@@ -36,7 +36,7 @@ namespace BGP {
 class CNBroadcastModel;
 class CNBroadcastMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNBroadcastThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNBroadcastModel,CNDevice,CNBroadcastMessage,CNBroadcastThread,2> CNBroadcastDevice;
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> CNBroadcastDevice;
 
 };	// BGP
 };	// Device
@@ -80,7 +80,7 @@ public:
 	inline void complete();
 protected:
 	//friend class CNBroadcastDevice;
-	friend class XMI::Device::Generic::SharedQueueSubDevice<CNBroadcastModel,CNDevice,CNBroadcastMessage,CNBroadcastThread,2>;
+	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>;
 
 	inline int __setThreads(CNBroadcastThread *t, int n) {
 		int nt = 0;
@@ -202,7 +202,7 @@ public:
 	XMI::Device::Interface::MulticastModel<CNBroadcastModel>(status)
 	{
 		_dispatch_id = _g_cnbroadcast_dev.newDispID();
-		_me = _g_cnbroadcast_dev.getSysdep()->mapping().rank();
+		_me = _g_cnbroadcast_dev.common()->getSysdep()->mapping.task();
 	}
 
 	inline bool postMulticast_impl(xmi_multicast_t *mcast);
@@ -210,9 +210,6 @@ public:
 private:
 	size_t _me;
 	unsigned _dispatch_id;
-	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNBroadcastMessage));
-	}
 }; // class CNBroadcastModel
 
 inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
@@ -223,7 +220,7 @@ inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
 }
 
 void CNBroadcastMessage::complete() {
-	((CNBroadcastDevice &)_QS).__complete(this);
+	((CNBroadcastDevice &)_QS).__complete<CNBroadcastMessage>(this);
 	executeCallback();
 }
 
@@ -242,10 +239,10 @@ inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// __post() will still try early advance... (after construction)
 	CNBroadcastMessage *msg;
 	msg = new (mcast->request) CNBroadcastMessage(_g_cnbroadcast_dev,
-			(XMI_PIPEWORKQUEUE_CLASS *)mcast->src;
+			(XMI_PIPEWORKQUEUE_CLASS *)mcast->src,
 			(XMI_PIPEWORKQUEUE_CLASS *)mcast->dst, mcast->bytes,
 			doStore, doData, mcast->roles, mcast->cb_done, _dispatch_id);
-	_g_cnbroadcast_dev.__post(msg);
+	_g_cnbroadcast_dev.__post<CNBroadcastMessage>(msg);
 	return true;
 }
 

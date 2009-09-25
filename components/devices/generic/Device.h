@@ -14,20 +14,28 @@
 // used by messaging (advance).
 
 #include "components/devices/BaseDevice.h"
-#include "components/sysdep/SysDep.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
 #include "components/atomic/Mutex.h"
-#include "components/atomic/bgp/LockBoxMutex.h"
-#include "components/atomic/bgp/LockBoxCounter.h"
 #include "sys/xmi.h"
 
 #ifdef __bgp__
+
 #include "spi/kernel_interface.h"
-#include "components/sysdep/bgp/BgpSysDep.h"
+#include "components/atomic/bgp/LockBoxMutex.h"
+#include "components/atomic/bgp/LockBoxCounter.h"
 typedef XMI::Mutex::LockBoxProcMutex<XMI_SYSDEP_CLASS> GenericDeviceMutex;
 typedef XMI::Counter::LockBoxProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
-#endif /* __bgp__ */
+
+#else
+// Other platform optimizations to follow...
+
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/gcc/GccCounter.h"
+typedef XMI::Mutex::CounterMutex<XMI_SYSDEP_CLASS,GccProcCounter<XMI_SYSDEP_CLASS> > GenericDeviceMutex;
+typedef XMI::Counter::GccProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
+
+#endif /* !__bgp__ */
 
 
 // For BG/P, NUM_CORES is the max number of threads.

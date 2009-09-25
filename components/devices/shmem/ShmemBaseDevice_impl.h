@@ -54,7 +54,7 @@ namespace XMI
       _rfifo = &_fifo[_local_task];
       new (_rfifo) T_Fifo ();
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 3, _local_task = %zd, _fifo = %p, _rfifo = %p\n", sysdep->mapping.task(), _local_task, _fifo, _rfifo));
-      _rfifo->init ();
+      _rfifo->init (*sysdep);
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 4\n", sysdep->mapping.task()));
 
       // barrier ?

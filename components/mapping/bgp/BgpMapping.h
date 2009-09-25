@@ -149,21 +149,21 @@ namespace XMI
           unsigned xyzt2 = _mapcache[task2];
           return ((xyzt1>>8)==(xyzt2>>8));
         }
-#if 0
-        inline DCMF_Result network2task_impl (const DCMF_NetworkCoord_t  * addr,
+        inline xmi_result_t network2task_impl (const xmi_coord_t  * addr,
                                               size_t                     * task,
-                                              DCMF_Network               * type) const
+                                              xmi_network               * type)
         {
-#error implement this
+#warning implement BgpMapping::network2task
+		return XMI_UNIMPL;
         }
 
-        inline DCMF_Result task2network_impl (size_t                task,
-                                              DCMF_NetworkCoord_t * addr,
-                                              DCMF_Network          type) const
+        inline xmi_result_t task2network_impl (size_t                task,
+                                              xmi_coord_t * addr,
+                                              xmi_network          type)
         {
-#error implement this
+#warning implement BgpMapping::task2network
+		return XMI_UNIMPL;
         }
-#endif
         /////////////////////////////////////////////////////////////////////////
         //
         // XMI::Mapping::Interface::Torus interface implementation

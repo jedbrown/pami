@@ -45,15 +45,13 @@ namespace XMI
           inline size_t size ();
 
 
-#if 0
-          inline DCMF_Result network2rank (const DCMF_NetworkCoord_t  * addr,
+          inline xmi_result_t network2task (const xmi_coord_t  * addr,
                                            size_t                     * rank,
-                                           DCMF_Network               * type) const;
+                                           xmi_network               * type);
 
-          inline DCMF_Result rank2network (size_t                rank,
-                                           DCMF_NetworkCoord_t * addr,
-                                           DCMF_Network          type) const;
-#endif
+          inline xmi_result_t task2network (size_t                rank,
+                                           xmi_coord_t * addr,
+                                           xmi_network          type);
       };
 
 
@@ -74,23 +72,21 @@ namespace XMI
       {
         return static_cast<T_Mapping*>(this)->size_impl ();
       }
-#if 0
       template <class T_Mapping>
-      inline DCMF_Result Base<T_Mapping>::network2rank (const DCMF_NetworkCoord_t  * addr,
+      inline xmi_result_t Base<T_Mapping>::network2task (const xmi_coord_t  * addr,
                                                         size_t                     * rank,
-                                                        DCMF_Network               * type) const
+                                                        xmi_network               * type)
       {
-        return static_cast<T_Mapping*>(this)->network2rank_impl (addr, rank, type);
+        return static_cast<T_Mapping*>(this)->network2task_impl (addr, rank, type);
       }
 
       template <class T_Mapping>
-      inline DCMF_Result Base<T_Mapping>::rank2network (size_t                rank,
-                                                        DCMF_NetworkCoord_t * addr,
-                                                        DCMF_Network          type) const
+      inline xmi_result_t Base<T_Mapping>::task2network (size_t                rank,
+                                                        xmi_coord_t * addr,
+                                                        xmi_network          type)
       {
-        return static_cast<T_Mapping*>(this)->rank2network_impl (rank, addr, type);
+        return static_cast<T_Mapping*>(this)->task2network_impl (rank, addr, type);
       }
-#endif
     };
   };
 };

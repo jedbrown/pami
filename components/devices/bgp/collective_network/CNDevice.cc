@@ -10,14 +10,16 @@
  * \file components/devices/bgp/collective_network/CNDevice.cc
  * \brief Collective Network Device implementation
  */
+#include "config.h"
+#include "sys/xmi.h"
 #include "util/common.h"
 #include "components/sysdep/bgp/BgpSysDep.h"
-#include "components/atomic/Barrier.h"
 #include "components/atomic/bgp/LockBoxBarrier.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
 
-extern "C" unsigned _g_min_peers;
-extern "C" unsigned _g_max_peers;
+size_t _g_num_active_nodes;
+size_t _g_min_peers;
+size_t _g_max_peers;
 
 // exported to other modules...
 
@@ -56,11 +58,11 @@ unsigned XMI_CN_HELPER_THRESH = 16384; // a guess
  */
 int XMI_CN_VN_DEEP = 1;
 
-typedef XMI::Barrier::BGP::LockBoxBarrier<XMI::SysDep::BgpSysDep> CNDevceInitBarrier;
-
 namespace XMI {
 namespace Device {
 namespace BGP {
+
+	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier<XMI::SysDep::BgpSysDep> CNDeviceInitBarrier;
 
 	void CNDevice::init(XMI::SysDep::BgpSysDep &sd, XMI::Device::Generic::Device *device) {
 		__init(sd, device);
@@ -87,17 +89,18 @@ namespace BGP {
 		 * to share the results of the measurements.
 		 */
 		unsigned *loc = NULL;
-		CNDevceInitBarrier lbb;
+		CNDeviceInitBarrier lbb;
+		size_t peers;
+		sd.mapping.nodePeers(peers);
 		/*
 		 * This is used by TreeMessage objects pre/post
 		 * math routines to account for changes to
 		 * bitfields in the data.
 		 */
-		_g_num_active_nodes = sd.mapping.numActiveNodesGlobal();
-		unsigned peers = sd.mapping.numActiveRanksLocal();
-		if (sd.mapping.numActiveRanksLocal() > 1) {
-			lbb.init(&sd, sd.mapping.numActiveRanksLocal());
-			loc = (unsigned *)sd.mm.scratchpad_static_area_start();
+		_g_num_active_nodes = sd.mapping.size();
+		if (peers > 1) {
+			lbb.init(&sd, peers);
+			sd.mm.memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
 		}
 		if (sd.lockboxFactory.isMasterRank()) {
 			static char pkt[BGPCN_PKT_SIZE]__attribute__((__aligned__(16)));
@@ -122,38 +125,38 @@ namespace BGP {
 				CollectiveFifoStatus(VIRTUAL_CHANNEL, &hc, &dc, &ih, &id);
 			} while (hc == 0 && dc == 0);
 			CollectiveRawReceivePacket(VIRTUAL_CHANNEL, &hdr, pkt);
-			__tree_times[0] = __tsc() - t0;
+			__cn_times[0] = __tsc() - t0;
 			_g_min_peers = ~ ((unsigned *)pkt)[0];
 			_g_max_peers = ((unsigned *)pkt)[1];
 			// perform a global max operation to get the longest time
-			*((unsigned *)pkt) = __tree_times[0];
+			*((unsigned *)pkt) = __cn_times[0];
 			CollectiveRawSendPacket(VIRTUAL_CHANNEL, &hdr, pkt);
 			do {
 				CollectiveFifoStatus(VIRTUAL_CHANNEL, &hc, &dc, &ih, &id);
 			} while (hc == 0 && dc == 0);
 			CollectiveRawReceivePacket(VIRTUAL_CHANNEL, &hdr, pkt);
 			// retrieve the MAX xmit time for all nodes
-			__tree_times[1] = *((unsigned *)pkt);
-			if (sd.mapping.numActiveRanksLocal() > 1) {
+			__cn_times[1] = *((unsigned *)pkt);
+			if (peers > 1) {
 				// "broadcast" results to other cores
-				loc[0] = __tree_times[0];
-				loc[1] = __tree_times[1];
+				loc[0] = __cn_times[0];
+				loc[1] = __cn_times[1];
 				loc[2] = _g_min_peers;
 				loc[3] = _g_max_peers;
 			}
 		}
-		if (sd.mapping.numActiveRanksLocal() > 1) {
+		if (peers > 1) {
 			// complete the "broadcast" by barriering and
 			// picking up the results from shared memory.
 			lbb.enter();
 			if (!sd.lockboxFactory.isMasterRank()) {
-				__tree_times[0] = loc[0];
-				__tree_times[1] = loc[1];
+				__cn_times[0] = loc[0];
+				__cn_times[1] = loc[1];
 				_g_min_peers = loc[2];
 				_g_max_peers = loc[3];
 			}
 		}
-		//fprintf(stderr, "Tree transmit time %d (%d)\n", __tree_times[1], __tree_times[0]);
+		//fprintf(stderr, "Tree transmit time %d (%d)\n", __cn_times[1], __cn_times[0]);
 		s = getenv("XMI_CN_VN_DEEP");
 		if (s) XMI_CN_VN_DEEP = atoi(s);
 		s = getenv("XMI_CN_DBLSUM_THRESH");
@@ -183,8 +186,8 @@ namespace BGP {
 		} else {
 			unsigned i = 0;
 			// use 1.5x for persistent advance timeout
-			i = __tree_times[1] +
-					(__tree_times[1] >> 1);
+			i = __cn_times[1] +
+					(__cn_times[1] >> 1);
 			if (i > 2 * XMI_PERSIST_MAX) {
 				// Not worth even trying
 				i = 0;

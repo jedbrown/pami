@@ -98,7 +98,7 @@ namespace BGP {
 class CNAllreduce2PModel;
 class CNAllreduce2PMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduce2PThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNAllreduce2PModel,CNDevice,CNAllreduce2PMessage,CNAllreduce2PThread,2> CNAllreduce2PDevice;
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2> CNAllreduce2PDevice;
 
 };	// BGP
 };	// Device
@@ -148,7 +148,7 @@ public:
 
 protected:
 	//friend class CNAllreduce2PDevice;
-	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreduce2PModel,CNDevice,CNAllreduce2PMessage,CNAllreduce2PThread,2>;
+	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2>;
 
 	inline int __setThreads(CNAllreduceThread *t, int n) {
 		int nt = 0;
@@ -291,13 +291,13 @@ public:
 	// to "jump" to next "boundary" so we maintain alignment for each cycle.
 	// this requires the WQ behavior based on workunits and worksize that
 	// creates artificial "boundaries" at those points.
-	_ewq(_g_cnallreduce2p_dev.getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
-	_mwq(_g_cnallreduce2p_dev.getSysdep(), EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE),
-	_xwq(_g_cnallreduce2p_dev.getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
+	_ewq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
+	_mwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE),
+	_xwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
 	_dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
 	_dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
 	{
-		_me = _g_cnallreduce2p_dev.getSysdep()->mapping.task();
+		_me = _g_cnallreduce2p_dev.common()->getSysdep()->mapping.task();
 		_ewq.setConsumers(1, 0);
 		_ewq.setProducers(1, 0);
 		_mwq.setConsumers(1, 0);
@@ -324,7 +324,6 @@ private:
 	size_t _me;
 
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNAllreduce2PMessage));
 		COMPILE_TIME_ASSERT(EXPO_WQ_SIZE >= EXPCOUNT);
 		COMPILE_TIME_ASSERT((EXPO_WQ_SIZE & (EXPO_WQ_SIZE - 1)) == 0);
 		COMPILE_TIME_ASSERT(MANT_WQ_FACT * EXPO_WQ_SIZE >= EXPO_MANT_FACTOR * EXPCOUNT);
@@ -340,7 +339,7 @@ inline void CNAllreduce2PMessage::__completeThread(CNAllreduce2PThread *thr) {
 }
 
 void CNAllreduce2PMessage::complete() {
-	((CNAllreduce2PDevice &)_QS).__complete(this);
+	((CNAllreduce2PDevice &)_QS).__complete<CNAllreduce2PMessage>(this);
 	executeCallback();
 }
 
@@ -356,13 +355,14 @@ inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb)
 	// could try to complete allreduce before construction, but for now the code
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
-	new (msg) CNAllreduce2PMessage(_g_cnallreduce2p_dev,
+	CNAllreduce2PMessage *msg;
+	msg = new (mcomb->request) CNAllreduce2PMessage(_g_cnallreduce2p_dev,
 			_ewq, _mwq, _xwq,
 			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data,
 			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->results,
 			bytes, doStore, mcomb->roles, mcomb->cb_done,
 			_dispatch_id_e, _dispatch_id_m);
-	_g_cnallreduce2p_dev.__post(msg);
+	_g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);
 	return true;
 }
 

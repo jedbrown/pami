@@ -22,7 +22,7 @@
 #define _xmi_bg_math_h_
 
 #include <stdint.h>
-#include "math_coremath.h"
+#include "math/math_coremath.h"
 
 /**
  * \brief Convert a LOC value TO a tree value

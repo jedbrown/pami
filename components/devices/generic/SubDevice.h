@@ -165,8 +165,8 @@ public:
 	///
 	/// \param[in] msg	New message to be removed
 	///
-	inline void remove(GenericMessage *msg) {
-		_queue.remove(msg);
+	inline void deleteElem(GenericMessage *msg) {
+		_queue.deleteElem(msg);
 	}
 
 	/// \brief number of messages on the queue
@@ -394,8 +394,7 @@ private:
 /// A multi-thread basic sub-device - standard boilerplate
 /// N threads, no roles, no "receive" polling.
 /// Allows more than one message to be active at a time.
-///
-/// Supports only one active message at a time.
+/// This means each message must supply the thread structure.
 ///
 template <class T_Thread, int N_Threads>
 class MultiThrdSubDevice : public GenericSubDevice {
@@ -420,8 +419,9 @@ private:
 		_nActiveThreads = t;
 	}
 
+	template <class T_Message>
 	inline void __post_msg(XMI::Device::Generic::GenericMessage *msg) {
-		T_Thread *thr = msg->__getThreads();
+		T_Thread *thr = static_cast<T_Message*>(msg)->__getThreads();
 		int x, y;
 		y = _nextChan;
 		for (x = 0; x < _nActiveThreads; ++x) {
@@ -429,8 +429,7 @@ private:
 			if (y >= NUM_THREADS) y = 0;
 		}
 		_nextChan = y;
-		_generic->post((XMI::Device::Generic::GenericMessage *)msg,
-				thr, sizeof(T_Thread), _nActiveThreads);
+		_generic->post(msg, thr, sizeof(T_Thread), _nActiveThreads);
 	}
 
 protected:
@@ -447,17 +446,17 @@ protected:
 	inline int advanceRecv(int channel = -1) { return 0; }
 
 //private:
-public:
 	// For some reason, we can't declare friends like this.
 	//friend class T_Message;
 	//friend class T_Model;
 	// So, must allow this to be public!
+public:
 
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		// assume early advance already tried... just queue it up
 		__start_msg<T_Message>(msg);
-		__post_msg(msg);
+		__post_msg<T_Message>(msg);
 		// Don't queue locally... all are active
 		//XMI::Device::Generic::GenericSubDevice::post(msg);
 	}
@@ -478,7 +477,7 @@ public:
 //		while (nxt = getCurrent()) {
 //			__start_msg<T_Message>(nxt);
 //			// could try to advance here?
-//			__post_msg(nxt);
+//			__post_msg<T_Message>(nxt);
 //		}
 	}
 

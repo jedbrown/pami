@@ -14,7 +14,7 @@
 #ifndef __components_devices_bgp_cnallreduce_h__
 #define __components_devices_bgp_cnallreduce_h__
 
-#include "xmi.h"
+#include "sys/xmi.h"
 #include "util/common.h"
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/bgp/collective_network/CNPacket.h"

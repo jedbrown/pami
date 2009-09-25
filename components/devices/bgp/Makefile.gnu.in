@@ -1,0 +1,4 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= collective_network
+NOTBUILT        =
+include @abs_top_builddir@/Build.rules

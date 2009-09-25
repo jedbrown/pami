@@ -69,9 +69,10 @@ namespace BGP {
 				_barrier->lwx_u.atomics[4].atom);
 		}
 
-		inline void enter_impl() {
+		inline xmi_result_t enter_impl() {
 			pollInit();
 			while (poll() != Done);
+			return XMI_SUCCESS;
 		}
 
 		inline void enterPoll_impl(pollFcn fcn, void *arg) {

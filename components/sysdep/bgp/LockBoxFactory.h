@@ -102,6 +102,13 @@ namespace BGP {
 			__isMasterRank = (__masterRank == mapping->task());
 		}
 
+		inline unsigned masterProc() { return _factory.masterProc; }
+		inline int coreShift() { return _factory.coreShift; }
+		inline int numCore() { return _factory.numCore; }
+		inline int numProc() { return _factory.numProc; }
+		inline unsigned coreXlat(unsigned x) { return _factory.coreXlat[x]; }
+		inline bool isMasterRank() { return __isMasterRank; }
+
 		~LockBoxFactory() {}
 
 		/**

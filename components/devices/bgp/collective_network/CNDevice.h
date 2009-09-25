@@ -81,7 +81,7 @@ extern unsigned XMI_CN_HELPER_THRESH;
 extern int XMI_CN_VN_DEEP;
 
 // This is here to avoid recursive includes
-extern "C" int _g_num_active_nodes;
+extern "C" size_t _g_num_active_nodes;
 
 namespace XMI {
 namespace Device {

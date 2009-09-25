@@ -18,7 +18,6 @@
  * granularity barriers is added here, in a way that makes the
  * barrier code common for all granularities.
  */
-#include "components/sysdep/SysDep.h"
 #include "components/sysdep/bgp/LockBoxFactory.h"
 #include "components/atomic/Barrier.h"
 #include <spi/bgp_SPI.h>
@@ -60,16 +59,19 @@ public:
 	_LockBoxBarrier() { }
 	~_LockBoxBarrier() { }
 
-	inline void init_impl(XMI::SysDep::BgpSysDep *sd);
-
-	inline void enter_impl() {
-		pollInit_impl();
-		while (poll_impl() != Done);
+	inline void init_impl(void *sd, size_t z) {
+		XMI_abortf("_LockBoxBarrier class must be subclass");
 	}
 
-	inline void enterPoll_impl(pollFcn fcn, void *arg) {
+	inline xmi_result_t enter_impl() {
 		pollInit_impl();
-		while (poll_impl() != Done) {
+		while (poll_impl() != XMI::Atomic::Interface::Done);
+		return XMI_SUCCESS;
+	}
+
+	inline void enterPoll_impl(XMI::Atomic::Interface::pollFcn fcn, void *arg) {
+		pollInit_impl();
+		while (poll_impl() != XMI::Atomic::Interface::Done) {
 			fcn(arg);
 		}
 	}
@@ -80,15 +82,15 @@ public:
 		lockup = LockBox_Query(_barrier.lbx_ctrl_lock);
 		LockBox_FetchAndInc(_barrier.lbx_lock[lockup]);
 		_data = (void*)lockup;
-		_status = Entered;
+		_status = XMI::Atomic::Interface::Entered;
 	}
 
-	inline barrierPollStatus poll_impl() {
-		DCMF_assert(_status == Entered);
+	inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
+		XMI_assert(_status == XMI::Atomic::Interface::Entered);
 		uint32_t lockup, value;
 		lockup = (unsigned)_data;
 		if (LockBox_Query(_barrier.lbx_lock[lockup]) < _barrier.nparties) {
-			return Entered;
+			return XMI::Atomic::Interface::Entered;
 		}
 
 		// All cores have participated in the barrier
@@ -111,58 +113,56 @@ public:
 			// wait until master releases the barrier by clearing the lock
 			while (LockBox_Query(_barrier.lbx_lock[lockup]) > 0);
 		}
-		_status = Initialized;
-		return Done;
+		_status = XMI::Atomic::Interface::Initialized;
+		return XMI::Atomic::Interface::Done;
 	}
 	// With 5 lockboxes used... which one should be returned?
 	inline void *returnBarrier_impl() { return _barrier.lbx_ctrl_lock; }
-
-	inline void init_impl(XMI::SysDep::BgpSysDep *sd) {
-		XMI_abortf("_LockBoxBarrier class must be subclass");
-	}
-private:
+protected:
 	LockBox_Barrier_s _barrier;
 	void *_data;
-	barrierPollStatus _status;
+	XMI::Atomic::Interface::barrierPollStatus _status;
 }; // class _LockBoxBarrier
 
+template <class T_Sysdep>
 class LockBoxNodeCoreBarrier :
-		public XMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
+		public XMI::Atomic::Interface::Barrier<T_Sysdep,LockBoxNodeCoreBarrier<T_Sysdep> >,
 		public _LockBoxBarrier {
 public:
 	LockBoxNodeCoreBarrier() {}
 	~LockBoxNodeCoreBarrier() {}
-	inline void init_impl(XMI::SysDep::BgpSysDep *sd) {
+	inline void init_impl(T_Sysdep *sd, size_t z) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
 		// process.
-		_barrier.master = lm->masterProc << lm->coreShift;
+		_barrier.master = sd->lockboxFactory.masterProc() << sd->lockboxFactory.coreShift();
 		_barrier.coreshift = 0;
-		_barrier.nparties = lm->numCore;
+		_barrier.nparties = sd->lockboxFactory.numCore();
 		sd->lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
 						XMI::Atomic::BGP::LBX_NODE_SCOPE);
-		_status = Initialized;
+		_status = XMI::Atomic::Interface::Initialized;
 	}
 }; // class LockBoxNodeCoreBarrier
 
+template <class T_Sysdep>
 class LockBoxNodeProcBarrier :
-		public XMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
+		public XMI::Atomic::Interface::Barrier<T_Sysdep,LockBoxNodeProcBarrier<T_Sysdep> >,
 		public _LockBoxBarrier {
 public:
 	LockBoxNodeProcBarrier() {}
 	~LockBoxNodeProcBarrier() {}
-	inline void init_impl(XMI::SysDep::BgpSysDep *sd) {
+	inline void init_impl(T_Sysdep *sd, size_t z) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will
 		// participate.
-		_barrier.master = lm->coreXlat[lm->masterProc] >> lm->coreShift;
-		_barrier.coreshift = lm->coreShift;
-		_barrier.nparties = lm->numProc;
+		_barrier.master = sd->lockboxFactory.coreXlat(sd->lockboxFactory.masterProc()) >> sd->lockboxFactory.coreShift();
+		_barrier.coreshift = sd->lockboxFactory.coreShift();
+		_barrier.nparties = sd->lockboxFactory.numProc();
 		sd->lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
 						XMI::Atomic::BGP::LBX_PROC_SCOPE);
-		_status = Initialized;
+		_status = XMI::Atomic::Interface::Initialized;
 	}
 }; // class LockBoxNodeProcBarrier
 

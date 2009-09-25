@@ -16,6 +16,8 @@
  * - Add call from init()
  * - Add call from __advanceRecv()
  */
+#include "config.h"
+#include "sys/xmi.h"
 #include "util/common.h"
 #include "components/devices/generic/GenericDevice.h"
 

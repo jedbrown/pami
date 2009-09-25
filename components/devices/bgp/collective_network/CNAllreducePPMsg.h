@@ -75,7 +75,7 @@ public:
 	inline void complete();
 protected:
 	//friend class CNAllreducePPDevice;
-	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreducePPModel,CNDevice,CNAllreducePPMessage,CNAllreducePPThread,2>;
+	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2>;
 
 	// _bytesLeft == bytes on network!
 	inline int __setThreads(CNAllreduceThread *t, int n) {
@@ -182,7 +182,7 @@ public:
 	XMI::Device::Interface::MulticombineModel<CNAllreducePPModel>(status)
 	{
 		_dispatch_id = _g_cnallreducepp_dev.newDispID();
-		_me = _g_cnallreducepp_dev.getSysdep()->mapping().rank();
+		_me = _g_cnallreducepp_dev.common()->getSysdep()->mapping.task();
 	}
 
 	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
@@ -190,9 +190,6 @@ public:
 private:
 	size_t _me;
 	unsigned _dispatch_id;
-	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(xmi_request_t) >= sizeof(CNAllreducePPMessage));
-	}
 }; // class CNAllreducePPModel
 
 inline void CNAllreducePPMessage::__completeThread(CNAllreducePPThread *thr) {
@@ -203,7 +200,7 @@ inline void CNAllreducePPMessage::__completeThread(CNAllreducePPThread *thr) {
 }
 
 void CNAllreducePPMessage::complete() {
-	((CNAllreducePPDevice &)_QS).__complete(this);
+	((CNAllreducePPDevice &)_QS).__complete<CNAllreducePPMessage>(this);
 	executeCallback();
 }
 
@@ -232,7 +229,7 @@ XMI_abort();
 			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data,
 			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->results,
 			bytes, doStore, mcomb->roles, mcomb->cb_done, _dispatch_id, tas);
-	_g_cnallreducepp_dev.__post(msg);
+	_g_cnallreducepp_dev.__post<CNAllreducePPMessage>(msg);
 	return true;
 }
 

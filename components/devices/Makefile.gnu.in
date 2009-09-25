@@ -1,0 +1,4 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= generic bgp
+NOTBUILT        =
+include @abs_top_builddir@/Build.rules

@@ -77,7 +77,7 @@ namespace XMI
           ///
           /// \brief Initialize the linear fifo with a specific packet buffer.
           ///
-          inline void init_impl ()
+          inline void init_impl (XMI_SYSDEP_CLASS &sysdep)
           {
 //            _npackets = bytes / sizeof(LinearFifoPacket);
 
@@ -88,7 +88,7 @@ namespace XMI
  //           _packet = (LinearFifoPacket *) addr;
 
             _head = 0;
-            _tail.init ();
+            _tail.init (&sysdep);
             _tail.fetch_and_clear ();
 
             unsigned i;

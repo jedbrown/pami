@@ -69,6 +69,8 @@ namespace XMI
           return __sync_bool_compare_and_swap (&_atom, compare, swap);
         };
 
+	inline void *returnLock_impl() { return &_atom; }
+
       protected:
 
         size_t _atom;

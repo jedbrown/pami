@@ -26,8 +26,8 @@ namespace XMI
     ///
     /// \brief CRTP interface for bgp atomic objects.
     ///
-    template <T_Sysdep>
-    class BgpAtomic : public Interface::Counter <T_SysDep, BgpAtomic>
+    template <class T_SysDep>
+    class BgpAtomic : public Interface::Counter <T_SysDep, BgpAtomic<T_SysDep> >
     {
       public:
         BgpAtomic () :
@@ -72,6 +72,11 @@ namespace XMI
         {
           size_t tmp = compare;
           return (bool) _bgp_compare_and_swap (&_atom, &tmp, swap);
+        };
+
+        inline void * returnLock()
+        {
+          return &_atom;
         };
 
       protected:

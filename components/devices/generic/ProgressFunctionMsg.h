@@ -27,7 +27,7 @@ class ProgressFunctionMdl;
 class ProgressFunctionMsg;
 
 typedef XMI::Device::Generic::GenericAdvanceThread ProgressFunctionThr;
-typedef XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionMdl,ProgressFunctionMsg,ProgressFunctionThr, NUM_CORES> ProgressFunctionDev;
+typedef XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, NUM_CORES> ProgressFunctionDev;
 
 }; //-- Device
 }; //-- XMI
@@ -86,7 +86,7 @@ protected:
 
 private:
 	//friend class ProgressFunctionDev;
-	friend class XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionMdl,ProgressFunctionMsg,ProgressFunctionThr, NUM_CORES>;
+	friend class XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, NUM_CORES>;
 
 	inline XMI::Device::MessageStatus __advanceThread(ProgressFunctionThr *thr) {
 		// TBD: optimize away virt func call - add method
@@ -147,7 +147,7 @@ private:
 }; //-- XMI
 
 inline void XMI::Device::ProgressFunctionMsg::complete() {
-	((ProgressFunctionDev &)_QS).__complete(this);
+	((ProgressFunctionDev &)_QS).__complete<ProgressFunctionMsg>(this);
 	executeCallback(_rc);
 }
 
@@ -174,7 +174,7 @@ inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t
 		return true;
 	}
 	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf->func, pf->clientdata, pf->cb_done);
-	_g_progfunc_dev.__post(msg);
+	_g_progfunc_dev.__post<ProgressFunctionMsg>(msg);
 	return true;
 }
 

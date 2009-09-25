@@ -1,0 +1,5 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		=
+@LIBNAME@-""-BGPCNDEVICE_SOURCES = CNDevice.cc
+DEVICENAME = @LIBNAME@-""-BGPCNDEVICE
+include @abs_top_builddir@/Build.rules

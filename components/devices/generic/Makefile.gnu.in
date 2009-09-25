@@ -13,6 +13,6 @@
 
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
-SOURCES		= CNDevice.cc CNAllreduce.cc
-DEVICENAME	= cndevice
+@LIBNAME@-""-GENERICDEVICE_SOURCES = Device.cc
+DEVICENAME	= @LIBNAME@-""-GENERICDEVICE
 include @abs_top_builddir@/Build.rules

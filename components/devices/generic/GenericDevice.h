@@ -123,7 +123,7 @@ namespace Generic {
 	/// \param[in] sd	The SysDep object
 	///
 	//////////////////////////////////////////////////////////////////
-	inline Device::Device(SysDep &sd) :
+	inline Device::Device(XMI_SYSDEP_CLASS &sd) :
 	__lastThreadUsed(0),
 	__sysdep(sd)
 	{
@@ -168,7 +168,7 @@ namespace Generic {
 		int y = 0;
 
 #ifdef USE_WAKEUP_VECTORS
-		size_t me = __sysdep.mapping().t(); // only works on BG/P...?
+		size_t me = __sysdep.mapping.t(); // only works on BG/P...?
 		rc = __sysdep.wakeupManager().allocWakeVecs((int)NUM_PROCESSES,
 			NUM_CHANNELS * MAX_REG_THREADS, (int)me,
 			&__wakeupVectors);
@@ -183,12 +183,12 @@ namespace Generic {
 		// Something else should cause separate threads to advance
 		// each channel in parallel.
 		unsigned cores = 0;
-		switch (sd.personality().tSize()) {
+		switch (sd.mapping.tSize()) {
 		case 1: // SMP mode
 			cores = (1 << 1) | (1 << 2) | (1 << 3);
 			break;
 		case 2: // DUAL mode
-			switch (sd.mapping().t()) {
+			switch (sd.mapping.t()) {
 			case 0:
 				cores = (1 << 1);
 				break;
@@ -210,7 +210,7 @@ namespace Generic {
 			COMMTHRD_OPCODE_CORE2,
 			COMMTHRD_OPCODE_CORE3,
 		};
-		static XMI::Mutex::LockBoxNodeMutex<XMI::SysDep::BgpSysDep> _mtx[NUM_CORES];
+		static XMI::Mutex::LockBoxNodeMutex<XMI_SYSDEP_CLASS> _mtx[NUM_CORES];
 
 		void *ct;
 		int id, op;
@@ -266,7 +266,7 @@ namespace Generic {
 	///
 	/// \param[in] sd	The SysDep object
 	///
-	inline void Device::init(SysDep &sd) {
+	inline void Device::init(XMI_SYSDEP_CLASS &sd) {
 		// These are all the devices we know how to play well with...
 		_g_progfunc_dev.init(sd, this);
 		_g_lmbarrier_dev.init(sd, this);
@@ -425,7 +425,7 @@ namespace Generic {
 				// not-done and no-progress.
 				++events;
 				if (msg->advanceThread(thr) == Done) {
-					__Threads[x].remove(thr);
+					__Threads[x].deleteElem(thr);
 				}
 			}
 			__Threads[x].mutex()->release();
@@ -443,7 +443,7 @@ namespace Generic {
 				msg; msg = (GenericMessage *)msg->next(1)) {
 			if (msg->getStatus() == Done) {
 				++events;
-				__GenericQueue[t].remove(msg);
+				__GenericQueue[t].deleteElem(msg);
 				msg->complete();
 			}
 		}

@@ -22,9 +22,8 @@
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
-//#include "components/atomic/gcc/GccBuiltin.h"
-//#include "components/atomic/pthread/Pthread.h"
 #include "components/atomic/bgp/BgpAtomic.h"
+#include "components/atomic/bgp/LockBoxCounter.h"
 
 #include "components/memory/MemoryAllocator.h"
 
@@ -43,9 +42,8 @@ namespace XMI
   namespace Context
   {
     typedef Fifo::FifoPacket <16,240> ShmemPacket;
-    //typedef Device::Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
-    //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
-    typedef Fifo::LinearFifo<Atomic::BgpAtomic<XMI::SysDep::BgpSysDep>,ShmemPacket,128> ShmemFifo;
+    //typedef Fifo::LinearFifo<Atomic::BgpAtomic<XMI::SysDep::BgpSysDep>,ShmemPacket,128> ShmemFifo;
+    typedef Fifo::LinearFifo<Counter::LockBoxProcCounter<XMI::SysDep::BgpSysDep>,ShmemPacket,128> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
     typedef Device::ShmemPacketDevice<SysDep::BgpSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
@@ -79,7 +77,7 @@ namespace XMI
 	  _generic(_sysdep),
           _shmem ()
         {
-          _generic.init (&_sysdep);
+          _generic.init (_sysdep);
           _shmem.init (&_sysdep);
         }
 
@@ -403,8 +401,8 @@ namespace XMI
         SysDep::BgpSysDep _sysdep;
 
         // devices...
+        XMI::Device::Generic::Device _generic;
         ShmemDevice _shmem;
-        Generic::Device _generic;
 
         protocol_t * _dispatch[1024];
         MemoryAllocator<sizeof(protocol_t),16> _protocol;

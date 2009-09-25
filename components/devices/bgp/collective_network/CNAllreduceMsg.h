@@ -208,10 +208,9 @@ public:
 	XMI::Device::Interface::MulticombineModel<CNAllreduceModel>(status)
 	{
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
-		_me = _g_cnallreduce_dev.getSysdep()->mapping.task();
+		_me = _g_cnallreduce_dev.common()->getSysdep()->mapping.task();
 		// at least one must do this
 		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
-		// if we need sysdep, use _g_cnallreduce_dev.getSysdep()...
 	}
 
 	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
@@ -229,7 +228,7 @@ inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
 }
 
 void CNAllreduceMessage::complete() {
-	((CNAllreduceDevice &)_QS).__complete(this);
+	((CNAllreduceDevice &)_QS).__complete<CNAllreduceMessage>(this);
 	executeCallback();
 }
 
@@ -256,7 +255,7 @@ inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data,
 			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->results,
 			bytes, doStore, mcomb->roles, mcomb->cb_done, _dispatch_id, tas);
-	_g_cnallreduce_dev.__post(msg);
+	_g_cnallreduce_dev.__post<CNAllreduceMessage>(msg);
 	return true;
 }
 

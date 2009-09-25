@@ -19,9 +19,9 @@
  *
  *
  */
-#include "components/sysdep/SysDep.h"
-#include "components/sysdep/bgp/BgpSysDep.h"
+#include "sys/xmi.h"
 #include "components/atomic/Counter.h"
+
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
 
@@ -69,7 +69,7 @@ namespace Counter {
 		LockBoxNodeCounter() {}
 		~LockBoxNodeCounter() {}
 		inline void init_impl(T_Sysdep *sd) {
-			sd->lockboxFactory.lbx_alloc(&_LockBoxCounter<T_Sysdep>::_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
+			sd->lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class LockBoxNodeCounter
 
@@ -80,7 +80,7 @@ namespace Counter {
 		LockBoxProcCounter() {}
 		~LockBoxProcCounter() {}
 		inline void init_impl(T_Sysdep *sd) {
-			sd->lockboxFactory.lbx_alloc(&_LockBoxCounter<T_Sysdep>::_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
+			sd->lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class LockBoxProcCounter
 

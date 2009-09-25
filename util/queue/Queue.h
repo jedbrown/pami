@@ -482,7 +482,7 @@ namespace XMI
           /// \brief Remove an element from the queue
           /// \returns:
           //////////////////////////////////////////////////////////////////
-          void remove(MultiQueueElem<numElems> *item);
+          void deleteElem(MultiQueueElem<numElems> *item);
 
           //////////////////////////////////////////////////////////////////
           /// \brief    Access the head element of the queue without removing
@@ -601,7 +601,7 @@ inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::popTai
 }
 
 template<int numElems, int elemNum>
-inline void XMI::MultiQueue<numElems, elemNum>::remove(MultiQueueElem<numElems> *item)
+inline void XMI::MultiQueue<numElems, elemNum>::deleteElem(MultiQueueElem<numElems> *item)
 {
   MultiQueueElem<numElems> *prev = (MultiQueueElem<numElems> *)item->prev(elemNum);
   MultiQueueElem<numElems> *next = (MultiQueueElem<numElems> *)item->next(elemNum);
