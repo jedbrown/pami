@@ -29,7 +29,7 @@ namespace XMI
       class EagerConnection
       {
         private:
-	class eager_connection_t
+	struct eager_connection_t
           {
 	    public:
             xmi_context_t     context;
@@ -92,7 +92,7 @@ namespace XMI
       };
 
       template <class T_Device, unsigned T_Size>
-      EagerConnection<T_Device,T_Size>::eager_connection_t EagerConnection<T_Device,T_Size>::_eager_connection[T_Size];
+      struct EagerConnection<T_Device,T_Size>::eager_connection_t EagerConnection<T_Device,T_Size>::_eager_connection[T_Size];
     };
   };
 };
