@@ -28,7 +28,7 @@ namespace XMI
   namespace CollRegistration
   {
     template <class T_Geometry, class T_Collfactory, class T_Device, class T_Sysdep>
-    class MPI : public CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
+    class MPI : public CollRegistration<XMI::CollRegistration::MPI<XMI_GEOMETRY_CLASS, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
     {
     public:
       inline MPI(T_Device *dev, T_Sysdep *sd):

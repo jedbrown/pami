@@ -31,7 +31,7 @@ namespace CCMI
       ///
       typedef bool      (*AnalyzeFn)   (XMI_GEOMETRY_CLASS                  * g);
 
-      inline bool true_analyze (XMI_GEOMETRY_CLASS *geometry)
+      bool true_analyze (XMI_GEOMETRY_CLASS *geometry)
       {
         return true;
       }

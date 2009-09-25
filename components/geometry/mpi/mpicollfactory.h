@@ -28,7 +28,7 @@ namespace XMI
   namespace CollFactory
   {
     template <class T_Device, class T_Sysdep>
-    class MPI : public CollFactory<XMI::CollFactory::MPI<T_Device, T_Sysdep> >
+    class MPI : public CollFactory<XMI::CollFactory::MPI<Device::MPIDevice<SysDep::MPISysDep>, SysDep::MPISysDep> >
     {
     public:
       inline MPI(T_Sysdep *sd):

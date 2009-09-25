@@ -28,7 +28,7 @@ namespace CCMI
     {
 
 
-      inline void get_colors (XMI_GEOMETRY_CLASS                  * g,
+      void get_colors (XMI_GEOMETRY_CLASS                  * g,
                               unsigned                    bytes,
                               CCMI::Schedule::Color     * colors,
                               unsigned                  & ncolors,

@@ -16,7 +16,7 @@
 
 //#include "config.h"
 
-//#include "components/mapping/mpi/mpimapping.h"
+#include "components/mapping/mpi/mpimapping.h"
 #define XMI_GEOMETRY_CLASS XMI::Geometry::Common<XMI_MAPPING_CLASS>
 
 #include "components/geometry/Geometry.h"
@@ -29,7 +29,7 @@ namespace XMI
   namespace Geometry
   {
     template <class T_Mapping>
-    class Common : public Geometry<XMI::Geometry::Common<T_Mapping>, T_Mapping>
+    class Common : public Geometry<XMI::Geometry::Common<XMI_MAPPING_CLASS>, T_Mapping>
     {
     public:
       inline Common(T_Mapping              *mapping,

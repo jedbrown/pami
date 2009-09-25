@@ -28,8 +28,8 @@
  */
 void silly()
 {
-  char buffer[sizeof(CCMI::Schedule::BinomialTreeSchedule)];
-  CCMI::Schedule::BinomialTreeSchedule * p = (CCMI::Schedule::BinomialTreeSchedule *) buffer;
-  p = new(p) CCMI::Schedule::BinomialTreeSchedule;
+  //  char buffer[sizeof(CCMI::Schedule::BinomialTreeSchedule)];
+  //  CCMI::Schedule::BinomialTreeSchedule * p = (CCMI::Schedule::BinomialTreeSchedule *) buffer;
+  //  p = new(p) CCMI::Schedule::BinomialTreeSchedule;
 }
 #endif
