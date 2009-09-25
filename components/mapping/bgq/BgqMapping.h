@@ -443,6 +443,15 @@ namespace XMI
           return XMI_SUCCESS;
         };
 
+        inline size_t a () { return _a; }
+        inline size_t b () { return _b; }
+        inline size_t c () { return _c; }
+        inline size_t d () { return _d; }
+        inline size_t e () { return _e; }
+        inline size_t p () { return _p; }
+        inline size_t t () { return _t; }
+
+
       private:
 
         static inline void compile_time_assert ()

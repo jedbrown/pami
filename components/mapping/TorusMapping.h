@@ -116,7 +116,7 @@ namespace XMI
           /// \param[out] addr Array of torus coordinates
           ///
 //          inline void torusAddr (size_t (&addr)[T_Dimensions]) const;
-          inline void torusAddr (size_t (&addr)[T_Dimensions]) const;
+          inline void torusAddr (size_t (&addr)[T_Dimensions]);
 
           ///
           /// \brief Get the torus address for a specific task
@@ -275,7 +275,7 @@ namespace XMI
       template <class T_Mapping, unsigned T_Dimensions>
       //template <int T_Dimension>
       //inline size_t Torus<T_Mapping,T_Dimensions>::torusAddr (size_t (&addr)[T_Dimensions]) const
-      inline void Torus<T_Mapping,T_Dimensions>::torusAddr (size_t (&addr)[T_Dimensions]) const
+      inline void Torus<T_Mapping,T_Dimensions>::torusAddr (size_t (&addr)[T_Dimensions])
       {
         return static_cast<T_Mapping*>(this)->torusAddr_impl (addr);
       }

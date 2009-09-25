@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/memregion/MemRegion.h"
-
 #define XMI_MEMREGION_CLASS XMI::MemRegion::MPI
+
+#include "components/memregion/MemRegion.h"
 
 namespace XMI
 {

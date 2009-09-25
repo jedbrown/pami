@@ -1,0 +1,7 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		= mu 
+#SUBDIRS		=  
+NOTBUILT        =
+#@LIBNAME@-""-DEVICE_SOURCES=
+#DEVICENAME     = @LIBNAME@-""-DEVICE
+include @abs_top_builddir@/Build.rules
