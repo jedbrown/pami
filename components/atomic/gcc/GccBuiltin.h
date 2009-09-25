@@ -24,11 +24,11 @@ namespace XMI
     /// \brief CRTP interface for gcc builtins atomic objects.
     ///
     template <class T_Sysdep>
-    class GccBuiltin : public Interface::Counter <T_Sysdep, GccBuiltin>
+    class GccBuiltin : public Interface::Counter <T_Sysdep, GccBuiltin<T_Sysdep> >
     {
       public:
         GccBuiltin () :
-            Interface::Counter <GccBuiltin> ()
+            Interface::Counter <T_Sysdep, GccBuiltin<T_Sysdep> > ()
         {};
 
         ~GccBuiltin () {};

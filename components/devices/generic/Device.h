@@ -19,6 +19,7 @@
 #include "components/atomic/Mutex.h"
 #include "sys/xmi.h"
 
+#warning The atomic class to use for a platform should be a template parameter. These typedefs belong in the context class.
 #ifdef __bgp__
 
 #include "spi/kernel_interface.h"
@@ -32,7 +33,7 @@ typedef XMI::Counter::LockBoxProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
 
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
-typedef XMI::Mutex::CounterMutex<XMI_SYSDEP_CLASS,GccProcCounter<XMI_SYSDEP_CLASS> > GenericDeviceMutex;
+typedef XMI::Mutex::CounterMutex<XMI_SYSDEP_CLASS,XMI::Counter::GccProcCounter<XMI_SYSDEP_CLASS> > GenericDeviceMutex;
 typedef XMI::Counter::GccProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
 
 #endif /* !__bgp__ */

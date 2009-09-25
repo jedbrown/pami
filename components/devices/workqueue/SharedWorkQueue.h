@@ -17,6 +17,7 @@
 #include "components/devices/workqueue/WorkQueue.h"
 #include "components/sysdep/SysDep.h"
 
+#warning This platform-specific code needs to move somewhere else.
 #ifdef __bgp__
 
 #include <bpcore/ppc450_inlines.h>
@@ -29,7 +30,7 @@ asm volatile ("stfpdux %2,%0,%1": "+Ob" (ptr) : "r" (incr), "f" (x) : "memory")
 
 #elif defined(__bgq__)
 
-#include "bqc/A2_inlines.h"
+#include <hwi/include/bqc/A2_inlines.h>
 #define mem_sync ppc_msync
 #define LQU(x, y, z)
 #define SQU(x, y, z)

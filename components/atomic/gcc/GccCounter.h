@@ -44,7 +44,7 @@ namespace Counter {
 		}
 		void *returnLock_impl() { return _addr->returnLock(); }
 	protected:
-		XMI::Atomic::GccBuiltin *_addr;
+		XMI::Atomic::GccBuiltin<T_Sysdep> *_addr;
 	}; // class GccNodeCounter
 
 	template <class T_Sysdep>
@@ -56,20 +56,20 @@ namespace Counter {
 			_addr.init(sd);
 		}
 		inline size_t fetch_impl() {
-			return _add.fetch();
+			return _addr.fetch();
 		}
 		inline size_t fetch_and_inc_impl() {
-			return _add.fetch_and_inc();
+			return _addr.fetch_and_inc();
 		}
 		inline size_t fetch_and_dec_impl() {
-			return _add.fetch_and_dec();
+			return _addr.fetch_and_dec();
 		}
 		inline size_t fetch_and_clear_impl() {
-			return _add.fetch_and_clear();
+			return _addr.fetch_and_clear();
 		}
 		void *returnLock_impl() { return _addr.returnLock(); }
 	protected:
-		XMI::Atomic::GccBuiltin _addr;
+		XMI::Atomic::GccBuiltin<T_Sysdep> _addr;
 	}; // class GccProcCounter
 
 }; // Counter namespace
