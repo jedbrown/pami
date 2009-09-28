@@ -1,5 +1,5 @@
 VPATH		= @srcdir@
-SUBDIRS         = 
+SUBDIRS         = send
 NOTBUILT        = 
 APPS            = adi.${EXTENSION} dispatch.${EXTENSION} default-send.${EXTENSION} immediate_send.${EXTENSION} send_latency.${EXTENSION} sendimmediate_latency.${EXTENSION}
 
