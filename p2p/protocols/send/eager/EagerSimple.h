@@ -18,8 +18,6 @@
 #ifndef __xmi_p2p_protocol_send_eager_eagersimple_h__
 #define __xmi_p2p_protocol_send_eager_eagersimple_h__
 
-#include "p2p/protocols/send/Simple.h"
-
 #include "components/memory/MemoryAllocator.h"
 
 #include "p2p/protocols/send/eager/EagerConnection.h"
@@ -46,7 +44,7 @@ namespace XMI
       /// \see XMI::Device::Interface::PacketDevice
       ///
       template <class T_Model, class T_Device, class T_Message>
-      class EagerSimple : public XMI::Protocol::Send::Simple
+      class EagerSimple
       {
         protected:
 
@@ -97,7 +95,6 @@ namespace XMI
                               size_t                     origin_task,
                               xmi_context_t              context,
                               xmi_result_t             & status) :
-              XMI::Protocol::Send::Simple (),
               _envelope_model (device, context),
               _data_model (device, context),
               _ack_model (device, context),
@@ -135,18 +132,18 @@ namespace XMI
           ///
           /// \brief Start a new simple send eager operation.
           ///
-          /// \see XMI::Protocol::Send:Simple::start
+          /// \see XMI::Protocol::Send:simple
           ///
-          virtual xmi_result_t start (xmi_event_function   local_fn,
-                                      xmi_event_function   remote_fn,
-                                      void               * cookie,
-                                      size_t               peer,
-                                      void               * src,
-                                      size_t               bytes,
-                                      void               * msginfo,
-                                      size_t               mbytes)
+          inline xmi_result_t simple_impl (xmi_event_function   local_fn,
+                                    xmi_event_function   remote_fn,
+                                    void               * cookie,
+                                    size_t               peer,
+                                    void               * src,
+                                    size_t               bytes,
+                                    void               * msginfo,
+                                    size_t               mbytes)
           {
-            TRACE_ERR((stderr, "EagerSimple::start() >>\n"));
+            TRACE_ERR((stderr, "EagerSimple::simple_impl() >>\n"));
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
@@ -185,7 +182,7 @@ namespace XMI
                 // data, the envelope message completion must clean up the
                 // protocol resources and invoke the application local done
                 // callback function, as there will be no data message.
-                TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
+                TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
                 _envelope_model.postPacket (&(state->msg[0]),
                                             send_complete,
                                             (void *) state,
@@ -197,7 +194,7 @@ namespace XMI
               }
             else
               {
-                TRACE_ERR((stderr, "EagerSimple::start() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
+                TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
                 _envelope_model.postPacket (&(state->msg[0]),
                                             NULL,
                                             NULL,
@@ -207,7 +204,7 @@ namespace XMI
                                             msginfo,
                                             mbytes);
 
-                TRACE_ERR((stderr, "EagerSimple::start() .. before _data_model.postPacket()\n"));
+                TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _data_model.postPacket()\n"));
                 _data_model.postMessage (&(state->msg[1]),
                                          send_complete,
                                          (void *) state,
@@ -218,7 +215,7 @@ namespace XMI
                                          bytes);
               }
 
-            TRACE_ERR((stderr, "EagerSimple::start() <<\n"));
+            TRACE_ERR((stderr, "EagerSimple::simple_impl() <<\n"));
             return XMI_SUCCESS;
           };
 

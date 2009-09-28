@@ -11,13 +11,15 @@
 #include <string.h>
 
 #include "sys/xmi.h"
-#include "../Context.h"
+#include "components/context/Context.h"
 
 #include "components/devices/shmem/ShmemPacketDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "components/devices/shmem/ShmemBaseMessage.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
+
+#include "components/devices/bgq/mu/MUDevice.h"
 
 #include "components/atomic/gcc/GccBuiltin.h"
 //#include "components/atomic/pthread/Pthread.h"
@@ -27,9 +29,13 @@
 
 #include "components/sysdep/bgq/BgqSysDep.h"
 
+#include "p2p/protocols/send/eager/Eager.h"
+#include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
-
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) fprintf x
+#endif
 
 namespace XMI
 {
@@ -44,6 +50,14 @@ namespace XMI
     typedef Device::ShmemPacketDevice<SysDep::BgqSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
 
+    //
+    // >> Point-to-point protocol typedefs and dispatch registration.
+    typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice, ShmemMessage> EagerShmem;
+    // << Point-to-point protocol typedefs and dispatch registration.
+    //
+
+    typedef MemoryAllocator<1024,16> ProtocolAllocator;
+
     class BgqContext : public Context<XMI::Context::BgqContext>
     {
       public:
@@ -52,8 +66,10 @@ namespace XMI
           _client (client),
           _context ((xmi_context_t)this),
           _sysdep (),
+          _mu (),
           _shmem ()
         {
+          _mu.init (&_sysdep);
           _shmem.init (&_sysdep);
         }
 
@@ -127,25 +143,40 @@ namespace XMI
         inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
         {
           size_t id = (size_t)(parameters->send.dispatch);
-          assert (_dispatch[id] != NULL);
+          TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+          XMI_assert_debug (_dispatch[id] != NULL);
 
-          XMI::Protocol::Send::Simple * send =
-            (XMI::Protocol::Send::Simple *) _dispatch[id];
-          send->start (parameters->simple.local_fn,
-                       parameters->simple.remote_fn,
-                       parameters->send.cookie,
-                       parameters->send.task,
-                       parameters->simple.addr,
-                       parameters->simple.bytes,
-                       parameters->send.header.addr,
-                       parameters->send.header.bytes);
+          XMI::Protocol::Send::Send * send =
+            (XMI::Protocol::Send::Send *) _dispatch[id];
+          send->simple (parameters->simple.local_fn,
+                        parameters->simple.remote_fn,
+                        parameters->send.cookie,
+                        parameters->send.task,
+                        parameters->simple.addr,
+                        parameters->simple.bytes,
+                        parameters->send.header.addr,
+                        parameters->send.header.bytes);
 
+          TRACE_ERR((stderr, "<< send_impl('simple')\n"));
           return XMI_SUCCESS;
         }
 
         inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
-          return XMI_UNIMPL;
+          size_t id = (size_t)(parameters->send.dispatch);
+          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+          XMI_assert_debug (_dispatch[id] != NULL);
+
+          XMI::Protocol::Send::Send * send =
+            (XMI::Protocol::Send::Send *) _dispatch[id];
+          send->immediate (parameters->send.task,
+                           parameters->immediate.addr,
+                           parameters->immediate.bytes,
+                           parameters->send.header.addr,
+                           parameters->send.header.bytes);
+
+          TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
+          return XMI_SUCCESS;
         }
 
         inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
@@ -305,16 +336,14 @@ namespace XMI
                                            void                     * cookie,
                                            xmi_send_hint_t            options)
         {
-          if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
-
-          // Allocate memory for the protocol object.
-          _dispatch[(size_t)id] = (void *) _request.allocateObject ();
-
-          // For now, only enable shmem short/eager sends.
-          typedef XMI::Protocol::Send::EagerSimple <ShmemModel, ShmemDevice, ShmemMessage> EagerSimpleShmem;
-
           xmi_result_t result = XMI_ERROR;
-          new ((void *)_dispatch[(size_t)id]) EagerSimpleShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+          if (_dispatch[id] == NULL)
+          {
+            // Allocate memory for the protocol object.
+            _dispatch[id] = (void *) _request.allocateObject ();
+
+            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+          }
 
           return result;
         }
@@ -359,10 +388,18 @@ namespace XMI
         SysDep::BgqSysDep _sysdep;
 
         // devices...
-        ShmemDevice _shmem;
+        Device::MU::MUDevice _mu;
+        ShmemDevice          _shmem;
 
         void * _dispatch[1024];
         MemoryAllocator<1024,16> _request;
+
+        static inline void compile_time_assert ()
+        {
+          // Make sure the memory allocator is large enough for all
+          // protocol classes.
+          COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
+        };
 
     }; // end XMI::Context::BgqContext
   }; // end namespace Context

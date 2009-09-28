@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocols/send/Simple.h
-/// \brief Defines base class interface for simple sends.
+/// \file p2p/protocols/Send.h
+/// \brief Defines base class interface for sends.
 ///
-#ifndef __xmi_p2p_protocols_send_simple_h__
-#define __xmi_p2p_protocols_send_simple_h__
+#ifndef __xmi_p2p_protocols_send_h__
+#define __xmi_p2p_protocols_send_h__
 
 #include "sys/xmi.h"
 
@@ -22,16 +22,16 @@ namespace XMI
     namespace Send
     {
       ///
-      /// \brief Base class for point-to-point simple send implementations.
+      /// \brief Base class for point-to-point send implementations.
       ///
-      class Simple
+      class Send
       {
         public:
 
           ///
-          /// \brief Base class constructor for point-to-point simple sends.
+          /// \brief Base class constructor for point-to-point sends.
           ///
-          inline Simple () {};
+          inline Send () {};
 
           ///
           /// \brief Base class destructor.
@@ -39,7 +39,22 @@ namespace XMI
           /// \note Any class with virtual functions must define a virtual
           ///       destructor.
           ///
-          virtual ~Simple () {};
+          virtual ~Send () {};
+
+          ///
+          /// \brief Start a new immediate send message.
+          ///
+          /// \param[in]  peer      Destination peer.
+          /// \param[in]  src       Send data buffer.
+          /// \param[in]  bytes     Send data length in bytes.
+          /// \param[in]  msginfo   Opaque application header information.
+          /// \param[in]  mbytes    Number of opaque application header bytes.
+          ///
+          virtual xmi_result_t immediate (size_t               peer,
+                                          void               * src,
+                                          size_t               bytes,
+                                          void               * msginfo,
+                                          size_t               mbytes) = 0;
 
           ///
           /// \brief Start a new simple send message.
@@ -55,21 +70,20 @@ namespace XMI
           /// \param[in]  msginfo   Opaque application header information.
           /// \param[in]  mbytes    Number of msginfo bytes.
           ///
-          virtual xmi_result_t start (xmi_event_function   local_fn,
-                                      xmi_event_function   remote_fn,
-                                      void               * cookie,
-                                      size_t               peer,
-                                      void               * src,
-                                      size_t               bytes,
-                                      void               * msginfo,
-                                      size_t               mbytes) = 0;
+          virtual xmi_result_t simple (xmi_event_function   local_fn,
+                                       xmi_event_function   remote_fn,
+                                       void               * cookie,
+                                       size_t               peer,
+                                       void               * src,
+                                       size_t               bytes,
+                                       void               * msginfo,
+                                       size_t               mbytes) = 0;
+      }; // XMI::Protocol::Send class
+    }; // XMI::Protocol::Send class
+  };   // XMI::Protocol namespace
+};     // XMI namespace
 
-      };
-    };
-  };
-};
-
-#endif // __xmi_p2p_protocols_send_simple_h__
+#endif // __xmi_p2p_protocols_send_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

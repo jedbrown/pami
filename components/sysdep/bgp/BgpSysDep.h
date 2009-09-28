@@ -50,10 +50,18 @@ namespace XMI
     class BgpSysDep : public SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping::BgpMapping, XMI::Time::BgpTime, XMI::Topology::BgpTopology>
     {
       public:
-        BgpSysDep() : lockboxFactory(&this->mapping) {}
+        BgpSysDep()
+#ifdef ENABLE_LOCKBOX
+          :
+          lockboxFactory(&this->mapping)
+#endif
+        {}
+
         ~BgpSysDep() {}
 
+#ifdef ENABLE_LOCKBOX
         XMI::Atomic::BGP::LockBoxFactory lockboxFactory;
+#endif
     }; // class BgpSysDep
   };
 };

@@ -83,6 +83,8 @@ namespace XMI
         unlock ();
       };
 
+      static const size_t objsize = T_ObjSize;
+
     protected:
 
       inline void lock ()

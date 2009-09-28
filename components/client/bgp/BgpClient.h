@@ -89,7 +89,7 @@ namespace XMI
 
           XMI::Context::BgpContext * context = NULL;
           int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::BgpContext));
-          if (rc != 0) assert(0);
+          XMI_assert(rc!=0);
           memset ((void *)context, 0x00, sizeof(XMI::Context::BgpContext));
           new (context) XMI::Context::BgpContext (this->getClientId());
           //_context_list->pushHead ((QueueElem *) context);

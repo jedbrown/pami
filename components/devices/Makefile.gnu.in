@@ -1,4 +1,6 @@
 VPATH		= @abs_srcdir@
-SUBDIRS		= generic @TARGET@ 
+# Disable generic device for now .. to be re-enabled when lockbox supported.
+#SUBDIRS		= generic @TARGET@ 
+SUBDIRS		= @TARGET@ 
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules

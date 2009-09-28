@@ -18,8 +18,6 @@
 #ifndef __xmi_p2p_protocol_send_eager_eagerimmediate_h__
 #define __xmi_p2p_protocol_send_eager_eagerimmediate_h__
 
-#include "p2p/protocols/send/Immediate.h"
-
 #include "components/memory/MemoryAllocator.h"
 
 #include "util/common.h"
@@ -46,22 +44,36 @@ namespace XMI
       /// \see XMI::Device::Interface::PacketDevice
       ///
       template <class T_Model, class T_Device, class T_Message>
-      class EagerImmediate : public XMI::Protocol::Send::Immediate
+      class EagerImmediate
       {
         protected:
 
+          ///
+          /// \brief Sender-side state structure for immediate sends.
+          ///
+          /// If the immediate post to the device fails due to unavailable
+          /// network resources, memory is allocated for this structure to
+          /// pack the source metadata and source data into a single
+          /// contiguous buffer which can be posted to the device as a
+          /// non-blocking transfer.
+          ///
           typedef struct send
           {
-            uint8_t                                   data[T_Device::packet_payload_size];
-            T_Message                                 msg;
-            EagerImmediate<T_Model,T_Device,T_Message> * pf;
+            uint8_t                     data[T_Device::packet_payload_size]; ///< Packed data
+            T_Message                   msg; ///< Device message state object
+            EagerImmediate<T_Model,
+                           T_Device,
+                           T_Message> * pf;  ///< Eager immediate protocol
           } send_t;
 
+          ///
+          /// \brief Protocol metadata structure for immediate sends
+          ///
           typedef struct __attribute__((__packed__)) protocol_metadata
           {
-            size_t         fromRank;
-            uint16_t       databytes;
-            uint16_t       metabytes;
+            size_t         fromRank;  ///< Origin task id
+            uint16_t       databytes; ///< Number of bytes of data
+            uint16_t       metabytes; ///< Number of bytes of metadata
           } protocol_metadata_t;
 
         public:
@@ -84,7 +96,6 @@ namespace XMI
                                  size_t                     origin_task,
                                  xmi_context_t              context,
                                  xmi_result_t             & status) :
-              XMI::Protocol::Send::Immediate (),
               _send_model (device, context),
               _fromRank (origin_task),
               _context (context),
@@ -100,15 +111,15 @@ namespace XMI
           ///
           /// \brief Start a new simple send eager operation.
           ///
-          /// \see XMI::Protocol::Send::Immediate::start
+          /// \see XMI::Protocol::Send::immediate
           ///
-          virtual xmi_result_t start (size_t   peer,
-                                      void   * src,
-                                      size_t   bytes,
-                                      void   * msginfo,
-                                      size_t   mbytes)
+          inline xmi_result_t immediate_impl (size_t   peer,
+                                       void   * src,
+                                       size_t   bytes,
+                                       void   * msginfo,
+                                       size_t   mbytes)
           {
-            TRACE_ERR((stderr, "EagerImmediate::start() >>\n"));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
 
             // Specify the protocol metadata to send with the application
             // metadata in the packet. This metadata is copied
@@ -119,7 +130,7 @@ namespace XMI
             metadata.databytes = bytes;
             metadata.metabytes = mbytes;
 
-            TRACE_ERR((stderr, "EagerImmediate::start() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
             bool posted =
               _send_model.postPacketImmediate (peer,
                                                (void *) &metadata,
@@ -149,7 +160,7 @@ namespace XMI
                                       mbytes+bytes);
             }
 
-            TRACE_ERR((stderr, "EagerImmediate::start() <<\n"));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() <<\n"));
             return XMI_SUCCESS;
           };
 
