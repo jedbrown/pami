@@ -52,6 +52,7 @@ namespace XMI
           inline xmi_result_t task2network (size_t                rank,
                                            xmi_coord_t * addr,
                                            xmi_network          type);
+	  inline size_t globalDims();
       };
 
 
@@ -86,6 +87,12 @@ namespace XMI
                                                         xmi_network          type)
       {
         return static_cast<T_Mapping*>(this)->task2network_impl (rank, addr, type);
+      }
+
+      template <class T_Mapping>
+      inline size_t Base<T_Mapping>::globalDims ()
+      {
+        return static_cast<T_Mapping*>(this)->globalDims_impl ();
       }
     };
   };
