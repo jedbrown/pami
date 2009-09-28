@@ -20,6 +20,7 @@
 #include "components/mapping/NodeMapping.h"
 
 #include "components/sysdep/bgp/BgpGlobal.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 #define XMI_MAPPING_CLASS XMI::Mapping::BgpMapping
 
@@ -34,7 +35,7 @@ namespace XMI
 {
   namespace Mapping
   {
-    class BgpMapping : public Interface::Base<BgpMapping>,
+    class BgpMapping : public Interface::Base<BgpMapping,XMI::Memory::SharedMemoryManager>,
                        public Interface::Torus<BgpMapping,XMI_BGP_NETWORK_DIMS>,
                        public Interface::Node<BgpMapping,XMI_BGP_LOCAL_DIMS>
     {
@@ -53,7 +54,7 @@ namespace XMI
 
       public:
         inline BgpMapping () :
-            Interface::Base<BgpMapping>(),
+            Interface::Base<BgpMapping,XMI::Memory::SharedMemoryManager>(),
             Interface::Torus<BgpMapping,XMI_BGP_NETWORK_DIMS>(),
             Interface::Node<BgpMapping,XMI_BGP_LOCAL_DIMS> (),
             _task (0),
@@ -83,15 +84,17 @@ namespace XMI
         
         XMI::Mapping::Interface::nodeaddr_t _nodeaddr;
         
-        //size_t _numActiveRanksLocal;
-        //size_t _numActiveRanksGlobal;
-        //size_t _numActiveNodesGlobal;
-        //size_t _fullSize;
+#warning These elements need to be moved or replaced
+        size_t _numActiveRanksLocal;
+        size_t _numActiveRanksGlobal;
+        size_t _numActiveNodesGlobal;
+        size_t _fullSize;
 
         size_t * _mapcache;
         size_t * _rankcache;
         size_t   _peercache[NUM_CORES];
-        
+	unsigned _localranks[NUM_CORES];
+
       public:
 
         /////////////////////////////////////////////////////////////////////////
@@ -104,7 +107,9 @@ namespace XMI
         /// \brief Initialize the mapping
         /// \see XMI::Mapping::Interface::Base::init()
         ///
-        inline xmi_result_t init_impl();
+	inline xmi_result_t init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
+				       size_t min_rank, size_t max_rank,
+					XMI::Memory::SharedMemoryManager &mm);
 
         ///
         /// \brief Return the BGP global task for this process
@@ -460,9 +465,13 @@ namespace XMI
   };
 };
 
-xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
+xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
+						  size_t min_rank, size_t max_rank,
+						  XMI::Memory::SharedMemoryManager &mm)
 {
   //fprintf (stderr, "BgpMapping::init_impl >>\n");
+  max_rank = 0;
+  min_rank = (size_t)-1;
   _mapcache  = __global.getMapCache();
   _rankcache = __global.getRankCache();
   _task = __global.getTask();
@@ -475,17 +484,20 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
 
   size_t peer = 0;
   size_t task;
-  size_t addr[XMI_BGP_NETWORK_DIMS + XMI_BGP_LOCAL_DIMS];
+  xmi_network dummy;
+  xmi_coord_t c;
+  c.network = XMI_N_TORUS_NETWORK;
+  c.n_torus.coords[0] = _x;
+  c.n_torus.coords[1] = _y;
+  c.n_torus.coords[2] = _z;
   _peers = 0;
-  addr[0] = _x;
-  addr[1] = _y;
-  addr[2] = _z;
-  for (addr[3]=0; addr[3]<__global.personality.tSize(); addr[3]++)
+  for (c.n_torus.coords[3]=0; c.n_torus.coords[3]<__global.personality.tSize(); c.n_torus.coords[3]++)
   {
-    if (torus2task(addr, task) == XMI_SUCCESS)
+    if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
     {
-      TRACE_ERR((stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", addr[3], peer));
-      _peercache[addr[3]] = peer++;
+      //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", c.n_torus.coords[3], peer);
+      _peercache[c.n_torus.coords[3]] = peer++;
+      _localranks[_peers] = task;
       _peers++;
     }
   }
@@ -520,7 +532,7 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
 
   //_processor_id = rts_get_processor_id();
   //_pers = & __global.personality;
-  //_myNetworkCoord.network = CM_TORUS_NETWORK;
+  //_myNetworkCoord.network = XMI_TORUS_NETWORK;
   //unsigned ix = 0;
   //_myNetworkCoord.n_torus.coords[ix++] = x();
   //_myNetworkCoord.n_torus.coords[ix++] = y();
@@ -529,7 +541,7 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
   //_myNetworkCoord.n_torus.coords[ix++] = t();
   //_numDims = ix;
 
-  //DCMF_assert_debug(_numDims <= CM_MAX_DIMS);
+  //XMI_assert_debug(_numDims <= XMI_MAX_DIMS);
   size_t tCoord = t ();
   size_t tsize  = tSize ();
 
@@ -593,17 +605,13 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
   // Allocate the map cache from shared memory (in DUAL or VN modes) or from
   // heap (in SMP mode).
 #warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-  //_mapcache = (size_t *) mm.scratchpad_dynamic_area_memalign (16, sizeof(kernel_coords_t) * _fullSize );
   result = mm.memalign((void **) &_mapcache, 16, sizeof(kernel_coords_t) * _fullSize);
 
   // Allocate the rank cache from shared memory (in DUAL or VN modes) or from
   // heap (in SMP mode).
 #warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-  //_rankcache = (unsigned *) mm.scratchpad_dynamic_area_memalign ( 16, sizeof(size_t) * _fullSize);
   result = mm.memalign((void **) &_rankcache, 16, sizeof(size_t) * _fullSize);
 
-  size_t max_rank = 0, min_rank = (size_t)-1;
-  xmi_coord_t ll, ur;
 
 
 
@@ -787,38 +795,6 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl ()
     _bgp_mbar();
 
     cacheAnchorsPtr->done[tCoord] = 1;  // Indicate we have seen the info.
-  }
-
-  XMI::Topology::BgpTopology::static_setup(this);
-
-  size_t rectsize = (ur.n_torus.coords[0] - ll.n_torus.coords[0] + 1) *
-                    (ur.n_torus.coords[1] - ll.n_torus.coords[1] + 1) *
-                    (ur.n_torus.coords[2] - ll.n_torus.coords[2] + 1) *
-                    (ur.n_torus.coords[3] - ll.n_torus.coords[3] + 1);
-  if (_numActiveRanksGlobal == rectsize) {
-    _g_topology_world = new (&__topology_w) XMI::Topology::BgpTopology(&ll, &ur);
-  } else if (max_rank - min_rank + 1 == _numActiveRanksGlobal) {
-    // does this ever happen for "COMM_WORLD"?
-    _g_topology_world = new (&__topology_w) XMI::Topology::BgpTopology(min_rank, max_rank);
-  } else {
-    // wait for COMM_WORLD so we don't allocate yet-another ranks list?
-    // actually, COMM_WORLD should use our rank list...
-    // does this ever happen for "COMM_WORLD"?
-    // _g_topology_world = new (&__topology_w) XMI::Topology::BgpTopology(ranks, nranks);
-    fprintf(stderr, "failed to build comm-world topology\n");
-  }
-  _g_topology_world->subTopologyLocalToMe(&__topology_l);
-  _g_topology_local = &__topology_l;
-
-  _localranks = (unsigned *)malloc(sizeof(*_localranks) * NUM_CORES);
-  DCMF_assert_debug(_localranks);
-  unsigned index = 0;
-  for (unsigned i = 0; i < tSize(); i++) {
-      unsigned peerrank = (unsigned)-1;
-      int rc = torus2rank(x(), y(), z(), i, peerrank);
-      if ((rc == CM_SUCCESS) && (peerrank != (unsigned)-1)) {
-          _localranks[index++] = peerrank;
-      }
   }
   
   //fprintf (stderr, "BgpMapping::init_impl <<\n");

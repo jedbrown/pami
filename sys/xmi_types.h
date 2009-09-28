@@ -145,8 +145,8 @@ extern "C"
     XMI_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
     XMI_TORUS_NETWORK,       /**< DEPRECATED! 3D-Torus / 1D-SMP network type. */
     XMI_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
-                             * mapping->numGlobalDims() for torus dim,
-                             * mapping->numDims() for all (torus+SMP) dim.
+                             * mapping->torusDims() for torus dim,
+                             * mapping->globalDims() for all (torus+SMP) dim.
                              */
     XMI_SOCKET_NETWORK,      /**< Unix socket network type. */
     XMI_SHMEM_NETWORK,       /**< local shared memory "network" for smp nodes. */

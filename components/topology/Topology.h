@@ -248,7 +248,7 @@ namespace XMI
             /// \param[out] _new	New topology created there
             /// \param[in] other	The other topology
             ///
-            inline void unionTopology(Topology *_new, Topology *other);
+            inline void unionTopology(T_Topology *_new, T_Topology *other);
 
             /// \brief produce the intersection of two topologies
             ///
@@ -257,7 +257,7 @@ namespace XMI
             /// \param[out] _new	New topology created there
             /// \param[in] other	The other topology
             ///
-            inline void intersectTopology(Topology *_new, Topology *other);
+            inline void intersectTopology(T_Topology *_new, T_Topology *other);
 
             /// \brief produce the difference of two topologies
             ///
@@ -266,7 +266,7 @@ namespace XMI
             /// \param[out] _new	New topology created there
             /// \param[in] other	The other topology
             ///
-            inline void subtractTopology(Topology *_new, Topology *other);
+            inline void subtractTopology(T_Topology *_new, T_Topology *other);
         }; // end XMI::Topology::Topology
 
         template <class T_Topology>
@@ -405,19 +405,19 @@ namespace XMI
         }
 
         template <class T_Topology>
-	void Topology<T_Topology>::unionTopology(Topology *_new, Topology *other)
+	void Topology<T_Topology>::unionTopology(T_Topology *_new, T_Topology *other)
         {
             return static_cast<T_Topology*>(this)->unionTopology_impl(_new, other);
         }
 
         template <class T_Topology>
-	void Topology<T_Topology>::intersectTopology(Topology *_new, Topology *other)
+	void Topology<T_Topology>::intersectTopology(T_Topology *_new, T_Topology *other)
         {
             return static_cast<T_Topology*>(this)->intersectTopology_impl(_new, other);
         }
 
         template <class T_Topology>
-	void Topology<T_Topology>::subtractTopology(Topology *_new, Topology *other)
+	void Topology<T_Topology>::subtractTopology(T_Topology *_new, T_Topology *other)
         {
             return static_cast<T_Topology*>(this)->subtractTopology_impl(_new, other);
         }

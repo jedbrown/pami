@@ -30,14 +30,14 @@ namespace XMI
       ///
       typedef struct nodeaddr
       {
-        size_t global; ///< Global node coordinate
-        size_t local;  ///< Local node coordinate
+        size_t global; ///< Global node "rank"
+        size_t local;  ///< Local node "rank"
       } nodeaddr_t;
 
       ///
       /// \param T_Mapping Node mapping template class
       ///
-      template <class T_Mapping>
+      template <class T_Mapping, unsigned T_Dimensions>
       class Node
       {
         public:
@@ -97,44 +97,44 @@ namespace XMI
           inline xmi_result_t node2peer (nodeaddr_t & address, size_t & peer);
       };
 
-      template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::nodeTasks (size_t global, size_t & tasks)
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline xmi_result_t Node<T_Mapping,T_Dimensions>::nodeTasks (size_t global, size_t & tasks)
       {
         return static_cast<T_Mapping*>(this)->nodeTasks_impl (global, tasks);
       }
 
-      template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::nodePeers (size_t & peers)
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline xmi_result_t Node<T_Mapping,T_Dimensions>::nodePeers (size_t & peers)
       {
         return static_cast<T_Mapping*>(this)->nodePeers_impl (peers);
       }
 
-      template <class T_Mapping>
-      inline bool Node<T_Mapping>::isPeer (size_t task1, size_t task2)
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline bool Node<T_Mapping,T_Dimensions>::isPeer (size_t task1, size_t task2)
       {
         return static_cast<T_Mapping*>(this)->isPeer_impl (task1, task2);
       }
 
-      template <class T_Mapping>
-      inline void Node<T_Mapping>::nodeAddr (nodeaddr_t & address)
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline void Node<T_Mapping,T_Dimensions>::nodeAddr (nodeaddr_t & address)
       {
         return static_cast<T_Mapping*>(this)->nodeAddr_impl (address);
       }
 
-      template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::task2node (size_t task, nodeaddr_t & address)
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline xmi_result_t Node<T_Mapping,T_Dimensions>::task2node (size_t task, nodeaddr_t & address)
       {
         return static_cast<T_Mapping*>(this)->task2node_impl (task, address);
       }
 
-      template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::node2task (nodeaddr_t & address, size_t & task)
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline xmi_result_t Node<T_Mapping,T_Dimensions>::node2task (nodeaddr_t & address, size_t & task)
       {
         return static_cast<T_Mapping*>(this)->node2task_impl (address, task);
       }
 
-      template <class T_Mapping>
-      inline xmi_result_t Node<T_Mapping>::node2peer (nodeaddr_t & address, size_t & peer)
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline xmi_result_t Node<T_Mapping,T_Dimensions>::node2peer (nodeaddr_t & address, size_t & peer)
       {
         return static_cast<T_Mapping*>(this)->node2peer_impl (address, peer);
       }

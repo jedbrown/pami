@@ -19,7 +19,10 @@
 #include "components/atomic/Mutex.h"
 #include "sys/xmi.h"
 
-#warning The atomic class to use for a platform should be a template parameter. These typedefs belong in the context class.
+// NOTE, these typedefs choose which type of atomic to use for a specific device.
+// since the fine details of all this have not been designed yet, these will
+// remain here until such time.
+//#warning The atomic class to use for a platform should be a template parameter. These typedefs belong in the context class.
 #ifdef __bgp__
 
 #include "spi/kernel_interface.h"

@@ -75,7 +75,9 @@ namespace XMI
           inline size_t torusSize () const;
 #endif
           ///
-          /// \brief Get the number of torus dimensions
+          /// \brief Get the number of torus (physical network) dimensions
+          ///
+          /// Does not include local, on-node, pseudo-dimensions
           ///
           /// \return Torus dimensions
           ///
