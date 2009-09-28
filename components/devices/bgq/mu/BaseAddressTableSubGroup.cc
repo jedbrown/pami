@@ -56,8 +56,8 @@ init ( uint32_t subGroupId,
   //////////////////////////////////////////////////////////////////////////////
 
   rc = Kernel_QueryBaseAddressTable ( subGroupId,
-                                      _entryNumbers,
-                                      &numFreeEntries );
+                                      &numFreeEntries,
+                                      _entryNumbers );
 
   TRACE(("BatSubGroup init(): Query Free returned rc=%d and %u free entries for subgroup %u\n",
          rc,
@@ -81,8 +81,8 @@ init ( uint32_t subGroupId,
 
   rc = Kernel_AllocateBaseAddressTable ( subGroupId,
                                          &_baseAddressTableSubGroup,
-                                         _entryNumbers,
-                                         numEntries );
+                                         numEntries,
+                                         _entryNumbers );
 
   TRACE(("BatSubGroup init(): Allocate returned rc=%d for subgroup %u\n",
          rc,

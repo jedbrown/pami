@@ -70,8 +70,8 @@ init ( uint32_t subGroupId,
   //////////////////////////////////////////////////////////////////////////////
 
   rc = Kernel_QueryRecFifos ( subGroupId,
-                              _fifoNumbers,
-                              &numFreeFifos );
+                              &numFreeFifos,
+                              _fifoNumbers );
 
   TRACE(("RecFifoSubGroup init(): Query Free returned rc=%d and %d free Fifos for group %d\n",
          rc,
@@ -97,10 +97,7 @@ init ( uint32_t subGroupId,
                                  &_fifoSubGroup,
                                  numFifos,
                                  _fifoNumbers,
-                                 fifoAttrs,
-                                 (Kernel_RecFifoInterrupts_t *)NULL,
-                                 0,
-                                 (uint64_t*)NULL );
+                                 fifoAttrs );
 
 
   TRACE(("RecFifoSubGroup init(): Allocate returned rc=%d for subgroup %d\n",

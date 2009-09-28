@@ -62,8 +62,8 @@ init ( uint32_t subGroupId,
   //////////////////////////////////////////////////////////////////////////////
 
   rc = Kernel_QueryInjFifos ( subGroupId,
-                              _fifoNumbers,
-                              &numFreeFifos );
+                              &numFreeFifos,
+                              _fifoNumbers );
 
   TRACE(("InjFifoSubGroup init(): Query Free returned rc=%d and %d free Fifos for group %d\n",
          rc,
@@ -90,11 +90,7 @@ init ( uint32_t subGroupId,
                                  &_fifoSubGroup,
                                  numFifos,
                                  _fifoNumbers,
-                                 fifoAttrs,
-                                 (Kernel_InjFifoInterrupts_t *)NULL,
-                                 0,
-                                 (uint64_t*)NULL,
-                                 (uint64_t*)NULL );
+                                 fifoAttrs );
 
 
   TRACE(("InjFifoSubGroup init(): Allocate returned rc=%d for subgroup %d\n",
@@ -171,9 +167,9 @@ init ( uint32_t subGroupId,
       // ------------------------------------------------------------------------
 
       rc = Kernel_InjFifoActivate ( &_fifoSubGroup,
+				    1,
                                     &_fifoNumbers[fifoNum],
-                                    1,
-                                    1 );
+				    KERNEL_INJ_FIFO_ACTIVATE );
 
       if ( rc != 0 ) return (rc); // Return if error.
 
