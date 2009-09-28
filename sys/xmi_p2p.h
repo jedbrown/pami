@@ -221,16 +221,18 @@ extern "C"
 
   /**
    * \brief Dispatch callback
+   *
+   * "pipe" has nothing to do with "PipeWorkQueue"s
    */
   typedef void (*xmi_dispatch_p2p_fn) (
-    xmi_context_t        context,      /**< IN: XMI context */
-    void               * cookie,       /**< IN: dispatch cookie */
-    size_t               task,         /**< IN: source task */
-    void               * header_addr,  /**< IN: header address */
-    size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv);        /**< OUT: receive message structure */
+    xmi_context_t        context,      /**< IN:  XMI context     */
+    void               * cookie,       /**< IN:  dispatch cookie */
+    size_t               task,         /**< IN:  source task     */
+    void               * header_addr,  /**< IN:  header address  */
+    size_t               header_size,  /**< IN:  header size     */
+    void               * pipe_addr,    /**< IN:  address of XMI pipe  buffer, valid only if non-NULL        */
+    size_t               pipe_size,    /**< IN:  size of XMI pipe buffer, valid regarldless of message type */
+    xmi_recv_t         * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /** \} */ /* end of "active message" group */
 

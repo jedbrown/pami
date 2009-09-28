@@ -59,20 +59,18 @@ static void RecvLongDoneCB(xmi_context_t   context,
 }
 
 static void RecvLongCB(xmi_context_t   context,
-                void          * cookie,
-                size_t          remote_task,
-                void          * _msginfo,
-                size_t          msginfo_size,
-                void          * _addr,
-                size_t          size,
-                xmi_recv_t    * recv)
+                       void          * cookie,
+                       size_t          remote_task,
+                       void          * _msginfo,
+                       size_t          msginfo_size,
+                       void          * _addr,
+                       size_t          size,
+                       xmi_recv_t    * recv)
 {
   assert(_addr == NULL);
-#warning Do I have any way of ascertaining if this was a reliable send?  Does it matter at this point, i.e. if I get this far can I assume that it will complete?
   assert(msginfo_size >= sizeof(unsigned));
   unsigned* msginfo = (unsigned*)_msginfo;
 
-#warning How big is the message?  Is that "size"?  I need to know for UE, and I have to be able to receive less for truncated recvs
   void* buf = malloc(size);
   recv->local_fn = RecvLongDoneCB;
   recv->cookie   = buf;
@@ -80,24 +78,23 @@ static void RecvLongCB(xmi_context_t   context,
   recv->data.simple.addr  = buf;
   recv->data.simple.bytes = size;
 
-#warning How can I get the context number out of the context opaque type?  I don't have a good idea how I could use the pointer to write a multi-context recv-queue.
+#warning I need each channel to have an id number/index to write a multi-context recv-queue.
   printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu\n", rank, context, remote_task, msginfo[0], size);
 }
 
 static void RecvShortCB(xmi_context_t   context,
-                 void          * cookie,
-                 size_t          remote_task,
-                 void          * _msginfo,
-                 size_t          msginfo_size,
-                 void          * _addr,
-                 size_t          size,
-                 xmi_recv_t    * recv)
+                        void          * cookie,
+                        size_t          remote_task,
+                        void          * _msginfo,
+                        size_t          msginfo_size,
+                        void          * _addr,
+                        size_t          size,
+                        xmi_recv_t    * recv)
 {
   assert(_addr != NULL);
   assert(msginfo_size >= sizeof(unsigned));
   unsigned* msginfo = (unsigned*)_msginfo;
   unsigned* data    = (unsigned*)_addr;
-#warning Do I have to use "recv" if _addr isn't NULL?
   printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu data=%x\n", rank, context, remote_task, msginfo[0], size, data[0]);
   done.s.r = 1;
 }
@@ -115,7 +112,6 @@ static void SendLongHandoff(xmi_context_t   context,
                      void          * cookie,
                      xmi_result_t    result)
 {
-#warning Where do I declare that this is an ordered and reliable send?
   int quad[] = {0x111, 0x222, 0x333, 0x444};
 
   xmi_send_simple_t parameters = { {0}, {0} };
@@ -189,7 +185,6 @@ static void init()
   for (i=0; i<NUM_CONTEXTS; ++i) {
     XMI_Context_create(client, NULL, 0, contexts+i);
     XMI_Dispatch_set(contexts[i],
-#warning What does the "dispatch" param do?  It is an "IN" to the function, but I cannot initialize it.
                      SHORT_DISPATCH,
                      RecvShortFN,
                      NULL,
@@ -209,11 +204,8 @@ static void init()
   XMI_Configuration_query (contexts[0], &query);
   size = query.value.intval;
 
-#warning How do I set MPI_THREAD_MULTIPLE?  I found "XMI_MODE_THREADED", but I don't know what to do with it
-  /* DCMF_Configure_t dcmf_config; */
-  /* memset(&dcmf_config, 0x00, sizeof(DCMF_Configure_t)); */
+#warning We need to clairify the threading nature of XMI
   /* dcmf_config.thread_level = DCMF_THREAD_MULTIPLE; */
-  /* DCMF_Messager_configure(&dcmf_config, &dcmf_config); */
 
   printf("Rank=%zu Size=%zu    <XMI Initialized> thread-level=%d\n", rank, size, 13);
 }
