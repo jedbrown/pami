@@ -45,9 +45,9 @@ size_t sdispls[ MAX_COMM_SIZE ];
 size_t rcvlens[ MAX_COMM_SIZE ];
 size_t rdispls[ MAX_COMM_SIZE ];
 
-void init_bufs(int r)
+void init_bufs(size_t r)
 {
-  for ( unsigned k = 0; k < sndlens[r]; k++ )
+  for ( size_t k = 0; k < sndlens[r]; k++ )
     {
       sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
       rbuf[ rdispls[r] + k ] = 0xff;
@@ -235,7 +235,7 @@ int main(int argc, char*argv[])
   size_t i,j;
   if (task_id == 0)
       {
-	printf("# Alltoallv Bandwidth Test(size:%ld)\n",sz);
+	printf("# Alltoallv Bandwidth Test(size:%ld) %p\n",sz, cb_alltoallv);
 	  printf("# Size(bytes)           cycles    bytes/sec      usec\n");
 	  printf("# -----------      -----------    -----------    ---------\n");
       }

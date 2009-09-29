@@ -71,7 +71,6 @@ namespace CCMI
                                rdispls, rcvcounters, geometry->nranks(),
                                // we want myIdx, not COMM_WORLD rank.
                                geometry->myIdx());
-
         int idx = geometry->myIdx();
         int size = (sndlens[idx] < rcvlens[idx])?
                    (sndlens[idx]):(rcvlens[idx]);
@@ -92,7 +91,6 @@ namespace CCMI
       {
         CCMI_assert (_geometry != NULL);
         CCMI_assert (_geometry->ranks() != NULL);
-
         // this is a bit hackish, but better than templatizing the geometry
         // we'll replace with topology and do it right
         if(sizeof(T_Counter) == 4)
@@ -125,7 +123,6 @@ namespace CCMI
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->_donecount ++;
-
         if((proto->_donecount == 2) && (proto->_app_cb_done.function))
           proto->_app_cb_done.function (NULL, proto->_app_cb_done.clientdata, XMI_SUCCESS);
       }

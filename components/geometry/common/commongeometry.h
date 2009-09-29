@@ -125,19 +125,16 @@ namespace XMI
         }
       inline void                      generatePermutation_impl()
         {
-          assert(0);
 	  return;
         }
 
       inline void                      freePermutation_impl()
         {
-          assert(0);
 	  return;
         }
       inline unsigned                 *permutation_impl()
         {
-          assert(0);
-	  return NULL;
+          return _ranks;
         }
       inline void                      generatePermutation_sizet_impl()
         {

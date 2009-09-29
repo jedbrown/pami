@@ -84,6 +84,46 @@ namespace XMI
       xmi_dt              _dtype;
       size_t              _counter;
     };
+
+    class MPIM2MMessage
+    {
+    public:
+      xmi_context_t       _context;
+      size_t              _dispatch_id;
+      unsigned            _conn;
+      xmi_event_function  _done_fn;
+      void               *_cookie;
+      int                 _num;
+      MPI_Request        *_reqs;
+      int                 _totalsize;
+      char               *_bufs;
+    };
+    
+    template <class T_Counter>
+    class MPIM2MRecvMessage
+    {
+    public:
+      size_t              _dispatch_id;
+      unsigned            _conn;
+      xmi_event_function  _done_fn;
+      void               *_cookie;
+      int                 _num;
+      char               *_buf;
+      T_Counter          *_sizes;
+      T_Counter          *_offsets;
+      unsigned            _nranks;
+    };
+
+    class MPIM2MHeader
+    {
+    public:
+      size_t      _dispatch_id;
+      unsigned    _size;
+      unsigned    _conn;
+      inline void *buffer() { return ((char *)this + sizeof (MPIM2MHeader)); } 
+      inline int  totalsize () { return _size + sizeof (MPIM2MHeader); } 
+    };
+
     
   };
 };

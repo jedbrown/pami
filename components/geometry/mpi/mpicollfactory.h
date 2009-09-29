@@ -577,8 +577,10 @@ namespace XMI
                   {
                     XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep> *cinfo=
                        (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
+
+// todo:  add some compile time asserts
                     
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(4*sizeof(XMI_Request_t));
                     XMI_Callback_t cb_done_ccmi;
 		    cb_done_ccmi.function   = alltoallv->cb_done;
                     cb_done_ccmi.clientdata = alltoallv->cookie;

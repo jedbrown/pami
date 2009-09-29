@@ -249,10 +249,10 @@ extern "C"
   typedef xmi_quad_t * (*xmi_olddispatch_manytomany_fn) (unsigned          conn_id,
                                                          void            * arg,
                                                          char           ** rcvbuf,
-                                                         unsigned       ** rcvdispls,
-                                                         unsigned       ** rcvlens,
-                                                         unsigned       **rcvcounters,
-                                                         unsigned        * nranks,
+                                                         size_t       ** rcvdispls,
+                                                         size_t       ** rcvlens,
+                                                         size_t       **rcvcounters,
+                                                         size_t        * nranks,
                                                          xmi_callback_t  * cb_done);
 
   

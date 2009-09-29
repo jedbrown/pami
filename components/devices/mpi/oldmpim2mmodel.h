@@ -31,12 +31,12 @@ namespace XMI
         Interface::Oldm2mModel<MPIOldm2mModel<T_Device, T_Message, T_Counter>, T_Device, T_Message, T_Counter> (device),
         _device(device)
         {
-//          assert(0);
+          _dispatch_id = _device.initM2M();
         };
         
       inline void setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg)
         {
-          assert(0);
+          _device.registerM2MRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
       inline void  send_impl  (XMI_Request_t         * request,
@@ -51,7 +51,71 @@ namespace XMI
                                T_Counter              * permutation,
                                unsigned                nranks)
         {
-          assert(0);
+
+          unsigned i;
+          MPIM2MMessage * m2m = (MPIM2MMessage *)malloc(sizeof(MPIM2MMessage));
+          XMI_assert( m2m != NULL );
+
+          m2m->_context     = NULL;
+          m2m->_dispatch_id = _dispatch_id;
+          m2m->_conn        = connid;
+
+          if(cb_done)
+              {
+                m2m->_done_fn = cb_done->function;
+                m2m->_cookie  = cb_done->clientdata;
+              }
+          else
+            m2m->_done_fn = NULL;
+
+          m2m->_num = 0;
+          m2m->_totalsize = 0;
+
+          for( i = 0; i < nranks; i++)
+          {
+            if( sizes[i] == 0 )
+              continue;
+            m2m->_num++;
+            m2m->_totalsize += (sizes[i] + sizeof(MPIM2MHeader));
+          }
+
+          if( m2m->_num == 0 )
+          {
+            if( m2m->_done_fn )
+              m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+            free ( m2m );
+            return ;
+          }
+
+          m2m->_reqs = (MPI_Request *)malloc( m2m->_num * sizeof(MPI_Request));
+          XMI_assert ( m2m->_reqs != NULL );
+          m2m->_bufs = ( char *)malloc( m2m->_totalsize );
+          XMI_assert ( m2m->_bufs != NULL );
+
+          MPIM2MHeader   * hdr = (MPIM2MHeader *) m2m->_bufs;
+          MPI_Request    * req = m2m->_reqs;
+          for( i = 0; i < nranks; i++)
+          {
+            int index = permutation[i];
+            XMI_assert ( index < nranks );
+            if( sizes[index] == 0 ) continue;
+            hdr->_dispatch_id = _dispatch_id;
+            hdr->_size        = sizes[index];
+            hdr->_conn        = connid;
+            memcpy (hdr->buffer(), buf+offsets[index], sizes[index]);
+            int rc = -1;
+            rc = MPI_Isend (hdr,
+                            hdr->totalsize(),
+                            MPI_CHAR,
+                            ranks[index],
+                            2,
+                            MPI_COMM_WORLD,
+                            req);
+            XMI_assert (rc == MPI_SUCCESS);
+            hdr = (MPIM2MHeader *)((char *)hdr + hdr->totalsize());
+            req++;
+          }
+          _device.enqueue(m2m);
           return;
         }
       
@@ -59,13 +123,35 @@ namespace XMI
                                  const xmi_callback_t   * cb_done,
                                  unsigned                 connid,
                                  char                   * buf,
-                                 T_Counter               * sizes,
-                                 T_Counter               * offsets,
-                                 T_Counter               * counters,
+                                 T_Counter              * sizes,
+                                 T_Counter              * offsets,
+                                 T_Counter              * counters,
                                  unsigned                 nranks,
                                  unsigned                 myindex)
         {
-          assert(0);
+          MPIM2MRecvMessage<T_Counter> *msg = (MPIM2MRecvMessage<T_Counter>*)malloc(sizeof(*msg));
+          msg->_dispatch_id = _dispatch_id;
+          msg->_conn        = connid;
+          msg->_done_fn     = cb_done->function;
+          msg->_cookie      = cb_done->clientdata;
+          msg->_num         = 0;
+          for( unsigned i = 0; i < nranks; i++)
+          {
+            if( sizes[i] == 0 ) continue;
+            msg->_num++;
+          }
+
+          if( msg->_num == 0 )
+          {
+            if( msg->_done_fn )
+              (*msg->_done_fn)(NULL, msg->_cookie,XMI_SUCCESS);
+            free(msg);
+          }
+          msg->_buf     = buf;
+          msg->_sizes   = sizes;
+          msg->_offsets = offsets;
+          msg->_nranks  = nranks;          
+          _device.enqueue(msg);
           return;
         }
       T_Device                     &_device;
