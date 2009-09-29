@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "components/topology/Topology.h"
+#include "components/mapping/mpi/mpimapping.h"
 
 #define XMI_TOPOLOGY_CLASS XMI::Topology::MPI
 
@@ -39,6 +40,10 @@ namespace XMI
                 Topology<XMI::Topology::MPI>(ranks, nranks)
                 {}
 
+
+            static void static_init(XMI::Mapping::MPIMapping *map)
+            {
+            }
             inline unsigned size_of_impl()
                 {
 		  return 0;

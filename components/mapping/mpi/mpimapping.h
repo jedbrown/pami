@@ -18,6 +18,7 @@
 #include "components/mapping/BaseMapping.h"
 #include "components/mapping/TorusMapping.h"
 #include "components/mapping/NodeMapping.h"
+#include "components/memory/heap/HeapMemoryManager.h"
 #include <mpi.h>
 
 #define XMI_MAPPING_CLASS XMI::Mapping::MPIMapping
@@ -27,16 +28,16 @@ namespace XMI
   namespace Mapping
   {
 #define MPI_DIMS 1
-    class MPIMapping : public Interface::Base<MPIMapping>,
+    class MPIMapping : public Interface::Base<MPIMapping, XMI::Memory::HeapMemoryManager>,
                        public Interface::Torus<MPIMapping, MPI_DIMS>,
-                       public Interface::Node<MPIMapping>
+                       public Interface::Node<MPIMapping, MPI_DIMS>
     {
 	
     public:
       inline MPIMapping () : 
-        Interface::Base<MPIMapping>(),
+        Interface::Base<MPIMapping,XMI::Memory::HeapMemoryManager >(),
         Interface::Torus<MPIMapping, MPI_DIMS>(),
-        Interface::Node<MPIMapping>()
+        Interface::Node<MPIMapping, MPI_DIMS>()
         {
           MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
           MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
@@ -46,8 +47,15 @@ namespace XMI
       size_t    _task;
       size_t    _size;
     public:
-      inline xmi_result_t init_impl()
+      inline xmi_result_t init_impl(xmi_coord_t                    &ll,
+                                    xmi_coord_t                    &ur,
+				    size_t                          min_rank,
+                                    size_t                          max_rank,
+				    XMI::Memory::HeapMemoryManager &mm)
         {
+          ll.n_torus.coords[0] = 0;
+          ur.n_torus.coords[0] = _size-1;
+          
           return XMI_SUCCESS;
         }
       inline size_t task_impl()
@@ -113,6 +121,10 @@ namespace XMI
           if(dimension >= MPI_DIMS)
             abort();
           return _task;
+        }
+      inline size_t globalDims()
+        {
+          return MPI_DIMS;
         }
     };
   };
