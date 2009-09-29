@@ -75,8 +75,11 @@ namespace XMI
                     {
                       _ranks[k] = rangelist[i].lo + j;
                       _ranks_sizet[k] = rangelist[i].lo + j;
+                      if(_ranks[k] == this->_rank)
+                        _myidx = k;
                     }
               }
+
           geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
 
@@ -118,8 +121,7 @@ namespace XMI
         }
       inline int                       myIdx_impl()
         {
-          assert(0);
-	  return 0;
+          return _myidx;
         }
       inline void                      generatePermutation_impl()
         {
@@ -351,6 +353,7 @@ namespace XMI
       void                 *_allreduce[2];
       unsigned              _allreduce_async_mode;
       unsigned              _allreduce_iteration;
+      int                   _myidx;
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace XMI
