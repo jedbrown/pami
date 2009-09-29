@@ -333,7 +333,104 @@ namespace XMI
                   }
                   case XMI::CollInfo::CI_ALLREDUCE1:
                   {
-                    assert(0);
+                    CCMI::Adaptor::Allreduce::BaseComposite * arcomposite =
+                      (CCMI::Adaptor::Allreduce::BaseComposite *)_geometry->getAllreduceComposite();
+                    XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep> *cinfo=
+                      (XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>*)info;
+
+                    XMI_Callback_t cb_done;
+                    cb_done.function   = allreduce->cb_done;
+                    cb_done.clientdata = allreduce->cookie;                    
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    CCMI::Adaptor::Allreduce::Ring::Factory *factory =
+                      (CCMI::Adaptor::Allreduce::Ring::Factory *) &cinfo->_allreduce_registration;
+                    if(arcomposite != NULL  &&  arcomposite->getFactory() == factory)
+                        {
+                          xmi_result_t status =  (xmi_result_t)arcomposite->restart((XMI_CollectiveRequest_t*)req,
+                                                                      cb_done,
+                                                                      XMI_MATCH_CONSISTENCY,
+                                                                      allreduce->sndbuf,
+                                                                      allreduce->rcvbuf,
+                                                                      allreduce->stypecount,
+                                                                      allreduce->dt,
+                                                                      allreduce->op);
+                          if(status == XMI_SUCCESS)
+                              {
+                                _geometry->setAllreduceComposite(arcomposite);
+                                return status;
+                              }
+                        }
+
+                    if(arcomposite != NULL) // Different factory?  Cleanup old executor.
+                        {
+                          _geometry->setAllreduceComposite(NULL);
+                          arcomposite->~BaseComposite();
+                        }
+                    void *ptr =factory->generate((XMI_CollectiveRequest_t*)req,
+                                                 cb_done,
+                                              XMI_MATCH_CONSISTENCY,
+                                              _geometry,
+                                              allreduce->sndbuf,
+                                              allreduce->rcvbuf,
+                                              allreduce->stypecount,
+                                              allreduce->dt,
+                                              allreduce->op);
+                    if(ptr == NULL)
+                        {
+                          return XMI_UNIMPL;
+                        }
+                    return XMI_SUCCESS;
+                    break;
+                  }
+                  case XMI::CollInfo::CI_ALLREDUCE2:
+                  {
+                    CCMI::Adaptor::Allreduce::BaseComposite * arcomposite =
+                      (CCMI::Adaptor::Allreduce::BaseComposite *)_geometry->getAllreduceComposite();
+                    XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep> *cinfo=
+                      (XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep>*)info;
+
+                    XMI_Callback_t cb_done;
+                    cb_done.function   = allreduce->cb_done;
+                    cb_done.clientdata = allreduce->cookie;                    
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    CCMI::Adaptor::Allreduce::Binomial::Factory *factory =
+                      (CCMI::Adaptor::Allreduce::Binomial::Factory *) &cinfo->_allreduce_registration;
+                    if(arcomposite != NULL  &&  arcomposite->getFactory() == factory)
+                        {
+                          xmi_result_t status =  (xmi_result_t)arcomposite->restart((XMI_CollectiveRequest_t*)req,
+                                                                      cb_done,
+                                                                      XMI_MATCH_CONSISTENCY,
+                                                                      allreduce->sndbuf,
+                                                                      allreduce->rcvbuf,
+                                                                      allreduce->stypecount,
+                                                                      allreduce->dt,
+                                                                      allreduce->op);
+                          if(status == XMI_SUCCESS)
+                              {
+                                _geometry->setAllreduceComposite(arcomposite);
+                                return status;
+                              }
+                        }
+
+                    if(arcomposite != NULL) // Different factory?  Cleanup old executor.
+                        {
+                          _geometry->setAllreduceComposite(NULL);
+                          arcomposite->~BaseComposite();
+                        }
+                    void *ptr =factory->generate((XMI_CollectiveRequest_t*)req,
+                                                 cb_done,
+                                              XMI_MATCH_CONSISTENCY,
+                                              _geometry,
+                                              allreduce->sndbuf,
+                                              allreduce->rcvbuf,
+                                              allreduce->stypecount,
+                                              allreduce->dt,
+                                              allreduce->op);
+                    if(ptr == NULL)
+                        {
+                          return XMI_UNIMPL;
+                        }
+                    return XMI_SUCCESS;
                     break;
                   }
                   default:

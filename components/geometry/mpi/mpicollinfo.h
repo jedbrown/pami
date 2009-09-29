@@ -65,6 +65,7 @@ namespace XMI
       CI_SCATTERV0,
       CI_ALLREDUCE0,
       CI_ALLREDUCE1,
+      CI_ALLREDUCE2,
       CI_BARRIER0,
       CI_BARRIER1,
       CI_AMBROADCAST0,
@@ -259,7 +260,25 @@ namespace XMI
       CCMI::Adaptor::Allreduce::Ring::Factory                 _allreduce_registration;
     };
 
-
+   template <class T_Device, class T_Sysdep>
+    class CCMIBinomialAllreduceInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIBinomialAllreduceInfo(T_Device *dev,
+                                T_Sysdep * sd,
+                                xmi_mapidtogeometry_fn fcn):
+        CollInfo<T_Device>(dev),
+        _model(*dev),
+        _allreduce_registration(sd,
+                                &_model,
+                                fcn,
+                                (CCMI::Adaptor::ConfigFlags){0, 0})
+        {
+        }
+      XMI_Request_t                                           _request;
+      MPIMcastModel                                           _model;
+      CCMI::Adaptor::Allreduce::Binomial::Factory             _allreduce_registration;
+    };
     
     
   };
