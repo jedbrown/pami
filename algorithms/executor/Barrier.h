@@ -223,7 +223,7 @@ namespace CCMI
 //        _minfo.setConnectionId(_connid);
 //        _minfo.setRoles((unsigned)-1);
 //        _minfo.setRanks(NULL);
-        _minfo.req_size  = sizeof(_request);
+//        _minfo.req_size  = sizeof(_request);
         _minfo.connection_id = _connid;
         _minfo.roles         = -1U;
         _minfo.participants  = NULL;
@@ -301,16 +301,17 @@ inline void CCMI::Executor::Barrier<T_Msync, T_Topology>::sendNext()
     {
       TRACE_ERR((stderr,"<%X>Executor::Barrier::sendNext set callback %X\n",(int)this, (int)_cb_done));
 //      _minfo.setCallback (_cb_done, _clientdata);
-      _minfo.cb_done= _cb_done;
-      _minfo.cookie = _clientdata;
-
+//      _minfo.cb_done= _cb_done;
+//      _minfo.cookie = _clientdata;
+      _minfo.cb_done.function   = _cb_done;
+      _minfo.cb_done.clientdata = _clientdata;
       _phase ++;
     }
     else
         {
 //          _minfo.setCallback (staticNotifySendDone, this);
-          _minfo.cb_done= staticNotifySendDone;
-          _minfo.cookie = this;
+          _minfo.cb_done.function   = staticNotifySendDone;
+          _minfo.cb_done.clientdata = this;
         }
 
     new (&topo) T_Topology(dstranks, ndest);

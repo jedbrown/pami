@@ -16,6 +16,7 @@
 
 /* Ordering is important here. This may not be right yet. */
 #include "mpi.h"
+#include "components/sysdep/mpi/mpisysdep.h"
 #include "components/pipeworkqueue/mpi/mpipipeworkqueue.h"
 #include "components/topology/mpi/mpitopology.h"
 #include "components/time/mpi/mpitime.h"

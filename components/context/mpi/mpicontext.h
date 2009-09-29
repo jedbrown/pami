@@ -15,6 +15,7 @@
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpimodel.h"
 #include "components/devices/mpi/mpimessage.h"
+#include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "components/sysdep/mpi/mpisysdep.h"
 #include "components/geometry/mpi/mpicollfactory.h"
@@ -130,19 +131,17 @@ namespace XMI
       inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
         {
           size_t id = (size_t)(parameters->send.dispatch);
-          assert (_dispatch[id] != NULL);
-
-          XMI::Protocol::Send::Simple * send =
-            (XMI::Protocol::Send::Simple *) _dispatch[id];
-          send->start (parameters->simple.local_fn,
-                       parameters->simple.remote_fn,
-                       parameters->send.cookie,
-                       parameters->send.task,
-                       parameters->simple.addr,
-                       parameters->simple.bytes,
-                       parameters->send.header.addr,
-                       parameters->send.header.bytes);
-
+          XMI_assert_debug (_dispatch[id] != NULL);
+          XMI::Protocol::Send::Send * send =
+            (XMI::Protocol::Send::Send *) _dispatch[id];
+          send->simple (parameters->simple.local_fn,
+                        parameters->simple.remote_fn,
+                        parameters->send.cookie,
+                        parameters->send.task,
+                        parameters->simple.addr,
+                        parameters->simple.bytes,
+                        parameters->send.header.addr,
+                        parameters->send.header.bytes);
           return XMI_SUCCESS;
         }
 
