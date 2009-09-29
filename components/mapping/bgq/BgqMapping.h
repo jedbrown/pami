@@ -204,7 +204,7 @@ namespace XMI
           addr[3] = _d;
           addr[4] = _e;
           addr[5] = _p;
-          addr[7] = _t;
+          addr[6] = _t;
         }
 
         ///

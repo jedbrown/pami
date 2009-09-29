@@ -118,22 +118,6 @@ bool XMI::Device::MU::MUDevice::requiresRead_impl ()
   return false;
 };
 
-size_t XMI::Device::MU::MUDevice::getPacketMetadataSize_impl ()
-{
-  return 17; // <-- replace with a constant from SPIs somewhere
-};
-
-size_t XMI::Device::MU::MUDevice::getPacketPayloadSize_impl ()
-{
-  return 512; // <-- replace with a constant from SPIs somewhere
-  //return 8;
-};
-
-size_t XMI::Device::MU::MUDevice::getMessageMetadataSize_impl ()
-{
-  return 13; // <-- replace with a constant from SPIs somewhere
-};
-
 bool XMI::Device::MU::MUDevice::registerPacketHandler (Interface::RecvFunction_t   function,
                                                 void                              * arg,
                                                 uint8_t                           & id)

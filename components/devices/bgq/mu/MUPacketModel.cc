@@ -60,7 +60,7 @@ XMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device, xmi_context_t 
 
 XMI::Device::MU::MUPacketModel::~MUPacketModel () {};
 
-bool XMI::Device::MU::MUPacketModel::init_impl (Interface::RecvFunction_t   direct_recv_func,
+xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (Interface::RecvFunction_t   direct_recv_func,
                                                 void                      * direct_recv_func_parm,
                                                 Interface::RecvFunction_t   read_recv_func,
                                                 void                      * read_recv_func_parm)
@@ -77,7 +77,7 @@ bool XMI::Device::MU::MUPacketModel::init_impl (Interface::RecvFunction_t   dire
                                    direct_recv_func_parm,
                                    hdr->dev.dispatch_id);
 
-  return success;
+  return XMI_SUCCESS;
 };
 
 //

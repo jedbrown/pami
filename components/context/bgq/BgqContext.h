@@ -20,6 +20,8 @@
 #include "util/fifo/LinearFifo.h"
 
 #include "components/devices/bgq/mu/MUDevice.h"
+#include "components/devices/bgq/mu/MUPacketModel.h"
+#include "components/devices/bgq/mu/MUInjFifoMessage.h"
 
 #include "components/atomic/gcc/GccBuiltin.h"
 //#include "components/atomic/pthread/Pthread.h"
@@ -53,6 +55,9 @@ namespace XMI
     //
     // >> Point-to-point protocol typedefs and dispatch registration.
     typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice, ShmemMessage> EagerShmem;
+    typedef XMI::Protocol::Send::Eager <XMI::Device::MU::MUPacketModel,
+                                        XMI::Device::MU::MUDevice,
+                                        XMI::Device::MU::MUInjFifoMessage> EagerMu;
     // << Point-to-point protocol typedefs and dispatch registration.
     //
 
@@ -342,7 +347,8 @@ namespace XMI
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _request.allocateObject ();
 
-            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+            //new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
+            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, _sysdep.mapping.task(), _context, result);
           }
 
           return result;

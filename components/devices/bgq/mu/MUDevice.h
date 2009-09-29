@@ -61,6 +61,12 @@ namespace XMI
           /// \copydoc XMI::Device::Interface::BaseDevice::isInit
           bool isInit_impl ();
 
+          /// \copydoc XMI::Device::Interface::BaseDevice::peers
+          inline size_t peers_impl ();
+
+          /// \copydoc XMI::Device::Interface::BaseDevice::task2peer
+          inline size_t task2peer_impl (size_t task);
+
           /// \copydoc XMI::Device::Interface::BaseDevice::advance
           inline int advance_impl ();
 
@@ -78,11 +84,11 @@ namespace XMI
           /// \copydoc XMI::Device::Interface::PacketDevice::requiresRead
           bool requiresRead_impl ();
 
-          /// \copydoc XMI::Device::Interface::PacketDevice::getPacketMetadataSize
-          size_t getPacketMetadataSize_impl ();
+          /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
+          static const size_t packet_metadata_size = 17; // <-- replace with a constant from SPIs somewhere
 
-          /// \copydoc XMI::Device::Interface::PacketDevice::getPacketMetadataSize
-          size_t getPacketPayloadSize_impl ();
+          /// \see XMI::Device::Interface::PacketDevice::getPacketPayloadSize()
+          static const size_t packet_payload_size = 512; // <-- replace with a constant from SPIs somewhere
 
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
@@ -92,8 +98,8 @@ namespace XMI
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
 
-          /// \copydoc XMI::Device::Interface::MessageDevice::getMessageMetadataSize
-          size_t getMessageMetadataSize_impl ();
+          /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
+          static const size_t message_metadata_size = 13; // <-- replace with a constant from SPIs somewhere
 
           /// \copydoc XMI::Device::Interface::MessageDevice::setConnection
           //inline void setConnection_impl (int channel, size_t rank, void * arg);
@@ -400,6 +406,15 @@ namespace XMI
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+size_t XMI::Device::MU::MUDevice::peers_impl ()
+{
+  return sysdep->mapping.size();
+}
+
+size_t XMI::Device::MU::MUDevice::task2peer_impl (size_t task)
+{
+  return task;
+}
 
 int XMI::Device::MU::MUDevice::advance_impl()
 {
