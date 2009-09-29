@@ -13,6 +13,7 @@
 #include "sys/xmi.h"
 #include "components/context/Context.h"
 
+#undef ENABLE_GENERIC_DEVICE
 #ifdef ENABLE_GENERIC_DEVICE
 #include "components/devices/generic/GenericDevice.h"
 #endif
@@ -43,7 +44,7 @@ namespace XMI
   namespace Context
   {
     typedef Fifo::FifoPacket <16,240> ShmemPacket;
-#ifdef ENABLE_LOCKBOX
+#ifdef NOT_YET
     typedef Fifo::LinearFifo<Counter::LockBoxProcCounter<XMI::SysDep::BgpSysDep>,ShmemPacket,128> ShmemFifo;
 #else
     typedef Fifo::LinearFifo<Atomic::BgpAtomic<XMI::SysDep::BgpSysDep>,ShmemPacket,128> ShmemFifo;

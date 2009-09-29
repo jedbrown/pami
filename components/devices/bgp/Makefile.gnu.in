@@ -1,6 +1,4 @@
 VPATH		= @abs_srcdir@
-# re-enable when lockbox is supported
-#SUBDIRS		= collective_network
 SUBDIRS		=
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules

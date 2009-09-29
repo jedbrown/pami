@@ -89,7 +89,7 @@ namespace XMI
 
           XMI::Context::BgpContext * context = NULL;
           int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::BgpContext));
-          XMI_assert(rc!=0);
+          XMI_assertf(rc==0, "posix_memalign failed for context, errno=%d\n", errno);
           memset ((void *)context, 0x00, sizeof(XMI::Context::BgpContext));
           new (context) XMI::Context::BgpContext (this->getClientId());
           //_context_list->pushHead ((QueueElem *) context);

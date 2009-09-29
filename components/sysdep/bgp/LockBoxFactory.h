@@ -62,11 +62,13 @@ namespace BGP {
 		LockBoxFactory(XMI::Mapping::BgpMapping *mapping) {
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
+			xmi_result_t rc;
 			xmi_coord_t coord;
 			size_t i;
 			int ncores = Kernel_ProcessorCount();
 			size_t t;
-			XMI_assert(XMI_SUCCESS == mapping->nodePeers(t));
+			rc = mapping->nodePeers(t);
+			XMI_assert(rc == XMI_SUCCESS);
 			_factory.numCore = 0;
 			_factory.numProc = 0;
 			_factory.masterProc = (unsigned)-1;
@@ -82,13 +84,14 @@ namespace BGP {
 			_factory.coreShift = shift;
 			for (i = 0; i < t; ++i) {
 				size_t r;
-				XMI_assert(XMI_SUCCESS == mapping->node2peer(
-					(XMI::Mapping::Interface::nodeaddr_t){0, i}, &r));
-				if (r >= 0) {
+				XMI::Mapping::Interface::nodeaddr_t n = {0, i};
+				rc = mapping->node2peer(n, r);
+				XMI_assert(rc == XMI_SUCCESS);
+				if (r != (size_t)-1) {
 					_factory.numCore += ncores;
 					++_factory.numProc;
-					mapping->task2network(r, &coord, XMI_TORUS_NETWORK);
-					_factory.coreXlat[i] = coord.torus.t << shift;
+					mapping->task2network(r, &coord, XMI_N_TORUS_NETWORK);
+					_factory.coreXlat[i] = coord.n_torus.coords[3] << shift;
 					if (r == mapping->task()) {
 						_factory.myProc = i;
 					}

@@ -17,6 +17,8 @@
 
 #include "components/sysdep/SysDep.h"
 
+#undef ENABLE_LOCKBOX
+
 // These must be defined early
 #define NUM_CORES 4
 #define NUM_SMT 1
