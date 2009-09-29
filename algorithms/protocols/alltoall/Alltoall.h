@@ -14,12 +14,11 @@
 #ifndef __ADAPTOR_ALL_TO_ALL_PROTOCOL__
 #define __ADAPTOR_ALL_TO_ALL_PROTOCOL__
 
-#include "multisend/multisend_impl.h"
-
 namespace CCMI
 {
   namespace Adaptor
   {
+    template <class T_Manytomany, class T_Sysdep, class T_Counter>
     class A2AProtocol
     {
     protected:
@@ -28,29 +27,29 @@ namespace CCMI
       XMI_Callback_t   _my_cb_done;
       XMI_Callback_t   _app_cb_done;
 
-      unsigned           _donecount;
+      unsigned             _donecount;
 
-      const char       * _sndbuf;
-      unsigned         * _sndlens;
-      unsigned         * _sdispls;
-      unsigned         * _sndcounters;
-      Geometry         * _geometry;
-      CCMI::MultiSend::ManytomanyInterface *_minterface;
+      const char         * _sndbuf;
+      T_Counter          * _sndlens;
+      T_Counter          * _sdispls;
+      T_Counter          * _sndcounters;
+      XMI_GEOMETRY_CLASS * _geometry;
+      T_Manytomany       * _minterface;
 
     public:
-      A2AProtocol (CCMI::CollectiveMapping                        *mapping,
-                   CCMI::MultiSend::ManytomanyInterface *minterface,
-                   XMI_Callback_t    cb_done,
-                   CCMI_Consistency   consistency,
-                   Geometry         * geometry,
-                   const char       * sndbuf,
-                   unsigned         * sndlens,
-                   unsigned         * sdispls,
-                   char             * rcvbuf,
-                   unsigned         * rcvlens,
-                   unsigned         * rdispls,
-                   unsigned         * sndcounters,
-                   unsigned         * rcvcounters):
+      A2AProtocol (T_Sysdep           * mapping,
+                   T_Manytomany       * minterface,
+                   XMI_Callback_t       cb_done,
+                   xmi_consistency_t     consistency,
+                   XMI_GEOMETRY_CLASS * geometry,
+                   const char         * sndbuf,
+                   T_Counter          * sndlens,
+                   T_Counter          * sdispls,
+                   char               * rcvbuf,
+                   T_Counter          * rcvlens,
+                   T_Counter          * rdispls,
+                   T_Counter          * sndcounters,
+                   T_Counter          * rcvcounters):
       _sndbuf (sndbuf),  _sndlens (sndlens),
       _sdispls (sdispls), _sndcounters (sndcounters), _geometry(geometry),
       _minterface(minterface)
@@ -94,34 +93,55 @@ namespace CCMI
         CCMI_assert (_geometry != NULL);
         CCMI_assert (_geometry->ranks() != NULL);
 
-
-        _minterface->send (&_sreq, &_my_cb_done, 0, _geometry->myIdx(),
-                           _sndbuf, _sndlens, _sdispls, _sndcounters,
-                           _geometry->ranks(), _geometry->permutation(),
-                           _geometry->nranks());
+        // this is a bit hackish, but better than templatizing the geometry
+        // we'll replace with topology and do it right
+        if(sizeof(T_Counter) == 4)
+          _minterface->send (&_sreq,
+                             &_my_cb_done,
+                             0,
+                             _geometry->myIdx(),
+                             _sndbuf,
+                             _sndlens,
+                             _sdispls,
+                             _sndcounters,
+                             (long unsigned int*)_geometry->ranks(),
+                             (long unsigned int*)_geometry->permutation(),
+                             _geometry->nranks());
+        else
+          _minterface->send (&_sreq,
+                             &_my_cb_done,
+                             0,
+                             _geometry->myIdx(),
+                             _sndbuf,
+                             _sndlens,
+                             _sdispls,
+                             _sndcounters,
+                             (size_t*)_geometry->ranks_sizet(),
+                             (size_t*)_geometry->permutation_sizet(),
+                             _geometry->nranks());
       }
 
-      static void done (void *arg, XMI_Error_t *err)
+      static void done (void *ctxt, void *arg, xmi_result_t err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->_donecount ++;
 
         if((proto->_donecount == 2) && (proto->_app_cb_done.function))
-          proto->_app_cb_done.function (proto->_app_cb_done.clientdata, NULL);
+          proto->_app_cb_done.function (NULL, proto->_app_cb_done.clientdata, XMI_SUCCESS);
       }
     };
 
-
+    template <class T_Manytomany, class T_Sysdep, class T_Counter>
     class AlltoallFactory : public CCMI::Adaptor::CollectiveProtocolFactory
     {
     protected:
-      CCMI::MultiSend::ManytomanyInterface  * _minterface;
-      CCMI::CollectiveMapping                        * _mapping;
+      T_Manytomany  * _minterface;
+      T_Sysdep      * _mapping;
 
     public:
 
-      AlltoallFactory (CCMI::MultiSend::ManytomanyInterface *minterface,
-                       CCMI::CollectiveMapping   *mapping)
+      AlltoallFactory (T_Manytomany *minterface,
+                       T_Sysdep     *mapping)
       {
         _minterface = minterface;
         _mapping   = mapping;
@@ -129,34 +149,34 @@ namespace CCMI
 
       //virtual ~AlltoallFactory () {}
       //void operator delete (void *p) {CCMI_abort();}
-      virtual bool Analyze(Geometry *geometry)
+      virtual bool Analyze(XMI_GEOMETRY_CLASS *geometry)
       {
         return(geometry->isTorus());
       }
 
       virtual unsigned generate (XMI_CollectiveRequest_t   * request,
                                  XMI_Callback_t    cb_done,
-                                 CCMI_Consistency   consistency,
-                                 Geometry         * geometry,
+                                 xmi_consistency_t   consistency,
+                                 XMI_GEOMETRY_CLASS         * geometry,
                                  const char       * sndbuf,
-                                 unsigned         * sndlens,
-                                 unsigned         * sdispls,
+                                 T_Counter         * sndlens,
+                                 T_Counter         * sdispls,
                                  char             * rcvbuf,
-                                 unsigned         * rcvlens,
-                                 unsigned         * rdispls,
-                                 unsigned         * sndcounters,
-                                 unsigned         * rcvcounters)
+                                 T_Counter         * rcvlens,
+                                 T_Counter         * rdispls,
+                                 T_Counter         * sndcounters,
+                                 T_Counter         * rcvcounters)
       {
-        new (request) A2AProtocol (_mapping, _minterface, cb_done,
-                                   consistency,
-                                   geometry,
-                                   sndbuf, sndlens, sdispls, rcvbuf,
-                                   rcvlens, rdispls, sndcounters,
-                                   rcvcounters);
-
+        new (request) A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> (_mapping, _minterface, cb_done,
+                                                                      consistency,
+                                                                      geometry,
+                                                                      sndbuf, sndlens, sdispls, rcvbuf,
+                                                                      rcvlens, rdispls, sndcounters,
+                                                                      rcvcounters);
+        
         // Lets do the barrier to sync
-        CCMI::Executor::Executor *barrier =
-        geometry->getBarrierExecutor();
+        CCMI::Executor::Executor *barrier =(CCMI::Executor::Executor *)
+          geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
         CCMI_assert(barrier != NULL);
         barrier->setDoneCallback (cb_barrier_done, request);
         barrier->setConsistency (consistency);
@@ -165,9 +185,9 @@ namespace CCMI
         return 0;
       }
 
-      static void cb_barrier_done (void *arg, XMI_Error_t *err)
+      static void cb_barrier_done (void *ctxt, void *arg, xmi_result_t err)
       {
-        A2AProtocol *proto = (A2AProtocol *) arg;
+        A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *proto = (A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *) arg;
         proto->start();
       }
 

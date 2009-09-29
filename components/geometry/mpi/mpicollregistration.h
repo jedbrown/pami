@@ -47,7 +47,8 @@ namespace XMI
         _ccmibinombroadcast(dev, sd, mapidtogeometry),
         _ccmiringbroadcast(dev, sd, mapidtogeometry),
         _ccmiringallreduce(dev, sd, mapidtogeometry),
-        _ccmibinomialallreduce(dev, sd, mapidtogeometry)
+        _ccmibinomialallreduce(dev, sd, mapidtogeometry),
+        _ccmialltoallv(dev,sd)
         {          
 	  // Register and link each collective into a queue for analysis
 	  _nbCollMgr.initialize();
@@ -99,8 +100,11 @@ namespace XMI
 
           _ccmibinomialallreduce._colltype=XMI::CollInfo::CI_ALLREDUCE2;
           _allreduces.push_back(&_ccmibinomialallreduce);
-}
 
+          _ccmialltoallv._colltype=XMI::CollInfo::CI_ALLTOALLV0;
+          _alltoallvs.push_back(&_ccmialltoallv);
+        }
+      
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
       {
 	XMI_COLLFACTORY_CLASS *f=(XMI_COLLFACTORY_CLASS *)_fact_alloc.allocateObject();
@@ -119,6 +123,7 @@ namespace XMI
         f->add_collective(XMI_XFER_BROADCAST,  &_ccmibinombroadcast);
         f->add_collective(XMI_XFER_ALLREDUCE,  &_ccmiringallreduce);
         f->add_collective(XMI_XFER_ALLREDUCE,  &_ccmibinomialallreduce);
+        f->add_collective(XMI_XFER_ALLTOALLV,  &_ccmialltoallv);
 	return f;
       }
       
@@ -147,11 +152,13 @@ namespace XMI
       XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>      _ccmiringbroadcast;
       XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>      _ccmiringallreduce;
       XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep>  _ccmibinomialallreduce;
-
+      XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>           _ccmialltoallv;
+      
       RegQueue          _broadcasts;
       RegQueue          _ambroadcasts;
       RegQueue          _allgathers;
       RegQueue          _allgathervs;
+      RegQueue          _alltoallvs;
       RegQueue          _scatters;
       RegQueue          _scattervs;
       RegQueue          _allreduces;

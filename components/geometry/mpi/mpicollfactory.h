@@ -75,7 +75,7 @@ namespace XMI
                     return NULL;
                     break;
                   case XMI_XFER_ALLTOALLV:
-                    return NULL;
+                    rq = &_alltoallvs;
                     break;
                   case XMI_XFER_ALLTOALLV_INT:
                     return NULL;
@@ -569,6 +569,39 @@ namespace XMI
 
       inline xmi_result_t  ialltoallv_impl      (xmi_alltoallv_t      *alltoallv)
         {
+          XMI::CollInfo::CollInfo<T_Device> *info = 
+	    (XMI::CollInfo::CollInfo<T_Device> *)_alltoallvs[alltoallv->algorithm];
+          switch(info->_colltype)
+              {
+                  case XMI::CollInfo::CI_ALLTOALLV0:
+                  {
+                    XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep> *cinfo=
+                       (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
+                    
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    XMI_Callback_t cb_done_ccmi;
+		    cb_done_ccmi.function   = alltoallv->cb_done;
+                    cb_done_ccmi.clientdata = alltoallv->cookie;
+
+		    cinfo->_alltoallv_registration.generate(req,
+                                                            cb_done_ccmi,
+                                                            XMI_MATCH_CONSISTENCY,
+                                                            _geometry,
+                                                            alltoallv->sndbuf,
+                                                            alltoallv->stypecounts,
+                                                            alltoallv->sdispls,
+                                                            alltoallv->rcvbuf,
+                                                            alltoallv->rtypecounts,
+                                                            alltoallv->rdispls,
+                                                            NULL,
+                                                            NULL);
+                  }
+                  break;
+                  default:
+                    assert(0);
+                    return XMI_UNIMPL;
+                    break;
+              }
           return XMI_UNIMPL;
         }
 
@@ -635,6 +668,7 @@ namespace XMI
       RegQueue                         _scattervs;
       RegQueue                         _allreduces;
       RegQueue                         _barriers;
+      RegQueue                         _alltoallvs;
       TSPColl::NBColl<MPIMcastModel>  *_barrier;
       TSPColl::NBColl<MPIMcastModel>  *_allgather;
       TSPColl::NBColl<MPIMcastModel>  *_allgatherv;

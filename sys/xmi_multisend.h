@@ -244,6 +244,18 @@ extern "C"
       xmi_op              op;
       xmi_dt              dt;
     }xmi_oldmulticast_recv_t;
+
+
+  typedef xmi_quad_t * (*xmi_olddispatch_manytomany_fn) (unsigned          conn_id,
+                                                         void            * arg,
+                                                         char           ** rcvbuf,
+                                                         unsigned       ** rcvdispls,
+                                                         unsigned       ** rcvlens,
+                                                         unsigned       **rcvcounters,
+                                                         unsigned        * nranks,
+                                                         xmi_callback_t  * cb_done);
+
+  
     /**********************************************************************/
 
 

@@ -64,14 +64,18 @@ namespace XMI
           for(i=0; i<numranges; i++)
 	    _nranks+=rangelist[i].hi-rangelist[i].lo+1;
 
-          _ranks = (unsigned int *)malloc(_nranks*sizeof(*_ranks));
+          _ranks       = (unsigned int *)malloc(_nranks*sizeof(*_ranks));
+          _ranks_sizet = (size_t *)malloc(_nranks*sizeof(*_ranks_sizet));
           int k = 0;
           for(i=0; i<numranges; i++)
               {
                 int range = rangelist[i].hi-rangelist[i].lo+1;
 		int j     = 0;
 		for(j=0;j<range;j++,k++)
-                  _ranks[k] = rangelist[i].lo + j;
+                    {
+                      _ranks[k] = rangelist[i].lo + j;
+                      _ranks_sizet[k] = rangelist[i].lo + j;
+                    }
               }
           geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
@@ -104,6 +108,10 @@ namespace XMI
         {
           return _ranks;
         }
+      inline size_t                 *ranks_sizet_impl()
+        {
+          return _ranks_sizet;
+        }
       inline unsigned                  nranks_impl()
         {
           return _nranks;
@@ -118,6 +126,7 @@ namespace XMI
           assert(0);
 	  return;
         }
+
       inline void                      freePermutation_impl()
         {
           assert(0);
@@ -128,6 +137,23 @@ namespace XMI
           assert(0);
 	  return NULL;
         }
+      inline void                      generatePermutation_sizet_impl()
+        {
+          assert(0);
+	  return;
+        }
+
+      inline void                      freePermutation_sizet_impl()
+        {
+          assert(0);
+	  return;
+        }
+      inline size_t                 *permutation_sizet_impl()
+        {
+          assert(0);
+	  return NULL;
+        }
+
       inline bool                      isRectangle_impl()
         {
           assert(0);
@@ -319,6 +345,7 @@ namespace XMI
       MatchQueue            _ue;
       MatchQueue            _post;
       unsigned             *_ranks;
+      size_t               *_ranks_sizet;
       int                   _nranks;
       void                 *_allreduce_storage[2];
       void                 *_allreduce[2];

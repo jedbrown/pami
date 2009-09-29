@@ -17,7 +17,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "../interface/xmi_collectives.h"
+#include "sys/xmi.h"
 
 
 //#define TRACE(x) printf x;fflush(stdout);
@@ -26,28 +26,24 @@
 
 #define MAX_COMM_SIZE 16
 #define MSGSIZE       4096
-
-
-#define BUFSIZE        (MSGSIZE * MAX_COMM_SIZE)
+#define BUFSIZE       (MSGSIZE * MAX_COMM_SIZE)
 
 
 //#define INIT_BUFS(r)
 #define INIT_BUFS(r) init_bufs(r)
 
 //#define CHCK_BUFS
-#define CHCK_BUFS    check_bufs()
+#define CHCK_BUFS(s,r)    check_bufs(s,r)
 
-
+volatile unsigned       _g_barrier_active;
+volatile unsigned       _g_alltoallv_active;
 
 char sbuf[BUFSIZE];
 char rbuf[BUFSIZE];
-
-unsigned sndlens[ MAX_COMM_SIZE ];
-unsigned sdispls[ MAX_COMM_SIZE ];
-unsigned rcvlens[ MAX_COMM_SIZE ];
-unsigned rdispls[ MAX_COMM_SIZE ];
-
-
+size_t sndlens[ MAX_COMM_SIZE ];
+size_t sdispls[ MAX_COMM_SIZE ];
+size_t rcvlens[ MAX_COMM_SIZE ];
+size_t rdispls[ MAX_COMM_SIZE ];
 
 void init_bufs(int r)
 {
@@ -59,16 +55,15 @@ void init_bufs(int r)
 }
 
 
-void check_bufs()
+void check_bufs(size_t sz, size_t myrank)
 {
-  unsigned myrank = XMI_Rank();
-  for ( int r = 0; r < XMI_Size(); r++ )
-    for ( unsigned k = 0; k < rcvlens[r]; k++ )
+  for ( size_t r = 0; r < sz; r++ )
+    for ( size_t k = 0; k < rcvlens[r]; k++ )
       {
 	if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
 	  {
-	    printf("%d: (E) rbuf[%d]:%02x instead of %02x (r:%d)\n",
-		   XMI_Rank(),
+	    printf("%ld: (E) rbuf[%ld]:%02x instead of %02lx (r:%ld)\n",
+                   myrank,
 		   rdispls[r] + k,
 		   rbuf[ rdispls[r] + k ],
 		   ((r + k) & 0xff),
@@ -78,11 +73,6 @@ void check_bufs()
       }
 }
 
-
-XMI_CollectiveProtocol_t _g_alltoall;
-volatile unsigned       _g_alltoall_active;
-XMI_CollectiveRequest_t  _g_alltoall_request;
-
 static double timer()
 {
     struct timeval tv;
@@ -91,139 +81,161 @@ static double timer()
 }
 
 
-// ------ Barrier
-
-void cb_barrier (void * clientdata);
-XMI_CollectiveProtocol_t _g_barrier;
-volatile unsigned       _g_barrier_active;
-XMI_CollectiveRequest_t  _g_barrier_request;
-XMI_Callback_t _cb_barrier   = {(void (*)(void*,XMI_Error_t*))cb_barrier,
-			       (void *) &_g_barrier_active };
-XMI_Barrier_t  _xfer_barrier =
-    {
-	XMI_XFER_BARRIER,
-	&_g_barrier,
-	&_g_barrier_request,
-	_cb_barrier,
-	&XMI_World_Geometry
-    };
-
-void cb_barrier (void * clientdata)
+void cb_barrier (xmi_context_t ctxt, void * clientdata, xmi_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void init__barriers ()
+void cb_alltoallv (xmi_context_t ctxt, void * clientdata, xmi_result_t res)
 {
-  XMI_Barrier_Configuration_t barrier_config;
-  barrier_config.cfg_type    = XMI_CFG_BARRIER;
-  barrier_config.protocol    = XMI_DEFAULT_BARRIER_PROTOCOL;
-  XMI_register(&_g_barrier,
-	      (XMI_CollectiveConfiguration_t*)&barrier_config,
-	      0);
-  _g_barrier_active = 0;
+  int * active = (int *) clientdata;
+  TRACE(("%d: cb_alltoallv active:%d(%p)\n",XMI_Rank(),*active,active));
+  (*active)--;
 }
 
-void _barrier ()
+
+void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
-  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_barrier);
-  while (_g_barrier_active)
-      XMI_Poll();
-}
-
-// ------- Alltoall
-
-void cb_alltoall (void * clientdata)
-{
-  int * active = (int *) clientdata;
-  TRACE(("%d: cb_alltoall active:%d(%p)\n",XMI_Rank(),*active,active));
-  (*active)--;
-}
-
-
-void init__alltoall ()
-{
-  XMI_Alltoall_Configuration_t alltoall_config;
-  alltoall_config.cfg_type    = XMI_CFG_ALLTOALL;
-  alltoall_config.protocol    = XMI_DEFAULT_ALLTOALL_PROTOCOL;
-  int rc = XMI_register(&_g_alltoall,
-		       (XMI_CollectiveConfiguration_t*)&alltoall_config,
-		       0);
-  assert ( rc == 0 );
-  _g_alltoall_active = 0;
-  TRACE(("%d: init alltoall active:%d(%p)\n",XMI_Rank(),_g_alltoall_active,&_g_alltoall_active));
-}
-
-XMI_Callback_t _cb = {(void (*)(void*,XMI_Error_t*))cb_alltoall, (void *) &_g_alltoall_active };
-XMI_Alltoall_t  _xfer_alltoall =
+  xmi_result_t result;
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
+  if (result != XMI_SUCCESS)
     {
-	XMI_XFER_ALLTOALL,
-	&_g_alltoall,
-	&_g_alltoall_request,
-	_cb,
-	&XMI_World_Geometry,
-	NULL,// char                     * sndbuf;
-        NULL,//unsigned                 * sndlens;
-        NULL,//unsigned                 * sdispls;
-        NULL,//char                     * rcvbuf;
-        NULL,//unsigned                 * rcvlens;
-        NULL,//unsigned                 * rdispls;
-        NULL,//unsigned                 * sndcounters;
-        NULL,//unsigned                 * rcvcounters;
-    };
+      fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
+      exit(1);
+    }
+  while (_g_barrier_active)
+    result = XMI_Context_advance (context, 1);
 
-XMI_Geometry_t *cb_geometry (int comm)
-{
-    if(comm == 0)
-	return &XMI_World_Geometry;
-    else
-	assert(0);
 }
 
 
-void _alltoall (
-		char       * sndbuf,
-		unsigned   * sndlens,
-		unsigned   * sdispls,
-		char       * rcvbuf,
-		unsigned   * rcvlens,
-		unsigned   * rdispls )
+void _alltoallv (xmi_context_t    context,
+                 xmi_alltoallv_t *xfer,
+                 char            *sndbuf,
+                 size_t          *sndlens,
+                 size_t          *sdispls,
+                 char            *rcvbuf,
+                 size_t          *rcvlens,
+                 size_t          *rdispls )
 {
-  _g_alltoall_active++;
-  _xfer_alltoall.sndbuf  = sndbuf;
-  _xfer_alltoall.sndlens = sndlens;
-  _xfer_alltoall.sdispls = sdispls;
-  _xfer_alltoall.rcvbuf  = rcvbuf;
-  _xfer_alltoall.rcvlens = rcvlens;
-  _xfer_alltoall.rdispls = rdispls;
-
-  XMI_Xfer (NULL, (XMI_Xfer_t*)&_xfer_alltoall);
-  while (_g_alltoall_active)
-      XMI_Poll();
+  xmi_result_t result;
+  _g_alltoallv_active++;
+  xfer->sndbuf        = sndbuf;
+  xfer->stype         = XMI_BYTE;
+  xfer->stypecounts   = sndlens;
+  xfer->sdispls       = sdispls;
+  xfer->rcvbuf        = rcvbuf;
+  xfer->rtype         = XMI_BYTE;
+  xfer->rtypecounts   = rcvlens;
+  xfer->rdispls       = rdispls;
+  result = XMI_Collective (NULL, (xmi_xfer_t*)xfer);
+  while (_g_alltoallv_active)
+    result = XMI_Context_advance (context, 1);
 }
 
 
 int main(int argc, char*argv[])
 {
-  double tf,ti,usec;
-
-  XMI_Collectives_initialize(&argc,&argv,cb_geometry);
-  init__alltoall();
-
-  int rank = XMI_Rank();
-  int size = XMI_Size();
-
-  assert ( size < MAX_COMM_SIZE );
-
-  TRACE(("%d: sbuf:%p rbuf:%p\n",rank,sbuf,rbuf));
-
-  int i,j;
-#if 1
-  if (rank == 0)
+  xmi_client_t  client;
+  xmi_context_t context;
+  xmi_result_t  result = XMI_ERROR;
+  char          cl_string[] = "TEST";
+  double ti, tf, usec;
+  result = XMI_Client_initialize (cl_string, &client);
+  if (result != XMI_SUCCESS)
       {
-	printf("# Alltoall Bandwidth Test(size:%d)\n",size);
+        fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+        return 1;
+      }
+
+  result = XMI_Context_create (client, NULL, 0, &context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+        return 1;
+      }
+
+
+  xmi_configuration_t configuration;
+  configuration.name = XMI_TASK_ID;
+  result = XMI_Configuration_query (context, &configuration);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+        return 1;
+      }
+  size_t task_id = configuration.value.intval;
+
+  configuration.name = XMI_NUM_TASKS;
+  result = XMI_Configuration_query (context, &configuration);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+        return 1;
+      }
+  size_t sz = configuration.value.intval;
+
+
+  xmi_geometry_t  world_geometry;
+
+  result = XMI_Geometry_world (context, &world_geometry);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_algorithm_t algorithm[1];
+  int             num_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_BARRIER,
+				  world_geometry,
+				  &algorithm[0],
+				  &num_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query barrier algorithm. result = %d\n", result);
+        return 1;
+      }
+
+  xmi_algorithm_t alltoallvalgorithm[1];
+  int             alltoallvnum_algorithm = 1;
+  result = XMI_Geometry_algorithm(context,
+				  XMI_XFER_ALLTOALLV,
+				  world_geometry,
+				  &alltoallvalgorithm[0],
+				  &alltoallvnum_algorithm);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query alltoallv algorithm. result = %d\n", result);
+        return 1;
+      }
+
+  assert ( sz < MAX_COMM_SIZE );
+
+  xmi_barrier_t barrier;
+  barrier.xfer_type = XMI_XFER_BARRIER;
+  barrier.cb_done   = cb_barrier;
+  barrier.cookie    = (void*)&_g_barrier_active;
+  barrier.geometry  = world_geometry;
+  barrier.algorithm = algorithm[0];
+
+  xmi_alltoallv_t alltoallv;
+  alltoallv.xfer_type  = XMI_XFER_ALLTOALLV;
+  alltoallv.cb_done    = cb_alltoallv;
+  alltoallv.cookie     = (void*)&_g_alltoallv_active;
+  alltoallv.geometry   = world_geometry;
+  alltoallv.algorithm  = alltoallvalgorithm[0];
+
+
+
+  
+  size_t i,j;
+  if (task_id == 0)
+      {
+	printf("# Alltoallv Bandwidth Test(size:%ld)\n",sz);
 	  printf("# Size(bytes)           cycles    bytes/sec      usec\n");
 	  printf("# -----------      -----------    -----------    ---------\n");
       }
@@ -232,32 +244,36 @@ int main(int argc, char*argv[])
   for(i=1; i<=MSGSIZE; i*=2)
       {
 	  long long dataSent = i;
-
-	  int niter = (i < 1024 ? 100 : 10);
-
-	  for ( j = 0; j < size; j++ )
+	  size_t niter = (i < 1024 ? 100 : 10);
+	  for ( j = 0; j < sz; j++ )
 	    {
 	      sndlens[j] = rcvlens[j] = i;
 	      sdispls[j] = rdispls[j] = i * j;
-
 	      INIT_BUFS( j );
 	    }
 
-	  _barrier ();
+	  _barrier (context, &barrier);
 	  ti = timer();
 
 	  for (j=0; j<niter; j++)
 	      {
-		_alltoall ( sbuf, sndlens, sdispls, rbuf, rcvlens, rdispls );
+		_alltoallv ( context,
+                             &alltoallv,
+                             sbuf,
+                             sndlens,
+                             sdispls,
+                             rbuf,
+                             rcvlens,
+                             rdispls );
 	      }
 	  tf = timer();
 
-	  CHCK_BUFS;
+	  CHCK_BUFS(sz, task_id);
 
-	  _barrier ();
+	  _barrier (context, &barrier);
 
 	  usec = (tf - ti)/(double)niter;
-	  if (rank == 0)
+	  if (task_id == 0)
 	      {
 
 		  printf("  %11lld %16lld %14.1f %12.2f\n",
@@ -268,7 +284,19 @@ int main(int argc, char*argv[])
 		  fflush(stdout);
 	      }
       }
-#endif
-  XMI_Collectives_finalize();
+
+  result = XMI_Context_destroy (context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+        return 1;
+      }
+  
+  result = XMI_Client_finalize (client);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+        return 1;
+      }
   return 0;
 }

@@ -17,6 +17,7 @@
 #include <vector>
 #include "components/geometry/CollRegistration.h"
 #include "components/devices/mpi/oldmpimulticastmodel.h"
+#include "components/devices/mpi/oldmpim2mmodel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "components/devices/mpi/mpidevice.h"
 #include "components/sysdep/mpi/mpisysdep.h"
@@ -34,6 +35,11 @@ typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MP
                                           XMI::Device::MPIMessage> MPIMcastModel;
 typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 
+typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>,
+                                    XMI::Device::MPIMessage,
+                                    size_t> MPIM2MModel;
+
+
 #define XMI_COLL_MCAST_CLASS  MPIMcastModel
 #define XMI_COLL_SYSDEP_CLASS XMI::SysDep::MPISysDep
 
@@ -47,7 +53,11 @@ typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 #include "algorithms/protocols/allreduce/sync_impl.h"
 #include "algorithms/protocols/allreduce/async_impl.h"
 
+#include "algorithms/protocols/alltoall/Alltoall.h"
 
+
+typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep::MPISysDep, size_t> AlltoallProtocol;
+typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep::MPISysDep, size_t> AlltoallFactory;
 
 
 namespace XMI
@@ -69,6 +79,7 @@ namespace XMI
       CI_BARRIER0,
       CI_BARRIER1,
       CI_AMBROADCAST0,
+      CI_ALLTOALLV0,
     }collinfo_type_t;
 
 
@@ -279,7 +290,25 @@ namespace XMI
       MPIMcastModel                                           _model;
       CCMI::Adaptor::Allreduce::Binomial::Factory             _allreduce_registration;
     };
-    
+
+
+    template <class T_Device, class T_Sysdep>
+    class CCMIAlltoallvInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIAlltoallvInfo(T_Device *dev,
+                       T_Sysdep * sd):
+        CollInfo<T_Device>(dev),
+        _model(*dev),
+        _alltoallv_registration(&_model,
+                                sd)
+        {
+        }
+      XMI_Request_t     _request;
+      MPIM2MModel       _model;
+      AlltoallFactory   _alltoallv_registration;
+    };
+
     
   };
 };

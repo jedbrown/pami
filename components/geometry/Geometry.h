@@ -81,11 +81,17 @@ namespace XMI
             inline unsigned                   incrementAllreduceIteration();
             inline unsigned                   comm();
             inline unsigned                  *ranks();
+            inline size_t                    *ranks_sizet();
             inline unsigned                   nranks();
             inline int                        myIdx();
             inline void                       generatePermutation();
             inline void                       freePermutation();
             inline unsigned                  *permutation();
+
+            inline void                       generatePermutation_sizet();
+            inline void                       freePermutation_sizet();
+            inline size_t                    *permutation_sizet();
+
             inline bool                       isRectangle();
             inline bool                       isTorus();
             inline bool                       isTree();
@@ -174,6 +180,12 @@ namespace XMI
         }
 
         template <class T_Geometry, class T_Mapping>
+        inline size_t *Geometry<T_Geometry, T_Mapping>::ranks_sizet()
+        {
+            return static_cast<T_Geometry*>(this)->ranks_sizet_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
         inline unsigned Geometry<T_Geometry, T_Mapping>::nranks()
         {
             return static_cast<T_Geometry*>(this)->nranks_impl();
@@ -203,6 +215,24 @@ namespace XMI
             return static_cast<T_Geometry*>(this)->permutation_impl();
         }
 
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::generatePermutation_sizet()
+        {
+            return static_cast<T_Geometry*>(this)->generatePermutation_sizet_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline void Geometry<T_Geometry, T_Mapping>::freePermutation_sizet()
+        {
+            return static_cast<T_Geometry*>(this)->freePermutation_sizet_impl();
+        }
+
+        template <class T_Geometry, class T_Mapping>
+        inline size_t *Geometry<T_Geometry, T_Mapping>::permutation_sizet()
+        {
+            return static_cast<T_Geometry*>(this)->permutation_sizet_impl();
+        }
+      
         template <class T_Geometry, class T_Mapping>
         inline bool Geometry<T_Geometry, T_Mapping>::isRectangle()
         {
