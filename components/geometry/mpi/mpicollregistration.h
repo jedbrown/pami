@@ -92,7 +92,10 @@ namespace XMI
 
           _ccmiringbroadcast._colltype=XMI::CollInfo::CI_BROADCAST2;
           _broadcasts.push_back(&_ccmiringbroadcast);
-        }
+
+          _ccmiringallreduce._colltype=XMI::CollInfo::CI_ALLREDUCE1;
+          _allreduces.push_back(&_ccmiringallreduce);
+}
 
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
       {
@@ -110,7 +113,7 @@ namespace XMI
         f->add_collective(XMI_XFER_AMBROADCAST,&_ccmiambroadcast);
         f->add_collective(XMI_XFER_BROADCAST,  &_ccmiringbroadcast);
         f->add_collective(XMI_XFER_BROADCAST,  &_ccmibinombroadcast);
-
+        f->add_collective(XMI_XFER_ALLREDUCE,  &_ccmiringallreduce);
 	return f;
       }
       

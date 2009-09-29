@@ -64,6 +64,7 @@ namespace XMI
       CI_SCATTER0,
       CI_SCATTERV0,
       CI_ALLREDUCE0,
+      CI_ALLREDUCE1,
       CI_BARRIER0,
       CI_BARRIER1,
       CI_AMBROADCAST0,

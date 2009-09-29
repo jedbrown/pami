@@ -293,36 +293,53 @@ namespace XMI
         {
           XMI::CollInfo::PGAllreduceInfo<T_Device> *info =
             (XMI::CollInfo::PGAllreduceInfo<T_Device> *)_allreduces[allreduce->algorithm];
-          unsigned datawidth;
-          coremath cb_allreduce;
-          CCMI::Adaptor::Allreduce::getReduceFunction(allreduce->dt,
-                                                      allreduce->op,
-                                                      allreduce->stypecount,
-                                                      datawidth,
-                                                      cb_allreduce);
-          if (datawidth * allreduce->stypecount < (unsigned)TSPColl::Allreduce::Short<MPIMcastModel>::MAXBUF)
+
+	  switch(info->_colltype)
               {
-                if (!_sar->isdone()) _dev->advance();
-                ((TSPColl::Allreduce::Short<MPIMcastModel> *)_sar)->reset (allreduce->sndbuf,
-                                                                           allreduce->rcvbuf,
-                                                                           allreduce->op,
-                                                                           allreduce->dt,
-                                                                           allreduce->stypecount);
-                _sar->setComplete(allreduce->cb_done, allreduce->cookie);
-                _sar->kick(&info->_model);
-                return XMI_SUCCESS;
-              }
-          else
-              {
-                if (!_lar->isdone()) _dev->advance();
-                ((TSPColl::Allreduce::Long<MPIMcastModel> *)_lar)->reset (allreduce->sndbuf,
-                                                                          allreduce->rcvbuf,
-                                                                          allreduce->op,
-                                                                          allreduce->dt,
-                                                                          allreduce->stypecount);
-                _lar->setComplete(allreduce->cb_done, allreduce->cookie);
-                _lar->kick(&info->_model);
-                return XMI_SUCCESS;
+                  case XMI::CollInfo::CI_ALLREDUCE0:
+                  {
+                    unsigned datawidth;
+                    coremath cb_allreduce;
+                    CCMI::Adaptor::Allreduce::getReduceFunction(allreduce->dt,
+                                                                allreduce->op,
+                                                                allreduce->stypecount,
+                                                                datawidth,
+                                                                cb_allreduce);
+                    if (datawidth * allreduce->stypecount < (unsigned)TSPColl::Allreduce::Short<MPIMcastModel>::MAXBUF)
+                        {
+                          if (!_sar->isdone()) _dev->advance();
+                          ((TSPColl::Allreduce::Short<MPIMcastModel> *)_sar)->reset (allreduce->sndbuf,
+                                                                                     allreduce->rcvbuf,
+                                                                                     allreduce->op,
+                                                                                     allreduce->dt,
+                                                                                     allreduce->stypecount);
+                          _sar->setComplete(allreduce->cb_done, allreduce->cookie);
+                          _sar->kick(&info->_model);
+                          return XMI_SUCCESS;
+                        }
+                    else
+                        {
+                          if (!_lar->isdone()) _dev->advance();
+                          ((TSPColl::Allreduce::Long<MPIMcastModel> *)_lar)->reset (allreduce->sndbuf,
+                                                                                    allreduce->rcvbuf,
+                                                                                    allreduce->op,
+                                                                                    allreduce->dt,
+                                                                                    allreduce->stypecount);
+                          _lar->setComplete(allreduce->cb_done, allreduce->cookie);
+                          _lar->kick(&info->_model);
+                          return XMI_SUCCESS;
+                        }
+                    break;                    
+                  }
+                  case XMI::CollInfo::CI_ALLREDUCE1:
+                  {
+                    assert(0);
+                    break;
+                  }
+                  default:
+                    assert(0);
+                    return XMI_UNIMPL;
+                    break;
               }
           return XMI_SUCCESS;
         }
