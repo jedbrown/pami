@@ -18,6 +18,8 @@
 
 #include "components/mapping/mpi/mpimapping.h"
 #define XMI_GEOMETRY_CLASS XMI::Geometry::Common<XMI_MAPPING_CLASS>
+#define GEOMETRY_STORAGE XMI_REQUEST_NQUADS*4
+
 
 #include "components/geometry/Geometry.h"
 #include <map>
@@ -83,18 +85,16 @@ namespace XMI
         }
       inline void                      setAsyncAllreduceMode_impl(unsigned value)
         {
-          assert(0);
-	  return;
+          _allreduce_async_mode = value;
         }
       inline unsigned                  getAsyncAllreduceMode_impl()
         {
-          assert(0);
-	  return 0;
+          return _allreduce_async_mode;
         }
       inline unsigned                  incrementAllreduceIteration_impl()
         {
-          assert(0);
-	  return 0;
+          _allreduce_iteration ^= _allreduce_async_mode; // "increment" with defined mode
+          return _allreduce_iteration;
         }
       inline unsigned                  comm_impl()
         {
@@ -160,8 +160,7 @@ namespace XMI
         }
       inline unsigned                  getAllreduceIteration_impl()
         {
-          assert(0);
-	  return 0;
+          return _allreduce_iteration;
         }
       inline void                      freeAllocations_impl()
         {
@@ -222,33 +221,34 @@ namespace XMI
 
       inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
         {
-          assert(0);
-          return NULL;
+          if(_allreduce_storage[i] == NULL)
+            _allreduce_storage[i] =  malloc (XMI_REQUEST_NQUADS*4);
+          return _allreduce_storage[i];
         }
       inline COMPOSITE_TYPE            getAllreduceComposite_impl(unsigned i)
         {
-          assert(0);
-          return NULL;
+          return _allreduce[i];
         }
       inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c)
         {
-          assert(0);
+          _allreduce[_allreduce_iteration] = c;
+          if(c) incrementAllreduceIteration_impl();
         }
       inline void                      setAllreduceComposite_impl(COMPOSITE_TYPE c,
                                                                   unsigned i)
         {
-          assert(0);
+          _allreduce[i] = c;
         }
       inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
         {
-          assert(0);
-          return NULL;
+          if(_allreduce_storage[_allreduce_iteration] == NULL)
+            _allreduce_storage[_allreduce_iteration] = malloc (XMI_REQUEST_NQUADS*4);
+          return _allreduce_storage[_allreduce_iteration];
         }
 
       inline COMPOSITE_TYPE            getAllreduceComposite_impl()
         {
-          assert(0);
-          return NULL;
+          return _allreduce[_allreduce_iteration];
         }
 
 
@@ -320,8 +320,10 @@ namespace XMI
       MatchQueue            _post;
       unsigned             *_ranks;
       int                   _nranks;
-
-
+      void                 *_allreduce_storage[2];
+      void                 *_allreduce[2];
+      unsigned              _allreduce_async_mode;
+      unsigned              _allreduce_iteration;
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace XMI

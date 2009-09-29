@@ -27,6 +27,7 @@
 /// So, width = 15 * 16 * 16 * x = 3840 * x
 /// Currently x = 4 for a width of 15360.  Adjust as desired.
 const unsigned MIN_PIPELINE_WIDTH = 3840;
+//const unsigned MIN_PIPELINE_WIDTH = 2147483647;
 
 /// FP collectives on Blue Gene/L and Blue Gene/P use a double
 /// pass scheme that processes exponents and mantissas. The

@@ -305,8 +305,8 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  xmi_algorithm_t allreducealgorithm[1];
-  int             allreducenum_algorithm = 1;
+  xmi_algorithm_t allreducealgorithm[20];
+  int             allreducenum_algorithm = 20;
   result = XMI_Geometry_algorithm(context,
 				  XMI_XFER_ALLREDUCE,
 				  world_geometry,
