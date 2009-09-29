@@ -107,6 +107,19 @@ namespace XMI
           return false;
         };
 
+      inline bool postPacketImmediate (size_t   target_rank,
+                                       void   * metadata,
+                                       size_t   metasize,
+                                       void   * payload0,
+                                       size_t   bytes0,
+                                       void   * payload1,
+                                       size_t   bytes1)
+        {
+          assert(0);
+          return false;
+        }
+      
+
       inline bool postMessage_impl (T_Message        * obj,
                                     xmi_event_function   fn,
                                     void               * cookie,

@@ -17,6 +17,7 @@
 #include "components/devices/mpi/mpimessage.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
+#include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "components/sysdep/mpi/mpisysdep.h"
 #include "components/geometry/mpi/mpicollfactory.h"
 #include "components/geometry/mpi/mpicollregistration.h"
@@ -34,8 +35,10 @@ namespace XMI
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
     typedef CollFactory::MPI<MPIDevice, SysDep::MPISysDep> MPICollfactory;
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep::MPISysDep> MPICollreg;
+    typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice,MPIMessage> EagerMPI;
 
 
+    
     class MPI : public Context<XMI::Context::MPI>
     {
     public:
@@ -147,8 +150,20 @@ namespace XMI
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
-          assert(0);
-          return XMI_UNIMPL;
+          size_t id = (size_t)(parameters->send.dispatch);
+          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+          XMI_assert_debug (_dispatch[id] != NULL);
+
+          XMI::Protocol::Send::Send * send =
+            (XMI::Protocol::Send::Send *) _dispatch[id];
+          send->immediate (parameters->send.task,
+                           parameters->immediate.addr,
+                           parameters->immediate.bytes,
+                           parameters->send.header.addr,
+                           parameters->send.header.bytes);
+
+          TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
+          return XMI_SUCCESS;
         }
 
       inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
@@ -385,12 +400,10 @@ namespace XMI
                                          void                     * cookie,
                                          xmi_send_hint_t            options)
         {
-          typedef XMI::Protocol::Send::EagerSimple <MPIModel,MPIDevice,MPIMessage> EagerSimpleMPI;
-
           if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
           _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
-          new (_dispatch[(size_t)id]) EagerSimpleMPI (id, fn, cookie, _mpi, _sysdep.mapping.task(), _context, result);
+          new (_dispatch[(size_t)id]) EagerMPI (id, fn, cookie, _mpi, _sysdep.mapping.task(), _context, result);
           return result;
         }
 
