@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "sys/xmi_types.h"
+#include "sys/xmi.h"
 
 /** \brief The maximum number of sources based on the number of cores */
 #define MATH_MAX_NSRC	4

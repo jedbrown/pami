@@ -4,6 +4,7 @@
 ///
 
 #include "sys/xmi.h"
+#include <stdio.h>
 
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */

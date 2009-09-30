@@ -4,7 +4,7 @@
 ///
 
 #include "sys/xmi.h"
-
+#include <stdio.h>
 static void recv_done (xmi_context_t   context,
                        void          * cookie,
                        xmi_result_t    result)

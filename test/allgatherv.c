@@ -5,6 +5,7 @@
 #include "sys/xmi.h"
 #include <sys/time.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #define BUFSIZE 524288
 volatile unsigned       _g_barrier_active;

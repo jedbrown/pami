@@ -6,6 +6,7 @@
 #include "sys/xmi.h"
 #include <sys/time.h>
 #include <unistd.h>
+#include <stdio.h>
 
 volatile unsigned       _g_barrier_active;
 
