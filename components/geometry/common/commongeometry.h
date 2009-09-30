@@ -75,7 +75,7 @@ namespace XMI
                     {
                       _ranks[k] = rangelist[i].lo + j;
                       _ranks_sizet[k] = rangelist[i].lo + j;
-                      if(_ranks[k] == this->_rank)
+                      if(_ranks[k] == (unsigned)this->_rank)
                         _myidx = k;
                     }
               }

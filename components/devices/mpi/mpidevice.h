@@ -231,7 +231,7 @@ namespace XMI
                           MPIMcastRecvMessage _m_store;
                           if( !found )
                               {
-                                XMI_assert (mpi.recv_func != NULL);
+                                XMI_assert (mdi.recv_func != NULL);
 			  
                                 mdi.recv_func (&msg->_info[0],
                                                msg->_info_count,
@@ -291,7 +291,7 @@ namespace XMI
                           //if(mcast->_done_fn)
                           //  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
 		    
-                          XMI_assert (nbytes <= mcast->_pwidth);
+                          // XMI_assert (nbytes <= mcast->_pwidth);
 		    
                           mcast->_counter += mcast->_pwidth;
                           if(mcast->_done_fn)
@@ -330,7 +330,6 @@ namespace XMI
                                 size_t        * offsets;
                                 size_t        * rcvcounters;
                                 size_t          nranks;
-                                XMI_assert ( _cb_m2m_head );
                                 mdi.recv_func(msg->_conn, 
                                               mdi.async_arg,
                                               &buf, 

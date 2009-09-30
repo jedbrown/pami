@@ -368,13 +368,13 @@ CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecvHea
              (unsigned)_state->getStartPhase(),
              sndlen, //_state->getBytes(),
              _state->getPipelineWidth()));
-  CCMI_assert(cdata->_comm == _commID);
+  CCMI_assert(cdata->_comm == this->_commID);
   CCMI_assert(cdata->_root == (unsigned) _state->getRoot());
 //  CCMI_assert((cdata->_phase >= (unsigned)_state->getStartPhase()) && (cdata->_phase <= (unsigned)_state->getEndPhase()));
   CCMI_assert(cdata->_phase >= (unsigned)_state->getStartPhase());
 
   CCMI_assert(peer != _state->getMyRank());
-  CCMI_assert(conn_id == _rconnmgr->getRecvConnectionId(cdata->_comm, (unsigned)-1, peer, _curRcvPhase, (unsigned)-1));
+  CCMI_assert(conn_id == this->_rconnmgr->getRecvConnectionId(cdata->_comm, (unsigned)-1, peer, _curRcvPhase, (unsigned)-1));
   CCMI_assert(arg && rcvlen && rcvbuf && pipewidth && cb_done);
 
   // Schedule misbehavior patch:

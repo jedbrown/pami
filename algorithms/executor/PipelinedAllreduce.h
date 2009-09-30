@@ -307,7 +307,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
 //  Logging::LogMgr::getLogMgr()->startCounter (_log_advancerecv);
 
-  CCMI_assert_debug (_initialized);
+  CCMI_assert_debug (this->_initialized);
 
   const char *mysrcbuf;
   char *mydstbuf;
@@ -419,7 +419,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
              "_numActiveSends %d\n", (int)this,ThreadID(),
              _numActiveSends));
 
-  CCMI_assert_debug (_initialized == true);
+  CCMI_assert_debug (this->_initialized == true);
   unsigned last_chunk  = this->_astate.getLastChunk();
   CCMI_assert (_curSendChunk <= last_chunk);
 

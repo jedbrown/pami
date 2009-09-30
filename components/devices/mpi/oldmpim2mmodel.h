@@ -97,7 +97,7 @@ namespace XMI
           for( i = 0; i < nranks; i++)
           {
             int index = permutation[i];
-            XMI_assert ( index < nranks );
+            XMI_assert ( (unsigned)index < nranks );
             if( sizes[index] == 0 ) continue;
             hdr->_dispatch_id = _dispatch_id;
             hdr->_size        = sizes[index];

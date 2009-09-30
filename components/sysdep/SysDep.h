@@ -38,7 +38,7 @@ namespace XMI
             topology_global ()
         {
 	  xmi_coord_t ll, ur;
-	  size_t min, max;
+	  size_t min=0, max=0;
           mapping.init (ll, ur, min, max, mm);
 	  // no one can use a Topology until after this point...
 	  T_Topology::static_init(&mapping);
