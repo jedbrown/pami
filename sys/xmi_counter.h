@@ -16,8 +16,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "xmi_misc.h"
-#include "xmi_p2p.h"
+#include "xmi.h"
 #ifdef __cplusplus
 extern "C"
 {
