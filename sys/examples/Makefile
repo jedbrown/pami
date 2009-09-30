@@ -1,4 +1,4 @@
 CFLAGS=-I..
-all: xmi_adi.o
+all:
 clean:
 	${RM} *.o
