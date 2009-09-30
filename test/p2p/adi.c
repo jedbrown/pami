@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file xmi_adi.c
+ * \file test/p2p/adi.c
  * \brief ???
  */
 
@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
-#include <xmi.h>
+#include <sys/xmi.h>
 
 
 #define SSIZE 2
