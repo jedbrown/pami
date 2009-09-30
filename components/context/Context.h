@@ -387,7 +387,7 @@ namespace XMI
                                                                  int algorithm_type,
                                                                  xmi_metadata_t *mdata)
     {
-      return static_cast<T_Context*>(this)->geometry_algorithm_info(context,
+      return static_cast<T_Context*>(this)->geometry_algorithm_info_impl(context,
                                                                     geometry,
                                                                     type,
                                                                     algorithm,

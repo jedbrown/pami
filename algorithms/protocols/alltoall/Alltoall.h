@@ -102,8 +102,8 @@ namespace CCMI
                              _sndlens,
                              _sdispls,
                              _sndcounters,
-                             (long unsigned int*)_geometry->ranks(),
-                             (long unsigned int*)_geometry->permutation(),
+                             (T_Counter*)_geometry->ranks(),
+                             (T_Counter*)_geometry->permutation(),
                              _geometry->nranks());
         else
           _minterface->send (&_sreq,
