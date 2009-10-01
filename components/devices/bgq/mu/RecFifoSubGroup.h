@@ -25,6 +25,11 @@
 
 #include "components/devices/bgq/mu/Dispatch.h"
 
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
+
 namespace XMI
 {
   namespace Device
@@ -113,13 +118,18 @@ namespace XMI
           {
             unsigned int numProcessed = 0;
 
+
+            TRACE((stderr, ">> RecFifoSubGroup::advance() .. _numFifos = %d\n", _numFifos));
+
             for ( uint32_t fifoNum = 0; fifoNum < _numFifos; fifoNum++ )
               {
                 MUSPI_RecFifo_t *fifoPtr = MUSPI_IdToRecFifo ( _fifoNumbers[fifoNum],
                                                                &_fifoSubGroup );
+                TRACE((stderr, "   RecFifoSubGroup::advance() .. fifoPtr = %p, _fifoNumbers[%d] = %d, &_fifoSubGroup = %p\n", fifoPtr, fifoNum, _fifoNumbers[fifoNum], &_fifoSubGroup));
                 numProcessed += recFifoPoll ( fifoPtr );
               }
 
+            TRACE((stderr, "<< RecFifoSubGroup::advance() .. numProcessed = %d\n", numProcessed));
             return numProcessed;
           }
 
@@ -134,8 +144,10 @@ namespace XMI
             MemoryFifoPacketHeader_t *hdr = NULL;
             unsigned packets = 0;
 
+            TRACE((stderr, ">> RecFifoSubGroup::recFifoPoll(%p)\n", rfifo));
             while ((total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap)) != 0)
               {
+                TRACE((stderr, "   RecFifoSubGroup::recFifoPoll(%p) .. wrap = %d\n", rfifo, wrap));
                 if (wrap)   //Extra branch over older packet loop
                   {
                     hdr = (MemoryFifoPacketHeader_t *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);
@@ -158,13 +170,13 @@ namespace XMI
 
                     while (cumulative_bytes < total_bytes )
                       {
-                        //fprintf (stderr, "recFifoPoll(no-wrap) .. before MUSPI_getNextPacketOptimized() .. va_start = %p, va_head = %p, va_tail = %p, va_end = %p\n", rfifo->_fifo.va_start, rfifo->_fifo.va_head, rfifo->_fifo.va_tail, rfifo->_fifo.va_end);
+                        TRACE((stderr, "recFifoPoll(no-wrap) .. before MUSPI_getNextPacketOptimized() .. va_start = %p, va_head = %p, va_tail = %p, va_end = %p\n", rfifo->_fifo.va_start, rfifo->_fifo.va_head, rfifo->_fifo.va_tail, rfifo->_fifo.va_end));
                         hdr = (MemoryFifoPacketHeader_t *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
-                        //fprintf (stderr, "recFifoPoll(no-wrap) ..  after MUSPI_getNextPacketOptimized() .. va_start = %p, va_head = %p, va_tail = %p, va_end = %p\n", rfifo->_fifo.va_start, rfifo->_fifo.va_head, rfifo->_fifo.va_tail, rfifo->_fifo.va_end);
-
-                        //uint32_t * p = (uint32_t *) hdr;
-                        //fprintf (stderr, "recFifoPoll(no-wrap) ..  after MUSPI_getNextPacketOptimized() .. packet = %p, cur_bytes = %d, dump header: 0x%08x 0x%08x 0x%08x 0x%08x  0x%08x 0x%08x 0x%08x 0x%08x\n", hdr, cur_bytes, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-
+                        TRACE((stderr, "recFifoPoll(no-wrap) ..  after MUSPI_getNextPacketOptimized() .. va_start = %p, va_head = %p, va_tail = %p, va_end = %p\n", rfifo->_fifo.va_start, rfifo->_fifo.va_head, rfifo->_fifo.va_tail, rfifo->_fifo.va_end));
+#ifdef TRACE
+                        uint32_t * p = (uint32_t *) hdr;
+                        TRACE((stderr, "recFifoPoll(no-wrap) ..  after MUSPI_getNextPacketOptimized() .. packet = %p, cur_bytes = %d, dump header: 0x%08x 0x%08x 0x%08x 0x%08x  0x%08x 0x%08x 0x%08x 0x%08x\n", hdr, cur_bytes, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]));
+#endif
                         void * metadata = hdr->dev.singlepkt.metadata;
 
                         if (!hdr->dev.issingle)
@@ -172,7 +184,9 @@ namespace XMI
 
                         uint8_t id = hdr->dev.dispatch_id;
 
-                        //fprintf (stderr, "recFifoPoll(no-wrap) packet = %p, id = %d, cur_bytes = %d\n", hdr, id, cur_bytes);
+                        TRACE((stderr, "recFifoPoll(no-wrap) packet = %p, id = %d, cur_bytes = %d\n", hdr, id, cur_bytes));
+                        
+                        TRACE((stderr, "recFifoPoll(no-wrap) _dispatch = %p, _dispatch[%d].f = %p\n", _dispatch, id, _dispatch[id].f));
                         _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p);
 
                         cumulative_bytes += cur_bytes;
@@ -185,6 +199,7 @@ namespace XMI
                   }
               }
 
+            TRACE((stderr, "<< RecFifoSubGroup::recFifoPoll(%p) .. packets = %d\n", rfifo, packets));
             return packets;
           }
 
@@ -251,7 +266,7 @@ namespace XMI
     };   // XMI::Device::MU namespace
   };     // XMI::Device namespace
 };       // XMI namespace
-
+#undef TRACE
 #endif   // __components_devices_bgq_mu_recfifosubgroup_h__
 
 //

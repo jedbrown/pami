@@ -62,6 +62,7 @@ init ( uint32_t subGroupId,
   XMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
   XMI_assert_debug( numFifos <= BGQ_MU_NUM_REC_FIFOS_PER_GROUP );
 
+  TRACE(("RecFifoSubGrou::init(), dispatch = %p\n", dispatch));
   _dispatch = dispatch;
   //////////////////////////////////////////////////////////////////////////////
   ///

@@ -27,6 +27,11 @@
 
 #include "util/queue/Queue.h"
 
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
+
 namespace XMI
 {
   namespace Device
@@ -305,15 +310,20 @@ namespace XMI
             uint64_t sequenceNum =
               MUSPI_InjFifoNextDesc (_injectionfifo[subgroupFifoNumber], (void **) desc);
 
+            TRACE((stderr, ">> InjFifoSubGroup::nextDescriptor() .. sequenceNum = %ld, *desc = %p\n", sequenceNum, *desc));
+
             if (sequenceNum == 0xFFFFFFFFFFFFFFFFULL)
               {
                 // Injection fifo is full. There is no "next" descriptor available
                 // to initialize.
+                TRACE((stderr, "<< InjFifoSubGroup::nextDescriptor() .. fifo full\n"));
                 return false;
               }
 
             // Set the injection fifo output parameter.
             *injfifo = _injectionfifo[subgroupFifoNumber];
+
+            TRACE((stderr, "   InjFifoSubGroup::nextDescriptor() .. _injectionfifo[%d] = %p, *injfifo = %p\n", subgroupFifoNumber, _injectionfifo[subgroupFifoNumber], *injfifo));
 
             // Locate the single packet payload buffer associated with this
             // descriptor and return the virtual and physical address.
@@ -321,6 +331,7 @@ namespace XMI
             *payloadVa = (void *) & _singlePacketPayload[subgroupFifoNumber].va[index];
             *payloadPa = (void *) & _singlePacketPayload[subgroupFifoNumber].pa[index];
 
+            TRACE((stderr, "<< InjFifoSubGroup::nextDescriptor() .. return true\n"));
             return true;
           }
 
@@ -405,7 +416,7 @@ namespace XMI
     };   // XMI::Device::MU namespace
   };     // XMI::Device namespace
 };       // XMI namespace
-
+#undef TRACE
 #endif   // __components_devices_bgq_mu_injfifosubgroup_h__
 
 //

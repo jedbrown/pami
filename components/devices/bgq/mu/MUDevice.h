@@ -27,6 +27,11 @@
 
 #include "components/sysdep/bgq/BgqSysDep.h"
 
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
+
 namespace XMI
 {
   namespace Device
@@ -153,16 +158,22 @@ namespace XMI
                                                void               ** payloadPa)
           {
             uint32_t fnum = _p2pChannel[_p2pSendChannelIndex]->pinFifo (target_rank);
+            TRACE((stderr, ">> MUDevice::nextInjectionDescriptor() .. _p2pChannel[%d]->pinFifo (%zd) = %d\n", _p2pSendChannelIndex, target_rank, _p2pChannel[_p2pSendChannelIndex]->pinFifo (target_rank)));
 
             if (!_p2pChannel[_p2pSendChannelIndex]->isEmptyMsgQ(fnum)) return false;
 
+            TRACE((stderr, "   MUDevice::nextInjectionDescriptor() .. before getSubGroupAndRelativeFifoNum()\n"));
             InjFifoSubGroup *injFifoSubGroup = NULL;
             uint32_t         relativeFnum = 0;
             getSubGroupAndRelativeFifoNum ( fnum,
                                             &injFifoSubGroup,
                                             &relativeFnum );
+            TRACE((stderr, "   MUDevice::nextInjectionDescriptor() ..  after getSubGroupAndRelativeFifoNum(), injFifoSubGroup = %p, relativeFnum = %d\n", injFifoSubGroup, relativeFnum));
 
-            return injFifoSubGroup->nextDescriptor (relativeFnum, injfifo, desc, payloadVa, payloadPa);
+            bool success = injFifoSubGroup->nextDescriptor (relativeFnum, injfifo, desc, payloadVa, payloadPa);
+
+            TRACE((stderr, "<< MUDevice::nextInjectionDescriptor() ..  success = %d\n", success));
+            return success;
           }
 
           inline void addToDoneQ (size_t                    target_rank,
@@ -420,18 +431,28 @@ int XMI::Device::MU::MUDevice::advance_impl()
 {
   int events = 0;
 
+#ifdef TRACE
+  static size_t loopcount = 0;
+  if (loopcount++ > 100) XMI_abort();
+#endif
+
+  TRACE((stderr, ">> MUDevice::advance_impl() .. _p2pSendChannelIndex = %d (%d)\n", _p2pSendChannelIndex, NULL_P2P_CHANNEL));
   if ( _p2pSendChannelIndex != NULL_P2P_CHANNEL )
     events += _p2pChannel[_p2pSendChannelIndex]->advanceSend();
 
+  TRACE((stderr, "   MUDevice::advance_impl() .. _p2pRecvChannelIndex = %d (%d)\n", _p2pRecvChannelIndex, NULL_P2P_CHANNEL));
   if ( _p2pRecvChannelIndex != NULL_P2P_CHANNEL )
     events += _p2pChannel[_p2pRecvChannelIndex]->advanceRecv();
 
+  TRACE((stderr, "   MUDevice::advance_impl() .. _colSendChannelFlag = %d\n", _colSendChannelFlag));
   if ( _colSendChannelFlag )
     events += _colChannel->advanceSend();
 
+  TRACE((stderr, "   MUDevice::advance_impl() .. _colRecvChannelFlag = %d\n", _colRecvChannelFlag));
   if ( _colRecvChannelFlag )
     events += _colChannel->advanceRecv();
 
+  TRACE((stderr, "<< MUDevice::advance_impl() .. events = %d\n", events));
   return events;
 }
 
@@ -441,6 +462,7 @@ int XMI::Device::MU::MUDevice::readData_impl (int channel, void * buf, size_t le
   return 0;
 };
 
+#undef TRACE
 
 #endif // __components_devices_bgq_mu_mudevice_h__
 

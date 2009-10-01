@@ -21,7 +21,10 @@
 #include <spi/include/kernel/MU.h>
 #include <spi/include/kernel/memory.h>
 
-#define TRACE(x) //printf x	
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
@@ -65,7 +68,7 @@ init ( uint32_t subGroupId,
                               &numFreeFifos,
                               _fifoNumbers );
 
-  TRACE(("InjFifoSubGroup init(): Query Free returned rc=%d and %d free Fifos for group %d\n",
+  TRACE((stderr, "InjFifoSubGroup init(): Query Free returned rc=%d and %d free Fifos for group %d\n",
          rc,
          numFreeFifos,
          subGroupId ));
@@ -74,7 +77,7 @@ init ( uint32_t subGroupId,
 
   if ( numFreeFifos < numFifos )
     {
-      TRACE(("XMI::Device::MU::InjFifoSubGroup:init() Requesting %d fifos, but only %d are free.\n",
+      TRACE((stderr, "XMI::Device::MU::InjFifoSubGroup:init() Requesting %d fifos, but only %d are free.\n",
              numFifos, numFreeFifos));
       return (-EBUSY); // Quit if not enough available.
     }
@@ -93,7 +96,7 @@ init ( uint32_t subGroupId,
                                  fifoAttrs );
 
 
-  TRACE(("InjFifoSubGroup init(): Allocate returned rc=%d for subgroup %d\n",
+  TRACE((stderr, "InjFifoSubGroup init(): Allocate returned rc=%d for subgroup %d\n",
          rc,
          subGroupId ));
 
@@ -115,6 +118,13 @@ init ( uint32_t subGroupId,
 
       if ( rc != 0 ) return (rc);
 
+      TRACE((stderr, "   InjFifoSubGroup::init() .. before Kernel_InjFifoInit(%p, %d, %p, %ld, %d)\n",
+                                &_fifoSubGroup,
+                                _fifoNumbers[fifoNum],
+                                &_injFifoMemRegion[fifoNum],
+                                (uint64_t)fifoPtrs[fifoNum] -
+                                (uint64_t)_injFifoMemRegion[fifoNum].BaseVa, // startoffset of start,head,tail relative to memRegion
+                                fifoSizes[fifoNum] - 1));
       rc = Kernel_InjFifoInit ( &_fifoSubGroup,
                                 _fifoNumbers[fifoNum],
                                 &_injFifoMemRegion[fifoNum],
@@ -122,7 +132,7 @@ init ( uint32_t subGroupId,
                                 (uint64_t)_injFifoMemRegion[fifoNum].BaseVa, // startoffset of start,head,tail relative to memRegion
                                 fifoSizes[fifoNum] - 1 );
 
-      TRACE(("InjFifoSubGroup init() InitById for subgroupPtr:%llx subgroup %d, logical fifo id=%d, MU fifo id=%d, start=%p, end=%p, size=%d, (startVA:%llx startPA:%llx) fifoPtr:%llx headPA:%llx tailPA:%llx headVA:%llx tailVA:%llx returned %d\n",
+      TRACE((stderr, "   InjFifoSubGroup::init() InitById for subgroupPtr:%llx subgroup %d, logical fifo id=%d, MU fifo id=%d, start=%p, end=%p, size=%d, (startVA:%llx startPA:%llx) fifoPtr:%llx headPA:%llx tailPA:%llx headVA:%llx tailVA:%llx returned %d\n",
              (unsigned long long)(&_fifoSubGroup),
              /*subGroupId*/_fifoSubGroup.subgroupid,
              fifoNum,
@@ -144,7 +154,9 @@ init ( uint32_t subGroupId,
       // ------------------------------------------------------------------------
       // Cache a pointer to the MUSPI_InjFifo_t structure associate with each
       // subgroup fifo number.
+      TRACE((stderr, "   InjFifoSubGroup::init() .. before MUSPI_IdToInjFifo(_fifoNumbers[%d] = %d, %p)\n", fifoNum, _fifoNumbers[fifoNum], &_fifoSubGroup));
       _injectionfifo[fifoNum] = MUSPI_IdToInjFifo (_fifoNumbers[fifoNum], &_fifoSubGroup);
+      TRACE((stderr, "   InjFifoSubGroup::init() ..  after MUSPI_IdToInjFifo(), _injectionfifo[%d] = %p\n", fifoNum, _injectionfifo[fifoNum]));
 
       // ------------------------------------------------------------------------
       // Save the virtual address of the single packet payload array.
@@ -217,7 +229,7 @@ advanceInternal ()
         {
           waitForDoneMaskCopy &= ~mask;   // Turn off the bit we are processing.
 
-          TRACE(("InjFifoSubGroup: advance(): Processing fnum %d, Bit 0x%08x, Bits left=0x%08x\n",
+          TRACE((stderr, "InjFifoSubGroup: advance(): Processing fnum %d, Bit 0x%08llx, Bits left=0x%08llx\n",
                  fnum, mask, waitForDoneMaskCopy));
 
           // Check waitingForDone descriptors on this fifo's queue until one is not
@@ -235,7 +247,7 @@ advanceInternal ()
 
               if ( isDescriptorDone ( desc ) ) // Is this descriptor done?
                 {
-                  TRACE(("desc %p is done\n", desc));
+                  TRACE((stderr, "desc %p is done\n", desc));
                   _waitForDoneQ[fnum].headPtr = desc->getNextPtr(); // Remove from Q
 
                   desc->performCallback(); // Notify user.
@@ -316,7 +328,7 @@ advanceInternal ()
   return numProcessed;
 
 } // End: advanceInternal()
-
+#undef TRACE
 //
 // astyle info    http://astyle.sourceforge.net
 //

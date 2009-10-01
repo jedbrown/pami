@@ -23,6 +23,10 @@ __thread bool       XMI::Device::MU::MUDevice::_colSendChannelFlag;
 __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 
 
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
 
 XMI::Device::MU::MUDevice::MUDevice () :
   //BaseDevice (),
@@ -122,6 +126,7 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (Interface::RecvFunction_t
                                                 void                              * arg,
                                                 uint8_t                           & id)
 {
+  TRACE((stderr, ">> MUDevice::registerPacketHandler(%p, %p, %d), _dispatch = %p\n", function, arg, id, _dispatch));
   if (_dispatch_num >= 255) return false;
 
   // acquire the lock
@@ -133,6 +138,7 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (Interface::RecvFunction_t
   _dispatch_num++;
 
   // release the lock
+  TRACE((stderr, "<< MUDevice::registerPacketHandler(%p, %p, %d)\n", function, arg, id));
 
   return true;
 };
@@ -148,3 +154,5 @@ int XMI::Device::MU::MUDevice::noop (void   * metadata,
   XMI_abort();
   return 0;
 };
+
+#undef TRACE

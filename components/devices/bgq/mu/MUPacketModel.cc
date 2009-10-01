@@ -12,6 +12,11 @@
  */
 #include "components/devices/bgq/mu/MUPacketModel.h"
 
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
+
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
 XMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device, xmi_context_t context) :
@@ -65,6 +70,7 @@ xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (Interface::RecvFunction_
                                                 Interface::RecvFunction_t   read_recv_func,
                                                 void                      * read_recv_func_parm)
 {
+  TRACE((stderr, ">> MUPacketModel::init_impl(%p, %p, %p, %p)\n", direct_recv_func, direct_recv_func_parm, read_recv_func, read_recv_func_parm));
   MemoryFifoPacketHeader * hdr =
     (MemoryFifoPacketHeader *) & _desc_model.PacketHeader;
 
@@ -77,9 +83,10 @@ xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (Interface::RecvFunction_
                                    direct_recv_func_parm,
                                    hdr->dev.dispatch_id);
 
+  TRACE((stderr, "<< MUPacketModel::init_impl()\n"));
   return XMI_SUCCESS;
 };
-
+#undef TRACE
 //
 // astyle info    http://astyle.sourceforge.net
 //

@@ -131,6 +131,7 @@ namespace XMI
                                                 uint64_t               payloadPa,
                                                 size_t                 bytes)
       {
+        TRACE((stderr, ">> initializeDescriptor(%p, %zd, %p, %zd)\n", desc, target_rank, (void *)payloadPa, bytes));
         // Clone the model descriptor.
         _desc_model.clone (*desc);
 
@@ -139,6 +140,7 @@ namespace XMI
         // This is terribly inefficient.
         MUHWI_Destination dst;
         size_t addr[7];
+#warning look a this
         _device.sysdep->mapping.torusAddr (addr);
         dst.Destination.A_Destination = addr[0];
         dst.Destination.B_Destination = addr[1];
@@ -164,7 +166,16 @@ namespace XMI
                          MUHWI_PACKET_HINT_E_NONE );
 #endif
         // --------------------------------------------------------------------
+
+        TRACE((stderr, "   initializeDescriptor(), before desc->setPayload()\n"));
+        //desc->dump();
+
         desc->setPayload (payloadPa, bytes);
+
+        TRACE((stderr, "   initializeDescriptor(),  after desc->setPayload()\n"));
+        //desc->dump();
+
+        TRACE((stderr, "<< initializeDescriptor(%p, %zd, %p, %zd)\n", desc, target_rank, (void *)payloadPa, bytes));
       }
 
       bool MUPacketModel::postPacket_impl (MUInjFifoMessage   * obj,
@@ -219,7 +230,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (cookie, NULL, XMI_SUCCESS);
+                fn (_context, cookie, XMI_SUCCESS);
               }
           }
         else
@@ -309,7 +320,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (cookie, NULL, XMI_SUCCESS); // Descriptor is done...notify.
+                fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
               }
           }
         else
@@ -479,7 +490,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    fn (cookie, NULL, XMI_SUCCESS); // Descriptor is done...notify.
+                    fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif

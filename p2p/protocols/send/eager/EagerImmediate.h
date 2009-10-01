@@ -204,7 +204,7 @@ namespace XMI
           {
             protocol_metadata_t * m = (protocol_metadata_t *) metadata;
 
-            TRACE_ERR ((stderr, "dispatch_send_direct(), m->fromRank = %zd, m->databytes = %zd, m->metabytes = %zd\n", m->fromRank, m->databytes, m->metabytes));
+            TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->fromRank = %zd, m->databytes = %d, m->metabytes = %d\n", m->fromRank, m->databytes, m->metabytes));
 
             EagerImmediate<T_Model, T_Device, T_Message> * send =
               (EagerImmediate<T_Model, T_Device, T_Message> *) recv_func_parm;
@@ -223,6 +223,7 @@ namespace XMI
                                     m->databytes,   // Payload data bytes
                                     (xmi_recv_t *) &recv);
 
+            TRACE_ERR ((stderr, "<< EagerImmediate::dispatch_send_direct()\n"));
             return 0;
           };
 

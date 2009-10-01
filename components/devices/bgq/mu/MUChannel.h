@@ -23,6 +23,11 @@
 
 #include "components/sysdep/bgq/BgqSysDep.h"
 
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
+
 namespace XMI
 {
   namespace Device
@@ -219,12 +224,14 @@ inline int XMI::Device::MU::Channel::advanceRecv()
 {
   int events = 0;
 
+  TRACE((stderr, ">> MU::Channel::advanceRecv()\n"));
   events += _resMgr.advanceReceptionFifos();
+  TRACE((stderr, "<< MU::Channel::advanceRecv() .. events = %d\n", events));
 
   //Counter advance for rzv messages
   return events;
 }
-
+#undef TRACE
 #endif // __components_devices_bgq_mu_channel_h__
 
 //

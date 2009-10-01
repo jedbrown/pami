@@ -60,7 +60,7 @@ static void send_done_remote (xmi_context_t   context,
 
 int main (int argc, char ** argv)
 {
-  volatile size_t send_active = 2;
+  volatile size_t send_active = 1;
   volatile size_t recv_active = 1;
 
 
@@ -124,10 +124,10 @@ int main (int argc, char ** argv)
   xmi_send_simple_t parameters;
   parameters.send.dispatch = dispatch;
   parameters.send.cookie   = (void *) &send_active;
-  parameters.send.header.addr = NULL;
-  parameters.send.header.bytes = 0;
-  parameters.simple.addr  = NULL;
-  parameters.simple.bytes = 0;
+  parameters.send.header.addr = (void *)&dispatch; // send *something*
+  parameters.send.header.bytes = sizeof(size_t);
+  parameters.simple.addr  = (void *)&dispatch; // send *something*
+  parameters.simple.bytes = sizeof(size_t);
   parameters.simple.local_fn  = send_done_local;
   parameters.simple.remote_fn = send_done_remote;
 
@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
     result = XMI_Send (context, &parameters);
     fprintf (stderr, "... after send.\n");
 
-    fprintf (stderr, "before send-recv advance loop ...\n");
+    fprintf (stderr, "before send-recv advance loop (send_active = %zd, recv_active = %zd) ...\n", send_active, recv_active);
     while (send_active || recv_active)
     {
       result = XMI_Context_advance (context, 100);

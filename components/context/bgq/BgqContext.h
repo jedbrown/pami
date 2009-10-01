@@ -36,7 +36,7 @@
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 namespace XMI
@@ -124,6 +124,7 @@ namespace XMI
           for (i=0; i<maximum && events==0; i++)
           {
             events += _shmem.advance_impl();
+            events += _mu.advance();
           }
           //if (events > 0) result = XMI_SUCCESS;
 

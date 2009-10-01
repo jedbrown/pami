@@ -25,6 +25,11 @@
 
 #include "components/sysdep/bgq/BgqSysDep.h"
 
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
+
 namespace XMI
 {
   namespace Device
@@ -203,6 +208,7 @@ namespace XMI
           int advanceReceptionFifos()
           {
             uint32_t numSubGroups = _recFifoInfo->numSubGroups;
+            TRACE((stderr, ">> advanceReceptionFifos() .. numSubGroups = %d\n", numSubGroups));
             int events = 0;
 
             for ( uint32_t i = 0; i < numSubGroups; i++ )
@@ -210,6 +216,7 @@ namespace XMI
                 events += _recFifoSubGroups[i]->advance();
               }
 
+            TRACE((stderr, "<< advanceReceptionFifos() .. events = %d\n", events));
             return events;
           }
 
@@ -405,7 +412,7 @@ namespace XMI
     };   // XMI::Device::MU namespace
   };     // XMI::Device namespace
 };       // XMI namespace
-
+#undef TRACE
 #endif   // __components_devices_bgq_mu_resourcemanager_h__
 
 //
