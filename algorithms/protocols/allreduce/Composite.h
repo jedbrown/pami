@@ -27,13 +27,20 @@ namespace CCMI
     /// \brief Default for reuse_storage_limit is currently MAXINT/2G-1
 #define CCMI_DEFAULT_REUSE_STORAGE_LIMIT ((unsigned)2*1024*1024*1024 - 1)
     /// \brief configuration flags/options for creating the factory
-    typedef struct
+    class ConfigFlags
     {
+    public:
+      ConfigFlags(unsigned r, unsigned p)
+        {
+          reuse_storage_limit=r;
+          pipeline_override=p;
+        }
+      
 /*      unsigned reuse_storage:1;  // save allocated storage across calls
-      unsigned reserved:31; */
+        unsigned reserved:31; */
       unsigned reuse_storage_limit; // save allocated storage up to this limit
       unsigned pipeline_override;
-    } ConfigFlags;
+    };
 
     namespace Allreduce
     {

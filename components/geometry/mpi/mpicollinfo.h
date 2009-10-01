@@ -260,14 +260,16 @@ namespace XMI
                             xmi_mapidtogeometry_fn fcn):
         CollInfo<T_Device>(dev),
         _model(*dev),
+        _cf(0,0),
         _allreduce_registration(sd,
                                 &_model,
                                 fcn,
-                                (CCMI::Adaptor::ConfigFlags){0, 0})
+                                _cf)
         {
         }
       XMI_Request_t                                           _request;
       MPIMcastModel                                           _model;
+      CCMI::Adaptor::ConfigFlags                              _cf;
       CCMI::Adaptor::Allreduce::Ring::Factory                 _allreduce_registration;
     };
 
@@ -280,14 +282,16 @@ namespace XMI
                                 xmi_mapidtogeometry_fn fcn):
         CollInfo<T_Device>(dev),
         _model(*dev),
+        _cf(0,0),
         _allreduce_registration(sd,
                                 &_model,
                                 fcn,
-                                (CCMI::Adaptor::ConfigFlags){0, 0})
+                                _cf)
         {
         }
       XMI_Request_t                                           _request;
       MPIMcastModel                                           _model;
+      CCMI::Adaptor::ConfigFlags                              _cf;
       CCMI::Adaptor::Allreduce::Binomial::Factory             _allreduce_registration;
     };
 
