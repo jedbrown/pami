@@ -52,7 +52,7 @@ namespace XMI
       template <class T>
       inline size_t MessageDevice<T>::getMessageMetadataSize ()
       {
-        return static_cast<T*>(this)->getMessageMetadataSize_impl ();
+        return T::message_metadata_size;
       }
     };
   };

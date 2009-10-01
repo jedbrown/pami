@@ -142,7 +142,9 @@ extern "C"
   }
     xmi_network;
 
-#define XMI_MAX_DIMS	4
+/// \todo Remove this platform-specific #define
+#define XMI_MAX_DIMS 7
+//#define XMI_MAX_DIMS	4
 
   /**
    * \brief A structure to describe a network coordinate

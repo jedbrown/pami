@@ -3,6 +3,8 @@
 /// \brief "send to self" point-to-point XMI_Send() test
 ///
 
+#include <stdio.h>
+
 #include "sys/xmi.h"
 
 static void recv_done (xmi_context_t   context,

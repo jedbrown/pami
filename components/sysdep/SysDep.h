@@ -37,28 +37,37 @@ namespace XMI
             topology_local (),
             topology_global ()
         {
-	  xmi_coord_t ll, ur;
-	  size_t min=0, max=0;
+          xmi_coord_t ll, ur;
+          size_t min = 0, max = 0;
           mapping.init (ll, ur, min, max, mm);
-	  // no one can use a Topology until after this point...
-	  T_Topology::static_init(&mapping);
-	  size_t rectsize = 1;
-	  for (unsigned d = 0; d < mapping.globalDims(); ++d) {
-	  	rectsize *= (ur.n_torus.coords[d] - ll.n_torus.coords[d] + 1);
-	  }
-	  if (mapping.size() == rectsize) {
-	    new (&topology_global) T_Topology(&ll, &ur);
-	  } else if (mapping.size() == max - min + 1) {
-	    new (&topology_global) T_Topology(min, max);
-	  } else {
-	    // wait for COMM_WORLD so we don't allocate yet-another ranks list?
-	    // actually, COMM_WORLD should use our rank list...
-	    // does this ever happen for "COMM_WORLD"?
-	    // (isn't COMM_WORLD, by definition, a contig set of ranks 0..(N-1)?)
-	    // topology_global(ranks, nranks);
-	    XMI_abortf("failed to build global-world topology");
-	  }
-	  topology_global.subTopologyLocalToMe(&topology_local);
+          // no one can use a Topology until after this point...
+          T_Topology::static_init(&mapping);
+          size_t rectsize = 1;
+
+          for (unsigned d = 0; d < mapping.globalDims(); ++d)
+            {
+              rectsize *= (ur.n_torus.coords[d] - ll.n_torus.coords[d] + 1);
+            }
+
+          if (mapping.size() == rectsize)
+            {
+              new (&topology_global) T_Topology(&ll, &ur);
+            }
+          else if (mapping.size() == max - min + 1)
+            {
+              new (&topology_global) T_Topology(min, max);
+            }
+          else
+            {
+              // wait for COMM_WORLD so we don't allocate yet-another ranks list?
+              // actually, COMM_WORLD should use our rank list...
+              // does this ever happen for "COMM_WORLD"?
+              // (isn't COMM_WORLD, by definition, a contig set of ranks 0..(N-1)?)
+              // topology_global(ranks, nranks);
+              XMI_abortf("failed to build global-world topology");
+            }
+
+          topology_global.subTopologyLocalToMe(&topology_local);
         };
 
         T_Memory   mm;

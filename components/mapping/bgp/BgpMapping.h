@@ -501,6 +501,11 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
       _peers++;
     }
   }
+
+#if 0
+#warning This is duplicate code .. the map cache is initialized in the BgpGlobal class .. if-out for now, then delete this
+
+
   TRACE_ERR((stderr, "BgpMapping::init_impl .. _peers = %zd\n", _peers));
 
   // This structure anchors pointers to the map cache and rank cache.
@@ -558,7 +563,6 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
   // pointers into this structure.  When the non-master ranks on this physical
   // node see the non-zero pointers, they can begin to use them.
   xmi_result_t result = mm.memalign((void **) &cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
 
   // Determine if we are the master rank on our physical node.  Do this by
   // finding the lowest t coordinate on our node, and if it is us, then we
@@ -796,7 +800,7 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
 
     cacheAnchorsPtr->done[tCoord] = 1;  // Indicate we have seen the info.
   }
-  
+#endif
   //fprintf (stderr, "BgpMapping::init_impl <<\n");
   
   return XMI_SUCCESS;

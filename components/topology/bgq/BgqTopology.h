@@ -136,6 +136,10 @@ namespace XMI
         {
         }
 
+        static void static_init(XMI::Mapping::BgqMapping *map)
+        {
+        }
+
     }; // end XMI::Topology::BgqTopology
   }; // end namespace Topology
 }; // end namespace XMI

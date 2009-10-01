@@ -22,6 +22,7 @@
 #include "components/mapping/NodeMapping.h"
 
 #include "components/sysdep/bgq/BgqGlobal.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 #include "util/common.h"
 
@@ -36,16 +37,17 @@ namespace XMI
   namespace Mapping
   {
 #define BGQ_DIMS 7
-    class BgqMapping : public Interface::Base<BgqMapping>,
+    class BgqMapping :
+        public Interface::Base<BgqMapping,XMI::Memory::SharedMemoryManager>,
         public Interface::Torus<BgqMapping, BGQ_DIMS>,
-        public Interface::Node<BgqMapping>
+        public Interface::Node<BgqMapping,1>
     {
       public:
 
         inline BgqMapping () :
-            Interface::Base<BgqMapping>(),
+            Interface::Base<BgqMapping,XMI::Memory::SharedMemoryManager>(),
             Interface::Torus<BgqMapping, BGQ_DIMS>(),
-            Interface::Node<BgqMapping> (),
+            Interface::Node<BgqMapping,1> (),
             _a (__global.personality.aCoord()),
             _b (__global.personality.bCoord()),
             _c (__global.personality.cCoord()),
@@ -165,7 +167,8 @@ namespace XMI
         /// \brief Initialize the mapping
         /// \see XMI::Mapping::Interface::Base::init()
         ///
-        inline xmi_result_t init_impl();
+        inline xmi_result_t init_impl(xmi_coord_t &ll, xmi_coord_t &ur,
+				    size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm);
 
         ///
         /// \brief Return the BGP global task for this process
@@ -183,6 +186,15 @@ namespace XMI
         inline size_t size_impl()
         {
           return _size;
+        }
+
+        ///
+        /// \brief Returns the number of global dimensions
+        /// \see XMI::Mapping::Interface::Base::globalDims()
+        ///
+        inline size_t globalDims_impl()
+        {
+          return BGQ_DIMS;
         }
 
         /////////////////////////////////////////////////////////////////////////
@@ -731,7 +743,8 @@ static size_t XMI::Mapping::BgqMapping::initializeMapCache (SysDep::BgqPersonali
 };
 #endif
 
-xmi_result_t XMI::Mapping::BgqMapping::init_impl ()
+xmi_result_t XMI::Mapping::BgqMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
+				    size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm)
 {
   //_mapcache  = __global.getMapCache();
   //_rankcache = __global.getRankCache();

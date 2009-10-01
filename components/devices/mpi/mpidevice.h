@@ -396,10 +396,9 @@ namespace XMI
         };
 
       // Implement MessageDevice Routines
-      inline size_t getMessageMetadataSize_impl ()
-        {
-          return 128;
-        }
+      /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
+      static const size_t message_metadata_size = 128;
+
       inline void   setConnection_impl (int channel, size_t rank, void * arg)
         {
           assert(0);

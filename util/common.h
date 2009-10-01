@@ -15,6 +15,8 @@
 
 #include <new>
 #include <stdint.h>
+#include <stdio.h>
+
 #include "sys/xmi.h"
 #ifndef MIN
 #define MIN(a,b)  (((a)<(b))?(a):(b))
