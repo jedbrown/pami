@@ -253,7 +253,7 @@ namespace XMI
                     cb_done.clientdata = broadcast->cookie;
                     XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     cinfo->_broadcast_registration.generate(req,
                                                            sizeof(XMI_CollectiveRequest_t),
                                                            cb_done,
@@ -271,7 +271,7 @@ namespace XMI
                     cb_done.clientdata = broadcast->cookie;
                     XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     cinfo->_broadcast_registration.generate(req,
                                                             sizeof(XMI_CollectiveRequest_t),
                                                             cb_done,
@@ -341,7 +341,7 @@ namespace XMI
                     XMI_Callback_t cb_done;
                     cb_done.function   = allreduce->cb_done;
                     cb_done.clientdata = allreduce->cookie;                    
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     CCMI::Adaptor::Allreduce::Ring::Factory *factory =
                       (CCMI::Adaptor::Allreduce::Ring::Factory *) &cinfo->_allreduce_registration;
                     if(arcomposite != NULL  &&  arcomposite->getFactory() == factory)
@@ -392,7 +392,7 @@ namespace XMI
                     XMI_Callback_t cb_done;
                     cb_done.function   = allreduce->cb_done;
                     cb_done.clientdata = allreduce->cookie;                    
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     CCMI::Adaptor::Allreduce::Binomial::Factory *factory =
                       (CCMI::Adaptor::Allreduce::Binomial::Factory *) &cinfo->_allreduce_registration;
                     if(arcomposite != NULL  &&  arcomposite->getFactory() == factory)
@@ -578,9 +578,9 @@ namespace XMI
                     XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep> *cinfo=
                        (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
 
-// todo:  add some compile time asserts
+// todo:  add some compile time asserts - I added one to AlltoallFactory for XMI_CollectiveRequest_t
                     
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(4*sizeof(XMI_Request_t));
+                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     XMI_Callback_t cb_done_ccmi;
 		    cb_done_ccmi.function   = alltoallv->cb_done;
                     cb_done_ccmi.clientdata = alltoallv->cookie;
@@ -631,7 +631,7 @@ namespace XMI
                 xmi_callback_t cb_done_ccmi;
                 cb_done_ccmi.function   = ambroadcast->cb_done;
                 cb_done_ccmi.clientdata = ambroadcast->cookie;
-                XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_Request_t));
+                XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                 factory->generate(req,
                                   sizeof(XMI_CollectiveRequest_t),
                                   cb_done_ccmi,

@@ -323,6 +323,7 @@ namespace XMI
                 sz+=(_rangelist[i].hi-_rangelist[i].lo+1);
               }
           assert(0);
+          return -1;
         }
       inline void                       setKey_impl(keys_t key, void*value)
         {

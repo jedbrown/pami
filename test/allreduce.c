@@ -361,6 +361,8 @@ int main(int argc, char*argv[])
 #endif
 
 #if 1
+  for(int nalg=0; nalg<allreducenum_algorithm; nalg++)
+      {
   if (rank == root)
       {
 	  printf("# Allreduce Bandwidth Test -- root = %d\n", root);
@@ -381,7 +383,7 @@ int main(int argc, char*argv[])
   allreduce.cb_done   = cb_allreduce;
   allreduce.cookie    = (void*)&_g_allreduce_active;
   allreduce.geometry  = world_geometry;
-  allreduce.algorithm = allreducealgorithm[0];
+  allreduce.algorithm = allreducealgorithm[nalg];
   allreduce.sndbuf    = sbuf;
   allreduce.stype     = XMI_BYTE;
   allreduce.stypecount= 0;
@@ -431,6 +433,7 @@ int main(int argc, char*argv[])
 			  }
 		  }
 	  }
+  }
 #endif
 
     result = XMI_Context_destroy (context);

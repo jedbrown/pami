@@ -164,6 +164,7 @@ namespace CCMI
                                  T_Counter         * sndcounters,
                                  T_Counter         * rcvcounters)
       {
+        COMPILE_TIME_ASSERT(sizeof(*request) >= sizeof(A2AProtocol<T_Manytomany, T_Sysdep, T_Counter>));
         new (request) A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> (_mapping, _minterface, cb_done,
                                                                       consistency,
                                                                       geometry,

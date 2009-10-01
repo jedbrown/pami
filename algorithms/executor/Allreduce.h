@@ -209,7 +209,7 @@ namespace CCMI
         TRACE_MSG((stderr, "<%#.8X>Executor::Allreduce::ctor() "
                    "Allreduce %X, AllreduceBase %X, Executor %X\n",(int)this,
                    sizeof(CCMI::Executor::Allreduce<T_Mcast,T_Sysdep,T_ConnectionManager>),
-                   sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep>),
+                   sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>),
                    sizeof(CCMI::Executor::Executor)));
         TRACE_DATA(("this",(const char*)this, sizeof(*this)));
 #endif
