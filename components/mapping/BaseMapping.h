@@ -33,7 +33,7 @@ namespace XMI
           /// \brief Initialize the mapping object.
           ///
           inline xmi_result_t init (xmi_coord_t &ll, xmi_coord_t &ur,
-				    size_t min_rank, size_t max_rank,
+				    size_t &min_rank, size_t &max_rank,
 				    T_Memory &mm);
 
           ///
@@ -60,7 +60,7 @@ namespace XMI
 
       template <class T_Mapping, class T_Memory>
       inline xmi_result_t Base<T_Mapping,T_Memory>::init (xmi_coord_t &ll, xmi_coord_t &ur,
-				    size_t min_rank, size_t max_rank, T_Memory &mm)
+				    size_t &min_rank, size_t &max_rank, T_Memory &mm)
       {
         return static_cast<T_Mapping*>(this)->init_impl (ll, ur, min_rank, max_rank, mm);
       }

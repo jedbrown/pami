@@ -82,10 +82,12 @@ namespace BGP {
 			//
 			int shift = (ncores == 4 ? 2 : (ncores == 2 ? 1 : 0));
 			_factory.coreShift = shift;
+			XMI::Mapping::Interface::nodeaddr_t n;
+			mapping->nodeAddr(n);
 			for (i = 0; i < t; ++i) {
 				size_t r;
-				XMI::Mapping::Interface::nodeaddr_t n = {0, i};
-				rc = mapping->node2peer(n, r);
+				n.local = i;
+				rc = mapping->node2task(n, r);
 				XMI_assert(rc == XMI_SUCCESS);
 				if (r != (size_t)-1) {
 					_factory.numCore += ncores;

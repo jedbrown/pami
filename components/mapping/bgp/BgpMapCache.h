@@ -15,6 +15,14 @@
 
 #include "components/sysdep/bgp/BgpPersonality.h"
 
+/// \brief Creates valid index into _rankcache[].
+///
+/// It is imperative that all who create an index into _rankcache[]
+/// do it in the identical way. Thus all should use this macro.
+///
+#define ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize) \
+	(((t * zSize + z) * ySize + y) * xSize + x)
+
 namespace XMI
 {
   namespace Mapping
@@ -236,10 +244,7 @@ namespace XMI
                           // rank encountered on this node. Increment the number of active nodes.
                           if (rarray[x][y][z] == 1) cacheAnchorsPtr->numActiveNodesGlobal++;
 
-                          size_t estimated_rank =
-                            t * (personality.xSize() * personality.ySize() * personality.zSize()) +
-                            z * (personality.xSize() * personality.ySize()) +
-                            y * (personality.xSize()) + x;
+                          size_t estimated_rank = ESTIMATED_TASK(x,y,z,t,personality.xSize(),personality.ySize(),personality.zSize(),personality.tSize());
 
                           _rankcache[estimated_rank] = i;
 
@@ -301,11 +306,7 @@ namespace XMI
                           if (rarray[x][y][z] == 1)
                             cacheAnchorsPtr->numActiveNodesGlobal++;
 
-                          int estimated_rank =
-                            t * (personality.xSize() * personality.ySize() * personality.zSize()) +
-                            z * (personality.xSize() * personality.ySize()) +
-                            y * (personality.xSize()) +
-                            x;
+                          size_t estimated_rank = ESTIMATED_TASK(x,y,z,t,personality.xSize(),personality.ySize(),personality.zSize(),personality.tSize());
                           _rankcache[estimated_rank] = i;
                         }
                       else

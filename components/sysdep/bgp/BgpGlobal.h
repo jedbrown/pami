@@ -87,6 +87,7 @@ namespace XMI
           // memory from the heap instead.
           //
           // TODO - verify the run mode is actually SMP.
+#warning should not use 1MB of stack here
           size_t buffer[bytes];
           size_t bytes_used = _mapcache.init (personality, buffer, bytes);
 
