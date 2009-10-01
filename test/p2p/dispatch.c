@@ -48,7 +48,7 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options;
-  result = XMI_Dispatch_set (context, dispatch, (xmi_dispatch_callback_fn) fn, NULL, options);
+  result = XMI_Dispatch_set (context, dispatch, fn, NULL, options);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);

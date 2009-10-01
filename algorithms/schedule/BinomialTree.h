@@ -18,7 +18,7 @@
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
 #include "Schedule.h"
-
+#include <strings.h>  //needed for ffs on AIX
 namespace CCMI
 {
   namespace Schedule

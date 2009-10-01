@@ -202,7 +202,7 @@ int main ()
   TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
   xmi_result_t result = XMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
-                                          (xmi_dispatch_callback_fn) fn,
+                                          fn,
                                           (void *)&_recv_active,
                                           options);
   if (result != XMI_SUCCESS)

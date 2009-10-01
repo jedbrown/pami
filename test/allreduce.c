@@ -233,13 +233,13 @@ void _allreduce (xmi_context_t context, xmi_allreduce_t *allreduce)
 
 
 
-bool ** alloc2DContig(int nrows, int ncols)
+unsigned ** alloc2DContig(int nrows, int ncols)
 {
     int i, j;
-    bool **array;
+    unsigned **array;
 
-    array        = (bool**)malloc(nrows*sizeof(bool*));
-    array[0]     = (bool *)calloc(sizeof(bool), nrows*ncols);
+    array        = (unsigned**)malloc(nrows*sizeof(unsigned*));
+    array[0]     = (unsigned *)calloc(sizeof(unsigned), nrows*ncols);
     for(i = 1; i<nrows; i++)
 	array[i]   = array[0]+i*ncols;
 
@@ -319,45 +319,45 @@ int main(int argc, char*argv[])
       }
 
 
-  bool** validTable=
+  unsigned** validTable=
   alloc2DContig(op_count,dt_count);
 #ifdef FULL_TEST
   for(i=0;i<op_count;i++)
       for(j=0;j<dt_count;j++)
-	  validTable[i][j]=true;
+	  validTable[i][j]=1;
 
   /* Not testing minloc/maxloc/logical,etc */
-  for(i=OP_MINLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=false;
-  for(i=OP_MAXLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=false;
-  for(i=0,j=DT_LOGICAL; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_LONG_DOUBLE; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_LOC_2INT; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_LOC_SHORT_INT; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_LOC_FLOAT_INT; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=false;
-  for(i=0,j=DT_LOC_2DOUBLE; i<OP_COUNT;i++)validTable[i][j]=false;
+  for(i=OP_MINLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+  for(i=OP_MAXLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+  for(i=0,j=DT_LOGICAL; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_LONG_DOUBLE; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_LOC_2INT; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_LOC_SHORT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_LOC_FLOAT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_LOC_2DOUBLE; i<OP_COUNT;i++)validTable[i][j]=0;
 
 
-  validTable[OP_MAX][DT_DOUBLE_COMPLEX]=false;
-  validTable[OP_MIN][DT_DOUBLE_COMPLEX]=false;
-  validTable[OP_PROD][DT_DOUBLE_COMPLEX]=false;
+  validTable[OP_MAX][DT_DOUBLE_COMPLEX]=0;
+  validTable[OP_MIN][DT_DOUBLE_COMPLEX]=0;
+  validTable[OP_PROD][DT_DOUBLE_COMPLEX]=0;
 
   //  This one is failing using core math...we should find this bug.
-  validTable[OP_BAND][DT_DOUBLE]=false;
+  validTable[OP_BAND][DT_DOUBLE]=0;
 
   /* Now add back the minloc/maxloc stuff */
   for(i=OP_MAXLOC; i<=OP_MINLOC; i++)
       for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
-	  validTable[i][j]=true;
+	  validTable[i][j]=1;
 #else
   for(i=0;i<op_count;i++)
       for(j=0;j<dt_count;j++)
-	  validTable[i][j]=false;
+	  validTable[i][j]=0;
 
-  validTable[OP_SUM][DT_SIGNED_INT]=true;
+  validTable[OP_SUM][DT_SIGNED_INT]=1;
 #endif
 
 #if 1

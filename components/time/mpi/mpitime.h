@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #include "components/time/BaseTime.h"
 #include <mpi.h>
-
+#include <stdio.h>
 
 namespace XMI
 {

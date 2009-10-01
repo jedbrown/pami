@@ -19,7 +19,7 @@
 #include <assert.h>
 
 #include "sys/xmi.h"
-#include "util/common.h"
+//#include "util/common.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -160,7 +160,7 @@ void barrier_init (xmi_context_t context, size_t dispatch)
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
-    XMI_abort();
+    abort();
   }
   
   barrier();
