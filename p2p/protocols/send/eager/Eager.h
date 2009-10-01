@@ -93,31 +93,31 @@ namespace XMI
             ///
             /// \see XMI::Protocol::Send::immediate
             ///
-            virtual xmi_result_t immediate (size_t   peer,
-                                        void   * src,
-                                        size_t   bytes,
-                                        void   * msginfo,
-                                        size_t   mbytes)
+            virtual xmi_result_t immediate (xmi_task_t   peer,
+                                            void       * src,
+                                            size_t       bytes,
+                                            void       * msginfo,
+                                            size_t       mbytes)
             {
               TRACE_ERR((stderr, ">> Eager::immediate()\n"));
               xmi_result_t result = this->immediate_impl (peer, src, bytes, msginfo, mbytes);
               TRACE_ERR((stderr, "<< Eager::immediate()\n"));
               return result;
             };
-            
+
             ///
             /// \brief Start a new simple send operation.
             ///
             /// \see XMI::Protocol::Send::simple
             ///
             virtual xmi_result_t simple (xmi_event_function   local_fn,
-                                        xmi_event_function   remote_fn,
-                                        void               * cookie,
-                                        size_t               peer,
-                                        void               * src,
-                                        size_t               bytes,
-                                        void               * msginfo,
-                                        size_t               mbytes)
+                                         xmi_event_function   remote_fn,
+                                         void               * cookie,
+                                         xmi_task_t           peer,
+                                         void               * src,
+                                         size_t               bytes,
+                                         void               * msginfo,
+                                         size_t               mbytes)
             {
               TRACE_ERR((stderr, ">> Eager::simple()\n"));
               xmi_result_t result = this->simple_impl (local_fn, remote_fn, cookie, peer, src, bytes, msginfo, mbytes);

@@ -69,7 +69,7 @@ namespace XMI
 
           typedef struct __attribute__((__packed__)) short_metadata
           {
-            size_t         fromRank;
+            xmi_task_t     fromRank;
             size_t         bytes;
             send_state_t * ackinfo;
         } short_metadata_t;
@@ -92,7 +92,7 @@ namespace XMI
                               xmi_dispatch_callback_fn   dispatch_fn,
                               void                     * cookie,
                               T_Device                 & device,
-                              size_t                     origin_task,
+                              xmi_task_t                 origin_task,
                               xmi_context_t              context,
                               xmi_result_t             & status) :
               _envelope_model (device, context),
@@ -135,13 +135,13 @@ namespace XMI
           /// \see XMI::Protocol::Send:simple
           ///
           inline xmi_result_t simple_impl (xmi_event_function   local_fn,
-                                    xmi_event_function   remote_fn,
-                                    void               * cookie,
-                                    size_t               peer,
-                                    void               * src,
-                                    size_t               bytes,
-                                    void               * msginfo,
-                                    size_t               mbytes)
+                                           xmi_event_function   remote_fn,
+                                           void               * cookie,
+                                           xmi_task_t           peer,
+                                           void               * src,
+                                           size_t               bytes,
+                                           void               * msginfo,
+                                           size_t               mbytes)
           {
             TRACE_ERR((stderr, "EagerSimple::simple_impl() >>\n"));
 
@@ -210,7 +210,7 @@ namespace XMI
                                          (void *) state,
                                          peer,
                                          (void *) &metadata.fromRank,
-                                         sizeof (size_t),
+                                         sizeof (xmi_task_t),
                                          src,
                                          bytes);
               }
@@ -240,7 +240,7 @@ namespace XMI
             _recv_allocator.returnObject ((void *) object);
           }
 
-          inline void setConnection (size_t task, void * arg)
+          inline void setConnection (xmi_task_t task, void * arg)
           {
             size_t peer = _msgDevice.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", task, arg, peer, _connection[peer]));
@@ -249,7 +249,7 @@ namespace XMI
             TRACE_ERR((stderr, "<< EagerSimple::setConnection(%zd, %p)\n", task, arg));
           }
 
-          inline void * getConnection (size_t task)
+          inline void * getConnection (xmi_task_t task)
           {
             size_t peer = _msgDevice.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
@@ -258,7 +258,7 @@ namespace XMI
             return _connection[peer];
           }
 
-          inline void clearConnection (size_t task)
+          inline void clearConnection (xmi_task_t task)
           {
             size_t peer = _msgDevice.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
@@ -275,7 +275,7 @@ namespace XMI
           T_Model         _ack_model;
           T_Device      & _msgDevice;
           size_t          _pktsize;
-          size_t          _fromRank;
+          xmi_task_t      _fromRank;
 
           xmi_context_t   _context;
 
@@ -375,7 +375,7 @@ namespace XMI
                                      payload,         // Application metadata
                                      bytes,           // Metadata bytes
                                      NULL,            // No payload data
-                                     0,               // No payload data
+                                     m->bytes,        // Number of msg bytes
                                      (xmi_recv_t *) &(state->info));
 
             XMI_assert(state->info.kind == XMI_AM_KIND_SIMPLE);
@@ -446,7 +446,7 @@ namespace XMI
             EagerSimple<T_Model, T_Device, T_Message> * eager =
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
-            size_t fromRank = *((size_t *)metadata);
+            xmi_task_t fromRank = *((xmi_task_t *)metadata);
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_direct(), fromRank = %zd, bytes = %zd\n", fromRank, bytes));
 
             recv_state_t * state = (recv_state_t *) eager->getConnection (fromRank);

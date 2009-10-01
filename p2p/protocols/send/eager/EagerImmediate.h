@@ -71,7 +71,7 @@ namespace XMI
           ///
           typedef struct __attribute__((__packed__)) protocol_metadata
           {
-            size_t         fromRank;  ///< Origin task id
+            xmi_task_t     fromRank;  ///< Origin task id
             uint16_t       databytes; ///< Number of bytes of data
             uint16_t       metabytes; ///< Number of bytes of metadata
           } protocol_metadata_t;
@@ -93,7 +93,7 @@ namespace XMI
                                  xmi_dispatch_callback_fn   dispatch_fn,
                                  void                     * cookie,
                                  T_Device                 & device,
-                                 size_t                     origin_task,
+                                 xmi_task_t                 origin_task,
                                  xmi_context_t              context,
                                  xmi_result_t             & status) :
               _send_model (device, context),
@@ -113,11 +113,11 @@ namespace XMI
           ///
           /// \see XMI::Protocol::Send::immediate
           ///
-          inline xmi_result_t immediate_impl (size_t   peer,
-                                       void   * src,
-                                       size_t   bytes,
-                                       void   * msginfo,
-                                       size_t   mbytes)
+          inline xmi_result_t immediate_impl (xmi_task_t   peer,
+                                              void       * src,
+                                              size_t       bytes,
+                                              void       * msginfo,
+                                              size_t       mbytes)
           {
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
 
@@ -143,7 +143,7 @@ namespace XMI
             if (!posted)
             {
               // For some reason the packet could not be immediately posted.
-              // Allocate memory, copy the user data and metadata, and attempt
+              // Allocate memory, pack the user data and metadata, and attempt
               // a regular (non-blocking) post.
               send_t * send = (send_t *) _allocator.allocateObject ();
               send->pf = this;
@@ -174,7 +174,7 @@ namespace XMI
           MemoryAllocator < sizeof(send_t), 16 > _allocator;
 
           T_Model         _send_model;
-          size_t          _fromRank;
+          xmi_task_t      _fromRank;
 
           xmi_context_t              _context;
           xmi_dispatch_callback_fn   _dispatch_fn;
@@ -204,7 +204,7 @@ namespace XMI
           {
             protocol_metadata_t * m = (protocol_metadata_t *) metadata;
 
-            TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->fromRank = %zd, m->databytes = %d, m->metabytes = %d\n", m->fromRank, m->databytes, m->metabytes));
+            TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->fromRank = %d, m->databytes = %d, m->metabytes = %d\n", m->fromRank, m->databytes, m->metabytes));
 
             EagerImmediate<T_Model, T_Device, T_Message> * send =
               (EagerImmediate<T_Model, T_Device, T_Message> *) recv_func_parm;
@@ -219,8 +219,8 @@ namespace XMI
                                     m->fromRank,    // Origin (sender) rank
                                     (void *) data,  // Application metadata
                                     m->metabytes,   // Metadata bytes
-                                    (void *) (data + m->metabytes),            // payload data
-                                    m->databytes,   // Payload data bytes
+                                    (void *) (data + m->metabytes),  // payload data
+                                    m->databytes,   // Total number of bytes
                                     (xmi_recv_t *) &recv);
 
             TRACE_ERR ((stderr, "<< EagerImmediate::dispatch_send_direct()\n"));

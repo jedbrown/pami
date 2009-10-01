@@ -44,13 +44,13 @@ namespace XMI
           ///
           /// \brief Start a new immediate send message.
           ///
-          /// \param[in]  peer      Destination peer.
+          /// \param[in]  task      Destination task.
           /// \param[in]  src       Send data buffer.
           /// \param[in]  bytes     Send data length in bytes.
           /// \param[in]  msginfo   Opaque application header information.
           /// \param[in]  mbytes    Number of opaque application header bytes.
           ///
-          virtual xmi_result_t immediate (size_t               peer,
+          virtual xmi_result_t immediate (xmi_task_t           task,
                                           void               * src,
                                           size_t               bytes,
                                           void               * msginfo,
@@ -64,7 +64,7 @@ namespace XMI
           /// \param[in]  remote_fn Callback to invoke on local node when
           ///                       message is completely received on remote node.
           /// \param[in]  cookie    Opaque application callback data.
-          /// \param[in]  rank      Destination rank.
+          /// \param[in]  task      Destination task.
           /// \param[in]  bytes     Send data length in bytes.
           /// \param[in]  src       Send data buffer.
           /// \param[in]  msginfo   Opaque application header information.
@@ -73,7 +73,7 @@ namespace XMI
           virtual xmi_result_t simple (xmi_event_function   local_fn,
                                        xmi_event_function   remote_fn,
                                        void               * cookie,
-                                       size_t               peer,
+                                       xmi_task_t           task,
                                        void               * src,
                                        size_t               bytes,
                                        void               * msginfo,
