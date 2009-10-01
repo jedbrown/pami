@@ -146,7 +146,7 @@ namespace TSPColl
 
     DECL_MUTEX(_mutex);
 
-    void internalerror (TSPColl::CollExchange<T_Mcast>::AMHeader *, int);
+    void internalerror (AMHeader *, int);
   };
 };
 
