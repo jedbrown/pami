@@ -22,9 +22,11 @@ namespace XMI
     class Context
     {
       public:
-        inline Context (xmi_client_t client) {}
+        inline Context (xmi_client_t client, size_t id) {}
 
-        inline xmi_client_t getClientId ();
+        inline xmi_client_t getClient ();
+
+        inline size_t getId ();
 
         inline xmi_result_t destroy ();
 
@@ -139,9 +141,15 @@ namespace XMI
     }; // end XMI::Context::Context
 
     template <class T_Context>
-    xmi_client_t Context<T_Context>::getClientId ()
+    xmi_client_t Context<T_Context>::getClient ()
     {
-      return static_cast<T_Context*>(this)->getClientId_impl();
+      return static_cast<T_Context*>(this)->getClient_impl();
+    }
+
+    template <class T_Context>
+    size_t Context<T_Context>::getId ()
+    {
+      return static_cast<T_Context*>(this)->getId_impl();
     }
 
     template <class T_Context>

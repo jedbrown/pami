@@ -95,10 +95,12 @@ namespace XMI
                                  T_Device                 & device,
                                  xmi_task_t                 origin_task,
                                  xmi_context_t              context,
+                                 size_t                     contextid,
                                  xmi_result_t             & status) :
               _send_model (device, context),
               _fromRank (origin_task),
               _context (context),
+              _contextid (contextid),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie)
           {
@@ -177,6 +179,7 @@ namespace XMI
           xmi_task_t      _fromRank;
 
           xmi_context_t              _context;
+          size_t                     _contextid;
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
 
@@ -212,15 +215,15 @@ namespace XMI
             uint8_t * data = (uint8_t *)payload;
             xmi_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
 
-
             // Invoke the registered dispatch function.
-            send->_dispatch_fn.p2p (send->_context, // Communication context
-                                    send->_cookie,  // Dispatch cookie
-                                    m->fromRank,    // Origin (sender) rank
-                                    (void *) data,  // Application metadata
-                                    m->metabytes,   // Metadata bytes
+            send->_dispatch_fn.p2p (send->_context,   // Communication context handle
+                                    send->_contextid, // Communication context id
+                                    send->_cookie,    // Dispatch cookie
+                                    m->fromRank,      // Origin (sender) rank
+                                    (void *) data,    // Application metadata
+                                    m->metabytes,     // Metadata bytes
                                     (void *) (data + m->metabytes),  // payload data
-                                    m->databytes,   // Total number of bytes
+                                    m->databytes,     // Total number of bytes
                                     (xmi_recv_t *) &recv);
 
             TRACE_ERR ((stderr, "<< EagerImmediate::dispatch_send_direct()\n"));

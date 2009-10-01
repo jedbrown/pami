@@ -94,6 +94,7 @@ namespace XMI
                               T_Device                 & device,
                               xmi_task_t                 origin_task,
                               xmi_context_t              context,
+                              size_t                     contextid,
                               xmi_result_t             & status) :
               _envelope_model (device, context),
               _data_model (device, context),
@@ -105,7 +106,8 @@ namespace XMI
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _connection ((void **)NULL),
-              _connection_manager (device)
+              _connection_manager (device),
+              _contextid (contextid)
           {
             _connection = _connection_manager.getConnectionArray (context);
 
@@ -286,6 +288,8 @@ namespace XMI
           // Support up to 100 unique contexts.
           //static eager_connection_t _eager_connection[];
           EagerConnection<T_Device> _connection_manager;
+          
+          size_t      _contextid;
 
           static int dispatch_ack_direct (void         * metadata,
                                           void         * payload,
@@ -370,6 +374,7 @@ namespace XMI
 
             // Invoke the registered dispatch function.
             eager->_dispatch_fn.p2p (eager->_context, // Communication context
+                                     eager->_contextid,
                                      eager->_cookie,  // Dispatch cookie
                                      m->fromRank,     // Origin (sender) rank
                                      payload,         // Application metadata

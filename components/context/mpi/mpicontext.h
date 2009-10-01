@@ -42,9 +42,10 @@ namespace XMI
     class MPI : public Context<XMI::Context::MPI>
     {
     public:
-      inline MPI (xmi_client_t client) :
-        Context<XMI::Context::MPI> (client),
-        _client (client)
+      inline MPI (xmi_client_t client, size_t id) :
+        Context<XMI::Context::MPI> (client, id),
+        _client (client),
+        _id (id)
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
@@ -61,10 +62,16 @@ namespace XMI
 
         }
 
-      inline xmi_client_t getClientId_impl ()
+        inline xmi_client_t getClient_impl ()
         {
           return _client;
         }
+
+        inline size_t getId_impl ()
+        {
+          return _id;
+        }
+
 
       inline xmi_result_t destroy_impl ()
         {
@@ -403,7 +410,7 @@ namespace XMI
           if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
           _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
-          new (_dispatch[(size_t)id]) EagerMPI (id, fn, cookie, _mpi, _sysdep.mapping.task(), _context, result);
+          new (_dispatch[(size_t)id]) EagerMPI (id, fn, cookie, _mpi, _sysdep.mapping.task(), _context, _id, result);
           return result;
         }
 
@@ -411,6 +418,7 @@ namespace XMI
       std::map <unsigned, xmi_geometry_t>   _geometry_id;
       xmi_client_t              _client;
       xmi_context_t             _context;
+      size_t                    _id;
       void                     *_dispatch[1024];
       SysDep::MPISysDep         _sysdep;
       MemoryAllocator<1024,16>  _request;

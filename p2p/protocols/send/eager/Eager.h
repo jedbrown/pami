@@ -67,6 +67,7 @@ namespace XMI
                         T_Device                 & device,
                         size_t                     origin_task,
                         xmi_context_t              context,
+                        size_t                     contextid,
                         xmi_result_t             & status) :
             XMI::Protocol::Send::Send (),
             EagerImmediate<T_Model,T_Device,T_Message> (dispatch,
@@ -75,6 +76,7 @@ namespace XMI
                                                         device,
                                                         origin_task,
                                                         context,
+                                                        contextid,
                                                         status),
             EagerSimple<T_Model,T_Device,T_Message> (dispatch,
                                                      dispatch_fn,
@@ -82,6 +84,7 @@ namespace XMI
                                                      device,
                                                      origin_task,
                                                      context,
+                                                     contextid,
                                                      status)
             {
             };

@@ -66,10 +66,11 @@ namespace XMI
     class BgqContext : public Context<XMI::Context::BgqContext>
     {
       public:
-        inline BgqContext (xmi_client_t client) :
-          Context<XMI::Context::BgqContext> (client),
+        inline BgqContext (xmi_client_t client, size_t contextid) :
+          Context<XMI::Context::BgqContext> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
+          _contextid (contextid),
           _sysdep (),
           _mu (),
           _shmem ()
@@ -78,9 +79,14 @@ namespace XMI
           _shmem.init (&_sysdep);
         }
 
-        inline xmi_client_t getClientId_impl ()
+        inline xmi_client_t getClient_impl ()
         {
           return _client;
+        }
+
+        inline size_t getId_impl ()
+        {
+          return _contextid;
         }
 
         inline xmi_result_t destroy_impl ()
@@ -349,7 +355,7 @@ namespace XMI
             _dispatch[id] = (void *) _request.allocateObject ();
 
             //new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
-            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, _sysdep.mapping.task(), _context, result);
+            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, _sysdep.mapping.task(), _context, _contextid, result);
           }
 
           return result;
@@ -391,6 +397,7 @@ namespace XMI
 
         xmi_client_t  _client;
         xmi_context_t _context;
+        size_t        _contextid;
 
         SysDep::BgqSysDep _sysdep;
 

@@ -30,7 +30,8 @@ namespace XMI
       inline MPI (char * name, xmi_result_t & result) :
         Client<XMI::Client::MPI,XMI::Context::MPI>(name, result),
         _client ((xmi_client_t) this),
-        _references (1)
+        _references (1),
+        _contexts (0)
         {
           static int initialized = 0;
           if(initialized==0)
@@ -82,7 +83,7 @@ namespace XMI
           context = (XMI::Context::MPI*) malloc(sizeof(XMI::Context::MPI));
           assert(context != NULL);
           memset ((void *)context, 0x00, sizeof(XMI::Context::MPI));
-          new (context) XMI::Context::MPI (this->getClientId());
+          new (context) XMI::Context::MPI (this->getClient(), _contexts++);
           result = XMI_SUCCESS;
           return context;
         }
@@ -95,7 +96,7 @@ namespace XMI
 
     protected:
 
-      inline xmi_client_t getClientId () const
+      inline xmi_client_t getClient () const
         {
           return _client;
         }
@@ -103,6 +104,7 @@ namespace XMI
     private:
       xmi_client_t _client;
       size_t       _references;
+      size_t       _contexts;
     }; // end class XMI::Client::MPI
   }; // end namespace Client
 }; // end namespace XMI

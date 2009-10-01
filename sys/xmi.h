@@ -400,13 +400,14 @@ extern "C"
    * "pipe" has nothing to do with "PipeWorkQueue"s
    */
   typedef void (*xmi_dispatch_p2p_fn) (
-    xmi_context_t        context,      /**< IN:  XMI context     */
+    xmi_context_t        context_hdl,  /**< IN:  communication context handle */
+    size_t               context_idx,  /**< IN:  communication context index  */
     void               * cookie,       /**< IN:  dispatch cookie */
-    size_t               task,         /**< IN:  source task     */
+    xmi_task_t           task,         /**< IN:  source task     */
     void               * header_addr,  /**< IN:  header address  */
     size_t               header_size,  /**< IN:  header size     */
     void               * pipe_addr,    /**< IN:  address of XMI pipe  buffer, valid only if non-NULL        */
-    size_t               pipe_size,    /**< IN:  size of XMI pipe buffer, valid regarldless of message type */
+    size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
     xmi_recv_t         * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /** \} */ /* end of "active message" group */

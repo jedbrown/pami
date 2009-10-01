@@ -59,6 +59,7 @@ static void RecvLongDoneCB(xmi_context_t   context,
 }
 
 static void RecvLongCB(xmi_context_t   context,
+                       size_t          contextid,
                        void          * cookie,
                        size_t          remote_task,
                        void          * _msginfo,
@@ -79,10 +80,11 @@ static void RecvLongCB(xmi_context_t   context,
   recv->data.simple.bytes = size;
 
 #warning I need each channel to have an id number/index to write a multi-context recv-queue.
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu\n", rank, context, remote_task, msginfo[0], size);
+  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu -- context id = %zd\n", rank, context, remote_task, msginfo[0], size, contextid);
 }
 
 static void RecvShortCB(xmi_context_t   context,
+                        size_t          contextid,
                         void          * cookie,
                         size_t          remote_task,
                         void          * _msginfo,
@@ -95,7 +97,7 @@ static void RecvShortCB(xmi_context_t   context,
   assert(msginfo_size >= sizeof(unsigned));
   unsigned* msginfo = (unsigned*)_msginfo;
   unsigned* data    = (unsigned*)_addr;
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu data=%x\n", rank, context, remote_task, msginfo[0], size, data[0]);
+  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu data=%x -- context id = %zd\n", rank, context, remote_task, msginfo[0], size, data[0], contextid);
   done.s.r = 1;
 }
 

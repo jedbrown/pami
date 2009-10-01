@@ -23,7 +23,8 @@ namespace XMI
         inline BgqClient (char * name, xmi_result_t &result) :
           Client<XMI::Client::BgqClient,XMI::Context::BgqContext>(name, result),
           _client ((xmi_client_t) this),
-          _references (1)
+          _references (1),
+          _contexts (0)
         {
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
@@ -91,7 +92,7 @@ namespace XMI
           int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::BgqContext));
           if (rc != 0) assert(0);
           memset ((void *)context, 0x00, sizeof(XMI::Context::BgqContext));
-          new (context) XMI::Context::BgqContext (this->getClientId());
+          new (context) XMI::Context::BgqContext (this->getClient(), _contexts++);
           //_context_list->pushHead ((QueueElem *) context);
 
           //_context_list->unlock ();
@@ -110,7 +111,7 @@ namespace XMI
 
       protected:
 
-        inline xmi_client_t getClientId () const
+        inline xmi_client_t getClient () const
         {
           return _client;
         }
@@ -120,6 +121,7 @@ namespace XMI
         xmi_client_t _client;
 
         size_t       _references;
+        size_t       _contexts;
         char         _name[256];
 
     }; // end class XMI::Client::BgqClient

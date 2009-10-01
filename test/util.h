@@ -47,6 +47,7 @@ xmi_context_t  __barrier_context;
 /* ************************************************************************* */
 static void barrier_dispatch_function (
     xmi_context_t        context,      /**< IN: XMI context */
+    size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
     size_t               task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */

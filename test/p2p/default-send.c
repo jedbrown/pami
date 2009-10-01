@@ -16,6 +16,7 @@ static void recv_done (xmi_context_t   context,
 
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
+    size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
     size_t               task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */

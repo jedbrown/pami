@@ -107,7 +107,7 @@ extern "C" xmi_result_t XMI_Context_create (xmi_client_t           client,
 extern "C" xmi_result_t XMI_Context_destroy (xmi_context_t context)
 {
   XMI_CONTEXT_CLASS * ctx = (XMI_CONTEXT_CLASS *) context;
-  XMI_CLIENT_CLASS  * client = (XMI_CLIENT_CLASS *) ctx->getClientId ();
+  XMI_CLIENT_CLASS  * client = (XMI_CLIENT_CLASS *) ctx->getClient ();
 
   return client->destroyContext (ctx);
 }

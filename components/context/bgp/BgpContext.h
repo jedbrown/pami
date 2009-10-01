@@ -67,10 +67,11 @@ namespace XMI
     class BgpContext : public Context<XMI::Context::BgpContext>
     {
       public:
-        inline BgpContext (xmi_client_t client) :
-          Context<XMI::Context::BgpContext> (client),
+        inline BgpContext (xmi_client_t client, size_t id) :
+          Context<XMI::Context::BgpContext> (client, id),
           _client (client),
           _context ((xmi_context_t)this),
+          _contextid (id),
           _sysdep (),
 #ifdef ENABLE_GENERIC_DEVICE
           _generic(_sysdep),
@@ -83,9 +84,14 @@ namespace XMI
           _shmem.init (&_sysdep);
         }
 
-        inline xmi_client_t getClientId_impl ()
+        inline xmi_client_t getClient_impl ()
         {
           return _client;
+        }
+
+        inline size_t getId_impl ()
+        {
+          return _contextid;
         }
 
         inline xmi_result_t destroy_impl ()
@@ -359,7 +365,7 @@ namespace XMI
             TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
             new (_dispatch[id]) EagerShmem (id, fn, cookie, _shmem,
                                             _sysdep.mapping.task(),
-                                            _context, result);
+                                            _context, _contextid, result);
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
             if (result != XMI_SUCCESS)
             {
@@ -408,6 +414,7 @@ namespace XMI
 
         xmi_client_t  _client;
         xmi_context_t _context;
+        size_t        _contextid;
 
         SysDep::BgpSysDep _sysdep;
 
