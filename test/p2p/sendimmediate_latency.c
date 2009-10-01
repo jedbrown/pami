@@ -67,7 +67,7 @@ static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
     size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
-    size_t               task,         /**< IN: source task */
+    xmi_task_t           task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
@@ -170,8 +170,9 @@ int main ()
 {
   TRACE_ERR((stderr, "Start test ...\n"));
   xmi_client_t client;
+  char clientname[]="XMI";
   TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
-  XMI_Client_initialize ("XMI", &client);
+  XMI_Client_initialize (clientname, &client);
   TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
   xmi_context_t context;
   TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
