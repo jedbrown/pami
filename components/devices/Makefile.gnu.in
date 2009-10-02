@@ -1,4 +1,4 @@
 VPATH		= @abs_srcdir@
-SUBDIRS		= @TARGET@ 
+SUBDIRS		= generic @TARGET@ 
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules

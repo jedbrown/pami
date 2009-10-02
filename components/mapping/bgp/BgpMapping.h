@@ -513,12 +513,12 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
 						  XMI::Memory::SharedMemoryManager &mm)
 {
   //fprintf (stderr, "BgpMapping::init_impl >>\n");
-  max_rank = 0;
-  min_rank = (size_t)-1;
   _mapcache  = __global.getMapCache();
   _rankcache = __global.getRankCache();
   _task = __global.getTask();
   _size = __global.getSize();
+
+  __global.getMappingInit(ll, ur, min_rank, max_rank);
 
   unsigned i;
   for (i=0; i<_size; i++) task2node (i, _nodeaddr);

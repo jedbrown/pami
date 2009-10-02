@@ -120,6 +120,11 @@ namespace XMI
         {
           return _mapcache.getSize();
         };
+
+	inline void getMappingInit(xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max)
+	{
+		_mapcache.getMappingInit(ll, ur, min, max);
+	}
         
 #if 0
         inline void allocateMemory ()

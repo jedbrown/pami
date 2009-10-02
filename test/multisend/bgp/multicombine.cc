@@ -86,7 +86,9 @@ int main(int argc, char ** argv) {
 	if (status != XMI_SUCCESS) fail_reg(test);
 
 	ipwq.configure(NULL, source, sizeof(source), sizeof(source));
+	ipwq.reset();
 	opwq.configure(NULL, result, sizeof(result), 0);
+	opwq.reset();
 	xmi_multicombine_t mcomb;
 
 	// simple allreduce on the tree... SMP mode (todo: check and error)

@@ -64,7 +64,7 @@ namespace XMI
               // does this ever happen for "COMM_WORLD"?
               // (isn't COMM_WORLD, by definition, a contig set of ranks 0..(N-1)?)
               // topology_global(ranks, nranks);
-              XMI_abortf("failed to build global-world topology");
+              XMI_abortf("failed to build global-world topology %zd::%zd(%d) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
             }
 
           topology_global.subTopologyLocalToMe(&topology_local);

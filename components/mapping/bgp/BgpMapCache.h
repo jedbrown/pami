@@ -58,10 +58,8 @@ namespace XMI
             volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
             volatile size_t maxRank;       // Largest valid rank
             volatile size_t minRank;       // Smallest valid rank
-#if 0
-            volatile CM_Coord_t activeLLCorner;
-            volatile CM_Coord_t activeURCorner;
-#endif
+            volatile xmi_coord_t activeLLCorner;
+            volatile xmi_coord_t activeURCorner;
           } cacheAnchors_t;
 
           //size_t myRank, mySize;
@@ -73,7 +71,7 @@ namespace XMI
 
           //_processor_id = rts_get_processor_id();
           //_pers = & __global_personality;
-          //_myNetworkCoord.network = CM_TORUS_NETWORK;
+          //_myNetworkCoord.network = XMI_N_TORUS_NETWORK;
           //unsigned ix = 0;
           //_myNetworkCoord.n_torus.coords[ix++] = x();
           //_myNetworkCoord.n_torus.coords[ix++] = y();
@@ -175,12 +173,8 @@ namespace XMI
           _rankcache = (size_t *) (_mapcache + fullSize);
 
 
-          size_t max_rank = 0, min_rank = (size_t) - 1;
-#if 0
-          CM_Coord_t ll, ur;
-#endif
-
-
+          _max_rank = 0;
+	  _min_rank = (size_t) - 1;
 
           // If we are the master, then initialize the caches.
           // Then, set the cache pointers into the shared memory area for the other
@@ -206,13 +200,11 @@ namespace XMI
                */
               if (rc == 0)
                 {
-#if 0
-                  ll.network = ur.network = CM_TORUS_NETWORK;
-                  ll.n_torus.coords[0] = ur.n_torus.coords[0] = x();
-                  ll.n_torus.coords[1] = ur.n_torus.coords[1] = y();
-                  ll.n_torus.coords[2] = ur.n_torus.coords[2] = z();
-                  ll.n_torus.coords[3] = ur.n_torus.coords[3] = t();
-#endif
+                  _ll.network = _ur.network = XMI_N_TORUS_NETWORK;
+                  _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.xCoord();
+                  _ll.u.n_torus.coords[1] = _ur.u.n_torus.coords[1] = personality.yCoord();
+                  _ll.u.n_torus.coords[2] = _ur.u.n_torus.coords[2] = personality.zCoord();
+                  _ll.u.n_torus.coords[3] = _ur.u.n_torus.coords[3] = personality.tCoord();
 
                   /* Obtain the following information from the _mapcache:
                    * 1. Number of active ranks in the partition.
@@ -249,39 +241,27 @@ namespace XMI
                           _rankcache[estimated_rank] = i;
 
                           // because of "for (i..." this will give us MAX after loop.
-                          max_rank = i;
+                          _max_rank = i;
 
-                          if (min_rank == (size_t) - 1) min_rank = i;
+                          if (_min_rank == (size_t) - 1) _min_rank = i;
 
-#if 0
+                          if (x < _ll.u.n_torus.coords[0]) _ll.u.n_torus.coords[0] = x;
+                          if (y < _ll.u.n_torus.coords[1]) _ll.u.n_torus.coords[1] = y;
+                          if (z < _ll.u.n_torus.coords[2]) _ll.u.n_torus.coords[2] = z;
+                          if (t < _ll.u.n_torus.coords[3]) _ll.u.n_torus.coords[3] = t;
+                          if (x > _ur.u.n_torus.coords[0]) _ur.u.n_torus.coords[0] = x;
+                          if (y > _ur.u.n_torus.coords[1]) _ur.u.n_torus.coords[1] = y;
+                          if (z > _ur.u.n_torus.coords[2]) _ur.u.n_torus.coords[2] = z;
+                          if (t > _ur.u.n_torus.coords[3]) _ur.u.n_torus.coords[3] = t;
 
-                          if (x < ll.n_torus.coords[0]) ll.n_torus.coords[0] = x;
-
-                          if (y < ll.n_torus.coords[1]) ll.n_torus.coords[1] = y;
-
-                          if (z < ll.n_torus.coords[2]) ll.n_torus.coords[2] = z;
-
-                          if (t < ll.n_torus.coords[3]) ll.n_torus.coords[3] = t;
-
-                          if (x > ur.n_torus.coords[0]) ur.n_torus.coords[0] = x;
-
-                          if (y > ur.n_torus.coords[1]) ur.n_torus.coords[1] = y;
-
-                          if (z > ur.n_torus.coords[2]) ur.n_torus.coords[2] = z;
-
-                          if (t > ur.n_torus.coords[3]) ur.n_torus.coords[3] = t;
-
-#endif
                         }
                     }
 
-                  cacheAnchorsPtr->maxRank = max_rank;
-                  cacheAnchorsPtr->minRank = min_rank;
-#if 0
+                  cacheAnchorsPtr->maxRank = _max_rank;
+                  cacheAnchorsPtr->minRank = _min_rank;
                   // why can't this just be assigned???
-                  memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &ll, sizeof(ll));
-                  memcpy((void *)&cacheAnchorsPtr->activeURCorner, &ur, sizeof(ur));
-#endif
+                  memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &_ll, sizeof(_ll));
+                  memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
                 }
               /* If the system call fails, assume the kernel is older and does not
                * have this system call.  Use the original system call, one call per
@@ -371,63 +351,15 @@ namespace XMI
               //_numActiveRanksLocal  = cacheAnchorsPtr->numActiveRanksLocal;
               //_numActiveRanksGlobal = cacheAnchorsPtr->numActiveRanksGlobal;
               //_numActiveNodesGlobal = cacheAnchorsPtr->numActiveNodesGlobal;
-              max_rank = cacheAnchorsPtr->maxRank;
-              min_rank = cacheAnchorsPtr->minRank;
-#if 0
+              _max_rank = cacheAnchorsPtr->maxRank;
+              _min_rank = cacheAnchorsPtr->minRank;
               // why can't these just be assigned???
-              memcpy(&ll, (void *)&cacheAnchorsPtr->activeLLCorner, sizeof(ll));
-              memcpy(&ur, (void *)&cacheAnchorsPtr->activeURCorner, sizeof(ur));
-#endif
+              memcpy(&_ll, (void *)&cacheAnchorsPtr->activeLLCorner, sizeof(_ll));
+              memcpy(&_ur, (void *)&cacheAnchorsPtr->activeURCorner, sizeof(_ur));
               _bgp_mbar();
 
               cacheAnchorsPtr->done[personality.tCoord()] = 1;  // Indicate we have seen the info.
             }
-
-
-#if 0
-          // This is other gunk .. used by collectives?
-          size_t rectsize = (ur.n_torus.coords[0] - ll.n_torus.coords[0] + 1) *
-                            (ur.n_torus.coords[1] - ll.n_torus.coords[1] + 1) *
-                            (ur.n_torus.coords[2] - ll.n_torus.coords[2] + 1) *
-                            (ur.n_torus.coords[3] - ll.n_torus.coords[3] + 1);
-
-          if (_numActiveRanksGlobal == rectsize)
-            {
-              _g_topology_world = new (&__topology_w) LL::Topology(&ll, &ur);
-            }
-          else if (max_rank - min_rank + 1 == _numActiveRanksGlobal)
-            {
-              // does this ever happen for "COMM_WORLD"?
-              _g_topology_world = new (&__topology_w) LL::Topology(min_rank, max_rank);
-            }
-          else
-            {
-              // wait for COMM_WORLD so we don't allocate yet-another ranks list?
-              // actually, COMM_WORLD should use our rank list...
-              // does this ever happen for "COMM_WORLD"?
-              // _g_topology_world = new (&__topology_w) LL::Topology(ranks, nranks);
-              fprintf(stderr, "failed to build comm-world topology\n");
-            }
-
-          _g_topology_world->subTopologyLocalToMe(&__topology_l);
-          _g_topology_local = &__topology_l;
-
-          _localranks = (unsigned *)malloc(sizeof(*_localranks) * NUM_CORES);
-          DCMF_assert_debug(_localranks);
-          unsigned index = 0;
-
-          for (unsigned i = 0; i < tSize(); i++)
-            {
-              unsigned peerrank = (unsigned) - 1;
-              int rc = torus2rank(x(), y(), z(), i, peerrank);
-
-              if ((rc == CM_SUCCESS) && (peerrank != (unsigned) - 1))
-                {
-                  _localranks[index++] = peerrank;
-                }
-            }
-
-#endif
 
           return sizeof(cacheAnchors_t) +
                  (sizeof(kernel_coords_t) + sizeof(size_t)) * fullSize;
@@ -453,12 +385,24 @@ namespace XMI
           return _size;
         };
 
+	inline void getMappingInit(xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max) {
+		ll = _ll;
+		ur = _ur;
+		min = _min_rank;
+		max = _max_rank;
+	}
+
       private:
 
         size_t   _size;
         size_t   _task;
         size_t * _mapcache;
         size_t * _rankcache;
+
+	size_t _max_rank;
+	size_t _min_rank;
+	xmi_coord_t _ll;
+	xmi_coord_t _ur;
 
     }; // XMI::Mapping::BgpMapCache
   };   // XMI::Mapping
