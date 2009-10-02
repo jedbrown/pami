@@ -39,12 +39,15 @@ namespace XMI
       xmi_context_t       _context;
       xmi_event_function  _done_fn;
       void               *_cookie;
+      int                 _freeme;
       MPI_Request         _request;
+
       struct _p2p_msg
       {
         size_t              _dispatch_id;
         int                 _metadatasize;
-        int                 _payloadsize;
+        int                 _payloadsize0;
+        int                 _payloadsize1;
         char                _metadata[128];
         char                _payload[224];
       }_p2p_msg;

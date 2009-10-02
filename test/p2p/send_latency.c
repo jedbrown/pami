@@ -26,7 +26,7 @@
 
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
-#define BUFSIZE 1024*256
+#define BUFSIZE 5*1024*1024
 //#define BUFSIZE 16
 //#define BUFSIZE 1024
 #endif
@@ -173,9 +173,10 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
 int main ()
 {
   TRACE_ERR((stderr, "Start test ...\n"));
+  char clientname[] = "XMI";
   xmi_client_t client;
   TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
-  XMI_Client_initialize ("XMI", &client);
+  XMI_Client_initialize (clientname, &client);
   TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
   xmi_context_t context;
   TRACE_ERR((stderr, "... before XMI_Context_create()\n"));

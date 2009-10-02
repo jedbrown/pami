@@ -89,7 +89,7 @@ namespace XMI
 			      hdr->totalsize(),
 			      MPI_CHAR,
 			      ranks[count],
-			      1,
+			      2,
 			      MPI_COMM_WORLD,
 			      &hdr->_req[count]);
 	      XMI_assert (rc == MPI_SUCCESS);

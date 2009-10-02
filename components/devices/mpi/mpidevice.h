@@ -130,8 +130,10 @@ namespace XMI
                 if(flag)
                     {
                       if((*it_p2p)->_done_fn )
-                        (*(*it_p2p)->_done_fn)((*it_p2p)->_context,(*it_p2p)->_cookie, XMI_SUCCESS);
+                        (*it_p2p)->_done_fn((*it_p2p)->_context,(*it_p2p)->_cookie, XMI_SUCCESS);
                       _sendQ.remove((*it_p2p));
+//                      if((*it_p2p)->_freeme)
+//                        free(*it_p2p);
                       break;
                     }
               }
@@ -186,7 +188,7 @@ namespace XMI
                         {
                           int nbytes = 0;
                           MPI_Get_count(&sts, MPI_BYTE, &nbytes);
-                          MPIMessage *msg = (MPIMessage *) malloc (nbytes);
+                          MPIMessage *msg = (MPIMessage *) malloc (sizeof(*msg));
                           int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
                                             MPI_SOURCE,sts.MPI_TAG,
                                             MPI_COMM_WORLD,&sts);
@@ -196,12 +198,31 @@ namespace XMI
                           if(mdi.recv_func)
                             mdi.recv_func(msg->_p2p_msg._metadata,
                                           msg->_p2p_msg._payload,
-                                          msg->_p2p_msg._payloadsize,
+                                          msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
                                           mdi.recv_func_parm);
                           free(msg);
                         }
                         break;
                         case 1:
+                        {
+                          int nbytes = 0;
+                          MPI_Get_count(&sts, MPI_BYTE, &nbytes);
+                          MPIMessage *msg = (MPIMessage *) malloc (sizeof(*msg)+nbytes);
+                          int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
+                                            MPI_SOURCE,sts.MPI_TAG,
+                                            MPI_COMM_WORLD,&sts);
+                          assert(rc == MPI_SUCCESS);
+                          size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
+                          mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
+                          if(mdi.recv_func)
+                            mdi.recv_func(msg->_p2p_msg._metadata,
+                                          (char*)msg->_p2p_msg._metadata+msg->_p2p_msg._metadatasize,
+                                          msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
+                                          mdi.recv_func_parm);
+                          free(msg);
+                        }
+                        break;
+                        case 2:
                         {
                           int nbytes = 0;
                           MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -306,7 +327,7 @@ namespace XMI
                           free (msg);
                         }	      
                         break;
-                        case 2:
+                        case 3:
                         {
                           int nbytes = 0;
                           MPI_Get_count(&sts, MPI_BYTE, &nbytes);

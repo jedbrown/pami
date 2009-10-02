@@ -108,7 +108,7 @@ namespace XMI
                             hdr->totalsize(),
                             MPI_CHAR,
                             ranks[index],
-                            2,
+                            3,
                             MPI_COMM_WORLD,
                             req);
             XMI_assert (rc == MPI_SUCCESS);

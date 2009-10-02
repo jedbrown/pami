@@ -62,8 +62,10 @@ namespace XMI
                              this->_dispatch_id,
                              fn,
                              cookie);
+          msg->_freeme=0;
           msg->_p2p_msg._metadatasize=metasize;
-          msg->_p2p_msg._payloadsize =bytes;
+          msg->_p2p_msg._payloadsize0=bytes;
+          msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload, bytes);
           rc = MPI_Isend (&msg->_p2p_msg,
@@ -115,8 +117,30 @@ namespace XMI
                                        void   * payload1,
                                        size_t   bytes1)
         {
-          assert(0);
-          return false;
+          int rc;
+          void       * obj = malloc(sizeof(MPIMessage));
+          MPIMessage * msg = (MPIMessage *)obj;
+          new(msg)MPIMessage(this->_context,
+                             this->_dispatch_id,
+                             NULL,
+                             0);
+          msg->_freeme=1;
+          msg->_p2p_msg._metadatasize=metasize;
+          msg->_p2p_msg._payloadsize0=bytes0;
+          msg->_p2p_msg._payloadsize1=bytes1;
+          memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
+          memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
+          memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
+          rc = MPI_Isend (&msg->_p2p_msg,
+                          sizeof(msg->_p2p_msg),
+                          MPI_CHAR,
+                          target_rank,
+                          0,
+                          MPI_COMM_WORLD,
+                          &msg->_request);
+          _device.enqueue(msg);
+          assert(rc == MPI_SUCCESS);
+          return true;
         }
       
 
@@ -129,8 +153,29 @@ namespace XMI
                                     void             * src,
                                     size_t             bytes)
         {
-          assert(0);
-          return false;
+          int rc;
+          MPIMessage * msg = (MPIMessage *)malloc(sizeof(MPIMessage)+metasize+bytes-128-224);
+          new(msg)MPIMessage(this->_context,
+                             this->_dispatch_id,
+                             fn,
+                             cookie);
+          msg->_freeme=1;
+          msg->_p2p_msg._metadatasize=metasize;
+          msg->_p2p_msg._payloadsize0=bytes;
+          msg->_p2p_msg._payloadsize1=0;
+          memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
+          memcpy((char*)(&msg->_p2p_msg._metadata[0])+metasize, src, bytes);
+          rc = MPI_Isend (&msg->_p2p_msg,
+                          sizeof(msg->_p2p_msg)+metasize+bytes-128-224,
+                          MPI_CHAR,
+                          target_rank,
+                          1,
+                          MPI_COMM_WORLD,
+                          &msg->_request);
+          _device.enqueue(msg);
+          assert(rc == MPI_SUCCESS);
+
+          return true;
         };
 
     protected:
