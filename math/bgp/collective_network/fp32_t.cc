@@ -12,12 +12,13 @@
  * \brief Default C math routines for 32 bit floating point operations.
  */
 
-#include "dcmf_bg_math.h"
-#include "TreeUtil.h"
-#include "Util.h"
-#include "internal.h"
+#include "xmi_bg_math.h"
+#include "CNUtil.h"
+#include "util/common.h"
+//#include "internal.h"
+#include "math/FloatUtil.h"
 
-void _core_fp32_pre_max(float *dst, const float *src, int count) {
+void _xmi_core_fp32_pre_max(float *dst, const float *src, int count) {
   uint32_t *d=(uint32_t*)dst, *s=(uint32_t*)src;
   register int n=0;
   register unsigned d0, d1, d2, d3;
@@ -47,7 +48,7 @@ void _core_fp32_pre_max(float *dst, const float *src, int count) {
     }
 }
 
-void _core_fp32_post_max(float *dst, const float *src, int count) {
+void _xmi_core_fp32_post_max(float *dst, const float *src, int count) {
   uint32_t *d=(uint32_t*)dst, *s=(uint32_t*)src;
   register int n=0;
   register unsigned d0, d1, d2, d3;
@@ -77,7 +78,7 @@ void _core_fp32_post_max(float *dst, const float *src, int count) {
     }
 }
 
-void _core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
+void _xmi_core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
   register int n = 0;
   uint32_int32_t *d=(uint32_int32_t*)dst, *s=(uint32_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -87,7 +88,7 @@ void _core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int
     }
 }
 
-void _core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
+void _xmi_core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
   register int n = 0;
   uint32_int32_t *d=(uint32_int32_t*)dst, *s=(uint32_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -97,7 +98,7 @@ void _core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, in
     }
 }
 
-void _core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
+void _xmi_core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
   register int n = 0;
   uint32_uint32_t *d=(uint32_uint32_t*)dst, *s=(uint32_uint32_t*)src;
   for (n = 0; n < count; n++)
@@ -107,7 +108,7 @@ void _core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int co
     }
 }
 
-void _core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
+void _xmi_core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
   register int n = 0;
   uint32_uint32_t *d=(uint32_uint32_t*)dst, *s=(uint32_uint32_t*)src;
   for (n = 0; n < count; n++)
@@ -117,7 +118,7 @@ void _core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int c
     }
 }
 
-void _core_fp32_pre_min(float *dst, const float *src, int count) {
+void _xmi_core_fp32_pre_min(float *dst, const float *src, int count) {
   uint32_t *d=(uint32_t*)dst, *s=(uint32_t*)src;
   register int n=0;
   register unsigned d0, d1, d2, d3;
@@ -147,7 +148,7 @@ void _core_fp32_pre_min(float *dst, const float *src, int count) {
     }
 }
 
-void _core_fp32_post_min(float *dst, const float *src, int count) {
+void _xmi_core_fp32_post_min(float *dst, const float *src, int count) {
   uint32_t *d=(uint32_t*)dst, *s=(uint32_t*)src;
   register int n=0;
   register unsigned d0, d1, d2, d3;
@@ -177,7 +178,7 @@ void _core_fp32_post_min(float *dst, const float *src, int count) {
     }
 }
 
-void _core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
+void _xmi_core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
   register int n = 0;
   uint32_int32_t *d=(uint32_int32_t*)dst, *s=(uint32_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -187,7 +188,7 @@ void _core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int
     }
 }
 
-void _core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
+void _xmi_core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
   register int n = 0;
   uint32_int32_t *d=(uint32_int32_t*)dst, *s=(uint32_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -197,7 +198,7 @@ void _core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int32_t *src, in
     }
 }
 
-void _core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
+void _xmi_core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
   register int n = 0;
   uint32_uint32_t *d=(uint32_uint32_t*)dst, *s=(uint32_uint32_t*)src;
   for (n = 0; n < count; n++)
@@ -207,7 +208,7 @@ void _core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int co
     }
 }
 
-void _core_fp32_fp32_post_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
+void _xmi_core_fp32_fp32_post_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
   register int n = 0;
   uint32_uint32_t *d=(uint32_uint32_t*)dst, *s=(uint32_uint32_t*)src;
   for (n = 0; n < count; n++)

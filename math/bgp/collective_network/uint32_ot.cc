@@ -11,12 +11,12 @@
  * \brief Optimized math routines for unsigned 32 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "dcmf_bg_math.h"
-#include "Util.h"
-#include "ppc450d/internal_o.h"
+#include "xmi_bg_math.h"
+#include "util/common.h"
+//#include "ppc450d/internal_o.h"
 
 // This is internally exported for use by other uint sizes...
-void _core_uint32_not_o(uint32_t *dst, const uint32_t *src, int count) {
+void _xmi_core_uint32_not_o(uint32_t *dst, const uint32_t *src, int count) {
 
   const uint32_t *sp = (const uint32_t *)src;
   uint32_t *dp = (uint32_t *)dst;
@@ -66,7 +66,7 @@ void _core_uint32_not_o(uint32_t *dst, const uint32_t *src, int count) {
 }
 
 #ifdef NOT_USED
-static void _core_uint32_conv_o(uint32_t *dst, const uint32_t *src, int count) {
+static void _xmi_core_uint32_conv_o(uint32_t *dst, const uint32_t *src, int count) {
 
   uint32_t *dp = dst;
   const uint32_t *sp = src;
@@ -138,7 +138,7 @@ static void _core_uint32_conv_o(uint32_t *dst, const uint32_t *src, int count) {
   return;
 }
 
-static void _core_uint32_conv_not_o(uint32_t *dst, const uint32_t *src, int count) {
+static void _xmi_core_uint32_conv_not_o(uint32_t *dst, const uint32_t *src, int count) {
 
   uint32_t *dp = dst;
   const uint32_t *sp = src;
@@ -229,10 +229,10 @@ static void _core_uint32_conv_not_o(uint32_t *dst, const uint32_t *src, int coun
 }
 #endif /* NOT_USED */
 
-void _core_uint32_pre_min_o(uint32_t *dst, const uint32_t *src, int count) {
-  _core_uint32_not_o(dst, src, count);
+void _xmi_core_uint32_pre_min_o(uint32_t *dst, const uint32_t *src, int count) {
+  _xmi_core_uint32_not_o(dst, src, count);
 }
 
-void _core_uint32_post_min_o(uint32_t *dst, const uint32_t *src, int count) {
-  _core_uint32_not_o(dst, src, count);
+void _xmi_core_uint32_post_min_o(uint32_t *dst, const uint32_t *src, int count) {
+  _xmi_core_uint32_not_o(dst, src, count);
 }

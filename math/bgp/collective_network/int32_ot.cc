@@ -11,12 +11,12 @@
  * \brief Optimized math routines for signed 32 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "dcmf_bg_math.h"
-#include "Util.h"
-#include "ppc450d/internal_o.h"
+#include "xmi_bg_math.h"
+#include "util/common.h"
+//#include "ppc450d/internal_o.h"
 
 #ifdef NOT_USED
-static void _core_int32_min_conv2(uint32_t *dst, const int32_t **srcs, int nsrc, int count) {
+static void _xmi_core_int32_min_conv2(uint32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
   uint32_t *dp = (uint32_t *)dst;
   const int32_t *s0 = (const int32_t *)srcs[0];
@@ -101,7 +101,7 @@ static void _core_int32_min_conv2(uint32_t *dst, const int32_t **srcs, int nsrc,
   return;
 }
 
-static void _core_int32_prod_to_tree2(uint32_t *dst, const int32_t **srcs, int nsrc, int count) {
+static void _xmi_core_int32_prod_to_tree2(uint32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
   uint32_t *dp = (uint32_t *)dst;
   const int32_t *s0 = (const int32_t *)srcs[0];
@@ -166,7 +166,7 @@ static void _core_int32_prod_to_tree2(uint32_t *dst, const int32_t **srcs, int n
 }
 #endif /* NOT_USED */
 
-static void _core_int32_conv_o(uint32_t *dst, const int32_t *src, int count) {
+static void _xmi_core_int32_conv_o(uint32_t *dst, const int32_t *src, int count) {
 
   uint32_t *dp = dst;
   const int32_t *sp = src;
@@ -243,16 +243,16 @@ static void _core_int32_conv_o(uint32_t *dst, const int32_t *src, int count) {
   return;
 }
 
-static void _core_int32_conv_not_o(uint32_t *dst, const int32_t *src, int count) {
+static void _xmi_core_int32_conv_not_o(uint32_t *dst, const int32_t *src, int count) {
 #define OP(a) (~((a)+(0x80000000UL)))
 
 #define TYPE uint32_t
-#include "_single_src.x.h"
+#include "math/_single_src.x.h"
 #undef TYPE
 #undef OP
 }
 
-static void _core_int32_unconv_o(int32_t *dst, const uint32_t *src, int count) {
+static void _xmi_core_int32_unconv_o(int32_t *dst, const uint32_t *src, int count) {
 
   int32_t *dp = dst;
   const uint32_t *sp = src;
@@ -329,32 +329,32 @@ static void _core_int32_unconv_o(int32_t *dst, const uint32_t *src, int count) {
   return;
 }
 
-static void _core_int32_unconv_not_o(int32_t *dst, const uint32_t *src, int count) {
+static void _xmi_core_int32_unconv_not_o(int32_t *dst, const uint32_t *src, int count) {
 #define OP(a) (~((a)-(0x80000000UL)))
 
 #define TYPE uint32_t
-#include "_single_src.x.h"
+#include "math/_single_src.x.h"
 #undef TYPE
 #undef OP
 }
 
-void _core_int32_pre_all_o(uint32_t *dst, const int32_t *src, int count) {
-	_core_int32_conv_o(dst, src, count);
+void _xmi_core_int32_pre_all_o(uint32_t *dst, const int32_t *src, int count) {
+	_xmi_core_int32_conv_o(dst, src, count);
 }
 
-void _core_int32_post_all_o(int32_t *dst, const uint32_t *src, int count) {
-	_core_int32_unconv_o(dst, src, count);
+void _xmi_core_int32_post_all_o(int32_t *dst, const uint32_t *src, int count) {
+	_xmi_core_int32_unconv_o(dst, src, count);
 }
 
-void _core_int32_pre_min_o(uint32_t *dst, const int32_t *src, int count) {
-  _core_int32_conv_not_o(dst, src, count);
+void _xmi_core_int32_pre_min_o(uint32_t *dst, const int32_t *src, int count) {
+  _xmi_core_int32_conv_not_o(dst, src, count);
 }
 
-void _core_int32_post_min_o(int32_t *dst, const uint32_t *src, int count) {
-	_core_int32_unconv_not_o(dst, src, count);
+void _xmi_core_int32_post_min_o(int32_t *dst, const uint32_t *src, int count) {
+	_xmi_core_int32_unconv_not_o(dst, src, count);
 }
 
-void _core_int32_int32_pre_maxloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count) {
+void _xmi_core_int32_int32_pre_maxloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)
@@ -364,7 +364,7 @@ void _core_int32_int32_pre_maxloc_o(uint32_int32_t *dst, const int32_int32_t *sr
     }
 }
 
-void _core_int32_int32_post_maxloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count) {
+void _xmi_core_int32_int32_post_maxloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)
@@ -374,7 +374,7 @@ void _core_int32_int32_post_maxloc_o(int32_int32_t *dst, const uint32_int32_t *s
     }
 }
 
-void _core_int32_int32_pre_minloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count) {
+void _xmi_core_int32_int32_pre_minloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)
@@ -384,7 +384,7 @@ void _core_int32_int32_pre_minloc_o(uint32_int32_t *dst, const int32_int32_t *sr
     }
 }
 
-void _core_int32_int32_post_minloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count) {
+void _xmi_core_int32_int32_post_minloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)

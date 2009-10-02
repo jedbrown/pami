@@ -11,12 +11,12 @@
  * \brief Optimized math routines for signed 8 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "dcmf_bg_math.h"
-#include "Util.h"
-#include "ppc450d/internal_o.h"
+#include "xmi_bg_math.h"
+#include "util/common.h"
+//#include "ppc450d/internal_o.h"
 
 #ifdef NOT_USED
-static void _core_int8_min_conv2(uint8_t *dst, const int8_t **srcs, int nsrc, int count) {
+static void _xmi_core_int8_min_conv2(uint8_t *dst, const int8_t **srcs, int nsrc, int count) {
 
   uint8_t *dp = (uint8_t *)dst;
   const int8_t *s0 = (const int8_t *)srcs[0];
@@ -103,7 +103,7 @@ static void _core_int8_min_conv2(uint8_t *dst, const int8_t **srcs, int nsrc, in
   return;
 }
 
-static void _core_int8_prod_to_tree2(uint8_t *dst, const int8_t **srcs, int nsrc, int count) {
+static void _xmi_core_int8_prod_to_tree2(uint8_t *dst, const int8_t **srcs, int nsrc, int count) {
 
   uint8_t *dp = (uint8_t *)dst;
   const int8_t *s0 = (const int8_t *)srcs[0];
@@ -173,7 +173,7 @@ static void _core_int8_prod_to_tree2(uint8_t *dst, const int8_t **srcs, int nsrc
 }
 #endif /* NOT_USED */
 
-static void _core_int8_conv_o(uint8_t *dst, const int8_t *src, int count) {
+static void _xmi_core_int8_conv_o(uint8_t *dst, const int8_t *src, int count) {
 
   uint8_t *dp = dst;
   const int8_t *sp = src;
@@ -267,7 +267,7 @@ static void _core_int8_conv_o(uint8_t *dst, const int8_t *src, int count) {
   return;
 }
 
-static void _core_int8_conv_not_o(uint8_t *dst, const int8_t *src, int count) {
+static void _xmi_core_int8_conv_not_o(uint8_t *dst, const int8_t *src, int count) {
 
   uint8_t *dp = dst;
   const int8_t *sp = src;
@@ -376,7 +376,7 @@ static void _core_int8_conv_not_o(uint8_t *dst, const int8_t *src, int count) {
   return;
 }
 
-static void _core_int8_unconv_o(int8_t *dst, const uint8_t *src, int count) {
+static void _xmi_core_int8_unconv_o(int8_t *dst, const uint8_t *src, int count) {
 
   int8_t *dp = dst;
   const uint8_t *sp = src;
@@ -470,7 +470,7 @@ static void _core_int8_unconv_o(int8_t *dst, const uint8_t *src, int count) {
   return;
 }
 
-static void _core_int8_unconv_not_o(int8_t *dst, const uint8_t *src, int count) {
+static void _xmi_core_int8_unconv_not_o(int8_t *dst, const uint8_t *src, int count) {
 
   int8_t *dp = dst;
   const uint8_t *sp = src;
@@ -579,18 +579,18 @@ static void _core_int8_unconv_not_o(int8_t *dst, const uint8_t *src, int count) 
   return;
 }
 
-void _core_int8_pre_all_o(uint8_t *dst, const int8_t *src, int count) {
-  _core_int8_conv_o(dst, src, count);
+void _xmi_core_int8_pre_all_o(uint8_t *dst, const int8_t *src, int count) {
+  _xmi_core_int8_conv_o(dst, src, count);
 }
 
-void _core_int8_post_all_o(int8_t *dst, const uint8_t *src, int count) {
-  _core_int8_unconv_o(dst, src, count);
+void _xmi_core_int8_post_all_o(int8_t *dst, const uint8_t *src, int count) {
+  _xmi_core_int8_unconv_o(dst, src, count);
 }
 
-void _core_int8_pre_min_o(uint8_t *dst, const int8_t *src, int count) {
-  _core_int8_conv_not_o(dst, src, count);
+void _xmi_core_int8_pre_min_o(uint8_t *dst, const int8_t *src, int count) {
+  _xmi_core_int8_conv_not_o(dst, src, count);
 }
 
-void _core_int8_post_min_o(int8_t *dst, const uint8_t *src, int count) {
-  _core_int8_unconv_not_o(dst, src, count);
+void _xmi_core_int8_post_min_o(int8_t *dst, const uint8_t *src, int count) {
+  _xmi_core_int8_unconv_not_o(dst, src, count);
 }

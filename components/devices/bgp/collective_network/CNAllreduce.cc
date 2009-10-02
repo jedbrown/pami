@@ -12,12 +12,12 @@
  * \brief Collective Network allreduce implementation.
  */
 
+#include "config.h"
+#include "sys/xmi.h"
 #include <util/common.h>
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "spi/bgp_SPI.h"
-
-extern int _g_num_active_nodes;
 
 namespace XMI {
 namespace Device {
@@ -29,7 +29,7 @@ namespace BGP {
 		for (unsigned op = XMI_UNDEFINED_OP; op < XMI_OP_COUNT; ++op) {
 		for (unsigned dt = XMI_UNDEFINED_DT; dt < XMI_DT_COUNT; ++dt) {
 			new (&CNAllreduceSetupCache[op][dt])
-				CNAllreduceSetup((XMI_Dt)dt, (XMI_Op)op);
+				CNAllreduceSetup((xmi_dt)dt, (xmi_op)op);
 		}}
 	}
 

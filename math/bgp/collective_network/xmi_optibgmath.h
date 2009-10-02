@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file math/ppc450d/dcmf_optibgmath.h
+ * \file math/bgp/collective_network/xmi_optibgmath.h
  * \brief Optimized collective network math routines
  *
  * This file describes any optimized math routines and facilitates
@@ -25,8 +25,8 @@
  * used for building the product.
  */
 
-#ifndef _dcmf_optibgmath_h_
-#define _dcmf_optibgmath_h_
+#ifndef _xmi_optibgmath_h_
+#define _xmi_optibgmath_h_
 
 /**
  * \brief Convert a LOC value TO a tree value
@@ -45,141 +45,141 @@
 extern "C" {
 #endif /* C++ */
 
-extern void _core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_fp32_post_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_post_max(float *dst, const float *src, int count);
-extern void _core_fp32_post_min(float *dst, const float *src, int count);
-extern void _core_fp32_pre_max(float *dst, const float *src, int count);
-extern void _core_fp32_pre_min(float *dst, const float *src, int count);
-extern void _core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_post_all(double *dst, const double *src, int count);
-extern void _core_fp64_post_max(double *dst, const double *src, int count);
-extern void _core_fp64_post_min(double *dst, const double *src, int count);
-extern void _core_fp64_post_sum(double *dst, const double *src, int count);
-extern void _core_fp64_pre_all(double *dst, const double *src, int count);
-extern void _core_fp64_pre_max(double *dst, const double *src, int count);
-extern void _core_fp64_pre_min(double *dst, const double *src, int count);
-extern void _core_fp64_pre_sum(double *dst, const double *src, int count);
-extern void _core_int16_int32_post_maxloc(int16_int32_t *dst, const uint16_int32_t *src, int count);
-extern void _core_int16_int32_post_minloc(int16_int32_t *dst, const uint16_int32_t *src, int count);
-extern void _core_int16_int32_pre_maxloc(uint16_int32_t *dst, const int16_int32_t *src, int count);
-extern void _core_int16_int32_pre_minloc(uint16_int32_t *dst, const int16_int32_t *src, int count);
-extern void _core_int16_post_all(int16_t *dst, const uint16_t *src, int count);
-extern void _core_int16_post_min(int16_t *dst, const uint16_t *src, int count);
-extern void _core_int16_pre_all(uint16_t *dst, const int16_t *src, int count);
-extern void _core_int16_pre_min(uint16_t *dst, const int16_t *src, int count);
-extern void _core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32_int32_t *src, int count);
-extern void _core_int32_int32_post_minloc(int32_int32_t *dst, const uint32_int32_t *src, int count);
-extern void _core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_int32_t *src, int count);
-extern void _core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_int32_t *src, int count);
-extern void _core_int32_post_all(int32_t *dst, const uint32_t *src, int count);
-extern void _core_int32_post_min(int32_t *dst, const uint32_t *src, int count);
-extern void _core_int32_pre_all(uint32_t *dst, const int32_t *src, int count);
-extern void _core_int32_pre_min(uint32_t *dst, const int32_t *src, int count);
-extern void _core_int64_post_all(int64_t *dst, const uint64_t *src, int count);
-extern void _core_int64_post_min(int64_t *dst, const uint64_t *src, int count);
-extern void _core_int64_pre_all(uint64_t *dst, const int64_t *src, int count);
-extern void _core_int64_pre_min(uint64_t *dst, const int64_t *src, int count);
-extern void _core_int8_post_all(int8_t *dst, const uint8_t *src, int count);
-extern void _core_int8_post_min(int8_t *dst, const uint8_t *src, int count);
-extern void _core_int8_pre_all(uint8_t *dst, const int8_t *src, int count);
-extern void _core_int8_pre_min(uint8_t *dst, const int8_t *src, int count);
-extern void _core_uint16_post_all(uint16_t *dst, const uint16_t *src, int count);
-extern void _core_uint16_post_min(uint16_t *dst, const uint16_t *src, int count);
-extern void _core_uint16_pre_all(uint16_t *dst, const uint16_t *src, int count);
-extern void _core_uint16_pre_min(uint16_t *dst, const uint16_t *src, int count);
-extern void _core_uint32_post_all(uint32_t *dst, const uint32_t *src, int count);
-extern void _core_uint32_post_min(uint32_t *dst, const uint32_t *src, int count);
-extern void _core_uint32_pre_all(uint32_t *dst, const uint32_t *src, int count);
-extern void _core_uint32_pre_min(uint32_t *dst, const uint32_t *src, int count);
-extern void _core_uint64_post_all(uint64_t *dst, const uint64_t *src, int count);
-extern void _core_uint64_post_min(uint64_t *dst, const uint64_t *src, int count);
-extern void _core_uint64_pre_all(uint64_t *dst, const uint64_t *src, int count);
-extern void _core_uint64_pre_min(uint64_t *dst, const uint64_t *src, int count);
-extern void _core_uint8_post_all(uint8_t *dst, const uint8_t *src, int count);
-extern void _core_uint8_post_min(uint8_t *dst, const uint8_t *src, int count);
-extern void _core_uint8_pre_all(uint8_t *dst, const uint8_t *src, int count);
-extern void _core_uint8_pre_min(uint8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_fp32_post_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_post_max(float *dst, const float *src, int count);
+extern void _xmi_core_fp32_post_min(float *dst, const float *src, int count);
+extern void _xmi_core_fp32_pre_max(float *dst, const float *src, int count);
+extern void _xmi_core_fp32_pre_min(float *dst, const float *src, int count);
+extern void _xmi_core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_post_all(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_post_max(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_post_min(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_post_sum(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_pre_all(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_pre_max(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_pre_min(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_pre_sum(double *dst, const double *src, int count);
+extern void _xmi_core_int16_int32_post_maxloc(int16_int32_t *dst, const uint16_int32_t *src, int count);
+extern void _xmi_core_int16_int32_post_minloc(int16_int32_t *dst, const uint16_int32_t *src, int count);
+extern void _xmi_core_int16_int32_pre_maxloc(uint16_int32_t *dst, const int16_int32_t *src, int count);
+extern void _xmi_core_int16_int32_pre_minloc(uint16_int32_t *dst, const int16_int32_t *src, int count);
+extern void _xmi_core_int16_post_all(int16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_int16_post_min(int16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_int16_pre_all(uint16_t *dst, const int16_t *src, int count);
+extern void _xmi_core_int16_pre_min(uint16_t *dst, const int16_t *src, int count);
+extern void _xmi_core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32_int32_t *src, int count);
+extern void _xmi_core_int32_int32_post_minloc(int32_int32_t *dst, const uint32_int32_t *src, int count);
+extern void _xmi_core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_int32_t *src, int count);
+extern void _xmi_core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_int32_t *src, int count);
+extern void _xmi_core_int32_post_all(int32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_int32_post_min(int32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_int32_pre_all(uint32_t *dst, const int32_t *src, int count);
+extern void _xmi_core_int32_pre_min(uint32_t *dst, const int32_t *src, int count);
+extern void _xmi_core_int64_post_all(int64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_int64_post_min(int64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_int64_pre_all(uint64_t *dst, const int64_t *src, int count);
+extern void _xmi_core_int64_pre_min(uint64_t *dst, const int64_t *src, int count);
+extern void _xmi_core_int8_post_all(int8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_int8_post_min(int8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_int8_pre_all(uint8_t *dst, const int8_t *src, int count);
+extern void _xmi_core_int8_pre_min(uint8_t *dst, const int8_t *src, int count);
+extern void _xmi_core_uint16_post_all(uint16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_uint16_post_min(uint16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_uint16_pre_all(uint16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_uint16_pre_min(uint16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_uint32_post_all(uint32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_uint32_post_min(uint32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_uint32_pre_all(uint32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_uint32_pre_min(uint32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_uint64_post_all(uint64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_uint64_post_min(uint64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_uint64_pre_all(uint64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_uint64_pre_min(uint64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_uint8_post_all(uint8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_uint8_post_min(uint8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_uint8_pre_all(uint8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_uint8_pre_min(uint8_t *dst, const uint8_t *src, int count);
 
 /* These are non-standard prototypes */
-extern void _core_fp64_pre1_2pass(uint16_t *dst_e, uint32_t *dst_m, const double *src, int count);
-extern void _core_fp64_pre2_2pass(uint32_t *dst_src_m, uint16_t *src_e, uint16_t *src_ee, int count);
-extern void _core_fp64_post_2pass(double *dst, uint16_t *src_e, uint32_t *src_m, int count);
+extern void _xmi_core_fp64_pre1_2pass(uint16_t *dst_e, uint32_t *dst_m, const double *src, int count);
+extern void _xmi_core_fp64_pre2_2pass(uint32_t *dst_src_m, uint16_t *src_e, uint16_t *src_ee, int count);
+extern void _xmi_core_fp64_post_2pass(double *dst, uint16_t *src_e, uint32_t *src_m, int count);
 
 
 /* Optimized math routines */
 
-extern void _core_uint32_not_o(uint32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_uint32_not_o(uint32_t *dst, const uint32_t *src, int count);
 
-extern void _core_fp32_fp32_post_maxloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_fp32_post_minloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_fp32_pre_maxloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_fp32_pre_minloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
-extern void _core_fp32_int32_post_maxloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_int32_post_minloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_int32_pre_maxloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_int32_pre_minloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
-extern void _core_fp32_post_max_o(float *dst, const float *src, int count);
-extern void _core_fp32_post_min_o(float *dst, const float *src, int count);
-extern void _core_fp32_pre_max_o(float *dst, const float *src, int count);
-extern void _core_fp32_pre_min_o(float *dst, const float *src, int count);
-extern void _core_fp64_fp64_post_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_fp64_post_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_fp64_pre_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_fp64_pre_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
-extern void _core_fp64_int32_post_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_int32_post_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_int32_pre_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_int32_pre_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
-extern void _core_fp64_post_max_o(double *dst, const double *src, int count);
-extern void _core_fp64_post_min_o(double *dst, const double *src, int count);
-extern void _core_fp64_pre_max_o(double *dst, const double *src, int count);
-extern void _core_fp64_pre_min_o(double *dst, const double *src, int count);
-extern void _core_int16_int32_post_maxloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count);
-extern void _core_int16_int32_post_minloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count);
-extern void _core_int16_int32_pre_maxloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count);
-extern void _core_int16_int32_pre_minloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count);
-extern void _core_int16_post_all_o(int16_t *dst, const uint16_t *src, int count);
-extern void _core_int16_post_min_o(int16_t *dst, const uint16_t *src, int count);
-extern void _core_int16_pre_all_o(uint16_t *dst, const int16_t *src, int count);
-extern void _core_int16_pre_min_o(uint16_t *dst, const int16_t *src, int count);
-extern void _core_int32_int32_post_maxloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count);
-extern void _core_int32_int32_post_minloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count);
-extern void _core_int32_int32_pre_maxloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count);
-extern void _core_int32_int32_pre_minloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count);
-extern void _core_int32_post_all_o(int32_t *dst, const uint32_t *src, int count);
-extern void _core_int32_post_min_o(int32_t *dst, const uint32_t *src, int count);
-extern void _core_int32_pre_all_o(uint32_t *dst, const int32_t *src, int count);
-extern void _core_int32_pre_min_o(uint32_t *dst, const int32_t *src, int count);
-extern void _core_int64_post_all_o(int64_t *dst, const uint64_t *src, int count);
-extern void _core_int64_post_min_o(int64_t *dst, const uint64_t *src, int count);
-extern void _core_int64_pre_all_o(uint64_t *dst, const int64_t *src, int count);
-extern void _core_int64_pre_min_o(uint64_t *dst, const int64_t *src, int count);
-extern void _core_int8_post_all_o(int8_t *dst, const uint8_t *src, int count);
-extern void _core_int8_post_min_o(int8_t *dst, const uint8_t *src, int count);
-extern void _core_int8_pre_all_o(uint8_t *dst, const int8_t *src, int count);
-extern void _core_int8_pre_min_o(uint8_t *dst, const int8_t *src, int count);
-extern void _core_uint16_post_min_o(uint16_t *dst, const uint16_t *src, int count);
-extern void _core_uint16_pre_min_o(uint16_t *dst, const uint16_t *src, int count);
-extern void _core_uint32_post_min_o(uint32_t *dst, const uint32_t *src, int count);
-extern void _core_uint32_pre_min_o(uint32_t *dst, const uint32_t *src, int count);
-extern void _core_uint64_post_min_o(uint64_t *dst, const uint64_t *src, int count);
-extern void _core_uint64_pre_min_o(uint64_t *dst, const uint64_t *src, int count);
-extern void _core_uint8_post_min_o(uint8_t *dst, const uint8_t *src, int count);
-extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_fp32_fp32_post_maxloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_fp32_post_minloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_fp32_pre_maxloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_fp32_pre_minloc_o(fp32_fp32_t *dst, const fp32_fp32_t *src, int count);
+extern void _xmi_core_fp32_int32_post_maxloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_int32_post_minloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_int32_pre_maxloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_int32_pre_minloc_o(fp32_int32_t *dst, const fp32_int32_t *src, int count);
+extern void _xmi_core_fp32_post_max_o(float *dst, const float *src, int count);
+extern void _xmi_core_fp32_post_min_o(float *dst, const float *src, int count);
+extern void _xmi_core_fp32_pre_max_o(float *dst, const float *src, int count);
+extern void _xmi_core_fp32_pre_min_o(float *dst, const float *src, int count);
+extern void _xmi_core_fp64_fp64_post_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_fp64_post_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_fp64_pre_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_fp64_pre_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count);
+extern void _xmi_core_fp64_int32_post_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_int32_post_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_int32_pre_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_int32_pre_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count);
+extern void _xmi_core_fp64_post_max_o(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_post_min_o(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_pre_max_o(double *dst, const double *src, int count);
+extern void _xmi_core_fp64_pre_min_o(double *dst, const double *src, int count);
+extern void _xmi_core_int16_int32_post_maxloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count);
+extern void _xmi_core_int16_int32_post_minloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count);
+extern void _xmi_core_int16_int32_pre_maxloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count);
+extern void _xmi_core_int16_int32_pre_minloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count);
+extern void _xmi_core_int16_post_all_o(int16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_int16_post_min_o(int16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_int16_pre_all_o(uint16_t *dst, const int16_t *src, int count);
+extern void _xmi_core_int16_pre_min_o(uint16_t *dst, const int16_t *src, int count);
+extern void _xmi_core_int32_int32_post_maxloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count);
+extern void _xmi_core_int32_int32_post_minloc_o(int32_int32_t *dst, const uint32_int32_t *src, int count);
+extern void _xmi_core_int32_int32_pre_maxloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count);
+extern void _xmi_core_int32_int32_pre_minloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count);
+extern void _xmi_core_int32_post_all_o(int32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_int32_post_min_o(int32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_int32_pre_all_o(uint32_t *dst, const int32_t *src, int count);
+extern void _xmi_core_int32_pre_min_o(uint32_t *dst, const int32_t *src, int count);
+extern void _xmi_core_int64_post_all_o(int64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_int64_post_min_o(int64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_int64_pre_all_o(uint64_t *dst, const int64_t *src, int count);
+extern void _xmi_core_int64_pre_min_o(uint64_t *dst, const int64_t *src, int count);
+extern void _xmi_core_int8_post_all_o(int8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_int8_post_min_o(int8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_int8_pre_all_o(uint8_t *dst, const int8_t *src, int count);
+extern void _xmi_core_int8_pre_min_o(uint8_t *dst, const int8_t *src, int count);
+extern void _xmi_core_uint16_post_min_o(uint16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_uint16_pre_min_o(uint16_t *dst, const uint16_t *src, int count);
+extern void _xmi_core_uint32_post_min_o(uint32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_uint32_pre_min_o(uint32_t *dst, const uint32_t *src, int count);
+extern void _xmi_core_uint64_post_min_o(uint64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_uint64_pre_min_o(uint64_t *dst, const uint64_t *src, int count);
+extern void _xmi_core_uint8_post_min_o(uint8_t *dst, const uint8_t *src, int count);
+extern void _xmi_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
 
 #if defined(__cplusplus)
 }; // extern "C"
@@ -197,7 +197,7 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
  * buffer counts, then the corresponding define here will have
  * statements added in the form:
  *
- *	OPTIMATH_NSRC(dt,op,N,_core_<type>_<oper>N)
+ *	OPTIMATH_NSRC(dt,op,N,_xmi_core_<type>_<oper>N)
  *	...
  *
  * Where "N" is the number of input buffers, "<type>" is the datatype,
@@ -219,7 +219,7 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
  * 	switch(nsrc) {
  *	OPTIMIZED_<type>_<oper>
  *	default:
- *		_core_<type>_<oper>(params...);
+ *		_xmi_core_<type>_<oper>(params...);
  *		break;
  *	}
  * }
@@ -250,7 +250,7 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
  * then the corresponding define here will have
  * statements added in the form:
  *
- *	OPTIMATH_UNARY(dt,op,_core_<type>_<oper>_o)
+ *	OPTIMATH_UNARY(dt,op,_xmi_core_<type>_<oper>_o)
  *
  * Where "<type>" is the datatype,
  * "<oper>" is the operand mnemonic, "dt" is the DCMF datatype, and "op"
@@ -269,7 +269,7 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
  * 	switch(1) {
  *	OPTIMIZED_<type>_<oper>
  *	default:
- *		_core_<type>_<oper>(params...);
+ *		_xmi_core_<type>_<oper>(params...);
  *		break;
  *	}
  * }
@@ -284,7 +284,7 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
  * void *dcmf_pre_op_funcs[ndt][nop][2] = {
  * OPTIMIZED_<type>_<oper>
  * ...
- * [dt][op][0] = _core_<type>_<oper>,	// unoptimized
+ * [dt][op][0] = _xmi_core_<type>_<oper>,	// unoptimized
  * };
  *
  * This table is accessed by using the DCMF_PRE_OP_FUNCS(dt,op,n) macro
@@ -301,23 +301,23 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
 #define OPTIMIZED_int8_pre_all(op)
 #define OPTIMIZED_int8_post_all(op)
 #define OPTIMIZED_int8_pre_min	\
-	OPTIMATH_UNARY(XMI_SIGNED_CHAR,XMI_MIN,_core_int8_pre_min_o)
+	OPTIMATH_UNARY(XMI_SIGNED_CHAR,XMI_MIN,_xmi_core_int8_pre_min_o)
 #define OPTIMIZED_int8_post_min	\
-	OPTIMATH_UNARY(XMI_SIGNED_CHAR,XMI_MIN,_core_int8_post_min_o)
+	OPTIMATH_UNARY(XMI_SIGNED_CHAR,XMI_MIN,_xmi_core_int8_post_min_o)
 #define OPTIMIZED_uint8_pre_all(op)
 #define OPTIMIZED_uint8_post_all(op)
 #define OPTIMIZED_uint8_pre_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_CHAR,XMI_MIN,_core_uint8_pre_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_CHAR,XMI_MIN,_xmi_core_uint8_pre_min_o)
 #define OPTIMIZED_uint8_post_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_CHAR,XMI_MIN,_core_uint8_post_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_CHAR,XMI_MIN,_xmi_core_uint8_post_min_o)
 #define OPTIMIZED_int16_pre_all(op)	\
-	OPTIMATH_UNARY(XMI_SIGNED_SHORT,op,_core_int16_pre_all_o)
+	OPTIMATH_UNARY(XMI_SIGNED_SHORT,op,_xmi_core_int16_pre_all_o)
 #define OPTIMIZED_int16_post_all(op)	\
-	OPTIMATH_UNARY(XMI_SIGNED_SHORT,op,_core_int16_post_all_o)
+	OPTIMATH_UNARY(XMI_SIGNED_SHORT,op,_xmi_core_int16_post_all_o)
 #define OPTIMIZED_int16_pre_min		\
-	OPTIMATH_UNARY(XMI_SIGNED_SHORT,XMI_MIN,_core_int16_pre_min_o)
+	OPTIMATH_UNARY(XMI_SIGNED_SHORT,XMI_MIN,_xmi_core_int16_pre_min_o)
 #define OPTIMIZED_int16_post_min	\
-	OPTIMATH_UNARY(XMI_SIGNED_SHORT,XMI_MIN,_core_int16_post_min_o)
+	OPTIMATH_UNARY(XMI_SIGNED_SHORT,XMI_MIN,_xmi_core_int16_post_min_o)
 #define OPTIMIZED_int16_int32_pre_maxloc
 #define OPTIMIZED_int16_int32_post_maxloc
 #define OPTIMIZED_int16_int32_pre_minloc
@@ -325,14 +325,14 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
 #define OPTIMIZED_uint16_pre_all(op)
 #define OPTIMIZED_uint16_post_all(op)
 #define OPTIMIZED_uint16_pre_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_SHORT,XMI_MIN,_core_uint16_pre_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_SHORT,XMI_MIN,_xmi_core_uint16_pre_min_o)
 #define OPTIMIZED_uint16_post_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_SHORT,XMI_MIN,_core_uint16_post_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_SHORT,XMI_MIN,_xmi_core_uint16_post_min_o)
 #define OPTIMIZED_int32_pre_all(op)
 #define OPTIMIZED_int32_post_all(op)
 #define OPTIMIZED_int32_pre_min
 #define OPTIMIZED_int32_post_min	\
-	OPTIMATH_UNARY(XMI_SIGNED_INT,XMI_MIN,_core_int32_post_min_o)
+	OPTIMATH_UNARY(XMI_SIGNED_INT,XMI_MIN,_xmi_core_int32_post_min_o)
 #define OPTIMIZED_int32_int32_pre_maxloc
 #define OPTIMIZED_int32_int32_post_maxloc
 #define OPTIMIZED_int32_int32_pre_minloc
@@ -340,9 +340,9 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
 #define OPTIMIZED_uint32_pre_all(op)
 #define OPTIMIZED_uint32_post_all(op)
 #define OPTIMIZED_uint32_pre_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_INT,XMI_MIN,_core_uint32_pre_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_INT,XMI_MIN,_xmi_core_uint32_pre_min_o)
 #define OPTIMIZED_uint32_post_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_INT,XMI_MIN,_core_uint32_post_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_INT,XMI_MIN,_xmi_core_uint32_post_min_o)
 #define OPTIMIZED_int64_pre_all(op)
 #define OPTIMIZED_int64_post_all(op)
 #define OPTIMIZED_int64_pre_min
@@ -350,9 +350,9 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
 #define OPTIMIZED_uint64_pre_all(op)
 #define OPTIMIZED_uint64_post_all(op)
 #define OPTIMIZED_uint64_pre_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_LONG_LONG,XMI_MIN,_core_uint64_pre_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_LONG_LONG,XMI_MIN,_xmi_core_uint64_pre_min_o)
 #define OPTIMIZED_uint64_post_min	\
-	OPTIMATH_UNARY(XMI_UNSIGNED_LONG_LONG,XMI_MIN,_core_uint64_post_min_o)
+	OPTIMATH_UNARY(XMI_UNSIGNED_LONG_LONG,XMI_MIN,_xmi_core_uint64_post_min_o)
 #define OPTIMIZED_fp32_pre_max
 #define OPTIMIZED_fp32_post_max
 #define OPTIMIZED_fp32_int32_pre_maxloc
@@ -382,4 +382,4 @@ extern void _core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count);
 #define OPTIMIZED_fp64_fp64_pre_minloc
 #define OPTIMIZED_fp64_fp64_post_minloc
 
-#endif /* _dcmf_optibgmath_h_ */
+#endif /* _xmi_optibgmath_h_ */

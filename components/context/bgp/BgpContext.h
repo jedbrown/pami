@@ -378,32 +378,32 @@ namespace XMI
           return result;
         }
 
-        inline xmi_result_t multisend_getroles(size_t          dispatch,
+        inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
                                                int            *numRoles,
                                                int            *replRole)
         {
           return XMI_UNIMPL;
         };
 
-        inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
+        inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
         {
           return XMI_UNIMPL;
         };
 
 
-        inline xmi_result_t manytomany(xmi_manytomany_t *m2minfo)
+        inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
         {
           return XMI_UNIMPL;
         };
 
 
-        inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
+        inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
         {
           return XMI_UNIMPL;
         };
 
 
-        inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
+        inline xmi_result_t multicombine_impl(xmi_multicombine_t *mcombineinfo)
         {
           return XMI_UNIMPL;
         };

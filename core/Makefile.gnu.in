@@ -1,0 +1,5 @@
+VPATH		= @abs_srcdir@
+SUBDIRS		=
+@LIBNAME@-""-XMICORE_SOURCES = xmi_dat.c
+DEVICENAME = @LIBNAME@-""-XMICORE
+include @abs_top_builddir@/Build.rules

@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgp_cnlib_h__
 #define __components_devices_bgp_cnlib_h__
 
-#include "components/sysdep/SysDep.h"
+#include "components/pipeworkqueue/bgp/BgpPipeWorkQueue.h"
 #include "components/devices/workqueue/WorkQueue.h"
 #include "math/bgp/collective_network/DblUtils.h"
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
@@ -495,17 +495,17 @@ public:
 	// (xx) - data/results user buffers
 	//
 	// Injection:
-	// (in) --> _core_fp64_pre1_2pass --+--> _ewq ---> [expo]
+	// (in) --> _xmi_core_fp64_pre1_2pass --+--> _ewq ---> [expo]
 	//                                  +--> _mwq
 	//
 	// _ewq --+
-	// _mwq --+--> _core_fp64_pre2_2pass ---> [mant]
+	// _mwq --+--> _xmi_core_fp64_pre2_2pass ---> [mant]
 	// _xwq --+
 	//
 	// Reception:
 	// [expo] --> _xwq
 	//
-	// [mant] --+--> _core_fp64_post_2pass --> (out)
+	// [mant] --+--> _xmi_core_fp64_post_2pass --> (out)
 	// _xwq ----+
 	//
 	//
@@ -522,8 +522,8 @@ public:
 				hcount < BGPCN_FIFO_SIZE && dcount < BGPCN_QUADS_PER_FIFO) {
 			uint16_t *ebuf = (uint16_t *)_ewq.bufferToProduce(0);
 			uint32_t *mbuf = (uint32_t *)_mwq.bufferToProduce(0);
-			_core_fp64_pre1_2pass(ebuf, mbuf, (double *)(buf + did), exptoSend);
-//fprintf(stderr, "_core_fp64_pre1_2pass {%p} %08x%08x%08x %04x %f (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], *((double *)(buf + did)), exptoSend);
+			_xmi_core_fp64_pre1_2pass(ebuf, mbuf, (double *)(buf + did), exptoSend);
+//fprintf(stderr, "_xmi_core_fp64_pre1_2pass {%p} %08x%08x%08x %04x %f (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], *((double *)(buf + did)), exptoSend);
 			_ewq.produceBytes(BGPCN_PKT_SIZE, 0);
 			// jump to boundary
 			_mwq.produceBytes(MANT_WQ_FACT * BGPCN_PKT_SIZE, 0);
@@ -561,9 +561,9 @@ public:
 		size_t did = 0;
 		while (manRemain > 0 && avail >= expBytes &&
 				hcount < BGPCN_FIFO_SIZE && dcount < BGPCN_QUADS_PER_FIFO) {
-//fprintf(stderr, "_core_fp64_pre2_2pass PRE  {%p} %08x%08x%08x %04x {%p} %04x (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], xbuf, xbuf[0], mantoSend);
-			_core_fp64_pre2_2pass(mbuf, ebuf, xbuf, mantoSend);
-//fprintf(stderr, "_core_fp64_pre2_2pass POST {%p} %08x%08x%08x\n", mbuf, mbuf[1], mbuf[2], mbuf[3]);
+//fprintf(stderr, "_xmi_core_fp64_pre2_2pass PRE  {%p} %08x%08x%08x %04x {%p} %04x (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], xbuf, xbuf[0], mantoSend);
+			_xmi_core_fp64_pre2_2pass(mbuf, ebuf, xbuf, mantoSend);
+//fprintf(stderr, "_xmi_core_fp64_pre2_2pass POST {%p} %08x%08x%08x\n", mbuf, mbuf[1], mbuf[2], mbuf[3]);
 			CollectiveRawSendPacket(VIRTUAL_CHANNEL, &_mhdr._hh, mbuf);
 			++hcount;
 			dcount += BGPCN_QUADS_PER_PKT;
@@ -661,8 +661,8 @@ public:
 			CollectiveRawReceivePacketNoHdr(VIRTUAL_CHANNEL, tmp);
 			uint32_t *mbuf = (uint32_t *)tmp;
 			if (_doStore) {
-				_core_fp64_post_2pass((double *)buf, ebuf, mbuf, manToRecv);
-//fprintf(stderr, "_core_fp64_post_2pass %f %08x%08x%08x {%p} %04x (%d)\n", *((double *)buf), mbuf[1], mbuf[2], mbuf[3], ebuf, ebuf[0], manToRecv);
+				_xmi_core_fp64_post_2pass((double *)buf, ebuf, mbuf, manToRecv);
+//fprintf(stderr, "_xmi_core_fp64_post_2pass %f %08x%08x%08x {%p} %04x (%d)\n", *((double *)buf), mbuf[1], mbuf[2], mbuf[3], ebuf, ebuf[0], manToRecv);
 			}
 			_manrecv += manToRecv;
 			manRemain -= manToRecv;

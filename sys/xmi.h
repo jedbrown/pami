@@ -3039,13 +3039,13 @@ extern "C"
    * type of multicombine being registered/used.
    */
   typedef struct {
-    void                *request;	              /**< space available in request, bytes */
-    xmi_callback_t       cb_done;	              /**< User's completion callback */
+    void                *request;             /**< space for communication struct(s) */
+    xmi_callback_t       cb_done;             /**< User's completion callback */
     unsigned             roles;		      /**< bitmap of roles to perform */
     xmi_pipeworkqueue_t *data;		      /**< Data source */
-    xmi_topology_t      *data_participants;	      /**< Ranks contributing data */
-    xmi_pipeworkqueue_t *results;	              /**< Results destination */
-    xmi_topology_t      *results_participants;    /**< Ranks receiving results */
+    xmi_topology_t      *data_participants;   /**< Ranks contributing data */
+    xmi_pipeworkqueue_t *results;	      /**< Results destination */
+    xmi_topology_t      *results_participants;/**< Ranks receiving results */
     xmi_op               optor;		      /**< Operation to perform on data */
     xmi_dt               dtype;		      /**< Datatype of elements */
     size_t               count;		      /**< Number of elements */

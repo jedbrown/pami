@@ -1,5 +1,10 @@
-VPATH		= @abs_srcdir@
+VPATH		= @abs_srcdir@ @abs_top_srcdir@/xmi/math/bgp/collective_network
 SUBDIRS		=
-@LIBNAME@-""-BGPCNDEVICE_SOURCES = CNDevice.cc
+@LIBNAME@-""-BGPCNDEVICE_SOURCES = CNDevice.cc CNAllreduce.cc cn_bg_dat.c \
+		fp128_t.cc fp64_t.cc fp64_ot.cc fp32_t.cc fp32_ot.cc \
+		uint64_t.cc uint64_ot.cc uint32_t.cc uint32_ot.cc \
+		uint16_t.cc uint16_ot.cc uint8_t.cc uint8_ot.cc \
+		int64_t.cc int64_ot.cc int32_t.cc int32_ot.cc \
+		int16_t.cc int16_ot.cc int8_t.cc int8_ot.cc
 DEVICENAME = @LIBNAME@-""-BGPCNDEVICE
 include @abs_top_builddir@/Build.rules
