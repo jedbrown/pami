@@ -353,14 +353,14 @@ inline void DCMF::MU::MUSendMessage::Send::setDest (unsigned rank,
   //recv grp id     
   mapping->rank2Network (rank, &network, DCMF_5DTORUS_NETWORK);   
 
-  dst.Destination.A_Destination = network.n_torus.coords[0];
-  dst.Destination.B_Destination = network.n_torus.coords[1];
-  dst.Destination.C_Destination = network.n_torus.coords[2];
-  dst.Destination.D_Destination = network.n_torus.coords[3];
-  dst.Destination.E_Destination = network.n_torus.coords[4];
+  dst.Destination.A_Destination = network.u.n_torus.coords[0];
+  dst.Destination.B_Destination = network.u.n_torus.coords[1];
+  dst.Destination.C_Destination = network.u.n_torus.coords[2];
+  dst.Destination.D_Destination = network.u.n_torus.coords[3];
+  dst.Destination.E_Destination = network.u.n_torus.coords[4];
 
   _descBase.setDestination (dst);   
-  _descBase.setRecFIFOId (_device->getRecFifoIdForDescriptor(network.n_torus.coords[5]));
+  _descBase.setRecFIFOId (_device->getRecFifoIdForDescriptor(network.u.n_torus.coords[5]));
 
   /// \todo Calculate the best torusInjectionFifoMap.
   /// For now, hard code to A-minus direction.

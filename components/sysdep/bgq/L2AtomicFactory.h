@@ -115,7 +115,7 @@ namespace BGQ {
 					_factory.numCore += ncores;
 					++_factory.numProc;
 					sd->mapping().rank2Network((size_t)ranks[i], &coord, XMI_TORUS_NETWORK);
-					_factory.coreXlat[i] = coord.torus.t << shift;
+					_factory.coreXlat[i] = coord.u.torus.t << shift;
 					if ((size_t)ranks[i] == sd->mapping().rank()) {
 						_factory.myProc = i;
 					}

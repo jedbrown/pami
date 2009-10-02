@@ -93,7 +93,7 @@ namespace BGP {
 					_factory.numCore += ncores;
 					++_factory.numProc;
 					mapping->task2network(r, &coord, XMI_N_TORUS_NETWORK);
-					_factory.coreXlat[i] = coord.n_torus.coords[3] << shift;
+					_factory.coreXlat[i] = coord.u.n_torus.coords[3] << shift;
 					if (r == mapping->task()) {
 						_factory.myProc = i;
 					}

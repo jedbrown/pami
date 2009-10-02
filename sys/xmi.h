@@ -177,7 +177,7 @@ extern "C"
         size_t rank;   /**< Global rank of process */
         size_t peer;   /**< Local rank of process */
       } shmem;    /**< XMI_SHMEM_NETWORK coordinates */
-    };
+    } u;
   } xmi_coord_t;
 
   /**
@@ -601,7 +601,7 @@ extern "C"
           uint64_t          value;     /**< 64-bit data value */
           uint64_t          test;      /**< 64-bit test value */
         } uint64;                      /**< 64-bit rmw input parameters */
-      };
+      } input;
     } rmw;                             /**< Parameters specific to rmw */
   } xmi_rmw_t;
 

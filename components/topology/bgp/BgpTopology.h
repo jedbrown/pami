@@ -27,7 +27,7 @@
 #define unlikely_if	if
 #warning Need likely/unlikely_if!
 
-#define net_coord(n)	n_torus.coords[n]
+#define net_coord(n)	u.n_torus.coords[n]
 
 // returns pointer to xmi_coord_t
 #define MY_COORDS	&my_coords

@@ -53,8 +53,8 @@ namespace XMI
                                     size_t                          max_rank,
 				    XMI::Memory::HeapMemoryManager &mm)
         {
-          ll.n_torus.coords[0] = 0;
-          ur.n_torus.coords[0] = _size-1;
+          ll.u.n_torus.coords[0] = 0;
+          ur.u.n_torus.coords[0] = _size-1;
           
           return XMI_SUCCESS;
         }

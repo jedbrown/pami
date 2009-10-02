@@ -46,7 +46,7 @@ namespace XMI
 
           for (unsigned d = 0; d < mapping.globalDims(); ++d)
             {
-              rectsize *= (ur.n_torus.coords[d] - ll.n_torus.coords[d] + 1);
+              rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
             }
 
           if (mapping.size() == rectsize)

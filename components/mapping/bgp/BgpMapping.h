@@ -184,10 +184,10 @@ namespace XMI
 			return XMI_INVAL;
 		}
 		*type = XMI_N_TORUS_NETWORK;
-		size_t x = addr->n_torus.coords[0];
-		size_t y = addr->n_torus.coords[1];
-		size_t z = addr->n_torus.coords[2];
-		size_t t = addr->n_torus.coords[3];
+		size_t x = addr->u.n_torus.coords[0];
+		size_t y = addr->u.n_torus.coords[1];
+		size_t z = addr->u.n_torus.coords[2];
+		size_t t = addr->u.n_torus.coords[3];
 
 		if ((x >= xSize) || (y >= ySize) ||
 			  (z >= zSize) || (t >= tSize)) {
@@ -211,10 +211,10 @@ namespace XMI
         {
 		unsigned xyzt = _mapcache[task];
 		addr->network = XMI_N_TORUS_NETWORK;
-		addr->n_torus.coords[0] = (xyzt >> 24) & 0x0ff;
-		addr->n_torus.coords[1] = (xyzt >> 16) & 0x0ff;
-		addr->n_torus.coords[2] = (xyzt >> 8) & 0x0ff;
-		addr->n_torus.coords[3] = (xyzt >> 0) & 0x0ff;
+		addr->u.n_torus.coords[0] = (xyzt >> 24) & 0x0ff;
+		addr->u.n_torus.coords[1] = (xyzt >> 16) & 0x0ff;
+		addr->u.n_torus.coords[2] = (xyzt >> 8) & 0x0ff;
+		addr->u.n_torus.coords[3] = (xyzt >> 0) & 0x0ff;
 		return XMI_SUCCESS;
         }
         /////////////////////////////////////////////////////////////////////////
@@ -530,16 +530,16 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
   xmi_network dummy;
   xmi_coord_t c;
   c.network = XMI_N_TORUS_NETWORK;
-  c.n_torus.coords[0] = _x;
-  c.n_torus.coords[1] = _y;
-  c.n_torus.coords[2] = _z;
+  c.u.n_torus.coords[0] = _x;
+  c.u.n_torus.coords[1] = _y;
+  c.u.n_torus.coords[2] = _z;
   _peers = 0;
-  for (c.n_torus.coords[3]=0; c.n_torus.coords[3]<__global.personality.tSize(); c.n_torus.coords[3]++)
+  for (c.u.n_torus.coords[3]=0; c.u.n_torus.coords[3]<__global.personality.tSize(); c.u.n_torus.coords[3]++)
   {
     if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
     {
       //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", c.n_torus.coords[3], peer);
-      _peercache[c.n_torus.coords[3]] = peer++;
+      _peercache[c.u.n_torus.coords[3]] = peer++;
       _localranks[_peers] = task;
       _peers++;
     }
