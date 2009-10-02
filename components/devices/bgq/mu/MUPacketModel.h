@@ -57,10 +57,11 @@ namespace XMI
           static const bool deterministic = true;
 
           /// \see XMI::Device::Interface::PacketModel::init
-          xmi_result_t init_impl (Interface::RecvFunction_t   direct_recv_func,
-                          void                      * direct_recv_func_parm,
-                          Interface::RecvFunction_t   read_recv_func,
-                          void                      * read_recv_func_parm);
+          xmi_result_t init_impl (size_t                      dispatch,
+                                  Interface::RecvFunction_t   direct_recv_func,
+                                  void                      * direct_recv_func_parm,
+                                  Interface::RecvFunction_t   read_recv_func,
+                                  void                      * read_recv_func_parm);
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
           inline bool postPacket_impl (MUInjFifoMessage   * obj,

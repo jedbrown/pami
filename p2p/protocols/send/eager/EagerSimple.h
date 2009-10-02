@@ -23,7 +23,7 @@
 #include "p2p/protocols/send/eager/EagerConnection.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) fprintf x
 #endif
 
 namespace XMI
@@ -112,19 +112,22 @@ namespace XMI
             _connection = _connection_manager.getConnectionArray (context);
 
             TRACE_ERR((stderr, "EagerSimple() [0]\n"));
-            status = _envelope_model.init (dispatch_envelope_direct, this,
+            status = _envelope_model.init (dispatch,
+                                           dispatch_envelope_direct, this,
                                            dispatch_envelope_read, this);
             TRACE_ERR((stderr, "EagerSimple() [1] status = %d\n", status));
 
             if (status == XMI_SUCCESS)
               {
-                status = _data_model.init (dispatch_data_direct, this,
+                status = _data_model.init (dispatch,
+                                           dispatch_data_direct, this,
                                            dispatch_data_read, this);
                 TRACE_ERR((stderr, "EagerSimple() [2] status = %d\n", status));
 
                 if (status == XMI_SUCCESS)
                   {
-                    status = _ack_model.init (dispatch_ack_direct, this,
+                    status = _ack_model.init (dispatch,
+                                              dispatch_ack_direct, this,
                                               dispatch_ack_read, this);
                     TRACE_ERR((stderr, "EagerSimple() [3] status = %d\n", status));
                   }
@@ -383,9 +386,11 @@ namespace XMI
                                      m->bytes,        // Number of msg bytes
                                      (xmi_recv_t *) &(state->info));
 
+            // Only handle simple receives .. until the non-contiguous support
+            // is available
             XMI_assert(state->info.kind == XMI_AM_KIND_SIMPLE);
 
-            if (m->bytes == 0)
+            if (m->bytes == 0) // Move this special case to another dispatch funtion to improve latency in the common case.
               {
                 // No data packets will follow this envelope packet. Invoke the
                 // recv done callback and, if an acknowledgement packet was
@@ -455,57 +460,71 @@ namespace XMI
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_direct(), fromRank = %zd, bytes = %zd\n", fromRank, bytes));
 
             recv_state_t * state = (recv_state_t *) eager->getConnection (fromRank);
-            XMI_assert(state != NULL);
+            XMI_assert_debug(state != NULL);
 
+            // Number of bytes received so far.
             size_t nbyte = state->received;
+
+            // Number of bytes left to copy into the destination buffer
             size_t nleft = state->info.data.simple.bytes - nbyte;
-            size_t ncopy = bytes;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), state->received = %zd, state->info.data.simple.bytes = %zd\n", state->received, state->info.data.simple.bytes));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), bytes received so far = %zd, bytes yet to receive = %zd, total bytes to receive = %zd, total bytes being sent = %zd\n", state->received, nleft, state->info.data.simple.bytes, state->sndlen));
 
-
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), fromRank = %zd, state->received = %zd, nleft = %zd, bytes = %zd\n", fromRank, state->received, nleft, bytes));
-
-            if (nleft > 0)
+            if (nleft > 0) // nleft should never be zero .. right?
               {
                 // Copy data from the packet buffer into the receive buffer.
-                if (nleft < ncopy) ncopy = nleft;
+                if (nleft < bytes)
+                {
+                  memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, nleft);
 
-                ncopy = nleft > bytes ? bytes : nleft;
-                memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, ncopy);
+                  // Update the receive state to prepate for another data packet.
+                  state->received += nleft;
+                }
+                else
+                {
+                  memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, bytes);
+
+                  // Update the receive state to prepate for another data packet.
+                  state->received += bytes;
+                }
               }
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), nbyte = %zd, ncopy = %zd\n", nbyte, ncopy));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), nbyte = %zd\n", nbyte));
 
-            if ((nbyte + ncopy) == state->sndlen)
+            if (nbyte+bytes >= state->sndlen)
+            {
+              // No more data packets will be received on this connection.
+              // Clear the connection data and prepare for the next message.
+              eager->clearConnection (fromRank);
+
+              // No more data is to be written to the receive buffer.
+              // Invoke the receive done callback.
+              if (state->info.local_fn)
+                state->info.local_fn (eager->_context,
+                                      state->info.cookie,
+                                      XMI_SUCCESS);
+
+              if (state->ackinfo != NULL)
               {
-                TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), before clearConnection()\n"));
-                eager->clearConnection (fromRank);
-                TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(),  after clearConnection()\n"));
-
-                if (state->info.local_fn)
-                  state->info.local_fn (eager->_context,
-                                        state->info.cookie,
-                                        XMI_SUCCESS);
-
-                // Send the acknowledgement.
-                if (state->ackinfo != NULL)
-                  {
-                    eager->_ack_model.postPacket (&(state->msg),
-                                                  receive_complete,
-                                                  (void *) state,
-                                                  fromRank,
-                                                  (void *) &(state->ackinfo),
-                                                  sizeof (send_state_t *),
-                                                  (void *)NULL,
-                                                  0);
-                  }
-
-                TRACE_ERR((stderr, "<< dispatch_data_direct(), fromRank = %zd ... send completed\n", fromRank));
-                return 0;
+                // Send an acknowledgement if requested.
+                eager->_ack_model.postPacket (&(state->msg),
+                                              receive_complete,
+                                              (void *) state,
+                                              fromRank,
+                                              (void *) &(state->ackinfo),
+                                              sizeof (send_state_t *),
+                                              (void *)NULL,
+                                              0);
               }
-
-            state->received += ncopy;
+              else
+              {
+                // Otherwise, return the receive state object memory to
+                // the memory pool.
+                eager->freeRecvState (state);
+              }
+              TRACE_ERR((stderr, "<< dispatch_data_direct(), fromRank = %zd ... receive completed\n", fromRank));
+              return 0;
+            }
 
             TRACE_ERR((stderr, "<< dispatch_data_direct(), fromRank = %zd ... wait for more data\n", fromRank));
             return 0;

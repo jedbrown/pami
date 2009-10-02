@@ -71,12 +71,14 @@ namespace XMI
           /// \see XMI::Device::Interface::PacketDevice::requiresRead()
           /// \see XMI::Device::Interface::PacketDevice::readData()
           ///
+          /// \param[in] dispatch              Dispatch set identifier
           /// \param[in] direct_recv_func      Receive function for direct-access packet devices
           /// \param[in] direct_recv_func_parm Receive function clientdata for direct-access packet devices
           /// \param[in] read_recv_func        Receive function for read-access packet devices
           /// \param[in] read_recv_func_parm   Receive function clientdata for read-access packet devices
           ///
-          xmi_result_t init (RecvFunction_t   direct_recv_func,
+          xmi_result_t init (size_t           dispatch,
+                             RecvFunction_t   direct_recv_func,
                              void           * direct_recv_func_parm,
                              RecvFunction_t   read_recv_func,
                              void           * read_recv_func_parm);
@@ -204,12 +206,14 @@ namespace XMI
       }
 
       template <class T_Model, class T_Device, class T_Object>
-      xmi_result_t PacketModel<T_Model, T_Device, T_Object>::init (RecvFunction_t   direct_recv_func,
+      xmi_result_t PacketModel<T_Model, T_Device, T_Object>::init (size_t           dispatch,
+                                                                   RecvFunction_t   direct_recv_func,
                                                                    void           * direct_recv_func_parm,
                                                                    RecvFunction_t   read_recv_func,
                                                                    void           * read_recv_func_parm)
       {
-        return static_cast<T_Model*>(this)->init_impl (direct_recv_func,
+        return static_cast<T_Model*>(this)->init_impl (dispatch,
+                                                       direct_recv_func,
                                                        direct_recv_func_parm,
                                                        read_recv_func,
                                                        read_recv_func_parm);

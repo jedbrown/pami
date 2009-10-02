@@ -59,12 +59,13 @@ namespace XMI
 
         static const bool deterministic = true;
 
-        xmi_result_t init_impl (Interface::RecvFunction_t   direct_recv_func,
+        xmi_result_t init_impl (size_t                      dispatch,
+                                Interface::RecvFunction_t   direct_recv_func,
                                 void                      * direct_recv_func_parm,
                                 Interface::RecvFunction_t   read_recv_func,
                                 void                      * read_recv_func_parm)
         {
-          _dispatch_id = _device.registerRecvFunction (direct_recv_func, direct_recv_func_parm);
+          _dispatch_id = _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm);
           return XMI_SUCCESS;  // <--- fix this
         };
 
@@ -241,7 +242,7 @@ namespace XMI
       protected:
         T_Device      & _device;
         xmi_context_t   _context;
-        size_t          _dispatch_id;
+        uint16_t        _dispatch_id;
     };
   };
 };

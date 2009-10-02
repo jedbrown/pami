@@ -105,7 +105,8 @@ namespace XMI
               _cookie (cookie)
           {
             TRACE_ERR((stderr, "EagerImmediate() [0]\n"));
-            status = _send_model.init (dispatch_send_direct, this,
+            status = _send_model.init (dispatch,
+                                       dispatch_send_direct, this,
                                        dispatch_send_read, this);
             TRACE_ERR((stderr, "EagerImmediate() [1] status = %d\n", status));
           }

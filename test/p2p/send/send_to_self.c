@@ -28,7 +28,7 @@ static void test_dispatch (
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zd\n", cookie, *active);
+  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zd, header_addr = %p, pipe_addr = %p\n", cookie, *active, header_addr, pipe_addr);
   //(*active)--;
   //fprintf (stderr, "... dispatch function.  active = %zd\n", *active);
 
@@ -58,12 +58,11 @@ static void send_done_remote (xmi_context_t   context,
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called send_done_remote function.  active: %zd -> %zd\n", *active, *active-1);
   (*active)--;
-  fprintf (stderr, "... send_done_remote function.  active = %zd\n", *active);
 }
 
 int main (int argc, char ** argv)
 {
-  volatile size_t send_active = 1;
+  volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
 
 

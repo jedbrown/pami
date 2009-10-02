@@ -80,13 +80,15 @@ namespace XMI
       // Initialize the registered receive function array to noop().
       // The array is limited to 256 dispatch ids because of the size of the
       // dispatch id field in the packet header.
-      _dispatch_count = 0;
-
-      for (i = 0; i < 256; i++)
+      for (i=0; i<256; i++)
+      {
+        _dispatch_count[i] = 0;
+        for (j=0; j<256; j++)
         {
-          _dispatch[i].function   = noop;
-          _dispatch[i].clientdata = NULL;
+          _dispatch[i*256+j].function   = noop;
+          _dispatch[i*256+j].clientdata = NULL;
         }
+      }
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 7\n", sysdep->mapping.task()));
 
       return 0;
@@ -128,21 +130,28 @@ namespace XMI
     ///
     /// \brief Regieter the receive function to dispatch when a packet arrives.
     ///
+    /// \param[in] id              Dispatch set identifier
     /// \param[in] recv_func       Receive function to dispatch
     /// \param[in] recv_func_parm  Receive function client data
     ///
     /// \return Dispatch id for this registration
     ///
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::registerRecvFunction (Interface::RecvFunction_t   recv_func,
-                                                                 void                   * recv_func_parm)
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::registerRecvFunction (size_t                      id,
+                                                                           Interface::RecvFunction_t   recv_func,
+                                                                           void                      * recv_func_parm)
     {
-      if (_dispatch_count > 256) return -1;
+      // This device only supports up to 256 dispatch sets.
+      if (id >= 256) return -1;
 
-      _dispatch[_dispatch_count].function   = recv_func;
-      _dispatch[_dispatch_count].clientdata = recv_func_parm;
+      if (_dispatch_count[id] >= 256) return -1;
 
-      return _dispatch_count++;
+      size_t i = id*sizeof(uint8_t) + _dispatch_count[id];
+
+      _dispatch[i].function   = recv_func;
+      _dispatch[i].clientdata = recv_func_parm;
+
+      return _dispatch_count[id]++;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
@@ -160,7 +169,7 @@ namespace XMI
                                                  size_t   bytes,
                                                  void   * recv_func_parm)
     {
-      abort();
+      XMI_abort();
       return 0;
     }
 

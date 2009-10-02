@@ -50,7 +50,7 @@ namespace XMI
       public:
         inline ShmemBaseDevice () :
             _fifo (NULL),
-            _dispatch_count (0),
+            //_dispatch_count (0),
             __sendQ (),
             __sendQMask (0),
             __doneQ (),
@@ -86,7 +86,7 @@ namespace XMI
         bool requiresRead_impl ();
 
         /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
-        static const size_t packet_metadata_size = T_Packet::headerSize_impl;
+        static const size_t packet_metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
 
         /// \see XMI::Device::Interface::PacketDevice::getPacketPayloadSize()
         static const size_t packet_payload_size = T_Packet::payloadSize_impl;
@@ -95,7 +95,7 @@ namespace XMI
         // ------------------------------------------
 
         /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
-        static const size_t message_metadata_size = T_Packet::headerSize_impl - 1;
+        static const size_t message_metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
 
         /// \see XMI::Device::Interface::MessageDevice::setConnection()
         inline void setConnection_impl (size_t   fromRank,
@@ -109,43 +109,45 @@ namespace XMI
         ///
         /// \brief Regieter the receive function to dispatch when a packet arrives.
         ///
+        /// \param[in] dispatch        Dispatch set identifier
         /// \param[in] recv_func       Receive function to dispatch
         /// \param[in] recv_func_parm  Receive function client data
         ///
         /// \return Dispatch id for this registration
         ///
-        int registerRecvFunction (Interface::RecvFunction_t   recv_func,
+        int registerRecvFunction (size_t                      dispatch,
+                                  Interface::RecvFunction_t   recv_func,
                                   void                      * recv_func_parm);
 
-        inline xmi_result_t writeSinglePacket (size_t   fnum,
-                                              size_t   dispatch_id,
-                                              void   * metadata,
-                                              size_t   metasize,
-                                              void   * payload,
-                                              size_t   bytes,
-                                              size_t & sequence);
+        inline xmi_result_t writeSinglePacket (size_t     fnum,
+                                               uint16_t   dispatch_id,
+                                               void     * metadata,
+                                               size_t     metasize,
+                                               void     * payload,
+                                               size_t     bytes,
+                                               size_t   & sequence);
 
-        inline xmi_result_t writeSinglePacket (size_t   fnum,
-                                              size_t   dispatch_id,
-                                              void   * metadata,
-                                              size_t   metasize,
-                                              void   * payload0,
-                                              size_t   bytes0,
-                                              void   * payload1,
-                                              size_t   bytes1,
-                                              size_t & sequence);
+        inline xmi_result_t writeSinglePacket (size_t     fnum,
+                                               uint16_t   dispatch_id,
+                                               void     * metadata,
+                                               size_t     metasize,
+                                               void     * payload0,
+                                               size_t     bytes0,
+                                               void     * payload1,
+                                               size_t     bytes1,
+                                               size_t   & sequence);
 
         inline xmi_result_t writeSinglePacket (size_t           fnum,
-                                              size_t           dispatch_id,
-                                              void           * metadata,
-                                              size_t           metasize,
-                                              struct iovec   * iov,
-                                              size_t           niov,
-                                              size_t & sequence);
+                                               uint16_t         dispatch_id,
+                                               void           * metadata,
+                                               size_t           metasize,
+                                               struct iovec   * iov,
+                                               size_t           niov,
+                                               size_t & sequence);
 
         inline xmi_result_t writeSinglePacket (size_t                       ififo,
-                                              ShmemBaseMessage<T_Packet> * msg,
-                                              size_t                     & sequence);
+                                               ShmemBaseMessage<T_Packet> * msg,
+                                               size_t                     & sequence);
 
         xmi_result_t post (size_t ififo, ShmemBaseMessage<T_Packet> * msg);
 
@@ -202,8 +204,8 @@ namespace XMI
 
         T_SysDep      * _sysdep;
 
-        dispatch_t  _dispatch[256];
-        unsigned    _dispatch_count;
+        dispatch_t  _dispatch[64*1024];
+        size_t      _dispatch_count[256];
 
         Queue * __sendQ;
         unsigned          __sendQMask;
@@ -248,7 +250,7 @@ namespace XMI
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
     xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,
-                                                                      size_t   dispatch_id,
+                                                                      uint16_t   dispatch_id,
                                                                       void   * metadata,
                                                                       size_t   metasize,
                                                                       void   * payload,
@@ -259,10 +261,10 @@ namespace XMI
 
       if (pkt != NULL)
         {
-          uint8_t * hdr = (uint8_t *) pkt->getHeader ();
+          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
 
-          // First byte is the dispatch id.
-          hdr[0] = (uint8_t) dispatch_id;
+          // First 2 bytes is the dispatch id.
+          hdr[0] = dispatch_id;
 
           // Remaining header bytes are metadata.
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket () .. metadata = %p\n", _sysdep->mapping.task(), metadata));
@@ -285,7 +287,7 @@ namespace XMI
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
     xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,
-                                                                      size_t   dispatch_id,
+                                                                      uint16_t   dispatch_id,
                                                                       void   * metadata,
                                                                       size_t   metasize,
                                                                       void   * payload0,
@@ -300,10 +302,10 @@ namespace XMI
 
       if (pkt != NULL)
         {
-          uint8_t * hdr = (uint8_t *) pkt->getHeader ();
+          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
 
-          // First byte is the dispatch id.
-          hdr[0] = (uint8_t) dispatch_id;
+          // First 2 bytes is the dispatch id.
+          hdr[0] = dispatch_id;
 
           // Remaining header bytes are metadata.
           memcpy ((void *) &hdr[1], metadata, metasize);
@@ -328,7 +330,7 @@ namespace XMI
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
     xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::writeSinglePacket (size_t         fnum,
-                                                                      size_t         dispatch_id,
+                                                                      uint16_t         dispatch_id,
                                                                       void         * metadata,
                                                                       size_t         metasize,
                                                                       struct iovec * iov,
@@ -341,10 +343,10 @@ namespace XMI
 
       if (pkt != NULL)
         {
-          uint8_t * hdr = (uint8_t *) pkt->getHeader ();
+          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
 
-          // First byte is the dispatch id.
-          hdr[0] = (uint8_t) dispatch_id;
+          // First 2 bytes is the dispatch id.
+          hdr[0] = dispatch_id;
 
           // Remaining header bytes are metadata.
           memcpy ((void *) &hdr[1], metadata, metasize);
@@ -383,13 +385,13 @@ namespace XMI
 
       if (pkt != NULL)
         {
-          uint8_t * hdr = (uint8_t *) pkt->getHeader ();
+          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
 
-          // First byte is the dispatch id.
+          // First 2 bytes is the dispatch id.
           hdr[0] = msg->getDispatchId ();
 
           // Remaining header bytes are metadata.
-          memcpy (&hdr[1], msg->getMetadata(), T_Packet::headerSize_impl - 1);
+          memcpy (&hdr[1], msg->getMetadata(), T_Packet::headerSize_impl - sizeof(uint16_t));
 
           // Write the packet payload data
           uint8_t * data = (uint8_t *) pkt->getPayload ();
@@ -442,8 +444,8 @@ namespace XMI
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before pkt->getHeader()\n", _sysdep->mapping.task()));
           uint8_t * hdr = (uint8_t *) pkt->getHeader ();
 
-          uint8_t id  = hdr[0];
-          void * meta = (void *) & hdr[1];
+          uint16_t id = *((uint16_t *) & hdr[0]);
+          void * meta = (void *) & hdr[2];
           void * data = pkt->getPayload ();
 
           mem_sync (); // TODO -- is this needed?
