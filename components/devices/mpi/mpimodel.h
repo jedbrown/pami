@@ -39,7 +39,8 @@ namespace XMI
                               void                      * read_recv_func_parm)
         {
           _dispatch_id = _device.registerRecvFunction (direct_recv_func, direct_recv_func_parm);
-          return XMI_SUCCESS;
+         TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::init_impl %d \n",(int)this, _dispatch_id));
+         return XMI_SUCCESS;
         };
 
       inline bool isDeterministic ()
@@ -58,6 +59,7 @@ namespace XMI
         {
           int rc;
           MPIMessage * msg = (MPIMessage *)obj;
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket_impl %d \n",(int)this, this->_dispatch_id));
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
                              fn,
@@ -119,6 +121,7 @@ namespace XMI
         {
           int rc;
           void       * obj = malloc(sizeof(MPIMessage));
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate %d \n",(int)this, this->_dispatch_id));
           MPIMessage * msg = (MPIMessage *)obj;
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
@@ -154,6 +157,7 @@ namespace XMI
                                     size_t             bytes)
         {
           int rc;
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postMessage_impl %d \n",(int)this, this->_dispatch_id));
           MPIMessage * msg = (MPIMessage *)malloc(sizeof(MPIMessage)+metasize+bytes-128-224);
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,

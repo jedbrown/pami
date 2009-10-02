@@ -17,7 +17,6 @@
 #include "Schedule.h"
 //#include "Rectangle.h"
 
-#define TRACE_RING(x)
 
 /////////////////////////////////////////////////////////////////////
 ///
@@ -79,7 +78,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _next : _prev;
           *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE((stderr,"Sending bcast message to %d\n", *dstpes));
+          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::getBroadcastDestinations() %d\n",(int)this, *dstpes));
         }
       }
 
@@ -113,7 +112,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _prev : _next;
           *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE((stderr,"Sending reduce message to %d\n", *dstpes));
+          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::getReduceDestinations() %d\n",(int)this, *dstpes));
         }
       }
 
@@ -265,8 +264,8 @@ namespace CCMI
 
         startphase = _startPhase;
 
-        TRACE_RING (("%d: Initializing schedule %d, %d, %d, "
-                     "idxes = (%d, %d, %d) \n", idxToRank (my_idx),
+        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::local_init schedule %d, %d, %d, "
+                     "idxes = (%d, %d, %d) \n", (int)this,
                      _prev, _next, _startPhase,
                      my_idx, head_idx, tail_idx));
       }
@@ -372,7 +371,7 @@ namespace CCMI
 
         local_init (root, op, startphase, nphases, maxranks);
 
-        TRACE_SCHEDULE((stderr,"In Ring Schedule _prev = %d, _next = %d\n", _prev, _next));
+        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::init() _prev = %d, _next = %d\n", (int)this,_prev, _next));
       }
 
       static unsigned getMaxPhases (T_Sysdep *map, unsigned nranks)

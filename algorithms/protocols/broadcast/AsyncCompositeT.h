@@ -54,6 +54,7 @@ namespace CCMI
                          ExecutorPool              * epool) :
         _executor (sd, geometry->comm(), cmgr, 0/*no color*/), _bqelem(this, root), _execpool(epool)
         {
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeT() \n",(int)this));
           _executor.setMulticastInterface (mf);
           _executor.setInfo (root, bytes+1, src, bytes);
           _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
@@ -98,7 +99,7 @@ namespace CCMI
           xmi_quad_t *info = NULL;
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
 
-          TRACE_ADAPTOR((stderr, "In static notify recv, exe=%p\n",composite));
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeT::staticAsyncRecvFn() \n",(int)composite));
           composite->executor().CCMI::Executor::Broadcast<T_Sysdep, T_Mcast,T_ConnectionManager>::notifyRecv ((unsigned)-1, *info, NULL,
                                                                                           composite->executor().getPwidth());
         }
@@ -131,7 +132,7 @@ namespace CCMI
         _rbconnmgr(sd)
         {
           //--
-          TRACE_ADAPTOR((stderr, "Binomial Broadcast Factory Constructor\n"));
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeFactoryT() \n",(int)this));
         }
 
         ///Works on all sub-communicators
@@ -235,9 +236,8 @@ namespace CCMI
          unsigned        * pipewidth,
          XMI_Callback_t * cb_done)
         {
-          TRACE_ADAPTOR ((stderr, "Broadcast Async Handler\n"));
-          fprintf(stderr, "Broadcast Async Handler!\n");
           AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeFactoryT::cb_head_buffered() \n",(int)factory));
           CollHeaderData *cdata = (CollHeaderData *) info;
 
           XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *)
@@ -288,10 +288,9 @@ namespace CCMI
 
         static void unexpected_done (void *context, void *cd, xmi_result_t err)
         {
-          TRACE_ADAPTOR ((stderr, "Unexpected bcast done\n"));
 
-          CCMI::Adaptor::Broadcast::BcastQueueElem *bqe =
-          ((T_Schedule *) cd)->bqelem();
+          CCMI::Adaptor::Broadcast::BcastQueueElem *bqe = ((T_Schedule *) cd)->bqelem();
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeFactoryT::unexpected_done() \n",(int)bqe));
 
           bqe->setFinished();
           if(bqe->isPosted())
@@ -303,10 +302,10 @@ namespace CCMI
 
         static void posted_done (void *context, void *cd, xmi_result_t err)
         {
-          TRACE_ADAPTOR ((stderr, "Posted bcast done\n"));
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe =
           ((T_Schedule *) cd)->bqelem();
+          TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeFactoryT::posted_done() \n",(int)bqe));
 
           bqe->completePosted();
           //nothing needs to be freed as this is an application buffer
@@ -323,8 +322,8 @@ namespace CCMI
                                            unsigned        * pipewidth,
                                            XMI_Callback_t * cb_done)
           {
-            TRACE_ADAPTOR ((stderr, "Broadcast Async Handler\n"));
             AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;
+            TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeFactoryT::cb_head() \n",(int)factory));
           CollHeaderData *cdata = (CollHeaderData *) info;
 
           XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *)

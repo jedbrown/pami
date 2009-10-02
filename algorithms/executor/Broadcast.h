@@ -81,7 +81,7 @@ namespace CCMI
           _comm_schedule->getDstPeList (phase+count, _destpes+_nmessages,
                                         ndest, _hints+_nmessages);
 
-          TRACE_FLOW ((stderr, "destpe %d phase %d", _destpes[_nmessages], count+_startphase));
+          TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::setPhase() destpe %d phase %d",(int)this, _destpes[_nmessages], count+_startphase));
 
           CCMI_assert(_nmessages + ndest < MAX_PARALLEL);
           _nmessages += ndest;
@@ -233,7 +233,7 @@ namespace CCMI
 template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
 inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: start ()
 {
-  TRACE_FLOW ((stderr, "In Start with phase %d, num total phases %d\n", _startphase, _nphases));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::start() phase %d, num total phases %d\n",(int)this, _startphase, _nphases));
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
@@ -249,7 +249,7 @@ template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
 inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: sendNext ()
 {
 
-  TRACE_FLOW ((stderr, "In Send Next %d, %d, %d\n", _startphase, _nphases, _nmessages));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::sendNext() startphase %d, nphases, nmessages %d\n",(int)this,_startphase, _nphases, _nmessages));
 
   //Leaf node who does not have to send
   if(_startphase == _nphases || _nmessages == 0)
@@ -293,7 +293,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
   _mdata._phase = 0;
 
   for(int dcount = 0; dcount < _nmessages; dcount++)
-    TRACE_FLOW ((stderr, "Calling multisend to %d for size %d\n", _destpes[dcount], _curlen));
+    TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::sendNext() send to %d for size %d\n",(int)this, _destpes[dcount], _curlen));
 
   //Moved to setInfo call
   //unsigned connid =
@@ -314,7 +314,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
 template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
 inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: notifySendDone ( const xmi_quad_t & info )
 {
-  TRACE_FLOW((stderr, "In notify send done %d\n", _nmessages));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::notifySendDone() nmessages %d\n",(int)this, _nmessages));
 
   _bytessent += _curlen;
   _curlen = 0;
@@ -330,7 +330,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager>::
  char          * buf,
  unsigned        bytes)
 {
-  TRACE_FLOW((stderr, "In Broadcast notify recv for %d\n", bytes));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::notifyRecv() bytes %d\n",(int)this, bytes));
 
   //buffer has changed
   if(buf != NULL)

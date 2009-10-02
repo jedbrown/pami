@@ -62,9 +62,10 @@ typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 
 
 #define XMI_X_DIM 0
-#define XMI_Y_DIM 1
-#define XMI_Z_DIM 2
-#define XMI_T_DIM 3
+#warning fix NDIMS
+#define XMI_Y_DIM 0//1
+#define XMI_Z_DIM 0//2
+#define XMI_T_DIM 0//3
 
 // TODO:  generalize this using mappings
 
