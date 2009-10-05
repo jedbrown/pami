@@ -39,8 +39,8 @@ namespace XMI
         Interface::Torus<LAPIMapping, LAPI_DIMS>(),
         Interface::Node<LAPIMapping, LAPI_DIMS>()
         {
-          LAPI_Comm_rank(LAPI_COMM_WORLD, (int*)&_task);
-          LAPI_Comm_size(LAPI_COMM_WORLD, (int*)&_size);
+//          LAPI_Comm_rank(LAPI_COMM_WORLD, (int*)&_task);
+//          LAPI_Comm_size(LAPI_COMM_WORLD, (int*)&_size);
         };
       inline ~LAPIMapping () {};
     protected:

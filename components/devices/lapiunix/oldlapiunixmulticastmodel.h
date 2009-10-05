@@ -73,25 +73,17 @@ namespace XMI
 
           int rc = -1;
 
-          hdr->_req = (LAPI_Request*)malloc(sizeof(LAPI_Request)*nranks);
+//          hdr->_req = (LAPI_Request*)malloc(sizeof(LAPI_Request)*nranks);
           hdr->_num = nranks;
           if(cb_done)
             hdr->_cb_done = *cb_done;
           else
             hdr->_cb_done.function = NULL;
 
-          XMI_assert(hdr->_req != NULL);
+//          XMI_assert(hdr->_req != NULL);
           for(unsigned count = 0; count < nranks; count ++)
 	    {
 	      XMI_assert (hints[count] == XMI_PT_TO_PT_SUBTASK);
-
-	      rc = LAPI_Isend (hdr,
-			      hdr->totalsize(),
-			      LAPI_CHAR,
-			      ranks[count],
-			      2,
-			      LAPI_COMM_WORLD,
-			      &hdr->_req[count]);
 	      XMI_assert (rc == LAPI_SUCCESS);
 	    }
 	  _device.enqueue(hdr);

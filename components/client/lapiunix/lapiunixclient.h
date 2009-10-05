@@ -10,7 +10,7 @@
 #define XMI_CLIENT_CLASS XMI::Client::LAPI
 
 #include "components/client/Client.h"
-#include "components/context/lapiunix/lapicontext.h"
+#include "components/context/lapiunix/lapiunixcontext.h"
 #include "components/geometry/common/commongeometry.h"
 
 namespace XMI
@@ -23,7 +23,7 @@ namespace XMI
 
       static void shutdownfunc()
         {
-          LAPI_Finalize();
+//          LAPI_Finalize();
         }
       inline LAPI (char * name, xmi_result_t & result) :
         Client<XMI::Client::LAPI,XMI::Context::LAPI>(name, result),

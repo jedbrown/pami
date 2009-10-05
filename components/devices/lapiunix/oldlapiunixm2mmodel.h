@@ -87,13 +87,13 @@ namespace XMI
             return ;
           }
 
-          m2m->_reqs = (LAPI_Request *)malloc( m2m->_num * sizeof(LAPI_Request));
-          XMI_assert ( m2m->_reqs != NULL );
+//          m2m->_reqs = (LAPI_Request *)malloc( m2m->_num * sizeof(LAPI_Request));
+//          XMI_assert ( m2m->_reqs != NULL );
           m2m->_bufs = ( char *)malloc( m2m->_totalsize );
           XMI_assert ( m2m->_bufs != NULL );
 
           LAPIM2MHeader   * hdr = (LAPIM2MHeader *) m2m->_bufs;
-          LAPI_Request    * req = m2m->_reqs;
+//          LAPI_Request    * req = m2m->_reqs;
           for( i = 0; i < nranks; i++)
           {
             int index = permutation[i];
@@ -104,16 +104,16 @@ namespace XMI
             hdr->_conn        = connid;
             memcpy (hdr->buffer(), buf+offsets[index], sizes[index]);
             int rc = -1;
-            rc = LAPI_Isend (hdr,
-                            hdr->totalsize(),
-                            LAPI_CHAR,
-                            ranks[index],
-                            3,
-                            LAPI_COMM_WORLD,
-                            req);
+//            rc = LAPI_Isend (hdr,
+//                            hdr->totalsize(),
+//                            LAPI_CHAR,
+//                            ranks[index],
+//                            3,
+//                            LAPI_COMM_WORLD,
+//                            req);
             XMI_assert (rc == LAPI_SUCCESS);
             hdr = (LAPIM2MHeader *)((char *)hdr + hdr->totalsize());
-            req++;
+//            req++;
           }
           _device.enqueue(m2m);
           return;

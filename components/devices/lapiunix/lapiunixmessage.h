@@ -40,7 +40,6 @@ namespace XMI
       xmi_event_function  _done_fn;
       void               *_cookie;
       int                 _freeme;
-      LAPI_Request         _request;
 
       struct _p2p_msg
       {
@@ -64,7 +63,6 @@ namespace XMI
       int            _info_count;
       int            _size;
       unsigned       _conn;
-      LAPI_Request    *_req;
       int            _num;
       xmi_callback_t _cb_done;
       inline void *buffer() { return ((char *)this + sizeof (*this)); }
@@ -97,7 +95,6 @@ namespace XMI
       xmi_event_function  _done_fn;
       void               *_cookie;
       int                 _num;
-      LAPI_Request        *_reqs;
       int                 _totalsize;
       char               *_bufs;
     };

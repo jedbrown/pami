@@ -17,10 +17,10 @@
 #define XMI_SYSDEP_CLASS XMI::SysDep::LAPISysDep
 
 #include "components/sysdep/SysDep.h"
-#include "components/mapping/lapi/lapimapping.h"
+#include "components/mapping/lapiunix/lapiunixmapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
-#include "components/time/lapi/lapitime.h"
-#include "components/topology/lapi/lapitopology.h"
+#include "components/time/lapiunix/lapiunixtime.h"
+#include "components/topology/lapiunix/lapiunixtopology.h"
 
 namespace XMI
 {

@@ -2,8 +2,8 @@
 /// \file components/context/lapi/lapicontext.h
 /// \brief XMI LAPI specific context implementation.
 ///
-#ifndef   __xmi_lapi_lapicontext_h__
-#define   __xmi_lapi_lapicontext_h__
+#ifndef   __xmi_lapiunix_lapiunixcontext_h__
+#define   __xmi_lapiunix_lapiunixcontext_h__
 
 #define XMI_CONTEXT_CLASS XMI::Context::LAPI
 
@@ -12,16 +12,16 @@
 #include <lapi.h>
 #include "components/context/Context.h"
 #include "components/geometry/common/commongeometry.h"
-#include "components/devices/lapi/lapidevice.h"
-#include "components/devices/lapi/lapimodel.h"
-#include "components/devices/lapi/lapimessage.h"
+#include "components/devices/lapiunix/lapiunixdevice.h"
+#include "components/devices/lapiunix/lapiunixmodel.h"
+#include "components/devices/lapiunix/lapiunixmessage.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
-#include "components/sysdep/lapi/lapisysdep.h"
-#include "components/geometry/lapi/lapicollfactory.h"
-#include "components/geometry/lapi/lapicollregistration.h"
-#include "components/mapping/lapi/lapimapping.h"
+#include "components/sysdep/lapiunix/lapiunixsysdep.h"
+#include "components/geometry/lapiunix/lapiunixcollfactory.h"
+#include "components/geometry/lapiunix/lapiunixcollregistration.h"
+#include "components/mapping/lapiunix/lapiunixmapping.h"
 #include <new>
 #include <map>
 
@@ -47,8 +47,8 @@ namespace XMI
         _client (client),
         _id (id)
         {
-          LAPI_Comm_rank(LAPI_COMM_WORLD,&_myrank);
-          LAPI_Comm_size(LAPI_COMM_WORLD,&_mysize);
+//          LAPI_Comm_rank(LAPI_COMM_WORLD,&_myrank);
+//          LAPI_Comm_size(LAPI_COMM_WORLD,&_mysize);
           _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));
 	  _world_range.lo=0;
 	  _world_range.hi=_mysize-1;

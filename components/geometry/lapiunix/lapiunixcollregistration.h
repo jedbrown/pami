@@ -18,8 +18,8 @@
 
 #include <map>
 #include <vector>
-#include "components/geometry/lapiunix/lapicollinfo.h"
-#include "components/geometry/lapiunix/lapicollfactory.h"
+#include "components/geometry/lapiunix/lapiunixcollinfo.h"
+#include "components/geometry/lapiunix/lapiunixcollfactory.h"
 #include "components/memory/MemoryAllocator.h"
 
 namespace XMI

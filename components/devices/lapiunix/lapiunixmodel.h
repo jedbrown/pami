@@ -16,7 +16,7 @@
 
 #include "sys/xmi.h"
 #include "components/devices/MessageModel.h"
-#include "components/devices/lapi/lapiunixmessage.h"
+#include "components/devices/lapiunix/lapiunixmessage.h"
 #include "errno.h"
 
 namespace XMI
@@ -68,13 +68,9 @@ namespace XMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload, bytes);
-          rc = LAPI_Isend (&msg->_p2p_msg,
-                          sizeof(msg->_p2p_msg),
-                          LAPI_CHAR,
-                          target_rank,
-                          0,
-                          LAPI_COMM_WORLD,
-                          &msg->_request);
+
+
+
           _device.enqueue(msg);
           assert(rc == LAPI_SUCCESS);
 
@@ -131,13 +127,6 @@ namespace XMI
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
           memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
-          rc = LAPI_Isend (&msg->_p2p_msg,
-                          sizeof(msg->_p2p_msg),
-                          LAPI_CHAR,
-                          target_rank,
-                          0,
-                          LAPI_COMM_WORLD,
-                          &msg->_request);
           _device.enqueue(msg);
           assert(rc == LAPI_SUCCESS);
           return true;
@@ -165,13 +154,6 @@ namespace XMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy((char*)(&msg->_p2p_msg._metadata[0])+metasize, src, bytes);
-          rc = LAPI_Isend (&msg->_p2p_msg,
-                          sizeof(msg->_p2p_msg)+metasize+bytes-128-224,
-                          LAPI_CHAR,
-                          target_rank,
-                          1,
-                          LAPI_COMM_WORLD,
-                          &msg->_request);
           _device.enqueue(msg);
           assert(rc == LAPI_SUCCESS);
 

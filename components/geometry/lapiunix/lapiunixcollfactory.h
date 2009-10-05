@@ -19,7 +19,7 @@
 
 #include "sys/xmi.h"
 #include "components/geometry/CollFactory.h"
-#include "components/geometry/lapiunix/lapicollinfo.h"
+#include "components/geometry/lapiunix/lapiunixcollinfo.h"
 #include "util/common.h"
 #include "algorithms/ccmi.h"
 
