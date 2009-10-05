@@ -34,8 +34,7 @@ XMI::Device::MU::MUDevice::MUDevice () :
   Interface::MessageDevice<MUDevice> (),
   sysdep (NULL),
   _colChannel (NULL),
-  _initialized (false),
-  _dispatch_num (0)
+  _initialized (false)
 {
   unsigned i;
   for ( i = 0; i < MAX_NUM_P2P_CHANNELS; i++ ) _p2pChannel[i] = NULL;
@@ -63,7 +62,7 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep::BgqSysDep * sysdep)
   //const int L1D_CACHE_LINE_SIZE = 64;
 
   // Initialze the dispatch table.
-  for ( i = 0; i < 256; i++)
+  for ( i = 0; i < 256*DISPATCH_SET_SIZE; i++)
   {
     _dispatch[i].f = noop;
     _dispatch[i].p = (void *) i;
@@ -122,33 +121,39 @@ bool XMI::Device::MU::MUDevice::requiresRead_impl ()
   return false;
 };
 
-bool XMI::Device::MU::MUDevice::registerPacketHandler (Interface::RecvFunction_t   function,
-                                                void                              * arg,
-                                                uint8_t                           & id)
+bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                      dispatch,
+                                                       Interface::RecvFunction_t   function,
+                                                       void                      * arg,
+                                                       uint16_t                  & id)
 {
   TRACE((stderr, ">> MUDevice::registerPacketHandler(%p, %p, %d), _dispatch = %p\n", function, arg, id, _dispatch));
-  if (_dispatch_num >= 255) return false;
 
-  // acquire the lock
+  unsigned i;
+  bool result = false;
+  for (i=0; i<DISPATCH_SET_SIZE; i++)
+  {
+    id = dispatch * DISPATCH_SET_SIZE + i;
+    if (_dispatch[id].f == noop)
+    {
+      _dispatch[id].f = function;
+      _dispatch[id].p = arg;
 
-  id = _dispatch_num;
-  _dispatch[_dispatch_num].f = function;
-  _dispatch[_dispatch_num].p = arg;
-
-  _dispatch_num++;
+      result = true;;
+    }
+  }
 
   // release the lock
-  TRACE((stderr, "<< MUDevice::registerPacketHandler(%p, %p, %d)\n", function, arg, id));
+  TRACE((stderr, "<< MUDevice::registerPacketHandler(%d, %p, %p, %d), result = %d\n", dispatch, function, arg, id, result));
 
-  return true;
+  return result;
 };
 
 
 /// \see XMI::Device::Interface::RecvFunction_t
 int XMI::Device::MU::MUDevice::noop (void   * metadata,
-                              void   * payload,
-                              size_t   bytes,
-                              void   * recv_func_parm)
+                                     void   * payload,
+                                     size_t   bytes,
+                                     void   * recv_func_parm)
 {
   fprintf (stderr, "Error. Dispatch to unregistered id (%zd).\n", (size_t) recv_func_parm);
   XMI_abort();

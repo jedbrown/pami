@@ -139,8 +139,11 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device, xmi_context_t contex
 
   // Register a memfifo dispatch id and write it into the remote memfifo
   // descriptor model.
-  _device.registerPacketHandler ((Interface::RecvFunction_t) dispatch_notify,
-                                 (void *) this, memfifo.SoftwareBytes[13]);
+  uint16_t dispatch_id;
+  _device.registerPacketHandler (255,
+                                 (Interface::RecvFunction_t) dispatch_notify,
+                                 (void *) this, dispatch_id);
+  *((uint16_t *)&memfifo.SoftwareBytes[12]) = dispatch_id;
 
   _rmem_desc_model.setBaseFields (&base);
   _rmem_desc_model.setPt2PtFields (&pt2pt);

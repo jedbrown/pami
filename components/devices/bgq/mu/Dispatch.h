@@ -36,15 +36,15 @@ namespace XMI
           {
             struct
             {
-              uint8_t metadata[17];
+              uint8_t metadata[16];
             } singlepkt;
             struct
             {
               uint8_t reserved[4];
-              uint8_t metadata[13];
+              uint8_t metadata[12];
             } multipkt;
           };
-          uint8_t dispatch_id;
+          uint16_t dispatch_id;
         } dev;
       } MemoryFifoPacketHeader_t;
 

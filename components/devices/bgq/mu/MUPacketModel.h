@@ -141,8 +141,7 @@ namespace XMI
         // This is terribly inefficient.
         MUHWI_Destination dst;
         size_t addr[7];
-#warning look a this
-        _device.sysdep->mapping.torusAddr (addr);
+        _device.sysdep->mapping.task2torus ((xmi_task_t)target_rank, addr);
         dst.Destination.A_Destination = addr[0];
         dst.Destination.B_Destination = addr[1];
         dst.Destination.C_Destination = addr[2];

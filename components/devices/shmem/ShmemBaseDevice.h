@@ -204,8 +204,8 @@ namespace XMI
 
         T_SysDep      * _sysdep;
 
-        dispatch_t  _dispatch[64*1024];
-        size_t      _dispatch_count[256];
+        dispatch_t  _dispatch[256][256];
+        //size_t      _dispatch_count[256];
 
         Queue * __sendQ;
         unsigned          __sendQMask;
@@ -447,10 +447,11 @@ namespace XMI
           uint16_t id = *((uint16_t *) & hdr[0]);
           void * meta = (void *) & hdr[2];
           void * data = pkt->getPayload ();
+          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... hdr = %p, hdr[0] = 0x%0x, hdr[1] = 0x%0x, id = %d, meta = %p, data = %p\n", _sysdep->mapping.task(), hdr, hdr[0], hdr[1], id, meta, data));
 
           mem_sync (); // TODO -- is this needed?
 
-          _dispatch[id].function (meta, data, pkt->payloadSize(), _dispatch[id].clientdata);
+          _dispatch[hdr[0]][hdr[1]].function (meta, data, pkt->payloadSize(), _dispatch[hdr[0]][hdr[1]].clientdata);
 
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before _rfifo->consumePacket()\n", _sysdep->mapping.task()));

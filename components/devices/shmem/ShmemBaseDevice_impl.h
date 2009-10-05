@@ -12,7 +12,7 @@
 #include "components/mapping/NodeMapping.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 namespace XMI
@@ -82,11 +82,11 @@ namespace XMI
       // dispatch id field in the packet header.
       for (i=0; i<256; i++)
       {
-        _dispatch_count[i] = 0;
+//        _dispatch_count[i] = 0;
         for (j=0; j<256; j++)
         {
-          _dispatch[i*256+j].function   = noop;
-          _dispatch[i*256+j].clientdata = NULL;
+          _dispatch[i][j].function   = noop;
+          _dispatch[i][j].clientdata = NULL;
         }
       }
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 7\n", sysdep->mapping.task()));
@@ -141,17 +141,27 @@ namespace XMI
                                                                            Interface::RecvFunction_t   recv_func,
                                                                            void                      * recv_func_parm)
     {
+      TRACE_ERR((stderr, ">> (%zd) ShmemBaseDevice::registerRecvFunction (%d,%p,%p)\n", _sysdep->mapping.task(), id, recv_func, recv_func_parm));
+
       // This device only supports up to 256 dispatch sets.
       if (id >= 256) return -1;
 
-      if (_dispatch_count[id] >= 256) return -1;
+      // Find the next available slot for this dispatch set.
+      size_t slot;
+      for (slot=0; slot<256; slot++)
+      {
+        if (_dispatch[id][slot].function == (Interface::RecvFunction_t) noop) break;
+      }
 
-      size_t i = id*sizeof(uint8_t) + _dispatch_count[id];
+      if (slot == 256) return -1;
 
-      _dispatch[i].function   = recv_func;
-      _dispatch[i].clientdata = recv_func_parm;
+      _dispatch[id][slot].function  = recv_func;
+      _dispatch[id][slot].clientdata = recv_func_parm;
 
-      return _dispatch_count[id]++;
+      size_t f = id*256+slot;
+
+      TRACE_ERR((stderr, "<< (%zd) ShmemBaseDevice::registerRecvFunction (%d,%p,%p) => %d => %d\n", _sysdep->mapping.task(), id, recv_func, recv_func_parm, slot, f));
+      return f;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>

@@ -71,7 +71,7 @@ xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (size_t                  
                                                         Interface::RecvFunction_t   read_recv_func,
                                                         void                      * read_recv_func_parm)
 {
-  TRACE((stderr, ">> MUPacketModel::init_impl(%p, %p, %p, %p)\n", direct_recv_func, direct_recv_func_parm, read_recv_func, read_recv_func_parm));
+  TRACE((stderr, ">> MUPacketModel::init_impl(%d, %p, %p, %p, %p)\n", dispatch, direct_recv_func, direct_recv_func_parm, read_recv_func, read_recv_func_parm));
   MemoryFifoPacketHeader * hdr =
     (MemoryFifoPacketHeader *) & _desc_model.PacketHeader;
 
@@ -80,7 +80,8 @@ xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (size_t                  
   // function is invoked and can provide a direct pointer to the packet
   // payload.
   bool success =
-    _device.registerPacketHandler (direct_recv_func,
+    _device.registerPacketHandler (dispatch,
+                                   direct_recv_func,
                                    direct_recv_func_parm,
                                    hdr->dev.dispatch_id);
 

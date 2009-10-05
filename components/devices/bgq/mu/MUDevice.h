@@ -32,6 +32,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
+#define DISPATCH_SET_SIZE 64
 namespace XMI
 {
   namespace Device
@@ -123,9 +124,10 @@ namespace XMI
 
 
 
-          bool registerPacketHandler (Interface::RecvFunction_t   function,
+          bool registerPacketHandler (size_t                      dispatch,
+                                      Interface::RecvFunction_t   function,
                                       void                      * arg,
-                                      uint8_t                   & id);
+                                      uint16_t                  & id);
 
           bool push (size_t target_rank, MUSPI_DescriptorWrapper & wrapper)
           {
@@ -388,8 +390,9 @@ namespace XMI
           ColChannel        * _colChannel;                     /**< Collective channel */
           bool                _initialized;                    /**< true when init() invoked successfully */
 
-          dispatch_t      _dispatch[256];
-          uint8_t         _dispatch_num;
+/** \todo This table is 256 KB. Can this be made smaller? */
+          dispatch_t      _dispatch[256*DISPATCH_SET_SIZE];
+          //uint8_t         _dispatch_num;
 
         private:
           ///

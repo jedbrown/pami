@@ -22,6 +22,7 @@
 #include <sched.h>
 #include "util/ccmi_debug.h"
 
+#define DISPATCH_SET_SIZE 256
 namespace XMI
 {
   namespace Device
@@ -47,7 +48,7 @@ namespace XMI
 
     template <class T_SysDep>
     class MPIDevice : public Interface::BaseDevice<MPIDevice<T_SysDep>, T_SysDep>,
-    public Interface::MessageDevice<MPIDevice<T_SysDep> >
+                      public Interface::MessageDevice<MPIDevice<T_SysDep> >
     {
     public:
       static const size_t packet_payload_size = 224;
@@ -65,15 +66,25 @@ namespace XMI
       inline ~MPIDevice () {};
 
 
-      int registerRecvFunction (Interface::RecvFunction_t  recv_func,
+      int registerRecvFunction (size_t                     dispatch,
+                                Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
-      {
-        _dispatch_table[_dispatch_id].recv_func=recv_func;
-        _dispatch_table[_dispatch_id].recv_func_parm=recv_func_parm;
-        _dispatch_lookup[_dispatch_id]=_dispatch_table[_dispatch_id];
-        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::registerRecvFunction %d\n",(int)this,_dispatch_id));
-        return _dispatch_id++;
-      }
+        {
+          unsigned i;
+          for (i=0; i<DISPATCH_SET_SIZE; i++)
+          {
+            unsigned id = dispatch * DISPATCH_SET_SIZE + i;
+            if (_dispatch_table[id].recv_func == NULL)
+            {
+              _dispatch_table[id].recv_func=recv_func;
+              _dispatch_table[id].recv_func_parm=recv_func_parm;
+              _dispatch_lookup[id] = _dispatch_table[id];
+
+              return id;
+            }
+          }
+          return -1;
+        }
 
       int initMcast()
       {
@@ -518,7 +529,7 @@ namespace XMI
       std::list<MPIM2MMessage*>                 _m2msendQ;
       std::list<MPIMcastRecvMessage*>           _mcastrecvQ;
       std::list<MPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
-      mpi_dispatch_info_t                       _dispatch_table[256];
+      mpi_dispatch_info_t                       _dispatch_table[256*DISPATCH_SET_SIZE];
       mpi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       mpi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
     };

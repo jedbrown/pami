@@ -26,7 +26,7 @@
 
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
-#define BUFSIZE 5*1024*1024
+#define BUFSIZE 1024*1024
 //#define BUFSIZE 16
 //#define BUFSIZE 1024
 #endif
@@ -78,19 +78,19 @@ static void test_dispatch (
   {
     memcpy (_recv_buffer, pipe_addr, pipe_size);
     unsigned * value = (unsigned *) cookie;
-    TRACE_ERR((stderr, "(%zd) short recv:  decrement cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+    TRACE_ERR((stderr, "(%zd) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
     --*value;
   }
   else
   {
     header_t * header = (header_t *) header_addr;
-    TRACE_ERR((stderr, "(%zd) test_dispatch() cookie = %p, header->sndlen = %zd\n", _my_rank, cookie, header->sndlen));
+    TRACE_ERR((stderr, "(%zd) test_dispatch() async recv:  cookie = %p, pipe_size = %zd\n", _my_rank, cookie, pipe_size));
 
     recv->local_fn = decrement;
     recv->cookie   = cookie;
     recv->kind = XMI_AM_KIND_SIMPLE;
     recv->data.simple.addr  = _recv_buffer;
-    recv->data.simple.bytes = header->sndlen;
+    recv->data.simple.bytes = pipe_size;
   }
 
   _recv_iteration++;
