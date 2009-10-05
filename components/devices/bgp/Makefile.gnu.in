@@ -10,6 +10,6 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS		= collective_network
+SUBDIRS		= 
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules

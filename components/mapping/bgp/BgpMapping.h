@@ -546,13 +546,13 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
   }
 
   // Find the maximum task id and the minimum task id.
-  for (c.n_torus.coords[0] = 0; c.n_torus.coords[0] < __global.personality.xSize(); c.n_torus.coords[0]++)
+  for (c.u.n_torus.coords[0] = 0; c.u.n_torus.coords[0] < __global.personality.xSize(); c.u.n_torus.coords[0]++)
   {
-    for (c.n_torus.coords[1] = 0; c.n_torus.coords[1] < __global.personality.ySize(); c.n_torus.coords[1]++)
+    for (c.u.n_torus.coords[1] = 0; c.u.n_torus.coords[1] < __global.personality.ySize(); c.u.n_torus.coords[1]++)
     {
-      for (c.n_torus.coords[2] = 0; c.n_torus.coords[2] < __global.personality.zSize(); c.n_torus.coords[2]++)
+      for (c.u.n_torus.coords[2] = 0; c.u.n_torus.coords[2] < __global.personality.zSize(); c.u.n_torus.coords[2]++)
       {
-        for (c.n_torus.coords[3] = 0; c.n_torus.coords[3] < __global.personality.xSize(); c.n_torus.coords[3]++)
+        for (c.u.n_torus.coords[3] = 0; c.u.n_torus.coords[3] < __global.personality.xSize(); c.u.n_torus.coords[3]++)
         {
           if (network2task (&c, &task, &dummy) == XMI_SUCCESS)
           {
