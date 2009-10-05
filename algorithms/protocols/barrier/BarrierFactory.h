@@ -127,7 +127,7 @@ namespace CCMI
         {
           CollHeaderData  *cdata = (CollHeaderData *) info;
           OldBarrierFactory *factory = (OldBarrierFactory *) arg;
-          
+
           XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *) XMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
           if(geometry == NULL)
           {

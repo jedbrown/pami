@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file xmi/core/xmi_dat.c
+/// \file core/xmi_dat.c
 /// \brief Tables used by XMI
 ///
 /// Since C++ does not yet support designated initializers,

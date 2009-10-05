@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/ppc450d/uint16_o.cc
+ * \file math/bgp/collective_network/uint16_ot.cc
  * \brief Optimized math routines for unsigned 16 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */

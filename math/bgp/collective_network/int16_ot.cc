@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/ppc450d/int16_o.cc
+ * \file math/bgp/collective_network/int16_ot.cc
  * \brief Optimized math routines for signed 16 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
@@ -594,19 +594,19 @@ static void _xmi_core_int16_unconv_not_o(int16_t *dst, const uint16_t *src, int 
 }
 
 void _xmi_core_int16_pre_all_o(uint16_t *dst, const int16_t *src, int count) {
-	_xmi_core_int16_conv_o(dst, src, count); 
+	_xmi_core_int16_conv_o(dst, src, count);
 }
 
 void _xmi_core_int16_post_all_o(int16_t *dst, const uint16_t *src, int count) {
-	_xmi_core_int16_unconv_o(dst, src, count); 
+	_xmi_core_int16_unconv_o(dst, src, count);
 }
 
 void _xmi_core_int16_pre_min_o(uint16_t *dst, const int16_t *src, int count) {
-	_xmi_core_int16_conv_not_o(dst, src, count); 
+	_xmi_core_int16_conv_not_o(dst, src, count);
 }
 
 void _xmi_core_int16_post_min_o(int16_t *dst, const uint16_t *src, int count) {
-	_xmi_core_int16_unconv_not_o(dst, src, count); 
+	_xmi_core_int16_unconv_not_o(dst, src, count);
 }
 
 void _xmi_core_int16_int32_pre_maxloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count) {

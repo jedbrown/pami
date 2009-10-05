@@ -1274,7 +1274,7 @@ namespace CCMI
         Binomial, Ring
       } Subschedule;
 
-    
+
     template <class T_Sysdep, class T_Schedule>
     class OneColorRectRedSched : public OneColorRectangle
     {

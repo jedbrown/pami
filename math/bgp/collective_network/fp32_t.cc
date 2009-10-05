@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file math/fp32.cc
+ * \file math/bgp/collective_network/fp32_t.cc
  * \brief Default C math routines for 32 bit floating point operations.
  */
 

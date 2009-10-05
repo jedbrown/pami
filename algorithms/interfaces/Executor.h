@@ -1,4 +1,3 @@
-
 #ifndef         __ccmi_interfaces_executor_h__
 #define         __ccmi_interfaces_executor_h__
 
@@ -11,7 +10,7 @@ namespace CCMI
   namespace Interfaces
   {
     /**
-     * \brief Base Class for all Executors. 
+     * \brief Base Class for all Executors.
      */
     class Executor
     {

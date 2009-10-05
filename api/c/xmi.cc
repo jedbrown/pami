@@ -476,7 +476,7 @@ extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
   return ctx->geometry_algorithms_num (context,
                                       geometry,
                                       coll_type,
-                                      lists_lengths);  
+                                      lists_lengths);
 }
 
 extern "C"  xmi_result_t XMI_Geometry_algorithm_info (xmi_context_t context,
@@ -492,7 +492,7 @@ extern "C"  xmi_result_t XMI_Geometry_algorithm_info (xmi_context_t context,
                                        type,
                                        algorithm,
                                        algorithm_type,
-                                       mdata);    
+                                       mdata);
 }
 ///
 

@@ -251,16 +251,16 @@ namespace XMI
 
 
       protected:
-      
+
         size_t _core;
         size_t _hwthread;
-        
+
         bool   _torusA;
         bool   _torusB;
         bool   _torusC;
         bool   _torusD;
         bool   _torusE;
-        
+
         size_t _cores;
         size_t _hwthreads;
 #if 0

@@ -185,7 +185,7 @@ namespace XMI
                         uint8_t id = hdr->dev.dispatch_id;
 
                         TRACE((stderr, "recFifoPoll(no-wrap) packet = %p, id = %d, cur_bytes = %d\n", hdr, id, cur_bytes));
-                        
+
                         TRACE((stderr, "recFifoPoll(no-wrap) _dispatch = %p, _dispatch[%d].f = %p\n", _dispatch, id, _dispatch[id].f));
                         _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p);
 

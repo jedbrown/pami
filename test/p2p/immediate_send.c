@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/immediate-send.c
+/// \file test/p2p/immediate_send.c
 /// \brief Simple point-to-point XMI_Send_immediate() test
 ///
 

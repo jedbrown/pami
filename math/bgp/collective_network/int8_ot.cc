@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/ppc450d/int8_o.cc
+ * \file math/bgp/collective_network/int8_ot.cc
  * \brief Optimized math routines for signed 8 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */

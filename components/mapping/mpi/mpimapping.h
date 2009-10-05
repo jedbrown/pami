@@ -32,9 +32,9 @@ namespace XMI
                        public Interface::Torus<MPIMapping, MPI_DIMS>,
                        public Interface::Node<MPIMapping, MPI_DIMS>
     {
-	
+
     public:
-      inline MPIMapping () : 
+      inline MPIMapping () :
         Interface::Base<MPIMapping,XMI::Memory::HeapMemoryManager >(),
         Interface::Torus<MPIMapping, MPI_DIMS>(),
         Interface::Node<MPIMapping, MPI_DIMS>()
@@ -55,7 +55,7 @@ namespace XMI
         {
           ll.u.n_torus.coords[0] = 0;
           ur.u.n_torus.coords[0] = _size-1;
-          
+
           return XMI_SUCCESS;
         }
       inline size_t task_impl()

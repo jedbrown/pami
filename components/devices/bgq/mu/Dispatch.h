@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/bgq/mu/Dispatch.h
+ * \file components/devices/bgq/mu/Dispatch.h
  * \brief ???
  */
 #ifndef __devices_bgq_mu_dispatch_h__

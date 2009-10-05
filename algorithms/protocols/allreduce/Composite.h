@@ -35,7 +35,7 @@ namespace CCMI
           reuse_storage_limit=r;
           pipeline_override=p;
         }
-      
+
 /*      unsigned reuse_storage:1;  // save allocated storage across calls
         unsigned reserved:31; */
       unsigned reuse_storage_limit; // save allocated storage up to this limit

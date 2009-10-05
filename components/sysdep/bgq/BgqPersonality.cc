@@ -36,12 +36,12 @@ XMI::SysDep::BgqPersonality::BgqPersonality ()
   Network_Config.Dcoord = 0;
   Network_Config.Ecoord = 0;
 #endif
-    
+
   size_t num_local_processes = Kernel_ProcessCount();
-  
+
   // Set the core id of this process [0..16]
   _core = Kernel_PhysicalProcessorID();
-  
+
   // Set the number of active process cores on this node [0..16]
   _cores = Kernel_ProcessCount();
 
@@ -51,15 +51,15 @@ XMI::SysDep::BgqPersonality::BgqPersonality ()
   // Set the number of active process hardware threads on this node [0..3]
   //_hwthreads = Kernel_PhysicalHWThreadID();
   _hwthreads = 1;
-    
-    
+
+
   _torusA = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);
   _torusB = (bool) (ND_ENABLE_TORUS_DIM_B & Network_Config.NetFlags);
   _torusC = (bool) (ND_ENABLE_TORUS_DIM_C & Network_Config.NetFlags);
   _torusD = (bool) (ND_ENABLE_TORUS_DIM_D & Network_Config.NetFlags);
   _torusE = (bool) (ND_ENABLE_TORUS_DIM_E & Network_Config.NetFlags);
-  
-  
+
+
 #if 0
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
   int err = Kernel_GetPersonality(p, sizeof(_BGP_Personality_t));

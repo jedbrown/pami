@@ -13,4 +13,3 @@
 
 //#include "AllreduceState.h"
 #include "AllreduceBase.h"
-

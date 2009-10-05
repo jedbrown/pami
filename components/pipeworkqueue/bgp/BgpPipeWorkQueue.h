@@ -266,9 +266,9 @@ public:
 			cbytes0, bytesAvailableToConsume());
 	}
 
-	/// 
+	///
 	/// \brief Export
-	/// 
+	///
 	/// Produces information about the PipeWorkQueue into the opaque buffer "export".
 	/// This info is suitable for sharing with other processes such that those processes
 	/// can then construct a PipeWorkQueue which accesses the same data stream.
@@ -276,7 +276,7 @@ public:
 	/// \param[in] wq             Opaque memory for PipeWorkQueue
 	/// \param[out] export        Opaque memory to export into
 	/// \return   success of the export operation
-	/// 
+	///
 	inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp) {
 		unlikely_if (_pmask) {
 			return XMI_ERROR;
@@ -287,24 +287,24 @@ public:
 		e->pmask = _pmask;
 		return XMI_SUCCESS;
 	}
-	
-	/// 
+
+	///
 	/// \brief Import
-	/// 
+	///
 	/// Takes the results of an export of a PipeWorkQueue on a different process and
 	/// constructs a new PipeWorkQueue which the local process may use to access the
 	/// data stream.
-	/// 
+	///
 	/// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
 	/// The producer has no knowledge of data consumed. There can be only one producer.
 	/// There may be multiple consumers, but the producer does not know about them.
-	/// 
+	///
 	/// TODO: can this work for circular buffers? does it need to, since those are
 	/// normally shared memory and thus already permit inter-process communication.
 	///
 	/// \param[in] import        Opaque memory into which an export was done.
 	/// \param[out] wq           Opaque memory for new PipeWorkQueue
-	/// \return   success of the import operation 
+	/// \return   success of the import operation
 	///
 	inline xmi_result_t import_impl(xmi_pipeworkqueue_ext_t *import) {
 		// import is not supported for this class
@@ -412,9 +412,9 @@ public:
 			// consumed bytes passes produced bytes, so we don't look for that
 			// condition. If we are spanning the wrap point, we bump both values
 			// by some amount in order to get them both on the same side of the wrap.
-			// We choose _qsize as the bump amount because the difference between 
+			// We choose _qsize as the bump amount because the difference between
 			// the counters should never exceed this value (in fact, it should never
-			// exceed _worksize) and so we can depend on this value always causing 
+			// exceed _worksize) and so we can depend on this value always causing
 			// cbytes to wrap if pbytes has already wrapped.
 			//
 			if (p < c && p + _qsize > c + _qsize) {

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/int64.cc
+ * \file math/bgp/collective_network/int64_t.cc
  * \brief Default C math routines for 32 bit signed integer operations.
  */
 
@@ -36,7 +36,7 @@ static void _xmi_core_int64_conv_not(uint64_t *dst, const int64_t *src, int coun
 static void _xmi_core_int64_unconv(int64_t *dst, const uint64_t *src, int count) {
 #define OP(a) ((a)-(0x8000000000000000ULL))
 
-#define TYPE int64_t 
+#define TYPE int64_t
 #include "math/_single_src.x.h"
 #undef TYPE
 #undef OP
@@ -45,7 +45,7 @@ static void _xmi_core_int64_unconv(int64_t *dst, const uint64_t *src, int count)
 static void _xmi_core_int64_unconv_not(int64_t *dst, const uint64_t *src, int count) {
 #define OP(a) (~((a)-(0x8000000000000000ULL)))
 
-#define TYPE int64_t 
+#define TYPE int64_t
 #include "math/_single_src.x.h"
 #undef TYPE
 #undef OP

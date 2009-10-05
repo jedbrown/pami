@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/OldM2mModel.h
+ * \file components/devices/OldM2MModel.h
  * \brief ???
  */
 
@@ -30,7 +30,7 @@ namespace XMI
         Oldm2mModel (T_Device & device) {};
         ~Oldm2mModel () {};
         inline void setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg);
-        
+
         inline void send  (XMI_Request_t          * request,
                            const xmi_callback_t   * cb_done,
                            unsigned                 connid,
@@ -86,7 +86,7 @@ namespace XMI
                                                ranks,
                                                permutation,
                                                nranks);
-                                                      
+
       }
 
       template <class T_Model, class T_Device, class T_Object, class T_Counter>

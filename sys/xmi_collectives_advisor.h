@@ -1,5 +1,5 @@
 /**
- * \file xmi_collectives_advisor.h
+ * \file sys/xmi_collectives_advisor.h
  * \brief XMI client advisor layer interface.
  */
 

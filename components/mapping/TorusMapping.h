@@ -303,7 +303,7 @@ namespace XMI
       {
         return static_cast<T_Mapping*>(this)->torusgetcoord_impl (dimension);
       }
-      
+
 #if 0
       template <class T_Mapping>
       template <int T_Dimension>

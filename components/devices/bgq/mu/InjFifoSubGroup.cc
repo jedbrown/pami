@@ -9,7 +9,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
-/// \file InjFifoSubGroup.cc
+/// \file components/devices/bgq/mu/InjFifoSubGroup.cc
 ///
 /// \brief Injection Fifo SubGroup implementations.
 ///

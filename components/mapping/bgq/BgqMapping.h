@@ -143,7 +143,7 @@ namespace XMI
         };
 
       public:
-        
+
         ///
         /// \brief Retrieve pointer to a mu destination structure for this task
         ///
@@ -748,7 +748,7 @@ xmi_result_t XMI::Mapping::BgqMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
 {
   //_mapcache  = __global.getMapCache();
   //_rankcache = __global.getRankCache();
-  
+
 
 #if 0
   // This structure anchors pointers to the map cache and rank cache.
@@ -1130,4 +1130,3 @@ xmi_result_t XMI::Mapping::BgqMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
 };
 #undef TRACE_ERR
 #endif // __components_mapping_bgq_bgqmapping_h__
-

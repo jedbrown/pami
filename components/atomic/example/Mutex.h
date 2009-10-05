@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 namespace XMI
 {
   namespace Atomic

@@ -58,7 +58,7 @@ namespace XMI
           this->_numranges = numranges;
           this->_size      = 0;
           int i;
-          for(i=0; i<numranges; i++)            
+          for(i=0; i<numranges; i++)
             this->_size+=(this->_rangelist[i].hi-this->_rangelist[i].lo+1);
 
           for(i=0; i<numranges; i++)
@@ -282,7 +282,7 @@ namespace XMI
           return (Common*)cached_geometry[comm];
         }
       static inline void               updateCachedGeometry_impl(Common *geometry,
-                                                                 unsigned comm)        
+                                                                 unsigned comm)
         {
           assert(geometry!=NULL);
           cached_geometry[comm]=(void*)geometry;

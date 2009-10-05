@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/int16.cc
+ * \file math/bgp/collective_network/int16_t.cc
  * \brief Default C math routines for 16 bit signed integer operations.
  */
 
@@ -36,7 +36,7 @@ static void _xmi_core_int16_conv_not(uint16_t *dst, const int16_t *src, int coun
 static void _xmi_core_int16_unconv(int16_t *dst, const uint16_t *src, int count) {
 #define OP(a) ((a)-(0x8000))
 
-#define TYPE int16_t 
+#define TYPE int16_t
 #include "math/_single_src.x.h"
 #undef TYPE
 #undef OP
@@ -45,7 +45,7 @@ static void _xmi_core_int16_unconv(int16_t *dst, const uint16_t *src, int count)
 static void _xmi_core_int16_unconv_not(int16_t *dst, const uint16_t *src, int count) {
 #define OP(a) (~((a)-(0x8000)))
 
-#define TYPE int16_t 
+#define TYPE int16_t
 #include "math/_single_src.x.h"
 #undef TYPE
 #undef OP

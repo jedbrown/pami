@@ -206,4 +206,3 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device, xmi_context_t contex
 };
 
 XMI::Device::MU::MUDmaModel::~MUDmaModel () {};
-

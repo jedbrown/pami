@@ -97,7 +97,7 @@ namespace XMI
 #warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
 #endif
           cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
-          
+
           // Notify all other tasks on the node that this task has entered the
           // map cache initialization function.  If the value returned is zero
           // then this task is the first one in and is designated the "master".
@@ -383,4 +383,3 @@ namespace XMI
 };     // XMI
 
 #endif // __xmi_components_mapping_bgq_bgqmapcache_h__
-

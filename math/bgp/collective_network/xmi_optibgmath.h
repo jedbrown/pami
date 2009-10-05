@@ -30,13 +30,13 @@
 
 /**
  * \brief Convert a LOC value TO a tree value
- * Convert LOC (MINLOC/MAXLOC) values to collective network 
+ * Convert LOC (MINLOC/MAXLOC) values to collective network
  * values that ensures signs are observed.
  */
 #define LOC_INT_TOTREE(i)     ((i) ^ 0x7fffffffUL)
 /**
  * \brief Convert a LOC value FROM a tree value
- * Convert LOC (MINLOC/MAXLOC) values to collective network 
+ * Convert LOC (MINLOC/MAXLOC) values to collective network
  * values that ensures signs are observed.
  */
 #define LOC_INT_FRTREE(i)     ((i) ^ 0x7fffffffUL)
@@ -290,7 +290,7 @@ extern void _xmi_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int coun
  * This table is accessed by using the DCMF_PRE_OP_FUNCS(dt,op,n) macro
  * where "n" is a flag indicating whether optimized or unoptimized routine
  * is to be selected.
- * 
+ *
  * Similar tables/functions exist for POST and MARSHALL routines.
  *
  * Note, many of these routines do not relate to XMI_Op operations and thus

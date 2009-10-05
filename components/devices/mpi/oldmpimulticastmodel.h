@@ -33,7 +33,7 @@ namespace XMI
 	  {
             _dispatch_id = _device.initMcast();
           };
-        
+
 	inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
         {
           _device.registerMcastRecvFunction (_dispatch_id, cb_recv, arg);

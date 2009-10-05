@@ -313,7 +313,7 @@ namespace XMI
       AlltoallFactory   _alltoallv_registration;
     };
 
-    
+
   };
 };
 typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;

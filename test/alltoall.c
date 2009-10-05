@@ -231,7 +231,7 @@ int main(int argc, char*argv[])
 
 
 
-  
+
   size_t i,j;
   if (task_id == 0)
       {
@@ -291,7 +291,7 @@ int main(int argc, char*argv[])
         fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
         return 1;
       }
-  
+
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)
       {

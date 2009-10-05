@@ -465,4 +465,3 @@ int XMI::Device::MU::MUDevice::readData_impl (int channel, void * buf, size_t le
 #undef TRACE
 
 #endif // __components_devices_bgq_mu_mudevice_h__
-

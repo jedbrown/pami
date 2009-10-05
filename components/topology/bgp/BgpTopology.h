@@ -11,7 +11,7 @@
 #define __components_topology_bgp_bgptopology_h__
 
 ////////////////////////////////////////////////////////////////////////
-/// \file dcmf/TopologyImpl.h
+/// \file components/topology/bgp/BgpTopology.h
 ///
 /// \brief Coordinate/Address Topology Class
 ///
@@ -104,7 +104,7 @@ namespace Topology {
 		///
 		bool __isLocalCoord(const xmi_coord_t *c0,
 					const xmi_coord_t *c1) {
-			unsigned x; 
+			unsigned x;
 			for (x = 0; x < mapping->globalDims(); ++x) {
 				if (c0->net_coord(x) != c1->net_coord(x)) {
 					return false;
@@ -121,7 +121,7 @@ namespace Topology {
 		///		topology, according to significant dimensions.
 		///
 		bool __isMemberCoord(const xmi_coord_t *c0, unsigned ndims) {
-			unsigned x; 
+			unsigned x;
 			for (x = 0; x < ndims; ++x) {
 				if (c0->net_coord(x) < topo_lldim(x) ||
 						c0->net_coord(x) > topo_urdim(x)) {

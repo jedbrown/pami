@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/int8.cc
+ * \file math/bgp/collective_network/int8_t.cc
  * \brief Default C math routines for 8 bit signed integer operations.
  */
 

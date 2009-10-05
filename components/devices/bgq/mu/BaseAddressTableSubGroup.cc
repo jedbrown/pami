@@ -9,7 +9,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
-/// \file BaseAddressTableSubGroup.cc
+/// \file components/devices/bgq/mu/BaseAddressTableSubGroup.cc
 ///
 /// \brief Base Address Table SubGroup implementations.
 ///

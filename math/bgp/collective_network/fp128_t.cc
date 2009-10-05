@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file math/fp128.cc
+ * \file math/bgp/collective_network/fp128_t.cc
  * \brief Default C math routines for 128 bit floating point operations.
  */
 

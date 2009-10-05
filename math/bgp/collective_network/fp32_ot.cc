@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/ppc450d/fp32_o.cc
+ * \file math/bgp/collective_network/fp32_ot.cc
  * \brief Optimized math routines for 32 bit floating point operations on
  *        the ppc 450 dual fpu architecture.
  *

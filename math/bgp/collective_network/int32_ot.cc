@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/ppc450d/int32_o.cc
+ * \file math/bgp/collective_network/int32_ot.cc
  * \brief Optimized math routines for signed 32 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */

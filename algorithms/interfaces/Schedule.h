@@ -1,4 +1,3 @@
-
 #ifndef  __ccmi_interfaces_schedule_h__
 #define  __ccmi_interfaces_schedule_h__
 
@@ -28,7 +27,7 @@ namespace CCMI
 
     /**
      * \brief Abstract reference class to define the schedule of a collective
-     */ 
+     */
     template <class Topology> class Schedule
     {
     public:

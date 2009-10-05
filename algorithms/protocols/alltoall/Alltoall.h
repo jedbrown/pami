@@ -171,7 +171,7 @@ namespace CCMI
                                                                       sndbuf, sndlens, sdispls, rcvbuf,
                                                                       rcvlens, rdispls, sndcounters,
                                                                       rcvcounters);
-        
+
         // Lets do the barrier to sync
         CCMI::Executor::Executor *barrier =(CCMI::Executor::Executor *)
           geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);

@@ -1,4 +1,3 @@
-
 ///
 /// \brief CDI is currently unimplemented in the MU Device.
 ///
@@ -11,41 +10,41 @@ namespace DCMF {
       inline int MUDevice::init_impl(SysDep &sysdep)
 	{
 	}
-#endif     
- 
+#endif
+
       inline int MUDevice::getPktSize_impl()
 	{
 	}
-      
+
       inline int MUDevice::isInit_impl()
 	{
 	}
-      
-      inline int MUDevice::advance_impl () 
-	{	  
+
+      inline int MUDevice::advance_impl ()
+	{
 	  int events = 0;
-	  
-	  if (_pollQueues) 
-	    events += pollQueuedMessages ();	    
-	  
+
+	  if (_pollQueues)
+	    events += pollQueuedMessages ();
+
 	  events += _resMgr.advanceReceptionFifos();
 	  events += _resMgr.advanceInjectionFifos();
-	  
+
 	  //Counter advance for rzv messages
 	  return events;
 	}
-      
-      
+
+
       inline int MUDevice::post_impl(MUMessage &msg_in)
 	{
 	}
-      
+
       inline int MUDevice::registerRecvFunction_impl
 	(RecvFunction_t  recv_func,
 	 void           *recv_func_parm)
 	{
 	}
-      
+
       inline int MUDevice::generateMessage_impl(MUMessage       &msg,
 						DCMF_Callback_t   cb,
 						unsigned          dispatch_id,
@@ -55,25 +54,25 @@ namespace DCMF {
 						unsigned          iov_len,
 						size_t            msg_len)
 	{
-	  
+
 	}
-      
+
       inline int    MUDevice::readData_impl (int index, void* buf, size_t length)
 	{
 	}
-      
+
       inline void MUDevice::recvPkt_finalize(int index)
 	{
 	}
-      
+
       inline char *MUDevice::recvPktBuf(int index)
 	{
 	}
-      
-      
+
+
       inline int MUDevice::getMessageSize_impl()
 	{
-	  
+
 	}
     };
   };

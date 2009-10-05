@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file protocols/prod/multisend/bgp/tree/DblUtils.h
+ * \file math/bgp/collective_network/DblUtils.h
  * \brief ???
  */
 

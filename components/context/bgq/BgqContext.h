@@ -332,7 +332,7 @@ namespace XMI
         {
           return XMI_UNIMPL;
         }
-      
+
         inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
                                                           xmi_geometry_t geometry,
                                                           xmi_xfer_type_t type,

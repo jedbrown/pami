@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/ppc450d/fp64_o.cc
+ * \file math/bgp/collective_network/fp64_ot.cc
  * \brief Optimized math routines for 64 bit floating point operations on
  *        the ppc 450 dual fpu architecture.
  */

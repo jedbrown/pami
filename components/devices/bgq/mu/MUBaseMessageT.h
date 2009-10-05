@@ -1,4 +1,3 @@
-
 #ifndef  __MU_BASE_MESSAGE_TEMPLATE__
 #define  __MU_BASE_MESSAGE_TEMPLATE__
 

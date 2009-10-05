@@ -101,7 +101,7 @@ namespace XMI
       int                 _totalsize;
       char               *_bufs;
     };
-    
+
     template <class T_Counter>
     class MPIM2MRecvMessage
     {
@@ -123,11 +123,11 @@ namespace XMI
       size_t      _dispatch_id;
       unsigned    _size;
       unsigned    _conn;
-      inline void *buffer() { return ((char *)this + sizeof (MPIM2MHeader)); } 
-      inline int  totalsize () { return _size + sizeof (MPIM2MHeader); } 
+      inline void *buffer() { return ((char *)this + sizeof (MPIM2MHeader)); }
+      inline int  totalsize () { return _size + sizeof (MPIM2MHeader); }
     };
 
-    
+
   };
 };
 

@@ -19,7 +19,7 @@
 #include "spi/bgp_SPI.h"
 
 ////////////////////////////////////////////////////////////////////////
-///  \file devices/prod/bgp/gi/Device.h
+///  \file components/devices/bgp/global_interrupt/GIBarrierMsg.h
 ///  \brief Global Interrupt Device
 ///
 ///  The GI classes implement a BaseDevice and a Message object

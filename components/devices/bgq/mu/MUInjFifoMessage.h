@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file devices/prod/bgq/mu/MUInjFifoMessage.h
+ * \file components/devices/bgq/mu/MUInjFifoMessage.h
  * \brief ???
  */
 #ifndef __devices_bgq_mu_inj_fifo_message_h__

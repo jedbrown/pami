@@ -68,13 +68,13 @@ namespace XMI
               {
                 _memptr  = ptr;
                 _memsize = n;
-                
+
                 size_t bytes_used = _mapcache.init (personality,
                                                     _memptr,
                                                     _memsize);
                 // Round up to the page size
                 size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
-               
+
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
                 if (rc != -1) return;
@@ -105,17 +105,17 @@ namespace XMI
         {
           return _mapcache.getMapCache();
         };
-        
+
         inline size_t * getRankCache ()
         {
           return _mapcache.getRankCache();
         };
-        
+
         inline size_t getTask ()
         {
           return _mapcache.getTask();
         };
-        
+
         inline size_t getSize ()
         {
           return _mapcache.getSize();
@@ -125,7 +125,7 @@ namespace XMI
 	{
 		_mapcache.getMappingInit(ll, ur, min, max);
 	}
-        
+
 #if 0
         inline void allocateMemory ()
         {
@@ -171,7 +171,7 @@ namespace XMI
       public:
 
         BgpPersonality       personality;
-        
+
       private:
 
         Mapping::BgpMapCache   _mapcache;

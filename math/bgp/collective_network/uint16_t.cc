@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/uint16.cc
+ * \file math/bgp/collective_network/uint16_t.cc
  * \brief Default C math routines for 16 bit unsigned integer operations.
  */
 

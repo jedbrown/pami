@@ -31,18 +31,18 @@ namespace XMI
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 0 _num_procs = %zd\n", sysdep->mapping.task(), _num_procs));
 
       //_global_task = _sysdep->mapping.task ();
-      
-      
+
+
       //size_t global;
       XMI::Mapping::Interface::nodeaddr_t nodeaddr;
       _sysdep->mapping.nodeAddr (nodeaddr);
       _global_task = nodeaddr.global;
       _local_task  = nodeaddr.local;
-      
+
       //_sysdep->mapping.task2node (_global_task, &nodeaddr);
-      
+
       //_local_task = _peercache[nodeaddr.local];
-      
+
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 1\n", sysdep->mapping.task()));
 
       // Allocate a shared memory segment for the fifos

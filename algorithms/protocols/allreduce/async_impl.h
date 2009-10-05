@@ -48,7 +48,7 @@ namespace CCMI
          XMI_COLL_MCAST_CLASS,
          CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS> >
           AsyncComposite;
-        
+
         typedef AsyncFactoryT
         <CCMI::ConnectionManager::RankBasedConnMgr<XMI_COLL_SYSDEP_CLASS>,
          CCMI::Adaptor::Allreduce::Binomial::AsyncComposite,

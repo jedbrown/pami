@@ -1,4 +1,3 @@
-
 #ifndef  __ccmi_interfaces_reduce_schedule_h__
 #define  __ccmi_interfaces_reduce_schedule_h__
 
@@ -20,7 +19,7 @@ namespace CCMI
   {
     /**
      * \brief Abstract reference class to define the schedule of Reduce and Allreduce Collectives
-     */ 
+     */
     template <class Topology>
       class ReduceSchedule : public Schedule<T>
     {
@@ -87,12 +86,12 @@ namespace CCMI
 
       /**
        * \brief Get the phase which the local computation must be performed
-       * \param [inout] phase 
-       * \param [inout] the source index if there are multiple sources contributing 
+       * \param [inout] phase
+       * \param [inout] the source index if there are multiple sources contributing
        *                data in this phase
        */
       virtual getLocalCombinePhase(unsigned &phase, unsigned &index) = 0;
-      
+
       /**
        * \brief Get the phase in the reduce+bcast allreduce where the
        *        last arithmatic sum operation is performed. The broadcast
@@ -100,14 +99,14 @@ namespace CCMI
        *        phases.
        */
       virtual unsigned getLastCombinePhase () = 0;
-      
-      
+
+
       /**
        * \brief Get the phase in the reduce+bcast allreduce where
-       *        result is broadcast. 
+       *        result is broadcast.
        */
       virtual unsigned getBcastSendPhase () = 0;
-      
+
 
     };  //-- Schedule
   };  //-- Schedule

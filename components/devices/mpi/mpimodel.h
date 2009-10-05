@@ -145,7 +145,7 @@ namespace XMI
           assert(rc == MPI_SUCCESS);
           return true;
         }
-      
+
 
       inline bool postMessage_impl (T_Message        * obj,
                                     xmi_event_function   fn,

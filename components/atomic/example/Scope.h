@@ -52,4 +52,3 @@ inline bool XMI::Atomic::Interface::ProcessScope<T>::setProcessScope()
   static_cast<T*>(this)->setProcessScope_impl();
   return T::_scoped;
 }
-

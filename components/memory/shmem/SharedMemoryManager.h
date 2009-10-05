@@ -80,10 +80,10 @@ namespace XMI
           }
 
           TRACE_ERR((stderr, "SharedMemoryManager() .. FAILED, fake shmem on the heap\n"));
-          
+
           posix_memalign ((void **)&_location, 16, n);
           _size = n;
-          
+
           return;
         }
 

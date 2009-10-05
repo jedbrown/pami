@@ -318,7 +318,7 @@ namespace XMI
               if(mcast->_size)
                 memcpy (mcast->_buf + mcast->_counter, msg->buffer(), bytes);
 
-              //printf ("dispatch %d matched posted receive %d %d %d %d\n", 
+              //printf ("dispatch %d matched posted receive %d %d %d %d\n",
               //	    dispatch_id,
               //	    nbytes, mcast->_pwidth, mcast->_counter,
               //	    mcast->_size);
@@ -341,7 +341,7 @@ namespace XMI
               }
 
               free (msg);
-            }       
+            }
             break;
           case 3:
             {
@@ -367,13 +367,13 @@ namespace XMI
                 size_t        * offsets;
                 size_t        * rcvcounters;
                 size_t          nranks;
-                mdi.recv_func(msg->_conn, 
+                mdi.recv_func(msg->_conn,
                               mdi.async_arg,
-                              &buf, 
-                              &offsets, 
-                              &sizes, 
-                              &rcvcounters, 
-                              &nranks, 
+                              &buf,
+                              &offsets,
+                              &sizes,
+                              &rcvcounters,
+                              &nranks,
                               &cb_done );
                 m2m = (MPIM2MRecvMessage<size_t> *)malloc(sizeof(MPIM2MRecvMessage<size_t>) );
                 XMI_assert ( m2m != NULL );
@@ -406,7 +406,7 @@ namespace XMI
               unsigned src = sts.MPI_SOURCE;
               if( m2m )
               {
-                unsigned size = msg->_size < m2m->_sizes[src] ? msg->_size : m2m->_sizes[src]; 
+                unsigned size = msg->_size < m2m->_sizes[src] ? msg->_size : m2m->_sizes[src];
                 XMI_assert( size > 0 );
                 memcpy( m2m->_buf + m2m->_offsets[src], msg->buffer(), size );
                 m2m->_num--;

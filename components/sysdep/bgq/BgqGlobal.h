@@ -114,14 +114,14 @@ namespace XMI
               {
                 _memptr  = ptr;
                 _memsize = n;
-                
+
                 TRACE_ERR((stderr, "BgqGlobal() .. _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
                 size_t bytes_used =
                   initializeMapCache (personality);
-                                      
+
                 // Round up to the page size
                 size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
-                
+
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
                 TRACE_ERR((stderr, "BgqGlobal() .. after second ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
@@ -154,12 +154,12 @@ namespace XMI
         {
           return &_mapcache;
         };
-        
+
         inline size_t size ()
         {
           return _size;
         }
-        
+
      private:
 
         inline size_t initializeMapCache (BgqPersonality  & personality);
@@ -247,21 +247,21 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
 
  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize);
  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->torus.task2coords = %p\n", mapcache->torus.task2coords);
- 
+
   mapcache->torus.task2coords = (bgq_coords_t *) (cacheAnchorsPtr + 1);
-  
+
  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task);
- 
+
   mapcache->torus.coords2task = (uint32_t *) (mapcache->torus.task2coords + fullSize);
-  
+
  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task);
- 
+
   mapcache->node.local2peer   = (size_t *) (mapcache->torus.coords2task + peerSize);
-  
+
  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task);
- 
+
   mapcache->node.peer2task    = (size_t *) (mapcache->node.local2peer + peerSize);
-  
+
  //fprintf (stderr, "XMI::SysDep::BgqGlobal::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task);
 
   size_t max_rank = 0, min_rank = (size_t) - 1;
@@ -359,7 +359,7 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
         cacheAnchorsPtr->maxRank = max_rank;
         cacheAnchorsPtr->minRank = min_rank;
       }
-      
+
       // Initialize the node task2peer and peer2task caches.
       uint32_t hash;
       size_t peer = 0;
@@ -383,8 +383,8 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
           mapcache->node.local2peer[hash] = peer++;
         }
       }
-      
-      
+
+
 #if 0
       /* If the system call fails, assume the kernel is older and does not
        * have this system call.  Use the original system call, one call per
@@ -508,5 +508,3 @@ size_t XMI::SysDep::BgqGlobal::initializeMapCache (BgqPersonality  & personality
 extern XMI::SysDep::BgqGlobal __global;
 #undef TRACE_ERR
 #endif // __xmi_components_sysdep_bgq_bgqglobal_h__
-
-

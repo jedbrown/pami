@@ -128,7 +128,7 @@ namespace XMI
             inline void                       setAllreduceComposite(COMPOSITE_TYPE c,
                                                                     unsigned i);
 
-          
+
             static inline T_Geometry         *getCachedGeometry (unsigned comm);
             static inline void                updateCachedGeometry (T_Geometry *geometry,
                                                                     unsigned comm);
@@ -232,7 +232,7 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->permutation_sizet_impl();
         }
-      
+
         template <class T_Geometry, class T_Mapping>
         inline bool Geometry<T_Geometry, T_Mapping>::isRectangle()
         {
@@ -359,7 +359,7 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->getAllreduceCompositeStorage_impl(i);
         }
-      
+
         template <class T_Geometry, class T_Mapping>
         inline COMPOSITE_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceComposite(unsigned i)
         {
@@ -378,7 +378,7 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->setAllreduceComposite_impl(c, i);
         }
-      
+
         template <class T_Geometry, class T_Mapping>
         inline CCMI_EXECUTOR_TYPE Geometry<T_Geometry, T_Mapping>::getAllreduceCompositeStorage ()
         {

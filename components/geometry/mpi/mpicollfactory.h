@@ -237,7 +237,7 @@ namespace XMI
                   case XMI::CollInfo::CI_BROADCAST0:
                   {
                     if (!_bcast->isdone()) _dev->advance();
-		
+
                     ((TSPColl::BinomBcast<MPIMcastModel> *)_bcast)->reset (_geometry->virtrankof(broadcast->root),
                                                                            broadcast->buf,
                                                                            broadcast->buf,
@@ -329,7 +329,7 @@ namespace XMI
                           _lar->kick(&info->_model);
                           return XMI_SUCCESS;
                         }
-                    break;                    
+                    break;
                   }
                   case XMI::CollInfo::CI_ALLREDUCE1:
                   {
@@ -340,7 +340,7 @@ namespace XMI
 
                     XMI_Callback_t cb_done;
                     cb_done.function   = allreduce->cb_done;
-                    cb_done.clientdata = allreduce->cookie;                    
+                    cb_done.clientdata = allreduce->cookie;
                     XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     CCMI::Adaptor::Allreduce::Ring::Factory *factory =
                       (CCMI::Adaptor::Allreduce::Ring::Factory *) &cinfo->_allreduce_registration;
@@ -391,7 +391,7 @@ namespace XMI
 
                     XMI_Callback_t cb_done;
                     cb_done.function   = allreduce->cb_done;
-                    cb_done.clientdata = allreduce->cookie;                    
+                    cb_done.clientdata = allreduce->cookie;
                     XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     CCMI::Adaptor::Allreduce::Binomial::Factory *factory =
                       (CCMI::Adaptor::Allreduce::Binomial::Factory *) &cinfo->_allreduce_registration;
@@ -527,14 +527,14 @@ namespace XMI
 
       inline xmi_result_t  ibarrier_impl        (xmi_barrier_t        *barrier)
         {
-	  XMI::CollInfo::CollInfo<T_Device> *info = 
+	  XMI::CollInfo::CollInfo<T_Device> *info =
 	    (XMI::CollInfo::CollInfo<T_Device> *)_barriers[barrier->algorithm];
-	  
+
 	  switch(info->_colltype)
               {
                   case XMI::CollInfo::CI_BARRIER0:
                   {
-                    XMI::CollInfo::PGBarrierInfo<T_Device> *binfo = 
+                    XMI::CollInfo::PGBarrierInfo<T_Device> *binfo =
                       (XMI::CollInfo::PGBarrierInfo<T_Device> *)info;
                     while(!_barrier->isdone()) _dev->advance();
                     ((TSPColl::Barrier<MPIMcastModel> *)_barrier)->reset();
@@ -569,7 +569,7 @@ namespace XMI
 
       inline xmi_result_t  ialltoallv_impl      (xmi_alltoallv_t      *alltoallv)
         {
-          XMI::CollInfo::CollInfo<T_Device> *info = 
+          XMI::CollInfo::CollInfo<T_Device> *info =
 	    (XMI::CollInfo::CollInfo<T_Device> *)_alltoallvs[alltoallv->algorithm];
           switch(info->_colltype)
               {
@@ -579,7 +579,7 @@ namespace XMI
                        (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
 
 // todo:  add some compile time asserts - I added one to AlltoallFactory for XMI_CollectiveRequest_t
-                    
+
                     XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     XMI_Callback_t cb_done_ccmi;
 		    cb_done_ccmi.function   = alltoallv->cb_done;

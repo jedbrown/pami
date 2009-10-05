@@ -266,7 +266,7 @@ namespace CCMI
         _msend_data.request = (xmi_quad_t*)&(_sState->sndReq);
         _msend_data.cb_done.function   = _sendCallbackHandler;
         _msend_data.cb_done.clientdata = &_sState->sndClientData;
-        
+
       }
 
       void setSchedule (Schedule::Schedule *schedule, unsigned color=0)
@@ -386,7 +386,7 @@ namespace CCMI
 
         _msend_data.op = op;
         _msend_data.dt = dt;
-        
+
         //override the pipeline width as we do not support
         //pipelining in this simple executor.
         if(!_enablePipelining)
@@ -682,8 +682,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep,T_Connectio
   _msend_data.ranks         = dstpes;
   _msend_data.nranks        = ndst;
   _msend_data.opcodes       = dsthints;
-  
-  
+
+
   //the message has been sent and send state slot is unavailable
   s_state->sndClientData.isDone = false;
 

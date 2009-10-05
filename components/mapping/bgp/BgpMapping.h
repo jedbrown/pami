@@ -95,9 +95,9 @@ namespace XMI
         size_t _y;
         size_t _z;
         size_t _t;
-        
+
         XMI::Mapping::Interface::nodeaddr_t _nodeaddr;
-        
+
 #warning These elements need to be moved or replaced
         size_t _numActiveRanksLocal;
         size_t _numActiveRanksGlobal;
@@ -179,7 +179,7 @@ namespace XMI
 		size_t ySize = __global.personality.ySize();
 		size_t zSize = __global.personality.zSize();
 		size_t tSize = __global.personality.tSize();
-		if (addr->network != XMI_DEFAULT_NETWORK && 
+		if (addr->network != XMI_DEFAULT_NETWORK &&
 			addr->network != XMI_N_TORUS_NETWORK) {
 			return XMI_INVAL;
 		}
@@ -546,7 +546,7 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
   }
 
   //fprintf (stderr, "BgpMapping::init_impl <<\n");
-  
+
   return XMI_SUCCESS;
 };
 #undef TRACE_ERR

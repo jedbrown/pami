@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file messager/prod/bgp/dcmf_bg_dat.c
+/// \file components/devices/bgp/collective_network/cn_bg_dat.c
 /// \brief Tables used by DCMF
 ///
 

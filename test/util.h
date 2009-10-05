@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file tests/util.h
+ * \file test/util.h
  * \brief ???
  */
 
@@ -128,7 +128,7 @@ void barrier ()
 void barrier_init (xmi_context_t context, size_t dispatch)
 {
   TRACE_ERR((stderr, "enter barrier_init() ...\n"));
-  
+
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
@@ -163,7 +163,7 @@ void barrier_init (xmi_context_t context, size_t dispatch)
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
     abort();
   }
-  
+
   barrier();
   TRACE_ERR((stderr, "... exit barrier_init()\n"));
 }

@@ -288,7 +288,7 @@ namespace XMI
           // Support up to 100 unique contexts.
           //static eager_connection_t _eager_connection[];
           EagerConnection<T_Device> _connection_manager;
-          
+
           size_t      _contextid;
 
           static int dispatch_ack_direct (void         * metadata,

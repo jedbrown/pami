@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/uint64.cc
+ * \file math/bgp/collective_network/uint64_t.cc
  * \brief Default C math routines for 64 bit unsigned integer operations.
  */
 
