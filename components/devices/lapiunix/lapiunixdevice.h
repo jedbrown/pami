@@ -1,0 +1,506 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/lapi/lapidevice.h
+ * \brief ???
+ */
+
+#ifndef __components_devices_lapi_lapidevice_h__
+#define __components_devices_lapi_lapidevice_h__
+
+#include "components/devices/BaseDevice.h"
+#include "components/devices/MessageDevice.h"
+#include "components/devices/lapiunix/lapiunixmessage.h"
+#include <map>
+#include <list>
+#include <sched.h>
+
+namespace XMI
+{
+  namespace Device
+  {
+    typedef struct lapi_dispatch_info_t
+    {
+      Interface::RecvFunction_t  recv_func;
+      void                      *recv_func_parm;
+    }lapi_dispatch_info_t;
+
+    typedef struct lapi_mcast_dispatch_info_t
+    {
+      xmi_olddispatch_multicast_fn  recv_func;
+      void                         *async_arg;
+    }lapi_mcast_dispatch_info_t;
+
+    typedef struct lapi_m2m_dispatch_info_t
+    {
+      xmi_olddispatch_manytomany_fn  recv_func;
+      void                          *async_arg;
+    }lapi_m2m_dispatch_info_t;
+
+
+    template <class T_SysDep>
+    class LAPIDevice : public Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep>,
+                      public Interface::MessageDevice<LAPIDevice<T_SysDep> >
+    {
+    public:
+      static const size_t packet_payload_size = 224;
+      inline LAPIDevice () :
+        Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep> (),
+        Interface::MessageDevice<LAPIDevice<T_SysDep> >(),
+        _dispatch_id(0)
+        {
+          LAPI_Comm_size(LAPI_COMM_WORLD, (int*)&_peers);
+        };
+
+      // Implement BaseDevice Routines
+
+      inline ~LAPIDevice () {};
+
+
+      int registerRecvFunction (Interface::RecvFunction_t  recv_func,
+                                void                      *recv_func_parm)
+        {
+          _dispatch_table[_dispatch_id].recv_func=recv_func;
+          _dispatch_table[_dispatch_id].recv_func_parm=recv_func_parm;
+          _dispatch_lookup[_dispatch_id]=_dispatch_table[_dispatch_id];
+          return _dispatch_id++;
+        }
+
+      int initMcast()
+        {
+          return _mcast_dispatch_id++;
+        }
+
+      int initM2M()
+        {
+          return _m2m_dispatch_id++;
+        }
+      
+      void registerMcastRecvFunction (int                           dispatch_id,
+                                      xmi_olddispatch_multicast_fn  recv_func,
+                                      void                         *async_arg)
+        {
+          _mcast_dispatch_table[dispatch_id].recv_func=recv_func;
+          _mcast_dispatch_table[dispatch_id].async_arg=async_arg;
+          _mcast_dispatch_lookup[dispatch_id]=_mcast_dispatch_table[dispatch_id];
+        }
+
+      void registerM2MRecvFunction (int                           dispatch_id,
+                                    xmi_olddispatch_multicast_fn  recv_func,
+                                    void                         *async_arg)
+        {
+          _m2m_dispatch_table[dispatch_id].recv_func=recv_func;
+          _m2m_dispatch_table[dispatch_id].async_arg=async_arg;
+          _m2m_dispatch_lookup[dispatch_id]=_m2m_dispatch_table[dispatch_id];
+        }
+
+      inline xmi_result_t init_impl (T_SysDep * sysdep)
+        {
+          assert(0);
+	  return XMI_UNIMPL;
+        };
+
+      inline bool isInit_impl ()
+        {
+          assert(0);
+	  return false;
+        };
+      inline bool isReliableNetwork ()
+        {
+          return true;
+        };
+
+      inline int advance_impl ()
+        {
+          int flag = 0;
+          LAPI_Status sts;
+
+          // Check the P2P send queue
+          std::list<LAPIMessage*>::iterator it_p2p;
+          for(it_p2p=_sendQ.begin();it_p2p != _sendQ.end(); it_p2p++)
+              {
+                flag            = 0;
+                LAPI_Testall(1,&((*it_p2p)->_request),&flag,LAPI_STATUSES_IGNORE);
+                if(flag)
+                    {
+                      if((*it_p2p)->_done_fn )
+                        (*it_p2p)->_done_fn((*it_p2p)->_context,(*it_p2p)->_cookie, XMI_SUCCESS);
+                      _sendQ.remove((*it_p2p));
+//                      if((*it_p2p)->_freeme)
+//                        free(*it_p2p);
+                      break;
+                    }
+              }
+          // Check the Multicast send queue
+          std::list<LAPIMcastMessage*>::iterator it_mcast;
+          for(it_mcast=_mcastsendQ.begin();it_mcast != _mcastsendQ.end(); it_mcast++)
+              {
+                int numStatuses = (*it_mcast)->_num;
+                flag            = 0;
+                LAPI_Testall(numStatuses,(*it_mcast)->_req,&flag,LAPI_STATUSES_IGNORE);
+                if(flag)
+                    {
+                      if((*it_mcast)->_cb_done.function )
+                        (*(*it_mcast)->_cb_done.function)((*it_p2p)->_context, (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
+                      free ((*it_mcast)->_req);
+                      free (*it_mcast);
+                      _mcastsendQ.remove((*it_mcast));
+                      break;
+                    }
+              }
+          // Check the M2M send Queue
+          std::list<LAPIM2MMessage*>::iterator it;
+          for(it=_m2msendQ.begin();it != _m2msendQ.end(); it++)
+              {
+                int numStatuses = (*it)->_num;
+                flag            = 0;
+                LAPI_Testall(numStatuses,(*it)->_reqs,&flag,LAPI_STATUSES_IGNORE);
+                if(flag)
+                    {
+                      if((*it)->_done_fn )
+                        ((*it)->_done_fn)(NULL, (*it)->_cookie, XMI_SUCCESS);
+
+                      free ((*it)->_reqs);
+                      free ((*it)->_bufs);
+                      _m2msendQ.remove((*it));
+                      free (*it);
+                      break;
+                    }
+              }
+          
+          
+
+          flag = 0;
+          int rc = LAPI_Iprobe (LAPI_ANY_SOURCE, LAPI_ANY_TAG, LAPI_COMM_WORLD, &flag, &sts);
+          assert (rc == LAPI_SUCCESS);
+          if(flag)
+              {
+                //p2p messages
+                switch(sts.LAPI_TAG)
+                    {
+                        case 0:
+                        {
+                          int nbytes = 0;
+                          LAPI_Get_count(&sts, LAPI_BYTE, &nbytes);
+                          LAPIMessage *msg = (LAPIMessage *) malloc (sizeof(*msg));
+                          int rc = LAPI_Recv(&msg->_p2p_msg,nbytes,LAPI_BYTE,sts.
+                                            LAPI_SOURCE,sts.LAPI_TAG,
+                                            LAPI_COMM_WORLD,&sts);
+                          assert(rc == LAPI_SUCCESS);
+                          size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
+                          lapi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
+                          if(mdi.recv_func)
+                            mdi.recv_func(msg->_p2p_msg._metadata,
+                                          msg->_p2p_msg._payload,
+                                          msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
+                                          mdi.recv_func_parm);
+                          free(msg);
+                        }
+                        break;
+                        case 1:
+                        {
+                          int nbytes = 0;
+                          LAPI_Get_count(&sts, LAPI_BYTE, &nbytes);
+                          LAPIMessage *msg = (LAPIMessage *) malloc (sizeof(*msg)+nbytes);
+                          int rc = LAPI_Recv(&msg->_p2p_msg,nbytes,LAPI_BYTE,sts.
+                                            LAPI_SOURCE,sts.LAPI_TAG,
+                                            LAPI_COMM_WORLD,&sts);
+                          assert(rc == LAPI_SUCCESS);
+                          size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
+                          lapi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
+                          if(mdi.recv_func)
+                            mdi.recv_func(msg->_p2p_msg._metadata,
+                                          (char*)msg->_p2p_msg._metadata+msg->_p2p_msg._metadatasize,
+                                          msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
+                                          mdi.recv_func_parm);
+                          free(msg);
+                        }
+                        break;
+                        case 2:
+                        {
+                          int nbytes = 0;
+                          LAPI_Get_count(&sts, LAPI_BYTE, &nbytes);
+                          LAPIMcastMessage *msg = (LAPIMcastMessage *) malloc (nbytes);
+                          assert(msg != NULL);
+                          int rc = LAPI_Recv(msg,nbytes,LAPI_BYTE,sts.LAPI_SOURCE,sts.LAPI_TAG, LAPI_COMM_WORLD,&sts);
+                          XMI_assert (rc == LAPI_SUCCESS);
+                          unsigned         rcvlen;
+                          char           * rcvbuf;
+                          unsigned         pwidth;
+                          xmi_callback_t   cb_done;
+                          size_t dispatch_id      = msg->_dispatch_id;
+                          lapi_mcast_dispatch_info_t mdi = _mcast_dispatch_lookup[dispatch_id];
+
+                          LAPIMcastRecvMessage *mcast;
+                          std::list<LAPIMcastRecvMessage*>::iterator it;
+                          int found=0;
+                          for(it=_mcastrecvQ.begin();it != _mcastrecvQ.end(); it++)
+                              {
+                                if( (*it)->_conn == msg->_conn &&
+                                    (*it)->_dispatch_id == msg->_dispatch_id)
+                                    {
+                                      found = 1;
+                                      break;
+                                    }
+                              }
+                          LAPIMcastRecvMessage _m_store;
+                          if( !found )
+                              {
+                                XMI_assert (mdi.recv_func != NULL);
+			  
+                                mdi.recv_func (&msg->_info[0],
+                                               msg->_info_count,
+                                               sts.LAPI_SOURCE,
+                                               msg->_size,
+                                               msg->_conn,
+                                               mdi.async_arg,
+                                               &rcvlen,
+                                               &rcvbuf,
+                                               &pwidth,
+                                               &cb_done);
+                                assert(rcvlen <= (size_t)msg->_size);
+//                          mcast = (LAPIMcastRecvMessage*)malloc(sizeof(*mcast));
+                                mcast = &_m_store;
+                                assert(mcast != NULL);
+                                mcast->_conn     = msg->_conn;
+                                mcast->_done_fn  = cb_done.function;
+                                mcast->_cookie   = cb_done.clientdata;
+                                mcast->_buf      = rcvbuf;
+                                mcast->_size     = rcvlen;
+                                mcast->_pwidth   = pwidth;
+                                mcast->_hint     = XMI_PT_TO_PT_SUBTASK;
+                                mcast->_op       = XMI_UNDEFINED_OP;
+                                mcast->_dtype    = XMI_UNDEFINED_DT;
+                                mcast->_counter = 0;
+                                mcast->_dispatch_id = dispatch_id;
+                                enqueue(mcast);
+                              }
+                          else
+                              {
+                                mcast = (*it);
+                              }
+
+                          if(mcast->_pwidth == 0 && mcast->_buf == 0) {
+                            if(mcast->_done_fn)
+                              mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
+		      
+                            _mcastrecvQ.remove(mcast);
+                            free (msg);
+                            if(found)
+                              free (mcast);
+
+                            break;
+                          }
+
+                          int bytes = mcast->_size - mcast->_counter;
+                          if (bytes > msg->_size) bytes = msg->_size;
+                          if(mcast->_size)
+                            memcpy (mcast->_buf + mcast->_counter, msg->buffer(), bytes);
+		    
+                          //printf ("dispatch %d matched posted receive %d %d %d %d\n", 
+                          //	    dispatch_id,
+                          //	    nbytes, mcast->_pwidth, mcast->_counter,
+                          //	    mcast->_size);
+		    
+                          //for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
+                          //if(mcast->_done_fn)
+                          //  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+		    
+                          // XMI_assert (nbytes <= mcast->_pwidth);
+		    
+                          mcast->_counter += mcast->_pwidth;
+                          if(mcast->_done_fn)
+                            mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+		    
+                          if (mcast->_counter >= mcast->_size) {
+                            _mcastrecvQ.remove(mcast);
+                            if(found)
+                              free (mcast);
+                          }
+
+                          free (msg);
+                        }	      
+                        break;
+                        case 3:
+                        {
+                          int nbytes = 0;
+                          LAPI_Get_count(&sts, LAPI_BYTE, &nbytes);
+                          LAPIM2MHeader *msg = (LAPIM2MHeader *) malloc (nbytes);
+                          int rc            = LAPI_Recv(msg,nbytes,LAPI_BYTE,sts.LAPI_SOURCE,sts.LAPI_TAG, LAPI_COMM_WORLD,&sts);
+                          XMI_assert (rc == LAPI_SUCCESS);
+
+                          std::list<LAPIM2MRecvMessage<size_t>*>::iterator it;
+                          for(it=_m2mrecvQ.begin();it != _m2mrecvQ.end(); it++)
+                              {
+                                if( (*it)->_conn == msg->_conn ) break;
+                              }
+                          
+                          lapi_m2m_dispatch_info_t mdi = _m2m_dispatch_lookup[msg->_dispatch_id];
+                          LAPIM2MRecvMessage<size_t> * m2m;
+                          if( it == _m2mrecvQ.end() )
+                              {
+                                xmi_callback_t    cb_done;
+                                char            * buf;
+                                size_t        * sizes;
+                                size_t        * offsets;
+                                size_t        * rcvcounters;
+                                size_t          nranks;
+                                mdi.recv_func(msg->_conn, 
+                                              mdi.async_arg,
+                                              &buf, 
+                                              &offsets, 
+                                              &sizes, 
+                                              &rcvcounters, 
+                                              &nranks, 
+                                              &cb_done );
+                                m2m = (LAPIM2MRecvMessage<size_t> *)malloc(sizeof(LAPIM2MRecvMessage<size_t>) );
+                                XMI_assert ( m2m != NULL );
+                                m2m->_conn = msg->_conn;
+                                m2m->_done_fn = cb_done.function;
+                                m2m->_cookie  = cb_done.clientdata;
+                                m2m->_num = 0;
+                                for( unsigned i = 0; i < nranks; i++)
+                                    {
+                                      if( sizes[i] == 0 ) continue;
+                                      m2m->_num++;
+                                    }
+                                if( m2m->_num == 0 )
+                                    {
+                                      if( m2m->_done_fn )
+                                        (m2m->_done_fn)(NULL, m2m->_cookie,XMI_SUCCESS);
+                                      free ( m2m );
+                                      return NULL;
+                                    }
+                                m2m->_buf     = buf;
+                                m2m->_sizes   = sizes;
+                                m2m->_offsets = offsets;
+                                m2m->_nranks  = nranks;
+                                enqueue(m2m);
+                              }
+                          else
+                              {
+                                m2m = (*it);
+                              }
+                          unsigned src = sts.LAPI_SOURCE;
+                          if( m2m )
+                              {
+                                unsigned size = msg->_size < m2m->_sizes[src] ? msg->_size : m2m->_sizes[src]; 
+                                XMI_assert( size > 0 );
+                                memcpy( m2m->_buf + m2m->_offsets[src], msg->buffer(), size );
+                                m2m->_num--;
+                                if( m2m->_num == 0 )
+                                    {
+                                      if( m2m->_done_fn )
+                                          {
+                                            m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+                                          }
+                                      _m2mrecvQ.remove(m2m);
+                                      free ( m2m );
+                                    }
+                              }
+                          free ( msg );
+                        }
+                        break;
+                    }
+              }
+          // This isn't performance sensitive because this device is just for testing
+          // but we want to play nice with other
+          // processes, so let's be nice and yield to them.
+          sched_yield();
+	  return 0;
+        };
+
+      // Implement MessageDevice Routines
+      /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
+      static const size_t message_metadata_size = 128;
+
+      inline void   setConnection_impl (int channel, size_t rank, void * arg)
+        {
+          assert(0);
+        }
+      inline void * getConnection_impl (int channel, size_t rank)
+        {
+          assert(0);
+	  return NULL;
+        }
+
+      // Implement Packet Device Routines
+      inline int    readData_impl(void * dst, size_t bytes)
+        {
+          assert(0);
+	  return -1;
+        }
+      inline bool   requiresRead_impl()
+        {
+          assert(0);
+	  return false;
+        }
+      inline size_t getPacketMetadataSize_impl()
+        {
+          return 128;
+        }
+      inline size_t getPacketPayloadSize_impl()
+        {
+          return 224;
+        }
+
+      inline size_t peers_impl ()
+        {
+          return _peers;
+        }
+
+      inline size_t task2peer_impl (size_t task)
+        {
+          assert(task < _peers);
+          return task;
+        }
+      inline void enqueue(LAPIMessage* msg)
+        {
+          _sendQ.push_front(msg);
+        }
+
+      inline void enqueue(LAPIMcastMessage* msg)
+        {
+          _mcastsendQ.push_front(msg);
+        }
+
+      inline void enqueue(LAPIMcastRecvMessage *msg)
+        {
+          _mcastrecvQ.push_front(msg);
+        }
+
+      inline void enqueue(LAPIM2MRecvMessage<size_t> *msg)
+        {
+          _m2mrecvQ.push_front(msg);
+        }
+
+      inline void enqueue(LAPIM2MMessage *msg)
+        {
+          _m2msendQ.push_front(msg);
+        }
+
+      size_t                                    _peers;
+      size_t                                    _dispatch_id;
+      size_t                                    _mcast_dispatch_id;
+      size_t                                    _m2m_dispatch_id;
+      std::map<int, lapi_dispatch_info_t>        _dispatch_lookup;
+      std::map<int, lapi_mcast_dispatch_info_t>  _mcast_dispatch_lookup;
+      std::map<int, lapi_m2m_dispatch_info_t>    _m2m_dispatch_lookup;
+      std::list<LAPIMessage*>                    _sendQ;
+      std::list<LAPIMcastMessage*>               _mcastsendQ;
+      std::list<LAPIM2MMessage*>                 _m2msendQ;
+      std::list<LAPIMcastRecvMessage*>           _mcastrecvQ;
+      std::list<LAPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
+      lapi_dispatch_info_t                       _dispatch_table[256];
+      lapi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
+      lapi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
+    };
+  };
+};
+#endif // __components_devices_lapi_lapipacketdevice_h__
