@@ -1,3 +1,14 @@
+# begin_generated_IBM_copyright_prolog                             #
+#                                                                  #
+#  --------------------------------------------------------------- #
+#                                                                  #
+# (C) Copyright IBM Corp.  2009, 2009                              #
+# IBM CPL License                                                  #
+#                                                                  #
+#  --------------------------------------------------------------- #
+#                                                                  #
+# end_generated_IBM_copyright_prolog                               #
+
 VPATH		= @abs_srcdir@
 SUBDIRS		= atomic  client  context  devices  geometry  mapping  memory  memregion  sysdep
 NOTBUILT        =
