@@ -161,7 +161,7 @@ public:
 		_barrier.coreshift = sd->lockboxFactory.coreShift();
 		_barrier.nparties = sd->lockboxFactory.numProc();
 		sd->lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
-						XMI::Atomic::BGP::LBX_PROC_SCOPE);
+						XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		_status = XMI::Atomic::Interface::Initialized;
 	}
 }; // class LockBoxNodeProcBarrier
