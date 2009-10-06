@@ -194,6 +194,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
   this->_initialized = true;
   _numActiveSends   = XMI_MAX_ACTIVE_SENDS;
 
+  XMI_assert(this->_sState);
+
   unsigned count;
   for(count = 0; count < _numActiveSends; count++)
   {

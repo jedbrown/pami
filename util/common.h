@@ -36,22 +36,24 @@
 #define XMI_abort()                       abort()
 #define XMI_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: ", __LINE__); fprintf(stderr, fmt); abort(); }
 
-#if ASSERT_LEVEL==0    // All asserts are disabled
+#ifndef ASSERT_LEVEL
+  #define ASSERT_LEVEL 2
+  #warning ASSERT_LEVEL not set by config.  Defaulting to all asserts enabled 
+#endif
 
+#if ASSERT_LEVEL==0    // All asserts are disabled
   #define XMI_assert(expr)
   #define XMI_assertf(expr, fmt...)
   #define XMI_assert_debug(expr)
   #define XMI_assert_debugf(expr, fmt...)
 
 #elif ASSERT_LEVEL==1  // Only "normal" asserts, not debug, are enabled
-
   #define XMI_assert(expr)                assert(expr)
   #define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
   #define XMI_assert_debug(expr)
   #define XMI_assert_debugf(expr, fmt...)
 
 #else // ASSERT_LEVEL==2 ... All asserts are enabled
-
   #define XMI_assert(expr)                assert(expr)
   #define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
   #define XMI_assert_debug(expr)          assert(expr)

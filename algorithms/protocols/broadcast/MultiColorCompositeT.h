@@ -74,7 +74,7 @@ namespace CCMI
         char *                                        _srcbufs    [NUMCOLORS];
         unsigned                                      _bytecounts [NUMCOLORS];
 
-      public:
+      public:        
         MultiColorCompositeT () : CCMI::Executor::Composite (), _doneCount(0), _nComplete(0)
         {
         }
@@ -85,15 +85,15 @@ namespace CCMI
         static void staticRecvFn (void *ctxt, void *executor, xmi_result_t err)
           {
             xmi_quad_t *info = NULL;
-
+            
             CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *exe =
               (CCMI::Executor::Broadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *) executor;
-
+            
             TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::MultiColorCompositeT::staticRecvFn() \n",(int)exe));
-
+                        
             exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
           }
-
+        
         MultiColorCompositeT (T_Sysdep                              * map,
                               T_ConnectionManager * cmgr,
                               XMI_Callback_t                              cb_done,
@@ -161,6 +161,7 @@ namespace CCMI
                            T_ConnectionManager   * cmgr,
                            T_Mcast               * minterface)
         {
+          XMI_assert(this->_sd);
           if(_sd->mapping.task() != root)
           { //post receive on non root nodes
             //posts a receive on connection given by connection
@@ -213,7 +214,7 @@ namespace CCMI
 
           CCMI_assert (bcast_composite->_doneCount <  bcast_composite->_nComplete);
           ++bcast_composite->_doneCount;
-
+          
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
             bcast_composite->_cb_done.function(ctxt, bcast_composite->_cb_done.clientdata, XMI_SUCCESS);
@@ -278,6 +279,7 @@ namespace CCMI
          unsigned                    bytes)
         {
           XMI_assert(rsize >= sizeof(B));
+          XMI_assert(request_buf);
           B  *composite =
           new (request_buf)
           B (this->_sd,
@@ -289,6 +291,7 @@ namespace CCMI
              root,
              src,
              bytes);
+          XMI_assert(composite);
           composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
           CCMI::Executor::OldBarrier<T_Mcast> *barrier = (CCMI::Executor::OldBarrier<T_Mcast>*)
             geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
