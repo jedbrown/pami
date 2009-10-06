@@ -64,10 +64,9 @@ namespace XMI
                                xmi_dt                      dtype = XMI_UNDEFINED_DT )
         {
           LAPIMcastMessage msg;
-          int   rc          = -1;
           msg._info_count   = info_count;
           msg._size         = size;
-          msg._peer         = 0;
+          msg._peer         = _device._sysdep->mapping.task();
           msg._conn         = connection_id;
           msg._dispatch_id  = _dispatch_id;
           if ( info )

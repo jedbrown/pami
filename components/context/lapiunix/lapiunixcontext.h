@@ -113,6 +113,7 @@ namespace XMI
                                        (int *)&_mysize)));
           free(lapi_info);
 
+          _lapi_device.init(&_sysdep);
           _lapi_device.setLapiHandle(_lapi_handle);
           
           _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));

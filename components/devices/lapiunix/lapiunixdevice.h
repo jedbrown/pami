@@ -63,7 +63,11 @@ namespace XMI
 
       // Implement BaseDevice Routines
 
-      inline ~LAPIDevice () {};
+      inline ~LAPIDevice ()
+        {
+          
+
+        };
 
 
       void setLapiHandle(lapi_handle_t handle)
@@ -72,9 +76,8 @@ namespace XMI
           _g_context_to_device_table[handle]=(void*) this;
 
           CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
-                                            (void *)__xmi_lapi_amSendRequestHandler,
-                                            XMI_LAPI_AMSENDREQUESTHANDLER)));
-
+                                            (void *)__xmi_lapi_mcast_fn,
+                                            1)));
         }
 
 
@@ -91,12 +94,12 @@ namespace XMI
 
       int initMcast()
         {
-          return 256+_mcast_dispatch_id++;
+          return _mcast_dispatch_id++;
         }
 
       int initM2M()
         {
-          return 512+_m2m_dispatch_id++;
+          return _m2m_dispatch_id++;
         }
 
       void registerMcastRecvFunction (int                           dispatch_id,
@@ -119,8 +122,8 @@ namespace XMI
 
       inline xmi_result_t init_impl (T_SysDep * sysdep)
         {
-          assert(0);
-	  return XMI_UNIMPL;
+          _sysdep = sysdep;
+	  return XMI_SUCCESS;
         };
 
       inline bool isInit_impl ()
@@ -135,7 +138,8 @@ namespace XMI
 
       inline int advance_impl ()
         {
-          assert(0);
+          lapi_msg_info_t info;
+          LAPI_Msgpoll (_lapi_handle, 5, &info);
         };
 
       // Implement MessageDevice Routines
@@ -208,13 +212,13 @@ namespace XMI
         }
 
 
-      static void __xmi_lapi_mcast_done_fn(void *clientdata)
+      static void __xmi_lapi_mcast_done_fn(lapi_handle_t* handle, void *clientdata)
         {
-          LAPIMcastRecvReq *req = clientdata;
+          LAPIMcastRecvReq *req = (LAPIMcastRecvReq *)clientdata;
           if(req->_user_done.function)
             req->_user_done.function(NULL,
-                                             req->_user_done.clientdata,
-                                             XMI_SUCCESS);
+                                     req->_user_done.clientdata,
+                                     XMI_SUCCESS);
           free(req);
         }
       
@@ -329,6 +333,7 @@ namespace XMI
         }
 
       lapi_handle_t                              _lapi_handle;
+      T_SysDep                                  *_sysdep;
       size_t                                     _peers;
       size_t                                     _dispatch_id;
       size_t                                     _mcast_dispatch_id;
