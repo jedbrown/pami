@@ -13,7 +13,7 @@
 #include "sys/xmi.h"
 #include "components/context/Context.h"
 
-//#define ENABLE_GENERIC_DEVICE
+#define ENABLE_GENERIC_DEVICE
 #ifdef ENABLE_GENERIC_DEVICE
 #include "components/devices/generic/GenericDevice.h"
 #endif
