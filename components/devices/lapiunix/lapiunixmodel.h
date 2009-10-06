@@ -144,7 +144,7 @@ namespace XMI
                                     size_t             bytes)
         {
           int rc;
-          LAPIMessage * msg = (LAPIMessage *)malloc(sizeof(LAPIMessage)+metasize+bytes-128-224);
+          LAPIMessage * msg = (LAPIMessage *)malloc(sizeof(LAPIMessage)+metasize+bytes-DEV_HEADER_SIZE-DEV_PAYLOAD_SIZE);
           new(msg)LAPIMessage(this->_context,
                              this->_dispatch_id,
                              fn,

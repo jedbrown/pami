@@ -44,12 +44,15 @@ namespace XMI
     }lapi_m2m_dispatch_info_t;
 
 
+    extern std::map<lapi_handle_t,void*> _g_context_to_device_table;
+
+
     template <class T_SysDep>
     class LAPIDevice : public Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep>,
-                      public Interface::MessageDevice<LAPIDevice<T_SysDep> >
+                       public Interface::MessageDevice<LAPIDevice<T_SysDep> >
     {
     public:
-      static const size_t packet_payload_size = 224;
+      static const size_t packet_payload_size = DEV_PAYLOAD_SIZE;
       inline LAPIDevice () :
         Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep> (),
         Interface::MessageDevice<LAPIDevice<T_SysDep> >(),
@@ -63,25 +66,39 @@ namespace XMI
       inline ~LAPIDevice () {};
 
 
+      void setLapiHandle(lapi_handle_t handle)
+        {
+          _lapi_handle=handle;
+          _g_context_to_device_table[handle]=(void*) this;
+
+          CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
+                                            (void *)__xmi_lapi_amSendRequestHandler,
+                                            XMI_LAPI_AMSENDREQUESTHANDLER)));
+
+        }
+
+
+
+
       int registerRecvFunction (Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
         {
           _dispatch_table[_dispatch_id].recv_func=recv_func;
           _dispatch_table[_dispatch_id].recv_func_parm=recv_func_parm;
           _dispatch_lookup[_dispatch_id]=_dispatch_table[_dispatch_id];
-          return _dispatch_id++;
+          return 0+_dispatch_id++;
         }
 
       int initMcast()
         {
-          return _mcast_dispatch_id++;
+          return 256+_mcast_dispatch_id++;
         }
 
       int initM2M()
         {
-          return _m2m_dispatch_id++;
+          return 512+_m2m_dispatch_id++;
         }
-      
+
       void registerMcastRecvFunction (int                           dispatch_id,
                                       xmi_olddispatch_multicast_fn  recv_func,
                                       void                         *async_arg)
@@ -118,11 +135,12 @@ namespace XMI
 
       inline int advance_impl ()
         {
+          assert(0);
         };
 
       // Implement MessageDevice Routines
       /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
-      static const size_t message_metadata_size = 128;
+      static const size_t message_metadata_size = DEV_HEADER_SIZE;
 
       inline void   setConnection_impl (int channel, size_t rank, void * arg)
         {
@@ -147,11 +165,11 @@ namespace XMI
         }
       inline size_t getPacketMetadataSize_impl()
         {
-          return 128;
+          return DEV_HEADER_SIZE;
         }
       inline size_t getPacketPayloadSize_impl()
         {
-          return 224;
+          return DEV_PAYLOAD_SIZE;
         }
 
       inline size_t peers_impl ()
@@ -189,10 +207,91 @@ namespace XMI
           _m2msendQ.push_front(msg);
         }
 
-      size_t                                    _peers;
-      size_t                                    _dispatch_id;
-      size_t                                    _mcast_dispatch_id;
-      size_t                                    _m2m_dispatch_id;
+      static    void * __xmi_lapi_mcast_fn (lapi_handle_t   * hndl,
+                                            void            * uhdr,
+                                            uint            * uhdr_len,
+                                            ulong           * retinfo,
+                                            compl_hndlr_t  ** comp_h,
+                                            void           ** uinfo)
+        {
+          lapi_return_info_t        * ri = (lapi_return_info_t *) retinfo;
+          LAPIP2PMessage            * hi = (LAPIP2PMessage *) uhdr;
+          void                       * r = NULL;
+          size_t                      hh =  hi->_dispatch_id;
+
+          LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
+          Interface::RecvFunction_t  recv_func;
+          void                      *recv_func_parm;
+          recv_func      = _dev->_dispatch_table[hh].recv_func;
+          recv_func_parm = _dev->_dispatch_table[hh].recv_func_parm;
+
+          if (!hh) XMI_abort();
+          recv_func(hi->_metadata,
+                    hi->_payload,
+                    hi->_payloadsize0+hi->_payloadsize1,
+                    recv_func_parm);
+
+          if (ri->udata_one_pkt_ptr)
+              {
+                if (r && ri->msg_len)
+                  memcpy(r,(void *)ri->udata_one_pkt_ptr,ri->msg_len);
+                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ctl_flags = LAPI_BURY_MSG;
+                return NULL;
+              }
+          else
+              {
+                ri->ret_flags = LAPI_SEND_REPLY;
+                if (!r) ri->ctl_flags = LAPI_BURY_MSG;
+              }
+          return r;
+        }
+
+      static    void * __xmi_lapi_amSendRequestHandler (lapi_handle_t   * hndl,
+                                                        void            * uhdr,
+                                                        uint            * uhdr_len,
+                                                        ulong           * retinfo,
+                                                        compl_hndlr_t  ** comp_h,
+                                                        void           ** uinfo)
+        {
+          lapi_return_info_t        * ri = (lapi_return_info_t *) retinfo;
+          LAPIP2PMessage            * hi = (LAPIP2PMessage *) uhdr;
+          void                       * r = NULL;
+          size_t                      hh =  hi->_dispatch_id;
+
+          LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
+          Interface::RecvFunction_t  recv_func;
+          void                      *recv_func_parm;
+          recv_func      = _dev->_dispatch_table[hh].recv_func;
+          recv_func_parm = _dev->_dispatch_table[hh].recv_func_parm;
+
+          if (!hh) XMI_abort();
+          recv_func(hi->_metadata,
+                    hi->_payload,
+                    hi->_payloadsize0+hi->_payloadsize1,
+                    recv_func_parm);
+
+          if (ri->udata_one_pkt_ptr)
+              {
+                if (r && ri->msg_len)
+                  memcpy(r,(void *)ri->udata_one_pkt_ptr,ri->msg_len);
+                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ctl_flags = LAPI_BURY_MSG;
+                return NULL;
+              }
+          else
+              {
+                ri->ret_flags = LAPI_SEND_REPLY;
+                if (!r) ri->ctl_flags = LAPI_BURY_MSG;
+              }
+          return r;
+        }
+
+      lapi_handle_t                              _lapi_handle;
+      size_t                                     _peers;
+      size_t                                     _dispatch_id;
+      size_t                                     _mcast_dispatch_id;
+      size_t                                     _m2m_dispatch_id;
       std::map<int, lapi_dispatch_info_t>        _dispatch_lookup;
       std::map<int, lapi_mcast_dispatch_info_t>  _mcast_dispatch_lookup;
       std::map<int, lapi_m2m_dispatch_info_t>    _m2m_dispatch_lookup;
@@ -205,6 +304,10 @@ namespace XMI
       lapi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       lapi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
     };
+
+
+
+
   };
 };
 #endif // __components_devices_lapi_lapipacketdevice_h__

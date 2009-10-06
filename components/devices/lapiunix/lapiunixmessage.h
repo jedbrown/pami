@@ -23,6 +23,23 @@ namespace XMI
 {
   namespace Device
   {
+    #define XMI_TSP_AMSEND_REG_MAX        100
+    #define DEV_HEADER_SIZE               64
+    #define DEV_PAYLOAD_SIZE              64
+
+    
+    class LAPIP2PMessage
+    {
+    public:
+      size_t              _dispatch_id;
+      int                 _metadatasize;
+      int                 _payloadsize0;
+      int                 _payloadsize1;
+      char                _metadata[DEV_HEADER_SIZE];
+      char                _payload[DEV_PAYLOAD_SIZE];      
+    };
+
+
     class LAPIMessage
     {
     public:
@@ -40,34 +57,43 @@ namespace XMI
       xmi_event_function  _done_fn;
       void               *_cookie;
       int                 _freeme;
-
-      struct _p2p_msg
-      {
-        size_t              _dispatch_id;
-        int                 _metadatasize;
-        int                 _payloadsize0;
-        int                 _payloadsize1;
-        char                _metadata[128];
-        char                _payload[224];
-      }_p2p_msg;
+      LAPIP2PMessage _p2p_msg;
     protected:
     private:
     };
 
+
+
+    class LAPISendInfo
+    {
+    public:
+      int                _totalsends;
+      int                _numsends;
+      xmi_callback_t     _user_cb_done;
+    };
+    
+    class LAPIMcastSendReq
+    {
+    public:
+      xmi_callback_t        user_done_callback;
+    }
+      __pgasrt_lapi_request_t;
+    
     class LAPIMcastMessage
     {
     public:
-      xmi_context_t  _context;
-      size_t         _dispatch_id;
       xmi_quad_t     _info[2];
       int            _info_count;
+      xmi_context_t  _context;
+      size_t         _dispatch_id;
+      int            _peer;
       int            _size;
       unsigned       _conn;
       int            _num;
       xmi_callback_t _cb_done;
       inline void *buffer() { return ((char *)this + sizeof (*this)); }
       inline int  totalsize () { return _size + sizeof (*this); }
-    };
+    }__attribute__((__aligned__(16)));;
 
     class LAPIMcastRecvMessage
     {
@@ -98,7 +124,7 @@ namespace XMI
       int                 _totalsize;
       char               *_bufs;
     };
-    
+
     template <class T_Counter>
     class LAPIM2MRecvMessage
     {
@@ -120,11 +146,11 @@ namespace XMI
       size_t      _dispatch_id;
       unsigned    _size;
       unsigned    _conn;
-      inline void *buffer() { return ((char *)this + sizeof (LAPIM2MHeader)); } 
-      inline int  totalsize () { return _size + sizeof (LAPIM2MHeader); } 
+      inline void *buffer() { return ((char *)this + sizeof (LAPIM2MHeader)); }
+      inline int  totalsize () { return _size + sizeof (LAPIM2MHeader); }
     };
 
-    
+
   };
 };
 

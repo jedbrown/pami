@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <lapi.h>
+#include "util/lapi/lapi_util.h"
 #include "components/context/Context.h"
 #include "components/geometry/common/commongeometry.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
@@ -36,8 +36,6 @@ namespace XMI
     typedef CollFactory::LAPI<LAPIDevice, SysDep::LAPISysDep> LAPICollfactory;
     typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep::LAPISysDep> LAPICollreg;
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice,LAPIMessage> EagerLAPI;
-
-
     
     class LAPI : public Context<XMI::Context::LAPI>
     {
@@ -47,27 +45,94 @@ namespace XMI
         _client (client),
         _id (id)
         {
-//          LAPI_Comm_rank(LAPI_COMM_WORLD,&_myrank);
-//          LAPI_Comm_size(LAPI_COMM_WORLD,&_mysize);
+          lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
+          lapi_extend_t * extend_info;   /* holds IP addresses and ports */
+          lapi_udp_t    * udp_info;      /* List of ip, port info to pass to LAPI */
+          int             num_tasks;     /* number of tasks (from LAPI_LIST_NAME) */
+          char          * list_name;     /* name of UDP host/port list file */
+          FILE          * fp;
+          int             i;
+
+          /* ------------------------------------------------------------ */
+          /*        initialize request allocation pool                    */
+          /* ------------------------------------------------------------ */
+//	    __pgasrt_lapi_pool_init();
+
+          /* ------------------------------------------------------------ */
+          /*       allocate and initialize lapi_info                      */
+          /* ------------------------------------------------------------ */
+
+          CHECK_NULL(lapi_info,(lapi_info_t *)malloc(sizeof(lapi_info_t)));
+          memset(lapi_info, 0, sizeof(lapi_info_t));
+
+          /* ------------------------------------------------------------ */
+          /* collect UDP hostnames and ports into udp_info data structure */
+          /* ------------------------------------------------------------ */
+
+          udp_info = NULL;
+          list_name=getenv("LAPI_LIST_NAME");
+          if (list_name)
+              {
+                if ((fp = fopen (list_name, "r")) == NULL) {
+                  printf ("Cannot find LAPI_LIST_NAME\n");
+                  abort();
+                }
+                fscanf(fp, "%u", &num_tasks);
+                CHECK_NULL(udp_info,(lapi_udp_t *) malloc(num_tasks*sizeof(lapi_udp_t)));
+                for (i = 0; i < num_tasks; i++)
+                    {
+                      char ip[256];
+                      unsigned port;
+                      fscanf(fp, "%s %u", ip, &port);
+                      udp_info[i].ip_addr = inet_addr(ip);
+                      udp_info[i].port_no = port;
+                    }
+                /* ------------------------------------------------------------ */
+                /*        link up udp_info, extend_info and lapi_info           */
+                /* ------------------------------------------------------------ */
+                CHECK_NULL(extend_info,(lapi_extend_t *)malloc(sizeof(lapi_extend_t)));
+                memset(extend_info, 0, sizeof(lapi_extend_t));
+                extend_info->add_udp_addrs = udp_info;
+                extend_info->num_udp_addr  = num_tasks;
+                extend_info->udp_hndlr     = 0;
+                lapi_info->add_info        = extend_info;
+              }
+          else
+              {
+                lapi_info->add_info        = NULL;
+              }
+          /* ------------------------------------------------------------ */
+          /*                call LAPI_Init                                */
+          /* ------------------------------------------------------------ */
+          int intval = 0;
+          CALL_AND_CHECK_RC((LAPI_Init(&_lapi_handle, lapi_info)));
+          CALL_AND_CHECK_RC((LAPI_Senv(_lapi_handle,INTERRUPT_SET, intval)));
+          CALL_AND_CHECK_RC((LAPI_Qenv(_lapi_handle,TASK_ID,
+                                       (int *)&_myrank)));
+          CALL_AND_CHECK_RC((LAPI_Qenv(_lapi_handle,NUM_TASKS,
+                                       (int *)&_mysize)));
+          free(lapi_info);
+
+          _lapi_device.setLapiHandle(_lapi_handle);
+          
           _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));
-	  _world_range.lo=0;
-	  _world_range.hi=_mysize-1;
+          _world_range.lo=0;
+          _world_range.hi=_mysize-1;
           new(_world_geometry) LAPIGeometry(&_sysdep.mapping,0, 1,&_world_range);
 
-	  _collreg=(LAPICollreg*) malloc(sizeof(*_collreg));
-	  new(_collreg) LAPICollreg(&_lapi, &_sysdep);
+          _collreg=(LAPICollreg*) malloc(sizeof(*_collreg));
+          new(_collreg) LAPICollreg(&_lapi_device, &_sysdep);
 
           _world_collfactory=_collreg->analyze(_world_geometry);
-	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
-
+          _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
         }
 
-        inline xmi_client_t getClient_impl ()
+      inline xmi_client_t getClient_impl ()
         {
           return _client;
         }
 
-        inline size_t getId_impl ()
+      inline size_t getId_impl ()
         {
           return _id;
         }
@@ -75,9 +140,8 @@ namespace XMI
 
       inline xmi_result_t destroy_impl ()
         {
-          // Do not call finalize because if we do
-          // it is not valid to call init again
-          // per the LAPI spec.
+          LAPI_Gfence (_lapi_handle);
+          CALL_AND_CHECK_RC((LAPI_Term(_lapi_handle)));
           return XMI_SUCCESS;
         }
 
@@ -115,7 +179,7 @@ namespace XMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
-                events += _lapi.advance_impl();
+                events += _lapi_device.advance_impl();
               }
           return events;
         }
@@ -353,20 +417,20 @@ namespace XMI
           return collfactory->collective(parameters);
         }
 
-        inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
-                                                          xmi_geometry_t geometry,
-                                                          xmi_xfer_type_t ctype,
-                                                          int *lists_lengths)
+      inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
+                                                        xmi_geometry_t geometry,
+                                                        xmi_xfer_type_t ctype,
+                                                        int *lists_lengths)
         {
           return XMI_UNIMPL;
         }
       
-        inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
-                                                          xmi_geometry_t geometry,
-                                                          xmi_xfer_type_t type,
-                                                          xmi_algorithm_t algorithm,
-                                                          int algorithm_type,
-                                                          xmi_metadata_t *mdata)
+      inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
+                                                        xmi_geometry_t geometry,
+                                                        xmi_xfer_type_t type,
+                                                        xmi_algorithm_t algorithm,
+                                                        int algorithm_type,
+                                                        xmi_metadata_t *mdata)
         {
           return XMI_UNIMPL;
         }
@@ -410,7 +474,9 @@ namespace XMI
           if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
           _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
-          new (_dispatch[(size_t)id]) EagerLAPI (id, fn, cookie, _lapi, _sysdep.mapping.task(), _context, _id, result);
+          new (_dispatch[(size_t)id]) EagerLAPI (id, fn, cookie, _lapi_device,
+                                                 _sysdep.mapping.task(), _context,
+                                                 _id, result);
           return result;
         }
 
@@ -419,13 +485,14 @@ namespace XMI
       xmi_client_t              _client;
       xmi_context_t             _context;
       size_t                    _id;
+      lapi_handle_t             _lapi_handle;
       void                     *_dispatch[1024];
-      SysDep::LAPISysDep         _sysdep;
+      SysDep::LAPISysDep        _sysdep;
       MemoryAllocator<1024,16>  _request;
-      LAPIDevice                 _lapi;
-      LAPICollreg               *_collreg;
-      LAPIGeometry              *_world_geometry;
-      LAPICollfactory           *_world_collfactory;
+      LAPIDevice                _lapi_device;
+      LAPICollreg              *_collreg;
+      LAPIGeometry             *_world_geometry;
+      LAPICollfactory          *_world_collfactory;
       xmi_geometry_range_t      _world_range;
       int                       _myrank;
       int                       _mysize;

@@ -12,6 +12,7 @@
 #include "components/client/Client.h"
 #include "components/context/lapiunix/lapiunixcontext.h"
 #include "components/geometry/common/commongeometry.h"
+#include "util/lapi/lapi_util.h"
 
 namespace XMI
 {
@@ -21,29 +22,12 @@ namespace XMI
     {
     public:
 
-      static void shutdownfunc()
-        {
-//          LAPI_Finalize();
-        }
       inline LAPI (char * name, xmi_result_t & result) :
         Client<XMI::Client::LAPI,XMI::Context::LAPI>(name, result),
         _client ((xmi_client_t) this),
         _references (1),
         _contexts (0)
         {
-          static int initialized = 0;
-          if(initialized==0)
-              {
-                int rc = LAPI_Init(0, NULL);
-                if(rc != LAPI_SUCCESS)
-                    {
-                      fprintf(stderr, "Unable to initialize context:  LAPI_Init failure\n");
-                      XMI_abort();
-                    }
-                initialized=1;
-                atexit(shutdownfunc);
-              }
-
         }
 
       inline ~LAPI ()
