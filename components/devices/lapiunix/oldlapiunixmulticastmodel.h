@@ -40,11 +40,12 @@ namespace XMI
           assert(0);
         }
 
-      static void amSent (lapi_handle_t * handle, void * param, lapi_sh_info_t * info)
+      static void __xmi_lapi_mcast_senddone_fn (lapi_handle_t * handle, void * param, lapi_sh_info_t * info)
         {
-          LAPIMcastSendReq * r = (LAPIMcastSendReq *) param;
-          if (r->user_done_callback.function)
-            r->user_done_callback.function (NULL, r->user_done_callback.clientdata, XMI_SUCCESS);
+          LAPIMcastSendReq * sreq = (LAPIMcastSendReq *) param;
+          sreq->_count++;
+          if (sreq->_user_done.function && sreq->_count == sreq->_total)
+            sreq->_user_done.function (NULL, sreq->_user_done.clientdata, XMI_SUCCESS);
         }
 
 
@@ -63,7 +64,6 @@ namespace XMI
                                xmi_dt                      dtype = XMI_UNDEFINED_DT )
         {
           LAPIMcastMessage msg;
-          void *r           = NULL;
           int   rc          = -1;
           msg._info_count   = info_count;
           msg._size         = size;
@@ -80,12 +80,19 @@ namespace XMI
                 memcpy (&msg._info[0],& info[0], info_count *sizeof (xmi_quad_t));
               }
 
-          LAPISendInfo *si              = (LAPISendInfo*)request;
-          si->_totalsends               = nranks;
-          si->_numsends                 = 0;
-          si->_user_cb_done.function    = cb_done->function;
-          si->_user_cb_done.clientdata  = cb_done->clientdata;
-
+          LAPIMcastSendReq *sreq    = (LAPIMcastSendReq*)request;
+          sreq->_count              = nranks;
+          sreq->_total              = 0;
+          if(cb_done)
+              {
+                sreq->_user_done.function    = cb_done->function;
+                sreq->_user_done.clientdata  = cb_done->clientdata;
+              }
+          else
+              {
+                sreq->_user_done.function    = NULL;
+                sreq->_user_done.clientdata  = NULL;
+              }
           if (sizeof(LAPIMcastMessage) + size < 128)
               {
                 for (unsigned count = 0; count < nranks; count ++)
@@ -102,19 +109,15 @@ namespace XMI
                       xfer_struct.Am.udata_len = size;
                       CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
                     }
-                if (si->_user_cb_done.function)
-                  si->_user_cb_done.function(NULL, si->_user_cb_done.clientdata, XMI_SUCCESS);
+                if (sreq->_user_done.function)
+                  sreq->_user_done.function(NULL, sreq->_user_done.clientdata, XMI_SUCCESS);
               }
           else
               {
-                LAPIMcastSendReq *reqs;
-                CHECK_NULL(reqs, (LAPIMcastSendReq*)malloc(sizeof(LAPIMcastSendReq)*nranks));
                 for (unsigned count = 0; count < nranks; count ++)
                     {
                       assert (hints[count] == XMI_PT_TO_PT_SUBTASK);
                       lapi_xfer_t xfer_struct;
-                      LAPIMcastSendReq *r      = &reqs[count];
-                      r->user_done_callback    = *cb_done;
                       xfer_struct.Am.Xfer_type = LAPI_AM_XFER;
                       xfer_struct.Am.flags     = 0;
                       xfer_struct.Am.tgt       = ranks[count];
@@ -123,8 +126,8 @@ namespace XMI
                       xfer_struct.Am.uhdr_len  = sizeof(LAPIMcastMessage);
                       xfer_struct.Am.udata     = (void *) buf;
                       xfer_struct.Am.udata_len = size;
-                      xfer_struct.Am.shdlr     = (scompl_hndlr_t*) amSent;
-                      xfer_struct.Am.sinfo     = (void *) r;
+                      xfer_struct.Am.shdlr     = (scompl_hndlr_t*) __xmi_lapi_mcast_senddone_fn;
+                      xfer_struct.Am.sinfo     = (void *) sreq;
                       xfer_struct.Am.org_cntr  = NULL;
                       xfer_struct.Am.cmpl_cntr = NULL;
                       xfer_struct.Am.tgt_cntr  = NULL;

@@ -62,22 +62,21 @@ namespace XMI
     private:
     };
 
-
-
-    class LAPISendInfo
-    {
-    public:
-      int                _totalsends;
-      int                _numsends;
-      xmi_callback_t     _user_cb_done;
-    };
     
     class LAPIMcastSendReq
     {
     public:
-      xmi_callback_t        user_done_callback;
-    }
-      __pgasrt_lapi_request_t;
+      int                   _count;
+      int                   _total;
+      xmi_callback_t        _user_done;
+    };
+
+    class LAPIMcastRecvReq
+    {
+    public:
+      xmi_callback_t        _user_done;
+    };
+
     
     class LAPIMcastMessage
     {
