@@ -32,6 +32,7 @@ namespace XMI
         _device(device)
         {
           _dispatch_id = _device.initM2M();
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIOldm2mModel() %d\n",(int)this, _dispatch_id));
         };
 
       inline void setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg)
@@ -104,6 +105,8 @@ namespace XMI
             hdr->_conn        = connid;
             memcpy (hdr->buffer(), buf+offsets[index], sizes[index]);
             int rc = -1;
+            TRACE_ADAPTOR((stderr,"<%#.8X>MPIOldm2mModel:send_impl MPI_Isend %zd to %zd\n",(int)this, 
+                         hdr->totalsize(),ranks[index]));
             rc = MPI_Isend (hdr,
                             hdr->totalsize(),
                             MPI_CHAR,
@@ -150,7 +153,9 @@ namespace XMI
           msg->_buf     = buf;
           msg->_sizes   = sizes;
           msg->_offsets = offsets;
-          msg->_nranks  = nranks;
+          msg->_nranks  = nranks;          
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIOldm2mModel:postRecv_impl size[0] %zd\n",(int)this, 
+                         msg->_sizes[0]));
           _device.enqueue(msg);
           return;
         }

@@ -205,7 +205,7 @@ namespace XMI
         assert (rc == MPI_SUCCESS);
         if(flag)
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl iprobe %d\n",(int)this,sts.MPI_TAG)); dbg = 1;
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Iprobe %d\n",(int)this,sts.MPI_TAG)); dbg = 1;
           //p2p messages
           switch(sts.MPI_TAG)
           {
@@ -219,6 +219,8 @@ namespace XMI
                                 MPI_COMM_WORLD,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
+              TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+                             (int)this, nbytes,dispatch_id));
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
               if(mdi.recv_func)
                 mdi.recv_func(msg->_p2p_msg._metadata,
@@ -238,6 +240,8 @@ namespace XMI
                                 MPI_COMM_WORLD,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
+              TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+                             (int)this, nbytes,dispatch_id));
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
               if(mdi.recv_func)
                 mdi.recv_func(msg->_p2p_msg._metadata,
@@ -260,6 +264,8 @@ namespace XMI
               unsigned         pwidth;
               xmi_callback_t   cb_done;
               size_t dispatch_id      = msg->_dispatch_id;
+              TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+                             (int)this, nbytes,dispatch_id));
               mpi_mcast_dispatch_info_t mdi = _mcast_dispatch_lookup[dispatch_id];
 
               MPIMcastRecvMessage *mcast;
@@ -340,9 +346,14 @@ namespace XMI
 
               // XMI_assert (nbytes <= mcast->_pwidth);
 
-              mcast->_counter += mcast->_pwidth;
-              if(mcast->_done_fn)
-                mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+              for(; bytes > 0; bytes -= mcast->_pwidth)
+              {
+                TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::calling done counter %zd, pwidth %zd, bytes %zd, size %zd\n",
+                               (int)this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
+                mcast->_counter += mcast->_pwidth;
+                if(mcast->_done_fn)
+                  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+              }
 
               if(mcast->_counter >= mcast->_size)
               {
@@ -361,6 +372,8 @@ namespace XMI
               MPIM2MHeader *msg = (MPIM2MHeader *) malloc (nbytes);
               int rc            = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, MPI_COMM_WORLD,&sts);
               XMI_assert (rc == MPI_SUCCESS);
+              TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d\n",
+                             (int)this, nbytes));
 
               std::list<MPIM2MRecvMessage<size_t>*>::iterator it;
               for(it=_m2mrecvQ.begin();it != _m2mrecvQ.end(); it++)
@@ -489,31 +502,31 @@ namespace XMI
       }
       inline void enqueue(MPIMessage* msg)
       {
-        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue message\n",(int)this));
+        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue message size 0 %zd, size 1 %zd, msize %zd\n",(int)this, (size_t)msg->_p2p_msg._payloadsize0,(size_t)msg->_p2p_msg._payloadsize1,(size_t)msg->_p2p_msg._metadatasize));
         _sendQ.push_front(msg);
       }
 
       inline void enqueue(MPIMcastMessage* msg)
       {
-        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue mcast message\n",(int)this));
+        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue mcast message size %zd\n",(int)this, (size_t)msg->_size));
         _mcastsendQ.push_front(msg);
       }
 
       inline void enqueue(MPIMcastRecvMessage *msg)
       {
-        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue mcast recv message\n",(int)this));
+        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",(int)this, (size_t)msg->_pwidth, (size_t)msg->_size));
         _mcastrecvQ.push_front(msg);
       }
 
       inline void enqueue(MPIM2MRecvMessage<size_t> *msg)
       {
-        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue m2m recv message\n",(int)this));
+        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue m2m recv message size %zd\n",(int)this, (size_t)msg->_sizes[0]));
         _m2mrecvQ.push_front(msg);
       }
 
       inline void enqueue(MPIM2MMessage *msg)
       {
-        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue m2m message \n",(int)this));
+        TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::enqueue m2m message total size %zd\n",(int)this, (size_t)msg->_totalsize));
         _m2msendQ.push_front(msg);
       }
 

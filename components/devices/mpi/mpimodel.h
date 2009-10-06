@@ -71,6 +71,8 @@ namespace XMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload, bytes);
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket_impl MPI_Isend %zd to %zd\n",(int)this, 
+                         sizeof(msg->_p2p_msg),target_rank));
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
@@ -135,6 +137,8 @@ namespace XMI
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
           memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate MPI_Isend %zd to %zd\n",(int)this, 
+                         sizeof(msg->_p2p_msg),target_rank));
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
@@ -170,6 +174,8 @@ namespace XMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy((char*)(&msg->_p2p_msg._metadata[0])+metasize, src, bytes);
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postMessage_impl MPI_Isend %zd+%zd+%zd-128-244 to %zd\n",(int)this, 
+                         sizeof(msg->_p2p_msg),metasize,bytes,target_rank));
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg)+metasize+bytes-128-224,
                           MPI_CHAR,
