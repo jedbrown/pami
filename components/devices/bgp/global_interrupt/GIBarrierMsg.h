@@ -131,6 +131,8 @@ protected:
 
 class giModel : public XMI::Device::Interface::MultisyncModel<giModel> {
 public:
+	static const size_t sizeof_msg = sizeof(giMessage);
+
 	giModel(xmi_result_t &status) :
 	XMI::Device::Interface::MultisyncModel<giModel>(status)
 	{

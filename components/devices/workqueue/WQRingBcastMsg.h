@@ -165,6 +165,7 @@ class WQRingBcastMdl : public XMI::Device::Interface::MulticastModel<WQRingBcast
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
+	static const size_t sizeof_msg = sizeof(WQRingBcastMsg);
 
 	WQRingBcastMdl(xmi_result_t &status) :
 	XMI::Device::Interface::MulticastModel<WQRingBcastMdl>(status)

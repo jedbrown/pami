@@ -20,11 +20,11 @@ void fail_reg(const char *s) {
 }
 
 char wqa[sizeof(XMI::Device::WQRingReduceMdl)];
-char wqam[sizeof(XMI::Device::WQRingReduceMsg)];
+char wqam[XMI::Device::WQRingReduceMdl::sizeof_msg];
 char lwqr[sizeof(XMI::Device::LocalReduceWQModel)];
-char lwqrm[sizeof(XMI::Device::LocalReduceWQMessage)];
+char lwqrm[XMI::Device::LocalReduceWQModel::sizeof_msg];
 char lwqa[sizeof(XMI::Device::LocalAllreduceWQModel)];
-char lwqam[sizeof(XMI::Device::LocalAllreduceWQMessage)];
+char lwqam[XMI::Device::LocalAllreduceWQModel::sizeof_msg];
 
 char source[TEST_BUF_SIZE];
 char result[TEST_BUF_SIZE];

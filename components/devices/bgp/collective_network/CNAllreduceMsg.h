@@ -203,6 +203,7 @@ class CNAllreduceModel : public XMI::Device::Interface::MulticombineModel<CNAllr
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
+	static const size_t sizeof_msg = sizeof(CNAllreduceMessage);
 
 	CNAllreduceModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<CNAllreduceModel>(status)

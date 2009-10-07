@@ -5,7 +5,7 @@
 #include "components/pipeworkqueue/bgp/BgpPipeWorkQueue.h"
 
 #include "components/time/bgp/BgpTime.h"
-#include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
+#include "components/time/bgp/BgpSysDep.h"
 
 
 void fail_reg(const char *s) {
@@ -13,8 +13,12 @@ void fail_reg(const char *s) {
 	exit(1);
 }
 
-char gib[sizeof(XMI::Device::BGP::giModel)];
-char gibm[sizeof(XMI::Device::BGP::giMessage)];
+typedef XMI::Atomic::CounterBarrier<XMI_SYSDEP_CLASS,XMI::Counter::GccNodeCounter<XMI_SYSDEP_CLASS> > Barrier_Type;
+
+typdef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
+
+char ab[sizeof(Barrier_Model)];
+char abm[Barrier_Model::sizeof_msg];
 
 int done = 0;
 
@@ -62,6 +66,8 @@ int main(int argc, char ** argv) {
 	size_t num_tasks = configuration.value.intval;
 	fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
+#warning ensure only local ranks
+
 // END standard setup
 // ------------------------------------------------------------------------
 
@@ -82,14 +88,14 @@ int main(int argc, char ** argv) {
 	unsigned long long t0, t1, t2;
 	bool rc;
 
-	const char *test = "giModel";
-	XMI::Device::BGP::giModel *model = new (&gib) XMI::Device::BGP::giModel(status);
+	const char *test = "AtomicBarrierMdl<CounterBarrier>";
+	Barrier_Model *model = new (&ab) Barrier_Model(status);
 	if (status != XMI_SUCCESS) fail_reg(test);
 
 	xmi_multisync_t msync;
 
 	// simple allreduce on the tree... SMP mode (todo: check and error)
-	msync.request = &gibm;
+	msync.request = &abm;
 	msync.cb_done = (xmi_callback_t){done_cb, (void *)test};
 	msync.roles = (unsigned)-1;
 	msync.participants = NULL;

@@ -197,6 +197,7 @@ class CNBroadcastModel : public XMI::Device::Interface::MulticastModel<CNBroadca
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
+	static const size_t sizeof_msg = sizeof(CNBroadcastMessage);
 
 	CNBroadcastModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticastModel<CNBroadcastModel>(status)

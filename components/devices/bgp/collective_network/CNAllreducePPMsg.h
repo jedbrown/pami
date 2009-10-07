@@ -177,6 +177,7 @@ class CNAllreducePPModel : public XMI::Device::Interface::MulticombineModel<CNAl
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
+	static const size_t sizeof_msg = sizeof(CNAllreducePPMessage);
 
 	CNAllreducePPModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<CNAllreducePPModel>(status)

@@ -14,7 +14,7 @@ void fail_reg(const char *s) {
 }
 
 char gib[sizeof(XMI::Device::BGP::giModel)];
-char gibm[sizeof(XMI::Device::BGP::giMessage)];
+char gibm[XMI::Device::BGP::giModel::sizeof_msg];
 
 int done = 0;
 

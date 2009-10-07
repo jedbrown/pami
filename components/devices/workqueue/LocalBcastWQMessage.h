@@ -115,6 +115,7 @@ class LocalBcastWQModel : public XMI::Device::Interface::MulticastModel<LocalBca
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
+	static const size_t sizeof_msg = sizeof(LocalBcastWQMessage);
 
 	LocalBcastWQModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticastModel<LocalBcastWQModel>(status),

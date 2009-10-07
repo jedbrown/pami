@@ -362,6 +362,7 @@ class CNAllreduceShortModel : public Impl::MulticombineModelImpl {
 public:
 	static const int NUM_ROLES = 3;
 	static const int REPL_ROLE = 2;
+	static const size_t sizeof_msg = sizeof(CNAllreduceShortMessage);
 
 	static const int MAX_SHORT_MSG = TREE_PKT_SIZE;
 

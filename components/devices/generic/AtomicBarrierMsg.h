@@ -126,6 +126,8 @@ protected:
 template <class T_Barrier>
 class AtomicBarrierMdl : public XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier> > {
 public:
+	static const size_t sizeof_msg = sizeof(AtomicBarrierMsg<T_Barrier>);
+
 	AtomicBarrierMdl(xmi_result_t &status) :
 	XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier> >(status)
 	{

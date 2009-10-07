@@ -127,6 +127,8 @@ protected:
 class ProgressFunctionMdl {
 
 public:
+	static const size_t sizeof_msg = sizeof(ProgressFunctionMsg);
+
 	/// This model is typically never constructed, but rather just
 	/// generateMessage called directly.
 	ProgressFunctionMdl() {

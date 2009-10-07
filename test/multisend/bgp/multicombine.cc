@@ -19,11 +19,11 @@ void fail_reg(const char *s) {
 }
 
 char cna[sizeof(XMI::Device::BGP::CNAllreduceModel)];
-char cnam[sizeof(XMI::Device::BGP::CNAllreduceMessage)];
+char cnam[XMI::Device::BGP::CNAllreduceModel::sizeof_msg];
 char cnpp[sizeof(XMI::Device::BGP::CNAllreducePPModel)];
-char cnppm[sizeof(XMI::Device::BGP::CNAllreducePPMessage)];
+char cnppm[XMI::Device::BGP::CNAllreducePPModel::sizeof_msg];
 char cns2p[sizeof(XMI::Device::BGP::CNAllreduce2PModel)];
-char cns2pm[sizeof(XMI::Device::BGP::CNAllreduce2PMessage)];
+char cns2pm[XMI::Device::BGP::CNAllreduce2PModel::sizeof_msg];
 
 char source[TEST_BUF_SIZE];
 char result[TEST_BUF_SIZE];
