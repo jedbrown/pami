@@ -36,13 +36,13 @@ namespace XMI
             public:
                 MulticastModel (xmi_result_t &status) { status = XMI_SUCCESS; };
                 ~MulticastModel () {};
-                inline bool postMultiCast (xmi_multicast_t *mcast);
+                inline bool postMulticast (xmi_multicast_t *mcast);
             };
 
             template <class T_Model>
-            bool MulticastModel<T_Model>::postMultiCast (xmi_multicast_t *mcast)
+            bool MulticastModel<T_Model>::postMulticast (xmi_multicast_t *mcast)
             {
-	      return static_cast<T_Model*>(this)->postMultiCast_impl(mcast);
+	      return static_cast<T_Model*>(this)->postMulticast_impl(mcast);
             }
 
         };

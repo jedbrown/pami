@@ -15,9 +15,13 @@
 #define __components_devices_bgp_cnbroadcastmsg_h__
 
 #include "util/common.h"
-#include "components/devices/MulticastModel.h"
+#include "components/devices/bgp/collective_network/CNDevice.h" // externs for env vars
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "components/devices/bgp/collective_network/CNPacket.h"
+#include "components/devices/generic/Device.h"
+#include "components/devices/generic/Message.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "components/devices/MulticastModel.h"
 
 /**
  * \page cn_bcast Collective Network Broadcast

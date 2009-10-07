@@ -1428,7 +1428,7 @@ namespace Topology {
 		likely_if (__type == other->__type) {
 			xmi_result_t rc;
 			xmi_coord_t ll, ur, c0;
-			size_t rank;
+			size_t rank = 0;
 			size_t min = 0, max = 0;
 			size_t s;
 			size_t i, j, k;
