@@ -115,8 +115,10 @@ namespace XMI
                                      void               * payload1,
                                      size_t               bytes1)
         {
-          size_t global, peer, sequence;
-          _device.getMapping()->rank2node (target_rank, global, peer);
+          size_t peer, sequence;
+          XMI::Mapping::Interface::nodeaddr_t addr;
+          _device._sysdep->mapping.task2node (target_rank, addr);
+          _device._sysdep->mapping.node2peer (addr, peer);
 
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id,

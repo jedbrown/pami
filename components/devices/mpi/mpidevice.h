@@ -457,6 +457,9 @@ namespace XMI
       };
 
       // Implement MessageDevice Routines
+      /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
+      static const size_t packet_metadata_size = 128;
+
       /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
       static const size_t message_metadata_size = 128;
 

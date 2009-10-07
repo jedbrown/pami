@@ -25,6 +25,8 @@
 #include <spi/include/mu/DescriptorWrapperXX.h>
 #include <spi/include/kernel/MU.h>
 
+#include "components/devices/bgq/mu/MUDescriptorWrapper.h"
+
 #include "util/queue/Queue.h"
 
 #ifdef TRACE
@@ -167,7 +169,7 @@ namespace XMI
           ///
           //////////////////////////////////////////////////////////////////////////
 
-          inline uint64_t push ( MUSPI_DescriptorWrapper &desc )
+          inline uint64_t push ( MUDescriptorWrapper &desc )
           {
             uint64_t sequenceNum;
             int fnum = desc.getFIFONum();
@@ -186,7 +188,7 @@ namespace XMI
                 // If this descriptor requires "descriptor notification",
                 // handle it.
                 //
-                if ( desc.isCallbackDesired() )
+                if ( desc.requiresCallback() )
                   {
 #ifndef OPTIMIZE_AGGREGATE_LATENCY
                     //
@@ -200,7 +202,7 @@ namespace XMI
                     if ( MUSPI_CheckDescComplete ( fifoPtr,
                                                    sequenceNum ) )
                       {
-                        desc.performCallback(); // Descriptor is done...notify.
+                        desc.invokeCallback(); // Descriptor is done...notify.
                       }
                     else
 #endif
@@ -307,10 +309,12 @@ namespace XMI
                                       void               ** payloadVa,
                                       void               ** payloadPa)
           {
+            TRACE((stderr, ">> InjFifoSubGroup::nextDescriptor() .. _injectionfifo[%d] = %p, desc = %p\n", subgroupFifoNumber, _injectionfifo[subgroupFifoNumber], desc));
+            TRACE((stderr, "   InjFifoSubGroup::nextDescriptor() .. *desc = %p\n", *desc));
             uint64_t sequenceNum =
               MUSPI_InjFifoNextDesc (_injectionfifo[subgroupFifoNumber], (void **) desc);
 
-            TRACE((stderr, ">> InjFifoSubGroup::nextDescriptor() .. sequenceNum = %ld, *desc = %p\n", sequenceNum, *desc));
+            TRACE((stderr, "   InjFifoSubGroup::nextDescriptor() .. sequenceNum = %ld, *desc = %p\n", sequenceNum, *desc));
 
             if (sequenceNum == 0xFFFFFFFFFFFFFFFFULL)
               {
@@ -335,8 +339,8 @@ namespace XMI
             return true;
           }
 
-          inline void addToDoneQ (int                       subgroupFifoNumber,
-                                  MUSPI_DescriptorWrapper * wrapper)
+          inline void addToDoneQ (int                   subgroupFifoNumber,
+                                  MUDescriptorWrapper * wrapper)
           {
             if ( _waitForDoneQ[subgroupFifoNumber].headPtr == NULL )
               _waitForDoneQ[subgroupFifoNumber].headPtr = wrapper;
@@ -397,8 +401,8 @@ namespace XMI
           unsigned long long      _waitForDoneMask;
           struct
           {
-            MUSPI_DescriptorWrapper *headPtr;
-            MUSPI_DescriptorWrapper *tailPtr;
+            MUDescriptorWrapper * headPtr;
+            MUDescriptorWrapper * tailPtr;
           } _waitForDoneQ[BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP];
           Kernel_MemoryRegion_t _injFifoMemRegion[BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP];
           struct

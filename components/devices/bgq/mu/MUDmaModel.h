@@ -25,6 +25,7 @@
 #include "components/devices/DmaModel.h"
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
+#include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
 #include "components/memregion/bgq/BgqMemregion.h"
 
@@ -180,7 +181,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    cb.function (cb.clientdata, NULL, XMI_SUCCESS); // Descriptor is done...notify.
+                    cb.function (_context, cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif
@@ -189,7 +190,7 @@ namespace XMI
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-                    new (obj) MUInjFifoMessage (cb, sequenceNum);
+                    new (obj) MUInjFifoMessage (cb.function, cb.clientdata, _context, sequenceNum);
 
                     // Queue it.
                     _device.addToDoneQ (target_rank, obj->getWrapper());

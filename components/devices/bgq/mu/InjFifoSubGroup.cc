@@ -73,7 +73,7 @@ init ( uint32_t subGroupId,
          numFreeFifos,
          subGroupId ));
 
-  if ( rc != 0 ) return (rc); // Quit if this call fails.
+  XMI_assertf(rc == 0, "Kernel_QueryInjFifos failed (rc=%d)\n", rc);
 
   if ( numFreeFifos < numFifos )
     {
@@ -100,7 +100,7 @@ init ( uint32_t subGroupId,
          rc,
          subGroupId ));
 
-  if ( rc != 0 ) return (rc); // Quit if this call fails.
+  XMI_assertf(rc == 0, "Kernel_AllocateInjFifos failed (rc=%d)\n", rc);
 
   //////////////////////////////////////////////////////////////////////////////
   ///
@@ -116,7 +116,7 @@ init ( uint32_t subGroupId,
                                       (void*) fifoPtrs[fifoNum],
                                       (size_t) fifoSizes[fifoNum] );
 
-      if ( rc != 0 ) return (rc);
+      XMI_assertf(rc == 0, "Kernel_CreateMemoryRegion failed (rc=%d)\n", rc);
 
       TRACE((stderr, "   InjFifoSubGroup::init() .. before Kernel_InjFifoInit(%p, %d, %p, %ld, %d)\n",
                                 &_fifoSubGroup,
@@ -149,7 +149,7 @@ init ( uint32_t subGroupId,
              (unsigned long long)_fifoSubGroup._injfifos[_fifoNumbers[fifoNum]]._fifo.va_tail,
              rc));
 
-      if ( rc != 0 ) return (rc); // Return if error.
+      XMI_assertf(rc == 0, "Kernel_InjFifoInit failed (rc=%d)\n", rc);
 
       // ------------------------------------------------------------------------
       // Cache a pointer to the MUSPI_InjFifo_t structure associate with each
@@ -211,12 +211,11 @@ advanceInternal ()
 {
   unsigned long long waitForDoneMaskCopy = _waitForDoneMask; // Copy of the
   // _waitForDoneMask
-  unsigned int numProcessed = 0;    // Number of descriptors processed.
-  int          fnum;                // Fifo number being processed.
-  unsigned long long mask;         // The bit corresponding to the fifo we are
-  // processing.
-  MUSPI_DescriptorWrapper *desc;// Pointer to the descriptor wrapper being
-  // processed.
+  unsigned int numProcessed = 0; // Number of descriptors processed.
+  int          fnum;             // Fifo number being processed.
+  unsigned long long mask;       // The bit corresponding to the fifo we are
+                                 // processing.
+  MUDescriptorWrapper * desc;    // Descriptor wrapper being processed.
 
   //
   // Process all bits that are set in _waitForDoneMask...
@@ -229,7 +228,7 @@ advanceInternal ()
         {
           waitForDoneMaskCopy &= ~mask;   // Turn off the bit we are processing.
 
-          TRACE((stderr, "InjFifoSubGroup: advance(): Processing fnum %d, Bit 0x%08llx, Bits left=0x%08llx\n",
+          TRACE((stderr, "InjFifoSubGroup::advance()  Processing fnum %d, Bit 0x%08llx, Bits left=0x%08llx\n",
                  fnum, mask, waitForDoneMaskCopy));
 
           // Check waitingForDone descriptors on this fifo's queue until one is not
@@ -238,6 +237,7 @@ advanceInternal ()
           while (1)
             {
               desc = _waitForDoneQ[fnum].headPtr; // Get first descriptor in Q.
+              TRACE((stderr, "InjFifoSubGroup::advance()  desc = %p\n", desc));
 
               if ( desc == NULL ) // No more descriptors for this fifo?
                 {
@@ -247,10 +247,10 @@ advanceInternal ()
 
               if ( isDescriptorDone ( desc ) ) // Is this descriptor done?
                 {
-                  TRACE((stderr, "desc %p is done\n", desc));
-                  _waitForDoneQ[fnum].headPtr = desc->getNextPtr(); // Remove from Q
+                  TRACE((stderr, "InjFifoSubGroup::advance()  desc %p is done (isCallbackDesired = %d)\n", desc, desc->isCallbackDesired()));
+                  _waitForDoneQ[fnum].headPtr = (MUDescriptorWrapper *) desc->getNextPtr(); // Remove from Q
 
-                  desc->performCallback(); // Notify user.
+                  if (desc->requiresCallback()) desc->invokeCallback(); // Notify user.
 
                   // DON'T TOUCH THE DESCRIPTOR AFTER THIS.  The user may
                   // reuse its storage.
@@ -259,6 +259,7 @@ advanceInternal ()
                 }
               else
                 {
+                  TRACE((stderr, "InjFifoSubGroup::advance()  desc %p is NOT done\n", desc));
                   break; // This descriptor is not done.  No more to process
                   // for this fifo.
                 }

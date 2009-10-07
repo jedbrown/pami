@@ -29,8 +29,6 @@ static void test_dispatch (
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zd, header_addr = %p, pipe_addr = %p\n", cookie, *active, header_addr, pipe_addr);
-  //(*active)--;
-  //fprintf (stderr, "... dispatch function.  active = %zd\n", *active);
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;
@@ -68,7 +66,6 @@ int main (int argc, char ** argv)
 
   xmi_client_t client;
   xmi_context_t context;
-  //xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
 
@@ -133,7 +130,6 @@ int main (int argc, char ** argv)
   parameters.simple.local_fn  = send_done_local;
   parameters.simple.remote_fn = send_done_remote;
 
-  //if (task_id == 0)
   {
     fprintf (stderr, "before send ...\n");
     parameters.send.task = task_id;
@@ -152,40 +148,6 @@ int main (int argc, char ** argv)
     }
     fprintf (stderr, "... after send-recv advance loop\n");
   }
-#if 0
-  else
-  {
-    fprintf (stderr, "before recv advance loop ...\n");
-    while (recv_active != 0)
-    {
-      result = XMI_Context_advance (context, 100);
-      if (result != XMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-        return 1;
-      }
-    }
-    fprintf (stderr, "... after recv advance loop\n");
-
-    fprintf (stderr, "before send ...\n");
-    parameters.send.task = 0;
-    result = XMI_Send (context, &parameters);
-    fprintf (stderr, "... after send.\n");
-
-    fprintf (stderr, "before send advance loop ...\n");
-    while (send_active)
-    {
-      result = XMI_Context_advance (context, 100);
-      if (result != XMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-        return 1;
-      }
-    }
-    fprintf (stderr, "... after send advance loop\n");
-  }
-#endif
-
 
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)

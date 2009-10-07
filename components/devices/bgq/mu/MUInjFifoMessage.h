@@ -33,12 +33,23 @@ namespace XMI
       class MUInjFifoMessage : public QueueElem
       {
         public:
-          inline MUInjFifoMessage (xmi_callback_t & cb, uint64_t sequenceNum = 0) :
+          inline MUInjFifoMessage (uint64_t sequenceNum = 0) :
               QueueElem (),
               _desc (),
               _wrapper (&_desc)
           {
-            _wrapper.setDoneCallback ((void (*)(void*))cb.function, cb.clientdata);
+            _wrapper.setSequenceNumber (sequenceNum);
+          }
+
+          inline MUInjFifoMessage (xmi_event_function function,
+                                   void *             cookie,
+                                   xmi_context_t      context,
+                                   uint64_t           sequenceNum = 0) :
+              QueueElem (),
+              _desc (),
+              _wrapper (&_desc)
+          {
+            _wrapper.setCallback (function, cookie, context);
             _wrapper.setSequenceNumber (sequenceNum);
           }
 
@@ -47,14 +58,14 @@ namespace XMI
             return &_desc;
           }
 
-          inline MUSPI_DescriptorWrapper * getWrapper ()
+          inline MUDescriptorWrapper * getWrapper ()
           {
             return &_wrapper;
           }
 
           inline bool isCallbackDesired ()
           {
-            return _wrapper.isCallbackDesired ();
+            return _wrapper.requiresCallback ();
           }
 
           inline void setSourceBuffer (void            * payload,
@@ -142,7 +153,8 @@ namespace XMI
 
         private:
           MUSPI_DescriptorBase    _desc __attribute__((__aligned__(16)));
-          MUSPI_DescriptorWrapper _wrapper __attribute__((__aligned__(16)));
+          MUDescriptorWrapper     _wrapper __attribute__((__aligned__(16)));
+//          MUSPI_DescriptorWrapper _wrapper __attribute__((__aligned__(16)));
           struct iovec   __iov[2];
           struct iovec * _iov;
           size_t         _niov;

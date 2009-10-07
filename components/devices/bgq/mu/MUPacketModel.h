@@ -25,6 +25,7 @@
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
 #include "components/devices/bgq/mu/Dispatch.h"
+#include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
 #ifdef TRACE
 #undef TRACE
@@ -122,7 +123,7 @@ namespace XMI
                                             size_t                 bytes);
         private:
           MUDevice                        & _device;
-          MUSPI_DescriptorWrapper           _wrapper_model;
+          MUDescriptorWrapper               _wrapper_model;
           MUSPI_Pt2PtMemoryFIFODescriptor   _desc_model;
           xmi_context_t                     _context;
       };
@@ -194,6 +195,15 @@ namespace XMI
         void               * payloadVa;
         void               * payloadPa;
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+#warning    Mambo can not handle zero-byte payloads.
+            if (bytes == 0 || payload == NULL)
+            {
+              payload = metadata;
+              bytes = 1;
+            }
+#endif
+
         if (_device.nextInjectionDescriptor (target_rank,
                                              &injfifo,
                                              &hwi_desc,
@@ -217,7 +227,9 @@ namespace XMI
               {
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-                XMI_assert(metasize <= _device.getPacketMetadataSize());
+                  
+                //XMI_assert(metasize <= _device.getPacketMetadataSize());
+                XMI_assert_debugf(metasize <= _device.getPacketMetadataSize(), "metasize = %zd, _device.getPacketMetadataSize() = %zd\n", metasize, _device.getPacketMetadataSize());
                 memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -225,6 +237,7 @@ namespace XMI
             // the MU hardware to process the descriptor and send the packet
             // on the torus.
             TRACE((stderr, "MUPacketModel::postPacket_impl(1) .. before MUSPI_InjFifoAdvanceDesc()\n"));
+            desc->dump();
             uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
             TRACE((stderr, "MUPacketModel::postPacket_impl(1) .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", sequenceNum));
 
@@ -236,10 +249,10 @@ namespace XMI
         else
           {
             // Construct a message and post to the device to be processed later.
-            xmi_callback_t cb;
-            cb.function = fn;
-            cb.clientdata = cookie;
-            new (obj) MUInjFifoMessage (cb);
+            //xmi_callback_t cb;
+            //cb.function = fn;
+            //cb.clientdata = cookie;
+            new (obj) MUInjFifoMessage (fn, cookie, _context);
             obj->setSourceBuffer (payload, bytes);
 
             // Initialize the descriptor directly in the injection fifo.
@@ -283,6 +296,18 @@ namespace XMI
         void               * payloadVa;
         void               * payloadPa;
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+#warning    Mambo can not handle zero-byte payloads.
+            if (bytes0+bytes1 == 0)
+            {
+              payload0 = metadata;
+              bytes0 = 1;
+              payload1 = metadata;
+              bytes1 = 1;
+            }
+#endif
+
+        TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. before nextInjectionDescriptor()\n"));
         if (_device.nextInjectionDescriptor (target_rank,
                                              &injfifo,
                                              &hwi_desc,
@@ -325,25 +350,32 @@ namespace XMI
           }
         else
           {
+            TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. after nextInjectionDescriptor(), no space in fifo\n"));
             // Construct a message and post to the device to be processed later.
-            xmi_callback_t cb;
-            cb.function = fn;
-            cb.clientdata = cookie;
-            new (obj) MUInjFifoMessage (cb);
+            //xmi_callback_t cb;
+            //cb.function = fn;
+            //cb.clientdata = cookie;
+            new (obj) MUInjFifoMessage (fn, cookie, _context);
+            TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. before setSourceBuffer\n"));
             obj->setSourceBuffer (payload0, bytes0, payload0, bytes0);
 
             // Initialize the descriptor directly in the injection fifo.
+            TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. before getDescriptor\n"));
             MUSPI_DescriptorBase * desc = obj->getDescriptor ();
+            TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. before initializeDescriptor\n"));
             initializeDescriptor (desc, target_rank, 0, 0);
 
             // Copy the metadata into the network header in the descriptor.
             if (metasize > 0)
               {
+                TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. copy metadata\n"));
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
                 XMI_assert(metasize <= _device.getPacketMetadataSize());
                 memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
+
+            TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. before addToSendQ()\n"));
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
@@ -380,6 +412,17 @@ namespace XMI
         MUHWI_Descriptor_t * hwi_desc;
         void               * payloadVa;
         void               * payloadPa;
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+#warning    Mambo can not handle zero-byte payloads.
+            if (bytes0+bytes1 == 0)
+            {
+              payload0 = metadata;
+              bytes0 = 1;
+              payload1 = metadata;
+              bytes1 = 1;
+            }
+#endif
 
         if (_device.nextInjectionDescriptor (target_rank,
                                              &injfifo,
@@ -431,6 +474,15 @@ namespace XMI
                                             size_t               bytes)
       {
         TRACE((stderr, "MUPacketModel::postMessage_impl() >> \n"));
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+#warning    Mambo can not handle zero-byte payloads.
+            if (bytes == 0)
+            {
+              payload = metadata;
+              bytes = 1;
+            }
+#endif
 
         // Determine the physical address of the source buffer.
         //
@@ -495,14 +547,15 @@ namespace XMI
                 else
 #endif
                   {
+                    TRACE((stderr, "MUPacketModel::postMessage_impl() .. descriptor is not done, create message (%p) and add to send queue\n", obj));
                     // The descriptor is not done (or was not checked). Save state
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-                    xmi_callback_t cb;
-                    cb.function = fn;
-                    cb.clientdata = cookie;
-                    new (obj) MUInjFifoMessage (cb, sequenceNum);
+                    //xmi_callback_t cb;
+                    //cb.function = fn;
+                    //cb.clientdata = cookie;
+                    new (obj) MUInjFifoMessage (fn, cookie, _context, sequenceNum);
 
                     // Queue it.
                     _device.addToDoneQ (target_rank, obj->getWrapper());
@@ -512,10 +565,10 @@ namespace XMI
         else
           {
             // Construct a message and post to the device to be processed later.
-            xmi_callback_t cb;
-            cb.function = fn;
-            cb.clientdata = cookie;
-            new (obj) MUInjFifoMessage (cb);
+            //xmi_callback_t cb;
+            //cb.function = fn;
+            //cb.clientdata = cookie;
+            new (obj) MUInjFifoMessage (fn, cookie, _context);
             obj->setSourceBuffer (payload, bytes);
 
             // Initialize the descriptor directly in the injection fifo.

@@ -24,6 +24,7 @@
 #include "components/devices/bgq/mu/InjFifoSubGroup.h"
 #include "components/devices/bgq/mu/MUChannel.h"
 #include "components/devices/bgq/mu/Dispatch.h"
+#include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
 #include "components/sysdep/bgq/BgqSysDep.h"
 
@@ -32,6 +33,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
+#define ENABLE_MAMBO_WORKAROUNDS
 #define DISPATCH_SET_SIZE 64
 namespace XMI
 {
@@ -129,7 +131,7 @@ namespace XMI
                                       void                      * arg,
                                       uint16_t                  & id);
 
-          bool push (size_t target_rank, MUSPI_DescriptorWrapper & wrapper)
+          bool push (size_t target_rank, MUDescriptorWrapper & wrapper)
           {
             InjFifoSubGroup *injFifoSubGroup = NULL;
             uint32_t         relativeFnum = 0;
@@ -178,8 +180,8 @@ namespace XMI
             return success;
           }
 
-          inline void addToDoneQ (size_t                    target_rank,
-                                  MUSPI_DescriptorWrapper * wrapper)
+          inline void addToDoneQ (size_t                target_rank,
+                                  MUDescriptorWrapper * wrapper)
           {
             InjFifoSubGroup * injFifoSubGroup = NULL;
             uint32_t          relativeFnum = 0;
@@ -434,9 +436,9 @@ int XMI::Device::MU::MUDevice::advance_impl()
 {
   int events = 0;
 
-#ifdef TRACE
+#if 1
   static size_t loopcount = 0;
-  if (loopcount++ > 100) XMI_abort();
+  if (loopcount++ > 1000) XMI_abort();
 #endif
 
   TRACE((stderr, ">> MUDevice::advance_impl() .. _p2pSendChannelIndex = %d (%d)\n", _p2pSendChannelIndex, NULL_P2P_CHANNEL));
