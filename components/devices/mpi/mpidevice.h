@@ -170,7 +170,7 @@ namespace XMI
           {
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl mc\n",(int)this)); dbg = 1;
             if((*it_mcast)->_cb_done.function )
-              (*(*it_mcast)->_cb_done.function)((*it_p2p)->_context, (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
+              (*(*it_mcast)->_cb_done.function)((*it_mcast)->_context, (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
             free ((*it_mcast)->_req);
             free (*it_mcast);
             _mcastsendQ.remove((*it_mcast));
