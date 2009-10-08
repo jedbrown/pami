@@ -59,7 +59,7 @@ namespace XMI
           ///
           typedef struct send
           {
-            uint8_t                     data[T_Device::packet_payload_size]; ///< Packed data
+            uint8_t                     data[T_Model::packet_model_payload_bytes]; ///< Packed data
             T_Message                   msg; ///< Device message state object
             EagerImmediate<T_Model,
                            T_Device,
@@ -306,13 +306,10 @@ namespace XMI
           static inline void compile_time_assert ()
           {
             // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(T_Device::reliable_network == true);
+            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
 
             // This protcol only works with deterministic models.
-            COMPILE_TIME_ASSERT(T_Model::deterministic == true);
-
-            // Verify that there is enough space for the protocol metadata.
-            COMPILE_TIME_ASSERT(sizeof(protocol_metadata_t) <= T_Device::packet_metadata_size);
+            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
           };
       };
     };

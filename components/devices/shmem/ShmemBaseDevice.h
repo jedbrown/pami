@@ -68,9 +68,6 @@ namespace XMI
         /// \see XMI::Device::Interface::BaseDevice::isInit()
         bool isInit_impl ();
 
-        /// \see XMI::Device::Interface::BaseDevice::isReliableNetwork()
-        static const size_t reliable_network = true;
-
         /// \see XMI::Device::Interface::BaseDevice::peers()
         inline size_t peers_impl ();
 
@@ -82,17 +79,10 @@ namespace XMI
         /// \see XMI::Device::Interface::BaseDevice::readData()
         inline int readData_impl (int channel, void * buf, size_t length);
 
-        /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
-        static const size_t packet_metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
-
-        /// \see XMI::Device::Interface::PacketDevice::getPacketPayloadSize()
-        static const size_t packet_payload_size = T_Packet::payloadSize_impl;
-
+        static const size_t metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
+        static const size_t payload_size  = T_Packet::payloadSize_impl;
 
         // ------------------------------------------
-
-        /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
-        static const size_t message_metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
 
         /// \see XMI::Device::Interface::MessageDevice::setConnection()
         inline void setConnection_impl (size_t   fromRank,

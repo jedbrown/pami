@@ -14,7 +14,7 @@
 #ifndef __components_devices_messagedevice_h__
 #define __components_devices_messagedevice_h__
 
-#include "PacketDevice.h"
+#include "components/devices/PacketDevice.h"
 
 namespace XMI
 {
@@ -37,23 +37,7 @@ namespace XMI
          {};
 
           ~MessageDevice() {};
-
-          ///
-          /// \brief Get the maximum packet metadata size in bytes.
-          ///
-          /// \attention All message device derived classes \b must
-          ///            implement the getMessageMetadataSize_impl() method.
-          ///
-          /// \return Maximum message metadata size in bytes
-          ///
-          inline size_t getMessageMetadataSize ();
       };
-
-      template <class T>
-      inline size_t MessageDevice<T>::getMessageMetadataSize ()
-      {
-        return T::message_metadata_size;
-      }
     };
   };
 };

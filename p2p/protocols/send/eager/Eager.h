@@ -128,16 +128,6 @@ namespace XMI
               return result;
             };
 
-        private:
-
-          static inline void compile_time_assert ()
-          {
-            // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(T_Device::reliable_network == true);
-
-            // This protcol only works with deterministic models.
-            COMPILE_TIME_ASSERT(T_Model::deterministic == true);
-          };
       };  // XMI::Protocol::Send::Eager class
     };    // XMI::Protocol::Send namespace
   };      // XMI::Protocol namespace

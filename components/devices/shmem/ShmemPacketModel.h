@@ -57,7 +57,15 @@ namespace XMI
             _context (context)
         {};
 
-        static const bool deterministic = true;
+        static const bool   deterministic_packet_model   = true;
+        static const bool   reliable_packet_model        = true;
+        static const size_t packet_model_metadata_bytes  = T_Device::metadata_size;
+        static const size_t packet_model_payload_bytes   = T_Device::payload_size;
+
+        static const bool   deterministic_message_model  = true;
+        static const bool   reliable_message_model       = true;
+        static const size_t message_model_metadata_bytes = T_Device::metadata_size;
+        static const size_t message_model_payload_bytes  = T_Device::payload_size;
 
         xmi_result_t init_impl (size_t                      dispatch,
                                 Interface::RecvFunction_t   direct_recv_func,

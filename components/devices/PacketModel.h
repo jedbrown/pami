@@ -57,10 +57,74 @@ namespace XMI
           /// task in the same order as the messages were sent by the local
           /// task.
           ///
-          /// \attention All device derived classes \b must contain a static
-          ///            const data member named 'bool deterministic'.
+          /// \attention All packet model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'bool deterministic_packet_model'.
           ///
-          static const bool isDeterministic ();
+          /// C++ code using templates to specify the model may statically
+          /// access the 'deterministic_packet_model' constant.
+          ///
+          static const bool isPacketDeterministic ();
+
+          ///
+          /// \brief Returns the reliable network attribute of this model
+          ///
+          /// A reliable network will not drop packets during the packet
+          /// transfer. Protocols written to a reliable packet model
+          /// implementation may assume that all packets sent using the
+          /// packet interface methods of the model \b will arrive at the
+          /// destination task.
+          ///
+          /// \attention All packet model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'bool reliable_packet_model'.
+          ///
+          /// C++ code using templates to specify the model may statically 
+          /// access the 'reliable_packet_model' constant.
+          ///
+          static const bool isPacketReliable ();
+
+          ///
+          /// \brief Returns the maximum metadata bytes attribute of this model.
+          ///
+          /// Certain packet-based hardware may provide a contiguous area in
+          /// packet network header that may be initialized and transfered with
+          /// the packet to its destination. This attribute specifies the
+          /// maximum number of bytes that may be sent in the packet metadata
+          /// using any of the post* methods of the packet model interface.
+          ///
+          /// A packet model implementation may return zero as the number of
+          /// packet metadata bytes supported.
+          /// 
+          /// \attention All packet model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t packet_model_metadata_bytes'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'packet_model_metadata_bytes' constant.
+          ///
+          static const size_t getPacketMetadataBytes ();
+
+          ///
+          /// \brief Returns the maximum payload bytes attribute of this model.
+          ///
+          /// Packet-based network hardware provides a contiguous payload area
+          /// within each packet transfered to the destination task. This
+          /// attribute specifies the maximum number of bytes that may be sent
+          /// in the packet payload using any of the post* methods of the
+          /// packet model interface.
+          ///
+          /// A packet model implementation may return zero as the number of
+          /// packet payload bytes supported.
+          /// 
+          /// \attention All packet model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t packet_model_payload_bytes'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'packet_model_payload_bytes' constant.
+          ///
+          static const size_t getPacketPayloadBytes ();
 
           ///
           /// \brief Base packet model initializer
@@ -199,10 +263,29 @@ namespace XMI
       };
 
       template <class T_Model, class T_Device, class T_Object>
-      const bool PacketModel<T_Model, T_Device, T_Object>::isDeterministic ()
+      const bool PacketModel<T_Model, T_Device, T_Object>::isPacketDeterministic ()
       {
-        return T_Model::deterministic;
+        return T_Model::deterministic_packet_model;
       }
+
+      template <class T_Model, class T_Device, class T_Object>
+      const bool PacketModel<T_Model, T_Device, T_Object>::isPacketReliable ()
+      {
+        return T_Model::reliable_packet_model;
+      }
+
+      template <class T_Model, class T_Device, class T_Object>
+      const size_t PacketModel<T_Model, T_Device, T_Object>::getPacketMetadataBytes ()
+      {
+        return T_Model::packet_model_metadata_bytes;
+      }
+
+      template <class T_Model, class T_Device, class T_Object>
+      const size_t PacketModel<T_Model, T_Device, T_Object>::getPacketPayloadBytes ()
+      {
+        return T_Model::packet_model_payload_bytes;
+      }
+
 
       template <class T_Model, class T_Device, class T_Object>
       xmi_result_t PacketModel<T_Model, T_Device, T_Object>::init (size_t           dispatch,

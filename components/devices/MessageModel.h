@@ -41,6 +41,86 @@ namespace XMI
           ~MessageModel () {};
 
           ///
+          /// \brief Returns the deterministic network attribute of this model
+          ///
+          /// A deterministic network "routes" all communication in a fixed,
+          /// deterministic, way such that messages are received by the remote
+          /// task in the same order as the messages were sent by the local
+          /// task.
+          ///
+          /// \attention All message model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'bool deterministic_message_model'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'deterministic_message_model' constant.
+          ///
+          static const bool isMessageDeterministic ();
+
+          ///
+          /// \brief Returns the reliable network attribute of this model
+          ///
+          /// A reliable network will not drop packets during the packet
+          /// transfer. Protocols written to a reliable message model
+          /// implementation may assume that all messages sent using the
+          /// message interface methods of the model \b will arrive at the
+          /// destination task.
+          ///
+          /// \attention All message model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'bool reliable_message_model'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'reliable_message_model' constant.
+          ///
+          static const bool isMessageReliable ();
+
+          ///
+          /// \brief Returns the maximum metadata bytes attribute of this model.
+          ///
+          /// Certain packet-based hardware may provide a contiguous area in
+          /// packet network header that may be initialized and transfered with
+          /// the packet to its destination. This attribute specifies the
+          /// maximum number of bytes that may be sent in the packet metadata
+          /// using any of the post* methods of the message model interface.
+          ///
+          /// The message model interface will deliver the \b same metadata in
+          /// all packet dispatch function callbacks.
+          ///
+          /// A message model implementation may return zero as the number of
+          /// message metadata bytes supported.
+          ///
+          /// \attention All message model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t message_model_metadata_bytes'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'packet_model_metadata_bytes' constant.
+          ///
+          static const size_t getMessageMetadataBytes ();
+
+          ///
+          /// \brief Returns the maximum payload bytes attribute of this model.
+          ///
+          /// Packet-based network hardware provides a contiguous payload area
+          /// within each packet transfered to the destination task. This
+          /// attribute specifies the maximum number of bytes that may be sent
+          /// in the packet payload using any of the post* methods of the
+          /// message model interface.
+          ///
+          /// A message model implementation may return zero as the number of
+          /// message payload bytes supported.
+          ///
+          /// \attention All message model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t message_model_payload_bytes'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'message_model_payload_bytes' constant.
+          ///
+          static const size_t getMessagePayloadBytes ();
+
+          ///
           /// \brief Post a multiple packet contigous transfer operation
           ///
           /// The post message interface allows the message model
@@ -55,10 +135,11 @@ namespace XMI
           ///       is an attribute of the specific message device associated
           ///       with this message model.
           ///
-          /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
+          /// \see getMessageMetadataSize()
           ///
           /// \param[in] obj          Location to store the transfer object
-          /// \param[in] cb           Callback to invoke when the operation completes
+          /// \param[in] fn           Event function to invoke when the operation completes
+          /// \param[in] cookie       Opaque cookie data to pass as the cookie parameter of the event function.
           /// \param[in] target_rank  Global rank of the destination process
           /// \param[in] metadata     Virtual address of metadata buffer
           /// \param[in] metasize     Number of metadata bytes
@@ -72,25 +153,49 @@ namespace XMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          inline bool postMessage (T_Object        * obj,
+          inline bool postMessage (T_Object           * obj,
                                    xmi_event_function   fn,
                                    void               * cookie,
-                                   size_t            target_rank,
-                                   void            * metadata,
-                                   size_t            metasize,
-                                   void            * payload,
-                                   size_t            bytes);
+                                   size_t               target_rank,
+                                   void               * metadata,
+                                   size_t               metasize,
+                                   void               * payload,
+                                   size_t               bytes);
       };
 
       template <class T_Model, class T_Device, class T_Object>
-      inline bool MessageModel<T_Model, T_Device, T_Object>::postMessage (T_Object        * obj,
-                                                                   xmi_event_function   fn,
-                                                                   void               * cookie,
-                                                                   size_t            target_rank,
-                                                                   void            * metadata,
-                                                                   size_t            metasize,
-                                                                   void            * payload,
-                                                                   size_t            bytes)
+      const bool MessageModel<T_Model, T_Device, T_Object>::isMessageDeterministic ()
+      {
+        return T_Model::deterministic_message_model;
+      }
+
+      template <class T_Model, class T_Device, class T_Object>
+      const bool MessageModel<T_Model, T_Device, T_Object>::isMessageReliable ()
+      {
+        return T_Model::reliable_message_model;
+      }
+
+      template <class T_Model, class T_Device, class T_Object>
+      const size_t MessageModel<T_Model, T_Device, T_Object>::getMessageMetadataBytes ()
+      {
+        return T_Model::message_model_metadata_bytes;
+      }
+
+      template <class T_Model, class T_Device, class T_Object>
+      const size_t MessageModel<T_Model, T_Device, T_Object>::getMessagePayloadBytes ()
+      {
+        return T_Model::message_model_payload_bytes;
+      }
+
+      template <class T_Model, class T_Device, class T_Object>
+      inline bool MessageModel<T_Model, T_Device, T_Object>::postMessage (T_Object           * obj,
+                                                                          xmi_event_function   fn,
+                                                                          void               * cookie,
+                                                                          size_t               target_rank,
+                                                                          void               * metadata,
+                                                                          size_t               metasize,
+                                                                          void               * payload,
+                                                                          size_t               bytes)
       {
         return static_cast<T_Model*>(this)->postMessage_impl (obj, fn, cookie, target_rank,
                                                              metadata, metasize, payload, bytes);

@@ -89,11 +89,9 @@ namespace XMI
           /// \copydoc XMI::Device::Interface::PacketDevice::readData
           inline int readData_impl (int channel, void * buf, size_t length);
 
-          /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
-          static const size_t packet_metadata_size = 17; // <-- replace with a constant from SPIs somewhere
-
-          /// \see XMI::Device::Interface::PacketDevice::getPacketPayloadSize()
-          static const size_t packet_payload_size = 512; // <-- replace with a constant from SPIs somewhere
+          static const size_t packet_metadata_size  = 17;  // <-- replace with a constant from SPIs somewhere
+          static const size_t message_metadata_size = 13;  // <-- replace with a constant from SPIs somewhere
+          static const size_t payload_size          = 512; // <-- replace with a constant from SPIs somewhere
 
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
@@ -102,16 +100,6 @@ namespace XMI
           //
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
-
-          /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
-          static const size_t message_metadata_size = 13; // <-- replace with a constant from SPIs somewhere
-
-          /// \copydoc XMI::Device::Interface::MessageDevice::setConnection
-          //inline void setConnection_impl (int channel, size_t rank, void * arg);
-
-          /// \copydoc XMI::Device::Interface::MessageDevice::getConnection
-          //inline void * getConnection_impl (int channel, size_t rank);
-
 
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------

@@ -457,35 +457,14 @@ namespace XMI
       };
 
       // Implement MessageDevice Routines
-      /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
-      static const size_t packet_metadata_size = 128;
-
-      /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
-      static const size_t message_metadata_size = 128;
-
-      inline void   setConnection_impl (int channel, size_t rank, void * arg)
-      {
-        assert(0);
-      }
-      inline void * getConnection_impl (int channel, size_t rank)
-      {
-        assert(0);
-        return NULL;
-      }
+      static const size_t metadata_size = 128;
+      static const size_t payload_size  = 224;
 
       // Implement Packet Device Routines
       inline int    readData_impl(void * dst, size_t bytes)
       {
         assert(0);
         return -1;
-      }
-      inline size_t getPacketMetadataSize_impl()
-      {
-        return 128;
-      }
-      inline size_t getPacketPayloadSize_impl()
-      {
-        return 224;
       }
 
       inline size_t peers_impl ()

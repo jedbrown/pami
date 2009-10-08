@@ -103,7 +103,7 @@ namespace XMI
               _data_model (device, context),
               _ack_model (device, context),
               _msgDevice (device),
-              _pktsize (device.getPacketPayloadSize ()),
+//              _pktsize (device.getPacketPayloadSize ()),
               _fromRank (origin_task),
               _context (context),
               _dispatch_fn (dispatch_fn),
@@ -151,7 +151,7 @@ namespace XMI
                                            void               * msginfo,
                                            size_t               mbytes)
           {
-            TRACE_ERR((stderr, "EagerSimple::simple_impl() >> sizeof(short_metadata_t) = %zd, T_Device::packet_metadata_size = %zd\n", sizeof(short_metadata_t), T_Device::packet_metadata_size));
+            TRACE_ERR((stderr, "EagerSimple::simple_impl() >> sizeof(short_metadata_t) = %zd, T_Model::packet_model_metadata_bytes = %zd\n", sizeof(short_metadata_t), T_Model::packet_model_metadata_bytes));
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
@@ -191,7 +191,7 @@ namespace XMI
                 TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
 
                 // This branch should be resolved at compile time and optimized out.
-                if (sizeof(short_metadata_t) <= T_Device::packet_metadata_size)
+                if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
                 {
                   _envelope_model.postPacket (&(state->msg[0]),
                                               send_complete,
@@ -221,7 +221,7 @@ namespace XMI
                 TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
 
                 // This branch should be resolved at compile time and optimized out.
-                if (sizeof(short_metadata_t) <= T_Device::packet_metadata_size)
+                if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
                 {
                   _envelope_model.postPacket (&(state->msg[0]),
                                               NULL,
@@ -250,7 +250,7 @@ namespace XMI
 
                 // This branch should be resolved at compile time and optimized out.
                 // COMPILE_TIME_ASSERT instead ?
-                if (sizeof(xmi_task_t) <= T_Device::packet_metadata_size)
+                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
                 {
                   _data_model.postMessage (&(state->msg[1]),
                                            send_complete,
@@ -326,7 +326,7 @@ namespace XMI
           T_Model         _data_model;
           T_Model         _ack_model;
           T_Device      & _msgDevice;
-          size_t          _pktsize;
+          //size_t          _pktsize;
           xmi_task_t      _fromRank;
 
           xmi_context_t   _context;
@@ -341,10 +341,10 @@ namespace XMI
 
           size_t      _contextid;
 
-          static int dispatch_ack_direct (void         * metadata,
-                                          void         * payload,
-                                          size_t         bytes,
-                                          void         * recv_func_parm)
+          static int dispatch_ack_direct (void   * metadata,
+                                          void   * payload,
+                                          size_t   bytes,
+                                          void   * recv_func_parm)
           {
             TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() >> \n"));
             send_state_t * state = *((send_state_t **) metadata);
@@ -364,10 +364,10 @@ namespace XMI
             return 0;
           }
 
-          static int dispatch_ack_read (void         * metadata,
-                                        void         * payload,
-                                        size_t         bytes,
-                                        void         * recv_func_parm)
+          static int dispatch_ack_read (void   * metadata,
+                                        void   * payload,
+                                        size_t   bytes,
+                                        void   * recv_func_parm)
           {
 #if 0
             send_state_t * state = (send_state_t *) metadata;
@@ -405,16 +405,16 @@ namespace XMI
           ///
           /// \see XMI::Device::Interface::RecvFunction_t
           ///
-          static int dispatch_envelope_direct (void         * metadata,
-                                               void         * payload,
-                                               size_t         bytes,
-                                               void         * recv_func_parm)
+          static int dispatch_envelope_direct (void   * metadata,
+                                               void   * payload,
+                                               size_t   bytes,
+                                               void   * recv_func_parm)
           {
             short_metadata_t * m = (short_metadata_t *) metadata;
             void * p = payload;
 
             // This branch should be resolved at compile time and optimized out.
-            if (sizeof(short_metadata_t) > T_Device::packet_metadata_size)
+            if (sizeof(short_metadata_t) > T_Model::packet_model_metadata_bytes)
             {
               m = (short_metadata_t *) payload;
               p = (void *) (m + 1);
@@ -461,7 +461,7 @@ namespace XMI
                 if (state->ackinfo != NULL)
                   {
                     // This branch should be resolved at compile time and optimized out.
-                    if (sizeof(send_state_t *) <= T_Device::packet_metadata_size)
+                    if (sizeof(send_state_t *) <= T_Model::packet_model_metadata_bytes)
                     {
                       eager->_ack_model.postPacket (&(state->msg),
                                                     receive_complete,
@@ -570,7 +570,7 @@ namespace XMI
               if (state->ackinfo != NULL)
               {
                 // This branch should be resolved at compile time and optimized out.
-                if (sizeof(send_state_t *) <= T_Device::packet_metadata_size)
+                if (sizeof(send_state_t *) <= T_Model::packet_model_metadata_bytes)
                 {
                   eager->_ack_model.postPacket (&(state->msg),
                                                 receive_complete,
@@ -754,13 +754,12 @@ namespace XMI
           static inline void compile_time_assert ()
           {
             // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(T_Device::reliable_network == true);
+            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
+            COMPILE_TIME_ASSERT(T_Model::reliable_message_model == true);
 
             // This protcol only works with deterministic models.
-            COMPILE_TIME_ASSERT(T_Model::deterministic == true);
-
-            // Verify that there is enough space for the protocol metadata.
-            COMPILE_TIME_ASSERT(sizeof(short_metadata_t) <= T_Device::packet_metadata_size);
+            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
+            COMPILE_TIME_ASSERT(T_Model::deterministic_message_model == true);
           };
       };
     };

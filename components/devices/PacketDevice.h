@@ -25,11 +25,6 @@ namespace XMI
       ///
       /// \brief Packet device dispatch receive function signature
       ///
-      /// \note The packet device \b must provide base address pointers in the
-      ///       iovec elements that are 16 byte aligned. This allows the receive
-      ///       function implementation to optimize how it provides the user data
-      ///       to the application.
-      ///
       /// \param[in] metadata       Pointer to network header metadata that is
       ///                           not part of the normal packet payload.
       /// \param[in] payload        Pointer to the raw packet payload.
@@ -72,45 +67,12 @@ namespace XMI
           /// \return 0 on success, !0 on failure
           ///
           inline int readData (void * dst, size_t bytes);
-
-          ///
-          /// \brief Get the maximum packet metadata size in bytes.
-          ///
-          /// \attention All device derived classes \b must contain a static
-          ///            const data member named 'size_t packet_metadata_size'.
-          ///
-          /// \return Maximum packet metadata size in bytes
-          ///
-          static const size_t getPacketMetadataSize ();
-
-          ///
-          /// \brief Get the maximum packet payload size in bytes.
-          ///
-          /// \attention All device derived classes \b must contain a static
-          ///            const data member named 'size_t packet_payload_size'.
-          ///
-          /// \return Maximum packet payload size in bytes
-          ///
-          static const size_t getPacketPayloadSize ();
-
       };
 
       template <class T>
       inline int PacketDevice<T>::readData (void * dst, size_t length)
       {
         return static_cast<T*>(this)->readData_impl(dst, length);
-      }
-
-      template <class T>
-      const size_t PacketDevice<T>::getPacketMetadataSize ()
-      {
-        return T::packet_metadata_size;
-      }
-
-      template <class T>
-      const size_t PacketDevice<T>::getPacketPayloadSize ()
-      {
-        return T::packet_payload_size;
       }
     };
   };

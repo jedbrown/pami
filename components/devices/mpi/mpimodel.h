@@ -33,6 +33,16 @@ namespace XMI
         _context(context)
         {};
 
+      static const bool   deterministic_packet_model   = true;
+      static const bool   reliable_packet_model        = true;
+      static const size_t packet_model_metadata_bytes  = T_Device::metadata_size;
+      static const size_t packet_model_payload_bytes   = T_Device::payload_size;
+
+      static const bool   deterministic_message_model  = true;
+      static const bool   reliable_message_model       = true;
+      static const size_t message_model_metadata_bytes = T_Device::metadata_size;
+      static const size_t message_model_payload_bytes  = T_Device::payload_size;
+
       xmi_result_t init_impl (size_t                      dispatch,
                               Interface::RecvFunction_t   direct_recv_func,
                               void                      * direct_recv_func_parm,
@@ -43,11 +53,6 @@ namespace XMI
          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::init_impl %d \n",(int)this, _dispatch_id));
          return XMI_SUCCESS;
         };
-
-      inline bool isDeterministic ()
-        {
-          return true;
-        }
 
       inline bool postPacket_impl (T_Message          * obj,
                                    xmi_event_function   fn,
@@ -178,14 +183,14 @@ namespace XMI
         }
 
 
-      inline bool postMessage_impl (T_Message        * obj,
+      inline bool postMessage_impl (T_Message          * obj,
                                     xmi_event_function   fn,
                                     void               * cookie,
-                                    size_t             target_rank,
-                                    void             * metadata,
-                                    size_t             metasize,
-                                    void             * src,
-                                    size_t             bytes)
+                                    size_t               target_rank,
+                                    void               * metadata,
+                                    size_t               metasize,
+                                    void               * src,
+                                    size_t               bytes)
         {
           int rc;
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postMessage_impl %d \n",(int)this, this->_dispatch_id));

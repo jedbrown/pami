@@ -58,15 +58,6 @@ namespace XMI
           inline bool isInit ();
 
           ///
-          /// \brief Returns the reliable network attribute of this device
-          ///
-          /// \attention All device derived classes \b must contain a static
-          ///            const data member named 'bool reliable_network'.
-          ///
-          ///
-          static const bool isReliableNetwork ();
-
-          ///
           /// \brief Number of addressable 'peer' tasks for this device
           ///
           /// \attention All device derived classes \b must
@@ -107,12 +98,6 @@ namespace XMI
       inline bool BaseDevice<T_Device, T_SysDep>::isInit ()
       {
         return static_cast<T_Device*>(this)->isInit_impl();
-      }
-
-      template <class T_Device, class T_SysDep>
-      const bool BaseDevice<T_Device, T_SysDep>::isReliableNetwork ()
-      {
-        return T_Device::reliable_network;
       }
 
       template <class T_Device, class T_SysDep>
