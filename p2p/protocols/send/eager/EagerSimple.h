@@ -202,6 +202,7 @@ namespace XMI
                                               msginfo,
                                               mbytes);
                 }
+                else
                 {
                   _envelope_model.postPacket (&(state->msg[0]),
                                               send_complete,

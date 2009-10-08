@@ -97,8 +97,34 @@ namespace XMI
                                    void               * payload1,
                                    size_t               bytes1)
         {
-          assert(0);
-          return false;
+          int rc;
+//          void       * obj = malloc(sizeof(MPIMessage));
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate %d \n",(int)this, this->_dispatch_id));
+          MPIMessage * msg = (MPIMessage *)obj;
+          new(msg)MPIMessage(this->_context,
+                             this->_dispatch_id,
+                             fn,
+                             cookie);
+          msg->_freeme=0;
+          msg->_p2p_msg._metadatasize=metasize;
+          msg->_p2p_msg._payloadsize0=bytes0;
+          msg->_p2p_msg._payloadsize1=bytes1;
+          memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
+          memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
+          memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate MPI_Isend %zd to %zd\n",(int)this, 
+                         sizeof(msg->_p2p_msg),target_rank));
+          rc = MPI_Isend (&msg->_p2p_msg,
+                          sizeof(msg->_p2p_msg),
+                          MPI_CHAR,
+                          target_rank,
+                          0,
+                          MPI_COMM_WORLD,
+                          &msg->_request);
+          _device.enqueue(msg);
+          assert(rc == MPI_SUCCESS);
+
+          return true;
         };
 
       inline bool postPacket_impl (T_Message        * obj,

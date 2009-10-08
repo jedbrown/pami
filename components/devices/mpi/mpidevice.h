@@ -154,8 +154,8 @@ namespace XMI
             if((*it_p2p)->_done_fn )
               (*it_p2p)->_done_fn((*it_p2p)->_context,(*it_p2p)->_cookie, XMI_SUCCESS);
             _sendQ.remove((*it_p2p));
-//                      if((*it_p2p)->_freeme)
-//                        free(*it_p2p);
+            if((*it_p2p)->_freeme)
+              free(*it_p2p);
             break;
           }
         }
