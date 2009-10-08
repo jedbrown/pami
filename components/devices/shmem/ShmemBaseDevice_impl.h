@@ -120,13 +120,6 @@ namespace XMI
       return peer;
     }
 
-    /// \see XMI::Device::Interface::PacketDevice::requiresRead()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    bool ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::requiresRead_impl ()
-    {
-      return false;
-    };
-
     ///
     /// \brief Regieter the receive function to dispatch when a packet arrives.
     ///

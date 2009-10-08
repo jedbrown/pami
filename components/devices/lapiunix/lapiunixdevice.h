@@ -162,11 +162,6 @@ namespace XMI
           assert(0);
 	  return -1;
         }
-      inline bool   requiresRead_impl()
-        {
-          assert(0);
-	  return false;
-        }
       inline size_t getPacketMetadataSize_impl()
         {
           return DEV_HEADER_SIZE;

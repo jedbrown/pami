@@ -68,7 +68,6 @@ namespace XMI
           /// The packet device implementation will use the appropriate receive
           /// function depending on the packet device "requires read" attribute.
           ///
-          /// \see XMI::Device::Interface::PacketDevice::requiresRead()
           /// \see XMI::Device::Interface::PacketDevice::readData()
           ///
           /// \param[in] dispatch              Dispatch set identifier

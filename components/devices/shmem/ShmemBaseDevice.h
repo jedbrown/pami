@@ -82,9 +82,6 @@ namespace XMI
         /// \see XMI::Device::Interface::BaseDevice::readData()
         inline int readData_impl (int channel, void * buf, size_t length);
 
-        /// \see XMI::Device::Interface::PacketDevice::requiresRead()
-        bool requiresRead_impl ();
-
         /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
         static const size_t packet_metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
 

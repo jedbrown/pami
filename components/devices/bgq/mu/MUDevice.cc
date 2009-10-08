@@ -111,11 +111,6 @@ bool XMI::Device::MU::MUDevice::isInit_impl()
 };
 
 
-bool XMI::Device::MU::MUDevice::requiresRead_impl ()
-{
-  return false;
-};
-
 bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                      dispatch,
                                                        Interface::RecvFunction_t   function,
                                                        void                      * arg,

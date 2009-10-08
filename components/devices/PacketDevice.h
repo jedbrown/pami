@@ -59,10 +59,7 @@ namespace XMI
           ~PacketDevice() {}
 
           ///
-          /// \brief Read data from a channel
-          ///
-          /// It is only required to read data from the channel if the
-          /// PacketDevice::requiresRead() method returns \c true
+          /// \brief Read data from a packet device
           ///
           /// \attention All packet device derived classes \b must
           ///            implement the readData_impl() method.
@@ -72,24 +69,9 @@ namespace XMI
           ///
           /// \todo Define return value(s)
           ///
-          /// \see requiresRead()
-          ///
           /// \return 0 on success, !0 on failure
           ///
           inline int readData (void * dst, size_t bytes);
-
-          ///
-          /// \brief Return the packet device implementation read attribute.
-          ///
-          /// \attention All packet device derived classes \b must
-          ///            implement the requiresRead_impl() method.
-          ///
-          /// \see readData()
-          ///
-          /// \retval true  The dispatch function \b must use readData()
-          /// \retval false The dispatch function will have direct access to the data.
-          ///
-          inline bool requiresRead ();
 
           ///
           /// \brief Get the maximum packet metadata size in bytes.
@@ -117,12 +99,6 @@ namespace XMI
       inline int PacketDevice<T>::readData (void * dst, size_t length)
       {
         return static_cast<T*>(this)->readData_impl(dst, length);
-      }
-
-      template <class T>
-      inline bool PacketDevice<T>::requiresRead ()
-      {
-        return static_cast<T*>(this)->requiresRead_impl();
       }
 
       template <class T>
