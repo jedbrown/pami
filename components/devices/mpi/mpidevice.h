@@ -317,7 +317,7 @@ namespace XMI
                 mcast = (*it);
               }
 
-              if(mcast->_pwidth == 0 && mcast->_buf == 0)
+              if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
               {
                 if(mcast->_done_fn)
                   mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
