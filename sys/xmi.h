@@ -2781,7 +2781,8 @@ extern "C"
    * (src, etc) cannot be re-used until cb_done.
    */
   typedef struct {
-    void                *request; 	       /**< space available in request, bytes */
+    xmi_context_t        context;	   /**< context to operate within */
+    void                *request; 	   /**< space for operation */
     xmi_callback_t       cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the
@@ -2954,15 +2955,16 @@ extern "C"
    * for indexing into the recv parameter arrays (lengths and offsets).
    */
   typedef struct {
-    void                *request; 	     /**< space available in request, bytes */
+    xmi_context_t        context;	     /**< context to operate within */
+    void                *request; 	     /**< space for operation */
     xmi_callback_t       cb_done;	     /**< User's completion callback */
-    unsigned             connection_id;  /**< differentiate data streams */
-    unsigned             roles;          /**< bitmap of roles to perform */
+    unsigned             connection_id;      /**< differentiate data streams */
+    unsigned             roles;              /**< bitmap of roles to perform */
     size_t              *rankIndex;	     /**< Index of send in recv parameters */
-    size_t               num_index;      /**< Number of entries in "rankIndex".
-                                            should be multiple of send.participants->size()?
-                                         */
-    xmi_manytomanybuf_t  send;           /**< send data parameters */
+    size_t               num_index;          /**< Number of entries in "rankIndex".
+                                                should be multiple of send.participants->size()?
+                                             */
+    xmi_manytomanybuf_t  send;               /**< send data parameters */
     const xmi_quad_t    *metadata;	     /**< A extra info field to be sent with the message.
                                                 This might include information about
                                                 the data being sent, for one-sided. */
@@ -3003,7 +3005,8 @@ extern "C"
    * \brief structure defining interface to Multisync
    */
   typedef struct {
-    void              *request;	        /**< space available in request, bytes */
+    xmi_context_t      context;		/**< context to operate within */
+    void              *request;	        /**< space for operation */
     xmi_callback_t     cb_done;		/**< User's completion callback */
     unsigned           connection_id;	/**< (remove?) differentiate data streams */
     unsigned           roles;		/**< bitmap of roles to perform */
@@ -3039,6 +3042,7 @@ extern "C"
    * type of multicombine being registered/used.
    */
   typedef struct {
+    xmi_context_t        context;	      /**< context to operate within */
     void                *request;             /**< space for communication struct(s) */
     xmi_callback_t       cb_done;             /**< User's completion callback */
     unsigned             roles;		      /**< bitmap of roles to perform */
