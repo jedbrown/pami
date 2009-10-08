@@ -78,7 +78,7 @@ namespace XMI
               }
               _eager_connection[first_empty_connection].context = context;
               _eager_connection[first_empty_connection].array =
-                (void **) malloc (sizeof(void *) * _device.peers());
+                (void **) calloc (_device.peers(), sizeof(void *));
               connection = _eager_connection[first_empty_connection].array;
             }
 
