@@ -3258,28 +3258,16 @@ extern "C"
    * This enum contains ALL possible attributes for all hardware
    */
   typedef enum {
-    /* Attribute            Init / Query / Update                                                                              */
-    XMI_PROTOCOL_NAME=1, /**< IQ  : char *            : name of the protocol                                                   */
-    XMI_RELIABILITY,     /**< IQ  : xmi_bool_t        : guaranteed reliability                                                 */
-    XMI_ATTRIBUTES,      /**<  Q  : xmi_attribute_t[] : attributes on the platform terminated with NULL                        */
-    XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task                                                        */
-    XMI_NUM_TASKS,       /**<  Q  : size_t            : total number of tasks                                                  */
-    XMI_RECV_INTR_MASK,  /**<  QU : xmi_intr_mask_t   : receive interrupt mask                                                 */
-    XMI_CHECK_PARAMS,    /**<  QU : xmi_bool_t        : check parameters                                                       */
-    XMI_USER_KEYS,       /**<  Q  : xmi_user_key_t[]  : user-defined keys terminated with NULL                                 */
-    XMI_USER_CONFIG,     /**<  QU : xmi_user_config_t : user-defined configuration key and value are shallow-copied for update */
+    /* Attribute            Init / Query / Update                                              */
+    XMI_ATTRIBUTES,      /**<  Q  : xmi_attribute_t[] : NULL terminated list of all attributes */
+    XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task                        */
+    XMI_NUM_TASKS,       /**<  Q  : size_t            : total number of tasks (AKA "rank")     */
   } xmi_attribute_name_t;
 
   typedef union
   {
-    void              * pointer;
-    char              * string;
-    xmi_bool_t          boolean;
-    xmi_attribute_name_t   * attributes;
-    size_t              intval;
-    xmi_intr_mask_t     interrupts;
-    xmi_user_key_t    * keys;
-    xmi_user_config_t * configurations;
+    xmi_attribute_name_t * attributes;
+    size_t                 intval;
   } xmi_attribute_value_t;
 
 #define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */
