@@ -143,7 +143,8 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
 int XMI::Device::MU::MUDevice::noop (void   * metadata,
                                      void   * payload,
                                      size_t   bytes,
-                                     void   * recv_func_parm)
+                                     void   * recv_func_parm,
+                                     void   * cookie)
 {
   fprintf (stderr, "Error. Dispatch to unregistered id (%zd).\n", (size_t) recv_func_parm);
   XMI_abort();

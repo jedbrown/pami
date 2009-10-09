@@ -76,21 +76,21 @@ namespace XMI
 
         // ------------------------------------------
 
-        /// \see XMI::Device::Interface::BaseDevice::readData()
-        inline int readData_impl (int channel, void * buf, size_t length);
+        /// \see XMI::Device::Interface::PacketDevice::read()
+        inline int read_impl (void * buf, size_t length, void * cookie);
 
         static const size_t metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
         static const size_t payload_size  = T_Packet::payloadSize_impl;
 
         // ------------------------------------------
-
+#if 0
         /// \see XMI::Device::Interface::MessageDevice::setConnection()
         inline void setConnection_impl (size_t   fromRank,
                                         void   * arg);
 
         /// \see XMI::Device::Interface::MessageDevice::getConnection()
         inline void * getConnection_impl (size_t fromRank);
-
+#endif
         // ------------------------------------------
 
         ///
@@ -183,7 +183,8 @@ namespace XMI
         static int noop (void   * metadata,
                          void   * payload,
                          size_t   bytes,
-                         void   * recv_func_parm);
+                         void   * recv_func_parm,
+                         void   * cookie);
 
 
         T_Fifo * _fifo;  ///< Array of injection fifos
@@ -227,11 +228,11 @@ namespace XMI
       return ((__sendQMask >> peer) & 0x01) == 0;
     }
 
-    /// \see XMI::Device::Interface::BaseDevice::readData()
+    /// \see XMI::Device::Interface::PacketDevice::read()
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::readData_impl (int channel, void * buf, size_t length)
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::read_impl (void * dst, size_t length, void * cookie)
     {
-      abort();
+      memcpy (dst, cookie, length);
       return 0;
     }
 
@@ -438,7 +439,7 @@ namespace XMI
 
           mem_sync (); // TODO -- is this needed?
 
-          _dispatch[hdr[0]][hdr[1]].function (meta, data, pkt->payloadSize(), _dispatch[hdr[0]][hdr[1]].clientdata);
+          _dispatch[hdr[0]][hdr[1]].function (meta, data, pkt->payloadSize(), _dispatch[hdr[0]][hdr[1]].clientdata, data);
 
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before _rfifo->consumePacket()\n", _sysdep->mapping.task()));

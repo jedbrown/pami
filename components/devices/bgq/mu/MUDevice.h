@@ -87,7 +87,7 @@ namespace XMI
           // ----------------------------------------------------------------------
 
           /// \copydoc XMI::Device::Interface::PacketDevice::readData
-          inline int readData_impl (int channel, void * buf, size_t length);
+          inline int read_impl (void * dst, size_t length, void * cookie);
 
           static const size_t packet_metadata_size  = 17;  // <-- replace with a constant from SPIs somewhere
           static const size_t message_metadata_size = 13;  // <-- replace with a constant from SPIs somewhere
@@ -391,7 +391,8 @@ namespace XMI
           static int noop (void   * metadata,
                            void   * payload,
                            size_t   bytes,
-                           void   * recv_func_parm);
+                           void   * recv_func_parm,
+                           void   * cookie);
 
       }; // XMI::Device::MU::MUDevicee class
     };   // XMI::Device::MU namespace
@@ -446,9 +447,10 @@ int XMI::Device::MU::MUDevice::advance_impl()
   return events;
 }
 
-int XMI::Device::MU::MUDevice::readData_impl (int channel, void * buf, size_t length)
+int XMI::Device::MU::MUDevice::read_impl (void * dst, size_t length, void * cookie)
 {
-  XMI_abort();
+  // TODO - replace this with an optimized packet copy function.
+  memcpy (dst, cookie, length);
   return 0;
 };
 

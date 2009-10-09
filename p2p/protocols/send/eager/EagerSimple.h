@@ -102,8 +102,7 @@ namespace XMI
               _envelope_model (device, context),
               _data_model (device, context),
               _ack_model (device, context),
-              _msgDevice (device),
-//              _pktsize (device.getPacketPayloadSize ()),
+              _device (device),
               _fromRank (origin_task),
               _context (context),
               _dispatch_fn (dispatch_fn),
@@ -123,8 +122,8 @@ namespace XMI
             if (status == XMI_SUCCESS)
               {
                 status = _data_model.init (dispatch,
-                                           dispatch_data_direct, this,
-                                           dispatch_data_read, this);
+                                           dispatch_data_message, this,
+                                           dispatch_data_message, this);
                 TRACE_ERR((stderr, "EagerSimple() [2] status = %d\n", status));
 
                 if (status == XMI_SUCCESS)
@@ -181,6 +180,7 @@ namespace XMI
                 state->remote_fn = NULL;
               }
 
+
             if (bytes == 0)
               {
                 // In the unlikely event that this eager (i.e., multi-packet)
@@ -204,6 +204,8 @@ namespace XMI
                 }
                 else
                 {
+                  XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
+
                   _envelope_model.postPacket (&(state->msg[0]),
                                               send_complete,
                                               (void *) state,
@@ -234,6 +236,8 @@ namespace XMI
                 }
                 else
                 {
+                  XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
+
                   _envelope_model.postPacket (&(state->msg[0]),
                                               NULL,
                                               NULL,
@@ -294,7 +298,7 @@ namespace XMI
 
           inline void setConnection (xmi_task_t task, void * arg)
           {
-            size_t peer = _msgDevice.task2peer (task);
+            size_t peer = _device.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", (size_t)task, arg, peer, _connection[peer]));
             XMI_assert(_connection[peer] == NULL);
             _connection[peer] = arg;
@@ -303,7 +307,7 @@ namespace XMI
 
           inline void * getConnection (xmi_task_t task)
           {
-            size_t peer = _msgDevice.task2peer (task);
+            size_t peer = _device.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
             XMI_assert(_connection[peer] != NULL);
             TRACE_ERR((stderr, "<< EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
@@ -312,7 +316,7 @@ namespace XMI
 
           inline void clearConnection (xmi_task_t task)
           {
-            size_t peer = _msgDevice.task2peer (task);
+            size_t peer = _device.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
             _connection[peer] = NULL;
             TRACE_ERR((stderr, "<< EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
@@ -325,7 +329,7 @@ namespace XMI
           T_Model         _envelope_model;
           T_Model         _data_model;
           T_Model         _ack_model;
-          T_Device      & _msgDevice;
+          T_Device      & _device;
           //size_t          _pktsize;
           xmi_task_t      _fromRank;
 
@@ -344,47 +348,50 @@ namespace XMI
           static int dispatch_ack_direct (void   * metadata,
                                           void   * payload,
                                           size_t   bytes,
-                                          void   * recv_func_parm)
+                                          void   * recv_func_parm,
+                                          void   * cookie)
           {
-            TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() >> \n"));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_direct()\n"));
             send_state_t * state = *((send_state_t **) metadata);
 
-            xmi_event_function remote_fn = state->remote_fn;
-            void               * cookie  = state->cookie;
-            TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() .. state = %p, remote_fn = %p\n", state, remote_fn));
+            xmi_event_function   remote_fn = state->remote_fn;
+            void               * fn_cookie = state->cookie;
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_ack_direct() .. state = %p, remote_fn = %p\n", state, remote_fn));
 
             EagerSimple<T_Model, T_Device, T_Message> * eager =
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
             eager->freeSendState (state);
 
-            if (remote_fn) remote_fn (eager->_context, cookie, XMI_SUCCESS);
+            if (remote_fn) remote_fn (eager->_context, fn_cookie, XMI_SUCCESS);
 
-            TRACE_ERR((stderr, "EagerSimple::dispatch_ack_direct() << \n"));
+            TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_direct()\n"));
             return 0;
           }
 
           static int dispatch_ack_read (void   * metadata,
                                         void   * payload,
                                         size_t   bytes,
-                                        void   * recv_func_parm)
+                                        void   * recv_func_parm,
+                                        void   * cookie)
           {
-#if 0
-            send_state_t * state = (send_state_t *) metadata;
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_read()\n"));
 
-            xmi_event_function * local_fn  = state->local_fn;
-            xmi_event_function * remote_fn = state->remote_fn;
-            void               * cookie    = state->cookie;
+            EagerSimple<T_Model, T_Device, T_Message> * pf =
+              (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
-            Eager<T_Model, T_Device, T_Message> * eager =
-              (Eager<T_Model, T_Device, T_Message> *) recv_func_parm;
-            eager->freeSendState (state);
+            // This packet device DOES NOT provide the data buffer(s) for the
+            // message and the data must be read on to the stack before the
+            // recv callback is invoked.
+            XMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
 
-            if (local_fn)  local_fn  (0, cookie, XMI_SUCCESS);
+            uint8_t stackData[T_Model::packet_model_payload_bytes];
+            void * p = (void *) & stackData[0];
+            pf->_device.read (p, bytes, cookie);
 
-            if (remote_fn) remote_fn (0, cookie, XMI_SUCCESS);
+            dispatch_ack_direct (metadata, p, bytes, recv_func_parm, cookie);
 
-#endif
+            TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_read()\n"));
             return 0;
           }
 
@@ -408,7 +415,8 @@ namespace XMI
           static int dispatch_envelope_direct (void   * metadata,
                                                void   * payload,
                                                size_t   bytes,
-                                               void   * recv_func_parm)
+                                               void   * recv_func_parm,
+                                               void   * cookie)
           {
             short_metadata_t * m = (short_metadata_t *) metadata;
             void * p = payload;
@@ -511,16 +519,17 @@ namespace XMI
           ///
           /// \see XMI::Device::Interface::RecvFunction_t
           ///
-          static int dispatch_data_direct   (void   * metadata,
-                                             void   * payload,
-                                             size_t   bytes,
-                                             void   * recv_func_parm)
+          static int dispatch_data_message   (void   * metadata,
+                                              void   * payload,
+                                              size_t   bytes,
+                                              void   * recv_func_parm,
+                                              void   * cookie)
           {
             EagerSimple<T_Model, T_Device, T_Message> * eager =
               (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
             xmi_task_t fromRank = *((xmi_task_t *)metadata);
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_direct(), fromRank = %zd, bytes = %zd\n", (size_t)fromRank, bytes));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), fromRank = %zd, bytes = %zd\n", (size_t)fromRank, bytes));
 
             recv_state_t * state = (recv_state_t *) eager->getConnection (fromRank);
             XMI_assert_debug(state != NULL);
@@ -531,28 +540,30 @@ namespace XMI
             // Number of bytes left to copy into the destination buffer
             size_t nleft = state->info.data.simple.bytes - nbyte;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), bytes received so far = %zd, bytes yet to receive = %zd, total bytes to receive = %zd, total bytes being sent = %zd\n", state->received, nleft, state->info.data.simple.bytes, state->sndlen));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zd, bytes yet to receive = %zd, total bytes to receive = %zd, total bytes being sent = %zd\n", state->received, nleft, state->info.data.simple.bytes, state->sndlen));
 
             if (nleft > 0) // nleft should never be zero .. right?
               {
                 // Copy data from the packet buffer into the receive buffer.
                 if (nleft < bytes)
                 {
-                  memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, nleft);
+                  //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, nleft);
+                  eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
 
                   // Update the receive state to prepate for another data packet.
                   state->received += nleft;
                 }
                 else
                 {
-                  memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, bytes);
+                  //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, bytes);
+                  eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, bytes, cookie);
 
                   // Update the receive state to prepate for another data packet.
                   state->received += bytes;
                 }
               }
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_direct(), nbyte = %zd\n", nbyte));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zd\n", nbyte));
 
             if (nbyte+bytes >= state->sndlen)
             {
@@ -592,11 +603,11 @@ namespace XMI
                 // the memory pool.
                 eager->freeRecvState (state);
               }
-              TRACE_ERR((stderr, "<< dispatch_data_direct(), fromRank = %zd ... receive completed\n", (size_t)fromRank));
+              TRACE_ERR((stderr, "<< dispatch_data_message(), fromRank = %zd ... receive completed\n", (size_t)fromRank));
               return 0;
             }
 
-            TRACE_ERR((stderr, "<< dispatch_data_direct(), fromRank = %zd ... wait for more data\n", (size_t)fromRank));
+            TRACE_ERR((stderr, "<< dispatch_data_message(), fromRank = %zd ... wait for more data\n", (size_t)fromRank));
             return 0;
           };
 
@@ -627,26 +638,26 @@ namespace XMI
           static int dispatch_envelope_read (void   * metadata,
                                              void   * payload,
                                              size_t   bytes,
-                                             void   * recv_func_parm)
+                                             void   * recv_func_parm,
+                                             void   * cookie)
           {
-#if 0
-            TRACE_ERR((stderr, "(%zd) EagerFactory::dispatch_envelope_read() .. \n", DCMF_Messager_rank()));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_envelope_read()\n"));
 
-            EagerFactory<T_Model, T_Device, T_Message> * pf =
-              (EagerFactory<T_Model, T_Device, T_Message> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_Message> * pf =
+              (EagerSimple<T_Model, T_Device, T_Message> *) recv_func_parm;
 
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
             // recv callback is invoked.
+            XMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
 
-            uint8_t stackData[pf->getDevice()->getPacketPayloadSize()];
+            uint8_t stackData[T_Model::packet_model_payload_bytes];
             void * p = (void *) & stackData[0];
-            pf->getDevice()->readData(channel, (char *) p, bytes);
+            pf->_device.read (p, bytes, cookie);
 
-            dispatch_envelope_direct (channel, metadata, p, bytes, recv_func_parm);
-#else
-            assert(0);
-#endif
+            dispatch_envelope_direct (metadata, p, bytes, recv_func_parm, cookie);
+
+            TRACE_ERR((stderr, "<< EagerSimple::dispatch_envelope_read()\n"));
             return 0;
           };
 
@@ -673,7 +684,8 @@ namespace XMI
           static int dispatch_data_read     (void   * metadata,
                                              void   * payload,
                                              size_t   bytes,
-                                             void   * recv_func_parm)
+                                             void   * recv_func_parm,
+                                             void   * cookie)
           {
 #if 0
             TRACE_ERR((stderr, "EagerFactory::dispatch_data_read() .. \n"));

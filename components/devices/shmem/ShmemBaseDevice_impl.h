@@ -168,9 +168,10 @@ namespace XMI
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
     int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::noop (void   * metadata,
-                                                 void   * payload,
-                                                 size_t   bytes,
-                                                 void   * recv_func_parm)
+                                                           void   * payload,
+                                                           size_t   bytes,
+                                                           void   * recv_func_parm,
+                                                           void   * cookie)
     {
       XMI_abort();
       return 0;

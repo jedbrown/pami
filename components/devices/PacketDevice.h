@@ -30,6 +30,7 @@ namespace XMI
       /// \param[in] payload        Pointer to the raw packet payload.
       /// \param[in] bytes          Number of valid bytes of packet payload.
       /// \param[in] recv_func_parm Registered dispatch clientdata
+      /// \param[in] cookie         Device cookie
       ///
       /// \todo Define return value(s)
       ///
@@ -38,7 +39,8 @@ namespace XMI
       typedef int (*RecvFunction_t) (void   * metadata,
                                      void   * payload,
                                      size_t   bytes,
-                                     void   * recv_func_parm);
+                                     void   * recv_func_parm,
+                                     void   * cookie);
 
       ///
       /// \brief Packet device interface.
@@ -59,20 +61,21 @@ namespace XMI
           /// \attention All packet device derived classes \b must
           ///            implement the readData_impl() method.
           ///
-          /// \param[in] dst      Destination buffer to read data to
+          /// \param[in] dst      Destination buffer
           /// \param[in] bytes    Number of bytes to read
+          /// \param[in] cookie   Device cookie
           ///
           /// \todo Define return value(s)
           ///
           /// \return 0 on success, !0 on failure
           ///
-          inline int readData (void * dst, size_t bytes);
+          inline int read (void * dst, size_t bytes, void * cookie);
       };
 
       template <class T>
-      inline int PacketDevice<T>::readData (void * dst, size_t length)
+      inline int PacketDevice<T>::read (void * dst, size_t bytes, void * cookie)
       {
-        return static_cast<T*>(this)->readData_impl(dst, length);
+        return static_cast<T*>(this)->read_impl(dst, bytes, cookie);
       }
     };
   };

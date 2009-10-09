@@ -102,7 +102,8 @@ namespace XMI
               _context (context),
               _contextid (contextid),
               _dispatch_fn (dispatch_fn),
-              _cookie (cookie)
+              _cookie (cookie),
+              _device (device)
           {
             TRACE_ERR((stderr, "EagerImmediate() [0]\n"));
             status = _send_model.init (dispatch,
@@ -183,6 +184,7 @@ namespace XMI
           size_t                     _contextid;
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
+          T_Device                 & _device;
 
           ///
           /// \brief Direct multi-packet send envelope packet dispatch.
@@ -201,10 +203,11 @@ namespace XMI
           ///
           /// \see XMI::Device::Interface::RecvFunction_t
           ///
-          static int dispatch_send_direct (void         * metadata,
-                                           void         * payload,
-                                           size_t         bytes,
-                                           void         * recv_func_parm)
+          static int dispatch_send_direct (void   * metadata,
+                                           void   * payload,
+                                           size_t   bytes,
+                                           void   * recv_func_parm,
+                                           void   * cookie)
           {
             protocol_metadata_t * m = (protocol_metadata_t *) metadata;
 
@@ -258,25 +261,26 @@ namespace XMI
           static int dispatch_send_read (void   * metadata,
                                          void   * payload,
                                          size_t   bytes,
-                                         void   * recv_func_parm)
+                                         void   * recv_func_parm,
+                                         void   * cookie)
           {
-            TRACE_ERR((stderr, "EagerImmediate::dispatch_send_read() .. \n"));
-#if 0
+            TRACE_ERR((stderr, ">> EagerImmediate::dispatch_send_read()\n"));
+
             EagerImmediate<T_Model, T_Device, T_Message> * pf =
               (EagerImmediate<T_Model, T_Device, T_Message> *) recv_func_parm;
 
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
             // recv callback is invoked.
+            XMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
 
-            uint8_t stackData[pf->getDevice()->getPacketPayloadSize()];
+            uint8_t stackData[T_Model::packet_model_payload_bytes];
             void * p = (void *) & stackData[0];
-            pf->getDevice()->readData((void *) p, bytes);
+            pf->_device.read (p, bytes, cookie);
 
-            dispatch_send_direct (metadata, p, bytes, recv_func_parm);
-#else
-            XMI_abort();
-#endif
+            dispatch_send_direct (metadata, p, bytes, recv_func_parm, cookie);
+
+            TRACE_ERR((stderr, "<< EagerImmediate::dispatch_send_read()\n"));
             return 0;
           };
 

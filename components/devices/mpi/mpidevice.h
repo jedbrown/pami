@@ -226,7 +226,8 @@ namespace XMI
                 mdi.recv_func(msg->_p2p_msg._metadata,
                               msg->_p2p_msg._payload,
                               msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
-                              mdi.recv_func_parm);
+                              mdi.recv_func_parm,
+                              NULL);
               free(msg);
             }
             break;
@@ -247,7 +248,8 @@ namespace XMI
                 mdi.recv_func(msg->_p2p_msg._metadata,
                               (char*)msg->_p2p_msg._metadata+msg->_p2p_msg._metadatasize,
                               msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
-                              mdi.recv_func_parm);
+                              mdi.recv_func_parm,
+                              NULL);
               free(msg);
             }
             break;
@@ -461,7 +463,7 @@ namespace XMI
       static const size_t payload_size  = 224;
 
       // Implement Packet Device Routines
-      inline int    readData_impl(void * dst, size_t bytes)
+      inline int    read_impl(void * dst, size_t bytes, void * cookie)
       {
         assert(0);
         return -1;
