@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = send_to_self.${EXTENSION}
+APPS            = send_to_self.${EXTENSION} long-header.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
