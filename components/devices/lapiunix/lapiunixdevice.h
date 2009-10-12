@@ -52,7 +52,6 @@ namespace XMI
                        public Interface::MessageDevice<LAPIDevice<T_SysDep> >
     {
     public:
-      static const size_t packet_payload_size = DEV_PAYLOAD_SIZE;
       inline LAPIDevice () :
         Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep> (),
         Interface::MessageDevice<LAPIDevice<T_SysDep> >(),
@@ -144,33 +143,16 @@ namespace XMI
 
       // Implement MessageDevice Routines
       /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
-      static const size_t message_metadata_size = DEV_HEADER_SIZE;
-
-      inline void   setConnection_impl (int channel, size_t rank, void * arg)
-        {
-          assert(0);
-        }
-      inline void * getConnection_impl (int channel, size_t rank)
-        {
-          assert(0);
-	  return NULL;
-        }
+      static const size_t metadata_size = DEV_HEADER_SIZE;
+      static const size_t payload_size  = DEV_PAYLOAD_SIZE;
 
       // Implement Packet Device Routines
-      inline int    readData_impl(void * dst, size_t bytes)
+      inline int    read_impl(void * dst, size_t bytes, void * cookie)
         {
           assert(0);
-	  return -1;
+          return -1;
         }
-      inline size_t getPacketMetadataSize_impl()
-        {
-          return DEV_HEADER_SIZE;
-        }
-      inline size_t getPacketPayloadSize_impl()
-        {
-          return DEV_PAYLOAD_SIZE;
-        }
-
+      
       inline size_t peers_impl ()
         {
           return _peers;
@@ -309,7 +291,8 @@ namespace XMI
           recv_func(hi->_metadata,
                     hi->_payload,
                     hi->_payloadsize0+hi->_payloadsize1,
-                    recv_func_parm);
+                    recv_func_parm,
+                    NULL);
 
           if (ri->udata_one_pkt_ptr)
               {
