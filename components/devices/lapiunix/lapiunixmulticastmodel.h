@@ -23,11 +23,11 @@ namespace XMI
     namespace Device
     {
         template <class T_Device, class T_Message>
-        class LAPIMulticastModel : public Interface::MessageModel<LAPIMulticastModel<T_Device, T_Message>,T_Device, T_Message>
+        class LAPIMulticastModel : public Interface::MessageModel<LAPIMulticastModel<T_Device, T_Message>,T_Device>
         {
         public:
             LAPIMulticastModel (T_Device & device) :
-                Interface::MessageModel < LAPIMulticastModel<T_Device, T_Message>, T_Device, T_Message > (device)
+                Interface::MessageModel < LAPIMulticastModel<T_Device, T_Message>, T_Device > (device)
                 {};
             inline void setConnectionId_impl (unsigned conn)
                 {

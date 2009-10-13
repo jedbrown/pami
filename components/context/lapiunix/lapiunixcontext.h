@@ -35,7 +35,7 @@ namespace XMI
     typedef Geometry::Common<XMI_MAPPING_CLASS> LAPIGeometry;
     typedef CollFactory::LAPI<LAPIDevice, SysDep::LAPISysDep> LAPICollfactory;
     typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep::LAPISysDep> LAPICollreg;
-    typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice,LAPIMessage> EagerLAPI;
+    typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
     
     class LAPI : public Context<XMI::Context::LAPI>
     {

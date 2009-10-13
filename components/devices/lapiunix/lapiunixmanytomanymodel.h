@@ -23,11 +23,11 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class LAPIManytomanyModel : public Interface::MessageModel<LAPIManytomanyModel<T_Device, T_Message>,T_Device, T_Message>
+    class LAPIManytomanyModel : public Interface::MessageModel<LAPIManytomanyModel<T_Device, T_Message>,T_Device>
     {
     public:
       LAPIManytomanyModel (T_Device & device) :
-        Interface::MessageModel < LAPIManytomanyModel<T_Device, T_Message>, T_Device, T_Message > (device)
+        Interface::MessageModel < LAPIManytomanyModel<T_Device, T_Message>, T_Device > (device)
         {};
 
       inline void setCallback (xmi_dispatch_manytomany_fn cb_recv, void *arg)

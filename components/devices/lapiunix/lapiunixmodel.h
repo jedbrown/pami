@@ -24,11 +24,11 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class LAPIModel : public Interface::MessageModel<LAPIModel<T_Device, T_Message>, T_Device, T_Message>
+    class LAPIModel : public Interface::MessageModel<LAPIModel<T_Device, T_Message>, T_Device>
     {
     public:
       LAPIModel (T_Device & device, xmi_context_t context) :
-        Interface::MessageModel < LAPIModel<T_Device, T_Message>, T_Device, T_Message > (device,context),
+        Interface::MessageModel < LAPIModel<T_Device, T_Message>, T_Device > (device,context),
         _device (device),
         _context(context)
         {};
@@ -36,17 +36,19 @@ namespace XMI
       static const bool   reliable_packet_model        = true;
       static const size_t packet_model_metadata_bytes  = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes   = T_Device::payload_size;
+      static const size_t packet_model_status_bytes    = sizeof(T_Message);
 
       static const bool   deterministic_message_model  = true;
       static const bool   reliable_message_model       = true;
       static const size_t message_model_metadata_bytes = T_Device::metadata_size;
       static const size_t message_model_payload_bytes  = T_Device::payload_size;
+      static const size_t message_model_status_bytes   = sizeof(T_Message);
       
-      xmi_result_t init_impl (size_t           dispatch,
+      xmi_result_t init_impl (size_t                      dispatch,
 			      Interface::RecvFunction_t   direct_recv_func,
-			      void           * direct_recv_func_parm,
+			      void                      * direct_recv_func_parm,
 			      Interface::RecvFunction_t   read_recv_func,
-			      void           * read_recv_func_parm)
+			      void                      * read_recv_func_parm)
         {
           _dispatch_id = _device.registerRecvFunction (direct_recv_func, direct_recv_func_parm);
           return XMI_SUCCESS;
@@ -57,7 +59,7 @@ namespace XMI
           return true;
         }
 
-      inline bool postPacket_impl (T_Message          * obj,
+      inline bool postPacket_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -67,7 +69,7 @@ namespace XMI
                                    size_t               bytes)
         {
           int rc;
-          LAPIMessage * msg = (LAPIMessage *)obj;
+          LAPIMessage * msg = (LAPIMessage *)state;
           new(msg)LAPIMessage(this->_context,
                              this->_dispatch_id,
                              fn,
@@ -87,7 +89,7 @@ namespace XMI
           return true;
         };
 
-      inline bool postPacket_impl (T_Message          * obj,
+      inline bool postPacket_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -102,14 +104,14 @@ namespace XMI
           return false;
         };
 
-      inline bool postPacket_impl (T_Message        * obj,
+      inline bool postPacket_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
-                                   size_t             target_rank,
-                                   void             * metadata,
-                                   size_t             metasize,
-                                   struct iovec_t   * iov,
-                                   size_t             niov)
+                                   size_t               target_rank,
+                                   void               * metadata,
+                                   size_t               metasize,
+                                   struct iovec_t     * iov,
+                                   size_t               niov)
         {
           assert(0);
           return false;
@@ -143,14 +145,14 @@ namespace XMI
         }
       
 
-      inline bool postMessage_impl (T_Message        * obj,
+      inline bool postMessage_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
                                     xmi_event_function   fn,
                                     void               * cookie,
-                                    size_t             target_rank,
-                                    void             * metadata,
-                                    size_t             metasize,
-                                    void             * src,
-                                    size_t             bytes)
+                                    size_t               target_rank,
+                                    void               * metadata,
+                                    size_t               metasize,
+                                    void               * src,
+                                    size_t               bytes)
         {
           int rc;
           LAPIMessage * msg = (LAPIMessage *)malloc(sizeof(LAPIMessage)+metasize+bytes-DEV_HEADER_SIZE-DEV_PAYLOAD_SIZE);
