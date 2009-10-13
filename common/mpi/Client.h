@@ -7,19 +7,15 @@
 
 #include <stdlib.h>
 
-#define XMI_CLIENT_CLASS XMI::Client::MPI
+#define XMI_CLIENT_CLASS XMI::Client
 
-#include "components/client/Client.h"
-#include "components/context/mpi/mpicontext.h"
-#include "components/geometry/common/commongeometry.h"
+#include "common/Client.h"
+#include "Context.h"
+#include "Geometry.h"
 
 namespace XMI
 {
-  namespace Client
-  {
-
-
-    class MPI : public Client<XMI::Client::MPI,XMI::Context::MPI>
+    class Client : public Interface::Client<XMI::Client,XMI::Context>
     {
     public:
 
@@ -27,8 +23,8 @@ namespace XMI
         {
           MPI_Finalize();
         }
-      inline MPI (char * name, xmi_result_t & result) :
-        Client<XMI::Client::MPI,XMI::Context::MPI>(name, result),
+      inline Client (char * name, xmi_result_t & result) :
+        Interface::Client<XMI::Client,XMI::Context>(name, result),
         _client ((xmi_client_t) this),
         _references (1),
         _contexts (0)
@@ -48,19 +44,19 @@ namespace XMI
 
         }
 
-      inline ~MPI ()
+      inline ~Client ()
         {
         }
 
       static xmi_result_t generate_impl (char * name, xmi_client_t * in_client)
         {
           int rc = 0;
-          XMI::Client::MPI * client;
-          client = (XMI::Client::MPI *)malloc(sizeof (XMI::Client::MPI));
+          XMI::Client * client;
+          client = (XMI::Client *)malloc(sizeof (XMI::Client));
           assert(client != NULL);
-          memset ((void *)client, 0x00, sizeof(XMI::Client::MPI));
+          memset ((void *)client, 0x00, sizeof(XMI::Client));
           xmi_result_t res;
-          new (client) XMI::Client::MPI (name, res);
+          new (client) XMI::Client (name, res);
           *in_client = (xmi_client_t*) client;
           return XMI_SUCCESS;
         }
@@ -79,11 +75,11 @@ namespace XMI
                                                size_t              count,
                                                xmi_result_t       & result)
         {
-          XMI::Context::MPI * context = NULL;
-          context = (XMI::Context::MPI*) malloc(sizeof(XMI::Context::MPI));
+          XMI::Context * context = NULL;
+          context = (XMI::Context*) malloc(sizeof(XMI::Context));
           assert(context != NULL);
-          memset ((void *)context, 0x00, sizeof(XMI::Context::MPI));
-          new (context) XMI::Context::MPI (this->getClient(), _contexts++);
+          memset ((void *)context, 0x00, sizeof(XMI::Context));
+          new (context) XMI::Context (this->getClient(), _contexts++);
           result = XMI_SUCCESS;
           return context;
         }
@@ -105,8 +101,7 @@ namespace XMI
       xmi_client_t _client;
       size_t       _references;
       size_t       _contexts;
-    }; // end class XMI::Client::MPI
-  }; // end namespace Client
+    }; // end class XMI::Client
 }; // end namespace XMI
 
 

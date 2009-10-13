@@ -13,7 +13,7 @@
 
 #include "BgqPersonality.h"
 
-XMI::SysDep::BgqPersonality::BgqPersonality ()
+XMI::BgqPersonality::BgqPersonality ()
 {
   Personality_t * p = (Personality_t *) this;
 

@@ -13,7 +13,7 @@
 #include "config.h"
 #include "sys/xmi.h"
 #include "util/common.h"
-#include "components/sysdep/bgp/BgpSysDep.h"
+#include "SysDep.h"
 #include "components/atomic/bgp/LockBoxBarrier.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
 
@@ -62,9 +62,9 @@ namespace XMI {
 namespace Device {
 namespace BGP {
 
-	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier<XMI::SysDep::BgpSysDep> CNDeviceInitBarrier;
+	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier<XMI::SysDep> CNDeviceInitBarrier;
 
-	void CNDevice::init(XMI::SysDep::BgpSysDep &sd, XMI::Device::Generic::Device *device) {
+	void CNDevice::init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
 		__init(sd, device);
 		char *s;
 		/*

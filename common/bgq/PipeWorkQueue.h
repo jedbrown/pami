@@ -1,5 +1,5 @@
 ///
-/// \file components/pipeworkqueue/bgq/BgqPipeWorkQueue.h
+/// \file common/bgq/PipeWorkQueue.h
 /// \brief XMI BG/P specific PipeWorkQueue implementation.
 ///
 #ifndef   __components_pipeworkqueue_bgq_bgqpipeworkqueue_h__
@@ -8,27 +8,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/sysdep/bgq/BgqSysDep.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
+#include "SysDep.h"
+#include "common/PipeWorkQueue.h"
 
-#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue::BgqPipeWorkQueue
+#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
 
 namespace XMI
 {
-    namespace PipeWorkQueue
-    {
-        class BgqPipeWorkQueue : public PipeWorkQueue<XMI::PipeWorkQueue::BgqPipeWorkQueue>
+        class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue>
         {
         public:
-            inline BgqPipeWorkQueue():
-                PipeWorkQueue<XMI::PipeWorkQueue::BgqPipeWorkQueue>()
+            inline PipeWorkQueue():
+                Interface::PipeWorkQueue<XMI::PipeWorkQueue>()
                 {
                 }
-            inline BgqPipeWorkQueue(XMI::PipeWorkQueue::BgqPipeWorkQueue &obj):
-                PipeWorkQueue<XMI::PipeWorkQueue::BgqPipeWorkQueue>(obj)
+            inline PipeWorkQueue(XMI::PipeWorkQueue &obj):
+                Interface::PipeWorkQueue<XMI::PipeWorkQueue>(obj)
                 {
                 }
-            inline ~BgqPipeWorkQueue()
+            inline ~PipeWorkQueue()
                 {
                 }
 
@@ -117,8 +115,7 @@ namespace XMI
                   return false;
                 }
 
-        }; // end XMI::PipeWorkQueue::BgqPipeWorkQueue
-    }; // end namespace PipeWorkQueue
+        }; // end XMI::PipeWorkQueue
 }; // end namespace XMI
 
 #endif // __components_pipeworkqueue_bgq_bgqpipeworkqueue_h__

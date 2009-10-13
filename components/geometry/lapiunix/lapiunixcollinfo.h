@@ -20,9 +20,9 @@
 #include "components/devices/lapiunix/oldlapiunixm2mmodel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
-#include "components/sysdep/lapiunix/lapiunixsysdep.h"
+#include "SysDep.h"
 #include "components/memory/heap/HeapMemoryManager.h"
-#include "components/mapping/lapiunix/lapiunixmapping.h"
+#include "Mapping.h"
 
 
 // PGASRT includes
@@ -31,17 +31,16 @@
 
 // CCMI includes
 
-typedef XMI::Device::LAPIOldmulticastModel<XMI::Device::LAPIDevice<XMI::SysDep::LAPISysDep>,
+typedef XMI::Device::LAPIOldmulticastModel<XMI::Device::LAPIDevice<XMI::SysDep>,
                                           XMI::Device::LAPIMessage> LAPIMcastModel;
 typedef TSPColl::NBCollManager<LAPIMcastModel> XMI_NBCollManager;
 
-typedef XMI::Device::LAPIOldm2mModel<XMI::Device::LAPIDevice<XMI::SysDep::LAPISysDep>,
+typedef XMI::Device::LAPIOldm2mModel<XMI::Device::LAPIDevice<XMI::SysDep>,
                                     XMI::Device::LAPIMessage,
                                     size_t> LAPIM2MModel;
 
 
 #define XMI_COLL_MCAST_CLASS  LAPIMcastModel
-#define XMI_COLL_SYSDEP_CLASS XMI::SysDep::LAPISysDep
 
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/protocols/broadcast/multi_color_impl.h"
@@ -56,8 +55,8 @@ typedef XMI::Device::LAPIOldm2mModel<XMI::Device::LAPIDevice<XMI::SysDep::LAPISy
 #include "algorithms/protocols/alltoall/Alltoall.h"
 
 
-typedef CCMI::Adaptor::A2AProtocol <LAPIM2MModel, XMI::SysDep::LAPISysDep, size_t> AlltoallProtocol;
-typedef CCMI::Adaptor::AlltoallFactory <LAPIM2MModel, XMI::SysDep::LAPISysDep, size_t> AlltoallFactory;
+typedef CCMI::Adaptor::A2AProtocol <LAPIM2MModel, XMI::SysDep, size_t> AlltoallProtocol;
+typedef CCMI::Adaptor::AlltoallFactory <LAPIM2MModel, XMI::SysDep, size_t> AlltoallFactory;
 
 
 namespace XMI
@@ -316,7 +315,7 @@ namespace XMI
 
   };
 };
-typedef XMI::Device::LAPIDevice<XMI::SysDep::LAPISysDep> LAPIDevice;
+typedef XMI::Device::LAPIDevice<XMI::SysDep> LAPIDevice;
 typedef std::vector<XMI::CollInfo::CollInfo<LAPIDevice> *> RegQueue;
 
 #endif

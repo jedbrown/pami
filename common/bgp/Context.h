@@ -1,17 +1,17 @@
 ///
-/// \file components/context/bgp/BgpContext.h
+/// \file common/bgp/Context.h
 /// \brief XMI BGP specific context implementation.
 ///
 #ifndef   __components_context_bgp_bgpcontext_h__
 #define   __components_context_bgp_bgpcontext_h__
 
-#define XMI_CONTEXT_CLASS XMI::Context::BgpContext
+#define XMI_CONTEXT_CLASS XMI::Context
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "sys/xmi.h"
-#include "components/context/Context.h"
+#include "common/Context.h"
 
 #define ENABLE_GENERIC_DEVICE
 #ifdef ENABLE_GENERIC_DEVICE
@@ -30,7 +30,7 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#include "components/sysdep/bgp/BgpSysDep.h"
+#include "SysDep.h"
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/Eager.h"
@@ -41,17 +41,15 @@
 
 namespace XMI
 {
-  namespace Context
-  {
     typedef Fifo::FifoPacket <16,240> ShmemPacket;
 #ifdef NOT_YET
-    typedef Fifo::LinearFifo<Counter::LockBoxProcCounter<XMI::SysDep::BgpSysDep>,ShmemPacket,128> ShmemFifo;
+    typedef Fifo::LinearFifo<Counter::LockBoxProcCounter<XMI::SysDep>,ShmemPacket,128> ShmemFifo;
 #else
-    typedef Fifo::LinearFifo<Atomic::BgpAtomic<XMI::SysDep::BgpSysDep>,ShmemPacket,128> ShmemFifo;
+    typedef Fifo::LinearFifo<Atomic::BgpAtomic<XMI::SysDep>,ShmemPacket,128> ShmemFifo;
 #endif
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-    typedef Device::ShmemPacketDevice<SysDep::BgpSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
+    typedef Device::ShmemPacketDevice<SysDep,ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
 
 
@@ -64,11 +62,11 @@ namespace XMI
 
     typedef MemoryAllocator<1024,16> ProtocolAllocator;
 
-    class BgpContext : public Context<XMI::Context::BgpContext>
+    class Context : public Interface::Context<XMI::Context>
     {
       public:
-        inline BgpContext (xmi_client_t client, size_t id) :
-          Context<XMI::Context::BgpContext> (client, id),
+        inline Context (xmi_client_t client, size_t id) :
+          Interface::Context<XMI::Context> (client, id),
           _client (client),
           _context ((xmi_context_t)this),
           _contextid (id),
@@ -429,7 +427,7 @@ namespace XMI
         xmi_context_t _context;
         size_t        _contextid;
 
-        SysDep::BgpSysDep _sysdep;
+        SysDep _sysdep;
 
         // devices...
 #ifdef ENABLE_GENERIC_DEVICE
@@ -439,8 +437,8 @@ namespace XMI
 
         void * _dispatch[1024];
         ProtocolAllocator _protocol;
-    }; // end XMI::Context::BgpContext
-  }; // end namespace Context
+
+    }; // end XMI::Context
 }; // end namespace XMI
 
 #undef TRACE_ERR

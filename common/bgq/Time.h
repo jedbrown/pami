@@ -7,29 +7,27 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/time/bgq/BgqTime.h
+/// \file common/bgq/Time.h
 /// \brief ???
 ///
 #ifndef __components_time_bgq_bgqtime_h__
 #define __components_time_bgq_bgqtime_h__
 
-#define XMI_TIME_CLASS XMI::Time::BgqTime
+#define XMI_TIME_CLASS XMI::Time
 
 #include "sys/xmi.h"
 
-#include "components/time/BaseTime.h"
-#include "components/sysdep/bgq/BgqGlobal.h"
+#include "common/BaseTime.h"
+#include "Global.h"
 
 namespace XMI
 {
-  namespace Time
-  {
-    class BgqTime : public Interface::BaseTime<BgqTime>
+    class Time : public Interface::BaseTime<Time>
     {
       public:
 
-        inline BgqTime () :
-            Interface::BaseTime<BgqTime> ()
+        inline Time () :
+            Interface::BaseTime<Time> ()
         {};
 
         ///
@@ -82,7 +80,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         inline double tick ()
         {
-          return XMI::Time::BgqTime::seconds_per_cycle;
+          return XMI::Time::seconds_per_cycle;
         };
 
         ///
@@ -90,15 +88,14 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         inline double time ()
         {
-          return ((double)timebase() * XMI::Time::BgqTime::seconds_per_cycle);
+          return ((double)timebase() * XMI::Time::seconds_per_cycle);
         };
 
       protected:
 
         /// \brief BG/P compute node processors run at 850 MHz
         static const double seconds_per_cycle;
-    };
+    };	// class Time
     const double BgqTime::seconds_per_cycle = 1.176470588235294033e-09;
-  };
-};
+};	// namespace XMI
 #endif // __components_time_bgq_bgqtime_h__

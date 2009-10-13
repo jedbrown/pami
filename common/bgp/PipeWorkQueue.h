@@ -7,17 +7,17 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/pipeworkqueue/bgp/BgpPipeWorkQueue.h
+ * \file common/bgp/PipeWorkQueue.h
  * \brief Implementation of PipeWorkQueue on BG/P
  */
 
 #ifndef __components_pipeworkqueue_bgp_bgppipeworkqueue_h__
 #define __components_pipeworkqueue_bgp_bgppipeworkqueue_h__
 
-#include "components/sysdep/bgp/BgpSysDep.h"
-#include "components/pipeworkqueue/PipeWorkQueue.h"
+#include "SysDep.h"
+#include "common/PipeWorkQueue.h"
 
-#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue::BgpPipeWorkQueue
+#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
 
 // undef/define to control workqueues that are optimized for the flat buffer case.
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
@@ -37,13 +37,9 @@
 #define WAKEUP(vector)		\
 	// ((XMI_SYSDEP_CLASS *)_sysdep)->wakeupManager().wakeup(vector)
 
-namespace XMI
-{
-  namespace PipeWorkQueue
-  {
+namespace XMI {
 
-    class BgpPipeWorkQueue : public PipeWorkQueue<XMI::PipeWorkQueue::BgpPipeWorkQueue>
-    {
+class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue> {
 ///
 /// \brief Work queue implementation of a fixed-size shared memory buffer.
 ///
@@ -53,42 +49,37 @@ namespace XMI
 /// NOTE! configure() is a one-time operation. cannot re-configure().
 ///
 
-        ///
-        /// \brief Work queue structure in shared memory
-        ///
-        typedef struct workqueue_t
-        {
-          union
-          {
-            struct
-            {
-              volatile size_t producedBytes;
-              volatile size_t consumedBytes;
-              volatile void *producerWakeVec;
-              volatile void *consumerWakeVec;
-            } _s;
-            xmi_quad_t _pad;
-          } _u;
-          volatile char buffer[0]; ///< Producer-consumer buffer
-        } workqueue_t __attribute__ ((__aligned__(16)));
+	///
+	/// \brief Work queue structure in shared memory
+	///
+	typedef struct workqueue_t {
+		union {
+			struct {
+				volatile size_t producedBytes;
+				volatile size_t consumedBytes;
+				volatile void *producerWakeVec;
+				volatile void *consumerWakeVec;
+			} _s;
+			xmi_quad_t _pad;
+		} _u;
+		volatile char buffer[0]; ///< Producer-consumer buffer
+	} workqueue_t __attribute__ ((__aligned__(16)));
 
-        typedef struct export_t
-        {
-          uint64_t bufPaddr;	// memregion?
-          uint64_t hdrPaddr;	// memregion?
-          unsigned pmask;
-        } export_t;
+	typedef struct export_t {
+		uint64_t bufPaddr;	// memregion?
+		uint64_t hdrPaddr;	// memregion?
+		unsigned pmask;
+	} export_t;
 
-      public:
-        BgpPipeWorkQueue() :
-            PipeWorkQueue<XMI::PipeWorkQueue::BgpPipeWorkQueue>(),
-            _qsize(0),
-            _isize(0),
-            _pmask(0),
-            _buffer(NULL),
-            _sharedqueue(NULL)
-        {
-        }
+public:
+	PipeWorkQueue() :
+	Interface::PipeWorkQueue<XMI::PipeWorkQueue>(),
+	_qsize(0),
+	_isize(0),
+	_pmask(0),
+	_buffer(NULL),
+	_sharedqueue(NULL) {
+	}
 
 #ifdef USE_FLAT_BUFFER
 #warning USE_FLAT_BUFFER Requires MemoryManager.cc change to increase shmem pool, also BG_SHAREDMEMPOOLSIZE when run
@@ -183,206 +174,190 @@ namespace XMI
 #endif /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
         }
 
-        ///
-        /// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
-        ///
-        /// Only one consumer and producer are allowed. Still supports pipelining.
-        /// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
-        /// Assumes the caller has placed buffer and (this) in appropriate memory
-        /// for desired use - i.e. all in shared memory if to be used beyond this process.
-        ///
-        /// This is typically only used for the application buffer, either input or output,
-        /// and so would not normally have both producer and consumer (only one or the other).
-        /// The interface is the same as for contiguous data except that "bytesAvailable" will
-        /// only return the number of *contiguous* bytes available. The user must consume those
-        /// bytes before it can see the next contiguous chunk.
-        ///
-        /// \param[out] wq            Opaque memory for PipeWorkQueue
-        /// \param[in] buffer         Buffer to use
-        /// \param[in] dgsp           Memory layout of a buffer unit
-        /// \param[in] dgspcount      Number of repetitions of buffer units
-        /// \param[in] dgspinit       Number of units initially in buffer
-        ///
-        inline void configure_impl(void *sysdep, char *buffer, xmi_type_t *dgsp, size_t dgspcount, size_t dgspinit)
-        {
-          XMI_abortf("DGSP PipeWorkQueue not yet supported");
-        }
+	///
+	/// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
+	///
+	/// Only one consumer and producer are allowed. Still supports pipelining.
+	/// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
+	/// Assumes the caller has placed buffer and (this) in appropriate memory
+	/// for desired use - i.e. all in shared memory if to be used beyond this process.
+	///
+	/// This is typically only used for the application buffer, either input or output,
+	/// and so would not normally have both producer and consumer (only one or the other).
+	/// The interface is the same as for contiguous data except that "bytesAvailable" will
+	/// only return the number of *contiguous* bytes available. The user must consume those
+	/// bytes before it can see the next contiguous chunk.
+	///
+	/// \param[out] wq            Opaque memory for PipeWorkQueue
+	/// \param[in] buffer         Buffer to use
+	/// \param[in] dgsp           Memory layout of a buffer unit
+	/// \param[in] dgspcount      Number of repetitions of buffer units
+	/// \param[in] dgspinit       Number of units initially in buffer
+	///
+	inline void configure_impl(void *sysdep, char *buffer, xmi_type_t *dgsp, size_t dgspcount, size_t dgspinit) {
+		XMI_abortf("DGSP PipeWorkQueue not yet supported");
+	}
 
-        ///
-        /// \brief Clone constructor.
-        ///
-        /// Used to create a second local memory wrapper object of the same
-        /// shared memory resource.
-        ///
-        /// \see WorkQueue(WorkQueue &)
-        ///
-        /// \param[in] obj     Shared work queue object
-        ///
-        BgpPipeWorkQueue(BgpPipeWorkQueue &obj) :
-            PipeWorkQueue<XMI::PipeWorkQueue::BgpPipeWorkQueue>(),
-            _sysdep(obj._sysdep),
-            _qsize(obj._qsize),
-            _pmask(obj._pmask),
-            _buffer(obj._buffer),
-            _sharedqueue(obj._sharedqueue)
-        {
-          // need ref count so we know when to free...
-          reset();
-        }
-        ///
-        /// \brief Virtual destructors make compilers happy.
-        ///
-        inline void operator delete(void * p) { }
-        ~BgpPipeWorkQueue()
-        {
-          // need ref count so we know when to free...
-          if (_sharedqueue != &this->__sq)
-            {
-              FREE_SHMEM(_sharedqueue);
-            }
-        }
+	///
+	/// \brief Clone constructor.
+	///
+	/// Used to create a second local memory wrapper object of the same
+	/// shared memory resource.
+	///
+	/// \see WorkQueue(WorkQueue &)
+	///
+	/// \param[in] obj     Shared work queue object
+	///
+	PipeWorkQueue(PipeWorkQueue &obj) :
+	Interface::PipeWorkQueue<XMI::PipeWorkQueue>(),
+	_sysdep(obj._sysdep),
+	_qsize(obj._qsize),
+	_pmask(obj._pmask),
+	_buffer(obj._buffer),
+	_sharedqueue(obj._sharedqueue) {
+		// need ref count so we know when to free...
+		reset();
+	}
+	///
+	/// \brief Virtual destructors make compilers happy.
+	///
+	inline void operator delete(void * p) { }
+	~PipeWorkQueue() {
+		// need ref count so we know when to free...
+		if (_sharedqueue != &this->__sq) {
+			FREE_SHMEM(_sharedqueue);
+		}
+	}
 
-        ///
-        /// \brief Reset this shared memory work queue.
-        ///
-        /// Sets the number of bytes produced and the number of bytes
-        /// consumed by each consumer to zero.
-        ///
-        inline void reset_impl()
-        {
-          _sharedqueue->_u._s.producedBytes = _isize;
-          _sharedqueue->_u._s.consumedBytes = 0;
-          _sharedqueue->_u._s.producerWakeVec = NULL;
-          _sharedqueue->_u._s.consumerWakeVec = NULL;
-          mem_sync();
-        }
+	///
+	/// \brief Reset this shared memory work queue.
+	///
+	/// Sets the number of bytes produced and the number of bytes
+	/// consumed by each consumer to zero.
+	///
+	inline void reset_impl() {
+		_sharedqueue->_u._s.producedBytes = _isize;
+		_sharedqueue->_u._s.consumedBytes = 0;
+		_sharedqueue->_u._s.producerWakeVec = NULL;
+		_sharedqueue->_u._s.consumerWakeVec = NULL;
+		mem_sync();
+	}
 
-        ///
-        /// \brief Dump shared memory work queue statistics to stderr.
-        ///
-        /// \param[in] prefix Optional character string to prefix.
-        ///
-        inline void dump_impl(const char *prefix = NULL)
-        {
-          mem_sync();
-          size_t pbytes0 = _sharedqueue->_u._s.producedBytes;
-          size_t cbytes0 = _sharedqueue->_u._s.consumedBytes;
+	///
+	/// \brief Dump shared memory work queue statistics to stderr.
+	///
+	/// \param[in] prefix Optional character string to prefix.
+	///
+	inline void dump_impl(const char *prefix = NULL) {
+		mem_sync();
+		size_t pbytes0 = _sharedqueue->_u._s.producedBytes;
+		size_t cbytes0 = _sharedqueue->_u._s.consumedBytes;
 
-          if (prefix == NULL)
-            {
-              prefix = "";
-            }
+		if (prefix == NULL) {
+			prefix = "";
+		}
 
-          fprintf(stderr, "%s dump(%p) _sharedqueue = %p, "
-                  "size = %u, init size = %u, mask = 0x%08x, "
-                  "wake p=%p c=%p, "
-                  "produced bytes = %zd (%zd), "
-                  "consumed bytes = %zd (%zd)\n",
-                  prefix, this, _sharedqueue,
-                  _qsize, _isize, _pmask,
-                  _sharedqueue->_u._s.producerWakeVec, _sharedqueue->_u._s.consumerWakeVec,
-                  pbytes0, bytesAvailableToProduce(),
-                  cbytes0, bytesAvailableToConsume());
-        }
+		fprintf(stderr, "%s dump(%p) _sharedqueue = %p, "
+			"size = %u, init size = %u, mask = 0x%08x, "
+			"wake p=%p c=%p, "
+			"produced bytes = %zd (%zd), "
+			"consumed bytes = %zd (%zd)\n",
+			prefix, this, _sharedqueue,
+			_qsize, _isize, _pmask,
+			_sharedqueue->_u._s.producerWakeVec, _sharedqueue->_u._s.consumerWakeVec,
+			pbytes0, bytesAvailableToProduce(),
+			cbytes0, bytesAvailableToConsume());
+	}
 
-        ///
-        /// \brief Export
-        ///
-        /// Produces information about the PipeWorkQueue into the opaque buffer "export".
-        /// This info is suitable for sharing with other processes such that those processes
-        /// can then construct a PipeWorkQueue which accesses the same data stream.
-        ///
-        /// \param[in] wq             Opaque memory for PipeWorkQueue
-        /// \param[out] export        Opaque memory to export into
-        /// \return   success of the export operation
-        ///
-        inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp)
-        {
-          if (unlikely(_pmask))
-            {
-              return XMI_ERROR;
-            }
+	///
+	/// \brief Export
+	///
+	/// Produces information about the PipeWorkQueue into the opaque buffer "export".
+	/// This info is suitable for sharing with other processes such that those processes
+	/// can then construct a PipeWorkQueue which accesses the same data stream.
+	///
+	/// \param[in] wq             Opaque memory for PipeWorkQueue
+	/// \param[out] export        Opaque memory to export into
+	/// \return   success of the export operation
+	///
+	inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp) {
+		unlikely_if (_pmask) {
+			return XMI_ERROR;
+		}
+		export_t *e = (export_t *)exp;
+		//e->bufPaddr = vtop(_buffer);
+		//e->hdrPaddr = vtop(_sharedqueue);
+		e->pmask = _pmask;
+		return XMI_SUCCESS;
+	}
 
-          export_t *e = (export_t *)exp;
-          //e->bufPaddr = vtop(_buffer);
-          //e->hdrPaddr = vtop(_sharedqueue);
-          e->pmask = _pmask;
-          return XMI_SUCCESS;
-        }
+	///
+	/// \brief Import
+	///
+	/// Takes the results of an export of a PipeWorkQueue on a different process and
+	/// constructs a new PipeWorkQueue which the local process may use to access the
+	/// data stream.
+	///
+	/// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
+	/// The producer has no knowledge of data consumed. There can be only one producer.
+	/// There may be multiple consumers, but the producer does not know about them.
+	///
+	/// TODO: can this work for circular buffers? does it need to, since those are
+	/// normally shared memory and thus already permit inter-process communication.
+	///
+	/// \param[in] import        Opaque memory into which an export was done.
+	/// \param[out] wq           Opaque memory for new PipeWorkQueue
+	/// \return   success of the import operation
+	///
+	inline xmi_result_t import_impl(xmi_pipeworkqueue_ext_t *import) {
+		// import is not supported for this class
+		return XMI_ERROR;
+	}
 
-        ///
-        /// \brief Import
-        ///
-        /// Takes the results of an export of a PipeWorkQueue on a different process and
-        /// constructs a new PipeWorkQueue which the local process may use to access the
-        /// data stream.
-        ///
-        /// The resulting PipeWorkQueue may consume data, but that is a local-only operation.
-        /// The producer has no knowledge of data consumed. There can be only one producer.
-        /// There may be multiple consumers, but the producer does not know about them.
-        ///
-        /// TODO: can this work for circular buffers? does it need to, since those are
-        /// normally shared memory and thus already permit inter-process communication.
-        ///
-        /// \param[in] import        Opaque memory into which an export was done.
-        /// \param[out] wq           Opaque memory for new PipeWorkQueue
-        /// \return   success of the import operation
-        ///
-        inline xmi_result_t import_impl(xmi_pipeworkqueue_ext_t *import)
-        {
-          // import is not supported for this class
-          return XMI_ERROR;
-        }
+	/// \brief register a wakeup for the consumer side of the PipeWorkQueue
+	///
+	/// \param[in] vec	Opaque wakeup vector parameter
+	///
+	inline void setConsumerWakeup_impl(void *vec) {
+		_sharedqueue->_u._s.consumerWakeVec = vec;
+		// It's possible that bytes have already been produced.
+		// So we may need to do a wakeup manually.
+		// This also ensures there is one wakeup on a flat buffer WQ.
+		if (vec && _sharedqueue->_u._s.producedBytes != 0) {
+			WAKEUP(vec);
+		}
+	}
 
-        /// \brief register a wakeup for the consumer side of the PipeWorkQueue
-        ///
-        /// \param[in] vec	Opaque wakeup vector parameter
-        ///
-        inline void setConsumerWakeup_impl(void *vec)
-        {
-          _sharedqueue->_u._s.consumerWakeVec = vec;
+	/// \brief register a wakeup for the producer side of the PipeWorkQueue
+	///
+	/// \param[in] vec	Opaque wakeup vector parameter
+	///
+	inline void setProducerWakeup_impl(void *vec) {
+		_sharedqueue->_u._s.producerWakeVec = vec;
+	}
 
-          // It's possible that bytes have already been produced.
-          // So we may need to do a wakeup manually.
-          // This also ensures there is one wakeup on a flat buffer WQ.
-          if (vec && _sharedqueue->_u._s.producedBytes != 0)
-            {
-              WAKEUP(vec);
-            }
-        }
-
-        /// \brief register a wakeup for the producer side of the PipeWorkQueue
-        ///
-        /// \param[in] vec	Opaque wakeup vector parameter
-        ///
-        inline void setProducerWakeup_impl(void *vec)
-        {
-          _sharedqueue->_u._s.producerWakeVec = vec;
-        }
-
-        ///
-        /// \brief Return the maximum number of bytes that can be produced into this work queue.
-        ///
-        /// Bytes must be produced into the memory location returned by bufferToProduce() and then
-        /// this work queue \b must be updated with produceBytes().
-        ///
-        /// The number of bytes that may be produced is calculated by determining
-        /// the difference between the \b minimum number of bytes consumed by all
-        /// consumers and the number of bytes produced.
-        ///
-        /// This must only be called with serious intent to produce! If this
-        /// routine returns non-zero, the caller MUST produceBytes() in a timely
-        /// manner. Never returns more than one packet.
-        ///
-        /// \see bufferToProduce
-        /// \see produceBytes
-        ///
-        /// \return Number of bytes that may be produced.
-        ///
-        inline size_t bytesAvailableToProduce_impl()
-        {
-          size_t a = 0;
-          size_t p = _sharedqueue->_u._s.producedBytes;
+	///
+	/// \brief Return the maximum number of bytes that can be produced into this work queue.
+	///
+	/// Bytes must be produced into the memory location returned by bufferToProduce() and then
+	/// this work queue \b must be updated with produceBytes().
+	///
+	/// The number of bytes that may be produced is calculated by determining
+	/// the difference between the \b minimum number of bytes consumed by all
+	/// consumers and the number of bytes produced.
+	///
+	/// This must only be called with serious intent to produce! If this
+	/// routine returns non-zero, the caller MUST produceBytes() in a timely
+	/// manner. Never returns more than one packet.
+	///
+	/// \see bufferToProduce
+	/// \see produceBytes
+	///
+	/// \return Number of bytes that may be produced.
+	///
+	inline size_t bytesAvailableToProduce_impl() {
+		size_t a = 0;
+		size_t p = _sharedqueue->_u._s.producedBytes;
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 
           if (likely(!_pmask))
@@ -563,53 +538,47 @@ namespace XMI
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
           {
 #endif /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
-              unsigned co = c & _pmask;
-              b = (char *) & _buffer[co];
-            }
-          return b;
-        }
+			unsigned co = c & _pmask;
+			b = (char *)&_buffer[co];
+		}
+		return b;
+	}
 
-        /// \brief notify workqueue that bytes have been consumed
-        ///
-        /// \return	number of bytes that were consumed
-        ///
-        inline void consumeBytes_impl(size_t bytes)
-        {
-          _sharedqueue->_u._s.consumedBytes += bytes;
-          // cast undoes "volatile"...
-          void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
+	/// \brief notify workqueue that bytes have been consumed
+	///
+	/// \return	number of bytes that were consumed
+	///
+	inline void consumeBytes_impl(size_t bytes) {
+		_sharedqueue->_u._s.consumedBytes += bytes;
+		// cast undoes "volatile"...
+		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
+		unlikely_if ((long)v != 0) {
+			WAKEUP(v);
+		}
+	}
 
-          if (unlikely((long)v != 0))
-            {
-              WAKEUP(v);
-            }
-        }
+	/// \brief is workqueue ready for action
+	///
+	/// \return	boolean indicate workqueue readiness
+	///
+	inline bool available_impl() {
+		return (_sharedqueue != NULL);
+	}
 
-        /// \brief is workqueue ready for action
-        ///
-        /// \return	boolean indicate workqueue readiness
-        ///
-        inline bool available_impl()
-        {
-          return (_sharedqueue != NULL);
-        }
+	static inline void compile_time_assert () {
+		COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(xmi_pipeworkqueue_ext_t));
+	}
 
-        static inline void compile_time_assert ()
-        {
-          COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(xmi_pipeworkqueue_ext_t));
-        }
+private:
+	void *_sysdep;	// possible pointer to system-dependencies (platform specifics)
+	unsigned _qsize;
+	unsigned _isize;
+	unsigned _pmask;
+	volatile char *_buffer;
+	workqueue_t *_sharedqueue;
+	workqueue_t __sq;
+}; // class PipeWorkQueue
 
-      private:
-        void *_sysdep;	// possible pointer to system-dependencies (platform specifics)
-        unsigned _qsize;
-        unsigned _isize;
-        unsigned _pmask;
-        volatile char *_buffer;
-        workqueue_t *_sharedqueue;
-        workqueue_t __sq;
-    }; // class BgpPipeWorkQueue
-
-  }; /* namespace PipeWorkQueue */
 }; /* namespace XMI */
 
 #endif // __components_pipeworkqueue_bgp_bgppipeworkqueue_h__

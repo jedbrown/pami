@@ -11,6 +11,6 @@
 /// \brief Blue Gene/Q Global Object implementation
 ///
 
-#include "components/sysdep/bgq/BgqGlobal.h"
+#include "Global.h"
 
-XMI::SysDep::BgqGlobal __global;
+XMI::Global __global;

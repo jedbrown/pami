@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include "sys/xmi.h"
 
-// PipeWorkQueue and Topology are designed wrong for platform-independent code...
-#include "components/pipeworkqueue/bgp/BgpPipeWorkQueue.h"
+#include "PipeWorkQueue.h"
 
-#include "components/time/bgp/BgpTime.h"
+#include "Time.h"
 #include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
 
 
@@ -78,7 +77,7 @@ int main(int argc, char ** argv) {
 	// extra time in order to show that the barrier is functional.
 
 	// Register some multisyncs, C++ style
-	XMI::Time::BgpTime time; // cheating?
+	XMI::Time time; // cheating?
 	unsigned long long t0, t1, t2;
 	bool rc;
 

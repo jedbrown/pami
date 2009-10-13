@@ -28,18 +28,16 @@
 #include <unistd.h>
 
 #include "util/common.h"
-#include "components/sysdep/bgp/BgpPersonality.h"
-#include "components/mapping/bgp/BgpMapCache.h"
+#include "common/bgp/BgpPersonality.h"
+#include "common/bgp/BgpMapCache.h"
 
 namespace XMI
 {
-  namespace SysDep
-  {
-    class BgpGlobal
+    class Global
     {
       public:
 
-        inline BgpGlobal () :
+        inline Global () :
           personality (),
           _mapcache (),
           _memptr (NULL),
@@ -99,7 +97,7 @@ namespace XMI
 
 
 
-        inline ~BgpGlobal () {};
+        inline ~Global () {};
 
         inline size_t * getMapCache ()
         {
@@ -174,13 +172,12 @@ namespace XMI
 
       private:
 
-        Mapping::BgpMapCache   _mapcache;
+        BgpMapCache   _mapcache;
         void                 * _memptr;
         size_t                 _memsize;
-    }; // XMI::SysDep::BgpGlobal
-  };   // XMI::SysDep
+  };   // XMI::Global
 };     // XMI
 
-extern XMI::SysDep::BgpGlobal __global;
+extern XMI::Global __global;
 
 #endif // __xmi_components_sysdep_bgp_bgpglobal_h__

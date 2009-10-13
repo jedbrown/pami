@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include "sys/xmi.h"
 
-#warning PipeWorkQueue and Topology are designed wrong for platform-independent code...
-#include "components/pipeworkqueue/bgp/BgpPipeWorkQueue.h"
-#include "components/topology/bgp/BgpTopology.h"
+#include "PipeWorkQueue.h"
+#include "Topology.h"
 
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/LocalReduceWQMessage.h"

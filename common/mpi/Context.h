@@ -5,45 +5,43 @@
 #ifndef   __xmi_mpi_mpicontext_h__
 #define   __xmi_mpi_mpicontext_h__
 
-#define XMI_CONTEXT_CLASS XMI::Context::MPI
+#define XMI_CONTEXT_CLASS XMI::Context
 
 #include <stdlib.h>
 #include <string.h>
 #include <mpi.h>
 #include "components/context/Context.h"
-#include "components/geometry/common/commongeometry.h"
+#include "Geometry.h"
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpimodel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
-#include "components/sysdep/mpi/mpisysdep.h"
+#include "SysDep.h"
 #include "components/geometry/mpi/mpicollfactory.h"
 #include "components/geometry/mpi/mpicollregistration.h"
-#include "components/mapping/mpi/mpimapping.h"
+#include "Mapping.h"
 #include <new>
 #include <map>
 
 namespace XMI
 {
-  namespace Context
-  {
     typedef Device::MPIMessage MPIMessage;
-    typedef Device::MPIDevice<SysDep::MPISysDep> MPIDevice;
+    typedef Device::MPIDevice<SysDep> MPIDevice;
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
-    typedef CollFactory::MPI<MPIDevice, SysDep::MPISysDep> MPICollfactory;
-    typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep::MPISysDep> MPICollreg;
+    typedef CollFactory::MPI<MPIDevice, SysDep> MPICollfactory;
+    typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice> EagerMPI;
 
 
 
-    class MPI : public Context<XMI::Context::MPI>
+    class Context : public Interface::Context<XMI::Context>
     {
     public:
-      inline MPI (xmi_client_t client, size_t id) :
-        Context<XMI::Context::MPI> (client, id),
+      inline Context (xmi_client_t client, size_t id) :
+        Interface::Context<XMI::Context> (client, id),
         _client (client),
         _id (id)
         {
@@ -420,7 +418,7 @@ namespace XMI
       xmi_context_t             _context;
       size_t                    _id;
       void                     *_dispatch[1024];
-      SysDep::MPISysDep         _sysdep;
+      SysDep                    _sysdep;
       MemoryAllocator<1024,16>  _request;
       MPIDevice                 _mpi;
       MPICollreg               *_collreg;
@@ -431,8 +429,7 @@ namespace XMI
       int                       _mysize;
       unsigned                 *_ranklist;
 
-    }; // end XMI::Context::MPI
-  }; // end namespace Context
+    }; // end XMI::Context
 }; // end namespace XMI
 
 #endif // __xmi_mpi_mpicontext_h__

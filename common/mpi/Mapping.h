@@ -15,34 +15,32 @@
 #define __components_mapping_mpi_mpimapping_h__
 
 #include "sys/xmi.h"
-#include "components/mapping/BaseMapping.h"
-#include "components/mapping/TorusMapping.h"
-#include "components/mapping/NodeMapping.h"
+#include "common/BaseMapping.h"
+#include "common/TorusMapping.h"
+#include "common/NodeMapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include <mpi.h>
 
-#define XMI_MAPPING_CLASS XMI::Mapping::MPIMapping
+#define XMI_MAPPING_CLASS XMI::Mapping
 
 namespace XMI
 {
-  namespace Mapping
-  {
 #define MPI_DIMS 1
-    class MPIMapping : public Interface::Base<MPIMapping, XMI::Memory::HeapMemoryManager>,
-                       public Interface::Torus<MPIMapping, MPI_DIMS>,
-                       public Interface::Node<MPIMapping, MPI_DIMS>
+    class Mapping : public Interface::Base<Mapping, XMI::Memory::HeapMemoryManager>,
+                       public Interface::Torus<Mapping, MPI_DIMS>,
+                       public Interface::Node<Mapping, MPI_DIMS>
     {
 
     public:
-      inline MPIMapping () :
-        Interface::Base<MPIMapping,XMI::Memory::HeapMemoryManager >(),
-        Interface::Torus<MPIMapping, MPI_DIMS>(),
-        Interface::Node<MPIMapping, MPI_DIMS>()
+      inline Mapping () :
+        Interface::Base<Mapping,XMI::Memory::HeapMemoryManager >(),
+        Interface::Torus<Mapping, MPI_DIMS>(),
+        Interface::Node<Mapping, MPI_DIMS>()
         {
           MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
           MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
         };
-      inline ~MPIMapping () {};
+      inline ~Mapping () {};
     protected:
       size_t    _task;
       size_t    _size;

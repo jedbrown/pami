@@ -1,27 +1,25 @@
 ///
-/// \file components/client/bgq/BgqClient.h
+/// \file common/bgq/Client.h
 /// \brief XMI client interface specific for the Blue Gene\Q platform.
 ///
 #ifndef   __components_client_bgq_bgqclient_h__
 #define   __components_client_bgq_bgqclient_h__
 
-#define XMI_CLIENT_CLASS XMI::Client::BgqClient
+#define XMI_CLIENT_CLASS XMI::Client
 
 #include <stdlib.h>
 
-#include "../Client.h"
+#include "common/Client.h"
 
-#include "components/context/bgq/BgqContext.h"
+#include "Context.h"
 
 namespace XMI
 {
-  namespace Client
-  {
-    class BgqClient : public Client<XMI::Client::BgqClient,XMI::Context::BgqContext>
+    class Client : public Interface::Client<XMI::Client,XMI::Context>
     {
       public:
-        inline BgqClient (char * name, xmi_result_t &result) :
-          Client<XMI::Client::BgqClient,XMI::Context::BgqContext>(name, result),
+        inline Client (char * name, xmi_result_t &result) :
+          Interface::Client<XMI::Client,XMI::Context>(name, result),
           _client ((xmi_client_t) this),
           _references (1),
           _contexts (0)
@@ -33,7 +31,7 @@ namespace XMI
           result = XMI_SUCCESS;
         }
 
-        inline ~BgqClient ()
+        inline ~Client ()
         {
         }
 
@@ -45,13 +43,13 @@ namespace XMI
           //__client_list->lock();
 
           // If a client with this name is not already initialized...
-          XMI::Client::BgqClient * clientp = NULL;
+          XMI::Client * clientp = NULL;
           //if ((client = __client_list->contains (name)) == NULL)
           //{
-            rc = posix_memalign((void **)&clientp, 16, sizeof (XMI::Client::BgqClient));
+            rc = posix_memalign((void **)&clientp, 16, sizeof (XMI::Client));
             if (rc != 0) assert(0);
-            memset ((void *)clientp, 0x00, sizeof(XMI::Client::BgqClient));
-            new (clientp) XMI::Client::BgqClient (name, result);
+            memset ((void *)clientp, 0x00, sizeof(XMI::Client));
+            new (clientp) XMI::Client (name, result);
             *client = clientp;
             //__client_list->pushHead ((QueueElem *) client);
           //}
@@ -88,11 +86,11 @@ namespace XMI
         {
           //_context_list->lock ();
 
-          XMI::Context::BgqContext * context = NULL;
-          int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::BgqContext));
+          XMI::Context * context = NULL;
+          int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context));
           if (rc != 0) assert(0);
-          memset ((void *)context, 0x00, sizeof(XMI::Context::BgqContext));
-          new (context) XMI::Context::BgqContext (this->getClient(), _contexts++);
+          memset ((void *)context, 0x00, sizeof(XMI::Context));
+          new (context) XMI::Context (this->getClient(), _contexts++);
           //_context_list->pushHead ((QueueElem *) context);
 
           //_context_list->unlock ();
@@ -105,7 +103,7 @@ namespace XMI
         {
           //_context_list->lock ();
           //_context_list->remove (context);
-          return ((XMI::Context::BgqContext *)context)->destroy ();
+          return ((XMI::Context *)context)->destroy ();
           //_context_list->unlock ();
         }
 
@@ -124,8 +122,7 @@ namespace XMI
         size_t       _contexts;
         char         _name[256];
 
-    }; // end class XMI::Client::BgqClient
-  }; // end namespace Client
+    }; // end class XMI::Client
 }; // end namespace XMI
 
 

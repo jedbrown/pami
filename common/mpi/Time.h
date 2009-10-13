@@ -13,18 +13,16 @@
 #ifndef __components_time_mpi_mpitime_h__
 #define __components_time_mpi_mpitime_h__
 
-#define XMI_TIME_CLASS XMI::Time::MPITime
+#define XMI_TIME_CLASS XMI::Time
 
 #include "sys/xmi.h"
 #include <sys/time.h>
-#include "components/time/BaseTime.h"
+#include "common/BaseTime.h"
 #include <mpi.h>
 #include <stdio.h>
 
 namespace XMI
 {
-  namespace Time
-  {
 #if defined(__i386) || defined(__amd64__)
     static inline uint64_t tb()
     {
@@ -62,12 +60,12 @@ namespace XMI
       return tv.tv_sec * 1000 + tv.tv_usec / 1000;
     }
 
-    class MPITime : public Interface::BaseTime<MPITime>
+    class Time : public Interface::BaseTime<Time>
     {
     public:
 
-      inline MPITime () :
-        Interface::BaseTime<MPITime>(),
+      inline Time () :
+        Interface::BaseTime<Time>(),
         _clockMHz(0)
         {
           init_impl();
@@ -177,6 +175,5 @@ namespace XMI
       uint64_t _clockMHz;
       double _sec_per_cycle;
     };
-  };
 };
 #endif // __components_time_time_h__

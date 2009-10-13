@@ -1,5 +1,5 @@
 ///
-/// \file components/topology/lapiunix/lapiunixtopology.h
+/// \file common/lapiunix/Topology.h
 /// \brief XMI LAPI specific topology implementation.
 ///
 #ifndef   __xmi_lapi_lapitopology_h__
@@ -8,40 +8,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/topology/Topology.h"
-#include "components/mapping/lapiunix/lapiunixmapping.h"
+#include "common/Topology.h"
+#include "Mapping.h"
 
-#define XMI_TOPOLOGY_CLASS XMI::Topology::LAPI
+#define XMI_TOPOLOGY_CLASS XMI::Topology
 
 namespace XMI
 {
-    namespace Topology
-    {
-        class LAPI : public Topology<XMI::Topology::LAPI>
+        class Topology : public Interface::Topology<XMI::Topology>
         {
         public:
-            inline LAPI():
-                Topology<XMI::Topology::LAPI>()
+            inline Topology():
+                Interface::Topology<XMI::Topology>()
                 {}
 
             inline LAPI(xmi_coord_t *ll, xmi_coord_t *ur,
                        unsigned char *tl = NULL):
-                Topology<XMI::Topology::LAPI>(ll,ur,tl)
+                Topology<XMI::Topology>(ll,ur,tl)
                 {}
 
             inline LAPI(size_t rank):
-                Topology<XMI::Topology::LAPI>(rank)
+                Topology<XMI::Topology>(rank)
                 {}
             inline LAPI(size_t rank0, size_t rankn):
-                Topology<XMI::Topology::LAPI>(rank0, rankn)
+                Topology<XMI::Topology>(rank0, rankn)
                 {}
 
             inline LAPI(size_t *ranks, size_t nranks):
-                Topology<XMI::Topology::LAPI>(ranks, nranks)
+                Topology<XMI::Topology>(ranks, nranks)
                 {}
 
 
-            static void static_init(XMI::Mapping::LAPIMapping *map)
+            static void static_init(XMI::Mapping *map)
             {
             }
             inline unsigned size_of_impl()
@@ -110,13 +108,13 @@ namespace XMI
                 {
 		  return false;
                 }
-            inline void subTopologyLocalToMe(XMI::Topology::LAPI *_new)
+            inline void subTopologyLocalToMe(XMI::Topology *_new)
                 {
                 }
-            inline void subTopologyNthGlobal(XMI::Topology::LAPI *_new, int n)
+            inline void subTopologyNthGlobal(XMI::Topology *_new, int n)
                 {
                 }
-            inline void subTopologyReduceDims(XMI::Topology::LAPI *_new, xmi_coord_t *fmt)
+            inline void subTopologyReduceDims(XMI::Topology *_new, xmi_coord_t *fmt)
                 {
                 }
             inline void getRankList(size_t max, size_t *ranks, size_t *nranks)
@@ -130,18 +128,17 @@ namespace XMI
                 {
 		  return false;
                 }
-            inline void unionTopology(XMI::Topology::LAPI *_new, XMI::Topology::LAPI *other)
+            inline void unionTopology(XMI::Topology *_new, XMI::Topology *other)
                 {
                 }
-            inline void intersectTopology(XMI::Topology::LAPI *_new, XMI::Topology::LAPI *other)
+            inline void intersectTopology(XMI::Topology *_new, XMI::Topology *other)
                 {
                 }
-            inline void subtractTopology(XMI::Topology::LAPI *_new, XMI::Topology::LAPI *other)
+            inline void subtractTopology(XMI::Topology *_new, XMI::Topology *other)
                 {
                 }
 
-        }; // end XMI::Topology::LAPI
-    }; // end namespace Topology
+        }; // end XMI::Topology
 }; // end namespace XMI
 
 #endif // __xmi_lapi_lapitopology_h__

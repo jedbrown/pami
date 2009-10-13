@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#if 0
-#include "BgpMapping.h"
+#if 0 // EVERYTHING
+#include "Mapping.h"
 
 
 ///
@@ -368,4 +368,4 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
   return XMI_SUCCESS;
 };
 
-#endif
+#endif // EVERYTHING

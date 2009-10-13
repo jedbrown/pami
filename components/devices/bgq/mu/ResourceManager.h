@@ -23,7 +23,7 @@
 #include "components/devices/bgq/mu/BaseAddressTableSubGroup.h"
 #include "components/devices/bgq/mu/Dispatch.h"
 
-#include "components/sysdep/bgq/BgqSysDep.h"
+#include "SysDep.h"
 
 #ifdef TRACE
 #undef TRACE
@@ -187,7 +187,7 @@ namespace XMI
           ResourceManager () { }
 
           int init ( ResourceType_t ,
-                     SysDep::BgqSysDep  * sd,
+                     SysDep  * sd,
                      dispatch_t      *dispatch
                    );
 
@@ -368,7 +368,7 @@ namespace XMI
           InjFifoSubGroup          **_injFifoSubGroups;
           RecFifoSubGroup          **_recFifoSubGroups;
           BaseAddressTableSubGroup **_batSubGroups;
-          SysDep::BgqSysDep         *_sysdep;
+          SysDep         *_sysdep;
 
           // Declare pointers to resource structures that will be allocated and
           // initialized by getInfo(), containing info about each of the resources

@@ -1,27 +1,25 @@
 ///
-/// \file components/client/bgp/BgpClient.h
+/// \file common/bgp/Client.h
 /// \brief XMI client interface specific for the BGP platform.
 ///
 #ifndef   __components_client_bgp_bgpclient_h__
 #define   __components_client_bgp_bgpclient_h__
 
-#define XMI_CLIENT_CLASS XMI::Client::BgpClient
+#define XMI_CLIENT_CLASS XMI::Client
 
 #include <stdlib.h>
 
-#include "../Client.h"
+#include "common/Client.h"
 
-#include "components/context/bgp/BgpContext.h"
+#include "Context.h"
 
 namespace XMI
 {
-  namespace Client
-  {
-    class BgpClient : public Client<XMI::Client::BgpClient,XMI::Context::BgpContext>
+    class Client : public Interface::Client<XMI::Client,XMI::Context>
     {
       public:
-        inline BgpClient (char * name, xmi_result_t &result) :
-          Client<XMI::Client::BgpClient,XMI::Context::BgpContext>(name, result),
+        inline Client (char * name, xmi_result_t &result) :
+          Interface::Client<XMI::Client,XMI::Context>(name, result),
           _client ((xmi_client_t) this),
           _references (1),
           _contexts (0)
@@ -33,7 +31,7 @@ namespace XMI
           result = XMI_SUCCESS;
         }
 
-        inline ~BgpClient ()
+        inline ~Client ()
         {
         }
 
@@ -45,13 +43,13 @@ namespace XMI
           //__client_list->lock();
 
           // If a client with this name is not already initialized...
-          XMI::Client::BgpClient * clientp = NULL;
+          XMI::Client * clientp = NULL;
           //if ((client = __client_list->contains (name)) == NULL)
           //{
-            rc = posix_memalign((void **)&clientp, 16, sizeof (XMI::Client::BgpClient));
+            rc = posix_memalign((void **)&clientp, 16, sizeof (XMI::Client));
             if (rc != 0) assert(0);
-            memset ((void *)clientp, 0x00, sizeof(XMI::Client::BgpClient));
-            new (clientp) XMI::Client::BgpClient (name, result);
+            memset ((void *)clientp, 0x00, sizeof(XMI::Client));
+            new (clientp) XMI::Client (name, result);
             *client = clientp;
             //__client_list->pushHead ((QueueElem *) client);
           //}
@@ -88,11 +86,11 @@ namespace XMI
         {
           //_context_list->lock ();
 
-          XMI::Context::BgpContext * context = NULL;
-          int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context::BgpContext));
+          XMI::Context * context = NULL;
+          int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context));
           XMI_assertf(rc==0, "posix_memalign failed for context, errno=%d\n", errno);
-          memset ((void *)context, 0x00, sizeof(XMI::Context::BgpContext));
-          new (context) XMI::Context::BgpContext (this->getClient(),_contexts++);
+          memset ((void *)context, 0x00, sizeof(XMI::Context));
+          new (context) XMI::Context (this->getClient(),_contexts++);
           //_context_list->pushHead ((QueueElem *) context);
 
           //_context_list->unlock ();
@@ -105,7 +103,7 @@ namespace XMI
         {
           //_context_list->lock ();
           //_context_list->remove (context);
-          return ((XMI::Context::BgpContext *)context)->destroy ();
+          return ((XMI::Context *)context)->destroy ();
           //_context_list->unlock ();
         }
 
@@ -125,8 +123,7 @@ namespace XMI
 
         char         _name[256];
 
-    }; // end class XMI::Client::BgpClient
-  }; // end namespace Client
+    }; // end class XMI::Client
 }; // end namespace XMI
 
 

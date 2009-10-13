@@ -19,9 +19,8 @@
  *
  *
  */
-#include "components/sysdep/SysDep.h"
-#include "components/sysdep/bgp/BgpSysDep.h"
-#include "components/sysdep/bgp/LockBoxFactory.h"
+#include "SysDep.h"
+#include "common/bgp/LockBoxFactory.h"
 #include "components/atomic/Mutex.h"
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>

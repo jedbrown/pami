@@ -20,9 +20,9 @@
 #include "components/devices/mpi/oldmpim2mmodel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "components/devices/mpi/mpidevice.h"
-#include "components/sysdep/mpi/mpisysdep.h"
+#include "SysDep.h"
 #include "components/memory/heap/HeapMemoryManager.h"
-#include "components/mapping/mpi/mpimapping.h"
+#include "Mapping.h"
 
 
 // PGASRT includes
@@ -31,17 +31,17 @@
 
 // CCMI includes
 
-typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>,
+typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep>,
                                           XMI::Device::MPIMessage> MPIMcastModel;
 typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 
-typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDep>,
+typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep>,
                                     XMI::Device::MPIMessage,
                                     size_t> MPIM2MModel;
 
 
 #define XMI_COLL_MCAST_CLASS  MPIMcastModel
-#define XMI_COLL_SYSDEP_CLASS XMI::SysDep::MPISysDep
+#define XMI_COLL_SYSDEP_CLASS XMI::SysDep
 
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/protocols/broadcast/multi_color_impl.h"
@@ -56,8 +56,8 @@ typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep::MPISysDe
 #include "algorithms/protocols/alltoall/Alltoall.h"
 
 
-typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep::MPISysDep, size_t> AlltoallProtocol;
-typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep::MPISysDep, size_t> AlltoallFactory;
+typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep, size_t> AlltoallProtocol;
+typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep, size_t> AlltoallFactory;
 
 
 namespace XMI
@@ -316,7 +316,7 @@ namespace XMI
 
   };
 };
-typedef XMI::Device::MPIDevice<XMI::SysDep::MPISysDep> MPIDevice;
+typedef XMI::Device::MPIDevice<XMI::SysDep> MPIDevice;
 typedef std::vector<XMI::CollInfo::CollInfo<MPIDevice> *> RegQueue;
 
 #endif

@@ -14,19 +14,17 @@
 #ifndef __components_sysdep_lapi_lapisysdep_h__
 #define __components_sysdep_lapi_lapisysdep_h__
 
-#define XMI_SYSDEP_CLASS XMI::SysDep::LAPISysDep
+#define XMI_SYSDEP_CLASS XMI::SysDep
 
-#include "components/sysdep/SysDep.h"
-#include "components/mapping/lapiunix/lapiunixmapping.h"
+#include "common/SysDep.h"
+#include "Mapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
-#include "components/time/lapiunix/lapiunixtime.h"
-#include "components/topology/lapiunix/lapiunixtopology.h"
+#include "Time.h"
+#include "Topology.h"
 
 namespace XMI
 {
-  namespace SysDep
-  {
-    typedef SysDep<XMI::Memory::HeapMemoryManager, XMI::Mapping::LAPIMapping, XMI::Time::LAPITime, XMI::Topology::LAPI> LAPISysDep;
+    typedef Interface::SysDep<XMI::Memory::HeapMemoryManager, XMI::Mapping, XMI::Time, XMI::Topology> SysDep;
   };
 };
 #endif // __components_sysdep_lapi_lapisysdep_h__

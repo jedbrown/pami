@@ -21,7 +21,7 @@
 #include "components/devices/bgq/mu/ResourceManager.h"
 #include "components/devices/bgq/mu/Dispatch.h"
 
-#include "components/sysdep/bgq/BgqSysDep.h"
+#include "SysDep.h"
 
 #ifdef TRACE
 #undef TRACE
@@ -48,7 +48,7 @@ namespace XMI
 
           ~Channel() {}
 
-          virtual int init( SysDep::BgqSysDep * sd, dispatch_t *dispatch ) = 0;
+          virtual int init( SysDep * sd, dispatch_t *dispatch ) = 0;
 
           void * operator new ( size_t nbytes, void * addr) { return addr; }
 
@@ -126,7 +126,7 @@ namespace XMI
         public:
           P2PChannel() : Channel() { }
 
-          int init( SysDep::BgqSysDep * sd, dispatch_t *dispatch )
+          int init( SysDep * sd, dispatch_t *dispatch )
           {
             return _resMgr.init( ResourceManager::P2P_TYPE, sd, dispatch );
           }
@@ -148,7 +148,7 @@ namespace XMI
         public:
           ColChannel() : Channel() { }
 
-          int init( SysDep::BgqSysDep * sd, dispatch_t * dispatch )
+          int init( SysDep * sd, dispatch_t * dispatch )
           {
             return _resMgr.init( ResourceManager::COLL_TYPE, sd, dispatch );
           }

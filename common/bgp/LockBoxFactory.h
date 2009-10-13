@@ -10,7 +10,7 @@
 #ifndef __xmi_bgp_lockboxfactory_h__
 #define __xmi_bgp_lockboxfactory_h__
 
-#include "components/mapping/bgp/BgpMapping.h"
+#include "Mapping.h"
 #include <spi/bgp_SPI.h>
 
 // These define the range of lockboxes we're allowed to use.
@@ -18,7 +18,7 @@
 #define LBX_MAX_NUMLOCKBOX	256
 
 ////////////////////////////////////////////////////////////////////////
-///  \file components/sysdep/bgp/LockBoxFactory.h
+///  \file common/bgp/LockBoxFactory.h
 ///  \brief Implementation of BGP AtomicFactory scheme(s).
 ///
 ///  This object is a portability layer that implements allocation
@@ -59,7 +59,7 @@ namespace BGP {
 		int __numProc;
 		bool __isMasterRank;
 	public:
-		LockBoxFactory(XMI::Mapping::BgpMapping *mapping) {
+		LockBoxFactory(XMI::Mapping *mapping) {
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
 			xmi_result_t rc;

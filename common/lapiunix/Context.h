@@ -5,30 +5,28 @@
 #ifndef   __xmi_lapiunix_lapiunixcontext_h__
 #define   __xmi_lapiunix_lapiunixcontext_h__
 
-#define XMI_CONTEXT_CLASS XMI::Context::LAPI
+#define XMI_CONTEXT_CLASS XMI::Context
 
 #include <stdlib.h>
 #include <string.h>
 #include "util/lapi/lapi_util.h"
-#include "components/context/Context.h"
-#include "components/geometry/common/commongeometry.h"
+#include "common/Context.h"
+#include "Geometry.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
 #include "components/devices/lapiunix/lapiunixmodel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
-#include "components/sysdep/lapiunix/lapiunixsysdep.h"
+#include "SysDep.h"
 #include "components/geometry/lapiunix/lapiunixcollfactory.h"
 #include "components/geometry/lapiunix/lapiunixcollregistration.h"
-#include "components/mapping/lapiunix/lapiunixmapping.h"
+#include "Mapping.h"
 #include <new>
 #include <map>
 
 namespace XMI
 {
-  namespace Context
-  {
     typedef Device::LAPIMessage LAPIMessage;
     typedef Device::LAPIDevice<SysDep::LAPISysDep> LAPIDevice;
     typedef Device::LAPIModel<LAPIDevice,LAPIMessage> LAPIModel;
@@ -37,11 +35,11 @@ namespace XMI
     typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep::LAPISysDep> LAPICollreg;
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
 
-    class LAPI : public Context<XMI::Context::LAPI>
+    class Context : public Interface::Context<XMI::Context>
     {
     public:
-      inline LAPI (xmi_client_t client, size_t id) :
-        Context<XMI::Context::LAPI> (client, id),
+      inline Context (xmi_client_t client, size_t id) :
+        Interface::Context<XMI::Context> (client, id),
         _client (client),
         _id (id)
         {
@@ -488,7 +486,7 @@ namespace XMI
       size_t                    _id;
       lapi_handle_t             _lapi_handle;
       void                     *_dispatch[1024];
-      SysDep::LAPISysDep        _sysdep;
+      SysDep                    _sysdep;
       MemoryAllocator<1024,16>  _request;
       LAPIDevice                _lapi_device;
       LAPICollreg              *_collreg;
@@ -499,8 +497,7 @@ namespace XMI
       int                       _mysize;
       unsigned                 *_ranklist;
 
-    }; // end XMI::Context::LAPI
-  }; // end namespace Context
+    }; // end XMI::Context
 }; // end namespace XMI
 
 #endif // __xmi_lapi_lapicontext_h__

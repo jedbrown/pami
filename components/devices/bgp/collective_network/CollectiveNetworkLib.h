@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgp_cnlib_h__
 #define __components_devices_bgp_cnlib_h__
 
-#include "components/pipeworkqueue/bgp/BgpPipeWorkQueue.h"
+#include "PipeWorkQueue.h"
 #include "components/devices/workqueue/WorkQueue.h"
 #include "math/bgp/collective_network/DblUtils.h"
 #include "components/devices/bgp/collective_network/CNAllreduce.h"

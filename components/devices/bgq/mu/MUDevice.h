@@ -26,7 +26,7 @@
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "components/sysdep/bgq/BgqSysDep.h"
+#include "SysDep.h"
 
 #ifdef TRACE
 #undef TRACE
@@ -43,7 +43,7 @@ namespace XMI
     {
       typedef   MUSPI_RecvFunction_t  MUDevice_DispatchFn_t;
 
-      class MUDevice : public Interface::BaseDevice<MUDevice,SysDep::BgqSysDep>, public Interface::MessageDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
+      class MUDevice : public Interface::BaseDevice<MUDevice,SysDep>, public Interface::MessageDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
           //class MUDevice : public BaseDevice, public CDI::Base::Device<MUDevice>, public CDI::Message::Device<MUDevice>//, public CDI::Dma::Device<MUDevice>
       {
 
@@ -64,7 +64,7 @@ namespace XMI
           // ----------------------------------------------------------------------
 
           /// \copydoc XMI::Device::Interface::BaseDevice::init
-          int init_impl (SysDep::BgqSysDep * sysdep);
+          int init_impl (SysDep * sysdep);
 
           /// \copydoc XMI::Device::Interface::BaseDevice::isInit
           bool isInit_impl ();
@@ -359,7 +359,7 @@ namespace XMI
             return _p2pChannel[_p2pSendChannelIndex]->getRgetInjFifoId (target_rank);
           }
 
-          SysDep::BgqSysDep * sysdep;                         /**< sysdep pointer     */
+          SysDep * sysdep;                         /**< sysdep pointer     */
 
         protected:
 

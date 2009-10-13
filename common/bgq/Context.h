@@ -1,17 +1,17 @@
 ///
-/// \file components/context/bgq/BgqContext.h
+/// \file common/bgq/Context.h
 /// \brief XMI Blue Gene\Q specific context implementation.
 ///
 #ifndef   __components_context_bgq_bgqcontext_h__
 #define   __components_context_bgq_bgqcontext_h__
 
-#define XMI_CONTEXT_CLASS XMI::Context::BgqContext
+#define XMI_CONTEXT_CLASS XMI::Context
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "sys/xmi.h"
-#include "components/context/Context.h"
+#include "common/Context.h"
 
 #include "components/devices/shmem/ShmemPacketDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
@@ -29,7 +29,7 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#include "components/sysdep/bgq/BgqSysDep.h"
+#include "SysDep.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
@@ -41,15 +41,13 @@
 
 namespace XMI
 {
-  namespace Context
-  {
     typedef Fifo::FifoPacket <32,992> ShmemPacket;
-    typedef Fifo::LinearFifo<Atomic::GccBuiltin<SysDep::BgqSysDep>,ShmemPacket,16> ShmemFifo;
+    typedef Fifo::LinearFifo<Atomic::GccBuiltin<SysDep>,ShmemPacket,16> ShmemFifo;
     //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
     //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-    typedef Device::ShmemPacketDevice<SysDep::BgqSysDep,ShmemFifo,ShmemPacket> ShmemDevice;
+    typedef Device::ShmemPacketDevice<SysDep,ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
 
     //
@@ -62,11 +60,11 @@ namespace XMI
 
     typedef MemoryAllocator<1024,16> ProtocolAllocator;
 
-    class BgqContext : public Context<XMI::Context::BgqContext>
+    class Context : public Interface::Context<XMI::Context>
     {
       public:
-        inline BgqContext (xmi_client_t client, size_t contextid) :
-          Context<XMI::Context::BgqContext> (client, contextid),
+        inline Context (xmi_client_t client, size_t contextid) :
+          Interface::Context<XMI::Context> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
           _contextid (contextid),
@@ -411,7 +409,7 @@ namespace XMI
         xmi_context_t _context;
         size_t        _contextid;
 
-        SysDep::BgqSysDep _sysdep;
+        SysDep _sysdep;
 
         // devices...
         Device::MU::MUDevice _mu;
@@ -419,8 +417,7 @@ namespace XMI
 
         void * _dispatch[1024];
         MemoryAllocator<1024,16> _request;
-    }; // end XMI::Context::BgqContext
-  }; // end namespace Context
+    }; // end XMI::Context
 }; // end namespace XMI
 
 #endif // __components_context_bgq_bgqcontext_h__

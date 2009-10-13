@@ -1,5 +1,5 @@
 ///
-/// \file components/topology/mpi/mpitopology.h
+/// \file common/mpi/Topology.h
 /// \brief XMI MPI specific topology implementation.
 ///
 #ifndef   __xmi_mpi_mpitopology_h__
@@ -9,39 +9,37 @@
 #include <string.h>
 
 #include "components/topology/Topology.h"
-#include "components/mapping/mpi/mpimapping.h"
+#include "Mapping.h"
 
-#define XMI_TOPOLOGY_CLASS XMI::Topology::MPI
+#define XMI_TOPOLOGY_CLASS XMI::Topology
 
 namespace XMI
 {
-    namespace Topology
-    {
-        class MPI : public Topology<XMI::Topology::MPI>
+        class Topology : public Interface::Topology<XMI::Topology>
         {
         public:
-            inline MPI():
-                Topology<XMI::Topology::MPI>()
+            inline Topology():
+                Interface::Topology<XMI::Topology>()
                 {}
 
             inline MPI(xmi_coord_t *ll, xmi_coord_t *ur,
                        unsigned char *tl = NULL):
-                Topology<XMI::Topology::MPI>(ll,ur,tl)
+                Topology<XMI::Topology>(ll,ur,tl)
                 {}
 
             inline MPI(size_t rank):
-                Topology<XMI::Topology::MPI>(rank)
+                Topology<XMI::Topology>(rank)
                 {}
             inline MPI(size_t rank0, size_t rankn):
-                Topology<XMI::Topology::MPI>(rank0, rankn)
+                Topology<XMI::Topology>(rank0, rankn)
                 {}
 
             inline MPI(size_t *ranks, size_t nranks):
-                Topology<XMI::Topology::MPI>(ranks, nranks)
+                Topology<XMI::Topology>(ranks, nranks)
                 {}
 
 
-            static void static_init(XMI::Mapping::MPIMapping *map)
+            static void static_init(XMI::Mapping *map)
             {
             }
             inline unsigned size_of_impl()
@@ -110,13 +108,13 @@ namespace XMI
                 {
 		  return false;
                 }
-            inline void subTopologyLocalToMe(XMI::Topology::MPI *_new)
+            inline void subTopologyLocalToMe(XMI::Topology *_new)
                 {
                 }
-            inline void subTopologyNthGlobal(XMI::Topology::MPI *_new, int n)
+            inline void subTopologyNthGlobal(XMI::Topology *_new, int n)
                 {
                 }
-            inline void subTopologyReduceDims(XMI::Topology::MPI *_new, xmi_coord_t *fmt)
+            inline void subTopologyReduceDims(XMI::Topology *_new, xmi_coord_t *fmt)
                 {
                 }
             inline void getRankList(size_t max, size_t *ranks, size_t *nranks)
@@ -130,18 +128,17 @@ namespace XMI
                 {
 		  return false;
                 }
-            inline void unionTopology(XMI::Topology::MPI *_new, XMI::Topology::MPI *other)
+            inline void unionTopology(XMI::Topology *_new, XMI::Topology *other)
                 {
                 }
-            inline void intersectTopology(XMI::Topology::MPI *_new, XMI::Topology::MPI *other)
+            inline void intersectTopology(XMI::Topology *_new, XMI::Topology *other)
                 {
                 }
-            inline void subtractTopology(XMI::Topology::MPI *_new, XMI::Topology::MPI *other)
+            inline void subtractTopology(XMI::Topology *_new, XMI::Topology *other)
                 {
                 }
 
-        }; // end XMI::Topology::MPI
-    }; // end namespace Topology
+        }; // end XMI::Topology
 }; // end namespace XMI
 
 #endif // __xmi_mpi_mpitopology_h__

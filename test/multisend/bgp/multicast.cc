@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include "sys/xmi.h"
 
-// PipeWorkQueue and Topology are designed wrong for platform-independent code...
-#include "components/pipeworkqueue/bgp/BgpPipeWorkQueue.h"
-#include "components/topology/bgp/BgpTopology.h"
+#include "PipeWorkQueue.h"
+#include "Topology.h"
 
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 

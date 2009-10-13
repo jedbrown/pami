@@ -11,7 +11,7 @@
 
 #include "common/Client.h"
 #include "Context.h"
-#include "components/geometry/common/commongeometry.h"
+#include "Geometry.h"
 #include "util/lapi/lapi_util.h"
 
 namespace XMI

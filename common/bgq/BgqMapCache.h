@@ -9,19 +9,17 @@
 #ifndef __xmi_components_mapping_bgq_bgqmapcache_h__
 #define __xmi_components_mapping_bgq_bgqmapcache_h__
 ///
-/// \file components/mapping/bgq/BgqMapCache.h
+/// \file common/bgq/BgqMapCache.h
 /// \brief Blue Gene/Q Map- and Rank-Cache Object
 ///
 
 #include <hwi/include/bqc/A2_inlines.h>
 
-#include "components/sysdep/bgq/BgqPersonality.h"
+#include "common/bgq/BgqPersonality.h"
 
 
 namespace XMI
 {
-  namespace Mapping
-  {
     class BgqMapCache
     {
       public:
@@ -378,8 +376,7 @@ namespace XMI
         size_t * _mapcache;
         size_t * _rankcache;
 
-    }; // XMI::Mapping::BgqMapCache
-  };   // XMI::Mapping
+    }; // XMI::BgqMapCache
 };     // XMI
 
 #endif // __xmi_components_mapping_bgq_bgqmapcache_h__
