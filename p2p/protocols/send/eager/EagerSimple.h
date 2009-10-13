@@ -470,7 +470,7 @@ namespace XMI
           {
             size_t peer = _device.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", (size_t)task, arg, peer, _connection[peer]));
-            XMI_assert(_connection[peer] == NULL);
+            XMI_assert_debug(_connection[peer] == NULL);
             _connection[peer] = arg;
             TRACE_ERR((stderr, "<< EagerSimple::setConnection(%zd, %p)\n", (size_t)task, arg));
           }
@@ -479,7 +479,7 @@ namespace XMI
           {
             size_t peer = _device.task2peer (task);
             TRACE_ERR((stderr, ">> EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
-            XMI_assert(_connection[peer] != NULL);
+            XMI_assert_debug(_connection[peer] != NULL);
             TRACE_ERR((stderr, "<< EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
             return _connection[peer];
           }
@@ -496,6 +496,8 @@ namespace XMI
                                         uint8_t          * header,
                                         recv_state_t     * state)
           {
+            TRACE_ERR((stderr, ">> EagerSimple::process_envelope()\n"));
+
             // Invoke the registered dispatch function.
             _dispatch_fn.p2p (_context,            // Communication context
                               _contextid,          // Context index
@@ -512,18 +514,21 @@ namespace XMI
             XMI_assert(state->info.kind == XMI_AM_KIND_SIMPLE);
 
             // Replace with 'unlikely if'
+            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zd\n", metadata->bytes));
             if (metadata->bytes == 0)
               {
                 // No data packets will follow this envelope packet. Invoke the
                 // recv done callback and, if an acknowledgement packet was
                 // requested send the acknowledgement. Otherwise return the recv
                 // state memory which was allocated above.
-                TRACE_ERR((stderr, "   EagerSimple::dispatch_envelope_direct() .. state->info.local_fn = %p\n", state->info.local_fn));
+                TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->info.local_fn = %p\n", state->info.local_fn));
 
                 if (state->info.local_fn)
                   state->info.local_fn (_context,
                                         state->info.cookie,
                                         XMI_SUCCESS);
+
+                TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->metadata.ackinfo = %p\n", state->metadata.ackinfo));
 
                 // Replace with 'unlikely if'
                 if (state->metadata.ackinfo != NULL)
@@ -548,10 +553,12 @@ namespace XMI
                   }
                 else
                   {
+                    clearConnection (metadata->fromRank);
                     freeRecvState (state);
                   }
               }
           
+            TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));
             return;
           }
 
