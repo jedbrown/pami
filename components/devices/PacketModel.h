@@ -205,7 +205,7 @@ namespace XMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          inline bool postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
+          inline bool postPacket (uint8_t              state[],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -227,7 +227,7 @@ namespace XMI
           /// \param[in] payload1     Virtual address of the second source buffer
           /// \param[in] bytes1       Number of bytes to transfer from the second buffer
           ///
-          inline bool postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
+          inline bool postPacket (uint8_t              state[],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -249,7 +249,7 @@ namespace XMI
           /// \param[in] payload      Virtual address of source buffer
           /// \param[in] bytes        Number of bytes to transfer
           ///
-          inline bool postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
+          inline bool postPacket (uint8_t              state[],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
