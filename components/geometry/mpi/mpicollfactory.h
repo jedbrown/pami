@@ -630,8 +630,6 @@ namespace XMI
                     XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep> *cinfo=
                        (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
 
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
-                    XMI_assertf(req,"malloc failure\n");
                     XMI_Callback_t cb_done;
 		    cb_done.function   = alltoallv->cb_done;
                     cb_done.clientdata = alltoallv->cookie;
@@ -683,26 +681,42 @@ namespace XMI
           XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep> *info =
             (XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep> *)_ambroadcasts[ambroadcast->algorithm];
 
-          if(ambroadcast->stypecount == 0)
-            ambroadcast->cb_done(NULL, ambroadcast->cookie, XMI_SUCCESS);
-          else
+          switch (info->_colltype)
               {
-#if 0
-//                CCMI_assert (((CCMI::Adaptor::Geometry *) geometry)->getBarrierExecutor() != NULL);
-                xmi_callback_t cb_done_ccmi;
-                cb_done_ccmi.function   = ambroadcast->cb_done;
-                cb_done_ccmi.clientdata = ambroadcast->cookie;
-                XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
-                XMI_assertf(req,"malloc failure\n");
-                factory->generate(req,
-                                  sizeof(XMI_CollectiveRequest_t),
-                                  cb_done_ccmi,
-                                  XMI_MATCH_CONSISTENCY,
-                                  _geometry,
-                                  _sd.mapping->task(), //root
-                                  ambroadcast->sndbuf,
-                                  ambroadcast->stypecount);
-#endif
+                  case  XMI::CollInfo::CI_AMBROADCAST0:
+                  {
+                    CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
+                      (CCMI::Adaptor::Broadcast::AsyncBinomialFactory *) &info->_bcast_registration;
+                    if(ambroadcast->stypecount == 0)
+                      ambroadcast->cb_done(NULL, ambroadcast->cookie, XMI_SUCCESS);
+                    else
+                        {
+                          xmi_callback_t cb_done;
+                          reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();
+                          XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
+
+                          fprintf(stderr, "ambroadcast is currently not working (registration mechanism needs to be implemented\n");
+                          XMI_abort();
+
+                          robj->factory      = this;
+                          robj->user_done_fn = ambroadcast->cb_done;
+                          robj->user_cookie  = ambroadcast->cookie;
+
+                          cb_done.function   = client_done;
+                          cb_done.clientdata = robj;
+
+                          XMI_assertf(robj,"ambcast: alg 1 memory allocation failure\n");
+                          factory->generate(robj->req[0],
+                                            sizeof(XMI_CollectiveRequest_t),
+                                            cb_done,
+                                            XMI_MATCH_CONSISTENCY,
+                                            _geometry,
+                                            _sd->mapping.task(), //root
+                                            (char*)ambroadcast->sndbuf,
+                                            ambroadcast->stypecount);
+                        }
+                  }
+                  break;
               }
           return XMI_SUCCESS;
         }
