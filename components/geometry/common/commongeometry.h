@@ -138,7 +138,6 @@ namespace XMI
         }
       inline void                      generatePermutation_sizet_impl()
         {
-          assert(0);
 	  return;
         }
 
@@ -149,8 +148,7 @@ namespace XMI
         }
       inline size_t                 *permutation_sizet_impl()
         {
-          assert(0);
-	  return NULL;
+          return _ranks_sizet;
         }
 
       inline bool                      isRectangle_impl()

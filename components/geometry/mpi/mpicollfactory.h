@@ -27,6 +27,7 @@ namespace XMI
 {
   namespace CollFactory
   {
+    
     template <class T_Device, class T_Sysdep>
     class MPI : public CollFactory<XMI::CollFactory::MPI<Device::MPIDevice<SysDep::MPISysDep>, SysDep::MPISysDep> >
     {
@@ -37,6 +38,29 @@ namespace XMI
         {
         }
 
+      class reqObj
+      {
+      public:
+        MPI                     *factory;
+        xmi_event_function       user_done_fn;
+        void                    *user_cookie;
+        // \todo:  we need to figure out exact sizes with ccmi....this is a bit of guesswork
+        //         to know if we got enough storage.
+        XMI_CollectiveRequest_t  req[4];
+      };
+
+      static void client_done(void *context, void *rdata, xmi_result_t res)
+        {
+          reqObj * robj = (reqObj*)rdata;
+          MPI    * mpi  = robj->factory;
+          if(robj->user_done_fn)
+            robj->user_done_fn(context, robj->user_cookie, res);
+          mpi->_reqAllocator.returnObject(robj);
+        }
+
+
+
+      
       inline RegQueue * getRegQ(xmi_xfer_type_t       collective)
         {
           RegQueue *rq = NULL;
@@ -249,32 +273,44 @@ namespace XMI
                   case XMI::CollInfo::CI_BROADCAST1:
                   {
                     XMI_Callback_t cb_done;
-                    cb_done.function   = broadcast->cb_done;
-                    cb_done.clientdata = broadcast->cookie;
                     XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
-                    XMI_assertf(req,"malloc failure\n");
-                    cinfo->_broadcast_registration.generate(req,
-                                                           sizeof(XMI_CollectiveRequest_t),
-                                                           cb_done,
-                                                           XMI_MATCH_CONSISTENCY,
-                                                           _geometry,
-                                                           broadcast->root,
-                                                           broadcast->buf,
-                                                           broadcast->typecount);
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    XMI_assertf(robj,"bcast alg 1:  memory allocation failure\n");
+                    
+                    robj->factory      = this;
+                    robj->user_done_fn = broadcast->cb_done;
+                    robj->user_cookie  = broadcast->cookie;
+                    
+                    cb_done.function   = client_done;
+                    cb_done.clientdata = robj;
+                    cinfo->_broadcast_registration.generate(&robj->req[0],
+                                                            sizeof(XMI_CollectiveRequest_t),
+                                                            cb_done,
+                                                            XMI_MATCH_CONSISTENCY,
+                                                            _geometry,
+                                                            broadcast->root,
+                                                            broadcast->buf,
+                                                            broadcast->typecount);
                   }
                   break;
                   case XMI::CollInfo::CI_BROADCAST2:
                   {
                     XMI_Callback_t cb_done;
-                    cb_done.function   = broadcast->cb_done;
-                    cb_done.clientdata = broadcast->cookie;
                     XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
-                    XMI_assertf(req,"malloc failure\n");
-                    cinfo->_broadcast_registration.generate(req,
+
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();           
+                    XMI_assertf(robj,"bcast alg 2:  memory allocation failure\n");
+                    
+                    robj->factory      = this;
+                    robj->user_done_fn = broadcast->cb_done;
+                    robj->user_cookie  = broadcast->cookie;
+                    
+                    cb_done.function   = client_done;
+                    cb_done.clientdata = robj;
+
+                    cinfo->_broadcast_registration.generate(&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
                                                             cb_done,
                                                             XMI_MATCH_CONSISTENCY,
@@ -341,22 +377,28 @@ namespace XMI
                       (XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>*)info;
 
                     XMI_Callback_t cb_done;
-                    cb_done.function   = allreduce->cb_done;
-                    cb_done.clientdata = allreduce->cookie;
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
-                    XMI_assertf(req,"malloc failure\n");
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();           
+                    XMI_assertf(robj,"allreduce alg 1:  memory allocation failure\n");
+                    
+                    robj->factory      = this;
+                    robj->user_done_fn = allreduce->cb_done;
+                    robj->user_cookie  = allreduce->cookie;
+                    
+                    cb_done.function   = client_done;
+                    cb_done.clientdata = robj;
+                    
                     CCMI::Adaptor::Allreduce::Ring::Factory *factory =
                       (CCMI::Adaptor::Allreduce::Ring::Factory *) &cinfo->_allreduce_registration;
                     if(arcomposite != NULL  &&  arcomposite->getFactory() == factory)
                         {
-                          xmi_result_t status =  (xmi_result_t)arcomposite->restart((XMI_CollectiveRequest_t*)req,
-                                                                      cb_done,
-                                                                      XMI_MATCH_CONSISTENCY,
-                                                                      allreduce->sndbuf,
-                                                                      allreduce->rcvbuf,
-                                                                      allreduce->stypecount,
-                                                                      allreduce->dt,
-                                                                      allreduce->op);
+                          xmi_result_t status =  (xmi_result_t)arcomposite->restart(&robj->req[0],
+                                                                                    cb_done,
+                                                                                    XMI_MATCH_CONSISTENCY,
+                                                                                    allreduce->sndbuf,
+                                                                                    allreduce->rcvbuf,
+                                                                                    allreduce->stypecount,
+                                                                                    allreduce->dt,
+                                                                                    allreduce->op);
                           if(status == XMI_SUCCESS)
                               {
                                 _geometry->setAllreduceComposite(arcomposite);
@@ -369,15 +411,15 @@ namespace XMI
                           _geometry->setAllreduceComposite(NULL);
                           arcomposite->~BaseComposite();
                         }
-                    void *ptr =factory->generate((XMI_CollectiveRequest_t*)req,
+                    void *ptr =factory->generate(&robj->req[0],
                                                  cb_done,
-                                              XMI_MATCH_CONSISTENCY,
-                                              _geometry,
-                                              allreduce->sndbuf,
-                                              allreduce->rcvbuf,
-                                              allreduce->stypecount,
-                                              allreduce->dt,
-                                              allreduce->op);
+                                                 XMI_MATCH_CONSISTENCY,
+                                                 _geometry,
+                                                 allreduce->sndbuf,
+                                                 allreduce->rcvbuf,
+                                                 allreduce->stypecount,
+                                                 allreduce->dt,
+                                                 allreduce->op);
                     if(ptr == NULL)
                         {
                           return XMI_UNIMPL;
@@ -393,22 +435,28 @@ namespace XMI
                       (XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep>*)info;
 
                     XMI_Callback_t cb_done;
-                    cb_done.function   = allreduce->cb_done;
-                    cb_done.clientdata = allreduce->cookie;
-                    XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
-                    XMI_assertf(req,"malloc failure\n");
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();           
+                    XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
+                    
+                    robj->factory      = this;
+                    robj->user_done_fn = allreduce->cb_done;
+                    robj->user_cookie  = allreduce->cookie;
+
+                    cb_done.function   = client_done;
+                    cb_done.clientdata = robj;
+
                     CCMI::Adaptor::Allreduce::Binomial::Factory *factory =
                       (CCMI::Adaptor::Allreduce::Binomial::Factory *) &cinfo->_allreduce_registration;
                     if(arcomposite != NULL  &&  arcomposite->getFactory() == factory)
                         {
-                          xmi_result_t status =  (xmi_result_t)arcomposite->restart((XMI_CollectiveRequest_t*)req,
-                                                                      cb_done,
-                                                                      XMI_MATCH_CONSISTENCY,
-                                                                      allreduce->sndbuf,
-                                                                      allreduce->rcvbuf,
-                                                                      allreduce->stypecount,
-                                                                      allreduce->dt,
-                                                                      allreduce->op);
+                          xmi_result_t status =  (xmi_result_t)arcomposite->restart(&robj->req[0],
+                                                                                    cb_done,
+                                                                                    XMI_MATCH_CONSISTENCY,
+                                                                                    allreduce->sndbuf,
+                                                                                    allreduce->rcvbuf,
+                                                                                    allreduce->stypecount,
+                                                                                    allreduce->dt,
+                                                                                    allreduce->op);
                           if(status == XMI_SUCCESS)
                               {
                                 _geometry->setAllreduceComposite(arcomposite);
@@ -421,15 +469,15 @@ namespace XMI
                           _geometry->setAllreduceComposite(NULL);
                           arcomposite->~BaseComposite();
                         }
-                    void *ptr =factory->generate((XMI_CollectiveRequest_t*)req,
+                    void *ptr =factory->generate(&robj->req[0],
                                                  cb_done,
-                                              XMI_MATCH_CONSISTENCY,
-                                              _geometry,
-                                              allreduce->sndbuf,
-                                              allreduce->rcvbuf,
-                                              allreduce->stypecount,
-                                              allreduce->dt,
-                                              allreduce->op);
+                                                 XMI_MATCH_CONSISTENCY,
+                                                 _geometry,
+                                                 allreduce->sndbuf,
+                                                 allreduce->rcvbuf,
+                                                 allreduce->stypecount,
+                                                 allreduce->dt,
+                                                 allreduce->op);
                     if(ptr == NULL)
                         {
                           return XMI_UNIMPL;
@@ -582,16 +630,24 @@ namespace XMI
                     XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep> *cinfo=
                        (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
 
-// todo:  add some compile time asserts - I added one to AlltoallFactory for XMI_CollectiveRequest_t
-
                     XMI_CollectiveRequest_t *req = (XMI_CollectiveRequest_t *)malloc(sizeof(XMI_CollectiveRequest_t));
                     XMI_assertf(req,"malloc failure\n");
-                    XMI_Callback_t cb_done_ccmi;
-		    cb_done_ccmi.function   = alltoallv->cb_done;
-                    cb_done_ccmi.clientdata = alltoallv->cookie;
+                    XMI_Callback_t cb_done;
+		    cb_done.function   = alltoallv->cb_done;
+                    cb_done.clientdata = alltoallv->cookie;
 
-		    cinfo->_alltoallv_registration.generate(req,
-                                                            cb_done_ccmi,
+                    reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();           
+                    XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
+                    
+                    robj->factory      = this;
+                    robj->user_done_fn = alltoallv->cb_done;
+                    robj->user_cookie  = alltoallv->cookie;
+
+                    cb_done.function   = client_done;
+                    cb_done.clientdata = robj;
+                    
+		    cinfo->_alltoallv_registration.generate(&robj->req[0],
+                                                            cb_done,
                                                             XMI_MATCH_CONSISTENCY,
                                                             _geometry,
                                                             alltoallv->sndbuf,
@@ -683,8 +739,10 @@ namespace XMI
       TSPColl::NBColl<MPIMcastModel>  *_bcast, *_bcast2;
       TSPColl::NBColl<MPIMcastModel>  *_sar,   *_lar;
       TSPColl::NBColl<MPIMcastModel>  *_sct,   *_sctv;
-      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep> *_ccmi_bar;
-      CCMI_Executor_t                           _barrier_executors[2];
+      CCMI_Executor_t                  _barrier_executors[2];
+      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>  *_ccmi_bar;
+      XMI::MemoryAllocator<sizeof(reqObj), 16> _reqAllocator;
+
     }; // class CollFactory
   };  // namespace CollFactory
 }; // namespace XMI
