@@ -193,7 +193,7 @@ int main(int argc, char*argv[])
 
 
   xmi_ambroadcast_t broadcast;
-  broadcast.xfer_type = XMI_XFER_BROADCAST;
+  broadcast.xfer_type = XMI_XFER_AMBROADCAST;
   broadcast.cb_done   = cb_broadcast;
   broadcast.cookie    = (void*)&_g_broadcast_active;
   broadcast.geometry  = world_geometry;

@@ -680,11 +680,16 @@ namespace XMI
         {
           XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep> *info =
             (XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep> *)_ambroadcasts[ambroadcast->algorithm];
+          
+          fprintf(stderr, "ambroadcast is currently not working (registration mechanism needs to be implemented)\n");
+          XMI_abort();
 
           switch (info->_colltype)
               {
                   case  XMI::CollInfo::CI_AMBROADCAST0:
                   {
+
+
                     CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
                       (CCMI::Adaptor::Broadcast::AsyncBinomialFactory *) &info->_bcast_registration;
                     if(ambroadcast->stypecount == 0)
@@ -694,9 +699,6 @@ namespace XMI
                           xmi_callback_t cb_done;
                           reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();
                           XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
-
-                          fprintf(stderr, "ambroadcast is currently not working (registration mechanism needs to be implemented\n");
-                          XMI_abort();
 
                           robj->factory      = this;
                           robj->user_done_fn = ambroadcast->cb_done;
