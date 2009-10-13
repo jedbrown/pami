@@ -361,7 +361,8 @@ int main(int argc, char*argv[])
 #endif
 
 #if 1
-  for(int nalg=0; nalg<allreducenum_algorithm; nalg++)
+  int nalg;
+  for(nalg=0; nalg<allreducenum_algorithm; nalg++)
       {
   if (rank == root)
       {

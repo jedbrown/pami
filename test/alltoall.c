@@ -47,7 +47,8 @@ size_t rdispls[ MAX_COMM_SIZE ];
 
 void init_bufs(size_t r)
 {
-  for ( size_t k = 0; k < sndlens[r]; k++ )
+  size_t k;
+  for ( k = 0; k < sndlens[r]; k++ )
     {
       sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
       rbuf[ rdispls[r] + k ] = 0xff;
@@ -57,8 +58,9 @@ void init_bufs(size_t r)
 
 void check_bufs(size_t sz, size_t myrank)
 {
-  for ( size_t r = 0; r < sz; r++ )
-    for ( size_t k = 0; k < rcvlens[r]; k++ )
+  size_t r, k;
+  for ( r = 0; r < sz; r++ )
+    for ( k = 0; k < rcvlens[r]; k++ )
       {
 	if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
 	  {

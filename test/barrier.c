@@ -141,7 +141,8 @@ int main (int argc, char ** argv)
         _barrier(context, &barrier);
 
         ti=timer();
-        for(int i=0; i<niter; i++)
+        int i;
+        for(i=0; i<niter; i++)
           _barrier(context, &barrier);
 
         tf=timer();
