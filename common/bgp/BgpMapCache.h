@@ -9,11 +9,11 @@
 #ifndef __xmi_components_mapping_bgp_bgpmapcache_h__
 #define __xmi_components_mapping_bgp_bgpmapcache_h__
 ///
-/// \file components/mapping/bgp/BgpMapCache.h
+/// \file common/bgp/BgpMapCache.h
 /// \brief Blue Gene/P Map- and Rank-Cache Object
 ///
 
-#include "components/sysdep/bgp/BgpPersonality.h"
+#include "common/bgp/BgpPersonality.h"
 
 /// \brief Creates valid index into _rankcache[].
 ///
@@ -25,7 +25,7 @@
 
 namespace XMI
 {
-  namespace Mapping
+  namespace SysDep
   {
     class BgpMapCache
     {
@@ -404,8 +404,8 @@ namespace XMI
 	xmi_coord_t _ll;
 	xmi_coord_t _ur;
 
-    }; // XMI::Mapping::BgpMapCache
-  };   // XMI::Mapping
+    }; // XMI::SysDep::BgpMapCache
+  };   // XMI::SysDep
 };     // XMI
 
 #endif //

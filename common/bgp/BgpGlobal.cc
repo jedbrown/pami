@@ -7,15 +7,15 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/sysdep/bgp/BgpGlobal.cc
+/// \file common/bgp/BgpGlobal.cc
 /// \brief Blue Gene/P Global Object implementation
 ///
 
 #include "config.h"
-#include "BgpGlobal.h"
-#include "components/topology/bgp/BgpTopology.h" // need to make static members...
+#include "Global.h"
+#include "Topology.h" // need to make static members...
 
-XMI::SysDep::BgpGlobal __global;
+XMI::SysDep::Global __global;
 
-XMI::Mapping::BgpMapping *XMI::Topology::BgpTopology::mapping = NULL;
-xmi_coord_t XMI::Topology::BgpTopology::my_coords;
+XMI::Mapping *XMI::Topology::mapping = NULL;
+xmi_coord_t XMI::Topology::my_coords;

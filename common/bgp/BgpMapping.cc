@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/mapping/bgp/BgpMapping.cc
+ * \file common/bgp/BgpMapping.cc
  * \brief ???
  */
 
