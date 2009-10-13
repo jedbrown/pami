@@ -24,11 +24,11 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class MPIModel : public Interface::MessageModel<MPIModel<T_Device, T_Message>, T_Device, T_Message>
+    class MPIModel : public Interface::MessageModel<MPIModel<T_Device, T_Message>, T_Device>
     {
     public:
       MPIModel (T_Device & device, xmi_context_t context) :
-        Interface::MessageModel < MPIModel<T_Device, T_Message>, T_Device, T_Message > (device,context),
+        Interface::MessageModel < MPIModel<T_Device, T_Message>, T_Device > (device,context),
         _device (device),
         _context(context)
         {};
@@ -37,11 +37,13 @@ namespace XMI
       static const bool   reliable_packet_model        = true;
       static const size_t packet_model_metadata_bytes  = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes   = T_Device::payload_size;
+      static const size_t packet_model_state_bytes     = sizeof(T_Message);
 
       static const bool   deterministic_message_model  = true;
       static const bool   reliable_message_model       = true;
       static const size_t message_model_metadata_bytes = T_Device::metadata_size;
       static const size_t message_model_payload_bytes  = T_Device::payload_size;
+      static const size_t message_model_state_bytes    = sizeof(T_Message);
 
       xmi_result_t init_impl (size_t                      dispatch,
                               Interface::RecvFunction_t   direct_recv_func,
@@ -54,7 +56,7 @@ namespace XMI
          return XMI_SUCCESS;
         };
 
-      inline bool postPacket_impl (T_Message          * obj,
+      inline bool postPacket_impl (uint8_t              state[MPIModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -64,7 +66,7 @@ namespace XMI
                                    size_t               bytes)
         {
           int rc;
-          MPIMessage * msg = (MPIMessage *)obj;
+          MPIMessage * msg = (MPIMessage *)state;
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket_impl %d \n",(int)this, this->_dispatch_id));
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
@@ -91,7 +93,7 @@ namespace XMI
           return true;
         };
 
-      inline bool postPacket_impl (T_Message          * obj,
+      inline bool postPacket_impl (uint8_t              state[MPIModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -105,7 +107,7 @@ namespace XMI
           int rc;
 //          void       * obj = malloc(sizeof(MPIMessage));
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate %d \n",(int)this, this->_dispatch_id));
-          MPIMessage * msg = (MPIMessage *)obj;
+          MPIMessage * msg = (MPIMessage *)state;
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
                              fn,
@@ -132,14 +134,14 @@ namespace XMI
           return true;
         };
 
-      inline bool postPacket_impl (T_Message        * obj,
+      inline bool postPacket_impl (uint8_t              state[MPIModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
-                                   size_t             target_rank,
-                                   void             * metadata,
-                                   size_t             metasize,
-                                   struct iovec_t   * iov,
-                                   size_t             niov)
+                                   size_t               target_rank,
+                                   void               * metadata,
+                                   size_t               metasize,
+                                   struct iovec_t     * iov,
+                                   size_t               niov)
         {
           assert(0);
           return false;
@@ -183,7 +185,7 @@ namespace XMI
         }
 
 
-      inline bool postMessage_impl (T_Message          * obj,
+      inline bool postMessage_impl (uint8_t              state[MPIModel::message_model_state_bytes],
                                     xmi_event_function   fn,
                                     void               * cookie,
                                     size_t               target_rank,

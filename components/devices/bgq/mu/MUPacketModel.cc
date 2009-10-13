@@ -20,7 +20,7 @@
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
 XMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device, xmi_context_t context) :
-    Interface::MessageModel<MUPacketModel, MUDevice, MUInjFifoMessage> (device, context),
+    Interface::MessageModel<MUPacketModel, MUDevice> (device, context),
     _device (device),
     _wrapper_model (&_desc_model),
     _context (context)

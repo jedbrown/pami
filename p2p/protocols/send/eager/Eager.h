@@ -38,15 +38,14 @@ namespace XMI
       ///
       /// \tparam T_Model   Template packet model class
       /// \tparam T_Device  Template packet device class
-      /// \tparam T_Message Template packet message class
       ///
       /// \see XMI::Device::Interface::PacketModel
       /// \see XMI::Device::Interface::PacketDevice
       ///
-      template <class T_Model, class T_Device, class T_Message>
+      template <class T_Model, class T_Device>
       class Eager : public XMI::Protocol::Send::Send,
-                    public EagerImmediate<T_Model,T_Device,T_Message>,
-                    public EagerSimple<T_Model,T_Device,T_Message>
+                    public EagerImmediate<T_Model,T_Device>,
+                    public EagerSimple<T_Model,T_Device>
       {
         public:
 
@@ -70,22 +69,22 @@ namespace XMI
                         size_t                     contextid,
                         xmi_result_t             & status) :
             XMI::Protocol::Send::Send (),
-            EagerImmediate<T_Model,T_Device,T_Message> (dispatch,
-                                                        dispatch_fn,
-                                                        cookie,
-                                                        device,
-                                                        origin_task,
-                                                        context,
-                                                        contextid,
-                                                        status),
-            EagerSimple<T_Model,T_Device,T_Message> (dispatch,
-                                                     dispatch_fn,
-                                                     cookie,
-                                                     device,
-                                                     origin_task,
-                                                     context,
-                                                     contextid,
-                                                     status)
+            EagerImmediate<T_Model,T_Device> (dispatch,
+                                              dispatch_fn,
+                                              cookie,
+                                              device,
+                                              origin_task,
+                                              context,
+                                              contextid,
+                                              status),
+            EagerSimple<T_Model,T_Device> (dispatch,
+                                           dispatch_fn,
+                                           cookie,
+                                           device,
+                                           origin_task,
+                                           context,
+                                           contextid,
+                                           status)
             {
             };
 

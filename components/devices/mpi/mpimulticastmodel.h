@@ -23,11 +23,11 @@ namespace XMI
     namespace Device
     {
         template <class T_Device, class T_Message>
-        class MPIMulticastModel : public Interface::MessageModel<MPIMulticastModel<T_Device, T_Message>,T_Device, T_Message>
+        class MPIMulticastModel : public Interface::MessageModel<MPIMulticastModel<T_Device, T_Message>,T_Device>
         {
         public:
             MPIMulticastModel (T_Device & device) :
-                Interface::MessageModel < MPIMulticastModel<T_Device, T_Message>, T_Device, T_Message > (device)
+                Interface::MessageModel < MPIMulticastModel<T_Device, T_Message>, T_Device > (device)
                 {};
             inline void setConnectionId_impl (unsigned conn)
                 {

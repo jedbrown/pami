@@ -58,7 +58,7 @@ namespace XMI
 
     //
     // >> Point-to-point protocol typedefs and dispatch registration.
-    typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice, ShmemMessage> EagerShmem;
+    typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
     // << Point-to-point protocol typedefs and dispatch registration.
     //
 

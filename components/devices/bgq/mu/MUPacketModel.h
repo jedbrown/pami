@@ -41,7 +41,7 @@ namespace XMI
   {
     namespace MU
     {
-      class MUPacketModel : public Interface::MessageModel<MUPacketModel, MUDevice, MUInjFifoMessage>
+      class MUPacketModel : public Interface::MessageModel<MUPacketModel, MUDevice>
       {
         public:
 
@@ -57,11 +57,13 @@ namespace XMI
           static const bool   reliable_packet_model        = true;
           static const size_t packet_model_metadata_bytes  = MUDevice::packet_metadata_size;
           static const size_t packet_model_payload_bytes   = MUDevice::payload_size;
+          static const size_t packet_model_state_bytes     = sizeof(MUInjFifoMessage);
 
           static const bool   deterministic_message_model  = true;
           static const bool   reliable_message_model       = true;
           static const size_t message_model_metadata_bytes = MUDevice::message_metadata_size;
           static const size_t message_model_payload_bytes  = MUDevice::payload_size;
+          static const size_t message_model_state_bytes    = sizeof(MUInjFifoMessage);
 
           /// \see XMI::Device::Interface::PacketModel::init
           xmi_result_t init_impl (size_t                      dispatch,
@@ -71,7 +73,7 @@ namespace XMI
                                   void                      * read_recv_func_parm);
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (MUInjFifoMessage   * obj,
+          inline bool postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
                                        size_t               target_rank,
@@ -81,7 +83,7 @@ namespace XMI
                                        size_t               bytes);
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (MUInjFifoMessage   * obj,
+          inline bool postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
                                        size_t               target_rank,
@@ -93,7 +95,7 @@ namespace XMI
                                        size_t               bytes1);
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (MUInjFifoMessage   * obj,
+          inline bool postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
                                        size_t               target_rank,
@@ -112,7 +114,7 @@ namespace XMI
                                                 size_t   bytes1);
 
           /// \see XMI::Device::Interface::MessageModel::postMessage
-          inline bool postMessage_impl (MUInjFifoMessage   * obj,
+          inline bool postMessage_impl (uint8_t              state[MUPacketModel::message_model_state_bytes],
                                         xmi_event_function   fn,
                                         void               * cookie,
                                         size_t               target_rank,
@@ -185,7 +187,7 @@ namespace XMI
         TRACE((stderr, "<< initializeDescriptor(%p, %zd, %p, %zd)\n", desc, target_rank, (void *)payloadPa, bytes));
       }
 
-      bool MUPacketModel::postPacket_impl (MUInjFifoMessage   * obj,
+      bool MUPacketModel::postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
                                            size_t               target_rank,
@@ -255,9 +257,7 @@ namespace XMI
         else
           {
             // Construct a message and post to the device to be processed later.
-            //xmi_callback_t cb;
-            //cb.function = fn;
-            //cb.clientdata = cookie;
+            MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
             new (obj) MUInjFifoMessage (fn, cookie, _context);
             obj->setSourceBuffer (payload, bytes);
 
@@ -284,7 +284,7 @@ namespace XMI
       };
 
 
-      bool MUPacketModel::postPacket_impl (MUInjFifoMessage   * obj,
+      bool MUPacketModel::postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
                                            size_t               target_rank,
@@ -358,9 +358,7 @@ namespace XMI
           {
             TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. after nextInjectionDescriptor(), no space in fifo\n"));
             // Construct a message and post to the device to be processed later.
-            //xmi_callback_t cb;
-            //cb.function = fn;
-            //cb.clientdata = cookie;
+            MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
             new (obj) MUInjFifoMessage (fn, cookie, _context);
             TRACE((stderr, "MUPacketModel::postPacket_impl(2) .. before setSourceBuffer\n"));
             obj->setSourceBuffer (payload0, bytes0, payload0, bytes0);
@@ -392,7 +390,7 @@ namespace XMI
         return true;
       };
 
-      bool MUPacketModel::postPacket_impl (MUInjFifoMessage   * obj,
+      bool MUPacketModel::postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
                                            size_t               target_rank,
@@ -470,7 +468,7 @@ namespace XMI
         return false;
       };
 
-      bool MUPacketModel::postMessage_impl (MUInjFifoMessage   * obj,
+      bool MUPacketModel::postMessage_impl (uint8_t              state[MUPacketModel::message_model_state_bytes],
                                             xmi_event_function   fn,
                                             void               * cookie,
                                             size_t               target_rank,
@@ -553,14 +551,12 @@ namespace XMI
                 else
 #endif
                   {
+                    MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
                     TRACE((stderr, "MUPacketModel::postMessage_impl() .. descriptor is not done, create message (%p) and add to send queue\n", obj));
                     // The descriptor is not done (or was not checked). Save state
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-                    //xmi_callback_t cb;
-                    //cb.function = fn;
-                    //cb.clientdata = cookie;
                     new (obj) MUInjFifoMessage (fn, cookie, _context, sequenceNum);
 
                     // Queue it.
@@ -571,9 +567,7 @@ namespace XMI
         else
           {
             // Construct a message and post to the device to be processed later.
-            //xmi_callback_t cb;
-            //cb.function = fn;
-            //cb.clientdata = cookie;
+            MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
             new (obj) MUInjFifoMessage (fn, cookie, _context);
             obj->setSourceBuffer (payload, bytes);
 

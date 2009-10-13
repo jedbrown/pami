@@ -35,7 +35,7 @@ namespace XMI
       /// \see Packet::Model
       /// \see Packet::Device
       ///
-      template <class T_Model, class T_Device, class T_Object>
+      template <class T_Model, class T_Device>
       class PacketModel
       {
         public:
@@ -127,6 +127,27 @@ namespace XMI
           static const size_t getPacketPayloadBytes ();
 
           ///
+          /// \brief Returns the transfer state bytes attribute of this model.
+          ///
+          /// Typically a packet device will require some amount of temporary
+          /// storage to be used during the transfer of the packet. This
+          /// attribute returns the number of bytes that must be provided to
+          /// the various packet post* methods.
+          ///
+          /// A packet model implementation may return zero as the number of
+          /// packet transfer state bytes required.
+          ///
+          /// \attention All packet model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t packet_model_state_bytes'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'packet_model_state_bytes' constant.
+          ///
+
+          static const size_t getPacketTransferStateBytes ();
+
+          ///
           /// \brief Base packet model initializer
           ///
           /// The packet device implementation will use the appropriate receive
@@ -184,7 +205,7 @@ namespace XMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          inline bool postPacket (T_Object           * obj,
+          inline bool postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -206,7 +227,7 @@ namespace XMI
           /// \param[in] payload1     Virtual address of the second source buffer
           /// \param[in] bytes1       Number of bytes to transfer from the second buffer
           ///
-          inline bool postPacket (T_Object           * obj,
+          inline bool postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -228,7 +249,7 @@ namespace XMI
           /// \param[in] payload      Virtual address of source buffer
           /// \param[in] bytes        Number of bytes to transfer
           ///
-          inline bool postPacket (T_Object           * obj,
+          inline bool postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -262,37 +283,42 @@ namespace XMI
                                            size_t   bytes1);
       };
 
-      template <class T_Model, class T_Device, class T_Object>
-      const bool PacketModel<T_Model, T_Device, T_Object>::isPacketDeterministic ()
+      template <class T_Model, class T_Device>
+      const bool PacketModel<T_Model, T_Device>::isPacketDeterministic ()
       {
         return T_Model::deterministic_packet_model;
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      const bool PacketModel<T_Model, T_Device, T_Object>::isPacketReliable ()
+      template <class T_Model, class T_Device>
+      const bool PacketModel<T_Model, T_Device>::isPacketReliable ()
       {
         return T_Model::reliable_packet_model;
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      const size_t PacketModel<T_Model, T_Device, T_Object>::getPacketMetadataBytes ()
+      template <class T_Model, class T_Device>
+      const size_t PacketModel<T_Model, T_Device>::getPacketMetadataBytes ()
       {
         return T_Model::packet_model_metadata_bytes;
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      const size_t PacketModel<T_Model, T_Device, T_Object>::getPacketPayloadBytes ()
+      template <class T_Model, class T_Device>
+      const size_t PacketModel<T_Model, T_Device>::getPacketPayloadBytes ()
       {
         return T_Model::packet_model_payload_bytes;
       }
 
+      template <class T_Model, class T_Device>
+      const size_t PacketModel<T_Model, T_Device>::getPacketTransferStateBytes ()
+      {
+        return T_Model::packet_model_state_bytes;
+      }
 
-      template <class T_Model, class T_Device, class T_Object>
-      xmi_result_t PacketModel<T_Model, T_Device, T_Object>::init (size_t           dispatch,
-                                                                   RecvFunction_t   direct_recv_func,
-                                                                   void           * direct_recv_func_parm,
-                                                                   RecvFunction_t   read_recv_func,
-                                                                   void           * read_recv_func_parm)
+      template <class T_Model, class T_Device>
+      xmi_result_t PacketModel<T_Model, T_Device>::init (size_t           dispatch,
+                                                         RecvFunction_t   direct_recv_func,
+                                                         void           * direct_recv_func_parm,
+                                                         RecvFunction_t   read_recv_func,
+                                                         void           * read_recv_func_parm)
       {
         return static_cast<T_Model*>(this)->init_impl (dispatch,
                                                        direct_recv_func,
@@ -301,60 +327,60 @@ namespace XMI
                                                        read_recv_func_parm);
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      inline bool PacketModel<T_Model, T_Device, T_Object>::postPacket (T_Object        * obj,
-                                                                        xmi_event_function   fn,
-                                                                        void               * cookie,
-                                                                        size_t            target_rank,
-                                                                        void            * metadata,
-                                                                        size_t            metasize,
-                                                                        void            * payload,
-                                                                        size_t            bytes)
+      template <class T_Model, class T_Device>
+      inline bool PacketModel<T_Model, T_Device>::postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
+                                                              xmi_event_function   fn,
+                                                              void               * cookie,
+                                                              size_t               target_rank,
+                                                              void               * metadata,
+                                                              size_t               metasize,
+                                                              void               * payload,
+                                                              size_t               bytes)
       {
-        return static_cast<T_Model*>(this)->postPacket_impl (obj, fn, cookie, target_rank,
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
                                                              metadata, metasize, payload, bytes);
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      inline bool PacketModel<T_Model, T_Device, T_Object>::postPacket (T_Object        * obj,
-                                                                        xmi_event_function   fn,
-                                                                        void               * cookie,
-                                                                        size_t            target_rank,
-                                                                        void            * metadata,
-                                                                        size_t            metasize,
-                                                                        void            * payload0,
-                                                                        size_t            bytes0,
-                                                                        void            * payload1,
-                                                                        size_t            bytes1)
+      template <class T_Model, class T_Device>
+      inline bool PacketModel<T_Model, T_Device>::postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
+                                                              xmi_event_function   fn,
+                                                              void               * cookie,
+                                                              size_t               target_rank,
+                                                              void               * metadata,
+                                                              size_t               metasize,
+                                                              void               * payload0,
+                                                              size_t               bytes0,
+                                                              void               * payload1,
+                                                              size_t               bytes1)
       {
-        return static_cast<T_Model*>(this)->postPacket_impl (obj, fn, cookie, target_rank,
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
                                                              metadata, metasize,
                                                              payload0, bytes0,
                                                              payload1, bytes1);
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      inline bool PacketModel<T_Model, T_Device, T_Object>::postPacket (T_Object        * obj,
-                                                                        xmi_event_function   fn,
-                                                                        void               * cookie,
-                                                                        size_t            target_rank,
-                                                                        void            * metadata,
-                                                                        size_t            metasize,
-                                                                        struct iovec    * iov,
-                                                                        size_t            niov)
+      template <class T_Model, class T_Device>
+      inline bool PacketModel<T_Model, T_Device>::postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
+                                                              xmi_event_function   fn,
+                                                              void               * cookie,
+                                                              size_t               target_rank,
+                                                              void               * metadata,
+                                                              size_t               metasize,
+                                                              struct iovec       * iov,
+                                                              size_t               niov)
       {
-        return static_cast<T_Model*>(this)->postPacket_impl (obj, fn, cookie, target_rank,
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
                                                              metadata, metasize, iov, niov);
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      inline bool PacketModel<T_Model, T_Device, T_Object>::postPacketImmediate (size_t   target_rank,
-                                                                                 void   * metadata,
-                                                                                 size_t   metasize,
-                                                                                 void   * payload0,
-                                                                                 size_t   bytes0,
-                                                                                 void   * payload1,
-                                                                                 size_t   bytes1)
+      template <class T_Model, class T_Device>
+      inline bool PacketModel<T_Model, T_Device>::postPacketImmediate (size_t   target_rank,
+                                                                       void   * metadata,
+                                                                       size_t   metasize,
+                                                                       void   * payload0,
+                                                                       size_t   bytes0,
+                                                                       void   * payload1,
+                                                                       size_t   bytes1)
       {
         return static_cast<T_Model*>(this)->postPacketImmediate_impl (target_rank,
                                                                       metadata, metasize,

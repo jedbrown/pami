@@ -27,15 +27,14 @@ namespace XMI
       /// \todo Need A LOT MORE documentation on this interface and its use
       /// \param T_Model   Message model template class
       /// \param T_Device  Message device template class
-      /// \param T_Object  Message object template class
       ///
-      template <class T_Model, class T_Device, class T_Object>
-      class MessageModel : public PacketModel<T_Model, T_Device, T_Object>
+      template <class T_Model, class T_Device>
+      class MessageModel : public PacketModel<T_Model, T_Device>
       {
         public:
           MessageModel (T_Device      & device,
                         xmi_context_t   context) :
-            PacketModel<T_Model, T_Device, T_Object> (device, context)
+            PacketModel<T_Model, T_Device> (device, context)
           {};
 
           ~MessageModel () {};
@@ -120,6 +119,8 @@ namespace XMI
           ///
           static const size_t getMessagePayloadBytes ();
 
+          static const size_t getMessageTransferStateBytes ();
+
           ///
           /// \brief Post a multiple packet contigous transfer operation
           ///
@@ -137,7 +138,7 @@ namespace XMI
           ///
           /// \see getMessageMetadataSize()
           ///
-          /// \param[in] obj          Location to store the transfer object
+          /// \param[in] state        Location to store the transfer object
           /// \param[in] fn           Event function to invoke when the operation completes
           /// \param[in] cookie       Opaque cookie data to pass as the cookie parameter of the event function.
           /// \param[in] target_rank  Global rank of the destination process
@@ -153,7 +154,7 @@ namespace XMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          inline bool postMessage (T_Object           * obj,
+          inline bool postMessage (uint8_t              state[T_Model::message_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -163,42 +164,48 @@ namespace XMI
                                    size_t               bytes);
       };
 
-      template <class T_Model, class T_Device, class T_Object>
-      const bool MessageModel<T_Model, T_Device, T_Object>::isMessageDeterministic ()
+      template <class T_Model, class T_Device>
+      const bool MessageModel<T_Model, T_Device>::isMessageDeterministic ()
       {
         return T_Model::deterministic_message_model;
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      const bool MessageModel<T_Model, T_Device, T_Object>::isMessageReliable ()
+      template <class T_Model, class T_Device>
+      const bool MessageModel<T_Model, T_Device>::isMessageReliable ()
       {
         return T_Model::reliable_message_model;
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      const size_t MessageModel<T_Model, T_Device, T_Object>::getMessageMetadataBytes ()
+      template <class T_Model, class T_Device>
+      const size_t MessageModel<T_Model, T_Device>::getMessageMetadataBytes ()
       {
         return T_Model::message_model_metadata_bytes;
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      const size_t MessageModel<T_Model, T_Device, T_Object>::getMessagePayloadBytes ()
+      template <class T_Model, class T_Device>
+      const size_t MessageModel<T_Model, T_Device>::getMessagePayloadBytes ()
       {
         return T_Model::message_model_payload_bytes;
       }
 
-      template <class T_Model, class T_Device, class T_Object>
-      inline bool MessageModel<T_Model, T_Device, T_Object>::postMessage (T_Object           * obj,
-                                                                          xmi_event_function   fn,
-                                                                          void               * cookie,
-                                                                          size_t               target_rank,
-                                                                          void               * metadata,
-                                                                          size_t               metasize,
-                                                                          void               * payload,
-                                                                          size_t               bytes)
+      template <class T_Model, class T_Device>
+      const size_t MessageModel<T_Model, T_Device>::getMessageTransferStateBytes ()
       {
-        return static_cast<T_Model*>(this)->postMessage_impl (obj, fn, cookie, target_rank,
-                                                             metadata, metasize, payload, bytes);
+        return T_Model::message_model_state_bytes;
+      }
+
+      template <class T_Model, class T_Device>
+      inline bool MessageModel<T_Model, T_Device>::postMessage (uint8_t              state[T_Model::message_model_state_bytes],
+                                                                xmi_event_function   fn,
+                                                                void               * cookie,
+                                                                size_t               target_rank,
+                                                                void               * metadata,
+                                                                size_t               metasize,
+                                                                void               * payload,
+                                                                size_t               bytes)
+      {
+        return static_cast<T_Model*>(this)->postMessage_impl (state, fn, cookie, target_rank,
+                                                              metadata, metasize, payload, bytes);
       }
     };
   };

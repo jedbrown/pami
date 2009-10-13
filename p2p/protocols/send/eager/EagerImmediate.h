@@ -38,15 +38,16 @@ namespace XMI
       ///
       /// \tparam T_Model   Template packet model class
       /// \tparam T_Device  Template packet device class
-      /// \tparam T_Message Template packet message class
       ///
       /// \see XMI::Device::Interface::PacketModel
       /// \see XMI::Device::Interface::PacketDevice
       ///
-      template <class T_Model, class T_Device, class T_Message>
+      template <class T_Model, class T_Device>
       class EagerImmediate
       {
         protected:
+
+          typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
           ///
           /// \brief Sender-side state structure for immediate sends.
@@ -59,11 +60,10 @@ namespace XMI
           ///
           typedef struct send
           {
-            uint8_t                     data[T_Model::packet_model_payload_bytes]; ///< Packed data
-            T_Message                   msg; ///< Device message state object
+            uint8_t                    data[T_Model::packet_model_payload_bytes]; ///< Packed data
+            pkt_t                      pkt;
             EagerImmediate<T_Model,
-                           T_Device,
-                           T_Message> * pf;  ///< Eager immediate protocol
+                           T_Device> * pf;  ///< Eager immediate protocol
           } send_t;
 
           ///
@@ -154,7 +154,7 @@ namespace XMI
               memcpy (&(send->data[0]), msginfo, mbytes);
               memcpy (&(send->data[mbytes]), src, bytes);
 
-              _send_model.postPacket (&(send->msg),
+              _send_model.postPacket (send->pkt,
                                       send_complete,
                                       send,
                                       peer,
@@ -213,8 +213,8 @@ namespace XMI
 
             TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->fromRank = %d, m->databytes = %d, m->metabytes = %d\n", m->fromRank, m->databytes, m->metabytes));
 
-            EagerImmediate<T_Model, T_Device, T_Message> * send =
-              (EagerImmediate<T_Model, T_Device, T_Message> *) recv_func_parm;
+            EagerImmediate<T_Model, T_Device> * send =
+              (EagerImmediate<T_Model, T_Device> *) recv_func_parm;
 
             uint8_t * data = (uint8_t *)payload;
             xmi_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
@@ -266,8 +266,8 @@ namespace XMI
           {
             TRACE_ERR((stderr, ">> EagerImmediate::dispatch_send_read()\n"));
 
-            EagerImmediate<T_Model, T_Device, T_Message> * pf =
-              (EagerImmediate<T_Model, T_Device, T_Message> *) recv_func_parm;
+            EagerImmediate<T_Model, T_Device> * pf =
+              (EagerImmediate<T_Model, T_Device> *) recv_func_parm;
 
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
@@ -296,8 +296,8 @@ namespace XMI
             TRACE_ERR((stderr, "EagerImmediate::send_complete() >> \n"));
             send_t * state = (send_t *) cookie;
 
-            EagerImmediate<T_Model, T_Device, T_Message> * pf =
-              (EagerImmediate<T_Model, T_Device, T_Message> *) state->pf;
+            EagerImmediate<T_Model, T_Device> * pf =
+              (EagerImmediate<T_Model, T_Device> *) state->pf;
 
             pf->freeSendState (state);
 

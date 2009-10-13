@@ -35,7 +35,7 @@ namespace XMI
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
     typedef CollFactory::MPI<MPIDevice, SysDep::MPISysDep> MPICollfactory;
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep::MPISysDep> MPICollreg;
-    typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice,MPIMessage> EagerMPI;
+    typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice> EagerMPI;
 
 
 
