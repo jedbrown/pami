@@ -25,8 +25,6 @@
 
 namespace XMI
 {
-  namespace SysDep
-  {
     class BgpMapCache
     {
       public:
@@ -35,7 +33,7 @@ namespace XMI
 
         inline ~BgpMapCache () {};
 
-        inline size_t init (SysDep::BgpPersonality & personality,
+        inline size_t init (BgpPersonality & personality,
                             void                   * ptr,
                             size_t                   bytes
                             )
@@ -404,8 +402,7 @@ namespace XMI
 	xmi_coord_t _ll;
 	xmi_coord_t _ur;
 
-    }; // XMI::SysDep::BgpMapCache
-  };   // XMI::SysDep
-};     // XMI
+    }; // class BgpMapCache
+};     // namespace XMI
 
-#endif //
+#endif // __xmi_components_mapping_bgp_bgpmapcache_h__

@@ -15,34 +15,32 @@
 #define __components_mapping_lapi_lapimapping_h__
 
 #include "sys/xmi.h"
-#include "components/mapping/BaseMapping.h"
-#include "components/mapping/TorusMapping.h"
-#include "components/mapping/NodeMapping.h"
+#include "common/BaseMapping.h"
+#include "common/TorusMapping.h"
+#include "common/NodeMapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include <lapi.h>
 
-#define XMI_MAPPING_CLASS XMI::Mapping::LAPIMapping
+#define XMI_MAPPING_CLASS XMI::Mapping
 
 namespace XMI
 {
-  namespace Mapping
-  {
 #define LAPI_DIMS 1
-    class LAPIMapping : public Interface::Base<LAPIMapping, XMI::Memory::HeapMemoryManager>,
-                       public Interface::Torus<LAPIMapping, LAPI_DIMS>,
-                       public Interface::Node<LAPIMapping, LAPI_DIMS>
+    class Mapping : public Interface::Mapping::Base<Mapping, XMI::Memory::HeapMemoryManager>,
+                       public Interface::Mapping::Torus<Mapping, LAPI_DIMS>,
+                       public Interface::Mapping::Node<Mapping, LAPI_DIMS>
     {
 
     public:
-      inline LAPIMapping () :
-        Interface::Base<LAPIMapping,XMI::Memory::HeapMemoryManager >(),
-        Interface::Torus<LAPIMapping, LAPI_DIMS>(),
-        Interface::Node<LAPIMapping, LAPI_DIMS>()
+      inline Mapping () : 
+        Interface::Mapping::Base<Mapping,XMI::Memory::HeapMemoryManager >(),
+        Interface::Mapping::Torus<Mapping, LAPI_DIMS>(),
+        Interface::Mapping::Node<Mapping, LAPI_DIMS>()
         {
 //          LAPI_Comm_rank(LAPI_COMM_WORLD, (int*)&_task);
 //          LAPI_Comm_size(LAPI_COMM_WORLD, (int*)&_size);
         };
-      inline ~LAPIMapping () {};
+      inline ~Mapping () {};
     protected:
       size_t    _task;
       size_t    _size;
@@ -81,22 +79,22 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-      inline void nodeAddr_impl (Interface::nodeaddr_t & address)
+      inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
         {
           assert(0);
         }
-      inline xmi_result_t task2node_impl (size_t task, Interface::nodeaddr_t & address)
+      inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
         {
           address.global=task;
           address.local =0;
           return XMI_SUCCESS;
         }
-      inline xmi_result_t node2task_impl (Interface::nodeaddr_t & address, size_t & task)
+      inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
         {
           task = address.global;
           return XMI_SUCCESS;
         }
-      inline xmi_result_t node2peer_impl (Interface::nodeaddr_t & address, size_t & peer)
+      inline xmi_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
         {
           assert(0);
           return XMI_UNIMPL;
@@ -126,7 +124,6 @@ namespace XMI
         {
           return LAPI_DIMS;
         }
-    };
-  };
-};
+    }; // class Mapping
+};	// namespace XMI
 #endif // __components_mapping_lapi_lapimapping_h__

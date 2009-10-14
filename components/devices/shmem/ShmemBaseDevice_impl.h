@@ -9,7 +9,7 @@
  * \brief ???
  */
 
-#include "components/mapping/NodeMapping.h"
+#include "SysDep.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -34,7 +34,7 @@ namespace XMI
 
 
       //size_t global;
-      XMI::Mapping::Interface::nodeaddr_t nodeaddr;
+      XMI::Interface::Mapping::nodeaddr_t nodeaddr;
       _sysdep->mapping.nodeAddr (nodeaddr);
       _global_task = nodeaddr.global;
       _local_task  = nodeaddr.local;
@@ -111,7 +111,7 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::task2peer_impl (size_t task)
     {
-      XMI::Mapping::Interface::nodeaddr_t address;
+      XMI::Interface::Mapping::nodeaddr_t address;
       _sysdep->mapping.task2node (task, address);
 
       size_t peer = 0;

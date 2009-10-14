@@ -20,8 +20,7 @@
 #define ENABLE_LOCKBOX
 
 // These must be defined early
-#define NUM_CORES 4
-#define NUM_SMT 1
+#include "Platform.h"
 
 #include "Topology.h"
 #include "Mapping.h"

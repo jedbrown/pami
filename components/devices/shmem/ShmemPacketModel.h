@@ -89,7 +89,7 @@ namespace XMI
                                      size_t               bytes)
         {
           size_t peer, sequence;
-          XMI::Mapping::Interface::nodeaddr_t addr;
+          XMI::Interface::Mapping::nodeaddr_t addr;
           TRACE_ERR((stderr, ">> ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd\n", target_rank));
           _device._sysdep->mapping.task2node (target_rank, addr);
           TRACE_ERR((stderr, "  ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
@@ -127,7 +127,7 @@ namespace XMI
                                      size_t               bytes1)
         {
           size_t peer, sequence;
-          XMI::Mapping::Interface::nodeaddr_t addr;
+          XMI::Interface::Mapping::nodeaddr_t addr;
           _device._sysdep->mapping.task2node (target_rank, addr);
           _device._sysdep->mapping.node2peer (addr, peer);
 
@@ -162,7 +162,7 @@ namespace XMI
                                      size_t               niov)
         {
           size_t peer, sequence;
-          XMI::Mapping::Interface::nodeaddr_t addr;
+          XMI::Interface::Mapping::nodeaddr_t addr;
           _device._sysdep->mapping.task2node (target_rank, addr);
           _device._sysdep->mapping.node2peer (addr, peer);
 
@@ -192,7 +192,7 @@ namespace XMI
                                               size_t   bytes1)
         {
           size_t peer = 0, sequence;
-          XMI::Mapping::Interface::nodeaddr_t addr;
+          XMI::Interface::Mapping::nodeaddr_t addr;
           TRACE_ERR((stderr, ">> ShmemPacketModel::postPacketImmediate_impl(1) .. target_rank = %zd\n", target_rank));
           _device._sysdep->mapping.task2node (target_rank, addr);
           TRACE_ERR((stderr, "   ShmemPacketModel::postPacketImmediate_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
@@ -219,7 +219,7 @@ namespace XMI
           TRACE_ERR((stderr, ">> ShmemPacketModel::postMessage_impl() .. target_rank = %zd\n", target_rank));
           size_t sequence;
 
-          XMI::Mapping::Interface::nodeaddr_t address;
+          XMI::Interface::Mapping::nodeaddr_t address;
           _device._sysdep->mapping.task2node (target_rank, address);
           TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. target_rank = %zd -> {%zd, %zd}\n", target_rank, address.global, address.local));
 

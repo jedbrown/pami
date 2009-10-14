@@ -17,9 +17,9 @@
 
 namespace XMI
 {
-  namespace Mapping
+  namespace Interface
   {
-    namespace Interface
+    namespace Mapping
     {
       ///
       /// \param T_Mapping Torus mapping template class
@@ -248,7 +248,7 @@ namespace XMI
           template <int T_Dimension>
           inline xmi_result_t torus2task_impl (size_t (&addr)[T_Dimension], size_t & task) const;
 #endif
-      };
+      }; // class Torus
 #if 0
       template <class T_Mapping, unsigned T_Dimensions>
       template <int T_Dimension>
@@ -345,7 +345,7 @@ namespace XMI
         return 0;
       }
 #endif
-    };
-  };
-};
+  };	// namespace Mapping
+};	// namespace Interface
+};	// namespace XMI
 #endif // __components_mapping_torusmapping_h__

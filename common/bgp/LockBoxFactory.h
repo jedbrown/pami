@@ -82,7 +82,7 @@ namespace BGP {
 			//
 			int shift = (ncores == 4 ? 2 : (ncores == 2 ? 1 : 0));
 			_factory.coreShift = shift;
-			XMI::Mapping::Interface::nodeaddr_t n;
+			XMI::Interface::Mapping::nodeaddr_t n;
 			mapping->nodeAddr(n);
 			for (i = 0; i < t; ++i) {
 				size_t r;

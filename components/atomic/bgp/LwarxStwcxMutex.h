@@ -19,7 +19,7 @@
  *
  *
  */
-#include "components/sysdep/SysDep.h"
+#include "SysDep.h"
 #include "components/atomic/Mutex.h"
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>

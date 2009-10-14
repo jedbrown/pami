@@ -12,7 +12,7 @@
 
 namespace XMI
 {
-    namespace Topology
+    namespace Interface
     {
         template <class T_Topology>
         class Topology
@@ -267,7 +267,7 @@ namespace XMI
             /// \param[in] other	The other topology
             ///
             inline void subtractTopology(T_Topology *_new, T_Topology *other);
-        }; // end XMI::Topology::Topology
+        }; // end class XMI::Interface::Topology
 
         template <class T_Topology>
 	unsigned Topology<T_Topology>::size_of()
@@ -421,7 +421,7 @@ namespace XMI
         {
             return static_cast<T_Topology*>(this)->subtractTopology_impl(_new, other);
         }
-    }; // end namespace Topology
+    }; // end namespace Interface
 }; // end namespace XMI
 
 #endif // __xmi_topology_h__

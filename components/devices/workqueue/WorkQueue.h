@@ -14,6 +14,8 @@
 #ifndef __components_devices_workqueue_workqueue_h__
 #define __components_devices_workqueue_workqueue_h__
 
+#include "SysDep.h"
+#include "PipeWorkQueue.h"
 #include "math/math_coremath.h"
 #include "sys/xmi.h"
 #include "util/common.h"

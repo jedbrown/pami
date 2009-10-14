@@ -15,7 +15,7 @@
 #define __xmi_atomic_noop_noop_h__
 
 #include "components/atomic/Counter.h"
-#include "components/sysdep/SysDep.h"
+#include "SysDep.h"
 
 namespace XMI
 {
@@ -24,17 +24,17 @@ namespace XMI
     ///
     /// \brief CRTP interface for "noop" atomic objects.
     ///
-    class Noop : public Interface::Counter <XMI::SysDep::NullSysDep, Noop>
+    class Noop : public Interface::Counter <XMI::Interface::NullSysDep, Noop>
     {
       public:
         Noop () :
-            Interface::Counter <XMI::SysDep::NullSysDep, Noop> ()
+            Interface::Counter <XMI::Interface::NullSysDep, Noop> ()
         {};
 
         ~Noop () {};
 
         /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::SysDep::NullSysDep *sd)
+        void init_impl (XMI::Interface::NullSysDep *sd)
         {
           return;
         };

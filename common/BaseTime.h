@@ -21,8 +21,6 @@
 
 namespace XMI
 {
-  namespace Time
-  {
     namespace Interface
     {
       ///
@@ -61,7 +59,7 @@ namespace XMI
           /// \brief Returns an elapsed time on the calling processor.
           ///
           double time ();
-      };
+      }; // class BaseTime
 
       template <class T>
       inline xmi_result_t BaseTime<T>::init ()
@@ -92,7 +90,6 @@ namespace XMI
       {
         return static_cast<T*>(this)->time_impl ();
       }
-    };
-  };
-};
+    };	// namespace Interface
+};	// namespace XMI
 #endif // __components_time_time_h__

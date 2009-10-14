@@ -28,11 +28,11 @@
 namespace XMI
 {
     typedef Device::LAPIMessage LAPIMessage;
-    typedef Device::LAPIDevice<SysDep::LAPISysDep> LAPIDevice;
+    typedef Device::LAPIDevice<SysDep> LAPIDevice;
     typedef Device::LAPIModel<LAPIDevice,LAPIMessage> LAPIModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> LAPIGeometry;
-    typedef CollFactory::LAPI<LAPIDevice, SysDep::LAPISysDep> LAPICollfactory;
-    typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep::LAPISysDep> LAPICollreg;
+    typedef CollFactory::LAPI<LAPIDevice, SysDep> LAPICollfactory;
+    typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep> LAPICollreg;
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
 
     class Context : public Interface::Context<XMI::Context>

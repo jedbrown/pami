@@ -15,7 +15,7 @@
 #define __components_devices_workqueue_sharedworkqueue_h__
 
 #include "components/devices/workqueue/WorkQueue.h"
-#include "components/sysdep/SysDep.h"
+#include "SysDep.h"
 
 #warning This platform-specific code needs to move somewhere else.
 #if defined(__bgp__) and !defined(__bgq__)

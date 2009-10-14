@@ -569,6 +569,7 @@ namespace XMI {
 		/// \return	Nth rank or (size_t)-1 if does not exist
 		///
 		size_t index2Rank_impl(size_t ix) {
+			size_t rank = 0;
 			if (ix < __size) switch (__type) {
 			case XMI_SINGLE_TOPOLOGY:
 				return topo_rank;
@@ -584,7 +585,6 @@ namespace XMI {
 				// assume last dim is least-significant
 				xmi_coord_t c0;
 				xmi_result_t rc;
-				size_t rank;
 				c0 = topo_llcoord;
 				unsigned x;
 				for (x = mapping->torusDims(); x > 0 && ix > 0;) {
@@ -891,7 +891,7 @@ namespace XMI {
 				return false;
 			} else {
 				// the hard way...
-				size_t rank;
+				size_t rank = 0;
 				rc = COORDS2RANK(c0, &rank);
 				return isRankMember(rank);
 			}
@@ -968,9 +968,10 @@ namespace XMI {
 			} else if (__type == XMI_COORD_TOPOLOGY) {
 				// the hard way...
 				xmi_coord_t c0;
-				size_t rank;
+				size_t rank = 0;
 				unsigned x;
 				// c0 = llcorner;
+				c0.network = XMI_N_TORUS_NETWORK;
 				for (x = 0; x < mapping->torusDims(); ++x) {
 					c0.net_coord(x) = topo_lldim(x);
 				}
@@ -1010,7 +1011,7 @@ namespace XMI {
 					// it might not always be desirable to
 					// convert a coord to single rank...
 					// maybe shouldn't at all...
-					size_t rank;
+					size_t rank = 0;
 					COORDS2RANK(&topo_llcoord, &rank);
 					__type = XMI_SINGLE_TOPOLOGY;
 					topo_rank = rank;
@@ -1045,7 +1046,7 @@ namespace XMI {
 		bool convertTopology_impl(xmi_topology_type_t new_type) {
 			xmi_result_t rc;
 			xmi_coord_t c0;
-			size_t rank;
+			size_t rank = 0;
 			size_t *rl, *rp;
 			size_t min, max;
 			switch (__type) {

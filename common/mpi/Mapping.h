@@ -26,16 +26,16 @@
 namespace XMI
 {
 #define MPI_DIMS 1
-    class Mapping : public Interface::Base<Mapping, XMI::Memory::HeapMemoryManager>,
-                       public Interface::Torus<Mapping, MPI_DIMS>,
-                       public Interface::Node<Mapping, MPI_DIMS>
+    class Mapping : public Interface::Mapping::Base<Mapping, XMI::Memory::HeapMemoryManager>,
+                       public Interface::Mapping::Torus<Mapping, MPI_DIMS>,
+                       public Interface::Mapping::Node<Mapping, MPI_DIMS>
     {
 
     public:
       inline Mapping () :
-        Interface::Base<Mapping,XMI::Memory::HeapMemoryManager >(),
-        Interface::Torus<Mapping, MPI_DIMS>(),
-        Interface::Node<Mapping, MPI_DIMS>()
+        Interface::Mapping::Base<Mapping,XMI::Memory::HeapMemoryManager >(),
+        Interface::Mapping::Torus<Mapping, MPI_DIMS>(),
+        Interface::Mapping::Node<Mapping, MPI_DIMS>()
         {
           MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
           MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
@@ -79,22 +79,22 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-      inline void nodeAddr_impl (Interface::nodeaddr_t & address)
+      inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
         {
           assert(0);
         }
-      inline xmi_result_t task2node_impl (size_t task, Interface::nodeaddr_t & address)
+      inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
         {
           address.global=task;
           address.local =0;
           return XMI_SUCCESS;
         }
-      inline xmi_result_t node2task_impl (Interface::nodeaddr_t & address, size_t & task)
+      inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
         {
           task = address.global;
           return XMI_SUCCESS;
         }
-      inline xmi_result_t node2peer_impl (Interface::nodeaddr_t & address, size_t & peer)
+      inline xmi_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
         {
           assert(0);
           return XMI_UNIMPL;
@@ -124,7 +124,6 @@ namespace XMI
         {
           return MPI_DIMS;
         }
-    };
-  };
-};
+    }; // class Mapping
+};	// namespace XMI
 #endif // __components_mapping_mpi_mpimapping_h__

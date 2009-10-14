@@ -16,7 +16,7 @@
 
 namespace XMI
 {
-  namespace Context
+  namespace Interface
   {
     template <class T_Context>
     class Context
@@ -138,7 +138,7 @@ namespace XMI
                                       xmi_send_hint_t            options);
 
 
-    }; // end XMI::Context::Context
+    }; // end class XMI::Context::Context
 
     template <class T_Context>
     xmi_client_t Context<T_Context>::getClient ()
@@ -444,7 +444,7 @@ namespace XMI
     {
         return static_cast<T_Context*>(this)->dispatch_impl(dispatch,fn,cookie,options);
     }
-  }; // end namespace Context
+  }; // end namespace Interface
 }; // end namespace XMI
 
 #endif // __components_context_context_h__

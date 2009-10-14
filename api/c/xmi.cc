@@ -4,6 +4,9 @@
  */
 
 #include "config.h"
+#include "SysDep.h"
+#include "Client.h"
+#include "Context.h"
 #include "sys/xmi.h"
 
 ////////////////////////////////////////////////////////////////////////////////

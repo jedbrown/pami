@@ -17,9 +17,9 @@
 
 namespace XMI
 {
-  namespace Mapping
+  namespace Interface
   {
-    namespace Interface
+    namespace Mapping
     {
       ///
       /// \param T_Mapping Base mapping template class
@@ -55,7 +55,7 @@ namespace XMI
                                            xmi_coord_t * addr,
                                            xmi_network          type);
 	  inline size_t globalDims();
-      };
+      };	// class Base
 
 
       template <class T_Mapping, class T_Memory>
@@ -97,7 +97,7 @@ namespace XMI
       {
         return static_cast<T_Mapping*>(this)->globalDims_impl ();
       }
-    };
-  };
-};
+    };	// namespace Mapping
+  };	// namespace Interface
+};	// namespace XMI
 #endif // __components_mapping_basemapping_h__

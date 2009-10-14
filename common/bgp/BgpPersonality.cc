@@ -13,7 +13,7 @@
 
 #include "BgpPersonality.h"
 
-XMI::SysDep::BgpPersonality::BgpPersonality ()
+XMI::BgpPersonality::BgpPersonality ()
 {
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
   int err = Kernel_GetPersonality(p, sizeof(_BGP_Personality_t));
@@ -68,7 +68,7 @@ XMI::SysDep::BgpPersonality::BgpPersonality ()
   _isHTCmode = (p->Kernel_Config.NodeConfig & _BGP_PERS_ENABLE_HighThroughput);
 };
 
-void XMI::SysDep::BgpPersonality::location (char location[], size_t size)
+void XMI::BgpPersonality::location (char location[], size_t size)
 {
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
   char tmp[BGPPERSONALITY_MAX_LOCATION+1];
@@ -79,7 +79,7 @@ void XMI::SysDep::BgpPersonality::location (char location[], size_t size)
   return;
 };
 
-void XMI::SysDep::BgpPersonality::dumpPersonality ()
+void XMI::BgpPersonality::dumpPersonality ()
 {
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
   int i, tmp;

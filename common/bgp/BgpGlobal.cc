@@ -15,7 +15,7 @@
 #include "Global.h"
 #include "Topology.h" // need to make static members...
 
-XMI::SysDep::Global __global;
+XMI::Global __global;
 
 XMI::Mapping *XMI::Topology::mapping = NULL;
 xmi_coord_t XMI::Topology::my_coords;

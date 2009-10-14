@@ -15,7 +15,7 @@
 #define   __xmi_lapicollfactory__h__
 
 
-#define XMI_COLLFACTORY_CLASS XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep::LAPISysDep>, SysDep::LAPISysDep >
+#define XMI_COLLFACTORY_CLASS XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep>, SysDep>
 
 #include "sys/xmi.h"
 #include "components/geometry/CollFactory.h"
@@ -29,7 +29,7 @@ namespace XMI
   {
 
     template <class T_Device, class T_Sysdep>
-    class LAPI : public CollFactory<XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep::LAPISysDep>, SysDep::LAPISysDep> >
+    class LAPI : public CollFactory<XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep>, SysDep> >
     {
     public:
       inline LAPI(T_Sysdep *sd):

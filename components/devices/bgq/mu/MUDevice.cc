@@ -25,7 +25,7 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 
 XMI::Device::MU::MUDevice::MUDevice () :
   //BaseDevice (),
-  Interface::BaseDevice<MUDevice,SysDep::BgqSysDep> (),
+  Interface::BaseDevice<MUDevice,SysDep> (),
   Interface::MessageDevice<MUDevice> (),
   sysdep (NULL),
   _colChannel (NULL),
@@ -37,7 +37,7 @@ XMI::Device::MU::MUDevice::MUDevice () :
 
 XMI::Device::MU::MUDevice::~MUDevice() {};
 
-int XMI::Device::MU::MUDevice::init_impl (SysDep::BgqSysDep * sysdep)
+int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
 {
   int rc = 0;
 

@@ -19,6 +19,8 @@
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "spi/bgp_SPI.h"
 
+extern "C" size_t _g_num_active_nodes;
+
 namespace XMI {
 namespace Device {
 namespace BGP {

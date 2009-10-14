@@ -18,8 +18,7 @@
 #include "common/SysDep.h"
 
 // These must be defined early
-#define NUM_CORES 16
-#define NUM_SMT 4
+#include "Platform.h"
 
 #include "Mapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"

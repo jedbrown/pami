@@ -13,6 +13,7 @@
 // used by the sub-devices. See GenericDevice.h for interfaces
 // used by messaging (advance).
 
+#include "SysDep.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"

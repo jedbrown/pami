@@ -9,7 +9,7 @@
 #ifndef __components_devices_bgp_gibarriermsg_h__
 #define __components_devices_bgp_gibarriermsg_h__
 
-#include "components/sysdep/SysDep.h"
+#include "SysDep.h"
 #include "util/common.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/generic/Device.h"

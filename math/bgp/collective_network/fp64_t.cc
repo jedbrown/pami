@@ -19,7 +19,7 @@
 #include "math/FloatUtil.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 
-extern "C" int _g_num_active_nodes;
+extern "C" size_t _g_num_active_nodes;
 
 /*
  * u2 = firstword - u2

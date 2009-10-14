@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "Platform.h"
 #include "util/common.h"
 #include "common/bgp/BgpPersonality.h"
 #include "common/bgp/BgpMapCache.h"
@@ -175,8 +176,8 @@ namespace XMI
         BgpMapCache   _mapcache;
         void                 * _memptr;
         size_t                 _memsize;
-  };   // XMI::Global
-};     // XMI
+  };   // class Global
+};     // namespace XMI
 
 extern XMI::Global __global;
 

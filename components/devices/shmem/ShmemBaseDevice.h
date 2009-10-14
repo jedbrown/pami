@@ -16,7 +16,7 @@
 
 #include "sys/xmi.h"
 
-#include "components/sysdep/SysDep.h"
+#include "SysDep.h"
 #include "util/queue/Queue.h"
 
 #include "components/devices/PacketDevice.h"

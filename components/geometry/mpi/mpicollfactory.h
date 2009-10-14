@@ -15,7 +15,7 @@
 #define   __xmi_mpicollfactory__h__
 
 
-#define XMI_COLLFACTORY_CLASS XMI::CollFactory::MPI<Device::MPIDevice<SysDep::MPISysDep>, SysDep::MPISysDep >
+#define XMI_COLLFACTORY_CLASS XMI::CollFactory::MPI<Device::MPIDevice<SysDep>, SysDep>
 
 #include "sys/xmi.h"
 #include "components/geometry/CollFactory.h"
@@ -29,7 +29,7 @@ namespace XMI
   {
 
     template <class T_Device, class T_Sysdep>
-    class MPI : public CollFactory<XMI::CollFactory::MPI<Device::MPIDevice<SysDep::MPISysDep>, SysDep::MPISysDep> >
+    class MPI : public CollFactory<XMI::CollFactory::MPI<Device::MPIDevice<SysDep>, SysDep> >
     {
     public:
       inline MPI(T_Sysdep *sd):

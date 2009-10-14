@@ -14,6 +14,7 @@
 #ifndef __components_devices_workqueue_wqringreducemsg_h__
 #define __components_devices_workqueue_wqringreducemsg_h__
 
+#include "PipeWorkQueue.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"

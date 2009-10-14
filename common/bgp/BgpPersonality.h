@@ -37,8 +37,6 @@
 
 namespace XMI
 {
-  namespace SysDep
-  {
     class BgpPersonality : public _BGP_Personality_t
     {
       public:
@@ -224,8 +222,7 @@ namespace XMI
         //int      _treeaddr;
         bool     _isHTCmode;
         //bool     _hasGI;
-    };
-  };
-};
+    };	// class BgpPersonality
+};	// namespace XMI
 
 #endif // __xmi_components_sysdep_bgp_bgppersonnality_h__

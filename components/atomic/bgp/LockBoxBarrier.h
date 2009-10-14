@@ -18,7 +18,7 @@
  * granularity barriers is added here, in a way that makes the
  * barrier code common for all granularities.
  */
-#include "components/sysdep/bgp/LockBoxFactory.h"
+#include "common/bgp/LockBoxFactory.h"
 #include "components/atomic/Barrier.h"
 #include <spi/bgp_SPI.h>
 

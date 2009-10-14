@@ -18,7 +18,7 @@
 
 namespace XMI
 {
-  namespace Client
+  namespace Interface
   {
     template <class T_Client, class T_Context>
     class Client : public QueueElem
@@ -78,7 +78,7 @@ namespace XMI
       return static_cast<T_Client*>(this)->destroyContext_impl(context);
     }
 
-  }; // end namespace Client
+  }; // end namespace Interface
 }; // end namespace XMI
 
 

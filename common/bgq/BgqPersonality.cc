@@ -115,7 +115,7 @@ XMI::BgqPersonality::BgqPersonality ()
 #endif
 };
 
-void XMI::SysDep::BgqPersonality::location (char location[], size_t size)
+void XMI::BgqPersonality::location (char location[], size_t size)
 {
 #if 0
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
@@ -128,7 +128,7 @@ void XMI::SysDep::BgqPersonality::location (char location[], size_t size)
 #endif
 };
 
-void XMI::SysDep::BgqPersonality::dumpPersonality ()
+void XMI::BgqPersonality::dumpPersonality ()
 {
 #if 0
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;

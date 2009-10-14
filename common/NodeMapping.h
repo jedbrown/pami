@@ -17,9 +17,9 @@
 
 namespace XMI
 {
-  namespace Mapping
+  namespace Interface
   {
-    namespace Interface
+    namespace Mapping
     {
       ///
       /// \brief Task node address structure
@@ -95,7 +95,7 @@ namespace XMI
           /// \param[out] peer    peer identifier
           ///
           inline xmi_result_t node2peer (nodeaddr_t & address, size_t & peer);
-      };
+      };	// class Node
 
       template <class T_Mapping, unsigned T_Dimensions>
       inline xmi_result_t Node<T_Mapping,T_Dimensions>::nodeTasks (size_t global, size_t & tasks)
@@ -138,7 +138,7 @@ namespace XMI
       {
         return static_cast<T_Mapping*>(this)->node2peer_impl (address, peer);
       }
-    };
-  };
-};
+    };	// namespace Mapping
+  };	// namespace Interface
+};	// namespace XMI
 #endif // __components_mapping_nodemapping_h__

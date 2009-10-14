@@ -17,9 +17,9 @@
 
 namespace XMI
 {
-  namespace Mapping
+  namespace Interface
   {
-    namespace Interface
+    namespace Mapping
     {
       ///
       /// \param T_Mapping Socket mapping template class
@@ -54,7 +54,7 @@ namespace XMI
           /// \param[out] task    Global task identifier
           ///
           inline xmi_result_t socket2task (size_t recv_fd, size_t send_fd, size_t & task) const;
-      };
+      }; // class Socket
 
       template <class T_Mapping>
       inline void Socket<T_Mapping>::socketAddr (size_t & recv_fd, size_t & send_fd) const
@@ -73,7 +73,7 @@ namespace XMI
       {
         return static_cast<T_Mapping*>(this)->socket2task_impl (recv_fd, send_fd, task);
       }
-    };
-  };
-};
+    };	// namespace Mapping
+  };	// namespace Interface
+};	// namespace XMI
 #endif // __components_mapping_socketmapping_h__

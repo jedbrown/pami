@@ -12,6 +12,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		=
 NOTBUILT        =
-@LIBNAME@-""-MAPPING_SOURCES=BgpMapping.cc
+@LIBNAME@-""-MAPPING_SOURCES=BgpMapping.cc BgpGlobal.cc BgpPersonality.cc
 DEVICENAME     = @LIBNAME@-""-MAPPING
 include @abs_top_builddir@/Build.rules

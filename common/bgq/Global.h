@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "Platform.h"
 #include "util/common.h"
 #include "common/bgq/BgqPersonality.h"
 

@@ -17,7 +17,7 @@
 #include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/workqueue/MemoryWorkQueue.h"
 #include "math/math_coremath.h"
-#include "components/sysdep/SysDep.h"
+#include "SysDep.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Message.h"

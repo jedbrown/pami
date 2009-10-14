@@ -115,7 +115,7 @@ getInfo()
 
 int XMI::Device::MU::ResourceManager::
 init ( ResourceType_t  type,
-       SysDep::BgqSysDep          *sd,
+       SysDep *sd,
        dispatch_t      *dispatch )
 {
   int rc = 0;

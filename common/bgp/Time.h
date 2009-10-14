@@ -22,8 +22,6 @@
 
 namespace XMI
 {
-  namespace Time
-  {
     class Time : public Interface::BaseTime<Time>
     {
       public:

@@ -18,7 +18,7 @@
 
 namespace XMI
 {
-  namespace SysDep
+  namespace Interface
   {
     ///
     /// \param T_Memory   Platform-specific memory manager class
@@ -75,13 +75,13 @@ namespace XMI
         T_Time     time;
         T_Topology topology_local;
         T_Topology topology_global;
-    };
+    };	// class SysDep
 
     class NullSysDep
     {
-    }; // class NullSysDep
-  };
-};
+    };	// class NullSysDep
+  };	// namespace Interface
+};	// namespace XMI
 #endif // __components_sysdep_sysdep_h__
 
 //

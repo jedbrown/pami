@@ -6,24 +6,16 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-/**
- * \file common/mpi/SysDep.h
- * \brief ???
- */
 
-#ifndef __components_sysdep_mpi_mpisysdep_h__
-#define __components_sysdep_mpi_mpisysdep_h__
+///
+/// \file common/bgp/Platform.h
+/// \brief ???
+///
 
-#define XMI_SYSDEP_CLASS XMI::SysDep
+#ifndef __common_bgp_platform_h__
+#define __common_bgp_platform_h__
 
-#include "common/SysDep.h"
-#include "Mapping.h"
-#include "components/memory/heap/HeapMemoryManager.h"
-#include "Time.h"
-#include "Topology.h"
+#define NUM_CORES 4
+#define NUM_SMT 1
 
-namespace XMI
-{
-    typedef Interface::SysDep<XMI::Memory::HeapMemoryManager, XMI::Mapping, XMI::Time, XMI::Topology> SysDep;
-};
-#endif // __components_sysdep_mpi_mpisysdep_h__
+#endif // __common_bgp_platform_h__

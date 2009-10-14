@@ -47,11 +47,9 @@
 
 namespace XMI
 {
-  namespace Mapping
-  {
-    class Mapping : public Interface::Base<Mapping,XMI::Memory::SharedMemoryManager>,
-                       public Interface::Torus<Mapping,XMI_BGP_NETWORK_DIMS>,
-                       public Interface::Node<Mapping,XMI_BGP_LOCAL_DIMS>
+    class Mapping : public Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>,
+                       public Interface::Mapping::Torus<Mapping,XMI_BGP_NETWORK_DIMS>,
+                       public Interface::Mapping::Node<Mapping,XMI_BGP_LOCAL_DIMS>
     {
       protected:
 
@@ -68,9 +66,9 @@ namespace XMI
 
       public:
         inline Mapping () :
-            Interface::Base<Mapping,XMI::Memory::SharedMemoryManager>(),
-            Interface::Torus<Mapping,XMI_BGP_NETWORK_DIMS>(),
-            Interface::Node<Mapping,XMI_BGP_LOCAL_DIMS> (),
+            Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>(),
+            Interface::Mapping::Torus<Mapping,XMI_BGP_NETWORK_DIMS>(),
+            Interface::Mapping::Node<Mapping,XMI_BGP_LOCAL_DIMS> (),
             _task (0),
             _size (0),
             _nodes (0),
@@ -96,7 +94,7 @@ namespace XMI
         size_t _z;
         size_t _t;
 
-        XMI::Mapping::Interface::nodeaddr_t _nodeaddr;
+        XMI::Interface::Mapping::nodeaddr_t _nodeaddr;
 
 #warning These elements need to be moved or replaced
         size_t _numActiveRanksLocal;
@@ -113,13 +111,13 @@ namespace XMI
 
         /////////////////////////////////////////////////////////////////////////
         //
-        // XMI::Mapping::Interface::Base interface implementation
+        // XMI::Interface::Mapping::Base interface implementation
         //
         /////////////////////////////////////////////////////////////////////////
 
         ///
         /// \brief Initialize the mapping
-        /// \see XMI::Mapping::Interface::Base::init()
+        /// \see XMI::Interface::Mapping::Base::init()
         ///
         inline xmi_result_t init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
                                        size_t &min_rank, size_t &max_rank,
@@ -127,7 +125,7 @@ namespace XMI
 
         ///
         /// \brief Return the BGP global task for this process
-        /// \see XMI::Mapping::Interface::Base::task()
+        /// \see XMI::Interface::Mapping::Base::task()
         ///
         inline size_t task_impl()
         {
@@ -136,7 +134,7 @@ namespace XMI
 
         ///
         /// \brief Returns the number of global tasks
-        /// \see XMI::Mapping::Interface::Base::size()
+        /// \see XMI::Interface::Mapping::Base::size()
         ///
         inline size_t size_impl()
         {
@@ -145,7 +143,7 @@ namespace XMI
 #if 0
         ///
         /// \brief Number of physical active nodes in the partition.
-        /// \see XMI::Mapping::Interface::Base::numActiveNodesGlobal()
+        /// \see XMI::Interface::Mapping::Base::numActiveNodesGlobal()
         ///
         inline size_t numActiveNodesGlobal_impl ()
         {
@@ -154,7 +152,7 @@ namespace XMI
 
         ///
         /// \brief Number of physical active tasks in the partition.
-        /// \see XMI::Mapping::Interface::Base::numActiveRanksGlobal()
+        /// \see XMI::Interface::Mapping::Base::numActiveRanksGlobal()
         ///
         inline size_t numActiveTasksGlobal_impl ()
         {
@@ -163,7 +161,7 @@ namespace XMI
 #endif
         ///
         /// \brief Determines if two global tasks are located on the same physical node.
-        /// \see XMI::Mapping::Interface::Base::isPeer()
+        /// \see XMI::Interface::Mapping::Base::isPeer()
         ///
         inline bool isPeer_impl (size_t task1, size_t task2)
         {
@@ -223,14 +221,14 @@ namespace XMI
         }
         /////////////////////////////////////////////////////////////////////////
         //
-        // XMI::Mapping::Interface::Torus interface implementation
+        // XMI::Interface::Mapping::Torus interface implementation
         //
         /////////////////////////////////////////////////////////////////////////
 
         ///
         /// \brief Return the BGP torus x coordinate (dimension 0) for this task
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusCoord()
+        /// \see XMI::Interface::Mapping::Torus::torusCoord()
         ///
         inline size_t x ()
         {
@@ -275,7 +273,7 @@ namespace XMI
         ///
         /// \brief Return the size of the BGP torus x dimension
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusSize()
+        /// \see XMI::Interface::Mapping::Torus::torusSize()
         ///
         template <>
         inline size_t torusCoord_impl<0> () const
@@ -286,7 +284,7 @@ namespace XMI
         ///
         /// \brief Return the BGP torus y coordinate (dimension 1) for this task
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusCoord()
+        /// \see XMI::Interface::Mapping::Torus::torusCoord()
         ///
         template <>
         inline size_t torusCoord_impl<1> () const
@@ -297,7 +295,7 @@ namespace XMI
         ///
         /// \brief Return the BGP torus z coordinate (dimension 2) for this task
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusCoord()
+        /// \see XMI::Interface::Mapping::Torus::torusCoord()
         ///
         template <>
         inline size_t torusCoord_impl<2> () const
@@ -308,7 +306,7 @@ namespace XMI
         ///
         /// \brief Return the BGP torus t coordinate (dimension 3) for this task
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusCoord()
+        /// \see XMI::Interface::Mapping::Torus::torusCoord()
         ///
         template <>
         inline size_t torusCoord_impl<3> () const
@@ -319,7 +317,7 @@ namespace XMI
         ///
         /// \brief Return the size of the BGP torus x dimension
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusSize()
+        /// \see XMI::Interface::Mapping::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<0> () const
@@ -330,7 +328,7 @@ namespace XMI
         ///
         /// \brief Return the size of the BGP torus y dimension
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusSize()
+        /// \see XMI::Interface::Mapping::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<1> () const
@@ -341,7 +339,7 @@ namespace XMI
         ///
         /// \brief Return the size of the BGP torus z dimension
         ///
-        /// \see XMI::Mapping::Interface::Torus::torusSize()
+        /// \see XMI::Interface::Mapping::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<2> () const
@@ -351,7 +349,7 @@ namespace XMI
 
         ///
         /// \brief Return the size of the BGP torus t dimension
-        /// \see XMI::Mapping::Interface::Torus::torusSize()
+        /// \see XMI::Interface::Mapping::Torus::torusSize()
         ///
         template <>
         inline size_t torusSize_impl<3> () const
@@ -361,7 +359,7 @@ namespace XMI
 #endif
         ///
         /// \brief Get the number of BGP torus dimensions
-        /// \see XMI::Mapping::Interface::Torus::torusDims()
+        /// \see XMI::Interface::Mapping::Torus::torusDims()
         ///
         inline const size_t torusDims_impl() const
         {
@@ -369,7 +367,7 @@ namespace XMI
         }
         ///
         /// \brief Get the number of BGP torus dimensions
-        /// \see XMI::Mapping::Interface::Torus::torusDims()
+        /// \see XMI::Interface::Mapping::Torus::torusDims()
         ///
         inline const size_t globalDims_impl() const
         {
@@ -377,7 +375,7 @@ namespace XMI
         }
         ///
         /// \brief Get the BGP torus address for this task
-        /// \see XMI::Mapping::Interface::Torus::torusAddr()
+        /// \see XMI::Interface::Mapping::Torus::torusAddr()
         ///
         //template <>
         inline void torusAddr_impl (size_t (&addr)[XMI_BGP_NETWORK_DIMS + XMI_BGP_LOCAL_DIMS])
@@ -390,7 +388,7 @@ namespace XMI
 
         ///
         /// \brief Get the BGP torus address for a task
-        /// \see XMI::Mapping::Interface::Torus::task2torus()
+        /// \see XMI::Interface::Mapping::Torus::task2torus()
         ///
         /// \todo Error path
         ///
@@ -406,7 +404,7 @@ namespace XMI
 
         ///
         /// \brief Get the global task for a BGP torus address
-        /// \see XMI::Mapping::Interface::Torus::torus2task()
+        /// \see XMI::Interface::Mapping::Torus::torus2task()
         ///
         /// \todo Error path
         ///
@@ -434,12 +432,12 @@ namespace XMI
 
           task = _rankcache [estimated_task];
           return XMI_SUCCESS;
-        };
+        }
 
 
         /////////////////////////////////////////////////////////////////////////
         //
-        // XMI::Mapping::Interface::Node interface implementation
+        // XMI::Interface::Mapping::Node interface implementation
         //
         /////////////////////////////////////////////////////////////////////////
 
@@ -451,30 +449,30 @@ namespace XMI
 #warning implement this!
           TRACE_ERR((stderr,"Mapping::nodeTasks_impl(%zd) <<\n", global));
           return XMI_UNIMPL;
-        };
+        }
 
         ///
         /// \brief Number of active tasks on the local node.
-        /// \see XMI::Mapping::Interface::Node::nodePeers()
+        /// \see XMI::Interface::Mapping::Node::nodePeers()
         ///
         inline xmi_result_t nodePeers_impl (size_t & peers)
         {
           peers = _peers;
           return XMI_SUCCESS;
-        };
+        }
 
         /// \brief Get the node address for the local task
-        inline void nodeAddr_impl (Interface::nodeaddr_t & addr)
+        inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & addr)
         {
           TRACE_ERR((stderr,"Mapping::nodeAddr_impl() >>\n"));
           addr = _nodeaddr;
           //global = _nodeaddr.global;
           //local  = _nodeaddr.local;
           TRACE_ERR((stderr,"Mapping::nodeAddr_impl(%zd, %zd) <<\n", addr.global, addr.local));
-        };
+        }
 
         /// \brief Get the node address for a specific task
-        inline xmi_result_t task2node_impl (size_t task, Interface::nodeaddr_t & addr)
+        inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & addr)
         {
           TRACE_ERR((stderr,"Mapping::task2node_impl(%zd) >>\n", task));
           //fprintf(stderr, "Mapping::task2node_impl() .. _mapcache[%zd] = 0x%08x\n", task, _mapcache[task]);
@@ -485,20 +483,20 @@ namespace XMI
 	  addr.local = ESTIMATED_TASK_LOCAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
           TRACE_ERR((stderr,"Mapping::task2node_impl(%zd, %zd, %zd) <<\n", task, addr.global, addr.local));
           return XMI_SUCCESS;
-        };
+        }
 
         /// \brief Get the task associated with a specific node address
-        inline xmi_result_t node2task_impl (Interface::nodeaddr_t addr, size_t & task)
+        inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t addr, size_t & task)
         {
           TRACE_ERR((stderr,"Mapping::node2task_impl(%zd, %zd) >>\n", addr.global, addr.local));
           size_t estimated_task = ESTIMATED_TASK_NODE(addr.global,addr.local,xSize(),ySize(),zSize(),tSize());
           task = _rankcache [estimated_task];
           TRACE_ERR((stderr,"Mapping::node2task_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, task));
           return XMI_SUCCESS;
-        };
+        }
 
         /// \brief Get the peer identifier associated with a specific node address
-        inline xmi_result_t node2peer_impl (Interface::nodeaddr_t & addr, size_t & peer)
+        inline xmi_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & addr, size_t & peer)
         {
           TRACE_ERR((stderr,"Mapping::node2peer_impl(%zd, %zd) >>\n", addr.global, addr.local));
 
@@ -506,7 +504,7 @@ namespace XMI
 
           TRACE_ERR((stderr,"Mapping::node2peer_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, peer));
           return XMI_SUCCESS;
-        };
+        }
     };	// class Mapping
 };	// namespace XMI
 

@@ -9,7 +9,7 @@
 
 namespace XMI
 {
-    namespace PipeWorkQueue
+    namespace Interface
     {
         template <class T_PipeWorkQueue>
         class PipeWorkQueue
@@ -239,7 +239,7 @@ namespace XMI
             ///
             inline bool available();
 
-        }; // end XMI::Pipeworkqueue::Pipeworkqueue
+        }; // end class XMI::Pipeworkqueue::Pipeworkqueue
 
         template <class T_PipeWorkQueue>
         void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI_SYSDEP_CLASS *sysdep,
@@ -360,7 +360,7 @@ namespace XMI
         {
             return static_cast<T_PipeWorkQueue*>(this)->available_impl();
         }
-    }; // end namespace PipeWorkQueue
+    }; // end namespace Interface
 }; // end namespace XMI
 
 #endif // __xmi_component_pipeworkqueue_h__

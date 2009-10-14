@@ -12,7 +12,7 @@
 
 #include "util/queue/Queue.h"
 #include "components/devices/BaseDevice.h"
-#include "components/sysdep/SysDep.h"
+#include "SysDep.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/AdvanceThread.h
