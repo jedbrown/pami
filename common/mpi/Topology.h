@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/topology/Topology.h"
+#include "common/Topology.h"
 #include "Mapping.h"
 
 #define XMI_TOPOLOGY_CLASS XMI::Topology
@@ -22,20 +22,20 @@ namespace XMI
                 Interface::Topology<XMI::Topology>()
                 {}
 
-            inline MPI(xmi_coord_t *ll, xmi_coord_t *ur,
+            inline Topology(xmi_coord_t *ll, xmi_coord_t *ur,
                        unsigned char *tl = NULL):
-                Topology<XMI::Topology>(ll,ur,tl)
+                Interface::Topology<XMI::Topology>(ll,ur,tl)
                 {}
 
-            inline MPI(size_t rank):
-                Topology<XMI::Topology>(rank)
+            inline Topology(size_t rank):
+                Interface::Topology<XMI::Topology>(rank)
                 {}
-            inline MPI(size_t rank0, size_t rankn):
-                Topology<XMI::Topology>(rank0, rankn)
+            inline Topology(size_t rank0, size_t rankn):
+                Interface::Topology<XMI::Topology>(rank0, rankn)
                 {}
 
-            inline MPI(size_t *ranks, size_t nranks):
-                Topology<XMI::Topology>(ranks, nranks)
+            inline Topology(size_t *ranks, size_t nranks):
+                Interface::Topology<XMI::Topology>(ranks, nranks)
                 {}
 
 

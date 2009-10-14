@@ -22,20 +22,20 @@ namespace XMI
                 Interface::Topology<XMI::Topology>()
                 {}
 
-            inline LAPI(xmi_coord_t *ll, xmi_coord_t *ur,
+            inline Topology(xmi_coord_t *ll, xmi_coord_t *ur,
                        unsigned char *tl = NULL):
-                Topology<XMI::Topology>(ll,ur,tl)
+                Interface::Topology<XMI::Topology>(ll,ur,tl)
                 {}
 
-            inline LAPI(size_t rank):
-                Topology<XMI::Topology>(rank)
+            inline Topology(size_t rank):
+                Interface::Topology<XMI::Topology>(rank)
                 {}
-            inline LAPI(size_t rank0, size_t rankn):
-                Topology<XMI::Topology>(rank0, rankn)
+            inline Topology(size_t rank0, size_t rankn):
+                Interface::Topology<XMI::Topology>(rank0, rankn)
                 {}
 
-            inline LAPI(size_t *ranks, size_t nranks):
-                Topology<XMI::Topology>(ranks, nranks)
+            inline Topology(size_t *ranks, size_t nranks):
+                Interface::Topology<XMI::Topology>(ranks, nranks)
                 {}
 
 
