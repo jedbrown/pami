@@ -24,11 +24,11 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class LAPIModel : public Interface::MessageModel<LAPIModel<T_Device, T_Message>, T_Device>
+    class LAPIModel : public Interface::MessageModel<LAPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
     {
     public:
       LAPIModel (T_Device & device, xmi_context_t context) :
-        Interface::MessageModel < LAPIModel<T_Device, T_Message>, T_Device > (device,context),
+        Interface::MessageModel < LAPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,context),
         _device (device),
         _context(context)
         {};
@@ -61,7 +61,7 @@ namespace XMI
           return true;
         }
 
-      inline bool postPacket_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
+      inline bool postPacket_impl (uint8_t              (&state)[LAPIModel::packet_model_status_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -91,7 +91,7 @@ namespace XMI
           return true;
         };
 
-      inline bool postPacket_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
+      inline bool postPacket_impl (uint8_t              (&state)[LAPIModel::packet_model_status_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -106,7 +106,7 @@ namespace XMI
           return false;
         };
 
-      inline bool postPacket_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
+      inline bool postPacket_impl (uint8_t              (&state)[LAPIModel::packet_model_status_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -147,7 +147,7 @@ namespace XMI
         }
       
 
-      inline bool postMessage_impl (uint8_t              state[LAPIModel::packet_model_status_bytes],
+      inline bool postMessage_impl (uint8_t              (&state)[LAPIModel::packet_model_status_bytes],
                                     xmi_event_function   fn,
                                     void               * cookie,
                                     size_t               target_rank,

@@ -28,14 +28,14 @@ namespace XMI
     {
       ///
       /// \todo Need A LOT MORE documentation on this interface and its use
-      /// \param T_Model   Packet model template class
-      /// \param T_Device  Packet device template class
-      /// \param T_Object  Packet object template class
+      /// \param T_Model       Packet model template class
+      /// \param T_Device      Packet device template class
+      /// \param T_StateBytes  Transfer state object size in bytes
       ///
       /// \see Packet::Model
       /// \see Packet::Device
       ///
-      template <class T_Model, class T_Device>
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
       class PacketModel
       {
         public:
@@ -45,7 +45,10 @@ namespace XMI
           /// \param[in] device  Packet device reference
           /// \param[in] context Communication context
           ///
-          PacketModel (T_Device & device, xmi_context_t context) {};
+          PacketModel (T_Device & device, xmi_context_t context)
+          {
+            compile_time_assert ();
+          };
 
           ~PacketModel () {};
 
@@ -79,7 +82,7 @@ namespace XMI
           ///            contain a public static const data member named
           ///            'bool reliable_packet_model'.
           ///
-          /// C++ code using templates to specify the model may statically 
+          /// C++ code using templates to specify the model may statically
           /// access the 'reliable_packet_model' constant.
           ///
           static const bool isPacketReliable ();
@@ -95,7 +98,7 @@ namespace XMI
           ///
           /// A packet model implementation may return zero as the number of
           /// packet metadata bytes supported.
-          /// 
+          ///
           /// \attention All packet model interface derived classes \b must
           ///            contain a public static const data member named
           ///            'size_t packet_model_metadata_bytes'.
@@ -116,7 +119,7 @@ namespace XMI
           ///
           /// A packet model implementation may return zero as the number of
           /// packet payload bytes supported.
-          /// 
+          ///
           /// \attention All packet model interface derived classes \b must
           ///            contain a public static const data member named
           ///            'size_t packet_model_payload_bytes'.
@@ -134,9 +137,6 @@ namespace XMI
           /// attribute returns the number of bytes that must be provided to
           /// the various packet post* methods.
           ///
-          /// A packet model implementation may return zero as the number of
-          /// packet transfer state bytes required.
-          ///
           /// \attention All packet model interface derived classes \b must
           ///            contain a public static const data member named
           ///            'size_t packet_model_state_bytes'.
@@ -144,7 +144,6 @@ namespace XMI
           /// C++ code using templates to specify the model may statically
           /// access the 'packet_model_state_bytes' constant.
           ///
-
           static const size_t getPacketTransferStateBytes ();
 
           ///
@@ -205,7 +204,7 @@ namespace XMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          inline bool postPacket (uint8_t              state[],
+          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -227,7 +226,7 @@ namespace XMI
           /// \param[in] payload1     Virtual address of the second source buffer
           /// \param[in] bytes1       Number of bytes to transfer from the second buffer
           ///
-          inline bool postPacket (uint8_t              state[],
+          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -249,7 +248,7 @@ namespace XMI
           /// \param[in] payload      Virtual address of source buffer
           /// \param[in] bytes        Number of bytes to transfer
           ///
-          inline bool postPacket (uint8_t              state[],
+          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
                                   size_t               target_rank,
@@ -281,44 +280,54 @@ namespace XMI
                                            size_t   bytes0,
                                            void   * payload1,
                                            size_t   bytes1);
+
+        private:
+
+          static inline void compile_time_assert ()
+          {
+            // This compile time assert verify that the specific packet model
+            // class, T_Model, has correctly specified the same value for the
+            // 'transfer state bytes' template parameter and constant.
+            COMPILE_TIME_ASSERT(T_Model::packet_model_state_bytes == T_StateBytes);
+          };
       };
 
-      template <class T_Model, class T_Device>
-      const bool PacketModel<T_Model, T_Device>::isPacketDeterministic ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const bool PacketModel<T_Model, T_Device, T_StateBytes>::isPacketDeterministic ()
       {
         return T_Model::deterministic_packet_model;
       }
 
-      template <class T_Model, class T_Device>
-      const bool PacketModel<T_Model, T_Device>::isPacketReliable ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const bool PacketModel<T_Model, T_Device, T_StateBytes>::isPacketReliable ()
       {
         return T_Model::reliable_packet_model;
       }
 
-      template <class T_Model, class T_Device>
-      const size_t PacketModel<T_Model, T_Device>::getPacketMetadataBytes ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const size_t PacketModel<T_Model, T_Device, T_StateBytes>::getPacketMetadataBytes ()
       {
         return T_Model::packet_model_metadata_bytes;
       }
 
-      template <class T_Model, class T_Device>
-      const size_t PacketModel<T_Model, T_Device>::getPacketPayloadBytes ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const size_t PacketModel<T_Model, T_Device, T_StateBytes>::getPacketPayloadBytes ()
       {
         return T_Model::packet_model_payload_bytes;
       }
 
-      template <class T_Model, class T_Device>
-      const size_t PacketModel<T_Model, T_Device>::getPacketTransferStateBytes ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const size_t PacketModel<T_Model, T_Device, T_StateBytes>::getPacketTransferStateBytes ()
       {
         return T_Model::packet_model_state_bytes;
       }
 
-      template <class T_Model, class T_Device>
-      xmi_result_t PacketModel<T_Model, T_Device>::init (size_t           dispatch,
-                                                         RecvFunction_t   direct_recv_func,
-                                                         void           * direct_recv_func_parm,
-                                                         RecvFunction_t   read_recv_func,
-                                                         void           * read_recv_func_parm)
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      xmi_result_t PacketModel<T_Model, T_Device, T_StateBytes>::init (size_t           dispatch,
+                                                                       RecvFunction_t   direct_recv_func,
+                                                                       void           * direct_recv_func_parm,
+                                                                       RecvFunction_t   read_recv_func,
+                                                                       void           * read_recv_func_parm)
       {
         return static_cast<T_Model*>(this)->init_impl (dispatch,
                                                        direct_recv_func,
@@ -327,31 +336,31 @@ namespace XMI
                                                        read_recv_func_parm);
       }
 
-      template <class T_Model, class T_Device>
-      inline bool PacketModel<T_Model, T_Device>::postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
-                                                              xmi_event_function   fn,
-                                                              void               * cookie,
-                                                              size_t               target_rank,
-                                                              void               * metadata,
-                                                              size_t               metasize,
-                                                              void               * payload,
-                                                              size_t               bytes)
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+                                                                            xmi_event_function   fn,
+                                                                            void               * cookie,
+                                                                            size_t               target_rank,
+                                                                            void               * metadata,
+                                                                            size_t               metasize,
+                                                                            void               * payload,
+                                                                            size_t               bytes)
       {
         return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
                                                              metadata, metasize, payload, bytes);
       }
 
-      template <class T_Model, class T_Device>
-      inline bool PacketModel<T_Model, T_Device>::postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
-                                                              xmi_event_function   fn,
-                                                              void               * cookie,
-                                                              size_t               target_rank,
-                                                              void               * metadata,
-                                                              size_t               metasize,
-                                                              void               * payload0,
-                                                              size_t               bytes0,
-                                                              void               * payload1,
-                                                              size_t               bytes1)
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+                                                                            xmi_event_function   fn,
+                                                                            void               * cookie,
+                                                                            size_t               target_rank,
+                                                                            void               * metadata,
+                                                                            size_t               metasize,
+                                                                            void               * payload0,
+                                                                            size_t               bytes0,
+                                                                            void               * payload1,
+                                                                            size_t               bytes1)
       {
         return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
                                                              metadata, metasize,
@@ -359,28 +368,28 @@ namespace XMI
                                                              payload1, bytes1);
       }
 
-      template <class T_Model, class T_Device>
-      inline bool PacketModel<T_Model, T_Device>::postPacket (uint8_t              state[T_Model::packet_model_state_bytes],
-                                                              xmi_event_function   fn,
-                                                              void               * cookie,
-                                                              size_t               target_rank,
-                                                              void               * metadata,
-                                                              size_t               metasize,
-                                                              struct iovec       * iov,
-                                                              size_t               niov)
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+                                                                            xmi_event_function   fn,
+                                                                            void               * cookie,
+                                                                            size_t               target_rank,
+                                                                            void               * metadata,
+                                                                            size_t               metasize,
+                                                                            struct iovec       * iov,
+                                                                            size_t               niov)
       {
         return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
                                                              metadata, metasize, iov, niov);
       }
 
-      template <class T_Model, class T_Device>
-      inline bool PacketModel<T_Model, T_Device>::postPacketImmediate (size_t   target_rank,
-                                                                       void   * metadata,
-                                                                       size_t   metasize,
-                                                                       void   * payload0,
-                                                                       size_t   bytes0,
-                                                                       void   * payload1,
-                                                                       size_t   bytes1)
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacketImmediate (size_t   target_rank,
+                                                                                     void   * metadata,
+                                                                                     size_t   metasize,
+                                                                                     void   * payload0,
+                                                                                     size_t   bytes0,
+                                                                                     void   * payload1,
+                                                                                     size_t   bytes1)
       {
         return static_cast<T_Model*>(this)->postPacketImmediate_impl (target_rank,
                                                                       metadata, metasize,

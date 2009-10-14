@@ -43,7 +43,7 @@ namespace XMI
     /// \see ShmemPacketDevice
     ///
     template <class T_Device, class T_Message>
-    class ShmemPacketModel : public Interface::MessageModel<ShmemPacketModel<T_Device, T_Message>, T_Device>
+    class ShmemPacketModel : public Interface::MessageModel<ShmemPacketModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
     {
       public:
         ///
@@ -52,7 +52,7 @@ namespace XMI
         /// \param[in] device  Shared memory device
         ///
         ShmemPacketModel (T_Device & device, xmi_context_t context) :
-            Interface::MessageModel < ShmemPacketModel<T_Device, T_Message>, T_Device > (device, context),
+            Interface::MessageModel < ShmemPacketModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
             _device (device),
             _context (context)
         {};
@@ -79,7 +79,7 @@ namespace XMI
           return XMI_SUCCESS;  // <--- fix this
         };
 
-        inline bool postPacket_impl (uint8_t              state[sizeof(T_Message)],
+        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
                                      xmi_event_function   fn,
                                      void               * cookie,
                                      size_t               target_rank,
@@ -115,7 +115,7 @@ namespace XMI
           return false;
         };
 
-        inline bool postPacket_impl (uint8_t              state[sizeof(T_Message)],
+        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
                                      xmi_event_function   fn,
                                      void               * cookie,
                                      size_t               target_rank,
@@ -152,7 +152,7 @@ namespace XMI
           return false;
         };
 
-        inline bool postPacket_impl (uint8_t              state[sizeof(T_Message)],
+        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
                                      xmi_event_function   fn,
                                      void               * cookie,
                                      size_t               target_rank,
@@ -207,7 +207,7 @@ namespace XMI
                                              sequence) == XMI_SUCCESS);
         };
 
-        inline bool postMessage_impl (uint8_t              state[sizeof(T_Message)],
+        inline bool postMessage_impl (uint8_t              (&state)[sizeof(T_Message)],
                                       xmi_event_function   fn,
                                       void               * cookie,
                                       size_t               target_rank,

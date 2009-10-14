@@ -25,17 +25,20 @@ namespace XMI
     {
       ///
       /// \todo Need A LOT MORE documentation on this interface and its use
-      /// \param T_Model   Message model template class
-      /// \param T_Device  Message device template class
+      /// \param T_Model       Message model template class
+      /// \param T_Device      Message device template class
+      /// \param T_StateBytes  Transfer state object size in bytes
       ///
-      template <class T_Model, class T_Device>
-      class MessageModel : public PacketModel<T_Model, T_Device>
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      class MessageModel : public PacketModel<T_Model, T_Device, T_StateBytes>
       {
         public:
           MessageModel (T_Device      & device,
                         xmi_context_t   context) :
-            PacketModel<T_Model, T_Device> (device, context)
-          {};
+              PacketModel<T_Model, T_Device, T_StateBytes> (device, context)
+          {
+            compile_time_assert ();
+          };
 
           ~MessageModel () {};
 
@@ -119,6 +122,24 @@ namespace XMI
           ///
           static const size_t getMessagePayloadBytes ();
 
+          ///
+          /// \brief Returns the transfer state bytes attribute of this model.
+          ///
+          /// Typically a message device will require some amount of temporary
+          /// storage to be used during the transfer of the message. This
+          /// attribute returns the number of bytes that must be provided to
+          /// the various message post* methods.
+          ///
+          /// A message model implementation may return zero as the number of
+          /// packet transfer state bytes required.
+          ///
+          /// \attention All message model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t message_model_state_bytes'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'message_model_state_bytes' constant.
+          ///
           static const size_t getMessageTransferStateBytes ();
 
           ///
@@ -162,47 +183,57 @@ namespace XMI
                                    size_t               metasize,
                                    void               * payload,
                                    size_t               bytes);
+
+        private:
+
+          static inline void compile_time_assert ()
+          {
+            // This compile time assert verify that the specific message model
+            // class, T_Model, has correctly specified the same value for the
+            // 'transfer state bytes' template parameter and constant.
+            COMPILE_TIME_ASSERT(T_Model::message_model_state_bytes == T_StateBytes);
+          };
       };
 
-      template <class T_Model, class T_Device>
-      const bool MessageModel<T_Model, T_Device>::isMessageDeterministic ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const bool MessageModel<T_Model, T_Device, T_StateBytes>::isMessageDeterministic ()
       {
         return T_Model::deterministic_message_model;
       }
 
-      template <class T_Model, class T_Device>
-      const bool MessageModel<T_Model, T_Device>::isMessageReliable ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const bool MessageModel<T_Model, T_Device, T_StateBytes>::isMessageReliable ()
       {
         return T_Model::reliable_message_model;
       }
 
-      template <class T_Model, class T_Device>
-      const size_t MessageModel<T_Model, T_Device>::getMessageMetadataBytes ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const size_t MessageModel<T_Model, T_Device, T_StateBytes>::getMessageMetadataBytes ()
       {
         return T_Model::message_model_metadata_bytes;
       }
 
-      template <class T_Model, class T_Device>
-      const size_t MessageModel<T_Model, T_Device>::getMessagePayloadBytes ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const size_t MessageModel<T_Model, T_Device, T_StateBytes>::getMessagePayloadBytes ()
       {
         return T_Model::message_model_payload_bytes;
       }
 
-      template <class T_Model, class T_Device>
-      const size_t MessageModel<T_Model, T_Device>::getMessageTransferStateBytes ()
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const size_t MessageModel<T_Model, T_Device, T_StateBytes>::getMessageTransferStateBytes ()
       {
         return T_Model::message_model_state_bytes;
       }
 
-      template <class T_Model, class T_Device>
-      inline bool MessageModel<T_Model, T_Device>::postMessage (uint8_t              state[T_Model::message_model_state_bytes],
-                                                                xmi_event_function   fn,
-                                                                void               * cookie,
-                                                                size_t               target_rank,
-                                                                void               * metadata,
-                                                                size_t               metasize,
-                                                                void               * payload,
-                                                                size_t               bytes)
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      inline bool MessageModel<T_Model, T_Device, T_StateBytes>::postMessage (uint8_t              (&state)[T_StateBytes],
+                                                                              xmi_event_function   fn,
+                                                                              void               * cookie,
+                                                                              size_t               target_rank,
+                                                                              void               * metadata,
+                                                                              size_t               metasize,
+                                                                              void               * payload,
+                                                                              size_t               bytes)
       {
         return static_cast<T_Model*>(this)->postMessage_impl (state, fn, cookie, target_rank,
                                                               metadata, metasize, payload, bytes);

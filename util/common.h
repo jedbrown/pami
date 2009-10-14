@@ -117,6 +117,11 @@ inline void* operator new(size_t obj_size, void* pointer)
  * foo.h:43: error: duplicate case value
  * foo.h:43: error: previously used here
  * \endcode
+ *
+ * \note C++ template code must actually invoke the compile_time_assert
+ *       function, typically in a class constructor, for the assertion
+ *       to be evaluated. This is because the compile will not even
+ *       parse the function unless it is used.
  */
 #define COMPILE_TIME_ASSERT(expr) switch(0){case 0:case expr:;}
 

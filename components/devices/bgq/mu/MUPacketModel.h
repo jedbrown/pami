@@ -41,7 +41,7 @@ namespace XMI
   {
     namespace MU
     {
-      class MUPacketModel : public Interface::MessageModel<MUPacketModel, MUDevice>
+      class MUPacketModel : public Interface::MessageModel<MUPacketModel, MUDevice, sizeof(MUInjFifoMessage)>
       {
         public:
 
@@ -73,7 +73,7 @@ namespace XMI
                                   void                      * read_recv_func_parm);
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
+          inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
                                        size_t               target_rank,
@@ -83,7 +83,7 @@ namespace XMI
                                        size_t               bytes);
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
+          inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
                                        size_t               target_rank,
@@ -95,7 +95,7 @@ namespace XMI
                                        size_t               bytes1);
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
+          inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
                                        size_t               target_rank,
@@ -114,7 +114,7 @@ namespace XMI
                                                 size_t   bytes1);
 
           /// \see XMI::Device::Interface::MessageModel::postMessage
-          inline bool postMessage_impl (uint8_t              state[MUPacketModel::message_model_state_bytes],
+          inline bool postMessage_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                         xmi_event_function   fn,
                                         void               * cookie,
                                         size_t               target_rank,
@@ -187,7 +187,7 @@ namespace XMI
         TRACE((stderr, "<< initializeDescriptor(%p, %zd, %p, %zd)\n", desc, target_rank, (void *)payloadPa, bytes));
       }
 
-      bool MUPacketModel::postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
+      bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
                                            size_t               target_rank,
@@ -284,7 +284,7 @@ namespace XMI
       };
 
 
-      bool MUPacketModel::postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
+      bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
                                            size_t               target_rank,
@@ -390,7 +390,7 @@ namespace XMI
         return true;
       };
 
-      bool MUPacketModel::postPacket_impl (uint8_t              state[MUPacketModel::packet_model_state_bytes],
+      bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
                                            size_t               target_rank,
@@ -468,7 +468,7 @@ namespace XMI
         return false;
       };
 
-      bool MUPacketModel::postMessage_impl (uint8_t              state[MUPacketModel::message_model_state_bytes],
+      bool MUPacketModel::postMessage_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                             xmi_event_function   fn,
                                             void               * cookie,
                                             size_t               target_rank,

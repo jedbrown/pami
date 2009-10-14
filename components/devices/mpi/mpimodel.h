@@ -24,11 +24,11 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class MPIModel : public Interface::MessageModel<MPIModel<T_Device, T_Message>, T_Device>
+    class MPIModel : public Interface::MessageModel<MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
     {
     public:
       MPIModel (T_Device & device, xmi_context_t context) :
-        Interface::MessageModel < MPIModel<T_Device, T_Message>, T_Device > (device,context),
+        Interface::MessageModel < MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,context),
         _device (device),
         _context(context)
         {};
@@ -56,7 +56,7 @@ namespace XMI
          return XMI_SUCCESS;
         };
 
-      inline bool postPacket_impl (uint8_t              state[MPIModel::packet_model_state_bytes],
+      inline bool postPacket_impl (uint8_t              (&state)[MPIModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -93,7 +93,7 @@ namespace XMI
           return true;
         };
 
-      inline bool postPacket_impl (uint8_t              state[MPIModel::packet_model_state_bytes],
+      inline bool postPacket_impl (uint8_t              (&state)[MPIModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -134,7 +134,7 @@ namespace XMI
           return true;
         };
 
-      inline bool postPacket_impl (uint8_t              state[MPIModel::packet_model_state_bytes],
+      inline bool postPacket_impl (uint8_t              (&state)[MPIModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
@@ -185,7 +185,7 @@ namespace XMI
         }
 
 
-      inline bool postMessage_impl (uint8_t              state[MPIModel::message_model_state_bytes],
+      inline bool postMessage_impl (uint8_t              (&state)[MPIModel::message_model_state_bytes],
                                     xmi_event_function   fn,
                                     void               * cookie,
                                     size_t               target_rank,
