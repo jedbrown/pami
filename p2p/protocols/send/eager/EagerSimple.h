@@ -690,7 +690,7 @@ namespace XMI
             // Check for long header
             // Replace with 'unlikely if'
             size_t header_bytes = m->metabytes;
-            if ((header_bytes) > (T_Model::packet_model_metadata_bytes -
+            if ((header_bytes) > (T_Model::packet_model_payload_bytes -
                                   sizeof(short_metadata_t)>T_Model::packet_model_metadata_bytes?sizeof(short_metadata_t):0))
             {
               state->longheader.addr   = (uint8_t *) malloc(header_bytes);
