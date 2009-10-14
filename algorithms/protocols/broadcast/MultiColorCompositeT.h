@@ -162,7 +162,7 @@ namespace CCMI
                            T_Mcast               * minterface)
         {
           XMI_assert(this->_sd);
-          if(_sd->mapping.task() != root)
+          if(__global.mapping.task() != root)
           { //post receive on non root nodes
             //posts a receive on connection given by connection
             //mgr, bcast connmgrs shouldnt care about phases

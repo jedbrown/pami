@@ -18,6 +18,7 @@
 #include "algorithms/connmgr/RankBasedConnMgr.h"
 #include "algorithms/protocols/broadcast/BroadcastFactory.h"
 #include "algorithms/protocols/broadcast/ExecutorPool.h"
+#include "Global.h"
 
 namespace CCMI
 {
@@ -175,7 +176,7 @@ namespace CCMI
 
           XMI_assert(rsize > sizeof(T_Schedule));
 
-          if(this->_sd->mapping.task() == root)
+          if(__global.mapping.task() == root)
           {
             a_bcast = new (request_buf)
                       T_Schedule ( this->_sd, &this->_rbconnmgr,

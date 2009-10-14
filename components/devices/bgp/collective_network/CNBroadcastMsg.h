@@ -207,7 +207,7 @@ public:
 	XMI::Device::Interface::MulticastModel<CNBroadcastModel>(status)
 	{
 		_dispatch_id = _g_cnbroadcast_dev.newDispID();
-		_me = _g_cnbroadcast_dev.common()->getSysdep()->mapping.task();
+		_me = __global.mapping.task();
 	}
 
 	inline bool postMulticast_impl(xmi_multicast_t *mcast);

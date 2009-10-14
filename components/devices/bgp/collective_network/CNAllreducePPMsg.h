@@ -183,7 +183,7 @@ public:
 	XMI::Device::Interface::MulticombineModel<CNAllreducePPModel>(status)
 	{
 		_dispatch_id = _g_cnallreducepp_dev.newDispID();
-		_me = _g_cnallreducepp_dev.common()->getSysdep()->mapping.task();
+		_me = __global.mapping.task();
 	}
 
 	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);

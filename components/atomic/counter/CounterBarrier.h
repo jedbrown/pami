@@ -33,89 +33,75 @@ namespace XMI
           _control (_counter[0]),
           _lock (&_counter[1]),
           _status (&_counter[3]),
-          _participants (0)
+          _participants (0),
+	  _data(0),
+	  _master(false)
         {};
 
         ~CounterBarrier () {};
 
         /// \see XMI::Atomic::Interface::Barrier::init()
-        void init_impl (T_Sysdep *sd, size_t participants)
+        void init_impl (T_Sysdep *sd, size_t participants, bool master)
         {
           unsigned i;
           for (i=0; i<5; i++) _counter[i].init(sd);
 
           _participants = participants;
+          _master = master;
         };
 
         /// \see XMI::Atomic::Interface::Barrier::enter()
         inline xmi_result_t enter_impl ()
         {
-          // Determine the lock phase, either 0 or 1. This safely prevents
-          // subsequent barriers from corrupting active counters.
+		pollInit_impl();
+		while (poll_impl() != XMI::Atomic::Interface::Done);
+		return XMI_SUCCESS;
+	}
 
-          size_t phase = _control.fetch ();
+        inline void enterPoll_impl(Interface::pollFcn fcn, void *arg) {
+		pollInit_impl();
+		while (poll_impl() != XMI::Atomic::Interface::Done) {
+			fcn(arg);
+		}
+	}
 
-          // Enter the barrier by incrementing the lock counter. This
-          // participant is the master if the value returned is zero.
+        inline void pollInit_impl() {
+		size_t phase;
+		// msync...
+		phase = _control.fetch();
+		_lock[phase].fetch_and_inc();
+		_data = phase;
+		_status = XMI::Atomic::Interface::Entered;
+	}
 
-          size_t participant = _lock[phase].fetch_and_inc ();
-
-          // Busy wait until all participants have entered the barrier.
-
-          size_t parties = _participants;
-          while (poll(phase, parties, participant) == XMI_EAGAIN);
-
-          return XMI_SUCCESS;
-        };
-
-        inline void enterPoll_impl(pollFcn fcn, void *arg) { XMI_abort(); }
-        inline void pollInit_impl() { XMI_abort(); }
-        inline barrierPollStatus poll_impl() { XMI_abort(); }
+        inline Interface::barrierPollStatus poll_impl() {
+		XMI_assert(_status == XMI::Atomic::Interface::Entered);
+		size_t value;
+		size_t phase = _data;
+		if (_lock[phase].fetch() < _participants) return XMI::Atomic::Interface::Entered;
+		_lock[phase].fetch_and_inc();
+		do {
+			value = _lock[phase].fetch();
+		while (value > 0 && value < (2 * _participants));
+		if (_master) {
+			if (phase) {
+				_control.fetch_and_dec();
+			} else {
+				_control.fetch_and_inc();
+			}
+			_status[phase].fetch_and_clear();
+			_lock[phase].fetch_and_clear();
+		} else {
+			// wait until master releases the barrier by clearing the lock
+			while (_lock[phase].fetch() > 0);
+		}
+		_status = XMI::Atomic::Interface::Initialized;
+		return XMI::Atomic::Interface::Done;
+	}
         inline void * returnBarrier_impl() { XMI_abort(); }
         inline void dump_impl(char *string) { XMI_abort(); }
 
       protected:
-
-        inline xmi_result_t poll (size_t phase, size_t parties, size_t participant)
-        {
-          // Return immediately if not all participants have checked in by
-          // incrementing the lock.
-
-          if (_lock[phase].fetch() < parties) return XMI_EAGAIN;
-
-          size_t value = 0;
-
-          // All participants have entered the barrier and must block until the
-          // master participant atomically clears the lock and exits.
-
-          _lock[phase].fetch_and_inc ();
-          do
-          {
-            value = _lock[phase].fetch ();
-          } while (value > 0 && value < (2 * parties));
-
-          if (participant == 0)
-          {
-            // Flip the barrier phase.
-            if (phase == 1)
-              _control.fetch_and_dec ();
-            else
-              _control.fetch_and_inc ();
-
-            // Clear the status counters. .... why?
-            _status[phase].fetch_and_clear ();
-
-            // Clear the lock. This allows the other participants to exit.
-            _lock[phase].fetch_and_clear ();
-          }
-          else
-          {
-            // Wait until master releases the barrier by clearing the lock
-            while (_lock[phase].fetch() > 0);
-          }
-
-          return XMI_SUCCESS;
-        };
 
       private:
 
@@ -126,6 +112,8 @@ namespace XMI
         T_Counter * _status;
 
         size_t      _participants;
+        size_t      _data;
+	bool        _master;
 
     };  // XMI::Atomic::CounterBarrier class
   };   // XMI::Atomic namespace

@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include "sys/xmi.h"
 
-#include "PipeWorkQueue.h"
+#include "Topology.h"
+#include "components/devices/generic/AtomicBarrierMsg.h"
+#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/counter/CounterBarrier.h"
 
 #include "Time.h"
 #include "SysDep.h"
-
 
 void fail_reg(const char *s) {
 	fprintf(stderr, "failed to register \"%s\"\n", s);
@@ -14,10 +16,12 @@ void fail_reg(const char *s) {
 
 typedef XMI::Atomic::CounterBarrier<XMI_SYSDEP_CLASS,XMI::Counter::GccNodeCounter<XMI_SYSDEP_CLASS> > Barrier_Type;
 
-typdef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
+typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 
 char ab[sizeof(Barrier_Model)];
 char abm[Barrier_Model::sizeof_msg];
+
+XMI_TOPOLOGY_CLASS topo;
 
 int done = 0;
 
@@ -91,13 +95,15 @@ int main(int argc, char ** argv) {
 	Barrier_Model *model = new (&ab) Barrier_Model(status);
 	if (status != XMI_SUCCESS) fail_reg(test);
 
+	new (&topo) XMI_TOPOLOGY_CLASS(task_id);
+
 	xmi_multisync_t msync;
 
 	// simple allreduce on the tree... SMP mode (todo: check and error)
 	msync.request = &abm;
 	msync.cb_done = (xmi_callback_t){done_cb, (void *)test};
 	msync.roles = (unsigned)-1;
-	msync.participants = NULL;
+	msync.participants = (xmi_topology_t *)&topo;
 	fprintf(stderr, "... before %s.postMultisync\n", test);
 	done = 0;
 	rc = model->postMultisync(&msync);

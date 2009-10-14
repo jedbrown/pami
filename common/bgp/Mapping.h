@@ -19,8 +19,8 @@
 #include "common/TorusMapping.h"
 #include "common/NodeMapping.h"
 
-#include "Global.h"
-#include "components/memory/shmem/SharedMemoryManager.h"
+#include "common/bgp/BgpPersonality.h"
+#include "common/bgp/BgpMapCache.h"
 
 #define XMI_MAPPING_CLASS XMI::Mapping
 
@@ -73,10 +73,11 @@ namespace XMI
             _size (0),
             _nodes (0),
             _peers (0),
-            _x (__global.personality.xCoord()),
-            _y (__global.personality.yCoord()),
-            _z (__global.personality.zCoord()),
-            _t (__global.personality.tCoord()),
+            _x (_personality.xCoord()),
+            _y (_personality.yCoord()),
+            _z (_personality.zCoord()),
+            _t (_personality.tCoord()),
+	    _personality(),
             _mapcache (NULL),
             _rankcache (NULL)
         {
@@ -94,13 +95,8 @@ namespace XMI
         size_t _z;
         size_t _t;
 
+	XMI::BgpPersonality &_personality;
         XMI::Interface::Mapping::nodeaddr_t _nodeaddr;
-
-#warning These elements need to be moved or replaced
-        size_t _numActiveRanksLocal;
-        size_t _numActiveRanksGlobal;
-        size_t _numActiveNodesGlobal;
-        size_t _fullSize;
 
         size_t * _mapcache;
         size_t * _rankcache;
@@ -117,11 +113,9 @@ namespace XMI
 
         ///
         /// \brief Initialize the mapping
-        /// \see XMI::Interface::Mapping::Base::init()
         ///
-        inline xmi_result_t init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
-                                       size_t &min_rank, size_t &max_rank,
-                                       XMI::Memory::SharedMemoryManager &mm);
+	inline xmi_result_t init(XMI::BgpMapCache &mapcache,
+				XMI::BgpPersonality &personality);
 
         ///
         /// \brief Return the BGP global task for this process
@@ -170,41 +164,37 @@ namespace XMI
           return ((xyzt1 >> 8) == (xyzt2 >> 8));
         }
         inline xmi_result_t network2task_impl (const xmi_coord_t  * addr,
-                                               size_t                     * task,
-                                               xmi_network               * type)
+                                              size_t                     * task,
+                                              xmi_network               * type)
         {
-          size_t xSize = __global.personality.xSize();
-          size_t ySize = __global.personality.ySize();
-          size_t zSize = __global.personality.zSize();
-          size_t tSize = __global.personality.tSize();
+		size_t xSize = _personality.xSize();
+		size_t ySize = _personality.ySize();
+		size_t zSize = _personality.zSize();
+		size_t tSize = _personality.tSize();
+		if (addr->network != XMI_DEFAULT_NETWORK &&
+			addr->network != XMI_N_TORUS_NETWORK) {
+			return XMI_INVAL;
+		}
+		*type = XMI_N_TORUS_NETWORK;
+		size_t x = addr->u.n_torus.coords[0];
+		size_t y = addr->u.n_torus.coords[1];
+		size_t z = addr->u.n_torus.coords[2];
+		size_t t = addr->u.n_torus.coords[3];
 
-          if (addr->network != XMI_DEFAULT_NETWORK &&
-              addr->network != XMI_N_TORUS_NETWORK)
-            {
-              return XMI_INVAL;
-            }
+		if ((x >= xSize) || (y >= ySize) ||
+			  (z >= zSize) || (t >= tSize)) {
+			return XMI_INVAL;
+		}
 
-          *type = XMI_N_TORUS_NETWORK;
-          size_t x = addr->u.n_torus.coords[0];
-          size_t y = addr->u.n_torus.coords[1];
-          size_t z = addr->u.n_torus.coords[2];
-          size_t t = addr->u.n_torus.coords[3];
+		size_t estimated_task = ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize);
 
-          if ((x >= xSize) || (y >= ySize) ||
-              (z >= zSize) || (t >= tSize))
-            {
-              return XMI_INVAL;
-            }
+		// convert to 'unlikely_if'
+		if (_rankcache [estimated_task] == (unsigned)-1) {
+			return XMI_ERROR;
+		}
 
-          size_t estimated_task = ESTIMATED_TASK(x, y, z, t, xSize, ySize, zSize, tSize);
-
-          if (unlikely(_rankcache [estimated_task] == (unsigned) - 1))
-            {
-              return XMI_ERROR;
-            }
-
-          *task = _rankcache [estimated_task];
-          return XMI_SUCCESS;
+		*task = _rankcache [estimated_task];
+		return XMI_SUCCESS;
         }
 
         inline xmi_result_t task2network_impl (size_t                task,
@@ -232,39 +222,39 @@ namespace XMI
         ///
         inline size_t x ()
         {
-          return __global.personality.xCoord();
+          return _personality.xCoord();
         }
         inline size_t y ()
         {
-          return __global.personality.yCoord();
+          return _personality.yCoord();
         }
         inline size_t z ()
         {
-          return __global.personality.zCoord();
+          return _personality.zCoord();
         }
         inline size_t t ()
         {
-          return __global.personality.tCoord();
+          return _personality.tCoord();
         }
 
         inline size_t xSize ()
         {
-          return __global.personality.xSize();
+          return _personality.xSize();
         }
 
         inline size_t ySize ()
         {
-          return __global.personality.ySize();
+          return _personality.ySize();
         }
 
         inline size_t zSize ()
         {
-          return __global.personality.zSize();
+          return _personality.zSize();
         }
 
         inline size_t tSize ()
         {
-          return __global.personality.tSize();
+          return _personality.tSize();
         }
 
 
@@ -278,7 +268,7 @@ namespace XMI
         template <>
         inline size_t torusCoord_impl<0> () const
         {
-          return __global.personality.xCoord();
+          return _personality.xCoord();
         }
 
         ///
@@ -289,7 +279,7 @@ namespace XMI
         template <>
         inline size_t torusCoord_impl<1> () const
         {
-          return __global.personality.yCoord();
+          return _personality.yCoord();
         }
 
         ///
@@ -300,7 +290,7 @@ namespace XMI
         template <>
         inline size_t torusCoord_impl<2> () const
         {
-          return __global.personality.zCoord();
+          return _personality.zCoord();
         }
 
         ///
@@ -311,7 +301,7 @@ namespace XMI
         template <>
         inline size_t torusCoord_impl<3> () const
         {
-          return __global.personality.tCoord();
+          return _personality.tCoord();
         }
 
         ///
@@ -322,7 +312,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<0> () const
         {
-          return __global.personality.xSize();
+          return _personality.xSize();
         }
 
         ///
@@ -333,7 +323,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<1> () const
         {
-          return __global.personality.ySize();
+          return _personality.ySize();
         }
 
         ///
@@ -344,7 +334,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<2> () const
         {
-          return __global.personality.zSize();
+          return _personality.zSize();
         }
 
         ///
@@ -354,7 +344,7 @@ namespace XMI
         template <>
         inline size_t torusSize_impl<3> () const
         {
-          return __global.personality.tSize();
+          return _personality.tSize();
         }
 #endif
         ///
@@ -410,10 +400,10 @@ namespace XMI
         ///
         inline xmi_result_t torus2task_impl (size_t (&addr)[XMI_BGP_NETWORK_DIMS + XMI_BGP_LOCAL_DIMS], size_t & task)
         {
-          size_t xSize = __global.personality.xSize();
-          size_t ySize = __global.personality.ySize();
-          size_t zSize = __global.personality.zSize();
-          size_t tSize = __global.personality.tSize();
+          size_t xSize = _personality.xSize();
+          size_t ySize = _personality.ySize();
+          size_t zSize = _personality.zSize();
+          size_t tSize = _personality.tSize();
 
           if ((addr[0] >= xSize) ||
               (addr[1] >= ySize) ||
@@ -508,17 +498,15 @@ namespace XMI
     };	// class Mapping
 };	// namespace XMI
 
-xmi_result_t XMI::Mapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
-						  size_t &min_rank, size_t &max_rank,
-						  XMI::Memory::SharedMemoryManager &mm)
+xmi_result_t XMI::Mapping::init(XMI::BgpMapCache &mapcache,
+				XMI::BgpPersonality &personality)
 {
   //fprintf (stderr, "Mapping::init_impl >>\n");
-  _mapcache  = __global.getMapCache();
-  _rankcache = __global.getRankCache();
-  _task = __global.getTask();
-  _size = __global.getSize();
-
-  __global.getMappingInit(ll, ur, min_rank, max_rank);
+  _personality = personality;
+  _mapcache  = mapcache.getMapCache();
+  _rankcache = mapcache.getRankCache();
+  _task = mapcache.getTask();
+  _size = mapcache.getSize();
 
   unsigned i;
 
@@ -536,7 +524,9 @@ xmi_result_t XMI::Mapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
   c.u.n_torus.coords[2] = _z;
   _peers = 0;
 
-  for (c.u.n_torus.coords[3] = 0; c.u.n_torus.coords[3] < __global.personality.tSize(); c.u.n_torus.coords[3]++)
+  for (c.u.n_torus.coords[3]=0; c.u.n_torus.coords[3]<_personality.tSize(); c.u.n_torus.coords[3]++)
+  {
+    if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
     {
       if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
         {
@@ -544,26 +534,6 @@ xmi_result_t XMI::Mapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
           _peercache[c.u.n_torus.coords[3]] = peer++;
           _localranks[_peers] = task;
           _peers++;
-        }
-    }
-
-  // Find the maximum task id and the minimum task id.
-  for (c.u.n_torus.coords[0] = 0; c.u.n_torus.coords[0] < __global.personality.xSize(); c.u.n_torus.coords[0]++)
-    {
-      for (c.u.n_torus.coords[1] = 0; c.u.n_torus.coords[1] < __global.personality.ySize(); c.u.n_torus.coords[1]++)
-        {
-          for (c.u.n_torus.coords[2] = 0; c.u.n_torus.coords[2] < __global.personality.zSize(); c.u.n_torus.coords[2]++)
-            {
-              for (c.u.n_torus.coords[3] = 0; c.u.n_torus.coords[3] < __global.personality.xSize(); c.u.n_torus.coords[3]++)
-                {
-                  if (network2task (&c, &task, &dummy) == XMI_SUCCESS)
-                    {
-                      if (task < min_rank) min_rank = task;
-
-                      if (task > max_rank) max_rank = task;
-                    }
-                }
-            }
         }
     }
 

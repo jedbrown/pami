@@ -15,6 +15,7 @@
 #define  __rank_conn_mgr_h__
 
 #include "ConnectionManager.h"
+#include "Global.h"
 
 namespace CCMI
 {
@@ -27,7 +28,7 @@ namespace CCMI
       RankBasedConnMgr (T_Sysdep *sd) :
         ConnectionManager<RankBasedConnMgr<T_Sysdep> >(),
         _sysdep(sd),
-        _numConnections(_sysdep->mapping.size())
+        _numConnections(__global.mapping.size())
         {
         }
 
@@ -42,7 +43,7 @@ namespace CCMI
                                             unsigned phase,
                                             unsigned dst=(unsigned)-1)
         {
-          return _sysdep->mapping.task();
+          return __global.mapping.task();
         }
 
       inline unsigned getRecvConnectionId_impl (unsigned comm,

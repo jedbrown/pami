@@ -168,7 +168,7 @@ namespace Generic {
 		int y = 0;
 
 #ifdef USE_WAKEUP_VECTORS
-		size_t me = __sysdep.mapping.t(); // only works on BG/P...?
+		size_t me = __global.mapping.t(); // only works on BG/P...?
 		rc = __sysdep.wakeupManager().allocWakeVecs((int)NUM_PROCESSES,
 			NUM_CHANNELS * MAX_REG_THREADS, (int)me,
 			&__wakeupVectors);
@@ -183,12 +183,12 @@ namespace Generic {
 		// Something else should cause separate threads to advance
 		// each channel in parallel.
 		unsigned cores = 0;
-		switch (sd.mapping.tSize()) {
+		switch (__global.mapping.tSize()) {
 		case 1: // SMP mode
 			cores = (1 << 1) | (1 << 2) | (1 << 3);
 			break;
 		case 2: // DUAL mode
-			switch (sd.mapping.t()) {
+			switch (__global.mapping.t()) {
 			case 0:
 				cores = (1 << 1);
 				break;

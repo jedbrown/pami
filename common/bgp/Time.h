@@ -18,7 +18,7 @@
 #include "sys/xmi.h"
 
 #include "common/BaseTime.h"
-#include "Global.h"
+#include "common/bgp/BgpPersonality.h"
 
 namespace XMI
 {
@@ -26,8 +26,9 @@ namespace XMI
     {
       public:
 
-        inline Time () :
-            Interface::BaseTime<Time> ()
+        inline Time (XMI::BgpPersonality &pers) :
+            Interface::BaseTime<Time> (),
+	_pers(pers)
         {};
 
         ///
@@ -45,7 +46,7 @@ namespace XMI
         ///
         inline size_t clockMHz ()
         {
-          return __global.personality.clockMHz ();
+          return _pers.clockMHz ();
         };
 
         ///
@@ -91,6 +92,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
 
         /// \brief BG/P compute node processors run at 850 MHz
         static const double seconds_per_cycle;
+	XMI::BgpPersonality &_pers;
     };	// class Time
     const double BgpTime::seconds_per_cycle = 1.176470588235294033e-09;
 };	// namespace XMI

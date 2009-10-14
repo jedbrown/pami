@@ -31,6 +31,10 @@
 #include "util/common.h"
 #include "common/bgp/BgpPersonality.h"
 #include "common/bgp/BgpMapCache.h"
+#include "Mapping.h"
+#include "Topology.h"
+#include "Time.h"
+#include "common/bgp/LockBoxFactory.h"
 
 namespace XMI
 {
@@ -42,7 +46,12 @@ namespace XMI
           personality (),
           _mapcache (),
           _memptr (NULL),
-          _memsize (0)
+          _memsize (0),
+	  time(personality),
+	  mapping(),
+	  lockboxFactory(&mapping),
+	  topology_global(),
+	  topology_local()
         {
           //allocateMemory ();
 
@@ -94,6 +103,27 @@ namespace XMI
           memcpy (_memptr, buffer, bytes_used);
           //memset (_memptr, 0, bytes);
           _memsize = bytes_used;
+
+	  {
+		mapping.init(_mapcache, personality);
+		xmi_coord_t ll, ur;
+		size_t min, max;
+
+		XMI::Topology::static_init(&mapping);
+		_mapcache.getMappingInit(ll, ur, min, max);
+		size_t rectsize = 1;
+		for (unsigned d = 0; d < mapping.globalDims(); ++d) {
+			rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
+		}
+		if (mapping.size() == rectsize) {
+			new (&topology_global) XMI::Topology(&ll, &ur);
+		} else if (mapping.size() == max - min + 1) {
+			new (&topology_global) XMI::Topology(min, max);
+		} else {
+			XMI_abortf("failed to build global-world topology %zd::%zd(%d) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
+		}
+		topology_global.subTopologyLocalToMe(&topology_local);
+	  }
         };
 
 
@@ -119,11 +149,6 @@ namespace XMI
         {
           return _mapcache.getSize();
         };
-
-	inline void getMappingInit(xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max)
-	{
-		_mapcache.getMappingInit(ll, ur, min, max);
-	}
 
 #if 0
         inline void allocateMemory ()
@@ -169,13 +194,21 @@ namespace XMI
 
       public:
 
-        BgpPersonality       personality;
+        XMI::BgpPersonality	personality;
 
       private:
 
-        BgpMapCache   _mapcache;
-        void                 * _memptr;
-        size_t                 _memsize;
+        XMI::BgpMapCache	_mapcache;
+        void			*_memptr;
+        size_t			_memsize;
+
+      public:
+
+	XMI::Time		time;
+	XMI::Mapping		mapping;
+	XMI::Atomic::BGP::LockBoxFactory lockboxFactory;
+	XMI::Topology topology_global;
+	XMI::Topology topology_local;
   };   // class Global
 };     // namespace XMI
 

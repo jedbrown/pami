@@ -39,6 +39,7 @@
 #ifndef  __components_devices_generic_atomicbarrier_h__
 #define  __components_devices_generic_atomicbarrier_h__
 
+#include "Global.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Message.h"
@@ -132,11 +133,10 @@ public:
 	XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier> >(status)
 	{
 		// "default" barrier: all local processes...
-		size_t peers;
-		_g_lmbarrier_dev.getSysdep()->mapping.nodePeers(peers);
-		_barrier.init(_g_lmbarrier_dev.getSysdep(), peers);
-		// participants = _g_topology_local
-		// if need sysdep, use _g_lmbarrier_dev.getSysdep()...
+		size_t peers = __global.topology_local.size();
+		size_t peer0 = __global.topology_local.index2Rank(0);
+		size_t me = __global.mapping.task();
+		_barrier.init(_g_lmbarrier_dev.getSysdep(), peers, (peer0 == me));
 	}
 
 	inline bool postMultisync_impl(xmi_multisync_t *msync);

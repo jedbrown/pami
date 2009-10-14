@@ -90,6 +90,7 @@ int main(int argc, char ** argv) {
 
 	// Register some multicombines, C++ style
 
+	size_t root = 0;
 	const char *test = "WQRingReduceMdl";
 	XMI::Device::WQRingReduceMdl *model = new (&wqa) XMI::Device::WQRingReduceMdl(status);
 	if (status != XMI_SUCCESS) fail_reg(test);
@@ -98,6 +99,8 @@ int main(int argc, char ** argv) {
 	ipwq.reset();
 	opwq.configure(NULL, result, sizeof(result), 0);
 	opwq.reset();
+	new (&otopo) XMI_TOPOLOGY_CLASS(root);
+	new (&itopo) XMI_TOPOLOGY_CLASS(task_id);
 	xmi_multicombine_t mcomb;
 
 	// simple allreduce on the local ranks...
@@ -105,9 +108,9 @@ int main(int argc, char ** argv) {
 	mcomb.cb_done = (xmi_callback_t){done_cb, (void *)test};
 	mcomb.roles = (unsigned)-1;
 	mcomb.data = (xmi_pipeworkqueue_t *)&ipwq;
-	mcomb.data_participants = itopo;
+	mcomb.data_participants = (xmi_topology_t *)&itopo;
 	mcomb.results = (xmi_pipeworkqueue_t *)&opwq;
-	mcomb.results_participants = otopo;
+	mcomb.results_participants = (xmi_topology_t *)&otopo;
 	mcomb.optor = XMI_SUM;
 	mcomb.dtype = XMI_UNSIGNED_INT;
 	mcomb.count = TEST_BUF_SIZE / sizeof(unsigned);
@@ -136,7 +139,7 @@ int main(int argc, char ** argv) {
 			fprintf(stderr, "Corrupted source buffer at index %d. stop.\n", x);
 			break;
 		}
-		if (((unsigned *)result)[x] != num_tasks) {
+		if (task_id == root && ((unsigned *)result)[x] != num_tasks) {
 			fprintf(stderr, "Incorrect result at index %d. stop.\n", x);
 			break;
 		}

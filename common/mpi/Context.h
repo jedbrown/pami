@@ -50,7 +50,7 @@ namespace XMI
           _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
 	  _world_range.lo=0;
 	  _world_range.hi=_mysize-1;
-          new(_world_geometry) MPIGeometry(&_sysdep.mapping,0, 1,&_world_range);
+          new(_world_geometry) MPIGeometry(&__global.mapping,0, 1,&_world_range);
 
 	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
 	  new(_collreg) MPICollreg(&_mpi, &_sysdep);
@@ -86,11 +86,11 @@ namespace XMI
           switch (configuration->name)
               {
                   case XMI_TASK_ID:
-                    configuration->value.intval = _sysdep.mapping.task();
+                    configuration->value.intval = __global.mapping.task();
                     result = XMI_SUCCESS;
                     break;
                   case XMI_NUM_TASKS:
-                    configuration->value.intval = _sysdep.mapping.size();
+                    configuration->value.intval = __global.mapping.size();
                     result = XMI_SUCCESS;
                     break;
                   default:
@@ -309,7 +309,7 @@ namespace XMI
 	  MPIGeometry              *new_geometry;
 	  MPICollfactory           *new_collfactory;
           new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
-          new(new_geometry) MPIGeometry(&_sysdep.mapping,id, slice_count,rank_slices);
+          new(new_geometry) MPIGeometry(&__global.mapping,id, slice_count,rank_slices);
           new_collfactory=_collreg->analyze(new_geometry);
 	  new_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, new_collfactory);
 	  *geometry=(MPIGeometry*) new_geometry;
@@ -408,7 +408,7 @@ namespace XMI
           if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
           _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
-          new (_dispatch[(size_t)id]) EagerMPI (id, fn, cookie, _mpi, _sysdep.mapping.task(), _context, _id, result);
+          new (_dispatch[(size_t)id]) EagerMPI (id, fn, cookie, _mpi, __global.mapping.task(), _context, _id, result);
           return result;
         }
 

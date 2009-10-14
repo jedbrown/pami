@@ -42,7 +42,7 @@ namespace XMI
         /// \see XMI::Device::Interface::BaseDevice::init()
         inline int init_impl (T_SysDep * sysdep)
         {
-          TRACE_ERR((stderr, "(%zd) ShmemPacketDevice::init_impl (), this = %p\n", sysdep->mapping.task(), this));
+          TRACE_ERR((stderr, "(%zd) ShmemPacketDevice::init_impl (), this = %p\n", __global.mapping.task(), this));
           return this->init_internal (sysdep);
         };
 

@@ -112,11 +112,11 @@ namespace XMI
           switch (configuration->name)
           {
             case XMI_TASK_ID:
-              configuration->value.intval = _sysdep.mapping.task();
+              configuration->value.intval = __global.mapping.task();
               result = XMI_SUCCESS;
               break;
             case XMI_NUM_TASKS:
-              configuration->value.intval = _sysdep.mapping.size();
+              configuration->value.intval = __global.mapping.size();
               result = XMI_SUCCESS;
               break;
             default:
@@ -364,8 +364,8 @@ namespace XMI
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _request.allocateObject ();
 
-            //new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, _sysdep.mapping.task(), _context, result);
-            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, _sysdep.mapping.task(), _context, _contextid, result);
+            //new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, __global.mapping.task(), _context, result);
+            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
           }
 
           return result;

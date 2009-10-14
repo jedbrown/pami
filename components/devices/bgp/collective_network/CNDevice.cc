@@ -91,13 +91,13 @@ namespace BGP {
 		unsigned *loc = NULL;
 		CNDeviceInitBarrier lbb;
 		size_t peers;
-		sd.mapping.nodePeers(peers);
+		__global.mapping.nodePeers(peers);
 		/*
 		 * This is used by TreeMessage objects pre/post
 		 * math routines to account for changes to
 		 * bitfields in the data.
 		 */
-		_g_num_active_nodes = sd.mapping.size();
+		_g_num_active_nodes = __global.mapping.size();
 		if (peers > 1) {
 			lbb.init(&sd, peers);
 			sd.mm.memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
@@ -202,7 +202,7 @@ namespace BGP {
 		}
 		// this will need to be more generic if number of
 		// cores becomes larger.
-		switch (sd.mapping.tSize()) {
+		switch (__global.mapping.tSize()) {
 		case 1: // SMP mode
 			if (XMI_THREADED_CN) {
 				_threadRoles = 2; // two roles may use comm_threads

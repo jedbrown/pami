@@ -117,7 +117,7 @@ namespace XMI
           _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));
           _world_range.lo=0;
           _world_range.hi=_mysize-1;
-          new(_world_geometry) LAPIGeometry(&_sysdep.mapping,0, 1,&_world_range);
+          new(_world_geometry) LAPIGeometry(&__global.mapping,0, 1,&_world_range);
 
           _collreg=(LAPICollreg*) malloc(sizeof(*_collreg));
           new(_collreg) LAPICollreg(&_lapi_device, &_sysdep);
@@ -151,11 +151,11 @@ namespace XMI
           switch (configuration->name)
               {
                   case XMI_TASK_ID:
-                    configuration->value.intval = _sysdep.mapping.task();
+                    configuration->value.intval = __global.mapping.task();
                     result = XMI_SUCCESS;
                     break;
                   case XMI_NUM_TASKS:
-                    configuration->value.intval = _sysdep.mapping.size();
+                    configuration->value.intval = __global.mapping.size();
                     result = XMI_SUCCESS;
                     break;
                   default:
@@ -374,7 +374,7 @@ namespace XMI
 	  LAPIGeometry              *new_geometry;
 	  LAPICollfactory           *new_collfactory;
           new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
-          new(new_geometry) LAPIGeometry(&_sysdep.mapping,id, slice_count,rank_slices);
+          new(new_geometry) LAPIGeometry(&__global.mapping,id, slice_count,rank_slices);
           new_collfactory=_collreg->analyze(new_geometry);
 	  new_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, new_collfactory);
 	  *geometry=(LAPIGeometry*) new_geometry;
@@ -474,7 +474,7 @@ namespace XMI
           _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
           new (_dispatch[(size_t)id]) EagerLAPI (id, fn, cookie, _lapi_device,
-                                                 _sysdep.mapping.task(), _context,
+                                                 __global.mapping.task(), _context,
                                                  _id, result);
           return result;
         }

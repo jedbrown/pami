@@ -298,7 +298,7 @@ public:
 	_dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
 	_dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
 	{
-		_me = _g_cnallreduce2p_dev.common()->getSysdep()->mapping.task();
+		_me = __global.mapping.task();
 		_ewq.setConsumers(1, 0);
 		_ewq.setProducers(1, 0);
 		_mwq.setConsumers(1, 0);

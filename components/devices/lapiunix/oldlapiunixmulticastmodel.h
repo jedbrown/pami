@@ -66,7 +66,7 @@ namespace XMI
           LAPIMcastMessage msg;
           msg._info_count   = info_count;
           msg._size         = size;
-          msg._peer         = _device._sysdep->mapping.task();
+          msg._peer         = __global.mapping.task();
           msg._conn         = connection_id;
           msg._dispatch_id  = _dispatch_id;
           if ( info )

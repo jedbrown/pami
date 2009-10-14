@@ -19,6 +19,7 @@
 #include "util/ccmi_debug.h"
 #include "math/math_coremath.h"
 #include "algorithms/executor/AllreduceState.h"
+#include "Global.h"
 
 namespace CCMI
 {
@@ -220,7 +221,7 @@ namespace CCMI
       _srcbuf (NULL), _dstbuf (NULL),
       _reduceFunc (NULL),
       _msendInterface (NULL), _rconnmgr (connmgr), _bconnmgr(connmgr), _msend_data(),
-      _astate(iteration, map->mapping.task())
+      _astate(iteration, __global.mapping.task())
       {
         TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceBase::ctor() ALERT:\n",(int)this));
 

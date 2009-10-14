@@ -171,9 +171,9 @@ public:
 	XMI::Device::Interface::MulticastModel<WQRingBcastMdl>(status)
 	{
 		XMI_SYSDEP_CLASS *sd = _g_wqbcast_dev.getSysdep();
-		_me = sd->mapping.task();
+		_me = __global.mapping.task();
 		size_t tz;
-		sd->mapping.nodePeers(tz);
+		__global.mapping.nodePeers(tz);
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
 			_wq[x].configure(sd, USE_FLAT_BUFFER, 0);

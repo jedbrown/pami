@@ -209,7 +209,7 @@ public:
 	XMI::Device::Interface::MulticombineModel<CNAllreduceModel>(status)
 	{
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
-		_me = _g_cnallreduce_dev.common()->getSysdep()->mapping.task();
+		_me = __global.mapping.task();
 		// at least one must do this
 		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
 	}

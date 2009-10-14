@@ -155,8 +155,8 @@ public:
 	LocalReduceWQModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<LocalReduceWQModel>(status),
 	_shared(_g_l_reducewq_dev.getSysdep()),
-	_peer(_g_l_reducewq_dev.getSysdep()->topology_local.rank2Index(_g_l_reducewq_dev.getSysdep()->mapping.task())),
-	_npeers(_g_l_reducewq_dev.getSysdep()->topology_local.size())
+	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
+	_npeers(__global.topology_local.size())
 	{
 		if (!_shared.available()) {
 			status = XMI_ERROR;

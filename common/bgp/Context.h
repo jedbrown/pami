@@ -117,11 +117,11 @@ namespace XMI
           switch (configuration->name)
           {
             case XMI_TASK_ID:
-              configuration->value.intval = _sysdep.mapping.task();
+              configuration->value.intval = __global.mapping.task();
               result = XMI_SUCCESS;
               break;
             case XMI_NUM_TASKS:
-              configuration->value.intval = _sysdep.mapping.size();
+              configuration->value.intval = __global.mapping.size();
               result = XMI_SUCCESS;
               break;
             default:
@@ -375,7 +375,7 @@ namespace XMI
             _dispatch[id] = _protocol.allocateObject ();
             TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
             new (_dispatch[id]) EagerShmem (id, fn, cookie, _shmem,
-                                            _sysdep.mapping.task(),
+                                            __global.mapping.task(),
                                             _context, _contextid, result);
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
             if (result != XMI_SUCCESS)

@@ -17,16 +17,10 @@
 
 #include "common/SysDep.h"
 
-#define ENABLE_LOCKBOX
-
 // These must be defined early
 #include "Platform.h"
 
-#include "Topology.h"
-#include "Mapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
-#include "Time.h"
-#include "common/bgp/LockBoxFactory.h"
 
 namespace XMI
 {
@@ -34,23 +28,7 @@ namespace XMI
     // contexts can get shared memory .. right now the second context to call
     // mm.init() will fail.
 
-
-    class SysDep : public Interface::SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping, XMI::Time, XMI::Topology>
-    {
-      public:
-        SysDep()
-#ifdef ENABLE_LOCKBOX
-          :
-          lockboxFactory(&this->mapping)
-#endif
-        {}
-
-        ~SysDep() {}
-
-#ifdef ENABLE_LOCKBOX
-        XMI::Atomic::BGP::LockBoxFactory lockboxFactory;
-#endif
-    }; // class SysDep
+    typedef Interface::SysDep<XMI::Memory::SharedMemoryManager> SysDep;
 };
 #endif // __components_sysdep_bgp_bgpsysdep_h__
 

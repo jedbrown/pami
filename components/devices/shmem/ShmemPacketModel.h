@@ -91,9 +91,9 @@ namespace XMI
           size_t peer, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
           TRACE_ERR((stderr, ">> ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd\n", target_rank));
-          _device._sysdep->mapping.task2node (target_rank, addr);
+          __global.mapping.task2node (target_rank, addr);
           TRACE_ERR((stderr, "  ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
-          _device._sysdep->mapping.node2peer (addr, peer);
+          __global.mapping.node2peer (addr, peer);
           TRACE_ERR((stderr, "  ShmemPacketModel::postPacket_impl(1) .. {%zd, %zd} -> %zd\n", addr.global, addr.local, peer));
 
           TRACE_ERR((stderr, "ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, peer));
@@ -128,8 +128,8 @@ namespace XMI
         {
           size_t peer, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          _device._sysdep->mapping.task2node (target_rank, addr);
-          _device._sysdep->mapping.node2peer (addr, peer);
+          __global.mapping.task2node (target_rank, addr);
+          __global.mapping.node2peer (addr, peer);
 
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id,
@@ -163,8 +163,8 @@ namespace XMI
         {
           size_t peer, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          _device._sysdep->mapping.task2node (target_rank, addr);
-          _device._sysdep->mapping.node2peer (addr, peer);
+          __global.mapping.task2node (target_rank, addr);
+          __global.mapping.node2peer (addr, peer);
 
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
@@ -194,9 +194,9 @@ namespace XMI
           size_t peer = 0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
           TRACE_ERR((stderr, ">> ShmemPacketModel::postPacketImmediate_impl(1) .. target_rank = %zd\n", target_rank));
-          _device._sysdep->mapping.task2node (target_rank, addr);
+          __global.mapping.task2node (target_rank, addr);
           TRACE_ERR((stderr, "   ShmemPacketModel::postPacketImmediate_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
-          _device._sysdep->mapping.node2peer (addr, peer);
+          __global.mapping.node2peer (addr, peer);
 
           TRACE_ERR((stderr, "<< ShmemPacketModel::postPacketImmediate_impl(1) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
           return (_device.isSendQueueEmpty (peer) &&
@@ -220,11 +220,11 @@ namespace XMI
           size_t sequence;
 
           XMI::Interface::Mapping::nodeaddr_t address;
-          _device._sysdep->mapping.task2node (target_rank, address);
+          __global.mapping.task2node (target_rank, address);
           TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. target_rank = %zd -> {%zd, %zd}\n", target_rank, address.global, address.local));
 
           size_t peer;
-          _device._sysdep->mapping.node2peer (address, peer);
+          __global.mapping.node2peer (address, peer);
           TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. {%zd, %zd} -> %zd\n", address.global, address.local, peer));
 
           TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. target_rank = %zd, peer = %zd\n", target_rank, peer));

@@ -127,7 +127,7 @@ namespace CCMI
         if(_ranks != NULL)
         {
           for(idx = 0; idx < _nranks; idx++)
-            if(_sysdep->mapping.task() == _ranks[idx])
+            if(__global.mapping.task() == _ranks[idx])
               return idx;
 
           return(unsigned)-1;
