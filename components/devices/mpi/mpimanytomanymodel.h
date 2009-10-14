@@ -23,11 +23,11 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class MPIManytomanyModel : public Interface::MessageModel<MPIManytomanyModel<T_Device, T_Message>,T_Device>
+    class MPIManytomanyModel : public Interface::MessageModel<MPIManytomanyModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
     {
     public:
       MPIManytomanyModel (T_Device & device) :
-        Interface::MessageModel < MPIManytomanyModel<T_Device, T_Message>, T_Device > (device)
+        Interface::MessageModel < MPIManytomanyModel<T_Device, T_Message>, T_Device,sizeof(T_Message)> (device)
         {};
 
       inline void setCallback (xmi_dispatch_manytomany_fn cb_recv, void *arg)
