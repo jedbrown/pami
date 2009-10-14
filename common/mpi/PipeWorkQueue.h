@@ -8,26 +8,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/pipeworkqueue/PipeWorkQueue.h"
+#include "common/PipeWorkQueue.h"
 
-#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue::MPI
+#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
 
 namespace XMI
 {
-    namespace PipeWorkQueue
-    {
-        class MPI : public PipeWorkQueue<XMI::PipeWorkQueue::MPI>
+        class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue>
         {
         public:
-            inline MPI():
-                PipeWorkQueue<XMI::PipeWorkQueue::MPI>()
+            inline PipeWorkQueue():
+                Interface::PipeWorkQueue<XMI::PipeWorkQueue>()
                 {
                 }
-            inline MPI(XMI::PipeWorkQueue::MPI &obj):
-                PipeWorkQueue<XMI::PipeWorkQueue::MPI>(obj)
+            inline PipeWorkQueue(XMI::PipeWorkQueue &obj):
+                Interface::PipeWorkQueue<XMI::PipeWorkQueue>(obj)
                 {
                 }
-            inline ~MPI()
+            inline ~PipeWorkQueue()
                 {
                 }
 
@@ -116,8 +114,7 @@ namespace XMI
 		  return false;
                 }
 
-        }; // end XMI::PipeWorkQueue::MPI
-    }; // end namespace PipeWorkQueue
+        }; // end XMI::PipeWorkQueue
 }; // end namespace XMI
 
 #endif // __xmi_mpi_mpipipeworkqueue_h__

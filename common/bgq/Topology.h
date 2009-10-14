@@ -1,5 +1,5 @@
 ///
-/// \file components/topology/bgq/BgqTopology.h
+/// \file common/bgq/Topology.h
 /// \brief XMI Blue Gene\Q specific topology implementation.
 ///
 #ifndef   __components_topology_bgq_bgqtopology_h__
@@ -8,40 +8,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/topology/Topology.h"
+#include "common/Topology.h"
 
-#define XMI_TOPOLOGY_CLASS XMI::Topology::BgqTopology
+#define XMI_TOPOLOGY_CLASS XMI::Topology
 
 namespace XMI
 {
-  namespace Topology
-  {
-    class BgqTopology : public Topology<XMI::Topology::BgqTopology>
+    class Topology : public Interface::Topology<XMI::Topology>
     {
       public:
-        inline BgqTopology():
-            Topology<XMI::Topology::BgqTopology>()
+        inline Topology():
+            Interface::Topology<XMI::Topology>()
         {}
 
-        inline BgqTopology(xmi_coord_t *ll, xmi_coord_t *ur,
+        inline Topology(xmi_coord_t *ll, xmi_coord_t *ur,
                            unsigned char *tl = NULL):
-            Topology<XMI::Topology::BgqTopology>(ll, ur, tl)
+            Interface::Topology<XMI::Topology>(ll, ur, tl)
         {}
 
-        inline BgqTopology(size_t rank):
-            Topology<XMI::Topology::BgqTopology>(rank)
+        inline Topology(size_t rank):
+            Interface::Topology<XMI::Topology>(rank)
         {}
-        inline BgqTopology(size_t rank0, size_t rankn):
-            Topology<XMI::Topology::BgqTopology>(rank0, rankn)
+        inline Topology(size_t rank0, size_t rankn):
+            Interface::Topology<XMI::Topology>(rank0, rankn)
         {}
 
-        inline BgqTopology(size_t *ranks, size_t nranks):
-            Topology<XMI::Topology::BgqTopology>(ranks, nranks)
+        inline Topology(size_t *ranks, size_t nranks):
+            Interface::Topology<XMI::Topology>(ranks, nranks)
         {}
 
         inline unsigned size_of_impl()
         {
-          return sizeof(BgqTopology);
+          return sizeof(Topology);
         }
         inline size_t size_impl()
         {
@@ -106,13 +104,13 @@ namespace XMI
         {
           return false;
         }
-        inline void subTopologyLocalToMe(XMI::Topology::BgqTopology *_new)
+        inline void subTopologyLocalToMe(XMI::Topology *_new)
         {
         }
-        inline void subTopologyNthGlobal(XMI::Topology::BgqTopology *_new, int n)
+        inline void subTopologyNthGlobal(XMI::Topology *_new, int n)
         {
         }
-        inline void subTopologyReduceDims(XMI::Topology::BgqTopology *_new, xmi_coord_t *fmt)
+        inline void subTopologyReduceDims(XMI::Topology *_new, xmi_coord_t *fmt)
         {
         }
         inline void getRankList(size_t max, size_t *ranks, size_t *nranks)
@@ -126,22 +124,21 @@ namespace XMI
         {
           return false;
         }
-        inline void unionTopology(XMI::Topology::BgqTopology *_new, XMI::Topology::BgqTopology *other)
+        inline void unionTopology(XMI::Topology *_new, XMI::Topology *other)
         {
         }
-        inline void intersectTopology(XMI::Topology::BgqTopology *_new, XMI::Topology::BgqTopology *other)
+        inline void intersectTopology(XMI::Topology *_new, XMI::Topology *other)
         {
         }
-        inline void subtractTopology(XMI::Topology::BgqTopology *_new, XMI::Topology::BgqTopology *other)
-        {
-        }
-
-        static void static_init(XMI::Mapping::BgqMapping *map)
+        inline void subtractTopology(XMI::Topology *_new, XMI::Topology *other)
         {
         }
 
-    }; // end XMI::Topology::BgqTopology
-  }; // end namespace Topology
+        static void static_init(XMI::Mapping *map)
+        {
+        }
+
+  }; // end class Topology
 }; // end namespace XMI
 
 #endif // __components_topology_bgq_bgqtopology_h__

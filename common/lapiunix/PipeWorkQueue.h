@@ -8,26 +8,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "components/pipeworkqueue/PipeWorkQueue.h"
+#include "common/PipeWorkQueue.h"
 
-#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue::LAPI
+#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
 
 namespace XMI
 {
-    namespace PipeWorkQueue
-    {
-        class LAPI : public PipeWorkQueue<XMI::PipeWorkQueue::LAPI>
+        class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue>
         {
         public:
-            inline LAPI():
-                PipeWorkQueue<XMI::PipeWorkQueue::LAPI>()
+            inline PipeWorkQueue():
+                Interface::PipeWorkQueue<XMI::PipeWorkQueue>()
                 {
                 }
-            inline LAPI(XMI::PipeWorkQueue::LAPI &obj):
-                PipeWorkQueue<XMI::PipeWorkQueue::LAPI>(obj)
+            inline PipeWorkQueue(XMI::PipeWorkQueue &obj):
+                Interface::PipeWorkQueue<XMI::PipeWorkQueue>(obj)
                 {
                 }
-            inline ~LAPI()
+            inline ~PipeWorkQueue()
                 {
                 }
 
@@ -116,8 +114,7 @@ namespace XMI
 		  return false;
                 }
 
-        }; // end XMI::PipeWorkQueue::LAPI
-    }; // end namespace PipeWorkQueue
+        }; // end class XMI::PipeWorkQueue
 }; // end namespace XMI
 
 #endif // __xmi_lapi_lapipipeworkqueue_h__

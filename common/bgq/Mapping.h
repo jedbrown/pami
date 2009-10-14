@@ -337,7 +337,7 @@ namespace XMI
         }
 
         /// \see XMI::Interface::Mapping::Node::nodeAddr()
-        inline void nodeAddr_impl (Interface::nodeaddr_t & address)
+        inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
         {
           TRACE_ERR((stderr, "Mapping::nodeAddr_impl() >>\n"));
           // Can this just be:  address = _nodeaddr; ???
@@ -347,7 +347,7 @@ namespace XMI
         };
 
         /// \see XMI::Interface::Mapping::Node::task2node()
-        inline xmi_result_t task2node_impl (size_t task, Interface::nodeaddr_t & address)
+        inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
         {
           TRACE_ERR((stderr, "Mapping::task2node_impl(%zd) >>\n", task));
 
@@ -367,7 +367,7 @@ namespace XMI
         };
 
         /// \see XMI::Interface::Mapping::Node::node2task()
-        inline xmi_result_t node2task_impl (Interface::nodeaddr_t address, size_t & task)
+        inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t address, size_t & task)
         {
           TRACE_ERR((stderr, "Mapping::node2task_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 

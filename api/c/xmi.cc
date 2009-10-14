@@ -7,6 +7,8 @@
 #include "SysDep.h"
 #include "Client.h"
 #include "Context.h"
+#include "PipeWorkQueue.h"
+#include "Topology.h"
 #include "sys/xmi.h"
 
 ////////////////////////////////////////////////////////////////////////////////

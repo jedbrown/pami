@@ -40,8 +40,6 @@
 
 namespace XMI
 {
-  namespace SysDep
-  {
     class BgqPersonality : public Personality_t
     {
       public:
@@ -288,8 +286,7 @@ namespace XMI
         bool     _isHTCmode;
         //bool     _hasGI;
 #endif
-    };
-  };
-};
+    };	// class BgqPersonality
+};	// namespace XMI
 
 #endif // __xmi_components_sysdep_bgq_bgqpersonnality_h__
