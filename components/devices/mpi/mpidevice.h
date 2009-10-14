@@ -137,7 +137,8 @@ namespace XMI
         static int dbg = 1;
         int flag = 0;
         MPI_Status sts;
-
+        int events=0;
+        
         if(dbg) {
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl\n",(int)this));
           dbg = 0;
@@ -150,6 +151,7 @@ namespace XMI
           MPI_Testall(1,&((*it_p2p)->_request),&flag,MPI_STATUSES_IGNORE);
           if(flag)
           {
+            events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl() p2p\n",(int)this)); dbg = 1;
             if((*it_p2p)->_done_fn )
               (*it_p2p)->_done_fn((*it_p2p)->_context,(*it_p2p)->_cookie, XMI_SUCCESS);
@@ -168,6 +170,7 @@ namespace XMI
           MPI_Testall(numStatuses,(*it_mcast)->_req,&flag,MPI_STATUSES_IGNORE);
           if(flag)
           {
+            events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl mc\n",(int)this)); dbg = 1;
             if((*it_mcast)->_cb_done.function )
               (*(*it_mcast)->_cb_done.function)((*it_mcast)->_context, (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
@@ -186,6 +189,7 @@ namespace XMI
           MPI_Testall(numStatuses,(*it)->_reqs,&flag,MPI_STATUSES_IGNORE);
           if(flag)
           {
+            events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl m2m\n",(int)this)); dbg = 1;
             if((*it)->_done_fn )
               ((*it)->_done_fn)(NULL, (*it)->_cookie, XMI_SUCCESS);
@@ -205,6 +209,7 @@ namespace XMI
         assert (rc == MPI_SUCCESS);
         if(flag)
         {
+          events++;
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Iprobe %d\n",(int)this,sts.MPI_TAG)); dbg = 1;
           //p2p messages
           switch(sts.MPI_TAG)
@@ -457,7 +462,7 @@ namespace XMI
         // but we want to play nice with other
         // processes, so let's be nice and yield to them.
         sched_yield();
-        return 0;
+        return events;
       };
 
       // Implement MessageDevice Routines
@@ -470,7 +475,7 @@ namespace XMI
         memcpy(dst, _currentBuf, bytes);
         return -1;
       }
-
+ 
       inline size_t peers_impl ()
       {
         return _peers;
