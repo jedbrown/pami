@@ -221,6 +221,7 @@ namespace XMI
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
               TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
                              (int)this, nbytes,dispatch_id));
+              _currentBuf = msg->_p2p_msg._payload;
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
               if(mdi.recv_func)
                 mdi.recv_func(msg->_p2p_msg._metadata,
@@ -243,6 +244,7 @@ namespace XMI
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
               TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
                              (int)this, nbytes,dispatch_id));
+              _currentBuf = (char*)msg->_p2p_msg._metadata+msg->_p2p_msg._metadatasize;
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
               if(mdi.recv_func)
                 mdi.recv_func(msg->_p2p_msg._metadata,
@@ -465,7 +467,7 @@ namespace XMI
       // Implement Packet Device Routines
       inline int    read_impl(void * dst, size_t bytes, void * cookie)
       {
-        assert(0);
+        memcpy(dst, _currentBuf, bytes);
         return -1;
       }
 
@@ -509,6 +511,7 @@ namespace XMI
         _m2msendQ.push_front(msg);
       }
 
+      char                                     *_currentBuf;
       size_t                                    _peers;
       size_t                                    _dispatch_id;
       size_t                                    _mcast_dispatch_id;
