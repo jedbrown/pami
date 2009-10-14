@@ -175,7 +175,7 @@ namespace XMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          inline bool postMessage (uint8_t              state[],
+          inline bool postMessage (uint8_t              (&state)[T_StateBytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
