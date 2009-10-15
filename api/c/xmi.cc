@@ -4,6 +4,7 @@
  */
 
 #include "config.h"
+#include "Global.h"
 #include "SysDep.h"
 #include "Client.h"
 #include "Context.h"
@@ -14,9 +15,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from xmi_misc.h                                                  //
 ////////////////////////////////////////////////////////////////////////////////
-
-XMI_TIME_CLASS XMI_Time;
-
 
 ///
 /// \copydoc XMI_Error_text
@@ -52,7 +50,7 @@ extern "C" xmi_result_t XMI_Configuration_update (xmi_context_t         context,
 ///
 double XMI_Wtime ()
 {
-  return XMI_Time.time();
+  return __global.time.time();
 }
 
 ///
@@ -60,7 +58,7 @@ double XMI_Wtime ()
 ///
 double XMI_Wtick()
 {
-  return XMI_Time.tick();
+  return __global.time.tick();
 }
 
 ///
@@ -68,7 +66,7 @@ double XMI_Wtick()
 ///
 unsigned long long XMI_Wtimebase()
 {
-  return XMI_Time.timebase();
+  return __global.time.timebase();
 }
 
 

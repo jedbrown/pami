@@ -713,7 +713,7 @@ namespace XMI
                                             cb_done,
                                             XMI_MATCH_CONSISTENCY,
                                             _geometry,
-                                            _sd->mapping.task(), //root
+                                            __global.mapping.task(), //root
                                             (char*)ambroadcast->sndbuf,
                                             ambroadcast->stypecount);
                         }

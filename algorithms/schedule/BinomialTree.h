@@ -18,6 +18,7 @@
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
 #include "Schedule.h"
+#include "Global.h"
 #include <strings.h>  //needed for ffs on AIX
 namespace CCMI
 {
@@ -409,7 +410,7 @@ BinomialTreeSchedule(T_SysDep *sysdep, unsigned nranks, unsigned *ranks) : Sched
   CCMI_assert(ranks != NULL);
 
   /* find my index - my place in rank list */
-  unsigned rank = sysdep->mapping.task();
+  unsigned rank = __global.mapping.task();
   CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
   initBinoSched(rank, 0, nranks - 1, ranks);
 }

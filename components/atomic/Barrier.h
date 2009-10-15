@@ -85,7 +85,7 @@ namespace Interface
       ///
       /// \param[in] participants Number of participants for the barrier
       ///
-      inline void init(T_Sysdep *sd, size_t participants);
+      inline void init(T_Sysdep *sd, size_t participants, bool master);
 
 
       ///
@@ -131,9 +131,9 @@ namespace Interface
     }; // class Barrier
 
 template <class T_Sysdep, class T>
-inline void Barrier<T_Sysdep, T>::init(T_Sysdep *sd, size_t participants)
+inline void Barrier<T_Sysdep, T>::init(T_Sysdep *sd, size_t participants, bool master)
 {
-	static_cast<T*>(this)->init_impl(sd, participants);
+	static_cast<T*>(this)->init_impl(sd, participants, master);
 }
 
 template <class T_Sysdep, class T>

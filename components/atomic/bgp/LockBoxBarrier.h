@@ -20,6 +20,7 @@
  */
 #include "common/bgp/LockBoxFactory.h"
 #include "components/atomic/Barrier.h"
+#include "Global.h"
 #include <spi/bgp_SPI.h>
 
 namespace XMI {
@@ -59,7 +60,7 @@ public:
 	_LockBoxBarrier() { }
 	~_LockBoxBarrier() { }
 
-	inline void init_impl(void *sd, size_t z) {
+	inline void init_impl(void *sd, size_t z, bool m) {
 		XMI_abortf("_LockBoxBarrier class must be subclass");
 	}
 
@@ -131,15 +132,16 @@ class LockBoxNodeCoreBarrier :
 public:
 	LockBoxNodeCoreBarrier() {}
 	~LockBoxNodeCoreBarrier() {}
-	inline void init_impl(T_Sysdep *sd, size_t z) {
+	inline void init_impl(T_Sysdep *sd, size_t z, bool m) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
 		// process.
-		_barrier.master = sd->lockboxFactory.masterProc() << sd->lockboxFactory.coreShift();
+#warning take master cue from params?
+		_barrier.master = __global.lockboxFactory.masterProc() << __global.lockboxFactory.coreShift();
 		_barrier.coreshift = 0;
-		_barrier.nparties = sd->lockboxFactory.numCore();
-		sd->lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
+		_barrier.nparties = __global.lockboxFactory.numCore();
+		__global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
 						XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		_status = XMI::Atomic::Interface::Initialized;
 	}
@@ -152,15 +154,15 @@ class LockBoxNodeProcBarrier :
 public:
 	LockBoxNodeProcBarrier() {}
 	~LockBoxNodeProcBarrier() {}
-	inline void init_impl(T_Sysdep *sd, size_t z) {
+	inline void init_impl(T_Sysdep *sd, size_t z, bool m) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will
 		// participate.
-		_barrier.master = sd->lockboxFactory.coreXlat(sd->lockboxFactory.masterProc()) >> sd->lockboxFactory.coreShift();
-		_barrier.coreshift = sd->lockboxFactory.coreShift();
-		_barrier.nparties = sd->lockboxFactory.numProc();
-		sd->lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
+		_barrier.master = __global.lockboxFactory.coreXlat(__global.lockboxFactory.masterProc()) >> __global.lockboxFactory.coreShift();
+		_barrier.coreshift = __global.lockboxFactory.coreShift();
+		_barrier.nparties = __global.lockboxFactory.numProc();
+		__global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
 						XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		_status = XMI::Atomic::Interface::Initialized;
 	}

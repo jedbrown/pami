@@ -410,7 +410,7 @@ namespace XMI
 
 size_t XMI::Device::MU::MUDevice::peers_impl ()
 {
-  return sysdep->mapping.size();
+  return __global.mapping.size();
 }
 
 size_t XMI::Device::MU::MUDevice::task2peer_impl (size_t task)

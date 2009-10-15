@@ -699,7 +699,7 @@ namespace XMI
                                   cb_done_ccmi,
                                   XMI_MATCH_CONSISTENCY,
                                   _geometry,
-                                  _sd.mapping->task(), //root
+                                  __global.mapping->task(), //root
                                   ambroadcast->sndbuf,
                                   ambroadcast->stypecount);
 #endif

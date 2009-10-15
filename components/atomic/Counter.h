@@ -42,7 +42,7 @@ namespace XMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch () const;
+        inline size_t fetch ();
 
         ///
         /// \brief Fetch, then increment the atomic counter object value
@@ -98,7 +98,7 @@ namespace XMI
     }
 
     template <class T_Sysdep, class T_Object>
-    inline size_t Counter<T_Sysdep, T_Object>::fetch () const
+    inline size_t Counter<T_Sysdep, T_Object>::fetch ()
     {
       return static_cast<T_Object*>(this)->fetch_impl();
     }

@@ -18,7 +18,7 @@
 #include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/workqueue/MemoryWorkQueue.h"
 #include "math/math_coremath.h"
-#include "SysDep.h"
+#include "Global.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Message.h"
@@ -137,7 +137,7 @@ public:
 	LocalAllreduceWQModel(xmi_result_t &status) :
 	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel>(status),
 	_shared(_g_l_allreducewq_dev.getSysdep()),
-	_peer(_global.topology_local.rank2Index(__global.mapping.task())),
+	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
 	_npeers(__global.topology_local.size())
 	{
 		if (!_shared.available()) {

@@ -17,7 +17,7 @@
 #include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/workqueue/MemoryWorkQueue.h"
 #include "math/math_coremath.h"
-#include "SysDep.h"
+#include "Global.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Message.h"
@@ -196,7 +196,7 @@ inline bool LocalReduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb)
 	// assert(_g_topology_local->rank2Index(results_topo->index2Rank(0)) != -1);
 	int dtshift = xmi_dt_shift[mcomb->dtype];
 	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
-	unsigned rootpeer = _g_l_reducewq_dev.getSysdep()->topology_local.rank2Index(results_topo->index2Rank(0));
+	unsigned rootpeer = __global.topology_local.rank2Index(results_topo->index2Rank(0));
 	LocalReduceWQMessage *msg =
 		new (mcomb->request) LocalReduceWQMessage(_g_l_reducewq_dev,
 				mcomb->cb_done, _shared, _peer, _npeers, rootpeer,

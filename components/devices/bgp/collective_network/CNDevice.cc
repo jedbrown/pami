@@ -99,10 +99,10 @@ namespace BGP {
 		 */
 		_g_num_active_nodes = __global.mapping.size();
 		if (peers > 1) {
-			lbb.init(&sd, peers);
+			lbb.init(&sd, peers, false);
 			sd.mm.memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
 		}
-		if (sd.lockboxFactory.isMasterRank()) {
+		if (__global.lockboxFactory.isMasterRank()) {
 			static char pkt[BGPCN_PKT_SIZE]__attribute__((__aligned__(16)));
 			_BGP_TreeHwHdr hdr;
 			register unsigned hc, dc, ih, id;
@@ -149,7 +149,7 @@ namespace BGP {
 			// complete the "broadcast" by barriering and
 			// picking up the results from shared memory.
 			lbb.enter();
-			if (!sd.lockboxFactory.isMasterRank()) {
+			if (!__global.lockboxFactory.isMasterRank()) {
 				__cn_times[0] = loc[0];
 				__cn_times[1] = loc[1];
 				_g_min_peers = loc[2];

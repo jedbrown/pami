@@ -177,7 +177,7 @@ namespace XMI
       CCMIAmbroadcastInfo(T_Device *dev, T_Sysdep * sd):
         CollInfo<T_Device>(dev),
 	_model(*dev),
-        _bcast_registration(sd, &_model, sd->mapping.size())
+        _bcast_registration(sd, &_model, __global.mapping.size())
         {
         }
       XMI_Request_t                                   _request;

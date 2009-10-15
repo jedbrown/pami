@@ -15,12 +15,14 @@
 
 #include "sys/xmi.h"
 
+#include "Platform.h"
 #include "common/BaseMapping.h"
 #include "common/TorusMapping.h"
 #include "common/NodeMapping.h"
 
 #include "common/bgp/BgpPersonality.h"
 #include "common/bgp/BgpMapCache.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 #define XMI_MAPPING_CLASS XMI::Mapping
 

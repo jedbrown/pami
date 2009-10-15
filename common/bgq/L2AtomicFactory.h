@@ -96,7 +96,7 @@ namespace BGQ {
 			int ranks[4];
 			int i;
 			int ncores = Kernel_ProcessorCount();
-			int t = sd->mapping().vnpeers(ranks);
+			int t = __global.mapping.vnpeers(ranks);
 			_factory.numCore = 0;
 			_factory.numProc = 0;
 			_factory.masterProc = (unsigned)-1;
@@ -114,9 +114,9 @@ namespace BGQ {
 				if (ranks[i] >= 0) {
 					_factory.numCore += ncores;
 					++_factory.numProc;
-					sd->mapping().rank2Network((size_t)ranks[i], &coord, XMI_TORUS_NETWORK);
+					__global.mapping.rank2Network((size_t)ranks[i], &coord, XMI_TORUS_NETWORK);
 					_factory.coreXlat[i] = coord.u.torus.t << shift;
-					if ((size_t)ranks[i] == sd->mapping().rank()) {
+					if ((size_t)ranks[i] == __global.mapping.rank()) {
 						_factory.myProc = i;
 					}
 					if (_factory.masterProc == (unsigned)-1) {
@@ -126,7 +126,7 @@ namespace BGQ {
 				}
 			}
 			__numProc = _factory.numProc;
-			__isMasterRank = (__masterRank == sd->mapping().rank());
+			__isMasterRank = (__masterRank == __global.mapping.rank());
 		}
 
 		~L2AtomicFactory() {}

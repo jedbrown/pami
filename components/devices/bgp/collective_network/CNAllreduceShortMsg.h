@@ -371,9 +371,9 @@ public:
 	_swq(sysdep, NUM_CORES, MAX_SHORT_MSG)
 	{
 		_dispatch_id = _g_cnallreduceshort_dev.newDispID();
-		_me = sysdep->mapping().rank();
-		_npeers = _g_topology_local->size();
-		_me_ix = _g_topology_local->rank2Index(_me);
+		_me = __global.mapping().rank();
+		_npeers = __global.topology_local->size();
+		_me_ix = __global.topology_local->rank2Index(_me);
 		// at least one must do this
 		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
 		unsigned i;

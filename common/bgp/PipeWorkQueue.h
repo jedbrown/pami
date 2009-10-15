@@ -17,6 +17,10 @@
 #include "SysDep.h"
 #include "common/PipeWorkQueue.h"
 
+#define likely_if       if
+#define unlikely_if     if
+#warning Need likely/unlikely_if!
+
 #define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
 
 // undef/define to control workqueues that are optimized for the flat buffer case.

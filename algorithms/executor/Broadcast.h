@@ -239,7 +239,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
   if((_buflen == 0) && _cb_done)
     _cb_done (NULL, _clientdata, XMI_SUCCESS);
 
-  else if(_sd->mapping.task() == _root)
+  else if(__global.mapping.task() == _root)
   {
     _bytesrecvd = _buflen;
     sendNext ();

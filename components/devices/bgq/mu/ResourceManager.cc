@@ -64,7 +64,7 @@ getInfo()
         for (i = 0; i < MINIMAL_INJ_NUM_SUBGROUPS; i++)
           {
             /// \todo For now, use 'p' coordinate (processor id) as the subgroup number
-            _injFifoInfo->subGroupInfo[i].subGroupId  = _sysdep->mapping.p();
+            _injFifoInfo->subGroupInfo[i].subGroupId  = __global.mapping.p();
             _injFifoInfo->subGroupInfo[i].numElements = MINIMAL_INJ_SUBGROUP_NUM_FIFOS;
           }
 
@@ -81,7 +81,7 @@ getInfo()
         for (i = 0; i < MINIMAL_REC_NUM_SUBGROUPS; i++)
           {
             /// \todo For now, use 'p' coordinate (processor id) as the subgroup number
-            _recFifoInfo->subGroupInfo[i].subGroupId  = _sysdep->mapping.p();
+            _recFifoInfo->subGroupInfo[i].subGroupId  = __global.mapping.p();
             _recFifoInfo->subGroupInfo[i].numElements = MINIMAL_REC_SUBGROUP_NUM_FIFOS;
           }
 
@@ -98,7 +98,7 @@ getInfo()
 
         for (i = 0; i < MINIMAL_BAT_NUM_SUBGROUPS; i++)
           {
-            _batInfo->subGroupInfo[i].subGroupId  = _sysdep->mapping.p();
+            _batInfo->subGroupInfo[i].subGroupId  = __global.mapping.p();
             _batInfo->subGroupInfo[i].numElements = MINIMAL_BAT_SUBGROUP_NUM_ENTRIES;
           }
 

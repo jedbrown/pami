@@ -17,7 +17,7 @@
 #include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/workqueue/MemoryWorkQueue.h"
 #include "math/math_coremath.h"
-#include "SysDep.h"
+#include "Global.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Message.h"
@@ -158,7 +158,7 @@ inline bool LocalBcastWQModel::popstMulticast_impl(xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
 	XMI_TOPOLOGY_CLASS *src_topo = (XMI_TOPOLOGY_CLASS *)mcast->src_participants;
-	unsigned rootpeer = _g_l_bcastwq_dev.getSysdep()->topology_local.rank2Index(src_topo->index2Rank(0));
+	unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
 	bool isrootrole = (_peer == rootpeer);
 	unsigned consumer = (_peer - (_peer > rootpeer));
 	if (isrootrole) consumer = 0; // hack!

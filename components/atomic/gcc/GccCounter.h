@@ -27,7 +27,7 @@ namespace Counter {
 		GccNodeCounter() {}
 		~GccNodeCounter() {}
 		inline void init_impl(T_Sysdep *sd) {
-			sd->mm.memalign(&_addr, sizeof(*_addr), sizeof(*_addr));
+			sd->mm.memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr));
 			_addr->init(sd);
 		}
 		inline size_t fetch_impl() {

@@ -3,7 +3,7 @@
 
 #include "PipeWorkQueue.h"
 
-#include "Time.h"
+#include "Global.h"
 #include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
 
 
@@ -77,7 +77,6 @@ int main(int argc, char ** argv) {
 	// extra time in order to show that the barrier is functional.
 
 	// Register some multisyncs, C++ style
-	XMI::Time time; // cheating?
 	unsigned long long t0, t1, t2;
 	bool rc;
 
@@ -108,8 +107,8 @@ int main(int argc, char ** argv) {
 			return 1;
 		}
 	}
-	t0 = time.timebase();
-	while ((t1 = time.timebase()) - t0 < task_id * 1000);
+	t0 = __global.time.timebase();
+	while ((t1 = __global.time.timebase()) - t0 < task_id * 1000);
 	done = 0;
 	rc = model->postMultisync(&msync);
 	if (!rc) {
@@ -123,7 +122,7 @@ int main(int argc, char ** argv) {
 		status = XMI_Context_advance(context, 100);
 		// assert(status == XMI_SUCCESS);
 	}
-	t2 = time.timebase();
+	t2 = __global.time.timebase();
 	// first number is total time for test barrier, second number is time for *this*
 	// rank's barrier. The second numbers should show a significant variation
 	// between ranks, while the first number should be more uniform.

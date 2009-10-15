@@ -32,7 +32,7 @@ namespace XMI
           Interface::Barrier<T_Sysdep, CounterBarrier<T_Sysdep, T_Counter> > (),
           _control (_counter[0]),
           _lock (&_counter[1]),
-          _status (&_counter[3]),
+          _stat (&_counter[3]),
           _participants (0),
 	  _data(0),
 	  _master(false)
@@ -82,14 +82,14 @@ namespace XMI
 		_lock[phase].fetch_and_inc();
 		do {
 			value = _lock[phase].fetch();
-		while (value > 0 && value < (2 * _participants));
+		} while (value > 0 && value < (2 * _participants));
 		if (_master) {
 			if (phase) {
 				_control.fetch_and_dec();
 			} else {
 				_control.fetch_and_inc();
 			}
-			_status[phase].fetch_and_clear();
+			_stat[phase].fetch_and_clear();
 			_lock[phase].fetch_and_clear();
 		} else {
 			// wait until master releases the barrier by clearing the lock
@@ -109,11 +109,12 @@ namespace XMI
 
         T_Counter & _control;
         T_Counter * _lock;
-        T_Counter * _status;
+        T_Counter * _stat;
 
         size_t      _participants;
         size_t      _data;
 	bool        _master;
+	XMI::Atomic::Interface::barrierPollStatus _status;
 
     };  // XMI::Atomic::CounterBarrier class
   };   // XMI::Atomic namespace

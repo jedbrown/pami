@@ -19,6 +19,7 @@
  *
  *
  */
+#include "Global.h"
 #include "SysDep.h"
 #include "common/bgp/LockBoxFactory.h"
 #include "components/atomic/Mutex.h"
@@ -123,7 +124,7 @@ namespace Mutex {
 		LockBoxNodeMutex() {}
 		~LockBoxNodeMutex() {}
 		inline void init_impl(T_Sysdep *sd) {
-			sd->lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class LockBoxNodeMutex
 
@@ -134,7 +135,7 @@ namespace Mutex {
 		LockBoxProcMutex() {}
 		~LockBoxProcMutex() {}
 		inline void init_impl(T_Sysdep *sd) {
-			sd->lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class LockBoxProcMutex
 
@@ -145,7 +146,7 @@ namespace Mutex {
 		FairLockBoxNodeMutex() {}
 		~FairLockBoxNodeMutex() {}
 		inline void init_impl(T_Sysdep *sd) {
-			sd->lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class FairLockBoxNodeMutex
 
@@ -156,7 +157,7 @@ namespace Mutex {
 		FairLockBoxProcMutex() {}
 		~FairLockBoxProcMutex() {}
 		inline void init_impl(T_Sysdep *sd) {
-			sd->lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class FairLockBoxProcMutex
 
