@@ -38,16 +38,16 @@ namespace XMI
   {
 #define BGQ_DIMS 7
     class BgqMapping :
-        public Interface::Base<BgqMapping,XMI::Memory::SharedMemoryManager>,
+        public Interface::Base<BgqMapping, XMI::Memory::SharedMemoryManager>,
         public Interface::Torus<BgqMapping, BGQ_DIMS>,
-        public Interface::Node<BgqMapping,1>
+        public Interface::Node<BgqMapping, 1>
     {
       public:
 
         inline BgqMapping () :
-            Interface::Base<BgqMapping,XMI::Memory::SharedMemoryManager>(),
+            Interface::Base<BgqMapping, XMI::Memory::SharedMemoryManager>(),
             Interface::Torus<BgqMapping, BGQ_DIMS>(),
-            Interface::Node<BgqMapping,1> (),
+            Interface::Node<BgqMapping, 1> (),
             _a (__global.personality.aCoord()),
             _b (__global.personality.bCoord()),
             _c (__global.personality.cCoord()),
@@ -181,7 +181,7 @@ namespace XMI
         /// \see XMI::Mapping::Interface::Base::init()
         ///
         inline xmi_result_t init_impl(xmi_coord_t &ll, xmi_coord_t &ur,
-				    size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm);
+                                      size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm);
 
         ///
         /// \brief Return the BGP global task for this process
@@ -474,7 +474,7 @@ namespace XMI
 };
 
 xmi_result_t XMI::Mapping::BgqMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
-				    size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm)
+                                                  size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm)
 {
   //_mapcache  = __global.getMapCache();
   //_rankcache = __global.getRankCache();

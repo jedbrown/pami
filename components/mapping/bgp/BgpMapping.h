@@ -49,9 +49,9 @@ namespace XMI
 {
   namespace Mapping
   {
-    class BgpMapping : public Interface::Base<BgpMapping,XMI::Memory::SharedMemoryManager>,
-                       public Interface::Torus<BgpMapping,XMI_BGP_NETWORK_DIMS>,
-                       public Interface::Node<BgpMapping,XMI_BGP_LOCAL_DIMS>
+    class BgpMapping : public Interface::Base<BgpMapping, XMI::Memory::SharedMemoryManager>,
+        public Interface::Torus<BgpMapping, XMI_BGP_NETWORK_DIMS>,
+        public Interface::Node<BgpMapping, XMI_BGP_LOCAL_DIMS>
     {
       protected:
 
@@ -68,9 +68,9 @@ namespace XMI
 
       public:
         inline BgpMapping () :
-            Interface::Base<BgpMapping,XMI::Memory::SharedMemoryManager>(),
-            Interface::Torus<BgpMapping,XMI_BGP_NETWORK_DIMS>(),
-            Interface::Node<BgpMapping,XMI_BGP_LOCAL_DIMS> (),
+            Interface::Base<BgpMapping, XMI::Memory::SharedMemoryManager>(),
+            Interface::Torus<BgpMapping, XMI_BGP_NETWORK_DIMS>(),
+            Interface::Node<BgpMapping, XMI_BGP_LOCAL_DIMS> (),
             _task (0),
             _size (0),
             _nodes (0),
@@ -107,7 +107,7 @@ namespace XMI
         size_t * _mapcache;
         size_t * _rankcache;
         size_t   _peercache[NUM_CORES];
-	unsigned _localranks[NUM_CORES];
+        unsigned _localranks[NUM_CORES];
 
       public:
 
@@ -121,15 +121,15 @@ namespace XMI
         /// \brief Initialize the mapping
         /// \see XMI::Mapping::Interface::Base::init()
         ///
-	inline xmi_result_t init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
-				       size_t &min_rank, size_t &max_rank,
-					XMI::Memory::SharedMemoryManager &mm);
+        inline xmi_result_t init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
+                                       size_t &min_rank, size_t &max_rank,
+                                       XMI::Memory::SharedMemoryManager &mm);
 
         ///
         /// \brief Return the BGP global task for this process
         /// \see XMI::Mapping::Interface::Base::task()
         ///
-	inline size_t task_impl()
+        inline size_t task_impl()
         {
           return _task;
         }
@@ -169,52 +169,57 @@ namespace XMI
         {
           unsigned xyzt1 = _mapcache[task1];
           unsigned xyzt2 = _mapcache[task2];
-          return ((xyzt1>>8)==(xyzt2>>8));
+          return ((xyzt1 >> 8) == (xyzt2 >> 8));
         }
         inline xmi_result_t network2task_impl (const xmi_coord_t  * addr,
-                                              size_t                     * task,
-                                              xmi_network               * type)
+                                               size_t                     * task,
+                                               xmi_network               * type)
         {
-		size_t xSize = __global.personality.xSize();
-		size_t ySize = __global.personality.ySize();
-		size_t zSize = __global.personality.zSize();
-		size_t tSize = __global.personality.tSize();
-		if (addr->network != XMI_DEFAULT_NETWORK &&
-			addr->network != XMI_N_TORUS_NETWORK) {
-			return XMI_INVAL;
-		}
-		*type = XMI_N_TORUS_NETWORK;
-		size_t x = addr->u.n_torus.coords[0];
-		size_t y = addr->u.n_torus.coords[1];
-		size_t z = addr->u.n_torus.coords[2];
-		size_t t = addr->u.n_torus.coords[3];
+          size_t xSize = __global.personality.xSize();
+          size_t ySize = __global.personality.ySize();
+          size_t zSize = __global.personality.zSize();
+          size_t tSize = __global.personality.tSize();
 
-		if ((x >= xSize) || (y >= ySize) ||
-			  (z >= zSize) || (t >= tSize)) {
-			return XMI_INVAL;
-		}
+          if (addr->network != XMI_DEFAULT_NETWORK &&
+              addr->network != XMI_N_TORUS_NETWORK)
+            {
+              return XMI_INVAL;
+            }
 
-		size_t estimated_task = ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize);
+          *type = XMI_N_TORUS_NETWORK;
+          size_t x = addr->u.n_torus.coords[0];
+          size_t y = addr->u.n_torus.coords[1];
+          size_t z = addr->u.n_torus.coords[2];
+          size_t t = addr->u.n_torus.coords[3];
 
-		if (unlikely(_rankcache [estimated_task] == (unsigned)-1)) {
-			return XMI_ERROR;
-		}
+          if ((x >= xSize) || (y >= ySize) ||
+              (z >= zSize) || (t >= tSize))
+            {
+              return XMI_INVAL;
+            }
 
-		*task = _rankcache [estimated_task];
-		return XMI_SUCCESS;
+          size_t estimated_task = ESTIMATED_TASK(x, y, z, t, xSize, ySize, zSize, tSize);
+
+          if (unlikely(_rankcache [estimated_task] == (unsigned) - 1))
+            {
+              return XMI_ERROR;
+            }
+
+          *task = _rankcache [estimated_task];
+          return XMI_SUCCESS;
         }
 
         inline xmi_result_t task2network_impl (size_t                task,
-                                              xmi_coord_t * addr,
-                                              xmi_network          type)
+                                               xmi_coord_t * addr,
+                                               xmi_network          type)
         {
-		unsigned xyzt = _mapcache[task];
-		addr->network = XMI_N_TORUS_NETWORK;
-		addr->u.n_torus.coords[0] = (xyzt >> 24) & 0x0ff;
-		addr->u.n_torus.coords[1] = (xyzt >> 16) & 0x0ff;
-		addr->u.n_torus.coords[2] = (xyzt >> 8) & 0x0ff;
-		addr->u.n_torus.coords[3] = (xyzt >> 0) & 0x0ff;
-		return XMI_SUCCESS;
+          unsigned xyzt = _mapcache[task];
+          addr->network = XMI_N_TORUS_NETWORK;
+          addr->u.n_torus.coords[0] = (xyzt >> 24) & 0x0ff;
+          addr->u.n_torus.coords[1] = (xyzt >> 16) & 0x0ff;
+          addr->u.n_torus.coords[2] = (xyzt >> 8) & 0x0ff;
+          addr->u.n_torus.coords[3] = (xyzt >> 0) & 0x0ff;
+          return XMI_SUCCESS;
         }
         /////////////////////////////////////////////////////////////////////////
         //
@@ -416,16 +421,16 @@ namespace XMI
               (addr[1] >= ySize) ||
               (addr[2] >= zSize) ||
               (addr[3] >= tSize))
-          {
-            return XMI_INVAL;
-          }
+            {
+              return XMI_INVAL;
+            }
 
-          size_t estimated_task = ESTIMATED_TASK(addr[0],addr[1],addr[2],addr[3],xSize,ySize,zSize,tSize);
+          size_t estimated_task = ESTIMATED_TASK(addr[0], addr[1], addr[2], addr[3], xSize, ySize, zSize, tSize);
 
-          if (unlikely(_rankcache [estimated_task] == (unsigned)-1))
-          {
-            return XMI_ERROR;
-          }
+          if (unlikely(_rankcache [estimated_task] == (unsigned) - 1))
+            {
+              return XMI_ERROR;
+            }
 
           task = _rankcache [estimated_task];
           return XMI_SUCCESS;
@@ -442,9 +447,9 @@ namespace XMI
         /// \return Dimension size
         inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
         {
-          TRACE_ERR((stderr,"BgpMapping::nodeTasks_impl(%zd) >>\n", global));
+          TRACE_ERR((stderr, "BgpMapping::nodeTasks_impl(%zd) >>\n", global));
 #warning implement this!
-          TRACE_ERR((stderr,"BgpMapping::nodeTasks_impl(%zd) <<\n", global));
+          TRACE_ERR((stderr, "BgpMapping::nodeTasks_impl(%zd) <<\n", global));
           return XMI_UNIMPL;
         };
 
@@ -461,45 +466,45 @@ namespace XMI
         /// \brief Get the node address for the local task
         inline void nodeAddr_impl (Interface::nodeaddr_t & addr)
         {
-          TRACE_ERR((stderr,"BgpMapping::nodeAddr_impl() >>\n"));
+          TRACE_ERR((stderr, "BgpMapping::nodeAddr_impl() >>\n"));
           addr = _nodeaddr;
           //global = _nodeaddr.global;
           //local  = _nodeaddr.local;
-          TRACE_ERR((stderr,"BgpMapping::nodeAddr_impl(%zd, %zd) <<\n", addr.global, addr.local));
+          TRACE_ERR((stderr, "BgpMapping::nodeAddr_impl(%zd, %zd) <<\n", addr.global, addr.local));
         };
 
         /// \brief Get the node address for a specific task
         inline xmi_result_t task2node_impl (size_t task, Interface::nodeaddr_t & addr)
         {
-          TRACE_ERR((stderr,"BgpMapping::task2node_impl(%zd) >>\n", task));
+          TRACE_ERR((stderr, "BgpMapping::task2node_impl(%zd) >>\n", task));
           //fprintf(stderr, "BgpMapping::task2node_impl() .. _mapcache[%zd] = 0x%08x\n", task, _mapcache[task]);
           //fprintf(stderr, "BgpMapping::task2node_impl() .. _mapcache[%zd] = 0x%08x &_mapcache[%zd] = %p\n", task, _mapcache[task], task, &_mapcache[task]);
-	  size_t coords[XMI_BGP_NETWORK_DIMS + XMI_BGP_LOCAL_DIMS];
-	  task2torus_impl(task, coords);
-	  addr.global = ESTIMATED_TASK_GLOBAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
-	  addr.local = ESTIMATED_TASK_LOCAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
-          TRACE_ERR((stderr,"BgpMapping::task2node_impl(%zd, %zd, %zd) <<\n", task, addr.global, addr.local));
+          size_t coords[XMI_BGP_NETWORK_DIMS + XMI_BGP_LOCAL_DIMS];
+          task2torus_impl(task, coords);
+          addr.global = ESTIMATED_TASK_GLOBAL(coords[0], coords[1], coords[2], coords[3], xSize(), ySize(), zSize(), tSize());
+          addr.local = ESTIMATED_TASK_LOCAL(coords[0], coords[1], coords[2], coords[3], xSize(), ySize(), zSize(), tSize());
+          TRACE_ERR((stderr, "BgpMapping::task2node_impl(%zd, %zd, %zd) <<\n", task, addr.global, addr.local));
           return XMI_SUCCESS;
         };
 
         /// \brief Get the task associated with a specific node address
         inline xmi_result_t node2task_impl (Interface::nodeaddr_t addr, size_t & task)
         {
-          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd) >>\n", addr.global, addr.local));
-          size_t estimated_task = ESTIMATED_TASK_NODE(addr.global,addr.local,xSize(),ySize(),zSize(),tSize());
+          TRACE_ERR((stderr, "BgpMapping::node2task_impl(%zd, %zd) >>\n", addr.global, addr.local));
+          size_t estimated_task = ESTIMATED_TASK_NODE(addr.global, addr.local, xSize(), ySize(), zSize(), tSize());
           task = _rankcache [estimated_task];
-          TRACE_ERR((stderr,"BgpMapping::node2task_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, task));
+          TRACE_ERR((stderr, "BgpMapping::node2task_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, task));
           return XMI_SUCCESS;
         };
 
         /// \brief Get the peer identifier associated with a specific node address
         inline xmi_result_t node2peer_impl (Interface::nodeaddr_t & addr, size_t & peer)
         {
-          TRACE_ERR((stderr,"BgpMapping::node2peer_impl(%zd, %zd) >>\n", addr.global, addr.local));
+          TRACE_ERR((stderr, "BgpMapping::node2peer_impl(%zd, %zd) >>\n", addr.global, addr.local));
 
           peer = _peercache[addr.local];
 
-          TRACE_ERR((stderr,"BgpMapping::node2peer_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, peer));
+          TRACE_ERR((stderr, "BgpMapping::node2peer_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, peer));
           return XMI_SUCCESS;
         };
     };
@@ -507,8 +512,8 @@ namespace XMI
 };
 
 xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
-						  size_t &min_rank, size_t &max_rank,
-						  XMI::Memory::SharedMemoryManager &mm)
+                                                  size_t &min_rank, size_t &max_rank,
+                                                  XMI::Memory::SharedMemoryManager &mm)
 {
   //fprintf (stderr, "BgpMapping::init_impl >>\n");
   _mapcache  = __global.getMapCache();
@@ -519,7 +524,8 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
   __global.getMappingInit(ll, ur, min_rank, max_rank);
 
   unsigned i;
-  for (i=0; i<_size; i++) task2node (i, _nodeaddr);
+
+  for (i = 0; i < _size; i++) task2node (i, _nodeaddr);
 
   task2node (_task, _nodeaddr);
 
@@ -532,35 +538,37 @@ xmi_result_t XMI::Mapping::BgpMapping::init_impl (xmi_coord_t &ll, xmi_coord_t &
   c.u.n_torus.coords[1] = _y;
   c.u.n_torus.coords[2] = _z;
   _peers = 0;
-  for (c.u.n_torus.coords[3]=0; c.u.n_torus.coords[3]<__global.personality.tSize(); c.u.n_torus.coords[3]++)
-  {
-    if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
+
+  for (c.u.n_torus.coords[3] = 0; c.u.n_torus.coords[3] < __global.personality.tSize(); c.u.n_torus.coords[3]++)
     {
-      //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", c.n_torus.coords[3], peer);
-      _peercache[c.u.n_torus.coords[3]] = peer++;
-      _localranks[_peers] = task;
-      _peers++;
+      if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
+        {
+          //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", c.n_torus.coords[3], peer);
+          _peercache[c.u.n_torus.coords[3]] = peer++;
+          _localranks[_peers] = task;
+          _peers++;
+        }
     }
-  }
 
   // Find the maximum task id and the minimum task id.
   for (c.u.n_torus.coords[0] = 0; c.u.n_torus.coords[0] < __global.personality.xSize(); c.u.n_torus.coords[0]++)
-  {
-    for (c.u.n_torus.coords[1] = 0; c.u.n_torus.coords[1] < __global.personality.ySize(); c.u.n_torus.coords[1]++)
     {
-      for (c.u.n_torus.coords[2] = 0; c.u.n_torus.coords[2] < __global.personality.zSize(); c.u.n_torus.coords[2]++)
-      {
-        for (c.u.n_torus.coords[3] = 0; c.u.n_torus.coords[3] < __global.personality.xSize(); c.u.n_torus.coords[3]++)
+      for (c.u.n_torus.coords[1] = 0; c.u.n_torus.coords[1] < __global.personality.ySize(); c.u.n_torus.coords[1]++)
         {
-          if (network2task (&c, &task, &dummy) == XMI_SUCCESS)
-          {
-            if (task < min_rank) min_rank = task;
-            if (task > max_rank) max_rank = task;
-          }
+          for (c.u.n_torus.coords[2] = 0; c.u.n_torus.coords[2] < __global.personality.zSize(); c.u.n_torus.coords[2]++)
+            {
+              for (c.u.n_torus.coords[3] = 0; c.u.n_torus.coords[3] < __global.personality.xSize(); c.u.n_torus.coords[3]++)
+                {
+                  if (network2task (&c, &task, &dummy) == XMI_SUCCESS)
+                    {
+                      if (task < min_rank) min_rank = task;
+
+                      if (task > max_rank) max_rank = task;
+                    }
+                }
+            }
         }
-      }
     }
-  }
 
   //fprintf (stderr, "BgpMapping::init_impl <<\n");
 

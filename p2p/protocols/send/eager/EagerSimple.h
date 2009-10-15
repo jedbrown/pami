@@ -56,7 +56,7 @@ namespace XMI
             size_t         metabytes; ///< Number of bytes of application metadata being sent
             void         * ackinfo;   ///< a.k.a. send_state_t *
             xmi_task_t     fromRank;  ///< Sender global task identifier
-          } short_metadata_t;
+        } short_metadata_t;
 
 
           typedef struct send_state
@@ -67,8 +67,8 @@ namespace XMI
             xmi_event_function      local_fn;  ///< Application send injection completion callback
             xmi_event_function      remote_fn; ///< Application remote receive acknowledgement callback
             void                  * cookie;    ///< Application callback cookie
-            EagerSimple<T_Model,
-                        T_Device> * eager;     ///< Eager protocol object
+            EagerSimple < T_Model,
+            T_Device > * eager;    ///< Eager protocol object
           } send_state_t;
 
           typedef struct recv_state
@@ -83,8 +83,8 @@ namespace XMI
               size_t                offset;
             } longheader;
             short_metadata_t        metadata; ///< Original eager protocol envelope metadata
-            EagerSimple<T_Model,
-                        T_Device> * eager;    ///< Eager protocol object
+            EagerSimple < T_Model,
+            T_Device > * eager;   ///< Eager protocol object
           } recv_state_t;
 
         public:
@@ -235,92 +235,92 @@ namespace XMI
 
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
-                {
-                  TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
-
-                  if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
                   {
-                    TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
+                    TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
 
-                    // "long header" with zero bytes of application data ? Weird.
-                    _envelope_model.postPacket (state->pkt,
-                                                NULL,
-                                                NULL,
-                                                peer,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t),
-                                                (void *) NULL,
-                                                0);
+                    if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                      {
+                        TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                    _longheader_model.postMessage (state->msg[0],
-                                                   send_complete,
-                                                   (void *) state,
-                                                   peer,
-                                                   (void *) &(state->metadata.fromRank),
-                                                   sizeof (xmi_task_t),
-                                                   msginfo,
-                                                   mbytes);
+                        // "long header" with zero bytes of application data ? Weird.
+                        _envelope_model.postPacket (state->pkt,
+                                                    NULL,
+                                                    NULL,
+                                                    peer,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t),
+                                                    (void *) NULL,
+                                                    0);
+
+                        _longheader_model.postMessage (state->msg[0],
+                                                       send_complete,
+                                                       (void *) state,
+                                                       peer,
+                                                       (void *) &(state->metadata.fromRank),
+                                                       sizeof (xmi_task_t),
+                                                       msginfo,
+                                                       mbytes);
+                      }
+                    else
+                      {
+                        TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does fit in a single packet payload\n"));
+
+                        // Single packet header with zero bytes of application data.
+                        _envelope_model.postPacket (state->pkt,
+                                                    send_complete,
+                                                    (void *) state,
+                                                    peer,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t),
+                                                    msginfo,
+                                                    mbytes);
+                      }
                   }
-                  else
-                  {
-                    TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does fit in a single packet payload\n"));
-
-                    // Single packet header with zero bytes of application data.
-                    _envelope_model.postPacket (state->pkt,
-                                                send_complete,
-                                                (void *) state,
-                                                peer,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t),
-                                                msginfo,
-                                                mbytes);
-                  }
-                }
                 else
-                {
-                  TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
-                  //XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
-
-                  if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                   {
-                    TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload\n"));
+                    TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
+                    //XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
 
-                    // "long header" with zero bytes of application data ? Weird.
-                    _envelope_model.postPacket (state->pkt,
-                                                NULL,
-                                                NULL,
-                                                peer,
-                                                NULL,
-                                                0,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t));
+                    if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                      {
+                        TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload\n"));
 
-                    _longheader_model.postMessage (state->msg[0],
-                                                   send_complete,
-                                                   (void *) state,
-                                                   peer,
-                                                   (void *) &(state->metadata.fromRank),
-                                                   sizeof (xmi_task_t),
-                                                   msginfo,
-                                                   mbytes);
+                        // "long header" with zero bytes of application data ? Weird.
+                        _envelope_model.postPacket (state->pkt,
+                                                    NULL,
+                                                    NULL,
+                                                    peer,
+                                                    NULL,
+                                                    0,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t));
+
+                        _longheader_model.postMessage (state->msg[0],
+                                                       send_complete,
+                                                       (void *) state,
+                                                       peer,
+                                                       (void *) &(state->metadata.fromRank),
+                                                       sizeof (xmi_task_t),
+                                                       msginfo,
+                                                       mbytes);
+                      }
+                    else
+                      {
+                        TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does fit in a single packet payload\n"));
+
+                        // Single packet header with zero bytes of application data.
+                        _envelope_model.postPacket (state->pkt,
+                                                    send_complete,
+                                                    (void *) state,
+                                                    peer,
+                                                    NULL,
+                                                    0,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t),
+                                                    msginfo,
+                                                    mbytes);
+                      }
                   }
-                  else
-                  {
-                      TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does fit in a single packet payload\n"));
-
-                    // Single packet header with zero bytes of application data.
-                    _envelope_model.postPacket (state->pkt,
-                                                send_complete,
-                                                (void *) state,
-                                                peer,
-                                                NULL,
-                                                0,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t),
-                                                msginfo,
-                                                mbytes);
-                  }
-                }
               }
             else
               {
@@ -328,79 +328,79 @@ namespace XMI
 
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
-                {
-                  if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
                   {
-                    // Application metadata does not fit in a single packet.
-                    // Send a "long header" message.
-                    _envelope_model.postPacket (state->pkt,
-                                                NULL,
-                                                NULL,
-                                                peer,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t),
-                                                (void *)NULL,
-                                                0);
+                    if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                      {
+                        // Application metadata does not fit in a single packet.
+                        // Send a "long header" message.
+                        _envelope_model.postPacket (state->pkt,
+                                                    NULL,
+                                                    NULL,
+                                                    peer,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t),
+                                                    (void *)NULL,
+                                                    0);
 
-                    _longheader_model.postMessage (state->msg[0],
-                                                   NULL,
-                                                   NULL,
-                                                   peer,
-                                                   (void *) &(state->metadata.fromRank),
-                                                   sizeof (xmi_task_t),
-                                                   msginfo,
-                                                   mbytes);
+                        _longheader_model.postMessage (state->msg[0],
+                                                       NULL,
+                                                       NULL,
+                                                       peer,
+                                                       (void *) &(state->metadata.fromRank),
+                                                       sizeof (xmi_task_t),
+                                                       msginfo,
+                                                       mbytes);
+                      }
+                    else
+                      {
+                        _envelope_model.postPacket (state->pkt,
+                                                    NULL,
+                                                    NULL,
+                                                    peer,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t),
+                                                    msginfo,
+                                                    mbytes);
+                      }
                   }
-                  else
-                  {
-                    _envelope_model.postPacket (state->pkt,
-                                                NULL,
-                                                NULL,
-                                                peer,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t),
-                                                msginfo,
-                                                mbytes);
-                  }
-                }
                 else
-                {
-                  if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                   {
-                    // Protocol metadata + application metadata does not fit in
-                    // a single packet. Send a "long header" message.
-                    _envelope_model.postPacket (state->pkt,
-                                                NULL,
-                                                NULL,
-                                                peer,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t),
-                                                (void *)NULL,
-                                                0);
+                    if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                      {
+                        // Protocol metadata + application metadata does not fit in
+                        // a single packet. Send a "long header" message.
+                        _envelope_model.postPacket (state->pkt,
+                                                    NULL,
+                                                    NULL,
+                                                    peer,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t),
+                                                    (void *)NULL,
+                                                    0);
 
-                    _longheader_model.postMessage (state->msg[0],
-                                                   NULL,
-                                                   NULL,
-                                                   peer,
-                                                   (void *) &(state->metadata.fromRank),
-                                                   sizeof (xmi_task_t),
-                                                   msginfo,
-                                                   mbytes);
+                        _longheader_model.postMessage (state->msg[0],
+                                                       NULL,
+                                                       NULL,
+                                                       peer,
+                                                       (void *) &(state->metadata.fromRank),
+                                                       sizeof (xmi_task_t),
+                                                       msginfo,
+                                                       mbytes);
+                      }
+                    else
+                      {
+                        _envelope_model.postPacket (state->pkt,
+                                                    NULL,
+                                                    NULL,
+                                                    peer,
+                                                    NULL,
+                                                    0,
+                                                    (void *) &(state->metadata),
+                                                    sizeof (short_metadata_t),
+                                                    msginfo,
+                                                    mbytes);
+                      }
                   }
-                  else
-                  {
-                    _envelope_model.postPacket (state->pkt,
-                                                NULL,
-                                                NULL,
-                                                peer,
-                                                NULL,
-                                                0,
-                                                (void *) &(state->metadata),
-                                                sizeof (short_metadata_t),
-                                                msginfo,
-                                                mbytes);
-                  }
-                }
 
                 TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _data_model.postPacket()\n"));
                 _data_model.postMessage (state->msg[1],
@@ -505,6 +505,7 @@ namespace XMI
             XMI_assert(state->info.kind == XMI_AM_KIND_SIMPLE);
 
             TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zd\n", metadata->bytes));
+
             if (unlikely(metadata->bytes == 0))
               {
                 // No data packets will follow this envelope packet. Invoke the
@@ -537,7 +538,7 @@ namespace XMI
                     freeRecvState (state);
                   }
               }
-          
+
             TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));
             return;
           }
@@ -620,15 +621,15 @@ namespace XMI
 
             // This branch should be resolved at compile time and optimized out.
             if (sizeof(short_metadata_t) > T_Model::packet_model_metadata_bytes)
-            {
-              m = (short_metadata_t *) payload;
-              p = (void *) (m + 1);
-            }
+              {
+                m = (short_metadata_t *) payload;
+                p = (void *) (m + 1);
+              }
             else
-            {
-              m = (short_metadata_t *) metadata;
-              p = payload;
-            }
+              {
+                m = (short_metadata_t *) metadata;
+                p = payload;
+              }
 
             TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->fromRank = %zd, m->bytes = %zd, m->ackinfo = %p\n", (size_t)(m->fromRank), m->bytes, m->ackinfo));
 
@@ -649,15 +650,16 @@ namespace XMI
 
             // Check for long header
             size_t header_bytes = m->metabytes;
+
             if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes -
-                                          sizeof(short_metadata_t)>T_Model::packet_model_metadata_bytes?sizeof(short_metadata_t):0)))
-            {
-              state->longheader.addr   = (uint8_t *) malloc(header_bytes);
-              state->longheader.bytes  = header_bytes;
-              state->longheader.offset = 0;
-              TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct() .. long header\n"));
-              return 0;
-            }
+                                           sizeof(short_metadata_t) > T_Model::packet_model_metadata_bytes ? sizeof(short_metadata_t) : 0)))
+              {
+                state->longheader.addr   = (uint8_t *) malloc(header_bytes);
+                state->longheader.bytes  = header_bytes;
+                state->longheader.offset = 0;
+                TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct() .. long header\n"));
+                return 0;
+              }
 
             // This is a short header envelope .. all application metadata
             // has been received.
@@ -732,22 +734,22 @@ namespace XMI
             recv_state_t * state = (recv_state_t *) eager->getConnection (fromRank);
             XMI_assert_debug(state != NULL);
 
-            size_t n = MIN(bytes,state->longheader.bytes-state->longheader.offset);
+            size_t n = MIN(bytes, state->longheader.bytes - state->longheader.offset);
 
             eager->_device.read ((void *)(state->longheader.addr + state->longheader.offset), n, cookie);
             state->longheader.offset += n;
 
             if (state->longheader.bytes == state->longheader.offset)
-            {
-              // The entire application metadata has been received. Invoke the
-              // registered xmi point-to-point dispatch function.
+              {
+                // The entire application metadata has been received. Invoke the
+                // registered xmi point-to-point dispatch function.
 
-              eager->process_envelope (&state->metadata, state->longheader.addr, state);
+                eager->process_envelope (&state->metadata, state->longheader.addr, state);
 
-              // Free the malloc'd longheader buffer now that it has been
-              // delivered to the application.
-              free (state->longheader.addr);
-            }
+                // Free the malloc'd longheader buffer now that it has been
+                // delivered to the application.
+                free (state->longheader.addr);
+              }
 
             TRACE_ERR((stderr, "<< EagerSimple::dispatch_longheader_message()\n"));
             return 0;
@@ -795,58 +797,59 @@ namespace XMI
               {
                 // Copy data from the packet buffer into the receive buffer.
                 if (nleft < bytes)
-                {
-                  //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, nleft);
-                  eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
+                  {
+                    //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, nleft);
+                    eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
 
-                  // Update the receive state to prepate for another data packet.
-                  state->received += nleft;
-                }
+                    // Update the receive state to prepate for another data packet.
+                    state->received += nleft;
+                  }
                 else
-                {
-                  //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, bytes);
-                  eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, bytes, cookie);
+                  {
+                    //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, bytes);
+                    eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, bytes, cookie);
 
-                  // Update the receive state to prepate for another data packet.
-                  state->received += bytes;
-                }
+                    // Update the receive state to prepate for another data packet.
+                    state->received += bytes;
+                  }
               }
 
             TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zd\n", nbyte));
 
-            if (nbyte+bytes >= state->metadata.bytes)
-            {
-              // No more data packets will be received on this connection.
-              // Clear the connection data and prepare for the next message.
-              eager->clearConnection (fromRank);
-
-              // No more data is to be written to the receive buffer.
-              // Invoke the receive done callback.
-              if (state->info.local_fn)
-                state->info.local_fn (eager->_context,
-                                      state->info.cookie,
-                                      XMI_SUCCESS);
-
-              if (state->metadata.ackinfo != NULL)
+            if (nbyte + bytes >= state->metadata.bytes)
               {
-                eager->_ack_model.postPacket (state->pkt,
-                                              receive_complete,
-                                              (void *) state,
-                                              fromRank,
-                                              (void *) NULL,
-                                              0,
-                                              (void *) &(state->metadata.ackinfo),
-                                              sizeof (send_state_t *));
+                // No more data packets will be received on this connection.
+                // Clear the connection data and prepare for the next message.
+                eager->clearConnection (fromRank);
+
+                // No more data is to be written to the receive buffer.
+                // Invoke the receive done callback.
+                if (state->info.local_fn)
+                  state->info.local_fn (eager->_context,
+                                        state->info.cookie,
+                                        XMI_SUCCESS);
+
+                if (state->metadata.ackinfo != NULL)
+                  {
+                    eager->_ack_model.postPacket (state->pkt,
+                                                  receive_complete,
+                                                  (void *) state,
+                                                  fromRank,
+                                                  (void *) NULL,
+                                                  0,
+                                                  (void *) &(state->metadata.ackinfo),
+                                                  sizeof (send_state_t *));
+                  }
+                else
+                  {
+                    // Otherwise, return the receive state object memory to
+                    // the memory pool.
+                    eager->freeRecvState (state);
+                  }
+
+                TRACE_ERR((stderr, "<< dispatch_data_message(), fromRank = %zd ... receive completed\n", (size_t)fromRank));
+                return 0;
               }
-              else
-              {
-                // Otherwise, return the receive state object memory to
-                // the memory pool.
-                eager->freeRecvState (state);
-              }
-              TRACE_ERR((stderr, "<< dispatch_data_message(), fromRank = %zd ... receive completed\n", (size_t)fromRank));
-              return 0;
-            }
 
             TRACE_ERR((stderr, "<< dispatch_data_message(), fromRank = %zd ... wait for more data\n", (size_t)fromRank));
             return 0;

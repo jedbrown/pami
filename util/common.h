@@ -54,54 +54,54 @@
 #define XMI_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: ", __LINE__); fprintf(stderr, fmt); abort(); }
 
 #ifndef ASSERT_LEVEL
-  #define ASSERT_LEVEL 2
-  #warning ASSERT_LEVEL not set by config.  Defaulting to all asserts enabled
+#define ASSERT_LEVEL 2
+#warning ASSERT_LEVEL not set by config.  Defaulting to all asserts enabled
 #endif
 
 #if ASSERT_LEVEL==0    // All asserts are disabled
-  #define XMI_assert(expr)
-  #define XMI_assertf(expr, fmt...)
-  #define XMI_assert_debug(expr)
-  #define XMI_assert_debugf(expr, fmt...)
+#define XMI_assert(expr)
+#define XMI_assertf(expr, fmt...)
+#define XMI_assert_debug(expr)
+#define XMI_assert_debugf(expr, fmt...)
 
 #elif ASSERT_LEVEL==1  // Only "normal" asserts, not debug, are enabled
-  #define XMI_assert(expr)                assert(expr)
-  #define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
-  #define XMI_assert_debug(expr)
-  #define XMI_assert_debugf(expr, fmt...)
+#define XMI_assert(expr)                assert(expr)
+#define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
+#define XMI_assert_debug(expr)
+#define XMI_assert_debugf(expr, fmt...)
 
 #else // ASSERT_LEVEL==2 ... All asserts are enabled
-  #define XMI_assert(expr)                assert(expr)
-  #define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
-  #define XMI_assert_debug(expr)          assert(expr)
-  #define XMI_assert_debugf(expr, fmt...) XMI_assertf(expr, fmt)
+#define XMI_assert(expr)                assert(expr)
+#define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
+#define XMI_assert_debug(expr)          assert(expr)
+#define XMI_assert_debugf(expr, fmt...) XMI_assertf(expr, fmt)
 
 #endif // ASSERT_LEVEL
 
 
-static inline int64_t min_nb64(int64_t x,int64_t y)
+static inline int64_t min_nb64(int64_t x, int64_t y)
 {
-  return x+(((y-x)>>(63))&(y-x));
+  return x + (((y - x) >> (63))&(y - x));
 }
 
-static inline int32_t min_nb32(int32_t x,int32_t y)
+static inline int32_t min_nb32(int32_t x, int32_t y)
 {
-  return x+(((y-x)>>(31))&(y-x));
+  return x + (((y - x) >> (31))&(y - x));
 }
 
-static inline int64_t max_nb64(int64_t x,int64_t y)
+static inline int64_t max_nb64(int64_t x, int64_t y)
 {
-  return x-(((x-y)>>(63))&(x-y));
+  return x - (((x - y) >> (63))&(x - y));
 }
 
-static inline int32_t max_nb32(int32_t x,int32_t y)
+static inline int32_t max_nb32(int32_t x, int32_t y)
 {
-  return x-(((x-y)>>(31))&(x-y));
+  return x - (((x - y) >> (31))&(x - y));
 }
 #if 0
 inline void* operator new(size_t obj_size, void* pointer)
 {
-/*   printf("%s: From %p for %u\n", __PRETTY_FUNCTION__, pointer, obj_size); */
+  /*   printf("%s: From %p for %u\n", __PRETTY_FUNCTION__, pointer, obj_size); */
 //  CCMI_assert_debug(pointer != NULL);
   return pointer;
 }
