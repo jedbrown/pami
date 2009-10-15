@@ -92,8 +92,9 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
       protected:
 
         /// \brief BG/P compute node processors run at 850 MHz
-        static const double seconds_per_cycle = 1.176470588235294033e-09;
+        static const double seconds_per_cycle;
     };
+    const double BgpTime::seconds_per_cycle = 1.176470588235294033e-09;
   };
 };
 #endif // __components_time_time_h__

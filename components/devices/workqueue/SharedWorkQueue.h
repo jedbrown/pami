@@ -18,8 +18,7 @@
 #include "components/sysdep/SysDep.h"
 
 #warning This platform-specific code needs to move somewhere else.
-#ifdef __bgp__
-
+#if defined(__bgp__) and !defined(__bgq__)
 #include <bpcore/ppc450_inlines.h>
 #define mem_sync()	_bgp_msync()
 #define mem_barrier()	_bgp_mbar()
@@ -31,7 +30,11 @@ asm volatile ("stfpdux %2,%0,%1": "+Ob" (ptr) : "r" (incr), "f" (x) : "memory")
 #elif defined(__bgq__)
 
 #include <hwi/include/bqc/A2_inlines.h>
+#ifdef mem_sync
+#warning mem_sync already defined
+#else
 #define mem_sync ppc_msync
+#endif
 #define LQU(x, y, z)
 #define SQU(x, y, z)
 
@@ -180,7 +183,9 @@ namespace XMI
             //fprintf (stderr, "SharedWorkQueue::shmemcpy() dst = %p, src = %p, n = %d, aligned = %d\n", dst, src, n, isaligned);
             //if ((((((unsigned) dst) | ((unsigned) src)) & 0x0f) == 0) && (n == _worksize))
             bool ismultiple256 = !(n & 0x000000ff);
-#if defined(__bgp__)
+#if defined(__bgp__) and !defined(__bgq__) and !defined(__xlC__) and !defined(__xlc__) 
+/// \todo xlC doesn't like LQU/SQU so don't do it for now
+
             if (isaligned && ismultiple256)
             {
               //fprintf (stderr, "SharedWorkQueue::shmemcpy() do dhummer memcpy\n");

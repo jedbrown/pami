@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgp_cnpacket_h__
 #define __components_devices_bgp_cnpacket_h__
 
-#if defined(__bgp__)
+#if defined(__bgp__) and !defined(__bgq__)
 
 /* -------------------------------------------------------------------------- */
 /*                                                    BG/P tree packet header */
@@ -68,6 +68,6 @@ namespace BGP {
 }; /* Device */
 }; /* XMI */
 
-#endif /* defined(__bgp__) */
+#endif /* defined(__bgp__) and  and !defined(__bgq__) */
 
 #endif /* __components_devices_bgp_cnpacket_h__ */

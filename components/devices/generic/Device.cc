@@ -32,7 +32,7 @@ XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 #ifdef NOT_YET
 XMI::Device::BGP::MemoryBarrierDev _g_mbarrier_dev;
 XMI::Device::BGP::LLSCDev _g_llscbarrier_dev;
@@ -46,7 +46,7 @@ XMI::Device::BGP::CNAllreduceDevice	_g_cnallreduce_dev(&_g_cncommon_dev);
 XMI::Device::BGP::CNAllreducePPDevice	_g_cnallreducepp_dev(&_g_cncommon_dev);
 XMI::Device::BGP::CNAllreduce2PDevice	_g_cnallreduce2p_dev(&_g_cncommon_dev);
 XMI::Device::BGP::CNBroadcastDevice	_g_cnbroadcast_dev(&_g_cncommon_dev);
-#endif // __bgp__
+#endif // __bgp__ and !__bgq__
 
 namespace XMI {
 namespace Device {
@@ -95,7 +95,7 @@ namespace Generic {
 		}
 		//+ core_mutex.release();
 		//+ }
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 		pthread_poof_np();
 #else
 #warning how does generic device thread exit?

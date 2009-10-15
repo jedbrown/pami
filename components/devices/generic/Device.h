@@ -23,7 +23,7 @@
 // since the fine details of all this have not been designed yet, these will
 // remain here until such time.
 //#warning The atomic class to use for a platform should be a template parameter. These typedefs belong in the context class.
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 
 #include "spi/kernel_interface.h"
 #include "components/atomic/bgp/LockBoxMutex.h"
@@ -129,7 +129,7 @@ public:
 							size_t len, int num) {
 		// early advance was done by the "real" device post()
 		{ int t;
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 		t = Kernel_PhysicalProcessorID();
 #else
 		t = 0;
@@ -154,7 +154,7 @@ public:
 				__Threads[n].pushTail(thr);
 #endif /* !USE_WAKEUP_VECTORS */
 				if (t > 0) {
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 					// Just kick off threads... they compete for work units.
 					// Presumably, each will get one...
 					// TBD: need to keep track of in-use threads...
@@ -209,7 +209,7 @@ private:
 	//////////////////////////////////////////////////////////////////
 	ThreadQueue __Threads[NUM_CHANNELS];
 	int __lastThreadUsed;
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 	unsigned _thrIPI[NUM_CHANNELS];
 #endif
 	int __maxHWThreads;

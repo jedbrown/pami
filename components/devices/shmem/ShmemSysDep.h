@@ -19,7 +19,7 @@
 #ifndef __components_devices_shmem_shmemsysdep_h__
 #define __components_devices_shmem_shmemsysdep_h__
 
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 
 /// The device supports a rendezvous style protocol for shaddr
 //#define SUPPORT_SHADDR

@@ -45,7 +45,7 @@ extern XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 extern XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 extern XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 // These are needed in order to use the Collective Network sub-devices.
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
@@ -82,7 +82,7 @@ static inline unsigned long __tsc() {
 #define __defined__tsc__
 #endif /* ! __defined__tsc__ */
 
-#endif // __bgp__
+#endif // __bgp__ and !__bgq__
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/GenericDevice.h
@@ -174,7 +174,7 @@ namespace Generic {
 			&__wakeupVectors);
 		XMI_assert(rc == XMI_SUCCESS);
 #endif /* USE_WAKEUP_VECTORS */
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 		// This is for setting up comm_threads on BG/P.
 		// These threads are used only by the Tree device,
 		// even though this code is fairly abstract. Use of
@@ -276,7 +276,7 @@ namespace Generic {
 		_g_l_reducewq_dev.init(sd, this);
 		_g_l_bcastwq_dev.init(sd, this);
 
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 #ifdef NOT_YET
 		_g_mbarrier_dev.init(sd, this);
 		_g_llscbarrier_dev.init(sd, this);
@@ -288,7 +288,7 @@ namespace Generic {
 		_g_cnallreducepp_dev.init(sd, this);
 		_g_cnallreduce2p_dev.init(sd, this);
 		_g_cnbroadcast_dev.init(sd, this);
-#endif // __bgp__
+#endif // __bgp__ and !__bgq__
 	}
 
 	/// \brief Quick check whether full advance is needed.
@@ -302,7 +302,7 @@ namespace Generic {
 		// There can be no threads to advance unless there is at least one
 		// message, on the __GenericQueue[].
 		int t;
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 		t = Kernel_PhysicalProcessorID();
 #else
 #warning need way to get thread id
@@ -335,7 +335,7 @@ namespace Generic {
 		events += _g_l_reducewq_dev.advanceRecv();
 		events += _g_l_bcastwq_dev.advanceRecv();
 
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 #ifdef NOT_YET
 		events += _g_mbarrier_dev.advanceRecv();
 		events += _g_llscbarrier_dev.advanceRecv();
@@ -347,7 +347,7 @@ namespace Generic {
 		events += _g_cnallreducepp_dev.advanceRecv();
 		events += _g_cnallreduce2p_dev.advanceRecv();
 		events += _g_cnbroadcast_dev.advanceRecv();
-#endif // __bgp__
+#endif // __bgp__ and !__bgq__
 		return events;
 	}
 
@@ -382,7 +382,7 @@ namespace Generic {
 		// Advance any recvs that have no "channels" (only 1 channel)...
 		events += __advanceRecv();
 		int t;
-#ifdef __bgp__
+#if defined(__bgp__) and !defined(__bgq__)
 		t = Kernel_PhysicalProcessorID();
 #else
 		t = 0;
