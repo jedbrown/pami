@@ -115,12 +115,38 @@ namespace XMI
               _device (device),
               _fromRank (origin_task),
               _context (context),
+              _contextid (contextid),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _connection ((void **)NULL),
-              _connection_manager (device),
-              _contextid (contextid)
+              _connection_manager (device)
           {
+            // ----------------------------------------------------------------
+            // Compile-time assertions
+            // ----------------------------------------------------------------
+
+            // This protocol only works with reliable networks.
+            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
+
+            // This protcol only works with deterministic models.
+            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
+
+            // Assert that the size of the packet metadata area is large
+            // enough to transfer a single xmi_task_t. This is used in the
+            // various postMessage() calls to transfer long header and data
+            // messages.
+            COMPILE_TIME_ASSERT(sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes);
+
+            // Assert that the size of the packet payload area is large
+            // enough to transfer a single virtual address. This is used in
+            // the postPacket() calls to transfer the ack information.
+            COMPILE_TIME_ASSERT(sizeof(void *) <= T_Model::packet_model_payload_bytes);
+
+            // ----------------------------------------------------------------
+            // Compile-time assertions
+            // ----------------------------------------------------------------
+
+
             _connection = _connection_manager.getConnectionArray (context);
 
             TRACE_ERR((stderr, "EagerSimple() [0]\n"));
@@ -228,25 +254,14 @@ namespace XMI
                                                 (void *) NULL,
                                                 0);
 
-                    // This branch should be resolved at compile time and optimized out.
-                    // COMPILE_TIME_ASSERT instead ?
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
-                    {
-                      TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
-                      _longheader_model.postMessage (state->msg[0],
-                                                     send_complete,
-                                                     (void *) state,
-                                                     peer,
-                                                     (void *) &(state->metadata.fromRank),
-                                                     sizeof (xmi_task_t),
-                                                     msginfo,
-                                                     mbytes);
-                    }
-                    else
-                    {
-                      TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does not fit in the message metadata\n"));
-                      XMI_abort();
-                    }
+                    _longheader_model.postMessage (state->msg[0],
+                                                   send_complete,
+                                                   (void *) state,
+                                                   peer,
+                                                   (void *) &(state->metadata.fromRank),
+                                                   sizeof (xmi_task_t),
+                                                   msginfo,
+                                                   mbytes);
                   }
                   else
                   {
@@ -283,25 +298,14 @@ namespace XMI
                                                 (void *) &(state->metadata),
                                                 sizeof (short_metadata_t));
 
-                    // This branch should be resolved at compile time and optimized out.
-                    // COMPILE_TIME_ASSERT instead ?
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
-                    {
-                      TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
-                      _longheader_model.postMessage (state->msg[0],
-                                                     send_complete,
-                                                     (void *) state,
-                                                     peer,
-                                                     (void *) &(state->metadata.fromRank),
-                                                     sizeof (xmi_task_t),
-                                                     msginfo,
-                                                     mbytes);
-                    }
-                    else
-                    {
-                      TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload, xmi_task_t does not fit in the message metadata\n"));
-                      XMI_abort();
-                    }
+                    _longheader_model.postMessage (state->msg[0],
+                                                   send_complete,
+                                                   (void *) state,
+                                                   peer,
+                                                   (void *) &(state->metadata.fromRank),
+                                                   sizeof (xmi_task_t),
+                                                   msginfo,
+                                                   mbytes);
                   }
                   else
                   {
@@ -341,23 +345,15 @@ namespace XMI
                                                 sizeof (short_metadata_t),
                                                 (void *)NULL,
                                                 0);
-                    // This branch should be resolved at compile time and optimized out.
-                    // COMPILE_TIME_ASSERT instead ?
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
-                    {
-                      _longheader_model.postMessage (state->msg[0],
-                                                     NULL,
-                                                     NULL,
-                                                     peer,
-                                                     (void *) &(state->metadata.fromRank),
-                                                     sizeof (xmi_task_t),
-                                                     msginfo,
-                                                     mbytes);
-                    }
-                    else
-                    {
-                      XMI_abort();
-                    }
+
+                    _longheader_model.postMessage (state->msg[0],
+                                                   NULL,
+                                                   NULL,
+                                                   peer,
+                                                   (void *) &(state->metadata.fromRank),
+                                                   sizeof (xmi_task_t),
+                                                   msginfo,
+                                                   mbytes);
                   }
                   else
                   {
@@ -387,23 +383,14 @@ namespace XMI
                                                 (void *)NULL,
                                                 0);
 
-                    // This branch should be resolved at compile time and optimized out.
-                    // COMPILE_TIME_ASSERT instead ?
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
-                    {
-                      _longheader_model.postMessage (state->msg[0],
-                                                     NULL,
-                                                     NULL,
-                                                     peer,
-                                                     (void *) &(state->metadata.fromRank),
-                                                     sizeof (xmi_task_t),
-                                                     msginfo,
-                                                     mbytes);
-                    }
-                    else
-                    {
-                      XMI_abort();
-                    }
+                    _longheader_model.postMessage (state->msg[0],
+                                                   NULL,
+                                                   NULL,
+                                                   peer,
+                                                   (void *) &(state->metadata.fromRank),
+                                                   sizeof (xmi_task_t),
+                                                   msginfo,
+                                                   mbytes);
                   }
                   else
                   {
@@ -421,24 +408,14 @@ namespace XMI
                 }
 
                 TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _data_model.postPacket()\n"));
-
-                // This branch should be resolved at compile time and optimized out.
-                // COMPILE_TIME_ASSERT instead ?
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
-                {
-                  _data_model.postMessage (state->msg[1],
-                                           send_complete,
-                                           (void *) state,
-                                           peer,
-                                           (void *) &(state->metadata.fromRank),
-                                           sizeof (xmi_task_t),
-                                           src,
-                                           bytes);
-                }
-                else
-                {
-                  XMI_abort();
-                }
+                _data_model.postMessage (state->msg[1],
+                                         send_complete,
+                                         (void *) state,
+                                         peer,
+                                         (void *) &(state->metadata.fromRank),
+                                         sizeof (xmi_task_t),
+                                         src,
+                                         bytes);
               }
 
             TRACE_ERR((stderr, "EagerSimple::simple_impl() <<\n"));
@@ -446,6 +423,25 @@ namespace XMI
           };
 
         protected:
+
+          MemoryAllocator < sizeof(send_state_t), 16 > _send_allocator;
+          MemoryAllocator < sizeof(recv_state_t), 16 > _recv_allocator;
+
+          T_Model         _envelope_model;
+          T_Model         _longheader_model;
+          T_Model         _data_model;
+          T_Model         _ack_model;
+          T_Device      & _device;
+          xmi_task_t      _fromRank;
+          xmi_context_t   _context;
+          size_t          _contextid;
+
+          xmi_dispatch_callback_fn   _dispatch_fn;
+          void                     * _cookie;
+
+          void **                   _connection;
+          EagerConnection<T_Device> _connection_manager;
+
           inline send_state_t * allocateSendState ()
           {
             return (send_state_t *) _send_allocator.allocateObject ();
@@ -533,23 +529,14 @@ namespace XMI
                 // Replace with 'unlikely if'
                 if (state->metadata.ackinfo != NULL)
                   {
-                    // This branch should be resolved at compile time and optimized out.
-                    // Replaace with COMPILE_TIME_ASSERT ?
-                    if (sizeof(send_state_t *) <= T_Model::packet_model_metadata_bytes)
-                    {
-                      _ack_model.postPacket (state->pkt,
-                                             receive_complete,
-                                             (void *) state,
-                                             metadata->fromRank,
-                                             (void *) &(state->metadata.ackinfo),
-                                             sizeof (send_state_t *),
-                                             (void *)NULL,
-                                             0);
-                    }
-                    else
-                    {
-                      XMI_abort(); // COMPILE_TIME_ASSERT instead ?
-                    }
+                    _ack_model.postPacket (state->pkt,
+                                           receive_complete,
+                                           (void *) state,
+                                           metadata->fromRank,
+                                           (void *) NULL,
+                                           0,
+                                           (void *) &(state->metadata.ackinfo),
+                                           sizeof (send_state_t *));
                   }
                 else
                   {
@@ -562,26 +549,6 @@ namespace XMI
             return;
           }
 
-          MemoryAllocator < sizeof(send_state_t), 16 > _send_allocator;
-          MemoryAllocator < sizeof(recv_state_t), 16 > _recv_allocator;
-
-          T_Model         _envelope_model;
-          T_Model         _longheader_model;
-          T_Model         _data_model;
-          T_Model         _ack_model;
-          T_Device      & _device;
-          xmi_task_t      _fromRank;
-
-          xmi_context_t   _context;
-
-          xmi_dispatch_callback_fn   _dispatch_fn;
-          void                     * _cookie;
-
-          void ** _connection;
-          EagerConnection<T_Device> _connection_manager;
-
-          size_t      _contextid;
-
           static int dispatch_ack_direct (void   * metadata,
                                           void   * payload,
                                           size_t   bytes,
@@ -589,7 +556,7 @@ namespace XMI
                                           void   * cookie)
           {
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_direct()\n"));
-            send_state_t * state = *((send_state_t **) metadata);
+            send_state_t * state = *((send_state_t **) payload);
 
             xmi_event_function   remote_fn = state->remote_fn;
             void               * fn_cookie = state->cookie;
@@ -870,22 +837,14 @@ namespace XMI
 
               if (state->metadata.ackinfo != NULL)
               {
-                // This branch should be resolved at compile time and optimized out.
-                if (sizeof(send_state_t *) <= T_Model::packet_model_metadata_bytes)
-                {
-                  eager->_ack_model.postPacket (state->pkt,
-                                                receive_complete,
-                                                (void *) state,
-                                                fromRank,
-                                                (void *) &(state->metadata.ackinfo),
-                                                sizeof (send_state_t *),
-                                                (void *)NULL,
-                                                0);
-                }
-                else
-                {
-                  XMI_abort(); // COMPILE_TIME_ASSERT instead ?
-                }
+                eager->_ack_model.postPacket (state->pkt,
+                                              receive_complete,
+                                              (void *) state,
+                                              fromRank,
+                                              (void *) NULL,
+                                              0,
+                                              (void *) &(state->metadata.ackinfo),
+                                              sizeof (send_state_t *));
               }
               else
               {
@@ -996,19 +955,6 @@ namespace XMI
 
             TRACE_ERR((stderr, "EagerSimple::receive_complete() << \n"));
             return;
-          };
-
-        private:
-
-          static inline void compile_time_assert ()
-          {
-            // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
-            COMPILE_TIME_ASSERT(T_Model::reliable_message_model == true);
-
-            // This protcol only works with deterministic models.
-            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
-            COMPILE_TIME_ASSERT(T_Model::deterministic_message_model == true);
           };
       };
     };

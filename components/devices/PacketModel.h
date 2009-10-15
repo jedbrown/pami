@@ -47,7 +47,10 @@ namespace XMI
           ///
           PacketModel (T_Device & device, xmi_context_t context)
           {
-            compile_time_assert ();
+            // This compile time assert verify that the specific packet model
+            // class, T_Model, has correctly specified the same value for the
+            // 'transfer state bytes' template parameter and constant.
+            COMPILE_TIME_ASSERT(T_Model::packet_model_state_bytes == T_StateBytes);
           };
 
           ~PacketModel () {};
@@ -280,16 +283,6 @@ namespace XMI
                                            size_t   bytes0,
                                            void   * payload1,
                                            size_t   bytes1);
-
-        private:
-
-          static inline void compile_time_assert ()
-          {
-            // This compile time assert verify that the specific packet model
-            // class, T_Model, has correctly specified the same value for the
-            // 'transfer state bytes' template parameter and constant.
-            COMPILE_TIME_ASSERT(T_Model::packet_model_state_bytes == T_StateBytes);
-          };
       };
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>

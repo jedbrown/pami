@@ -74,6 +74,19 @@ namespace XMI
           _mu (),
           _shmem ()
         {
+          // ----------------------------------------------------------------
+          // Compile-time assertions
+          // ----------------------------------------------------------------
+
+          // Make sure the memory allocator is large enough for all
+          // protocol classes.
+          COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
+          COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
+
+          // ----------------------------------------------------------------
+          // Compile-time assertions
+          // ----------------------------------------------------------------
+
           _mu.init (&_sysdep);
           _shmem.init (&_sysdep);
         }
@@ -406,14 +419,6 @@ namespace XMI
 
         void * _dispatch[1024];
         MemoryAllocator<1024,16> _request;
-
-        static inline void compile_time_assert ()
-        {
-          // Make sure the memory allocator is large enough for all
-          // protocol classes.
-          COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
-        };
-
     }; // end XMI::Context::BgqContext
   }; // end namespace Context
 }; // end namespace XMI

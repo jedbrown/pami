@@ -123,7 +123,7 @@ inline void* operator new(size_t obj_size, void* pointer)
  *       to be evaluated. This is because the compile will not even
  *       parse the function unless it is used.
  */
-#define COMPILE_TIME_ASSERT(expr) switch(0){case 0:case expr:;}
+#define COMPILE_TIME_ASSERT(expr) if(0){switch(0){case 0:case expr:;}}
 
 typedef xmi_geometry_t (*xmi_mapidtogeometry_fn) (int comm);
 

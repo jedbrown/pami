@@ -105,6 +105,20 @@ namespace XMI
               _cookie (cookie),
               _device (device)
           {
+            // ----------------------------------------------------------------
+            // Compile-time assertions
+            // ----------------------------------------------------------------
+
+            // This protocol only works with reliable networks.
+            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
+
+            // This protcol only works with deterministic models.
+            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
+
+            // ----------------------------------------------------------------
+            // Compile-time assertions
+            // ----------------------------------------------------------------
+
             TRACE_ERR((stderr, "EagerImmediate() [0]\n"));
             status = _send_model.init (dispatch,
                                        dispatch_send_direct, this,
@@ -304,17 +318,6 @@ namespace XMI
             TRACE_ERR((stderr, "EagerImmediate::send_complete() << \n"));
             return;
           }
-
-        private:
-
-          static inline void compile_time_assert ()
-          {
-            // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
-
-            // This protcol only works with deterministic models.
-            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
-          };
       };
     };
   };
