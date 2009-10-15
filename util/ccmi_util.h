@@ -42,36 +42,6 @@
 
 #define CCMIQuad_sizeof(x)  ((sizeof(x)+15)>>4)
 
-/**
- * \brief Creates a compile error if the condition is false.
- *
- * This macro must be used within a function for the compiler to process it.
- * It is suggested that C++ classes and C files create an inline function
- * similar to the following example. The inline function is never used at
- * runtime and should be optimized out by the compiler. It exists for the sole
- * purpose of moving runtime \c assert calls to compile-time errors.
- *
- * \code
- * static inline void compile_time_assert ()
- * {
- *   // This compile time assert will succeed.
- *   COMPILE_TIME_ASSERT(sizeof(char) <= sizeof(double));
- *
- *   // This compile time assert will fail.
- *   COMPILE_TIME_ASSERT(sizeof(double) <= sizeof(char));
- * }
- * \endcode
- *
- * Compile time assert errors will look similar to the following:
- *
- * \code
- * foo.h: In function compile_time_assert:
- * foo.h:43: error: duplicate case value
- * foo.h:43: error: previously used here
- * \endcode
- */
-#define COMPILE_TIME_ASSERT(expr) switch(0){case 0:case expr:;}
-
 #define __dcmf_ccmi_new_defined__
 #ifndef  __dcmf_ccmi_new_defined__
   #define  __dcmf_ccmi_new_defined__
