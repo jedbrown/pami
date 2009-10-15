@@ -17,6 +17,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#if defined(__xlc__) || defined(__xlC__)
+#include <builtins.h>
+#endif
+
 #include "sys/xmi.h"
 #ifndef MIN
 #define MIN(a,b)  (((a)<(b))?(a):(b))
