@@ -16,6 +16,7 @@
 
 #include "components/devices/PacketModel.h"
 #include "components/devices/MessageDevice.h"
+#include "util/common.h"
 
 namespace XMI
 {

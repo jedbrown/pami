@@ -63,7 +63,7 @@ namespace XMI
 
           // Make sure that the coords structure and the MUHWI_Destination_t
           // structure match
-          COMPILE_TIME_ASSERT(sizeof(SysDep::bgq_coords_t) == sizeof(MUHWI_Destination_t));
+          COMPILE_TIME_ASSERT(sizeof(bgq_coords_t) == sizeof(MUHWI_Destination_t));
 
           // ----------------------------------------------------------------
           // Compile-time assertions

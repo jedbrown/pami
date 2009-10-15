@@ -538,7 +538,7 @@ xmi_result_t XMI::Mapping::init(XMI::BgpMapCache &mapcache,
           _peers++;
         }
     }
-
+  }
   //fprintf (stderr, "Mapping::init_impl <<\n");
 
   return XMI_SUCCESS;

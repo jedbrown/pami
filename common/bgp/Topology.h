@@ -132,7 +132,7 @@ namespace XMI {
 		/// \return	nothing, but _new may be XMI_EMPTY_TOPOLOGY
 		///
 		void __subTopologyLocalToMe(XMI::Topology *_new) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				if (__isMemberCoord(MY_COORDS,
 						mapping->globalDims())) {
 					_new->__type = XMI_COORD_TOPOLOGY;
@@ -217,7 +217,7 @@ namespace XMI {
 				unsigned ll = topo_lldim(x);
 				unsigned ur = topo_urdim(x);
 				int nn = ur - ll + 1;
-				likely_if (n < nn) {
+				if (likely(n < nn)) {
 					_new->topo_lldim(x) =
 					_new->topo_urdim(x) = ll + n;
 					n = 0;
@@ -739,7 +739,7 @@ namespace XMI {
 		///
 		bool isLocal_impl() {
 			xmi_result_t rc;
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				return __isLocalCoord(&topo_llcoord,
 							&topo_urcoord);
 			} else {
@@ -785,7 +785,7 @@ namespace XMI {
 		/// \return boolean indicating locality of ranks
 		///
 		bool isLocalToMe_impl() {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				// does mapping have "me" cached as a xmi_coord_t?
 				return __isLocalCoord(&topo_llcoord,
 							&topo_urcoord) &&
@@ -854,7 +854,7 @@ namespace XMI {
 		///
 		bool isRankMember_impl(size_t rank) {
 			xmi_result_t rc;
-			unlikely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (unlikely(__type == XMI_COORD_TOPOLOGY)) {
 				xmi_coord_t c0;
 				rc = RANK2COORDS(rank, &c0);
 				XMI_assert_debugf(rc == XMI_SUCCESS, "RANK2COORDS failed\n");
@@ -885,7 +885,7 @@ namespace XMI {
 		///
 		bool isCoordMember_impl(xmi_coord_t *c0) {
 			xmi_result_t rc;
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				return __isMemberCoord(c0, mapping->torusDims());
 			} else if (__type == XMI_EMPTY_TOPOLOGY) {
 				return false;
@@ -911,7 +911,7 @@ namespace XMI {
 		/// \param[in] n	Which local rank to select on each node
 		///
 		void subTopologyNthGlobal_impl(XMI::Topology *_new, int n) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				__subTopologyNthGlobal(_new, n);
 				// may produce empty topology, if "n" is out of range.
 			} else {
@@ -932,7 +932,7 @@ namespace XMI {
 		/// \param[in] fmt	how to reduce dimensions
 		///
 		void subTopologyReduceDims_impl(XMI::Topology *_new, xmi_coord_t *fmt) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				__subTopologyReduceDims(_new, fmt);
 			} else {
 				// the really hard way... impractical?
@@ -960,7 +960,7 @@ namespace XMI {
 			xmi_result_t rc;
 			*nranks = __size; // might exceed "max" - caller detects error.
 			XMI_assert_debugf(max != 0, "getRankList called with no array space\n");
-			likely_if (__type == XMI_LIST_TOPOLOGY) {
+			if (likely(__type == XMI_LIST_TOPOLOGY)) {
 				unsigned x;
 				for (x = 0; x < __size && x < max; ++x) {
 					ranks[x] = topo_list(x);
@@ -1192,7 +1192,6 @@ namespace XMI {
 	void unionTopology_impl(Topology *_new, Topology *other) {
 		// for now, assume this isn't used/needed.
 		XMI_abortf("Topology::unionTopology not implemented\n");
->>>>>>> Issue 218: step 2: convert classes and namespaces and include files:common/bgp/Topology.h
 #if 0
 
           if (likely(__type == other->__type))
@@ -1287,9 +1286,6 @@ namespace XMI {
             }
 
 #endif
-<<<<<<< HEAD:common/bgp/Topology.h
-        }
-=======
 	}
 
 	/// \brief produce the intersection of two topologies
@@ -1300,7 +1296,7 @@ namespace XMI {
 	/// \param[in] other	The other topology
 	///
 	void intersectTopology_impl(Topology *_new, Topology *other) {
-		likely_if (__type == other->__type) {
+		if (likely(__type == other->__type)) {
 			size_t s;
 			size_t i, j, k;
 			size_t *rl;
@@ -1449,7 +1445,7 @@ namespace XMI {
 	/// \param[in] other	The other topology
 	///
 	void subtractTopology_impl(Topology *_new, Topology *other) {
-		likely_if (__type == other->__type) {
+		if (likely(__type == other->__type)) {
 			xmi_result_t rc;
 			xmi_coord_t ll, ur, c0;
 			size_t rank = 0;
@@ -1674,495 +1670,7 @@ namespace XMI {
 		union topology_u __topo;///< topoloy info
 
 	}; // class Topology
->>>>>>> Issue 218: step 2: convert classes and namespaces and include files:common/bgp/Topology.h
 
-<<<<<<< HEAD:common/bgp/Topology.h
-        /// \brief produce the intersection of two topologies
-        ///
-        /// produces: _new = this ./\. other
-        ///
-        /// \param[out] _new	New topology created there
-        /// \param[in] other	The other topology
-        ///
-        void intersectTopology_impl(BgpTopology *_new, BgpTopology *other)
-        {
-          if (likely(__type == other->__type))
-            {
-              size_t s;
-              size_t i, j, k;
-              size_t *rl;
-
-              switch (__type)
-                {
-                  case XMI_COORD_TOPOLOGY:
-
-                    // This always results in a rectangle...
-                    // first, check for disjoint
-                    if (__coordLT(&topo_urcoord,
-                                  &other->topo_llcoord,
-                                  mapping->torusDims()) ||
-                        __coordLT(&other->topo_urcoord,
-                                  &topo_llcoord,
-                                  mapping->torusDims()))
-                      {
-                        break;
-                      }
-
-                    _new->__type = XMI_COORD_TOPOLOGY;
-                    __coordMAX(&_new->topo_llcoord,
-                               &topo_llcoord,
-                               &other->topo_llcoord,
-                               mapping->torusDims());
-                    __coordMIN(&_new->topo_urcoord,
-                               &topo_urcoord,
-                               &other->topo_urcoord,
-                               mapping->torusDims());
-                    _new->__size = __sizeRange(&_new->topo_llcoord,
-                                               &_new->topo_urcoord, mapping->torusDims());
-                    // can we get real torus info from old topology???
-                    // for now, assume no torus links
-                    memset(topo_istorus, 0, mapping->torusDims());
-                    return;
-                    break;
-                  case XMI_SINGLE_TOPOLOGY:
-
-                    if (other->topo_rank == topo_rank)
-                      {
-                        _new->__type = XMI_SINGLE_TOPOLOGY;
-                        _new->__size = 1;
-                        _new->topo_rank = topo_rank;
-                        return;
-                      }
-
-                    break;
-                  case XMI_RANGE_TOPOLOGY:
-
-                    // This always results in a range...
-                    if (topo_last < other->topo_first ||
-                        other->topo_last < topo_first)
-                      {
-                        // disjoint ranges
-                        break;
-                      }
-
-                    _new->__type = XMI_RANGE_TOPOLOGY;
-                    _new->topo_first = (topo_first > other->topo_first ?
-                                        topo_first : other->topo_first);
-                    _new->topo_last = (topo_last < other->topo_last ?
-                                       topo_last : other->topo_last);
-                    _new->__size = _new->topo_last - _new->topo_first + 1;
-                    return;
-                    break;
-                  case XMI_LIST_TOPOLOGY:
-                    /// \todo keep this from being O(n^2)
-                    // guess at size: smallest topology.
-                    s = (__size < other->__size ?
-                         __size : other->__size);
-                    rl = (size_t *)malloc(s * sizeof(*rl));
-                    k = 0;
-
-                    for (i = 0; i < __size; ++i)
-                      {
-                        for (j = 0; j < other->__size; ++j)
-                          {
-                            if (topo_list(i) == other->topo_list(j))
-                              {
-                                rl[k++] = topo_list(i);
-                              }
-                          }
-                      }
-
-                    if (k)
-                      {
-                        _new->__type = XMI_LIST_TOPOLOGY;
-                        _new->__size = k;
-                        _new->topo_ranklist = rl;
-                        return;
-                      }
-
-                    free(rl);
-                    break;
-                  case XMI_EMPTY_TOPOLOGY:
-                  default:
-                    break;
-                }
-            }
-          else if (__type == XMI_SINGLE_TOPOLOGY)
-            {
-              if (other->isRankMember(topo_rank))
-                {
-                  _new->__type = XMI_SINGLE_TOPOLOGY;
-                  _new->__size = 1;
-                  _new->topo_rank = topo_rank;
-                  return;
-                }
-            }
-          else if (other->__type == XMI_SINGLE_TOPOLOGY)
-            {
-              if (isRankMember(other->topo_rank))
-                {
-                  _new->__type = XMI_SINGLE_TOPOLOGY;
-                  _new->__size = 1;
-                  _new->topo_rank = other->topo_rank;
-                  return;
-                }
-            }
-          else if (__type != XMI_EMPTY_TOPOLOGY &&
-                   other->__type != XMI_EMPTY_TOPOLOGY)
-            {
-              // more complicated scenarios - TBD
-              switch (__type)
-                {
-                  case XMI_COORD_TOPOLOGY:
-
-                    switch (other->__type)
-                      {
-                        case XMI_LIST_TOPOLOGY:
-                          break;
-                        case XMI_RANGE_TOPOLOGY:
-                          break;
-                        case XMI_SINGLE_TOPOLOGY: // already handled
-                        case XMI_COORD_TOPOLOGY:  // already handled
-                        default:
-                          break;
-                      }
-
-                  case XMI_LIST_TOPOLOGY:
-
-                    switch (other->__type)
-                      {
-                        case XMI_COORD_TOPOLOGY:
-                          break;
-                        case XMI_RANGE_TOPOLOGY:
-                          break;
-                        case XMI_SINGLE_TOPOLOGY: // already handled
-                        case XMI_LIST_TOPOLOGY:   // already handled
-                        default:
-                          break;
-                      }
-
-                  case XMI_RANGE_TOPOLOGY:
-
-                    switch (other->__type)
-                      {
-                        case XMI_COORD_TOPOLOGY:
-                          break;
-                        case XMI_LIST_TOPOLOGY:
-                          break;
-                        case XMI_SINGLE_TOPOLOGY: // already handled
-                        case XMI_RANGE_TOPOLOGY:  // already handled
-                        default:
-                          break;
-                      }
-
-                  case XMI_SINGLE_TOPOLOGY: // already handled
-                  default:
-                    break;
-                }
-            }
-
-          _new->__type = XMI_EMPTY_TOPOLOGY;
-          _new->__size = 0;
-        }
-
-        /// \brief produce the difference of two topologies
-        ///
-        /// produces: _new = this .-. other
-        ///
-        /// \param[out] _new	New topology created there
-        /// \param[in] other	The other topology
-        ///
-        void subtractTopology_impl(BgpTopology *_new, BgpTopology *other)
-        {
-          if (likely(__type == other->__type))
-            {
-              xmi_result_t rc;
-              xmi_coord_t ll, ur, c0;
-              size_t rank = 0;
-              size_t min = 0, max = 0;
-              size_t s;
-              size_t i, j, k;
-              size_t *rl;
-              unsigned flag;
-
-              switch (__type)
-                {
-                  case XMI_COORD_TOPOLOGY:
-                    // This results in coord range in special cases
-                    // that we don't check for. We just create a
-                    // list and then try to convert it to coords.
-                    s = __size;
-                    rl = (size_t *)malloc(s * sizeof(*rl));
-                    k = 0;
-                    c0 = topo_llcoord;
-
-                    do
-                      {
-                        if (other->__isMemberCoord(&c0,
-                                                   mapping->torusDims()))
-                          {
-                            continue;
-                          }
-
-                        // keep it
-                        rc = COORDS2RANK(&c0, &rank);
-
-                        if (k == 0)   // first one found...
-                          {
-                            __initRange(&ll, &ur, &c0, mapping->torusDims());
-                            min = max = rank;
-                          }
-                        else
-                          {
-                            __bumpRange(&ll, &ur, &c0, mapping->torusDims());
-
-                            if (rank < min) min = rank;
-
-                            if (rank > max) max = rank;
-                          }
-
-                        rl[k++] = rank;
-                      }
-                    while (__nextCoord(&c0, mapping->torusDims()));
-
-                    if (k == 0)
-                      {
-                        break;
-                      }
-
-                    _new->__size = k;
-                    s = __sizeRange(&ll, &ur, mapping->torusDims());
-
-                    if (s == k)
-                      {
-                        _new->__type = XMI_COORD_TOPOLOGY;
-                        _new->topo_llcoord = ll;
-                        _new->topo_urcoord = ur;
-                        // can we get real torus info from old topology???
-                        // for now, assume no torus links
-                        memset(_new->topo_istorus, 0, mapping->torusDims());
-                        free(rl);
-                      }
-                    else if (max - min + 1 == k)
-                      {
-                        _new->__type = XMI_RANGE_TOPOLOGY;
-                        _new->topo_first = min;
-                        _new->topo_last = max;
-                        free(rl);
-                      }
-                    else
-                      {
-                        _new->__type = XMI_LIST_TOPOLOGY;
-                        _new->topo_ranklist = rl;
-                      }
-
-                    return;
-                    break;
-                  case XMI_SINGLE_TOPOLOGY:
-
-                    if (other->topo_rank != topo_rank)
-                      {
-                        *_new = *this;
-                        return;
-                      }
-
-                    break;
-                  case XMI_RANGE_TOPOLOGY:
-                    // This mostly results in a range...
-                    flag =	((topo_first >= other->topo_first) << 3) |
-                           ((topo_first <= other->topo_last) << 2) |
-                           ((topo_last >= other->topo_first) << 1) |
-                           ((topo_last <= other->topo_last) << 0);
-
-                    switch (flag)
-                      {
-                        case b0000:
-                        case b0001:
-                        case b0010:
-                        case b0011:
-                        case b0100:
-                        case b0101:
-                        case b1000:
-                        case b1001:
-                        case b1010:
-                        case b1011:
-                        case b1100:
-                        case b1101:
-                        default:
-                          // disjoint ranges, nothing removed
-                          *_new = *this;
-                          return;
-                          break;
-                        case b0110:
-                          // split into two ranges...
-                          // convert to list...
-                          _new->__type = XMI_LIST_TOPOLOGY;
-                          s = other->topo_first - topo_first +
-                              topo_last - other->topo_last;
-                          XMI_assert_debugf(s != 0, "subtraction results in empty topology\n");
-                          rl = (size_t *)malloc(s * sizeof(*rl));
-                          k = 0;
-
-                          for (j = topo_first; j < other->topo_first; ++j)
-                            {
-                              rl[k++] = j;
-                            }
-
-                          for (j = other->topo_last + 1; j <= topo_last; ++j)
-                            {
-                              rl[k++] = j;
-                            }
-
-                          XMI_assert_debug(k == s);
-                          _new->__size = s;
-                          return;
-                          break;
-                        case b0111:
-                          // remove top of range...
-                          _new->__type = XMI_RANGE_TOPOLOGY;
-                          _new->topo_first = topo_first;
-                          _new->topo_last = other->topo_first - 1;
-                          _new->__size = _new->topo_last - _new->topo_first + 1;
-                          XMI_assert_debugf(_new->__size != 0, "subtraction results in empty topology\n");
-                          return;
-                          break;
-                        case b1110:
-                          // remove bottom of range...
-                          _new->__type = XMI_RANGE_TOPOLOGY;
-                          _new->topo_first = other->topo_last + 1;
-                          _new->topo_last = topo_last;
-                          _new->__size = _new->topo_last - _new->topo_first + 1;
-                          XMI_assert_debugf(_new->__size != 0, "subtraction results in empty topology\n");
-                          return;
-                          break;
-                        case b1111:
-                          // remove all...
-                          break;
-                      }
-
-                    break;
-                  case XMI_LIST_TOPOLOGY:
-                    /// \todo keep this from being O(n^2)
-                    s = __size;
-                    rl = (size_t *)malloc(s * sizeof(*rl));
-                    k = 0;
-
-                    for (i = 0; i < __size; ++i)
-                      {
-                        if (other->isRankMember(topo_list(i)))
-                          {
-                            continue;
-                          }
-
-                        // keep it...
-                        rl[k++] = topo_list(i);
-                      }
-
-                    if (k == 0)
-                      {
-                        free(rl);
-                        _new->__type = XMI_EMPTY_TOPOLOGY;
-                        _new->__size = 0;
-                        break;
-                      }
-
-                    _new->__type = XMI_LIST_TOPOLOGY;
-                    _new->__size = k;
-                    _new->topo_ranklist = rl;
-                    return;
-                    break;
-                  case XMI_EMPTY_TOPOLOGY:
-                    break;
-                  default:
-                    break;
-                }
-            }
-          else if (__type == XMI_SINGLE_TOPOLOGY)
-            {
-              if (other->isRankMember(topo_rank))
-                {
-                  _new->__type = XMI_SINGLE_TOPOLOGY;
-                  _new->__size = 1;
-                  _new->topo_rank = topo_rank;
-                  return;
-                }
-            }
-          else if (other->__type == XMI_SINGLE_TOPOLOGY)
-            {
-              if (isRankMember(other->topo_rank))
-                {
-                  _new->__type = XMI_SINGLE_TOPOLOGY;
-                  _new->__size = 1;
-                  _new->topo_rank = other->topo_rank;
-                  return;
-                }
-            }
-          else if (__type != XMI_EMPTY_TOPOLOGY &&
-                   other->__type != XMI_EMPTY_TOPOLOGY)
-            {
-              // more complicated scenarios - TBD
-              switch (__type)
-                {
-                  case XMI_COORD_TOPOLOGY:
-
-                    switch (other->__type)
-                      {
-                        case XMI_LIST_TOPOLOGY:
-                          break;
-                        case XMI_RANGE_TOPOLOGY:
-                          break;
-                        case XMI_SINGLE_TOPOLOGY: // already handled
-                        case XMI_COORD_TOPOLOGY:  // already handled
-                        default:
-                          break;
-                      }
-
-                  case XMI_LIST_TOPOLOGY:
-
-                    switch (other->__type)
-                      {
-                        case XMI_COORD_TOPOLOGY:
-                          break;
-                        case XMI_RANGE_TOPOLOGY:
-                          break;
-                        case XMI_SINGLE_TOPOLOGY: // already handled
-                        case XMI_LIST_TOPOLOGY:   // already handled
-                        default:
-                          break;
-                      }
-
-                  case XMI_RANGE_TOPOLOGY:
-
-                    switch (other->__type)
-                      {
-                        case XMI_COORD_TOPOLOGY:
-                          break;
-                        case XMI_LIST_TOPOLOGY:
-                          break;
-                        case XMI_SINGLE_TOPOLOGY: // already handled
-                        case XMI_RANGE_TOPOLOGY:  // already handled
-                        default:
-                          break;
-                      }
-
-                  case XMI_SINGLE_TOPOLOGY: // already handled
-                  default:
-                    break;
-                }
-            }
-
-          _new->__type = XMI_EMPTY_TOPOLOGY;
-          _new->__size = 0;
-        }
-
-      private:
-        size_t	__size;		///< number of ranks in this topology
-        xmi_topology_type_t __type;	///< type of topology this is
-        union topology_u __topo;///< topoloy info
-
-    }; // class BgpTopology
-
-  }; // namespace Topology
 }; // namespace XMI
 
 #endif // __components_topology_bgp_bgptopology_h__
