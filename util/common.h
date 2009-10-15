@@ -30,6 +30,23 @@
 #define CEIL(x,y) (((x)+(y)-1)/(y))
 #endif
 
+/*
+ * The following are only respected by GCC and the latest XL
+ * compilers.  The "expected" value is assumed to be either a 1 or 0,
+ * so best results are achieved when your expression evaluates to 1 or
+ * 0.  It makes sense to use unlikely for error checking, since it
+ * will move the object code away from the good-path.
+ *
+ * They can be used like this:
+
+  if (likely(expression_that_is_probably_one(input)) { do_something() }
+
+  if (unlikely(error_check_expression_that_is_probably_zero(input)) { do_something_to_handle_error() }
+
+ */
+#define   likely(x) (__builtin_expect(x,1))
+#define unlikely(x) (__builtin_expect(x,0))
+
 #define XMIQuad_sizeof(x)  ((sizeof(x)+15)>>4)
 
 /// abort macros defined for all assertion levels

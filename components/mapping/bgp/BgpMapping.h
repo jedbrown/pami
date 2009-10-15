@@ -196,8 +196,7 @@ namespace XMI
 
 		size_t estimated_task = ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize);
 
-		// convert to 'unlikely_if'
-		if (_rankcache [estimated_task] == (unsigned)-1) {
+		if (unlikely(_rankcache [estimated_task] == (unsigned)-1)) {
 			return XMI_ERROR;
 		}
 
@@ -423,8 +422,7 @@ namespace XMI
 
           size_t estimated_task = ESTIMATED_TASK(addr[0],addr[1],addr[2],addr[3],xSize,ySize,zSize,tSize);
 
-          // convert to 'unlikely_if'
-          if (_rankcache [estimated_task] == (unsigned)-1)
+          if (unlikely(_rankcache [estimated_task] == (unsigned)-1))
           {
             return XMI_ERROR;
           }

@@ -278,7 +278,7 @@ public:
 	/// \return   success of the export operation
 	///
 	inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp) {
-		unlikely_if (_pmask) {
+          if (unlikely(_pmask)) {
 			return XMI_ERROR;
 		}
 		export_t *e = (export_t *)exp;
@@ -356,7 +356,7 @@ public:
 		size_t a = 0;
 		size_t p = _sharedqueue->_u._s.producedBytes;
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
-		likely_if (!_pmask) {
+		if (likely(!_pmask)) {
 			a = _qsize - p;
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
@@ -397,7 +397,7 @@ public:
 		size_t p = _sharedqueue->_u._s.producedBytes;
 		size_t c = _sharedqueue->_u._s.consumedBytes;
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
-		likely_if (!_pmask) {
+		if (likely(!_pmask)) {
 			a = p - c;
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
@@ -459,7 +459,7 @@ public:
 		char *b;
 		size_t p = _sharedqueue->_u._s.producedBytes;
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
-		likely_if (!_pmask) {
+		if (likely(!_pmask)) {
 			b = (char *)&_buffer[p];
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
@@ -479,7 +479,7 @@ public:
 		_sharedqueue->_u._s.producedBytes += bytes;
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.consumerWakeVec;
-		unlikely_if ((long)v != 0) {
+		if (unlikely((long)v != 0)) {
 			WAKEUP(v);
 		}
 	}
@@ -492,7 +492,7 @@ public:
 		char *b;
 		size_t c = _sharedqueue->_u._s.consumedBytes;
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
-		likely_if (!_pmask) {
+		if (likely(!_pmask)) {
 			b = (char *)&_buffer[c];
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
@@ -512,7 +512,7 @@ public:
 		_sharedqueue->_u._s.consumedBytes += bytes;
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
-		unlikely_if ((long)v != 0) {
+		if (unlikely((long)v != 0)) {
 			WAKEUP(v);
 		}
 	}

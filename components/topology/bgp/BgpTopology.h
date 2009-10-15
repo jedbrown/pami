@@ -23,10 +23,6 @@
 #include "components/topology/Topology.h"
 #include "components/mapping/bgp/BgpMapping.h"
 
-#define likely_if	if
-#define unlikely_if	if
-#warning Need likely/unlikely_if!
-
 #define net_coord(n)	u.n_torus.coords[n]
 
 // returns pointer to xmi_coord_t
@@ -137,7 +133,7 @@ namespace Topology {
 		/// \return	nothing, but _new may be XMI_EMPTY_TOPOLOGY
 		///
 		void __subTopologyLocalToMe(XMI::Topology::BgpTopology *_new) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+                  if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				if (__isMemberCoord(MY_COORDS,
 						mapping->globalDims())) {
 					_new->__type = XMI_COORD_TOPOLOGY;
@@ -222,7 +218,7 @@ namespace Topology {
 				unsigned ll = topo_lldim(x);
 				unsigned ur = topo_urdim(x);
 				int nn = ur - ll + 1;
-				likely_if (n < nn) {
+				if (likely(n < nn)) {
 					_new->topo_lldim(x) =
 					_new->topo_urdim(x) = ll + n;
 					n = 0;
@@ -744,7 +740,7 @@ namespace Topology {
 		///
 		bool isLocal_impl() {
 			xmi_result_t rc;
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				return __isLocalCoord(&topo_llcoord,
 							&topo_urcoord);
 			} else {
@@ -790,7 +786,7 @@ namespace Topology {
 		/// \return boolean indicating locality of ranks
 		///
 		bool isLocalToMe_impl() {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+                  if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				// does mapping have "me" cached as a xmi_coord_t?
 				return __isLocalCoord(&topo_llcoord,
 							&topo_urcoord) &&
@@ -859,7 +855,7 @@ namespace Topology {
 		///
 		bool isRankMember_impl(size_t rank) {
 			xmi_result_t rc;
-			unlikely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (unlikely(__type == XMI_COORD_TOPOLOGY)) {
 				xmi_coord_t c0;
 				rc = RANK2COORDS(rank, &c0);
 				XMI_assert_debugf(rc == XMI_SUCCESS, "RANK2COORDS failed\n");
@@ -890,7 +886,7 @@ namespace Topology {
 		///
 		bool isCoordMember_impl(xmi_coord_t *c0) {
 			xmi_result_t rc;
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				return __isMemberCoord(c0, mapping->torusDims());
 			} else if (__type == XMI_EMPTY_TOPOLOGY) {
 				return false;
@@ -916,7 +912,7 @@ namespace Topology {
 		/// \param[in] n	Which local rank to select on each node
 		///
 		void subTopologyNthGlobal_impl(XMI::Topology::BgpTopology *_new, int n) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+                  if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				__subTopologyNthGlobal(_new, n);
 				// may produce empty topology, if "n" is out of range.
 			} else {
@@ -937,7 +933,7 @@ namespace Topology {
 		/// \param[in] fmt	how to reduce dimensions
 		///
 		void subTopologyReduceDims_impl(XMI::Topology::BgpTopology *_new, xmi_coord_t *fmt) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+                  if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				__subTopologyReduceDims(_new, fmt);
 			} else {
 				// the really hard way... impractical?
@@ -965,7 +961,7 @@ namespace Topology {
 			xmi_result_t rc;
 			*nranks = __size; // might exceed "max" - caller detects error.
 			XMI_assert_debugf(max != 0, "getRankList called with no array space\n");
-			likely_if (__type == XMI_LIST_TOPOLOGY) {
+			if (likely(__type == XMI_LIST_TOPOLOGY)) {
 				unsigned x;
 				for (x = 0; x < __size && x < max; ++x) {
 					ranks[x] = topo_list(x);
@@ -1197,7 +1193,7 @@ namespace Topology {
 		// for now, assume this isn't used/needed.
 		XMI_abortf("Topology::unionTopology not implemented\n");
 #if 0
-		likely_if (__type == other->__type) {
+		if (likely(__type == other->__type)) {
 			// size_t s;
 			// size_t i, j, k;
 			switch (__type) {
@@ -1276,7 +1272,7 @@ namespace Topology {
 	/// \param[in] other	The other topology
 	///
 	void intersectTopology_impl(BgpTopology *_new, BgpTopology *other) {
-		likely_if (__type == other->__type) {
+          if (likely(__type == other->__type)) {
 			size_t s;
 			size_t i, j, k;
 			size_t *rl;
@@ -1425,7 +1421,7 @@ namespace Topology {
 	/// \param[in] other	The other topology
 	///
 	void subtractTopology_impl(BgpTopology *_new, BgpTopology *other) {
-		likely_if (__type == other->__type) {
+          if (likely(__type == other->__type)) {
 			xmi_result_t rc;
 			xmi_coord_t ll, ur, c0;
 			size_t rank = 0;

@@ -272,14 +272,13 @@ namespace XMI
           size_t pSize = __global.personality.tSize();
 
           // Verify that the bgq address is valid.
-          // TODO convert to "unlikely if"
-          if ((addr[0] >= aSize) ||
-              (addr[1] >= bSize) ||
-              (addr[2] >= cSize) ||
-              (addr[3] >= dSize) ||
-              (addr[4] >= eSize) ||
-              (addr[5] >= pSize) ||
-              (addr[6] >= tSize))
+          if (unlikely((addr[0] >= aSize) ||
+                       (addr[1] >= bSize) ||
+                       (addr[2] >= cSize) ||
+                       (addr[3] >= dSize) ||
+                       (addr[4] >= eSize) ||
+                       (addr[5] >= pSize) ||
+                       (addr[6] >= tSize)))
             {
               return XMI_INVAL;
             }
@@ -295,8 +294,7 @@ namespace XMI
             addr[0];
 
           // Verify that the estimated task is mapped.
-          // TODO convert to 'unlikely_if'
-          if (_mapcache.torus.coords2task[hash] == (unsigned) - 1)
+          if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
             {
               return XMI_ERROR;
             }
@@ -397,14 +395,13 @@ namespace XMI
           size_t pCoord = address.local & 0x0000000f;
 
           // Verify that the bgq address is valid.
-          // TODO convert to "unlikely if"
-          if ((aCoord >= aSize) ||
-              (bCoord >= bSize) ||
-              (cCoord >= cSize) ||
-              (dCoord >= dSize) ||
-              (eCoord >= eSize) ||
-              (pCoord >= pSize) ||
-              (tCoord >= tSize))
+          if (unlikely((aCoord >= aSize) ||
+                       (bCoord >= bSize) ||
+                       (cCoord >= cSize) ||
+                       (dCoord >= dSize) ||
+                       (eCoord >= eSize) ||
+                       (pCoord >= pSize) ||
+                       (tCoord >= tSize)))
             {
               return XMI_INVAL;
             }
@@ -420,8 +417,7 @@ namespace XMI
             aCoord;
 
           // Verify that the estimated task is mapped.
-          // TODO convert to 'unlikely_if'
-          if (_mapcache.torus.coords2task[hash] == (unsigned) - 1)
+          if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
             {
               return XMI_ERROR;
             }
@@ -446,8 +442,7 @@ namespace XMI
           size_t pCoord = address.local & 0x0000000f;
 
           // Verify that the local node address is valid.
-          // TODO convert to "unlikely if"
-          if ((pCoord >= pSize) || (tCoord >= tSize))
+          if (unlikely((pCoord >= pSize) || (tCoord >= tSize)))
             {
               return XMI_INVAL;
             }
@@ -456,8 +451,7 @@ namespace XMI
           size_t hash = tCoord * pSize + pCoord;
 
           // Verify that the address hash is valid.
-          // TODO convert to 'unlikely_if'
-          if (_mapcache.node.local2peer[hash] == (unsigned) - 1)
+          if (unlikely(_mapcache.node.local2peer[hash] == (unsigned) - 1))
             {
               return XMI_ERROR;
             }

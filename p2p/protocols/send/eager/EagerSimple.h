@@ -224,8 +224,7 @@ namespace XMI
                 state->remote_fn = NULL;
               }
 
-            // Replace with 'unlikely if'
-            if (bytes == 0)
+            if (unlikely(bytes == 0))
               {
                 // In the unlikely event that this eager (i.e., multi-packet)
                 // protocol is being used to send zero bytes of application
@@ -239,8 +238,7 @@ namespace XMI
                 {
                   TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
 
-                  // Replace with 'unlikely if'
-                  if (mbytes > T_Model::packet_model_payload_bytes)
+                  if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
                   {
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
@@ -283,8 +281,7 @@ namespace XMI
                   TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
                   //XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
 
-                  // Replace with 'unlikely if'
-                  if (mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t)))
+                  if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                   {
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload\n"));
 
@@ -332,8 +329,7 @@ namespace XMI
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
                 {
-                  // Replace with 'unlikely if'
-                  if (mbytes > T_Model::packet_model_payload_bytes)
+                  if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
                   {
                     // Application metadata does not fit in a single packet.
                     // Send a "long header" message.
@@ -369,8 +365,7 @@ namespace XMI
                 }
                 else
                 {
-                  // Replace with 'unlikely if'
-                  if (mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t)))
+                  if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                   {
                     // Protocol metadata + application metadata does not fit in
                     // a single packet. Send a "long header" message.
@@ -509,9 +504,8 @@ namespace XMI
             // is available
             XMI_assert(state->info.kind == XMI_AM_KIND_SIMPLE);
 
-            // Replace with 'unlikely if'
             TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zd\n", metadata->bytes));
-            if (metadata->bytes == 0)
+            if (unlikely(metadata->bytes == 0))
               {
                 // No data packets will follow this envelope packet. Invoke the
                 // recv done callback and, if an acknowledgement packet was
@@ -526,8 +520,7 @@ namespace XMI
 
                 TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->metadata.ackinfo = %p\n", state->metadata.ackinfo));
 
-                // Replace with 'unlikely if'
-                if (state->metadata.ackinfo != NULL)
+                if (unlikely(state->metadata.ackinfo != NULL))
                   {
                     _ack_model.postPacket (state->pkt,
                                            receive_complete,
@@ -655,10 +648,9 @@ namespace XMI
             eager->setConnection (m->fromRank, (void *)state);
 
             // Check for long header
-            // Replace with 'unlikely if'
             size_t header_bytes = m->metabytes;
-            if ((header_bytes) > (T_Model::packet_model_payload_bytes -
-                                  sizeof(short_metadata_t)>T_Model::packet_model_metadata_bytes?sizeof(short_metadata_t):0))
+            if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes -
+                                          sizeof(short_metadata_t)>T_Model::packet_model_metadata_bytes?sizeof(short_metadata_t):0)))
             {
               state->longheader.addr   = (uint8_t *) malloc(header_bytes);
               state->longheader.bytes  = header_bytes;
