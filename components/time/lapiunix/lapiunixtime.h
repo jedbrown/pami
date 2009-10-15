@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/time/lapi/lapitime.h
+/// \file components/time/lapiunix/lapiunixtime.h
 /// \brief ???
 ///
 #ifndef __components_time_lapi_lapitime_h__

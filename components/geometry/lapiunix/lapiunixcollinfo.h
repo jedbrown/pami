@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/lapi/lapicollinfo.h
+ * \file components/geometry/lapiunix/lapiunixcollinfo.h
  * \brief ???
  */
 
@@ -313,7 +313,7 @@ namespace XMI
       AlltoallFactory   _alltoallv_registration;
     };
 
-    
+
   };
 };
 typedef XMI::Device::LAPIDevice<XMI::SysDep::LAPISysDep> LAPIDevice;

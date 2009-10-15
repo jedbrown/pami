@@ -1,5 +1,5 @@
 ///
-/// \file components/topology/lapi/lapitopology.h
+/// \file components/topology/lapiunix/lapiunixtopology.h
 /// \brief XMI LAPI specific topology implementation.
 ///
 #ifndef   __xmi_lapi_lapitopology_h__

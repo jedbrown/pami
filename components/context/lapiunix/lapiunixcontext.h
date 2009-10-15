@@ -1,5 +1,5 @@
 ///
-/// \file components/context/lapi/lapicontext.h
+/// \file components/context/lapiunix/lapiunixcontext.h
 /// \brief XMI LAPI specific context implementation.
 ///
 #ifndef   __xmi_lapiunix_lapiunixcontext_h__
@@ -36,7 +36,7 @@ namespace XMI
     typedef CollFactory::LAPI<LAPIDevice, SysDep::LAPISysDep> LAPICollfactory;
     typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep::LAPISysDep> LAPICollreg;
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
-    
+
     class LAPI : public Context<XMI::Context::LAPI>
     {
     public:
@@ -115,7 +115,7 @@ namespace XMI
 
           _lapi_device.init(&_sysdep);
           _lapi_device.setLapiHandle(_lapi_handle);
-          
+
           _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));
           _world_range.lo=0;
           _world_range.hi=_mysize-1;
@@ -425,7 +425,7 @@ namespace XMI
         {
           return XMI_UNIMPL;
         }
-      
+
       inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
                                                         xmi_geometry_t geometry,
                                                         xmi_xfer_type_t type,
@@ -435,7 +435,7 @@ namespace XMI
         {
           return XMI_UNIMPL;
         }
-        
+
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
                                                   int            *numRoles,
                                                   int            *replRole)

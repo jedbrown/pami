@@ -235,7 +235,7 @@ namespace XMI
               {
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-                  
+
                 //XMI_assert(metasize <= _device.getPacketMetadataSize());
                 XMI_assert_debugf(metasize <= packet_model_metadata_bytes, "metasize = %zd, packet_model_metadata_bytes = %zd\n", metasize, packet_model_metadata_bytes);
                 memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.

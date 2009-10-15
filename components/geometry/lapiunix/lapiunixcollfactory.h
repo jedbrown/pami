@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/lapi/lapicollfactory.h
+ * \file components/geometry/lapiunix/lapiunixcollfactory.h
  * \brief ???
  */
 
@@ -27,7 +27,7 @@ namespace XMI
 {
   namespace CollFactory
   {
-    
+
     template <class T_Device, class T_Sysdep>
     class LAPI : public CollFactory<XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep::LAPISysDep>, SysDep::LAPISysDep> >
     {
@@ -60,7 +60,7 @@ namespace XMI
 
 
 
-      
+
       inline RegQueue * getRegQ(xmi_xfer_type_t       collective)
         {
           RegQueue *rq = NULL;
@@ -277,11 +277,11 @@ namespace XMI
                       (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
                     XMI_assertf(robj,"bcast alg 1:  memory allocation failure\n");
-                    
+
                     robj->factory      = this;
                     robj->user_done_fn = broadcast->cb_done;
                     robj->user_cookie  = broadcast->cookie;
-                    
+
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
                     cinfo->_broadcast_registration.generate(&robj->req[0],
@@ -300,13 +300,13 @@ namespace XMI
                     XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
 
-                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();           
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
                     XMI_assertf(robj,"bcast alg 2:  memory allocation failure\n");
-                    
+
                     robj->factory      = this;
                     robj->user_done_fn = broadcast->cb_done;
                     robj->user_cookie  = broadcast->cookie;
-                    
+
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
 
@@ -377,16 +377,16 @@ namespace XMI
                       (XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>*)info;
 
                     XMI_Callback_t cb_done;
-                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();           
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
                     XMI_assertf(robj,"allreduce alg 1:  memory allocation failure\n");
-                    
+
                     robj->factory      = this;
                     robj->user_done_fn = allreduce->cb_done;
                     robj->user_cookie  = allreduce->cookie;
-                    
+
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
-                    
+
                     CCMI::Adaptor::Allreduce::Ring::Factory *factory =
                       (CCMI::Adaptor::Allreduce::Ring::Factory *) &cinfo->_allreduce_registration;
                     if(arcomposite != NULL  &&  arcomposite->getFactory() == factory)
@@ -435,9 +435,9 @@ namespace XMI
                       (XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep>*)info;
 
                     XMI_Callback_t cb_done;
-                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();           
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
                     XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
-                    
+
                     robj->factory      = this;
                     robj->user_done_fn = allreduce->cb_done;
                     robj->user_cookie  = allreduce->cookie;
@@ -636,16 +636,16 @@ namespace XMI
 		    cb_done.function   = alltoallv->cb_done;
                     cb_done.clientdata = alltoallv->cookie;
 
-                    reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();           
+                    reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();
                     XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
-                    
+
                     robj->factory      = this;
                     robj->user_done_fn = alltoallv->cb_done;
                     robj->user_cookie  = alltoallv->cookie;
 
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
-                    
+
 		    cinfo->_alltoallv_registration.generate(&robj->req[0],
                                                             cb_done,
                                                             XMI_MATCH_CONSISTENCY,

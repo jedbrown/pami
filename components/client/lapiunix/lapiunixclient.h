@@ -1,5 +1,5 @@
 ///
-/// \file components/client/lapi/lapiclient.h
+/// \file components/client/lapiunix/lapiunixclient.h
 /// \brief XMI client interface specific for the LAPI platform.
 ///
 #ifndef   __xmi_lapi_lapiclient_h__

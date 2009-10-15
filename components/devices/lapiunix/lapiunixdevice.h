@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/lapi/lapidevice.h
+ * \file components/devices/lapiunix/lapiunixdevice.h
  * \brief ???
  */
 
@@ -64,7 +64,7 @@ namespace XMI
 
       inline ~LAPIDevice ()
         {
-          
+
 
         };
 
@@ -152,7 +152,7 @@ namespace XMI
           assert(0);
           return -1;
         }
-      
+
       inline size_t peers_impl ()
         {
           return _peers;
@@ -198,7 +198,7 @@ namespace XMI
                                      XMI_SUCCESS);
           free(req);
         }
-      
+
       static    void * __xmi_lapi_mcast_fn (lapi_handle_t   * hndl,
                                             void            * uhdr,
                                             uint            * uhdr_len,
@@ -242,14 +242,14 @@ namespace XMI
           mcast->_dtype       = XMI_UNDEFINED_DT;
           mcast->_counter     = 0;
           mcast->_dispatch_id = dispatch_id;
-          
+
           if (ri->udata_one_pkt_ptr)
               {
                 if (r && ri->msg_len)
                   memcpy(rcvbuf,
                          (void *)ri->udata_one_pkt_ptr,
                          ri->msg_len);
-                ri->ret_flags = LAPI_SEND_REPLY;                
+                ri->ret_flags = LAPI_SEND_REPLY;
                 ri->ctl_flags = LAPI_BURY_MSG;
                 if(cb_done.function)
                   cb_done.function(NULL, cb_done.clientdata, XMI_SUCCESS);

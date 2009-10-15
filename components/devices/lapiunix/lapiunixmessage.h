@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/lapi/lapimessage.h
+ * \file components/devices/lapiunix/lapiunixmessage.h
  * \brief ???
  */
 
@@ -27,7 +27,7 @@ namespace XMI
     #define DEV_HEADER_SIZE               64
     #define DEV_PAYLOAD_SIZE              64
 
-    
+
     class LAPIP2PMessage
     {
     public:
@@ -36,7 +36,7 @@ namespace XMI
       int                 _payloadsize0;
       int                 _payloadsize1;
       char                _metadata[DEV_HEADER_SIZE];
-      char                _payload[DEV_PAYLOAD_SIZE];      
+      char                _payload[DEV_PAYLOAD_SIZE];
     };
 
 
@@ -62,7 +62,7 @@ namespace XMI
     private:
     };
 
-    
+
     class LAPIMcastSendReq
     {
     public:
@@ -77,7 +77,7 @@ namespace XMI
       xmi_callback_t        _user_done;
     };
 
-    
+
     class LAPIMcastMessage
     {
     public:

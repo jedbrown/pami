@@ -1,5 +1,5 @@
 ///
-/// \file components/pipeworkqueue/lapi/lapipipeworkqueue.h
+/// \file components/pipeworkqueue/lapiunix/lapiunixpipeworkqueue.h
 /// \brief XMI LAPI specific PipeWorkQueue implementation.
 ///
 #ifndef   __xmi_lapi_lapipipeworkqueue_h__

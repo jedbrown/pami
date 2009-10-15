@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/mapping/lapi/lapimapping.h
+ * \file components/mapping/lapiunix/lapiunixmapping.h
  * \brief ???
  */
 
@@ -32,9 +32,9 @@ namespace XMI
                        public Interface::Torus<LAPIMapping, LAPI_DIMS>,
                        public Interface::Node<LAPIMapping, LAPI_DIMS>
     {
-	
+
     public:
-      inline LAPIMapping () : 
+      inline LAPIMapping () :
         Interface::Base<LAPIMapping,XMI::Memory::HeapMemoryManager >(),
         Interface::Torus<LAPIMapping, LAPI_DIMS>(),
         Interface::Node<LAPIMapping, LAPI_DIMS>()
@@ -55,7 +55,7 @@ namespace XMI
         {
           ll.u.n_torus.coords[0] = 0;
           ur.u.n_torus.coords[0] = _size-1;
-          
+
           return XMI_SUCCESS;
         }
       inline size_t task_impl()

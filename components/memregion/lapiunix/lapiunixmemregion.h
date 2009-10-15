@@ -1,5 +1,5 @@
 ///
-/// \file components/memregion/lapi/lapimemregion.h
+/// \file components/memregion/lapiunix/lapiunixmemregion.h
 /// \brief XMI LAPI specific memregion implementation.
 ///
 #ifndef   __xmi_lapi_lapimemregion_h__

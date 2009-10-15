@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/lapi/oldlapim2mmodel.h
+ * \file components/devices/lapiunix/oldlapiunixm2mmodel.h
  * \brief ???
  */
 
@@ -33,7 +33,7 @@ namespace XMI
         {
           _dispatch_id = _device.initM2M();
         };
-        
+
       inline void setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg)
         {
           _device.registerM2MRecvFunction (_dispatch_id, cb_recv, arg);
@@ -118,7 +118,7 @@ namespace XMI
           _device.enqueue(m2m);
           return;
         }
-      
+
       inline void postRecv_impl (XMI_Request_t          * request,
                                  const xmi_callback_t   * cb_done,
                                  unsigned                 connid,
@@ -150,7 +150,7 @@ namespace XMI
           msg->_buf     = buf;
           msg->_sizes   = sizes;
           msg->_offsets = offsets;
-          msg->_nranks  = nranks;          
+          msg->_nranks  = nranks;
           _device.enqueue(msg);
           return;
         }

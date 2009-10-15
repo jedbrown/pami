@@ -138,7 +138,7 @@ namespace XMI
         int flag = 0;
         MPI_Status sts;
         int events=0;
-        
+
         if(dbg) {
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl\n",(int)this));
           dbg = 0;
@@ -475,7 +475,7 @@ namespace XMI
         memcpy(dst, _currentBuf, bytes);
         return -1;
       }
- 
+
       inline size_t peers_impl ()
       {
         return _peers;

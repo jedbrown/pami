@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/lapi/lapimodel.h
+ * \file components/devices/lapiunix/lapiunixmodel.h
  * \brief ???
  */
 
@@ -45,7 +45,7 @@ namespace XMI
       static const size_t message_model_payload_bytes  = T_Device::payload_size;
       static const size_t message_model_status_bytes   = sizeof(T_Message);
       static const size_t message_model_state_bytes     = sizeof(T_Message);
-      
+
       xmi_result_t init_impl (size_t                      dispatch,
 			      Interface::RecvFunction_t   direct_recv_func,
 			      void                      * direct_recv_func_parm,
@@ -145,7 +145,7 @@ namespace XMI
           assert(rc == LAPI_SUCCESS);
           return true;
         }
-      
+
 
       inline bool postMessage_impl (uint8_t              (&state)[LAPIModel::packet_model_status_bytes],
                                     xmi_event_function   fn,

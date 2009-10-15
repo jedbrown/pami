@@ -84,7 +84,7 @@ int main(int argc, char ** argv) {
 		exit(1);
 	}
 
-	
+
 
 // END standard setup
 // ------------------------------------------------------------------------
@@ -101,7 +101,7 @@ int main(int argc, char ** argv) {
 	opwq.reset();
 	xmi_multicombine_t mcomb;
 
-	// simple allreduce on the local ranks... 
+	// simple allreduce on the local ranks...
 	mcomb.request = &wqam;
 	mcomb.cb_done = (xmi_callback_t){done_cb, (void *)test};
 	mcomb.roles = (unsigned)-1;

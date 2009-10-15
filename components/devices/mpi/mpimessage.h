@@ -54,7 +54,7 @@ namespace XMI
     protected:
     private:
     };
-    
+
 
     class MPIMcastMessage
     {
