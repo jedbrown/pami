@@ -19,6 +19,7 @@
 #include <stddef.h>
 
 #include "components/devices/bgq/mu/ResourceManager.h"
+#include "Global.h"
 
 #ifndef TRACE
 #define TRACE(x) //printf x

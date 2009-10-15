@@ -27,7 +27,11 @@
 
 #include "Platform.h"
 #include "util/common.h"
+#include "common/GlobalInterface.h"
 #include "common/bgq/BgqPersonality.h"
+#include "common/bgq/BgqMapCache.h"
+#include "Mapping.h"
+#include "Topology.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
@@ -35,59 +39,19 @@
 
 namespace XMI
 {
-    ///
-    /// \brief Blue Gene/Q coordinate structure
-    ///
-    /// This structure takes 32-bits on any 32/64 bit system. The a, b, c,
-    /// and d fields are the same size and in the same location as the MU
-    /// descriptor structure. The thread/core fields are sized for 16 cores
-    /// with 4 hardware threads each, though the reserved bit can be stolen
-    /// for the 17th core if it needs a rank. The e dimension is sized to the
-    /// current node-layout maximum, though the MU hardware supports the full
-    /// 6 bits.
-    ///
-    /// \see MUHWI_Destination_t
-    ///
-    typedef union bgq_coords
-    {
-      struct
-      {
-        uint32_t thread   : 2; ///< Hardware thread id, 4 threads per core
-        uint32_t a        : 6; ///< Torus 'a' dimension
-        uint32_t b        : 6; ///< Torus 'b' dimension
-        uint32_t c        : 6; ///< Torus 'c' dimension
-        uint32_t d        : 6; ///< Torus 'd' dimension
-        uint32_t e        : 1; ///< Torus 'e' dimension, two nodes per node card
-        uint32_t reserved : 1; ///< Reserved - possibly to identify the 17th core
-        uint32_t core     : 4; ///< Core id, 16 application cores per node
-      };
-      uint32_t   raw;          ///< Raw memory storage
-    } bgq_coords_t;
-
-    typedef struct
-    {
-      struct
-      {
-        bgq_coords_t * task2coords;
-        uint32_t     * coords2task;
-      } torus;
-      struct
-      {
-        size_t       * local2peer;
-        size_t       * peer2task;
-      } node;
-    } bgq_mapcache_t;
-
-    class Global
+    class Global : public Interface::Global<XMI::Global>
     {
       public:
 
         inline Global () :
           personality (),
+	  mapping(personality),
           _memptr (NULL),
           _memsize (0),
           _mapcache ()
         {
+	  xmi_coord_t ll, ur;
+	  size_t min, max;
           const char   * shmemfile = "/unique-xmi-global-shmem-file";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
@@ -116,7 +80,7 @@ namespace XMI
 
                 TRACE_ERR((stderr, "Global() .. _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
                 size_t bytes_used =
-                  initializeMapCache (personality);
+                  initializeMapCache (personality, ll, ur, min, max);
 
                 // Round up to the page size
                 size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
@@ -138,7 +102,22 @@ namespace XMI
           memset (_memptr, 0, bytes);
           _memsize = bytes;
           TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
-          size_t bytes_used = initializeMapCache (personality);
+          size_t bytes_used = initializeMapCache (personality, ll, ur, min, max);
+
+	  mapping.init(_mapcache, personality);
+	  XMI::Topology::static_init(&mapping);
+	  size_t rectsize = 1;
+	  for (unsigned d = 0; d < mapping.globalDims(); ++d) {
+		rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
+	  }
+	  if (mapping.size() == rectsize) {
+		new (&topology_global) XMI::Topology(&ll, &ur);
+	  } else if (mapping.size() == max - min + 1) {
+		new (&topology_global) XMI::Topology(min, max);
+	  } else {
+		XMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
+	  }
+	  topology_global.subTopologyLocalToMe(&topology_local);
 
           TRACE_ERR((stderr, "Global() <<\n"));
 
@@ -156,16 +135,18 @@ namespace XMI
 
         inline size_t size ()
         {
-          return _size;
+          return _mapcache.size;
         }
 
      private:
 
-        inline size_t initializeMapCache (BgqPersonality  & personality);
+        inline size_t initializeMapCache (BgqPersonality  & personality,
+				xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max);
 
       public:
 
         BgqPersonality       personality;
+	XMI::Mapping         mapping;
 
       private:
 
@@ -176,7 +157,8 @@ namespace XMI
     }; // XMI::Global
 };     // XMI
 
-size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
+size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
+				xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max)
 {
   void            * ptr      = _memptr;
   size_t            bytes    = _memsize;
@@ -201,6 +183,8 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
     volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
     volatile size_t maxRank;       // Largest valid rank
     volatile size_t minRank;       // Smallest valid rank
+    volatile xmi_coord_t activeLLCorner;
+    volatile xmi_coord_t activeURCorner;
   } cacheAnchors_t;
 
   volatile cacheAnchors_t * cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
@@ -263,6 +247,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
  //fprintf (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task);
 
   size_t max_rank = 0, min_rank = (size_t) - 1;
+  xmi_coord_t _ll, _ur;
 
   // If we are the master (participant 0), then initialize the caches.
   // Then, set the cache pointers into the shared memory area for the other
@@ -310,6 +295,15 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
         size_t i;
  //fprintf (stderr, "XMI::Global::initializeMapCache() .. fullSize = %zd\n", fullSize);
 
+	_ll.network = _ur.network = XMI_N_TORUS_NETWORK;
+	_ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
+	_ll.u.n_torus.coords[1] = _ur.u.n_torus.coords[1] = personality.bCoord();
+	_ll.u.n_torus.coords[2] = _ur.u.n_torus.coords[2] = personality.cCoord();
+	_ll.u.n_torus.coords[3] = _ur.u.n_torus.coords[3] = personality.dCoord();
+	_ll.u.n_torus.coords[4] = _ur.u.n_torus.coords[4] = personality.eCoord();
+	_ll.u.n_torus.coords[5] = _ur.u.n_torus.coords[5] = tCoord;
+	_ll.u.n_torus.coords[6] = _ur.u.n_torus.coords[6] = pCoord;
+
         for (i = 0; i < fullSize; i++)
           {
             //if ( (int)_mapcache[i] != -1 )
@@ -336,26 +330,36 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
                 if (rarray[a][b][c][d][e] == 1)
                   cacheAnchorsPtr->numActiveNodesGlobal++;
 
-                uint32_t addr_hash =
-                  t * (aSize * bSize * cSize * dSize * eSize * pSize) +
-                  p * (aSize * bSize * cSize * dSize * eSize) +
-                  e * (aSize * bSize * cSize * dSize) +
-                  d * (aSize * bSize * cSize) +
-                  c * (aSize * bSize) +
-                  b * (aSize) +
-                  a;
-
+                uint32_t addr_hash = ESTIMATED_TASK(a,b,c,d,e,t,p,aSize,bSize,cSize,dSize,eSize,tSize,pSize);
                 mapcache->torus.coords2task[addr_hash] = i;
 
                 // because of "for (i..." this will give us MAX after loop.
                 max_rank = i;
 
                 if (min_rank == (size_t) - 1) min_rank = i;
+
+		if (a < _ll.u.n_torus.coords[0]) _ll.u.n_torus.coords[0] = a;
+		if (b < _ll.u.n_torus.coords[1]) _ll.u.n_torus.coords[1] = b;
+		if (c < _ll.u.n_torus.coords[2]) _ll.u.n_torus.coords[2] = c;
+		if (d < _ll.u.n_torus.coords[3]) _ll.u.n_torus.coords[3] = d;
+		if (e < _ll.u.n_torus.coords[4]) _ll.u.n_torus.coords[4] = e;
+		if (t < _ll.u.n_torus.coords[5]) _ll.u.n_torus.coords[5] = t;
+		if (p < _ll.u.n_torus.coords[6]) _ll.u.n_torus.coords[6] = p;
+
+		if (a < _ur.u.n_torus.coords[0]) _ur.u.n_torus.coords[0] = a;
+		if (b < _ur.u.n_torus.coords[1]) _ur.u.n_torus.coords[1] = b;
+		if (c < _ur.u.n_torus.coords[2]) _ur.u.n_torus.coords[2] = c;
+		if (d < _ur.u.n_torus.coords[3]) _ur.u.n_torus.coords[3] = d;
+		if (e < _ur.u.n_torus.coords[4]) _ur.u.n_torus.coords[4] = e;
+		if (t < _ur.u.n_torus.coords[5]) _ur.u.n_torus.coords[5] = t;
+		if (p < _ur.u.n_torus.coords[6]) _ur.u.n_torus.coords[6] = p;
             //  }
           }
 
         cacheAnchorsPtr->maxRank = max_rank;
         cacheAnchorsPtr->minRank = min_rank;
+	memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &_ll, sizeof(_ll));
+	memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
       }
 
       // Initialize the node task2peer and peer2task caches.
@@ -365,66 +369,17 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
       {
         for (p=0; p<pSize; p++)
         {
-          hash =
-            t * (aSize * bSize * cSize * dSize * eSize * pSize) +
-            p * (aSize * bSize * cSize * dSize * eSize) +
-            e * (aSize * bSize * cSize * dSize) +
-            d * (aSize * bSize * cSize) +
-            c * (aSize * bSize) +
-            b * (aSize) +
-            a;
+          hash = ESTIMATED_TASK(a,b,c,d,e,t,p,aSize,bSize,cSize,dSize,eSize,tSize,pSize);
 
           mapcache->node.peer2task[peer] =
             mapcache->torus.coords2task[hash];
 
-          hash = t * pSize + p;
+          hash = ESTIMATED_TASK(0,0,0,0,0,t,p,1,1,1,1,1,tSize,pSize);
           mapcache->node.local2peer[hash] = peer++;
         }
       }
 
 
-#if 0
-      /* If the system call fails, assume the kernel is older and does not
-       * have this system call.  Use the original system call, one call per
-       * rank (which is slower than the single new system call) to obtain
-       * the information necessary to fill in the _mapcache, etc.
-       */
-      else
-        {
-          size_t i;
-
-          for (i = 0; i < fullSize; i++)
-            {
-              unsigned x, y, z, t;
-              err = Kernel_Rank2Coord ((int)i, &x, &y, &z, &t);
-
-              if (err == 0)
-                {
-                  _mapcache[i] = ((x & 0xFF) << 24) | ((y & 0xFF) << 16) | ((z & 0xFF) << 8) | (t & 0xFF);
-                  rarray[x][y][z]++;
-                  cacheAnchorsPtr->numActiveRanksGlobal++;
-
-                  if (rarray[x][y][z] == 1)
-                    cacheAnchorsPtr->numActiveNodesGlobal++;
-
-                  int estimated_rank =
-                    t * (personality.xSize() * personality.ySize() * personality.zSize()) +
-                    z * (personality.xSize() * personality.ySize()) +
-                    y * (personality.xSize()) +
-                    x;
-                  _rankcache[estimated_rank] = i;
-                }
-              else
-                {
-                  _mapcache[i] = (unsigned) - 1;
-                }
-            }
-
-          cacheAnchorsPtr->numActiveRanksLocal =
-            rarray[personality.xCoord()][personality.yCoord()][personality.zCoord()];
-        }
-
-#endif
       // Now that the map and rank caches have been initialized,
       // store their pointers into the shared memory cache pointer area so the
       // other nodes see these pointers.
@@ -442,6 +397,8 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
       // completed the initialization.
       Fetch_and_Add ((uint64_t *)&(cacheAnchorsPtr->atomic.exit), 1);
 
+	memcpy((void *)&ll, &_ll, sizeof(ll));
+	memcpy((void *)&ur, &_ur, sizeof(ur));
 
 # if 0
 
@@ -483,13 +440,18 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality)
       max_rank = cacheAnchorsPtr->maxRank;
       min_rank = cacheAnchorsPtr->minRank;
 
+      min = min_rank;
+      max = max_rank;
+      memcpy(&ll, (void *)&cacheAnchorsPtr->activeLLCorner, sizeof(ll));
+      memcpy(&ur, (void *)&cacheAnchorsPtr->activeURCorner, sizeof(ur));
+
       mbar();
 
       //cacheAnchorsPtr->done[personality.tCoord()] = 1;  // Indicate we have seen the info.
       Fetch_and_Add ((uint64_t *)&(cacheAnchorsPtr->atomic.exit), 1);
     }
 
-  _size = cacheAnchorsPtr->numActiveRanksGlobal;
+  mapcache->size = cacheAnchorsPtr->numActiveRanksGlobal;
 
   size_t mapsize = sizeof(cacheAnchors_t) +
          (sizeof(bgq_coords_t) + sizeof(uint32_t)) * fullSize +

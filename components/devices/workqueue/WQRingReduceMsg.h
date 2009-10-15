@@ -22,6 +22,7 @@
 #include "sys/xmi.h"
 #include "components/devices/MulticombineModel.h"
 #include "math/math_coremath.h"
+#include "Global.h"
 
 namespace XMI {
 namespace Device {

@@ -157,7 +157,7 @@ inline void* operator new(size_t obj_size, void* pointer)
 typedef xmi_geometry_t (*xmi_mapidtogeometry_fn) (int comm);
 
 #ifdef __cplusplus
-#define ENFORCE_CLASS_MEMBER(class,member)	{ &(static_cast<class *>(NULL))->member; }
+#define ENFORCE_CLASS_MEMBER(class,member)	{ &((class *)this)->member; }
 #endif // __cplusplus
 
 #endif // __util_common_h__

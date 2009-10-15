@@ -27,6 +27,7 @@
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
 #include "SysDep.h"
+#include "Global.h"
 
 #ifdef TRACE
 #undef TRACE

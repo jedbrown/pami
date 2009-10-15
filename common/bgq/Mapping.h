@@ -22,6 +22,7 @@
 #include "common/NodeMappingInterface.h"
 
 #include "common/bgq/BgqPersonality.h"
+#include "common/bgq/BgqMapCache.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 
 #include "util/common.h"
@@ -34,18 +35,19 @@
 
 namespace XMI
 {
-#define BGQ_DIMS 7
+#define BGQ_TDIMS 5
+#define BGQ_LDIMS 2
     class Mapping :
         public Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>,
-        public Interface::Mapping::Torus<Mapping, BGQ_DIMS>,
-        public Interface::Mapping::Node<Mapping,1>
+        public Interface::Mapping::Torus<Mapping, BGQ_TDIMS>,
+        public Interface::Mapping::Node<Mapping,BGQ_LDIMS>
     {
       public:
 
         inline Mapping (XMI::BgqPersonality &pers) :
             Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>(),
-            Interface::Mapping::Torus<Mapping, BGQ_DIMS>(),
-            Interface::Mapping::Node<Mapping,1> (),
+            Interface::Mapping::Torus<Mapping, BGQ_TDIMS>(),
+            Interface::Mapping::Node<Mapping,BGQ_LDIMS> (),
 	    _pers(pers),
             _a (_pers.aCoord()),
             _b (_pers.bCoord()),
@@ -67,14 +69,6 @@ namespace XMI
           // Compile-time assertions
           // ----------------------------------------------------------------
 
-
-          bgq_mapcache_t * cache = __global.getMapCache();
-
-          _mapcache.torus.task2coords = cache->torus.task2coords;
-          _mapcache.torus.coords2task = cache->torus.coords2task;
-          _mapcache.node.local2peer   = cache->node.local2peer;
-          _mapcache.node.peer2task    = cache->node.peer2task;
-
           _coords.thread   = _t;
           _coords.a        = _a;
           _coords.b        = _b;
@@ -87,8 +81,6 @@ namespace XMI
           coord2node (_t, _a, _b, _c, _d, _e, _p,
                       _nodeaddr.global, _nodeaddr.local);
 
-          _size = __global.size();;
-
           TRACE_ERR((stderr, "Mapping() .. coords: (%zd %zd %zd %zd %zd %zd), node: (%zd %zd)\n", _a, _b, _c, _d, _e, _t, _p, _nodeaddr.global, _nodeaddr.local));
         };
 
@@ -97,7 +89,6 @@ namespace XMI
       protected:
 	XMI::BgqPersonality &_pers;
         size_t _task;
-        size_t _size;
         size_t _nodes;
         size_t _peers;
 
@@ -112,14 +103,7 @@ namespace XMI
         bgq_coords_t  _coords;
         Interface::Mapping::nodeaddr_t _nodeaddr;
 
-        //size_t _numActiveRanksLocal;
-        //size_t _numActiveRanksGlobal;
-        //size_t _numActiveNodesGlobal;
-        //size_t _fullSize;
-
         bgq_mapcache_t _mapcache;
-        //bgq_coords_t * _mapcache;
-        //uint32_t             * _rankcache;
 
         inline void coord2node (size_t   a,
                                 size_t   b,
@@ -180,8 +164,8 @@ namespace XMI
         /// \brief Initialize the mapping
         /// \see XMI::Interface::Mapping::Base::init()
         ///
-        inline xmi_result_t init_impl(xmi_coord_t &ll, xmi_coord_t &ur,
-                                      size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm);
+	inline xmi_result_t init(bgq_mapcache_t &mapcache,
+				XMI::BgqPersonality &personality);
 
         ///
         /// \brief Return the BGP global task for this process
@@ -198,7 +182,7 @@ namespace XMI
         ///
         inline size_t size_impl()
         {
-          return _size;
+          return _mapcache.size;
         }
 
         ///
@@ -207,7 +191,7 @@ namespace XMI
         ///
         inline size_t globalDims_impl()
         {
-          return BGQ_DIMS;
+          return BGQ_TDIMS + BGQ_LDIMS;
         }
 
         /////////////////////////////////////////////////////////////////////////
@@ -221,15 +205,15 @@ namespace XMI
         /// \see XMI::Interface::Mapping::Torus::torusAddr()
         ///
         //template <>
-        inline void torusAddr_impl (size_t (&addr)[BGQ_DIMS])
+        inline void torusAddr_impl (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS])
         {
           addr[0] = _a;
           addr[1] = _b;
           addr[2] = _c;
           addr[3] = _d;
           addr[4] = _e;
-          addr[5] = _p;
           addr[6] = _t;
+          addr[5] = _p;
         }
 
         ///
@@ -238,7 +222,7 @@ namespace XMI
         ///
         /// \todo Error path
         ///
-        inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[BGQ_DIMS])
+        inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[BGQ_TDIMS])
         {
           uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
 
@@ -247,8 +231,8 @@ namespace XMI
           addr[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
           addr[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
           addr[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
-          addr[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
-          addr[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
+//        addr[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
+//        addr[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
 
           return XMI_SUCCESS;
         }
@@ -259,7 +243,7 @@ namespace XMI
         ///
         /// \todo Error path
         ///
-        inline xmi_result_t torus2task_impl (size_t (&addr)[BGQ_DIMS], size_t & task)
+        inline xmi_result_t torus2task_impl (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS], size_t & task)
         {
           TRACE_ERR((stderr, "Mapping::torus2task_impl({%zd, %zd, %zd, %zd, %zd, %zd, %zd}, ...) >>\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
 
@@ -277,21 +261,15 @@ namespace XMI
                        (addr[2] >= cSize) ||
                        (addr[3] >= dSize) ||
                        (addr[4] >= eSize) ||
-                       (addr[5] >= pSize) ||
-                       (addr[6] >= tSize)))
+                       (addr[6] >= tSize) ||
+                       (addr[5] >= pSize)))
             {
               return XMI_INVAL;
             }
 
           // Estimate the task id based on the bgq coordinates.
-          size_t hash =
-            addr[6] * (aSize * bSize * cSize * dSize * eSize * pSize) +
-            addr[5] * (aSize * bSize * cSize * dSize * eSize) +
-            addr[4] * (aSize * bSize * cSize * dSize) +
-            addr[3] * (aSize * bSize * cSize) +
-            addr[2] * (aSize * bSize) +
-            addr[1] * (aSize) +
-            addr[0];
+          size_t hash = ESTIMATED_TASK(addr[0],addr[1],addr[2],addr[3],addr[4],addr[6],addr[5],
+					aSize,bSize,cSize,dSize,eSize,tSize,pSize);
 
           // Verify that the estimated task is mapped.
           if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
@@ -305,6 +283,76 @@ namespace XMI
 
           return XMI_SUCCESS;
         };
+
+        ///
+        /// \brief Get the BGQ network address for a task
+        /// \see XMI::Interface::Mapping::Torus::task2network()
+        ///
+        /// \todo Error path
+        ///
+        inline xmi_result_t task2network_impl (size_t task,
+						xmi_coord_t *addr,
+						xmi_network type)
+        {
+          uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
+	  addr->network = XMI_N_TORUS_NETWORK;
+          addr->u.n_torus.coords[0] = (abcdept >> 24) & 0x00000003f; // 'a' coordinate
+          addr->u.n_torus.coords[1] = (abcdept >> 18) & 0x00000003f; // 'b' coordinate
+          addr->u.n_torus.coords[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
+          addr->u.n_torus.coords[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
+          addr->u.n_torus.coords[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
+	  addr->u.n_torus.coords[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
+          addr->u.n_torus.coords[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
+          return XMI_SUCCESS;
+        }
+
+        ///
+        /// \brief Get the BGQ network address for a task
+        /// \see XMI::Interface::Mapping::Torus::network2task()
+        ///
+        /// \todo Error path
+        ///
+        inline xmi_result_t network2task_impl (const xmi_coord_t *addr,
+						size_t *task,
+						xmi_network *type)
+        {
+          size_t aSize = _pers.aSize();
+          size_t bSize = _pers.bSize();
+          size_t cSize = _pers.cSize();
+          size_t dSize = _pers.dSize();
+          size_t eSize = _pers.eSize();
+          size_t tSize = _pers.pSize();
+          size_t pSize = _pers.tSize();
+          size_t a = addr->u.n_torus.coords[0];
+	  size_t b = addr->u.n_torus.coords[1];
+	  size_t c = addr->u.n_torus.coords[2];
+	  size_t d = addr->u.n_torus.coords[3];
+	  size_t e = addr->u.n_torus.coords[4];
+	  size_t t = addr->u.n_torus.coords[6];
+	  size_t p = addr->u.n_torus.coords[5];
+          // Verify that the bgq address is valid.
+          // TODO convert to "unlikely if"
+          if ((a >= aSize) ||
+              (b >= bSize) ||
+              (c >= cSize) ||
+              (d >= dSize) ||
+              (e >= eSize) ||
+              (p >= pSize) ||
+              (t >= tSize))
+            {
+              return XMI_INVAL;
+            }
+
+          size_t hash = ESTIMATED_TASK(a,b,c,d,e,t,p,
+					aSize,bSize,cSize,dSize,eSize,tSize,pSize);
+
+	  if (_mapcache.torus.coords2task[hash] == (uint32_t)-1) {
+		return XMI_ERROR;
+	  }
+	  *task = _mapcache.torus.coords2task[hash];
+	  *type = XMI_N_TORUS_NETWORK;
+          return XMI_SUCCESS;
+        }
 
 
         /////////////////////////////////////////////////////////////////////////
@@ -407,15 +455,8 @@ namespace XMI
             }
 
           // Estimate the task id based on the bgq coordinates.
-          size_t hash =
-            tCoord * (aSize * bSize * cSize * dSize * eSize * pSize) +
-            pCoord * (aSize * bSize * cSize * dSize * eSize) +
-            eCoord * (aSize * bSize * cSize * dSize) +
-            dCoord * (aSize * bSize * cSize) +
-            cCoord * (aSize * bSize) +
-            bCoord * (aSize) +
-            aCoord;
-
+          size_t hash = ESTIMATED_TASK(aCoord,bCoord,cCoord,dCoord,eCoord,tCoord,pCoord,
+					aSize,bSize,cSize,dSize,eSize,tSize,pSize);
           // Verify that the estimated task is mapped.
           if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
             {
@@ -448,7 +489,8 @@ namespace XMI
             }
 
           // Estimate the task id based on the bgq coordinates.
-          size_t hash = tCoord * pSize + pCoord;
+          size_t hash = ESTIMATED_TASK(0,0,0,0,0,tCoord,pCoord,
+					1,1,1,1,1,tSize,pSize);
 
           // Verify that the address hash is valid.
           if (unlikely(_mapcache.node.local2peer[hash] == (unsigned) - 1))
@@ -472,657 +514,16 @@ namespace XMI
     };	// class Mapping
 };	// namespace XMI
 
-#if 0
-static size_t XMI::Mapping::initializeMapCache (BgqPersonality  & personality,
-                                                            void                    * ptr,
-                                                            size_t                    bytes,
-                                                            bgq_coords_t           ** mapcache,
-                                                            uint32_t               ** rankcache)
+xmi_result_t XMI::Mapping::init(bgq_mapcache_t &mapcache,
+				XMI::BgqPersonality &personality)
 {
-  // This structure anchors pointers to the map cache and rank cache.
-  // It is created in the static portion of shared memory in this
-  // constructor, but exists there only for the duration of this
-  // constructor.  It communicates mapping initialization information
-  // to the other tasks running on this physical node.
-  typedef struct cacheAnchors
-  {
-    struct
-    {
-      uint64_t enter;
-      uint64_t exit;
-    } atomic;
-    volatile size_t *rankCachePtr; // Pointer to rank cache
-    volatile size_t numActiveRanksLocal; // Number of ranks on our physical node.
-    volatile size_t numActiveRanksGlobal;// Number of ranks in the partition.
-    volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
-    volatile size_t maxRank;       // Largest valid rank
-    volatile size_t minRank;       // Smallest valid rank
-  } cacheAnchors_t;
-
-  volatile cacheAnchors_t * cacheAnchorsPtr;
-
-  size_t myRank, mySize;
-
-  size_t tt, num_t = 0, rank, size;
-  int err;
-
-  size_t pCoord = personality.pCoord ();
-  size_t tCoord = personality.tCoord ();
-
-  size_t aSize  = personality.aSize ();
-  size_t bSize  = personality.bSize ();
-  size_t cSize  = personality.cSize ();
-  size_t dSize  = personality.dSize ();
-  size_t eSize  = personality.eSize ();
-  size_t pSize  = personality.pSize ();
-  size_t tSize  = personality.tSize ();
-
-  cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
-
-  // Notify all other tasks on the node that this task has entered the
-  // map cache initialization function.  If the value returned is zero
-  // then this task is the first one in and is designated the "master".
-  // All other tasks will wait until the master completes the
-  // initialization.
-  uint64_t participant =
-    Fetch_and_Add ((uint64_t *) & (cacheAnchorsPtr->atomic.enter), 1);
-
-  myRank = personality.rank();
-#warning set 'mySize' ?
-
-  // Calculate the number of potential ranks in this partition.
-  size_t fullSize = aSize * bSize * cSize * dSize * eSize * pSize * tSize;
-
-  _mapcache  = (bgq_coords_t *) (cacheAnchorsPtr + 1);
-  _rankcache = (uint32_t *) (_mapcache + fullSize);
-
-  size_t max_rank = 0, min_rank = (size_t) - 1;
-
-  // If we are the master (participant 0), then initialize the caches.
-  // Then, set the cache pointers into the shared memory area for the other
-  // ranks on this node to see, and wait for them to see it.
-  if (participant == 0)
-    {
-      // Sized to the addressable MU range.
-      uint16_t rarray [64][64][64][64][2];
-      memset(rarray, 0, sizeof(rarray));
-
-      memset(_rankcache, -1, sizeof(uint32_t) * fullSize);
-
-      size_t aSize = _pers.aSize();
-      size_t bSize = _pers.bSize();
-      size_t cSize = _pers.cSize();
-      size_t dSize = _pers.dSize();
-      size_t eSize = _pers.eSize();
-      size_t tSize = _pers.pSize();
-      size_t pSize = _pers.tSize();
-
-      /* Fill in the _mapcache array in a single syscall.
-       * It is indexed by rank, dimensioned to be the full size of the
-       * partition (ignoring -np), and filled in with the xyzt
-       * coordinates of each rank packed into a single 4 byte int.
-       * Non-active ranks (-np) have x, y, z, and t equal to 255, such
-       * that the entire 4 byte int is -1.
-       */
-#warning Need ranks2coords syscall!
-//              int rc = Kernel_Ranks2Coords((kernel_coords_t *)_mapcache, fullSize);
-
-      /* The above system call is new in V1R3M0.  If it works, obtain info
-       * from the returned _mapcache.
-       */
-//              if (rc == 0)
-      {
-        /* Obtain the following information from the _mapcache:
-         * 1. Number of active ranks in the partition.
-         * 2. Number of active compute nodes in the partition.
-         * 3. _rankcache (the reverse of _mapcache).  It is indexed by
-         *    coordinates and contains the rank.
-         * 4. Number of active ranks on each compute node.
-         */
-        size_t i;
-
-        for (i = 0; i < fullSize; i++)
-          {
-            if ( (int)_mapcache[i] != -1 )
-              {
-                size_t x, y, z, t;
-                bgq_coords_t mapCacheElement = *(bgq_coords_t*) & _mapcache[i];
-                a = mapCacheElement.a;
-                b = mapCacheElement.b;
-                c = mapCacheElement.c;
-                d = mapCacheElement.d;
-                e = mapCacheElement.e;
-                p = mapCacheElement.core;
-                t = mapCacheElement.thread;
-
-                // Increment the rank count on this node.
-                rarray[a][b][c][d][e]++;
-
-                // Increment the number of global ranks.
-                cacheAnchorsPtr->numActiveRanksGlobal++;
-
-                // If the rank count on this node is '1', this is the first
-                // rank encountered on this node. Increment the number of active nodes.
-                if (rarray[a][b][c][d][e] == 1)
-                  cacheAnchorsPtr->numActiveNodesGlobal++;
-
-                size_t estimated_task =
-                  t * (aSize * bSize * cSize * dSize * eSize * pSize) +
-                  p * (aSize * bSize * cSize * dSize * eSize) +
-                  e * (aSize * bSize * cSize * dSize) +
-                  d * (aSize * bSize * cSize) +
-                  c * (aSize * bSize) +
-                  b * (aSize) +
-                  a;
-
-                _rankcache[estimated_rank] = i;
-
-                // because of "for (i..." this will give us MAX after loop.
-                max_rank = i;
-
-                if (min_rank == (size_t) - 1) min_rank = i;
-              }
-          }
-
-        cacheAnchorsPtr->maxRank = max_rank;
-        cacheAnchorsPtr->minRank = min_rank;
-      }
-#if 0
-      /* If the system call fails, assume the kernel is older and does not
-       * have this system call.  Use the original system call, one call per
-       * rank (which is slower than the single new system call) to obtain
-       * the information necessary to fill in the _mapcache, etc.
-       */
-      else
-        {
-          size_t i;
-
-          for (i = 0; i < fullSize; i++)
-            {
-              unsigned x, y, z, t;
-              err = Kernel_Rank2Coord ((int)i, &x, &y, &z, &t);
-
-              if (err == 0)
-                {
-                  _mapcache[i] = ((x & 0xFF) << 24) | ((y & 0xFF) << 16) | ((z & 0xFF) << 8) | (t & 0xFF);
-                  rarray[x][y][z]++;
-                  cacheAnchorsPtr->numActiveRanksGlobal++;
-
-                  if (rarray[x][y][z] == 1)
-                    cacheAnchorsPtr->numActiveNodesGlobal++;
-
-                  int estimated_rank =
-                    t * (personality.xSize() * personality.ySize() * personality.zSize()) +
-                    z * (personality.xSize() * personality.ySize()) +
-                    y * (personality.xSize()) +
-                    x;
-                  _rankcache[estimated_rank] = i;
-                }
-              else
-                {
-                  _mapcache[i] = (unsigned) - 1;
-                }
-            }
-
-          cacheAnchorsPtr->numActiveRanksLocal =
-            rarray[personality.xCoord()][personality.yCoord()][personality.zCoord()];
-        }
-
-#endif
-      // Now that the map and rank caches have been initialized,
-      // store their pointers into the shared memory cache pointer area so the
-      // other nodes see these pointers.
-      cacheAnchorsPtr->mapCachePtr  = _mapcache;
-      cacheAnchorsPtr->rankCachePtr = _rankcache;
-
-      // Copy the rank counts into the mapping object.
-      //_numActiveRanksLocal  = cacheAnchorsPtr->numActiveRanksLocal;
-      //_numActiveRanksGlobal = cacheAnchorsPtr->numActiveRanksGlobal;
-      //_numActiveNodesGlobal = cacheAnchorsPtr->numActiveNodesGlobal;
-
-      mbar();  // Ensure that stores to memory are in the memory.
-
-      // Notify the other processes on this node that the master has
-      // completed the initialization.
-      Fetch_and_Add ((uint64_t *)&(cacheAnchorsPtr->atomic.exit), 1);
-
-
-# if 0
-
-      // Wait until the other t's on our physical node have seen the cache
-      // pointers.
-      for (tt = 0; tt < tsize; tt++)
-        {
-          while ( cacheAnchorsPtr->done[tt] == 0 )
-            {
-              _ppc_msync();
-            }
-        }
-
-      // Now that all nodes have seen the cache pointers, zero out the cache
-      // anchor structure for others who expect this area to be zero.
-      memset ((void*)cacheAnchorsPtr, 0x00, sizeof(cacheAnchors_t));
-#endif
-    } // End: Allocate an initialize the map and rank caches.
-
-
-  // We are not the master t on our physical node.  Wait for the master t to
-  // initialize the caches.  Then grab the pointers and rank
-  // counts, and then indicate we have seen them.
-  else
-    {
-      while (cacheAnchorsPtr->atomic.exit == 0);
-
-
-
-
-      _mapcache = (unsigned*)(cacheAnchorsPtr->mapCachePtr);
-
-
-      _rankcache = (unsigned*)(cacheAnchorsPtr->rankCachePtr);
-
-      //_numActiveRanksLocal  = cacheAnchorsPtr->numActiveRanksLocal;
-      //_numActiveRanksGlobal = cacheAnchorsPtr->numActiveRanksGlobal;
-      //_numActiveNodesGlobal = cacheAnchorsPtr->numActiveNodesGlobal;
-      max_rank = cacheAnchorsPtr->maxRank;
-      min_rank = cacheAnchorsPtr->minRank;
-
-      mbar();
-
-      //cacheAnchorsPtr->done[personality.tCoord()] = 1;  // Indicate we have seen the info.
-      Fetch_and_Add ((uint64_t *)&(cacheAnchorsPtr->atomic.exit), 1);
-    }
-
-  return sizeof(cacheAnchors_t) +
-         (sizeof(bgq_coords_t) + sizeof(uint32_t)) * fullSize;
-
-};
-#endif
-
-xmi_result_t XMI::Mapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
-				    size_t min_rank, size_t max_rank, XMI::Memory::SharedMemoryManager &mm)
-{
-  //_mapcache  = __global.getMapCache();
-  //_rankcache = __global.getRankCache();
-
-
-#if 0
-  // This structure anchors pointers to the map cache and rank cache.
-  // It is created in the static portion of shared memory in this constructor,
-  // but exists there only for the duration of this constructor.  It
-  // communicates mapping initialization information to the other tasks running
-  // on this physical node.
-  typedef struct cacheAnchors
-  {
-    volatile size_t * mapCachePtr; // Pointer to map cache
-    volatile size_t *rankCachePtr; // Pointer to rank cache
-    volatile size_t done[4];       // Indicators as to when each of the t coordinates
-    // on our physical node are done extracting the
-    // cache pointers from this structure in shared
-    // memory (0 = not done, 1 = done.
-    volatile size_t numActiveRanksLocal; // Number of ranks on our physical node.
-    volatile size_t numActiveRanksGlobal;// Number of ranks in the partition.
-    volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
-    volatile size_t maxRank;       // Largest valid rank
-    volatile size_t minRank;       // Smallest valid rank
-#if 0
-    volatile CM_Coord_t activeLLCorner;
-    volatile CM_Coord_t activeURCorner;
-#endif
-  } cacheAnchors_t;
-
-  volatile cacheAnchors_t * cacheAnchorsPtr;
-  bool meMaster = false;
-  size_t tt, num_t = 0, rank, size;
-  int err;
-
-  //_processor_id = rts_get_processor_id();
-  //_pers = & _pers;
-  //_myNetworkCoord.network = CM_TORUS_NETWORK;
-  //unsigned ix = 0;
-  //_myNetworkCoord.n_torus.coords[ix++] = x();
-  //_myNetworkCoord.n_torus.coords[ix++] = y();
-  //_myNetworkCoord.n_torus.coords[ix++] = z();
-  //_numGlobalDims = ix;
-  //_myNetworkCoord.n_torus.coords[ix++] = t();
-  //_numDims = ix;
-
-  //DCMF_assert_debug(_numDims <= CM_MAX_DIMS);
-  size_t tCoord = t ();
-  size_t tsize  = tSize ();
-
-  _numActiveRanksLocal = 0;
-  _numActiveRanksGlobal = 0;
-  _numActiveNodesGlobal = 0;
-
-  // Calculate the number of potential ranks in this partition.
-  _fullSize = xSize() * ySize() * zSize() * tsize;
-
-  // Use the static portion of the shared memory area (guaranteed to be zeros
-  // at this point when it is in shared memory) to anchor pointers to
-  // the caches.  Only the master rank will initialize these caches and set the
-  // pointers into this structure.  When the non-master ranks on this physical
-  // node see the non-zero pointers, they can begin to use them.
-  xmi_result_t result = mm.memalign((void **) & cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-
-  // Determine if we are the master rank on our physical node.  Do this by
-  // finding the lowest t coordinate on our node, and if it is us, then we
-  // are the master.
-  for (tt = 0; tt < tsize; tt++)
-    {
-      // See if there is a rank on our xyz with this t.
-      int rc = Kernel_Coord2Rank( x(), y(), z(), tt, &rank, &size);
-
-      if (rc == 0) // Found a t.
-        {
-          // If this t is the first one we found, and it is us, then we are the
-          // master.
-          if ( (num_t == 0) && (tt == tCoord) )
-            {
-              meMaster = true;
-              cacheAnchorsPtr->done[tt] = 1; // Indicate this t is done so we
-              // (the master) don't wait on it
-              // later.
-            }
-
-          // If this t is us, save the rank and size in the mapping object.
-          if ( tt == tCoord )
-            {
-              _task = rank; // Save our task rank in the mapping object.
-              _size = size; // Save the size in the mapping object.
-            }
-
-          // Count the t's on our physical node.
-          num_t++;
-        }
-      // If there is no rank on this t, indicate that this t is done so we
-      // don't wait on it later.
-      else
-        {
-          cacheAnchorsPtr->done[tt] = 1;
-        }
-    }
-
-  // Note:  All nodes allocate the map and rank caches.  When in DUAL or VN modes,
-  //        the allocator will return the same address in shared memory,
-  //        effectively allocating the physically same buffer.  When in SMP mode,
-  //        there is only one node that will allocate out of the heap.
-
-  // Allocate the map cache from shared memory (in DUAL or VN modes) or from
-  // heap (in SMP mode).
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-  //_mapcache = (size_t *) mm.scratchpad_dynamic_area_memalign (16, sizeof(kernel_coords_t) * _fullSize );
-  result = mm.memalign((void **) & _mapcache, 16, sizeof(kernel_coords_t) * _fullSize);
-
-  // Allocate the rank cache from shared memory (in DUAL or VN modes) or from
-  // heap (in SMP mode).
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-  //_rankcache = (unsigned *) mm.scratchpad_dynamic_area_memalign ( 16, sizeof(size_t) * _fullSize);
-  result = mm.memalign((void **) & _rankcache, 16, sizeof(size_t) * _fullSize);
-
-  size_t max_rank = 0, min_rank = (size_t) - 1;
-#if 0
-  CM_Coord_t ll, ur;
-#endif
-
-
-
-  // If we are the master, then initialize the caches.
-  // Then, set the cache pointers into the shared memory area for the other
-  // ranks on this node to see, and wait for them to see it.
-  if ( meMaster )
-    {
-      uint16_t rarray [72][32][32]; /* Full 72 rack partition */
-      memset(rarray, 0, sizeof(rarray));
-
-      memset(_rankcache, -1, sizeof(size_t) * _fullSize);
-
-      /* Fill in the _mapcache array in a single syscall.
-       * It is indexed by rank, dimensioned to be the full size of the
-       * partition (ignoring -np), and filled in with the xyzt
-       * coordinates of each rank packed into a single 4 byte int.
-       * Non-active ranks (-np) have x, y, z, and t equal to 255, such
-       * that the entire 4 byte int is -1.
-       */
-      int rc = Kernel_Ranks2Coords((kernel_coords_t *)_mapcache, _fullSize);
-
-      /* The above system call is new in V1R3M0.  If it works, obtain info
-       * from the returned _mapcache.
-       */
-      if (rc == 0)
-        {
-#if 0
-          ll.network = ur.network = CM_TORUS_NETWORK;
-          ll.n_torus.coords[0] = ur.n_torus.coords[0] = x();
-          ll.n_torus.coords[1] = ur.n_torus.coords[1] = y();
-          ll.n_torus.coords[2] = ur.n_torus.coords[2] = z();
-          ll.n_torus.coords[3] = ur.n_torus.coords[3] = t();
-#endif
-
-          /* Obtain the following information from the _mapcache:
-           * 1. Number of active ranks in the partition.
-           * 2. Number of active compute nodes in the partition.
-           * 3. _rankcache (the reverse of _mapcache).  It is indexed by
-           *    coordinates and contains the rank.
-           * 4. Number of active ranks on each compute node.
-           */
-          size_t i;
-
-          for (i = 0; i < _fullSize; i++)
-            {
-              if ( (int)_mapcache[i] != -1 )
-                {
-                  size_t x, y, z, t;
-                  kernel_coords_t mapCacheElement = *(kernel_coords_t*) & _mapcache[i];
-                  x = mapCacheElement.x;
-                  y = mapCacheElement.y;
-                  z = mapCacheElement.z;
-                  t = mapCacheElement.t;
-
-                  // Increment the rank count on this node.
-                  rarray[x][y][z]++;
-
-                  // Increment the number of global ranks.
-                  cacheAnchorsPtr->numActiveRanksGlobal++;
-
-                  // If the rank count on this node is '1', this is the first
-                  // rank encountered on this node. Increment the number of active nodes.
-                  if (rarray[x][y][z] == 1) cacheAnchorsPtr->numActiveNodesGlobal++;
-
-                  size_t estimated_rank =
-                    t * (xSize() * ySize() * zSize()) +
-                    z * (xSize() * ySize()) +
-                    y * (xSize()) + x;
-
-                  _rankcache[estimated_rank] = i;
-
-                  // because of "for (i..." this will give us MAX after loop.
-                  max_rank = i;
-
-                  if (min_rank == (size_t) - 1) min_rank = i;
-
-#if 0
-
-                  if (x < ll.n_torus.coords[0]) ll.n_torus.coords[0] = x;
-
-                  if (y < ll.n_torus.coords[1]) ll.n_torus.coords[1] = y;
-
-                  if (z < ll.n_torus.coords[2]) ll.n_torus.coords[2] = z;
-
-                  if (t < ll.n_torus.coords[3]) ll.n_torus.coords[3] = t;
-
-                  if (x > ur.n_torus.coords[0]) ur.n_torus.coords[0] = x;
-
-                  if (y > ur.n_torus.coords[1]) ur.n_torus.coords[1] = y;
-
-                  if (z > ur.n_torus.coords[2]) ur.n_torus.coords[2] = z;
-
-                  if (t > ur.n_torus.coords[3]) ur.n_torus.coords[3] = t;
-
-#endif
-                }
-            }
-
-          cacheAnchorsPtr->maxRank = max_rank;
-          cacheAnchorsPtr->minRank = min_rank;
-#if 0
-          // why can't this just be assigned???
-          memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &ll, sizeof(ll));
-          memcpy((void *)&cacheAnchorsPtr->activeURCorner, &ur, sizeof(ur));
-#endif
-        }
-      /* If the system call fails, assume the kernel is older and does not
-       * have this system call.  Use the original system call, one call per
-       * rank (which is slower than the single new system call) to obtain
-       * the information necessary to fill in the _mapcache, etc.
-       */
-      else
-        {
-          size_t i;
-
-          for (i = 0; i < _fullSize; i++)
-            {
-              unsigned x, y, z, t;
-              err = Kernel_Rank2Coord ((int)i, &x, &y, &z, &t);
-
-              if (err == 0)
-                {
-                  _mapcache[i] = ((x & 0xFF) << 24) | ((y & 0xFF) << 16) | ((z & 0xFF) << 8) | (t & 0xFF);
-                  rarray[x][y][z]++;
-                  cacheAnchorsPtr->numActiveRanksGlobal++;
-
-                  if (rarray[x][y][z] == 1)
-                    cacheAnchorsPtr->numActiveNodesGlobal++;
-
-                  int estimated_rank =
-                    t * (xSize() * ySize() * zSize()) +
-                    z * (xSize() * ySize()) +
-                    y * (xSize()) +
-                    x;
-                  _rankcache[estimated_rank] = i;
-                }
-              else
-                {
-                  _mapcache[i] = (unsigned) - 1;
-                }
-            }
-
-          cacheAnchorsPtr->numActiveRanksLocal = rarray[x()][y()][z()];
-        }
-
-      // Now that the map and rank caches have been initialized,
-      // store their pointers into the shared memory cache pointer area so the
-      // other nodes see these pointers.
-      cacheAnchorsPtr->mapCachePtr  = _mapcache;
-      cacheAnchorsPtr->rankCachePtr = _rankcache;
-
-      // Copy the rank counts into the mapping object.
-      _numActiveRanksLocal  = cacheAnchorsPtr->numActiveRanksLocal;
-      _numActiveRanksGlobal = cacheAnchorsPtr->numActiveRanksGlobal;
-      _numActiveNodesGlobal = cacheAnchorsPtr->numActiveNodesGlobal;
-
-      _bgq_mbar();  // Ensure that stores to memory are in the memory.
-
-      // Wait until the other t's on our physical node have seen the cache
-      // pointers.
-      for (tt = 0; tt < tsize; tt++)
-        {
-          while ( cacheAnchorsPtr->done[tt] == 0 )
-            {
-              _bgq_msync();
-            }
-        }
-
-      // Now that all nodes have seen the cache pointers, zero out the cache
-      // anchor structure for others who expect this area to be zero.
-      memset ((void*)cacheAnchorsPtr, 0x00, sizeof(cacheAnchors_t));
-
-    } // End: Allocate an initialize the map and rank caches.
-
-
-  // We are not the master t on our physical node.  Wait for the master t to
-  // initialize the caches.  Then grab the pointers and rank
-  // counts, and then indicate we have seen them.
-  else
-    {
-      while ( cacheAnchorsPtr->mapCachePtr == NULL )
-        {
-          _bgq_msync();
-        }
-
-      _mapcache = (unsigned*)(cacheAnchorsPtr->mapCachePtr);
-
-      while ( cacheAnchorsPtr->rankCachePtr == NULL )
-        {
-          _bgq_msync();
-        }
-
-      _rankcache = (unsigned*)(cacheAnchorsPtr->rankCachePtr);
-
-      _numActiveRanksLocal  = cacheAnchorsPtr->numActiveRanksLocal;
-      _numActiveRanksGlobal = cacheAnchorsPtr->numActiveRanksGlobal;
-      _numActiveNodesGlobal = cacheAnchorsPtr->numActiveNodesGlobal;
-      max_rank = cacheAnchorsPtr->maxRank;
-      min_rank = cacheAnchorsPtr->minRank;
-
-#if 0
-      // why can't these just be assigned???
-      memcpy(&ll, (void *)&cacheAnchorsPtr->activeLLCorner, sizeof(ll));
-      memcpy(&ur, (void *)&cacheAnchorsPtr->activeURCorner, sizeof(ur));
-#endif
-      _bgq_mbar();
-
-      cacheAnchorsPtr->done[tCoord] = 1;  // Indicate we have seen the info.
-    }
-
-
-#if 0
-  // This is other gunk .. used by collectives?
-  size_t rectsize = (ur.n_torus.coords[0] - ll.n_torus.coords[0] + 1) *
-                    (ur.n_torus.coords[1] - ll.n_torus.coords[1] + 1) *
-                    (ur.n_torus.coords[2] - ll.n_torus.coords[2] + 1) *
-                    (ur.n_torus.coords[3] - ll.n_torus.coords[3] + 1);
-
-  if (_numActiveRanksGlobal == rectsize)
-    {
-      _g_topology_world = new (&__topology_w) LL::Topology(&ll, &ur);
-    }
-  else if (max_rank - min_rank + 1 == _numActiveRanksGlobal)
-    {
-      // does this ever happen for "COMM_WORLD"?
-      _g_topology_world = new (&__topology_w) LL::Topology(min_rank, max_rank);
-    }
-  else
-    {
-      // wait for COMM_WORLD so we don't allocate yet-another ranks list?
-      // actually, COMM_WORLD should use our rank list...
-      // does this ever happen for "COMM_WORLD"?
-      // _g_topology_world = new (&__topology_w) LL::Topology(ranks, nranks);
-      fprintf(stderr, "failed to build comm-world topology\n");
-    }
-
-  _g_topology_world->subTopologyLocalToMe(&__topology_l);
-  _g_topology_local = &__topology_l;
-
-  _localranks = (unsigned *)malloc(sizeof(*_localranks) * NUM_CORES);
-  DCMF_assert_debug(_localranks);
-  unsigned index = 0;
-
-  for (unsigned i = 0; i < tSize(); i++)
-    {
-      unsigned peerrank = (unsigned) - 1;
-      int rc = torus2rank(x(), y(), z(), i, peerrank);
-
-      if ((rc == CM_SUCCESS) && (peerrank != (unsigned) - 1))
-        {
-          _localranks[index++] = peerrank;
-        }
-    }
-
-#endif
-#endif
-  return XMI_SUCCESS;
-};
+	_mapcache.torus.task2coords = mapcache.torus.task2coords;
+	_mapcache.torus.coords2task = mapcache.torus.coords2task;
+	_mapcache.node.local2peer   = mapcache.node.local2peer;
+	_mapcache.node.peer2task    = mapcache.node.peer2task;
+	_mapcache.size    = mapcache.size;
+
+	return XMI_SUCCESS;
+}
 #undef TRACE_ERR
 #endif // __components_mapping_bgq_bgqmapping_h__

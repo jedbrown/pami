@@ -17,23 +17,73 @@
 
 #include "common/bgq/BgqPersonality.h"
 
+/// \brief Creates valid index into _rankcache[].
+///
+/// It is imperative that all who create an index into _rankcache[]
+/// do it in the identical way. Thus all should use this macro.
+///
+#define ESTIMATED_TASK(a,b,c,d,e,t,p,aSize,bSize,cSize,dSize,eSize,tSize,pSize) \
+	((((((t * pSize + p) * eSize + e) * dSize + d) * cSize + c)* bSize + b) * aSize + a)
 
 namespace XMI
 {
-    class BgqMapCache
+    ///
+    /// \brief Blue Gene/Q coordinate structure
+    ///
+    /// This structure takes 32-bits on any 32/64 bit system. The a, b, c,
+    /// and d fields are the same size and in the same location as the MU
+    /// descriptor structure. The thread/core fields are sized for 16 cores
+    /// with 4 hardware threads each, though the reserved bit can be stolen
+    /// for the 17th core if it needs a rank. The e dimension is sized to the
+    /// current node-layout maximum, though the MU hardware supports the full
+    /// 6 bits. 
+    ///
+    /// \see MUHWI_Destination_t
+    ///
+    typedef union bgq_coords
     {
+      struct  
+      {
+        uint32_t thread   : 2; ///< Hardware thread id, 4 threads per core
+        uint32_t a        : 6; ///< Torus 'a' dimension
+        uint32_t b        : 6; ///< Torus 'b' dimension
+        uint32_t c        : 6; ///< Torus 'c' dimension
+        uint32_t d        : 6; ///< Torus 'd' dimension
+        uint32_t e        : 1; ///< Torus 'e' dimension, two nodes per node card
+        uint32_t reserved : 1; ///< Reserved - possibly to identify the 17th core
+        uint32_t core     : 4; ///< Core id, 16 application cores per node
+      };      
+      uint32_t   raw;          ///< Raw memory storage 
+    } bgq_coords_t;
+
+    typedef struct
+    {
+      struct  
+      {
+        bgq_coords_t * task2coords;
+        uint32_t     * coords2task;
+      } torus;
+      struct
+      {
+        size_t       * local2peer;
+        size_t       * peer2task;
+      } node;
+      size_t	size;
+    } bgq_mapcache_t;
+
+    class BgqMapCache {
       public:
 
         inline BgqMapCache () {};
 
         inline ~BgqMapCache () {};
 
-        inline size_t init (SysDep::BgqPersonality & personality,
+        inline size_t init (XMI::BgqPersonality & personality,
                             void                   * ptr,
                             size_t                   bytes
                             )
         {
-
+#ifdef OBSOLETE
           // This structure anchors pointers to the map cache and rank cache.
           // It is created in the static portion of shared memory in this
           // constructor, but exists there only for the duration of this
@@ -78,22 +128,6 @@ namespace XMI
           size_t psize  = personality.pSize ();
           size_t tsize  = personality.tSize ();
 
-#if 0
-          _numActiveRanksLocal = 0;
-          _numActiveRanksGlobal = 0;
-          _numActiveNodesGlobal = 0;
-
-          // Calculate the number of potential ranks in this partition.
-          _fullSize = xSize() * ySize() * zSize() * tsize;
-
-          // Use the static portion of the shared memory area (guaranteed to be zeros
-          // at this point when it is in shared memory) to anchor pointers to
-          // the caches.  Only the master rank will initialize these caches and set the
-          // pointers into this structure.  When the non-master ranks on this physical
-          // node see the non-zero pointers, they can begin to use them.
-          xmi_result_t result = mm.memalign((void **) & cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-#endif
           cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
 
           // Notify all other tasks on the node that this task has entered the
@@ -107,49 +141,6 @@ namespace XMI
           if (participant == 0) meMaster = true;
 
           myRank = personality.rank();
-#warning set 'mySize' ?
-#if 0
-          // Determine if we are the master rank on our physical node.  Do this
-          // by finding the lowest t coordinate on our node, and if it is us,
-          // then we are the master.
-          for (tt = 0; tt < tsize; tt++)
-            {
-              // See if there is a rank on our xyz with this t.
-              int rc = Kernel_Coord2Rank (personality.xCoord(),
-                                          personality.yCoord(),
-                                          personality.zCoord(),
-                                          tt, &rank, &size);
-
-              if (rc == 0) // Found a t.
-                {
-                  // If this t is the first one we found, and it is us, then we are the
-                  // master.
-                  if ( (num_t == 0) && (tt == tCoord) )
-                    {
-                      meMaster = true;
-                      cacheAnchorsPtr->done[tt] = 1; // Indicate this t is done so we
-                      // (the master) don't wait on it
-                      // later.
-                    }
-
-                  // If this t is us, save the rank and size in the mapping object.
-                  if ( tt == tCoord )
-                    {
-                      myRank = rank; // Save our task rank in the mapping object.
-                      mySize = size; // Save the size in the mapping object.
-                    }
-
-                  // Count the t's on our physical node.
-                  num_t++;
-                }
-              // If there is no rank on this t, indicate that this t is done so we
-              // don't wait on it later.
-              else
-                {
-                  cacheAnchorsPtr->done[tt] = 1;
-                }
-            }
-#endif
           // Calculate the number of potential ranks in this partition.
           size_t fullSize = personality.aSize() *
                             personality.bSize() *
@@ -209,7 +200,7 @@ namespace XMI
 
                   for (i = 0; i < fullSize; i++)
                     {
-                      if ( (int)_mapcache[i] != -1 )
+                      if ( (int)_mapcache[i].raw != -1 )
                         {
                           size_t x, y, z, t;
                           bgq_coords_t mapCacheElement = *(bgq_coords_t*) & _mapcache[i];
@@ -233,13 +224,8 @@ namespace XMI
                             cacheAnchorsPtr->numActiveNodesGlobal++;
 
                           size_t estimated_task =
-                            t * (aSize * bSize * cSize * dSize * eSize * pSize) +
-                            p * (aSize * bSize * cSize * dSize * eSize) +
-                            e * (aSize * bSize * cSize * dSize) +
-                            d * (aSize * bSize * cSize) +
-                            c * (aSize * bSize) +
-                            b * (aSize) +
-                            a;
+				ESTIMATED_TASK(a,b,c,d,e,t,p,
+					aSize,bSize,cSize,dSize,eSize,tSize,pSize);
 
                           _rankcache[estimated_rank] = i;
 
@@ -253,47 +239,6 @@ namespace XMI
                   cacheAnchorsPtr->maxRank = max_rank;
                   cacheAnchorsPtr->minRank = min_rank;
                 }
-#if 0
-              /* If the system call fails, assume the kernel is older and does not
-               * have this system call.  Use the original system call, one call per
-               * rank (which is slower than the single new system call) to obtain
-               * the information necessary to fill in the _mapcache, etc.
-               */
-              else
-                {
-                  size_t i;
-
-                  for (i = 0; i < fullSize; i++)
-                    {
-                      unsigned x, y, z, t;
-                      err = Kernel_Rank2Coord ((int)i, &x, &y, &z, &t);
-
-                      if (err == 0)
-                        {
-                          _mapcache[i] = ((x & 0xFF) << 24) | ((y & 0xFF) << 16) | ((z & 0xFF) << 8) | (t & 0xFF);
-                          rarray[x][y][z]++;
-                          cacheAnchorsPtr->numActiveRanksGlobal++;
-
-                          if (rarray[x][y][z] == 1)
-                            cacheAnchorsPtr->numActiveNodesGlobal++;
-
-                          int estimated_rank =
-                            t * (personality.xSize() * personality.ySize() * personality.zSize()) +
-                            z * (personality.xSize() * personality.ySize()) +
-                            y * (personality.xSize()) +
-                            x;
-                          _rankcache[estimated_rank] = i;
-                        }
-                      else
-                        {
-                          _mapcache[i] = (unsigned) - 1;
-                        }
-                    }
-
-                  cacheAnchorsPtr->numActiveRanksLocal =
-                    rarray[personality.xCoord()][personality.yCoord()][personality.zCoord()];
-                }
-#endif
               // Now that the map and rank caches have been initialized,
               // store their pointers into the shared memory cache pointer area so the
               // other nodes see these pointers.
@@ -311,22 +256,6 @@ namespace XMI
               // completed the initialization.
               Fetch_and_Add ((uint64_t *)&(cacheAnchorsPtr->atomic.exit), 1);
 
-
-# if 0
-              // Wait until the other t's on our physical node have seen the cache
-              // pointers.
-              for (tt = 0; tt < tsize; tt++)
-                {
-                  while ( cacheAnchorsPtr->done[tt] == 0 )
-                    {
-                      _ppc_msync();
-                    }
-                }
-
-              // Now that all nodes have seen the cache pointers, zero out the cache
-              // anchor structure for others who expect this area to be zero.
-              memset ((void*)cacheAnchorsPtr, 0x00, sizeof(cacheAnchors_t));
-#endif
             } // End: Allocate an initialize the map and rank caches.
 
 
@@ -359,8 +288,11 @@ namespace XMI
 
           return sizeof(cacheAnchors_t) +
                  (sizeof(bgq_coords_t) + sizeof(uint32_t)) * fullSize;
+#endif // OBSOLETE
+	  return 0;
         };
 
+#ifdef OBSOLETE
         inline size_t * getMapCache ()
         {
           return _mapcache;
@@ -375,6 +307,7 @@ namespace XMI
 
         size_t * _mapcache;
         size_t * _rankcache;
+#endif // OBSOLETE
 
     }; // XMI::BgqMapCache
 };     // XMI
