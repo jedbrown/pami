@@ -38,7 +38,7 @@
 
 #ifndef ASSERT_LEVEL
   #define ASSERT_LEVEL 2
-  #warning ASSERT_LEVEL not set by config.  Defaulting to all asserts enabled 
+  #warning ASSERT_LEVEL not set by config.  Defaulting to all asserts enabled
 #endif
 
 #if ASSERT_LEVEL==0    // All asserts are disabled
@@ -124,6 +124,14 @@ inline void* operator new(size_t obj_size, void* pointer)
  *       parse the function unless it is used.
  */
 #define COMPILE_TIME_ASSERT(expr) if(0){switch(0){case 0:case expr:;}}
+
+/**
+ * \brief This is like COMPILE_TIME_ASSERT, but should match the new
+ *        system used in "C++ 0x"
+ *
+ *  http://en.wikipedia.org/wiki/C%2B%2B0x#Static_assertions
+ */
+#define static_assert(expr, string) COMPILE_TIME_ASSERT(expr)
 
 typedef xmi_geometry_t (*xmi_mapidtogeometry_fn) (int comm);
 
