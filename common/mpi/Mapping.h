@@ -15,9 +15,9 @@
 #define __components_mapping_mpi_mpimapping_h__
 
 #include "sys/xmi.h"
-#include "common/BaseMapping.h"
-#include "common/TorusMapping.h"
-#include "common/NodeMapping.h"
+#include "common/BaseMappingInterface.h"
+#include "common/TorusMappingInterface.h"
+#include "common/NodeMappingInterface.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include <mpi.h>
 

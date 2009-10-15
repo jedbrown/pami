@@ -20,7 +20,7 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 
-#include "common/Topology.h"
+#include "common/TopologyInterface.h"
 #include "Mapping.h"
 
 #define net_coord(n)	u.n_torus.coords[n]

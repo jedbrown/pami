@@ -17,7 +17,7 @@
 
 #include "sys/xmi.h"
 #include <sys/time.h>
-#include "common/BaseTime.h"
+#include "common/BaseTimeInterface.h"
 #include <mpi.h>
 #include <stdio.h>
 

@@ -15,7 +15,7 @@
 
 #define XMI_SYSDEP_CLASS XMI::SysDep
 
-#include "common/SysDep.h"
+#include "common/SysDepInterface.h"
 
 // These must be defined early
 #include "Platform.h"

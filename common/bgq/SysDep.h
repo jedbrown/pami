@@ -15,7 +15,7 @@
 
 #define XMI_SYSDEP_CLASS XMI::SysDep
 
-#include "common/SysDep.h"
+#include "common/SysDepInterface.h"
 
 // These must be defined early
 #include "Platform.h"
@@ -30,6 +30,6 @@ namespace XMI
     // TODO -- need to make a different shared memory manager so that multiple
     // contexts can get shared memory .. right now the second context to call
     // mm.init() will fail.
-    typedef Interface::SysDep<XMI::Memory::SharedMemoryManager, XMI::Mapping, XMI::Time, XMI::Topology> SysDep;
+    typedef Interface::SysDep<XMI::Memory::SharedMemoryManager> SysDep;
 };
 #endif // __components_sysdep_bgq_bgqsysdep_h__

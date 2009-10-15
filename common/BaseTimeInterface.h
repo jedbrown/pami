@@ -34,7 +34,7 @@ namespace XMI
           ///
           /// \brief Initialize the time object.
           ///
-          inline xmi_result_t init ();
+          inline xmi_result_t init (size_t clockMHz);
 
 
           ///
@@ -62,9 +62,9 @@ namespace XMI
       }; // class BaseTime
 
       template <class T>
-      inline xmi_result_t BaseTime<T>::init ()
+      inline xmi_result_t BaseTime<T>::init (size_t clockMHz)
       {
-        return static_cast<T*>(this)->init_impl ();
+        return static_cast<T*>(this)->init_impl (clockMHz);
       }
 
       template <class T>

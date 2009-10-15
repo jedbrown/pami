@@ -2,6 +2,7 @@
 /// \file components/topology/Topology.h
 /// \brief XMI topology implementation.
 ///
+
 #ifndef   __xmi_component_topology_h__
 #define   __xmi_component_topology_h__
 

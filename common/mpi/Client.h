@@ -9,7 +9,7 @@
 
 #define XMI_CLIENT_CLASS XMI::Client
 
-#include "common/Client.h"
+#include "common/ClientInterface.h"
 #include "Context.h"
 #include "Geometry.h"
 

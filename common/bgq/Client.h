@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 
-#include "common/Client.h"
+#include "common/ClientInterface.h"
 
 #include "Context.h"
 

@@ -29,6 +29,7 @@
 
 #include "Platform.h"
 #include "util/common.h"
+#include "common/GlobalInterface.h"
 #include "common/bgp/BgpPersonality.h"
 #include "common/bgp/BgpMapCache.h"
 #include "Mapping.h"
@@ -38,21 +39,20 @@
 
 namespace XMI
 {
-    class Global
+    class Global : public Interface::Global<XMI::Global>
     {
       public:
 
         inline Global () :
+	  Interface::Global<XMI::Global>(),
           personality (),
+	  mapping(personality),
           _mapcache (),
           _memptr (NULL),
           _memsize (0),
-	  time(personality),
-	  mapping(),
-	  lockboxFactory(&mapping),
-	  topology_global(),
-	  topology_local()
+	  lockboxFactory(&mapping)
         {
+	  Interface::Global<XMI::Global>::time.init(personality.clockMHz());
           //allocateMemory ();
 
           char   * shmemfile = "/unique-xmi-global-shmem-file";
@@ -130,71 +130,10 @@ namespace XMI
 
         inline ~Global () {};
 
-        inline size_t * getMapCache ()
-        {
-          return _mapcache.getMapCache();
-        };
-
-        inline size_t * getRankCache ()
-        {
-          return _mapcache.getRankCache();
-        };
-
-        inline size_t getTask ()
-        {
-          return _mapcache.getTask();
-        };
-
-        inline size_t getSize ()
-        {
-          return _mapcache.getSize();
-        };
-
-#if 0
-        inline void allocateMemory ()
-        {
-          char   * shmemfile = "/unique-xmi-shmem-file-foo";
-          size_t   bytes     = 1024*1024;
-          size_t   pagesize  = 4096;
-
-          // Round up to the page size
-          size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-
-          int fd, rc;
-          size_t n = bytes;
-
-          fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-          if ( fd != -1 )
-          {
-            rc = ftruncate( fd, n );
-            if ( rc != -1 )
-            {
-              void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-              if ( ptr != MAP_FAILED )
-              {
-                _memptr  = ptr;
-                _memsize = n;
-                return;
-              }
-            }
-          }
-
-          // There was a failure obtaining the shared memory segment, most
-          // likely because the applicatino is running in SMP mode. Allocate
-          // memory from the heap instead.
-          //
-          // TODO - verify the run mode is actually SMP.
-          posix_memalign ((void **)&_memptr, 16, bytes);
-          memset (_memptr, 0, bytes);
-          _memsize = bytes;
-
-          return;
-        };
-#endif
-
       public:
 
         XMI::BgpPersonality	personality;
+	XMI::Mapping		mapping;
 
       private:
 
@@ -204,11 +143,8 @@ namespace XMI
 
       public:
 
-	XMI::Time		time;
-	XMI::Mapping		mapping;
 	XMI::Atomic::BGP::LockBoxFactory lockboxFactory;
-	XMI::Topology topology_global;
-	XMI::Topology topology_local;
+
   };   // class Global
 };     // namespace XMI
 

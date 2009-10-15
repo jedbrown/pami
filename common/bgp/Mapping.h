@@ -16,9 +16,9 @@
 #include "sys/xmi.h"
 
 #include "Platform.h"
-#include "common/BaseMapping.h"
-#include "common/TorusMapping.h"
-#include "common/NodeMapping.h"
+#include "common/BaseMappingInterface.h"
+#include "common/TorusMappingInterface.h"
+#include "common/NodeMappingInterface.h"
 
 #include "common/bgp/BgpPersonality.h"
 #include "common/bgp/BgpMapCache.h"
@@ -67,10 +67,11 @@ namespace XMI
 
 
       public:
-        inline Mapping () :
+        inline Mapping (XMI::BgpPersonality &pers) :
             Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>(),
             Interface::Mapping::Torus<Mapping,XMI_BGP_NETWORK_DIMS>(),
             Interface::Mapping::Node<Mapping,XMI_BGP_LOCAL_DIMS> (),
+	    _personality(pers),
             _task (0),
             _size (0),
             _nodes (0),
@@ -79,7 +80,6 @@ namespace XMI
             _y (_personality.yCoord()),
             _z (_personality.zCoord()),
             _t (_personality.tCoord()),
-	    _personality(),
             _mapcache (NULL),
             _rankcache (NULL)
         {
@@ -88,6 +88,7 @@ namespace XMI
         inline ~Mapping () {};
 
       protected:
+	XMI::BgpPersonality &_personality;
         size_t _task;
         size_t _size;
         size_t _nodes;
@@ -97,7 +98,6 @@ namespace XMI
         size_t _z;
         size_t _t;
 
-	XMI::BgpPersonality &_personality;
         XMI::Interface::Mapping::nodeaddr_t _nodeaddr;
 
         size_t * _mapcache;

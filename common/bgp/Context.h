@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "sys/xmi.h"
-#include "common/Context.h"
+#include "common/ContextInterface.h"
 
 #define ENABLE_GENERIC_DEVICE
 #ifdef ENABLE_GENERIC_DEVICE

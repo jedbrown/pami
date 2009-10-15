@@ -17,11 +17,11 @@
 
 #include "sys/xmi.h"
 
-#include "common/BaseMapping.h"
-#include "common/TorusMapping.h"
-#include "common/NodeMapping.h"
+#include "common/BaseMappingInterface.h"
+#include "common/TorusMappingInterface.h"
+#include "common/NodeMappingInterface.h"
 
-#include "Global.h"
+#include "common/bgq/BgqPersonality.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 
 #include "util/common.h"
@@ -42,17 +42,18 @@ namespace XMI
     {
       public:
 
-        inline Mapping () :
+        inline Mapping (XMI::BgqPersonality &pers) :
             Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>(),
             Interface::Mapping::Torus<Mapping, BGQ_DIMS>(),
             Interface::Mapping::Node<Mapping,1> (),
-            _a (__global.personality.aCoord()),
-            _b (__global.personality.bCoord()),
-            _c (__global.personality.cCoord()),
-            _d (__global.personality.dCoord()),
-            _e (__global.personality.eCoord()),
-            _p (__global.personality.pCoord()),
-            _t (__global.personality.tCoord())
+	    _pers(pers),
+            _a (_pers.aCoord()),
+            _b (_pers.bCoord()),
+            _c (_pers.cCoord()),
+            _d (_pers.dCoord()),
+            _e (_pers.eCoord()),
+            _p (_pers.pCoord()),
+            _t (_pers.tCoord())
         {
           // ----------------------------------------------------------------
           // Compile-time assertions
@@ -94,6 +95,7 @@ namespace XMI
         inline ~Mapping () {};
 
       protected:
+	XMI::BgqPersonality &_pers;
         size_t _task;
         size_t _size;
         size_t _nodes;
@@ -261,13 +263,13 @@ namespace XMI
         {
           TRACE_ERR((stderr, "Mapping::torus2task_impl({%zd, %zd, %zd, %zd, %zd, %zd, %zd}, ...) >>\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
 
-          size_t aSize = __global.personality.aSize();
-          size_t bSize = __global.personality.bSize();
-          size_t cSize = __global.personality.cSize();
-          size_t dSize = __global.personality.dSize();
-          size_t eSize = __global.personality.eSize();
-          size_t tSize = __global.personality.pSize();
-          size_t pSize = __global.personality.tSize();
+          size_t aSize = _pers.aSize();
+          size_t bSize = _pers.bSize();
+          size_t cSize = _pers.cSize();
+          size_t dSize = _pers.dSize();
+          size_t eSize = _pers.eSize();
+          size_t tSize = _pers.pSize();
+          size_t pSize = _pers.tSize();
 
           // Verify that the bgq address is valid.
           if (unlikely((addr[0] >= aSize) ||
@@ -371,13 +373,13 @@ namespace XMI
         {
           TRACE_ERR((stderr, "Mapping::node2task_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 
-          size_t aSize = __global.personality.aSize();
-          size_t bSize = __global.personality.bSize();
-          size_t cSize = __global.personality.cSize();
-          size_t dSize = __global.personality.dSize();
-          size_t eSize = __global.personality.eSize();
-          size_t tSize = __global.personality.pSize();
-          size_t pSize = __global.personality.tSize();
+          size_t aSize = _pers.aSize();
+          size_t bSize = _pers.bSize();
+          size_t cSize = _pers.cSize();
+          size_t dSize = _pers.dSize();
+          size_t eSize = _pers.eSize();
+          size_t tSize = _pers.pSize();
+          size_t pSize = _pers.tSize();
 
           // global coordinate is just the a,b,c,d,e torus coords.
           size_t aCoord =  address.global >> 19;
@@ -430,8 +432,8 @@ namespace XMI
         {
           TRACE_ERR((stderr, "Mapping::node2peer_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 
-          size_t tSize = __global.personality.pSize();
-          size_t pSize = __global.personality.tSize();
+          size_t tSize = _pers.pSize();
+          size_t pSize = _pers.tSize();
 
           // local coordinate is the thread id (t) in the most significant
           // position followed by the core id (p) in the least significant
@@ -547,13 +549,13 @@ static size_t XMI::Mapping::initializeMapCache (BgqPersonality  & personality,
 
       memset(_rankcache, -1, sizeof(uint32_t) * fullSize);
 
-      size_t aSize = __global.personality.aSize();
-      size_t bSize = __global.personality.bSize();
-      size_t cSize = __global.personality.cSize();
-      size_t dSize = __global.personality.dSize();
-      size_t eSize = __global.personality.eSize();
-      size_t tSize = __global.personality.pSize();
-      size_t pSize = __global.personality.tSize();
+      size_t aSize = _pers.aSize();
+      size_t bSize = _pers.bSize();
+      size_t cSize = _pers.cSize();
+      size_t dSize = _pers.dSize();
+      size_t eSize = _pers.eSize();
+      size_t tSize = _pers.pSize();
+      size_t pSize = _pers.tSize();
 
       /* Fill in the _mapcache array in a single syscall.
        * It is indexed by rank, dimensioned to be the full size of the
@@ -775,7 +777,7 @@ xmi_result_t XMI::Mapping::init_impl (xmi_coord_t &ll, xmi_coord_t &ur,
   int err;
 
   //_processor_id = rts_get_processor_id();
-  //_pers = & __global.personality;
+  //_pers = & _pers;
   //_myNetworkCoord.network = CM_TORUS_NETWORK;
   //unsigned ix = 0;
   //_myNetworkCoord.n_torus.coords[ix++] = x();

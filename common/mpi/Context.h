@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mpi.h>
-#include "components/context/Context.h"
+#include "common/ContextInterface.h"
 #include "Geometry.h"
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpimodel.h"

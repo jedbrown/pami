@@ -17,8 +17,7 @@
 
 #include "sys/xmi.h"
 
-#include "common/BaseTime.h"
-#include "Global.h"
+#include "common/BaseTimeInterface.h"
 
 namespace XMI
 {
@@ -27,15 +26,17 @@ namespace XMI
       public:
 
         inline Time () :
-            Interface::BaseTime<Time> ()
+            Interface::BaseTime<Time> (),
+	    _mhz(0)
         {};
 
         ///
         /// \brief Initialize the time object.
         ///
-        inline xmi_result_t init_impl ()
+        inline xmi_result_t init_impl (size_t clockMHz)
         {
-          return XMI_UNIMPL;
+	  _mhz = clockMHz;
+          return XMI_SUCCESS;
         };
 
         ///
@@ -45,7 +46,7 @@ namespace XMI
         ///
         inline size_t clockMHz ()
         {
-          return __global.personality.clockMHz ();
+          return _mhz;
         };
 
         ///
@@ -95,6 +96,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
 
         /// \brief BG/P compute node processors run at 850 MHz
         static const double seconds_per_cycle;
+	size_t _mhz;
     };	// class Time
     const double BgqTime::seconds_per_cycle = 1.176470588235294033e-09;
 };	// namespace XMI

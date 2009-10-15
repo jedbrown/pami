@@ -16,7 +16,7 @@
 
 #define XMI_SYSDEP_CLASS XMI::SysDep
 
-#include "common/SysDep.h"
+#include "common/SysDepInterface.h"
 #include "Mapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include "Time.h"

@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util/lapi/lapi_util.h"
-#include "common/Context.h"
+#include "common/ContextInterface.h"
 #include "Geometry.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
 #include "components/devices/lapiunix/lapiunixmodel.h"

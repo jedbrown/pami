@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/Topology.h"
+#include "common/TopologyInterface.h"
 
 #define XMI_TOPOLOGY_CLASS XMI::Topology
 

@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "sys/xmi.h"
-#include "common/Context.h"
+#include "common/ContextInterface.h"
 
 #include "components/devices/shmem/ShmemPacketDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"

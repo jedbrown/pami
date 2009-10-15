@@ -15,7 +15,7 @@
 #define __components_pipeworkqueue_bgp_bgppipeworkqueue_h__
 
 #include "SysDep.h"
-#include "common/PipeWorkQueue.h"
+#include "common/PipeWorkQueueInterface.h"
 
 #define likely_if       if
 #define unlikely_if     if

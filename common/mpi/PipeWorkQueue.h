@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/PipeWorkQueue.h"
+#include "common/PipeWorkQueueInterface.h"
 
 #define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
 
