@@ -16,10 +16,7 @@
 
 #include "SysDep.h"
 #include "common/PipeWorkQueueInterface.h"
-
-#define likely_if       if
-#define unlikely_if     if
-#warning Need likely/unlikely_if!
+#include "util/common.h"
 
 #define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
 
@@ -285,7 +282,7 @@ public:
 	/// \return   success of the export operation
 	///
 	inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp) {
-		unlikely_if (_pmask) {
+		if (unlikely(_pmask)) {
 			return XMI_ERROR;
 		}
 		export_t *e = (export_t *)exp;
@@ -556,7 +553,7 @@ public:
 		_sharedqueue->_u._s.consumedBytes += bytes;
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
-		unlikely_if ((long)v != 0) {
+		if (unlikely((long)v != 0)) {
 			WAKEUP(v);
 		}
 	}
