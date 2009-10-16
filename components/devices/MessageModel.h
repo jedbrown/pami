@@ -14,9 +14,10 @@
 #ifndef __components_devices_messagemodel_h__
 #define __components_devices_messagemodel_h__
 
+#include "util/common.h"
+
 #include "components/devices/PacketModel.h"
 #include "components/devices/MessageDevice.h"
-#include "util/common.h"
 
 namespace XMI
 {

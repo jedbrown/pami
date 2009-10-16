@@ -42,10 +42,10 @@ namespace XMI
       /// \see XMI::Device::Interface::PacketModel
       /// \see XMI::Device::Interface::PacketDevice
       ///
-      template <class T_Model, class T_Device>
+      template < class T_Model, class T_Device, bool T_LongHeader = true >
       class Eager : public XMI::Protocol::Send::Send,
-                    public EagerImmediate<T_Model,T_Device>,
-                    public EagerSimple<T_Model,T_Device>
+          public EagerImmediate<T_Model, T_Device>,
+          public EagerSimple<T_Model, T_Device, T_LongHeader>
       {
         public:
 
@@ -68,64 +68,64 @@ namespace XMI
                         xmi_context_t              context,
                         size_t                     contextid,
                         xmi_result_t             & status) :
-            XMI::Protocol::Send::Send (),
-            EagerImmediate<T_Model,T_Device> (dispatch,
-                                              dispatch_fn,
-                                              cookie,
-                                              device,
-                                              origin_task,
-                                              context,
-                                              contextid,
-                                              status),
-            EagerSimple<T_Model,T_Device> (dispatch,
-                                           dispatch_fn,
-                                           cookie,
-                                           device,
-                                           origin_task,
-                                           context,
-                                           contextid,
-                                           status)
-            {
-            };
+              XMI::Protocol::Send::Send (),
+              EagerImmediate<T_Model, T_Device> (dispatch,
+                                                 dispatch_fn,
+                                                 cookie,
+                                                 device,
+                                                 origin_task,
+                                                 context,
+                                                 contextid,
+                                                 status),
+              EagerSimple<T_Model, T_Device, T_LongHeader> (dispatch,
+                                                            dispatch_fn,
+                                                            cookie,
+                                                            device,
+                                                            origin_task,
+                                                            context,
+                                                            contextid,
+                                                            status)
+          {
+          };
 
-            virtual ~Eager () {};
+          virtual ~Eager () {};
 
-            ///
-            /// \brief Start a new immediate send operation.
-            ///
-            /// \see XMI::Protocol::Send::immediate
-            ///
-            virtual xmi_result_t immediate (xmi_task_t   peer,
-                                            void       * src,
-                                            size_t       bytes,
-                                            void       * msginfo,
-                                            size_t       mbytes)
-            {
-              TRACE_ERR((stderr, ">> Eager::immediate()\n"));
-              xmi_result_t result = this->immediate_impl (peer, src, bytes, msginfo, mbytes);
-              TRACE_ERR((stderr, "<< Eager::immediate()\n"));
-              return result;
-            };
+          ///
+          /// \brief Start a new immediate send operation.
+          ///
+          /// \see XMI::Protocol::Send::immediate
+          ///
+          virtual xmi_result_t immediate (xmi_task_t   peer,
+                                          void       * src,
+                                          size_t       bytes,
+                                          void       * msginfo,
+                                          size_t       mbytes)
+          {
+            TRACE_ERR((stderr, ">> Eager::immediate()\n"));
+            xmi_result_t result = this->immediate_impl (peer, src, bytes, msginfo, mbytes);
+            TRACE_ERR((stderr, "<< Eager::immediate()\n"));
+            return result;
+          };
 
-            ///
-            /// \brief Start a new simple send operation.
-            ///
-            /// \see XMI::Protocol::Send::simple
-            ///
-            virtual xmi_result_t simple (xmi_event_function   local_fn,
-                                         xmi_event_function   remote_fn,
-                                         void               * cookie,
-                                         xmi_task_t           peer,
-                                         void               * src,
-                                         size_t               bytes,
-                                         void               * msginfo,
-                                         size_t               mbytes)
-            {
-              TRACE_ERR((stderr, ">> Eager::simple()\n"));
-              xmi_result_t result = this->simple_impl (local_fn, remote_fn, cookie, peer, src, bytes, msginfo, mbytes);
-              TRACE_ERR((stderr, "<< Eager::simple()\n"));
-              return result;
-            };
+          ///
+          /// \brief Start a new simple send operation.
+          ///
+          /// \see XMI::Protocol::Send::simple
+          ///
+          virtual xmi_result_t simple (xmi_event_function   local_fn,
+                                       xmi_event_function   remote_fn,
+                                       void               * cookie,
+                                       xmi_task_t           peer,
+                                       void               * src,
+                                       size_t               bytes,
+                                       void               * msginfo,
+                                       size_t               mbytes)
+          {
+            TRACE_ERR((stderr, ">> Eager::simple()\n"));
+            xmi_result_t result = this->simple_impl (local_fn, remote_fn, cookie, peer, src, bytes, msginfo, mbytes);
+            TRACE_ERR((stderr, "<< Eager::simple()\n"));
+            return result;
+          };
 
       };  // XMI::Protocol::Send::Eager class
     };    // XMI::Protocol::Send namespace

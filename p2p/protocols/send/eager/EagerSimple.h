@@ -42,7 +42,7 @@ namespace XMI
       /// \see XMI::Device::Interface::PacketModel
       /// \see XMI::Device::Interface::PacketDevice
       ///
-      template <class T_Model, class T_Device>
+      template <class T_Model, class T_Device, bool T_LongHeader>
       class EagerSimple
       {
         protected:
@@ -68,7 +68,8 @@ namespace XMI
             xmi_event_function      remote_fn; ///< Application remote receive acknowledgement callback
             void                  * cookie;    ///< Application callback cookie
             EagerSimple < T_Model,
-            T_Device > * eager;    ///< Eager protocol object
+            T_Device,
+            T_LongHeader > * eager;    ///< Eager protocol object
           } send_state_t;
 
           typedef struct recv_state
@@ -84,7 +85,8 @@ namespace XMI
             } longheader;
             short_metadata_t        metadata; ///< Original eager protocol envelope metadata
             EagerSimple < T_Model,
-            T_Device > * eager;   ///< Eager protocol object
+            T_Device,
+            T_LongHeader > * eager;   ///< Eager protocol object
           } recv_state_t;
 
         public:
@@ -169,12 +171,17 @@ namespace XMI
                                               dispatch_ack_read, this);
                     TRACE_ERR((stderr, "EagerSimple() [3] status = %d\n", status));
 
-                    if (status == XMI_SUCCESS)
+                    TRACE_ERR((stderr, "EagerSimple() [4] 'long header' support enabled = %d\n", T_LongHeader));
+
+                    if (T_LongHeader == true)
                       {
-                        status = _longheader_model.init (dispatch,
-                                                         dispatch_longheader_message, this,
-                                                         dispatch_longheader_message, this);
-                        TRACE_ERR((stderr, "EagerSimple() [4] status = %d\n", status));
+                        if (status == XMI_SUCCESS)
+                          {
+                            status = _longheader_model.init (dispatch,
+                                                             dispatch_longheader_message, this,
+                                                             dispatch_longheader_message, this);
+                            TRACE_ERR((stderr, "EagerSimple() [5] status = %d\n", status));
+                          }
                       }
                   }
               }
@@ -238,7 +245,20 @@ namespace XMI
                   {
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
 
-                    if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
+#if ASSERT_LEVEL==2
+
+                    if (mbytes > T_Model::packet_model_payload_bytes)
+                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
+
+#endif
+
+                    // Short circuit evaluation of the constant expression will
+                    // allow the compiler to optimize out this branch when long
+                    // header support is disabled.
+                    //
+                    // When long header support is enabled the compiler should
+                    // respect the 'unlikely if' conditional.
+                    if (T_LongHeader == true && unlikely(mbytes > T_Model::packet_model_payload_bytes))
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
@@ -281,7 +301,20 @@ namespace XMI
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
                     //XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
 
-                    if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+#if ASSERT_LEVEL==2
+
+                    if (mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t)))
+                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
+
+#endif
+
+                    // Short circuit evaluation of the constant expression will
+                    // allow the compiler to optimize out this branch when long
+                    // header support is disabled.
+                    //
+                    // When long header support is enabled the compiler should
+                    // respect the 'unlikely if' conditional.
+                    if (T_LongHeader == true && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload\n"));
 
@@ -329,7 +362,20 @@ namespace XMI
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
                   {
-                    if (unlikely(mbytes > T_Model::packet_model_payload_bytes))
+#if ASSERT_LEVEL==2
+
+                    if (mbytes > T_Model::packet_model_payload_bytes)
+                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
+
+#endif
+
+                    // Short circuit evaluation of the constant expression will
+                    // allow the compiler to optimize out this branch when long
+                    // header support is disabled.
+                    //
+                    // When long header support is enabled the compiler should
+                    // respect the 'unlikely if' conditional.
+                    if (T_LongHeader == true && unlikely(mbytes > T_Model::packet_model_payload_bytes))
                       {
                         // Application metadata does not fit in a single packet.
                         // Send a "long header" message.
@@ -365,7 +411,20 @@ namespace XMI
                   }
                 else
                   {
-                    if (unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+#if ASSERT_LEVEL==2
+
+                    if (mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t)))
+                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
+
+#endif
+
+                    // Short circuit evaluation of the constant expression will
+                    // allow the compiler to optimize out this branch when long
+                    // header support is disabled.
+                    //
+                    // When long header support is enabled the compiler should
+                    // respect the 'unlikely if' conditional.
+                    if (T_LongHeader == true && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                       {
                         // Protocol metadata + application metadata does not fit in
                         // a single packet. Send a "long header" message.
@@ -487,7 +546,7 @@ namespace XMI
                                         uint8_t          * header,
                                         recv_state_t     * state)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::process_envelope()\n"));
+            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. rank = %zd, header = %p, header bytes = %zd\n", metadata->fromRank, header, metadata->metabytes));
 
             // Invoke the registered dispatch function.
             _dispatch_fn.p2p (_context,            // Communication context
@@ -556,8 +615,8 @@ namespace XMI
             void               * fn_cookie = state->cookie;
             TRACE_ERR((stderr, "   EagerSimple::dispatch_ack_direct() .. state = %p, remote_fn = %p\n", state, remote_fn));
 
-            EagerSimple<T_Model, T_Device> * eager =
-              (EagerSimple<T_Model, T_Device> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
             eager->freeSendState (state);
 
@@ -575,8 +634,8 @@ namespace XMI
           {
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_read()\n"));
 
-            EagerSimple<T_Model, T_Device> * pf =
-              (EagerSimple<T_Model, T_Device> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_LongHeader> * pf =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
@@ -633,8 +692,8 @@ namespace XMI
 
             TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->fromRank = %zd, m->bytes = %zd, m->ackinfo = %p\n", (size_t)(m->fromRank), m->bytes, m->ackinfo));
 
-            EagerSimple<T_Model, T_Device> * eager =
-              (EagerSimple<T_Model, T_Device> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
@@ -648,17 +707,23 @@ namespace XMI
             // Set the eager connection.
             eager->setConnection (m->fromRank, (void *)state);
 
-            // Check for long header
-            size_t header_bytes = m->metabytes;
-
-            if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes -
-                                           sizeof(short_metadata_t) > T_Model::packet_model_metadata_bytes ? sizeof(short_metadata_t) : 0)))
+            // The compiler will optimize out this constant expression
+            // conditional and include this code block only when the long
+            // header support is enabled.
+            if (T_LongHeader == true)
               {
-                state->longheader.addr   = (uint8_t *) malloc(header_bytes);
-                state->longheader.bytes  = header_bytes;
-                state->longheader.offset = 0;
-                TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct() .. long header\n"));
-                return 0;
+                // Check for long header
+                size_t header_bytes = m->metabytes;
+
+                if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes -
+                                               sizeof(short_metadata_t) > T_Model::packet_model_metadata_bytes ? sizeof(short_metadata_t) : 0)))
+                  {
+                    state->longheader.addr   = (uint8_t *) malloc(header_bytes);
+                    state->longheader.bytes  = header_bytes;
+                    state->longheader.offset = 0;
+                    TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct() .. long header\n"));
+                    return 0;
+                  }
               }
 
             // This is a short header envelope .. all application metadata
@@ -701,8 +766,8 @@ namespace XMI
           {
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_envelope_read()\n"));
 
-            EagerSimple<T_Model, T_Device> * pf =
-              (EagerSimple<T_Model, T_Device> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_LongHeader> * pf =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
@@ -725,8 +790,12 @@ namespace XMI
                                                   void   * recv_func_parm,
                                                   void   * cookie)
           {
-            EagerSimple<T_Model, T_Device> * eager =
-              (EagerSimple<T_Model, T_Device> *) recv_func_parm;
+            // This assertion of a constant expression should be optimized out
+            // by the compiler when long header support is enabled.
+            XMI_assertf(T_LongHeader == true, "'long header' support is not enabled.");
+
+            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
             xmi_task_t fromRank = *((xmi_task_t *)metadata);
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), fromRank = %zd, bytes = %zd\n", (size_t)fromRank, bytes));
@@ -776,8 +845,8 @@ namespace XMI
                                               void   * recv_func_parm,
                                               void   * cookie)
           {
-            EagerSimple<T_Model, T_Device> * eager =
-              (EagerSimple<T_Model, T_Device> *) recv_func_parm;
+            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
             xmi_task_t fromRank = *((xmi_task_t *)metadata);
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), fromRank = %zd, bytes = %zd\n", (size_t)fromRank, bytes));
@@ -855,50 +924,6 @@ namespace XMI
             return 0;
           };
 
-#if 0
-          ///
-          /// \brief Read-access multi-packet send data packet callback.
-          ///
-          /// Reads incoming bytes from the device to the destination buffer.
-          ///
-          /// The eager packet factory will register this dispatch function
-          /// if and only if the device \b does \b not provide access to
-          /// data which has already been read from the network by the device.
-          ///
-          /// The data dispatch function is invoked by the packet device
-          /// to process the subsequent packets of a multi-packet message
-          /// after the first envelope packet. The CDI eager protocol sends
-          /// one iovec element in the data packets for the user data buffer.
-          ///
-          /// \note The iov_base fields in the iovec structure will be \c NULL
-          ///
-          /// \see DCMF::CDI::RecvFunction_t
-          /// \see dispatch_envelope_read
-          ///
-          static int dispatch_data_read     (void   * metadata,
-                                             void   * payload,
-                                             size_t   bytes,
-                                             void   * recv_func_parm,
-                                             void   * cookie)
-          {
-            TRACE_ERR((stderr, "EagerFactory::dispatch_data_read() .. \n"));
-
-            EagerFactory<T_Model, T_Device, T_Message> * pf =
-              (EagerFactory<T_Model, T_Device, T_Message> *) recv_func_parm;
-
-            // This packet device DOES NOT provide the data buffer(s) for the
-            // message and the data must be read on to the stack before the
-            // recv callback is invoked.
-
-            uint8_t stackData[pf->getDevice()->getPacketPayloadSize()];
-            void * p = (void *) & stackData[0];
-            pf->getDevice()->readData(channel, (char *) p, bytes);
-
-            dispatch_data_read (channel, metadata, p, bytes, recv_func_parm);
-            return 0;
-          };
-#endif
-
           ///
           /// \brief Local send completion event callback.
           ///
@@ -913,8 +938,8 @@ namespace XMI
             TRACE_ERR((stderr, "EagerSimple::send_complete() >> \n"));
             send_state_t * state = (send_state_t *) cookie;
 
-            EagerSimple<T_Model, T_Device> * eager =
-              (EagerSimple<T_Model, T_Device> *) state->eager;
+            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) state->eager;
 
             if (state->local_fn != NULL)
               {
@@ -943,8 +968,8 @@ namespace XMI
           {
             TRACE_ERR((stderr, "EagerSimple::receive_complete() >> \n"));
             recv_state_t * state = (recv_state_t *) cookie;
-            EagerSimple<T_Model, T_Device> * eager =
-              (EagerSimple<T_Model, T_Device> *) state->eager;
+            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
+              (EagerSimple<T_Model, T_Device, T_LongHeader> *) state->eager;
 
             eager->freeRecvState (state);
 

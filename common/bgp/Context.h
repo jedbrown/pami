@@ -56,7 +56,7 @@ namespace XMI
 
     //
     // >> Point-to-point protocol typedefs and dispatch registration.
-    typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
+    //typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
     // << Point-to-point protocol typedefs and dispatch registration.
     //
 
@@ -82,7 +82,7 @@ namespace XMI
 
           // Make sure the memory allocator is large enough for all
           // protocol classes.
-          COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
+          //COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
 
           // ----------------------------------------------------------------
           // Compile-time assertions
@@ -372,11 +372,24 @@ namespace XMI
           TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", index, _dispatch[index]));
           if (_dispatch[index] == NULL)
           {
-            _dispatch[id] = _protocol.allocateObject ();
             TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
-            new (_dispatch[id]) EagerShmem (id, fn, cookie, _shmem,
-                                            __global.mapping.task(),
-                                            _context, _contextid, result);
+            if (options.no_long_header == 1)
+            {
+              _dispatch[id] = _protocol.allocateObject ();
+              new (_dispatch[id])
+                Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
+                                      (id, fn, cookie, _shmem, __global.mapping.task(),
+                                       _context, _contextid, result);
+            }
+            else
+            {
+              _dispatch[id] = _protocol.allocateObject ();
+              new (_dispatch[id])
+                Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
+                                      (id, fn, cookie, _shmem, __global.mapping.task(),
+                                       _context, _contextid, result);
+            }
+
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
             if (result != XMI_SUCCESS)
             {

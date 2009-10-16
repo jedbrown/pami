@@ -217,8 +217,9 @@ extern "C"
     uint32_t no_local_copy     : 1; /**< ???                                                     */
     uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
     uint32_t high_priority     : 1; /**< Message is delivered with high priority,
-                                       which may result in out-of-order delivery               */
-    uint32_t reserved          :24; /**< Unused at this time                                     */
+                                       which may result in out-of-order delivery                 */
+    uint32_t no_long_header    : 1; /**< Disable long header support                             */
+    uint32_t reserved          :23; /**< Unused at this time                                     */
   } xmi_send_hint_t;
 
   /**
