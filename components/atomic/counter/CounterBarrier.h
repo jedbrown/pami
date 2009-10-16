@@ -58,7 +58,7 @@ namespace XMI
 		return XMI_SUCCESS;
 	}
 
-        inline void enterPoll_impl(Interface::pollFcn fcn, void *arg) {
+        inline void enterPoll_impl(XMI::Atomic::Interface::pollFcn fcn, void *arg) {
 		pollInit_impl();
 		while (poll_impl() != XMI::Atomic::Interface::Done) {
 			fcn(arg);
@@ -74,7 +74,7 @@ namespace XMI
 		_status = XMI::Atomic::Interface::Entered;
 	}
 
-        inline Interface::barrierPollStatus poll_impl() {
+        inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
 		XMI_assert(_status == XMI::Atomic::Interface::Entered);
 		size_t value;
 		size_t phase = _data;
