@@ -3,8 +3,6 @@
 
 #include "Topology.h"
 #include "components/devices/generic/AtomicBarrierMsg.h"
-#include "components/atomic/gcc/GccCounter.h"
-#include "components/atomic/counter/CounterBarrier.h"
 
 #include "Global.h"
 
@@ -13,7 +11,22 @@ void fail_reg(const char *s) {
 	exit(1);
 }
 
-typedef XMI::Atomic::CounterBarrier<XMI_SYSDEP_CLASS,XMI::Counter::GccNodeCounter<XMI_SYSDEP_CLASS> > Barrier_Type;
+#ifdef __bgp__
+
+#warning using BGP lockbox barrier to avoid bug in CounterBarrier/GccCounter
+#define BARRIER_NAME	"XMI::Barrier::BGP::LockBoxNodeProcBarrier"
+#include "components/atomic/bgp/LockBoxBarrier.h"
+typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier<XMI_SYSDEP_CLASS> Barrier_Type;
+
+#else
+
+#warning CounterBarrier/GccCounter is broken - it does not barrier
+#define BARRIER_NAME	"XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter>"
+#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/counter/CounterBarrier.h"
+typedef XMI::Barrier::CounterBarrier<XMI_SYSDEP_CLASS,XMI::Counter::GccNodeCounter<XMI_SYSDEP_CLASS> > Barrier_Type;
+
+#endif
 
 typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 
@@ -89,7 +102,7 @@ int main(int argc, char ** argv) {
 	unsigned long long t0, t1, t2;
 	bool rc;
 
-	const char *test = "AtomicBarrierMdl<CounterBarrier>";
+	const char *test = BARRIER_NAME;
 	Barrier_Model *model = new (&ab) Barrier_Model(status);
 	if (status != XMI_SUCCESS) fail_reg(test);
 

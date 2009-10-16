@@ -17,7 +17,7 @@
 
 namespace XMI
 {
-  namespace Atomic
+  namespace Barrier
   {
     ///
     /// \brief Generic atomic counter based barrier implementation
@@ -116,8 +116,8 @@ namespace XMI
 	bool        _master;
 	XMI::Atomic::Interface::barrierPollStatus _status;
 
-    };  // XMI::Atomic::CounterBarrier class
-  };   // XMI::Atomic namespace
+    };  // XMI::Barrier::CounterBarrier class
+  };   // XMI::Barrier namespace
 };     // XMI namespace
 
 #endif // __components_atomic_counter_counterbarier_h__
