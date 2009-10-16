@@ -29,19 +29,7 @@ namespace XMI
         _references (1),
         _contexts (0)
         {
-          static int initialized = 0;
-          if(initialized==0)
-              {
-                int rc = MPI_Init(0, NULL);
-                if(rc != MPI_SUCCESS)
-                    {
-                      fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
-                      XMI_abort();
-                    }
-                initialized=1;
-                atexit(shutdownfunc);
-              }
-
+//          \todo:        this is never called!
         }
 
       inline ~Client ()

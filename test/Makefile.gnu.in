@@ -10,7 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = time client context p2p multisend
+SUBDIRS         = time client context p2p
+# DISABLED MULTISEND TEST FOR NOW BECAUSE IT IS NOT AN "XMI PROPER" TEST
+# IT USES THE INTERNALS OF XMI
 NOTBUILT        = 
 APPS            = xmihello.${EXTENSION} barrier.${EXTENSION} bcast.${EXTENSION} \
 		allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} \

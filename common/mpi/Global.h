@@ -6,10 +6,10 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_common_lapiunix_global_h__
-#define __xmi_common_lapiunix_global_h__
+#ifndef __xmi_common_mpi_global_h__
+#define __xmi_common_mpi_global_h__
 ///
-/// \file common/lapiunix/Global.h
+/// \file common/mpi/Global.h
 /// \brief Global Object
 ///
 /// This global object is constructed before main() and is a container class
@@ -23,9 +23,15 @@
 #include "Mapping.h"
 #include "Topology.h"
 #include "Time.h"
-
+#include <mpi.h>
 namespace XMI
 {
+    static void shutdownfunc()
+    {
+      MPI_Finalize();
+    }
+
+
     class Global : public Interface::Global<XMI::Global>
     {
       public:
@@ -38,7 +44,15 @@ namespace XMI
 	  Interface::Global<XMI::Global>::time.init(0);
 	  {
 		size_t min, max;
-		mapping.init(min, max);
+                int rc = MPI_Init(0, NULL);
+                if(rc != MPI_SUCCESS)
+                    {
+                      fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
+                      XMI_abort();
+                    }
+                atexit(shutdownfunc);
+
+                mapping.init(min, max);
 
 		XMI::Topology::static_init(&mapping);
 		if (mapping.size() == max - min + 1) {
@@ -63,4 +77,4 @@ namespace XMI
 
 extern XMI::Global __global;
 
-#endif // __xmi_common_lapiunix_global_h__
+#endif // __xmi_common_mpi_global_h__

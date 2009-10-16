@@ -30,7 +30,7 @@
 #define MY_COORDS	&my_coords
 
 #define RANK2COORDS(rank, coords)	\
-	({ assert(0); XMI_SUCCESS; })
+	({ XMI_SUCCESS; })
 //	mapping->task2network(rank, coords, XMI_N_TORUS_NETWORK)
 
 static xmi_network __dummy_net; // never really used

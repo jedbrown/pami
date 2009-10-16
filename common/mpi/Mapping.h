@@ -38,8 +38,6 @@ namespace XMI
         Interface::Mapping::Torus<Mapping, MPI_DIMS>(),
         Interface::Mapping::Node<Mapping, MPI_DIMS>()
         {
-          MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
-          MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
         };
       inline ~Mapping () {};
     protected:
@@ -48,6 +46,9 @@ namespace XMI
     public:
       inline xmi_result_t init(size_t &min_rank, size_t &max_rank)
         {
+          MPI_Comm_rank(MPI_COMM_WORLD, (int*)&_task);
+          MPI_Comm_size(MPI_COMM_WORLD, (int*)&_size);
+
           min_rank = 0;
           max_rank = _size-1;
 
@@ -63,17 +64,14 @@ namespace XMI
         }
       inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
         {
-          assert(0);
           return XMI_UNIMPL;
         }
       inline xmi_result_t nodePeers_impl (size_t & peers)
         {
-          assert(0);
           return XMI_UNIMPL;
         }
       inline bool isPeer_impl (size_t task1, size_t task2)
         {
-          assert(0);
           return XMI_UNIMPL;
         }
       inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
