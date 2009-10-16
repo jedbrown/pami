@@ -59,7 +59,11 @@ namespace BGP {
 		int __numProc;
 		bool __isMasterRank;
 	public:
-		LockBoxFactory(XMI::Mapping *mapping) {
+		LockBoxFactory() { }
+
+		~LockBoxFactory() {}
+
+		inline void init(XMI::Mapping *mapping) {
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
 			xmi_result_t rc;
@@ -113,8 +117,6 @@ namespace BGP {
 		inline int numProc() { return _factory.numProc; }
 		inline unsigned coreXlat(unsigned x) { return _factory.coreXlat[x]; }
 		inline bool isMasterRank() { return __isMasterRank; }
-
-		~LockBoxFactory() {}
 
 		/**
 		 * \brief Generic LockBox allocation

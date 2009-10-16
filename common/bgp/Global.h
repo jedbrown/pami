@@ -50,7 +50,7 @@ namespace XMI
           _mapcache (),
           _memptr (NULL),
           _memsize (0),
-	  lockboxFactory(&mapping)
+	  lockboxFactory()
         {
 	  Interface::Global<XMI::Global>::time.init(personality.clockMHz());
           //allocateMemory ();
@@ -106,6 +106,7 @@ namespace XMI
 
 	  {
 		mapping.init(_mapcache, personality);
+		lockboxFactory.init(&mapping);
 		xmi_coord_t ll, ur;
 		size_t min, max;
 
