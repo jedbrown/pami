@@ -25,7 +25,6 @@
 // remain here until such time.
 //#warning The atomic class to use for a platform should be a template parameter. These typedefs belong in the context class.
 #if defined(__bgp__) and !defined(__bgq__)
-
 #include "spi/kernel_interface.h"
 #include "components/atomic/bgp/LockBoxMutex.h"
 #include "components/atomic/bgp/LockBoxCounter.h"
@@ -35,10 +34,21 @@ typedef XMI::Counter::LockBoxProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
 #else
 // Other platform optimizations to follow...
 
+#ifdef __GNUC__
+
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
 typedef XMI::Mutex::CounterMutex<XMI_SYSDEP_CLASS,XMI::Counter::GccProcCounter<XMI_SYSDEP_CLASS> > GenericDeviceMutex;
 typedef XMI::Counter::GccProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
+
+#else /* !__GNUC__ */
+
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/pthread/Pthread.h"
+typedef XMI::Mutex::CounterMutex<XMI_SYSDEP_CLASS,XMI::Counter::Pthread<XMI_SYSDEP_CLASS> > GenericDeviceMutex;
+typedef XMI::Counter::Pthread<XMI_SYSDEP_CLASS> GenericDeviceCounter;
+
+#endif /* !__GNUC__ */
 
 #endif /* !__bgp__ */
 

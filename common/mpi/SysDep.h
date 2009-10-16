@@ -13,7 +13,8 @@
 
 #ifndef __components_sysdep_mpi_mpisysdep_h__
 #define __components_sysdep_mpi_mpisysdep_h__
-
+#undef __bgp__
+#undef __bgq__
 #define XMI_SYSDEP_CLASS XMI::SysDep
 
 #include "common/SysDepInterface.h"

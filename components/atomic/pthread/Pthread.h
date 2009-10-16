@@ -20,18 +20,16 @@
 
 namespace XMI
 {
-  namespace Atomic
+  namespace Counter
   {
     ///
     /// \brief CRTP interface for pthread atomic objects.
     ///
     template <class T_Sysdep>
-    class Pthread : public Counter <T_Sysdep, Pthread>
+      class Pthread : public XMI::Atomic::Interface::Counter <T_Sysdep, Pthread<T_Sysdep> >
     {
       public:
-        Pthread () :
-            Counter <Pthread> ()
-        {}
+        Pthread (){}
 
         ~Pthread () {}
 
