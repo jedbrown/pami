@@ -62,11 +62,13 @@ namespace XMI
           int fd, rc;
           size_t n = size;
 
+	  // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
-          fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
           TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", fd));
-          if ( fd != -1 )
+          if ( rc != -1 )
           {
+	    fd = rc;
             rc = ftruncate( fd, n );
             TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
             if ( rc != -1 )
@@ -88,21 +90,22 @@ namespace XMI
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
                 TRACE_ERR((stderr, "Global() .. after second ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
-                if (rc != -1) return;
-              }
+	      } else { rc = -1; }
             }
           }
 
-          // There was a failure obtaining the shared memory segment, most
-          // likely because the application is running in SMP mode. Allocate
-          // memory from the heap instead.
-          //
-          // TODO - verify the run mode is actually SMP.
-          posix_memalign ((void **)&_memptr, 16, bytes);
-          memset (_memptr, 0, bytes);
-          _memsize = bytes;
-          TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
-          size_t bytes_used = initializeMapCache (personality, ll, ur, min, max);
+          if (rc == -1) {
+          	// There was a failure obtaining the shared memory segment, most
+          	// likely because the application is running in SMP mode. Allocate
+          	// memory from the heap instead.
+          	//
+          	// TODO - verify the run mode is actually SMP.
+          	posix_memalign ((void **)&_memptr, 16, bytes);
+          	memset (_memptr, 0, bytes);
+          	_memsize = bytes;
+          	TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
+          	size_t bytes_used = initializeMapCache (personality, ll, ur, min, max);
+	  }
 
 	  mapping.init(_mapcache, personality);
 	  XMI::Topology::static_init(&mapping);

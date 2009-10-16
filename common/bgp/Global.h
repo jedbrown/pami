@@ -65,9 +65,11 @@ namespace XMI
           int fd, rc;
           size_t n = bytes;
 
-          fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-          if ( fd != -1 )
+	  // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
+          rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          if ( rc != -1 )
           {
+	    fd = rc;
             rc = ftruncate( fd, n );
             if ( rc != -1 )
             {
@@ -85,47 +87,45 @@ namespace XMI
 
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
-                if (rc != -1) return;
-              }
+              } else { rc = -1; }
             }
           }
+          if (rc == -1) {
 
-          // There was a failure obtaining the shared memory segment, most
-          // likely because the applicatino is running in SMP mode. Allocate
-          // memory from the heap instead.
-          //
-          // TODO - verify the run mode is actually SMP.
+          	// There was a failure obtaining the shared memory segment, most
+          	// likely because the applicatino is running in SMP mode. Allocate
+          	// memory from the heap instead.
+          	//
+          	// TODO - verify the run mode is actually SMP.
 #warning should not use 1MB of stack here
-          size_t buffer[bytes];
-          size_t bytes_used = _mapcache.init (personality, buffer, bytes);
+          	size_t buffer[bytes];
+          	size_t bytes_used = _mapcache.init (personality, buffer, bytes);
 
-          posix_memalign ((void **)&_memptr, 16, bytes_used);
-          memcpy (_memptr, buffer, bytes_used);
-          //memset (_memptr, 0, bytes);
-          _memsize = bytes_used;
-
-	  {
-		mapping.init(_mapcache, personality);
-		lockboxFactory.init(&mapping);
-		xmi_coord_t ll, ur;
-		size_t min, max;
-
-		XMI::Topology::static_init(&mapping);
-		_mapcache.getMappingInit(ll, ur, min, max);
-		size_t rectsize = 1;
-		for (unsigned d = 0; d < mapping.globalDims(); ++d) {
-			rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
-		}
-		if (mapping.size() == rectsize) {
-			new (&topology_global) XMI::Topology(&ll, &ur);
-		} else if (mapping.size() == max - min + 1) {
-			new (&topology_global) XMI::Topology(min, max);
-		} else {
-			XMI_abortf("failed to build global-world topology %zd::%zd(%d) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
-		}
-		topology_global.subTopologyLocalToMe(&topology_local);
+          	posix_memalign ((void **)&_memptr, 16, bytes_used);
+          	memcpy (_memptr, buffer, bytes_used);
+          	//memset (_memptr, 0, bytes);
+          	_memsize = bytes_used;
 	  }
-        };
+	  mapping.init(_mapcache, personality);
+	  lockboxFactory.init(&mapping);
+	  xmi_coord_t ll, ur;
+	  size_t min, max;
+
+	  XMI::Topology::static_init(&mapping);
+	  _mapcache.getMappingInit(ll, ur, min, max);
+	  size_t rectsize = 1;
+	  for (unsigned d = 0; d < mapping.globalDims(); ++d) {
+		rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
+	  }
+	  if (mapping.size() == rectsize) {
+		new (&topology_global) XMI::Topology(&ll, &ur);
+	  } else if (mapping.size() == max - min + 1) {
+		new (&topology_global) XMI::Topology(min, max);
+	  } else {
+		XMI_abortf("failed to build global-world topology %zd::%zd(%d) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
+	  }
+	  topology_global.subTopologyLocalToMe(&topology_local);
+        }
 
 
 
