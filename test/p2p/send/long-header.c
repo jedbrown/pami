@@ -117,17 +117,27 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  size_t dispatch = 0;
+  xmi_send_hint_t options;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
 
-  xmi_send_hint_t options;
   options.no_long_header = 0;
-  //options.no_long_header = 1;
-
   TRACE((stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active));
   result = XMI_Dispatch_set (context,
-                             dispatch,
+                             0,
+                             fn,
+                             (void *)&recv_active,
+                             options);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf(stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+    return 1;
+  }
+
+  options.no_long_header = 1;
+  TRACE((stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active));
+  result = XMI_Dispatch_set (context,
+                             1,
                              fn,
                              (void *)&recv_active,
                              options);
@@ -140,7 +150,7 @@ int main (int argc, char ** argv)
   uint8_t header[10240];
 
   xmi_send_simple_t parameters;
-  parameters.send.dispatch = dispatch;
+  parameters.send.dispatch = 0;
   parameters.send.cookie   = (void *) &send_active;
   parameters.send.header.addr = (void *) header;
   parameters.send.header.bytes = 10240;
@@ -154,6 +164,11 @@ int main (int argc, char ** argv)
     TRACE((stderr, "before send ...\n"));
     parameters.send.task = 1;
     result = XMI_Send (context, &parameters);
+    if (result != XMI_SUCCESS)
+    {
+        fprintf(stderr, "Error. Send using dispatch configured to enable long header support failed. result = %d\n", result);
+        return 1;
+    }
     TRACE((stderr, "... after send.\n"));
 
     TRACE((stderr, "before send-recv advance loop ...\n"));
@@ -185,6 +200,11 @@ int main (int argc, char ** argv)
     TRACE((stderr, "before send ...\n"));
     parameters.send.task = 0;
     result = XMI_Send (context, &parameters);
+    if (result != XMI_SUCCESS)
+    {
+        fprintf(stderr, "Error. Send using dispatch configured to enable long header support failed. result = %d\n", result);
+        return 1;
+    }
     TRACE((stderr, "... after send.\n"));
 
     TRACE((stderr, "before send advance loop ...\n"));
@@ -200,6 +220,23 @@ int main (int argc, char ** argv)
     TRACE((stderr, "... after send advance loop\n"));
   }
 
+  /* ********************
+   * Test error path .. dispatch configured without long header support used
+   * to send a long header message.
+   * *******************/
+  if (task_id == 0)
+  {
+    TRACE((stderr, "before send ...\n"));
+    parameters.send.task = 1;
+    parameters.send.dispatch = 1;
+    result = XMI_Send (context, &parameters);
+    if (result != XMI_INVAL)
+    {
+        fprintf(stderr, "Error. Long header send using dispatch configured to disable long header support did not return an error as expected. result = %d\n", result);
+        return 1;
+    }
+    TRACE((stderr, "... after send.\n"));
+  }
 
 
   result = XMI_Context_destroy (context);

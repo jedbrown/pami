@@ -177,17 +177,18 @@ namespace XMI
 
           XMI::Protocol::Send::Send * send =
             (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->simple (parameters->simple.local_fn,
-                        parameters->simple.remote_fn,
-                        parameters->send.cookie,
-                        parameters->send.task,
-                        parameters->simple.addr,
-                        parameters->simple.bytes,
-                        parameters->send.header.addr,
-                        parameters->send.header.bytes);
+          xmi_result_t result =
+            send->simple (parameters->simple.local_fn,
+                          parameters->simple.remote_fn,
+                          parameters->send.cookie,
+                          parameters->send.task,
+                          parameters->simple.addr,
+                          parameters->simple.bytes,
+                          parameters->send.header.addr,
+                          parameters->send.header.bytes);
 
           TRACE_ERR((stderr, "<< send_impl('simple')\n"));
-          return XMI_SUCCESS;
+          return result;
         }
 
         inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
@@ -198,14 +199,15 @@ namespace XMI
 
           XMI::Protocol::Send::Send * send =
             (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->immediate (parameters->send.task,
-                           parameters->immediate.addr,
-                           parameters->immediate.bytes,
-                           parameters->send.header.addr,
-                           parameters->send.header.bytes);
+          xmi_result_t result =
+            send->immediate (parameters->send.task,
+                             parameters->immediate.addr,
+                             parameters->immediate.bytes,
+                             parameters->send.header.addr,
+                             parameters->send.header.bytes);
 
           TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
-          return XMI_SUCCESS;
+          return result;
         }
 
         inline xmi_result_t send_impl (xmi_send_typed_t * parameters)

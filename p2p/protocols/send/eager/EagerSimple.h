@@ -245,11 +245,12 @@ namespace XMI
                   {
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
 
-#if ASSERT_LEVEL==2
-
-                    if (mbytes > T_Model::packet_model_payload_bytes)
-                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
-
+#ifdef ERROR_CHECKS
+                    if (T_LongHeader==false && unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                    {
+                      // "'long header' support is disabled.\n"
+                      return XMI_INVAL;
+                    }
 #endif
 
                     // Short circuit evaluation of the constant expression will
@@ -301,11 +302,13 @@ namespace XMI
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
                     //XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
 
-#if ASSERT_LEVEL==2
-
-                    if (mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t)))
-                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
-
+#ifdef ERROR_CHECKS
+                    if (T_LongHeader==false && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    {
+                      // "'long header' support is disabled.\n"
+                      TRACE_ERR((stderr, "EagerSimple::simple_impl() .. error .. 'long header' support is disabled.\n"));
+                      return XMI_INVAL;
+                    }
 #endif
 
                     // Short circuit evaluation of the constant expression will
@@ -362,11 +365,12 @@ namespace XMI
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
                   {
-#if ASSERT_LEVEL==2
-
-                    if (mbytes > T_Model::packet_model_payload_bytes)
-                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
-
+#ifdef ERROR_CHECKS
+                    if (T_LongHeader==false && unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                    {
+                      // "'long header' support is disabled.\n"
+                      return XMI_INVAL;
+                    }
 #endif
 
                     // Short circuit evaluation of the constant expression will
@@ -411,11 +415,12 @@ namespace XMI
                   }
                 else
                   {
-#if ASSERT_LEVEL==2
-
-                    if (mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t)))
-                      XMI_assertf(T_LongHeader == true, "'long header' support is disabled.\n");
-
+#ifdef ERROR_CHECKS
+                    if (T_LongHeader==false && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    {
+                      // "'long header' support is disabled.\n"
+                      return XMI_INVAL;
+                    }
 #endif
 
                     // Short circuit evaluation of the constant expression will
