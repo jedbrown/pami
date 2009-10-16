@@ -55,12 +55,15 @@ namespace XMI
                 mapping.init(min, max);
 
 		XMI::Topology::static_init(&mapping);
+#warning "Global/Local Topology initializer currently disabled for MPI Platform"
+#if 0
 		if (mapping.size() == max - min + 1) {
 			new (&topology_global) XMI::Topology(min, max);
 		} else {
 			XMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
 		}
 		topology_global.subTopologyLocalToMe(&topology_local);
+#endif                
 	  }
         };
 
