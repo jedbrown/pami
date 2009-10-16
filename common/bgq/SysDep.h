@@ -22,7 +22,7 @@
 
 #include "Mapping.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
-#include "Time.h"
+#include "Wtime.h"
 #include "Topology.h"
 
 namespace XMI

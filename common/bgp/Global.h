@@ -34,7 +34,7 @@
 #include "common/bgp/BgpMapCache.h"
 #include "Mapping.h"
 #include "Topology.h"
-#include "Time.h"
+#include "Wtime.h"
 #include "common/bgp/LockBoxFactory.h"
 
 namespace XMI

@@ -22,7 +22,7 @@
 #include "common/GlobalInterface.h"
 #include "Mapping.h"
 #include "Topology.h"
-#include "Time.h"
+#include "Wtime.h"
 
 namespace XMI
 {

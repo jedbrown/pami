@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/bgq/Time.h
+/// \file common/bgq/Wtime.h
 /// \brief ???
 ///
 #ifndef __components_time_bgq_bgqtime_h__

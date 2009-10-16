@@ -20,7 +20,7 @@
 #include "Platform.h"
 #include "Mapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
-#include "Time.h"
+#include "Wtime.h"
 #include "Topology.h"
 
 namespace XMI
