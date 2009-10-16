@@ -21,7 +21,7 @@
 #define GEOMETRY_STORAGE XMI_REQUEST_NQUADS*4
 
 
-#include "components/geometry/Geometry.h"
+#include "common/GeometryInterface.h"
 #include <map>
 
 namespace XMI
