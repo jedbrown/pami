@@ -88,7 +88,6 @@ public:
             if (_isrootpeer) producer = 0; // hack!
 
 
-if (!(producer < peers-1)) fprintf(stderr, "LocalReduceWQMessage %d %d %d %d\n", peer, peers, rootpeer, producer);
             _shared.setProducers (peers-1, producer);
             _shared.setConsumers (1, 0);
           }

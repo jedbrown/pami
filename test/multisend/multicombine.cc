@@ -18,12 +18,13 @@ void fail_reg(const char *s) {
 	exit(1);
 }
 
-char wqa[sizeof(XMI::Device::WQRingReduceMdl)];
-char wqam[XMI::Device::WQRingReduceMdl::sizeof_msg];
-char lwqr[sizeof(XMI::Device::LocalReduceWQModel)];
-char lwqrm[XMI::Device::LocalReduceWQModel::sizeof_msg];
-char lwqa[sizeof(XMI::Device::LocalAllreduceWQModel)];
-char lwqam[XMI::Device::LocalAllreduceWQModel::sizeof_msg];
+//#define LOCAL_REDUCE_NAME	"XMI::Device::WQRingReduceMdl"
+//#define LOCAL_REDUCE_MODEL	XMI::Device::WQRingReduceMdl
+#define LOCAL_REDUCE_NAME	"XMI::Device::LocalReduceWQModel"
+#define LOCAL_REDUCE_MODEL	XMI::Device::LocalReduceWQModel
+
+char lr[sizeof(LOCAL_REDUCE_MODEL)];
+char lrm[LOCAL_REDUCE_MODEL::sizeof_msg];
 
 char source[TEST_BUF_SIZE];
 char result[TEST_BUF_SIZE];
@@ -91,8 +92,8 @@ int main(int argc, char ** argv) {
 	// Register some multicombines, C++ style
 
 	size_t root = 0;
-	const char *test = "WQRingReduceMdl";
-	XMI::Device::WQRingReduceMdl *model = new (&wqa) XMI::Device::WQRingReduceMdl(status);
+	const char *test = LOCAL_REDUCE_NAME;
+	LOCAL_REDUCE_MODEL *model = new (&lr) LOCAL_REDUCE_MODEL(status);
 	if (status != XMI_SUCCESS) fail_reg(test);
 
 	ipwq.configure(NULL, source, sizeof(source), sizeof(source));
@@ -104,7 +105,7 @@ int main(int argc, char ** argv) {
 	xmi_multicombine_t mcomb;
 
 	// simple allreduce on the local ranks...
-	mcomb.request = &wqam;
+	mcomb.request = &lrm;
 	mcomb.cb_done = (xmi_callback_t){done_cb, (void *)test};
 	mcomb.roles = (unsigned)-1;
 	mcomb.data = (xmi_pipeworkqueue_t *)&ipwq;

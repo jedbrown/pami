@@ -22,10 +22,7 @@
 
 #include "common/TopologyInterface.h"
 #include "Mapping.h"
-
-#define likely_if	if
-#define unlikely_if	if
-#warning Need likely/unlikely_if!
+#include "util/common.h"
 
 #define net_coord(n)	u.n_torus.coords[n]
 
@@ -104,7 +101,7 @@ namespace XMI {
 		bool __isLocalCoord(const xmi_coord_t *c0,
 					const xmi_coord_t *c1) {
 			unsigned x;
-			for (x = 0; x < mapping->globalDims(); ++x) {
+			for (x = 0; x < mapping->torusDims(); ++x) {
 				if (c0->net_coord(x) != c1->net_coord(x)) {
 					return false;
 				}
@@ -136,17 +133,17 @@ namespace XMI {
 		/// \return	nothing, but _new may be XMI_EMPTY_TOPOLOGY
 		///
 		void __subTopologyLocalToMe(XMI::Topology *_new) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				if (__isMemberCoord(MY_COORDS,
-						mapping->globalDims())) {
+						mapping->torusDims())) {
 					_new->__type = XMI_COORD_TOPOLOGY;
 					_new->topo_llcoord = *MY_COORDS;
 					_new->topo_urcoord = *MY_COORDS;
 					// might be able to get better torus info from mapping
-					memset(_new->topo_istorus, 0, mapping->globalDims());
+					memset(_new->topo_istorus, 0, mapping->torusDims());
 					size_t s = 1;
 					unsigned x;
-					for (x = mapping->globalDims(); x < mapping->torusDims(); ++x) {
+					for (x = mapping->torusDims(); x < mapping->globalDims(); ++x) {
 						_new->topo_lldim(x) = topo_lldim(x);
 						_new->topo_urdim(x) = topo_urdim(x);
 						_new->topo_hastorus(x) = topo_hastorus(x);
@@ -215,13 +212,13 @@ namespace XMI {
 			*_new = *this;
 			size_t s = __sizeRange(&topo_llcoord,
 						&topo_urcoord,
-						mapping->globalDims());
+						mapping->torusDims());
 			unsigned x;
-			for (x = mapping->globalDims(); x < mapping->torusDims(); ++x) {
+			for (x = mapping->torusDims(); x < mapping->globalDims(); ++x) {
 				unsigned ll = topo_lldim(x);
 				unsigned ur = topo_urdim(x);
 				int nn = ur - ll + 1;
-				likely_if (n < nn) {
+				if (likely(n < nn)) {
 					_new->topo_lldim(x) =
 					_new->topo_urdim(x) = ll + n;
 					n = 0;
@@ -251,7 +248,7 @@ namespace XMI {
 			*_new = *this;
 			size_t s = 1;
 			unsigned x;
-			for (x = 0; x < mapping->torusDims(); ++x) {
+			for (x = 0; x < mapping->globalDims(); ++x) {
 				if (fmt->net_coord(x) == (unsigned)-1) {
 					_new->topo_lldim(x) = topo_lldim(x);
 					_new->topo_urdim(x) = topo_urdim(x);
@@ -346,19 +343,19 @@ namespace XMI {
 			xmi_coord_t c0;
 			size_t r = topo_first;
 			rc = RANK2COORDS(r, &c0);
-			__initRange(&ll, &ur, &c0, mapping->torusDims());
+			__initRange(&ll, &ur, &c0, mapping->globalDims());
 			for (r += 1; r <= topo_last; ++r) {
 				RANK2COORDS(r, &c0);
-				__bumpRange(&ll, &ur, &c0, mapping->torusDims());
+				__bumpRange(&ll, &ur, &c0, mapping->globalDims());
 			}
-			size_t s = __sizeRange(&ll, &ur, mapping->torusDims());
+			size_t s = __sizeRange(&ll, &ur, mapping->globalDims());
 			if (s == __size) {
 				__type = XMI_COORD_TOPOLOGY;
 				topo_llcoord = ll;
 				topo_urcoord = ur;
 				// can we get real torus info from mapping???
 				// for now, assume no torus links
-				memset(topo_istorus, 0, mapping->torusDims());
+				memset(topo_istorus, 0, mapping->globalDims());
 				return true;
 			}
 			return false;
@@ -375,19 +372,19 @@ namespace XMI {
 			xmi_coord_t c0;
 			unsigned i = 0;
 			rc = RANK2COORDS(topo_list(i), &c0);
-			__initRange(&ll, &ur, &c0, mapping->torusDims());
+			__initRange(&ll, &ur, &c0, mapping->globalDims());
 			for (i += 1; i < __size; ++i) {
 				RANK2COORDS(topo_list(i), &c0);
-				__bumpRange(&ll, &ur, &c0, mapping->torusDims());
+				__bumpRange(&ll, &ur, &c0, mapping->globalDims());
 			}
-			size_t s = __sizeRange(&ll, &ur, mapping->torusDims());
+			size_t s = __sizeRange(&ll, &ur, mapping->globalDims());
 			if (s == __size) {
 				__type = XMI_COORD_TOPOLOGY;
 				topo_llcoord = ll;
 				topo_urcoord = ur;
 				// can we get real torus info from mapping???
 				// for now, assume no torus links
-				memset(topo_istorus, 0, mapping->torusDims());
+				memset(topo_istorus, 0, mapping->globalDims());
 				return true;
 			}
 			return false;
@@ -507,11 +504,11 @@ namespace XMI {
 			topo_llcoord = *ll;
 			topo_urcoord = *ur;
 			if (tl) {
-				memcpy(topo_istorus, tl, mapping->torusDims());
+				memcpy(topo_istorus, tl, mapping->globalDims());
 			} else {
-				memset(topo_istorus, 0, mapping->torusDims());
+				memset(topo_istorus, 0, mapping->globalDims());
 			}
-			__size = __sizeRange(ll, ur, mapping->torusDims());
+			__size = __sizeRange(ll, ur, mapping->globalDims());
 		}
 
 		/// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
@@ -591,7 +588,7 @@ namespace XMI {
 				xmi_result_t rc;
 				c0 = topo_llcoord;
 				unsigned x;
-				for (x = mapping->torusDims(); x > 0 && ix > 0;) {
+				for (x = mapping->globalDims(); x > 0 && ix > 0;) {
 					--x;
 					unsigned ll = topo_lldim(x);
 					unsigned ur = topo_urdim(x);
@@ -644,7 +641,7 @@ namespace XMI {
 				rc = RANK2COORDS(rank, &c0);
 				ix = 0;
 				nn = 0;
-				for (x = 0; x < mapping->torusDims(); ++x) {
+				for (x = 0; x < mapping->globalDims(); ++x) {
 					unsigned ll = topo_lldim(x);
 					unsigned ur = topo_urdim(x);
 					if (c0.net_coord(x) < ll || c0.net_coord(x) > ur) {
@@ -732,7 +729,7 @@ namespace XMI {
 			*ll = topo_llcoord;
 			*ur = topo_urcoord;
 			if (tl) {
-				memcpy(tl, topo_istorus, mapping->torusDims());
+				memcpy(tl, topo_istorus, mapping->globalDims());
 			}
 			return XMI_SUCCESS;
 		}
@@ -743,7 +740,7 @@ namespace XMI {
 		///
 		bool isLocal_impl() {
 			xmi_result_t rc;
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				return __isLocalCoord(&topo_llcoord,
 							&topo_urcoord);
 			} else {
@@ -789,7 +786,7 @@ namespace XMI {
 		/// \return boolean indicating locality of ranks
 		///
 		bool isLocalToMe_impl() {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				// does mapping have "me" cached as a xmi_coord_t?
 				return __isLocalCoord(&topo_llcoord,
 							&topo_urcoord) &&
@@ -858,11 +855,11 @@ namespace XMI {
 		///
 		bool isRankMember_impl(size_t rank) {
 			xmi_result_t rc;
-			unlikely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (unlikely(__type == XMI_COORD_TOPOLOGY)) {
 				xmi_coord_t c0;
 				rc = RANK2COORDS(rank, &c0);
 				XMI_assert_debugf(rc == XMI_SUCCESS, "RANK2COORDS failed\n");
-				return __isMemberCoord(&c0, mapping->torusDims());
+				return __isMemberCoord(&c0, mapping->globalDims());
 			} else {
 				if (__type == XMI_SINGLE_TOPOLOGY) {
 					return (rank == __topo._rank);
@@ -889,8 +886,8 @@ namespace XMI {
 		///
 		bool isCoordMember_impl(xmi_coord_t *c0) {
 			xmi_result_t rc;
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
-				return __isMemberCoord(c0, mapping->torusDims());
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
+				return __isMemberCoord(c0, mapping->globalDims());
 			} else if (__type == XMI_EMPTY_TOPOLOGY) {
 				return false;
 			} else {
@@ -915,7 +912,7 @@ namespace XMI {
 		/// \param[in] n	Which local rank to select on each node
 		///
 		void subTopologyNthGlobal_impl(XMI::Topology *_new, int n) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				__subTopologyNthGlobal(_new, n);
 				// may produce empty topology, if "n" is out of range.
 			} else {
@@ -936,7 +933,7 @@ namespace XMI {
 		/// \param[in] fmt	how to reduce dimensions
 		///
 		void subTopologyReduceDims_impl(XMI::Topology *_new, xmi_coord_t *fmt) {
-			likely_if (__type == XMI_COORD_TOPOLOGY) {
+			if (likely(__type == XMI_COORD_TOPOLOGY)) {
 				__subTopologyReduceDims(_new, fmt);
 			} else {
 				// the really hard way... impractical?
@@ -964,7 +961,7 @@ namespace XMI {
 			xmi_result_t rc;
 			*nranks = __size; // might exceed "max" - caller detects error.
 			XMI_assert_debugf(max != 0, "getRankList called with no array space\n");
-			likely_if (__type == XMI_LIST_TOPOLOGY) {
+			if (likely(__type == XMI_LIST_TOPOLOGY)) {
 				unsigned x;
 				for (x = 0; x < __size && x < max; ++x) {
 					ranks[x] = topo_list(x);
@@ -976,7 +973,7 @@ namespace XMI {
 				unsigned x;
 				// c0 = llcorner;
 				c0.network = XMI_N_TORUS_NETWORK;
-				for (x = 0; x < mapping->torusDims(); ++x) {
+				for (x = 0; x < mapping->globalDims(); ++x) {
 					c0.net_coord(x) = topo_lldim(x);
 				}
 				x = 0;
@@ -984,7 +981,7 @@ namespace XMI {
 					rc = COORDS2RANK(&c0, &rank);
 					ranks[x] = rank;
 					++x;
-				} while (x < max && __nextCoord(&c0, mapping->torusDims()));
+				} while (x < max && __nextCoord(&c0, mapping->globalDims()));
 			} else if (__type == XMI_SINGLE_TOPOLOGY) {
 				ranks[0] = __topo._rank;
 			} else if (__type == XMI_RANGE_TOPOLOGY) {
@@ -1064,7 +1061,7 @@ namespace XMI {
 					topo_urcoord = c0;
 					// can we get real torus info from mapping???
 					// for now, assume no torus links
-					memset(topo_istorus, 0, mapping->torusDims());
+					memset(topo_istorus, 0, mapping->globalDims());
 					return true;
 					break;
 				case XMI_RANGE_TOPOLOGY:
@@ -1155,7 +1152,7 @@ namespace XMI {
 					do {
 						rc = COORDS2RANK(&c0, &rank);
 						*rp++ = rank;
-					} while (__nextCoord(&c0, mapping->torusDims()));
+					} while (__nextCoord(&c0, mapping->globalDims()));
 					__type = XMI_LIST_TOPOLOGY;
 					topo_ranklist = rl;
 					return true;
@@ -1168,7 +1165,7 @@ namespace XMI {
 						rc = COORDS2RANK(&c0, &rank);
 						if (rank < min) min = rank;
 						if (rank > max) max = rank;
-					} while (__nextCoord(&c0, mapping->torusDims()));
+					} while (__nextCoord(&c0, mapping->globalDims()));
 					if (__size == max - min + 1) {
 						__type = XMI_RANGE_TOPOLOGY;
 						topo_first = min;
@@ -1197,7 +1194,7 @@ namespace XMI {
 		// for now, assume this isn't used/needed.
 		XMI_abortf("Topology::unionTopology not implemented\n");
 #if 0
-		likely_if (__type == other->__type) {
+		if (likely(__type == other->__type)) {
 			// size_t s;
 			// size_t i, j, k;
 			switch (__type) {
@@ -1276,7 +1273,7 @@ namespace XMI {
 	/// \param[in] other	The other topology
 	///
 	void intersectTopology_impl(Topology *_new, Topology *other) {
-		likely_if (__type == other->__type) {
+		if (likely(__type == other->__type)) {
 			size_t s;
 			size_t i, j, k;
 			size_t *rl;
@@ -1286,26 +1283,26 @@ namespace XMI {
 				// first, check for disjoint
 				if (__coordLT(&topo_urcoord,
 						&other->topo_llcoord,
-						mapping->torusDims()) ||
+						mapping->globalDims()) ||
 					__coordLT(&other->topo_urcoord,
 						&topo_llcoord,
-						mapping->torusDims())) {
+						mapping->globalDims())) {
 					break;
 				}
 				_new->__type = XMI_COORD_TOPOLOGY;
 				__coordMAX(&_new->topo_llcoord,
 					&topo_llcoord,
 					&other->topo_llcoord,
-					mapping->torusDims());
+					mapping->globalDims());
 				__coordMIN(&_new->topo_urcoord,
 					&topo_urcoord,
 					&other->topo_urcoord,
-					mapping->torusDims());
+					mapping->globalDims());
 				_new->__size = __sizeRange(&_new->topo_llcoord,
-					&_new->topo_urcoord, mapping->torusDims());
+					&_new->topo_urcoord, mapping->globalDims());
 				// can we get real torus info from old topology???
 				// for now, assume no torus links
-				memset(topo_istorus, 0, mapping->torusDims());
+				memset(topo_istorus, 0, mapping->globalDims());
 				return;
 				break;
 			case XMI_SINGLE_TOPOLOGY:
@@ -1425,7 +1422,7 @@ namespace XMI {
 	/// \param[in] other	The other topology
 	///
 	void subtractTopology_impl(Topology *_new, Topology *other) {
-		likely_if (__type == other->__type) {
+		if (likely(__type == other->__type)) {
 			xmi_result_t rc;
 			xmi_coord_t ll, ur, c0;
 			size_t rank = 0;
@@ -1445,33 +1442,33 @@ namespace XMI {
 				c0 = topo_llcoord;
 				do {
 					if (other->__isMemberCoord(&c0,
-							mapping->torusDims())) {
+							mapping->globalDims())) {
 						continue;
 					}
 					// keep it
 					rc = COORDS2RANK(&c0, &rank);
 					if (k == 0) { // first one found...
-						__initRange(&ll, &ur, &c0, mapping->torusDims());
+						__initRange(&ll, &ur, &c0, mapping->globalDims());
 						min = max = rank;
 					} else {
-						__bumpRange(&ll, &ur, &c0, mapping->torusDims());
+						__bumpRange(&ll, &ur, &c0, mapping->globalDims());
 						if (rank < min) min = rank;
 						if (rank > max) max = rank;
 					}
 					rl[k++] = rank;
-				} while (__nextCoord(&c0, mapping->torusDims()));
+				} while (__nextCoord(&c0, mapping->globalDims()));
 				if (k == 0) {
 					break;
 				}
 				_new->__size = k;
-				s = __sizeRange(&ll, &ur, mapping->torusDims());
+				s = __sizeRange(&ll, &ur, mapping->globalDims());
 				if (s == k) {
 					_new->__type = XMI_COORD_TOPOLOGY;
 					_new->topo_llcoord = ll;
 					_new->topo_urcoord = ur;
 					// can we get real torus info from old topology???
 					// for now, assume no torus links
-					memset(_new->topo_istorus, 0, mapping->torusDims());
+					memset(_new->topo_istorus, 0, mapping->globalDims());
 					free(rl);
 				} else if (max - min + 1 == k) {
 					_new->__type = XMI_RANGE_TOPOLOGY;
