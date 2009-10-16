@@ -7,13 +7,13 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file arch/a2/Arch.h
+ * \file arch/a2qpx/Arch.h
  * \brief ???
  */
 
-#ifndef __xmi_arch_a2_h__
-#define __xmi_arch_a2_h__
+#ifndef __xmi_arch_a2qpx_h__
+#define __xmi_arch_a2qpx_h__
 
 // Here go things specific to this processor architecture
 
-#endif // __xmi_arch_a2_h__
+#endif // __xmi_arch_a2qpx_h__
