@@ -16,6 +16,7 @@
 
 #include "components/devices/workqueue/WorkQueue.h"
 #include "SysDep.h"
+#include "string.h"
 
 #warning This platform-specific code needs to move somewhere else.
 #if defined(__bgp__) and !defined(__bgq__)

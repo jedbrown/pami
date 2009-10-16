@@ -11,6 +11,6 @@
 
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
-SOURCES		= WorkQueue.cc
-DEVICENAME	= workqueue
+@LIBNAME@-""-WQDEVICE_SOURCES = WorkQueue.cc
+DEVICENAME	= @LIBNAME@-""-WQDEVICE
 include @abs_top_builddir@/Build.rules

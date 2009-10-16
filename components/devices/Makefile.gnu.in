@@ -10,6 +10,6 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS		= @DEVICES@ @TARGET@ 
+SUBDIRS		= @DEVICES@ @TARGET@ workqueue
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules
