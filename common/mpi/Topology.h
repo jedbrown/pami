@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "common/TopologyInterface.h"
+#include "util/common.h"
 #include "Mapping.h"
 
 #define net_coord(n)	u.n_torus.coords[n]
