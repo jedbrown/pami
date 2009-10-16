@@ -68,18 +68,16 @@ namespace XMI
         Interface::BaseTime<Time>(),
         _clockMHz(0)
         {
-          init_impl();
-          _clockMHz = clockMHz_impl();
-          //fprintf(stderr, "clockmhz=%lld\n", _clockMHz);
         };
 
       ///
       /// \brief Initialize the time object.
       ///
-      inline xmi_result_t init_impl ()
+      inline xmi_result_t init_impl (size_t dummy)
         {
           _clockMHz      = clockMHz()/1e6;
           _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
+          //fprintf(stderr, "clockmhz=%lld\n", _clockMHz);
           if(_clockMHz == -1ULL)
             return XMI_ERROR;
           else
@@ -174,6 +172,6 @@ namespace XMI
     protected:
       uint64_t _clockMHz;
       double _sec_per_cycle;
-    };
-};
+    };	// class Time
+};	// namespace XMI
 #endif // __components_time_time_h__

@@ -6,25 +6,16 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-/**
- * \file common/mpi/SysDep.h
- * \brief ???
- */
+///
+/// \file common/lapiunix/Global.cc
+/// \brief Global Object implementation
+///
 
-#ifndef __components_sysdep_mpi_mpisysdep_h__
-#define __components_sysdep_mpi_mpisysdep_h__
+#include "config.h"
+#include "Global.h"
+#include "Topology.h" // need to make static members...
 
-#define XMI_SYSDEP_CLASS XMI::SysDep
+XMI::Global __global;
 
-#include "common/SysDepInterface.h"
-#include "Platform.h"
-#include "Mapping.h"
-#include "components/memory/heap/HeapMemoryManager.h"
-#include "Time.h"
-#include "Topology.h"
-
-namespace XMI
-{
-    typedef Interface::SysDep<XMI::Memory::HeapMemoryManager> SysDep;
-};
-#endif // __components_sysdep_mpi_mpisysdep_h__
+XMI::Mapping *XMI::Topology::mapping = NULL;
+xmi_coord_t XMI::Topology::my_coords;

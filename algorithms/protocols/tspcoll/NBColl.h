@@ -14,7 +14,7 @@
 #ifndef __tspcoll_nbcoll_h__
 #define __tspcoll_nbcoll_h__
 
-#include "components/geometry/common/commongeometry.h"
+#include "Geometry.h"
 
 namespace TSPColl
 {

@@ -15,6 +15,7 @@
 #define __components_mapping_lapi_lapimapping_h__
 
 #include "sys/xmi.h"
+#include "Platform.h"
 #include "common/BaseMappingInterface.h"
 #include "common/TorusMappingInterface.h"
 #include "common/NodeMappingInterface.h"
@@ -45,14 +46,10 @@ namespace XMI
       size_t    _task;
       size_t    _size;
     public:
-      inline xmi_result_t init_impl(xmi_coord_t                    &ll,
-                                    xmi_coord_t                    &ur,
-				    size_t                          min_rank,
-                                    size_t                          max_rank,
-				    XMI::Memory::HeapMemoryManager &mm)
+      inline xmi_result_t init(size_t &min_rank, size_t &max_rank)
         {
-          ll.u.n_torus.coords[0] = 0;
-          ur.u.n_torus.coords[0] = _size-1;
+          min_rank = 0;
+          max_rank = _size-1;
 
           return XMI_SUCCESS;
         }

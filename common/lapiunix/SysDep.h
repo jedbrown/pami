@@ -17,6 +17,7 @@
 #define XMI_SYSDEP_CLASS XMI::SysDep
 
 #include "common/SysDepInterface.h"
+#include "Platform.h"
 #include "Mapping.h"
 #include "components/memory/heap/HeapMemoryManager.h"
 #include "Time.h"
@@ -24,7 +25,7 @@
 
 namespace XMI
 {
-    typedef Interface::SysDep<XMI::Memory::HeapMemoryManager, XMI::Mapping, XMI::Time, XMI::Topology> SysDep;
+    typedef Interface::SysDep<XMI::Memory::HeapMemoryManager> SysDep;
   };
 };
 #endif // __components_sysdep_lapi_lapisysdep_h__

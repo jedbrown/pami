@@ -13,7 +13,7 @@
 #ifndef __components_time_lapi_lapitime_h__
 #define __components_time_lapi_lapitime_h__
 
-#define XMI_TIME_CLASS XMI::Time::LAPITime
+#define XMI_TIME_CLASS XMI::Time
 
 #include "sys/xmi.h"
 #include <sys/time.h>
@@ -23,8 +23,6 @@
 
 namespace XMI
 {
-  namespace Time
-  {
 #if defined(__i386) || defined(__amd64__)
     static inline uint64_t tb()
     {
@@ -62,26 +60,24 @@ namespace XMI
       return tv.tv_sec * 1000 + tv.tv_usec / 1000;
     }
 
-    class LAPITime : public Interface::BaseTime<LAPITime>
+    class Time : public Interface::BaseTime<Time>
     {
     public:
 
-      inline LAPITime () :
-        Interface::BaseTime<LAPITime>(),
+      inline Time () :
+        Interface::BaseTime<Time>(),
         _clockMHz(0)
         {
-          init_impl();
-          _clockMHz = clockMHz_impl();
-          //fprintf(stderr, "clockmhz=%lld\n", _clockMHz);
         };
 
       ///
       /// \brief Initialize the time object.
       ///
-      inline xmi_result_t init_impl ()
+      inline xmi_result_t init_impl (size_t dummy)
         {
           _clockMHz      = clockMHz()/1e6;
           _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
+          //fprintf(stderr, "clockmhz=%lld\n", _clockMHz);
           if(_clockMHz == -1ULL)
             return XMI_ERROR;
           else
@@ -176,7 +172,6 @@ namespace XMI
     protected:
       uint64_t _clockMHz;
       double _sec_per_cycle;
-    };
-  };
-};
+    };	// class Time
+};	// namespace XMI
 #endif // __components_time_time_h__

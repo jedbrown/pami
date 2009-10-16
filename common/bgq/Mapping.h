@@ -16,6 +16,7 @@
 #include <hwi/include/bqc/MU_PacketCommon.h>
 
 #include "sys/xmi.h"
+#include "Platform.h"
 
 #include "common/BaseMappingInterface.h"
 #include "common/TorusMappingInterface.h"
