@@ -149,7 +149,7 @@ template<class T_Mcast>
 void TSPColl::Scatter<T_Mcast>::
 reset (int root, const void * sbuf, void * rbuf, size_t length)
 {
-  _isroot = (root == this->_comm->rank());
+  _isroot = (root == this->_comm->virtrank());
   _rbuf   = rbuf;
   _sbuf   = (const char *)sbuf;
   _length = length;
@@ -168,7 +168,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
   if (!_isroot) return;
   _req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
   for (int i=0; i < this->_comm->size(); i++)
-    if (i == this->_comm->rank())
+    if (i == this->_comm->virtrank())
       {
 	memcpy (_rbuf, _sbuf+i*_length, _length);
         cb_senddone (NULL, &_header, XMI_SUCCESS);
@@ -226,7 +226,7 @@ template<class T_Mcast>
 void TSPColl::Scatterv<T_Mcast>::
 reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 {
-  this->_isroot = (root == this->_comm->rank());
+  this->_isroot = (root == this->_comm->virtrank());
   this->_rbuf   = rbuf;
   this->_sbuf   = (const char *)sbuf;
   this->_lengths = lengths;
@@ -258,7 +258,7 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
                this->_counter, this->_complete, i, this->_comm->size(), this->_lengths[i],
                s, s[0], s[1], s[2]));
 
-        if (i == this->_comm->rank())
+        if (i == this->_comm->virtrank())
             {
               memcpy (this->_rbuf, s, this->_lengths[i]);
               cb_senddone (NULL, &this->_header, XMI_SUCCESS);

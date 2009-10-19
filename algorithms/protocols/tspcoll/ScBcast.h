@@ -111,9 +111,10 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
 {
   int myoffset = -1;
   size_t pernodelen = CEIL (len, this->_comm->size());
+  int rank = this->_comm->virtrank();
   for (int i=0, current = 0; i<this->_comm->size(); i++)
     {
-      if (this->_comm->rank() == i) myoffset = current;
+      if (rank == i) myoffset = current;
       current += (_lengths[i] = MIN (pernodelen, len - current));
     }
 

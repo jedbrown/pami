@@ -82,7 +82,6 @@ namespace XMI
 
           geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
-
         }
 
       inline int                       getColorsArray_impl()
@@ -295,6 +294,12 @@ namespace XMI
         {
           return _rank;
         }
+
+      inline int virtrank_impl()
+        {
+          return virtrankof_impl(_rank);
+        }
+      
       inline int                        absrankof_impl  (int rank)
         {
           int rankLeft=rank;
@@ -304,6 +309,9 @@ namespace XMI
                 rankLeft    -= rangeSz;
                 if(rankLeft <= 0)
                     {
+                      if(rankLeft == 0)
+                        continue;
+
                       int offset = rangeSz+rankLeft;
                       return _rangelist[i].lo+offset;
                     }

@@ -118,7 +118,7 @@ namespace CCMI
         unsigned i;
         if(_ranks)
         {
-          for(i = 0; i < _nranks && _ranks[i] != rank; i++);
+          for(i = 0; i < _nranks && _ranks[i] != rank; i++)
           CCMI_assert(i < _nranks);
         }
         else

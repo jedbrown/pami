@@ -72,7 +72,7 @@ BlockingBarrier (Communicator * comm, int tag, int id)
   _numphases = -1; for (int n=2*comm->size()-1; n>0; n>>=1) _numphases++;
   for (int i=0; i<_numphases; i++)
     {
-      _dest[i] = comm->absrankof((comm->rank() + (1<<i)) % comm->size());
+      _dest[i] = comm->absrankof((comm->virtrank() + (1<<i)) % comm->size());
       _recvcomplete[i] = 0;
       _header[i].hdr.handler   = cb_incoming;
       _header[i].hdr.headerlen = sizeof (struct AMHeader);

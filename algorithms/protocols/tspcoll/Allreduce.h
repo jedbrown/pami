@@ -118,20 +118,20 @@ Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   for (_logMaxBF = 0; (1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
   int maxBF  = 1<<_logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
-  int phase=0;
-
+  int phase  = 0;
+  int rank   = comm->virtrank();
   /* -------------------------------------------- */
   /* phase 0: gather buffers from ranks > n2prev  */
   /* -------------------------------------------- */
-
+  
   if (nonBF > 0)
     {
-      unsigned rdest = comm->absrankof (comm->rank() - maxBF);
-      this->_dest    [phase] = (comm->rank() >= maxBF) ? rdest : -1;
+      unsigned rdest = comm->absrankof (rank - maxBF);
+      this->_dest    [phase] = (rank >= maxBF) ? rdest : -1;
       this->_sbuf    [phase] = NULL;    /* unknown */
-      this->_rbuf    [phase] = (comm->rank() < nonBF)  ? _phasebuf[phase][0] : NULL;
-      this->_cb_recv1[phase] = (comm->rank() < nonBF)  ? cb_switchbuf : NULL;
-      this->_cb_recv2[phase] = (comm->rank() < nonBF)  ? cb_allreduce : NULL;
+      this->_rbuf    [phase] = (rank < nonBF)  ? _phasebuf[phase][0] : NULL;
+      this->_cb_recv1[phase] = (rank < nonBF)  ? cb_switchbuf : NULL;
+      this->_cb_recv2[phase] = (rank < nonBF)  ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;       /* unknown */
       this->_bufctr  [phase] = 0;
       phase ++;
@@ -143,12 +143,12 @@ Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
 
   for (int i=0; i<_logMaxBF; i++)
     {
-      unsigned rdest   = comm->absrankof (comm->rank() ^ (1<<i));
-      this->_dest    [phase] = (comm->rank() < maxBF) ? rdest : -1;
+      unsigned rdest   = comm->absrankof (rank ^ (1<<i));
+      this->_dest    [phase] = (rank < maxBF) ? rdest : -1;
       this->_sbuf    [phase] = NULL;     /* unknown */
-      this->_rbuf    [phase] = (comm->rank() < maxBF) ? _phasebuf[phase][0] : NULL;
-      this->_cb_recv1[phase] = (comm->rank() < maxBF) ? cb_switchbuf : NULL;
-      this->_cb_recv2[phase] = (comm->rank() < maxBF) ? cb_allreduce : NULL;
+      this->_rbuf    [phase] = (rank < maxBF) ? _phasebuf[phase][0] : NULL;
+      this->_cb_recv1[phase] = (rank < maxBF) ? cb_switchbuf : NULL;
+      this->_cb_recv2[phase] = (rank < maxBF) ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;        /* unknown */
       this->_bufctr  [phase] = 0;
       phase ++;
@@ -160,8 +160,8 @@ Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
 
   if (nonBF > 0)
     {
-      unsigned rdest   = comm->absrankof (comm->rank() + maxBF);
-      this->_dest    [phase] = (comm->rank() < nonBF)  ? rdest : -1;
+      unsigned rdest   = comm->absrankof (rank + maxBF);
+      this->_dest    [phase] = (rank < nonBF)  ? rdest : -1;
       this->_sbuf    [phase] = NULL;     /* unknown */
       this->_rbuf    [phase] = NULL;     /* unknown */
       this->_cb_recv1[phase] = NULL;
@@ -228,7 +228,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 
   int maxBF = 1<<_logMaxBF; /* largest power of 2 that fits into comm */
   int nonBF = this->_comm->size() - maxBF; /* comm->size() - largest power of 2 */
-
+  int rank  = this->_comm->virtrank();
   /* -------------------------------------------- */
   /* phase 0: gather buffers from ranks > n2prev  */
   /* -------------------------------------------- */
@@ -236,7 +236,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
   int phase=0;
   if (nonBF > 0)   /* phase 0: gather buffers from ranks > n2prev */
     {
-      this->_sbuf    [phase] = (this->_comm->rank() >= maxBF) ? dbuf  : NULL;
+      this->_sbuf    [phase] = (rank >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
@@ -247,7 +247,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 
   for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
-      this->_sbuf    [phase] = (this->_comm->rank() < maxBF) ? dbuf  : NULL;
+      this->_sbuf    [phase] = (rank < maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
@@ -259,8 +259,8 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 
   if (nonBF > 0)   /*  last phase: collect results */
     {
-      this->_sbuf    [phase] = (this->_comm->rank() < nonBF)  ? dbuf  : NULL;
-      this->_rbuf    [phase] = (this->_comm->rank() >= maxBF) ? dbuf  : NULL;
+      this->_sbuf    [phase] = (rank < nonBF)  ? dbuf  : NULL;
+      this->_rbuf    [phase] = (rank >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
@@ -268,7 +268,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
   assert (phase == this->_numphases);
 
 #ifdef DEBUG_ALLREDUCE
-  printf ("%d: ", comm->rank());
+  printf ("%d: ", rank);
   for (int i=0; i<this->_numphases; i++)
     printf ("[%d %s] ", this->_dest[i], this->_rbuf[i]? "Y" : "N");
   printf ("\n");
@@ -302,7 +302,7 @@ Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   int maxBF  = 1<<_logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
-
+  int rank   = this->_comm->virtrank();
   /* -------------------------------------------- */
   /* phase 0: gather buffers from ranks > n2prev  */
   /* -------------------------------------------- */
@@ -311,21 +311,21 @@ Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
     {
       /* send permission chits to potential senders */
 
-      unsigned rdest = this->_comm->absrankof (this->_comm->rank() + maxBF);
-      this->_dest    [phase] = (this->_comm->rank() <  nonBF) ? rdest : -1;
-      this->_sbuf    [phase] = (this->_comm->rank() <  nonBF) ? &_dummy : NULL;
-      this->_rbuf    [phase] = (this->_comm->rank() >= maxBF) ? &_dummy : NULL;
+      unsigned rdest = this->_comm->absrankof (rank + maxBF);
+      this->_dest    [phase] = (rank <  nonBF) ? rdest : -1;
+      this->_sbuf    [phase] = (rank <  nonBF) ? &_dummy : NULL;
+      this->_rbuf    [phase] = (rank >= maxBF) ? &_dummy : NULL;
       this->_cb_recv2[phase] = NULL;
       this->_sbufln  [phase] = 1;
       phase ++;
 
       /* send data */
 
-      rdest = this->_comm->absrankof (this->_comm->rank() - maxBF);
-      this->_dest    [phase] = (this->_comm->rank() >= maxBF) ? rdest : -1;
+      rdest = this->_comm->absrankof (rank - maxBF);
+      this->_dest    [phase] = (rank >= maxBF) ? rdest : -1;
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
-      this->_cb_recv2[phase] = (this->_comm->rank() < nonBF)  ? cb_allreduce : NULL;
+      this->_cb_recv2[phase] = (rank < nonBF)  ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
       phase ++;
     }
@@ -338,20 +338,20 @@ Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
     {
       /* send permission chits to senders */
 
-      unsigned rdest   = this->_comm->absrankof (this->_comm->rank() ^ (1<<i));
-      this->_dest    [phase] = (this->_comm->rank() < maxBF) ? rdest : -1;
-      this->_sbuf    [phase] = (this->_comm->rank() < maxBF) ? &_dummy : NULL;
-      this->_rbuf    [phase] = (this->_comm->rank() < maxBF) ? &_dummy : NULL;
+      unsigned rdest   = this->_comm->absrankof (rank ^ (1<<i));
+      this->_dest    [phase] = (rank < maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = (rank < maxBF) ? &_dummy : NULL;
+      this->_rbuf    [phase] = (rank < maxBF) ? &_dummy : NULL;
       this->_cb_recv2[phase] = NULL;
       this->_sbufln  [phase] = 1;
       phase ++;
 
       /* send data */
 
-      this->_dest    [phase] = (this->_comm->rank() < maxBF) ? rdest : -1;
+      this->_dest    [phase] = (rank < maxBF) ? rdest : -1;
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
-      this->_cb_recv2[phase] = (this->_comm->rank() < maxBF) ? cb_allreduce : NULL;
+      this->_cb_recv2[phase] = (rank < maxBF) ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
       phase ++;
     }
@@ -364,18 +364,18 @@ Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
     {
       /* send permission slips */
 
-      unsigned rdest = this->_comm->absrankof (this->_comm->rank() - maxBF);
-      this->_dest    [phase] = (this->_comm->rank() >= maxBF) ? rdest : -1;
-      this->_sbuf    [phase] = (this->_comm->rank() >= maxBF) ? &_dummy : NULL;
-      this->_rbuf    [phase] = (this->_comm->rank() < nonBF)  ? &_dummy : NULL;
+      unsigned rdest = this->_comm->absrankof (rank - maxBF);
+      this->_dest    [phase] = (rank >= maxBF) ? rdest : -1;
+      this->_sbuf    [phase] = (rank >= maxBF) ? &_dummy : NULL;
+      this->_rbuf    [phase] = (rank < nonBF)  ? &_dummy : NULL;
       this->_cb_recv2[phase] = NULL;
       this->_sbufln  [phase] = 1;
       phase ++;
 
       /* send data */
 
-      rdest   = this->_comm->absrankof (this->_comm->rank() + maxBF);
-      this->_dest    [phase] = (this->_comm->rank() < nonBF)  ? rdest : -1;
+      rdest   = this->_comm->absrankof (rank + maxBF);
+      this->_dest    [phase] = (rank < nonBF)  ? rdest : -1;
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_cb_recv2[phase] = NULL;
@@ -435,12 +435,13 @@ void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
   int maxBF  = 1<<_logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
+  int rank   = this->_comm->virtrank();
 
   if (nonBF > 0)   /* phase 0: gather buffers from ranks > n2prev */
     {
       phase ++;
-      this->_sbuf    [phase] = (this->_comm->rank() >= maxBF) ? _dbuf : NULL;
-      this->_rbuf    [phase] = (this->_comm->rank() < nonBF)  ? _tmpbuf : NULL;
+      this->_sbuf    [phase] = (rank >= maxBF) ? _dbuf : NULL;
+      this->_rbuf    [phase] = (rank < nonBF)  ? _tmpbuf : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
@@ -448,8 +449,8 @@ void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
   for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       phase ++;
-      this->_sbuf    [phase] = (this->_comm->rank() < maxBF) ? _dbuf : NULL;
-      this->_rbuf    [phase] = (this->_comm->rank() < maxBF) ? _tmpbuf : NULL;
+      this->_sbuf    [phase] = (rank < maxBF) ? _dbuf : NULL;
+      this->_rbuf    [phase] = (rank < maxBF) ? _tmpbuf : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }
@@ -457,8 +458,8 @@ void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
   if (nonBF > 0)   /*  last phase: collect results */
     {
       phase ++;
-      this->_sbuf    [phase] = (this->_comm->rank() < nonBF)  ? _dbuf  : NULL;
-      this->_rbuf    [phase] = (this->_comm->rank() >= maxBF) ? _dbuf  : NULL;
+      this->_sbuf    [phase] = (rank < nonBF)  ? _dbuf  : NULL;
+      this->_rbuf    [phase] = (rank >= maxBF) ? _dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       phase ++;
     }

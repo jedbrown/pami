@@ -52,7 +52,9 @@ BinomBcast(XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
     {
-      int destindex = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+
+      int rank = this->_comm->virtrank();
+      int destindex = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[i] = this->_comm->absrankof(destindex);
       this->_sbuf[i] = &_dummy;
       this->_rbuf[i] = &_dummy;
@@ -76,13 +78,14 @@ reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  if (rootindex == this->_comm->rank() && sbuf != buf)
+  int rank = this->_comm->virtrank();
+  if (rootindex == rank && sbuf != buf)
     memcpy (buf, sbuf, nbytes);
 
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  int myrelrank = (this->_comm->rank() + this->_comm->size() - rootindex) % this->_comm->size();
+  int myrelrank = (rank + this->_comm->size() - rootindex) % this->_comm->size();
   for (int i=0, phase=this->_numphases/2; i<this->_numphases/2; i++, phase++)
     {
       int  dist       = 1<<(this->_numphases/2-1-i);

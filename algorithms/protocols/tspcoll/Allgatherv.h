@@ -53,7 +53,8 @@ inline TSPColl::Allgatherv<T_Mcast>::Allgatherv (XMI_GEOMETRY_CLASS * comm, NBTa
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
     {
-      int destindex = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int rank = this->_comm->virtrank();
+      int destindex = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[i] = this->_comm->absrankof(destindex);
       this->_sbuf[i] = &_dummy;
       this->_rbuf[i] = &_dummy;
@@ -76,14 +77,15 @@ Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
     allsumbytes+=lengths[i];
 
   size_t mysumbytes = 0;
-  for(int i=0;i<this->_comm->rank();i++)
+  int rank = this->_comm->virtrank();
+  for(int i=0;i<rank;i++)
     mysumbytes +=lengths[i];
 
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
 
-  memcpy ((char *)rbuf + mysumbytes, sbuf, lengths[this->_comm->rank()]);
+  memcpy ((char *)rbuf + mysumbytes, sbuf, lengths[rank]);
 
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
@@ -91,7 +93,7 @@ Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
 
   for (int i=0, phase=this->_numphases/3; i<this->_numphases/3; i++, phase+=2)
     {
-      int destindex = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int destindex = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[phase]   =  this->_comm->absrankof (destindex);
       this->_dest[phase+1]   =this->_dest[phase];
       this->_sbuf[phase]   = (char *)rbuf + mysumbytes;
@@ -99,7 +101,7 @@ Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
 
       size_t phasesumbytes=0;
       for (int n=0; n < (1<<i); n++)
-	phasesumbytes += lengths[(this->_comm->rank()+n)%this->_comm->size()];
+	phasesumbytes += lengths[(rank+n)%this->_comm->size()];
 
       this->_rbuf[phase]   = (char *)rbuf+ ((mysumbytes + phasesumbytes) % allsumbytes);
       this->_rbuf[phase+1]   = (char *)rbuf;

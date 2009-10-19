@@ -61,7 +61,8 @@ inline TSPColl::Allgather<T_Mcast>::Allgather (XMI_GEOMETRY_CLASS *comm, NBTag t
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
     {
-      int destindex = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int rank       = this->_comm->virtrank();
+      int destindex  = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[i] = this->_comm->absrankof(destindex);
       this->_sbuf[i] = &_dummy;
       this->_rbuf[i] = &_dummy;
@@ -83,8 +84,8 @@ void TSPColl::Allgather<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t nb
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
-
-  memcpy ((char *)rbuf + nbytes * this->_comm->rank(), sbuf, nbytes);
+  int rank = this->_comm->virtrank();
+  memcpy ((char *)rbuf + nbytes * rank, sbuf, nbytes);
 
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
@@ -92,22 +93,22 @@ void TSPColl::Allgather<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t nb
 
   for (int i=0, phase=this->_numphases/3; i<this->_numphases/3; i++, phase+=2)
     {
-      int previndex  = (this->_comm->rank()+2*this->_comm->size()-(1<<i))%this->_comm->size();
-      int nextindex  = (this->_comm->rank()+(1<<i))%this->_comm->size();
+      int previndex  = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int nextindex  = (rank+(1<<i))%this->_comm->size();
 
       this->_dest[phase]   = this->_comm->absrankof (previndex);
       this->_dest[phase+1] = this->_dest[phase];
 
-      this->_sbuf[phase]   = (char *)rbuf + this->_comm->rank() * nbytes;
+      this->_sbuf[phase]   = (char *)rbuf + rank * nbytes;
       this->_sbuf[phase+1] = (char *)rbuf;
 
       this->_rbuf[phase]   = (char *)rbuf + nextindex*nbytes;
       this->_rbuf[phase+1] = (char *)rbuf;
 
-      if (this->_comm->rank() + (1<<i) >= this->_comm->size())
+      if (rank + (1<<i) >= this->_comm->size())
  	{
-	  this->_sbufln[phase]   = nbytes * (this->_comm->size() - this->_comm->rank());
-	  this->_sbufln[phase+1] = nbytes * (this->_comm->rank() + (1<<i) - this->_comm->size());
+	  this->_sbufln[phase]   = nbytes * (this->_comm->size() - rank);
+	  this->_sbufln[phase+1] = nbytes * (rank + (1<<i) - this->_comm->size());
 	}
       else
 	{

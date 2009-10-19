@@ -136,6 +136,7 @@ namespace XMI
           // These methods were originally from the PGASRT Communicator class
             inline int                        size       (void);
             inline int                        rank       (void);
+            inline int                        virtrank   (void);
             inline int                        absrankof  (int rank);
             inline int                        virtrankof (int rank);
 	    inline void                       setKey(keys_t key, void*value);
@@ -414,6 +415,11 @@ namespace XMI
         inline int                        Geometry<T_Geometry, T_Mapping>::rank       (void)
         {
             return static_cast<T_Geometry*>(this)->rank_impl();
+        }
+        template <class T_Geometry, class T_Mapping>
+        inline int                        Geometry<T_Geometry, T_Mapping>::virtrank()
+        {
+            return static_cast<T_Geometry*>(this)->virtrank_impl();
         }
         template <class T_Geometry, class T_Mapping>
         inline int                        Geometry<T_Geometry, T_Mapping>::absrankof  (int rank)

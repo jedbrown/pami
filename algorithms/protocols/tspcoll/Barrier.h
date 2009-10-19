@@ -54,9 +54,6 @@ inline TSPColl::Barrier<T_Mcast>::
 Barrier (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
-  TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n",
-	 PGASRT_MYNODE, _comm->rank(), _comm->size()));
-
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   this->_sendcomplete = this->_numphases;
   this->_phase        = this->_numphases;
@@ -67,7 +64,7 @@ Barrier (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
 
   for (int i=0; i<this->_numphases; i++)
     {
-      this->_dest[i]      = comm->absrankof((this->_comm->rank() + (1<<i))%this->_comm->size());
+      this->_dest[i]      = comm->absrankof((this->_comm->virtrank() + (1<<i))%this->_comm->size());
       this->_sbuf[i]      = &_dummy;
       this->_sbufln[i]    = 1;
       this->_rbuf[i]      = &_dummy;
