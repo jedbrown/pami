@@ -41,12 +41,12 @@ namespace XMI
       class reqObj
       {
       public:
+        // The request needs to be aligned.  Easiest thing to do is put it first since 
+        // we align the whole structure.
+        XMI_CollectiveRequest_t  req[1];
         MPI                     *factory;
         xmi_event_function       user_done_fn;
         void                    *user_cookie;
-        // \todo:  we need to figure out exact sizes with ccmi....this is a bit of guesswork
-        //         to know if we got enough storage.
-        XMI_CollectiveRequest_t  req[4];
       };
 
       static void client_done(void *context, void *rdata, xmi_result_t res)

@@ -505,11 +505,9 @@ namespace CCMI
       }
       static inline void _compile_time_assert_ ()
       {
-#if 0
         // Compile time assert
         // SendState storage must must fit in a request
         COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase::SendState) <= sizeof(XMI_CollectiveRequest_t));
-#endif
       }
     }; // AllreduceBase
   } // Executor
