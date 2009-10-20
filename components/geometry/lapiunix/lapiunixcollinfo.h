@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/lapiunix/lapiunixcollinfo.h
+ * \file components/geometry/lapi/lapicollinfo.h
  * \brief ???
  */
 
@@ -41,6 +41,7 @@ typedef XMI::Device::LAPIOldm2mModel<XMI::Device::LAPIDevice<XMI::SysDep>,
 
 
 #define XMI_COLL_MCAST_CLASS  LAPIMcastModel
+#define XMI_COLL_SYSDEP_CLASS XMI::SysDep
 
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/protocols/broadcast/multi_color_impl.h"

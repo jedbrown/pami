@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_topology_lapiunix_topology_h__
-#define __components_topology_lapiunix_topology_h__
+#ifndef __components_topology_lapi_topology_h__
+#define __components_topology_lapi_topology_h__
 
 ////////////////////////////////////////////////////////////////////////
-/// \file common/lapiunix/Topology.h
+/// \file common/lapi/Topology.h
 ///
 /// \brief Coordinate/Address Topology Class
 ///
@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "common/TopologyInterface.h"
+#include "util/common.h"
 #include "Mapping.h"
 
 #define net_coord(n)	u.n_torus.coords[n]
@@ -29,7 +30,7 @@
 #define MY_COORDS	&my_coords
 
 #define RANK2COORDS(rank, coords)	\
-	({ assert(0); XMI_SUCCESS; })
+	({ XMI_SUCCESS; })
 //	mapping->task2network(rank, coords, XMI_N_TORUS_NETWORK)
 
 static xmi_network __dummy_net; // never really used
@@ -1678,7 +1679,7 @@ namespace XMI {
 
 }; // namespace XMI
 
-#endif // __components_topology_lapiunix_topology_h__
+#endif // __components_topology_lapi_topology_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

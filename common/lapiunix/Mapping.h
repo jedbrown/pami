@@ -33,7 +33,7 @@ namespace XMI
     {
 
     public:
-      inline Mapping () : 
+      inline Mapping () :
         Interface::Mapping::Base<Mapping,XMI::Memory::HeapMemoryManager >(),
         Interface::Mapping::Torus<Mapping, LAPI_DIMS>(),
         Interface::Mapping::Node<Mapping, LAPI_DIMS>()
@@ -46,11 +46,10 @@ namespace XMI
       size_t    _task;
       size_t    _size;
     public:
-      inline xmi_result_t init(size_t &min_rank, size_t &max_rank)
+      inline xmi_result_t init(size_t task, size_t size)
         {
-          min_rank = 0;
-          max_rank = _size-1;
-
+          _task = task;
+          _size = size;
           return XMI_SUCCESS;
         }
       inline size_t task_impl()

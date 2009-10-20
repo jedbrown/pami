@@ -113,6 +113,7 @@ namespace XMI
 
           _lapi_device.init(&_sysdep);
           _lapi_device.setLapiHandle(_lapi_handle);
+          __global.mapping.init(_myrank, _mysize);
 
           _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));
           _world_range.lo=0;
@@ -124,6 +125,9 @@ namespace XMI
 
           _world_collfactory=_collreg->analyze(_world_geometry);
           _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
+
+          CALL_AND_CHECK_RC((LAPI_Gfence (_lapi_handle)));
+
         }
 
       inline xmi_client_t getClient_impl ()

@@ -57,7 +57,6 @@ namespace XMI
         Interface::MessageDevice<LAPIDevice<T_SysDep> >(),
         _dispatch_id(0)
         {
-//          LAPI_Comm_size(LAPI_COMM_WORLD, (int*)&_peers);
         };
 
       // Implement BaseDevice Routines
@@ -69,17 +68,29 @@ namespace XMI
         };
 
 
-      void setLapiHandle(lapi_handle_t handle)
+      inline void setLapiHandle(lapi_handle_t handle)
         {
           _lapi_handle=handle;
           _g_context_to_device_table[handle]=(void*) this;
+
+          _tf.Util_type = LAPI_GET_THREAD_FUNC;
+          CALL_AND_CHECK_RC((LAPI_Util(_lapi_handle, (lapi_util_t *)&_tf)));
 
           CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
                                             (void *)__xmi_lapi_mcast_fn,
                                             1)));
         }
 
-
+      void lock()
+        {
+          //MUTEX_LOCK(&_adaptor_lock);
+          _tf.mutex_lock(_lapi_handle);
+        }
+      void unlock()
+        {
+          //MUTEX_UNLOCK(&_adaptor_lock);
+          _tf.mutex_unlock(_lapi_handle);
+        }
 
 
       int registerRecvFunction (Interface::RecvFunction_t  recv_func,
@@ -138,7 +149,9 @@ namespace XMI
       inline int advance_impl ()
         {
           lapi_msg_info_t info;
+//          lock();
           LAPI_Msgpoll (_lapi_handle, 5, &info);
+//          unlock();
         };
 
       // Implement MessageDevice Routines
@@ -269,48 +282,8 @@ namespace XMI
           return r;
         }
 
-      static    void * __xmi_lapi_amSendRequestHandler (lapi_handle_t   * hndl,
-                                                        void            * uhdr,
-                                                        uint            * uhdr_len,
-                                                        ulong           * retinfo,
-                                                        compl_hndlr_t  ** comp_h,
-                                                        void           ** uinfo)
-        {
-          lapi_return_info_t        * ri = (lapi_return_info_t *) retinfo;
-          LAPIP2PMessage            * hi = (LAPIP2PMessage *) uhdr;
-          void                       * r = NULL;
-          size_t                      hh =  hi->_dispatch_id;
-
-          LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
-          Interface::RecvFunction_t  recv_func;
-          void                      *recv_func_parm;
-          recv_func      = _dev->_dispatch_table[hh].recv_func;
-          recv_func_parm = _dev->_dispatch_table[hh].recv_func_parm;
-
-          if (!hh) XMI_abort();
-          recv_func(hi->_metadata,
-                    hi->_payload,
-                    hi->_payloadsize0+hi->_payloadsize1,
-                    recv_func_parm,
-                    NULL);
-
-          if (ri->udata_one_pkt_ptr)
-              {
-                if (r && ri->msg_len)
-                  memcpy(r,(void *)ri->udata_one_pkt_ptr,ri->msg_len);
-                ri->ret_flags = LAPI_SEND_REPLY;
-                ri->ctl_flags = LAPI_BURY_MSG;
-                return NULL;
-              }
-          else
-              {
-                ri->ret_flags = LAPI_SEND_REPLY;
-                if (!r) ri->ctl_flags = LAPI_BURY_MSG;
-              }
-          return r;
-        }
-
       lapi_handle_t                              _lapi_handle;
+      lapi_thread_func_t                         _tf;
       T_SysDep                                  *_sysdep;
       size_t                                     _peers;
       size_t                                     _dispatch_id;

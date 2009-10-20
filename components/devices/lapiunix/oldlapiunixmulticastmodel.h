@@ -32,12 +32,12 @@ namespace XMI
         Interface::OldmulticastModel<LAPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message> (device),
         _device(device)
         {
-          assert(0);
+          _dispatch_id = _device.initMcast();
         };
 
       inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
         {
-          assert(0);
+          _device.registerMcastRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
       static void __xmi_lapi_mcast_senddone_fn (lapi_handle_t * handle, void * param, lapi_sh_info_t * info)
@@ -80,8 +80,8 @@ namespace XMI
               }
 
           LAPIMcastSendReq *sreq    = (LAPIMcastSendReq*)request;
-          sreq->_count              = nranks;
-          sreq->_total              = 0;
+          sreq->_count              = 0;
+          sreq->_total              = nranks;
           if(cb_done)
               {
                 sreq->_user_done.function    = cb_done->function;
@@ -96,12 +96,19 @@ namespace XMI
               {
                 for (unsigned count = 0; count < nranks; count ++)
                     {
+#if 0
+                      fprintf(stderr, "Sending Short Lapi Message to %d hsize=%d buf=%p sz=%d\n",
+                              ranks[count],
+                              sizeof(LAPIMcastMessage),
+                              buf,
+                              size);
+#endif
                       assert (hints[count] == XMI_PT_TO_PT_SUBTASK);
                       lapi_xfer_t xfer_struct;
                       xfer_struct.Am.Xfer_type = LAPI_AM_LW_XFER;
                       xfer_struct.Am.flags     = 0;
                       xfer_struct.Am.tgt       = ranks[count];
-                      xfer_struct.Am.hdr_hdl   = (lapi_long_t)_dispatch_id;
+                      xfer_struct.Am.hdr_hdl   = (lapi_long_t)1L;
                       xfer_struct.Am.uhdr      = (void *) &msg;
                       xfer_struct.Am.uhdr_len  = sizeof(LAPIMcastMessage);
                       xfer_struct.Am.udata     = (void *) buf;
@@ -115,12 +122,19 @@ namespace XMI
               {
                 for (unsigned count = 0; count < nranks; count ++)
                     {
+#if 0
+                      fprintf(stderr, "Sending Long Lapi Message to %d hsize=%d buf=%p sz=%d\n",
+                              ranks[count],
+                              sizeof(LAPIMcastMessage),
+                              buf,
+                              size);
+#endif
                       assert (hints[count] == XMI_PT_TO_PT_SUBTASK);
                       lapi_xfer_t xfer_struct;
                       xfer_struct.Am.Xfer_type = LAPI_AM_XFER;
                       xfer_struct.Am.flags     = 0;
                       xfer_struct.Am.tgt       = ranks[count];
-                      xfer_struct.Am.hdr_hdl   = (lapi_long_t)_dispatch_id;
+                      xfer_struct.Am.hdr_hdl   = (lapi_long_t)1L;
                       xfer_struct.Am.uhdr      = (void *) &msg;
                       xfer_struct.Am.uhdr_len  = sizeof(LAPIMcastMessage);
                       xfer_struct.Am.udata     = (void *) buf;

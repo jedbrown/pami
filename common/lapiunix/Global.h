@@ -40,6 +40,9 @@ namespace XMI
 		size_t min, max;
 		mapping.init(min, max);
 
+#warning "Global/Local Topology initializer currently disabled for LAPI Platform"
+#if 0
+
 		XMI::Topology::static_init(&mapping);
 		if (mapping.size() == max - min + 1) {
 			new (&topology_global) XMI::Topology(min, max);
@@ -47,6 +50,7 @@ namespace XMI
 			XMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
 		}
 		topology_global.subTopologyLocalToMe(&topology_local);
+#endif
 	  }
         };
 
