@@ -15,6 +15,7 @@
 #define __components_atomic_gcc_gccbuiltin_h__
 
 #include "components/atomic/Counter.h"
+#include "util/common.h"
 
 namespace XMI
 {

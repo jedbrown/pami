@@ -16,4 +16,11 @@
 
 // Here go things specific to this compiler family
 
+#include "builtins.h"
+#define __sync_fetch_and_or(x,y)	__fetch_and_or(x,y)
+#define __sync_fetch_and_and(x,y)	__fetch_and_and(x,y)
+#define __sync_fetch_and_add(x,y)	__fetch_and_add(x,y)
+#define __sync_fetch_and_sub(x,y)	__fetch_and_add(x,-(y))
+#define __sync_fetch_and_swap(x,y)	__fetch_and_swap(x,y)
+
 #endif // __xmi_compiler_xl_h__

@@ -22,6 +22,9 @@
 #endif
 
 #include "sys/xmi.h"
+#include "Compiler.h"
+#include "Arch.h"
+
 #ifndef MIN
 #define MIN(a,b)  (((a)<(b))?(a):(b))
 #endif
