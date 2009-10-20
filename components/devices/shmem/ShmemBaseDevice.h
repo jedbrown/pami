@@ -17,15 +17,15 @@
 #include "sys/xmi.h"
 
 #include "SysDep.h"
-#include "util/queue/Queue.h"
-
-#include "components/devices/PacketDevice.h"
-#include "ShmemSysDep.h"
-#include "ShmemBaseMessage.h"
-#include "util/fifo/LinearFifo.h"
-#include "util/fifo/FifoPacket.h"
+#include "Arch.h"
 
 #include "components/atomic/Counter.h"
+#include "components/devices/PacketDevice.h"
+#include "components/devices/shmem/ShmemBaseMessage.h"
+
+#include "util/fifo/LinearFifo.h"
+#include "util/fifo/FifoPacket.h"
+#include "util/queue/Queue.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -82,15 +82,6 @@ namespace XMI
         static const size_t metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
         static const size_t payload_size  = T_Packet::payloadSize_impl;
 
-        // ------------------------------------------
-#if 0
-        /// \see XMI::Device::Interface::MessageDevice::setConnection()
-        inline void setConnection_impl (size_t   fromRank,
-                                        void   * arg);
-
-        /// \see XMI::Device::Interface::MessageDevice::getConnection()
-        inline void * getConnection_impl (size_t fromRank);
-#endif
         // ------------------------------------------
 
         ///

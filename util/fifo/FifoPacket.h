@@ -16,7 +16,9 @@
 
 #include <stdint.h>
 
-#include "Packet.h"
+#include "Arch.h"
+
+#include "util/fifo/Packet.h"
 
 #ifndef TRACE
 #define TRACE(x)
@@ -32,7 +34,10 @@ namespace XMI
         public:
           inline FifoPacket () :
               Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
-          {};
+          {
+            COMPILE_TIME_ASSERT(T_HeaderSize%sizeof(xmi_quad_t)==0);
+            COMPILE_TIME_ASSERT(T_PacketSize%sizeof(xmi_quad_t)==0);
+          };
 
           inline void clear_impl ()
           {
@@ -46,30 +51,29 @@ namespace XMI
 
           inline void copyHeader_impl (void * addr)
           {
-            uint8_t * hdr = (uint8_t *) addr;
-            unsigned i;
-
-            for (i = 0; i < T_HeaderSize; i++) hdr[i] = _data[i];
+            if(likely((size_t)addr & 0x0f == 0))
+              Type<xmi_quad_t>::copy<T_HeaderSize>((xmi_quad_t *) addr, _data);
+            else
+              Type<size_t>::copy<T_HeaderSize>((size_t *) addr, (size_t *) _data);
           };
 
           inline void * getPayload ()
           {
-            return (void *) &_data[T_HeaderSize];
+            return (void *) &_data[T_HeaderSize/sizeof(xmi_quad_t)];
           };
 
           inline void copyPayload_impl (void * addr)
           {
-            uint8_t * dst = (uint8_t *) addr;
-            uint8_t * payload = &_data[T_HeaderSize];
-            unsigned i;
-
-            for (i = 0; i < (T_PacketSize - T_HeaderSize); i++) dst[i] = payload[i];
+            if(likely((size_t)addr & 0x0f == 0))
+              Type<xmi_quad_t>::copy<T_PacketSize-T_HeaderSize> ((xmi_quad_t *) addr, &_data[T_HeaderSize]);
+            else
+              Type<size_t>::copy<T_PacketSize-T_HeaderSize> ((size_t *) addr, (size_t *) &_data[T_HeaderSize]);
           };
 
           static const size_t headerSize_impl  = T_HeaderSize;
           static const size_t payloadSize_impl = T_PacketSize - T_HeaderSize;
         private:
-          uint8_t _data[T_PacketSize];
+          xmi_quad_t _data[T_PacketSize/sizeof(xmi_quad_t)];
       };
   };
 };

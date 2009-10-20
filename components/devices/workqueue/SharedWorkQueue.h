@@ -14,37 +14,10 @@
 #ifndef __components_devices_workqueue_sharedworkqueue_h__
 #define __components_devices_workqueue_sharedworkqueue_h__
 
-#include "components/devices/workqueue/WorkQueue.h"
+#include "Arch.h"
 #include "SysDep.h"
+#include "components/devices/workqueue/WorkQueue.h"
 #include "string.h"
-
-#warning This platform-specific code needs to move somewhere else.
-#if defined(__bgp__) and !defined(__bgq__)
-#include <bpcore/ppc450_inlines.h>
-#define mem_sync()	_bgp_msync()
-#define mem_barrier()	_bgp_mbar()
-#define LQU(x, ptr, incr) \
-asm volatile ("lfpdux %0,%1,%2" : "=f"(x), "+Ob"(ptr) : "r"(incr) : "memory")
-#define SQU(x, ptr, incr) \
-asm volatile ("stfpdux %2,%0,%1": "+Ob" (ptr) : "r" (incr), "f" (x) : "memory")
-
-#elif defined(__bgq__)
-
-#include <hwi/include/bqc/A2_inlines.h>
-#ifdef mem_sync
-#warning mem_sync already defined
-#else
-#define mem_sync ppc_msync
-#endif
-#define LQU(x, y, z)
-#define SQU(x, y, z)
-
-#else
-
-#define mem_sync()
-#define mem_barrier()
-
-#endif
 
 //#define WORKSIZE (8*1024)
 //#define WORKSIZE (1024)
@@ -184,43 +157,25 @@ namespace XMI
             //fprintf (stderr, "SharedWorkQueue::shmemcpy() dst = %p, src = %p, n = %d, aligned = %d\n", dst, src, n, isaligned);
             //if ((((((unsigned) dst) | ((unsigned) src)) & 0x0f) == 0) && (n == _worksize))
             bool ismultiple256 = !(n & 0x000000ff);
-#if defined(__bgp__) and !defined(__bgq__) and !defined(__xlC__) and !defined(__xlc__) 
-/// \todo xlC doesn't like LQU/SQU so don't do it for now
+            
+            typedef uint8_t uint2048_t[256];
+            uint2048_t * d = (uint2048_t *) dst;
+            uint2048_t * s = (uint2048_t *) src;
 
-            if (isaligned && ismultiple256)
+            if (ismultiple256)
             {
-              //fprintf (stderr, "SharedWorkQueue::shmemcpy() do dhummer memcpy\n");
-              // src and dst are 16-byte aligned and the length is an entire work unit
-              register unsigned i16 = sizeof(xmi_quad_t);
-              register xmi_quad_t *d = ((xmi_quad_t *)dst) - 1;
-              register xmi_quad_t *s = ((xmi_quad_t *)src) - 1;
-              register double r0, r1, r2, r3, r4, r5, r6, r7, r8;
-
               unsigned i, loop = n >> 8; // --> n/256
               for (i=0; i<loop; i++)
               {
-                LQU(r0,s,i16); LQU(r1,s,i16); LQU(r2,s,i16);
-                LQU(r3,s,i16); LQU(r4,s,i16); LQU(r5,s,i16);
-                SQU(r0,d,i16); SQU(r1,d,i16); SQU(r2,d,i16);
-                LQU(r6,s,i16); LQU(r7,s,i16); LQU(r8,s,i16);
-                SQU(r3,d,i16); SQU(r4,d,i16); SQU(r5,d,i16);
-                LQU(r0,s,i16); LQU(r1,s,i16); LQU(r2,s,i16);
-                SQU(r6,d,i16); SQU(r7,d,i16); SQU(r8,d,i16);
-                LQU(r3,s,i16); LQU(r4,s,i16); LQU(r5,s,i16);
-                SQU(r0,d,i16); SQU(r1,d,i16); SQU(r2,d,i16);
-                LQU(r6,s,i16);
-                SQU(r3,d,i16); SQU(r4,d,i16); SQU(r5,d,i16);
-                SQU(r6,d,i16);
+                //Type<xmi_quad_t>::copy<256>((xmi_quad_t *)d,(xmi_quad_t *)s);
+                //Type<uint32_t>::copy<256>((uint32_t *)d,(uint32_t *)s);
+                Type<size_t>::copy<256>((size_t *)d,(size_t *)s);
+                d++; s++;
               }
             }
             else
-#else
-#warning need some sort of optimized bgq memcopy someday
-		isaligned = isaligned;
-		ismultiple256 = ismultiple256;
-#endif
             {
-              memcpy (dst, src, n);
+              memcpy(dst,src,n);
             }
           }
 

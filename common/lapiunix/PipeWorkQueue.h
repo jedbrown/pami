@@ -14,6 +14,7 @@
 #ifndef __components_pipeworkqueue_lapiunix_pipeworkqueue_h__
 #define __components_pipeworkqueue_lapiunix_pipeworkqueue_h__
 
+#include "Arch.h"
 #include "SysDep.h"
 #include "util/common.h"
 #include "common/PipeWorkQueueInterface.h"
@@ -23,9 +24,6 @@
 // undef/define to control workqueues that are optimized for the flat buffer case.
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
 #undef USE_FLAT_BUFFER	// (4*1024*1024)
-
-#define mem_sync()
-#define mem_barrier()
 
 #define ALLOC_SHMEM(memptr, align, size)	\
 	((XMI_SYSDEP_CLASS *)_sysdep)->mm.memalign((void **)&memptr, align, size)

@@ -16,11 +16,12 @@
 
 #include <errno.h>
 
+#include "Arch.h"
+
 #include "sys/xmi.h"
 
 #include "components/devices/MessageModel.h"
 #include "components/devices/shmem/ShmemPacketDevice.h"
-#include "components/devices/shmem/ShmemSysDep.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x

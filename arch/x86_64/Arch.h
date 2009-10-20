@@ -14,6 +14,8 @@
 #ifndef __xmi_arch_x86_64_h__
 #define __xmi_arch_x86_64_h__
 
+#include "arch/ArchInterface.h"
+
 // Here go things specific to this processor architecture
 
 #endif // __xmi_arch_x86_64_h__

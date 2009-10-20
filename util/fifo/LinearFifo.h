@@ -16,10 +16,13 @@
 
 #include <string.h>
 
+#include "Arch.h"
+#include "SysDep.h"
+
 #include "components/atomic/Counter.h"
 
-#include "Fifo.h"
-#include "Packet.h"
+#include "util/fifo/Fifo.h"
+#include "util/fifo/Packet.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
@@ -77,7 +80,7 @@ namespace XMI
           ///
           /// \brief Initialize the linear fifo with a specific packet buffer.
           ///
-          inline void init_impl (XMI_SYSDEP_CLASS &sysdep)
+          inline void init_impl (SysDep & sysdep)
           {
 //            _npackets = bytes / sizeof(LinearFifoPacket);
 

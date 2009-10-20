@@ -14,6 +14,16 @@
 #ifndef __xmi_arch_a2qpx_h__
 #define __xmi_arch_a2qpx_h__
 
+#include "arch/ArchInterface.h"
+
+#include <hwi/include/bqc/A2_inlines.h>
+
 // Here go things specific to this processor architecture
+
+#undef  mem_sync
+#define mem_sync()    ppc_msync()
+
+#undef  mem_barrier
+#define mem_barrier() __sync_synchronize()
 
 #endif // __xmi_arch_a2qpx_h__
