@@ -17,8 +17,8 @@
 // Here go things specific to this compiler family
 
 #include "builtins.h"
-#define __sync_fetch_and_or(x,y)	__fetch_and_or((volatile int *)x,y)
-#define __sync_fetch_and_and(x,y)	__fetch_and_and((volatile int *)x,y)
+#define __sync_fetch_and_or(x,y)	__fetch_and_or((volatile unsigned int *)x,y)
+#define __sync_fetch_and_and(x,y)	__fetch_and_and((volatile unsigned int *)x,y)
 #define __sync_fetch_and_add(x,y)	__fetch_and_add((volatile int *)x,y)
 #define __sync_fetch_and_sub(x,y)	__fetch_and_add((volatile int *)x,-(y))
 #define __sync_fetch_and_swap(x,y)	__fetch_and_swap((volatile int *)x,y)
