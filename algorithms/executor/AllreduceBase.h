@@ -507,7 +507,8 @@ namespace CCMI
       {
         // Compile time assert
         // SendState storage must must fit in a request
-        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase::SendState) <= sizeof(XMI_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep,T_ConnectionManager>::SendState)
+                            <= sizeof(XMI_CollectiveRequest_t));
       }
     }; // AllreduceBase
   } // Executor
