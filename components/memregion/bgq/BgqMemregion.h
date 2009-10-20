@@ -29,32 +29,59 @@ namespace XMI
                                                   void     * base,
                                                   uint64_t   options)
         {
-          return XMI_UNIMPL;
+		   XMI_assert(base!=NULL);
+
+          // Determine the physical address of the source buffer.
+          uint32_t rc;
+          rc = Kernel_CreateMemoryRegion (&_memregion, base, bytes_in);
+          XMI_assert ( rc == 0 );
+
+          _offset = (uint64_t)base - (uint64_t)_memregion.BaseVa;
+          fprintf(stderr, "DmaMemregionBgqCnk::createDmaMemregion_impl() .. base = %p, _memregion.BaseVa = %p, _offset = %zd\n", base, _memregion.BaseVa, _offset);
+
+          *bytes_out = bytes_in;
+
+          rc = Kernel_CreateGlobalMemoryRegion (&_memregion, &_globmemregion);
+     	   printf("in create, my global va:%p\n",_globmemregion.BaseVa);
+
+          return XMI_SUCCESS;
+	
         }
 
         inline xmi_result_t destroyMemRegion_impl ()
         {
-          return XMI_UNIMPL;
+          return XMI_SUCCESS;;
         }
 
         inline xmi_result_t getInfo_impl (size_t  * bytes,
                                           void   ** base)
         {
-          return XMI_UNIMPL;
-
+		 *bytes = _memregion.Bytes - _offset;
+          *base  = (void *)((uint64_t)_memregion.BaseVa + _offset);
+          return XMI_SUCCESS;;
         }
 
         inline void * getBaseVirtualAddress_impl ()
-        {
-          return NULL;
-        }
+		{
+			return (void *)((uint64_t)_memregion.BaseVa + _offset);
+		}
 
         inline uint64_t getBasePhysicalAddress ()
         {
-          return 0;
+			 return (void *)((uint64_t)_memregion.BasePa + _offset);
+        }
+		
+		  /// \see XMI::CDI::DMA::Memregion::getBaseVirtualAddress
+        inline void * getBaseGlobalVirtualAddress ()
+        {
+          	return (void *)((uint64_t)_globmemregion.BaseVa + _offset);
         }
 
+
       private:
+		Kernel_MemoryRegion_t _memregion; // Memory region associated with the buffer.
+        Kernel_MemoryRegion_t _globmemregion; // Memory region associated with the buffer.
+        size_t _offset;
 
         xmi_context_t _context;
 
