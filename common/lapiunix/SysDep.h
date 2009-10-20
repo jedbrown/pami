@@ -14,7 +14,10 @@
 #ifndef __components_sysdep_lapi_lapisysdep_h__
 #define __components_sysdep_lapi_lapisysdep_h__
 
+#undef __bgp__
+#undef __bgq__
 #define XMI_SYSDEP_CLASS XMI::SysDep
+
 
 #include "common/SysDepInterface.h"
 #include "Platform.h"
@@ -25,7 +28,6 @@
 
 namespace XMI
 {
-    typedef Interface::SysDep<XMI::Memory::HeapMemoryManager> SysDep;
-  };
+  typedef Interface::SysDep<XMI::Memory::HeapMemoryManager> SysDep;
 };
 #endif // __components_sysdep_lapi_lapisysdep_h__

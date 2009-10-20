@@ -53,18 +53,18 @@ namespace CCMI
 
 
       typedef MultiColorCompositeT <1,
-                                    CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
+                                    CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
                                     get_colors,
-                                    XMI_COLL_SYSDEP_CLASS,
+                                    XMI_SYSDEP_CLASS,
                                     XMI_COLL_MCAST_CLASS,
-                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> >
+                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> >
                                     BinomialBcastComposite;
       template<> void BinomialBcastComposite::create_schedule ( void                      * buf,
                                                                 unsigned                    size,
                                                                 XMI_GEOMETRY_CLASS                  * g,
                                                                 CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
       }
 
 
@@ -73,32 +73,32 @@ namespace CCMI
       //get_rcolors<CCMI::Schedule::OneColorRectangle> > RectangleBcastComposite;
 
       typedef MultiColorCompositeT <1,
-                                    CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS>,
+                                    CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS>,
                                     get_colors,
-                                    XMI_COLL_SYSDEP_CLASS,
+                                    XMI_SYSDEP_CLASS,
                                     XMI_COLL_MCAST_CLASS,
-                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> >
+                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> >
                                     RingBcastComposite;
       template<> void RingBcastComposite::create_schedule ( void                      * buf,
                                                             unsigned                    size,
                                                             XMI_GEOMETRY_CLASS        * g,
                                                             CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::RingSchedule<XMI_COLL_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
       }
 
 
       typedef MultiColorBroadcastFactoryT <BinomialBcastComposite,
                                            true_analyze,
-                                           XMI_COLL_SYSDEP_CLASS,
+                                           XMI_SYSDEP_CLASS,
                                            XMI_COLL_MCAST_CLASS,
-                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> > BinomialBcastFactory;
+                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > BinomialBcastFactory;
       //typedef MultiColorBroadcastFactoryT <RectangleBcastComposite, rectangle_analyze> RectBcastFactory;
       typedef MultiColorBroadcastFactoryT <RingBcastComposite,
                                            true_analyze,
-                                           XMI_COLL_SYSDEP_CLASS,
+                                           XMI_SYSDEP_CLASS,
                                            XMI_COLL_MCAST_CLASS,
-                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_COLL_SYSDEP_CLASS> > RingBcastFactory;
+                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > RingBcastFactory;
     };
   };
 };

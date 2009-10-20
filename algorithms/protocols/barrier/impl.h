@@ -25,12 +25,12 @@ namespace CCMI
         return true;
       }
 
-      typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule<XMI_COLL_SYSDEP_CLASS>,
+      typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
                            binomial_analyze,
-                           XMI_COLL_SYSDEP_CLASS,
+                           XMI_SYSDEP_CLASS,
                            XMI_COLL_MCAST_CLASS> BinomialBarrier;
       typedef OldBarrierFactoryT <BinomialBarrier,
-                                  XMI_COLL_SYSDEP_CLASS,
+                                  XMI_SYSDEP_CLASS,
                                   XMI_COLL_MCAST_CLASS> BinomialBarrierFactory;
     };
   };
