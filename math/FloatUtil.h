@@ -86,9 +86,17 @@
 #define BGL_TR_HUMUNGOUS	(0x0000000040000000ull)
 #define BGL_TR_BAD_OPERAND	(0x0000800000000000ull)
 
+#ifdef __bgq__
+#include <hwi/include/bqc/A2_inlines.h>
+#endif
+
 /* ***********************************/
 /* XXX replace with cntlz instruction*/
 /* ***********************************/
+
+#ifdef __bgq__
+#warning This function signature collides with an A2 inline function
+#else
 static inline uint64_t
 cntlz64 (uint64_t u)
 {
@@ -99,9 +107,13 @@ cntlz64 (uint64_t u)
     }
   return i;
 }
+#endif
 /* ***********************************/
 /* Returns 32 if u==0.               */
 /* ***********************************/
+#ifdef __bgq__
+#warning This function signature collides with an A2 inline function
+#else
 static inline uint32_t
 cntlz32 (uint32_t x)
 {
@@ -109,6 +121,7 @@ cntlz32 (uint32_t x)
 asm ("cntlzw %0,%1": "=r" (lz):"r" (x));
   return lz;
 }
+#endif
 /* ***********************************************/
 /* Replace by a 440 instruction.                 */
 /* Returns 32 if u==0.                        */
