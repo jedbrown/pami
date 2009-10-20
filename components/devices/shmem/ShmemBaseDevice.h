@@ -160,13 +160,13 @@ namespace XMI
         ///
         /// \see advance_impl
         ///
-        void advance_sendQ ();
+        int advance_sendQ ();
 
-        void advance_sendQ (size_t peer);
+        int advance_sendQ (size_t peer);
 
-        void advance_doneQ ();
+        int advance_doneQ ();
 
-        void advance_doneQ (size_t peer);
+        int advance_doneQ (size_t peer);
 
         ///
         /// \see XMI::Device::Interface::RecvFunction_t
@@ -404,15 +404,16 @@ namespace XMI
     template <class T_SysDep, class T_Fifo, class T_Packet>
     int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_internal ()
     {
+      int events = 0;
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() >> ... __sendQMask = 0x%0x\n", __global.mapping.task(), __sendQMask));
 
       // Advance any pending send messages.
-      if (__sendQMask != 0) advance_sendQ ();
+      if (__sendQMask != 0) events += advance_sendQ ();
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... __doneQMask = 0x%0x\n", __global.mapping.task(), __doneQMask));
 
       // Advance any pending done messages.
-      if (__doneQMask != 0) advance_doneQ ();
+      if (__doneQMask != 0) events += advance_doneQ ();
 
       // Advance any pending receive messages.
       T_Packet * pkt = NULL;
@@ -436,11 +437,12 @@ namespace XMI
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
           _rfifo->consumePacket (pkt);
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ...  after _rfifo->consumePacket()\n", __global.mapping.task()));
+          events++;
         }
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() <<\n", __global.mapping.task()));
-      return 0;
+      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() << ... events = %d\n", __global.mapping.task(), events));
+      return events;
     }
 
     ///

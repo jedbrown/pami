@@ -22,7 +22,6 @@
 //#define ITERATIONS 1
 //#define ITERATIONS 1000
 #define ITERATIONS 100
-//#define ITERATIONS 1
 
 #ifndef BUFSIZE
 //#define BUFSIZE 2048

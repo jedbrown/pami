@@ -179,21 +179,24 @@ namespace XMI
 
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_sendQ ()
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_sendQ ()
     {
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ () >> _num_procs = %zd\n", __global.mapping.task(), _num_procs));
       unsigned peer;
 
+      int events = 0;
       for (peer = 0; peer < _num_procs; peer++)
-        advance_sendQ (peer);
+        events += advance_sendQ (peer);
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ () <<\n", __global.mapping.task()));
+      return events;
     }
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_sendQ (size_t peer)
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_sendQ (size_t peer)
     {
       ShmemBaseMessage<T_Packet> * msg;
       size_t sequence;
+      int events = 0;
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ (%zd) >>\n", __global.mapping.task(), peer));
       while (!__sendQ[peer].isEmpty())
@@ -209,6 +212,8 @@ namespace XMI
             {
               if (msg->done())
                 {
+                  events++;
+
                   // The message has completed processing the source data.
                   // Remove from the send queue and advance next message
                   // before invoking the message's done callback.
@@ -251,20 +256,25 @@ namespace XMI
               break;
             }
         }
+        return events;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_doneQ ()
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_doneQ ()
     {
       size_t peer;
+      int events = 0;
 
       for (peer = 0; peer < _num_procs; peer++)
-        advance_doneQ (peer);
+        events += advance_doneQ (peer);
+
+      return events;
     };
 
     template <class T_SysDep, class T_Fifo, class T_Packet>
-    void ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_doneQ (size_t peer)
+    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_doneQ (size_t peer)
     {
+      int events = 0;
       size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
       ShmemBaseMessage<T_Packet> * msg;
 
@@ -277,14 +287,16 @@ namespace XMI
             // The remote rank has completed processing the packets
             // associated with this message. Remove from the done queue
             // and invoke the message's done callback.
+            events++;
             popDoneQueueHead (peer);
             msg->executeCallback ();
           }
           else
           {
-            return;
+            return events;
           }
         }
+      return events;
     };
   };
 };
