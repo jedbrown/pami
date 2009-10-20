@@ -180,15 +180,30 @@ extern "C"
     } u;
   } xmi_coord_t;
 
+  /* should this be size_t????? */
+  typedef int CA_Mask;
+
+#define CA_MASK_NUM_BYTES  (sizeof(CA_Mask))
+#define CA_BYTE_SIZE       (sizeof(char))
+#define CA_TOTAL_BITS      (CA_BYTE_SIZE * CA_MASK_NUM_BYTES)
+#define CA_NUM_ELEMENTS    1
+
+  /* compact list of informative attributes in the form of bits*/
+  typedef struct
+  {
+    /* initially 1 list element of 32 bits */
+    CA_Mask bits[CA_NUM_ELEMENTS];
+  } xmi_ca_t;
+
+  
   /**
    * \brief A metadata structure to describe a collective protocol
    */
   typedef struct
   {
-//  \todo: attribute definition
-    //xmi_ca_list_t geometry_attrs; /**< geometry attributes */
-    //xmi_ca_list_t buffer_attrs;  /**< buffer attributes (contig, alignment) */
-    //xmi_ca_list_t misc_attributes; /**< other attributes (i.e. threaded) */
+    xmi_ca_t geometry; /**< geometry attributes */
+    xmi_ca_t buffer;  /**< buffer attributes (contig, alignment) */
+    xmi_ca_t misc; /**< other attributes (i.e. threaded) */
     char name[32]; /** < name of algorithm */
   } xmi_metadata_t;
 

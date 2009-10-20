@@ -344,6 +344,11 @@ namespace XMI
                                                           xmi_xfer_type_t ctype,
                                                           int *lists_lengths)
         {
+          MPIGeometry *new_geometry = (MPIGeometry*) geometry;
+          MPICollfactory  *collfactory =  (MPICollfactory*)
+            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
+          return collfactory->algorithms_num(colltype, lists_lengths);
+          
           return XMI_UNIMPL;
         }
 
