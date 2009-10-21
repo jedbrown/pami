@@ -105,10 +105,10 @@ namespace XMI
           ///
           inline void setProducers (unsigned producers, unsigned producer)
           {
-            XMI_assert_debug(producers > 0);
-            XMI_assert_debug(producers <= XMI_MAX_PROC_PER_NODE);
-            XMI_assert_debug(producer >= 0);
-            XMI_assert_debug(producer < producers);
+            XMI_assert_debugf(producers > 0, "WorkQueue requires at least one producer, got %d\n", producers);
+            XMI_assert_debugf(producers <= XMI_MAX_PROC_PER_NODE, "WorkQueue producers must be less than %d, got %d\n", XMI_MAX_PROC_PER_NODE, producers);
+            XMI_assert_debugf(producer >= 0, "WorkQueue producer number must be positive, got %d\n", producer);
+            XMI_assert_debugf(producer < producers, "WorkQueue producer number must be less than producers (%d !< %d)\n", producer, producers);
 
             _producers = producers;
             _producer  = producer;
@@ -129,10 +129,10 @@ namespace XMI
           ///
           inline void setConsumers (unsigned consumers, unsigned consumer)
           {
-            XMI_assert_debug(consumers > 0);
-            XMI_assert_debug(consumers <= XMI_MAX_PROC_PER_NODE);
-            XMI_assert_debug(consumer >= 0);
-            XMI_assert_debug(consumer < consumers);
+            XMI_assert_debugf(consumers > 0, "WorkQueue requires at least one consumer, got %d\n", consumers);
+            XMI_assert_debugf(consumers <= XMI_MAX_PROC_PER_NODE, "WorkQueue consumers must be less than %d, got %d\n", XMI_MAX_PROC_PER_NODE, consumers);
+            XMI_assert_debugf(consumer >= 0, "WorkQueue consumer number must be positive, got %d\n", consumer);
+            XMI_assert_debugf(consumer < consumers, "WorkQueue consumer number must be less than consumers (%d !< %d)\n", consumer, consumers);
 
             _consumers = consumers;
             _consumer  = consumer;

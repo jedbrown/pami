@@ -21,8 +21,11 @@
 #include "common/NodeMappingInterface.h"
 #include "sys/xmi.h"
 #include <mpi.h>
+#ifdef EXAMPLE_CODE
 #include <pmi.h>
+#endif // EXAMPLE_CODE
 #include <errno.h>
+#include <unistd.h>
 
 #define XMI_MAPPING_CLASS XMI::Mapping
 
@@ -64,6 +67,10 @@ namespace XMI
       inline xmi_result_t init(size_t &min_rank, size_t &max_rank,
 				size_t &num_local, size_t **local_ranks)
         {
+#ifdef EXAMPLE_CODE
+		// This code uses MPICH's "smpd" process manager to get local node
+		// information.  A more-general method follows.
+		//
 		int num_ranks, mine;
 		size_t *ranks, r, q;
 		int err;
@@ -157,6 +164,65 @@ namespace XMI
 			}
 			_mapcache[r] = (q << 16) | ix;
 		}
+#else // EXAMPLE_CODE
+		int num_ranks;
+		size_t r, q;
+		int err;
+		char *host, *hosts;
+
+		// global process/rank info
+		MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+		_size = num_ranks;
+		MPI_Comm_rank(MPI_COMM_WORLD, &num_ranks);
+		_task = num_ranks;
+
+		// local node process/rank info
+		err = posix_memalign((void **)&_mapcache, sizeof(void *), sizeof(*_mapcache) * _size);
+		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+		err = posix_memalign((void **)&_nodecache, sizeof(void *), sizeof(*_nodecache) * _size);
+		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+		err = posix_memalign((void **)&_peers, sizeof(void *), sizeof(*_peers) * _size);
+		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+
+		err = posix_memalign((void **)&host, sizeof(void *), 128);
+		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+		err = gethostname(host, 128);
+		XMI_assertf(err == 0, "gethostname failed, errno %d", errno);
+
+		err = posix_memalign((void **)&hosts, sizeof(void *), 128 * _size);
+		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+
+		err = MPI_Allgather(host, 128, MPI_BYTE, hosts, 128, MPI_BYTE, MPI_COMM_WORLD);
+		XMI_assertf(err == 0, "allgather failed, err %d", err);
+
+		_nSize = 0;
+		_tSize = 1;
+		_npeers = 0;
+		for (r = 0; r < _size; ++r) {
+			// search backwards for anyone with the same hostname...
+			for (q = r - 1; (int)q >= 0 && strcmp(hosts + 128 * r, hosts + 128 * q) != 0; --q);
+			if ((int)q >= 0) {
+				// already saw this hostname... add new peer...
+				uint32_t u = _mapcache[q];
+				uint32_t t = (u & 0x0000ffff) + 1;
+				_mapcache[r] = (u & 0xffff0000) | t;
+				if (t >= _tSize) _tSize = t + 1;
+			} else {
+				// new hostname... first one for that host... give it T=0
+				_mapcache[r] = (_nSize << 16) | 0;
+				_nodecache[_nSize++] = r;
+			}
+			if (strcmp(host, hosts + 128 * r) == 0) {
+				_peers[_npeers++] = r;
+			}
+		}
+		free(host);
+		free(hosts);
+		*local_ranks = _peers;
+		num_local = _npeers;
+		min_rank = 0;
+		max_rank = _size-1;
+#endif // EXAMPLE_CODE
 		// At this point, _mapcache[rank] -> [index1]|[index2], where:
 		// _nodecache[index1] -> "first" rank on that node
 		// (at target node)_peers[index2] -> rank
