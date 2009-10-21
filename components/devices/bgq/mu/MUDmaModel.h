@@ -153,7 +153,7 @@ namespace XMI
             // Set the destination torus address and reception fifo.
             // This is terribly inefficient.
             MUHWI_Destination dst;
-            size_t addr[5];
+            size_t addr[BGQ_TDIMS];
             __global.mapping.task2torus (target_rank, addr);
             dst.Destination.A_Destination = addr[0];
             dst.Destination.B_Destination = addr[1];
@@ -279,7 +279,7 @@ namespace XMI
             // Set the destination torus address and reception fifo.
             // This is terribly inefficient.
             MUHWI_Destination dst;
-            size_t addr[5];
+            size_t addr[BGQ_TDIMS];
             __global.mapping.task2torus (target_rank, addr);
             dst.Destination.A_Destination = addr[0];
             dst.Destination.B_Destination = addr[1];

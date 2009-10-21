@@ -232,8 +232,27 @@ namespace XMI
           addr[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
           addr[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
           addr[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
-//        addr[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
-//        addr[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
+
+          return XMI_SUCCESS;
+        }
+
+        ///
+        /// \brief Get the BGQ torus address for a task
+        /// \see XMI::Interface::Mapping::Torus::task2torus()
+        ///
+        /// \todo Error path
+        ///
+        inline xmi_result_t task2global (size_t task, size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS])
+        {
+          uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
+
+          addr[0] = (abcdept >> 24) & 0x00000003f; // 'a' coordinate
+          addr[1] = (abcdept >> 18) & 0x00000003f; // 'b' coordinate
+          addr[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
+          addr[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
+          addr[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
+          addr[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
+          addr[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
 
           return XMI_SUCCESS;
         }

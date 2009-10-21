@@ -87,7 +87,7 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device, xmi_context_t contex
 
   // The destination of the remote direct put is this (local) rank.
   MUHWI_Destination dst;
-  size_t addr[5];
+  size_t addr[BGQ_TDIMS];
   size_t local_rank = __global.mapping.task ();
   __global.mapping.task2torus (local_rank, addr);
   dst.Destination.A_Destination = addr[0];
