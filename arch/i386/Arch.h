@@ -18,4 +18,10 @@
 
 // Here go things specific to this processor architecture
 
+inline void mem_sync()
+{
+  // todo:  implement
+}
+
+
 #endif // __xmi_arch_i386_h__
