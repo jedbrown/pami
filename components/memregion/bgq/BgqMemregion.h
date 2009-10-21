@@ -66,7 +66,7 @@ namespace XMI
 			return (void *)((uint64_t)_memregion.BaseVa + _offset);
 		}
 
-        inline uint64_t getBasePhysicalAddress ()
+        inline void* getBasePhysicalAddress ()
         {
 			 return (void *)((uint64_t)_memregion.BasePa + _offset);
         }
