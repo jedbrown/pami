@@ -231,30 +231,68 @@ namespace XMI
           LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
           lapi_mcast_dispatch_info_t ldi = _dev->_mcast_dispatch_lookup[dispatch_id];
 
+          std::list<LAPIMcastRecvMessage*>::iterator it;
+          int found=0;
+          for(it=_dev->_mcastrecvQ.begin();it != _dev->_mcastrecvQ.end(); it++)
+              {
+                if( (*it)->_conn == msg->_conn &&
+                    (*it)->_dispatch_id == msg->_dispatch_id)
+                    {
+                      found = 1;
+                      break;
+                    }
+              }
+
           LAPIMcastRecvMessage  m_store;
           LAPIMcastRecvMessage *mcast = &m_store;
-          ldi.recv_func (&msg->_info[0],
-                         msg->_info_count,
-                         msg->_peer,
-                         msg->_size,
-                         msg->_conn,
-                         ldi.async_arg,
-                         &rcvlen,
-                         &rcvbuf,
-                         &pwidth,
-                         &cb_done);
-          assert(rcvlen <= (size_t)msg->_size);
-          mcast->_conn        = msg->_conn;
-          mcast->_done_fn     = cb_done.function;
-          mcast->_cookie      = cb_done.clientdata;
-          mcast->_buf         = rcvbuf;
-          mcast->_size        = rcvlen;
-          mcast->_pwidth      = pwidth;
-          mcast->_hint        = XMI_PT_TO_PT_SUBTASK;
-          mcast->_op          = XMI_UNDEFINED_OP;
-          mcast->_dtype       = XMI_UNDEFINED_DT;
-          mcast->_counter     = 0;
-          mcast->_dispatch_id = dispatch_id;
+          if(!found)
+              {
+                ldi.recv_func (&msg->_info[0],
+                               msg->_info_count,
+                               msg->_peer,
+                               msg->_size,
+                               msg->_conn,
+                               ldi.async_arg,
+                               &rcvlen,
+                               &rcvbuf,
+                               &pwidth,
+                               &cb_done);
+                assert(rcvlen <= (size_t)msg->_size);
+                mcast->_conn        = msg->_conn;
+                mcast->_done_fn     = cb_done.function;
+                mcast->_cookie      = cb_done.clientdata;
+                mcast->_buf         = rcvbuf;
+                mcast->_size        = rcvlen;
+                mcast->_pwidth      = pwidth;
+                mcast->_hint        = XMI_PT_TO_PT_SUBTASK;
+                mcast->_op          = XMI_UNDEFINED_OP;
+                mcast->_dtype       = XMI_UNDEFINED_DT;
+                mcast->_counter     = 0;
+                mcast->_dispatch_id = dispatch_id;
+//                _dev->enqueue(mcast);
+              }
+          else
+              {
+                mcast = (*it);
+              }
+
+
+          if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
+              {
+                if(mcast->_done_fn)
+                  mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                _dev->_mcastrecvQ.remove(mcast);
+                free (msg);
+                if(found)
+                  free (mcast);
+
+                r             = NULL;
+                *comp_h       = NULL;
+                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ctl_flags = LAPI_BURY_MSG;
+              }
+
+
 
           if (ri->udata_one_pkt_ptr)
               {
@@ -262,11 +300,12 @@ namespace XMI
                   memcpy(rcvbuf,
                          (void *)ri->udata_one_pkt_ptr,
                          ri->msg_len);
+                r             = NULL;
+                *comp_h       = NULL;
                 ri->ret_flags = LAPI_SEND_REPLY;
                 ri->ctl_flags = LAPI_BURY_MSG;
                 if(cb_done.function)
                   cb_done.function(NULL, cb_done.clientdata, XMI_SUCCESS);
-                return NULL;
               }
           else
               {

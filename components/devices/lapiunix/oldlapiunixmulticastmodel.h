@@ -176,7 +176,19 @@ namespace XMI
                                 xmi_op                   op     = XMI_UNDEFINED_OP,
                                 xmi_dt                   dtype  = XMI_UNDEFINED_DT)
         {
-          assert(0);
+          LAPIMcastRecvMessage *msg = (LAPIMcastRecvMessage*)malloc(sizeof(*msg));
+          msg->_dispatch_id = _dispatch_id;
+          msg->_conn     = conn_id;
+          msg->_done_fn  = cb_done->function;
+          msg->_cookie   = cb_done->clientdata;
+          msg->_buf      = buf;
+          msg->_size     = size;
+          msg->_pwidth   = pwidth;
+          msg->_counter  = 0;
+          //          msg->_hint     = hint;
+          //          msg->_op       = op;
+          //          msg->_dtype    = dtype;
+          _device.enqueue(msg);
 	  return 0;
         }
 

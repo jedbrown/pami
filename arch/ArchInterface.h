@@ -14,10 +14,6 @@
 #ifndef __xmi_arch_common_h__
 #define __xmi_arch_common_h__
 
-#define mem_sync()    __sync_synchronize()
-#define mem_barrier() __sync_synchronize()
-
-
 ///
 /// \brief Encapuslating class for static methods which allows partial template specialization
 ///
