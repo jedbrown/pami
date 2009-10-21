@@ -116,17 +116,6 @@ extern "C"
   }
     xmi_dt;
 
-  typedef void*   xmi_geometry_t;
-  typedef size_t  xmi_algorithm_t;
-
-  typedef struct
-  {
-    size_t lo;
-    size_t hi;
-  }
-    xmi_geometry_range_t;
-
-
   /**
    * \brief Network type
    */
@@ -1044,8 +1033,8 @@ extern "C"
                   break;                                                \
             }                                                           \
       }                                                                 \
-  while (0);                                                            \
-                                                                        \
+  while (0);
+
   /* ************************************************************************* */
   /* ********* Transfer Types, used by geometry and xfer routines ************ */
   /* ************************************************************************* */
@@ -1075,6 +1064,17 @@ extern "C"
   /* ************************************************************************* */
   /* **************     Geometry (like groups/communicators)  **************** */
   /* ************************************************************************* */
+
+  typedef void*   xmi_geometry_t;
+  typedef size_t  xmi_algorithm_t;
+
+  typedef struct
+  {
+    size_t lo;
+    size_t hi;
+  }
+    xmi_geometry_range_t;
+
   /**
    * \brief Initialize the geometry
    *

@@ -426,7 +426,7 @@ extern "C" xmi_result_t XMI_Geometry_initialize (xmi_context_t               con
 }
 
 ///
-/// \copydoc XMI_Geometry_initialize
+/// \copydoc XMI_Geometry_world
 ///
 extern "C" xmi_result_t XMI_Geometry_world (xmi_context_t               context,
                                  xmi_geometry_t            * world_geometry)
