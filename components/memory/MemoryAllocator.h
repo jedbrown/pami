@@ -59,9 +59,11 @@ namespace XMI
           // Allocate and construct a new set of objects
           unsigned i;
 #ifdef USE_MEMALIGN
-          posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
+          int rc = posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
+          XMI_assertf(rc==0, "posix_memalign failed for context, errno=%d\n", errno);
 #else
           object = (memory_object_t*)malloc(sizeof(memory_object_t)*10);
+          XMI_assertf((((unsigned long)object) & (T_ObjAlign-1))== 0, "object (%p) not aligned on %#X bytes.\n", object, T_ObjAlign);
 #endif
           // "return" the newly allocated objects to the pool of free objects.
           for (i=1; i<10; i++) returnObject ((void *) &object[i]);
