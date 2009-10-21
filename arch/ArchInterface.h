@@ -54,6 +54,7 @@ void Type<uint32_t>::copy (uint32_t * dst, uint32_t * src)
   }
 };
 
+#ifndef XMI_NO_SIZE_T_PROTO
 ///
 /// \brief Template specialization for size_t copies.
 ///
@@ -72,7 +73,9 @@ void Type<size_t>::copy (size_t * dst, size_t * src)
     for (i=0; i<(N%(sizeof(size_t))); i++) d[i] = s[i];
   }
 };
-
+#else // XMI_NO_SIZE_T_PROTO
+ #warning (XMI_NO_SIZE_T_PROTO) size_t and unsigned definitions conflict
+#endif // XMI_NO_SIZE_T_PROTO
 
 
 #endif // __xmi_arch_common_h__
