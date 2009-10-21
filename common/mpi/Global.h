@@ -43,7 +43,7 @@ namespace XMI
 	  // Time gets its own clockMHz
 	  Interface::Global<XMI::Global>::time.init(0);
 	  {
-		size_t min, max;
+		size_t min, max, num, *ranks;
                 int rc = MPI_Init(0, NULL);
                 if(rc != MPI_SUCCESS)
                     {
@@ -52,18 +52,16 @@ namespace XMI
                     }
                 atexit(shutdownfunc);
 
-                mapping.init(min, max);
+                mapping.init(min, max, num, &ranks);
 
 		XMI::Topology::static_init(&mapping);
-#warning "Global/Local Topology initializer currently disabled for MPI Platform"
-#if 0
 		if (mapping.size() == max - min + 1) {
 			new (&topology_global) XMI::Topology(min, max);
 		} else {
 			XMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
 		}
-		topology_global.subTopologyLocalToMe(&topology_local);
-#endif                
+		new (&topology_local) XMI::Topology(ranks, num);
+		// could try to optimize list into range, etc...
 	  }
         };
 

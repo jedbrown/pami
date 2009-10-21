@@ -7,6 +7,8 @@
 
 #define XMI_CONTEXT_CLASS XMI::Context
 
+#define ENABLE_GENERIC_DEVICE
+
 #include <stdlib.h>
 #include <string.h>
 #include <mpi.h>
@@ -21,6 +23,9 @@
 #include "SysDep.h"
 #include "components/geometry/mpi/mpicollfactory.h"
 #include "components/geometry/mpi/mpicollregistration.h"
+#ifdef ENABLE_GENERIC_DEVICE
+#include "components/devices/generic/GenericDevice.h"
+#endif
 #include "Mapping.h"
 #include <new>
 #include <map>
@@ -43,7 +48,11 @@ namespace XMI
       inline Context (xmi_client_t client, size_t id) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
-        _id (id)
+        _id (id),
+	_sysdep()
+#ifdef ENABLE_GENERIC_DEVICE
+	, _generic(_sysdep)
+#endif
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
@@ -57,6 +66,10 @@ namespace XMI
 
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
+
+#ifdef ENABLE_GENERIC_DEVICE
+	  _generic.init (_sysdep);
+#endif
 
         }
 
@@ -114,6 +127,9 @@ namespace XMI
           for (i=0; i<maximum && events==0; i++)
               {
                 events += _mpi.advance_impl();
+#ifdef ENABLE_GENERIC_DEVICE
+	        events += _generic.advance();
+#endif
               }
           return events;
         }
@@ -419,6 +435,9 @@ namespace XMI
       size_t                    _id;
       void                     *_dispatch[1024];
       SysDep                    _sysdep;
+#ifdef ENABLE_GENERIC_DEVICE
+      XMI::Device::Generic::Device _generic;
+#endif
       MemoryAllocator<1024,16>  _request;
       MPIDevice                 _mpi;
       MPICollreg               *_collreg;

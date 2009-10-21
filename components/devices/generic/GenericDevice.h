@@ -127,7 +127,7 @@ namespace Generic {
 	__lastThreadUsed(0),
 	__sysdep(sd)
 	{
-		for (int x = 0; x < NUM_CHANNELS; ++x) {
+		for (int x = 0; x < XMI_MAX_THREAD_PER_PROC; ++x) {
 			new (&__Threads[x]) ThreadQueue(sd);
 		}
 		//
@@ -161,7 +161,7 @@ namespace Generic {
 		// running at a time so perhaps the queue can be shared, as long as
 		// an app thread is not preempted in the middle of a queue operation.
 		//
-		for (int x = 0; x < MAX_THREADS_PER_PROC; ++x) {
+		for (int x = 0; x < XMI_MAX_THREAD_PER_PROC; ++x) {
 			new (&__GenericQueue[x]) MultiQueue<2, 1>();
 		}
 		xmi_result_t rc;
@@ -169,8 +169,8 @@ namespace Generic {
 
 #ifdef USE_WAKEUP_VECTORS
 		size_t me = __global.mapping.t(); // only works on BG/P...?
-		rc = __sysdep.wakeupManager().allocWakeVecs((int)NUM_PROCESSES,
-			NUM_CHANNELS * MAX_REG_THREADS, (int)me,
+		rc = __sysdep.wakeupManager().allocWakeVecs((int)XMI_MAX_PROC_PER_NODE,
+			XMI_MAX_THREAD_PER_PROC * MAX_REG_THREADS, (int)me,
 			&__wakeupVectors);
 		XMI_assert(rc == XMI_SUCCESS);
 #endif /* USE_WAKEUP_VECTORS */
@@ -226,7 +226,7 @@ namespace Generic {
 		// messages are only posted to channels backed by comm_threads.
 		// This may not always be the best option?
 		//
-		for (x = 1; x < NUM_CORES && y < NUM_CHANNELS; ++x) {
+		for (x = 1; x < NUM_CORES && y < XMI_MAX_THREAD_PER_PROC; ++x) {
 			if (!(cores & (1 << x))) continue;
 			id = Kernel_MkInterruptID(0, 24 + x);
 			// Note! this must be setup as a lockbox mutex!
@@ -256,7 +256,7 @@ namespace Generic {
 #endif
 		__maxHWThreads = y;
 		__maxSWThreads = y + 1;
-		// assert(__maxSWThreads <= NUM_CHANNELS);
+		// assert(__maxSWThreads <= XMI_MAX_THREAD_PER_PROC);
 	}
 
 	/// \brief Initialize the Generic Device and all subdevices.

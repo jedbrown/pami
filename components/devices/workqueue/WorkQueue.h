@@ -106,7 +106,7 @@ namespace XMI
           inline void setProducers (unsigned producers, unsigned producer)
           {
             XMI_assert_debug(producers > 0);
-            XMI_assert_debug(producers <= NUM_CORES);
+            XMI_assert_debug(producers <= XMI_MAX_PROC_PER_NODE);
             XMI_assert_debug(producer >= 0);
             XMI_assert_debug(producer < producers);
 
@@ -130,7 +130,7 @@ namespace XMI
           inline void setConsumers (unsigned consumers, unsigned consumer)
           {
             XMI_assert_debug(consumers > 0);
-            XMI_assert_debug(consumers <= NUM_CORES);
+            XMI_assert_debug(consumers <= XMI_MAX_PROC_PER_NODE);
             XMI_assert_debug(consumer >= 0);
             XMI_assert_debug(consumer < consumers);
 

@@ -27,7 +27,7 @@ class ProgressFunctionMdl;
 class ProgressFunctionMsg;
 
 typedef XMI::Device::Generic::GenericAdvanceThread ProgressFunctionThr;
-typedef XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, NUM_CORES> ProgressFunctionDev;
+typedef XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, XMI_MAX_THREAD_PER_PROC> ProgressFunctionDev;
 
 }; //-- Device
 }; //-- XMI
@@ -86,7 +86,7 @@ protected:
 
 private:
 	//friend class ProgressFunctionDev;
-	friend class XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, NUM_CORES>;
+	friend class XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, XMI_MAX_THREAD_PER_PROC>;
 
 	inline XMI::Device::MessageStatus __advanceThread(ProgressFunctionThr *thr) {
 		// TBD: optimize away virt func call - add method

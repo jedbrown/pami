@@ -37,7 +37,9 @@ namespace XMI
         /// \see XMI::Atomic::Interface::Counter::init
         void init_impl (T_Sysdep *sd)
         {
-          fetch_and_clear_impl ();
+	  // MUST NOT DO THIS! other procs might be already using it.
+	  // TODO: find a way to ensure memory is zeroed once and only once.
+          //fetch_and_clear_impl ();
         };
 
         /// \see XMI::Atomic::Interface::Counter::fetch

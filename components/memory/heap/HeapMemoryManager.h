@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_components_memory_shmem_sharedmemorymanager_h__
-#define __xmi_components_memory_shmem_sharedmemorymanager_h__
+#ifndef __xmi_components_memory_heap_heapmemorymanager_h__
+#define __xmi_components_memory_heap_heapmemorymanager_h__
 
 #include "components/memory/MemoryManager.h"
 
@@ -46,4 +46,4 @@ namespace XMI
   };
 };
 
-#endif // __xmi_components_memory_shmem_sharedmemorymanager_h__
+#endif // __xmi_components_memory_heap_heapmemorymanager_h__

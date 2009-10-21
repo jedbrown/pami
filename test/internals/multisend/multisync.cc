@@ -81,7 +81,10 @@ int main(int argc, char ** argv) {
 	size_t num_tasks = configuration.value.intval;
 	fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
-#warning ensure only local ranks
+	if (__global.topology_local.size() < 2) {
+		fprintf(stderr, "This test requires more than one \"local\" rank.\n");
+		exit(1);
+	}
 
 // END standard setup
 // ------------------------------------------------------------------------

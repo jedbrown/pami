@@ -28,9 +28,11 @@
 /** \brief Number of axii on BG Torus/Mesh network. */
 
 // TODO:  make these queryable by the mapping
-#define NUM_STD_AXIS	1
+#define NUM_STD_AXIS	2
 /** \brief Total number of axii on BG (includes local cores). */
-#define NUM_AXIS	1
+#define NUM_AXIS	2
+
+typedef size_t axis_array_t[NUM_STD_AXIS];
 
 /** \brief Type which holds a set of coordinates (axii - X,Y,Z,T) */
 typedef size_t axii_t[NUM_AXIS];
@@ -249,7 +251,7 @@ namespace CCMI
     static inline unsigned coord2rank(XMI_MAPPING_CLASS *map, axii_t x)
     {
       size_t rank = XMI_UNDEFINED_RANK;
-      xmi_result_t rc = map->task2torus(rank, (size_t (&)[NUM_STD_AXIS])x);
+      xmi_result_t rc = map->task2global(rank, (size_t (&)[NUM_STD_AXIS])x);
       return(rc == XMI_SUCCESS ? rank : XMI_UNDEFINED_RANK);
     }
 
@@ -263,7 +265,7 @@ namespace CCMI
  */
     static inline void rank2coord(XMI_MAPPING_CLASS *map, size_t rank, axii_t x)
     {
-      map->torus2task((size_t (&)[NUM_STD_AXIS])x, rank);
+      map->global2task((axis_array_t &)x, rank);
     }
 
 /**
@@ -1738,7 +1740,7 @@ namespace CCMI
         unsigned coords[XMI_TORUS_NDIMS];
         XMI_COPY_COORDS(coords, _rect->x0);
         coords[XMI_T_DIM] += (_color % _rect->xs[XMI_T_DIM]);
-        _mapping->torus2task((size_t (&)[NUM_STD_AXIS])coords, (size_t)r);
+        _mapping->global2task((axis_array_t &)coords, (size_t)r);
 
         CCMI::Schedule::OneColorRectangle::init(r, op,
                                                 /* not used: */ start, nphases, nmessages);

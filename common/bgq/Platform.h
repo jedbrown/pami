@@ -18,4 +18,8 @@
 #define NUM_CORES	16
 #define NUM_SMT		4
 
+// these are based on what the CNK allows
+#define XMI_MAX_PROC_PER_NODE	(NUM_CORES * NUM_SMT)
+#define XMI_MAX_THREAD_PER_PROC	(NUM_CORES * NUM_SMT)
+
 #endif // __common_bgq_platform_h__

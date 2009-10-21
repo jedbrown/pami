@@ -188,7 +188,7 @@ public:
 
 private:
 	size_t _me;
-	XMI_PIPEWORKQUEUE_CLASS _wq[NUM_CORES /* * NUM_THREADS */];
+	XMI_PIPEWORKQUEUE_CLASS _wq[XMI_MAX_PROC_PER_NODE];
 }; // class WQRingBcastMdl
 
 void WQRingBcastMsg::complete() {

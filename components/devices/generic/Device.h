@@ -54,9 +54,6 @@ typedef XMI::Counter::Pthread<XMI_SYSDEP_CLASS> GenericDeviceCounter;
 
 
 // For BG/P, NUM_CORES is the max number of threads.
-#define NUM_PROCESSES	NUM_CORES	// at most
-#define NUM_CHANNELS	NUM_CORES
-#define MAX_THREADS_PER_PROC	NUM_CORES // * NUM_THREADS...
 #define MAX_REG_THREADS	16	// >= total max threads in all subdevices
 
 ////////////////////////////////////////////////////////////////////////
@@ -213,15 +210,15 @@ private:
 	//////////////////////////////////////////////////////////////////
 	/// \brief Storage for the queue of messages
 	//////////////////////////////////////////////////////////////////
-	MultiQueue<2, 1> __GenericQueue[MAX_THREADS_PER_PROC];
+	MultiQueue<2, 1> __GenericQueue[XMI_MAX_THREAD_PER_PROC];
 
 	//////////////////////////////////////////////////////////////////
 	/// \brief Storage for the queue of threads (a.k.a. channels)
 	//////////////////////////////////////////////////////////////////
-	ThreadQueue __Threads[NUM_CHANNELS];
+	ThreadQueue __Threads[XMI_MAX_THREAD_PER_PROC];
 	int __lastThreadUsed;
 #if defined(__bgp__) and !defined(__bgq__)
-	unsigned _thrIPI[NUM_CHANNELS];
+	unsigned _thrIPI[NUM_CORES];
 #endif
 	int __maxHWThreads;
 	int __maxSWThreads;
