@@ -17,7 +17,9 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
+#include "components/devices/generic/SubDevice.h"
 #include "sys/xmi.h"
+#include "Global.h"
 #include "components/devices/MulticastModel.h"
 
 namespace XMI {

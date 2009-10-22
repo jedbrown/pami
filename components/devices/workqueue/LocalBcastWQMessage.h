@@ -139,7 +139,7 @@ public:
 		}
 	}
 
-	inline bool popstMulticast_impl(xmi_multicast_t *mcast);
+	inline bool postMulticast_impl(xmi_multicast_t *mcast);
 private:
 	XMI::Device::WorkQueue::SharedWorkQueue _shared;
 	unsigned _peer;
@@ -155,7 +155,7 @@ inline XMI::Device::MessageStatus LocalBcastWQMessage::advanceThread(XMI::Device
 	return __advanceThread((LocalBcastWQThread *)t);
 }
 
-inline bool LocalBcastWQModel::popstMulticast_impl(xmi_multicast_t *mcast) {
+inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
 	XMI_TOPOLOGY_CLASS *src_topo = (XMI_TOPOLOGY_CLASS *)mcast->src_participants;
