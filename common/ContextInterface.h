@@ -95,7 +95,7 @@ namespace XMI
         inline xmi_result_t geometry_initialize (xmi_geometry_t       * geometry,
                                                  unsigned               id,
                                                  xmi_geometry_range_t * rank_slices,
-                                                 unsigned               slice_count);
+                                                 size_t                 slice_count);
 
         inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry);
 
@@ -337,7 +337,7 @@ namespace XMI
     xmi_result_t Context<T_Context>::geometry_initialize (xmi_geometry_t       * geometry,
                                                           unsigned               id,
                                                           xmi_geometry_range_t * rank_slices,
-                                                          unsigned               slice_count)
+                                                          size_t                 slice_count)
     {
       return static_cast<T_Context*>(this)->geometry_initialize_impl(geometry, id,
                                                                      rank_slices,

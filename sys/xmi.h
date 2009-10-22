@@ -1070,8 +1070,7 @@ extern "C"
 
   typedef struct
   {
-    size_t lo;
-    size_t hi;
+    size_t lo, hi;
   }
     xmi_geometry_range_t;
 
@@ -1090,7 +1089,7 @@ extern "C"
                                         xmi_geometry_t            * geometry,
                                         unsigned                    id,
                                         xmi_geometry_range_t      * rank_slices,
-                                        unsigned                    slice_count);
+                                        size_t                      slice_count);
 
   /**
    * \brief Initialize the geometry

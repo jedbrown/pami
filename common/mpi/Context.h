@@ -320,7 +320,7 @@ namespace XMI
       inline xmi_result_t geometry_initialize_impl (xmi_geometry_t       * geometry,
                                                     unsigned               id,
                                                     xmi_geometry_range_t * rank_slices,
-                                                    unsigned               slice_count)
+                                                    size_t                 slice_count)
         {
 	  MPIGeometry              *new_geometry;
 	  MPICollfactory           *new_collfactory;
