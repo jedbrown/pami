@@ -47,7 +47,7 @@ namespace XMI
     //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-    typedef Device::ShmemPacketDevice<SysDep,ShmemFifo,ShmemPacket> ShmemDevice;
+    typedef Device::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
 
     //
@@ -63,12 +63,13 @@ namespace XMI
     class Context : public Interface::Context<XMI::Context>
     {
       public:
-        inline Context (xmi_client_t client, size_t contextid) :
+        inline Context (xmi_client_t client, size_t contextid, void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
           _contextid (contextid),
-          _sysdep (),
+          _mm (addr, bytes),
+          _sysdep (_mm),
           _mu (),
           _shmem ()
         {
@@ -409,6 +410,7 @@ namespace XMI
         xmi_context_t _context;
         size_t        _contextid;
 
+        XMI::Memory::MemoryManager _mm;
         SysDep _sysdep;
 
         // devices...

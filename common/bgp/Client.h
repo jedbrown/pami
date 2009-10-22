@@ -11,7 +11,11 @@
 
 #include "common/ClientInterface.h"
 
+#include "Global.h"
 #include "Context.h"
+
+#include "components/memory/MemoryManager.h"
+
 
 namespace XMI
 {
@@ -22,11 +26,15 @@ namespace XMI
           Interface::Client<XMI::Client,XMI::Context>(name, result),
           _client ((xmi_client_t) this),
           _references (1),
-          _contexts (0)
+          _contexts (0),
+          _mm ()
         {
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
+
+          // Get some shared memory for this client
+          initializeMemoryManager ();
 
           result = XMI_SUCCESS;
         }
@@ -86,11 +94,22 @@ namespace XMI
         {
           //_context_list->lock ();
 
+          if (_contexts > 4)
+          {
+            result = XMI_ERROR;
+            return (xmi_context_t)0;
+          }
+
           XMI::Context * context = NULL;
           int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context));
           XMI_assertf(rc==0, "posix_memalign failed for context, errno=%d\n", errno);
           memset ((void *)context, 0x00, sizeof(XMI::Context));
-          new (context) XMI::Context (this->getClient(),_contexts++);
+
+          size_t   bytes = _mm.size() >> 2;
+          void   * base  = NULL;
+          _mm.memalign((void **)&base, 16, bytes);
+
+          new (context) XMI::Context (this->getClient(),_contexts++,base,bytes);
           //_context_list->pushHead ((QueueElem *) context);
 
           //_context_list->unlock ();
@@ -123,6 +142,44 @@ namespace XMI
 
         char         _name[256];
 
+        Memory::MemoryManager _mm;
+
+        inline void initializeMemoryManager ()
+        {
+          char   shmemfile[1024];
+          size_t bytes     = 1024*1024;
+          size_t pagesize  = 4096;
+
+          snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
+
+          // Round up to the page size
+          size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+
+          int fd, rc;
+          size_t n = bytes;
+
+          // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
+          rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          if ( rc != -1 )
+          {
+            fd = rc;
+            rc = ftruncate( fd, n );
+            if ( rc != -1 )
+            {
+              void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+              if ( ptr != MAP_FAILED )
+              {
+                _mm.init (ptr, n);
+                return;
+              }
+            }
+          }
+
+          // Failed to create shared memory .. fake it using the heap ??
+          _mm.init (malloc (n), n);
+
+          return;
+        }
     }; // end class XMI::Client
 }; // end namespace XMI
 

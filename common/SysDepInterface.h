@@ -16,26 +16,21 @@
 #include "sys/xmi.h"
 #include "util/common.h"
 
+#include "components/memory/MemoryManager.h"
+
 namespace XMI
 {
   namespace Interface
   {
-    ///
-    /// \param T_Memory   Platform-specific memory manager class
-    /// \param T_Mapping  Platform-specific mapping class
-    /// \param T_Time     Platform-specific time class
-    /// \param T_Topology Platform-specific topology class
-    ///
-    template <class T_Memory>
     class SysDep
     {
       public:
-        inline SysDep () :
-            mm ()
+        inline SysDep (Memory::MemoryManager & mm_ref) :
+            mm (mm_ref)
         {
         };
 
-        T_Memory   mm;
+        Memory::MemoryManager & mm;
     };	// class SysDep
 
     class NullSysDep

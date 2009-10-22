@@ -21,7 +21,6 @@
 #include "Platform.h"
 
 #include "Mapping.h"
-#include "components/memory/shmem/SharedMemoryManager.h"
 #include "Wtime.h"
 #include "Topology.h"
 
@@ -30,6 +29,6 @@ namespace XMI
     // TODO -- need to make a different shared memory manager so that multiple
     // contexts can get shared memory .. right now the second context to call
     // mm.init() will fail.
-    typedef Interface::SysDep<XMI::Memory::SharedMemoryManager> SysDep;
+    typedef Interface::SysDep SysDep;
 };
 #endif // __components_sysdep_bgq_bgqsysdep_h__

@@ -45,11 +45,12 @@ namespace XMI
     class Context : public Interface::Context<XMI::Context>
     {
     public:
-      inline Context (xmi_client_t client, size_t id) :
+      inline Context (xmi_client_t client, size_t id, void * addr, size_t bytes) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
         _id (id),
-	_sysdep()
+        _mm (addr, bytes),
+	_sysdep(_mm)
 #ifdef ENABLE_GENERIC_DEVICE
 	, _generic(_sysdep)
 #endif
@@ -434,6 +435,7 @@ namespace XMI
       xmi_context_t             _context;
       size_t                    _id;
       void                     *_dispatch[1024];
+      Memory::MemoryManager     _mm;
       SysDep                    _sysdep;
 #ifdef ENABLE_GENERIC_DEVICE
       XMI::Device::Generic::Device _generic;

@@ -19,7 +19,6 @@
 #include "common/BaseMappingInterface.h"
 #include "common/TorusMappingInterface.h"
 #include "common/NodeMappingInterface.h"
-#include "components/memory/heap/HeapMemoryManager.h"
 #include <lapi.h>
 
 #define XMI_MAPPING_CLASS XMI::Mapping
@@ -28,14 +27,14 @@ namespace XMI
 {
 #define LAPI_DIMS 1
 #define LAPI_LDIMS 1
-    class Mapping : public Interface::Mapping::Base<Mapping, XMI::Memory::HeapMemoryManager>,
+    class Mapping : public Interface::Mapping::Base<Mapping>,
                        public Interface::Mapping::Torus<Mapping, LAPI_DIMS>,
                        public Interface::Mapping::Node<Mapping, LAPI_DIMS>
     {
 
     public:
       inline Mapping () :
-        Interface::Mapping::Base<Mapping,XMI::Memory::HeapMemoryManager >(),
+        Interface::Mapping::Base<Mapping>(),
         Interface::Mapping::Torus<Mapping, LAPI_DIMS>(),
         Interface::Mapping::Node<Mapping, LAPI_DIMS>()
         {

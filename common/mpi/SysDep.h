@@ -21,10 +21,9 @@
 
 #include "common/SysDepInterface.h"
 #include "Platform.h"
-#include "components/memory/shmem/SharedMemoryManager.h"
 
 namespace XMI
 {
-    typedef Interface::SysDep<XMI::Memory::SharedMemoryManager> SysDep;
+    typedef Interface::SysDep SysDep;
 };
 #endif // __components_sysdep_mpi_mpisysdep_h__

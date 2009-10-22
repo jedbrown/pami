@@ -21,7 +21,6 @@
 #include "components/devices/mpi/mpimessage.h"
 #include "components/devices/mpi/mpidevice.h"
 #include "SysDep.h"
-#include "components/memory/heap/HeapMemoryManager.h"
 #include "Mapping.h"
 
 

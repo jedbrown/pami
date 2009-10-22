@@ -15,7 +15,6 @@
 #define __common_mpi_Mapping_h__
 
 #include "Platform.h"
-#include "components/memory/heap/HeapMemoryManager.h"
 #include "common/BaseMappingInterface.h"
 #include "common/TorusMappingInterface.h"
 #include "common/NodeMappingInterface.h"
@@ -30,14 +29,14 @@ namespace XMI
 {
 #define MPI_TDIMS 1
 #define MPI_LDIMS 1
-    class Mapping : public Interface::Mapping::Base<Mapping, XMI::Memory::HeapMemoryManager>,
+    class Mapping : public Interface::Mapping::Base<Mapping>,
                        public Interface::Mapping::Torus<Mapping, MPI_TDIMS>,
                        public Interface::Mapping::Node<Mapping, MPI_LDIMS>
     {
 
     public:
       inline Mapping () :
-        Interface::Mapping::Base<Mapping,XMI::Memory::HeapMemoryManager >(),
+        Interface::Mapping::Base<Mapping>(),
         Interface::Mapping::Torus<Mapping, MPI_TDIMS>(),
         Interface::Mapping::Node<Mapping, MPI_LDIMS>()
         {

@@ -22,7 +22,6 @@
 
 #include "common/bgp/BgpPersonality.h"
 #include "common/bgp/BgpMapCache.h"
-#include "components/memory/shmem/SharedMemoryManager.h"
 
 #define XMI_MAPPING_CLASS XMI::Mapping
 
@@ -49,7 +48,7 @@
 
 namespace XMI
 {
-    class Mapping : public Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>,
+    class Mapping : public Interface::Mapping::Base<Mapping>,
                        public Interface::Mapping::Torus<Mapping,XMI_BGP_NETWORK_DIMS>,
                        public Interface::Mapping::Node<Mapping,XMI_BGP_LOCAL_DIMS>
     {
@@ -68,7 +67,7 @@ namespace XMI
 
       public:
         inline Mapping (XMI::BgpPersonality &pers) :
-            Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>(),
+            Interface::Mapping::Base<Mapping>(),
             Interface::Mapping::Torus<Mapping,XMI_BGP_NETWORK_DIMS>(),
             Interface::Mapping::Node<Mapping,XMI_BGP_LOCAL_DIMS> (),
 	    _personality(pers),

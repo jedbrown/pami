@@ -24,7 +24,7 @@ namespace XMI
       ///
       /// \param T_Mapping Base mapping template class
       ///
-      template <class T_Mapping, class T_Memory>
+      template <class T_Mapping>
       class Base
       {
         public:
@@ -41,44 +41,44 @@ namespace XMI
 
 
           inline xmi_result_t network2task (const xmi_coord_t  * addr,
-                                           size_t                     * rank,
-                                           xmi_network               * type);
+                                           size_t              * rank,
+                                           xmi_network         * type);
 
-          inline xmi_result_t task2network (size_t                rank,
-                                           xmi_coord_t * addr,
-                                           xmi_network          type);
+          inline xmi_result_t task2network (size_t               rank,
+                                           xmi_coord_t         * addr,
+                                           xmi_network           type);
 	  inline size_t globalDims();
       };	// class Base
 
-      template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::task ()
+      template <class T_Mapping>
+      inline size_t Base<T_Mapping>::task ()
       {
         return static_cast<T_Mapping*>(this)->task_impl ();
       }
 
-      template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::size ()
+      template <class T_Mapping>
+      inline size_t Base<T_Mapping>::size ()
       {
         return static_cast<T_Mapping*>(this)->size_impl ();
       }
-      template <class T_Mapping, class T_Memory>
-      inline xmi_result_t Base<T_Mapping,T_Memory>::network2task (const xmi_coord_t  * addr,
-                                                        size_t                     * rank,
-                                                        xmi_network               * type)
+      template <class T_Mapping>
+      inline xmi_result_t Base<T_Mapping>::network2task (const xmi_coord_t  * addr,
+                                                         size_t             * rank,
+                                                         xmi_network        * type)
       {
         return static_cast<T_Mapping*>(this)->network2task_impl (addr, rank, type);
       }
 
-      template <class T_Mapping, class T_Memory>
-      inline xmi_result_t Base<T_Mapping,T_Memory>::task2network (size_t                rank,
-                                                        xmi_coord_t * addr,
-                                                        xmi_network          type)
+      template <class T_Mapping>
+      inline xmi_result_t Base<T_Mapping>::task2network (size_t        rank,
+                                                         xmi_coord_t * addr,
+                                                         xmi_network   type)
       {
         return static_cast<T_Mapping*>(this)->task2network_impl (rank, addr, type);
       }
 
-      template <class T_Mapping, class T_Memory>
-      inline size_t Base<T_Mapping,T_Memory>::globalDims ()
+      template <class T_Mapping>
+      inline size_t Base<T_Mapping>::globalDims ()
       {
         return static_cast<T_Mapping*>(this)->globalDims_impl ();
       }

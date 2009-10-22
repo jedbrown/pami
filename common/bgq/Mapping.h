@@ -24,7 +24,6 @@
 
 #include "common/bgq/BgqPersonality.h"
 #include "common/bgq/BgqMapCache.h"
-#include "components/memory/shmem/SharedMemoryManager.h"
 
 #include "util/common.h"
 
@@ -39,14 +38,14 @@ namespace XMI
 #define BGQ_TDIMS 5
 #define BGQ_LDIMS 2
     class Mapping :
-        public Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>,
+        public Interface::Mapping::Base<Mapping>,
         public Interface::Mapping::Torus<Mapping, BGQ_TDIMS>,
         public Interface::Mapping::Node<Mapping,BGQ_LDIMS>
     {
       public:
 
         inline Mapping (XMI::BgqPersonality &pers) :
-            Interface::Mapping::Base<Mapping,XMI::Memory::SharedMemoryManager>(),
+            Interface::Mapping::Base<Mapping>(),
             Interface::Mapping::Torus<Mapping, BGQ_TDIMS>(),
             Interface::Mapping::Node<Mapping,BGQ_LDIMS> (),
 	    _pers(pers),

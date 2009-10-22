@@ -22,12 +22,11 @@
 #include "common/SysDepInterface.h"
 #include "Platform.h"
 #include "Mapping.h"
-#include "components/memory/heap/HeapMemoryManager.h"
 #include "Wtime.h"
 #include "Topology.h"
 
 namespace XMI
 {
-  typedef Interface::SysDep<XMI::Memory::HeapMemoryManager> SysDep;
+  typedef Interface::SysDep SysDep;
 };
 #endif // __components_sysdep_lapi_lapisysdep_h__

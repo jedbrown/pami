@@ -19,8 +19,8 @@ namespace XMI
 {
   namespace Device
   {
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::init_internal (T_SysDep * sysdep)
+    template <class T_Fifo, class T_Packet>
+    int ShmemBaseDevice<T_Fifo, T_Packet>::init_internal (XMI::SysDep * sysdep)
     {
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal ()\n", __global.mapping.task()));
       _sysdep = sysdep;
@@ -47,7 +47,7 @@ namespace XMI
 
       // Allocate a shared memory segment for the fifos
       size_t size = ((sizeof(T_Fifo) + 15) & 0xfff0) * _num_procs;
-      sysdep->mm.memalign ((void **)&_fifo, 16, size);
+      _sysdep->mm.memalign ((void **)&_fifo, 16, size);
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::init_internal () .. 2\n", __global.mapping.task()));
 
       // Initialize the fifo acting as the reception fifo for this local task
@@ -94,22 +94,22 @@ namespace XMI
       return 0;
     }
 
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    bool ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::isInit_impl ()
+    template <class T_Fifo, class T_Packet>
+    bool ShmemBaseDevice<T_Fifo, T_Packet>::isInit_impl ()
     {
       return true;
     }
 
     /// \see XMI::Device::Interface::BaseDevice::peers()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::peers_impl ()
+    template <class T_Fifo, class T_Packet>
+    size_t ShmemBaseDevice<T_Fifo, T_Packet>::peers_impl ()
     {
       return _num_procs;
     }
 
     /// \see XMI::Device::Interface::BaseDevice::task2peer()
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    size_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::task2peer_impl (size_t task)
+    template <class T_Fifo, class T_Packet>
+    size_t ShmemBaseDevice<T_Fifo, T_Packet>::task2peer_impl (size_t task)
     {
       XMI::Interface::Mapping::nodeaddr_t address;
       __global.mapping.task2node (task, address);
@@ -129,11 +129,11 @@ namespace XMI
     ///
     /// \return Dispatch id for this registration
     ///
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::registerRecvFunction (size_t                      id,
-                                                                           Interface::RecvFunction_t   recv_func,
-                                                                           void                      * recv_func_parm)
-    {
+    template <class T_Fifo, class T_Packet>
+    int ShmemBaseDevice<T_Fifo, T_Packet>::registerRecvFunction (size_t                      id,
+                                                                 Interface::RecvFunction_t   recv_func,
+                                                                 void                      * recv_func_parm)
+    { 
       TRACE_ERR((stderr, ">> (%zd) ShmemBaseDevice::registerRecvFunction (%d,%p,%p)\n", __global.mapping.task(), id, recv_func, recv_func_parm));
 
       // This device only supports up to 256 dispatch sets.
@@ -157,8 +157,8 @@ namespace XMI
       return f;
     };
 
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::post (size_t fnum, ShmemBaseMessage<T_Packet> * msg)
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet>::post (size_t fnum, ShmemBaseMessage<T_Packet> * msg)
     {
       pushSendQueueTail (fnum, (QueueElem *) msg);
       return XMI_SUCCESS;
@@ -166,20 +166,20 @@ namespace XMI
 
 
 
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::noop (void   * metadata,
-                                                           void   * payload,
-                                                           size_t   bytes,
-                                                           void   * recv_func_parm,
-                                                           void   * cookie)
+    template <class T_Fifo, class T_Packet>
+    int ShmemBaseDevice<T_Fifo, T_Packet>::noop (void   * metadata,
+                                                 void   * payload,
+                                                 size_t   bytes,
+                                                 void   * recv_func_parm,
+                                                 void   * cookie)
     {
       XMI_abort();
       return 0;
     }
 
 
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_sendQ ()
+    template <class T_Fifo, class T_Packet>
+    int ShmemBaseDevice<T_Fifo, T_Packet>::advance_sendQ ()
     {
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ () >> _num_procs = %zd\n", __global.mapping.task(), _num_procs));
       unsigned peer;
@@ -191,8 +191,8 @@ namespace XMI
       return events;
     }
 
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_sendQ (size_t peer)
+    template <class T_Fifo, class T_Packet>
+    int ShmemBaseDevice<T_Fifo, T_Packet>::advance_sendQ (size_t peer)
     {
       ShmemBaseMessage<T_Packet> * msg;
       size_t sequence;
@@ -259,8 +259,8 @@ namespace XMI
         return events;
     };
 
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_doneQ ()
+    template <class T_Fifo, class T_Packet>
+    int ShmemBaseDevice<T_Fifo, T_Packet>::advance_doneQ ()
     {
       size_t peer;
       int events = 0;
@@ -271,8 +271,8 @@ namespace XMI
       return events;
     };
 
-    template <class T_SysDep, class T_Fifo, class T_Packet>
-    int ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::advance_doneQ (size_t peer)
+    template <class T_Fifo, class T_Packet>
+    int ShmemBaseDevice<T_Fifo, T_Packet>::advance_doneQ (size_t peer)
     {
       int events = 0;
       size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
