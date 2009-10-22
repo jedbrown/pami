@@ -77,7 +77,7 @@ namespace XMI
 		_task = num_ranks;
 
 		// local node process/rank info
-#ifdef POSIX_MEMALIGN
+#ifdef USE_MEMALIGN
 		err = posix_memalign((void **)&_mapcache, sizeof(void *), sizeof(*_mapcache) * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&_nodecache, sizeof(void *), sizeof(*_nodecache) * _size);
