@@ -363,7 +363,7 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 		     XMI_MATCH_CONSISTENCY,
 		     (xmi_quad_t*)& _header[phase],
 		     XMIQuad_sizeof(_header[phase]),
-		     0,
+		     phase,
 		     (char*)_sbuf[phase],
 		     (unsigned)_sbufln[phase],
 		     &hints,

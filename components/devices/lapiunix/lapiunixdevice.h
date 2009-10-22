@@ -149,9 +149,9 @@ namespace XMI
       inline int advance_impl ()
         {
           lapi_msg_info_t info;
-//          lock();
+          lock();
           LAPI_Msgpoll (_lapi_handle, 5, &info);
-//          unlock();
+          unlock();
         };
 
       // Implement MessageDevice Routines
@@ -205,10 +205,17 @@ namespace XMI
       static void __xmi_lapi_mcast_done_fn(lapi_handle_t* handle, void *clientdata)
         {
           LAPIMcastRecvReq *req = (LAPIMcastRecvReq *)clientdata;
-          if(req->_user_done.function)
-            req->_user_done.function(NULL,
-                                     req->_user_done.clientdata,
-                                     XMI_SUCCESS);
+          int bytes = req->_mcast._size - req->_mcast._counter;
+          for(; bytes > 0; bytes -= req->_mcast._pwidth)
+              {
+                req->_mcast._counter += req->_mcast._pwidth;
+                if(req->_mcast._done_fn)
+                  req->_mcast._done_fn(NULL, req->_mcast._cookie, XMI_SUCCESS);
+              }
+          if(req->_mcast._counter >= req->_mcast._size)
+              {
+                req->_mcastrecvQ->remove(&req->_mcast);
+              }
           free(req);
         }
 
@@ -231,6 +238,7 @@ namespace XMI
           LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
           lapi_mcast_dispatch_info_t ldi = _dev->_mcast_dispatch_lookup[dispatch_id];
 
+          _dev->lock();
           std::list<LAPIMcastRecvMessage*>::iterator it;
           int found=0;
           for(it=_dev->_mcastrecvQ.begin();it != _dev->_mcastrecvQ.end(); it++)
@@ -242,7 +250,6 @@ namespace XMI
                       break;
                     }
               }
-
           LAPIMcastRecvMessage  m_store;
           LAPIMcastRecvMessage *mcast = &m_store;
           if(!found)
@@ -269,7 +276,7 @@ namespace XMI
                 mcast->_dtype       = XMI_UNDEFINED_DT;
                 mcast->_counter     = 0;
                 mcast->_dispatch_id = dispatch_id;
-//                _dev->enqueue(mcast);
+                it = _dev->_mcastrecvQ.insert(it,mcast);
               }
           else
               {
@@ -290,34 +297,57 @@ namespace XMI
                 *comp_h       = NULL;
                 ri->ret_flags = LAPI_SEND_REPLY;
                 ri->ctl_flags = LAPI_BURY_MSG;
+                _dev->unlock();
+                return NULL;                
               }
 
 
 
           if (ri->udata_one_pkt_ptr)
               {
-                if (r && ri->msg_len)
-                  memcpy(rcvbuf,
+                int bytes = mcast->_size - mcast->_counter;
+//                XMI_assert(bytes == ri->msg_len);
+                if (mcast->_size)
+                  memcpy(mcast->_buf + mcast->_counter,
                          (void *)ri->udata_one_pkt_ptr,
-                         ri->msg_len);
+                         bytes);
                 r             = NULL;
                 *comp_h       = NULL;
                 ri->ret_flags = LAPI_SEND_REPLY;
                 ri->ctl_flags = LAPI_BURY_MSG;
-                if(cb_done.function)
-                  cb_done.function(NULL, cb_done.clientdata, XMI_SUCCESS);
+
+                for(; bytes > 0; bytes -= mcast->_pwidth)
+                    {
+                      mcast->_counter += mcast->_pwidth;
+                      if(mcast->_done_fn)
+                        mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                    }
+                if(mcast->_counter >= mcast->_size)
+                    {
+                      _dev->_mcastrecvQ.remove(mcast);
+                      if(found)
+                        free (mcast);
+                    }
               }
           else
               {
                 LAPIMcastRecvReq *req;
                 CHECK_NULL(req, (LAPIMcastRecvReq*)malloc(sizeof(LAPIMcastRecvReq)));
-                req->_user_done         = cb_done;
-                r                       = (void*)mcast->_buf;
+                req->_mcastrecvQ        = &_dev->_mcastrecvQ;
+                req->_mcast             = *mcast;
+                req->_found             = found;
+                *it                     = &req->_mcast;
+                if(found)
+                  free (mcast);
+
+                r                       = (void*)((size_t)mcast->_buf + mcast->_counter);
                 *comp_h                 = __xmi_lapi_mcast_done_fn;
                 *uinfo                  = (void*)req;
                 ri->ret_flags           = LAPI_SEND_REPLY;
+                assert(r != NULL);
                 if (!r) ri->ctl_flags   = LAPI_BURY_MSG;
               }
+          _dev->unlock();
           return r;
         }
 

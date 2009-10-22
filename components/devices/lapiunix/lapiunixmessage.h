@@ -18,6 +18,7 @@
 #include "util/common.h"
 #include "util/queue/Queue.h"
 #include <lapi.h>
+#include <list>
 
 namespace XMI
 {
@@ -71,11 +72,6 @@ namespace XMI
       xmi_callback_t        _user_done;
     };
 
-    class LAPIMcastRecvReq
-    {
-    public:
-      xmi_callback_t        _user_done;
-    };
 
 
     class LAPIMcastMessage
@@ -111,6 +107,16 @@ namespace XMI
       size_t              _counter;
     };
 
+    class LAPIMcastRecvReq
+    {
+    public:
+      LAPIMcastRecvMessage              _mcast;
+      int                               _found;
+      std::list<LAPIMcastRecvMessage*> *_mcastrecvQ;
+    };
+
+
+    
     class LAPIM2MMessage
     {
     public:

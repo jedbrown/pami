@@ -112,7 +112,7 @@ inline void TSPColl::BlockingBarrier::execute (CCMI::MultiSend::OldMulticastInte
 				    & _header[phase].hdr,
 				    _counter,
 				    NULL,
-				    0,
+				    phase,
 				    &hints,
 				    &ranks,
 				    1);

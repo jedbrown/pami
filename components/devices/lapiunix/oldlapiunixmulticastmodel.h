@@ -63,6 +63,7 @@ namespace XMI
                                xmi_op                      op    = XMI_UNDEFINED_OP,
                                xmi_dt                      dtype = XMI_UNDEFINED_DT )
         {
+          _device.lock();
           LAPIMcastMessage msg;
           msg._info_count   = info_count;
           msg._size         = size;
@@ -147,6 +148,7 @@ namespace XMI
                       CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
                     }
               }
+          _device.unlock();
           return XMI_SUCCESS;
         }
 
@@ -176,6 +178,7 @@ namespace XMI
                                 xmi_op                   op     = XMI_UNDEFINED_OP,
                                 xmi_dt                   dtype  = XMI_UNDEFINED_DT)
         {
+          _device.lock();
           LAPIMcastRecvMessage *msg = (LAPIMcastRecvMessage*)malloc(sizeof(*msg));
           msg->_dispatch_id = _dispatch_id;
           msg->_conn     = conn_id;
@@ -189,6 +192,7 @@ namespace XMI
           //          msg->_op       = op;
           //          msg->_dtype    = dtype;
           _device.enqueue(msg);
+          _device.unlock();
 	  return 0;
         }
 
