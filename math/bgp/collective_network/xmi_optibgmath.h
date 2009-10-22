@@ -25,8 +25,8 @@
  * used for building the product.
  */
 
-#ifndef _xmi_optibgmath_h_
-#define _xmi_optibgmath_h_
+#ifndef __math_bgp_collective_network_xmi_optibgmath_h__
+#define __math_bgp_collective_network_xmi_optibgmath_h__
 
 /**
  * \brief Convert a LOC value TO a tree value

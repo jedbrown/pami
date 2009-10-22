@@ -10,8 +10,8 @@
 /// \file common/bgp/Mapping.h
 /// \brief ???
 ///
-#ifndef __components_mapping_bgp_bgpmapping_h__
-#define __components_mapping_bgp_bgpmapping_h__
+#ifndef __common_bgp_Mapping_h__
+#define __common_bgp_Mapping_h__
 
 #include "sys/xmi.h"
 

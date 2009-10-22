@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_binom_bcast_h__
-#define __tspcoll_binom_bcast_h__
+#ifndef __algorithms_protocols_tspcoll_BinomBcast_h__
+#define __algorithms_protocols_tspcoll_BinomBcast_h__
 
 #include <assert.h>
 #include <stdio.h>

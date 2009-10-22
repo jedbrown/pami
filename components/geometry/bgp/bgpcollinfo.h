@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_bgpcollinfo__h__
-#define   __xmi_bgpcollinfo__h__
+#ifndef __components_geometry_bgp_bgpcollinfo_h__
+#define __components_geometry_bgp_bgpcollinfo_h__
 
 #include <vector>
 #include "components/geometry/CollRegistration.h"

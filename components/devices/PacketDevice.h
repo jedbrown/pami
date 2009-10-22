@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_packetdevice_h__
-#define __components_devices_packetdevice_h__
+#ifndef __components_devices_PacketDevice_h__
+#define __components_devices_PacketDevice_h__
 
 #include "sys/xmi.h"
 

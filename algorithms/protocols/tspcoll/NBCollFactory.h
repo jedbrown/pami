@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_nbcollfactory_h__
-#define __tspcoll_nbcollfactory_h__
+#ifndef __algorithms_protocols_tspcoll_NBCollFactory_h__
+#define __algorithms_protocols_tspcoll_NBCollFactory_h__
 
 #include "algorithms/protocols/tspcoll/NBColl.h"
 #include "algorithms/protocols/tspcoll/Barrier.h"

@@ -11,8 +11,8 @@
  * \brief Implementation of PipeWorkQueue on BG/P
  */
 
-#ifndef __components_pipeworkqueue_bgp_bgppipeworkqueue_h__
-#define __components_pipeworkqueue_bgp_bgppipeworkqueue_h__
+#ifndef __common_bgp_PipeWorkQueue_h__
+#define __common_bgp_PipeWorkQueue_h__
 
 #include "Arch.h"
 #include "SysDep.h"

@@ -2,8 +2,8 @@
 /// \file common/bgp/Context.h
 /// \brief XMI BGP specific context implementation.
 ///
-#ifndef   __components_context_bgp_bgpcontext_h__
-#define   __components_context_bgp_bgpcontext_h__
+#ifndef __common_bgp_Context_h__
+#define __common_bgp_Context_h__
 
 #define XMI_CONTEXT_CLASS XMI::Context
 

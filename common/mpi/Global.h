@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_common_mpi_global_h__
-#define __xmi_common_mpi_global_h__
+#ifndef __common_mpi_Global_h__
+#define __common_mpi_Global_h__
 ///
 /// \file common/mpi/Global.h
 /// \brief Global Object

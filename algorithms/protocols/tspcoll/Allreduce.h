@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_Allreduce_h__
-#define __tspcoll_Allreduce_h__
+#ifndef __algorithms_protocols_tspcoll_Allreduce_h__
+#define __algorithms_protocols_tspcoll_Allreduce_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 #include "math/math_coremath.h"

@@ -10,8 +10,8 @@
 /// \file p2p/protocols/send/eager/EagerConnection.h
 /// \brief Connection class for reliable, deterministic eager protocols
 ///
-#ifndef __xmi_p2p_protocol_send_eager_eagerconnection_h__
-#define __xmi_p2p_protocol_send_eager_eagerconnection_h__
+#ifndef __p2p_protocols_send_eager_EagerConnection_h__
+#define __p2p_protocols_send_eager_EagerConnection_h__
 
 #include <stdlib.h>
 

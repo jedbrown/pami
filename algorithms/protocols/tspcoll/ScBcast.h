@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_scatter_bcast_h__
-#define __tspcoll_scatter_bcast_h__
+#ifndef __algorithms_protocols_tspcoll_ScBcast_h__
+#define __algorithms_protocols_tspcoll_ScBcast_h__
 
 #include <assert.h>
 #include <stdio.h>

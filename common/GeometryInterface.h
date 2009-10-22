@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_geometry__h__
-#define   __xmi_geometry__h__
+#ifndef __common_GeometryInterface_h__
+#define __common_GeometryInterface_h__
 
 #include "sys/xmi.h"
 #include "util/queue/MatchQueue.h"

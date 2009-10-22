@@ -2,8 +2,8 @@
 /// \file common/bgq/Client.h
 /// \brief XMI client interface specific for the Blue Gene\Q platform.
 ///
-#ifndef   __components_client_bgq_bgqclient_h__
-#define   __components_client_bgq_bgqclient_h__
+#ifndef __common_bgq_Client_h__
+#define __common_bgq_Client_h__
 
 #define XMI_CLIENT_CLASS XMI::Client
 

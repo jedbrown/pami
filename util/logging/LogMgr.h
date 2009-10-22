@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_logging_logmgr__
-#define __ccmi_logging_logmgr__
+#ifndef __util_logging_LogMgr_h__
+#define __util_logging_LogMgr_h__
 
 #include  <stdio.h>
 #include  <stdlib.h>

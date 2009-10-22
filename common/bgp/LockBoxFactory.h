@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __xmi_bgp_lockboxfactory_h__
-#define __xmi_bgp_lockboxfactory_h__
+#ifndef __common_bgp_LockBoxFactory_h__
+#define __common_bgp_LockBoxFactory_h__
 
 #include "Mapping.h"
 #include <spi/bgp_SPI.h>

@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_components_sysdep_bgq_bgqglobal_h__
-#define __xmi_components_sysdep_bgq_bgqglobal_h__
+#ifndef __common_bgq_Global_h__
+#define __common_bgq_Global_h__
 ///
 /// \file common/bgq/Global.h
 /// \brief Blue Gene/Q Global Object

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __ccmi_adaptor_broadcast_executor_pool__
-#define  __ccmi_adaptor_broadcast_executor_pool__
+#ifndef __algorithms_protocols_broadcast_ExecutorPool_h__
+#define __algorithms_protocols_broadcast_ExecutorPool_h__
 
 #include "util/queue/Queue.h"
 #include "./BcastQueueElem.h"

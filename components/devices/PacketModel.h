@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_packetmodel_h__
-#define __components_devices_packetmodel_h__
+#ifndef __components_devices_PacketModel_h__
+#define __components_devices_PacketModel_h__
 
 #include <sys/uio.h>
 

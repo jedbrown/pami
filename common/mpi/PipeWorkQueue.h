@@ -11,8 +11,8 @@
  * \brief Implementation of PipeWorkQueue
  */
 
-#ifndef __components_pipeworkqueue_mpi_pipeworkqueue_h__
-#define __components_pipeworkqueue_mpi_pipeworkqueue_h__
+#ifndef __common_mpi_PipeWorkQueue_h__
+#define __common_mpi_PipeWorkQueue_h__
 
 #include "Arch.h"
 #include "SysDep.h"

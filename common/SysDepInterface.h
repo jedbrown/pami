@@ -10,8 +10,8 @@
 /// \file common/SysDepInterface.h
 /// \brief ???
 ///
-#ifndef __components_sysdep_sysdep_h__
-#define __components_sysdep_sysdep_h__
+#ifndef __common_SysDepInterface_h__
+#define __common_SysDepInterface_h__
 
 #include "sys/xmi.h"
 #include "util/common.h"

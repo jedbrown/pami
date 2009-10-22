@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_atomic_bgp_lwarxstwcxmutex_h__
-#define __components_atomic_bgp_lwarxstwcxmutex_h__
+#ifndef __components_atomic_bgp_LwarxStwcxMutex_h__
+#define __components_atomic_bgp_LwarxStwcxMutex_h__
 
 /**
  * \file components/atomic/bgp/LwarxStwcxMutex.h

@@ -11,8 +11,8 @@
  * \brief CCMI composite template implementations
  */
 
-#ifndef __ccmi_adaptor_allreduce_sync_impl_h__
-#define __ccmi_adaptor_allreduce_sync_impl_h__
+#ifndef __algorithms_protocols_allreduce_sync_impl_h__
+#define __algorithms_protocols_allreduce_sync_impl_h__
 
 #include "algorithms/protocols/allreduce/CompositeT.h"
 #include "algorithms/protocols/allreduce/FactoryT.h"

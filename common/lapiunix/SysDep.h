@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_sysdep_lapi_lapisysdep_h__
-#define __components_sysdep_lapi_lapisysdep_h__
+#ifndef __common_lapiunix_SysDep_h__
+#define __common_lapiunix_SysDep_h__
 
 #undef __bgp__
 #undef __bgq__

@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __components_devices_generic_subdevice_h__
-#define __components_devices_generic_subdevice_h__
+#ifndef __components_devices_generic_SubDevice_h__
+#define __components_devices_generic_SubDevice_h__
 
 #include "util/queue/Queue.h"
 #include "components/devices/generic/BaseGenericDevice.h"

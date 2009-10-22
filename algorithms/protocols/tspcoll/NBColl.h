@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_nbcoll_h__
-#define __tspcoll_nbcoll_h__
+#ifndef __algorithms_protocols_tspcoll_NBColl_h__
+#define __algorithms_protocols_tspcoll_NBColl_h__
 
 #include "Geometry.h"
 

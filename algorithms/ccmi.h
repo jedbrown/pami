@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __ccmi_internal_h__
-#define   __ccmi_internal_h__
+#ifndef __algorithms_ccmi_h__
+#define __algorithms_ccmi_h__
 
 #include <stdlib.h>
 #include "sys/xmi.h"

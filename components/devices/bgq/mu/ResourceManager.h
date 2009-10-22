@@ -13,8 +13,8 @@
 /// \brief Resource Manager definitions.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __components_devices_bgq_mu_resourcemanager_h__
-#define __components_devices_bgq_mu_resourcemanager_h__
+#ifndef __components_devices_bgq_mu_ResourceManager_h__
+#define __components_devices_bgq_mu_ResourceManager_h__
 
 #include <hwi/include/bqc/MU_Descriptor.h>
 

@@ -4,8 +4,8 @@
  * \brief ???
  */
 
-#ifndef _XMI_ATTRIBUTES_H_
-#define _XMI_ATTRIBUTES_H_
+#ifndef __xmi_attributes_h__
+#define __xmi_attributes_h__
 
 
 /* Each '#define' below represents an informative attribute                   */

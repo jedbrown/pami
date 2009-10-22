@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_common_lapiunix_global_h__
-#define __xmi_common_lapiunix_global_h__
+#ifndef __common_lapiunix_Global_h__
+#define __common_lapiunix_Global_h__
 ///
 /// \file common/lapiunix/Global.h
 /// \brief Global Object

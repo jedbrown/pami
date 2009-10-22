@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_broadcast_multicolor_sync_composite_h__
-#define __ccmi_adaptor_broadcast_multicolor_sync_composite_h__
+#ifndef __algorithms_protocols_broadcast_MultiColorCompositeT_h__
+#define __algorithms_protocols_broadcast_MultiColorCompositeT_h__
 
 #include "algorithms/executor/Broadcast.h"
 #include "algorithms/executor/Barrier.h"

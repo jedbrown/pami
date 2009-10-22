@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapimultisyncmodel_h__
-#define __components_devices_lapi_lapimultisyncmodel_h__
+#ifndef __components_devices_lapiunix_lapiunixmultisyncmodel_h__
+#define __components_devices_lapiunix_lapiunixmultisyncmodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/MultisyncModel.h"

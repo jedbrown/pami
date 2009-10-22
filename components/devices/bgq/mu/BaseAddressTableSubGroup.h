@@ -14,8 +14,8 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __components_devices_bgq_mu_baseaddresstablesubgroup_h__
-#define __components_devices_bgq_mu_baseaddresstablesubgroup_h__
+#ifndef __components_devices_bgq_mu_BaseAddressTableSubGroup_h__
+#define __components_devices_bgq_mu_BaseAddressTableSubGroup_h__
 
 #include <errno.h>
 

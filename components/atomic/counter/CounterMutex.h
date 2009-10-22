@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_atomic_countermutex_h__
-#define __components_atomic_countermutex_h__
+#ifndef __components_atomic_counter_CounterMutex_h__
+#define __components_atomic_counter_CounterMutex_h__
 
 /**
  * \file components/atomic/counter/CounterMutex.h

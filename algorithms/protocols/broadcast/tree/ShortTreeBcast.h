@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_broadcast_short_tree_h__
-#define __ccmi_adaptor_broadcast_short_tree_h__
+#ifndef __algorithms_protocols_broadcast_tree_ShortTreeBcast_h__
+#define __algorithms_protocols_broadcast_tree_ShortTreeBcast_h__
 
 #include "multisend/multisend_impl.h"
 

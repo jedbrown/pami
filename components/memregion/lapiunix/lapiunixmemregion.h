@@ -2,8 +2,8 @@
 /// \file components/memregion/lapiunix/lapiunixmemregion.h
 /// \brief XMI LAPI specific memregion implementation.
 ///
-#ifndef   __xmi_lapi_lapimemregion_h__
-#define   __xmi_lapi_lapimemregion_h__
+#ifndef __components_memregion_lapiunix_lapiunixmemregion_h__
+#define __components_memregion_lapiunix_lapiunixmemregion_h__
 
 #include <stdlib.h>
 #include <string.h>

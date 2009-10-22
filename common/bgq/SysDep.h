@@ -10,8 +10,8 @@
 /// \file common/bgq/SysDep.h
 /// \brief ???
 ///
-#ifndef __components_sysdep_bgq_bgqsysdep_h__
-#define __components_sysdep_bgq_bgqsysdep_h__
+#ifndef __common_bgq_SysDep_h__
+#define __common_bgq_SysDep_h__
 
 #define XMI_SYSDEP_CLASS XMI::SysDep
 

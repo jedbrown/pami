@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __allreduce_base_executor_h__
-#define __allreduce_base_executor_h__
+#ifndef __algorithms_executor_AllreduceBase_h__
+#define __algorithms_executor_AllreduceBase_h__
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"

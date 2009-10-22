@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __ccmi_adaptor_broadcast_multi_color_impl__
-#define   __ccmi_adaptor_broadcast_multi_color_impl__
+#ifndef __algorithms_protocols_broadcast_multi_color_impl_h__
+#define __algorithms_protocols_broadcast_multi_color_impl_h__
 
 #include "algorithms/schedule/Rectangle.h"
 #include "algorithms/schedule/BinomialTree.h"

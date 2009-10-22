@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __util_fifo_fifopacket_h__
-#define __util_fifo_fifopacket_h__
+#ifndef __util_fifo_FifoPacket_h__
+#define __util_fifo_FifoPacket_h__
 
 #include <stdint.h>
 

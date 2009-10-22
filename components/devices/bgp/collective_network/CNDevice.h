@@ -10,8 +10,8 @@
  * \file components/devices/bgp/collective_network/CNDevice.h
  * \brief Collective Network Device interface
  */
-#ifndef __components_devices_bgp_cndevice_h__
-#define __components_devices_bgp_cndevice_h__
+#ifndef __components_devices_bgp_collective_network_CNDevice_h__
+#define __components_devices_bgp_collective_network_CNDevice_h__
 
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"

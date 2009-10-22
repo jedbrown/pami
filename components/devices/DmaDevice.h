@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_dmadevice_h__
-#define __components_devices_dmadevice_h__
+#ifndef __components_devices_DmaDevice_h__
+#define __components_devices_DmaDevice_h__
 
 #include <sys/uio.h>
 

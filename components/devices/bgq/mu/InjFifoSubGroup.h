@@ -13,8 +13,8 @@
 /// \brief Injection Fifo SubGroup definitions.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __components_devices_bgq_mu_injfifosubgroup_h__
-#define __components_devices_bgq_mu_injfifosubgroup_h__
+#ifndef __components_devices_bgq_mu_InjFifoSubGroup_h__
+#define __components_devices_bgq_mu_InjFifoSubGroup_h__
 
 #include <errno.h>
 

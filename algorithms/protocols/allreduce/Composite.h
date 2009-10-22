@@ -12,8 +12,8 @@
  */
 
 
-#ifndef __ccmi_collectives_allreduce_composite_h__
-#define __ccmi_collectives_allreduce_composite_h__
+#ifndef __algorithms_protocols_allreduce_Composite_h__
+#define __algorithms_protocols_allreduce_Composite_h__
 
 #include "algorithms/protocols/allreduce/BaseComposite.h"
 #include "algorithms/executor/Barrier.h"

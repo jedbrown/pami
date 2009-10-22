@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __util_fifo_linearfifo_h__
-#define __util_fifo_linearfifo_h__
+#ifndef __util_fifo_LinearFifo_h__
+#define __util_fifo_LinearFifo_h__
 
 #include <string.h>
 

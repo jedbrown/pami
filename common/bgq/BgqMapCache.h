@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_components_mapping_bgq_bgqmapcache_h__
-#define __xmi_components_mapping_bgq_bgqmapcache_h__
+#ifndef __common_bgq_BgqMapCache_h__
+#define __common_bgq_BgqMapCache_h__
 ///
 /// \file common/bgq/BgqMapCache.h
 /// \brief Blue Gene/Q Map- and Rank-Cache Object

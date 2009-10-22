@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __componenets_devices_dmamodel_h__
-#define __componenets_devices_dmamodel_h__
+#ifndef __components_devices_DmaModel_h__
+#define __components_devices_DmaModel_h__
 
 #include <errno.h>
 

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_lapicollfactory__h__
-#define   __xmi_lapicollfactory__h__
+#ifndef __components_geometry_lapiunix_lapiunixcollfactory_h__
+#define __components_geometry_lapiunix_lapiunixcollfactory_h__
 
 
 #define XMI_COLLFACTORY_CLASS XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep>, SysDep>

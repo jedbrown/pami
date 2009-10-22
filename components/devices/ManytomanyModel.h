@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_device_manytomanymodel_h__
-#define __components_device_manytomanymodel_h__
+#ifndef __components_devices_ManytomanyModel_h__
+#define __components_devices_ManytomanyModel_h__
 
 #include "sys/xmi.h"
 #include "algorithms/ccmi.h"  //for XMI_Callback_t...probably move this at some point

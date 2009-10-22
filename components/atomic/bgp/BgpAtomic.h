@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_atomic_bgp_bgpatomic_h__
-#define __xmi_atomic_bgp_bgpatomic_h__
+#ifndef __components_atomic_bgp_BgpAtomic_h__
+#define __components_atomic_bgp_BgpAtomic_h__
 
 #include "components/atomic/Counter.h"
 

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_messagemodel_h__
-#define __components_devices_messagemodel_h__
+#ifndef __components_devices_MessageModel_h__
+#define __components_devices_MessageModel_h__
 
 #include "util/common.h"
 

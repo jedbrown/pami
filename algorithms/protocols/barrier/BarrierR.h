@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_collectives_barrier_factory_template_r_h__
-#define __ccmi_collectives_barrier_factory_template_r_h__
+#ifndef __algorithms_protocols_barrier_BarrierR_h__
+#define __algorithms_protocols_barrier_BarrierR_h__
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "./BarrierFactory.h"

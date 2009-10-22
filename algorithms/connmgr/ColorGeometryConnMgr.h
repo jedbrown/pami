@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __cg_conn_mgr_h__
-#define  __cg_conn_mgr_h__
+#ifndef __algorithms_connmgr_ColorGeometryConnMgr_h__
+#define __algorithms_connmgr_ColorGeometryConnMgr_h__
 
 #include "algorithms/schedule/Rectangle.h"
 

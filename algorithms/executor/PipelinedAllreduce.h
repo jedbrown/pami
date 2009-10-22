@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __pipelined_allreduce_executor_h__
-#define __pipelined_allreduce_executor_h__
+#ifndef __algorithms_executor_PipelinedAllreduce_h__
+#define __algorithms_executor_PipelinedAllreduce_h__
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"

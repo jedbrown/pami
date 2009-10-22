@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapimulticombinemodel_h__
-#define __components_devices_lapi_lapimulticombinemodel_h__
+#ifndef __components_devices_lapiunix_lapiunixmulticombinemodel_h__
+#define __components_devices_lapiunix_lapiunixmulticombinemodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/MulticombineModel.h"

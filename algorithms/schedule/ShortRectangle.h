@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __SHORT_RECTANGLE_SCHEDULE__
-#define  __SHORT_RECTANGLE_SCHEDULE__
+#ifndef __algorithms_schedule_ShortRectangle_h__
+#define __algorithms_schedule_ShortRectangle_h__
 
 #include "Schedule.h"
 #include "util/ccmi_util.h"

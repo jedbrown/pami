@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapioldm2mmodel_h__
-#define __components_devices_lapi_lapioldm2mmodel_h__
+#ifndef __components_devices_lapiunix_oldlapiunixm2mmodel_h__
+#define __components_devices_lapiunix_oldlapiunixm2mmodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/OldM2MModel.h"

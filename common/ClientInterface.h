@@ -2,8 +2,8 @@
 /// \file common/ClientInterface.h
 /// \brief XMI client interface.
 ///
-#ifndef   __xmi_client_h__
-#define   __xmi_client_h__
+#ifndef __common_ClientInterface_h__
+#define __common_ClientInterface_h__
 
 #ifndef XMI_CLIENT_CLASS
 #error XMI_CLIENT_CLASS must be defined

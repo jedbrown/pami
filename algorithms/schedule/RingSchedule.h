@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __ring_schedule__
-#define  __ring_schedule__
+#ifndef __algorithms_schedule_RingSchedule_h__
+#define __algorithms_schedule_RingSchedule_h__
 
 #include "Schedule.h"
 //#include "Rectangle.h"

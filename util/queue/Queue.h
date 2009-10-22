@@ -21,8 +21,8 @@
 ///  - Queue:         A queue of elements
 ///
 ///
-#ifndef __util_queue_queue_h__
-#define __util_queue_queue_h__
+#ifndef __util_queue_Queue_h__
+#define __util_queue_Queue_h__
 
 #include <stdio.h>
 #include "util/common.h"

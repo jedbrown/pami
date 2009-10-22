@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __xmi_bgp_lockboxbarrier_h__
-#define __xmi_bgp_lockboxbarrier_h__
+#ifndef __components_atomic_bgp_LockBoxBarrier_h__
+#define __components_atomic_bgp_LockBoxBarrier_h__
 
 /**
  * \file components/atomic/bgp/LockBoxBarrier.h

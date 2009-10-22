@@ -15,8 +15,8 @@
 ///
 /// C++ templates require all source code to be #include'd from a header file.
 ///
-#ifndef __xmi_p2p_protocol_send_eager_eagersimple_h__
-#define __xmi_p2p_protocol_send_eager_eagersimple_h__
+#ifndef __p2p_protocols_send_eager_EagerSimple_h__
+#define __p2p_protocols_send_eager_EagerSimple_h__
 
 #include "components/memory/MemoryAllocator.h"
 

@@ -3,8 +3,8 @@
 /// \brief XMI topology implementation.
 ///
 
-#ifndef   __xmi_component_topology_h__
-#define   __xmi_component_topology_h__
+#ifndef __common_TopologyInterface_h__
+#define __common_TopologyInterface_h__
 
 #include <stdlib.h>
 #include <string.h>

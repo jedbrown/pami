@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __components_devices_bgp_gibarriermsg_h__
-#define __components_devices_bgp_gibarriermsg_h__
+#ifndef __components_devices_bgp_global_interrupt_GIBarrierMsg_h__
+#define __components_devices_bgp_global_interrupt_GIBarrierMsg_h__
 
 #include "SysDep.h"
 #include "util/common.h"

@@ -2,8 +2,8 @@
 /// \file common/bgq/Context.h
 /// \brief XMI Blue Gene\Q specific context implementation.
 ///
-#ifndef   __components_context_bgq_bgqcontext_h__
-#define   __components_context_bgq_bgqcontext_h__
+#ifndef __common_bgq_Context_h__
+#define __common_bgq_Context_h__
 
 #define XMI_CONTEXT_CLASS XMI::Context
 

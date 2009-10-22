@@ -10,8 +10,8 @@
 /// \file common/mpi/Wtime.h
 /// \brief ???
 ///
-#ifndef __components_time_mpi_mpitime_h__
-#define __components_time_mpi_mpitime_h__
+#ifndef __common_mpi_Wtime_h__
+#define __common_mpi_Wtime_h__
 
 #define XMI_TIME_CLASS XMI::Time
 

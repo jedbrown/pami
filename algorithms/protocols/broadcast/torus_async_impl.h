@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __ccmi_adaptor_broadcast_torus_async_impl__
-#define   __ccmi_adaptor_broadcast_torus_async_impl__
+#ifndef __algorithms_protocols_broadcast_torus_async_impl_h__
+#define __algorithms_protocols_broadcast_torus_async_impl_h__
 
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/schedule/RingSchedule.h"

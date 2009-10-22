@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_device_multicombinemodel_h__
-#define __components_device_multicombinemodel_h__
+#ifndef __components_devices_MulticombineModel_h__
+#define __components_devices_MulticombineModel_h__
 
 #include <sys/uio.h>
 

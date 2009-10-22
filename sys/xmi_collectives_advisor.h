@@ -3,8 +3,8 @@
  * \brief XMI client advisor layer interface.
  */
 
-#ifndef __xmi_collective_advisor_h__
-#define __xmi_collective_advisor_h__
+#ifndef __xmi_collectives_advisor_h__
+#define __xmi_collectives_advisor_h__
 
 #include "xmi.h"
 

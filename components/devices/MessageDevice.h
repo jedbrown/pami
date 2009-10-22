@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_messagedevice_h__
-#define __components_devices_messagedevice_h__
+#ifndef __components_devices_MessageDevice_h__
+#define __components_devices_MessageDevice_h__
 
 #include "components/devices/PacketDevice.h"
 

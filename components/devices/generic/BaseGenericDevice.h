@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_devices_generic_basedevice_h__
-#define __components_devices_generic_basedevice_h__
+#ifndef __components_devices_generic_BaseGenericDevice_h__
+#define __components_devices_generic_BaseGenericDevice_h__
 
 #include <util/common.h>
 

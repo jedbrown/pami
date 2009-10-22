@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_workqueue_memoryworkqueue_h__
-#define __components_devices_workqueue_memoryworkqueue_h__
+#ifndef __components_devices_workqueue_MemoryWorkQueue_h__
+#define __components_devices_workqueue_MemoryWorkQueue_h__
 
 #include "components/devices/workqueue/WorkQueue.h"
 

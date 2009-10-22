@@ -9,8 +9,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_shmempacketdevice_h__
-#define __components_devices_shmem_shmempacketdevice_h__
+#ifndef __components_devices_shmem_ShmemPacketDevice_h__
+#define __components_devices_shmem_ShmemPacketDevice_h__
 
 #include "components/devices/BaseDevice.h"
 #include "components/devices/MessageDevice.h"

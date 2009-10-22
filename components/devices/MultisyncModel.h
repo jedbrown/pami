@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_device_multisyncmodel_h__
-#define __components_device_multisyncmodel_h__
+#ifndef __components_devices_MultisyncModel_h__
+#define __components_devices_MultisyncModel_h__
 
 #include "sys/xmi.h"
 

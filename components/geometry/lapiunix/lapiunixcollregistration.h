@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_lapicollregistration__h__
-#define   __xmi_lapicollregistration__h__
+#ifndef __components_geometry_lapiunix_lapiunixcollregistration_h__
+#define __components_geometry_lapiunix_lapiunixcollregistration_h__
 
 #define XMI_COLLREGISTRATION_CLASS XMI::CollRegistration::LAPI
 

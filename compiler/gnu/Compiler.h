@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_compiler_gnu_h__
-#define __xmi_compiler_gnu_h__
+#ifndef __compiler_gnu_Compiler_h__
+#define __compiler_gnu_Compiler_h__
 
 // Here go things specific to this compiler family
 

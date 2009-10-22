@@ -10,8 +10,8 @@
  * \file components/devices/bgp/collective_network/CollectiveNetworkLib.h
  * \brief ???
  */
-#ifndef __components_devices_bgp_cnlib_h__
-#define __components_devices_bgp_cnlib_h__
+#ifndef __components_devices_bgp_collective_network_CollectiveNetworkLib_h__
+#define __components_devices_bgp_collective_network_CollectiveNetworkLib_h__
 
 #include "PipeWorkQueue.h"
 #include "components/devices/workqueue/WorkQueue.h"

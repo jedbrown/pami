@@ -10,8 +10,8 @@
 /// \file common/BaseMappingInterface.h
 /// \brief ???
 ///
-#ifndef __components_mapping_basemapping_h__
-#define __components_mapping_basemapping_h__
+#ifndef __common_BaseMappingInterface_h__
+#define __common_BaseMappingInterface_h__
 
 #include "sys/xmi.h"
 

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __ccmi_adaptor_broadcast_queue_elem__
-#define  __ccmi_adaptor_broadcast_queue_elem__
+#ifndef __algorithms_protocols_broadcast_BcastQueueElem_h__
+#define __algorithms_protocols_broadcast_BcastQueueElem_h__
 
 #include "util/queue/Queue.h"
 #include "algorithms/composite/Composite.h"

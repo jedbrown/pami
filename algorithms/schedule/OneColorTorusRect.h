@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __new_rectangle_broadcast_collective_h__
-#define  __new_rectangle_broadcast_collective_h__
+#ifndef __algorithms_schedule_OneColorTorusRect_h__
+#define __algorithms_schedule_OneColorTorusRect_h__
 
 /*-------------------------------------------------*/
 /*     Basic utility classes collectives           */

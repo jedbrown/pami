@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_topology_lapi_topology_h__
-#define __components_topology_lapi_topology_h__
+#ifndef __common_lapiunix_Topology_h__
+#define __common_lapiunix_Topology_h__
 
 ////////////////////////////////////////////////////////////////////////
 /// \file common/lapiunix/Topology.h

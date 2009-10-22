@@ -14,8 +14,8 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __components_devices_bgq_mu_channel_h__
-#define __components_devices_bgq_mu_channel_h__
+#ifndef __components_devices_bgq_mu_MUChannel_h__
+#define __components_devices_bgq_mu_MUChannel_h__
 
 #include "components/devices/bgq/mu/MUBaseMessage.h"
 #include "components/devices/bgq/mu/ResourceManager.h"

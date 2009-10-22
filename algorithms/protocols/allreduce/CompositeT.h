@@ -11,8 +11,8 @@
  * \brief CCMI allreduce sync composite template
  */
 
-#ifndef __ccmi_collectives_allreduce_compositet_h__
-#define __ccmi_collectives_allreduce_compositet_h__
+#ifndef __algorithms_protocols_allreduce_CompositeT_h__
+#define __algorithms_protocols_allreduce_CompositeT_h__
 
 #include "algorithms/protocols/allreduce/Composite.h"
 #include "algorithms/schedule/Rectangle.h"

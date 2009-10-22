@@ -11,8 +11,8 @@
  * \brief An executor composite class which supports optional barriers
  */
 
-#ifndef __CCMI_KERNEL_EXECUTOR_COMPOSITE__
-#define __CCMI_KERNEL_EXECUTOR_COMPOSITE__
+#ifndef __algorithms_composite_Composite_h__
+#define __algorithms_composite_Composite_h__
 
 #include "algorithms/executor/Executor.h"
 

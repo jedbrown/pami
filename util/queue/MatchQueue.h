@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __util_queue_matchqueue_h__
-#define   __util_queue_matchqueue_h__
+#ifndef __util_queue_MatchQueue_h__
+#define __util_queue_MatchQueue_h__
 
 #include "Queue.h"
 

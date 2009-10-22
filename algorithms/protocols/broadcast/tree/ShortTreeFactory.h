@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_broadcast_short_tree_factory_h__
-#define __ccmi_adaptor_broadcast_short_tree_factory_h__
+#ifndef __algorithms_protocols_broadcast_tree_ShortTreeFactory_h__
+#define __algorithms_protocols_broadcast_tree_ShortTreeFactory_h__
 
 //#include "algorithms/schedule/TreeSchedule.h"
 //#include "algorithms/schedule/TreeBwSchedule.h"

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __ccmi_adaptor_protocol_factory__
-#define  __ccmi_adaptor_protocol_factory__
+#ifndef __algorithms_protocols_CollectiveProtocolFactory_h__
+#define __algorithms_protocols_CollectiveProtocolFactory_h__
 
 namespace CCMI
 {

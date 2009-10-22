@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_atomic_bgp_lockboxmutex_h__
-#define __components_atomic_bgp_lockboxmutex_h__
+#ifndef __components_atomic_bgp_LockBoxMutex_h__
+#define __components_atomic_bgp_LockBoxMutex_h__
 
 /**
  * \file components/atomic/bgp/LockBoxMutex.h

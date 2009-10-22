@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __xmi_bgp_lwarxstwcxbarrier_h__
-#define __xmi_bgp_lwarxstwcxbarrier_h__
+#ifndef __components_atomic_bgp_LwarxStwcxBarrier_h__
+#define __components_atomic_bgp_LwarxStwcxBarrier_h__
 
 /**
  * \file components/atomic/bgp/LwarxStwcxBarrier.h

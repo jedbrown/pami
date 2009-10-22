@@ -11,8 +11,8 @@
  * \brief Defines common and default macros and checks for required macro definitions.
  */
 
-#ifndef __xmi_arch_common_h__
-#define __xmi_arch_common_h__
+#ifndef __arch_ArchInterface_h__
+#define __arch_ArchInterface_h__
 
 ///
 /// \brief Encapuslating class for static methods which allows partial template specialization

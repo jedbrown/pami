@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapimanytomanymodel_h__
-#define __components_devices_lapi_lapimanytomanymodel_h__
+#ifndef __components_devices_lapiunix_lapiunixmanytomanymodel_h__
+#define __components_devices_lapiunix_lapiunixmanytomanymodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/ManytomanyModel.h"

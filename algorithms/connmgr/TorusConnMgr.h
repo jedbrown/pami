@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __torus_conn_mgr_h__
-#define  __torus_conn_mgr_h__
+#ifndef __algorithms_connmgr_TorusConnMgr_h__
+#define __algorithms_connmgr_TorusConnMgr_h__
 
 #include "ConnectionManager.h"
 

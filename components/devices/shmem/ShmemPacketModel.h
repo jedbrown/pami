@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_shmempacketmodel_h__
-#define __components_devices_shmem_shmempacketmodel_h__
+#ifndef __components_devices_shmem_ShmemPacketModel_h__
+#define __components_devices_shmem_ShmemPacketModel_h__
 
 #include <errno.h>
 

@@ -10,8 +10,8 @@
 /// \file common/bgq/Mapping.h
 /// \brief ???
 ///
-#ifndef __components_mapping_bgq_bgqmapping_h__
-#define __components_mapping_bgq_bgqmapping_h__
+#ifndef __common_bgq_Mapping_h__
+#define __common_bgq_Mapping_h__
 
 #include <hwi/include/bqc/MU_PacketCommon.h>
 

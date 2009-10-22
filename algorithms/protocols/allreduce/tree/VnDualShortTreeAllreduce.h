@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_allreduce_vn_dual_short_tree_h__
-#define __ccmi_adaptor_allreduce_vn_dual_short_tree_h__
+#ifndef __algorithms_protocols_allreduce_tree_VnDualShortTreeAllreduce_h__
+#define __algorithms_protocols_allreduce_tree_VnDualShortTreeAllreduce_h__
 
 #include "../BaseComposite.h"
 #include "multisend/multisend_impl.h"

@@ -1,5 +1,5 @@
-#ifndef  __DCMF_MU_MUSENDMESSAGE_H__
-#define  __DCMF_MU_MUSENDMESSAGE_H__
+#ifndef __components_devices_bgq_mu_MUSendMessage_h__
+#define __components_devices_bgq_mu_MUSendMessage_h__
 #error FOO!
 #include "MUBaseMessage.h"
 #include <spi/include/mu/DescriptorBaseXX.h>

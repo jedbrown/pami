@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_components_sysdep_bgq_bgqpersonnality_h__
-#define __xmi_components_sysdep_bgq_bgqpersonnality_h__
+#ifndef __common_bgq_BgqPersonality_h__
+#define __common_bgq_BgqPersonality_h__
 ///
 ///  \file common/bgq/BgqPersonality.h
 ///  \brief Blue Gene/Q Personality Object

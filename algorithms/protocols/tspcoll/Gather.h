@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_gather_h__
-#define __tspcoll_gather_h__
+#ifndef __algorithms_protocols_tspcoll_Gather_h__
+#define __algorithms_protocols_tspcoll_Gather_h__
 
 #include <assert.h>
 #include <stdio.h>

@@ -1,5 +1,5 @@
-#ifndef  __MU_BASE_MESSAGE_TEMPLATE__
-#define  __MU_BASE_MESSAGE_TEMPLATE__
+#ifndef __components_devices_bgq_mu_MUBaseMessageT_h__
+#define __components_devices_bgq_mu_MUBaseMessageT_h__
 
 ///
 /// \brief The MU Message base class template. This explore Barton Nackman and

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_workqueue_workqueue_h__
-#define __components_devices_workqueue_workqueue_h__
+#ifndef __components_devices_workqueue_WorkQueue_h__
+#define __components_devices_workqueue_WorkQueue_h__
 
 #include "SysDep.h"
 #include "PipeWorkQueue.h"

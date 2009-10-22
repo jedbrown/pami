@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_mpicollregistration__h__
-#define   __xmi_mpicollregistration__h__
+#ifndef __components_geometry_mpi_mpicollregistration_h__
+#define __components_geometry_mpi_mpicollregistration_h__
 
 #define XMI_COLLREGISTRATION_CLASS XMI::CollRegistration::MPI
 

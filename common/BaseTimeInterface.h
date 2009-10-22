@@ -10,8 +10,8 @@
 /// \file common/BaseTimeInterface.h
 /// \brief ???
 ///
-#ifndef __components_time_basetime_h__
-#define __components_time_basetime_h__
+#ifndef __common_BaseTimeInterface_h__
+#define __common_BaseTimeInterface_h__
 
 #ifndef XMI_TIME_CLASS
 #error XMI_TIME_CLASS must be defined

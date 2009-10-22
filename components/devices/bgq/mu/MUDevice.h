@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_bgq_mu_mudevice_h__
-#define __components_devices_bgq_mu_mudevice_h__
+#ifndef __components_devices_bgq_mu_MUDevice_h__
+#define __components_devices_bgq_mu_MUDevice_h__
 
 #include <stdint.h>
 

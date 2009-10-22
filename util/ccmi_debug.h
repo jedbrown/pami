@@ -11,8 +11,8 @@
  * \brief common debug macros
  */
 
-#ifndef __adaptor_ccmi_debug_h__
-#define __adaptor_ccmi_debug_h__
+#ifndef __util_ccmi_debug_h__
+#define __util_ccmi_debug_h__
 
 #include <stdio.h>
 #include <stdarg.h>

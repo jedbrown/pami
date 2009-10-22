@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_collregistration__h__
-#define   __xmi_collregistration__h__
+#ifndef __components_geometry_CollRegistration_h__
+#define __components_geometry_CollRegistration_h__
 
 #include "sys/xmi.h"
 

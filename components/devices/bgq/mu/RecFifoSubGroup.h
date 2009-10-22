@@ -14,8 +14,8 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __components_devices_bgq_mu_recfifosubgroup_h__
-#define __components_devices_bgq_mu_recfifosubgroup_h__
+#ifndef __components_devices_bgq_mu_RecFifoSubGroup_h__
+#define __components_devices_bgq_mu_RecFifoSubGroup_h__
 
 #include <errno.h>
 

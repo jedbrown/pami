@@ -10,8 +10,8 @@
 /// \file common/bgq/Wtime.h
 /// \brief ???
 ///
-#ifndef __components_time_bgq_bgqtime_h__
-#define __components_time_bgq_bgqtime_h__
+#ifndef __common_bgq_Wtime_h__
+#define __common_bgq_Wtime_h__
 
 #define XMI_TIME_CLASS XMI::Time
 

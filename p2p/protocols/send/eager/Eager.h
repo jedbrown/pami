@@ -15,8 +15,8 @@
 ///
 /// C++ templates require all source code to be #include'd from a header file.
 ///
-#ifndef __xmi_p2p_protocol_send_eager_eager_h__
-#define __xmi_p2p_protocol_send_eager_eager_h__
+#ifndef __p2p_protocols_send_eager_Eager_h__
+#define __p2p_protocols_send_eager_Eager_h__
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"

@@ -12,8 +12,8 @@
 /// \brief ???
 ///
 
-#ifndef __common_bgq_platform_h__
-#define __common_bgq_platform_h__
+#ifndef __common_bgq_Platform_h__
+#define __common_bgq_Platform_h__
 
 #define NUM_CORES	16
 #define NUM_SMT		4

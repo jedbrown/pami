@@ -16,8 +16,8 @@
  *       macros. These can also be implemented in a different way.
  */
 
-#ifndef __components_devices_shmem_shmemsysdep_h__
-#define __components_devices_shmem_shmemsysdep_h__
+#ifndef __components_devices_shmem_ShmemSysDep_h__
+#define __components_devices_shmem_ShmemSysDep_h__
 
 #if defined(__bgp__) and !defined(__bgq__)
 

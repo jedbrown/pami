@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_mutex_object_h__
-#define __xmi_mutex_object_h__
+#ifndef __components_atomic_Mutex_h__
+#define __components_atomic_Mutex_h__
 
 ///
 ///  \file components/atomic/Mutex.h

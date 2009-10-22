@@ -2,8 +2,8 @@
 /// \file components/memregion/bgq/BgqMemregion.h
 /// \brief XMI BG/Q specific memregion implementation.
 ///
-#ifndef   __components_memregion_bgq_bgqmemregion_h__
-#define   __components_memregion_bgq_bgqmemregion_h__
+#ifndef __components_memregion_bgq_BgqMemregion_h__
+#define __components_memregion_bgq_BgqMemregion_h__
 
 #include <stdlib.h>
 #include <string.h>

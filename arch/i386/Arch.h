@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_arch_i386_h__
-#define __xmi_arch_i386_h__
+#ifndef __arch_i386_Arch_h__
+#define __arch_i386_Arch_h__
 
 #include "arch/ArchInterface.h"
 

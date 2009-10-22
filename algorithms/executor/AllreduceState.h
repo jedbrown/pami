@@ -10,8 +10,8 @@
  * \file algorithms/executor/AllreduceState.h
  * \brief The persistent state data for [all]reduce executor
  */
-#ifndef __allreduce_state_h__
-#define __allreduce_state_h__
+#ifndef __algorithms_executor_AllreduceState_h__
+#define __algorithms_executor_AllreduceState_h__
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"

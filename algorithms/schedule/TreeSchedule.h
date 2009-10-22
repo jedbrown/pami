@@ -12,8 +12,8 @@
  * on the BlueGene tree network
  */
 
-#ifndef  __TREE_SCHEDULE__
-#define  __TREE_SCHEDULE__
+#ifndef __algorithms_schedule_TreeSchedule_h__
+#define __algorithms_schedule_TreeSchedule_h__
 
 #include "Schedule.h"
 #include "util/ccmi_util.h"

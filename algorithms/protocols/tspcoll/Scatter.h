@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_scatter_h__
-#define __tspcoll_scatter_h__
+#ifndef __algorithms_protocols_tspcoll_Scatter_h__
+#define __algorithms_protocols_tspcoll_Scatter_h__
 
 #include <assert.h>
 #include <stdio.h>

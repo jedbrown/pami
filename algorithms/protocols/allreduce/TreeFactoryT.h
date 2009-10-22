@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_allreduce_tree_factoryt_h__
-#define __ccmi_adaptor_allreduce_tree_factoryt_h__
+#ifndef __algorithms_protocols_allreduce_TreeFactoryT_h__
+#define __algorithms_protocols_allreduce_TreeFactoryT_h__
 
 #include "./Factory.h"
 #include "./TreeCompositeT.h"

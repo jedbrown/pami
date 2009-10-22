@@ -10,8 +10,8 @@
 /// \file common/NodeMappingInterface.h
 /// \brief ???
 ///
-#ifndef __components_mapping_nodemapping_h__
-#define __components_mapping_nodemapping_h__
+#ifndef __common_NodeMappingInterface_h__
+#define __common_NodeMappingInterface_h__
 
 #include "sys/xmi.h"
 

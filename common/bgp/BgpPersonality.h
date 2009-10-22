@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_components_sysdep_bgp_bgppersonnality_h__
-#define __xmi_components_sysdep_bgp_bgppersonnality_h__
+#ifndef __common_bgp_BgpPersonality_h__
+#define __common_bgp_BgpPersonality_h__
 ///
 ///  \file common/bgp/BgpPersonality.h
 ///  \brief Blue Gene/P Personality Object

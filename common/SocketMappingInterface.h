@@ -10,8 +10,8 @@
 /// \file common/SocketMappingInterface.h
 /// \brief ???
 ///
-#ifndef __components_mapping_socketmapping_h__
-#define __components_mapping_socketmapping_h__
+#ifndef __common_SocketMappingInterface_h__
+#define __common_SocketMappingInterface_h__
 
 #include "sys/xmi.h"
 

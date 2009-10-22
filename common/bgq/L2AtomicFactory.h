@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __xmi_bgq_l2atomicfactory_h__
-#define __xmi_bgq_l2atomicfactory_h__
+#ifndef __common_bgq_L2AtomicFactory_h__
+#define __common_bgq_L2AtomicFactory_h__
 
 // not sure what this should be yet...
 #define MapL2AtomicRegion(v)	((uintptr_t)v)

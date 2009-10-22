@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __dcmf_workqueue_localallreducewqmsg_h__
-#define __dcmf_workqueue_localallreducewqmsg_h__
+#ifndef __components_devices_workqueue_LocalAllreduceWQMessage_h__
+#define __components_devices_workqueue_LocalAllreduceWQMessage_h__
 
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/workqueue/SharedWorkQueue.h"

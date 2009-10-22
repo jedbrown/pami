@@ -12,8 +12,8 @@
  * a ring sub-schedule and dput multisend.
  */
 
-#ifndef __ccmi_adaptor_allreduce_rectanglering_dput_factory_h__
-#define __ccmi_adaptor_allreduce_rectanglering_dput_factory_h__
+#ifndef __algorithms_protocols_allreduce_rectanglering_dput_Factory_h__
+#define __algorithms_protocols_allreduce_rectanglering_dput_Factory_h__
 
 #include "algorithms/protocols/allreduce/Factory.h"
 #include "algorithms/protocols/allreduce/rectanglering_dput/Composite.h"

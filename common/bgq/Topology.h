@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_topology_bgq_bgqtopology_h__
-#define __components_topology_bgq_bgqtopology_h__
+#ifndef __common_bgq_Topology_h__
+#define __common_bgq_Topology_h__
 
 ////////////////////////////////////////////////////////////////////////
 /// \file common/bgq/Topology.h

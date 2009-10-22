@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_broadcast_async_composite_t_h__
-#define __ccmi_adaptor_broadcast_async_composite_t_h__
+#ifndef __algorithms_protocols_broadcast_AsyncCompositeT_h__
+#define __algorithms_protocols_broadcast_AsyncCompositeT_h__
 
 #include "algorithms/executor/Broadcast.h"
 #include "algorithms/connmgr/RankBasedConnMgr.h"

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __DblUtils_h__
-#define __DblUtils_h__
+#ifndef __math_bgp_collective_network_DblUtils_h__
+#define __math_bgp_collective_network_DblUtils_h__
 
 /* ******************************************************************** */
 /*                  asm macros for processing exponents                 */

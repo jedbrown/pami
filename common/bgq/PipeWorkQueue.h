@@ -2,8 +2,8 @@
 /// \file common/bgq/PipeWorkQueue.h
 /// \brief XMI BG/P specific PipeWorkQueue implementation.
 ///
-#ifndef   __components_pipeworkqueue_bgq_bgqpipeworkqueue_h__
-#define   __components_pipeworkqueue_bgq_bgqpipeworkqueue_h__
+#ifndef __common_bgq_PipeWorkQueue_h__
+#define __common_bgq_PipeWorkQueue_h__
 
 #include <stdlib.h>
 #include <string.h>

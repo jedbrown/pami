@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __basic_ccmi_util_types_h__
-#define   __basic_ccmi_util_types_h__
+#ifndef __util_ccmi_util_h__
+#define __util_ccmi_util_h__
 
 //#define throw() // Needed for xlC -noeh processing
 //#include <config.h>

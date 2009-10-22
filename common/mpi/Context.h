@@ -2,8 +2,8 @@
 /// \file common/mpi/Context.h
 /// \brief XMI MPI specific context implementation.
 ///
-#ifndef   __xmi_mpi_mpicontext_h__
-#define   __xmi_mpi_mpicontext_h__
+#ifndef __common_mpi_Context_h__
+#define __common_mpi_Context_h__
 
 #define XMI_CONTEXT_CLASS XMI::Context
 

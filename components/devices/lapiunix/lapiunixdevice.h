@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapidevice_h__
-#define __components_devices_lapi_lapidevice_h__
+#ifndef __components_devices_lapiunix_lapiunixdevice_h__
+#define __components_devices_lapiunix_lapiunixdevice_h__
 
 #include "components/devices/BaseDevice.h"
 #include "components/devices/MessageDevice.h"

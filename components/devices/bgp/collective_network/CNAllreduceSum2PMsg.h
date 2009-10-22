@@ -12,8 +12,8 @@
  * \brief Default collective network allreduce interface
  * for DOUBLE-SUM 2-Pass algorithm
  */
-#ifndef __components_devices_bgp_cnallreduce2psummsg_h__
-#define __components_devices_bgp_cnallreduce2psummsg_h__
+#ifndef __components_devices_bgp_collective_network_CNAllreduceSum2PMsg_h__
+#define __components_devices_bgp_collective_network_CNAllreduceSum2PMsg_h__
 
 #include "util/common.h"
 #include "components/devices/workqueue/SharedWorkQueue.h"

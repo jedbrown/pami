@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_atomic_gcccounter_h__
-#define __components_atomic_gcccounter_h__
+#ifndef __components_atomic_gcc_GccCounter_h__
+#define __components_atomic_gcc_GccCounter_h__
 
 /**
  * \file components/atomic/gcc/GccCounter.h

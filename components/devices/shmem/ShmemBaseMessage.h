@@ -9,8 +9,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_shmembasemessage_h__
-#define __components_devices_shmem_shmembasemessage_h__
+#ifndef __components_devices_shmem_ShmemBaseMessage_h__
+#define __components_devices_shmem_ShmemBaseMessage_h__
 
 #include <sys/uio.h>
 

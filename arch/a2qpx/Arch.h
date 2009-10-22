@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_arch_a2qpx_h__
-#define __xmi_arch_a2qpx_h__
+#ifndef __arch_a2qpx_Arch_h__
+#define __arch_a2qpx_Arch_h__
 
 #include "arch/ArchInterface.h"
 

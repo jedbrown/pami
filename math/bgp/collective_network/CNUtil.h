@@ -12,8 +12,8 @@
  *
  * Detailed description.
  */
-#ifndef __core_CNUtil_impl_h__
-#define __core_CNUtil_impl_h__
+#ifndef __math_bgp_collective_network_CNUtil_h__
+#define __math_bgp_collective_network_CNUtil_h__
 #include <stdint.h>
 #include "math/FloatUtil.h"
 

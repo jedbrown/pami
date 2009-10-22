@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_mapping_lapi_lapimapping_h__
-#define __components_mapping_lapi_lapimapping_h__
+#ifndef __common_lapiunix_Mapping_h__
+#define __common_lapiunix_Mapping_h__
 
 #include "sys/xmi.h"
 #include "Platform.h"

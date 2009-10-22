@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __ccmi_adaptor_allreduce_tree_compositet_h__
-#define __ccmi_adaptor_allreduce_tree_compositet_h__
+#ifndef __algorithms_protocols_allreduce_TreeCompositeT_h__
+#define __algorithms_protocols_allreduce_TreeCompositeT_h__
 
 #include "./Composite.h"
 

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_commongeometry__h__
-#define   __xmi_commongeometry__h__
+#ifndef __common_default_Geometry_h__
+#define __common_default_Geometry_h__
 
 //#include "config.h"
 

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __ccmi_adaptor_broadcast_torus_multi_color_impl__
-#define   __ccmi_adaptor_broadcast_torus_multi_color_impl__
+#ifndef __algorithms_protocols_broadcast_torus_multi_color_impl_h__
+#define __algorithms_protocols_broadcast_torus_multi_color_impl_h__
 
 #include "algorithms/schedule/Rectangle.h"
 #include "algorithms/schedule/OneColorTorusRect.h"

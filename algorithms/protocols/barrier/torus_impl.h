@@ -10,8 +10,8 @@
  * \file algorithms/protocols/barrier/torus_impl.h
  * \brief ???
  */
-#ifndef   __ccmi_adaptor_torus_multi_color_impl__
-#define   __ccmi_adaptor_torus_multi_color_impl__
+#ifndef __algorithms_protocols_barrier_torus_impl_h__
+#define __algorithms_protocols_barrier_torus_impl_h__
 
 #include "algorithms/schedule/GiSchedule.h"
 #include "algorithms/schedule/LockboxBarrierSchedule.h"

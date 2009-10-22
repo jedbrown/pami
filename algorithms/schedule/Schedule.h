@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __schedule_h__
-#define  __schedule_h__
+#ifndef __algorithms_schedule_Schedule_h__
+#define __algorithms_schedule_Schedule_h__
 
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"

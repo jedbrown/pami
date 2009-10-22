@@ -11,8 +11,8 @@
  * \brief common routines for ccmi tests
  */
 
-#ifndef __SYS_TESTS_COMMON_H__
-#define __SYS_TESTS_COMMON_H__
+#ifndef __algorithms_tests_generic_common_h__
+#define __algorithms_tests_generic_common_h__
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"

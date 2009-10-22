@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_workqueue_wqringbcastmsg_h__
-#define __components_devices_workqueue_wqringbcastmsg_h__
+#ifndef __components_devices_workqueue_WQRingBcastMsg_h__
+#define __components_devices_workqueue_WQRingBcastMsg_h__
 
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"

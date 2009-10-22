@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_memregion_h__
-#define __xmi_memregion_h__
+#ifndef __components_memregion_MemRegion_h__
+#define __components_memregion_MemRegion_h__
 
 #include "sys/xmi.h"
 

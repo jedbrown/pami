@@ -2,8 +2,8 @@
 /// \file common/PipeWorkQueueInterface.h
 /// \brief XMI pipeworkqueue implementation.
 ///
-#ifndef   __xmi_component_pipeworkqueue_h__
-#define   __xmi_component_pipeworkqueue_h__
+#ifndef __common_PipeWorkQueueInterface_h__
+#define __common_PipeWorkQueueInterface_h__
 
 #include "sys/xmi.h"
 

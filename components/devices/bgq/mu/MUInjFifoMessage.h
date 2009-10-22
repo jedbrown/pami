@@ -10,8 +10,8 @@
  * \file components/devices/bgq/mu/MUInjFifoMessage.h
  * \brief ???
  */
-#ifndef __devices_bgq_mu_inj_fifo_message_h__
-#define __devices_bgq_mu_inj_fifo_message_h__
+#ifndef __components_devices_bgq_mu_MUInjFifoMessage_h__
+#define __components_devices_bgq_mu_MUInjFifoMessage_h__
 
 #include <sys/uio.h>
 

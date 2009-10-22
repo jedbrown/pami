@@ -1,5 +1,5 @@
-#ifndef __xmi__h__
-#define __xmi__h__
+#ifndef __xmi_h__
+#define __xmi_h__
 
 #include <stdint.h>
 #include <stddef.h>

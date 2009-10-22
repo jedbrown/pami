@@ -1,5 +1,5 @@
-#ifndef _COMPACT_ATTRIBUTES_H_
-#define _COMPACT_ATTRIBUTES_H_
+#ifndef __util_compact_attributes_h__
+#define __util_compact_attributes_h__
 
 /* denotes the end of arguments in variadic functions */
 #define CA_END_ARGS   -1

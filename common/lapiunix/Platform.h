@@ -12,8 +12,8 @@
 /// \brief ???
 ///
 
-#ifndef __common_lapiunix_platform_h__
-#define __common_lapiunix_platform_h__
+#ifndef __common_lapiunix_Platform_h__
+#define __common_lapiunix_Platform_h__
 
 #define NUM_CORES 1
 #define NUM_SMT 1

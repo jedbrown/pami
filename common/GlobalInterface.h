@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __xmi_common_global_h__
-#define __xmi_common_global_h__
+#ifndef __common_GlobalInterface_h__
+#define __common_GlobalInterface_h__
 
 ///
 /// \file common/GlobalInterface.h

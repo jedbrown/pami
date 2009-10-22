@@ -12,8 +12,8 @@
  * \brief Prototypes of routines used internally
  */
 
-#ifndef __math_math_internal_h__
-#define __math_math_internal_h__
+#ifndef __math_internal_h__
+#define __math_internal_h__
 
 #include "util/common.h"
 

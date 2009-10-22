@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __components_devices_generic_device_h__
-#define __components_devices_generic_device_h__
+#ifndef __components_devices_generic_Device_h__
+#define __components_devices_generic_Device_h__
 
 // The section of the Generic::Device implements the interfaces
 // used by the sub-devices. See GenericDevice.h for interfaces

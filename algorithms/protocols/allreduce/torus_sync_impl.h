@@ -11,8 +11,8 @@
  * \brief CCMI composite template implementations
  */
 
-#ifndef __ccmi_adaptor_allreduce_torus_sync_impl_h__
-#define __ccmi_adaptor_allreduce_torus_sync_impl_h__
+#ifndef __algorithms_protocols_allreduce_torus_sync_impl_h__
+#define __algorithms_protocols_allreduce_torus_sync_impl_h__
 
 #include "./CompositeT.h"
 #include "./FactoryT.h"

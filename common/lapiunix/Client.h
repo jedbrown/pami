@@ -2,8 +2,8 @@
 /// \file common/lapiunix/Client.h
 /// \brief XMI client interface specific for the LAPI platform.
 ///
-#ifndef   __xmi_lapi_lapiclient_h__
-#define   __xmi_lapi_lapiclient_h__
+#ifndef __common_lapiunix_Client_h__
+#define __common_lapiunix_Client_h__
 
 #include <stdlib.h>
 

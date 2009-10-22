@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_atomic_gcc_gccbuiltin_h__
-#define __components_atomic_gcc_gccbuiltin_h__
+#ifndef __components_atomic_gcc_GccBuiltin_h__
+#define __components_atomic_gcc_GccBuiltin_h__
 
 #include "components/atomic/Counter.h"
 #include "util/common.h"

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_mpicollfactory__h__
-#define   __xmi_mpicollfactory__h__
+#ifndef __components_geometry_mpi_mpicollfactory_h__
+#define __components_geometry_mpi_mpicollfactory_h__
 
 
 #define XMI_COLLFACTORY_CLASS XMI::CollFactory::MPI<Device::MPIDevice<SysDep>, SysDep>

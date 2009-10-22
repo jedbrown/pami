@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __broadcast_executor_h__
-#define   __broadcast_executor_h__
+#ifndef __algorithms_executor_Broadcast_h__
+#define __algorithms_executor_Broadcast_h__
 
 //#define TRACE_FLOW(x)  fprintf x
 

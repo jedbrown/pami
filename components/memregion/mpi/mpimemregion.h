@@ -2,8 +2,8 @@
 /// \file components/memregion/mpi/mpimemregion.h
 /// \brief XMI MPI specific memregion implementation.
 ///
-#ifndef   __xmi_mpi_mpimemregion_h__
-#define   __xmi_mpi_mpimemregion_h__
+#ifndef __components_memregion_mpi_mpimemregion_h__
+#define __components_memregion_mpi_mpimemregion_h__
 
 #include <stdlib.h>
 #include <string.h>

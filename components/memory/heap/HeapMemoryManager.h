@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_components_memory_heap_heapmemorymanager_h__
-#define __xmi_components_memory_heap_heapmemorymanager_h__
+#ifndef __components_memory_heap_HeapMemoryManager_h__
+#define __components_memory_heap_HeapMemoryManager_h__
 
 #include "components/memory/MemoryManager.h"
 

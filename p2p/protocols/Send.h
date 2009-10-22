@@ -10,8 +10,8 @@
 /// \file p2p/protocols/Send.h
 /// \brief Defines base class interface for sends.
 ///
-#ifndef __xmi_p2p_protocols_send_h__
-#define __xmi_p2p_protocols_send_h__
+#ifndef __p2p_protocols_Send_h__
+#define __p2p_protocols_Send_h__
 
 #include "sys/xmi.h"
 

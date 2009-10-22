@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapimulticastmodel_h__
-#define __components_devices_lapi_lapimulticastmodel_h__
+#ifndef __components_devices_lapiunix_lapiunixmulticastmodel_h__
+#define __components_devices_lapiunix_lapiunixmulticastmodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/MulticastModel.h"

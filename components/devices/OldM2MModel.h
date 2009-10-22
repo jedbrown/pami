@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_device_Oldm2mmodel_h__
-#define __components_device_Oldm2mmodel_h__
+#ifndef __components_devices_OldM2MModel_h__
+#define __components_devices_OldM2MModel_h__
 
 #include "sys/xmi.h"
 #include "algorithms/ccmi.h"

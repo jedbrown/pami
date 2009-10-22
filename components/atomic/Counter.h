@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_atomic_counter_h__
-#define __components_atomic_counter_h__
+#ifndef __components_atomic_Counter_h__
+#define __components_atomic_Counter_h__
 
 namespace XMI
 {

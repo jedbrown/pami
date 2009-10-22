@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_basedevice_h__
-#define __components_devices_basedevice_h__
+#ifndef __components_devices_BaseDevice_h__
+#define __components_devices_BaseDevice_h__
 
 #include "sys/xmi.h"
 

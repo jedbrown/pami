@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __util_fifo_fifo_h__
-#define __util_fifo_fifo_h__
+#ifndef __util_fifo_Fifo_h__
+#define __util_fifo_Fifo_h__
 
 #ifndef TRACE
 #define TRACE(x)

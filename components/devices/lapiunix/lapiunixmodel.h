@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapipacketmodel_h__
-#define __components_devices_lapi_lapipacketmodel_h__
+#ifndef __components_devices_lapiunix_lapiunixmodel_h__
+#define __components_devices_lapiunix_lapiunixmodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/MessageModel.h"

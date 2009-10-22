@@ -10,8 +10,8 @@
 /// \file common/lapiunix/Wtime.h
 /// \brief ???
 ///
-#ifndef __components_time_lapi_lapitime_h__
-#define __components_time_lapi_lapitime_h__
+#ifndef __common_lapiunix_Wtime_h__
+#define __common_lapiunix_Wtime_h__
 
 #define XMI_TIME_CLASS XMI::Time
 

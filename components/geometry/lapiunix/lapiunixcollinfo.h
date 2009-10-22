@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_lapicollinfo__h__
-#define   __xmi_lapicollinfo__h__
+#ifndef __components_geometry_lapiunix_lapiunixcollinfo_h__
+#define __components_geometry_lapiunix_lapiunixcollinfo_h__
 
 #include <vector>
 #include "components/geometry/CollRegistration.h"

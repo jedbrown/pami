@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_allreduce_shm_tree_h__
-#define __ccmi_adaptor_allreduce_shm_tree_h__
+#ifndef __algorithms_protocols_allreduce_tree_SmpTreeAllreduce_h__
+#define __algorithms_protocols_allreduce_tree_SmpTreeAllreduce_h__
 
 #include "../BaseComposite.h"
 #include "multisend/multisend_impl.h"

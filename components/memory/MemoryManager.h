@@ -13,8 +13,8 @@
 /// The class defined in this file uses C++ templates. C++ templates
 /// require all source code to be #include'd from a header file.
 ///
-#ifndef __xmi_components_memory_memorymanager_h__
-#define __xmi_components_memory_memorymanager_h__
+#ifndef __components_memory_MemoryManager_h__
+#define __components_memory_MemoryManager_h__
 
 #include "sys/xmi.h"
 

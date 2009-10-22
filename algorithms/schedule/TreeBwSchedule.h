@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __tree_bw_schedule__
-#define  __tree_bw_schedule__
+#ifndef __algorithms_schedule_TreeBwSchedule_h__
+#define __algorithms_schedule_TreeBwSchedule_h__
 
 #include "Schedule.h"
 #include "util/ccmi_util.h"

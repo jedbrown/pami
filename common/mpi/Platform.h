@@ -12,8 +12,8 @@
 /// \brief ???
 ///
 
-#ifndef __common_mpi_platform_h__
-#define __common_mpi_platform_h__
+#ifndef __common_mpi_Platform_h__
+#define __common_mpi_Platform_h__
 
 #define NUM_CORES 1
 #define NUM_SMT 1

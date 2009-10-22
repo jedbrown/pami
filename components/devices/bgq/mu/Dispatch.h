@@ -10,8 +10,8 @@
  * \file components/devices/bgq/mu/Dispatch.h
  * \brief ???
  */
-#ifndef __devices_bgq_mu_dispatch_h__
-#define __devices_bgq_mu_dispatch_h__
+#ifndef __components_devices_bgq_mu_Dispatch_h__
+#define __components_devices_bgq_mu_Dispatch_h__
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 

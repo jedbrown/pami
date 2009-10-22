@@ -10,8 +10,8 @@
  * \file components/devices/bgq/mu/MUDmaModel.h
  * \brief ???
  */
-#ifndef __devices_bgq_mu_dma_model_h__blah
-#define __devices_bgq_mu_dma_model_h__blah
+#ifndef __components_devices_bgq_mu_MUDmaModel_h__
+#define __components_devices_bgq_mu_MUDmaModel_h__
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 

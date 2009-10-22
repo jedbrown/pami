@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_blockingbarrier_h__
-#define __tspcoll_blockingbarrier_h__
+#ifndef __algorithms_protocols_tspcoll_BlockingBarrier_h__
+#define __algorithms_protocols_tspcoll_BlockingBarrier_h__
 
 #include "interface/Communicator.h"
 #include <assert.h>

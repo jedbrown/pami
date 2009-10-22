@@ -1,5 +1,5 @@
-#ifndef ___LAPI_UTIL_H__
-#define ___LAPI_UTIL_H__
+#ifndef __util_lapi_lapi_util_h__
+#define __util_lapi_lapi_util_h__
 
 #include <assert.h>
 #include <stdlib.h>

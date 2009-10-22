@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef ___collective_callbacks__
-#define ___collective_callbacks__
+#ifndef __algorithms_protocols_tspcoll_NBCallbacks_h__
+#define __algorithms_protocols_tspcoll_NBCallbacks_h__
 
 /* *********************************************************************** */
 /*                   incoming active message                               */

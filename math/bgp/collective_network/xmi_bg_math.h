@@ -18,8 +18,8 @@
  */
 
 
-#ifndef _xmi_bg_math_h_
-#define _xmi_bg_math_h_
+#ifndef __math_bgp_collective_network_xmi_bg_math_h__
+#define __math_bgp_collective_network_xmi_bg_math_h__
 
 #include <stdint.h>
 #include "math/math_coremath.h"

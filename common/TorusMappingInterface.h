@@ -10,8 +10,8 @@
 /// \file common/TorusMappingInterface.h
 /// \brief ???
 ///
-#ifndef __components_mapping_torusmapping_h__
-#define __components_mapping_torusmapping_h__
+#ifndef __common_TorusMappingInterface_h__
+#define __common_TorusMappingInterface_h__
 
 #include "sys/xmi.h"
 

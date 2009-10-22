@@ -2,8 +2,8 @@
 /// \file common/mpi/Client.h
 /// \brief XMI client interface specific for the MPI platform.
 ///
-#ifndef   __xmi_mpi_mpiclient_h__
-#define   __xmi_mpi_mpiclient_h__
+#ifndef __common_mpi_Client_h__
+#define __common_mpi_Client_h__
 
 #include <stdlib.h>
 

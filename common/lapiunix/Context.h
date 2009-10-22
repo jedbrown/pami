@@ -2,8 +2,8 @@
 /// \file common/lapiunix/Context.h
 /// \brief XMI LAPI specific context implementation.
 ///
-#ifndef   __xmi_lapiunix_lapiunixcontext_h__
-#define   __xmi_lapiunix_lapiunixcontext_h__
+#ifndef __common_lapiunix_Context_h__
+#define __common_lapiunix_Context_h__
 
 #define XMI_CONTEXT_CLASS XMI::Context
 

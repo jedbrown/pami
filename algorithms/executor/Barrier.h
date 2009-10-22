@@ -11,8 +11,8 @@
  * \brief The basic/general barrier executor
  */
 
-#ifndef __barrier_executor_h__
-#define __barrier_executor_h__
+#ifndef __algorithms_executor_Barrier_h__
+#define __algorithms_executor_Barrier_h__
 
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"

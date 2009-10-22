@@ -11,8 +11,8 @@
  * \brief CCMI composite adaptor for allreduce with barrier support
  */
 
-#ifndef __ccmi_adaptor_allreduce_async_composite_h__
-#define __ccmi_adaptor_allreduce_async_composite_h__
+#ifndef __algorithms_protocols_allreduce_AsyncComposite_h__
+#define __algorithms_protocols_allreduce_AsyncComposite_h__
 
 #include "./Composite.h"
 //  #include "Geometry.h"

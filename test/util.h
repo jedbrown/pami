@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __tests_util_h__
-#define __tests_util_h__
+#ifndef __test_util_h__
+#define __test_util_h__
 
 #include <unistd.h>
 #include <stdlib.h>

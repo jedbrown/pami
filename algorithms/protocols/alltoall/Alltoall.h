@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ADAPTOR_ALL_TO_ALL_PROTOCOL__
-#define __ADAPTOR_ALL_TO_ALL_PROTOCOL__
+#ifndef __algorithms_protocols_alltoall_Alltoall_h__
+#define __algorithms_protocols_alltoall_Alltoall_h__
 
 namespace CCMI
 {

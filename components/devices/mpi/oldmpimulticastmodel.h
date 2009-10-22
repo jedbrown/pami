@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_mpi_mpioldmulticastmodel_h__
-#define __components_devices_mpi_mpioldmulticastmodel_h__
+#ifndef __components_devices_mpi_oldmpimulticastmodel_h__
+#define __components_devices_mpi_oldmpimulticastmodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/OldMulticastModel.h"

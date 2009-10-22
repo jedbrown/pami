@@ -14,8 +14,8 @@
  * \todo should the mapping be a template parameter?  CollectiveMapping vs CollectiveMapping
  */
 
-#ifndef __ccmi_adaptor_allreduce_asyncfactoryt_h__
-#define __ccmi_adaptor_allreduce_asyncfactoryt_h__
+#ifndef __algorithms_protocols_allreduce_AsyncFactoryT_h__
+#define __algorithms_protocols_allreduce_AsyncFactoryT_h__
 
 #include "./AsyncFactory.h"
 

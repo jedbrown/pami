@@ -10,8 +10,8 @@
  * \file algorithms/executor/Executor.h
  * \brief ???
  */
-#ifndef         __executor_h__
-#define         __executor_h__
+#ifndef __algorithms_executor_Executor_h__
+#define __algorithms_executor_Executor_h__
 
 #include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"

@@ -12,8 +12,8 @@
  */
 
 
-#ifndef __ccmi_adaptor_allreduce_factory_h__
-#define __ccmi_adaptor_allreduce_factory_h__
+#ifndef __algorithms_protocols_allreduce_Factory_h__
+#define __algorithms_protocols_allreduce_Factory_h__
 
 #include "algorithms/protocols/allreduce/Composite.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"

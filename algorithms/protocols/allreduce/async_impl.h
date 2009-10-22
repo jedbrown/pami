@@ -11,8 +11,8 @@
  * \brief CCMI composite template implementations
  */
 
-#ifndef __ccmi_adaptor_allreduce_async_impl_h__
-#define __ccmi_adaptor_allreduce_async_impl_h__
+#ifndef __algorithms_protocols_allreduce_async_impl_h__
+#define __algorithms_protocols_allreduce_async_impl_h__
 
 #include "./AsyncCompositeT.h"
 #include "./AsyncFactoryT.h"

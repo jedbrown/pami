@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __components_atomic_barrier_h__
-#define __components_atomic_barrier_h__
+#ifndef __components_atomic_Barrier_h__
+#define __components_atomic_Barrier_h__
 
 #include "sys/xmi.h"
 

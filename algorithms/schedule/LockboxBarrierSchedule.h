@@ -11,8 +11,8 @@
  * \brief Schedule for Barrier between local cores using lockbox
  */
 
-#ifndef  __LOCKBOX_BARRIER_SCHEDULE__
-#define  __LOCKBOX_BARRIER_SCHEDULE__
+#ifndef __algorithms_schedule_LockboxBarrierSchedule_h__
+#define __algorithms_schedule_LockboxBarrierSchedule_h__
 
 #include "Schedule.h"
 #include "util/ccmi_util.h"

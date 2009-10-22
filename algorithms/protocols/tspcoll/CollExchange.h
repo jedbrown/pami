@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_collbase_h__
-#define __tspcoll_collbase_h__
+#ifndef __algorithms_protocols_tspcoll_CollExchange_h__
+#define __algorithms_protocols_tspcoll_CollExchange_h__
 
 #include "util/ccmi_debug.h"
 #include "algorithms/ccmi.h" //for request type

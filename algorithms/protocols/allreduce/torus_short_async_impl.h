@@ -11,8 +11,8 @@
  * \brief Composite template implementations
  */
 
-#ifndef __ccmi_adaptor_allreduce_torus_short_async_impl_h__
-#define __ccmi_adaptor_allreduce_torus_short_async_impl_h__
+#ifndef __algorithms_protocols_allreduce_torus_short_async_impl_h__
+#define __algorithms_protocols_allreduce_torus_short_async_impl_h__
 
 #include "./ShortAsyncCompositeT.h"
 #include "./ShortAsyncFactoryT.h"

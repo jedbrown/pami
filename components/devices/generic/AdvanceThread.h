@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_devices_generic_thread_h__
-#define __components_devices_generic_thread_h__
+#ifndef __components_devices_generic_AdvanceThread_h__
+#define __components_devices_generic_AdvanceThread_h__
 
 #include "util/queue/Queue.h"
 #include "components/devices/BaseDevice.h"

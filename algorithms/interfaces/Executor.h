@@ -1,5 +1,5 @@
-#ifndef         __ccmi_interfaces_executor_h__
-#define         __ccmi_interfaces_executor_h__
+#ifndef __algorithms_interfaces_Executor_h__
+#define __algorithms_interfaces_Executor_h__
 
 #include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"

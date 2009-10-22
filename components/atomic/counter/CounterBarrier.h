@@ -10,8 +10,8 @@
 /// \file components/atomic/counter/CounterBarrier.h
 /// \brief ???
 ///
-#ifndef __components_atomic_counter_counterbarrier_h__
-#define __components_atomic_counter_counterbarrier_h__
+#ifndef __components_atomic_counter_CounterBarrier_h__
+#define __components_atomic_counter_CounterBarrier_h__
 
 #include "components/atomic/Barrier.h"
 

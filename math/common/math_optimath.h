@@ -23,8 +23,8 @@
  * used for building the product.
  */
 
-#ifndef _math_optimath_h_
-#define _math_optimath_h_
+#ifndef __math_common_math_optimath_h__
+#define __math_common_math_optimath_h__
 
 /**
  * \fn void OPTIMATH_NSRC(XMI_Dt dt, XMI_Op op, int nsrc, coremath func)

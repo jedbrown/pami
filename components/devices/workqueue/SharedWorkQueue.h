@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_workqueue_sharedworkqueue_h__
-#define __components_devices_workqueue_sharedworkqueue_h__
+#ifndef __components_devices_workqueue_SharedWorkQueue_h__
+#define __components_devices_workqueue_SharedWorkQueue_h__
 
 #include "Arch.h"
 #include "SysDep.h"

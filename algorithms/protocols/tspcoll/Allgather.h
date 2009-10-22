@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __pgasrt_tspcoll_allgather_h__
-#define __pgasrt_tspcoll_allgather_h__
+#ifndef __algorithms_protocols_tspcoll_Allgather_h__
+#define __algorithms_protocols_tspcoll_Allgather_h__
 
 #include <assert.h>
 #include <stdio.h>

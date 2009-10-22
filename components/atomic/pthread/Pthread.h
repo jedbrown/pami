@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_atomic_pthread_pthread_h__
-#define __xmi_atomic_pthread_pthread_h__
+#ifndef __components_atomic_pthread_Pthread_h__
+#define __components_atomic_pthread_Pthread_h__
 
 #include "components/atomic/Counter.h"
 

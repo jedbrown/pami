@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_broadcast_factory_h__
-#define __ccmi_adaptor_broadcast_factory_h__
+#ifndef __algorithms_protocols_broadcast_BroadcastFactory_h__
+#define __algorithms_protocols_broadcast_BroadcastFactory_h__
 
 #include "algorithms/executor/Broadcast.h"
 #include "algorithms/composite/Composite.h"

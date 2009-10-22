@@ -13,8 +13,8 @@
  * Also used by the Rectangle schedule to implement Reduce.
  */
 
-#ifndef __binomial_tree_schedule__
-#define __binomial_tree_schedule__
+#ifndef __algorithms_schedule_BinomialTree_h__
+#define __algorithms_schedule_BinomialTree_h__
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
 #include "Schedule.h"

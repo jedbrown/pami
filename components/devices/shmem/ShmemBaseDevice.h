@@ -9,8 +9,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_shmembasedevice_h__
-#define __components_devices_shmem_shmembasedevice_h__
+#ifndef __components_devices_shmem_ShmemBaseDevice_h__
+#define __components_devices_shmem_ShmemBaseDevice_h__
 
 #include <sys/uio.h>
 

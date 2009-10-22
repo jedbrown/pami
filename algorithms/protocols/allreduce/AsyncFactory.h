@@ -12,8 +12,8 @@
  */
 
 
-#ifndef __ccmi_adaptor_allreduce_async_factory_h__
-#define __ccmi_adaptor_allreduce_async_factory_h__
+#ifndef __algorithms_protocols_allreduce_AsyncFactory_h__
+#define __algorithms_protocols_allreduce_AsyncFactory_h__
 
 #include "algorithms/protocols/allreduce/AsyncComposite.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"

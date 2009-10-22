@@ -11,8 +11,8 @@
  * \file components/devices/bgp/collective_network/CNAllreduce.h
  * \brief Default collective network allreduce interface.
  */
-#ifndef __components_devices_bgp_cnallreduce_h__
-#define __components_devices_bgp_cnallreduce_h__
+#ifndef __components_devices_bgp_collective_network_CNAllreduce_h__
+#define __components_devices_bgp_collective_network_CNAllreduce_h__
 
 #include "sys/xmi.h"
 #include "util/common.h"

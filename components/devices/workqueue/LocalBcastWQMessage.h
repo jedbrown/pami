@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_components_devices_workqueue_localbcastwqmsg_h__
-#define __xmi_components_devices_workqueue_localbcastwqmsg_h__
+#ifndef __components_devices_workqueue_LocalBcastWQMessage_h__
+#define __components_devices_workqueue_LocalBcastWQMessage_h__
 
 #include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/workqueue/MemoryWorkQueue.h"

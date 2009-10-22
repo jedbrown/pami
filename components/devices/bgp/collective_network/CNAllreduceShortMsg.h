@@ -11,8 +11,8 @@
  * \file components/devices/bgp/collective_network/CNAllreduceShortMsg.h
  * \brief Default collective network allreduce interface.
  */
-#ifndef __dcmf_cdi_bgp_cnallreduceshortmsg_h__
-#define __dcmf_cdi_bgp_cnallreduceshortmsg_h__
+#ifndef __components_devices_bgp_collective_network_CNAllreduceShortMsg_h__
+#define __components_devices_bgp_collective_network_CNAllreduceShortMsg_h__
 
 #include "util/common.h"
 #include "components/devices/bgp/collective_network/CNDevice.h" // externs for env vars

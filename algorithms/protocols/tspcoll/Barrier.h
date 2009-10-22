@@ -14,8 +14,8 @@
  * \brief ???
  */
 
-#ifndef __tspcoll_barrier_h__
-#define __tspcoll_barrier_h__
+#ifndef __algorithms_protocols_tspcoll_Barrier_h__
+#define __algorithms_protocols_tspcoll_Barrier_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 

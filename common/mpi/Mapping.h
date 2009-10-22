@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_mapping_mpi_mpimapping_h__
-#define __components_mapping_mpi_mpimapping_h__
+#ifndef __common_mpi_Mapping_h__
+#define __common_mpi_Mapping_h__
 
 #include "Platform.h"
 #include "components/memory/heap/HeapMemoryManager.h"

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __ccmi_adaptor_broadcast_tree_h__
-#define __ccmi_adaptor_broadcast_tree_h__
+#ifndef __algorithms_protocols_broadcast_tree_TreeBroadcast_h__
+#define __algorithms_protocols_broadcast_tree_TreeBroadcast_h__
 
 #include "algorithms/schedule/TreeSchedule.h"
 #include "algorithms/schedule/TreeBwSchedule.h"

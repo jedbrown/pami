@@ -29,8 +29,8 @@
  * used for building the product.
  */
 
-#ifndef _math_optimath_h_
-#define _math_optimath_h_
+#ifndef __math_ppc450d_math_optimath_h__
+#define __math_ppc450d_math_optimath_h__
 
 #undef MATH_NO_OPTIMATH
 

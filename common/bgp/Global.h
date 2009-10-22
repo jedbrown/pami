@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __xmi_components_sysdep_bgp_bgpglobal_h__
-#define __xmi_components_sysdep_bgp_bgpglobal_h__
+#ifndef __common_bgp_Global_h__
+#define __common_bgp_Global_h__
 ///
 /// \file common/bgp/Global.h
 /// \brief Blue Gene/P Global Object

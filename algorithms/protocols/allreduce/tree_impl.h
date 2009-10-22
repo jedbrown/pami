@@ -11,8 +11,8 @@
  * \brief Composite template implementations
  */
 
-#ifndef __ccmi_adaptor_allreduce_tree_impl_h__
-#define __ccmi_adaptor_allreduce_tree_impl_h__
+#ifndef __algorithms_protocols_allreduce_tree_impl_h__
+#define __algorithms_protocols_allreduce_tree_impl_h__
 
 #include "./TreeCompositeT.h"
 #include "./TreeFactoryT.h"

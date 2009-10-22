@@ -15,8 +15,8 @@
  * I.e. make the local cores phase plugable with any schedule.
  */
 
-#ifndef __rectangle_schedule__
-#define __rectangle_schedule__
+#ifndef __algorithms_schedule_Rectangle_h__
+#define __algorithms_schedule_Rectangle_h__
 #define HAVE_NEW_RECT_SCHED	// until branch is merged into main
 
 /**

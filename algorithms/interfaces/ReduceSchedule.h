@@ -1,5 +1,5 @@
-#ifndef  __ccmi_interfaces_reduce_schedule_h__
-#define  __ccmi_interfaces_reduce_schedule_h__
+#ifndef __algorithms_interfaces_ReduceSchedule_h__
+#define __algorithms_interfaces_ReduceSchedule_h__
 
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"

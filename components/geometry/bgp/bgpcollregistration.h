@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_bgpcollregistration__h__
-#define   __xmi_bgpcollregistration__h__
+#ifndef __components_geometry_bgp_bgpcollregistration_h__
+#define __components_geometry_bgp_bgpcollregistration_h__
 
 #define XMI_COLLREGISTRATION_CLASS XMI::CollRegistration::BGP
 

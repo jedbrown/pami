@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __rank_conn_mgr_h__
-#define  __rank_conn_mgr_h__
+#ifndef __algorithms_connmgr_RankBasedConnMgr_h__
+#define __algorithms_connmgr_RankBasedConnMgr_h__
 
 #include "ConnectionManager.h"
 #include "Global.h"

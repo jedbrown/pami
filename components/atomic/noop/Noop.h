@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_atomic_noop_noop_h__
-#define __xmi_atomic_noop_noop_h__
+#ifndef __components_atomic_noop_Noop_h__
+#define __components_atomic_noop_Noop_h__
 
 #include "components/atomic/Counter.h"
 #include "SysDep.h"

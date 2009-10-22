@@ -13,8 +13,8 @@
  * \todo AsyncCompositeT and CompositeT are very similar and could be combined.
  */
 
-#ifndef __ccmi_adaptor_allreduce_asynccompositet_h__
-#define __ccmi_adaptor_allreduce_asynccompositet_h__
+#ifndef __algorithms_protocols_allreduce_AsyncCompositeT_h__
+#define __algorithms_protocols_allreduce_AsyncCompositeT_h__
 
 #include "./AsyncComposite.h"
 

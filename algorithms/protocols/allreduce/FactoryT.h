@@ -11,8 +11,8 @@
  * \brief  CCMI factory for sync [all]reduce compositeT
   */
 
-#ifndef __ccmi_adaptor_allreduce_factoryt_h__
-#define __ccmi_adaptor_allreduce_factoryt_h__
+#ifndef __algorithms_protocols_allreduce_FactoryT_h__
+#define __algorithms_protocols_allreduce_FactoryT_h__
 
 #include "./Factory.h"
 

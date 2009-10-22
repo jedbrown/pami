@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-#ifndef __components_devices_generic_genericdevice_h__
-#define __components_devices_generic_genericdevice_h__
+#ifndef __components_devices_generic_GenericDevice_h__
+#define __components_devices_generic_GenericDevice_h__
 
 // This file implements the interfaces used by messaging (advance).
 // See generic/Device.h for interfaces used by sub-devices.

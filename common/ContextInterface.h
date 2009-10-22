@@ -2,8 +2,8 @@
 /// \file common/ContextInterface.h
 /// \brief XMI context interface.
 ///
-#ifndef   __components_context_context_h__
-#define   __components_context_context_h__
+#ifndef __common_ContextInterface_h__
+#define __common_ContextInterface_h__
 
 #ifndef XMI_CONTEXT_CLASS
 #error XMI_CONTEXT_CLASS must be defined

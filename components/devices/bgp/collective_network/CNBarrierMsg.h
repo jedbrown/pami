@@ -15,8 +15,8 @@
  * \file components/devices/bgp/collective_network/CNBarrierMsg.h
  * \brief Currently, Collective Network Barrier is not used.
  */
-#ifndef __components_devices_bgp_cnbarriermsg_h__
-#define __components_devices_bgp_cnbarriermsg_h__
+#ifndef __components_devices_bgp_collective_network_CNBarrierMsg_h__
+#define __components_devices_bgp_collective_network_CNBarrierMsg_h__
 
 #if NOT_YET // or ever?
 #include "bgp/tree/Device.h"

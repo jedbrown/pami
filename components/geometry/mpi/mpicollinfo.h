@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_mpicollinfo__h__
-#define   __xmi_mpicollinfo__h__
+#ifndef __components_geometry_mpi_mpicollinfo_h__
+#define __components_geometry_mpi_mpicollinfo_h__
 
 #include <vector>
 #include "components/geometry/CollRegistration.h"

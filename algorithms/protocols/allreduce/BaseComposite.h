@@ -13,8 +13,8 @@
  */
 
 
-#ifndef __ccmi_adaptor_allreduce_basecomposite_h__
-#define __ccmi_adaptor_allreduce_basecomposite_h__
+#ifndef __algorithms_protocols_allreduce_BaseComposite_h__
+#define __algorithms_protocols_allreduce_BaseComposite_h__
 
 #include "algorithms/composite/Composite.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"

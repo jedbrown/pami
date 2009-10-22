@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_mpi_mpipacketmodel_h__
-#define __components_devices_mpi_mpipacketmodel_h__
+#ifndef __components_devices_mpi_mpimodel_h__
+#define __components_devices_mpi_mpimodel_h__
 
 #include "sys/xmi.h"
 #include "components/devices/MessageModel.h"

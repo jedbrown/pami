@@ -10,8 +10,8 @@
  * \file algorithms/executor/Allreduce.h
  * \brief The basic/general [all]reduce executor
  */
-#ifndef __allreduce_executor_h__
-#define __allreduce_executor_h__
+#ifndef __algorithms_executor_Allreduce_h__
+#define __algorithms_executor_Allreduce_h__
 
 #include "./AllreduceBase.h"
 

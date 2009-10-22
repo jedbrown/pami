@@ -1,5 +1,5 @@
-#ifndef   __MU_BASE_MESSSAGE__
-#define   __MU_BASE_MESSSAGE__
+#ifndef __components_devices_bgq_mu_MUBaseMessage_h__
+#define __components_devices_bgq_mu_MUBaseMessage_h__
 
 #include "MUBaseMessageT.h"
 

@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __xmi_collfactory__h__
-#define   __xmi_collfactory__h__
+#ifndef __components_geometry_CollFactory_h__
+#define __components_geometry_CollFactory_h__
 
 #include "sys/xmi.h"
 

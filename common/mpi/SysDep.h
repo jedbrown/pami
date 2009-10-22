@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_sysdep_mpi_mpisysdep_h__
-#define __components_sysdep_mpi_mpisysdep_h__
+#ifndef __common_mpi_SysDep_h__
+#define __common_mpi_SysDep_h__
 
 #undef __bgp__
 #undef __bgq__

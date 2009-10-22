@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_device_multicastmodel_h__
-#define __components_device_multicastmodel_h__
+#ifndef __components_devices_MulticastModel_h__
+#define __components_devices_MulticastModel_h__
 
 #include <sys/uio.h>
 

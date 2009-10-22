@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_arch_ppc64_h__
-#define __xmi_arch_ppc64_h__
+#ifndef __arch_ppc64_Arch_h__
+#define __arch_ppc64_Arch_h__
 
 #include "arch/ArchInterface.h"
 

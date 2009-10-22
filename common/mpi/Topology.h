@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_topology_mpi_topology_h__
-#define __components_topology_mpi_topology_h__
+#ifndef __common_mpi_Topology_h__
+#define __common_mpi_Topology_h__
 
 ////////////////////////////////////////////////////////////////////////
 /// \file common/mpi/Topology.h

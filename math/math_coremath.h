@@ -15,8 +15,8 @@
  */
 
 
-#ifndef _math_coremath_h_
-#define _math_coremath_h_
+#ifndef __math_math_coremath_h__
+#define __math_math_coremath_h__
 
 #include <stdint.h>
 #include <stdlib.h>

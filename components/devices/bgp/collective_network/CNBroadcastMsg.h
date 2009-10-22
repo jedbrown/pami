@@ -11,8 +11,8 @@
  * \file components/devices/bgp/collective_network/CNBroadcastMsg.h
  * \brief Default collective network broadcast interface.
  */
-#ifndef __components_devices_bgp_cnbroadcastmsg_h__
-#define __components_devices_bgp_cnbroadcastmsg_h__
+#ifndef __components_devices_bgp_collective_network_CNBroadcastMsg_h__
+#define __components_devices_bgp_collective_network_CNBroadcastMsg_h__
 
 #include "util/common.h"
 #include "components/devices/bgp/collective_network/CNDevice.h" // externs for env vars

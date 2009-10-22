@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __xmi_arch_power7_h__
-#define __xmi_arch_power7_h__
+#ifndef __arch_power7_Arch_h__
+#define __arch_power7_Arch_h__
 
 #include "arch/ArchInterface.h"
 

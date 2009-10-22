@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef  __phase_conn_mgr_h__
-#define  __phase_conn_mgr_h__
+#ifndef __algorithms_connmgr_PhaseBasedConnMgr_h__
+#define __algorithms_connmgr_PhaseBasedConnMgr_h__
 
 #include "ConnectionManager.h"
 

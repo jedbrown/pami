@@ -10,8 +10,8 @@
  * \file components/devices/bgq/mu/MUDescriptorWrapper.h
  * \brief ???
  */
-#ifndef __devices_bgq_mu_mudescriptorwrapper_h__
-#define __devices_bgq_mu_mudescriptorwrapper_h__
+#ifndef __components_devices_bgq_mu_MUDescriptorWrapper_h__
+#define __components_devices_bgq_mu_MUDescriptorWrapper_h__
 
 #include <spi/include/mu/DescriptorWrapperXX.h>
 

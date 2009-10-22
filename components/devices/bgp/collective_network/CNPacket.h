@@ -10,8 +10,8 @@
  * \file components/devices/bgp/collective_network/CNPacket.h
  * \brief Morphing of collective network constants/structs into C++ classes
  */
-#ifndef __components_devices_bgp_cnpacket_h__
-#define __components_devices_bgp_cnpacket_h__
+#ifndef __components_devices_bgp_collective_network_CNPacket_h__
+#define __components_devices_bgp_collective_network_CNPacket_h__
 
 #if defined(__bgp__) and !defined(__bgq__)
 

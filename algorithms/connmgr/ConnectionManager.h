@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef   __conn_mgr_h__
-#define   __conn_mgr_h__
+#ifndef __algorithms_connmgr_ConnectionManager_h__
+#define __algorithms_connmgr_ConnectionManager_h__
 
 namespace CCMI
 {
