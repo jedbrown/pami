@@ -163,7 +163,8 @@ public:
 		}
 		_shared.setProducers(_npeers, _peer);
 		_shared.setConsumers(_npeers, _peer);
-		reset_impl();
+		// since we hard-code topology_local, we know _peer==0 exists...
+		_shared.barrier_reset(_npeers, (_peer == 0));
 	}
 
 	inline void reset_impl() {

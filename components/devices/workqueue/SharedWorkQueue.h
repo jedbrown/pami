@@ -116,6 +116,43 @@ namespace XMI
           }
 
           ///
+          /// \brief Reset this shared memory work queue without contention.
+          ///
+          /// Sets the number of bytes produced and the number of bytes
+          /// consumed by each consumer to zero. Performs a type of
+	  /// barrier operation with all callers, so that there is no
+	  /// contention between would-be initializers.
+          ///
+          inline void barrier_reset(unsigned participants, bool master)
+          {
+		// yuk... we need a better way to coordinate initialization!
+		size_t value;
+		if (master) {
+			unsigned i;
+			value = _sharedqueue->consumer[3].bytes + participants;
+			for (i = 0; i < 4 - 1; i++) {
+				_sharedqueue->producer[i].bytes = 0;
+				_sharedqueue->consumer[i].bytes = 0;
+			}
+			__sync_fetch_and_add(&_sharedqueue->consumer[3].bytes, 1);
+			mem_sync();
+			while (_sharedqueue->consumer[3].bytes != value) {
+				__sync_fetch_and_add(&_sharedqueue->producer[3].bytes, 1);
+			}
+			_sharedqueue->consumer[3].bytes = 0;
+			_sharedqueue->producer[3].bytes = 0;
+			mem_sync();
+		} else {
+			value = _sharedqueue->producer[3].bytes;
+			mem_sync();
+			while (_sharedqueue->producer[3].bytes == value);
+			__sync_fetch_and_add(&_sharedqueue->consumer[3].bytes, 1);
+			mem_sync();
+			while (_sharedqueue->producer[3].bytes != 0);
+		}
+          }
+
+          ///
           /// \brief Dump shared memory work queue statistics to stderr.
           ///
           /// \param[in] prefix Optional character string to prefix.
