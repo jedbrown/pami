@@ -77,20 +77,31 @@ namespace XMI
 		_task = num_ranks;
 
 		// local node process/rank info
+#ifdef POSIX_MEMALIGN
 		err = posix_memalign((void **)&_mapcache, sizeof(void *), sizeof(*_mapcache) * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&_nodecache, sizeof(void *), sizeof(*_nodecache) * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&_peers, sizeof(void *), sizeof(*_peers) * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
-
 		err = posix_memalign((void **)&host, sizeof(void *), str_len);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
-		err = gethostname(host, str_len);
-		XMI_assertf(err == 0, "gethostname failed, errno %d", errno);
-
 		err = posix_memalign((void **)&hosts, sizeof(void *), str_len * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+#else
+                _mapcache=(uint32_t*)malloc(sizeof(*_mapcache) * _size);
+                XMI_assertf(_mapcache != NULL, "memory alloc failed");
+                _nodecache=(size_t*)malloc(sizeof(*_nodecache) * _size);
+                XMI_assertf(_nodecache != NULL, "memory alloc failed");
+                _peers = (size_t*)malloc(sizeof(*_peers) * _size);
+                XMI_assertf(_peers != NULL, "memory alloc failed");
+                host=(char*)malloc(str_len);
+                XMI_assertf(host != NULL, "memory alloc failed");
+                hosts=(char*)malloc(str_len*_size);
+                XMI_assertf(hosts != NULL, "memory alloc failed");
+#endif
+		err = gethostname(host, str_len);
+		XMI_assertf(err == 0, "gethostname failed, errno %d", errno);
 
 		err = MPI_Allgather(host, str_len, MPI_BYTE, hosts, str_len, MPI_BYTE, MPI_COMM_WORLD);
 		XMI_assertf(err == 0, "allgather failed, err %d", err);
