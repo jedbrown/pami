@@ -21,9 +21,6 @@
 #include "common/NodeMappingInterface.h"
 #include "sys/xmi.h"
 #include <mpi.h>
-#ifdef EXAMPLE_CODE
-#include <pmi.h>
-#endif // EXAMPLE_CODE
 #include <errno.h>
 #include <unistd.h>
 
@@ -49,7 +46,7 @@ namespace XMI
     protected:
 	size_t    _task;
 	size_t    _size;
-	size_t    *_peers;
+	size_t   *_peers;
 	size_t    _npeers;
 	uint32_t *_mapcache;
 	size_t   *_nodecache;
@@ -67,108 +64,11 @@ namespace XMI
       inline xmi_result_t init(size_t &min_rank, size_t &max_rank,
 				size_t &num_local, size_t **local_ranks)
         {
-#ifdef EXAMPLE_CODE
-		// This code uses MPICH's "smpd" process manager to get local node
-		// information.  A more-general method follows.
-		//
-		int num_ranks, mine;
-		size_t *ranks, r, q;
-		int err;
-		int x;
-		char *kvsname, *id;
-
-		// global process/rank info
-		err = PMI_Get_size(&num_ranks);
-		XMI_assertf(err == PMI_SUCCESS, "PMI_Get_size failed %d", err);
-		_size = num_ranks;
-		err = PMI_Get_rank(&num_ranks);
-		XMI_assertf(err == PMI_SUCCESS, "PMI_Get_rank failed %d", err);
-		_task = num_ranks;
-
-		// local node process/rank info
-		// this requires 'smpd' as the mpich2 process manager!
-		err = PMI_Get_clique_size(&num_ranks);
-		XMI_assertf(err == PMI_SUCCESS, "PMI_Get_clique_size failed %d", err);
-		err = posix_memalign((void **)&ranks, sizeof(*ranks), sizeof(*ranks) * num_ranks);
-		XMI_assertf(err == 0, "memory alloc failed, errno %d", err);
-		err = PMI_Get_clique_ranks((int *)ranks, num_ranks);
-		XMI_assertf(err == PMI_SUCCESS, "PMI_Get_clique_ranks failed %d", err);
-		// now, need to convert int to size_t...
-		if (sizeof(*ranks) != sizeof(int)) {
-			for (x = num_ranks - 1; x >= 0; --x) {
-				ranks[x] = ((int *)ranks)[x];
-			}
-		}
-		// needed?
-		// qsort(ranks, num_ranks, sizeof(*ranks), rank_compare);
-		mine = 0;
-		for (x = 0; x < num_ranks; ++x) {
-			if (ranks[x] == _task) {
-				mine = x;
-				break;
-			}
-		}
-		*local_ranks = ranks;
-		num_local = num_ranks;
-		_peers = ranks;
-		_npeers = num_ranks;
-
-		// is this a valid assumption?
-		min_rank = 0;
-		max_rank = _size-1;
-
-		int name_max;
-		err = PMI_KVS_Get_name_length_max(&name_max);
-		XMI_assertf(err == PMI_SUCCESS, "PMI_KVS_Get_name_length_max failed %d", err);
-		err = posix_memalign((void **)&kvsname, sizeof(void *), name_max);
-		XMI_assertf(err == 0, "memory alloc failed, errno %d", err);
-		err = PMI_KVS_Get_my_name(kvsname, name_max);
-		XMI_assertf(err == PMI_SUCCESS, "PMI_KVS_Get_my_name failed %d", err);
-		err = PMI_Get_id_length_max(&name_max);
-		XMI_assertf(err == PMI_SUCCESS, "PMI_Get_id_length_max failed %d", err);
-		err = posix_memalign((void **)&id, sizeof(void *), name_max);
-		XMI_assertf(err == 0, "memory alloc failed, errno %d", err);
-		static char buf[4096];
-
-		// now post our local "map" for others to see
-		char *s = buf;
-		sprintf(buf, "%zdx%zd", mine, _peers[0]);
-		sprintf(id, "PEERS_%zd", _task);
-		err = PMI_KVS_Put(kvsname, id, buf);
-		XMI_assertf(err == 0, "Failed (%d/%d) to put KVS value for \"%s\"", err, errno, id);
-		err = PMI_KVS_Commit(kvsname);
-		XMI_assertf(err == 0, "Failed (%d) to commit KVS value", err);
-		PMI_Barrier();
-
-		err = posix_memalign((void **)&_mapcache, sizeof(*_mapcache), sizeof(*_mapcache) * _size);
-		XMI_assertf(err == 0, "memory alloc failed, errno %d", err);
-		err = posix_memalign((void **)&_nodecache, sizeof(*_nodecache), sizeof(*_nodecache) * _size);
-		XMI_assertf(err == 0, "memory alloc failed, errno %d", err);
-
-		// now go through all ranks and get each one's "map" entry
-		int max = 0;
-		_tSize = 0;
-		_nSize = 0;
-		for (r = 0; r < _size; ++r) {
-			size_t ix, master;
-			sprintf(id, "PEERS_%zd", r);
-			err = PMI_KVS_Get(kvsname, id, buf, sizeof(buf));
-			XMI_assertf(err == 0, "Failed (%d) to get KVS value for \"%s\"", err, id);
-			x = sscanf(buf, "%zdx%zd", &ix, &master);
-			XMI_assertf(x == 2, "Failed to parse (%d) KVS value for \"%s\"", x, id);
-			if (ix >= _tSize) _tSize = ix + 1;
-			// TODO! all nodes must build this list in the same order!
-			for (q = 0; q < _nSize && master != _nodecache[q]; ++q);
-			if (!(q < _nSize)) {
-				_nodecache[_nSize++] = master;
-			}
-			_mapcache[r] = (q << 16) | ix;
-		}
-#else // EXAMPLE_CODE
 		int num_ranks;
 		size_t r, q;
 		int err;
 		char *host, *hosts;
+		int str_len = 128;
 
 		// global process/rank info
 		MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
@@ -184,15 +84,15 @@ namespace XMI
 		err = posix_memalign((void **)&_peers, sizeof(void *), sizeof(*_peers) * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
 
-		err = posix_memalign((void **)&host, sizeof(void *), 128);
+		err = posix_memalign((void **)&host, sizeof(void *), str_len);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
-		err = gethostname(host, 128);
+		err = gethostname(host, str_len);
 		XMI_assertf(err == 0, "gethostname failed, errno %d", errno);
 
-		err = posix_memalign((void **)&hosts, sizeof(void *), 128 * _size);
+		err = posix_memalign((void **)&hosts, sizeof(void *), str_len * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
 
-		err = MPI_Allgather(host, 128, MPI_BYTE, hosts, 128, MPI_BYTE, MPI_COMM_WORLD);
+		err = MPI_Allgather(host, str_len, MPI_BYTE, hosts, str_len, MPI_BYTE, MPI_COMM_WORLD);
 		XMI_assertf(err == 0, "allgather failed, err %d", err);
 
 		_nSize = 0;
@@ -200,7 +100,7 @@ namespace XMI
 		_npeers = 0;
 		for (r = 0; r < _size; ++r) {
 			// search backwards for anyone with the same hostname...
-			for (q = r - 1; (int)q >= 0 && strcmp(hosts + 128 * r, hosts + 128 * q) != 0; --q);
+			for (q = r - 1; (int)q >= 0 && strcmp(hosts + str_len * r, hosts + str_len * q) != 0; --q);
 			if ((int)q >= 0) {
 				// already saw this hostname... add new peer...
 				uint32_t u = _mapcache[q];
@@ -212,20 +112,23 @@ namespace XMI
 				_mapcache[r] = (_nSize << 16) | 0;
 				_nodecache[_nSize++] = r;
 			}
-			if (strcmp(host, hosts + 128 * r) == 0) {
+			if (strcmp(host, hosts + str_len * r) == 0) {
 				_peers[_npeers++] = r;
 			}
 		}
 		free(host);
 		free(hosts);
+		// local ranks could be represented as rectangle...
 		*local_ranks = _peers;
 		num_local = _npeers;
+		// global ranks could be represented as rectangle...
 		min_rank = 0;
 		max_rank = _size-1;
-#endif // EXAMPLE_CODE
+		//
 		// At this point, _mapcache[rank] -> [index1]|[index2], where:
 		// _nodecache[index1] -> "first" rank on that node
 		// (at target node)_peers[index2] -> rank
+		// coordinates = (index1,index2)
 
 		return XMI_SUCCESS;
         }

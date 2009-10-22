@@ -120,6 +120,7 @@ int main(int argc, char ** argv) {
 	msync.participants = (xmi_topology_t *)&topo;
 	fprintf(stderr, "... before %s.postMultisync\n", test);
 	done = 0;
+	t0 = __global.time.timebase();
 	rc = model->postMultisync(&msync);
 	if (!rc) {
 		fprintf(stderr, "Failed to post first multisync \"%s\"\n", test);
@@ -134,8 +135,30 @@ int main(int argc, char ** argv) {
 			return 1;
 		}
 	}
+	t2 = __global.time.timebase() - t0;
+	t2 *= task_id;
+	//
+	// In order to get meaningful results below, we need to vary each rank's
+	// arrival time at the barrier by a "significant" amount. We use the
+	// time it took for the initial barrier, multiplied by our task ID, to
+	// create noticable differences in arrival time (we hope).
+	//
+	// The resulting timings should show that barrier times (in parens)
+	// vary a lot while the overall times should be more closely aligned.
+	//
+	// +--------------------------------------------------------------+
+	// |                                        |    barrier          |
+	// +--------------------------------------------------------------+
+	// |                         |    barrier                         |
+	// +--------------------------------------------------------------+
+	// |               |    barrier                                   |
+	// +--------------------------------------------------------------+
+	// |                                             |    barrier     |
+	// +--------------------------------------------------------------+
+	// t0            (t1[x] ...         ...      ... )                t2
+	//
 	t0 = __global.time.timebase();
-	while ((t1 = __global.time.timebase()) - t0 < task_id * 1000);
+	while ((t1 = __global.time.timebase()) - t0 < t2);
 	done = 0;
 	rc = model->postMultisync(&msync);
 	if (!rc) {
