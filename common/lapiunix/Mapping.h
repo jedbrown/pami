@@ -27,6 +27,7 @@
 namespace XMI
 {
 #define LAPI_DIMS 1
+#define LAPI_LDIMS 1
     class Mapping : public Interface::Mapping::Base<Mapping, XMI::Memory::HeapMemoryManager>,
                        public Interface::Mapping::Torus<Mapping, LAPI_DIMS>,
                        public Interface::Mapping::Node<Mapping, LAPI_DIMS>
@@ -110,6 +111,23 @@ namespace XMI
           task = addr[0];
           return XMI_SUCCESS;
         }
+
+#warning "These need to be added to a public interface"
+      inline xmi_result_t task2global (size_t task, size_t (&addr)[LAPI_DIMS+LAPI_LDIMS])
+        {
+          addr[0] = task;
+          addr[1] = 0;
+          return XMI_SUCCESS;
+        }
+      inline xmi_result_t global2task (size_t (&addr)[LAPI_DIMS+LAPI_LDIMS], size_t & task)
+        {
+          task = addr[0];
+          return XMI_SUCCESS;
+        }
+
+
+
+
       inline size_t       torusgetcoord_impl (size_t dimension)
         {
           if(dimension >= LAPI_DIMS)
