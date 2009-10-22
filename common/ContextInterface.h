@@ -1,5 +1,5 @@
 ///
-/// \file components/context/Context.h
+/// \file common/ContextInterface.h
 /// \brief XMI context interface.
 ///
 #ifndef   __components_context_context_h__

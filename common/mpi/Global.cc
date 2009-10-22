@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/lapiunix/Global.cc
+/// \file common/mpi/Global.cc
 /// \brief Global Object implementation
 ///
 

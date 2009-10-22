@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file arch/common.h
+ * \file arch/ArchInterface.h
  * \brief Defines common and default macros and checks for required macro definitions.
  */
 

@@ -1,5 +1,5 @@
 ///
-/// \file components/client/mpi/mpiclient.h
+/// \file common/mpi/Client.h
 /// \brief XMI client interface specific for the MPI platform.
 ///
 #ifndef   __xmi_mpi_mpiclient_h__

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/mapping/TorusMapping.h
+/// \file common/TorusMappingInterface.h
 /// \brief ???
 ///
 #ifndef __components_mapping_torusmapping_h__

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/mapping/mpi/mpimapping.h
+ * \file common/mpi/Mapping.h
  * \brief ???
  */
 
@@ -223,7 +223,7 @@ namespace XMI
 		addr[0] = x >> 16;
 		return XMI_SUCCESS;
         }
-#warning "These need to be added to a public interface"      
+#warning "These need to be added to a public interface"
       inline xmi_result_t task2global (size_t task, size_t (&addr)[MPI_TDIMS + MPI_LDIMS])
         {
 		if (task >= _size) {

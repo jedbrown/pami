@@ -36,13 +36,13 @@ namespace XMI
     /// with 4 hardware threads each, though the reserved bit can be stolen
     /// for the 17th core if it needs a rank. The e dimension is sized to the
     /// current node-layout maximum, though the MU hardware supports the full
-    /// 6 bits. 
+    /// 6 bits.
     ///
     /// \see MUHWI_Destination_t
     ///
     typedef union bgq_coords
     {
-      struct  
+      struct
       {
         uint32_t thread   : 2; ///< Hardware thread id, 4 threads per core
         uint32_t a        : 6; ///< Torus 'a' dimension
@@ -52,13 +52,13 @@ namespace XMI
         uint32_t e        : 1; ///< Torus 'e' dimension, two nodes per node card
         uint32_t reserved : 1; ///< Reserved - possibly to identify the 17th core
         uint32_t core     : 4; ///< Core id, 16 application cores per node
-      };      
-      uint32_t   raw;          ///< Raw memory storage 
+      };
+      uint32_t   raw;          ///< Raw memory storage
     } bgq_coords_t;
 
     typedef struct
     {
-      struct  
+      struct
       {
         bgq_coords_t * task2coords;
         uint32_t     * coords2task;

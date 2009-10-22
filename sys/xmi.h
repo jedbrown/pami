@@ -184,7 +184,7 @@ extern "C"
     CA_Mask bits[CA_NUM_ELEMENTS];
   } xmi_ca_t;
 
-  
+
   /**
    * \brief A metadata structure to describe a collective protocol
    */

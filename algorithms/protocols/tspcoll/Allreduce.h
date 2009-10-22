@@ -123,7 +123,7 @@ Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   /* -------------------------------------------- */
   /* phase 0: gather buffers from ranks > n2prev  */
   /* -------------------------------------------- */
-  
+
   if (nonBF > 0)
     {
       unsigned rdest = comm->absrankof (rank - maxBF);

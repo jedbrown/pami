@@ -63,7 +63,7 @@ void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
   {
     if (N > ld++)
     {
-      LQU(r[ld],s,i16);  
+      LQU(r[ld],s,i16);
 #ifdef ENABLE_TRACE
       snprintf (out[p], "ld%p", ld);
 #endif
@@ -83,7 +83,7 @@ void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
     {
       if (N > ld++)
       {
-        LQU(r[ld%9],s,i16);  
+        LQU(r[ld%9],s,i16);
 #ifdef ENABLE_TRACE
         snprintf (out[p], "ld%p", ld%9);
 #endif
@@ -103,7 +103,7 @@ void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
     {
       if (N > st++)
       {
-        SQU(r[st%9],d,i16);  
+        SQU(r[st%9],d,i16);
 #ifdef ENABLE_TRACE
         snprintf (out[p], "st%p", st%9);
 #endif
@@ -121,4 +121,3 @@ void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
 
 
 #endif // __xmi_arch_ppc450d_h__
-

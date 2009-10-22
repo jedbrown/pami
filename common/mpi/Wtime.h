@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/time/mpi/mpitime.h
+/// \file common/mpi/Wtime.h
 /// \brief ???
 ///
 #ifndef __components_time_mpi_mpitime_h__

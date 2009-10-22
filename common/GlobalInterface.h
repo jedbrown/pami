@@ -11,7 +11,7 @@
 #define __xmi_common_global_h__
 
 ///
-/// \file components/sysdep/Global.h
+/// \file common/GlobalInterface.h
 /// \brief Blue Gene/P Global Object
 ///
 /// This global object is constructed before main() and is a container class

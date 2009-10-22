@@ -1,5 +1,5 @@
 ///
-/// \file components/context/lapiunix/lapiunixcontext.h
+/// \file common/lapiunix/Context.h
 /// \brief XMI LAPI specific context implementation.
 ///
 #ifndef   __xmi_lapiunix_lapiunixcontext_h__

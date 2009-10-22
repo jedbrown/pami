@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/sysdep/SysDep.h
+/// \file common/SysDepInterface.h
 /// \brief ???
 ///
 #ifndef __components_sysdep_sysdep_h__

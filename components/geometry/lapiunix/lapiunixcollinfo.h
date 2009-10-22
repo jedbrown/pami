@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/lapi/lapicollinfo.h
+ * \file components/geometry/lapiunix/lapiunixcollinfo.h
  * \brief ???
  */
 

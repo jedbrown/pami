@@ -1,4 +1,3 @@
-
 #ifndef _COMPACT_ATTRIBUTES_H_
 #define _COMPACT_ATTRIBUTES_H_
 

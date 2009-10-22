@@ -18,7 +18,7 @@
 #define L2A_MAX_NUML2ATOMIC	256
 
 ////////////////////////////////////////////////////////////////////////
-///  \file components/sysdep/bgq/L2AtomicFactory.h
+///  \file common/bgq/L2AtomicFactory.h
 ///  \brief Implementation of BGQ AtomicFactory scheme(s).
 ///
 ///  This object is a portability layer that implements allocation

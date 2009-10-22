@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/common/commongeometry.h
+ * \file common/default/Geometry.h
  * \brief ???
  */
 
@@ -299,7 +299,7 @@ namespace XMI
         {
           return virtrankof_impl(_rank);
         }
-      
+
       inline int                        absrankof_impl  (int rank)
         {
           int rankLeft=rank;

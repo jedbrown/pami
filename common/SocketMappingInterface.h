@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/mapping/SocketMapping.h
+/// \file common/SocketMappingInterface.h
 /// \brief ???
 ///
 #ifndef __components_mapping_socketmapping_h__

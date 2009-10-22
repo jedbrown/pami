@@ -9,7 +9,7 @@
 #ifndef __xmi_components_sysdep_bgq_bgqpersonnality_h__
 #define __xmi_components_sysdep_bgq_bgqpersonnality_h__
 ///
-///  \file components/sysdep/bgq/BgqPersonality.h
+///  \file common/bgq/BgqPersonality.h
 ///  \brief Blue Gene/Q Personality Object
 ///
 ///  This object currently provides the following features:

@@ -30,7 +30,7 @@ namespace XMI
 
     template <class T_Device, class T_Sysdep>
     class BGP: public CollFactory<XMI::CollFactory::BGP<T_Device, T_Sysdep> >
-      
+
     {
     public:
       inline BGP(T_Sysdep *sd):CollFactory<XMI::CollFactory::BGP<T_Device, T_Sysdep>>(),
@@ -259,7 +259,7 @@ namespace XMI
 
       inline xmi_result_t ibarrier_impl(xmi_barrier_t *barrier)
       {
-        return XMI_UNIMPL;      
+        return XMI_UNIMPL;
       }
 
       inline xmi_result_t ialltoall_impl(xmi_alltoall_t *alltoall)
@@ -269,7 +269,7 @@ namespace XMI
 
       inline xmi_result_t ialltoallv_impl(xmi_alltoallv_t *alltoallv)
       {
-        return XMI_UNIMPL;     
+        return XMI_UNIMPL;
       }
 
       inline xmi_result_t ialltoallv_int_impl(xmi_alltoallv_int_t *alltoallv_int)
@@ -301,7 +301,7 @@ namespace XMI
       {
         return XMI_UNIMPL;
       }
-      
+
       XMI_GEOMETRY_CLASS *_geometry;
       T_Device *_dev;
       T_Sysdep *_sd;
@@ -314,7 +314,7 @@ namespace XMI
       RegQueue _allreduces;
       RegQueue _barriers;
       RegQueue _alltoallvs;
-  
+
       //    XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>  *_ccmi_bar;
       XMI::MemoryAllocator<sizeof(reqObj), 16> _reqAllocator;
 

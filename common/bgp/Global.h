@@ -9,7 +9,7 @@
 #ifndef __xmi_components_sysdep_bgp_bgpglobal_h__
 #define __xmi_components_sysdep_bgp_bgpglobal_h__
 ///
-/// \file components/sysdep/bgp/BgpGlobal.h
+/// \file common/bgp/Global.h
 /// \brief Blue Gene/P Global Object
 ///
 /// This global object is constructed before main() and is a container class

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/time/lapiunix/lapiunixtime.h
+/// \file common/lapiunix/Wtime.h
 /// \brief ???
 ///
 #ifndef __components_time_lapi_lapitime_h__

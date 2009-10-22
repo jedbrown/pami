@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/sysdep/bgq/BgqPersonality.cc
+ * \file common/bgq/BgqPersonality.cc
  * \brief ???
  */
 

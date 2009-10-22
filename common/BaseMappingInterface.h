@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/mapping/BaseMapping.h
+/// \file common/BaseMappingInterface.h
 /// \brief ???
 ///
 #ifndef __components_mapping_basemapping_h__

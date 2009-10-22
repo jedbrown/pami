@@ -1,5 +1,5 @@
 ///
-/// \file components/context/mpi/mpicontext.h
+/// \file common/mpi/Context.h
 /// \brief XMI MPI specific context implementation.
 ///
 #ifndef   __xmi_mpi_mpicontext_h__

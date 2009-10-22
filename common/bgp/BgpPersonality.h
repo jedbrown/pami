@@ -9,7 +9,7 @@
 #ifndef __xmi_components_sysdep_bgp_bgppersonnality_h__
 #define __xmi_components_sysdep_bgp_bgppersonnality_h__
 ///
-///  \file components/sysdep/bgp/BgpPersonality.h
+///  \file common/bgp/BgpPersonality.h
 ///  \brief Blue Gene/P Personality Object
 ///
 ///  This object currently provides the following features:

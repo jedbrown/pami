@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/mapping/lapiunix/lapiunixmapping.h
+ * \file common/lapiunix/Mapping.h
  * \brief ???
  */
 

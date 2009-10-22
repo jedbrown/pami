@@ -11,7 +11,7 @@
 #define __components_topology_lapi_topology_h__
 
 ////////////////////////////////////////////////////////////////////////
-/// \file common/lapi/Topology.h
+/// \file common/lapiunix/Topology.h
 ///
 /// \brief Coordinate/Address Topology Class
 ///

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/sysdep/bgp/BgpPersonality.cc
+ * \file common/bgp/BgpPersonality.cc
  * \brief ???
  */
 

@@ -1,5 +1,5 @@
 ///
-/// \file components/topology/Topology.h
+/// \file common/TopologyInterface.h
 /// \brief XMI topology implementation.
 ///
 

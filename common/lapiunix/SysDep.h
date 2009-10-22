@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/sysdep/lapiunix/lapiunixsysdep.h
+ * \file common/lapiunix/SysDep.h
  * \brief ???
  */
 

@@ -298,7 +298,7 @@ namespace XMI
                 ri->ret_flags = LAPI_SEND_REPLY;
                 ri->ctl_flags = LAPI_BURY_MSG;
                 _dev->unlock();
-                return NULL;                
+                return NULL;
               }
 
 

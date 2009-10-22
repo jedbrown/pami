@@ -41,7 +41,7 @@ namespace XMI
       class reqObj
       {
       public:
-        // The request needs to be aligned.  Easiest thing to do is put it first since 
+        // The request needs to be aligned.  Easiest thing to do is put it first since
         // we align the whole structure.
         XMI_CollectiveRequest_t  req[1];
         MPI                     *factory;

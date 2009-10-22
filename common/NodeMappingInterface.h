@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/mapping/NodeMapping.h
+/// \file common/NodeMappingInterface.h
 /// \brief ???
 ///
 #ifndef __components_mapping_nodemapping_h__

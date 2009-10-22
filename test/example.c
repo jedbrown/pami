@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file sys/example.c
+ * \file test/example.c
  * \brief ???
  */
 

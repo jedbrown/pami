@@ -116,7 +116,7 @@ namespace XMI
     };
 
 
-    
+
     class LAPIM2MMessage
     {
     public:

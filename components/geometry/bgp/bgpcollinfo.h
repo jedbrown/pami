@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/mpi/bgpcollinfo.h
+ * \file components/geometry/bgp/bgpcollinfo.h
  * \brief ???
  */
 

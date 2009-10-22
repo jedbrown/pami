@@ -1,5 +1,5 @@
 ///
-/// \file components/pipeworkqueue/PipeWorkQueue.h
+/// \file common/PipeWorkQueueInterface.h
 /// \brief XMI pipeworkqueue implementation.
 ///
 #ifndef   __xmi_component_pipeworkqueue_h__

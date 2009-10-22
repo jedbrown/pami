@@ -194,7 +194,7 @@ namespace XMI
             //fprintf (stderr, "SharedWorkQueue::shmemcpy() dst = %p, src = %p, n = %d, aligned = %d\n", dst, src, n, isaligned);
             //if ((((((unsigned) dst) | ((unsigned) src)) & 0x0f) == 0) && (n == _worksize))
             bool ismultiple256 = !(n & 0x000000ff);
-            
+
             typedef uint8_t uint2048_t[256];
             uint2048_t * d = (uint2048_t *) dst;
             uint2048_t * s = (uint2048_t *) src;

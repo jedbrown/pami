@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/time/BaseTime.h
+/// \file common/BaseTimeInterface.h
 /// \brief ???
 ///
 #ifndef __components_time_basetime_h__

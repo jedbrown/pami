@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/sysdep/bgq/BgqGlobal.cc
+/// \file common/bgq/BgqGlobal.cc
 /// \brief Blue Gene/Q Global Object implementation
 ///
 
@@ -16,6 +16,5 @@
 
 XMI::Global __global;
 
-XMI::Mapping *XMI::Topology::mapping = NULL; 
+XMI::Mapping *XMI::Topology::mapping = NULL;
 xmi_coord_t XMI::Topology::my_coords;
-
