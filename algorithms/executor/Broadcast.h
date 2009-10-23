@@ -303,8 +303,8 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
   if(_bytessent > 0)
     _msend.flags = 1; //PERSISTENT_MESSAGE);
 
-  _msend.ranks  = _destpes;
-  _msend.nranks = _nmessages;
+  _msend.tasks  = _destpes;
+  _msend.ntasks = _nmessages;
 
   _msend.src    = _buf + _bytessent;
   _msend.bytes  = _curlen;

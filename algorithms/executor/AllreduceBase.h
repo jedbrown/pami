@@ -679,8 +679,8 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep,T_Connectio
   _msend_data.connection_id = _astate.getPhaseSendConnectionId (sphase);
   _msend_data.bytes         = bytes;
   _msend_data.src           = buf;
-  _msend_data.ranks         = dstpes;
-  _msend_data.nranks        = ndst;
+  _msend_data.tasks         = dstpes;
+  _msend_data.ntasks        = ndst;
   _msend_data.opcodes       = dsthints;
 
 

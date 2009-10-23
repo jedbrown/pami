@@ -2870,8 +2870,8 @@ extern "C"
     unsigned            connection_id;
     unsigned            bytes;
     const char        * src;
-    unsigned            nranks;
-    unsigned          * ranks;
+    unsigned            ntasks;
+    unsigned          * tasks;
     xmi_subtask_t     * opcodes;
     const xmi_quad_t  * msginfo;
     unsigned            count;

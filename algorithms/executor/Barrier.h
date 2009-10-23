@@ -601,8 +601,8 @@ namespace CCMI
         _minfo.count  =1;
         _minfo.bytes  =0;
         _minfo.src    =NULL;
-        _minfo.ranks  =NULL;
-        _minfo.nranks=0;
+        _minfo.tasks  =NULL;
+        _minfo.ntasks=0;
         _minfo.opcodes=(xmi_subtask_t*)NULL;
         _iteration     = 0;
       }
@@ -689,8 +689,8 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
 //    _minfo.setOpcodes((CCMI_Subtask *)subtasks);
 //    _minfo.setRanks(dstranks, ndest);
     _minfo.opcodes=(xmi_subtask_t*) subtasks;
-    _minfo.ranks=dstranks;
-    _minfo.nranks=ndest;
+    _minfo.tasks=dstranks;
+    _minfo.ntasks=ndest;
     ///Initiate multisend
     _mcastInterface->send (&_minfo);
 //    sleep(1);

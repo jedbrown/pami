@@ -113,8 +113,8 @@ namespace XMI
                             mcastinfo->src,
                             mcastinfo->bytes,
                             (unsigned *)mcastinfo->opcodes,
-                            mcastinfo->ranks,
-                            mcastinfo->nranks);
+                            mcastinfo->tasks,
+                            mcastinfo->ntasks);
         }
 
 
