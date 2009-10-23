@@ -30,8 +30,15 @@
 #include <new>
 #include <map>
 
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+#endif
+
 namespace XMI
 {
+    // This won't work with XL
+    typedef XMI::Mutex::CounterMutex<SysDep,XMI::Counter::GccProcCounter<SysDep> >  ContextLock;
+
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice<SysDep> MPIDevice;
     typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
@@ -40,6 +47,64 @@ namespace XMI
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice> EagerMPI;
 
+
+    class Work : public Queue
+    {
+      private:
+        class WorkObject : public QueueElem
+        {
+          public:
+            inline WorkObject (xmi_event_function   fn,
+                               void               * cookie) :
+              QueueElem (),
+              _fn (fn),
+              _cookie (cookie)
+            {};
+
+            xmi_event_function   _fn;
+            void               * _cookie;
+        };
+
+        xmi_context_t _context;
+        ContextLock   _lock;
+        MemoryAllocator<sizeof(WorkObject),16> _allocator;
+
+      public:
+        inline Work (xmi_context_t context, SysDep * sysdep) :
+          Queue (),
+          _context (context),
+          _lock (),
+          _allocator ()
+        {
+          _lock.init (sysdep);
+        };
+
+        inline void post (xmi_event_function   fn,
+                          void               * cookie)
+        {
+          _lock.acquire ();
+          WorkObject * obj = (WorkObject *) _allocator.allocateObject ();
+          new (obj) WorkObject (fn, cookie);
+          pushTail ((QueueElem *) obj);
+          _lock.release ();
+        };
+
+        inline size_t advance ()
+        {
+          size_t events = 0;
+          if (_lock.tryAcquire ())
+          {
+            WorkObject * obj = NULL;
+            while ((obj = (WorkObject *) popHead()) != NULL)
+            {
+              obj->_fn(_context, obj->_cookie, XMI_SUCCESS);
+              events++;
+            }
+            _lock.release ();
+          }
+          return events;
+        };
+    };
 
 
     class Context : public Interface::Context<XMI::Context>
@@ -50,7 +115,9 @@ namespace XMI
         _client (client),
         _id (id),
         _mm (addr, bytes),
-	_sysdep(_mm)
+	_sysdep(_mm),
+        _lock (),
+        _work (_context, &_sysdep)
 #ifdef ENABLE_GENERIC_DEVICE
 	, _generic(_sysdep)
 #endif
@@ -116,14 +183,18 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
         {
-          assert(0);
-          return XMI_UNIMPL;
+          _work.post (work_fn, cookie);
+          return XMI_SUCCESS;
         }
 
       inline size_t advance_impl (size_t maximum, xmi_result_t & result)
         {
           result = XMI_SUCCESS;
           size_t events = 0;
+
+          // Should this go inside the loop?
+          events += _work.advance ();
+
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
@@ -137,20 +208,31 @@ namespace XMI
 
       inline xmi_result_t lock_impl ()
         {
-          assert(0);
-          return XMI_UNIMPL;
+          TRACE_ERR((stderr, ">> lock_impl()\n"));
+          _lock.acquire ();
+          TRACE_ERR((stderr, "<< lock_impl()\n"));
+          return XMI_SUCCESS;
         }
 
       inline xmi_result_t trylock_impl ()
         {
-          assert(0);
-          return XMI_UNIMPL;
+          TRACE_ERR((stderr, ">> trylock_impl()\n"));
+          if (_lock.tryAcquire ())
+          {
+            TRACE_ERR((stderr, "<< trylock_impl(), XMI_SUCCESS\n"));
+            return XMI_SUCCESS;
+          }
+
+          TRACE_ERR((stderr, "<< trylock_impl(), XMI_EAGAIN\n"));
+          return XMI_EAGAIN;
         }
 
       inline xmi_result_t unlock_impl ()
         {
-          assert(0);
-          return XMI_UNIMPL;
+          TRACE_ERR((stderr, ">> release_impl()\n"));
+          _lock.release ();
+          TRACE_ERR((stderr, "<< release_impl()\n"));
+          return XMI_SUCCESS;
         }
 
       inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
@@ -437,6 +519,11 @@ namespace XMI
       void                     *_dispatch[1024];
       Memory::MemoryManager     _mm;
       SysDep                    _sysdep;
+      ContextLock _lock;
+
+      // This is a bringup hack .. it should be replaced with something better
+      Work _work;
+
 #ifdef ENABLE_GENERIC_DEVICE
       XMI::Device::Generic::Device _generic;
 #endif
@@ -449,8 +536,9 @@ namespace XMI
       int                       _myrank;
       int                       _mysize;
       unsigned                 *_ranklist;
-
     }; // end XMI::Context
 }; // end namespace XMI
+
+#undef TRACE_ERR;
 
 #endif // __xmi_mpi_mpicontext_h__
