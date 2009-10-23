@@ -13,10 +13,11 @@
 /**
  * \file components/atomic/bgp/LockBoxBarrier.h
  * \brief LockBox implementation of a Node-scoped Barrier
- * This implementation is different from, and incompatible with,
- * the BGP SPI LockBox_Barrier implementation. Support for core
- * granularity barriers is added here, in a way that makes the
- * barrier code common for all granularities.
+ *
+ * This implementation is different from, and incompatible with, the
+ * BGP SPI LockBox_Barrier implementation. Support for core
+ * granularity barriers is added here, in a way that makes the barrier
+ * code common for all granularities.
  */
 #include "common/bgp/LockBoxFactory.h"
 #include "components/atomic/Barrier.h"
