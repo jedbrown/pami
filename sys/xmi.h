@@ -21,7 +21,7 @@ extern "C"
     XMI_INVAL,        /**< Invalid argument            */
     XMI_UNIMPL,       /**< Function is not implemented */
     XMI_EAGAIN,       /**< Not currently availible     */
-    XMI_SHUTDOWN,     /**< Rank has shutdown           */
+    XMI_SHUTDOWN,     /**< Task has shutdown           */
     XMI_CHECK_ERRNO,  /**< Check the errno val         */
     XMI_OTHER,        /**< Other undefined error       */
   }
@@ -160,8 +160,8 @@ extern "C"
       } socket;   /**< XMI_SOCKET_NETWORK coordinates */
       struct
       {
-        size_t rank;   /**< Global rank of process */
-        size_t peer;   /**< Local rank of process */
+        size_t rank;   /**< Global task id of process */
+        size_t peer;   /**< Local task id of process */
       } shmem;    /**< XMI_SHMEM_NETWORK coordinates */
     } u;
   } xmi_coord_t;
@@ -1077,7 +1077,7 @@ extern "C"
    * \param[out] geometry        Opaque geometry object to initialize
    * \param[in]  id              Unique identifier for this geometry
    *                             which globally represents this geometry
-   * \param[in]  rank_slices     Array of node slices participating in the geometry
+   * \param[in]  task_slices     Array of node slices participating in the geometry
    *                             User must keep the array of slices in memory for the
    *                             duration of the geometry's existence
    * \param[in]  slice_count     Number of nodes participating in the geometry
@@ -1085,7 +1085,7 @@ extern "C"
   xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
                                         xmi_geometry_t            * geometry,
                                         unsigned                    id,
-                                        xmi_geometry_range_t      * rank_slices,
+                                        xmi_geometry_range_t      * task_slices,
                                         size_t                      slice_count);
 
   /**
@@ -1271,7 +1271,7 @@ extern "C"
    *
    * \param[in]  cb_done      Callback to invoke when message is complete.
    * \param[in]  geometry     Geometry to use for this collective operation.
-   * \param[in]  root         Rank of the reduce root node.
+   * \param[in]  root         Task ID of the reduce root node.
    * \param[in]  sbuffer      Source buffer.
    * \param[in]  stype        Source buffer type
    * \param[in]  stypecount   Source buffer type count
@@ -1346,7 +1346,7 @@ extern "C"
    *
    * \param[in]  cb_done      Callback to invoke when message is complete.
    * \param[in]  geometry     Geometry to use for this collective operation.
-   * \param[in]  root         Rank of the node performing the broadcast.
+   * \param[in]  root         Task ID of the node performing the broadcast.
    * \param[in]  buf          Source buffer to broadcast on root, dest buffer on non-root
    * \param[in]  type         data type layout, may be different on root/destinations
    * \param[in]  count        Single type replication count
@@ -1591,7 +1591,7 @@ extern "C"
    *
    * \param[in]  cb_done      Callback to invoke when message is complete.
    * \param[in]  geometry     Geometry to use for this collective operation.
-   * \param[in]  root         Rank of the reduce root node.
+   * \param[in]  root         Task ID of the reduce root node.
    * \param[in]  sbuffer      Source buffer.
    * \param[in]  stype        Source buffer type
    * \param[in]  stypecount   Source buffer type count
@@ -2374,10 +2374,10 @@ extern "C"
 
   /** \brief The various types a Topology can be */
   typedef enum {
-    XMI_EMPTY_TOPOLOGY = 0, /**< topology represents no (zero) ranks    */
-    XMI_SINGLE_TOPOLOGY,    /**< topology is for one rank               */
-    XMI_RANGE_TOPOLOGY,     /**< topology is a simple range of ranks    */
-    XMI_LIST_TOPOLOGY,      /**< topology is an unordered list of ranks */
+    XMI_EMPTY_TOPOLOGY = 0, /**< topology represents no (zero) tasks    */
+    XMI_SINGLE_TOPOLOGY,    /**< topology is for one task               */
+    XMI_RANGE_TOPOLOGY,     /**< topology is a simple range of tasks    */
+    XMI_LIST_TOPOLOGY,      /**< topology is an unordered list of tasks */
     XMI_COORD_TOPOLOGY,     /**< topology is a rectangular segment
                                represented by coordinates           */
     XMI_TOPOLOGY_COUNT
@@ -2406,39 +2406,39 @@ extern "C"
                                 xmi_coord_t *ll, xmi_coord_t *ur, unsigned char *tl);
 
   /**
-   * \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
+   * \brief single task constructor (XMI_SINGLE_TOPOLOGY)
    *
    * \param[out] topo	Opaque memory for topology
-   * \param[in] rank	The rank
+   * \param[in] task	The task
    */
-  void XMI_Topology_create_rank(xmi_topology_t *topo, size_t rank);
+  void XMI_Topology_create_rank(xmi_topology_t *topo, size_t task);
 
   /**
-   * \brief rank range constructor (XMI_RANGE_TOPOLOGY)
+   * \brief task range constructor (XMI_RANGE_TOPOLOGY)
    *
    * \param[out] topo	Opaque memory for topology
-   * \param[in] rank0	first rank in range
-   * \param[in] rankn	last rank in range
+   * \param[in] task0	first task in range
+   * \param[in] taskn	last task in range
    */
-  void XMI_Topology_create_range(xmi_topology_t *topo, size_t rank0, size_t rankn);
+  void XMI_Topology_create_range(xmi_topology_t *topo, size_t task0, size_t taskn);
 
   /**
-   * \brief rank list constructor (XMI_LIST_TOPOLOGY)
+   * \brief task list constructor (XMI_LIST_TOPOLOGY)
    *
-   * caller must not free ranks[]!
+   * caller must not free tasks[]!
    *
    * \param[out] topo	Opaque memory for topology
-   * \param[in] ranks	array of ranks
-   * \param[in] nranks	size of array
+   * \param[in] tasks	array of tasks
+   * \param[in] ntasks	size of array
    *
    * \todo create destructor to free list, or establish rules
    */
-  void XMI_Topology_create_list(xmi_topology_t *topo, size_t *ranks, size_t nranks);
+  void XMI_Topology_create_list(xmi_topology_t *topo, size_t *tasks, size_t ntasks);
 
   /**
    * \brief destructor
    *
-   * For XMI_LIST_TOPOLOGY, would free the ranks list array... ?
+   * For XMI_LIST_TOPOLOGY, would free the tasks list array... ?
    *
    * \param[out] topo	Opaque memory for topology
    */
@@ -2453,9 +2453,9 @@ extern "C"
   unsigned XMI_Topology_size_of(xmi_topology_t *topo);
 
   /**
-   * \brief number of ranks in topology
+   * \brief number of tasks in topology
    * \param[in] topo	Opaque memory for topology
-   * \return	number of ranks
+   * \return	number of tasks
    */
   size_t XMI_Topology_size(xmi_topology_t *topo);
 
@@ -2467,37 +2467,37 @@ extern "C"
   xmi_topology_type_t xmi_topology_type(xmi_topology_t *topo);
 
   /**
-   * \brief Nth rank in topology
+   * \brief Nth task in topology
    *
    * \param[in] topo	Opaque memory for topology
-   * \param[in] ix	Which rank to select
-   * \return	Nth rank or (size_t)-1 if does not exist
+   * \param[in] ix	Which task to select
+   * \return	Nth task or (size_t)-1 if does not exist
    */
   size_t XMI_Topology_index2Rank(xmi_topology_t *topo, size_t ix);
 
   /**
-   * \brief determine index of rank in topology
+   * \brief determine index of task in topology
    *
-   * This is the inverse function to rank(ix) above.
+   * This is the inverse function to task(ix) above.
    *
    * \param[in] topo	Opaque memory for topology
-   * \param[in] rank	Which rank to get index for
-   * \return	index of rank (rank(ix) == rank) or (size_t)-1
+   * \param[in] task	Which task to get index for
+   * \return	index of task (task(ix) == task) or (size_t)-1
    */
-  size_t XMI_Topology_rank2Index(xmi_topology_t *topo, size_t rank);
+  size_t XMI_Topology_rank2Index(xmi_topology_t *topo, size_t task);
 
   /**
    * \brief return range
    *
    * \param[in] topo	Opaque memory for topology
-   * \param[out] first	Where to put first rank in range
-   * \param[out] last	Where to put last rank in range
+   * \param[out] first	Where to put first task in range
+   * \param[out] last	Where to put last task in range
    * \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
    */
   xmi_result_t XMI_Topology_rankRange(xmi_topology_t *topo, size_t *first, size_t *last);
 
   /**
-   * \brief return rank list
+   * \brief return task list
    *
    * \param[in] topo	Opaque memory for topology
    * \param[out] list	pointer to list stored here
@@ -2522,10 +2522,10 @@ extern "C"
                                     unsigned char *tl);
 
   /**
-   * \brief does topology consist entirely of ranks local to self
+   * \brief does topology consist entirely of tasks local to self
    *
    * \param[in] topo	Opaque memory for topology
-   * \return boolean indicating locality of ranks
+   * \return boolean indicating locality of tasks
    */
   int XMI_Topology_isLocalToMe(xmi_topology_t *topo);
 
@@ -2549,13 +2549,13 @@ extern "C"
                                unsigned *c0, unsigned *cn, unsigned char *tl);
 
   /**
-   * \brief is rank in topology
+   * \brief is task in topology
    *
    * \param[in] topo	Opaque memory for topology
-   * \param[in] rank	Rank to test
-   * \return	boolean indicating rank is in topology
+   * \param[in] task	Task to test
+   * \return	boolean indicating task is in topology
    */
-  int XMI_Topology_isRankMember(xmi_topology_t *topo, size_t rank);
+  int XMI_Topology_isRankMember(xmi_topology_t *topo, size_t task);
 
   /**
    * \brief is coordinate in topology
@@ -2567,7 +2567,7 @@ extern "C"
   int XMI_Topology_isCoordMember(xmi_topology_t *topo, xmi_coord_t *c0);
 
   /**
-   * \brief create topology of ranks local to self
+   * \brief create topology of tasks local to self
    *
    * \param[out] _new	Where to build topology
    * \param[in] topo	Opaque memory for topology
@@ -2575,11 +2575,11 @@ extern "C"
   void XMI_Topology_sub_LocalToMe(xmi_topology_t *_new, xmi_topology_t *topo);
 
   /**
-   * \brief create topology from all Nth ranks globally
+   * \brief create topology from all Nth tasks globally
    *
    * \param[out] _new	Where to build topology
    * \param[in] topo	Opaque memory for topology
-   * \param[in] n	Which local rank to select on each node
+   * \param[in] n	Which local task to select on each node
    */
   void XMI_Topology_sub_NthGlobal(xmi_topology_t *_new, xmi_topology_t *topo, int n);
 
@@ -2598,26 +2598,26 @@ extern "C"
   void XMI_Topology_sub_ReduceDims(xmi_topology_t *_new, xmi_topology_t *topo, xmi_coord_t *fmt);
 
   /**
-   * \brief Return list of ranks representing contents of topology
+   * \brief Return list of tasks representing contents of topology
    *
    * This always returns a list regardless of topology type.
    * Caller must allocate space for list, and determine an
    * appropriate size for that space. Note, there might be a
-   * number larger than 'max' returned in 'nranks', but there
-   * are never more than 'max' ranks put into the array.
-   * If the caller sees that 'nranks' exceeds 'max' then it
+   * number larger than 'max' returned in 'ntasks', but there
+   * are never more than 'max' tasks put into the array.
+   * If the caller sees that 'ntasks' exceeds 'max' then it
    * should assume it did not get the whole list, and could
    * allocate a larger array and try again.
    *
    * \param[in] topo	Opaque memory for topology
    * \param[in] max	size of caller-allocated array
-   * \param[out] ranks	array where rank list is placed
-   * \param[out] nranks	actual number of ranks put into array
+   * \param[out] tasks	array where task list is placed
+   * \param[out] ntasks	actual number of tasks put into array
    */
-  void XMI_Topology_getRankList(xmi_topology_t *topo, size_t max, size_t *ranks, size_t *nranks);
+  void XMI_Topology_getRankList(xmi_topology_t *topo, size_t max, size_t *tasks, size_t *ntasks);
 
   /**
-   * \brief check if rank range or list can be converted to rectangle
+   * \brief check if task range or list can be converted to rectangle
    *
    * Since a rectangular segment is consider the optimal state, no
    * other analysis is done. A XMI_SINGLE_TOPOLOGY cannot be optimized,
@@ -2768,7 +2768,7 @@ extern "C"
    * \param[in] msginfo		Metadata
    * \param[in] msgcount	Count of metadata
    * \param[in] connection_id  Stream ID of data
-   * \param[in] root		Sending rank
+   * \param[in] root		Sending task
    * \param[in] sndlen		Length of data sent
    * \param[in] clientdata	Opaque arg
    * \param[out] rcvlen		Length of data to receive
@@ -2894,14 +2894,14 @@ extern "C"
   } xmi_oldmulticast_recv_t;
 
 
-  typedef xmi_quad_t * (*xmi_olddispatch_manytomany_fn) (unsigned          conn_id,
-                                                         void            * arg,
-                                                         char           ** rcvbuf,
-                                                         size_t       ** rcvdispls,
-                                                         size_t       ** rcvlens,
-                                                         size_t       **rcvcounters,
-                                                         size_t        * nranks,
-                                                         xmi_callback_t  * cb_done);
+  typedef xmi_quad_t * (*xmi_olddispatch_manytomany_fn) (unsigned         conn_id,
+                                                         void           * arg,
+                                                         char          ** rcvbuf,
+                                                         size_t        ** rcvdispls,
+                                                         size_t        ** rcvlens,
+                                                         size_t        ** rcvcounters,
+                                                         size_t         * ntasks,
+                                                         xmi_callback_t * cb_done);
 
 
   /**********************************************************************/
@@ -2920,9 +2920,9 @@ extern "C"
   typedef struct
   {
     xmi_pipeworkqueue_t *buffer;       /**< Memory used for data (buffer)            */
-    xmi_topology_t      *participants; /**< Ranks that are vectored in buffer        */
-    size_t              *lengths;      /**< Array of lengths in buffer for each rank */
-    size_t              *offsets;      /**< Array of offsets in buffer for each rank */
+    xmi_topology_t      *participants; /**< Tasks that are vectored in buffer        */
+    size_t              *lengths;      /**< Array of lengths in buffer for each task */
+    size_t              *offsets;      /**< Array of offsets in buffer for each task */
     size_t               num_vecs;     /**< The number of entries in
                                             "lengths" and "offsets".
                                             May be a flag: either "1"
@@ -2941,7 +2941,7 @@ extern "C"
    * only once per connection_id. The first sender message to arrive will invoke
    * the callback and get recv params for ALL other senders in the instance.
    *
-   * The myIndex parameter is the receiving rank's index in the recv arrays
+   * The myIndex parameter is the receiving task's index in the recv arrays
    * (lengths and offsets) and is used by the manytomany as an optimization
    * for handling reception data and completion.
    *
@@ -2950,7 +2950,7 @@ extern "C"
    * \param[in] metadata	Pointer to metadata, if any, in message header.
    * \param[in] metacount	Number of xmi_quad_ts of metadata.
    * \param[out] recv		Receive parameters for this connection (instance)
-   * \param[out] myIndex	Index of Recv Rank in the receive parameters.
+   * \param[out] myIndex	Index of Recv Task in the receive parameters.
    * \param[out] cb_done	Completion callback when message complete
    * \return	Request object opaque storage for message.
    */
@@ -2965,7 +2965,7 @@ extern "C"
   /**
    * \brief Structure of parameters used to initiate a ManyToMany
    *
-   * The rankIndex parameter is transmitted to the receiver for use by cb_recv
+   * The taskIndex parameter is transmitted to the receiver for use by cb_recv
    * for indexing into the recv parameter arrays (lengths and offsets).
    */
   typedef struct
@@ -2975,8 +2975,8 @@ extern "C"
     xmi_callback_t       cb_done;	     /**< User's completion callback */
     unsigned             connection_id;      /**< differentiate data streams */
     unsigned             roles;              /**< bitmap of roles to perform */
-    size_t              *rankIndex;	     /**< Index of send in recv parameters */
-    size_t               num_index;          /**< Number of entries in "rankIndex".
+    size_t              *taskIndex;	     /**< Index of send in recv parameters */
+    size_t               num_index;          /**< Number of entries in "taskIndex".
                                                 should be multiple of send.participants->size()?
                                              */
     xmi_manytomanybuf_t  send;               /**< send data parameters */
@@ -3026,7 +3026,7 @@ extern "C"
     xmi_callback_t     cb_done;		/**< User's completion callback */
     unsigned           connection_id;	/**< (remove?) differentiate data streams */
     unsigned           roles;		/**< bitmap of roles to perform */
-    xmi_topology_t    *participants;	/**< Ranks involved in synchronization */
+    xmi_topology_t    *participants;	/**< Tasks involved in synchronization */
   } xmi_multisync_t;
   /**
    * \brief Barriers and the like.
@@ -3064,9 +3064,9 @@ extern "C"
     xmi_callback_t       cb_done;             /**< User's completion callback */
     unsigned             roles;		      /**< bitmap of roles to perform */
     xmi_pipeworkqueue_t *data;		      /**< Data source */
-    xmi_topology_t      *data_participants;   /**< Ranks contributing data */
+    xmi_topology_t      *data_participants;   /**< Tasks contributing data */
     xmi_pipeworkqueue_t *results;	      /**< Results destination */
-    xmi_topology_t      *results_participants;/**< Ranks receiving results */
+    xmi_topology_t      *results_participants;/**< Tasks receiving results */
     xmi_op               optor;		      /**< Operation to perform on data */
     xmi_dt               dtype;		      /**< Datatype of elements */
     size_t               count;		      /**< Number of elements */
@@ -3076,7 +3076,7 @@ extern "C"
    * \brief Allreduce, Reduce, etc. (may include some specialized Broadcasts, too)
    *
    * All participants make this call. So, there is no "send" or "recv"
-   * distinction needed. Send and/or recv are determined by calling rank's
+   * distinction needed. Send and/or recv are determined by calling task's
    * membership in respective Topologies, as well as requirements of underlying
    * hardware.
    *
@@ -3277,8 +3277,8 @@ extern "C"
   typedef enum {
     /* Attribute            Init / Query / Update                                              */
     XMI_ATTRIBUTES,      /**<  Q  : xmi_attribute_t[] : NULL terminated list of all attributes */
-    XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task                        */
-    XMI_NUM_TASKS,       /**<  Q  : size_t            : total number of tasks (AKA "rank")     */
+    XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task (AKA "rank")           */
+    XMI_NUM_TASKS,       /**<  Q  : size_t            : total number of tasks                  */
   } xmi_attribute_name_t;
 
   typedef union
