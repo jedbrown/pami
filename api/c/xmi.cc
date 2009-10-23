@@ -894,9 +894,9 @@ void XMI_Topology_create_rect(xmi_topology_t *topo,
 }
 
 ///
-/// \copydoc XMI_Topology_create_rank
+/// \copydoc XMI_Topology_create_task
 ///
-void XMI_Topology_create_rank(xmi_topology_t *topo, size_t rank)
+void XMI_Topology_create_task(xmi_topology_t *topo, size_t rank)
 {
     assert(0);
 }
@@ -953,36 +953,36 @@ xmi_topology_type_t xmi_topology_type(xmi_topology_t *topo)
 }
 
 ///
-/// \copydoc XMI_Topology_index2Rank
+/// \copydoc XMI_Topology_index2TaskID
 ///
-size_t XMI_Topology_index2Rank(xmi_topology_t *topo, size_t ix)
+size_t XMI_Topology_index2TaskID(xmi_topology_t *topo, size_t ix)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
     return t->index2Rank(ix);
 }
 
 ///
-/// \copydoc XMI_Topology_rank2Index
+/// \copydoc XMI_Topology_taskID2Index
 ///
-size_t XMI_Topology_rank2Index(xmi_topology_t *topo, size_t rank)
+size_t XMI_Topology_taskID2Index(xmi_topology_t *topo, size_t rank)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
     return t->rank2Index(rank);
 }
 
 ///
-/// \copydoc XMI_Topology_rankRange
+/// \copydoc XMI_Topology_taskRange
 ///
-xmi_result_t XMI_Topology_rankRange(xmi_topology_t *topo, size_t *first, size_t *last)
+xmi_result_t XMI_Topology_taskRange(xmi_topology_t *topo, size_t *first, size_t *last)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
     return t->rankRange(first,last);
 }
 
 ///
-/// \copydoc XMI_Topology_rankList
+/// \copydoc XMI_Topology_taskList
 ///
-xmi_result_t XMI_Topology_rankList(xmi_topology_t *topo, size_t **list)
+xmi_result_t XMI_Topology_taskList(xmi_topology_t *topo, size_t **list)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
     return t->rankList(list);
@@ -1028,9 +1028,9 @@ void XMI_Topology_getNthDims(xmi_topology_t *topo, unsigned n,
 }
 
 ///
-/// \copydoc XMI_Topology_isRankMember
+/// \copydoc XMI_Topology_isTaskMember
 ///
-int XMI_Topology_isRankMember(xmi_topology_t *topo, size_t rank)
+int XMI_Topology_isTaskMember(xmi_topology_t *topo, size_t rank)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
     return t->isRankMember(rank);
@@ -1073,9 +1073,9 @@ void XMI_Topology_sub_ReduceDims(xmi_topology_t *_new, xmi_topology_t *topo, xmi
 }
 
 ///
-/// \copydoc XMI_Topology_getRankList
+/// \copydoc XMI_Topology_getTaskList
 ///
-void XMI_Topology_getRankList(xmi_topology_t *topo, size_t max, size_t *ranks, size_t *nranks)
+void XMI_Topology_getTaskList(xmi_topology_t *topo, size_t max, size_t *ranks, size_t *nranks)
 {
     XMI_TOPOLOGY_CLASS * t = (XMI_TOPOLOGY_CLASS *) topo;
     t->getRankList(max,ranks,nranks);

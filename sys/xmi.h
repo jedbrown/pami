@@ -2411,7 +2411,7 @@ extern "C"
    * \param[out] topo	Opaque memory for topology
    * \param[in] task	The task
    */
-  void XMI_Topology_create_rank(xmi_topology_t *topo, size_t task);
+  void XMI_Topology_create_task(xmi_topology_t *topo, size_t task);
 
   /**
    * \brief task range constructor (XMI_RANGE_TOPOLOGY)
@@ -2473,7 +2473,7 @@ extern "C"
    * \param[in] ix	Which task to select
    * \return	Nth task or (size_t)-1 if does not exist
    */
-  size_t XMI_Topology_index2Rank(xmi_topology_t *topo, size_t ix);
+  size_t XMI_Topology_index2TaskID(xmi_topology_t *topo, size_t ix);
 
   /**
    * \brief determine index of task in topology
@@ -2484,7 +2484,7 @@ extern "C"
    * \param[in] task	Which task to get index for
    * \return	index of task (task(ix) == task) or (size_t)-1
    */
-  size_t XMI_Topology_rank2Index(xmi_topology_t *topo, size_t task);
+  size_t XMI_Topology_taskID2Index(xmi_topology_t *topo, size_t task);
 
   /**
    * \brief return range
@@ -2494,7 +2494,7 @@ extern "C"
    * \param[out] last	Where to put last task in range
    * \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
    */
-  xmi_result_t XMI_Topology_rankRange(xmi_topology_t *topo, size_t *first, size_t *last);
+  xmi_result_t XMI_Topology_taskRange(xmi_topology_t *topo, size_t *first, size_t *last);
 
   /**
    * \brief return task list
@@ -2503,7 +2503,7 @@ extern "C"
    * \param[out] list	pointer to list stored here
    * \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
    */
-  xmi_result_t XMI_Topology_rankList(xmi_topology_t *topo, size_t **list);
+  xmi_result_t XMI_Topology_taskList(xmi_topology_t *topo, size_t **list);
 
   /**
    * \brief return rectangular segment coordinates
@@ -2555,7 +2555,7 @@ extern "C"
    * \param[in] task	Task to test
    * \return	boolean indicating task is in topology
    */
-  int XMI_Topology_isRankMember(xmi_topology_t *topo, size_t task);
+  int XMI_Topology_isTaskMember(xmi_topology_t *topo, size_t task);
 
   /**
    * \brief is coordinate in topology
@@ -2614,7 +2614,7 @@ extern "C"
    * \param[out] tasks	array where task list is placed
    * \param[out] ntasks	actual number of tasks put into array
    */
-  void XMI_Topology_getRankList(xmi_topology_t *topo, size_t max, size_t *tasks, size_t *ntasks);
+  void XMI_Topology_getTaskList(xmi_topology_t *topo, size_t max, size_t *tasks, size_t *ntasks);
 
   /**
    * \brief check if task range or list can be converted to rectangle
