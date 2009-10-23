@@ -14,8 +14,9 @@
 #define __util_common_h__
 
 #include <new>
-#include <stdint.h>
 #include <stdio.h>
+#include <assert.h>
+#include <stddef.h>
 
 #if defined(__xlc__) || defined(__xlC__)
 #include <builtins.h>

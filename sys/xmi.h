@@ -1,11 +1,8 @@
 #ifndef __xmi_h__
 #define __xmi_h__
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
 #include "xmi_config.h"
 
 #ifdef __cplusplus
@@ -18,9 +15,9 @@ extern "C"
    */
   typedef enum
   {
-    XMI_SUCCESS = 0,  /**< Successful execution        */
+    XMI_SUCCESS =  0, /**< Successful execution        */
     XMI_NERROR  = -1, /**< Generic error (-1)          */
-    XMI_ERROR   = 1,  /**< Generic error (+1)          */
+    XMI_ERROR   =  1, /**< Generic error (+1)          */
     XMI_INVAL,        /**< Invalid argument            */
     XMI_UNIMPL,       /**< Function is not implemented */
     XMI_EAGAIN,       /**< Not currently availible     */
@@ -48,11 +45,11 @@ extern "C"
                                        void          * cookie,
                                        xmi_result_t    result );
 
-  typedef struct xmi_callback_t
+  typedef struct
   {
     xmi_event_function  function;
     void               *clientdata;
-  }xmi_callback_t;
+  } xmi_callback_t;
 
 
 
@@ -133,14 +130,14 @@ extern "C"
   }
     xmi_network;
 
-/// \todo Remove this platform-specific #define
+/** \todo Remove this platform-specific #define */
 #define XMI_MAX_DIMS 7
-//#define XMI_MAX_DIMS	4
+/* #define XMI_MAX_DIMS	4 */
 
   /**
    * \brief A structure to describe a network coordinate
    */
-  typedef struct xmi_coord_t
+  typedef struct
   {
     xmi_network network; /**< Network type for the coordinates */
     union
@@ -190,10 +187,10 @@ extern "C"
    */
   typedef struct
   {
-    xmi_ca_t geometry; /**< geometry attributes */
-    xmi_ca_t buffer;  /**< buffer attributes (contig, alignment) */
-    xmi_ca_t misc; /**< other attributes (i.e. threaded) */
-    char name[32]; /** < name of algorithm */
+    xmi_ca_t geometry; /**< geometry attributes                   */
+    xmi_ca_t buffer;   /**< buffer attributes (contig, alignment) */
+    xmi_ca_t misc;     /**< other attributes (i.e. threaded)      */
+    char name[32];     /**< name of algorithm                     */
   } xmi_metadata_t;
 
   /*****************************************************************************/
@@ -1059,7 +1056,7 @@ extern "C"
     XMI_XFER_AMGATHER,
     XMI_XFER_AMREDUCE,
     XMI_XFER_COUNT
-  }xmi_xfer_type_t;
+  } xmi_xfer_type_t;
 
   /* ************************************************************************* */
   /* **************     Geometry (like groups/communicators)  **************** */
@@ -1197,7 +1194,7 @@ extern "C"
     xmi_type_t               * rtype;
     size_t                   * rtypecounts;
     size_t                   * rdispls;
-  }xmi_alltoallv_t;
+  } xmi_alltoallv_t;
 
   /**
    * \brief Create and post a non-blocking alltoall vector operation.
@@ -1233,7 +1230,7 @@ extern "C"
     xmi_type_t              * rtype;
     int                     * rtypecounts;
     int                     * rdispls;
-  }xmi_alltoallv_int_t;
+  } xmi_alltoallv_int_t;
 
 
   /**
@@ -1266,7 +1263,7 @@ extern "C"
     char                      * rcvbuf;
     xmi_type_t                * rtype;
     size_t                      rtypecount;
-  }xmi_alltoall_t;
+  } xmi_alltoall_t;
 
   /**
    * \brief Create and post a non-blocking reduce operation.
@@ -1302,7 +1299,7 @@ extern "C"
     size_t                     rtypecount;
     xmi_dt                     dt;
     xmi_op                     op;
-  }xmi_reduce_t;
+  } xmi_reduce_t;
 
   /**
    * \brief Create and post a non-blocking reduce_scatter operation.
@@ -1340,7 +1337,7 @@ extern "C"
     size_t                  * rcounts;
     xmi_dt                    dt;
     xmi_op                    op;
-  }xmi_reduce_scatter_t;
+  } xmi_reduce_scatter_t;
 
   /**
    * \brief Create and post a non-blocking broadcast operation.
@@ -1368,7 +1365,7 @@ extern "C"
     char                      * buf;
     xmi_type_t                * type;
     size_t                      typecount;
-  }xmi_broadcast_t;
+  } xmi_broadcast_t;
 
 
   /**
@@ -1401,7 +1398,7 @@ extern "C"
     char                      * rcvbuf;
     xmi_type_t                * rtype;
     size_t                      rtypecount;
-  }xmi_allgather_t;
+  } xmi_allgather_t;
 
 
   /**
@@ -1437,7 +1434,7 @@ extern "C"
     char                      * rcvbuf;
     xmi_type_t                * rtype;
     size_t                      rtypecount;
-  }xmi_gather_t;
+  } xmi_gather_t;
 
   /**
    * \brief Create and post a non-blocking gatherv
@@ -1475,7 +1472,7 @@ extern "C"
     xmi_type_t               * rtype;
     size_t                   * rtypecounts;
     size_t                   * rdispls;
-  }xmi_gatherv_t;
+  } xmi_gatherv_t;
 
   /**
    * \brief Create and post a non-blocking gatherv
@@ -1513,7 +1510,7 @@ extern "C"
     xmi_type_t               * rtype;
     int                      * rtypecounts;
     int                      * rdispls;
-  }xmi_gatherv_int_t;
+  } xmi_gatherv_int_t;
 
 
   /**
@@ -1549,7 +1546,7 @@ extern "C"
     xmi_type_t               * rtype;
     size_t                   * rtypecounts;
     size_t                   * rdispls;
-  }xmi_allgatherv_t;
+  } xmi_allgatherv_t;
 
   /**
    * \brief Create and post a non-blocking allgatherv
@@ -1584,7 +1581,7 @@ extern "C"
     xmi_type_t               * rtype;
     int                      * rtypecounts;
     int                      * rdispls;
-  }xmi_allgatherv_int_t;
+  } xmi_allgatherv_int_t;
 
 
   /**
@@ -1620,7 +1617,7 @@ extern "C"
     char                      * rcvbuf;
     xmi_type_t                * rtype;
     size_t                      rtypecount;
-  }xmi_scatter_t;
+  } xmi_scatter_t;
 
   /**
    * \brief Create and post a non-blocking scatterv
@@ -1656,7 +1653,7 @@ extern "C"
     char                      * rcvbuf;
     xmi_type_t                * rtype;
     size_t                      rtypecount;
-  }xmi_scatterv_t;
+  } xmi_scatterv_t;
 
   /**
    * \brief Create and post a non-blocking scatterv
@@ -1692,7 +1689,7 @@ extern "C"
     char                      * rcvbuf;
     xmi_type_t                * rtype;
     int                         rtypecount;
-  }xmi_scatterv_int_t;
+  } xmi_scatterv_int_t;
 
 
   /**
@@ -1731,7 +1728,7 @@ extern "C"
     size_t                     rtypecount;
     xmi_dt                     dt;
     xmi_op                     op;
-  }xmi_allreduce_t;
+  } xmi_allreduce_t;
 
 
   /**
@@ -1772,7 +1769,7 @@ extern "C"
     xmi_dt                     dt;
     xmi_op                     op;
     int                        exclusive;
-  }xmi_scan_t;
+  } xmi_scan_t;
 
   /**
    * \brief Create and post a non-blocking barrier operation.
@@ -1792,7 +1789,7 @@ extern "C"
     void                     * cookie;
     xmi_geometry_t             geometry;
     xmi_algorithm_t            algorithm;
-  }xmi_barrier_t;
+  } xmi_barrier_t;
 
 
   /**
@@ -1831,7 +1828,7 @@ extern "C"
     void                      * sndbuf;
     xmi_type_t                * stype;
     size_t                      stypecount;
-  }xmi_ambroadcast_t;
+  } xmi_ambroadcast_t;
   /**
    * \brief The active message callback function, delivered to the user
    * \param[in]   root       system defined metadata:  root initiating the broadcast
@@ -1891,7 +1888,7 @@ extern "C"
     void                      * sndbuf;
     xmi_type_t                * stype;
     size_t                      stypecount;
-  }xmi_amscatter_t;
+  } xmi_amscatter_t;
   /**
    * \brief The active message callback function, delivered to the user
    * \param[in]   root       system defined metadata:  root initiating the scatter
@@ -1953,7 +1950,7 @@ extern "C"
     void                      * rcvbuf;
     xmi_type_t                * rtype;
     size_t                      rtypecount;
-  }xmi_amgather_t;
+  } xmi_amgather_t;
   /**
    * \brief The active message callback function, delivered to the user
    * \param[in]   root       system defined metadata:  root initiating the gather
@@ -2021,7 +2018,7 @@ extern "C"
     size_t                      rtypecount;
     xmi_dt                      dt;
     xmi_op                      op;
-  }xmi_amreduce_t;
+  } xmi_amreduce_t;
 
   /**
    * \brief The active message callback function, delivered to the user
@@ -2081,7 +2078,7 @@ extern "C"
     xmi_amreduce_t         xfer_amreduce;
     xmi_scan_t             xfer_scan;
     xmi_barrier_t          xfer_barrier;
-  }xmi_xfer_t;
+  } xmi_xfer_t;
 
   xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
 
@@ -2795,7 +2792,8 @@ extern "C"
    * The XMI_Multicast_t object is re-useable immediately, but objects referred to
    * (src, etc) cannot be re-used until cb_done.
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_context_t        context;	   /**< context to operate within */
     void                *request; 	   /**< space for operation */
     xmi_callback_t       cb_done;          /**< Completion callback */
@@ -2825,22 +2823,22 @@ extern "C"
     XMI_MATCH_CONSISTENCY,
     XMI_WEAK_CONSISTENCY,
     XMI_CONSISTENCY_COUNT
-  }xmi_consistency_t;
+  } xmi_consistency_t;
 
 #define  LINE_BCAST_MASK    (XMI_LINE_BCAST_XP|XMI_LINE_BCAST_XM|	\
                              XMI_LINE_BCAST_YP|XMI_LINE_BCAST_YM|	\
                              XMI_LINE_BCAST_ZP|XMI_LINE_BCAST_ZM)
   typedef enum
   {
-    XMI_PT_TO_PT_SUBTASK           =  0,      //Send a pt-to-point message
-    XMI_LINE_BCAST_XP              =  0x20,   //Bcast along x+
-    XMI_LINE_BCAST_XM              =  0x10,   //Bcast along x-
-    XMI_LINE_BCAST_YP              =  0x08,   //Bcast along y+
-    XMI_LINE_BCAST_YM              =  0x04,   //Bcast along y-
-    XMI_LINE_BCAST_ZP              =  0x02,   //Bcast along z+
-    XMI_LINE_BCAST_ZM              =  0x01,   //Bcast along z-
-    XMI_COMBINE_SUBTASK            =  0x0100,   //Combine the incoming message
-    //with the local state
+    XMI_PT_TO_PT_SUBTASK           =  0,      /**< Send a pt-to-point message */
+    XMI_LINE_BCAST_XP              =  0x20,   /**< Bcast along x+ */
+    XMI_LINE_BCAST_XM              =  0x10,   /**< Bcast along x- */
+    XMI_LINE_BCAST_YP              =  0x08,   /**< Bcast along y+ */
+    XMI_LINE_BCAST_YM              =  0x04,   /**< Bcast along y- */
+    XMI_LINE_BCAST_ZP              =  0x02,   /**< Bcast along z+ */
+    XMI_LINE_BCAST_ZM              =  0x01,   /**< Bcast along z- */
+    XMI_COMBINE_SUBTASK            =  0x0100, /**< Combine the incoming message */
+    /* with the local state */
     XMI_GI_BARRIER                 =  0x0200,
     XMI_LOCKBOX_BARRIER            =  0x0300,
     XMI_TREE_BARRIER               =  0x0400,
@@ -2865,7 +2863,7 @@ extern "C"
                                                         char              ** rcvbuf,
                                                         unsigned           * pipewidth,
                                                         xmi_callback_t     * cb_done);
-  typedef struct xmi_oldmulticast_t
+  typedef struct
   {
     xmi_quad_t        * request;
     xmi_callback_t      cb_done;
@@ -2880,10 +2878,9 @@ extern "C"
     unsigned            flags;
     xmi_op              op;
     xmi_dt              dt;
+  } xmi_oldmulticast_t;
 
-  }xmi_oldmulticast_t;
-
-  typedef struct xmi_oldmulticast_recv_t
+  typedef struct
   {
     xmi_quad_t        * request;
     xmi_callback_t      cb_done;
@@ -2894,7 +2891,7 @@ extern "C"
     xmi_subtask_t       opcode;
     xmi_op              op;
     xmi_dt              dt;
-  }xmi_oldmulticast_recv_t;
+  } xmi_oldmulticast_recv_t;
 
 
   typedef xmi_quad_t * (*xmi_olddispatch_manytomany_fn) (unsigned          conn_id,
@@ -2920,14 +2917,16 @@ extern "C"
    * much of the vector to embed inside PipeWorkQueue and if Topology
    * contains permutation information.
    */
-  typedef struct {
-    xmi_pipeworkqueue_t *buffer;	    /**< Memory used for data (buffer) */
-    xmi_topology_t      *participants;  /**< Ranks that are vectored in buffer */
-    size_t              *lengths;       /**< Array of lengths in buffer for each rank */
-    size_t              *offsets;       /**< Array of offsets in buffer for each rank */
-    size_t               num_vecs;      /**< The number of entries in "lengths" and
-                                           "offsets". May be a flag: either "1" or
-                                           participants->size(). */
+  typedef struct
+  {
+    xmi_pipeworkqueue_t *buffer;       /**< Memory used for data (buffer)            */
+    xmi_topology_t      *participants; /**< Ranks that are vectored in buffer        */
+    size_t              *lengths;      /**< Array of lengths in buffer for each rank */
+    size_t              *offsets;      /**< Array of offsets in buffer for each rank */
+    size_t               num_vecs;     /**< The number of entries in
+                                            "lengths" and "offsets".
+                                            May be a flag: either "1"
+                                            or participants->size(). */
   } xmi_manytomanybuf_t;
 
   /**
@@ -2969,7 +2968,8 @@ extern "C"
    * The rankIndex parameter is transmitted to the receiver for use by cb_recv
    * for indexing into the recv parameter arrays (lengths and offsets).
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_context_t        context;	     /**< context to operate within */
     void                *request; 	     /**< space for operation */
     xmi_callback_t       cb_done;	     /**< User's completion callback */
@@ -3019,7 +3019,8 @@ extern "C"
   /**
    * \brief structure defining interface to Multisync
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_context_t      context;		/**< context to operate within */
     void              *request;	        /**< space for operation */
     xmi_callback_t     cb_done;		/**< User's completion callback */
@@ -3056,7 +3057,8 @@ extern "C"
    * then the results parameters are not needed. Details of this are specified by the
    * type of multicombine being registered/used.
    */
-  typedef struct {
+  typedef struct
+  {
     xmi_context_t        context;	      /**< context to operate within */
     void                *request;             /**< space for communication struct(s) */
     xmi_callback_t       cb_done;             /**< User's completion callback */
@@ -3216,7 +3218,7 @@ extern "C"
     xmi_dispatch_multicast_fn   multicast;
     xmi_dispatch_manytomany_fn  manytomany;
     xmi_dispatch_multisync_fn   multisync;
-  }xmi_dispatch_callback_fn;
+  } xmi_dispatch_callback_fn;
 
   /*****************************************************************************/
   /**
