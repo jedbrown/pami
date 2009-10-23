@@ -14,16 +14,11 @@
 #ifndef __components_devices_workqueue_SharedWorkQueue_h__
 #define __components_devices_workqueue_SharedWorkQueue_h__
 
-#include "Arch.h"
+#include "util/common.h"
 #include "SysDep.h"
 #include "components/devices/workqueue/WorkQueue.h"
 #include "string.h"
 
-//#define WORKSIZE (8*1024)
-//#define WORKSIZE (1024)
-//#define WORKSIZE (16*1024)
-//#define QSIZE (WORKSIZE*32)
-//#define QSIZE (WORKSIZE*4)
 
 namespace XMI
 {
@@ -43,15 +38,18 @@ namespace XMI
           ///
           typedef struct workqueue_t
           {
-            //volatile char buffer[QSIZE]; ///< Producer-consumer buffer
             struct
             {
               volatile size_t bytes;     ///< Number of bytes produced - Only written by each producer!
-            } producer[4];	// must preserve 16-byte alignment
+            } consumer[XMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
             struct
             {
               volatile size_t bytes;     ///< Number of bytes consumed - Only written by each consumer!
-            } consumer[4];	// must preserve 16-byte alignment
+            } producer[XMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
+		// NOTE: producer[] must be at the end of the header
+		// (be the space used for the ad-hoc barrier counters)
+		// in order to avoid problems when early exiters of
+		// barrier_reset() start using this WQ.
             volatile char buffer[0]; ///< Producer-consumer buffer
           } workqueue_t __attribute__ ((__aligned__ (16)));
 
@@ -125,31 +123,12 @@ namespace XMI
           ///
           inline void barrier_reset(unsigned participants, bool master)
           {
-		// yuk... we need a better way to coordinate initialization!
-		size_t value;
-		if (master) {
-			unsigned i;
-			value = _sharedqueue->consumer[3].bytes + participants;
-			for (i = 0; i < 4 - 1; i++) {
-				_sharedqueue->producer[i].bytes = 0;
-				_sharedqueue->consumer[i].bytes = 0;
-			}
-			__sync_fetch_and_add(&_sharedqueue->consumer[3].bytes, 1);
-			mem_sync();
-			while (_sharedqueue->consumer[3].bytes != value) {
-				__sync_fetch_and_add(&_sharedqueue->producer[3].bytes, 1);
-			}
-			_sharedqueue->consumer[3].bytes = 0;
-			_sharedqueue->producer[3].bytes = 0;
-			mem_sync();
-		} else {
-			value = _sharedqueue->producer[3].bytes;
-			mem_sync();
-			while (_sharedqueue->producer[3].bytes == value);
-			__sync_fetch_and_add(&_sharedqueue->consumer[3].bytes, 1);
-			mem_sync();
-			while (_sharedqueue->producer[3].bytes != 0);
-		}
+		// NOTE: producer[] must be at the end of the header
+		// (be the space used for the ad-hoc barrier counters)
+		// in order to avoid problems when early exiters of
+		// barrier_reset() start using this WQ.
+		local_barriered_shmemzero((void *)_sharedqueue, sizeof(*_sharedqueue),
+					participants, master);
           }
 
           ///

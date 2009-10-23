@@ -52,7 +52,7 @@ namespace Atomic
 {
 namespace Interface
 {
-  typedef enum barrierPollStatus
+  enum barrierPollStatus
             {
               Uninitialized=0,
               Initialized,

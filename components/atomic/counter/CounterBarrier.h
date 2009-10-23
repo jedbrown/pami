@@ -14,6 +14,7 @@
 #define __components_atomic_counter_CounterBarrier_h__
 
 #include "components/atomic/Barrier.h"
+#include "util/common.h"
 
 namespace XMI
 {
@@ -48,22 +49,7 @@ namespace XMI
 
           _participants = participants;
           _master = master;
-	  // yuk... ensure all wait here until "master" initializes everything...
-	  if (master) {
-		size_t value = _counter[4].fetch() + participants;
-		for (i=1; i<4; i++) _counter[i].fetch_and_clear();
-		_counter[4].fetch_and_inc();
-		while (_counter[4].fetch() != value) {
-			_counter[0].fetch_and_inc();
-		}
-		_counter[4].fetch_and_clear();
-		_counter[0].fetch_and_clear();
-	  } else {
-		size_t value = _counter[0].fetch();
-		while (_counter[0].fetch() == value);
-		_counter[4].fetch_and_inc();
-		while (_counter[0].fetch() != 0);
-	  }
+	  local_barriered_ctrzero<T_Counter>(_counter, 5, participants, master);
         };
 
         /// \see XMI::Atomic::Interface::Barrier::enter()

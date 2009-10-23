@@ -164,4 +164,86 @@ typedef xmi_geometry_t (*xmi_mapidtogeometry_fn) (int comm);
 #define ENFORCE_CLASS_MEMBER(class,member)	{ &((class *)this)->member; }
 #endif // __cplusplus
 
+/*
+ * The following inlines help with initialization of shared (memory) resources,
+ * such that only one participant will initialize and no participants start to
+ * use the resource until initialization has finished.
+ */
+#ifndef __local_barriered_ctrzero_fn__
+#define __local_barriered_ctrzero_fn__
+#ifdef __cplusplus
+///
+/// This assumes that the last two counters will not be accessed
+/// by any participant too soon after return from this routine...
+///
+template <class T_Counter>
+inline void local_barriered_ctrzero(T_Counter *ctrs, size_t num,
+				size_t participants, bool master) {
+	XMI_assertf(num >= 2, "local_barriered_ctrzero() requires at least two counters\n");
+	size_t c0 = num - 2;
+	size_t c1 = num - 1;
+	if (master) {
+		size_t value = ctrs[c1].fetch() + participants;
+		size_t i;
+		for (i = 0; i < c0; ++i) {
+			ctrs[i].fetch_and_clear();
+		}
+		ctrs[c1].fetch_and_inc();
+		while (ctrs[c1].fetch() != value) {
+			ctrs[c0].fetch_and_inc();
+		}
+		ctrs[c1].fetch_and_clear();
+		ctrs[c0].fetch_and_clear();
+	} else {
+		size_t value = ctrs[c0].fetch();
+		while (ctrs[c0].fetch() == value);
+		ctrs[c1].fetch_and_inc();
+		while (ctrs[c0].fetch() != 0);
+	}
+}
+#endif // __cplusplus
+// try to do an un-templated version for C programs?
+#endif // __local_barriered_ctrzero_fn__
+
+#ifndef __local_barriered_shmemzero_fn__
+#define __local_barriered_shmemzero_fn__
+#include <string.h>
+///
+/// This assumes that the area at the end of "mem" will not be accessed
+/// by any participant too soon after return from this routine...
+///
+/// This also requires that compiler builtin atomics exist, and
+/// are named (or aliased) the same as GCC __sync_*() atomics.
+/// It also assumes these atomics work on "size_t" values.
+/// It additionally assumes that counters may be fetched without special
+/// semantics (i.e. just a load from 'volatile *').
+///
+inline void local_barriered_shmemzero(void *shmem, size_t len,
+				size_t participants, bool master) {
+	volatile size_t *ctrs = (volatile size_t *)shmem;
+	size_t num = len / sizeof(size_t);
+	XMI_assertf(num >= 2, "local_barriered_shmemzero() requires enough shmem for at least two counters\n");
+	size_t c0 = num - 2;
+	size_t c1 = num - 1;
+	if (master) {
+		size_t value = ctrs[c1] + participants;
+		size_t blk1 = (char *)&ctrs[c0] - (char *)shmem;
+		size_t blk2 = len - ((char *)&ctrs[c1] - (char *)shmem);
+		memset(shmem, 0, blk1);
+		__sync_fetch_and_add(&ctrs[c1], 1);
+		while (ctrs[c1] != value) {
+			__sync_fetch_and_add(&ctrs[c0], 1);
+			mem_sync();
+		}
+		memset((void *)&ctrs[c1], 0, blk2);
+		__sync_fetch_and_and(&ctrs[c0], 0);
+	} else {
+		size_t value = ctrs[c0];
+		while (ctrs[c0] == value);
+		__sync_fetch_and_add(&ctrs[c1], 1);
+		while (ctrs[c0] != 0);
+	}
+}
+#endif // __local_barriered_shmemzero_fn__
+
 #endif // __util_common_h__
