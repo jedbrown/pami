@@ -11,7 +11,7 @@ void fail_reg(const char *s) {
 	exit(1);
 }
 
-#ifdef __bgp__
+#ifdef NOTHING__bgp__
 
 #warning using BGP lockbox barrier to avoid bug in CounterBarrier/GccCounter
 #define BARRIER_NAME	"XMI::Barrier::BGP::LockBoxNodeProcBarrier"
@@ -20,7 +20,6 @@ typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier<XMI_SYSDEP_CLASS> Barrier_Type
 
 #else
 
-#warning CounterBarrier/GccCounter is broken - it does not barrier
 #define BARRIER_NAME	"XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter>"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
@@ -102,7 +101,7 @@ int main(int argc, char ** argv) {
 	// extra time in order to show that the barrier is functional.
 
 	// Register some multisyncs, C++ style
-	unsigned long long t0, t1, t2;
+	unsigned long long t0, t1, t2, delay, raw;
 	bool rc;
 
 	const char *test = BARRIER_NAME;
@@ -120,7 +119,6 @@ int main(int argc, char ** argv) {
 	msync.participants = (xmi_topology_t *)&topo;
 	fprintf(stderr, "... before %s.postMultisync\n", test);
 	done = 0;
-	t0 = __global.time.timebase();
 	rc = model->postMultisync(&msync);
 	if (!rc) {
 		fprintf(stderr, "Failed to post first multisync \"%s\"\n", test);
@@ -135,8 +133,19 @@ int main(int argc, char ** argv) {
 			return 1;
 		}
 	}
-	t2 = __global.time.timebase() - t0;
-	t2 *= task_id;
+	done = 0;
+	t0 = __global.time.timebase();
+	rc = model->postMultisync(&msync);
+	if (!rc) {
+		fprintf(stderr, "Failed to post second multisync \"%s\"\n", test);
+		// need to skip rest...
+	}
+	while (!done) {
+		status = XMI_Context_advance(context, 100);
+		// assert(status == XMI_SUCCESS);
+	}
+	raw = __global.time.timebase() - t0;
+	delay = raw * task_id;
 	//
 	// In order to get meaningful results below, we need to vary each rank's
 	// arrival time at the barrier by a "significant" amount. We use the
@@ -158,11 +167,11 @@ int main(int argc, char ** argv) {
 	// t0            (t1[x] ...         ...      ... )                t2
 	//
 	t0 = __global.time.timebase();
-	while ((t1 = __global.time.timebase()) - t0 < t2);
+	while ((t1 = __global.time.timebase()) - t0 < delay);
 	done = 0;
 	rc = model->postMultisync(&msync);
 	if (!rc) {
-		fprintf(stderr, "Failed to post second multisync \"%s\"\n", test);
+		fprintf(stderr, "Failed to post third multisync \"%s\"\n", test);
 		// need to skip rest...
 	}
 
@@ -176,7 +185,7 @@ int main(int argc, char ** argv) {
 	// first number is total time for test barrier, second number is time for *this*
 	// rank's barrier. The second numbers should show a significant variation
 	// between ranks, while the first number should be more uniform.
-	fprintf(stderr, "PASS? %5lld (%5lld)\n", t2 - t0, t2 - t1);
+	fprintf(stderr, "PASS? %5lld (%5lld) [delay: %lld, time: %lld]\n", t2 - t0, t2 - t1, delay, raw);
 
 	status = XMI_Context_destroy(context);
 	if (status != XMI_SUCCESS) {
