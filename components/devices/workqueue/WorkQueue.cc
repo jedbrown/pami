@@ -22,10 +22,10 @@ namespace XMI
   {
     namespace WorkQueue
     {
-      WorkQueue::~WorkQueue() { XMI_abort(); }
-      NonVirtWorkQueue::~NonVirtWorkQueue() { XMI_abort(); }
-      SharedWorkQueue::~SharedWorkQueue() { XMI_abort(); }
-      MemoryWorkQueue::~MemoryWorkQueue() { XMI_abort(); }
+      WorkQueue::~WorkQueue() { }
+      NonVirtWorkQueue::~NonVirtWorkQueue() { }
+      SharedWorkQueue::~SharedWorkQueue() { }
+      MemoryWorkQueue::~MemoryWorkQueue() { }
     };
   };
 };

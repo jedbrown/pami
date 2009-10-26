@@ -20,6 +20,8 @@
 #include "components/devices/generic/SubDevice.h"
 #include "sys/xmi.h"
 #include "Global.h"
+#include "PipeWorkQueue.h"
+#include "Topology.h"
 #include "components/devices/MulticastModel.h"
 
 namespace XMI {
