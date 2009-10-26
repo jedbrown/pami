@@ -69,6 +69,7 @@ int main(int argc, char ** argv) {
 	mcast.roles = (unsigned)-1;
 	mcast.src_participants = (xmi_topology_t *)&itopo;
 	mcast.dst_participants = (xmi_topology_t *)&otopo;
+	mcast.bytes = TEST_BUF_SIZE;
 
 	const char *test = "XMI::Device::BGP::CNBroadcastModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);

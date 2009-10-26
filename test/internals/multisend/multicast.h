@@ -68,7 +68,6 @@ public:
 		mcast->cb_done = (xmi_callback_t){_done_cb, (void *)this};
 		mcast->src = (xmi_pipeworkqueue_t *)&_ipwq;
 		mcast->dst = (xmi_pipeworkqueue_t *)&_opwq;
-		mcast->bytes = T_BufSize;
 		size_t count = mcast->bytes / sizeof(unsigned);
 		for (x = 0; x < count; ++x) {
 			((unsigned *)_source)[x] = 1;
