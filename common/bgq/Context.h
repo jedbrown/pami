@@ -12,7 +12,9 @@
 #include "common/ContextInterface.h"
 
 #include "components/devices/shmem/ShmemPacketDevice.h"
+#include "components/devices/shmem/dma/bgq/cnk/ShmemDmaDeviceBgqCnk.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
+#include "components/devices/shmem/dma/bgq/cnk/ShmemDmaModelBgqCnk.h"
 #include "components/devices/shmem/ShmemBaseMessage.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
@@ -33,6 +35,7 @@
 #include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
+#include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
@@ -45,8 +48,10 @@ namespace XMI
     //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-    typedef Device::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
+    //typedef Device::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
+    typedef Device::ShmemDmaDeviceBgqCnk<SysDep,ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
+    typedef Device::ShmemDmaModelBgqCnk<ShmemDevice, ShmemMessage> ShmemDmaModel;
 
     //
     // >> Point-to-point protocol typedefs and dispatch registration.
@@ -55,6 +60,8 @@ namespace XMI
                                         XMI::Device::MU::MUDevice> EagerMu;
     // << Point-to-point protocol typedefs and dispatch registration.
     //
+	
+	typedef XMI::Protocol::Get::Get <ShmemDmaModel, ShmemDevice, MemRegion::BgqMemregion> Get;
 
     typedef MemoryAllocator<1024,16> ProtocolAllocator;
 
@@ -79,6 +86,7 @@ namespace XMI
           // protocol classes.
           COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
           COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
+          COMPILE_TIME_ASSERT(sizeof(Get) <= ProtocolAllocator::objsize);
 
           // ----------------------------------------------------------------
           // Compile-time assertions
@@ -86,6 +94,12 @@ namespace XMI
 
           _mu.init (&_sysdep);
           _shmem.init (&_sysdep);
+
+		  _get = (void *) _request.allocateObject ();
+		  xmi_result_t result ;
+
+		  new ((void *)_get) Get(_shmem, __global.mapping.task(), _context, _contextid, result);
+	
         }
 
         inline xmi_client_t getClient_impl ()
@@ -217,6 +231,7 @@ namespace XMI
 
         inline xmi_result_t get (xmi_get_simple_t * parameters)
         {
+
           return XMI_UNIMPL;
         }
 
@@ -262,7 +277,15 @@ namespace XMI
 
         inline xmi_result_t rget (xmi_rget_simple_t * parameters)
         {
-          return XMI_UNIMPL;
+          ((Get*)_get)->getimpl (	parameters->rma.done_fn,
+							parameters->rma.cookie,
+							parameters->rma.task,
+							parameters->rget.bytes,
+							(MemRegion::BgqMemregion*)parameters->rget.local_mr,
+							(MemRegion::BgqMemregion*)parameters->rget.remote_mr,
+							parameters->rget.local_offset,
+							parameters->rget.remote_offset);
+          return XMI_SUCCESS;
         }
 
         inline xmi_result_t rget_typed (xmi_rget_typed_t * parameters)
@@ -416,6 +439,7 @@ namespace XMI
         ShmemDevice          _shmem;
 
         void * _dispatch[1024];
+		void* _get; //use for now..remove later
         MemoryAllocator<1024,16> _request;
     }; // end XMI::Context
 }; // end namespace XMI

@@ -11,6 +11,7 @@
 #define XMI_MEMREGION_CLASS XMI::MemRegion::BgqMemregion
 
 #include "components/memregion/MemRegion.h"
+#include <spi/include/kernel/memory.h>
 
 namespace XMI
 {

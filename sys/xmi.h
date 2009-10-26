@@ -794,8 +794,11 @@ extern "C"
     xmi_rma_t              rma;       /**< Common rma parameters */
     struct
     {
-      xmi_memregion_t      local_mr;  /**< Local buffer memory region */
-      xmi_memregion_t      remote_mr; /**< Remote buffer memory region */
+      xmi_memregion_t      	local_mr;  /**< Local buffer memory region */
+      xmi_memregion_t      	remote_mr; /**< Remote buffer memory region */
+	  size_t				local_offset;
+	  size_t				remote_offset;
+      size_t             	bytes;     /**< Data transfer size in bytes */
     } rget;                           /**< Parameters specific to rget */
   } xmi_rget_simple_t;
 

@@ -1,0 +1,261 @@
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2008                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file devices/prod/cdi/shmem/dma/ShmemDmaDevice.h
+ * \brief ???
+ */
+
+#ifndef __dcmf_cdi_device_shmem_dma_h__
+#define __dcmf_cdi_device_shmem_dma_h__
+
+#define DEVICE_ERR(x)  // fprintf x
+
+///undefining SHM_LIN_FIFO picks up fifowithlbox
+#define SHM_LIN_FIFO
+
+#include "../ShmemBaseDevice.h"
+#include "../../BaseDevice.h"
+#include "../../DmaDevice.h"
+#include "../../PacketDevice.h"
+
+#include "ShmemDmaMessage.h"
+#include "sysdep/atomic/AtomicObject.h"
+
+namespace DCMF
+{
+  namespace CDI
+  {
+    template <class T_Memregion, class T_Atomic>
+    class ShmemDmaDevice : public ShmemBaseDevice<T_Atomic>, public Base::Device<ShmemDmaDevice<T_Memregion, T_Atomic> >, public DMA::Device<ShmemDmaDevice<T_Memregion, T_Atomic>, ShmemDmaMessage<T_Memregion, T_Atomic> >, public Packet::Device<ShmemDmaDevice<T_Memregion, T_Atomic> >
+    {
+      public:
+        inline ShmemDmaDevice () :
+            ShmemBaseDevice<T_Atomic> (),
+            Base::Device<ShmemDmaDevice<T_Memregion, T_Atomic> > (),
+            DMA::Device<ShmemDmaDevice<T_Memregion, T_Atomic>, ShmemDmaMessage<T_Memregion, T_Atomic> > (),
+            Packet::Device<ShmemDmaDevice<T_Memregion, T_Atomic> > ()
+        {};
+
+        inline ~ShmemDmaDevice () {};
+
+        /// \see DCMF::CDI::Base::Device::advance()
+        inline int advance_impl ()
+        {
+          // Advance any pending done messages.
+          if (__doneQMask != 0)
+            advance_doneQ ();
+
+          return ShmemBaseDevice<T_Atomic>::advance_internal ();
+        }
+
+        int init_impl (SysDep & sysdep);
+
+        /// \see DCMF::CDI::DMA::Device::postDmaMessage()
+        inline DCMF_Result postDmaMessage_impl (ShmemDmaMessage<T_Memregion, T_Atomic> * msg)
+        {
+          DCMF_Result status = DCMF_SUCCESS;
+          int rc = 1;
+          int peer = msg->getDest ();
+
+          if (! ShmemBaseDevice<T_Atomic>::isSendQueueEmpty(peer))
+            {
+              // There is a pending message on the send queue. Push this message
+              // on to the send queue to advance later.
+              ShmemBaseDevice<T_Atomic>::pushSendQueueTail (peer, (Queueing::QueueElem *) msg);
+
+              // Advance the send queue so messages don't get piled up.
+              ShmemBaseDevice<T_Atomic>::advance_sendQ ();
+            }
+          else
+            {
+              // There are no pending messages on the send queue.
+              // Advance the message to copy data into the fifo.
+              rc = msg->advance (&ShmemBaseDevice<T_Atomic>::_ififo[peer]);
+
+              if (rc != 0)
+                {
+                  // The message has not completed processing all source data.
+                  // Push this message on to the send queue to advance later.
+                  DEVICE_ERR ((stdout, "pushing in the sendQ\n"));
+                  ShmemBaseDevice<T_Atomic>::pushSendQueueTail (peer, (Queueing::QueueElem *) msg);
+
+                  // Advance the send queue so messages don't get piled up.
+                  ShmemBaseDevice<T_Atomic>::advance_sendQ ();
+                }
+              else
+                {
+                  // The message has completed sending the dma meta data. Push this
+                  // message on to the done queue until the target node has
+                  // completed the transfer.
+                  msg->executeCallback_impl ();
+                }
+            }
+
+          return status;
+        };
+
+        inline void pushDoneQueueTail (size_t peer, Queueing::QueueElem * element)
+        {
+          DEVICE_ERR ((stdout, "pushing in the doneQ\n"));
+          __doneQ[peer].pushTail (element);
+          __doneQMask |= (1 << peer);
+        }
+
+        inline void incDmaRecvCount (size_t peer)
+        {
+          _dma_recv_count[peer]++;
+          mem_barrier(); // <<<------------------------------- is this really needed?
+        };
+
+        inline uint64_t incDmaSendCount (size_t peer, uint64_t n)
+        {
+          _dma_send_count[peer] += n;
+          return _dma_send_count[peer];
+        }
+
+        static void sendq_done_cb (void * clientdata, DCMF_Error_t * error);
+
+      protected:
+
+        ///
+        /// \brief Check if the send queue to a local rank is empty
+        ///
+        /// \param[in] peer  \b Local rank
+        ///
+        inline Queueing::QueueElem * popDoneQueueHead (size_t peer)
+        {
+          DEVICE_ERR((stdout, "popping out from the doneQ\n"));
+          Queueing::QueueElem * tmp = __doneQ[peer].popHead();
+
+          if (__doneQ[peer].isEmpty())
+            {
+              // Clear the done queue mask for this fifo.
+              __doneQMask ^= (1 << peer);
+            }
+
+          return tmp;
+        }
+
+        ///
+        /// \brief Advance the done queues and process any pending dma remote completion messages.
+        ///
+        /// \see advanceDma_impl
+        ///
+        inline void advance_doneQ ()
+        {
+          ShmemDmaMessage<T_Memregion, T_Atomic> * msg;
+
+          unsigned j;
+
+          for (j = 0; j < ShmemBaseDevice<T_Atomic>::_num_procs; j++)
+            {
+              while ((__doneQMask >> j) & 0x01)
+                {
+                  // There is a pending completion message on the done queue.
+                  msg = (ShmemDmaMessage<T_Memregion, T_Atomic> *) __doneQ[j].peekHead ();
+
+                  // Check if the number of packets from this local rank processed
+                  // by the remote rank is greater than or equal to the
+                  // sequence number of this message. In other words, has the
+                  // remote rank processed all packets from this message?
+                  if (msg->getSequence () <= getRemoteCounter (j))
+                    {
+                      // The remote rank has completed processing the message.
+                      // Remove from the done queue and invoke the done callback.
+                      popDoneQueueHead (j);
+
+                      mem_sync();
+                      // Call the done completion callback here.
+                      msg->executeUserCallback_impl ();
+                    }
+                }
+            }
+        };
+
+        inline uint64_t getRemoteCounter (size_t peer)
+        {
+          mem_barrier(); // <<<------------------------------- is this really needed?
+          return _sequence_recv[(peer * _max_local_ranks) + ShmemBaseDevice<T_Atomic>::_local_rank];
+        };
+
+        volatile uint64_t * _sequence_recv;
+        volatile uint64_t * _dma_recv_count;
+        uint64_t * _dma_send_count;
+
+        size_t _max_local_ranks;
+
+        Queueing::Queue * __doneQ;
+        unsigned          __doneQMask;
+
+        unsigned _dma_dispatch_id;
+
+        unsigned _debug_counter;
+    };
+
+    template <class T_Memregion, class T_Atomic>
+    int ShmemDmaDevice<T_Memregion, T_Atomic>::init_impl (SysDep & sysdep)
+    {
+      ShmemBaseDevice<T_Atomic>::init_impl (sysdep);
+
+      // Change this to use sysdeps
+      _max_local_ranks = ShmemBaseDevice<T_Atomic>::__mapping->tSize();
+
+      // Allocate an array of 64-bit recv counters in shared memory.
+      _sequence_recv = (uint64_t *) sysdep.memoryManager().scratchpad_dynamic_area_memalign(16, sizeof(uint64_t) * _max_local_ranks * _max_local_ranks);
+
+      // Set up the recv count status information for this rank.
+      _dma_recv_count = &_sequence_recv[ShmemBaseDevice<T_Atomic>::__mapping->t () * _max_local_ranks];
+
+      // Set up the send count status information for this rank.
+      _dma_send_count = (uint64_t *) malloc (sizeof(uint64_t) * _max_local_ranks);
+
+      // Set up the done queue.
+      __doneQ = (Queueing::Queue *) malloc (sizeof(Queueing::Queue) * _max_local_ranks);
+
+      // Initialize the send counts, recv counts, and done queues for this rank.
+      size_t i;
+
+      for (i = 0; i < _max_local_ranks; i++)
+        {
+          _dma_recv_count[i] = 0;
+          _dma_send_count[i] = 0;
+          new (&__doneQ[i]) Queueing::Queue();
+        }
+
+      return 0;
+    }
+
+    template <class T_Memregion, class T_Atomic>
+    void ShmemDmaDevice<T_Memregion, T_Atomic>::sendq_done_cb (void * clientdata, DCMF_Error_t * error)
+    {
+      void ** ptr = (void **) clientdata;
+      ShmemDmaMessage<T_Memregion, T_Atomic> * msg = (ShmemDmaMessage<T_Memregion, T_Atomic> *) ptr[0];
+      ShmemDmaDevice<T_Memregion, T_Atomic>  * dev = (ShmemDmaDevice<T_Memregion, T_Atomic>  *) ptr[1];
+
+      // This callback is invoked when a dma message, which was on the send
+      // queue, completes. Now the dma message must be enqueued on the done
+      // queue where it waits until the remote rank completes the receive of
+      // all packets associated with this dma message.
+
+      size_t peer = msg->peer ();
+
+      uint64_t sequence = dev->incDmaSendCount (peer, msg->getPackets ());
+      msg->setSequence (sequence);
+
+      dev->pushDoneQueueTail (peer, (Queueing::QueueElem *) msg);
+    };
+  };
+};
+#endif /* __dcmf_cdi_device_shmem_dma_h__ */
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//
