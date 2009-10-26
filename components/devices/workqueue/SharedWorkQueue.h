@@ -60,7 +60,7 @@ namespace XMI
           ///
           /// \param[in] queue Location of the workqueue structure in shared memory.
           ///
-          SharedWorkQueue (XMI_SYSDEP_CLASS *sysdep, unsigned workunits = 32, unsigned worksize = 8192) :
+          SharedWorkQueue (XMI_SYSDEP_CLASS *sysdep, unsigned workunits = XMI_DEF_SH_WORKUNITS, unsigned worksize = XMI_DEF_SH_WORKSIZE) :
             WorkQueue (),
             _qsize (workunits * worksize),
             _worksize (worksize),
