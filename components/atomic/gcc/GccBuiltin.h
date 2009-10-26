@@ -45,7 +45,10 @@ namespace XMI
         /// \see XMI::Atomic::Interface::Counter::fetch
         inline size_t fetch_impl ()
         {
-          return __sync_fetch_and_or (&_atom, 0);
+          // return __sync_fetch_and_or (&_atom, 0);
+	  // can't use __sync_fetch_and_or... it's broken?
+	  // instead, ensure "_atom" is volatile
+          return _atom;
         };
 
         /// \see XMI::Atomic::Interface::Counter::fetch_and_inc
@@ -76,7 +79,7 @@ namespace XMI
 
       protected:
 
-        size_t _atom;
+        volatile size_t _atom;
     };
   };
 };

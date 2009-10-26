@@ -233,7 +233,6 @@ inline void local_barriered_shmemzero(void *shmem, size_t len,
 		__sync_fetch_and_add(&ctrs[c1], 1);
 		while (ctrs[c1] != value) {
 			__sync_fetch_and_add(&ctrs[c0], 1);
-			mem_sync();
 		}
 		memset((void *)&ctrs[c1], 0, blk2);
 		__sync_fetch_and_and(&ctrs[c0], 0);
