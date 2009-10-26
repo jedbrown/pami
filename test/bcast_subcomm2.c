@@ -280,12 +280,17 @@ int main(int argc, char*argv[])
             {
               printf("Participant:  %d\n", (int)rank);
               fflush(stdout);
-              int iter = 0;
-              for(iter=0; iter<num_algorithm; iter++)
+              int alg = 0;
+              // todo:  fix so that we use the right algorithm array for each comm
+              // the code as is should work for simple splits assuming some
+              // network symmetry
+              for(alg=0; alg<num_algorithm; alg++)
                   {
                     if (rank == roots[k])
-                      fprintf(stderr, "Trying algorithm %d of %d\n", iter+1, num_algorithm);
+                      fprintf(stderr, "Trying algorithm %d of %d\n", alg+1, num_algorithm);
                     _barrier (context, barriers[k]);
+                    broadcasts[k]->algorithm = alg;
+
                     for(i=1; i<=BUFSIZE; i*=2)
                         {
                           long long dataSent = i;

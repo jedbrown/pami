@@ -96,6 +96,7 @@ namespace XMI
       int registerRecvFunction (Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
         {
+          assert(recv_func != NULL);
           _dispatch_table[_dispatch_id].recv_func=recv_func;
           _dispatch_table[_dispatch_id].recv_func_parm=recv_func_parm;
           _dispatch_lookup[_dispatch_id]=_dispatch_table[_dispatch_id];
@@ -213,9 +214,7 @@ namespace XMI
                   req->_mcast._done_fn(NULL, req->_mcast._cookie, XMI_SUCCESS);
               }
           if(req->_mcast._counter >= req->_mcast._size)
-              {
-                req->_mcastrecvQ->remove(&req->_mcast);
-              }
+            req->_mcastrecvQ->remove(&req->_mcast);
           free(req);
         }
 
@@ -237,7 +236,6 @@ namespace XMI
 
           LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
           lapi_mcast_dispatch_info_t ldi = _dev->_mcast_dispatch_lookup[dispatch_id];
-
           _dev->lock();
           std::list<LAPIMcastRecvMessage*>::iterator it;
           int found=0;
@@ -250,6 +248,7 @@ namespace XMI
                       break;
                     }
               }
+          XMI_assert(!(ldi.recv_func==NULL && found!=1));
           LAPIMcastRecvMessage  m_store;
           LAPIMcastRecvMessage *mcast = &m_store;
           if(!found)
@@ -305,20 +304,15 @@ namespace XMI
 
           if (ri->udata_one_pkt_ptr)
               {
-                int bytes = mcast->_size - mcast->_counter;
-//                XMI_assert(bytes == ri->msg_len);
-                if (mcast->_size)
-                  memcpy(mcast->_buf + mcast->_counter,
-                         (void *)ri->udata_one_pkt_ptr,
-                         bytes);
-                r             = NULL;
-                *comp_h       = NULL;
-                ri->ret_flags = LAPI_SEND_REPLY;
-                ri->ctl_flags = LAPI_BURY_MSG;
+                int remain_bytes   = mcast->_size - mcast->_counter;
+                int incoming_bytes = msg->_size;
+                memcpy(mcast->_buf + mcast->_counter,
+                       (void *)ri->udata_one_pkt_ptr,
+                       incoming_bytes);
+                mcast->_counter+=incoming_bytes;
 
-                for(; bytes > 0; bytes -= mcast->_pwidth)
+                for(; incoming_bytes > 0; incoming_bytes -= mcast->_pwidth)
                     {
-                      mcast->_counter += mcast->_pwidth;
                       if(mcast->_done_fn)
                         mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
                     }
@@ -328,6 +322,10 @@ namespace XMI
                       if(found)
                         free (mcast);
                     }
+                r             = NULL;
+                *comp_h       = NULL;
+                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ctl_flags = LAPI_BURY_MSG;
               }
           else
               {
