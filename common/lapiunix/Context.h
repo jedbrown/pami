@@ -38,10 +38,11 @@ namespace XMI
     class Context : public Interface::Context<XMI::Context>
     {
     public:
-      inline Context (xmi_client_t client, size_t id) :
+      inline Context (xmi_client_t client, size_t id, void * addr, size_t bytes) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
-        _id (id)
+        _id (id),
+        _sysdep(_mm)
         {
           lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
           lapi_extend_t * extend_info;   /* holds IP addresses and ports */
@@ -485,12 +486,13 @@ namespace XMI
 
     private:
       std::map <unsigned, xmi_geometry_t>   _geometry_id;
+      Memory::MemoryManager     _mm;
       xmi_client_t              _client;
       xmi_context_t             _context;
       size_t                    _id;
+      SysDep                    _sysdep;
       lapi_handle_t             _lapi_handle;
       void                     *_dispatch[1024];
-      SysDep                    _sysdep;
       MemoryAllocator<1024,16>  _request;
       LAPIDevice                _lapi_device;
       LAPICollreg              *_collreg;

@@ -63,7 +63,9 @@ namespace XMI
           context = (XMI::Context*) malloc(sizeof(XMI::Context));
           assert(context != NULL);
           memset ((void *)context, 0x00, sizeof(XMI::Context));
-          new (context) XMI::Context (this->getClient(), _contexts++);
+          size_t   bytes = 0;
+          void   * base  = NULL;
+          new (context) XMI::Context (this->getClient(),_contexts++,base,bytes);
           result = XMI_SUCCESS;
           return context;
         }

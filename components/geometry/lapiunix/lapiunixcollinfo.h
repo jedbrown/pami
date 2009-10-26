@@ -21,7 +21,6 @@
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
 #include "SysDep.h"
-#include "components/memory/heap/HeapMemoryManager.h"
 #include "Mapping.h"
 
 
