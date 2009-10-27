@@ -27,6 +27,9 @@
 #include "util/fifo/FifoPacket.h"
 #include "util/queue/Queue.h"
 
+//#define TRAP_ADVANCE_DEADLOCK
+#define ADVANCE_DEADLOCK_MAX_LOOP 10000
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
@@ -404,6 +407,11 @@ namespace XMI
     template <class T_Fifo, class T_Packet>
     int ShmemBaseDevice<T_Fifo, T_Packet>::advance_internal ()
     {
+#ifdef TRAP_ADVANCE_DEADLOCK
+      static size_t iteration = 0;
+      XMI_assert (iteration++ < ADVANCE_DEADLOCK_MAX_LOOP);
+#endif
+
       int events = 0;
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() >> ... __sendQMask = 0x%0x\n", __global.mapping.task(), __sendQMask));
 
@@ -442,6 +450,9 @@ namespace XMI
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
 
       TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() << ... events = %d\n", __global.mapping.task(), events));
+#ifdef TRAP_ADVANCE_DEADLOCK
+      if (events) iteration = 0;
+#endif
       return events;
     }
 
