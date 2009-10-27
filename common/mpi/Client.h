@@ -95,6 +95,7 @@ namespace XMI
 		size_t bytes = _mm.size() / n;
 		int x;
 		for (x = 0; x < n; ++x) {
+			contexts[x] = &context[x];
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
@@ -102,7 +103,6 @@ namespace XMI
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
 		}
-		*contexts = context;
 		return XMI_SUCCESS;
         }
 

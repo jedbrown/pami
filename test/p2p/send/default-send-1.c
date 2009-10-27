@@ -214,17 +214,11 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = XMI_Context_create (client, NULL, 0, &context[0]);
-  if (result != XMI_SUCCESS)
+  int num = 2;
+  result = XMI_Context_createv (client, NULL, 0, &context[0], &num);
+  if (result != XMI_SUCCESS || num != 2)
   {
-    fprintf (stderr, "Error. Unable to create the first xmi context. result = %d\n", result);
-    return 1;
-  }
-
-  result = XMI_Context_create (client, NULL, 0, &context[1]);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to create the second xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to create the two xmi context. result = %d\n", result);
     return 1;
   }
 

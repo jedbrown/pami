@@ -3448,12 +3448,6 @@ extern "C"
                                    xmi_context_t        * context,
 				   int			* ncontexts);
 
-#warning backward-compatible XMI_Context_create() is deprecated
-static inline xmi_result_t XMI_Context_create(xmi_client_t client, xmi_configuration_t configuration[], size_t count, xmi_context_t *context) {
-	int n = 1;
-	return XMI_Context_createv(client, configuration, count, context, &n);
-}
-
   /**
    * \brief Destroy an independent communication context
    *

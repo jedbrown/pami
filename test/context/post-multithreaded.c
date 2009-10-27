@@ -182,20 +182,19 @@ int main (int argc, char ** argv)
   }
 
   _endpoint[0].recv = 1;
-  result = XMI_Context_create (client, configuration, 0, &_endpoint[0].context);
-  if (result != XMI_SUCCESS)
+  {
+  int num = 2;
+  result = XMI_Context_createv (client, configuration, 0, &context[0], &num);
+  if (result != XMI_SUCCESS || num != 2)
   {
     fprintf (stderr, "Error. Unable to create first xmi context. result = %d\n", result);
     return 1;
   }
+  _endpoint[0].context = context[0];
+  _endpoint[1].context = context[1];
+  }
 
   _endpoint[1].recv = 1;
-  result = XMI_Context_create (client, configuration, 0, &_endpoint[1].context);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to create second xmi context. result = %d\n", result);
-    return 1;
-  }
 
   /* Create the "helper" or "endpoint" thread */
   pthread_t thread;

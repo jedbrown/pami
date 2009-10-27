@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
         return 1;
       }
 
-  result = XMI_Context_create (client, NULL, 0, &context);
+	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);

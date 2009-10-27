@@ -175,7 +175,7 @@ int main ()
   TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
   xmi_context_t context;
   TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
-  XMI_Context_create (client, NULL, 0, &context);
+  { int _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
   double clockMHz = 850.0;

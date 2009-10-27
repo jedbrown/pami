@@ -183,9 +183,11 @@ static void init()
   XMI_Client_initialize("XMId ADI Example", &client);
 
 #warning Do I really have to loop to create all the contexts?
+    int num = NUM_CONTEXTS;
+    XMI_Context_createv(client, NULL, 0, contexts, &num);
+
   unsigned i;
   for (i=0; i<NUM_CONTEXTS; ++i) {
-    XMI_Context_create(client, NULL, 0, contexts+i);
     XMI_Dispatch_set(contexts[i],
                      SHORT_DISPATCH,
                      RecvShortFN,
