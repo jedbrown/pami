@@ -156,6 +156,7 @@ namespace XMI
 							state->local_fn (get->_context, state->cookie, XMI_SUCCESS);
 					}
 
+					get->freeGetState(state);		
 
 					return;
 			}
