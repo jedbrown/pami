@@ -3260,11 +3260,8 @@ extern "C"
    */
   /*****************************************************************************/
 
-  typedef unsigned int  xmi_intr_mask_t;  /**< ??? */
-  typedef unsigned int  xmi_bool_t;       /**< ??? */
-  typedef char *        xmi_user_key_t;   /**< ??? */
-  typedef char *        xmi_user_value_t; /**< ??? */
-
+  typedef char* xmi_user_key_t;   /**< ??? */
+  typedef char* xmi_user_value_t; /**< ??? */
   typedef struct
   {
     xmi_user_key_t    key;   /**< The configuration key   */

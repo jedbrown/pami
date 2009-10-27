@@ -1,5 +1,5 @@
-#ifndef __xmi_test_internals_multisend_multicast_h__
-#define __xmi_test_internals_multisend_multicast_h__
+#ifndef __test_internals_multisend_multicast_h__
+#define __test_internals_multisend_multicast_h__
 
 #include <stdio.h>
 #include "sys/xmi.h"

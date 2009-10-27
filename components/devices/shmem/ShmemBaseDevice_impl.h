@@ -133,7 +133,7 @@ namespace XMI
     int ShmemBaseDevice<T_Fifo, T_Packet>::registerRecvFunction (size_t                      id,
                                                                  Interface::RecvFunction_t   recv_func,
                                                                  void                      * recv_func_parm)
-    { 
+    {
       TRACE_ERR((stderr, ">> (%zd) ShmemBaseDevice::registerRecvFunction (%d,%p,%p)\n", __global.mapping.task(), id, recv_func, recv_func_parm));
 
       // This device only supports up to 256 dispatch sets.

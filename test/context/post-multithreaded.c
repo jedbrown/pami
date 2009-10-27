@@ -13,7 +13,7 @@
 #ifdef ENABLE_TRACE
 #define TRACE(x) fprintf x
 #else
-#define TRACE(x) 
+#define TRACE(x)
 #endif
 
 
@@ -90,7 +90,7 @@ void * endpoint (void * arg)
     work.bytes = 1024;
     work.active = 1;
     work.from = 0;
-    work.to   = 1; 
+    work.to   = 1;
 
     result = XMI_Context_post (_endpoint[1].context, do_work, (void *)&work);
     if (result != XMI_SUCCESS)
@@ -138,7 +138,7 @@ void * endpoint (void * arg)
     work.bytes = 1024;
     work.active = 1;
     work.from = 1;
-    work.to   = 0; 
+    work.to   = 0;
 
     result = XMI_Context_post (_endpoint[0].context, do_work, (void *)&work);
     if (result != XMI_SUCCESS)

@@ -16,9 +16,9 @@ void Init()
     if (rc)
         printf("XMI_Client_initialize returned %d due to %s\n", rc, XMI_Last_error());
 
-    char             protocol_name[] = "MPI";
-    xmi_bool_t       reliability = 0;
-    xmi_intr_mask_t  intr_mask = 0;
+    char     protocol_name[] = "MPI";
+    unsigned reliability = 0;
+    unsigned intr_mask = 0;
     xmi_configuration_t  config[] = {
         { XMI_PROTOCOL_NAME,  protocol_name },
         { XMI_RELIABILITY,    &reliability  },
