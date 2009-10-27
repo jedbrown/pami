@@ -22,7 +22,7 @@
 #include "components/devices/mpi/mpidevice.h"
 #include "SysDep.h"
 #include "Mapping.h"
-
+#include "util/compact_attributes.h"
 
 // PGASRT includes
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
@@ -86,8 +86,14 @@ namespace XMI
     class CollInfo
     {
     public:
-      CollInfo(T_Device *dev) {}
+      CollInfo(T_Device *dev)
+      {
+        xmi_ca_unset_all(&_metadata.geometry);        
+        xmi_ca_unset_all(&_metadata.buffer);        
+        xmi_ca_unset_all(&_metadata.misc);
+      }
       collinfo_type_t _colltype;
+      xmi_metadata_t _metadata;
     };
 
     template <class T_Device>
@@ -96,7 +102,11 @@ namespace XMI
     public:
       PGBroadcastInfo(T_Device *dev):
         CollInfo<T_Device>(dev),
-        _model(*dev){}
+        _model(*dev)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "PGAS_Bcast");
+        }
       MPIMcastModel _model;
     };
 
@@ -106,7 +116,11 @@ namespace XMI
     public:
       PGAllgatherInfo(T_Device *dev):
         CollInfo<T_Device>(dev),
-	_model(*dev){}
+	_model(*dev)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "PGAS_Allgather");
+        }
       MPIMcastModel _model;
     };
 
@@ -116,7 +130,11 @@ namespace XMI
     public:
       PGAllgathervInfo(T_Device *dev):
         CollInfo<T_Device>(dev),
-	_model(*dev){}
+	_model(*dev)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "PGAS_Allgatherv");
+        }
       MPIMcastModel _model;
     };
 
@@ -127,7 +145,11 @@ namespace XMI
       PGScatterInfo(T_Device *dev):
         CollInfo<T_Device>(dev),
 	_smodel(*dev),
-	_bmodel(*dev){}
+	_bmodel(*dev)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "PGAS_Scatter");
+        }
 
       MPIMcastModel _smodel;
       MPIMcastModel _bmodel;
@@ -141,7 +163,11 @@ namespace XMI
       PGScattervInfo(T_Device *dev):
         CollInfo<T_Device>(dev),
 	_smodel(*dev),
-	_bmodel(*dev){}
+	_bmodel(*dev)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "PGAS_Scatterv");
+        }
 
       MPIMcastModel _smodel;
       MPIMcastModel _bmodel;
@@ -153,7 +179,11 @@ namespace XMI
     public:
       PGAllreduceInfo(T_Device *dev):
         CollInfo<T_Device>(dev),
-	_model(*dev){}
+	_model(*dev)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "PGAS_Allreduce");          
+        }
 
       MPIMcastModel _model;
     };
@@ -164,7 +194,11 @@ namespace XMI
     public:
       PGBarrierInfo(T_Device *dev):
         CollInfo<T_Device>(dev),
-	_model(*dev){}
+	_model(*dev)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "PGAS_Barrier");          
+        }
 
       MPIMcastModel _model;
     };
@@ -178,6 +212,8 @@ namespace XMI
 	_model(*dev),
         _bcast_registration(sd, &_model, __global.mapping.size())
         {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_AMBroadcast");          
         }
       XMI_Request_t                                   _request;
       MPIMcastModel                                   _model;
@@ -197,6 +233,8 @@ namespace XMI
                               sd,
                               fcn)
         {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_BinomBarrier");          
         }
       XMI_Request_t                                  _request;
       MPIMcastModel                                  _model;
@@ -220,6 +258,8 @@ namespace XMI
                                 &_connmgr,
                                 65535)
         {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_BinomBroadcast");                    
         }
       XMI_Request_t                                           _request;
       MPIMcastModel                                           _model;
@@ -242,6 +282,8 @@ namespace XMI
                                 &_connmgr,
                                 65535)
         {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_RingBroadcast");                    
         }
       XMI_Request_t                                           _request;
       MPIMcastModel                                           _model;
@@ -265,6 +307,8 @@ namespace XMI
                                 fcn,
                                 _cf)
         {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_RingAllreduce");          
         }
       XMI_Request_t                                           _request;
       MPIMcastModel                                           _model;
@@ -287,6 +331,8 @@ namespace XMI
                                 fcn,
                                 _cf)
         {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_BinomAllreduce");          
         }
       XMI_Request_t                                           _request;
       MPIMcastModel                                           _model;
@@ -306,6 +352,8 @@ namespace XMI
         _alltoallv_registration(&_model,
                                 sd)
         {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_Alltoallv");          
         }
       XMI_Request_t     _request;
       MPIM2MModel       _model;

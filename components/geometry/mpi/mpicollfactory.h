@@ -139,7 +139,7 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
-      inline size_t        num_algorithm_impl   (xmi_xfer_type_t           collective)
+      inline size_t  num_algorithm_impl   (xmi_xfer_type_t           collective)
         {
           RegQueue *rq = getRegQ(collective);
           if(rq==NULL)
@@ -147,7 +147,45 @@ namespace XMI
           return rq->size();
         }
 
+     inline xmi_result_t algorithms_num_impl (xmi_xfer_type_t collective,
+                                              int *lists_lengths)
+     {
+       RegQueue *rq = getRegQ(collective);
+       if(rq == NULL)
+         return XMI_UNIMPL;
+       lists_lengths[0] = rq->size();
+       
+       /* we return 0 for now for the "sometimes works" list */
+       lists_lengths[1] = 0;
+       return XMI_SUCCESS;
+     }
+      
 
+     inline xmi_result_t algorithm_info_impl(xmi_xfer_type_t collective,
+                                             xmi_algorithm_t algorithm,
+                                             int algorithm_type,
+                                             xmi_metadata_t *mdata)
+     {
+       RegQueue *rq = (RegQueue *) NULL;
+
+       /* if type is 0, then we want the list of "always works" list */
+       if (algorithm_type == 0)
+         rq = getRegQ(collective);
+       else
+       {
+#warning need to implement this later
+         ; //
+       }
+       
+       if(rq == NULL)
+         return XMI_UNIMPL;
+
+       mdata->geometry = (*rq)[algorithm]->_metadata.geometry;
+       mdata->buffer = (*rq)[algorithm]->_metadata.buffer;
+       mdata->misc = (*rq)[algorithm]->_metadata.misc;
+       strcpy(mdata->name, (*rq)[algorithm]->_metadata.name);
+       return XMI_SUCCESS;
+     }
 
 
       inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g,

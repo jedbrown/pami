@@ -15,6 +15,7 @@
 #define __common_GeometryInterface_h__
 
 #include "sys/xmi.h"
+#include "util/compact_attributes.h"
 #include "util/queue/MatchQueue.h"
 //  Need to make this work with config.h!
 //  hitting some circ dependencies in ccmi...need to solve
@@ -67,13 +68,21 @@ namespace XMI
                             unsigned     nranks,
                             unsigned     comm,
                             unsigned     numcolors,
-                            bool         globalcontext) {}
+                            bool         globalcontext)
+            {
+              xmi_ca_unset_all(&attributes);              
+            }
             inline Geometry (T_Mapping *mapping,
                              unsigned   comm,
                              int        numranges,
                              xmi_geometry_range_t rangelist[])
             {
+              xmi_ca_unset_all(&attributes);              
             }
+            
+            // list of attribute bits holding geometry info
+            xmi_ca_t attributes;
+                 
             // These methods were originally from the CCMI Geometry class
             inline int                        getColorsArray();
             inline void                       setAsyncAllreduceMode(unsigned value);
@@ -91,12 +100,15 @@ namespace XMI
             inline void                       generatePermutation_sizet();
             inline void                       freePermutation_sizet();
             inline size_t                    *permutation_sizet();
-
+#warning need to replace by attributes
+#if 1
+      // no need for these as they are embedded inside attributes
             inline bool                       isRectangle();
             inline bool                       isTorus();
             inline bool                       isTree();
             inline bool                       isGlobalContext();
             inline bool                       isGI();
+#endif
             inline unsigned                   getNumColors();
             inline unsigned                   getAllreduceIteration();
             inline void                       freeAllocations ();
@@ -234,6 +246,9 @@ namespace XMI
             return static_cast<T_Geometry*>(this)->permutation_sizet_impl();
         }
 
+#warning replace by attributes
+#if 1
+    // to be removed eventually
         template <class T_Geometry, class T_Mapping>
         inline bool Geometry<T_Geometry, T_Mapping>::isRectangle()
         {
@@ -263,7 +278,7 @@ namespace XMI
         {
             return static_cast<T_Geometry*>(this)->isGI_impl();
         }
-
+#endif
         template <class T_Geometry, class T_Mapping>
         inline unsigned Geometry<T_Geometry, T_Mapping>::getNumColors()
         {

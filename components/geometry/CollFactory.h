@@ -31,6 +31,13 @@ namespace XMI
                                             xmi_algorithm_t      *alglist,
                                             int                  *num);
       inline size_t        num_algorithm   (xmi_xfer_t            collective);
+      inline xmi_result_t  algorithms_num  (xmi_xfer_type_t collective,
+                                            int *lists_lengths);
+      inline xmi_result_t  algorithm_info  (xmi_xfer_type_t collective,
+                                            xmi_algorithm_t algorithm,
+                                            int algorithm_type,
+                                            xmi_metadata_t *mdata);
+
       inline xmi_result_t  collective      (xmi_xfer_t           *collective);
       inline xmi_result_t  ibroadcast      (xmi_broadcast_t      *broadcast);
       inline xmi_result_t  iallreduce      (xmi_allreduce_t      *allreduce);
@@ -75,6 +82,23 @@ namespace XMI
       return static_cast<T_Collfactory*>(this)->collective_impl(collective);
     }
 
+    template <class T_Collfactory>
+    inline xmi_result_t CollFactory<T_Collfactory>::algorithms_num(xmi_xfer_type_t collective,
+                                                                     int *lists_lengths)
+    {
+      return static_cast<T_Collfactory*>(this)->algorithms_num_impl(collective, lists_lengths);
+    }
+    
+    template <class T_Collfactory>
+    inline xmi_result_t CollFactory<T_Collfactory>::algorithm_info(xmi_xfer_type_t collective,
+                                                                   xmi_algorithm_t algorithm,
+                                                                   int algorithm_type,
+                                                                   xmi_metadata_t *mdata)
+    {
+      return static_cast<T_Collfactory*>(this)->algorithm_info_impl(collective, algorithm, algorithm_type, mdata);
+    }
+
+    
     template <class T_Collfactory>
     inline xmi_result_t
     CollFactory<T_Collfactory>::ibroadcast(xmi_broadcast_t *broadcast)

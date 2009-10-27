@@ -449,24 +449,33 @@ namespace XMI
 	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
           return collfactory->collective(parameters);
         }
-
         inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
                                                           xmi_geometry_t geometry,
-                                                          xmi_xfer_type_t ctype,
+                                                          xmi_xfer_type_t colltype,
                                                           int *lists_lengths)
         {
-          return XMI_UNIMPL;
+          MPIGeometry *new_geometry = (MPIGeometry*) geometry;
+          MPICollfactory  *collfactory =  (MPICollfactory*)
+            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
+          return collfactory->algorithms_num(colltype, lists_lengths);
         }
 
         inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
                                                           xmi_geometry_t geometry,
-                                                          xmi_xfer_type_t type,
+                                                          xmi_xfer_type_t colltype,
                                                           xmi_algorithm_t algorithm,
                                                           int algorithm_type,
                                                           xmi_metadata_t *mdata)
         {
-          return XMI_UNIMPL;
+          MPIGeometry *new_geometry = (MPIGeometry*) geometry;
+          MPICollfactory  *collfactory;
+          collfactory = (MPICollfactory*)
+            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
+          return collfactory->algorithm_info(colltype, algorithm,
+                                             algorithm_type, mdata);
+
         }
+
 
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
                                                   int            *numRoles,

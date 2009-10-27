@@ -1156,6 +1156,7 @@ extern "C"
                                        xmi_xfer_type_t            colltype,
                                        xmi_geometry_t             geometry,
                                        xmi_algorithm_t           *algorithm,
+                                       //                                       int                        algorithm_type,
                                        int                       *num);
 
   /**
