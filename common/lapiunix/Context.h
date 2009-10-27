@@ -38,7 +38,7 @@ namespace XMI
     class Context : public Interface::Context<XMI::Context>
     {
     public:
-      inline Context (xmi_client_t client, size_t id, void * addr, size_t bytes) :
+      inline Context (xmi_client_t client, size_t id):
         Interface::Context<XMI::Context> (client, id),
         _client (client),
         _id (id),

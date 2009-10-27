@@ -75,7 +75,7 @@ namespace XMI
 		}
 		XMI::Context *context = NULL;
 		context = (XMI::Context *)malloc(sizeof(XMI::Context) * n);
-		XMI_assertf(rc==0, "malloc failed for context[%d], errno=%d\n", n, errno);
+		XMI_assertf(context!=0, "malloc failed for context[%d], errno=%d\n", n, errno);
 		memset((void *)context, 0, sizeof(XMI::Context) * n);
 		// size_t bytes = _mm.size() / n;
 		int x;
