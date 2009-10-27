@@ -93,15 +93,16 @@ namespace XMI
 				if (_device.isSendQueueEmpty (peer)){ 
 
 						memcpy (remote_vaddr, local_vaddr, bytes);
-						 ppc_msync();
+						ppc_msync();
 						printf("Calling postDmaPut_impl\n");
 						fflush(stdout);
 
 						if (local_fn) local_fn (_context, cookie, XMI_SUCCESS);
+						return XMI_SUCCESS;  
 
 				}
 				T_Message * obj = (T_Message *) &state[0];
-				new (obj) T_Message(_context, local_fn, cookie, _dispatch_id, local_vaddr, remote_vaddr, bytes);
+				new (obj) T_Message(_context, local_fn, cookie, _dispatch_id, remote_vaddr, local_vaddr, bytes);
 
 				//obj->enableRemoteCompletion ();
 				_device.post (peer, obj);
@@ -135,8 +136,14 @@ namespace XMI
 						fflush(stdout);
 
 						if (local_fn) local_fn (_context, cookie, XMI_SUCCESS);
+						return XMI_SUCCESS;  
 
 				}
+				T_Message * obj = (T_Message *) &state[0];
+				new (obj) T_Message(_context, local_fn, cookie, _dispatch_id, local_vaddr, remote_vaddr, bytes);
+
+				//obj->enableRemoteCompletion ();
+				_device.post (peer, obj);
 
 				return XMI_SUCCESS;  
 		};	

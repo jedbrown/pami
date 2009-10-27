@@ -204,6 +204,21 @@ namespace XMI
           // There is a pending message on the send queue.
           msg = (ShmemBaseMessage<T_Packet> *) __sendQ[peer].peekHead ();
 
+		  if (msg->isRMAType() == true){
+				  sequence = _fifo[peer].nextInjSequenceId();
+				  xmi_result_t res = processRMAMessage(peer, msg, sequence);
+				  if (res == XMI_SUCCESS)
+				  {	
+				  	popSendQueueHead (peer);
+                    msg->executeCallback ();
+				    continue;
+				  }
+				  else
+				  {		
+					break; //dont process any further elements until the RMA message is processed
+				  }	
+		  }
+
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ (%zd) .. before writeSinglePacket()\n", __global.mapping.task(), peer));
           xmi_result_t result = writeSinglePacket (peer, msg, sequence);
           TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_sendQ (%zd) ..  after writeSinglePacket(), result = %zd\n", __global.mapping.task(), peer, result));
@@ -282,6 +297,7 @@ namespace XMI
         {
           // There is a pending message on the done queue.
           msg = (ShmemBaseMessage<T_Packet> *) __doneQ[peer].peekHead ();
+
           if (msg->getSequenceId() <= last_rec_seq_id)
           {
             // The remote rank has completed processing the packets

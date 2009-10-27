@@ -130,12 +130,14 @@ namespace XMI
                                                ShmemBaseMessage<T_Packet> * msg,
                                                size_t                     & sequence);
 
+        inline xmi_result_t processRMAMessage (size_t                       peer,
+                                               ShmemBaseMessage<T_Packet> * msg,
+                                               size_t                     & sequence);
         xmi_result_t post (size_t ififo, ShmemBaseMessage<T_Packet> * msg);
 
         ///
         /// \brief Check if the send queue to a local rank is empty
         ///
-        /// \param[in] peer  \b Local rank
         ///
         inline bool isSendQueueEmpty (size_t peer);
 
@@ -229,6 +231,23 @@ namespace XMI
       memcpy (dst, cookie, length);
       return 0;
     }
+
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::processRMAMessage (size_t             peer,
+                                               							ShmemBaseMessage<T_Packet> * msg,
+                                               							size_t                     & sequence)
+	{
+			size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
+			if (sequence-1 <= last_rec_seq_id) //sequence id is carried by a pt-to-pt message before me
+			{
+					msg->copyBytes();	
+					return XMI_SUCCESS;
+			}
+			else
+			{
+					 return XMI_EAGAIN;
+			}
+	}
 
     template <class T_Fifo, class T_Packet>
     xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet>::writeSinglePacket (size_t   fnum,

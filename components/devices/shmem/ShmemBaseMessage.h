@@ -140,8 +140,8 @@ namespace XMI
                                  xmi_event_function   fn,
                                  void               * cookie,
                                  uint8_t              dispatch_id,
-                                 void               * local_vaddr,
-                                 void               * remote_vaddr,
+                                 void               * dst_vaddr,
+                                 void               * src_vaddr,
                                  size_t               bytes) :
             QueueElem (),
             _context (context),
@@ -153,8 +153,8 @@ namespace XMI
             _nbytes (bytes),
             _dispatch_id (dispatch_id),
             _remote_completion (false),
-			_local_vaddr(local_vaddr),
-			_remote_vaddr(remote_vaddr),
+			_dst_vaddr(dst_vaddr),
+			_src_vaddr(src_vaddr),
 			_pkt_type(RMA)
         {
         };
@@ -225,6 +225,11 @@ namespace XMI
 		{
 			return (_pkt_type == RMA);
 		}	
+	
+		inline void copyBytes()
+		{
+			memcpy(_dst_vaddr, _src_vaddr, _nbytes);
+		}
 		
       protected:
         xmi_context_t        _context;
@@ -242,8 +247,8 @@ namespace XMI
         size_t  _sequence_id;
         bool    _remote_completion;
 		
-		void*	_local_vaddr;
-		void*	_remote_vaddr;
+		void*	_dst_vaddr;
+		void*	_src_vaddr;
 
 		shmem_pkt_t		_pkt_type;
 
