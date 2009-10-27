@@ -4,8 +4,8 @@
 /* denotes the end of arguments in variadic functions */
 #define CA_END_ARGS   -1
 
-#define CA_BIT(b)       ((b) / CA_TOTAL_BITS)
-#define CA_MASK(b)      ((CA_Mask) 1 << ((b) % CA_TOTAL_BITS))
+#define CA_BIT(b)       ((b) / XMI_CA_TOTAL_BITS)
+#define CA_MASK(b)      ((xmi_ca_mask) 1 << ((b) % XMI_CA_TOTAL_BITS))
 
 #define CA_ELEMENT(list) ((list)->bits)
 
@@ -25,7 +25,7 @@
   {                                                                           \
     unsigned int __i, __j;                                                    \
     xmi_ca_t *__list = (l);                                                    \
-    for (__i = 0; __i < CA_NUM_ELEMENTS; __i++)                               \
+    for (__i = 0; __i < XMI_CA_NUM_ELEMENTS; __i++)                               \
       CA_ELEMENT (__list)[__i] = 0;                                           \
   } while (0)
 
@@ -44,7 +44,7 @@
     unsigned int __i, __j;                                                    \
     xmi_ca_t  *__src = (s);                                                    \
     xmi_ca_t  *__dst = (d);                                                    \
-    for (__i = 0; __i < CA_NUM_ELEMENTS; ++__i)                               \
+    for (__i = 0; __i < XMI_CA_NUM_ELEMENTS; ++__i)                               \
       CA_ELEMENT (__dst)[__i] |= CA_ELEMENT (__src)[__i];                     \
   } while (0)
 
@@ -54,11 +54,11 @@
   do                                                                          \
   {                                                                           \
     unsigned int __i, __bit, __element;                                       \
-    for (__element = CA_NUM_ELEMENTS - 1; __element >=0; __element--)         \
+    for (__element = XMI_CA_NUM_ELEMENTS - 1; __element >=0; __element--)         \
     {                                                                         \
-      for (__i = CA_TOTAL_BITS - 1; i >= 0; i--)                              \
+      for (__i = XMI_CA_TOTAL_BITS - 1; i >= 0; i--)                              \
       {                                                                       \
-        if (((__i+1) % 4 == 0) && (__i+1) != CA_TOTAL_BITS) printf("-");      \
+        if (((__i+1) % 4 == 0) && (__i+1) != XMI_CA_TOTAL_BITS) printf("-");      \
         __bit = (((CA_ELEMENT (l)[__element]) >> __i) & 1);                   \
         printf("%d", __bit);                                                  \
       }                                                                       \
@@ -75,7 +75,7 @@
     unsigned int __i;                                                         \
     xmi_ca_t *__l1 = (l1);                                                     \
     xmi_ca_t *__l2 = (l2);                                                     \
-    for (__i = 0; __i < CA_NUM_ELEMENTS; __i++)                               \
+    for (__i = 0; __i < XMI_CA_NUM_ELEMENTS; __i++)                               \
       if ((CA_ELEMENT (__l1)[__i] & CA_ELEMENT (__l2)[__i]) !=                \
           CA_ELEMENT (__l2)[__i])                                             \
       {                                                                       \

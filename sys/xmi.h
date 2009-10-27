@@ -163,21 +163,27 @@ extern "C"
     } u;
   } xmi_coord_t;
 
-  /* should this be size_t????? */
-  typedef int CA_Mask;
+  /*****************************************************************************/
+  /**
+   * \defgroup CA Compact attributes
+   * \{
+   */
+  /*****************************************************************************/
 
-#define CA_MASK_NUM_BYTES  (sizeof(CA_Mask))
-#define CA_BYTE_SIZE       (sizeof(char))
-#define CA_TOTAL_BITS      (CA_BYTE_SIZE * CA_MASK_NUM_BYTES)
-#define CA_NUM_ELEMENTS    1
+  /** \todo Should this be size_t ??? */
+  typedef int xmi_ca_mask;
+
+#define XMI_CA_MASK_NUM_BYTES  (sizeof(xmi_ca_mask))
+#define XMI_CA_BYTE_SIZE       (sizeof(char))
+#define XMI_CA_TOTAL_BITS      (XMI_CA_BYTE_SIZE * XMI_CA_MASK_NUM_BYTES) /**< \todo Either this definition is wrong, or the name is misleading; this is not a bit-count for the array */
+#define XMI_CA_NUM_ELEMENTS    1
 
   /* compact list of informative attributes in the form of bits*/
   typedef struct
   {
-    /* initially 1 list element of 32 bits */
-    CA_Mask bits[CA_NUM_ELEMENTS];
+    /* initially 1 list element of 32 bits, assuming sizeof(xmi_ca_mask)==4 */
+    xmi_ca_mask bits[XMI_CA_NUM_ELEMENTS];
   } xmi_ca_t;
-
 
   /**
    * \brief A metadata structure to describe a collective protocol
@@ -189,6 +195,9 @@ extern "C"
     xmi_ca_t misc;     /**< other attributes (i.e. threaded)      */
     char name[32];     /**< name of algorithm                     */
   } xmi_metadata_t;
+
+  /** \} */ /* end of "Compact attributes" group */
+
 
   /*****************************************************************************/
   /**
