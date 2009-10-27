@@ -84,34 +84,40 @@ namespace XMI
           return _name;
         }
 
-        inline xmi_context_t createContext_impl (xmi_configuration_t   configuration[],
+        inline xmi_result_t createContext_impl (xmi_configuration_t   configuration[],
                                                  size_t                count,
-                                                 xmi_result_t        & result)
+                                                 xmi_context_t *contexts,
+						 int *ncontexts)
         {
-          //_context_list->lock ();
-          if (_contexts > 4)
-          {
-            result = XMI_ERROR;
-            return (xmi_context_t)0;
-          }
-
-          XMI::Context * context = NULL;
-          int rc = posix_memalign((void **)&context, 16, sizeof (XMI::Context));
-          if (rc != 0) assert(0);
-          memset ((void *)context, 0x00, sizeof(XMI::Context));
-
-          size_t   bytes = _mm.size() >> 2;
-          void   * base  = NULL;
-          _mm.memalign((void **)&base, 16, bytes);
-
-          new (context) XMI::Context (this->getClient(),_contexts++,base,bytes);
-
-          //_context_list->pushHead ((QueueElem *) context);
-
-          //_context_list->unlock ();
-
-          result = XMI_SUCCESS;
-          return (xmi_context_t) context;
+		//_context_list->lock ();
+		int n = *ncontexts;
+		if (_contexts != 0) {
+			*ncontexts = 0;
+			return XMI_ERROR;
+		}
+		if (_contexts + n > 4) {
+			n = 4 - _contexts;
+		}
+		*ncontexts = n;
+		if (n <= 0) { // impossible?
+			return XMI_ERROR;
+		}
+		XMI::Context *context = NULL;
+		int rc = posix_memalign((void **)&context, 16, sizeof(XMI::Context) * n);
+		XMI_assertf(rc==0, "posix_memalign failed for context[%d], errno=%d\n", n, errno);
+		memset((void *)context, 0, sizeof(XMI::Context) * n);
+		size_t bytes = _mm.size() / n;
+		int x;
+		for (x = 0; x < n; ++x) {
+			void *base = NULL;
+			_mm.memalign((void **)&base, 16, bytes);
+			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
+			new (&context[x]) XMI::Context(this->getClient(), _contexts++, base, bytes);
+			//_context_list->pushHead((QueueElem *)&context[x]);
+			//_context_list->unlock();
+		}
+		*contexts = context;
+		return XMI_SUCCESS;
         }
 
         inline xmi_result_t destroyContext_impl (xmi_context_t context)

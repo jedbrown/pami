@@ -38,9 +38,16 @@ namespace XMI
 
         inline char * getName () const;
 
-        inline xmi_context_t createContext (xmi_configuration_t   configuration[],
+	///
+	/// \param[in] configuration
+	/// \param[in] count
+	/// \param[out] contexts	array of contexts created
+	/// \param[in,out] ncontexts	num contexts requested (in), created (out)
+	///
+        inline xmi_result_t createContext (xmi_configuration_t   configuration[],
                                            size_t                count,
-                                           xmi_result_t       & result);
+                                           xmi_context_t *contexts,
+					   int *ncontexts);
 
         inline xmi_result_t destroyContext (xmi_context_t context);
 
@@ -65,11 +72,11 @@ namespace XMI
     }
 
     template <class T_Client, class T_Context>
-    inline xmi_context_t Client<T_Client,T_Context>::createContext (xmi_configuration_t configuration[],
-                                                                   size_t              count,
-                                                                   xmi_result_t       & result)
-    {
-      return static_cast<T_Client*>(this)->createContext_impl(configuration, count, result);
+    inline xmi_result_t Client<T_Client,T_Context>::createContext (xmi_configuration_t configuration[],
+                                           size_t                count,
+                                           xmi_context_t *contexts,
+					   int *ncontexts) {
+	return static_cast<T_Client*>(this)->createContext_impl(configuration, count, contexts, ncontexts);
     }
 
     template <class T_Client, class T_Context>

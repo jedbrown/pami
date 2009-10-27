@@ -89,17 +89,18 @@ extern "C" xmi_result_t XMI_Client_finalize (xmi_client_t client)
 }
 
 ///
-/// \copydoc XMI_Context_create
+/// \copydoc XMI_Context_createv
 ///
-extern "C" xmi_result_t XMI_Context_create (xmi_client_t           client,
+extern "C" xmi_result_t XMI_Context_createv (xmi_client_t           client,
                                             xmi_configuration_t    configuration[],
                                             size_t                 count,
-                                            xmi_context_t        * context)
+                                            xmi_context_t        * context,
+					    int			 * ncontexts)
 {
   xmi_result_t result;
   XMI_CLIENT_CLASS * xmi = (XMI_CLIENT_CLASS *) client;
 
-  *context = xmi->createContext (configuration, count, result);
+  result = xmi->createContext (configuration, count, context, ncontexts);
 
   return result;
 }

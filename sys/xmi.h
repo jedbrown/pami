@@ -3426,7 +3426,6 @@ extern "C"
    */
   xmi_result_t XMI_Client_finalize (xmi_client_t client);
 
-
   /**
    * \brief Create a new independent communication context for a client
    *
@@ -3441,11 +3440,19 @@ extern "C"
    * \param[in]  configuration List of configurable attributes and values
    * \param[in]  count         Number of configurations, may be zero
    * \param[out] context       XMI communication context
+   * \param[in,out] ncontexts  num contexts requested (in), created (out)
    */
-  xmi_result_t XMI_Context_create (xmi_client_t           client,
+  xmi_result_t XMI_Context_createv (xmi_client_t           client,
                                    xmi_configuration_t    configuration[],
                                    size_t                 count,
-                                   xmi_context_t        * context);
+                                   xmi_context_t        * context,
+				   int			* ncontexts);
+
+#warning backward-compatible XMI_Context_create() is deprecated
+static inline xmi_result_t XMI_Context_create(xmi_client_t client, xmi_configuration_t configuration[], size_t count, xmi_context_t *context) {
+	int n = 1;
+	return XMI_Context_createv(client, configuration, count, context, &n);
+}
 
   /**
    * \brief Destroy an independent communication context
