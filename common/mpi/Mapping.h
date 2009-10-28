@@ -261,12 +261,36 @@ namespace XMI
         {
           return MPI_TDIMS + MPI_LDIMS;
         }
+      inline xmi_result_t task2network (size_t task, xmi_coord_t *addr, xmi_network type)
+        {
+		if (task >= _size ||
+			(type != XMI_N_TORUS_NETWORK && type != XMI_DEFAULT_NETWORK)) {
+			return XMI_ERROR;
+		}
+		uint32_t x = _mapcache[task];
+		addr->u.n_torus.coords[0] = x >> 16;
+		addr->u.n_torus.coords[1] = x & 0x0000ffff;
+		addr->network = XMI_N_TORUS_NETWORK;
+		return XMI_SUCCESS;
+        }
       inline xmi_result_t network2task_impl(const xmi_coord_t *addr,
 						size_t *task,
 						xmi_network *type)
 	{
-		*task = addr->u.n_torus.coords[0];
-		return XMI_SUCCESS;
+		if (addr->network != XMI_N_TORUS_NETWORK) {
+			return XMI_ERROR;
+		}
+		uint32_t x = (addr->u.n_torus.coords[0] << 16) | addr->u.n_torus.coords[1];
+		// since we expect this to be small, searching is probably the easiest way
+		size_t r;
+		for (r = 0; r < _size && _mapcache[r] != x; ++r);
+		if (r < _size) {
+			*task = r;
+			return XMI_SUCCESS;
+		}
+		*type = XMI_N_TORUS_NETWORK;
+		// never happens?
+		return XMI_ERROR;
 	}
     }; // class Mapping
 };	// namespace XMI

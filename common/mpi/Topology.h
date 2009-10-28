@@ -30,19 +30,15 @@
 #define MY_COORDS	&my_coords
 
 #define RANK2COORDS(rank, coords)	\
-	({ XMI_SUCCESS; })
-//	mapping->task2network(rank, coords, XMI_N_TORUS_NETWORK)
+	mapping->task2network(rank, coords, XMI_N_TORUS_NETWORK)
 
 static xmi_network __dummy_net; // never really used
 
 #define COORDS2RANK(coords, rank)	\
-	({ assert(0); XMI_SUCCESS; })
-//	mapping->network2task(coords, rank, &__dummy_net)
+	mapping->network2task(coords, rank, &__dummy_net)
 
 #define IS_LOCAL_PEER(rank)	\
-	true
-//	assume all are local for now?
-//	mapping->isPeer(mapping->task(), rank)
+	mapping->isPeer(mapping->task(), rank)
 
 namespace XMI {
 	class Topology : public Interface::Topology<XMI::Topology> {
