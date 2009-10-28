@@ -19,8 +19,6 @@
 #include "util/common.h"
 #include "common/PipeWorkQueueInterface.h"
 
-#define XMI_PIPEWORKQUEUE_CLASS XMI::PipeWorkQueue
-
 // undef/define to control workqueues that are optimized for the flat buffer case.
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
 #undef USE_FLAT_BUFFER	// (4*1024*1024)

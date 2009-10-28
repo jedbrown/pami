@@ -65,8 +65,8 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	};
 public:
 	CNBroadcastMessage(Generic::BaseGenericDevice &qs,
-			XMI_PIPEWORKQUEUE_CLASS *swq,
-			XMI_PIPEWORKQUEUE_CLASS *rwq,
+			XMI::PipeWorkQueue *swq,
+			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
 			bool doData,
@@ -234,8 +234,8 @@ XMI::Device::MessageStatus CNBroadcastMessage::advanceThread(XMI::Device::Generi
 }
 
 inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
-	XMI_TOPOLOGY_CLASS *src_topo = (XMI_TOPOLOGY_CLASS *)mcast->src_participants;
-	XMI_TOPOLOGY_CLASS *dst_topo = (XMI_TOPOLOGY_CLASS *)mcast->dst_participants;
+	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
+	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
 	bool doData = (!src_topo || src_topo->isRankMember(_me));
 	bool doStore = (!dst_topo || dst_topo->isRankMember(_me));
 
@@ -244,8 +244,8 @@ inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// __post() will still try early advance... (after construction)
 	CNBroadcastMessage *msg;
 	msg = new (mcast->request) CNBroadcastMessage(_g_cnbroadcast_dev,
-			(XMI_PIPEWORKQUEUE_CLASS *)mcast->src,
-			(XMI_PIPEWORKQUEUE_CLASS *)mcast->dst, mcast->bytes,
+			(XMI::PipeWorkQueue *)mcast->src,
+			(XMI::PipeWorkQueue *)mcast->dst, mcast->bytes,
 			doStore, doData, mcast->roles, mcast->cb_done, _dispatch_id);
 	_g_cnbroadcast_dev.__post<CNBroadcastMessage>(msg);
 	return true;

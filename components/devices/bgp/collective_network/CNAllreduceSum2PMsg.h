@@ -128,8 +128,8 @@ public:
 		XMI::Device::WorkQueue::WorkQueue &ewq,
 		XMI::Device::WorkQueue::WorkQueue &mwq,
 		XMI::Device::WorkQueue::WorkQueue &xwq,
-		XMI_PIPEWORKQUEUE_CLASS *swq,
-		XMI_PIPEWORKQUEUE_CLASS *rwq,
+		XMI::PipeWorkQueue *swq,
+		XMI::PipeWorkQueue *rwq,
 		size_t bytes,
 		bool doStore,
 		unsigned roles,
@@ -350,7 +350,7 @@ XMI::Device::MessageStatus CNAllreduce2PMessage::advanceThread(XMI::Device::Gene
 
 inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	// we don't need CNAllreduceSetup since we know this is DOUBLE-SUM
-	XMI_TOPOLOGY_CLASS *results_topo = (XMI_TOPOLOGY_CLASS *)mcomb->results_participants;
+	XMI::Topology *results_topo = (XMI::Topology *)mcomb->results_participants;
 	bool doStore = (!results_topo || results_topo->isRankMember(_me));
 	size_t bytes = mcomb->count << xmi_dt_shift[mcomb->dtype];
 	// could try to complete allreduce before construction, but for now the code
@@ -359,8 +359,8 @@ inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb)
 	CNAllreduce2PMessage *msg;
 	msg = new (mcomb->request) CNAllreduce2PMessage(_g_cnallreduce2p_dev,
 			_ewq, _mwq, _xwq,
-			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->data,
-			(XMI_PIPEWORKQUEUE_CLASS *)mcomb->results,
+			(XMI::PipeWorkQueue *)mcomb->data,
+			(XMI::PipeWorkQueue *)mcomb->results,
 			bytes, doStore, mcomb->roles, mcomb->cb_done,
 			_dispatch_id_e, _dispatch_id_m);
 	_g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);

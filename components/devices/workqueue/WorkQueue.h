@@ -374,7 +374,7 @@ namespace XMI
             return nbytes;
           }
           // Q2Q using PipeWorkQueue as 'in' (should use template?)
-          inline unsigned Q2Q (XMI_PIPEWORKQUEUE_CLASS & in,
+          inline unsigned Q2Q (XMI::PipeWorkQueue & in,
                                coremath1   func,
                                int         dtshift)
           {
@@ -402,7 +402,7 @@ namespace XMI
             return nbytes;
           }
           // reverse-direction Q2Q, using PipeWorkQueue as 'out'
-          inline unsigned Q2Qr (XMI_PIPEWORKQUEUE_CLASS &out,
+          inline unsigned Q2Qr (XMI::PipeWorkQueue &out,
                                coremath1   func,
                                int         dtshift)
           {
@@ -486,8 +486,8 @@ namespace XMI
           }
 
           /// PipeWorkQueue version... "this" is the SharedWorkQueue...
-          inline unsigned reduce2Q (XMI_PIPEWORKQUEUE_CLASS &in,
-                                    XMI_PIPEWORKQUEUE_CLASS &out,
+          inline unsigned reduce2Q (XMI::PipeWorkQueue &in,
+                                    XMI::PipeWorkQueue &out,
                                     coremath    func,
                                     int         dtshift)
           {
@@ -548,7 +548,7 @@ namespace XMI
           }
 
           // reduceInPlace using PipeWorkQueue as 'in' (should use template?)
-          inline unsigned reduceInPlace (XMI_PIPEWORKQUEUE_CLASS & in,
+          inline unsigned reduceInPlace (XMI::PipeWorkQueue & in,
                                          coremath    func,
                                          int         dtshift)
           {

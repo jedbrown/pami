@@ -44,8 +44,6 @@ static xmi_network __dummy_net; // never really used
 //	assume all are local for now?
 //	mapping->isPeer(mapping->task(), rank)
 
-#define XMI_TOPOLOGY_CLASS XMI::Topology
-
 namespace XMI {
 	class Topology : public Interface::Topology<XMI::Topology> {
 		static XMI::Mapping *mapping;

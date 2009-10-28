@@ -13,10 +13,6 @@
 #ifndef __common_BaseTimeInterface_h__
 #define __common_BaseTimeInterface_h__
 
-#ifndef XMI_TIME_CLASS
-#error XMI_TIME_CLASS must be defined
-#endif
-
 #include "sys/xmi.h"
 
 namespace XMI

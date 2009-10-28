@@ -13,8 +13,6 @@
 #ifndef __common_bgq_Wtime_h__
 #define __common_bgq_Wtime_h__
 
-#define XMI_TIME_CLASS XMI::Time
-
 #include "sys/xmi.h"
 
 #include "common/BaseTimeInterface.h"

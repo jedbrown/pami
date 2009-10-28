@@ -59,8 +59,8 @@ public:
                                       xmi_callback_t   cb,
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole,
-                                      XMI_PIPEWORKQUEUE_CLASS   * sbuffer,
-                                      XMI_PIPEWORKQUEUE_CLASS   * rbuffer,
+                                      XMI::PipeWorkQueue   * sbuffer,
+                                      XMI::PipeWorkQueue   * rbuffer,
                                       size_t            nbytes) :
             XMI::Device::Generic::GenericMessage (device, cb),
             _isrootrole (isrootrole),
@@ -106,8 +106,8 @@ private:
 
 private:
           bool              _isrootrole;
-          XMI_PIPEWORKQUEUE_CLASS   &_sbuffer;
-          XMI_PIPEWORKQUEUE_CLASS   &_rbuffer;
+          XMI::PipeWorkQueue   &_sbuffer;
+          XMI::PipeWorkQueue   &_rbuffer;
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalBcastWQMessage
 
@@ -158,7 +158,7 @@ inline XMI::Device::MessageStatus LocalBcastWQMessage::advanceThread(XMI::Device
 inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
-	XMI_TOPOLOGY_CLASS *src_topo = (XMI_TOPOLOGY_CLASS *)mcast->src_participants;
+	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
 	unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
 	bool isrootrole = (_peer == rootpeer);
 	unsigned consumer = (_peer - (_peer > rootpeer));
@@ -167,7 +167,7 @@ inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	LocalBcastWQMessage *msg =
 		new (mcast->request) LocalBcastWQMessage(_g_l_bcastwq_dev,
 			mcast->cb_done, _shared, isrootrole,
-			(XMI_PIPEWORKQUEUE_CLASS *)mcast->src, (XMI_PIPEWORKQUEUE_CLASS *)mcast->dst,
+			(XMI::PipeWorkQueue *)mcast->src, (XMI::PipeWorkQueue *)mcast->dst,
 			mcast->bytes);
 	_g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
 	return true;
