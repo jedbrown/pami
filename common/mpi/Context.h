@@ -37,7 +37,7 @@
 namespace XMI
 {
     // This won't work with XL
-    typedef XMI::Mutex::CounterMutex<SysDep,XMI::Counter::GccProcCounter<SysDep> >  ContextLock;
+    typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice<SysDep> MPIDevice;

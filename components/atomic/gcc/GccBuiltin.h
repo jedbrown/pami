@@ -24,18 +24,17 @@ namespace XMI
     ///
     /// \brief CRTP interface for gcc builtins atomic objects.
     ///
-    template <class T_Sysdep>
-    class GccBuiltin : public Interface::Counter <T_Sysdep, GccBuiltin<T_Sysdep> >
+    class GccBuiltin : public Interface::Counter <GccBuiltin>
     {
       public:
         GccBuiltin () :
-            Interface::Counter <T_Sysdep, GccBuiltin<T_Sysdep> > ()
+            Interface::Counter <GccBuiltin> ()
         {};
 
         ~GccBuiltin () {};
 
         /// \see XMI::Atomic::Interface::Counter::init
-        void init_impl (T_Sysdep *sd)
+        void init_impl (XMI::SysDep *sd)
         {
 	  // MUST NOT DO THIS! other procs might be already using it.
 	  // TODO: find a way to ensure memory is zeroed once and only once.
@@ -75,7 +74,7 @@ namespace XMI
           return __sync_bool_compare_and_swap (&_atom, compare, swap);
         };
 
-	inline void *returnLock_impl() { return &_atom; }
+	inline void *returnLock_impl() { return (void *)&_atom; }
 
       protected:
 

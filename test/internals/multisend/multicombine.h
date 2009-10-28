@@ -96,17 +96,17 @@ public:
 		}
 		for (x = 0; x < mcomb->count; ++x) {
 			if (((unsigned *)_source)[x] != 1) {
-				fprintf(stderr, "Corrupted source buffer at index %d. stop.\n", x);
+				fprintf(stderr, "Corrupted source buffer at index %zd. stop.\n", x);
 				break;
 			}
 			if (root) {
 				if (((unsigned *)_result)[x] != num_tasks) {
-					fprintf(stderr, "Incorrect result at index %d. stop.\n", x);
+					fprintf(stderr, "Incorrect result at index %zd. stop.\n", x);
 					break;
 				}
 			} else {
 				if (((unsigned *)_result)[x] != (unsigned)-1) {
-					fprintf(stderr, "Corrupted result buffer at index %d. stop.\n", x);
+					fprintf(stderr, "Corrupted result buffer at index %zd. stop.\n", x);
 					break;
 				}
 			}

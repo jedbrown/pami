@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
 	}
 	size_t num_tasks = configuration.value.intval;
 
-	fprintf(stderr, "Hello world from XMI rank %d of %d\n", task_id, num_tasks);
+	fprintf(stderr, "Hello world from XMI rank %zd of %zd\n", task_id, num_tasks);
 
 	status = XMI_Context_destroy(context);
 	if (status != XMI_SUCCESS) {

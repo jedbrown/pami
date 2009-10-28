@@ -15,8 +15,8 @@
 #define LOCAL_REDUCE_NAME2	"XMI::Device::WQRingReduceMdl"
 #define LOCAL_REDUCE_MODEL2	XMI::Device::WQRingReduceMdl
 
-XMI_TOPOLOGY_CLASS itopo;
-XMI_TOPOLOGY_CLASS otopo;
+XMI::Topology itopo;
+XMI::Topology otopo;
 
 int main(int argc, char ** argv) {
 	unsigned x;
@@ -68,8 +68,8 @@ int main(int argc, char ** argv) {
 	xmi_result_t rc;
 	size_t root = 0;
 
-	new (&otopo) XMI_TOPOLOGY_CLASS(root);
-	new (&itopo) XMI_TOPOLOGY_CLASS(task_id);
+	new (&otopo) XMI::Topology(root);
+	new (&itopo) XMI::Topology(task_id);
 	xmi_multicombine_t mcomb;
 
 	// simple allreduce on the local ranks...

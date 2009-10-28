@@ -31,11 +31,10 @@ namespace Counter {
 	//
 	// This class is used internally ONLY. See following classes for users
 	//
-	template <class T_Sysdep>
 	class _LockBoxCounter {
 	public:
 		_LockBoxCounter() { _addr = NULL; }
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			XMI_abortf("_LockBoxCounter must be a subclass");
 		}
 		inline size_t fetch_impl() {
@@ -63,24 +62,22 @@ namespace Counter {
 	// Here are the actual classes to be used:
 	//
 
-	template <class T_Sysdep>
-	class LockBoxNodeCounter : public _LockBoxCounter<T_Sysdep>,
-				 public XMI::Atomic::Interface::Counter<T_Sysdep, LockBoxNodeCounter<T_Sysdep> > {
+	class LockBoxNodeCounter : public _LockBoxCounter,
+				 public XMI::Atomic::Interface::Counter<LockBoxNodeCounter> {
 	public:
 		LockBoxNodeCounter() {}
 		~LockBoxNodeCounter() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class LockBoxNodeCounter
 
-	template <class T_Sysdep>
-	class LockBoxProcCounter : public _LockBoxCounter<T_Sysdep>,
-				 public XMI::Atomic::Interface::Counter<T_Sysdep, LockBoxProcCounter<T_Sysdep> > {
+	class LockBoxProcCounter : public _LockBoxCounter,
+				 public XMI::Atomic::Interface::Counter<LockBoxProcCounter> {
 	public:
 		LockBoxProcCounter() {}
 		~LockBoxProcCounter() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class LockBoxProcCounter

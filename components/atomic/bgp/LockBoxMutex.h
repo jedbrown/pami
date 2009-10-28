@@ -40,11 +40,10 @@ namespace Mutex {
 	//
 	// These classes are used internally ONLY. See following classes for users
 	//
-	template <class T_Sysdep>
 	class _LockBoxMutex {
 	public:
 		_LockBoxMutex() { _addr = NULL; }
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			XMI_abortf("_LockBoxMutex must be a subclass");
 		}
 		void acquire_impl() {
@@ -64,11 +63,10 @@ namespace Mutex {
 		void *_addr;
 	}; // class _LockBoxMutex
 
-	template <class T_Sysdep>
 	class _FairLockBoxMutex {
 	public:
 		_FairLockBoxMutex() { _addr = NULL; }
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			XMI_abortf("_FairLockBoxMutex must be a subclass");
 		}
 		void acquire_impl() {
@@ -117,46 +115,42 @@ namespace Mutex {
 	// Here are the actual classes to be used:
 	//
 
-	template <class T_Sysdep>
-	class LockBoxNodeMutex : public _LockBoxMutex<T_Sysdep>,
-				 public XMI::Atomic::Interface::Mutex<T_Sysdep, LockBoxNodeMutex<T_Sysdep> > {
+	class LockBoxNodeMutex : public _LockBoxMutex,
+				 public XMI::Atomic::Interface::Mutex<LockBoxNodeMutex> {
 	public:
 		LockBoxNodeMutex() {}
 		~LockBoxNodeMutex() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class LockBoxNodeMutex
 
-	template <class T_Sysdep>
-	class LockBoxProcMutex : public _LockBoxMutex<T_Sysdep>,
-				 public XMI::Atomic::Interface::Mutex<T_Sysdep, LockBoxProcMutex<T_Sysdep> > {
+	class LockBoxProcMutex : public _LockBoxMutex,
+				 public XMI::Atomic::Interface::Mutex<LockBoxProcMutex> {
 	public:
 		LockBoxProcMutex() {}
 		~LockBoxProcMutex() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class LockBoxProcMutex
 
-	template <class T_Sysdep>
-	class FairLockBoxNodeMutex : public _FairLockBoxMutex<T_Sysdep>,
-				     public XMI::Atomic::Interface::Mutex<T_Sysdep, FairLockBoxNodeMutex<T_Sysdep> > {
+	class FairLockBoxNodeMutex : public _FairLockBoxMutex,
+				     public XMI::Atomic::Interface::Mutex<FairLockBoxNodeMutex> {
 	public:
 		FairLockBoxNodeMutex() {}
 		~FairLockBoxNodeMutex() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class FairLockBoxNodeMutex
 
-	template <class T_Sysdep>
-	class FairLockBoxProcMutex : public _FairLockBoxMutex<T_Sysdep>,
-				     public XMI::Atomic::Interface::Mutex<T_Sysdep, FairLockBoxProcMutex<T_Sysdep> > {
+	class FairLockBoxProcMutex : public _FairLockBoxMutex,
+				     public XMI::Atomic::Interface::Mutex<FairLockBoxProcMutex> {
 	public:
 		FairLockBoxProcMutex() {}
 		~FairLockBoxProcMutex() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class FairLockBoxProcMutex

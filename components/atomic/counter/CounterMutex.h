@@ -21,12 +21,12 @@
 namespace XMI {
 namespace Mutex {
 
-	template <class T_Sysdep, class T_Counter>
-	class CounterMutex : public XMI::Atomic::Interface::Mutex<T_Sysdep, CounterMutex<T_Sysdep, T_Counter> > {
+	template <class T_Counter>
+	class CounterMutex : public XMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> > {
 	public:
 		CounterMutex() {}
 		~CounterMutex() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			_counter.init(sd);
 		}
 		void acquire_impl() {

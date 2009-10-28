@@ -28,8 +28,8 @@
 #include "spi/kernel_interface.h"
 #include "components/atomic/bgp/LockBoxMutex.h"
 #include "components/atomic/bgp/LockBoxCounter.h"
-typedef XMI::Mutex::LockBoxProcMutex<XMI_SYSDEP_CLASS> GenericDeviceMutex;
-typedef XMI::Counter::LockBoxProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
+typedef XMI::Mutex::LockBoxProcMutex GenericDeviceMutex;
+typedef XMI::Counter::LockBoxProcCounter GenericDeviceCounter;
 
 #else
 // Other platform optimizations to follow...
@@ -38,15 +38,15 @@ typedef XMI::Counter::LockBoxProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
 
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
-typedef XMI::Mutex::CounterMutex<XMI_SYSDEP_CLASS,XMI::Counter::GccProcCounter<XMI_SYSDEP_CLASS> > GenericDeviceMutex;
-typedef XMI::Counter::GccProcCounter<XMI_SYSDEP_CLASS> GenericDeviceCounter;
+typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter> GenericDeviceMutex;
+typedef XMI::Counter::GccProcCounter GenericDeviceCounter;
 
 #else /* !__GNUC__ */
 
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/pthread/Pthread.h"
-typedef XMI::Mutex::CounterMutex<XMI_SYSDEP_CLASS,XMI::Counter::Pthread<XMI_SYSDEP_CLASS> > GenericDeviceMutex;
-typedef XMI::Counter::Pthread<XMI_SYSDEP_CLASS> GenericDeviceCounter;
+typedef XMI::Mutex::CounterMutex<XMI::Counter::Pthread> GenericDeviceMutex;
+typedef XMI::Counter::Pthread GenericDeviceCounter;
 
 #endif /* !__GNUC__ */
 
@@ -83,7 +83,7 @@ class ThreadQueue : public Queue {
 public:
 	ThreadQueue() : Queue() { }
 
-	ThreadQueue(XMI_SYSDEP_CLASS &sd) : Queue()
+	ThreadQueue(XMI::SysDep &sd) : Queue()
 	{
 		// need status/result here...
 		_mutex.init(&sd);
@@ -107,9 +107,9 @@ public:
 	//////////////////////////////////////////////////////////////////
 	/// \brief  A device
 	//////////////////////////////////////////////////////////////////
-	inline Device(XMI_SYSDEP_CLASS &sd);
+	inline Device(XMI::SysDep &sd);
 
-	inline void init(XMI_SYSDEP_CLASS &sd);
+	inline void init(XMI::SysDep &sd);
 
 	inline bool isAdvanceNeeded();
 
@@ -233,7 +233,7 @@ private:
 	//////////////////////////////////////////////////////////////////
 	/// \brief Lockmanager object for local barrier calls
 	//////////////////////////////////////////////////////////////////
-	XMI_SYSDEP_CLASS &__sysdep;
+	XMI::SysDep &__sysdep;
 
 }; /* class Device */
 

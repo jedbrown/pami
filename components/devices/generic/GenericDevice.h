@@ -210,7 +210,7 @@ namespace Generic {
 			COMMTHRD_OPCODE_CORE2,
 			COMMTHRD_OPCODE_CORE3,
 		};
-		static XMI::Mutex::LockBoxNodeMutex<XMI_SYSDEP_CLASS> _mtx[NUM_CORES];
+		static XMI::Mutex::LockBoxNodeMutex _mtx[NUM_CORES];
 
 		void *ct;
 		int id, op;

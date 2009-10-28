@@ -7,7 +7,7 @@
 #define BARRIER_NAME	"XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter>"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
-typedef XMI::Barrier::CounterBarrier<XMI_SYSDEP_CLASS,XMI::Counter::GccNodeCounter<XMI_SYSDEP_CLASS> > Barrier_Type;
+typedef XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter> Barrier_Type;
 
 typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 
@@ -15,7 +15,7 @@ typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 
 #define BARRIER_NAME2	"XMI::Barrier::BGP::LockBoxNodeProcBarrier"
 #include "components/atomic/bgp/LockBoxBarrier.h"
-typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier<XMI_SYSDEP_CLASS> Barrier_Type2;
+typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier Barrier_Type2;
 typedef XMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
 
 #endif // __bgp__

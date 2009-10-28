@@ -24,17 +24,17 @@ namespace XMI
     ///
     /// \brief CRTP interface for "noop" atomic objects.
     ///
-    class Noop : public Interface::Counter <XMI::Interface::NullSysDep, Noop>
+    class Noop : public Interface::Counter <Noop>
     {
       public:
         Noop () :
-            Interface::Counter <XMI::Interface::NullSysDep, Noop> ()
+            Interface::Counter <Noop> ()
         {};
 
         ~Noop () {};
 
         /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::Interface::NullSysDep *sd)
+        void init_impl (XMI::SysDep *sd)
         {
           return;
         };

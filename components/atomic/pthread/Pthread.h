@@ -25,8 +25,7 @@ namespace XMI
     ///
     /// \brief CRTP interface for pthread atomic objects.
     ///
-    template <class T_Sysdep>
-      class Pthread : public XMI::Atomic::Interface::Counter <T_Sysdep, Pthread<T_Sysdep> >
+      class Pthread : public XMI::Atomic::Interface::Counter <Pthread>
     {
       public:
         Pthread (){}
@@ -34,7 +33,7 @@ namespace XMI
         ~Pthread () {}
 
         /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (T_Sysdep *sd)
+        void init_impl (XMI::SysDep *sd)
         {
           pthread_mutex_init (&_mutex, NULL);
           fetch_and_clear_impl ();

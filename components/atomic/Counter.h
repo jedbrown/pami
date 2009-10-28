@@ -25,14 +25,14 @@ namespace XMI
     ///
     /// \param T_Object  Atomic counter object derived class
     ///
-    template <class T_Sysdep, class T_Object>
+    template <class T_Object>
     class Counter
     {
       public:
         Counter  () {};
         ~Counter () {};
 
-        void init (T_Sysdep *sd);
+        void init (XMI::SysDep *sd);
 
         ///
         /// \brief Fetch the atomic counter object value
@@ -91,44 +91,44 @@ namespace XMI
 
     }; // XMI::Atomic::Interface::Counter class
 
-    template <class T_Sysdep, class T_Object>
-    inline void Counter<T_Sysdep, T_Object>::init (T_Sysdep *sd)
+    template <class T_Object>
+    inline void Counter<T_Object>::init (XMI::SysDep *sd)
     {
       static_cast<T_Object*>(this)->init_impl(sd);
     }
 
-    template <class T_Sysdep, class T_Object>
-    inline size_t Counter<T_Sysdep, T_Object>::fetch ()
+    template <class T_Object>
+    inline size_t Counter<T_Object>::fetch ()
     {
       return static_cast<T_Object*>(this)->fetch_impl();
     }
 
-    template <class T_Sysdep, class T_Object>
-    inline size_t Counter<T_Sysdep, T_Object>::fetch_and_inc ()
+    template <class T_Object>
+    inline size_t Counter<T_Object>::fetch_and_inc ()
     {
       return static_cast<T_Object*>(this)->fetch_and_inc_impl();
     }
 
-    template <class T_Sysdep, class T_Object>
-    inline size_t Counter<T_Sysdep, T_Object>::fetch_and_dec ()
+    template <class T_Object>
+    inline size_t Counter<T_Object>::fetch_and_dec ()
     {
       return static_cast<T_Object*>(this)->fetch_and_dec_impl();
     }
 
-    template <class T_Sysdep, class T_Object>
-    inline size_t Counter<T_Sysdep, T_Object>::fetch_and_clear ()
+    template <class T_Object>
+    inline size_t Counter<T_Object>::fetch_and_clear ()
     {
       return static_cast<T_Object*>(this)->fetch_and_clear_impl();
     }
 
-    template <class T_Sysdep, class T_Object>
-    inline bool Counter<T_Sysdep, T_Object>::compare_and_swap (size_t compare, size_t swap)
+    template <class T_Object>
+    inline bool Counter<T_Object>::compare_and_swap (size_t compare, size_t swap)
     {
       return static_cast<T_Object*>(this)->compare_and_swap_impl(compare, swap);
     }
 
-    template <class T_Sysdep, class T_Object>
-    inline void * Counter<T_Sysdep, T_Object>::returnLock()
+    template <class T_Object>
+    inline void * Counter<T_Object>::returnLock()
     {
       return static_cast<T_Object*>(this)->returnLock_impl();
     }

@@ -14,8 +14,8 @@
 #define LOCAL_BCAST_NAME2	"XMI::Device::WQRingBcastMdl"
 #define LOCAL_BCAST_MODEL2	XMI::Device::WQRingBcastMdl
 
-XMI_TOPOLOGY_CLASS itopo;
-XMI_TOPOLOGY_CLASS otopo;
+XMI::Topology itopo;
+XMI::Topology otopo;
 
 int main(int argc, char ** argv) {
 	unsigned x;
@@ -67,9 +67,9 @@ int main(int argc, char ** argv) {
 
 	size_t root = __global.topology_local.index2Rank(0);
 
-	new (&itopo) XMI_TOPOLOGY_CLASS(root);
+	new (&itopo) XMI::Topology(root);
 	if (task_id != root) {
-		new (&otopo) XMI_TOPOLOGY_CLASS(task_id);
+		new (&otopo) XMI::Topology(task_id);
 	}
 
 	xmi_multicast_t mcast;

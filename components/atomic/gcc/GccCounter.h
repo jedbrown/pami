@@ -21,12 +21,11 @@
 namespace XMI {
 namespace Counter {
 
-	template <class T_Sysdep>
-	class GccNodeCounter : public XMI::Atomic::Interface::Counter<T_Sysdep, GccNodeCounter<T_Sysdep> > {
+	class GccNodeCounter : public XMI::Atomic::Interface::Counter<GccNodeCounter> {
 	public:
 		GccNodeCounter() {}
 		~GccNodeCounter() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			sd->mm.memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr));
 			_addr->init(sd);
 		}
@@ -44,15 +43,14 @@ namespace Counter {
 		}
 		void *returnLock_impl() { return _addr->returnLock(); }
 	protected:
-		XMI::Atomic::GccBuiltin<T_Sysdep> *_addr;
+		XMI::Atomic::GccBuiltin *_addr;
 	}; // class GccNodeCounter
 
-	template <class T_Sysdep>
-	class GccProcCounter : public XMI::Atomic::Interface::Counter<T_Sysdep, GccProcCounter<T_Sysdep> > {
+	class GccProcCounter : public XMI::Atomic::Interface::Counter<GccProcCounter> {
 	public:
 		GccProcCounter() {}
 		~GccProcCounter() {}
-		inline void init_impl(T_Sysdep *sd) {
+		inline void init_impl(XMI::SysDep *sd) {
 			_addr.init(sd);
 		}
 		inline size_t fetch_impl() {
@@ -69,7 +67,7 @@ namespace Counter {
 		}
 		void *returnLock_impl() { return _addr.returnLock(); }
 	protected:
-		XMI::Atomic::GccBuiltin<T_Sysdep> _addr;
+		XMI::Atomic::GccBuiltin _addr;
 	}; // class GccProcCounter
 
 }; // Counter namespace

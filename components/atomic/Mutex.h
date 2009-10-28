@@ -36,7 +36,7 @@ namespace Interface
   ///
   ///  \brief Base Class for Mutex
   ///
-  template <class T_Sysdep, class T_Object>
+  template <class T_Object>
   class Mutex
     {
     public:
@@ -63,7 +63,7 @@ namespace Interface
       ///
       /// \brief  Alloc and Init
       ///
-      inline void init(T_Sysdep *sd);
+      inline void init(XMI::SysDep *sd);
 
       ///
       /// \brief  Provide access to the raw lock var/data
@@ -79,38 +79,38 @@ namespace Interface
     private:
     }; // class Mutex
 
-template <class T_Sysdep, class T_Object>
-inline void Mutex<T_Sysdep, T_Object>::acquire()
+template <class T_Object>
+inline void Mutex<T_Object>::acquire()
 {
 	static_cast<T_Object*>(this)->acquire_impl();
 }
 
-template <class T_Sysdep, class T_Object>
-inline void Mutex<T_Sysdep, T_Object>::release()
+template <class T_Object>
+inline void Mutex<T_Object>::release()
 {
 	static_cast<T_Object*>(this)->release_impl();
 }
 
-template <class T_Sysdep, class T_Object>
-inline bool Mutex<T_Sysdep, T_Object>::tryAcquire()
+template <class T_Object>
+inline bool Mutex<T_Object>::tryAcquire()
 {
 	return static_cast<T_Object*>(this)->tryAcquire_impl();
 }
 
-template <class T_Sysdep, class T_Object>
-inline bool Mutex<T_Sysdep, T_Object>::isLocked()
+template <class T_Object>
+inline bool Mutex<T_Object>::isLocked()
 {
 	return static_cast<T_Object*>(this)->isLocked_impl();
 }
 
-template <class T_Sysdep, class T_Object>
-inline void Mutex<T_Sysdep, T_Object>::init(T_Sysdep *sd)
+template <class T_Object>
+inline void Mutex<T_Object>::init(XMI::SysDep *sd)
 {
 	static_cast<T_Object*>(this)->init_impl(sd);
 }
 
-template <class T_Sysdep, class T_Object>
-inline void *Mutex<T_Sysdep, T_Object>::returnLock()
+template <class T_Object>
+inline void *Mutex<T_Object>::returnLock()
 {
 	return static_cast<T_Object*>(this)->returnLock_impl();
 }

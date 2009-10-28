@@ -159,7 +159,8 @@ int main(int argc, char*argv[])
       {
         fprintf(stderr, "%d:  Creating Bottom Geometry\n", (int)rank);
         bottom_range = (xmi_geometry_range_t *)malloc(((sz+1)/2)*sizeof(xmi_geometry_range_t));
-        int i, iter=0;
+        int iter=0;
+        size_t i;
         for(i=0; i<sz; i++)
             {
               if((i%2)==0)
@@ -210,7 +211,8 @@ int main(int argc, char*argv[])
   else
       {
         fprintf(stderr, "%d:  Creating Top Geometry\n", (int)rank);
-        int i, iter=0;
+        int iter=0;
+        size_t i;
         top_range  = (xmi_geometry_range_t *)malloc(((sz+1)/2)*sizeof(xmi_geometry_range_t));
         for(i=0; i<sz; i++)
             {

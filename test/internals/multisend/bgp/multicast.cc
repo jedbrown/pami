@@ -8,8 +8,8 @@
 #define TEST_BUF_SIZE	1024
 #endif // TEST_BUF_SIZE
 
-XMI_TOPOLOGY_CLASS itopo;
-XMI_TOPOLOGY_CLASS otopo;
+XMI::Topology itopo;
+XMI::Topology otopo;
 
 int main(int argc, char ** argv) {
 	unsigned x;
@@ -57,9 +57,9 @@ int main(int argc, char ** argv) {
 
 	size_t root = 0;
 
-	new (&itopo) XMI_TOPOLOGY_CLASS(root);
+	new (&itopo) XMI::Topology(root);
 	if (task_id != root) {
-		new (&otopo) XMI_TOPOLOGY_CLASS(task_id);
+		new (&otopo) XMI::Topology(task_id);
 	}
 
 	xmi_multicast_t mcast;

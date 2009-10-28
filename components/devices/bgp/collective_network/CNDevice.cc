@@ -62,7 +62,7 @@ namespace XMI {
 namespace Device {
 namespace BGP {
 
-	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier<XMI::SysDep> CNDeviceInitBarrier;
+	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier CNDeviceInitBarrier;
 
 	void CNDevice::init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
 		__init(sd, device);

@@ -126,14 +126,13 @@ protected:
 	XMI::Atomic::Interface::barrierPollStatus _status;
 }; // class _LockBoxBarrier
 
-template <class T_Sysdep>
 class LockBoxNodeCoreBarrier :
-		public XMI::Atomic::Interface::Barrier<T_Sysdep,LockBoxNodeCoreBarrier<T_Sysdep> >,
+		public XMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
 		public _LockBoxBarrier {
 public:
 	LockBoxNodeCoreBarrier() {}
 	~LockBoxNodeCoreBarrier() {}
-	inline void init_impl(T_Sysdep *sd, size_t z, bool m) {
+	inline void init_impl(XMI::SysDep *sd, size_t z, bool m) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
@@ -148,14 +147,13 @@ public:
 	}
 }; // class LockBoxNodeCoreBarrier
 
-template <class T_Sysdep>
 class LockBoxNodeProcBarrier :
-		public XMI::Atomic::Interface::Barrier<T_Sysdep,LockBoxNodeProcBarrier<T_Sysdep> >,
+		public XMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
 		public _LockBoxBarrier {
 public:
 	LockBoxNodeProcBarrier() {}
 	~LockBoxNodeProcBarrier() {}
-	inline void init_impl(T_Sysdep *sd, size_t z, bool m) {
+	inline void init_impl(XMI::SysDep *sd, size_t z, bool m) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will

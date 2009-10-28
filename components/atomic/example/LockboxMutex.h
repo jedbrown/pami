@@ -5,8 +5,7 @@ namespace XMI
     ///
     /// \brief Blue Gene/P lockbox mutex class
     ///
-    template <class T_Sysdep>
-    class LockboxMutex : public Interface::Mutex<T_Sysdep, LockboxMutex>,
+    class LockboxMutex : public Interface::Mutex<LockboxMutex>,
                          public Interface::NodeScope<LockboxMutex>,
                          public Interface::ProcessScope<LockboxMutex>
     {
@@ -35,7 +34,7 @@ namespace XMI
 
         inline ~LockboxMutex () {};
 
-        inline void init_impl (T_Sysdep *sd)
+        inline void init_impl (XMI::SysDep *sd)
         {
 	  sd->lockboxFactory.lbx_alloc((void **)&_mutex, 1, );
         };

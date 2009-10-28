@@ -44,14 +44,14 @@
 
 namespace XMI
 {
-    typedef XMI::Mutex::CounterMutex<SysDep,XMI::Counter::GccProcCounter<SysDep> >  ContextLock;
+    typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
 
     typedef Fifo::FifoPacket <16,240> ShmemPacket;
 #ifdef NOT_YET
-    typedef Fifo::LinearFifo<Counter::LockBoxProcCounter<XMI::SysDep>,ShmemPacket,128> ShmemFifo;
+    typedef Fifo::LinearFifo<Counter::LockBoxProcCounter,ShmemPacket,128> ShmemFifo;
 #else
-    typedef Fifo::LinearFifo<Atomic::BgpAtomic<XMI::SysDep>,ShmemPacket,128> ShmemFifo;
+    typedef Fifo::LinearFifo<Atomic::BgpAtomic,ShmemPacket,128> ShmemFifo;
 #endif
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
