@@ -20,23 +20,23 @@ namespace XMI
 {
   namespace Device 
   {
-    template <class T_SysDep, class T_Fifo, class T_Packet>
+    template <class T_Fifo, class T_Packet>
     class ShmemDmaDeviceBgqCnk : 
-					public ShmemBaseDevice<T_SysDep,T_Fifo, T_Packet>, 
-					public Interface::BaseDevice<ShmemDmaDeviceBgqCnk<T_SysDep,T_Fifo, T_Packet>, T_SysDep>, 
-					public Interface::MessageDevice<ShmemDmaDeviceBgqCnk<T_SysDep,T_Fifo, T_Packet> >
+					public ShmemBaseDevice<T_Fifo, T_Packet>, 
+					public Interface::BaseDevice<ShmemDmaDeviceBgqCnk<T_Fifo, T_Packet>, XMI::SysDep>, 
+					public Interface::MessageDevice<ShmemDmaDeviceBgqCnk<T_Fifo, T_Packet> >
     {
       public:
 		  inline ShmemDmaDeviceBgqCnk () :
-            ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet> (),
-            Interface::BaseDevice<ShmemDmaDeviceBgqCnk<T_SysDep, T_Fifo, T_Packet>, T_SysDep> (),
-            Interface::MessageDevice<ShmemDmaDeviceBgqCnk<T_SysDep, T_Fifo, T_Packet> > ()
+            ShmemBaseDevice<T_Fifo, T_Packet> (),
+            Interface::BaseDevice<ShmemDmaDeviceBgqCnk< T_Fifo, T_Packet>, XMI::SysDep> (),
+            Interface::MessageDevice<ShmemDmaDeviceBgqCnk<T_Fifo, T_Packet> > ()
         { };
 
         inline ~ShmemDmaDeviceBgqCnk () {};
 
         /// \see XMI::Device::Interface::BaseDevice::init()
-        inline int init_impl (T_SysDep * sysdep)
+        inline int init_impl (XMI::SysDep * sysdep )
         {
           //TRACE_ERR((stderr, "(%zd) ShmemPacketDevice::init_impl (), this = %p\n", sysdep->mapping.task(), this));
           return this->init_internal (sysdep);

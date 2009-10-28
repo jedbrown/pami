@@ -49,7 +49,7 @@ namespace XMI
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
     //typedef Device::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
-    typedef Device::ShmemDmaDeviceBgqCnk<SysDep,ShmemFifo,ShmemPacket> ShmemDevice;
+    typedef Device::ShmemDmaDeviceBgqCnk<ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
     typedef Device::ShmemDmaModelBgqCnk<ShmemDevice, ShmemMessage> ShmemDmaModel;
 

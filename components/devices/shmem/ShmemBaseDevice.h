@@ -233,7 +233,7 @@ namespace XMI
     }
 
     template <class T_Fifo, class T_Packet>
-    xmi_result_t ShmemBaseDevice<T_SysDep, T_Fifo, T_Packet>::processRMAMessage (size_t             peer,
+    xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet>::processRMAMessage (size_t             peer,
                                                							ShmemBaseMessage<T_Packet> * msg,
                                                							size_t                     & sequence)
 	{
