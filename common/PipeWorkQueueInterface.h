@@ -106,6 +106,7 @@ namespace XMI
             /// consumed by each consumer to zero.
             ///
             inline void reset();
+            inline void barrier_reset(unsigned participants, bool master);
 
             ///
             /// \brief Dump shared memory work queue statistics to stderr.
@@ -252,6 +253,12 @@ namespace XMI
         void PipeWorkQueue<T_PipeWorkQueue>::reset()
         {
             return static_cast<T_PipeWorkQueue*>(this)->reset_impl();
+        }
+
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::barrier_reset(unsigned participants, bool master)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->barrier_reset_impl(participants, master);
         }
 
         template <class T_PipeWorkQueue>

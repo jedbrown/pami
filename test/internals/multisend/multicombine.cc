@@ -15,7 +15,6 @@
 #define LOCAL_REDUCE_NAME2	"XMI::Device::WQRingReduceMdl"
 #define LOCAL_REDUCE_MODEL2	XMI::Device::WQRingReduceMdl
 
-XMI::Topology itopo;
 XMI::Topology otopo;
 
 int main(int argc, char ** argv) {
@@ -66,23 +65,24 @@ int main(int argc, char ** argv) {
 	// Register some multicombines, C++ style
 
 	xmi_result_t rc;
-	size_t root = 0;
+	size_t root = __global.topology_local.index2Rank(0);
+	if (task_id == root) fprintf(stderr, "Number of local tasks = %zd\n", __global.topology_local.size());
 
 	new (&otopo) XMI::Topology(root);
-	new (&itopo) XMI::Topology(task_id);
+
 	xmi_multicombine_t mcomb;
 
 	// simple allreduce on the local ranks...
 	mcomb.context = context;
 	mcomb.roles = (unsigned)-1;
-	mcomb.data_participants = (xmi_topology_t *)&itopo;
+	mcomb.data_participants = (xmi_topology_t *)&__global.topology_local;
 	mcomb.results_participants = (xmi_topology_t *)&otopo;
 	mcomb.optor = XMI_SUM;
 	mcomb.dtype = XMI_UNSIGNED_INT;
 	mcomb.count = TEST_BUF_SIZE / sizeof(unsigned);
 
 	const char *test = LOCAL_REDUCE_NAME;
-	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
+	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,TEST_BUF_SIZE> test1(test);
 
 	rc = test1.perform_test(task_id, num_tasks, &mcomb);
@@ -94,7 +94,7 @@ int main(int argc, char ** argv) {
 	fprintf(stderr, "PASS %s\n", test);
 
 	test = LOCAL_REDUCE_NAME2;
-	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
+	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,TEST_BUF_SIZE> test2(test);
 
 	rc = test2.perform_test(task_id, num_tasks, &mcomb);

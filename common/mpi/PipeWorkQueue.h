@@ -242,6 +242,18 @@ public:
 	}
 
 	///
+	/// \brief Reset this shared memory work queue.
+	///
+	/// Sets the number of bytes produced and the number of bytes
+	/// consumed by each consumer to zero.
+	///
+	inline void barrier_reset_impl(unsigned participants, bool master) {
+		// assert(_isize == 0);
+		local_barriered_shmemzero((void *)_sharedqueue, sizeof(*_sharedqueue),
+						participants, master);
+	}
+
+	///
 	/// \brief Dump shared memory work queue statistics to stderr.
 	///
 	/// \param[in] prefix Optional character string to prefix.

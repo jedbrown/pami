@@ -66,11 +66,10 @@ int main(int argc, char ** argv) {
 	// Register some multicasts, C++ style
 
 	size_t root = __global.topology_local.index2Rank(0);
+	if (task_id == root) fprintf(stderr, "Number of local tasks = %zd\n", __global.topology_local.size());
 
 	new (&itopo) XMI::Topology(root);
-	if (task_id != root) {
-		new (&otopo) XMI::Topology(task_id);
-	}
+	__global.topology_local.subtractTopology(&otopo, &itopo);
 
 	xmi_multicast_t mcast;
 
@@ -82,7 +81,7 @@ int main(int argc, char ** argv) {
 	mcast.bytes = TEST_BUF_SIZE;
 
 	const char *test = LOCAL_BCAST_NAME;
-	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
+	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, TEST_BUF_SIZE> test1(test);
 
 	rc = test1.perform_test(task_id, num_tasks, &mcast);
@@ -93,7 +92,7 @@ int main(int argc, char ** argv) {
 	fprintf(stderr, "PASS %s\n", test);
 
 	test = LOCAL_BCAST_NAME2;
-	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
+	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL2, TEST_BUF_SIZE> test2(test);
 
 	rc = test2.perform_test(task_id, num_tasks, &mcast);

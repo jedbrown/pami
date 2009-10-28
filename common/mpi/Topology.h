@@ -1451,15 +1451,15 @@ namespace XMI {
 	/// \param[in] other	The other topology
 	///
 	void subtractTopology_impl(Topology *_new, Topology *other) {
+		xmi_result_t rc;
+		xmi_coord_t ll, ur, c0;
+		size_t rank = 0;
+		size_t min = 0, max = 0;
+		size_t s;
+		size_t i, j, k;
+		size_t *rl;
+		unsigned flag;
 		if (likely(__type == other->__type)) {
-			xmi_result_t rc;
-			xmi_coord_t ll, ur, c0;
-			size_t rank = 0;
-			size_t min = 0, max = 0;
-			size_t s;
-			size_t i, j, k;
-			size_t *rl;
-			unsigned flag;
 			switch (__type) {
 			case XMI_COORD_TOPOLOGY:
 				// This results in coord range in special cases
@@ -1487,6 +1487,7 @@ namespace XMI {
 					rl[k++] = rank;
 				} while (__nextCoord(&c0, mapping->globalDims()));
 				if (k == 0) {
+					free(rl);
 					break;
 				}
 				_new->__size = k;
@@ -1587,7 +1588,7 @@ namespace XMI {
 				s = __size;
 				rl = (size_t *)malloc(s * sizeof(*rl));
 				k = 0;
-				for (i = 0; i < __size; ++i) {
+				for (i = 0; i < s; ++i) {
 					if (other->isRankMember(topo_list(i))) {
 						continue;
 					}
@@ -1618,11 +1619,101 @@ namespace XMI {
 				return;
 			}
 		} else if (other->__type == XMI_SINGLE_TOPOLOGY) {
-			if (isRankMember(other->topo_rank)) {
-				_new->__type = XMI_SINGLE_TOPOLOGY;
-				_new->__size = 1;
-				_new->topo_rank = other->topo_rank;
+			switch (__type) {
+			case XMI_COORD_TOPOLOGY:
+				if (isRankMember(other->topo_rank)) {
+					// convert rectangle to list and remove one...
+					s = __size;
+					rl = (size_t *)malloc(s * sizeof(*rl));
+					k = 0;
+					c0 = topo_llcoord;
+					do {
+						rc = COORDS2RANK(&c0, &rank);
+						if (rank == other->topo_rank) {
+							continue;
+						}
+						// could try to make a range...
+						rl[k++] = rank;
+					} while (__nextCoord(&c0, mapping->globalDims()));
+					if (k == 0) {
+						free(rl);
+						break;
+					} else if (k == 1) {
+						_new->__type = XMI_SINGLE_TOPOLOGY;
+						_new->__size = 1;
+						_new->topo_rank = rl[0];
+						free(rl);
+						return;
+					}
+					_new->__type = XMI_LIST_TOPOLOGY;
+					_new->__size = k;
+					_new->topo_ranklist = rl;
+					return;
+				} else {
+					*_new = *this;
+					return;
+				}
+				break;
+			case XMI_RANGE_TOPOLOGY:
+				if (isRankMember(other->topo_rank)) {
+					// convert range into list...
+					s = __size;
+					rl = (size_t *)malloc(s * sizeof(*rl));
+					k = 0;
+					for (i = topo_first; i < other->topo_rank; ++i) {
+						rl[k++] = i;
+					}
+					for (++i; i <= topo_last; ++i) {
+						rl[k++] = i;
+					}
+					if (k == 0) { // probably never
+						free(rl);
+						break;
+					} else if (k == 1) {
+						_new->__type = XMI_SINGLE_TOPOLOGY;
+						_new->__size = 1;
+						_new->topo_rank = rl[0];
+						free(rl);
+						return;
+					}
+					_new->__type = XMI_LIST_TOPOLOGY;
+					_new->__size = k;
+					_new->topo_ranklist = rl;
+					return;
+				} else {
+					*_new = *this;
+					return;
+				}
+				break;
+			case XMI_LIST_TOPOLOGY:
+				s = __size;
+				rl = (size_t *)malloc(s * sizeof(*rl));
+				k = 0;
+				for (i = 0; i < s; ++i) {
+					if (topo_list(i) != other->topo_rank) {
+						rl[k++] = topo_list(i);
+					}
+				}
+				if (k == 0) { // probably never
+					free(rl);
+					break;
+				} else if (k == 1) {
+					_new->__type = XMI_SINGLE_TOPOLOGY;
+					_new->__size = 1;
+					_new->topo_rank = rl[0];
+					free(rl);
+					return;
+				}
+				_new->__type = XMI_LIST_TOPOLOGY;
+				_new->__size = k;
+				_new->topo_ranklist = rl;
 				return;
+				break;
+			case XMI_EMPTY_TOPOLOGY:
+				break;
+			case XMI_SINGLE_TOPOLOGY: // cannot happen - already checked
+			default:
+				break;
 			}
 		} else if (__type != XMI_EMPTY_TOPOLOGY &&
 				other->__type != XMI_EMPTY_TOPOLOGY) {

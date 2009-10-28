@@ -26,7 +26,7 @@
 #undef USE_FLAT_BUFFER	// (4*1024*1024)
 
 #define ALLOC_SHMEM(memptr, align, size)	\
-	((XMI_SYSDEP_CLASS *)_sysdep)->mm.memalign((void **)&memptr, align, size)
+	{ memptr = NULL; ((XMI_SYSDEP_CLASS *)_sysdep)->mm.memalign((void **)&memptr, align, size); }
 
 /// \todo Fix shmem free so that it doesn't assert
 #define FREE_SHMEM(memptr)	\
@@ -239,6 +239,18 @@ public:
 		_sharedqueue->_u._s.producerWakeVec = NULL;
 		_sharedqueue->_u._s.consumerWakeVec = NULL;
 		mem_sync();
+	}
+
+	///
+	/// \brief Reset this shared memory work queue.
+	///
+	/// Sets the number of bytes produced and the number of bytes
+	/// consumed by each consumer to zero.
+	///
+	inline void barrier_reset_impl(unsigned participants, bool master) {
+		// assert(_isize == 0);
+		local_barriered_shmemzero((void *)_sharedqueue, sizeof(*_sharedqueue),
+						participants, master);
 	}
 
 	///
