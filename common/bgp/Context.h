@@ -5,8 +5,6 @@
 #ifndef __common_bgp_Context_h__
 #define __common_bgp_Context_h__
 
-#define XMI_CONTEXT_CLASS XMI::Context
-
 #include <stdlib.h>
 #include <string.h>
 

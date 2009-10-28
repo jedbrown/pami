@@ -5,8 +5,6 @@
 #ifndef __common_bgq_Client_h__
 #define __common_bgq_Client_h__
 
-#define XMI_CLIENT_CLASS XMI::Client
-
 #include <stdlib.h>
 
 #include "common/ClientInterface.h"

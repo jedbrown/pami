@@ -5,10 +5,6 @@
 #ifndef __common_ContextInterface_h__
 #define __common_ContextInterface_h__
 
-#ifndef XMI_CONTEXT_CLASS
-#error XMI_CONTEXT_CLASS must be defined
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 

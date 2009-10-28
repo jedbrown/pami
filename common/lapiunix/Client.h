@@ -7,8 +7,6 @@
 
 #include <stdlib.h>
 
-#define XMI_CLIENT_CLASS XMI::Client
-
 #include "common/ClientInterface.h"
 #include "Context.h"
 #include "Geometry.h"

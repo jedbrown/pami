@@ -5,10 +5,6 @@
 #ifndef __common_ClientInterface_h__
 #define __common_ClientInterface_h__
 
-#ifndef XMI_CLIENT_CLASS
-#error XMI_CLIENT_CLASS must be defined
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 

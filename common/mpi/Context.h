@@ -5,8 +5,6 @@
 #ifndef __common_mpi_Context_h__
 #define __common_mpi_Context_h__
 
-#define XMI_CONTEXT_CLASS XMI::Context
-
 #define ENABLE_GENERIC_DEVICE
 
 #include <stdlib.h>
