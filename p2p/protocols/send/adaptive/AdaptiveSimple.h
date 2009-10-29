@@ -7,10 +7,10 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocols/send/adaptive/AdaptiveSimple.h
-/// \brief Simple adaptive send protocol for reliable devices.
+/// \file p2p/protocols/send/eager/EagerSimple.h
+/// \brief Simple eager send protocol for reliable devices.
 ///
-/// The AdaptiveSimple class defined in this file uses C++ templates and
+/// The EagerSimple class defined in this file uses C++ templates and
 /// the device "message" interface - which also uses C++ templates.
 ///
 /// C++ templates require all source code to be #include'd from a header file.
@@ -51,8 +51,7 @@ namespace XMI
         protected:
 		
 		  typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
-          typedef uint8_t msg_t[T_Model::message_model_state_bytes];
-		
+      		
 		//forward declaration
 		  class  send_state_t;
 		  struct recv_state_t;
@@ -71,14 +70,13 @@ namespace XMI
 		  struct recv_state_t
         {   
 		  cts_info_t          cts;                               /// cts info
-		  pkt_t               pkt[2];                            /// Message Object	  
+		  pkt_t               pkt;                            /// Message Object	  
           AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive;  /// Pointer to protocol
           xmi_recv_t     info;                                   /// Application receive information.
   		  size_t                           count;                /// Message info bytes	
 		  xmi_task_t                       fromRank;             ///origen rank
           char *                           msgbuff;              /// RTS data buffer
 		  size_t                           msgbytes;		     /// RTS bytes received
-		  bool                             flag;                 ///Toggle packet
         };		
 			
 				
@@ -124,7 +122,7 @@ namespace XMI
 		  recv_state_t *       va_recv;         /// Receiver Virtual Address
 		  size_t               send_bytes;      /// Total bytes to send
 		  char *               send_buffer;     /// Send Buffer address
-		  pkt_t                pkt[2];          /// packet
+		  pkt_t                pkt;          /// packet
 		  rts_info_t           rts;             /// RTS struct info
 		  header_metadata_t    header;          /// header_metadata
 		  xmi_event_function   cb_data;         /// Callback to execute when data have been sent
@@ -134,8 +132,7 @@ namespace XMI
           xmi_event_function   local_fn;        /// Local Completion callback.
           xmi_event_function   remote_fn;       /// Remote Completion callback.
           void                 * cookie;        /// Cookie
-		  bool                 flag;            ///
-		  
+		
           AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive;
 		  
         };
@@ -180,7 +177,7 @@ namespace XMI
               _connection ((void **)NULL),
               _connection_manager (device),
               _contextid (contextid)
-			  {
+			 {
 		    // ----------------------------------------------------------------
             // Compile-time assertions
             // ----------------------------------------------------------------
@@ -211,12 +208,9 @@ namespace XMI
             _connection = _connection_manager.getConnectionArray (context);
 			
 			
-			//No tested
-			
-			 //Queue Setup
-			   if (_queue==NULL){
-			           
-			        //allocate memory
+			   //No tested
+		       //Queue Setup
+			   //allocate memory
 			        _queue = (Queue *) malloc(sizeof(Queue)* _device.peers());
 				    
 										
@@ -224,8 +218,7 @@ namespace XMI
 				    for(size_t i=0;i< _device.peers();i++)
 				        new (&_queue[i]) Queue();
 								
-	                   
-				}
+	                  
 
             TRACE_ERR((stderr, "AdaptiveSimple() [0]\n"));
             status = _rts_model.init (dispatch,
@@ -295,12 +288,7 @@ namespace XMI
             // Allocate memory to maintain the state of the send.
             send_state_t * send = allocateSendState ();
             
-			
-			
-			 send->flag =true;                              //switch packets
-			
-			
-			  
+					  
 			  
 			  
 			
@@ -356,7 +344,7 @@ namespace XMI
 											  TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
                                                                   											   
                                                 //send RTS info without message info
-										        _rts_model.postPacket (send->pkt[0],         ///T_Message to send
+										        _rts_model.postPacket (send->pkt,         ///T_Message to send
 																NULL,                     ///Callback to execute when done 
 																(void *) send,            /// Cookie
 																peer,                     ///Target Rank
@@ -379,7 +367,7 @@ namespace XMI
 
 						                
 										//Everything OK                               ///Post rts package
-								        _rts_model.postPacket (send->pkt[0],             ///T_Message to send
+								        _rts_model.postPacket (send->pkt,             ///T_Message to send
 														local_fn,                     ///Callback to execute when done 
 														(void *) cookie,             /// Cookie
 														peer,                        ///Target Rank
@@ -415,7 +403,7 @@ namespace XMI
 											 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
                                                
 																					
-                                                _rts_model.postPacket (send->pkt[0],         ///T_Message to send
+                                                _rts_model.postPacket (send->pkt,         ///T_Message to send
 																NULL,                     ///Callback to execute when done 
 																(void *) send,            /// Cookie
 																peer,                     ///Target Rank
@@ -438,7 +426,7 @@ namespace XMI
 						                  TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
     
 											  //OK CASE
-						                     _rts_model.postPacket (send->pkt[0],       ///T_Message to send
+						                     _rts_model.postPacket (send->pkt,       ///T_Message to send
 														local_fn,                    ///Callback to execute when done 
 														(void *) cookie,             /// Cookie
 														peer,                        ///Target Rank
@@ -477,7 +465,7 @@ namespace XMI
 										
 										TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
   	    
-										        _rts_model.postPacket (send->pkt[0],           ///T_Message to send
+										        _rts_model.postPacket (send->pkt,           ///T_Message to send
 																NULL,                       ///Callback to execute when done 
 																(void *) send,              /// Cookie
 																peer,                       ///Target Rank
@@ -497,7 +485,7 @@ namespace XMI
 									   TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata fit in a single packet payload\n"));
 
 									   //Everything OK
-									    _rts_model.postPacket (send->pkt[0],
+									    _rts_model.postPacket (send->pkt,
 																NULL,
 																(void *) cookie ,
 																peer,
@@ -522,7 +510,7 @@ namespace XMI
                                              {
 											 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
               
-										        _rts_model.postPacket (send->pkt[0],         ///T_Message to send
+										        _rts_model.postPacket (send->pkt,         ///T_Message to send
 																NULL,                     ///Callback to execute when done 
 																(void *) send,            ///Cookie
 																peer,                     ///Target Rank
@@ -545,7 +533,7 @@ namespace XMI
 										  
 										  TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
     	
-										     _rts_model.postPacket (send->pkt[0],
+										     _rts_model.postPacket (send->pkt,
 																NULL,
 																(void *) cookie ,
 																peer,
@@ -644,7 +632,7 @@ namespace XMI
           size_t      _contextid;
 		  static Queue *    _queue;
 		  
-		 		  
+		  		  
 		  ///
           /// \brief Direct send rts packet dispatch.
           ///
@@ -661,8 +649,7 @@ namespace XMI
 			void * msginfo;             
 			rts_info_t * send;          
 			int total_payload =0;
-			//pkt_t packet;
-		  
+			  
 			AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 			
@@ -673,9 +660,8 @@ namespace XMI
 			rcv->adaptive = adaptive;             
 		  
 		
-            rcv->flag=true;          //toggle packets
-			     
-			 			 
+            			
+			 
 			    if (sizeof(rts_info_t) <= T_Model::packet_model_metadata_bytes)
                      {
 					     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. rts_info_t coming inside metadata\n"));
@@ -750,7 +736,9 @@ namespace XMI
 								  return 0;
 								  }
 			  
-					
+			
+
+			                      								  
 								      
 								  
 										//Post CTS package info
@@ -765,7 +753,7 @@ namespace XMI
               										
 																						 
 																			//Post cts package  
-																	        adaptive->_cts_model.postPacket (rcv->pkt[0],
+																	        adaptive->_cts_model.postPacket (rcv->pkt,
 																							NULL,
 																							rcv->info.cookie,
 																							send->fromRank,
@@ -795,7 +783,7 @@ namespace XMI
 																	   TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol cts_info_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
               																						 			 
 																					//Post cts package  
-																	   adaptive->_cts_model.postPacket (rcv->pkt[0],
+																	   adaptive->_cts_model.postPacket (rcv->pkt,
 																							NULL,
 																							rcv->info.cookie,
 																							send->fromRank,
@@ -849,7 +837,7 @@ namespace XMI
 																												
 																						 
 																			//Post rts_ack package  
-																	adaptive->_rts_ack_model.postPacket (rcv->pkt[0],
+																	adaptive->_rts_ack_model.postPacket (rcv->pkt,
 																							NULL,
 																							rcv->info.cookie,
 																							send->fromRank,
@@ -881,7 +869,7 @@ namespace XMI
 																		TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol header_rts_ack_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
     										 			 
 																			//Post rts_ack package  
-																	        adaptive->_rts_ack_model.postPacket (rcv->pkt[0],
+																	        adaptive->_rts_ack_model.postPacket (rcv->pkt,
 																							NULL,
 																							rcv->info.cookie,
 																							send->fromRank,
@@ -927,7 +915,6 @@ namespace XMI
 		  
 		  			 
            header_rts_ack_t * ack;
-		   pkt_t * packet;
 			
 			if (sizeof(header_rts_ack_t) <= T_Model::packet_model_metadata_bytes)
                 {
@@ -956,15 +943,6 @@ namespace XMI
 						 
 						  
 			      }
-				  
-			//Toggle packets	  
-		   if(ack->va_send->flag){
-								     packet = &ack->va_send->pkt[0];
-									 ack->va_send->flag=false;
-								  }else{
-								     packet =&ack->va_send->pkt[1];
-									 ack->va_send->flag=true;
-								}	  
 		  
 		  
 		    //Save receiver VA
@@ -997,7 +975,7 @@ namespace XMI
  
 																					
 											    //Post rts_data package 			 
-												adaptive->_rts_data_model.postPacket (*packet,
+												adaptive->_rts_data_model.postPacket (ack->va_send->pkt,
 															ack->va_send->cb_rts,
 															(void *) ack->va_send,
 															ack->va_send->rts.destRank,      
@@ -1026,7 +1004,7 @@ namespace XMI
 											TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
      										
 											    //Post rts_data package 			 
-												adaptive->_rts_data_model.postPacket (*packet,
+												adaptive->_rts_data_model.postPacket (ack->va_send->pkt,
 															ack->va_send->cb_rts,
 															(void *) ack->va_send ,
 															ack->va_send->rts.destRank,      // target rank
@@ -1077,7 +1055,6 @@ namespace XMI
 		  
            header_metadata_t * header;
 		   void * msginfo;
-		   pkt_t * packet;
 		   
 		   //Pointer to protocol			 
               AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
@@ -1188,15 +1165,7 @@ namespace XMI
               return 0;
 			  }
 			  
-			 //Toggle packets
-            if(header->va_recv->flag){
-								     packet = &header->va_recv->pkt[0];
-									 header->va_recv->flag=false;
-								  }else{
-								     packet = &header->va_recv->pkt[1];
-									 header->va_recv->flag=true;
-								}	  
-			 
+			  
 			
 			if (sizeof(cts_info_t) <= T_Model::packet_model_metadata_bytes)
                             {
@@ -1210,7 +1179,7 @@ namespace XMI
 																					
 											    			 
 									        //Post cts package  
-										    adaptive->_cts_model.postPacket (*packet,
+										    adaptive->_cts_model.postPacket (header->va_recv->pkt,
 																NULL,
 																header->va_recv->info.cookie,
 																header->va_recv->fromRank,
@@ -1239,7 +1208,7 @@ namespace XMI
     										
 											    			 			 
 											 //Post cts package  
-										     adaptive->_cts_model.postPacket (*packet,
+										     adaptive->_cts_model.postPacket (header->va_recv->pkt,
 																NULL,
 																header->va_recv->info.cookie,
 																header->va_recv->fromRank,
@@ -1282,7 +1251,6 @@ namespace XMI
 			 
 			 cts_info_t * rcv;
 			 int to_send;
-			 pkt_t * packet;
 			
 			if (sizeof(cts_info_t) <= T_Model::packet_model_metadata_bytes)
                 {
@@ -1296,17 +1264,6 @@ namespace XMI
 			        rcv= (cts_info_t *) payload; 
 						  
 			      }
-				  
-				  
-				  
-			//Toggle packets	  
-			if(rcv->va_send->flag){
-								     packet = &rcv->va_send->pkt[0];
-									 rcv->va_send->flag=false;
-								  }else{
-								     packet = &rcv->va_send->pkt[1];
-									 rcv->va_send->flag=true;
-								}	  	  
 				  
 				  
 			//Determine short package
@@ -1342,7 +1299,7 @@ namespace XMI
                                              TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
   
 											 //Post First Data package   			 
-											adaptive->_data_model.postPacket   ( *packet,          ///T_message to send
+											adaptive->_data_model.postPacket   ( rcv->va_send->pkt,          ///T_message to send
 																rcv->va_send->cb_data,         ///Callback to execute when done
 																(void *)rcv->va_send,
 																rcv->destRank,                 ///target Rank
@@ -1369,7 +1326,7 @@ namespace XMI
 											TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
     									
 											//Post Fisrt data package 			 			 			 
-											adaptive->_data_model.postPacket   ( *packet,          ///T_message to send
+											adaptive->_data_model.postPacket   ( rcv->va_send->pkt,          ///T_message to send
 																rcv->va_send->cb_data,         ///Callback to execute when done
 																(void *)rcv->va_send,
 																rcv->destRank,                 ///target Rank
@@ -1404,14 +1361,7 @@ namespace XMI
 				 //recover next object to send			
 			     send_state_t * send = (send_state_t *) (adaptive->_queue[adaptive->_fromRank].peekHead()); 
 			
-			    //Toggle packets
-			    if(send->flag){
-								     packet = &send->pkt[0];
-									 send->flag=false;
-								  }else{
-								     packet =&send->pkt[1];
-									 send->flag=true;
-								}	  			     				 
+						     				 
 				 
 				if (send->sendlen == 0){
 				 
@@ -1434,7 +1384,7 @@ namespace XMI
 											  TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
                                                                   											   
                                                 //send RTS info without message info
-										        adaptive->_rts_model.postPacket (*packet,         ///T_Message to send
+										        adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
 																NULL,                     ///Callback to execute when done 
 																(void *)rcv->va_send,   /// Cookie
 																send->rts.destRank,       ///Target Rank
@@ -1457,7 +1407,7 @@ namespace XMI
 
 						                
 										//Everything OK                               ///Post rts package
-								        adaptive->_rts_model.postPacket (*packet,             ///T_Message to send
+								        adaptive->_rts_model.postPacket (send->pkt,             ///T_Message to send
 														send->local_fn,               ///Callback to execute when done 
 														(void *)send->cookie,       /// Cookie
 														send->rts.destRank,          ///Target Rank
@@ -1493,7 +1443,7 @@ namespace XMI
 											 TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
                                                
 																					
-                                                adaptive->_rts_model.postPacket (*packet,         ///T_Message to send
+                                                adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
 																NULL,                     ///Callback to execute when done 
 																(void *)rcv->va_send,   /// Cookie
 																send->rts.destRank,       ///Target Rank
@@ -1516,7 +1466,7 @@ namespace XMI
 						                  TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
     
 											  //OK CASE
-						                     adaptive->_rts_model.postPacket (*packet,       ///T_Message to send
+						                     adaptive->_rts_model.postPacket (send->pkt,       ///T_Message to send
 														send->local_fn,              ///Callback to execute when done 
 														(void *)send->cookie,       /// Cookie
 														 send->rts.destRank,         ///Target Rank
@@ -1555,7 +1505,7 @@ namespace XMI
 										
 										TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
   	    
-										        adaptive->_rts_model.postPacket (*packet,           ///T_Message to send
+										        adaptive->_rts_model.postPacket (send->pkt,           ///T_Message to send
 																NULL,                       ///Callback to execute when done 
 																(void *) rcv->va_send,      /// Cookie
 																send->rts.destRank,         ///Target Rank
@@ -1575,7 +1525,7 @@ namespace XMI
 									   TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata fit in a single packet payload\n"));
 
 									   //Everything OK
-									    adaptive->_rts_model.postPacket (*packet,
+									    adaptive->_rts_model.postPacket (send->pkt,
 																NULL,
 																(void *) send->cookie ,
 																send->rts.destRank,
@@ -1600,7 +1550,7 @@ namespace XMI
                                              {
 											 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
               
-										        adaptive->_rts_model.postPacket (*packet,         ///T_Message to send
+										        adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
 																NULL,                     ///Callback to execute when done 
 																(void *) rcv->va_send,    ///Cookie
 																send->rts.destRank,       ///Target Rank
@@ -1623,7 +1573,7 @@ namespace XMI
 										  
 										  TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
     	
-										     adaptive->_rts_model.postPacket (*packet,
+										     adaptive->_rts_model.postPacket (send->pkt,
 																NULL,
 																(void *) send->cookie ,
 																send->rts.destRank,
@@ -1684,7 +1634,8 @@ namespace XMI
 			  		
 
                     }			
-               
+
+				    
    
                 //Update total of bytes received
                 header->va_recv->info.data.simple.bytes -= header->bsend;
@@ -1718,23 +1669,12 @@ namespace XMI
           {
 		  
 		   TRACE_ERR((stderr, ">> AdaptiveSimple::Callback_rts_send()\n"));
-		   pkt_t * packet;
 		   
 		 //Fix Bug Share Memory Device
 		 //usleep(200); 
 		   
             //Pointer to send state
 			send_state_t * send = (send_state_t *) cookie;
-			
-			//Toggle packets
-			    if(send->flag){
-								     packet = &send->pkt[0];
-									 send->flag=false;
-								  }else{
-								     packet = &send->pkt[1];
-									 send->flag=true;
-								}	  			     		
-				    
 			
 			
             //Pointer to Protocol object
@@ -1804,7 +1744,7 @@ namespace XMI
 
 																					
 											    //Post rts_data package 			 
-												adaptive->_rts_data_model.postPacket (*packet,
+												adaptive->_rts_data_model.postPacket (send->pkt,
 															send->cb_rts,
 															(void *) send,
 															send->rts.destRank,      
@@ -1831,7 +1771,7 @@ namespace XMI
 											TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
      										
 											    //Post rts_data package 			 
-												adaptive->_rts_data_model.postPacket (*packet,
+												adaptive->_rts_data_model.postPacket (send->pkt,
 															send->cb_rts,
 															(void *) send ,
 															send->rts.destRank,      
@@ -1873,7 +1813,7 @@ namespace XMI
           {
 		  
 		   TRACE_ERR((stderr, ">> AdaptiveSimple::Callback_data_send()\n"));
-		   pkt_t * packet;
+		   
 		    
 		   
 		  			   
@@ -1900,7 +1840,7 @@ namespace XMI
 				
 				
 			TRACE_ERR((stderr,"   AdaptiveSimple::Callback_data_send() .. data total bytes= %d  , send->next_offset = %d , offset=%d , bsend=%d \n", send->sendlen, send->next_offset,send->header.offset,send->header.bsend));
-			TRACE_ERR((stderr,"   AdaptiveSimple::Callback_data_send() .. cookie= %p , send->cts->va_send = %p ,send->cb_data = %p\n" ,cookie,send->rts.va_send, send->cb_data));
+			//TRACE_ERR((stderr,"   AdaptiveSimple::Callback_data_send() .. cookie= %p , send->cts->va_send = %p ,send->cb_data = %p\n" ,cookie,send->rts.va_send, send->cb_data));
 				
 				 //Check if data to send
                  if (send->sendlen < send->next_offset)
@@ -1929,15 +1869,6 @@ namespace XMI
 				  
 				  
                  send->header.offset= send->next_offset;                                   ///Update offset in metadata
-				 
-				 //Toggle packets
-			    if(send->flag){
-								     packet = &send->pkt[0];
-									 send->flag=false;
-								  }else{
-								     packet =&send->pkt[1];
-									 send->flag=true;
-								}	  		
 				
                 
 				 if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
@@ -1950,8 +1881,8 @@ namespace XMI
 											TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 										    			 
 												//Post data package 	
-                                                //pkt_t * dummy = (pkt_t *)malloc(sizeof(pkt_t));												
-												adaptive->_data_model.postPacket (*packet,
+											
+												adaptive->_data_model.postPacket (send->pkt,
 																			send->cb_data,
 																			(void *)send,
 																			send->rts.destRank,      
@@ -1978,7 +1909,7 @@ namespace XMI
 											TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
      									
 											    //Post data package 			 			 
-												adaptive->_data_model.postPacket (*packet,
+												adaptive->_data_model.postPacket (send->pkt,
 																			send->cb_data,
 																			(void *)send,
 																			send->rts.destRank,      // target rank
@@ -1999,11 +1930,7 @@ namespace XMI
 							
 				}						 
 					 				
-			
-			           
 
-
-			
 			TRACE_ERR((stderr, ">>   AdaptiveSimple::Callback_data_send() .. posted data packet\n"));		
       
             return;
