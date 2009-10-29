@@ -123,10 +123,6 @@ namespace XMI
           task = addr[0];
           return XMI_SUCCESS;
         }
-
-
-
-
       inline size_t       torusgetcoord_impl (size_t dimension)
         {
           if(dimension >= LAPI_DIMS)
@@ -137,6 +133,29 @@ namespace XMI
         {
           return LAPI_DIMS;
         }
+
+      inline xmi_result_t task2network (size_t task, xmi_coord_t *addr, xmi_network type)
+        {
+          if (task >= _size ||
+              (type != XMI_N_TORUS_NETWORK && type != XMI_DEFAULT_NETWORK))
+              {
+                return XMI_ERROR;
+              }
+          addr->u.n_torus.coords[0] = task;
+          addr->u.n_torus.coords[1] = 0;
+          addr->network             = XMI_N_TORUS_NETWORK;
+          return XMI_SUCCESS;
+        }
+      inline xmi_result_t network2task_impl(const xmi_coord_t *addr,
+                                            size_t            *task,
+                                            xmi_network       *type)
+	{
+          if (addr->network != XMI_N_TORUS_NETWORK)
+            return XMI_ERROR;
+          *task = addr->u.n_torus.coords[0];
+          *type = XMI_N_TORUS_NETWORK;
+          return XMI_SUCCESS;
+	}
     }; // class Mapping
 };	// namespace XMI
 #endif // __components_mapping_lapi_lapimapping_h__
