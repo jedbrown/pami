@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include "sys/xmi.h"
+#include "Global.h"
 
 int main(int argc, char ** argv) {
 	unsigned x;
 	xmi_client_t client;
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
+	char *name = "multicombine test";
 
-	status = XMI_Client_initialize("multicombine test", &client);
+	status = XMI_Client_initialize(name, &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
 		return 1;
@@ -37,7 +39,21 @@ int main(int argc, char ** argv) {
 	}
 	size_t num_tasks = configuration.value.intval;
 
-	fprintf(stderr, "Hello world from XMI rank %zd of %zd\n", task_id, num_tasks);
+	char buf[256];
+	char *s = buf;
+	char p = '(';
+	size_t d;
+	xmi_coord_t c;
+	status = __global.mapping.task2network(task_id, &c, XMI_N_TORUS_NETWORK);
+	if (status == XMI_SUCCESS) {
+		for (d = 0; d < __global.mapping.globalDims(); ++d) {
+			s += sprintf(s, "%c%d", p, c.u.n_torus.coords[d]);
+			p = ',';
+		}
+		*s++ = ')';
+	}
+	*s++ = '\0';
+	fprintf(stderr, "Hello world from XMI rank %zd of %zd %s\n", task_id, num_tasks, buf);
 
 	status = XMI_Context_destroy(context);
 	if (status != XMI_SUCCESS) {

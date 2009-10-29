@@ -48,7 +48,6 @@ namespace XMI
 	size_t   *_peers;
 	size_t    _npeers;
 	uint32_t *_mapcache;
-	size_t   *_nodecache;
 	size_t    _nSize;
 	size_t    _tSize;
 
@@ -66,7 +65,8 @@ namespace XMI
 		int num_ranks;
 		size_t r, q;
 		int err;
-		char *host, *hosts;
+		int nz, tz;
+		char *host, *hosts, *s;
 		int str_len = 128;
 
 		// global process/rank info
@@ -79,8 +79,6 @@ namespace XMI
 #ifdef USE_MEMALIGN
 		err = posix_memalign((void **)&_mapcache, sizeof(void *), sizeof(*_mapcache) * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
-		err = posix_memalign((void **)&_nodecache, sizeof(void *), sizeof(*_nodecache) * _size);
-		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&_peers, sizeof(void *), sizeof(*_peers) * _size);
 		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&host, sizeof(void *), str_len);
@@ -90,8 +88,6 @@ namespace XMI
 #else
                 _mapcache=(uint32_t*)malloc(sizeof(*_mapcache) * _size);
                 XMI_assertf(_mapcache != NULL, "memory alloc failed");
-                _nodecache=(size_t*)malloc(sizeof(*_nodecache) * _size);
-                XMI_assertf(_nodecache != NULL, "memory alloc failed");
                 _peers = (size_t*)malloc(sizeof(*_peers) * _size);
                 XMI_assertf(_peers != NULL, "memory alloc failed");
                 host=(char*)malloc(str_len);
@@ -120,7 +116,7 @@ namespace XMI
 			} else {
 				// new hostname... first one for that host... give it T=0
 				_mapcache[r] = (_nSize << 16) | 0;
-				_nodecache[_nSize++] = r;
+				++_nSize;
 			}
 			if (strcmp(host, hosts + str_len * r) == 0) {
 				_peers[_npeers++] = r;
@@ -128,7 +124,55 @@ namespace XMI
 		}
 		free(host);
 		free(hosts);
+
+		// if all ranks are local, then see if an ENV variable
+		// gives us permission to spice things up.
+		nz = tz = 0;
+		s = getenv("XMI_MAPPING_TSIZE");
+		if (s) {
+			tz = strtol(s, NULL, 0);
+			if (!tz) tz = 1;
+		}
+		s = getenv("XMI_MAPPING_NSIZE");
+		if (s) {
+			nz = strtol(s, NULL, 0);
+			if (!nz) nz = 1;
+		}
+		if (_nSize == 1 && (nz > 0 || tz > 0)) {
+			uint32_t t = 0;
+			uint32_t n = 0;
+			if (nz > 0) {
+				tz = 0;
+				// remap using N-first sequence
+				_nSize = nz;
+				for (r = 0; r < _size; ++r) {
+					if (n >= nz) { ++t; n = 0; }
+					_mapcache[r] = (n << 16) | t;
+					++n;
+				}
+				_tSize = t + 1;
+			} else if (tz > 0) {
+				// remap using T-first sequence
+				_tSize = tz;
+				for (r = 0; r < _size; ++r) {
+					if (t >= tz) { ++n; t = 0; }
+					_mapcache[r] = (n << 16) | t;
+					++t;
+				}
+				_nSize = n + 1;
+			}
+			// now, must recompute _peers, _npeers...
+			_npeers = 0;
+			n = _mapcache[_task] & 0xffff0000;
+			for (r = 0; r < _size; ++r) {
+				if ((_mapcache[r] & 0xffff0000) == n) {
+					_peers[_npeers++] = r;
+				}
+			}
+		}
+
 		// local ranks could be represented as rectangle...
+		// but, let Global.h use Topology analyze if it wants.
 		*local_ranks = _peers;
 		num_local = _npeers;
 		// global ranks could be represented as rectangle...
@@ -136,7 +180,6 @@ namespace XMI
 		max_rank = _size-1;
 		//
 		// At this point, _mapcache[rank] -> [index1]|[index2], where:
-		// _nodecache[index1] -> "first" rank on that node
 		// (at target node)_peers[index2] -> rank
 		// coordinates = (index1,index2)
 
