@@ -131,12 +131,10 @@ namespace XMI
 		s = getenv("XMI_MAPPING_TSIZE");
 		if (s) {
 			tz = strtol(s, NULL, 0);
-			if (!tz) tz = 1;
 		}
 		s = getenv("XMI_MAPPING_NSIZE");
 		if (s) {
 			nz = strtol(s, NULL, 0);
-			if (!nz) nz = 1;
 		}
 		if (_nSize == 1 && (nz > 0 || tz > 0)) {
 			uint32_t t = 0;
