@@ -252,6 +252,7 @@ namespace Generic {
 		}
 #else
 #warning generic device not configured for helper threads
+		y = XMI_MAX_THREAD_PER_PROC - 1;
 		rc = rc;
 #endif
 		__maxHWThreads = y;
