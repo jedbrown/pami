@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
 
-	status = XMI_Client_initialize("multisync test", &client);
+	status = XMI_Client_initialize("multiprogressfunc test", &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
 		return 1;
