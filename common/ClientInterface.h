@@ -20,7 +20,7 @@ namespace XMI
     class Client : public QueueElem
     {
       public:
-        inline Client (char * name, xmi_result_t & result) :
+        inline Client (const char * name, xmi_result_t & result) :
           QueueElem ()
         {
           result = XMI_UNIMPL;
@@ -28,7 +28,7 @@ namespace XMI
 
         inline ~Client () {}
 
-        static xmi_result_t generate (char * name, xmi_client_t * client);
+        static xmi_result_t generate (const char * name, xmi_client_t * client);
 
         static void destroy (xmi_client_t client);
 
@@ -50,7 +50,7 @@ namespace XMI
     }; // end class XMI::Client::Client
 
     template <class T_Client, class T_Context>
-    xmi_result_t Client<T_Client,T_Context>::generate (char * name, xmi_client_t * client)
+    xmi_result_t Client<T_Client,T_Context>::generate (const char * name, xmi_client_t * client)
     {
       return T_Client::generate_impl(name, client);
     }

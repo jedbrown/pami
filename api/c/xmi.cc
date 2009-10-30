@@ -73,7 +73,7 @@ unsigned long long XMI_Wtimebase()
 ///
 /// \copydoc XMI_Client_initialize
 ///
-extern "C" xmi_result_t XMI_Client_initialize (char         * name,
+extern "C" xmi_result_t XMI_Client_initialize (const char * name,
                                                xmi_client_t * client)
 {
   return XMI::Client::generate (name, client);

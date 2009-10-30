@@ -144,7 +144,7 @@ namespace XMI
 				// remap using N-first sequence
 				_nSize = nz;
 				for (r = 0; r < _size; ++r) {
-					if (n >= nz) { ++t; n = 0; }
+					if (n >= _nSize) { ++t; n = 0; }
 					_mapcache[r] = (n << 16) | t;
 					++n;
 				}
@@ -153,7 +153,7 @@ namespace XMI
 				// remap using T-first sequence
 				_tSize = tz;
 				for (r = 0; r < _size; ++r) {
-					if (t >= tz) { ++n; t = 0; }
+					if (t >= _tSize) { ++n; t = 0; }
 					_mapcache[r] = (n << 16) | t;
 					++t;
 				}

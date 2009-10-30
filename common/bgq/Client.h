@@ -16,7 +16,7 @@ namespace XMI
     class Client : public Interface::Client<XMI::Client,XMI::Context>
     {
       public:
-        inline Client (char * name, xmi_result_t &result) :
+        inline Client (const char * name, xmi_result_t &result) :
           Interface::Client<XMI::Client,XMI::Context>(name, result),
           _client ((xmi_client_t) this),
           _references (1),
@@ -37,7 +37,7 @@ namespace XMI
         {
         }
 
-        static xmi_result_t generate_impl (char * name, xmi_client_t * client)
+        static xmi_result_t generate_impl (const char * name, xmi_client_t * client)
         {
           xmi_result_t result;
           int rc = 0;

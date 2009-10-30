@@ -3415,7 +3415,7 @@ extern "C"
    * \param[in]  name   XMI client unique name
    * \param[out] client XMI client handle
    */
-  xmi_result_t XMI_Client_initialize (char         * name,
+  xmi_result_t XMI_Client_initialize (const char * name,
                                       xmi_client_t * client);
 
   /**
