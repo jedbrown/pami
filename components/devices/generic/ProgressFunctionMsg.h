@@ -20,6 +20,16 @@
 #include "components/devices/generic/AdvanceThread.h"
 #include "sys/xmi.h"
 
+typedef int XMI_ProgressFunc(void *clientdata);
+
+typedef struct {
+	xmi_context_t context;
+	void *request;
+	XMI_ProgressFunc *func;
+	void *clientdata;
+	xmi_callback_t cb_done;
+} XMI_ProgressFunc_t;
+
 namespace XMI {
 namespace Device {
 
@@ -36,16 +46,6 @@ extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
 namespace XMI {
 namespace Device {
-
-// also needs context?
-typedef int XMI_ProgressFunc(void *clientdata);
-
-typedef struct {
-	void *request;
-	XMI_ProgressFunc *func;
-	void *clientdata;
-	xmi_callback_t cb_done;
-} XMI_ProgressFunc_t;
 
 ///
 /// \brief A local barrier message that takes advantage of the
