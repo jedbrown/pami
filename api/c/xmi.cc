@@ -573,6 +573,17 @@ extern "C" xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
   XMI::Context * ctx = (XMI::Context *) context;
   return ctx->dispatch (dispatch, fn, cookie, options);
 }
+//#ifdef __xmi_target_mpi__
+extern "C" xmi_result_t XMI_Dispatch_set_new(xmi_context_t  context,
+                                 size_t                     dispatch,
+                                 xmi_dispatch_callback_fn   fn,
+                                 void                     * cookie,
+                                 xmi_dispatch_hint_t        options)
+  {
+    XMI::Context * ctx = (XMI::Context *) context;
+    return ctx->dispatch_new(dispatch, fn, cookie, options);
+  }
+//#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////

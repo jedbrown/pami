@@ -5,7 +5,12 @@
 #ifndef __common_mpi_Context_h__
 #define __common_mpi_Context_h__
 
-#define ENABLE_GENERIC_DEVICE
+#ifdef DISABLE_GENERIC_DEVICE
+  #undef ENABLE_GENERIC_DEVICE
+  #warning generic device disabled until it is updated (request storage is removed)
+#else
+  #define ENABLE_GENERIC_DEVICE
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +18,9 @@
 #include "common/ContextInterface.h"
 #include "Geometry.h"
 #include "components/devices/mpi/mpidevice.h"
+#include "components/devices/mpi/mpiglobaldevice.h"
 #include "components/devices/mpi/mpimodel.h"
+#include "components/devices/mpi/mpiglobalmcastmodel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "p2p/protocols/send/adaptive/Adaptive.h"
 #include "p2p/protocols/send/eager/Eager.h"
@@ -26,7 +33,7 @@
 #include "components/devices/generic/GenericDevice.h"
 #endif
 #include "Mapping.h"
-#include <new>
+#include <new> 
 #include <map>
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
@@ -42,6 +49,10 @@
 
 
 
+#include "components/devices/mpi/mpimulticastprotocol.h"
+#include "components/devices/mpi/mpiheader.h"
+#include "components/devices/mpi/mpicollectivedevice.h"
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
@@ -53,12 +64,22 @@ namespace XMI
 
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice<SysDep> MPIDevice;
-    typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
+    typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
     typedef CollFactory::MPI<MPIDevice, SysDep> MPICollfactory;
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
-    typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice> EagerMPI;
-    //typedef XMI::Protocol::Send::Adaptive <MPIModel,MPIDevice> EagerMPI;
+    typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
+    //typedef XMI::Protocol::Send::Adaptive <MPIPacketModel,MPIDevice> EagerMPI;
+    typedef Device::MPIGlobalDevice<SysDep> MPIGlobalDevice;
+    typedef XMI::Device::MPIGlobalMcastModel<MPIGlobalDevice,XMI::Device::MPIGlobalMcastMessage> MPIMulticastModel;
+
+    typedef XMI::Device::MPIMulticastHeader<XMI::Device::MPICommMcastMessage> MPIMcastHeader;
+
+    typedef XMI::Device::MPICollectiveDevice<MPIMcastHeader> MPICollDevice; 
+    typedef XMI::Protocol::MPI::OneSidedMulticastProtocol<MPICollDevice, MPIMcastHeader > MPIOneSidedMulticastProtocol;
+
+    typedef XMI::Device::MPIAllSidedCollectiveDevice<MPIMcastHeader> MPIAllSidedCollDevice; 
+    typedef XMI::Protocol::MPI::AllSidedMulticastProtocol<MPIAllSidedCollDevice, MPIMcastHeader > MPIAllSidedMulticastProtocol;
 
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Fifo::FifoPacket <16, 240> ShmemPacket;
@@ -145,9 +166,46 @@ namespace XMI
 #ifdef ENABLE_GENERIC_DEVICE
 	, _generic(_sysdep)
 #endif
+       ,_mpi_global_coll_device((size_t)__global.mapping.task()),
+       _mpi_local_coll_device(&__global.topology_local, (size_t)__global.mapping.task())
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
+
+          /* create a device to talk to 0th rank on each locale */
+          XMI::Topology topology_spanning;
+/* Doesn't work? 
+          xmi_topology_type_t t = __global.topology_global.type();
+          fprintf(stderr,"global type %d, size %d, ranks %d/%d/%d/%d\n",(unsigned) __global.topology_global.type(),(unsigned)__global.topology_global.size(),
+                  __global.topology_global.index2Rank(0),
+                  __global.topology_global.index2Rank(1),
+                  __global.topology_global.index2Rank(2),
+                  __global.topology_global.index2Rank(3));
+          __global.topology_global.convertTopology(XMI_COORD_TOPOLOGY);
+          fprintf(stderr,"global type %d, size %d, ranks %d/%d/%d/%d\n",(unsigned) __global.topology_global.type(),(unsigned)__global.topology_global.size(),
+                  __global.topology_global.index2Rank(0),
+                  __global.topology_global.index2Rank(1),
+                  __global.topology_global.index2Rank(2),
+                  __global.topology_global.index2Rank(3));
+          __global.topology_global.subTopologyNthGlobal(&topology_spanning, 0);
+          fprintf(stderr,"global type %d, size %d, ranks %d/%d/%d/%d\n",(unsigned) __global.topology_global.type(),(unsigned)__global.topology_global.size(),
+                  __global.topology_global.index2Rank(0),
+                  __global.topology_global.index2Rank(1),
+                  __global.topology_global.index2Rank(2),
+                  __global.topology_global.index2Rank(3));
+          __global.topology_global.convertTopology(t);
+          fprintf(stderr,"global type %d, size %d, ranks %d/%d/%d/%d\n",(unsigned) __global.topology_global.type(),(unsigned)__global.topology_global.size(),
+                  __global.topology_global.index2Rank(0),
+                  __global.topology_global.index2Rank(1),
+                  __global.topology_global.index2Rank(2),
+                  __global.topology_global.index2Rank(3));
+          new (&_mpi_spanning_coll_device) MPICollDevice(&topology_spanning, (size_t)__global.mapping.task());
+          fprintf(stderr,"type %d/%d, ranks %d/%d/%d/%d\n",(unsigned) __global.topology_global.type(),topology_spanning.type(),
+                  topology_spanning.index2Rank(0),
+                  topology_spanning.index2Rank(1),
+                  topology_spanning.index2Rank(2),
+                  topology_spanning.index2Rank(3));
+*/
           _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
 	  _world_range.lo=0;
 	  _world_range.hi=_mysize-1;
@@ -228,18 +286,23 @@ namespace XMI
 
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
-              {
-                events += _mpi.advance_impl();
+          {
+            events += _mpi.advance_impl();
 #ifdef ENABLE_GENERIC_DEVICE
-	        events += _generic.advance();
+            events += _generic.advance();
 #endif
-                events += _shmem.advance_impl();
-
-                if(events == 0)
-                  _empty_advance++;
-                else
-                  _empty_advance=0;
-              }
+            events += _shmem.advance_impl();
+    
+            events += _global_mpi.advance_impl();
+            events += _mpi_global_coll_device.advance_impl();
+            events += _mpi_local_coll_device.advance_impl();
+            events += _mpi_spanning_coll_device.advance_impl();
+            if(events == 0)
+              _empty_advance++;
+            else
+              _empty_advance=0;
+          }
+          //if(events) TRACE_ERR((stderr, "MPIContext::advance events %d\n",events));
           if(_empty_advance==10)
               {
                 sched_yield();
@@ -318,37 +381,37 @@ namespace XMI
 
       inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t put_impl (xmi_put_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t put_typed_impl (xmi_put_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t get_impl (xmi_get_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t get_typed_impl (xmi_get_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rmw_impl (xmi_rmw_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -356,13 +419,13 @@ namespace XMI
                                                    size_t            bytes,
                                                    xmi_memregion_t * memregion)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t memregion_deregister_impl (xmi_memregion_t * memregion)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -372,69 +435,69 @@ namespace XMI
                                                 size_t           * bytes,
                                                 size_t           * task)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
 
       inline xmi_result_t memregion_register_impl (xmi_rmw_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rput_impl (xmi_rput_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rput_typed_impl (xmi_rput_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rget_impl (xmi_rget_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rget_typed_impl (xmi_rget_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t purge_totask_impl (size_t * dest, size_t count)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t resume_totask_impl (size_t * dest, size_t count)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_begin_impl ()
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_end_impl ()
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_all_impl (xmi_event_function   done_fn,
                                           void               * cookie)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -442,7 +505,7 @@ namespace XMI
                                             void               * cookie,
                                             size_t               task)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -470,7 +533,7 @@ namespace XMI
 
       inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -517,31 +580,66 @@ namespace XMI
                                                   int            *numRoles,
                                                   int            *replRole)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
         {
-          assert(0);
-          return XMI_UNIMPL;
+          size_t id = (size_t)(mcastinfo->dispatch);
+          TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zd/%zd] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
+          XMI_assert_debug (_dispatch[id] != NULL);
+          // I need to look at hints until I get down to one object for mcast...
+          //  now it's either a protocol or a model.   
+          if(mcastinfo->hints.one_sided)
+          {
+            MPIOneSidedMulticastProtocol * multicast = (MPIOneSidedMulticastProtocol *) _dispatch[id][0];
+            TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
+            multicast->multicast(mcastinfo);
+          }
+          else if(mcastinfo->hints.all_sided)
+          {
+            if(mcastinfo->hints.ring_wq ) // \todo bogus!  the problem with hints is ....
+            {
+              XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
+              TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
+              if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+              {
+                char *msgbuf = new char[XMI::Device::WQRingBcastMdl::sizeof_msg];
+                mcastinfo->request = msgbuf;
+              }
+              multicast->postMulticast(mcastinfo);
+            }
+            else
+            {
+              XMI::Device::LocalBcastWQModel  * multicast = (XMI::Device::LocalBcastWQModel *) _dispatch[id][0];
+              TRACE_ERR((stderr, ">> multicast_impl, all sided multicast %p\n", multicast));
+              if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+              {
+                char *msgbuf = new char[XMI::Device::LocalBcastWQModel::sizeof_msg];
+                mcastinfo->request = msgbuf;
+              }
+              multicast->postMulticast(mcastinfo);
+            }
+          }
+          return XMI_SUCCESS;
         }
 
       inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t multicombine_impl(xmi_multicombine_t *mcombineinfo)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
       inline xmi_result_t dispatch_impl (size_t                     id,
@@ -555,12 +653,13 @@ namespace XMI
           if (_dispatch[(size_t)id][0] != NULL) return XMI_ERROR;
           _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
+          XMI_assert(_request.objsize >= sizeof(EagerMPI));
           new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi,
                                                 __global.mapping.task(),
                                                 _context, _contextid, result);
           if(result!=XMI_SUCCESS)
               {
-                assert(0);
+                XMI_abort();
                 goto result_error;
               }
           // Shared Memory Registration
@@ -596,12 +695,134 @@ namespace XMI
                       _dispatch[id][1] = NULL;
                     }
               }
-              assert(result == XMI_SUCCESS);
+              XMI_assert(result == XMI_SUCCESS);
 
           result_error:
           TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index][0]));
           return result;
         }
+
+    inline xmi_result_t dispatch_new_impl (size_t                     id,
+                                           xmi_dispatch_callback_fn   fn,
+                                           void                     * cookie,
+                                           xmi_dispatch_hint_t        options)
+    {
+      xmi_result_t result        = XMI_ERROR;
+      // Off node registration
+      // This is for communication off node
+      if(_dispatch[(size_t)id][0] != NULL)
+      {
+        XMI_abort();
+        goto result_error;
+      }
+      _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
+      if(options.type == XMI_MULTICAST)
+      {
+        if(options.hint.multicast.global)
+        {
+          XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
+          new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie, 
+                                                              &_mpi_global_coll_device,
+                                                              this->_context,
+                                                              this->_contextid,
+                                                              result);
+          TRACE_ERR((stderr, "<< dispatch_impl() mcast global _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+        }
+        else if(options.hint.multicast.local)
+        {
+          if(options.hint.multicast.one_sided)
+          {
+            XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
+            new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie, 
+                                                                &_mpi_local_coll_device,
+                                                                this->_context,
+                                                                this->_contextid,
+                                                                result);
+            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+          }
+          else if(options.hint.multicast.all_sided)
+          {
+            if(options.hint.multicast.ring_wq ) // \todo bogus!  the problem with hints is ....
+            {
+              XMI_assertf(_request.objsize >= sizeof(XMI::Device::WQRingBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::WQRingBcastMdl));
+              new (_dispatch[(size_t)id][0]) XMI::Device::WQRingBcastMdl(result);
+              TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided ring _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+            }
+            else
+            {
+              XMI_assertf(_request.objsize >= sizeof(XMI::Device::LocalBcastWQModel),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::LocalBcastWQModel));
+              new (_dispatch[(size_t)id][0]) XMI::Device::LocalBcastWQModel(result);
+              TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+            }
+          }
+        }
+        else if(options.hint.multicast.spanning)
+        {
+          XMI_abort(); // doesn't work 
+          XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
+          new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie, 
+                                                              &_mpi_spanning_coll_device,
+                                                              this->_context,
+                                                              this->_contextid,
+                                                              result);
+        }
+
+        if(result!=XMI_SUCCESS)
+        {
+          XMI_assertf(result==XMI_SUCCESS,"result %d\n",result);
+          goto result_error;
+        }
+      }
+      else
+      {
+        XMI_assert(_request.objsize >= sizeof(EagerMPI));
+        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi, 
+                                                 __global.mapping.task(), 
+                                                 _context, _contextid, result);
+        if(result!=XMI_SUCCESS)
+        {
+          XMI_abort();
+          goto result_error;
+        }
+        // Shared Memory Registration
+        // This is for communication on node
+        TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+
+        // currently, shared memory is off, because this dispatch_id will  not be null
+//          if (_dispatch[id][1] == NULL)
+        {
+          TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
+
+          if(options.hint.send.no_long_header == 1)
+          {
+            _dispatch[id][1] = _protocol.allocateObject ();
+            new (_dispatch[id][1])
+            Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
+            (id, fn, cookie, _shmem, __global.mapping.task(),
+             _context, _contextid, result);
+          }
+          else
+          {
+            _dispatch[id][1] = _protocol.allocateObject ();
+            new (_dispatch[id][1])
+            Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
+            (id, fn, cookie, _shmem, __global.mapping.task(),
+             _context, _contextid, result);
+          }
+
+          TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
+          if(result != XMI_SUCCESS)
+          {
+            _protocol.returnObject (_dispatch[id][1]);
+            _dispatch[id][1] = NULL;
+          }
+        }
+        XMI_assert(result == XMI_SUCCESS);
+      }
+      result_error:
+      TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, id, _dispatch[id][0]));
+      return result;
+    }
 
     private:
       std::map <unsigned, xmi_geometry_t>   _geometry_id;
@@ -620,8 +841,12 @@ namespace XMI
 #ifdef ENABLE_GENERIC_DEVICE
       XMI::Device::Generic::Device _generic;
 #endif
-      MemoryAllocator<1024,16>  _request;
+      MemoryAllocator<2048,16>  _request;
       MPIDevice                 _mpi;
+      MPIGlobalDevice           _global_mpi;
+      MPICollDevice             _mpi_global_coll_device;
+      MPICollDevice             _mpi_local_coll_device;
+      MPICollDevice             _mpi_spanning_coll_device;
       MPICollreg               *_collreg;
       MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;

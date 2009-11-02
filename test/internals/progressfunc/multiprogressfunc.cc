@@ -10,7 +10,12 @@
  * \file test/internals/progressfunc/multiprogressfunc.cc
  * \brief Test the generic progress function feature with multiple functions
  */
-
+#ifdef DISABLE_GENERIC_DEVICE
+  #warning generic device disabled
+int main(int argc, char **argv) {
+return 0;
+}
+#else
 #include <stdio.h>
 #include "sys/xmi.h"
 #include "components/devices/generic/ProgressFunctionMsg.h"
@@ -146,3 +151,4 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
+#endif
