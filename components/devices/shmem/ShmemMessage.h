@@ -5,12 +5,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemBaseMessage.h
+ * \file components/devices/shmem/ShmemMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_ShmemBaseMessage_h__
-#define __components_devices_shmem_ShmemBaseMessage_h__
+#ifndef __components_devices_shmem_ShmemMessage_h__
+#define __components_devices_shmem_ShmemMessage_h__
 
 #include <sys/uio.h>
 
@@ -24,7 +24,7 @@ namespace XMI
   namespace Device
   {
     template <class T_Packet>
-    class ShmemBaseMessage : public QueueElem
+    class ShmemMessage : public QueueElem
     {
       public:
 
@@ -34,7 +34,7 @@ namespace XMI
           RMA
         };
 
-        inline ShmemBaseMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                                  xmi_event_function   fn,
                                  void               * cookie,
                                  uint8_t              dispatch_id,
@@ -61,7 +61,7 @@ namespace XMI
           memcpy(_metadata, metadata, metasize);
         };
 
-        inline ShmemBaseMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                                  xmi_event_function   fn,
                                  void               * cookie,
                                  uint8_t           dispatch_id,
@@ -92,7 +92,7 @@ namespace XMI
           memcpy(_metadata, metadata, metasize);
         };
 
-        inline ShmemBaseMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                                  xmi_event_function   fn,
                                  void               * cookie,
                                  uint8_t             dispatch_id,
@@ -117,7 +117,7 @@ namespace XMI
         };
 
 
-        inline ShmemBaseMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                                  xmi_event_function   fn,
                                  void               * cookie,
                                  uint8_t              dispatch_id,
@@ -137,7 +137,7 @@ namespace XMI
           memcpy(_metadata, metadata, metasize);
         };
 
-        inline ShmemBaseMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                                  xmi_event_function   fn,
                                  void               * cookie,
                                  uint8_t              dispatch_id,
@@ -160,7 +160,7 @@ namespace XMI
         {
         };
 
-        inline ShmemBaseMessage (xmi_event_function   fn,
+        inline ShmemMessage (xmi_event_function   fn,
                                  void               * cookie,
                                  void               * local_memregion,
                                  size_t               local_offset,

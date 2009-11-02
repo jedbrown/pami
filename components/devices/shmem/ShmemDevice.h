@@ -5,12 +5,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemBaseDevice.h
+ * \file components/devices/shmem/ShmemDevice.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_ShmemBaseDevice_h__
-#define __components_devices_shmem_ShmemBaseDevice_h__
+#ifndef __components_devices_shmem_ShmemDevice_h__
+#define __components_devices_shmem_ShmemDevice_h__
 
 #include <sys/uio.h>
 
@@ -22,7 +22,7 @@
 #include "components/atomic/Counter.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/MessageDevice.h"
-#include "components/devices/shmem/ShmemBaseMessage.h"
+#include "components/devices/shmem/ShmemMessage.h"
 
 #include "components/memregion/NoopMemregion.h"
 
@@ -51,23 +51,23 @@ namespace XMI
     } dispatch_t;
 
     template < class T_Fifo, class T_Packet, class T_Memregion = XMI::MemRegion::Noop >
-    class ShmemBaseDevice : public Interface::BaseDevice<ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>, XMI::SysDep>,
-        public Interface::MessageDevice<ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion> >
+    class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion>, XMI::SysDep>,
+        public Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion> >
     {
       public:
-        inline ShmemBaseDevice () :
-            Interface::BaseDevice<ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>, XMI::SysDep> (),
-            Interface::MessageDevice<ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion> > (),
+        inline ShmemDevice () :
+            Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion>, XMI::SysDep> (),
+            Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion> > (),
             _fifo (NULL),
             __sendQ (),
             __sendQMask (0),
             __doneQ (),
             __doneQMask (0)
         {
-          TRACE_ERR((stderr, "ShmemBaseDevice() constructor\n"));
+          TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
         };
 
-        inline ~ShmemBaseDevice () {};
+        inline ~ShmemDevice () {};
 
         inline size_t getLocalRank ();
 
@@ -132,13 +132,13 @@ namespace XMI
                                                size_t         & sequence);
 
         inline xmi_result_t writeSinglePacket (size_t                       ififo,
-                                               ShmemBaseMessage<T_Packet> * msg,
+                                               ShmemMessage<T_Packet> * msg,
                                                size_t                     & sequence);
 
         inline xmi_result_t processRMAMessage (size_t                       peer,
-                                               ShmemBaseMessage<T_Packet> * msg,
+                                               ShmemMessage<T_Packet> * msg,
                                                size_t                     & sequence);
-        xmi_result_t post (size_t ififo, ShmemBaseMessage<T_Packet> * msg);
+        xmi_result_t post (size_t ififo, ShmemMessage<T_Packet> * msg);
 
         ///
         /// \brief Check if the send queue to a local rank is empty
@@ -213,7 +213,7 @@ namespace XMI
     };
 
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline size_t ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::getLocalRank()
+    inline size_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::getLocalRank()
     {
       return _local_task;
     }
@@ -224,22 +224,22 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline bool ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::isSendQueueEmpty (size_t peer)
+    inline bool ShmemDevice<T_Fifo, T_Packet, T_Memregion>::isSendQueueEmpty (size_t peer)
     {
       return ((__sendQMask >> peer) & 0x01) == 0;
     }
 
     /// \see XMI::Device::Interface::PacketDevice::read()
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::read_impl (void * dst, size_t length, void * cookie)
+    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::read_impl (void * dst, size_t length, void * cookie)
     {
       memcpy (dst, cookie, length);
       return 0;
     }
 #if 0
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::processRMAMessage (size_t             peer,
-        ShmemBaseMessage<T_Packet> * msg,
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::processRMAMessage (size_t             peer,
+        ShmemMessage<T_Packet> * msg,
         size_t                     & sequence)
     {
       size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
@@ -256,7 +256,7 @@ namespace XMI
     }
 #endif
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t   fnum,
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t   fnum,
         uint16_t   dispatch_id,
         void   * metadata,
         size_t   metasize,
@@ -274,7 +274,7 @@ namespace XMI
           hdr[0] = dispatch_id;
 
           // Remaining header bytes are metadata.
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket () .. metadata = %p\n", __global.mapping.task(), metadata));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket () .. metadata = %p\n", __global.mapping.task(), metadata));
           memcpy ((void *) &hdr[1], metadata, metasize);
 
           // Write the packet payload data
@@ -293,7 +293,7 @@ namespace XMI
     };
 
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t     fnum,
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t     fnum,
         uint16_t   dispatch_id,
         void     * metadata,
         size_t     metasize,
@@ -303,7 +303,7 @@ namespace XMI
         size_t     bytes1,
         size_t   & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) >>\n", __global.mapping.task(), fnum, dispatch_id));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, ...) >>\n", __global.mapping.task(), fnum, dispatch_id));
 
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
@@ -327,16 +327,16 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, ...) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, ...) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, ...) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id));
       return XMI_EAGAIN;
     };
 
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t         fnum,
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t         fnum,
         uint16_t       dispatch_id,
         void         * metadata,
         size_t         metasize,
@@ -344,7 +344,7 @@ namespace XMI
         size_t         niov,
         size_t       & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
 
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
@@ -373,20 +373,20 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
       return XMI_EAGAIN;
     };
 
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t                       fnum,
-        ShmemBaseMessage<T_Packet> * msg,
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (size_t                       fnum,
+        ShmemMessage<T_Packet> * msg,
         size_t                     & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
 
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
@@ -421,16 +421,16 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_SUCCESS\n", __global.mapping.task(), fnum, msg));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << CM_SUCCESS\n", __global.mapping.task(), fnum, msg));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::writeSinglePacket (%zd, %p) << CM_EAGAIN\n", __global.mapping.task(), fnum, msg));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << CM_EAGAIN\n", __global.mapping.task(), fnum, msg));
       return XMI_EAGAIN;
     };
 
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::advance_impl ()
+    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::advance_impl ()
     {
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
@@ -438,12 +438,12 @@ namespace XMI
 #endif
 
       int events = 0;
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() >> ... __sendQMask = 0x%0x\n", __global.mapping.task(), __sendQMask));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl() >> ... __sendQMask = 0x%0x\n", __global.mapping.task(), __sendQMask));
 
       // Advance any pending send messages.
       if (__sendQMask != 0) events += advance_sendQ ();
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... __doneQMask = 0x%0x\n", __global.mapping.task(), __doneQMask));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... __doneQMask = 0x%0x\n", __global.mapping.task(), __doneQMask));
 
       // Advance any pending done messages.
       if (__doneQMask != 0) events += advance_doneQ ();
@@ -451,32 +451,32 @@ namespace XMI
       // Advance any pending receive messages.
       T_Packet * pkt = NULL;
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before _rfifo->nextRecPacket()\n", __global.mapping.task()));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->nextRecPacket()\n", __global.mapping.task()));
 
       while ((pkt = _rfifo->nextRecPacket()) != NULL)
         {
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before pkt->getHeader()\n", __global.mapping.task()));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before pkt->getHeader()\n", __global.mapping.task()));
           uint8_t * hdr = (uint8_t *) pkt->getHeader ();
 
           uint16_t id = *((uint16_t *) & hdr[0]);
           void * meta = (void *) & hdr[2];
           void * data = pkt->getPayload ();
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... hdr = %p, hdr[0] = 0x%0x, hdr[1] = 0x%0x, id = %d, meta = %p, data = %p\n", __global.mapping.task(), hdr, hdr[0], hdr[1], id, meta, data));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... hdr = %p, hdr[0] = 0x%0x, hdr[1] = 0x%0x, id = %d, meta = %p, data = %p\n", __global.mapping.task(), hdr, hdr[0], hdr[1], id, meta, data));
 
           mem_sync (); // TODO -- is this needed?
 
           _dispatch[hdr[0]][hdr[1]].function (meta, data, pkt->payloadSize(), _dispatch[hdr[0]][hdr[1]].clientdata, data);
 
           // Complete this message/packet and increment the fifo head.
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
           _rfifo->consumePacket (pkt);
-          TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ...  after _rfifo->consumePacket()\n", __global.mapping.task()));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ...  after _rfifo->consumePacket()\n", __global.mapping.task()));
           events++;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
 
-      TRACE_ERR((stderr, "(%zd) ShmemBaseDevice::advance_internal() << ... events = %d\n", __global.mapping.task(), events));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl() << ... events = %d\n", __global.mapping.task(), events));
 #ifdef TRAP_ADVANCE_DEADLOCK
 
       if (events) iteration = 0;
@@ -491,7 +491,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline void ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::pushSendQueueTail (size_t peer, QueueElem * element)
+    inline void ShmemDevice<T_Fifo, T_Packet, T_Memregion>::pushSendQueueTail (size_t peer, QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", __global.mapping.task(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
       __sendQ[peer].pushTail (element);
@@ -504,7 +504,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline QueueElem * ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::popSendQueueHead (size_t peer)
+    inline QueueElem * ShmemDevice<T_Fifo, T_Packet, T_Memregion>::popSendQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the sendQ\n"));
       QueueElem * tmp = __sendQ[peer].popHead();
@@ -518,7 +518,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline void ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::pushDoneQueueTail (size_t peer, QueueElem * element)
+    inline void ShmemDevice<T_Fifo, T_Packet, T_Memregion>::pushDoneQueueTail (size_t peer, QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushDoneQueueTail(%zd, %p), __doneQMask = %d -> %d\n", __global.mapping.task(), peer, element, __doneQMask, __doneQMask | (1 << peer)));
       __doneQ[peer].pushTail (element);
@@ -531,7 +531,7 @@ namespace XMI
     /// \param[in] peer  \b Local rank
     ///
     template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline QueueElem * ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>::popDoneQueueHead (size_t peer)
+    inline QueueElem * ShmemDevice<T_Fifo, T_Packet, T_Memregion>::popDoneQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the doneQ\n"));
       QueueElem * tmp = __doneQ[peer].popHead();
@@ -543,7 +543,7 @@ namespace XMI
 #undef TRACE_ERR
 
 // Include the non-inline method definitions
-#include "ShmemBaseDevice_impl.h"
+#include "ShmemDevice_impl.h"
 
 #endif // __components_devices_shmem_shmembasedevice_h__
 

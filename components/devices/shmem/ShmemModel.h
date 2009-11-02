@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemPacketModel.h
+ * \file components/devices/shmem/ShmemModel.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_ShmemPacketModel_h__
-#define __components_devices_shmem_ShmemPacketModel_h__
+#ifndef __components_devices_shmem_ShmemModel_h__
+#define __components_devices_shmem_ShmemModel_h__
 
 #include <errno.h>
 
@@ -22,7 +22,7 @@
 
 #include "components/devices/myDmaModel.h" //for now using a separate model than M
 #include "components/devices/MessageModel.h"
-#include "components/devices/shmem/ShmemPacketDevice.h"
+#include "components/devices/shmem/ShmemDevice.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -45,8 +45,8 @@ namespace XMI
     /// \see ShmemPacketDevice
     ///
     template < class T_Device, class T_Message, class T_Memregion = XMI::MemRegion::Noop >
-    class ShmemPacketModel : public Interface::MessageModel < ShmemPacketModel<T_Device, T_Message, T_Memregion>, T_Device, sizeof(T_Message) > ,
-        public myInterface::DmaModel < ShmemPacketModel<T_Device, T_Message, T_Memregion>, T_Device, T_Memregion, sizeof(T_Message) >
+    class ShmemModel : public Interface::MessageModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, sizeof(T_Message) > ,
+        public myInterface::DmaModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, T_Memregion, sizeof(T_Message) >
     {
       public:
         ///
@@ -54,9 +54,9 @@ namespace XMI
         ///
         /// \param[in] device  Shared memory device
         ///
-        ShmemPacketModel (T_Device & device, xmi_context_t context) :
-            Interface::MessageModel < ShmemPacketModel<T_Device, T_Message, T_Memregion>, T_Device, sizeof(T_Message) > (device, context),
-            myInterface::DmaModel < ShmemPacketModel<T_Device, T_Message, T_Memregion>, T_Device, T_Memregion, sizeof(T_Message) > (device, context),
+        ShmemModel (T_Device & device, xmi_context_t context) :
+            Interface::MessageModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, sizeof(T_Message) > (device, context),
+            myInterface::DmaModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, T_Memregion, sizeof(T_Message) > (device, context),
             _device (device),
             _context (context)
         {};
@@ -94,13 +94,13 @@ namespace XMI
         {
           size_t peer, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          TRACE_ERR((stderr, ">> ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd\n", target_rank));
+          TRACE_ERR((stderr, ">> ShmemModel::postPacket_impl(1) .. target_rank = %zd\n", target_rank));
           __global.mapping.task2node (target_rank, addr);
-          TRACE_ERR((stderr, "  ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
+          TRACE_ERR((stderr, "  ShmemModel::postPacket_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
           __global.mapping.node2peer (addr, peer);
-          TRACE_ERR((stderr, "  ShmemPacketModel::postPacket_impl(1) .. {%zd, %zd} -> %zd\n", addr.global, addr.local, peer));
+          TRACE_ERR((stderr, "  ShmemModel::postPacket_impl(1) .. {%zd, %zd} -> %zd\n", addr.global, addr.local, peer));
 
-          TRACE_ERR((stderr, "ShmemPacketModel::postPacket_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, peer));
+          TRACE_ERR((stderr, "ShmemModel::postPacket_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, peer));
 
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
@@ -197,12 +197,12 @@ namespace XMI
         {
           size_t peer = 0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          TRACE_ERR((stderr, ">> ShmemPacketModel::postPacketImmediate_impl(1) .. target_rank = %zd\n", target_rank));
+          TRACE_ERR((stderr, ">> ShmemModel::postPacketImmediate_impl(1) .. target_rank = %zd\n", target_rank));
           __global.mapping.task2node (target_rank, addr);
-          TRACE_ERR((stderr, "   ShmemPacketModel::postPacketImmediate_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
+          TRACE_ERR((stderr, "   ShmemModel::postPacketImmediate_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
           __global.mapping.node2peer (addr, peer);
 
-          TRACE_ERR((stderr, "<< ShmemPacketModel::postPacketImmediate_impl(1) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
+          TRACE_ERR((stderr, "<< ShmemModel::postPacketImmediate_impl(1) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
           return (_device.isSendQueueEmpty (peer) &&
                   _device.writeSinglePacket (peer, _dispatch_id,
                                              metadata, metasize,
@@ -220,46 +220,46 @@ namespace XMI
                                       void               * src,
                                       size_t               bytes)
         {
-          TRACE_ERR((stderr, ">> ShmemPacketModel::postMessage_impl() .. target_rank = %zd\n", target_rank));
+          TRACE_ERR((stderr, ">> ShmemModel::postMessage_impl() .. target_rank = %zd\n", target_rank));
           size_t sequence;
 
           XMI::Interface::Mapping::nodeaddr_t address;
           __global.mapping.task2node (target_rank, address);
-          TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. target_rank = %zd -> {%zd, %zd}\n", target_rank, address.global, address.local));
+          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. target_rank = %zd -> {%zd, %zd}\n", target_rank, address.global, address.local));
 
           size_t peer;
           __global.mapping.node2peer (address, peer);
-          TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. {%zd, %zd} -> %zd\n", address.global, address.local, peer));
+          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. {%zd, %zd} -> %zd\n", address.global, address.local, peer));
 
-          TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. target_rank = %zd, peer = %zd\n", target_rank, peer));
+          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. target_rank = %zd, peer = %zd\n", target_rank, peer));
           T_Message * obj = (T_Message *) & state[0];
           new (obj) T_Message (_context, fn, cookie, _dispatch_id, metadata, metasize, src, bytes, false);
 
-          TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. 0\n"));
+          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. 0\n"));
 
           if (_device.isSendQueueEmpty (peer))
             {
-              TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. 1\n"));
+              TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. 1\n"));
 
               while (_device.writeSinglePacket (peer, obj, sequence) == XMI_SUCCESS)
                 {
-                  TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. 2\n"));
+                  TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. 2\n"));
 
                   if (obj->done())
                     {
-                      TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. 3\n"));
+                      TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. 3\n"));
                       // Invoke the send completion callback here.. may post
                       // another message!
                       obj->executeCallback ();
-                      TRACE_ERR((stderr, "<< ShmemPacketModel::postMessage_impl() .. 4\n"));
+                      TRACE_ERR((stderr, "<< ShmemModel::postMessage_impl() .. 4\n"));
                       return true;
                     }
                 }
             }
 
-          TRACE_ERR((stderr, "   ShmemPacketModel::postMessage_impl() .. 5\n"));
+          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. 5\n"));
           _device.post (peer, obj);
-          TRACE_ERR((stderr, "<< ShmemPacketModel::postMessage_impl() .. 6\n"));
+          TRACE_ERR((stderr, "<< ShmemModel::postMessage_impl() .. 6\n"));
           return false;
         };
 

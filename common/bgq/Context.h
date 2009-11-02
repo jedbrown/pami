@@ -11,18 +11,17 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
-//#include "components/devices/shmem/ShmemPacketDevice.h"
-#include "components/devices/shmem/ShmemBaseDevice.h"
-#include "components/devices/shmem/dma/bgq/cnk/ShmemDmaDeviceBgqCnk.h"
-#include "components/devices/shmem/ShmemPacketModel.h"
-#include "components/devices/shmem/dma/bgq/cnk/ShmemDmaModelBgqCnk.h"
-#include "components/devices/shmem/ShmemBaseMessage.h"
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemModel.h"
+#include "components/devices/shmem/ShmemMessage.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUPacketModel.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
+
+#include "components/memregion/bgq/BgqMemregion.h"
 
 #include "components/atomic/gcc/GccBuiltin.h"
 //#include "components/atomic/pthread/Pthread.h"
@@ -48,11 +47,9 @@ namespace XMI
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
-  typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-  typedef Device::ShmemBaseDevice<ShmemFifo, ShmemPacket, MemRegion::BgqMemregion> ShmemDevice;
-  //typedef Device::ShmemDmaDeviceBgqCnk<ShmemFifo,ShmemPacket> ShmemDevice;
-  typedef Device::ShmemPacketModel<ShmemDevice, ShmemMessage, MemRegion::BgqMemregion> ShmemModel;
-  typedef Device::ShmemDmaModelBgqCnk<ShmemDevice, ShmemMessage> ShmemDmaModel;
+  typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
+  typedef Device::ShmemDevice<ShmemFifo, ShmemPacket, MemRegion::BgqMemregion> ShmemDevice;
+  typedef Device::ShmemModel<ShmemDevice, ShmemMessage, MemRegion::BgqMemregion> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -62,7 +59,7 @@ namespace XMI
   // << Point-to-point protocol typedefs and dispatch registration.
   //
 
-  typedef XMI::Protocol::Get::Get <ShmemDmaModel, ShmemDevice, MemRegion::BgqMemregion> Get;
+  typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice, MemRegion::BgqMemregion> Get;
 
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 

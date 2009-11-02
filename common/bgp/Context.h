@@ -17,10 +17,9 @@
 #endif
 
 #warning shmem device must become sub-device of generic device
-#include "components/devices/shmem/ShmemBaseDevice.h"
-//#include "components/devices/shmem/ShmemPacketDevice.h"
-#include "components/devices/shmem/ShmemPacketModel.h"
-#include "components/devices/shmem/ShmemBaseMessage.h"
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemModel.h"
+#include "components/devices/shmem/ShmemMessage.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
@@ -53,9 +52,9 @@ namespace XMI
   typedef Fifo::LinearFifo<Atomic::BgpAtomic, ShmemPacket, 128> ShmemFifo;
 #endif
 
-  typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-  typedef Device::ShmemBaseDevice<ShmemFifo, ShmemPacket> ShmemDevice;
-  typedef Device::ShmemPacketModel<ShmemDevice, ShmemMessage> ShmemModel;
+  typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
+  typedef Device::ShmemDevice<ShmemFifo, ShmemPacket> ShmemDevice;
+  typedef Device::ShmemModel<ShmemDevice, ShmemMessage> ShmemModel;
 
 
 
