@@ -28,10 +28,11 @@ namespace XMI
     {
       public:
 
-		enum shmem_pkt_t {
-			PTP,
-			RMA
-		};
+        enum shmem_pkt_t
+        {
+          PTP,
+          RMA
+        };
 
         inline ShmemBaseMessage (xmi_context_t        context,
                                  xmi_event_function   fn,
@@ -52,7 +53,7 @@ namespace XMI
             _nbytes (0),
             _dispatch_id (dispatch_id),
             _remote_completion (false),
-			_pkt_type(PTP)
+            _pkt_type(PTP)
         {
           __iov[0].iov_base = src;
           __iov[0].iov_len  = bytes;
@@ -81,7 +82,7 @@ namespace XMI
             _nbytes (0),
             _dispatch_id (dispatch_id),
             _remote_completion (false),
-			_pkt_type(PTP)
+            _pkt_type(PTP)
         {
           __iov[0].iov_base = src0;
           __iov[0].iov_len  = bytes0;
@@ -110,7 +111,7 @@ namespace XMI
             _nbytes (0),
             _dispatch_id (dispatch_id),
             _remote_completion (false),
-			_pkt_type(PTP)
+            _pkt_type(PTP)
         {
           memcpy(_metadata, metadata, metasize);
         };
@@ -153,12 +154,32 @@ namespace XMI
             _nbytes (bytes),
             _dispatch_id (dispatch_id),
             _remote_completion (false),
-			_dst_vaddr(dst_vaddr),
-			_src_vaddr(src_vaddr),
-			_pkt_type(RMA)
+            _dst_vaddr(dst_vaddr),
+            _src_vaddr(src_vaddr),
+            _pkt_type(RMA)
         {
         };
 
+        inline ShmemBaseMessage (xmi_event_function   fn,
+                                 void               * cookie,
+                                 void               * local_memregion,
+                                 size_t               local_offset,
+                                 void               * remote_memregion,
+                                 size_t               remote_offset,
+                                 size_t               bytes,
+                                 bool                 is_put) :
+            QueueElem (),
+            _fn (fn),
+            _cookie (cookie),
+            _pkt_type(RMA),
+            _rma_local_memregion (local_memregion),
+            _rma_remote_memregion (remote_memregion),
+            _rma_local_offset (local_offset),
+            _rma_remote_offset (remote_offset),
+            _rma_bytes (bytes),
+            _rma_is_put (is_put)
+        {
+        };
 
         inline int executeCallback (xmi_result_t status = XMI_SUCCESS)
         {
@@ -221,16 +242,33 @@ namespace XMI
           _sequence_id = sequence;
         }
 
-		inline bool isRMAType()
-		{
-			return (_pkt_type == RMA);
-		}	
-	
-		inline void copyBytes()
-		{
-			memcpy(_dst_vaddr, _src_vaddr, _nbytes);
-		}
-		
+        inline bool isRMAType()
+        {
+          return (_pkt_type == RMA);
+        }
+
+        inline void copyBytes()
+        {
+          memcpy(_dst_vaddr, _src_vaddr, _nbytes);
+        }
+
+        inline bool getRMA (void   ** local_memregion,
+                            size_t  & local_offset,
+                            void   ** remote_memregion,
+                            size_t  & remote_offset,
+                            size_t  & bytes)
+        {
+          *local_memregion  = _rma_local_memregion;
+          *remote_memregion = _rma_remote_memregion;
+          local_offset      = _rma_local_offset;
+          remote_offset     = _rma_remote_offset;
+          bytes             = _rma_bytes;
+
+          return _rma_is_put;
+        }
+
+
+
       protected:
         xmi_context_t        _context;
 
@@ -246,11 +284,18 @@ namespace XMI
         uint8_t _dispatch_id;
         size_t  _sequence_id;
         bool    _remote_completion;
-		
-		void*	_dst_vaddr;
-		void*	_src_vaddr;
 
-		shmem_pkt_t		_pkt_type;
+        void*	_dst_vaddr;
+        void*	_src_vaddr;
+
+        shmem_pkt_t		_pkt_type;
+
+        void * _rma_local_memregion;
+        void * _rma_remote_memregion;
+        size_t _rma_local_offset;
+        size_t _rma_remote_offset;
+        size_t _rma_bytes;
+        bool   _rma_is_put;
 
       private:
         struct iovec      __iov[2];

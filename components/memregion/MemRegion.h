@@ -27,16 +27,20 @@ namespace XMI
     ///
     /// \brief memory regions.
     ///
-    /// \param T_MemRegion MemRegion template class
+    /// \param T MemRegion template class
     ///
-    template <class T_MemRegion>
+    template <class T>
     class MemRegion
     {
       public:
         ///
         /// \brief memory region constructor.
         ///
-        inline MemRegion (xmi_context_t context) {};
+        inline MemRegion (xmi_context_t context)
+        {
+          isSharedAddressReadSupported ();
+          isSharedAddressWriteSupported ();
+        };
 
         ///
         /// \brief Create a memory region.
@@ -100,34 +104,84 @@ namespace XMI
         /// \retval base Base virtual address
         ///
         inline void * getBaseVirtualAddress ();
+
+        inline bool isSharedAddressReadSupported ();
+
+        inline xmi_result_t read (size_t   local_offset,
+                                  T      * remote_memregion,
+                                  size_t   remote_offset,
+                                  size_t   bytes);
+
+        inline bool isSharedAddressWriteSupported ();
+
+        inline xmi_result_t write (size_t   local_offset,
+                                   T      * remote_memregion,
+                                   size_t   remote_offset,
+                                   size_t   bytes);
     };
 
-    template <class T_MemRegion>
-    inline xmi_result_t MemRegion<T_MemRegion>::createMemRegion(size_t  * bytes_out,
-                                                                size_t    bytes_in,
-                                                                void    * base,
-                                                                uint64_t  options)
+    template <class T>
+    inline xmi_result_t MemRegion<T>::createMemRegion(size_t  * bytes_out,
+                                                      size_t    bytes_in,
+                                                      void    * base,
+                                                      uint64_t  options)
     {
-      return static_cast<T_MemRegion*>(this)->createMemRegion_impl(bytes_out, bytes_in, base, options);
+      return static_cast<T*>(this)->createMemRegion_impl(bytes_out, bytes_in, base, options);
     }
 
-    template <class T_MemRegion>
-    inline xmi_result_t MemRegion<T_MemRegion>::destroyMemRegion()
+    template <class T>
+    inline xmi_result_t MemRegion<T>::destroyMemRegion()
     {
-      return static_cast<T_MemRegion*>(this)->destroyMemRegion_impl();
+      return static_cast<T*>(this)->destroyMemRegion_impl();
     }
 
-    template <class T_MemRegion>
-    inline xmi_result_t MemRegion<T_MemRegion>::getInfo(size_t * bytes, void ** base)
+    template <class T>
+    inline xmi_result_t MemRegion<T>::getInfo(size_t * bytes, void ** base)
     {
-      return static_cast<T_MemRegion*>(this)->getInfo_impl(bytes, base);
+      return static_cast<T*>(this)->getInfo_impl(bytes, base);
     }
 
-    template <class T_MemRegion>
-    inline void * MemRegion<T_MemRegion>::getBaseVirtualAddress()
+    template <class T>
+    inline void * MemRegion<T>::getBaseVirtualAddress()
     {
-      return static_cast<T_MemRegion*>(this)->getBaseVirtualAddress_impl();
+      return static_cast<T*>(this)->getBaseVirtualAddress_impl();
     }
+
+    template <class T>
+    inline bool MemRegion<T>::isSharedAddressReadSupported()
+    {
+      return T::shared_address_read_supported;
+    };
+
+    template <class T>
+    inline xmi_result_t MemRegion<T>::read(size_t   local_offset,
+                                           T      * remote_memregion,
+                                           size_t   remote_offset,
+                                           size_t   bytes)
+    {
+      return static_cast<T*>(this)->read_impl(local_offset,
+                                              remote_memregion,
+                                              remote_offset,
+                                              bytes);
+    };
+
+    template <class T>
+    inline bool MemRegion<T>::isSharedAddressWriteSupported()
+    {
+      return T::shared_address_write_supported;
+    };
+
+    template <class T>
+    inline xmi_result_t MemRegion<T>::write(size_t   local_offset,
+                                            T      * remote_memregion,
+                                            size_t   remote_offset,
+                                            size_t   bytes)
+    {
+      return static_cast<T*>(this)->write_impl(local_offset,
+                                               remote_memregion,
+                                               remote_offset,
+                                               bytes);
+    };
   };
 };
 #endif /* __xmi__memregion_h__ */

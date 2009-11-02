@@ -45,7 +45,7 @@ namespace XMI
           inline DmaModel (T_Device & device, xmi_context_t context) {};
           inline ~DmaModel () {};
 
-          bool init (size_t origin_rank);
+          // bool init (size_t origin_rank);
 
           ///
           /// \brief Post a contiguous dma put transfer operation
@@ -78,8 +78,8 @@ namespace XMI
           ///               callback is invoked
           ///
           inline bool postDmaPut (uint8_t              (&state)[T_StateBytes],
-								  xmi_event_function   local_fn,
-                              	  void   	         * cookie,
+                                  xmi_event_function   local_fn,
+                                  void   	         * cookie,
                                   size_t            target_rank,
                                   T_Memregion     * local_memregion,
                                   size_t            local_offset,
@@ -118,8 +118,8 @@ namespace XMI
           ///               callback is invoked
           ///
           inline bool postDmaGet (uint8_t              (&state)[T_StateBytes],
-								  xmi_event_function   local_fn,
-                              	  void   	         * cookie,
+                                  xmi_event_function   local_fn,
+                                  void   	         * cookie,
                                   size_t            target_rank,
                                   T_Memregion     * local_memregion,
                                   size_t            local_offset,
@@ -128,26 +128,26 @@ namespace XMI
                                   size_t            bytes);
       };
 
-      template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
-      inline bool DmaModel<T_Model,T_Device,T_Memregion,T_StateBytes>::init (size_t origin_rank)
-      {
-        return static_cast<T_Model*>(this)->init_impl (origin_rank);
-      }
+//      template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
+      //    inline bool DmaModel<T_Model,T_Device,T_Memregion,T_StateBytes>::init (size_t origin_rank)
+      //  {
+      //  return static_cast<T_Model*>(this)->init_impl (origin_rank);
+      // }
 
       template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
-      inline bool DmaModel<T_Model,T_Device,T_Memregion,T_StateBytes>::postDmaPut (uint8_t  (&state)[T_StateBytes],
-					  															xmi_event_function   local_fn,
-					  															void   	         * cookie,
-                                                                               size_t            target_rank,
-                                                                               T_Memregion     * local_memregion,
-                                                                               size_t            local_offset,
-                                                                               T_Memregion     * remote_memregion,
-                                                                               size_t            remote_offset,
-                                                                               size_t            bytes)
+      inline bool DmaModel<T_Model, T_Device, T_Memregion, T_StateBytes>::postDmaPut (uint8_t  (&state)[T_StateBytes],
+          xmi_event_function   local_fn,
+          void   	         * cookie,
+          size_t            target_rank,
+          T_Memregion     * local_memregion,
+          size_t            local_offset,
+          T_Memregion     * remote_memregion,
+          size_t            remote_offset,
+          size_t            bytes)
       {
         return static_cast<T_Model*>(this)->postDmaPut_impl (state,
-					  										local_fn,
-					  										 cookie,
+                                                             local_fn,
+                                                             cookie,
                                                              target_rank,
                                                              local_memregion,
                                                              local_offset,
@@ -158,19 +158,19 @@ namespace XMI
 
 
       template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
-      inline bool DmaModel<T_Model,T_Device,T_Memregion,T_StateBytes>::postDmaGet (uint8_t (&state)[T_StateBytes],
-					  															xmi_event_function   local_fn,
-					  															void   	         * cookie,
-                                                                               size_t            target_rank,
-                                                                               T_Memregion     * local_memregion,
-                                                                               size_t            local_offset,
-                                                                               T_Memregion     * remote_memregion,
-                                                                               size_t            remote_offset,
-                                                                               size_t            bytes)
+      inline bool DmaModel<T_Model, T_Device, T_Memregion, T_StateBytes>::postDmaGet (uint8_t (&state)[T_StateBytes],
+          xmi_event_function   local_fn,
+          void   	         * cookie,
+          size_t            target_rank,
+          T_Memregion     * local_memregion,
+          size_t            local_offset,
+          T_Memregion     * remote_memregion,
+          size_t            remote_offset,
+          size_t            bytes)
       {
         return static_cast<T_Model*>(this)->postDmaGet_impl (state,
-					  										 local_fn,
-					  										 cookie,
+                                                             local_fn,
+                                                             cookie,
                                                              target_rank,
                                                              local_memregion,
                                                              local_offset,

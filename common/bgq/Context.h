@@ -11,7 +11,8 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
-#include "components/devices/shmem/ShmemPacketDevice.h"
+//#include "components/devices/shmem/ShmemPacketDevice.h"
+#include "components/devices/shmem/ShmemBaseDevice.h"
 #include "components/devices/shmem/dma/bgq/cnk/ShmemDmaDeviceBgqCnk.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "components/devices/shmem/dma/bgq/cnk/ShmemDmaModelBgqCnk.h"
@@ -42,33 +43,33 @@
 
 namespace XMI
 {
-    typedef Fifo::FifoPacket <32,992> ShmemPacket;
-    typedef Fifo::LinearFifo<Atomic::GccBuiltin,ShmemPacket,16> ShmemFifo;
-    //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
-    //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
+  typedef Fifo::FifoPacket <32, 992> ShmemPacket;
+  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
+  //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
+  //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
-    typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-    typedef Device::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
-    //typedef Device::ShmemDmaDeviceBgqCnk<ShmemFifo,ShmemPacket> ShmemDevice;
-    typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
-    typedef Device::ShmemDmaModelBgqCnk<ShmemDevice, ShmemMessage> ShmemDmaModel;
+  typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
+  typedef Device::ShmemBaseDevice<ShmemFifo, ShmemPacket, MemRegion::BgqMemregion> ShmemDevice;
+  //typedef Device::ShmemDmaDeviceBgqCnk<ShmemFifo,ShmemPacket> ShmemDevice;
+  typedef Device::ShmemPacketModel<ShmemDevice, ShmemMessage, MemRegion::BgqMemregion> ShmemModel;
+  typedef Device::ShmemDmaModelBgqCnk<ShmemDevice, ShmemMessage> ShmemDmaModel;
 
-    //
-    // >> Point-to-point protocol typedefs and dispatch registration.
-    typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
-    typedef XMI::Protocol::Send::Eager <XMI::Device::MU::MUPacketModel,
-                                        XMI::Device::MU::MUDevice> EagerMu;
-    // << Point-to-point protocol typedefs and dispatch registration.
-    //
-	
-	typedef XMI::Protocol::Get::Get <ShmemDmaModel, ShmemDevice, MemRegion::BgqMemregion> Get;
+  //
+  // >> Point-to-point protocol typedefs and dispatch registration.
+  typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
+  typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel,
+  XMI::Device::MU::MUDevice > EagerMu;
+  // << Point-to-point protocol typedefs and dispatch registration.
+  //
 
-    typedef MemoryAllocator<1024,16> ProtocolAllocator;
+  typedef XMI::Protocol::Get::Get <ShmemDmaModel, ShmemDevice, MemRegion::BgqMemregion> Get;
 
-    class Context : public Interface::Context<XMI::Context>
-    {
-      public:
-        inline Context (xmi_client_t client, size_t contextid, void * addr, size_t bytes) :
+  typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+
+  class Context : public Interface::Context<XMI::Context>
+  {
+    public:
+      inline Context (xmi_client_t client, size_t contextid, void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
@@ -77,52 +78,52 @@ namespace XMI
           _sysdep (_mm),
           _mu (),
           _shmem ()
-        {
-          // ----------------------------------------------------------------
-          // Compile-time assertions
-          // ----------------------------------------------------------------
+      {
+        // ----------------------------------------------------------------
+        // Compile-time assertions
+        // ----------------------------------------------------------------
 
-          // Make sure the memory allocator is large enough for all
-          // protocol classes.
-          COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
-          COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
-          COMPILE_TIME_ASSERT(sizeof(Get) <= ProtocolAllocator::objsize);
+        // Make sure the memory allocator is large enough for all
+        // protocol classes.
+        COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
+        COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
+        COMPILE_TIME_ASSERT(sizeof(Get) <= ProtocolAllocator::objsize);
 
-          // ----------------------------------------------------------------
-          // Compile-time assertions
-          // ----------------------------------------------------------------
+        // ----------------------------------------------------------------
+        // Compile-time assertions
+        // ----------------------------------------------------------------
 
-          _mu.init (&_sysdep);
-          _shmem.init (&_sysdep);
+        _mu.init (&_sysdep);
+        _shmem.init (&_sysdep);
 
-		  _get = (void *) _request.allocateObject ();
-		  xmi_result_t result ;
+        _get = (void *) _request.allocateObject ();
+        xmi_result_t result ;
 
-		  new ((void *)_get) Get(_shmem, __global.mapping.task(), _context, _contextid, result);
-	
-        }
+        new ((void *)_get) Get(_shmem, __global.mapping.task(), _context, _contextid, result);
 
-        inline xmi_client_t getClient_impl ()
-        {
-          return _client;
-        }
+      }
 
-        inline size_t getId_impl ()
-        {
-          return _contextid;
-        }
+      inline xmi_client_t getClient_impl ()
+      {
+        return _client;
+      }
 
-        inline xmi_result_t destroy_impl ()
-        {
-          //return XMI_UNIMPL;
-          return XMI_SUCCESS;
-        }
+      inline size_t getId_impl ()
+      {
+        return _contextid;
+      }
 
-        inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
-        {
-          xmi_result_t result = XMI_ERROR;
+      inline xmi_result_t destroy_impl ()
+      {
+        //return XMI_UNIMPL;
+        return XMI_SUCCESS;
+      }
 
-          switch (configuration->name)
+      inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
+      {
+        xmi_result_t result = XMI_ERROR;
+
+        switch (configuration->name)
           {
             case XMI_TASK_ID:
               configuration->value.intval = __global.mapping.task();
@@ -136,252 +137,255 @@ namespace XMI
               break;
           };
 
-          return result;
-        };
+        return result;
+      };
 
-        inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline size_t advance_impl (size_t maximum, xmi_result_t & result)
-        {
+      inline size_t advance_impl (size_t maximum, xmi_result_t & result)
+      {
 //          result = XMI_EAGAIN;
-          result = XMI_SUCCESS;
-          size_t events = 0;
-          unsigned i;
-          for (i=0; i<maximum && events==0; i++)
+        result = XMI_SUCCESS;
+        size_t events = 0;
+        unsigned i;
+
+        for (i = 0; i < maximum && events == 0; i++)
           {
             events += _shmem.advance_impl();
             events += _mu.advance();
           }
-          //if (events > 0) result = XMI_SUCCESS;
 
-          return events;
-        }
+        //if (events > 0) result = XMI_SUCCESS;
 
-        inline xmi_result_t lock_impl ()
-        {
-          return XMI_UNIMPL;
-        }
+        return events;
+      }
 
-        inline xmi_result_t trylock_impl ()
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t lock_impl ()
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t unlock_impl ()
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t trylock_impl ()
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
-        {
-          size_t id = (size_t)(parameters->send.dispatch);
-          TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
-          XMI_assert_debug (_dispatch[id] != NULL);
+      inline xmi_result_t unlock_impl ()
+      {
+        return XMI_UNIMPL;
+      }
 
-          XMI::Protocol::Send::Send * send =
-            (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->simple (parameters->simple.local_fn,
-                        parameters->simple.remote_fn,
-                        parameters->send.cookie,
-                        parameters->send.task,
-                        parameters->simple.addr,
-                        parameters->simple.bytes,
-                        parameters->send.header.addr,
-                        parameters->send.header.bytes);
+      inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
+      {
+        size_t id = (size_t)(parameters->send.dispatch);
+        TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+        XMI_assert_debug (_dispatch[id] != NULL);
 
-          TRACE_ERR((stderr, "<< send_impl('simple')\n"));
-          return XMI_SUCCESS;
-        }
+        XMI::Protocol::Send::Send * send =
+          (XMI::Protocol::Send::Send *) _dispatch[id];
+        send->simple (parameters->simple.local_fn,
+                      parameters->simple.remote_fn,
+                      parameters->send.cookie,
+                      parameters->send.task,
+                      parameters->simple.addr,
+                      parameters->simple.bytes,
+                      parameters->send.header.addr,
+                      parameters->send.header.bytes);
 
-        inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
-        {
-          size_t id = (size_t)(parameters->send.dispatch);
-          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
-          XMI_assert_debug (_dispatch[id] != NULL);
+        TRACE_ERR((stderr, "<< send_impl('simple')\n"));
+        return XMI_SUCCESS;
+      }
 
-          XMI::Protocol::Send::Send * send =
-            (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->immediate (parameters->send.task,
-                           parameters->immediate.addr,
-                           parameters->immediate.bytes,
-                           parameters->send.header.addr,
-                           parameters->send.header.bytes);
+      inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
+      {
+        size_t id = (size_t)(parameters->send.dispatch);
+        TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+        XMI_assert_debug (_dispatch[id] != NULL);
 
-          TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
-          return XMI_SUCCESS;
-        }
+        XMI::Protocol::Send::Send * send =
+          (XMI::Protocol::Send::Send *) _dispatch[id];
+        send->immediate (parameters->send.task,
+                         parameters->immediate.addr,
+                         parameters->immediate.bytes,
+                         parameters->send.header.addr,
+                         parameters->send.header.bytes);
 
-        inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+        TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
+        return XMI_SUCCESS;
+      }
 
-        inline xmi_result_t put (xmi_put_simple_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t put_typed (xmi_put_typed_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t put (xmi_put_simple_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t get (xmi_get_simple_t * parameters)
-        {
+      inline xmi_result_t put_typed (xmi_put_typed_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t get (xmi_get_simple_t * parameters)
+      {
 
-        inline xmi_result_t get_typed (xmi_get_typed_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t rmw (xmi_rmw_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t get_typed (xmi_get_typed_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t memregion_register (void            * address,
-                                                size_t            bytes,
-                                                xmi_memregion_t * memregion)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t rmw (xmi_rmw_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t memregion_deregister (xmi_memregion_t * memregion)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t memregion_register (void            * address,
+                                              size_t            bytes,
+                                              xmi_memregion_t * memregion)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t memregion_query (xmi_memregion_t    memregion,
-                                             void            ** address,
-                                             size_t           * bytes,
-                                             size_t           * task)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t memregion_deregister (xmi_memregion_t * memregion)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t rput (xmi_rput_simple_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t memregion_query (xmi_memregion_t    memregion,
+                                           void            ** address,
+                                           size_t           * bytes,
+                                           size_t           * task)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t rput_typed (xmi_rput_typed_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t rput (xmi_rput_simple_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t rget (xmi_rget_simple_t * parameters)
-        {
-          ((Get*)_get)->getimpl (	parameters->rma.done_fn,
-							parameters->rma.cookie,
-							parameters->rma.task,
-							parameters->rget.bytes,
-							(MemRegion::BgqMemregion*)parameters->rget.local_mr,
-							(MemRegion::BgqMemregion*)parameters->rget.remote_mr,
-							parameters->rget.local_offset,
-							parameters->rget.remote_offset);
-          return XMI_SUCCESS;
-        }
+      inline xmi_result_t rput_typed (xmi_rput_typed_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t rget_typed (xmi_rget_typed_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t rget (xmi_rget_simple_t * parameters)
+      {
+        ((Get*)_get)->getimpl (	parameters->rma.done_fn,
+                                parameters->rma.cookie,
+                                parameters->rma.task,
+                                parameters->rget.bytes,
+                                (MemRegion::BgqMemregion*)parameters->rget.local_mr,
+                                (MemRegion::BgqMemregion*)parameters->rget.remote_mr,
+                                parameters->rget.local_offset,
+                                parameters->rget.remote_offset);
+        return XMI_SUCCESS;
+      }
 
-        inline xmi_result_t purge_totask (size_t *dest, size_t count)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t rget_typed (xmi_rget_typed_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t resume_totask (size_t *dest, size_t count)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t purge_totask (size_t *dest, size_t count)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t fence_begin ()
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t resume_totask (size_t *dest, size_t count)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t fence_end ()
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t fence_begin ()
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t fence_all (xmi_event_function   done_fn,
-                                       void               * cookie)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t fence_end ()
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t fence_task (xmi_event_function   done_fn,
-                                        void               * cookie,
-                                        size_t               task)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t fence_all (xmi_event_function   done_fn,
+                                     void               * cookie)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t geometry_initialize (xmi_geometry_t       * geometry,
-                                                 unsigned               id,
-                                                 xmi_geometry_range_t * rank_slices,
-                                                 size_t                 slice_count)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t fence_task (xmi_event_function   done_fn,
+                                      void               * cookie,
+                                      size_t               task)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t geometry_initialize (xmi_geometry_t       * geometry,
+                                               unsigned               id,
+                                               xmi_geometry_range_t * rank_slices,
+                                               size_t                 slice_count)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t geometry_algorithm (xmi_xfer_type_t  colltype,
-                                                xmi_geometry_t   geometry,
-                                                xmi_algorithm_t *algorithm,
-                                                int             *num)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t geometry_finalize (xmi_geometry_t geometry)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t geometry_algorithm (xmi_xfer_type_t  colltype,
+                                              xmi_geometry_t   geometry,
+                                              xmi_algorithm_t *algorithm,
+                                              int             *num)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t collective (xmi_xfer_t * parameters)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t geometry_finalize (xmi_geometry_t geometry)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
-                                                          xmi_geometry_t geometry,
-                                                          xmi_xfer_type_t ctype,
-                                                          int *lists_lengths)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t collective (xmi_xfer_t * parameters)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
-                                                          xmi_geometry_t geometry,
-                                                          xmi_xfer_type_t type,
-                                                          xmi_algorithm_t algorithm,
-                                                          int algorithm_type,
-                                                          xmi_metadata_t *mdata)
-        {
-          return XMI_UNIMPL;
-        }
+      inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
+                                                        xmi_geometry_t geometry,
+                                                        xmi_xfer_type_t ctype,
+                                                        int *lists_lengths)
+      {
+        return XMI_UNIMPL;
+      }
 
-        inline xmi_result_t dispatch_impl (size_t                     id,
-                                           xmi_dispatch_callback_fn   fn,
-                                           void                     * cookie,
-                                           xmi_send_hint_t            options)
-        {
-          xmi_result_t result = XMI_ERROR;
-          if (_dispatch[id] == NULL)
+      inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
+                                                        xmi_geometry_t geometry,
+                                                        xmi_xfer_type_t type,
+                                                        xmi_algorithm_t algorithm,
+                                                        int algorithm_type,
+                                                        xmi_metadata_t *mdata)
+      {
+        return XMI_UNIMPL;
+      }
+
+      inline xmi_result_t dispatch_impl (size_t                     id,
+                                         xmi_dispatch_callback_fn   fn,
+                                         void                     * cookie,
+                                         xmi_send_hint_t            options)
+      {
+        xmi_result_t result = XMI_ERROR;
+
+        if (_dispatch[id] == NULL)
           {
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _request.allocateObject ();
@@ -390,58 +394,58 @@ namespace XMI
             new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
           }
 
-          return result;
-        }
+        return result;
+      }
 
-        inline xmi_result_t multisend_getroles(size_t          dispatch,
-                                               int            *numRoles,
-                                               int            *replRole)
-        {
-          return XMI_UNIMPL;
-        };
+      inline xmi_result_t multisend_getroles(size_t          dispatch,
+                                             int            *numRoles,
+                                             int            *replRole)
+      {
+        return XMI_UNIMPL;
+      };
 
-        inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
-        {
-          return XMI_UNIMPL;
-        };
-
-
-        inline xmi_result_t manytomany(xmi_manytomany_t *m2minfo)
-        {
-          return XMI_UNIMPL;
-        };
+      inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
+      {
+        return XMI_UNIMPL;
+      };
 
 
-        inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
-        {
-          return XMI_UNIMPL;
-        };
+      inline xmi_result_t manytomany(xmi_manytomany_t *m2minfo)
+      {
+        return XMI_UNIMPL;
+      };
 
 
-        inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
-        {
-          return XMI_UNIMPL;
-        };
+      inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
+      {
+        return XMI_UNIMPL;
+      };
+
+
+      inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
+      {
+        return XMI_UNIMPL;
+      };
 
 
 
-      private:
+    private:
 
-        xmi_client_t  _client;
-        xmi_context_t _context;
-        size_t        _contextid;
+      xmi_client_t  _client;
+      xmi_context_t _context;
+      size_t        _contextid;
 
-        XMI::Memory::MemoryManager _mm;
-        SysDep _sysdep;
+      XMI::Memory::MemoryManager _mm;
+      SysDep _sysdep;
 
-        // devices...
-        Device::MU::MUDevice _mu;
-        ShmemDevice          _shmem;
+      // devices...
+      Device::MU::MUDevice _mu;
+      ShmemDevice          _shmem;
 
-        void * _dispatch[1024];
-		void* _get; //use for now..remove later
-        MemoryAllocator<1024,16> _request;
-    }; // end XMI::Context
+      void * _dispatch[1024];
+      void* _get; //use for now..remove later
+      MemoryAllocator<1024, 16> _request;
+  }; // end XMI::Context
 }; // end namespace XMI
 
 #endif // __components_context_bgq_bgqcontext_h__

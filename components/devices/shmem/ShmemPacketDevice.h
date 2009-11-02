@@ -20,18 +20,19 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
+#if 0
 namespace XMI
 {
   namespace Device
   {
-    template <class T_Fifo, class T_Packet>
-    class ShmemPacketDevice : public ShmemBaseDevice<T_Fifo, T_Packet>,
-                              public Interface::BaseDevice<ShmemPacketDevice<T_Fifo, T_Packet>, XMI::SysDep>,
-                              public Interface::MessageDevice<ShmemPacketDevice<T_Fifo, T_Packet> >
+    template <class T_Fifo, class T_Packet, class T_Memregion>
+    class ShmemPacketDevice : public ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion>,
+        public Interface::BaseDevice<ShmemPacketDevice<T_Fifo, T_Packet>, XMI::SysDep>,
+        public Interface::MessageDevice<ShmemPacketDevice<T_Fifo, T_Packet> >
     {
       public:
         inline ShmemPacketDevice () :
-            ShmemBaseDevice<T_Fifo, T_Packet> (),
+            ShmemBaseDevice<T_Fifo, T_Packet, T_Memregion> (),
             Interface::BaseDevice<ShmemPacketDevice<T_Fifo, T_Packet>, XMI::SysDep> (),
             Interface::MessageDevice<ShmemPacketDevice<T_Fifo, T_Packet> > ()
         {
@@ -54,6 +55,7 @@ namespace XMI
     };
   };
 };
+#endif
 #undef TRACE_ERR
 #endif // __components_devices_shmem_shmempacketdevice_h__
 
