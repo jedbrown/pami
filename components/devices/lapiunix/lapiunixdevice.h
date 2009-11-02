@@ -79,7 +79,11 @@ namespace XMI
           CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
                                             (void *)__xmi_lapi_mcast_fn,
                                             1)));
-        }
+
+          CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
+                                            (void *)__xmi_lapi_m2m_fn,
+                                            2)));
+}
 
       void lock()
         {
@@ -202,6 +206,116 @@ namespace XMI
           _m2msendQ.push_front(msg);
         }
 
+      static void __xmi_lapi_m2m_done_fn(lapi_handle_t* handle, void *clientdata)
+        {
+          LAPIM2MRecvMessage<size_t> *m2m = (LAPIM2MRecvMessage<size_t> *)clientdata;
+          m2m->_num--;
+          if(m2m->_num==0)
+              {
+                if( m2m->_done_fn )
+                  m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+                m2m->_m2mrecvQ->remove(m2m);
+                free ( m2m );
+              }
+        }
+
+      static    void * __xmi_lapi_m2m_fn (lapi_handle_t   * hndl,
+                                          void            * uhdr,
+                                          uint            * uhdr_len,
+                                          ulong           * retinfo,
+                                          compl_hndlr_t  ** comp_h,
+                                          void           ** uinfo)
+        {
+          void               *r   = NULL;
+          lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
+          LAPIM2MHeader      *hdr = (LAPIM2MHeader*) uhdr;
+          LAPIDevice         *dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
+
+          std::list<LAPIM2MRecvMessage<size_t>*>::iterator it;
+          for(it=dev->_m2mrecvQ.begin();it != dev->_m2mrecvQ.end(); it++)
+              {
+                if((*it)->_conn == hdr->_conn) break;
+              }
+
+          lapi_m2m_dispatch_info_t mdi = dev->_m2m_dispatch_lookup[hdr->_dispatch_id];
+          LAPIM2MRecvMessage<size_t> * m2m;
+          if(it == dev->_m2mrecvQ.end())
+              {
+                xmi_callback_t    cb_done;
+                char            * buf;
+                size_t          * sizes;
+                size_t          * offsets;
+                size_t          * rcvcounters;
+                size_t            nranks;
+                mdi.recv_func(hdr->_conn,
+                              mdi.async_arg,
+                              &buf,
+                              &offsets,
+                              &sizes,
+                              &rcvcounters,
+                              &nranks,
+                              &cb_done);
+                m2m = (LAPIM2MRecvMessage<size_t> *)malloc(sizeof(LAPIM2MRecvMessage<size_t>) );
+                XMI_assert ( m2m != NULL );
+                m2m->_conn    = hdr->_conn;
+                m2m->_done_fn = cb_done.function;
+                m2m->_cookie  = cb_done.clientdata;
+                m2m->_num     = 0;
+                for( unsigned i = 0; i < nranks; i++)
+                    {
+                      if( sizes[i] == 0 ) continue;
+                      m2m->_num++;
+                    }
+                if( m2m->_num == 0 )
+                    {
+                      if( m2m->_done_fn )
+                        (m2m->_done_fn)(NULL, m2m->_cookie,XMI_SUCCESS);
+                      free ( m2m );
+                      return NULL;
+                    }
+                m2m->_buf      = buf;
+                m2m->_sizes    = sizes;
+                m2m->_offsets  = offsets;
+                m2m->_nranks   = nranks;
+                m2m->_m2mrecvQ = &dev->_m2mrecvQ;
+                dev->enqueue(m2m);
+              }
+          else
+              {
+                m2m = (*it);
+              }
+          XMI_assert(m2m != NULL);
+
+          size_t src = hdr->_peer;
+          if (ri->udata_one_pkt_ptr)
+              {
+                unsigned size = hdr->_size < m2m->_sizes[src] ? hdr->_size : m2m->_sizes[src];
+                XMI_assert(size>0);
+                memcpy(m2m->_buf+m2m->_offsets[src],
+                       (void *)ri->udata_one_pkt_ptr,
+                       size);
+                m2m->_num--;
+                if(m2m->_num==0)
+                    {
+                      if( m2m->_done_fn )
+                        m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+                      dev->_m2mrecvQ.remove(m2m);
+                      free ( m2m );
+                    }
+                r             = NULL;
+                *comp_h       = NULL;
+                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ctl_flags = LAPI_BURY_MSG;
+              }
+          else
+              {
+                r             = (void*)(m2m->_buf+m2m->_offsets[src]);
+                *comp_h       = __xmi_lapi_m2m_done_fn;
+                *uinfo        = m2m;
+                ri->ret_flags = LAPI_SEND_REPLY;
+              }
+          return r;
+        }
 
       static void __xmi_lapi_mcast_done_fn(lapi_handle_t* handle, void *clientdata)
         {

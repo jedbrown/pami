@@ -115,19 +115,29 @@ namespace XMI
       std::list<LAPIMcastRecvMessage*> *_mcastrecvQ;
     };
 
+    class LAPIM2MHeader
+    {
+    public:
+      size_t      _dispatch_id;
+      unsigned    _peer;
+      unsigned    _size;
+      unsigned    _conn;
+      inline void *buffer() { return ((char *)this + sizeof (LAPIM2MHeader)); }
+      inline int  totalsize () { return _size + sizeof (LAPIM2MHeader); }
+    };
+
 
 
     class LAPIM2MMessage
     {
     public:
       xmi_context_t       _context;
-      size_t              _dispatch_id;
       unsigned            _conn;
-      xmi_event_function  _done_fn;
+      xmi_event_function  _user_done_fn;
       void               *_cookie;
       int                 _num;
-      int                 _totalsize;
-      char               *_bufs;
+      int                 _numdone;
+      LAPIM2MHeader      *_send_headers;
     };
 
     template <class T_Counter>
@@ -143,17 +153,9 @@ namespace XMI
       T_Counter          *_sizes;
       T_Counter          *_offsets;
       unsigned            _nranks;
+      std::list<LAPIM2MRecvMessage*> *_m2mrecvQ;
     };
 
-    class LAPIM2MHeader
-    {
-    public:
-      size_t      _dispatch_id;
-      unsigned    _size;
-      unsigned    _conn;
-      inline void *buffer() { return ((char *)this + sizeof (LAPIM2MHeader)); }
-      inline int  totalsize () { return _size + sizeof (LAPIM2MHeader); }
-    };
 
 
   };
