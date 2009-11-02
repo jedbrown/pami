@@ -48,8 +48,8 @@ namespace XMI
     //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
     typedef Device::ShmemBaseMessage<ShmemPacket> ShmemMessage;
-    //typedef Device::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
-    typedef Device::ShmemDmaDeviceBgqCnk<ShmemFifo,ShmemPacket> ShmemDevice;
+    typedef Device::ShmemPacketDevice<ShmemFifo,ShmemPacket> ShmemDevice;
+    //typedef Device::ShmemDmaDeviceBgqCnk<ShmemFifo,ShmemPacket> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice,ShmemMessage> ShmemModel;
     typedef Device::ShmemDmaModelBgqCnk<ShmemDevice, ShmemMessage> ShmemDmaModel;
 
