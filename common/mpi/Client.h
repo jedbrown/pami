@@ -87,8 +87,14 @@ namespace XMI
 			return XMI_ERROR;
 		}
 		XMI::Context *context = NULL;
+
+#ifdef USE_MEMALIGN                
 		int rc = posix_memalign((void **)&context, 16, sizeof(XMI::Context) * n);
 		XMI_assertf(rc==0, "posix_memalign failed for context[%d], errno=%d\n", n, errno);
+#else
+                context = (XMI::Context*)malloc(sizeof(XMI::Context)*n);
+		XMI_assertf(context!=NULL, "malloc failed for context[%d], errno=%d\n", n, errno);
+#endif
 		memset((void *)context, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
 		int x;
@@ -165,4 +171,5 @@ namespace XMI
 }; // end namespace XMI
 
 
-#endif // __xmi_mpi_mpiclient_h__
+#endif
+// __xmi_mpi_mpiclient_h__
