@@ -54,22 +54,18 @@ namespace XMI
       // Allocate memory for and construct the queue objects,
       // one for each local rank.
       __sendQ = (Queue *) malloc ((sizeof (Queue) * _num_procs));
-      __doneQ = (Queue *) malloc ((sizeof (Queue) * _num_procs));
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 5\n", __global.mapping.task()));
 
       for (i = 0; i < _num_procs; i++)
         {
           new (&__sendQ[i]) Queue ();
-          new (&__doneQ[i]) Queue ();
         }
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 6\n", __global.mapping.task()));
 
-      // Initialize the send and done queue masks to zero (empty).
-      // There should be a queue mask associated with each channel.
+      // Initialize the send queue mask to zero (empty).
       __sendQMask = 0;
-      __doneQMask = 0;
 
       // Initialize the registered receive function array to noop().
       // The array is limited to 256 dispatch ids because of the size of the
@@ -125,8 +121,8 @@ namespace XMI
     ///
     template <class T_Fifo, class T_Packet, class T_Memregion>
     int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::registerRecvFunction (size_t                      id,
-                                                                              Interface::RecvFunction_t   recv_func,
-                                                                              void                      * recv_func_parm)
+                                                                          Interface::RecvFunction_t   recv_func,
+                                                                          void                      * recv_func_parm)
     {
       TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction (%d,%p,%p)\n", __global.mapping.task(), id, recv_func, recv_func_parm));
 
@@ -163,10 +159,10 @@ namespace XMI
 
     template <class T_Fifo, class T_Packet, class T_Memregion>
     int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::noop (void   * metadata,
-                                                              void   * payload,
-                                                              size_t   bytes,
-                                                              void   * recv_func_parm,
-                                                              void   * cookie)
+                                                          void   * payload,
+                                                          size_t   bytes,
+                                                          void   * recv_func_parm,
+                                                          void   * cookie)
     {
       XMI_abort();
       return 0;
@@ -208,7 +204,6 @@ namespace XMI
               if (msg->isRMAType() == true)
                 {
                   sequence = _fifo[peer].nextInjSequenceId();
-                  //xmi_result_t res = processRMAMessage(peer, msg, sequence);
 
                   size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
 
@@ -239,21 +234,6 @@ namespace XMI
                     {
                       break; //dont process any further elements until the RMA message is processed
                     }
-
-#if 0
-
-                  if (res == XMI_SUCCESS)
-                    {
-                      popSendQueueHead (peer);
-                      msg->executeCallback ();
-                      continue;
-                    }
-                  else
-                    {
-                      break; //dont process any further elements until the RMA message is processed
-                    }
-
-#endif
                 }
             }
 
@@ -272,35 +252,10 @@ namespace XMI
                   // before invoking the message's done callback.
                   popSendQueueHead (peer);
 
-                  if (msg->isRemoteCompletionRequired ())
-                    {
-                      // Do not invoke the completion callback until the packets
-                      // have been processed by the remote rank.
-                      size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
-
-                      if (sequence <= last_rec_seq_id)
-                        {
-                          // The last packet in this message has been processed by
-                          // the remote node. Invoke the send completion callback
-                          // here.. may post another message!
-                          msg->executeCallback ();
-                        }
-                      else
-                        {
-                          // The remote node has not yet processed the last packet
-                          // of this message. Add the message to the done queue
-                          // and check for completion again later.
-                          msg->setSequenceId (sequence);
-                          pushDoneQueueTail (peer, (QueueElem *) msg);
-                        }
-                    }
-                  else
-                    {
-                      // Invoke the send completion callback here.. may post
-                      // another message!
-                      msg->executeCallback ();
-                      break;
-                    }
+                  // Invoke the send completion callback here.. may post
+                  // another message!
+                  msg->executeCallback ();
+                  break;
                 }
             }
           else
@@ -308,48 +263,6 @@ namespace XMI
               // Unable to write a packet .. ififo is full.
               // Leave this message on the queue and break out of the loop.
               break;
-            }
-        }
-
-      return events;
-    };
-
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::advance_doneQ ()
-    {
-      size_t peer;
-      int events = 0;
-
-      for (peer = 0; peer < _num_procs; peer++)
-        events += advance_doneQ (peer);
-
-      return events;
-    };
-
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::advance_doneQ (size_t peer)
-    {
-      int events = 0;
-      size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
-      ShmemMessage<T_Packet> * msg;
-
-      while (!__doneQ[peer].isEmpty())
-        {
-          // There is a pending message on the done queue.
-          msg = (ShmemMessage<T_Packet> *) __doneQ[peer].peekHead ();
-
-          if (msg->getSequenceId() <= last_rec_seq_id)
-            {
-              // The remote rank has completed processing the packets
-              // associated with this message. Remove from the done queue
-              // and invoke the message's done callback.
-              events++;
-              popDoneQueueHead (peer);
-              msg->executeCallback ();
-            }
-          else
-            {
-              return events;
             }
         }
 

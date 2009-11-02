@@ -35,14 +35,14 @@ namespace XMI
         };
 
         inline ShmemMessage (xmi_context_t        context,
-                                 xmi_event_function   fn,
-                                 void               * cookie,
-                                 uint8_t              dispatch_id,
-                                 void               * metadata,
-                                 size_t               metasize,
-                                 void               * src,
-                                 size_t               bytes,
-                                 bool                 packed) :
+                             xmi_event_function   fn,
+                             void               * cookie,
+                             uint8_t              dispatch_id,
+                             void               * metadata,
+                             size_t               metasize,
+                             void               * src,
+                             size_t               bytes,
+                             bool                 packed) :
             QueueElem (),
             _context (context),
             _fn (fn),
@@ -52,7 +52,6 @@ namespace XMI
             _niov (0),
             _nbytes (0),
             _dispatch_id (dispatch_id),
-            _remote_completion (false),
             _pkt_type(PTP)
         {
           __iov[0].iov_base = src;
@@ -62,16 +61,16 @@ namespace XMI
         };
 
         inline ShmemMessage (xmi_context_t        context,
-                                 xmi_event_function   fn,
-                                 void               * cookie,
-                                 uint8_t           dispatch_id,
-                                 void            * metadata,
-                                 size_t            metasize,
-                                 void            * src0,
-                                 size_t            bytes0,
-                                 void            * src1,
-                                 size_t            bytes1,
-                                 bool              packed) :
+                             xmi_event_function   fn,
+                             void               * cookie,
+                             uint16_t             dispatch_id,
+                             void                * metadata,
+                             size_t                metasize,
+                             void                * src0,
+                             size_t                bytes0,
+                             void                * src1,
+                             size_t                bytes1,
+                             bool                  packed) :
             QueueElem (),
             _context (context),
             _fn (fn),
@@ -81,7 +80,6 @@ namespace XMI
             _niov (0),
             _nbytes (0),
             _dispatch_id (dispatch_id),
-            _remote_completion (false),
             _pkt_type(PTP)
         {
           __iov[0].iov_base = src0;
@@ -93,14 +91,14 @@ namespace XMI
         };
 
         inline ShmemMessage (xmi_context_t        context,
-                                 xmi_event_function   fn,
-                                 void               * cookie,
-                                 uint8_t             dispatch_id,
-                                 void               * metadata,
-                                 size_t               metasize,
-                                 struct iovec       * iov,
-                                 size_t               niov,
-                                 bool                 packed) :
+                             xmi_event_function   fn,
+                             void               * cookie,
+                             uint16_t             dispatch_id,
+                             void               * metadata,
+                             size_t               metasize,
+                             struct iovec       * iov,
+                             size_t               niov,
+                             bool                 packed) :
             QueueElem (),
             _context (context),
             _fn (fn),
@@ -110,7 +108,6 @@ namespace XMI
             _niov (0),
             _nbytes (0),
             _dispatch_id (dispatch_id),
-            _remote_completion (false),
             _pkt_type(PTP)
         {
           memcpy(_metadata, metadata, metasize);
@@ -118,11 +115,11 @@ namespace XMI
 
 
         inline ShmemMessage (xmi_context_t        context,
-                                 xmi_event_function   fn,
-                                 void               * cookie,
-                                 uint8_t              dispatch_id,
-                                 void               * metadata,
-                                 size_t               metasize) :
+                             xmi_event_function   fn,
+                             void               * cookie,
+                             uint16_t             dispatch_id,
+                             void               * metadata,
+                             size_t               metasize) :
             QueueElem (),
             _context (context),
             _fn (fn),
@@ -132,32 +129,9 @@ namespace XMI
             _niov (0),
             _nbytes (0),
             _dispatch_id (dispatch_id),
-            _remote_completion (false)
+           _pkt_type(PTP)
         {
           memcpy(_metadata, metadata, metasize);
-        };
-
-        inline ShmemMessage (xmi_context_t        context,
-                                 xmi_event_function   fn,
-                                 void               * cookie,
-                                 uint8_t              dispatch_id,
-                                 void               * dst_vaddr,
-                                 void               * src_vaddr,
-                                 size_t               bytes) :
-            QueueElem (),
-            _context (context),
-            _fn (fn),
-            _cookie (cookie),
-            _iov (&__iov[0]),
-            _tiov (0),
-            _niov (0),
-            _nbytes (bytes),
-            _dispatch_id (dispatch_id),
-            _remote_completion (false),
-            _dst_vaddr(dst_vaddr),
-            _src_vaddr(src_vaddr),
-            _pkt_type(RMA)
-        {
         };
 
         inline ShmemMessage (xmi_event_function   fn,
@@ -222,16 +196,6 @@ namespace XMI
           return (void *) &_metadata;
         }
 
-        inline bool isRemoteCompletionRequired ()
-        {
-          return _remote_completion;
-        }
-
-        inline void enableRemoteCompletion ()
-        {
-          _remote_completion = true;
-        }
-
         inline size_t getSequenceId ()
         {
           return _sequence_id;
@@ -245,11 +209,6 @@ namespace XMI
         inline bool isRMAType()
         {
           return (_pkt_type == RMA);
-        }
-
-        inline void copyBytes()
-        {
-          memcpy(_dst_vaddr, _src_vaddr, _nbytes);
         }
 
         inline bool getRMA (void   ** local_memregion,
@@ -283,10 +242,6 @@ namespace XMI
 
         uint8_t _dispatch_id;
         size_t  _sequence_id;
-        bool    _remote_completion;
-
-        void*	_dst_vaddr;
-        void*	_src_vaddr;
 
         shmem_pkt_t		_pkt_type;
 
