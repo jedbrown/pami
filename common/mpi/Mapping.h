@@ -278,6 +278,7 @@ namespace XMI
       inline xmi_result_t torus2task_impl (size_t (&addr)[MPI_TDIMS], size_t & task)
         {
 		XMI_abort();
+        return XMI_ERROR;
 	}
       inline xmi_result_t global2task(size_t (&addr)[MPI_TDIMS + MPI_LDIMS], size_t & task)
         {

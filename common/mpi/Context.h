@@ -27,6 +27,8 @@
 #include "Mapping.h"
 #include <new>
 #include <map>
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/gcc/GccCounter.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -58,6 +60,7 @@ namespace XMI
               _fn (fn),
               _cookie (cookie)
             {};
+            inline ~WorkObject() { };
 
             xmi_event_function   _fn;
             void               * _cookie;
@@ -76,7 +79,6 @@ namespace XMI
         {
           _lock.init (sysdep);
         };
-
         inline void post (xmi_event_function   fn,
                           void               * cookie)
         {

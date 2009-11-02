@@ -825,6 +825,7 @@ namespace XMI {
 			// is this too difficult/expensive? is it needed?
 			// Note, this is NOT simply "!isLocal()"...
 			XMI_abortf("Topology::isGlobal not implemented\n");
+        return false;
 		}
 
 		/// \brief is topology a rectangular segment

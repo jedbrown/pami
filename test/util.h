@@ -151,7 +151,7 @@ void barrier_init (xmi_context_t context, size_t dispatch)
 
   xmi_dispatch_callback_fn fn;
   fn.p2p = barrier_dispatch_function;
-  xmi_send_hint_t options;
+  xmi_send_hint_t options={0};
   TRACE_ERR((stderr, "Before XMI_Dispatch_set() ...\n"));
   result = XMI_Dispatch_set (context,
                              dispatch,

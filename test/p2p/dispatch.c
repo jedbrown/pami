@@ -48,7 +48,7 @@ int main (int argc, char ** argv)
   size_t dispatch = 0;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  xmi_send_hint_t options;
+  xmi_send_hint_t options={0};
   result = XMI_Dispatch_set (context, dispatch, fn, NULL, options);
   if (result != XMI_SUCCESS)
   {

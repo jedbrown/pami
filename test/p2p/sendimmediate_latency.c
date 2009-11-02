@@ -195,7 +195,7 @@ int main ()
   size_t dispatch = 1;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  xmi_send_hint_t options;
+  xmi_send_hint_t options={0};
   TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
   xmi_result_t result = XMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],

@@ -164,7 +164,7 @@ namespace Generic {
 		for (int x = 0; x < XMI_MAX_THREAD_PER_PROC; ++x) {
 			new (&__GenericQueue[x]) MultiQueue<2, 1>();
 		}
-		xmi_result_t rc;
+		xmi_result_t rc = XMI_ERROR;
 		int y = 0;
 
 #ifdef USE_WAKEUP_VECTORS

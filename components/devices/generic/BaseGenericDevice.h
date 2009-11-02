@@ -47,7 +47,7 @@ namespace Generic {
 		///  \brief Used by the protocol to get _device_id.
 		//////////////////////////////////////////////////////////////////////
 		inline  unsigned getDeviceID() const { return _device_id; };
-		virtual unsigned advance_channel(unsigned channel) { XMI_abort(); };
+		virtual unsigned advance_channel(unsigned channel) { XMI_abort(); return 0; };
 	protected:
 		//////////////////////////////////////////////////////////////////////
 		///  \brief The multichannel work required each device to have an ID
