@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = $(TARGET)
+SUBDIRS         = @DEVICES@ @TARGET@
 NOTBUILT        = 
-APPS            = multicombine.$(EXTENSION) multisync.$(EXTENSION) multicast.$(EXTENSION)
+APPS            = #multicombine.$(EXTENSION) multisync.$(EXTENSION) multicast.$(EXTENSION)
 
 include @abs_top_builddir@/Build.rules
 

@@ -125,6 +125,12 @@ namespace XMI
                                       xmi_dispatch_callback_fn   fn,
                                       void                     * cookie,
                                       xmi_send_hint_t            options);
+	//#ifdef __xmi_target_mpi__
+        inline xmi_result_t dispatch_new (size_t                 dispatch,
+                                          xmi_dispatch_callback_fn   fn,
+                                          void                     * cookie,
+                                          xmi_dispatch_hint_t        options);
+	//#endif
 
 
     }; // end class XMI::Context::Context
@@ -408,6 +414,16 @@ namespace XMI
     {
         return static_cast<T_Context*>(this)->dispatch_impl(dispatch,fn,cookie,options);
     }
+//#ifdef __xmi_target_mpi__
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::dispatch_new (size_t                 dispatch,
+                                               xmi_dispatch_callback_fn   fn,
+                                               void                     * cookie,
+                                               xmi_dispatch_hint_t        options)
+    {
+        return static_cast<T_Context*>(this)->dispatch_new_impl(dispatch,fn,cookie,options);
+    }
+//#endif
   }; // end namespace Interface
 }; // end namespace XMI
 

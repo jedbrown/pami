@@ -111,7 +111,7 @@ int main (int argc, char ** argv)
   fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active);
   result = XMI_Dispatch_set (context,
                              dispatch,
-                             (xmi_dispatch_callback_fn) fn,
+                             fn,
                              (void *)&recv_active,
                              options);
   if (result != XMI_SUCCESS)

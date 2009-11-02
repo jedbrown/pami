@@ -7,7 +7,7 @@ int main(int argc, char ** argv) {
 	xmi_client_t client;
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
-	char *name = "multicombine test";
+	const char *name = "multicombine test";
 
 	status = XMI_Client_initialize(name, &client);
 	if (status != XMI_SUCCESS) {
