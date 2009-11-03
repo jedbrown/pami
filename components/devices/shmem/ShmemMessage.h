@@ -39,7 +39,7 @@ namespace XMI
         inline ShmemMessage (xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
-                             uint8_t              dispatch_id,
+                             uint16_t             dispatch_id,
                              void               * metadata,
                              size_t               metasize,
                              void               * src,
@@ -66,13 +66,13 @@ namespace XMI
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
-                             void                * metadata,
-                             size_t                metasize,
-                             void                * src0,
-                             size_t                bytes0,
-                             void                * src1,
-                             size_t                bytes1,
-                             bool                  packed) :
+                             void               * metadata,
+                             size_t               metasize,
+                             void               * src0,
+                             size_t               bytes0,
+                             void               * src1,
+                             size_t               bytes1,
+                             bool                 packed) :
             QueueElem (),
             _context (context),
             _fn (fn),
@@ -188,7 +188,7 @@ namespace XMI
           return (_tiov == _niov) ? true : false;
         };
 
-        inline uint8_t getDispatchId ()
+        inline uint16_t getDispatchId ()
         {
           return _dispatch_id;
         }
@@ -242,8 +242,8 @@ namespace XMI
         size_t            _niov;
         size_t            _nbytes;
 
-        uint8_t _dispatch_id;
-        size_t  _sequence_id;
+        uint16_t _dispatch_id;
+        size_t   _sequence_id;
 
         shmem_pkt_t		_pkt_type;
 

@@ -80,8 +80,7 @@ namespace XMI
                                 Interface::RecvFunction_t   read_recv_func,
                                 void                      * read_recv_func_parm)
         {
-          _dispatch_id = _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm);
-          return XMI_SUCCESS;  // <--- fix this
+          return _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm, _dispatch_id);
         };
 
         inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],

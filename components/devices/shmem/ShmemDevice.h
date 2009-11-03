@@ -98,9 +98,10 @@ namespace XMI
         ///
         /// \return Dispatch id for this registration
         ///
-        int registerRecvFunction (size_t                      dispatch,
-                                  Interface::RecvFunction_t   recv_func,
-                                  void                      * recv_func_parm);
+        xmi_result_t registerRecvFunction (size_t                      set,
+                                           Interface::RecvFunction_t   recv_func,
+                                           void                      * recv_func_parm,
+                                           uint16_t                  & id);
 
         inline xmi_result_t writeSinglePacket (size_t     fnum,
                                                uint16_t   dispatch_id,
@@ -177,7 +178,7 @@ namespace XMI
 
         XMI::SysDep      * _sysdep;
 
-        dispatch_t  _dispatch[256][256];
+        dispatch_t  _dispatch[256*256];
 
         Queue * __sendQ;
         unsigned          __sendQMask;
@@ -428,7 +429,7 @@ namespace XMI
 
           mem_sync (); // TODO -- is this needed?
 
-          _dispatch[hdr[0]][hdr[1]].function (meta, data, pkt->payloadSize(), _dispatch[hdr[0]][hdr[1]].clientdata, data);
+          _dispatch[id].function (meta, data, pkt->payloadSize(), _dispatch[id].clientdata, data);
 
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));

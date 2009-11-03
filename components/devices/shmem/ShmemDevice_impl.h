@@ -70,13 +70,10 @@ namespace XMI
       // Initialize the registered receive function array to noop().
       // The array is limited to 256 dispatch ids because of the size of the
       // dispatch id field in the packet header.
-      for (i = 0; i < 256; i++)
+      for (i = 0; i < 256*256; i++)
         {
-          for (j = 0; j < 256; j++)
-            {
-              _dispatch[i][j].function   = noop;
-              _dispatch[i][j].clientdata = NULL;
-            }
+          _dispatch[i].function   = noop;
+          _dispatch[i].clientdata = NULL;
         }
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 7\n", __global.mapping.task()));
@@ -120,32 +117,34 @@ namespace XMI
     /// \return Dispatch id for this registration
     ///
     template <class T_Fifo, class T_Packet>
-    int ShmemDevice<T_Fifo, T_Packet>::registerRecvFunction (size_t                      id,
-                                                                          Interface::RecvFunction_t   recv_func,
-                                                                          void                      * recv_func_parm)
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::registerRecvFunction (size_t                      set,
+                                                                      Interface::RecvFunction_t   recv_func,
+                                                                      void                      * recv_func_parm,
+                                                                      uint16_t                  & id)
     {
       TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction (%d,%p,%p)\n", __global.mapping.task(), id, recv_func, recv_func_parm));
 
       // This device only supports up to 256 dispatch sets.
-      if (id >= 256) return -1;
+      if (set >= 256) return XMI_ERROR;
 
-      // Find the next available slot for this dispatch set.
-      size_t slot;
-
-      for (slot = 0; slot < 256; slot++)
+      // Find the next available id for this dispatch set.
+      bool found_free_slot = false;
+      for (id = set*256; id < ((set+1)*256); id++)
         {
-          if (_dispatch[id][slot].function == (Interface::RecvFunction_t) noop) break;
+          if (_dispatch[id].function == (Interface::RecvFunction_t) noop)
+          {
+            found_free_slot = true;
+            break;
+          }
         }
 
-      if (slot == 256) return -1;
+      if (!found_free_slot) return XMI_ERROR;
 
-      _dispatch[id][slot].function  = recv_func;
-      _dispatch[id][slot].clientdata = recv_func_parm;
+      _dispatch[id].function   = recv_func;
+      _dispatch[id].clientdata = recv_func_parm;
 
-      size_t f = id * 256 + slot;
-
-      TRACE_ERR((stderr, "<< (%zd) ShmemDevice::registerRecvFunction (%d,%p,%p) => %d => %d\n", __global.mapping.task(), id, recv_func, recv_func_parm, slot, f));
-      return f;
+      TRACE_ERR((stderr, "<< (%zd) ShmemDevice::registerRecvFunction (%d,%p,%p) => %d\n", __global.mapping.task(), set, recv_func, recv_func_parm, id));
+      return XMI_SUCCESS;
     };
 
     template <class T_Fifo, class T_Packet>
