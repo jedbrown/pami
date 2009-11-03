@@ -196,6 +196,8 @@ extern "C"
     char name[32];     /**< name of algorithm                     */
   } xmi_metadata_t;
 
+  extern void xmi_metadata_multiset(xmi_ca_t *, ...);
+                           
   /** \} */ /* end of "Compact attributes" group */
 
 

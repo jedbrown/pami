@@ -161,6 +161,7 @@
       }                                                                 \
   while (0);                                                            \
 
+
 #define xmi_ca_copy      CA_COPY
 #define xmi_ca_set       CA_SET
 #define xmi_ca_unset     CA_UNSET

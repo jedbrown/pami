@@ -16,6 +16,7 @@
 
 #include "sys/xmi.h"
 #include "math/math_coremath.h"
+#include <stdarg.h>
 
 /**
  * \brief Translates a XMI_Dt into its size
@@ -329,4 +330,6 @@ OPTIMIZED_fp64_fp64_minloc
 [XMI_MINLOC][XMI_LOC_2DOUBLE][0] =	(void*)_xmi_core_fp64_fp64_minloc,
 
 };
+
+
 #undef OPTIMATH_NSRC
