@@ -201,29 +201,44 @@ namespace XMI
                                            void               * msginfo,
                                            size_t               mbytes)
           {
+            xmi_send_simple_t parameters;
+            parameters.simple.local_fn   = local_fn;
+            parameters.simple.remote_fn  = remote_fn;
+            parameters.send.cookie       = cookie;
+            parameters.send.task         = peer;
+            parameters.simple.addr       = src;
+            parameters.simple.bytes      = bytes;
+            parameters.send.header.addr  = msginfo;
+            parameters.send.header.bytes = mbytes;
+
+            return simple_impl (&parameters);
+          }
+
+          inline xmi_result_t simple_impl (xmi_send_simple_t * parameters)
+          {
             TRACE_ERR((stderr, "EagerSimple::simple_impl() >> sizeof(short_metadata_t) = %zd, T_Model::packet_model_metadata_bytes = %zd\n", sizeof(short_metadata_t), T_Model::packet_model_metadata_bytes));
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
 
-            state->cookie   = cookie;
-            state->local_fn = local_fn;
+            state->cookie   = parameters->send.cookie;
+            state->local_fn = parameters->simple.local_fn;
             state->eager    = this;
 
             // Specify the protocol metadata to send with the application
             // metadata in the envelope packet.
             state->metadata.fromRank  = _fromRank;
-            state->metadata.bytes     = bytes;
-            state->metadata.metabytes = mbytes;
+            state->metadata.bytes     = parameters->simple.bytes;
+            state->metadata.metabytes = parameters->send.header.bytes;
 
             // Set the acknowledgement information to the virtual address of
             // send state object on the origin task if a local callback of the
             // remote receive completion event is requested. If this is set to
             // NULL no acknowledgement will be received by the origin task.
-            if (remote_fn != NULL)
+            if (parameters->simple.remote_fn != NULL)
               {
                 state->metadata.ackinfo = state;
-                state->remote_fn = remote_fn;
+                state->remote_fn = parameters->simple.remote_fn;
               }
             else
               {
@@ -231,7 +246,7 @@ namespace XMI
                 state->remote_fn = NULL;
               }
 
-            if (unlikely(bytes == 0))
+            if (unlikely(parameters->simple.bytes == 0))
               {
                 // In the unlikely event that this eager (i.e., multi-packet)
                 // protocol is being used to send zero bytes of application
@@ -246,7 +261,7 @@ namespace XMI
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
 
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
                     {
                       // "'long header' support is disabled.\n"
                       return XMI_INVAL;
@@ -259,7 +274,7 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
@@ -267,7 +282,7 @@ namespace XMI
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
-                                                    peer,
+                                                    parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
                                                     (void *) NULL,
@@ -276,11 +291,11 @@ namespace XMI
                         _longheader_model.postMessage (state->msg[0],
                                                        send_complete,
                                                        (void *) state,
-                                                       peer,
+                                                       parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       msginfo,
-                                                       mbytes);
+                                                       parameters->send.header.addr,
+                                                       parameters->send.header.bytes);
                       }
                     else
                       {
@@ -290,20 +305,20 @@ namespace XMI
                         _envelope_model.postPacket (state->pkt,
                                                     send_complete,
                                                     (void *) state,
-                                                    peer,
+                                                    parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    msginfo,
-                                                    mbytes);
+                                                    parameters->send.header.addr,
+                                                    parameters->send.header.bytes);
                       }
                   }
                 else
                   {
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
-                    //XMI_assertf((mbytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), mbytes, T_Model::packet_model_payload_bytes);
+                    //XMI_assertf((parameters->send.header.bytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), parameters->send.header.bytes, T_Model::packet_model_payload_bytes);
 
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                     {
                       // "'long header' support is disabled.\n"
                       TRACE_ERR((stderr, "EagerSimple::simple_impl() .. error .. 'long header' support is disabled.\n"));
@@ -317,7 +332,7 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload\n"));
 
@@ -325,7 +340,7 @@ namespace XMI
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
-                                                    peer,
+                                                    parameters->send.task,
                                                     NULL,
                                                     0,
                                                     (void *) &(state->metadata),
@@ -334,11 +349,11 @@ namespace XMI
                         _longheader_model.postMessage (state->msg[0],
                                                        send_complete,
                                                        (void *) state,
-                                                       peer,
+                                                       parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       msginfo,
-                                                       mbytes);
+                                                       parameters->send.header.addr,
+                                                       parameters->send.header.bytes);
                       }
                     else
                       {
@@ -348,13 +363,13 @@ namespace XMI
                         _envelope_model.postPacket (state->pkt,
                                                     send_complete,
                                                     (void *) state,
-                                                    peer,
+                                                    parameters->send.task,
                                                     NULL,
                                                     0,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    msginfo,
-                                                    mbytes);
+                                                    parameters->send.header.addr,
+                                                    parameters->send.header.bytes);
                       }
                   }
               }
@@ -366,7 +381,7 @@ namespace XMI
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
                   {
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
                     {
                       // "'long header' support is disabled.\n"
                       return XMI_INVAL;
@@ -379,14 +394,14 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(mbytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
                       {
                         // Application metadata does not fit in a single packet.
                         // Send a "long header" message.
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
-                                                    peer,
+                                                    parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
                                                     (void *)NULL,
@@ -395,28 +410,28 @@ namespace XMI
                         _longheader_model.postMessage (state->msg[0],
                                                        NULL,
                                                        NULL,
-                                                       peer,
+                                                       parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       msginfo,
-                                                       mbytes);
+                                                       parameters->send.header.addr,
+                                                       parameters->send.header.bytes);
                       }
                     else
                       {
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
-                                                    peer,
+                                                    parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    msginfo,
-                                                    mbytes);
+                                                    parameters->send.header.addr,
+                                                    parameters->send.header.bytes);
                       }
                   }
                 else
                   {
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                     {
                       // "'long header' support is disabled.\n"
                       return XMI_INVAL;
@@ -429,14 +444,14 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(mbytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                       {
                         // Protocol metadata + application metadata does not fit in
                         // a single packet. Send a "long header" message.
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
-                                                    peer,
+                                                    parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
                                                     (void *)NULL,
@@ -445,24 +460,24 @@ namespace XMI
                         _longheader_model.postMessage (state->msg[0],
                                                        NULL,
                                                        NULL,
-                                                       peer,
+                                                       parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       msginfo,
-                                                       mbytes);
+                                                       parameters->send.header.addr,
+                                                       parameters->send.header.bytes);
                       }
                     else
                       {
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
-                                                    peer,
+                                                    parameters->send.task,
                                                     NULL,
                                                     0,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    msginfo,
-                                                    mbytes);
+                                                    parameters->send.header.addr,
+                                                    parameters->send.header.bytes);
                       }
                   }
 
@@ -470,11 +485,11 @@ namespace XMI
                 _data_model.postMessage (state->msg[1],
                                          send_complete,
                                          (void *) state,
-                                         peer,
+                                         parameters->send.task,
                                          (void *) &(state->metadata.fromRank),
                                          sizeof (xmi_task_t),
-                                         src,
-                                         bytes);
+                                         parameters->simple.addr,
+                                         parameters->simple.bytes);
               }
 
             TRACE_ERR((stderr, "EagerSimple::simple_impl() <<\n"));

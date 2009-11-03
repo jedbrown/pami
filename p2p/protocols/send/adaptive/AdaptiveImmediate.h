@@ -131,6 +131,15 @@ namespace XMI
           ///
           /// \see XMI::Protocol::Send::immediate
           ///
+          inline xmi_result_t immediate_impl (xmi_send_immediate_t * parameters)
+          {
+           return immediate_impl (parameters->send.task,
+                                  parameters->immediate.addr,
+                                  parameters->immediate.bytes,
+                                  parameters->send.header.addr,
+                                  parameters->send.header.bytes);
+          }
+
           inline xmi_result_t immediate_impl (xmi_task_t   peer,
                                               void       * src,
                                               size_t       bytes,

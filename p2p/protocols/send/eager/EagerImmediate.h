@@ -137,6 +137,18 @@ namespace XMI
                                               void       * msginfo,
                                               size_t       mbytes)
           {
+            xmi_send_immediate_t parameters;
+            parameters.send.task         = peer;
+            parameters.immediate.addr    = src;
+            parameters.immediate.bytes   = bytes;
+            parameters.send.header.addr  = msginfo;
+            parameters.send.header.bytes = mbytes;
+
+            return immediate_impl (&parameters);
+          };
+
+          inline xmi_result_t immediate_impl (xmi_send_immediate_t * parameters)
+          {
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
 
             // Specify the protocol metadata to send with the application
@@ -145,18 +157,18 @@ namespace XMI
             // on the stack.
             protocol_metadata_t metadata;
             metadata.fromRank  = _fromRank;
-            metadata.databytes = bytes;
-            metadata.metabytes = mbytes;
+            metadata.databytes = parameters->immediate.bytes;
+            metadata.metabytes = parameters->send.header.bytes;
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
             bool posted =
-              _send_model.postPacketImmediate (peer,
+              _send_model.postPacketImmediate (parameters->send.task,
                                                (void *) &metadata,
                                                sizeof (protocol_metadata_t),
-                                               msginfo,
-                                               mbytes,
-                                               src,
-                                               bytes);
+                                               parameters->send.header.addr,
+                                               parameters->send.header.bytes,
+                                               parameters->immediate.addr,
+                                               parameters->immediate.bytes);
 
             if (!posted)
             {
@@ -165,17 +177,17 @@ namespace XMI
               // a regular (non-blocking) post.
               send_t * send = (send_t *) _allocator.allocateObject ();
               send->pf = this;
-              memcpy (&(send->data[0]), msginfo, mbytes);
-              memcpy (&(send->data[mbytes]), src, bytes);
+              memcpy (&(send->data[0]), parameters->send.header.addr, metadata.metabytes);
+              memcpy (&(send->data[metadata.metabytes]), parameters->immediate.addr, metadata.databytes);
 
               _send_model.postPacket (send->pkt,
                                       send_complete,
                                       send,
-                                      peer,
+                                      parameters->send.task,
                                       (void *) &metadata,
                                       sizeof (protocol_metadata_t),
                                       &(send->data[0]),
-                                      mbytes+bytes);
+                                      metadata.databytes+metadata.metabytes);
             }
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() <<\n"));

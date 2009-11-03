@@ -271,6 +271,18 @@ namespace XMI
           ///
           /// \see XMI::Protocol::Send:simple
           ///
+          inline xmi_result_t simple_impl (xmi_send_simple_t * parameters)
+          {
+           return simple_impl (parameters->simple.local_fn,
+                               parameters->simple.remote_fn,
+                               parameters->send.cookie,
+                               parameters->send.task,
+                               parameters->immediate.addr,
+                               parameters->immediate.bytes,
+                               parameters->send.header.addr,
+                               parameters->send.header.bytes);
+          }
+
           inline xmi_result_t simple_impl (xmi_event_function   local_fn,
                                            xmi_event_function   remote_fn,
                                            void               * cookie,

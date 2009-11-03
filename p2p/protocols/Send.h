@@ -56,6 +56,8 @@ namespace XMI
                                           void               * msginfo,
                                           size_t               mbytes) = 0;
 
+          virtual xmi_result_t immediate (xmi_send_immediate_t * parameters) = 0;
+
           ///
           /// \brief Start a new simple send message.
           ///
@@ -78,6 +80,9 @@ namespace XMI
                                        size_t               bytes,
                                        void               * msginfo,
                                        size_t               mbytes) = 0;
+
+          virtual xmi_result_t simple (xmi_send_simple_t * parameters) = 0;
+
       }; // XMI::Protocol::Send class
     }; // XMI::Protocol::Send class
   };   // XMI::Protocol namespace

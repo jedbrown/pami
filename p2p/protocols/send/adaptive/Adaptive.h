@@ -107,6 +107,14 @@ namespace XMI
             return result;
           };
 
+          virtual xmi_result_t immediate (xmi_send_immediate_t * parameters)
+          {
+            TRACE_ERR((stderr, ">> Adaptive::immediate()\n"));
+            xmi_result_t result = this->immediate_impl (parameters);
+            TRACE_ERR((stderr, "<< Adaptive::immediate()\n"));
+            return result;
+          };
+
           ///
           /// \brief Start a new simple send operation.
           ///
@@ -127,6 +135,13 @@ namespace XMI
             return result;
           };
 
+          virtual xmi_result_t simple (xmi_send_simple_t * parameters)
+          {
+            TRACE_ERR((stderr, ">> Adaptive::simple()\n"));
+            xmi_result_t result = this->simple_impl (parameters);
+            TRACE_ERR((stderr, "<< Adaptive::simple()\n"));
+            return result;
+          };
       };  // XMI::Protocol::Send::Adaptive class
     };    // XMI::Protocol::Send namespace
   };      // XMI::Protocol namespace
