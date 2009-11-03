@@ -19,6 +19,10 @@
 #include "util/queue/Queue.h"
 #include <mpi.h>
 
+//#define EMULATE_NONDETERMINISTIC_DEVICE
+//#define EMULATE_UNRELIABLE_DEVICE
+#define EMULATE_UNRELIABLE_DEVICE_FREQUENCY 10
+
 namespace XMI
 {
   namespace Device
@@ -41,6 +45,7 @@ namespace XMI
       void               *_cookie;
       int                 _freeme;
       MPI_Request         _request;
+      xmi_task_t          _target_task;
 
       struct _p2p_msg
       {

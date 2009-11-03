@@ -33,14 +33,25 @@ namespace XMI
         _context(context)
         {};
 
+#ifdef EMULATE_NONDETERMINISTIC_DEVICE
+      static const bool   deterministic_packet_model   = false;
+      static const bool   deterministic_message_model  = false;
+#else
       static const bool   deterministic_packet_model   = true;
+      static const bool   deterministic_message_model  = true;
+#endif
+#ifdef EMULATE_UNRELIABLE_DEVICE
+      static const bool   reliable_packet_model        = false;
+      static const bool   reliable_message_model       = false;
+#else
       static const bool   reliable_packet_model        = true;
+      static const bool   reliable_message_model       = true;
+#endif
+
       static const size_t packet_model_metadata_bytes  = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes   = T_Device::payload_size;
       static const size_t packet_model_state_bytes     = sizeof(T_Message);
 
-      static const bool   deterministic_message_model  = true;
-      static const bool   reliable_message_model       = true;
       static const size_t message_model_metadata_bytes = T_Device::metadata_size;
       static const size_t message_model_payload_bytes  = T_Device::payload_size;
       static const size_t message_model_state_bytes    = sizeof(T_Message);
@@ -68,6 +79,10 @@ namespace XMI
           int rc;
           MPIMessage * msg = (MPIMessage *)state;
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket_impl %d \n",(int)this, this->_dispatch_id));
+#ifdef EMULATE_UNRELIABLE_DEVICE
+          unsigned long long t = __global.time.timebase ();
+          if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
+#endif
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
                              fn,
@@ -80,6 +95,10 @@ namespace XMI
           memcpy(&msg->_p2p_msg._payload[0], payload, bytes);
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket_impl MPI_Isend %zd to %zd\n",(int)this,
                          sizeof(msg->_p2p_msg),target_rank));
+#ifdef EMULATE_NONDETERMINISTIC_DEVICE
+          msg->_target_task = (xmi_task_t) target_rank;
+          _device.addToNonDeterministicQueue (msg);
+#else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
@@ -89,7 +108,7 @@ namespace XMI
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
-
+#endif
           return true;
         };
 
@@ -106,7 +125,11 @@ namespace XMI
         {
           int rc;
 //          void       * obj = malloc(sizeof(MPIMessage));
-          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate %d \n",(int)this, this->_dispatch_id));
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket %d \n",(int)this, this->_dispatch_id));
+#ifdef EMULATE_UNRELIABLE_DEVICE
+          unsigned long long t = __global.time.timebase ();
+          if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
+#endif
           MPIMessage * msg = (MPIMessage *)state;
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
@@ -119,8 +142,12 @@ namespace XMI
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
           memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
-          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate MPI_Isend %zd to %zd\n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket MPI_Isend %zd to %zd\n",(int)this,
                          sizeof(msg->_p2p_msg),target_rank));
+#ifdef EMULATE_NONDETERMINISTIC_DEVICE
+          msg->_target_task = (xmi_task_t) target_rank;
+          _device.addToNonDeterministicQueue (msg);
+#else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
@@ -130,7 +157,7 @@ namespace XMI
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
-
+#endif
           return true;
         };
 
@@ -158,6 +185,10 @@ namespace XMI
           int rc;
           void       * obj = malloc(sizeof(MPIMessage));
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate %d \n",(int)this, this->_dispatch_id));
+#ifdef EMULATE_UNRELIABLE_DEVICE
+          unsigned long long t = __global.time.timebase ();
+          if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
+#endif
           MPIMessage * msg = (MPIMessage *)obj;
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
@@ -172,6 +203,10 @@ namespace XMI
           memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate MPI_Isend %zd to %zd\n",(int)this,
                          sizeof(msg->_p2p_msg),target_rank));
+#ifdef EMULATE_NONDETERMINISTIC_DEVICE
+          msg->_target_task = (xmi_task_t) target_rank;
+          _device.addToNonDeterministicQueue (msg);
+#else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
@@ -181,6 +216,7 @@ namespace XMI
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
+#endif
           return true;
         }
 
@@ -196,6 +232,10 @@ namespace XMI
         {
           int rc;
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postMessage_impl %d \n",(int)this, this->_dispatch_id));
+#ifdef EMULATE_UNRELIABLE_DEVICE
+          unsigned long long t = __global.time.timebase ();
+          if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
+#endif
           MPIMessage * msg = (MPIMessage *)malloc(sizeof(MPIMessage)+metasize+bytes-128-224);
           new(msg)MPIMessage(this->_context,
                              this->_dispatch_id,
@@ -209,6 +249,10 @@ namespace XMI
           memcpy((char*)(&msg->_p2p_msg._metadata[0])+metasize, src, bytes);
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postMessage_impl MPI_Isend %zd+%zd+%zd-128-244 to %zd\n",(int)this,
                          sizeof(msg->_p2p_msg),metasize,bytes,target_rank));
+#ifdef EMULATE_NONDETERMINISTIC_DEVICE
+          msg->_target_task = (xmi_task_t) target_rank;
+          _device.addToNonDeterministicQueue (msg);
+#else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg)+metasize+bytes-128-224,
                           MPI_CHAR,
@@ -218,7 +262,7 @@ namespace XMI
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
-
+#endif
           return true;
         };
 

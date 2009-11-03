@@ -143,6 +143,23 @@ namespace XMI
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl\n",(int)this));
           dbg = 0;
         }
+#ifdef EMULATE_NONDETERMINISTIC_DEVICE
+        // Check the P2P *pending* send queue
+        std::list<MPIMessage*>::iterator it_pending;
+        for(it_pending=_pendingQ.begin();it_pending != _pendingQ.end(); it_pending++)
+        {
+          // Remove from the pending queue, start the MPI_Isend, then add to the _sendQ
+           MPI_Isend (&(*it_pending)->_p2p_msg,
+                      sizeof((*it_pending)->_p2p_msg),
+                      MPI_CHAR,
+                      (*it_pending)->_target_task,
+                      0,
+                      MPI_COMM_WORLD,
+                      &(*it_pending)->_request);
+          _pendingQ.remove(*it_pending);
+          enqueue(*it_pending);
+        }
+#endif
         // Check the P2P send queue
         std::list<MPIMessage*>::iterator it_p2p;
         for(it_p2p=_sendQ.begin();it_p2p != _sendQ.end(); it_p2p++)
@@ -516,6 +533,14 @@ namespace XMI
         _m2msendQ.push_front(msg);
       }
 
+      inline void addToNonDeterministicQueue(MPIMessage* msg)
+      {
+        size_t index, insert = __global.time.timebase() % _pendingQ.size();
+        std::list<MPIMessage*>::iterator it;
+        for (index = 0; index < insert; index++) it++;
+        _pendingQ.insert(it,msg);
+      }
+
       char                                     *_currentBuf;
       size_t                                    _peers;
       size_t                                    _dispatch_id;
@@ -529,6 +554,7 @@ namespace XMI
       std::list<MPIM2MMessage*>                 _m2msendQ;
       std::list<MPIMcastRecvMessage*>           _mcastrecvQ;
       std::list<MPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
+      std::list<MPIMessage*>                    _pendingQ;
       mpi_dispatch_info_t                       _dispatch_table[256*DISPATCH_SET_SIZE];
       mpi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       mpi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
