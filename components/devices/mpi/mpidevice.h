@@ -145,19 +145,18 @@ namespace XMI
         }
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
         // Check the P2P *pending* send queue
-        std::list<MPIMessage*>::iterator it_pending;
-        for(it_pending=_pendingQ.begin();it_pending != _pendingQ.end(); it_pending++)
+        while (!_pendingQ.empty())
         {
-          // Remove from the pending queue, start the MPI_Isend, then add to the _sendQ
-           MPI_Isend (&(*it_pending)->_p2p_msg,
-                      sizeof((*it_pending)->_p2p_msg),
-                      MPI_CHAR,
-                      (*it_pending)->_target_task,
-                      0,
-                      MPI_COMM_WORLD,
-                      &(*it_pending)->_request);
-          _pendingQ.remove(*it_pending);
-          enqueue(*it_pending);
+          MPIMessage * msg = _pendingQ.front();
+          _pendingQ.pop_front();
+          MPI_Isend (&msg->_p2p_msg,
+                     sizeof(msg->_p2p_msg),
+                     MPI_CHAR,
+                     msg->_target_task,
+                     0,
+                     MPI_COMM_WORLD,
+                     &msg->_request);
+          enqueue(msg);
         }
 #endif
         // Check the P2P send queue
