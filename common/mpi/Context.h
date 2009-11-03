@@ -548,6 +548,6 @@ namespace XMI
     }; // end XMI::Context
 }; // end namespace XMI
 
-#undef TRACE_ERR;
+#undef TRACE_ERR
 
 #endif // __xmi_mpi_mpicontext_h__
