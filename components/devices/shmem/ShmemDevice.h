@@ -18,13 +18,12 @@
 
 #include "SysDep.h"
 #include "Arch.h"
+#include "Memregion.h"
 
 #include "components/atomic/Counter.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/MessageDevice.h"
 #include "components/devices/shmem/ShmemMessage.h"
-
-#include "components/memregion/NoopMemregion.h"
 
 #include "util/fifo/LinearFifo.h"
 #include "util/fifo/FifoPacket.h"
@@ -50,14 +49,14 @@ namespace XMI
       void                      * clientdata;
     } dispatch_t;
 
-    template < class T_Fifo, class T_Packet, class T_Memregion = XMI::MemRegion::Noop >
-    class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion>, XMI::SysDep>,
-        public Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion> >
+    template < class T_Fifo, class T_Packet >
+    class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep>,
+        public Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet> >
     {
       public:
         inline ShmemDevice () :
-            Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion>, XMI::SysDep> (),
-            Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet, T_Memregion> > (),
+            Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep> (),
+            Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet> > (),
             _fifo (NULL),
             __sendQ (),
             __sendQMask (0)
@@ -193,8 +192,8 @@ namespace XMI
         unsigned   _current_pkt_iov;
     };
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline size_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::getLocalRank()
+    template <class T_Fifo, class T_Packet>
+    inline size_t ShmemDevice<T_Fifo, T_Packet>::getLocalRank()
     {
       return _local_task;
     }
@@ -204,22 +203,22 @@ namespace XMI
     ///
     /// \param[in] peer  \b Local rank
     ///
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline bool ShmemDevice<T_Fifo, T_Packet, T_Memregion>::isSendQueueEmpty (size_t peer)
+    template <class T_Fifo, class T_Packet>
+    inline bool ShmemDevice<T_Fifo, T_Packet>::isSendQueueEmpty (size_t peer)
     {
       return ((__sendQMask >> peer) & 0x01) == 0;
     }
 
     /// \see XMI::Device::Interface::PacketDevice::read()
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::read_impl (void * dst, size_t length, void * cookie)
+    template <class T_Fifo, class T_Packet>
+    int ShmemDevice<T_Fifo, T_Packet>::read_impl (void * dst, size_t length, void * cookie)
     {
       memcpy (dst, cookie, length);
       return 0;
     }
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
         size_t     fnum,
         uint16_t   dispatch_id,
         void     * metadata,
@@ -256,8 +255,8 @@ namespace XMI
       return XMI_EAGAIN;
     };
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
         size_t     fnum,
         uint16_t   dispatch_id,
         void     * metadata,
@@ -300,8 +299,8 @@ namespace XMI
       return XMI_EAGAIN;
     };
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
         size_t         fnum,
         uint16_t       dispatch_id,
         void         * metadata,
@@ -347,8 +346,8 @@ namespace XMI
       return XMI_EAGAIN;
     };
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::writeSinglePacket (
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
         size_t                   fnum,
         ShmemMessage<T_Packet> * msg,
         size_t                 & sequence)
@@ -396,8 +395,8 @@ namespace XMI
       return XMI_EAGAIN;
     };
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::advance_impl ()
+    template <class T_Fifo, class T_Packet>
+    int ShmemDevice<T_Fifo, T_Packet>::advance_impl ()
     {
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
@@ -454,8 +453,8 @@ namespace XMI
     ///
     /// \param[in] peer  \b Local rank
     ///
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline void ShmemDevice<T_Fifo, T_Packet, T_Memregion>::pushSendQueueTail (size_t peer, QueueElem * element)
+    template <class T_Fifo, class T_Packet>
+    inline void ShmemDevice<T_Fifo, T_Packet>::pushSendQueueTail (size_t peer, QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", __global.mapping.task(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
       __sendQ[peer].pushTail (element);
@@ -467,8 +466,8 @@ namespace XMI
     ///
     /// \param[in] peer  \b Local rank
     ///
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    inline QueueElem * ShmemDevice<T_Fifo, T_Packet, T_Memregion>::popSendQueueHead (size_t peer)
+    template <class T_Fifo, class T_Packet>
+    inline QueueElem * ShmemDevice<T_Fifo, T_Packet>::popSendQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the sendQ\n"));
       QueueElem * tmp = __sendQ[peer].popHead();

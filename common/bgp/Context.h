@@ -32,6 +32,7 @@
 #include "components/memory/MemoryManager.h"
 
 #include "SysDep.h"
+#include "Memregion.h"
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/Eager.h"

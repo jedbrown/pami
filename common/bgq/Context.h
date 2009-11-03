@@ -21,8 +21,6 @@
 #include "components/devices/bgq/mu/MUPacketModel.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
 
-#include "components/memregion/bgq/BgqMemregion.h"
-
 #include "components/atomic/gcc/GccBuiltin.h"
 //#include "components/atomic/pthread/Pthread.h"
 //#include "components/atomic/bgq/BgqAtomic.h"
@@ -30,6 +28,7 @@
 #include "components/memory/MemoryAllocator.h"
 
 #include "SysDep.h"
+#include "Memregion.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
@@ -48,8 +47,8 @@ namespace XMI
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
   typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
-  typedef Device::ShmemDevice<ShmemFifo, ShmemPacket, MemRegion::BgqMemregion> ShmemDevice;
-  typedef Device::ShmemModel<ShmemDevice, ShmemMessage, MemRegion::BgqMemregion> ShmemModel;
+  typedef Device::ShmemDevice<ShmemFifo, ShmemPacket> ShmemDevice;
+  typedef Device::ShmemModel<ShmemDevice, ShmemMessage> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -59,7 +58,7 @@ namespace XMI
   // << Point-to-point protocol typedefs and dispatch registration.
   //
 
-  typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice, MemRegion::BgqMemregion> Get;
+  typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
 
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
@@ -84,7 +83,7 @@ namespace XMI
         // protocol classes.
         COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
         COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
-        COMPILE_TIME_ASSERT(sizeof(Get) <= ProtocolAllocator::objsize);
+        COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
 
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -96,7 +95,7 @@ namespace XMI
         _get = (void *) _request.allocateObject ();
         xmi_result_t result ;
 
-        new ((void *)_get) Get(_shmem, __global.mapping.task(), _context, _contextid, result);
+        new ((void *)_get) GetShmem(_shmem, __global.mapping.task(), _context, _contextid, result);
 
       }
 
@@ -277,12 +276,12 @@ namespace XMI
 
       inline xmi_result_t rget (xmi_rget_simple_t * parameters)
       {
-        ((Get*)_get)->getimpl (	parameters->rma.done_fn,
+        ((GetShmem*)_get)->getimpl (	parameters->rma.done_fn,
                                 parameters->rma.cookie,
                                 parameters->rma.task,
                                 parameters->rget.bytes,
-                                (MemRegion::BgqMemregion*)parameters->rget.local_mr,
-                                (MemRegion::BgqMemregion*)parameters->rget.remote_mr,
+                                (Memregion*)parameters->rget.local_mr,
+                                (Memregion*)parameters->rget.remote_mr,
                                 parameters->rget.local_offset,
                                 parameters->rget.remote_offset);
         return XMI_SUCCESS;

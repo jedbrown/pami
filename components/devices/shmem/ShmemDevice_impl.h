@@ -19,8 +19,8 @@ namespace XMI
 {
   namespace Device
   {
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::init_impl (XMI::SysDep * sysdep)
+    template <class T_Fifo, class T_Packet>
+    int ShmemDevice<T_Fifo, T_Packet>::init_impl (XMI::SysDep * sysdep)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl ()\n", __global.mapping.task()));
       _sysdep = sysdep;
@@ -84,22 +84,22 @@ namespace XMI
       return 0;
     }
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    bool ShmemDevice<T_Fifo, T_Packet, T_Memregion>::isInit_impl ()
+    template <class T_Fifo, class T_Packet>
+    bool ShmemDevice<T_Fifo, T_Packet>::isInit_impl ()
     {
       return true;
     }
 
     /// \see XMI::Device::Interface::BaseDevice::peers()
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    size_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::peers_impl ()
+    template <class T_Fifo, class T_Packet>
+    size_t ShmemDevice<T_Fifo, T_Packet>::peers_impl ()
     {
       return _num_procs;
     }
 
     /// \see XMI::Device::Interface::BaseDevice::task2peer()
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    size_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::task2peer_impl (size_t task)
+    template <class T_Fifo, class T_Packet>
+    size_t ShmemDevice<T_Fifo, T_Packet>::task2peer_impl (size_t task)
     {
       XMI::Interface::Mapping::nodeaddr_t address;
       __global.mapping.task2node (task, address);
@@ -119,8 +119,8 @@ namespace XMI
     ///
     /// \return Dispatch id for this registration
     ///
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::registerRecvFunction (size_t                      id,
+    template <class T_Fifo, class T_Packet>
+    int ShmemDevice<T_Fifo, T_Packet>::registerRecvFunction (size_t                      id,
                                                                           Interface::RecvFunction_t   recv_func,
                                                                           void                      * recv_func_parm)
     {
@@ -148,8 +148,8 @@ namespace XMI
       return f;
     };
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet, T_Memregion>::post (size_t fnum, ShmemMessage<T_Packet> * msg)
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::post (size_t fnum, ShmemMessage<T_Packet> * msg)
     {
       pushSendQueueTail (fnum, (QueueElem *) msg);
       return XMI_SUCCESS;
@@ -157,8 +157,8 @@ namespace XMI
 
 
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::noop (void   * metadata,
+    template <class T_Fifo, class T_Packet>
+    int ShmemDevice<T_Fifo, T_Packet>::noop (void   * metadata,
                                                           void   * payload,
                                                           size_t   bytes,
                                                           void   * recv_func_parm,
@@ -169,8 +169,8 @@ namespace XMI
     }
 
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::advance_sendQ ()
+    template <class T_Fifo, class T_Packet>
+    int ShmemDevice<T_Fifo, T_Packet>::advance_sendQ ()
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ () >> _num_procs = %zd\n", __global.mapping.task(), _num_procs));
       unsigned peer;
@@ -184,8 +184,8 @@ namespace XMI
       return events;
     }
 
-    template <class T_Fifo, class T_Packet, class T_Memregion>
-    int ShmemDevice<T_Fifo, T_Packet, T_Memregion>::advance_sendQ (size_t peer)
+    template <class T_Fifo, class T_Packet>
+    int ShmemDevice<T_Fifo, T_Packet>::advance_sendQ (size_t peer)
     {
       ShmemMessage<T_Packet> * msg;
       size_t sequence;
@@ -198,8 +198,8 @@ namespace XMI
           // There is a pending message on the send queue.
           msg = (ShmemMessage<T_Packet> *) __sendQ[peer].peekHead ();
 
-          if (T_Memregion::shared_address_read_supported ||
-              T_Memregion::shared_address_write_supported)
+          if (Memregion::shared_address_read_supported ||
+              Memregion::shared_address_write_supported)
             {
               if (msg->isRMAType() == true)
                 {
@@ -209,13 +209,13 @@ namespace XMI
 
                   if (sequence - 1 <= last_rec_seq_id) //sequence id is carried by a pt-to-pt message before me
                     {
-                      T_Memregion * local_memregion  = (T_Memregion *) NULL;
-                      T_Memregion * remote_memregion = (T_Memregion *) NULL;
+                      Memregion * local_memregion  = (Memregion *) NULL;
+                      Memregion * remote_memregion = (Memregion *) NULL;
                       size_t local_offset, remote_offset, bytes;
 
-                      if (msg->getRMA ((void **)&local_memregion,
+                      if (msg->getRMA (&local_memregion,
                                        local_offset,
-                                       (void **)&remote_memregion,
+                                       &remote_memregion,
                                        remote_offset,
                                        bytes))
                         {

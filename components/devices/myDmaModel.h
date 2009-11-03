@@ -15,7 +15,7 @@
 #define __componenets_devices_dmamodel_h__
 
 #include <errno.h>
-
+#include "Memregion.h"
 #include "sys/xmi.h"
 
 
@@ -29,10 +29,9 @@ namespace XMI
       /// \todo Need A LOT MORE documentation on this interface and its use
       /// \param T_Model      Dma model template class
       /// \param T_Device     Dma device template class
-      /// \param T_Memregion  Memory region template class
       /// \param T_StateBytes     Dma object template class
       ///
-      template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
       class DmaModel
       {
         public:
@@ -44,8 +43,6 @@ namespace XMI
           ///
           inline DmaModel (T_Device & device, xmi_context_t context) {};
           inline ~DmaModel () {};
-
-          // bool init (size_t origin_rank);
 
           ///
           /// \brief Post a contiguous dma put transfer operation
@@ -79,13 +76,13 @@ namespace XMI
           ///
           inline bool postDmaPut (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   local_fn,
-                                  void   	         * cookie,
-                                  size_t            target_rank,
-                                  T_Memregion     * local_memregion,
-                                  size_t            local_offset,
-                                  T_Memregion     * remote_memregion,
-                                  size_t            remote_offset,
-                                  size_t            bytes);
+                                  void               * cookie,
+                                  size_t               target_rank,
+                                  Memregion          * local_memregion,
+                                  size_t               local_offset,
+                                  Memregion          * remote_memregion,
+                                  size_t               remote_offset,
+                                  size_t               bytes);
 
           ///
           /// \brief Post a contiguous dma get transfer operation
@@ -119,31 +116,26 @@ namespace XMI
           ///
           inline bool postDmaGet (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   local_fn,
-                                  void   	         * cookie,
-                                  size_t            target_rank,
-                                  T_Memregion     * local_memregion,
-                                  size_t            local_offset,
-                                  T_Memregion     * remote_memregion,
-                                  size_t            remote_offset,
-                                  size_t            bytes);
+                                  void               * cookie,
+                                  size_t               target_rank,
+                                  Memregion          * local_memregion,
+                                  size_t               local_offset,
+                                  Memregion          * remote_memregion,
+                                  size_t               remote_offset,
+                                  size_t               bytes);
       };
 
-//      template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
-      //    inline bool DmaModel<T_Model,T_Device,T_Memregion,T_StateBytes>::init (size_t origin_rank)
-      //  {
-      //  return static_cast<T_Model*>(this)->init_impl (origin_rank);
-      // }
-
-      template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
-      inline bool DmaModel<T_Model, T_Device, T_Memregion, T_StateBytes>::postDmaPut (uint8_t  (&state)[T_StateBytes],
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      inline bool DmaModel<T_Model, T_Device, T_StateBytes>::postDmaPut (
+          uint8_t              (&state)[T_StateBytes],
           xmi_event_function   local_fn,
-          void   	         * cookie,
-          size_t            target_rank,
-          T_Memregion     * local_memregion,
-          size_t            local_offset,
-          T_Memregion     * remote_memregion,
-          size_t            remote_offset,
-          size_t            bytes)
+          void               * cookie,
+          size_t               target_rank,
+          Memregion          * local_memregion,
+          size_t               local_offset,
+          Memregion          * remote_memregion,
+          size_t               remote_offset,
+          size_t               bytes)
       {
         return static_cast<T_Model*>(this)->postDmaPut_impl (state,
                                                              local_fn,
@@ -157,16 +149,17 @@ namespace XMI
       }
 
 
-      template <class T_Model, class T_Device, class T_Memregion, unsigned T_StateBytes>
-      inline bool DmaModel<T_Model, T_Device, T_Memregion, T_StateBytes>::postDmaGet (uint8_t (&state)[T_StateBytes],
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      inline bool DmaModel<T_Model, T_Device, T_StateBytes>::postDmaGet (
+          uint8_t              (&state)[T_StateBytes],
           xmi_event_function   local_fn,
-          void   	         * cookie,
-          size_t            target_rank,
-          T_Memregion     * local_memregion,
-          size_t            local_offset,
-          T_Memregion     * remote_memregion,
-          size_t            remote_offset,
-          size_t            bytes)
+          void               * cookie,
+          size_t               target_rank,
+          Memregion          * local_memregion,
+          size_t               local_offset,
+          Memregion          * remote_memregion,
+          size_t               remote_offset,
+          size_t               bytes)
       {
         return static_cast<T_Model*>(this)->postDmaGet_impl (state,
                                                              local_fn,

@@ -7,36 +7,32 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/memregion/MemRegion.h
+ * \file common/MemregionInterface.h
  * \brief ???
  */
 
-#ifndef __components_memregion_MemRegion_h__
-#define __components_memregion_MemRegion_h__
+#ifndef __common_MemregionInterface_h__
+#define __common_MemregionInterface_h__
 
 #include "sys/xmi.h"
 
-#ifndef XMI_MEMREGION_CLASS
-#error XMI_MEMREGION_CLASS must be defined!
-#endif
-
 namespace XMI
 {
-  namespace MemRegion
+  namespace Interface
   {
     ///
     /// \brief memory regions.
     ///
-    /// \param T MemRegion template class
+    /// \param T Memregion template class
     ///
     template <class T>
-    class MemRegion
+    class Memregion
     {
       public:
         ///
         /// \brief memory region constructor.
         ///
-        inline MemRegion (xmi_context_t context)
+        inline Memregion (xmi_context_t context)
         {
           isSharedAddressReadSupported ();
           isSharedAddressWriteSupported ();
@@ -46,7 +42,7 @@ namespace XMI
         /// \brief Create a memory region.
         ///
         /// \attention All memory region derived classes \b must
-        ///            implement the createMemRegion_impl() method.
+        ///            implement the createMemregion_impl() method.
         ///
         /// \param[out] bytes_out Actual number of bytes pinned
         /// \param[in]  bytes_in  Requested number of bytes to be pinned
@@ -58,38 +54,34 @@ namespace XMI
         ///                      number of bytes pinned from the start of the
         ///                      buffer is returned in the \c bytes_out
         ///                      field. The memory region must be free'd with
-        ///                      with destroyMemRegion().
+        ///                      with destroyMemregion().
         ///
         /// \retval XMI_EAGAIN  The memory region was not pinned due to an
         ///                      unavailable resource. The memory region does
-        ///                      not need to be freed with destroyMemRegion().
+        ///                      not need to be freed with destroyMemregion().
         ///
         /// \retval XMI_INVAL   An invalid parameter value was specified.
         ///
         /// \retval XMI_ERROR   The memory region was not pinned and does not need to
-        ///                      be freed with destroyMemRegion().
+        ///                      be freed with destroyMemregion().
         ///
-        /// \see destroyMemRegion
-        /// \see XMI_MemRegion_create()
+        /// \see destroyMemregion
+        /// \see XMI_Memregion_create()
         ///
-        inline xmi_result_t createMemRegion (size_t   * bytes_out,
+        inline xmi_result_t createMemregion (size_t   * bytes_out,
                                              size_t     bytes_in,
                                              void     * base,
                                              uint64_t   options);
 
         ///
         /// \attention All memory region derived classes \b must
-        ///            implement the destroyMemRegion_impl() method.
+        ///            implement the destroyMemregion_impl() method.
         ///
-        /// \copydoc XMI::MemRegion::destroy()
-        ///
-        inline xmi_result_t destroyMemRegion ();
+        inline xmi_result_t destroyMemregion ();
 
         ///
         /// \attention All memory region derived classes \b must
         ///            implement the getInfo_impl() method.
-        ///
-        /// \copydoc XMI::MemRegion::query()
         ///
         inline xmi_result_t getInfo (size_t * bytes, void ** base);
 
@@ -121,40 +113,40 @@ namespace XMI
     };
 
     template <class T>
-    inline xmi_result_t MemRegion<T>::createMemRegion(size_t  * bytes_out,
+    inline xmi_result_t Memregion<T>::createMemregion(size_t  * bytes_out,
                                                       size_t    bytes_in,
                                                       void    * base,
                                                       uint64_t  options)
     {
-      return static_cast<T*>(this)->createMemRegion_impl(bytes_out, bytes_in, base, options);
+      return static_cast<T*>(this)->createMemregion_impl(bytes_out, bytes_in, base, options);
     }
 
     template <class T>
-    inline xmi_result_t MemRegion<T>::destroyMemRegion()
+    inline xmi_result_t Memregion<T>::destroyMemregion()
     {
-      return static_cast<T*>(this)->destroyMemRegion_impl();
+      return static_cast<T*>(this)->destroyMemregion_impl();
     }
 
     template <class T>
-    inline xmi_result_t MemRegion<T>::getInfo(size_t * bytes, void ** base)
+    inline xmi_result_t Memregion<T>::getInfo(size_t * bytes, void ** base)
     {
       return static_cast<T*>(this)->getInfo_impl(bytes, base);
     }
 
     template <class T>
-    inline void * MemRegion<T>::getBaseVirtualAddress()
+    inline void * Memregion<T>::getBaseVirtualAddress()
     {
       return static_cast<T*>(this)->getBaseVirtualAddress_impl();
     }
 
     template <class T>
-    inline bool MemRegion<T>::isSharedAddressReadSupported()
+    inline bool Memregion<T>::isSharedAddressReadSupported()
     {
       return T::shared_address_read_supported;
     };
 
     template <class T>
-    inline xmi_result_t MemRegion<T>::read(size_t   local_offset,
+    inline xmi_result_t Memregion<T>::read(size_t   local_offset,
                                            T      * remote_memregion,
                                            size_t   remote_offset,
                                            size_t   bytes)
@@ -166,13 +158,13 @@ namespace XMI
     };
 
     template <class T>
-    inline bool MemRegion<T>::isSharedAddressWriteSupported()
+    inline bool Memregion<T>::isSharedAddressWriteSupported()
     {
       return T::shared_address_write_supported;
     };
 
     template <class T>
-    inline xmi_result_t MemRegion<T>::write(size_t   local_offset,
+    inline xmi_result_t Memregion<T>::write(size_t   local_offset,
                                             T      * remote_memregion,
                                             size_t   remote_offset,
                                             size_t   bytes)

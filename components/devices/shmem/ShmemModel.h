@@ -17,6 +17,7 @@
 #include <errno.h>
 
 #include "Arch.h"
+#include "Memregion.h"
 
 #include "sys/xmi.h"
 
@@ -44,9 +45,9 @@ namespace XMI
     ///
     /// \see ShmemPacketDevice
     ///
-    template < class T_Device, class T_Message, class T_Memregion = XMI::MemRegion::Noop >
-    class ShmemModel : public Interface::MessageModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, sizeof(T_Message) > ,
-        public myInterface::DmaModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, T_Memregion, sizeof(T_Message) >
+    template < class T_Device, class T_Message>
+    class ShmemModel : public Interface::MessageModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > ,
+        public myInterface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) >
     {
       public:
         ///
@@ -55,8 +56,8 @@ namespace XMI
         /// \param[in] device  Shared memory device
         ///
         ShmemModel (T_Device & device, xmi_context_t context) :
-            Interface::MessageModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, sizeof(T_Message) > (device, context),
-            myInterface::DmaModel < ShmemModel<T_Device, T_Message, T_Memregion>, T_Device, T_Memregion, sizeof(T_Message) > (device, context),
+            Interface::MessageModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
+            myInterface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
             _device (device),
             _context (context)
         {};
@@ -267,13 +268,13 @@ namespace XMI
                                      xmi_event_function   local_fn,
                                      void               * cookie,
                                      size_t               target_rank,
-                                     T_Memregion        * local_memregion,
+                                     Memregion          * local_memregion,
                                      size_t               local_offset,
-                                     T_Memregion        * remote_memregion,
+                                     Memregion          * remote_memregion,
                                      size_t               remote_offset,
                                      size_t               bytes)
         {
-          if (! T_Memregion::shared_address_write_supported)
+          if (! Memregion::shared_address_write_supported)
             XMI_abort();
 
           size_t peer;
@@ -308,13 +309,13 @@ namespace XMI
                                      xmi_event_function   local_fn,
                                      void               * cookie,
                                      size_t               target_rank,
-                                     T_Memregion        * local_memregion,
+                                     Memregion          * local_memregion,
                                      size_t               local_offset,
-                                     T_Memregion        * remote_memregion,
+                                     Memregion          * remote_memregion,
                                      size_t               remote_offset,
                                      size_t               bytes)
         {
-          if (! T_Memregion::shared_address_read_supported)
+          if (! Memregion::shared_address_read_supported)
             XMI_abort();
 
           size_t peer;

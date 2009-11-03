@@ -22,12 +22,13 @@
 #include <spi/include/mu/Pt2PtDirectPutDescriptorXX.h>
 #include <spi/include/kernel/memory.h>
 
-#include "components/devices/DmaModel.h"
+//#include "components/devices/DmaModel.h"
+#include "components/devices/myDmaModel.h"
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "components/memregion/bgq/BgqMemregion.h"
+#include "Memregion.h"
 
 #ifdef TRACE
 #error TRACE already defined!
@@ -41,7 +42,7 @@ namespace XMI
   {
     namespace MU
     {
-      class MUDmaModel : public Interface::DmaModel<MUDmaModel, MUDevice, MemRegion::BgqMemregion, MUInjFifoMessage>
+      class MUDmaModel : public myInterface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)>
       {
         public:
 
@@ -51,21 +52,21 @@ namespace XMI
 
           inline bool init_impl (size_t origin_rank);
 
-          inline bool postDmaPut_impl (MUInjFifoMessage   * obj,
+          inline bool postDmaPut_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
                                        xmi_callback_t     & cb,
                                        size_t               target_rank,
-                                       MemRegion::BgqMemregion * local_memregion,
+                                       Memregion * local_memregion,
                                        size_t               local_offset,
-                                       MemRegion::BgqMemregion * remote_memregion,
+                                       Memregion * remote_memregion,
                                        size_t               remote_offset,
                                        size_t               bytes);
 
-          inline bool postDmaGet_impl (MUInjFifoMessage   * obj,
+          inline bool postDmaGet_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
                                        xmi_callback_t     & cb,
                                        size_t               target_rank,
-                                       MemRegion::BgqMemregion * local_memregion,
+                                       Memregion * local_memregion,
                                        size_t               local_offset,
-                                       MemRegion::BgqMemregion * remote_memregion,
+                                       Memregion * remote_memregion,
                                        size_t               remote_offset,
                                        size_t               bytes);
 
@@ -93,17 +94,12 @@ namespace XMI
           xmi_context_t                     _context;
       };
 
-      bool MUDmaModel::init_impl (size_t origin_rank)
-      {
-        return true;
-      };
-
-      bool MUDmaModel::postDmaPut_impl (MUInjFifoMessage     * obj,
+      bool MUDmaModel::postDmaPut_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
                                         xmi_callback_t       & cb,
                                         size_t                 target_rank,
-                                        MemRegion::BgqMemregion * local_memregion,
+                                        Memregion * local_memregion,
                                         size_t                 local_offset,
-                                        MemRegion::BgqMemregion * remote_memregion,
+                                        Memregion * remote_memregion,
                                         size_t                 remote_offset,
                                         size_t                 bytes)
       {
@@ -190,10 +186,11 @@ namespace XMI
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-                    new (obj) MUInjFifoMessage (cb.function, cb.clientdata, _context, sequenceNum);
+                    MUInjFifoMessage * msg = (MUInjFifoMessage *) obj;
+                    new (msg) MUInjFifoMessage (cb.function, cb.clientdata, _context, sequenceNum);
 
                     // Queue it.
-                    _device.addToDoneQ (target_rank, obj->getWrapper());
+                    _device.addToDoneQ (target_rank, msg->getWrapper());
                   }
               }
           }
@@ -205,12 +202,12 @@ namespace XMI
         return true;
       };
 
-      bool MUDmaModel::postDmaGet_impl (MUInjFifoMessage     * obj,
+      bool MUDmaModel::postDmaGet_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
                                         xmi_callback_t       & cb,
                                         size_t                 target_rank,
-                                        MemRegion::BgqMemregion * local_memregion,
+                                        Memregion * local_memregion,
                                         size_t                 local_offset,
-                                        MemRegion::BgqMemregion * remote_memregion,
+                                        Memregion * remote_memregion,
                                         size_t                 remote_offset,
                                         size_t                 bytes)
       {

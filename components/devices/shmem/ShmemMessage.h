@@ -14,6 +14,8 @@
 
 #include <sys/uio.h>
 
+#include "Memregion.h"
+
 #include "sys/xmi.h"
 
 #include "util/common.h"
@@ -135,13 +137,13 @@ namespace XMI
         };
 
         inline ShmemMessage (xmi_event_function   fn,
-                                 void               * cookie,
-                                 void               * local_memregion,
-                                 size_t               local_offset,
-                                 void               * remote_memregion,
-                                 size_t               remote_offset,
-                                 size_t               bytes,
-                                 bool                 is_put) :
+                             void               * cookie,
+                             Memregion          * local_memregion,
+                             size_t               local_offset,
+                             Memregion          * remote_memregion,
+                             size_t               remote_offset,
+                             size_t               bytes,
+                             bool                 is_put) :
             QueueElem (),
             _fn (fn),
             _cookie (cookie),
@@ -211,11 +213,11 @@ namespace XMI
           return (_pkt_type == RMA);
         }
 
-        inline bool getRMA (void   ** local_memregion,
-                            size_t  & local_offset,
-                            void   ** remote_memregion,
-                            size_t  & remote_offset,
-                            size_t  & bytes)
+        inline bool getRMA (Memregion ** local_memregion,
+                            size_t     & local_offset,
+                            Memregion ** remote_memregion,
+                            size_t     & remote_offset,
+                            size_t     & bytes)
         {
           *local_memregion  = _rma_local_memregion;
           *remote_memregion = _rma_remote_memregion;
@@ -245,8 +247,8 @@ namespace XMI
 
         shmem_pkt_t		_pkt_type;
 
-        void * _rma_local_memregion;
-        void * _rma_remote_memregion;
+        Memregion * _rma_local_memregion;
+        Memregion * _rma_remote_memregion;
         size_t _rma_local_offset;
         size_t _rma_remote_offset;
         size_t _rma_bytes;

@@ -22,6 +22,9 @@
 #define __xmi_protocol_get_cdi_factory_h__
 
 #include <string.h>
+
+#include "Memregion.h"
+
 //#include "get/Get.h"
 //#include "devices/prod/cdi/DmaModel.h"
 //#include "devices/prod/cdi/DmaDevice.h"
@@ -38,17 +41,13 @@ namespace XMI
       ///
       /// \brief Get protocol factory for CDI dma devices.
       ///
-      /// \param T_DmaModel   Template CDI dma model class
-      /// \param T_DmaDevice  Template CDI dma device class
-      /// \param T_DmaMessage   Template CDI dma message class
-      /// \param T_DmaMemregion Template CDI dma memregion class
+      /// \param T_Model   Template CDI dma model class
+      /// \param T_Device  Template CDI dma device class
       ///
       /// \see XMI::CDI::DMA::DmaModel
       /// \see XMI::CDI::DMA::DmaDevice
-      /// \see XMI::CDI::DMA::DmaMessage
-      /// \see XMI::CDI::DMA::DmaMemregion
       ///
-      template <class T_Model, class T_Device, class T_Memregion>
+      template <class T_Model, class T_Device>
       class Get
       {
 
@@ -60,7 +59,7 @@ namespace XMI
             msg_t                   msg;
             xmi_event_function      local_fn;
             void                  * cookie;    ///< Application callback cookie
-            Get < T_Model, T_Device, T_Memregion > * get;    ///< get protocol object
+            Get < T_Model, T_Device > * get;    ///< get protocol object
           } get_state_t;
 
 
@@ -75,10 +74,7 @@ namespace XMI
               _context (context),
               _contextid (contextid)
           {
-//              if (_get_model.init (origin_task))
             status = XMI_SUCCESS;
-            //          else
-            //          status = XMI_ERROR;
           }
 
           ///
@@ -90,8 +86,8 @@ namespace XMI
                                         void               * cookie,
                                         size_t             target_rank,
                                         size_t             bytes,
-                                        T_Memregion* 		src_memregion,
-                                        T_Memregion* 		dst_memregion,
+                                        Memregion* 		src_memregion,
+                                        Memregion* 		dst_memregion,
                                         size_t             src_offset,
                                         size_t             dst_offset)
           {
@@ -107,9 +103,9 @@ namespace XMI
                                    get_complete,
                                    (void*)state,
                                    target_rank,
-                                   (T_Memregion *) dst_memregion,
+                                   dst_memregion,
                                    dst_offset,
-                                   (T_Memregion *) src_memregion,
+                                   src_memregion,
                                    src_offset,
                                    bytes);
 
@@ -148,8 +144,8 @@ namespace XMI
           {
             get_state_t * state = (get_state_t *) cookie;
 
-            Get<T_Model, T_Device, T_Memregion> *get  =
-              (Get<T_Model, T_Device, T_Memregion> *) state->get;
+            Get<T_Model, T_Device> *get  =
+              (Get<T_Model, T_Device> *) state->get;
 
             if (state->local_fn != NULL)
               {
