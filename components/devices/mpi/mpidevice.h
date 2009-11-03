@@ -169,11 +169,15 @@ namespace XMI
           {
             events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl() p2p\n",(int)this)); dbg = 1;
-            if((*it_p2p)->_done_fn )
-              (*it_p2p)->_done_fn((*it_p2p)->_context,(*it_p2p)->_cookie, XMI_SUCCESS);
+            xmi_event_function  done_fn = (*it_p2p)->_done_fn;
+            void               *cookie  = (*it_p2p)->_cookie;
+            xmi_context_t       context = (*it_p2p)->_context;
             _sendQ.remove((*it_p2p));
             if((*it_p2p)->_freeme)
               free(*it_p2p);
+
+            if(done_fn)
+              done_fn(context,cookie,XMI_SUCCESS);
             break;
           }
         }
