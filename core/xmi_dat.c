@@ -16,7 +16,7 @@
 
 #include "sys/xmi.h"
 #include "math/math_coremath.h"
-#include <stdarg.h>
+
 
 /**
  * \brief Translates a XMI_Dt into its size

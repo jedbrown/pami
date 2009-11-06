@@ -13,6 +13,7 @@
 
 #include "sys/xmi.h"
 #include "util/compact_attributes.h"
+#include <stdarg.h>
 
 void xmi_metadata_multiset(xmi_ca_t *ca_list, ...)
 {

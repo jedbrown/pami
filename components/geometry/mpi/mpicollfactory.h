@@ -179,7 +179,10 @@ namespace XMI
        
        if(rq == NULL)
          return XMI_UNIMPL;
-
+       
+       if (algorithm >= rq->size())
+         return XMI_ERROR;
+       
        mdata->geometry = (*rq)[algorithm]->_metadata.geometry;
        mdata->buffer = (*rq)[algorithm]->_metadata.buffer;
        mdata->misc = (*rq)[algorithm]->_metadata.misc;
