@@ -112,9 +112,7 @@ namespace XMI
             // This protocol only works with reliable networks.
             COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
 
-            // This protcol only works with deterministic models.
-            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
-
+           
             // ----------------------------------------------------------------
             // Compile-time assertions
             // ----------------------------------------------------------------

@@ -185,8 +185,7 @@ namespace XMI
             // This protocol only works with reliable networks.
             COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
 
-            // This protcol only works with deterministic models.
-            COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
+            
 
             // Assert that the size of the packet metadata area is large
             // enough to transfer a single xmi_task_t. This is used in the
@@ -244,19 +243,21 @@ namespace XMI
 						 TRACE_ERR((stderr, "AdaptiveSimple() [3] status = %d\n", status));					  
 					
 					if (status == XMI_SUCCESS)
-                    {
-                         status = _cts_model.init (dispatch,
-                                              dispatch_cts_direct, this,
-                                              dispatch_cts_read, this);
-						 TRACE_ERR((stderr, "AdaptiveSimple() [4] status = %d\n", status));					  
-						 
-						 if (status == XMI_SUCCESS)
                            {
                                 status = _data_model.init (dispatch,
                                            dispatch_data_direct, this,
                                            dispatch_data_read, this);
-                                TRACE_ERR((stderr, "AdaptiveSimple() [5] status = %d\n", status));
-                           }					  
+                                TRACE_ERR((stderr, "AdaptiveSimple() [4] status = %d\n", status));
+					
+					
+					    if (status == XMI_SUCCESS)
+                            {
+                             status = _cts_model.init (dispatch,
+                                              dispatch_cts_direct, this,
+                                              dispatch_cts_read, this);
+						      TRACE_ERR((stderr, "AdaptiveSimple() [5] status = %d\n", status));					  
+						 
+						    }					  
                  
                     }						  
                  
@@ -277,8 +278,8 @@ namespace XMI
                                parameters->simple.remote_fn,
                                parameters->send.cookie,
                                parameters->send.task,
-                               parameters->immediate.addr,
-                               parameters->immediate.bytes,
+                               parameters->simple.addr,
+                               parameters->simple.bytes,
                                parameters->send.header.addr,
                                parameters->send.header.bytes);
           }
@@ -628,9 +629,9 @@ namespace XMI
           MemoryAllocator < sizeof(recv_state_t), 16 > _recv_allocator;
 
           T_Model         _rts_model;
-          T_Model         _data_model;
-		  T_Model         _rts_data_model;
 		  T_Model         _rts_ack_model;
+          T_Model         _rts_data_model;
+		  T_Model         _data_model;
           T_Model         _cts_model;
           T_Device      & _device;
           xmi_task_t      _fromRank;
@@ -660,7 +661,7 @@ namespace XMI
 		   
 			void * msginfo;             
 			rts_info_t * send;          
-			int total_payload =0;
+			size_t total_payload =0;
 			  
 			AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
