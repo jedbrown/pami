@@ -88,6 +88,7 @@ namespace XMI
     public:
       CollInfo(T_Device *dev) {}
       collinfo_type_t _colltype;
+      xmi_metadata_t _metadata;
     };
 
     template <class T_Device>

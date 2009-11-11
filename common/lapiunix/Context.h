@@ -421,22 +421,25 @@ namespace XMI
 
       inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
                                                         xmi_geometry_t geometry,
-                                                        xmi_xfer_type_t ctype,
+                                                        xmi_xfer_type_t colltype,
                                                         int *lists_lengths)
         {
-          return XMI_UNIMPL;
+          LAPIGeometry *new_geometry = (LAPIGeometry*) geometry;
+          LAPICollfactory  *collfactory =  (LAPICollfactory*)
+            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
+          return collfactory->algorithms_num(colltype, lists_lengths);
         }
 
-      inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
-                                                        xmi_geometry_t geometry,
-                                                        xmi_xfer_type_t type,
-                                                        xmi_algorithm_t algorithm,
-                                                        int algorithm_type,
-                                                        xmi_metadata_t *mdata)
+        inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
+                                                          xmi_geometry_t geometry,
+                                                          xmi_xfer_type_t colltype,
+                                                          xmi_algorithm_t algorithm,
+                                                          int algorithm_type,
+                                                          xmi_metadata_t *mdata)
         {
-          MPIGeometry *new_geometry = (MPIGeometry*) geometry;
-          MPICollfactory  *collfactory;
-          collfactory = (MPICollfactory*)
+          LAPIGeometry *new_geometry = (LAPIGeometry*) geometry;
+          LAPICollfactory  *collfactory;
+          collfactory = (LAPICollfactory*)
             new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
           return collfactory->algorithm_info(colltype, algorithm,
                                              algorithm_type, mdata);
