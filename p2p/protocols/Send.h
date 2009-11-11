@@ -50,12 +50,13 @@ namespace XMI
           /// \param[in]  msginfo   Opaque application header information.
           /// \param[in]  mbytes    Number of opaque application header bytes.
           ///
+#if 0
           virtual xmi_result_t immediate (xmi_task_t           task,
                                           void               * src,
                                           size_t               bytes,
                                           void               * msginfo,
                                           size_t               mbytes) = 0;
-
+#endif
           virtual xmi_result_t immediate (xmi_send_immediate_t * parameters) = 0;
 
           ///
@@ -72,6 +73,7 @@ namespace XMI
           /// \param[in]  msginfo   Opaque application header information.
           /// \param[in]  mbytes    Number of msginfo bytes.
           ///
+#if 0
           virtual xmi_result_t simple (xmi_event_function   local_fn,
                                        xmi_event_function   remote_fn,
                                        void               * cookie,
@@ -80,8 +82,8 @@ namespace XMI
                                        size_t               bytes,
                                        void               * msginfo,
                                        size_t               mbytes) = 0;
-
-          virtual xmi_result_t simple (xmi_send_simple_t * parameters) = 0;
+#endif
+          virtual xmi_result_t simple (xmi_send_t * parameters) = 0;
 
       }; // XMI::Protocol::Send class
     }; // XMI::Protocol::Send class

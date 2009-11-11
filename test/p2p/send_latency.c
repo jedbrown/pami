@@ -95,7 +95,7 @@ static void test_dispatch (
   _recv_iteration++;
 }
 
-void send_once (xmi_context_t context, xmi_send_simple_t * parameters)
+void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
   xmi_result_t result = XMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
@@ -124,15 +124,15 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
   header_t header;
   header.sndlen = sndlen;
 
-  xmi_send_simple_t parameters;
-  parameters.send.dispatch = dispatch;
-  parameters.send.cookie   = (void *) &_send_active;
-  parameters.send.header.addr = &header;
-  parameters.send.header.bytes = sizeof(header_t);
-  parameters.simple.addr  = buffer;
-  parameters.simple.bytes = sndlen;
-  parameters.simple.local_fn  = decrement;
-  parameters.simple.remote_fn = NULL;
+  xmi_send_t parameters;
+  parameters.send.dispatch        = dispatch;
+  parameters.send.header.iov_base = &header;
+  parameters.send.header.iov_len  = sizeof(header_t);
+  parameters.send.data.iov_base   = buffer;
+  parameters.send.data.iov_len    = sndlen;
+  parameters.events.cookie        = (void *) &_send_active;
+  parameters.events.local_fn      = decrement;
+  parameters.events.remote_fn     = NULL;
 
   barrier ();
 

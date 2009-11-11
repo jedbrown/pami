@@ -128,15 +128,15 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  xmi_send_simple_t parameters;
-  parameters.send.dispatch = dispatch;
-  parameters.send.cookie   = (void *) &send_active;
-  parameters.send.header.addr = NULL;
-  parameters.send.header.bytes = 0;
-  parameters.simple.addr  = NULL;
-  parameters.simple.bytes = 0;
-  parameters.simple.local_fn  = send_done_local;
-  parameters.simple.remote_fn = send_done_remote;
+  xmi_send_t parameters;
+  parameters.send.dispatch        = dispatch;
+  parameters.send.header.iov_base = NULL;
+  parameters.send.header.iov_len  = 0;
+  parameters.send.data.iov_base   = NULL;
+  parameters.send.data.iov_len    = 0;
+  parameters.events.cookie        = (void *) &send_active;
+  parameters.events.local_fn      = send_done_local;
+  parameters.events.remote_fn     = send_done_remote;
 
   if (task_id == 0)
   {

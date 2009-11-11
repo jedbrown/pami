@@ -149,15 +149,15 @@ int main (int argc, char ** argv)
 
   uint8_t header[10240];
 
-  xmi_send_simple_t parameters;
-  parameters.send.dispatch = 0;
-  parameters.send.cookie   = (void *) &send_active;
-  parameters.send.header.addr = (void *) header;
-  parameters.send.header.bytes = 10240;
-  parameters.simple.addr  = NULL;
-  parameters.simple.bytes = 0;
-  parameters.simple.local_fn  = send_done_local;
-  parameters.simple.remote_fn = send_done_remote;
+  xmi_send_t parameters;
+  parameters.send.dispatch        = 0;
+  parameters.send.header.iov_base = (void *) header;
+  parameters.send.header.iov_len  = 10240;
+  parameters.send.data.iov_base   = NULL;
+  parameters.send.data.iov_len    = 0;
+  parameters.events.cookie        = (void *) &send_active;
+  parameters.events.local_fn      = send_done_local;
+  parameters.events.remote_fn     = send_done_remote;
 
   if (task_id == 0)
   {

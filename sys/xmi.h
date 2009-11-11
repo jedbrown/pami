@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <sys/uio.h>
+
 #include "xmi_config.h"
 
 #ifdef __cplusplus
@@ -239,65 +241,45 @@ extern "C"
     size_t            dispatch; /**< Dispatch identifier */
     xmi_send_hint_t   hints;    /**< Hints for sending the message */
     xmi_task_t        task;     /**< Destination task */
-    void            * cookie;   /**< Argument to \b all event callbacks */
-    struct
+    union
     {
-      size_t          bytes;    /**< Header buffer size in bytes */
-      void          * addr;     /**< Header buffer address */
-    } header;                        /**< Send message metadata header */
-  } xmi_send_t;
+      struct iovec    iov[2];   /**< Raw transfer iovecs */
+      struct
+      {
+        struct iovec  header;   /**< Header buffer address and size in bytes */
+        struct iovec  data;     /**< Data buffer address and size in bytes */
+      };
+    };
+  } xmi_send_immediate_t;
 
-  /**
-   * \brief Active message kind identifier
-   */
-  typedef enum {
-    XMI_AM_KIND_SIMPLE = 0, /**< Simple contiguous data transfer */
-    XMI_AM_KIND_TYPED       /**< Typed, non-contiguous, data transfer */
-  } xmi_am_kind_t;
+  typedef struct
+  {
+    void               * cookie;   /**< Argument to \b all event callbacks */
+    xmi_event_function   local_fn; /**< Local message completion event */
+    xmi_event_function   remote_fn;/**< Remote message completion event */
+  } xmi_send_event_t;
 
   /**
    * \brief Structure for send parameters unique to a simple active message send
    */
   typedef struct
   {
-    xmi_send_t             send;     /**< Common send parameters */
-    struct
-    {
-      size_t               bytes;    /**< Number of bytes of data */
-      void               * addr;     /**< Address of the buffer */
-      xmi_event_function   local_fn; /**< Local message completion event */
-      xmi_event_function   remote_fn;/**< Remote message completion event ------ why is this needed ? */
-    } simple;                        /**< Simple send parameters */
-  } xmi_send_simple_t;
-
-  /**
-   * \brief Structure for send parameters unique to an immediate active message send
-   */
-  typedef struct
-  {
-    xmi_send_t               send;     /**< Common send parameters */
-    struct
-    {
-      size_t                 bytes;    /**< Number of bytes of data */
-      void                 * addr;     /**< Address of the buffer */
-    } immediate;                       /**< Immediate send parameters */
-  } xmi_send_immediate_t;
+    xmi_send_immediate_t send;     /**< Common send parameters */
+    xmi_send_event_t     events;   /**< Non-blocking event parameters */
+  } xmi_send_t;
 
   /**
    * \brief Structure for send parameters unique to a typed active message send
    */
   typedef struct
   {
-    xmi_send_t             send;     /**< Common send parameters */
+    xmi_send_immediate_t send;     /**< Common send parameters */
+    xmi_send_event_t     events;   /**< Non-blocking event parameters */
     struct
     {
-      size_t               bytes;    /**< Number of bytes of data */
-      void               * addr;     /**< Starting address of the buffer */
-      size_t               offset;   /**< Starting offset */
-      xmi_type_t           type;     /**< Datatype */
-      xmi_event_function   local_fn; /**< Local message completion event */
-      xmi_event_function   remote_fn;/**< Remote message completion event ------ why is this needed ? */
-    } typed;                         /**< Typed send parameters */
+      size_t             offset;   /**< Starting offset from \code send.data.iov_base */
+      xmi_type_t         datatype; /**< Datatype */
+    } typed;                       /**< Typed send parameters */
   } xmi_send_typed_t;
 
   /**
@@ -307,7 +289,7 @@ extern "C"
    * \param[in] parameters Send simple parameter structure
    */
   xmi_result_t XMI_Send (xmi_context_t       context,
-                         xmi_send_simple_t * parameters);
+                         xmi_send_t * parameters);
 
   /**
    * \brief Immediate active message send for small contiguous data
@@ -340,10 +322,10 @@ extern "C"
    * \todo Define configuration attribute for the size limit
    *
    * \param[in] context    XMI communication context
-   * \param[in] parameters Send immediate parameter structure
+   * \param[in] parameters Send parameter structure
    */
-  xmi_result_t XMI_Send_immediate (xmi_context_t          context,
-                                   xmi_send_immediate_t * parameters);
+  xmi_result_t XMI_Send_immediate (xmi_context_t   context,
+                                   xmi_send_immediate_t    * parameters);
 
   /**
    * \brief Non-blocking active message send for non-contiguous typed data
@@ -371,6 +353,14 @@ extern "C"
                                       *   receives the dispatch notification. */
     uint32_t reserved          : 31; /**< Reserved. Do not use. */
   } xmi_recv_hint_t;
+
+  /**
+   * \brief Active message kind identifier
+   */
+  typedef enum {
+    XMI_AM_KIND_SIMPLE = 0, /**< Simple contiguous data transfer */
+    XMI_AM_KIND_TYPED       /**< Typed, non-contiguous, data transfer */
+  } xmi_am_kind_t;
 
   /**
    * \brief Receive message structure

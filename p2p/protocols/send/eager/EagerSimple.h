@@ -187,58 +187,31 @@ namespace XMI
               }
           }
 
-          ///
-          /// \brief Start a new simple send eager operation.
-          ///
-          /// \see XMI::Protocol::Send:simple
-          ///
-          inline xmi_result_t simple_impl (xmi_event_function   local_fn,
-                                           xmi_event_function   remote_fn,
-                                           void               * cookie,
-                                           xmi_task_t           peer,
-                                           void               * src,
-                                           size_t               bytes,
-                                           void               * msginfo,
-                                           size_t               mbytes)
-          {
-            xmi_send_simple_t parameters;
-            parameters.simple.local_fn   = local_fn;
-            parameters.simple.remote_fn  = remote_fn;
-            parameters.send.cookie       = cookie;
-            parameters.send.task         = peer;
-            parameters.simple.addr       = src;
-            parameters.simple.bytes      = bytes;
-            parameters.send.header.addr  = msginfo;
-            parameters.send.header.bytes = mbytes;
-
-            return simple_impl (&parameters);
-          }
-
-          inline xmi_result_t simple_impl (xmi_send_simple_t * parameters)
+          inline xmi_result_t simple_impl (xmi_send_t * parameters)
           {
             TRACE_ERR((stderr, "EagerSimple::simple_impl() >> sizeof(short_metadata_t) = %zd, T_Model::packet_model_metadata_bytes = %zd\n", sizeof(short_metadata_t), T_Model::packet_model_metadata_bytes));
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
 
-            state->cookie   = parameters->send.cookie;
-            state->local_fn = parameters->simple.local_fn;
+            state->cookie   = parameters->events.cookie;
+            state->local_fn = parameters->events.local_fn;
             state->eager    = this;
 
             // Specify the protocol metadata to send with the application
             // metadata in the envelope packet.
             state->metadata.fromRank  = _fromRank;
-            state->metadata.bytes     = parameters->simple.bytes;
-            state->metadata.metabytes = parameters->send.header.bytes;
+            state->metadata.bytes     = parameters->send.data.iov_len;
+            state->metadata.metabytes = parameters->send.header.iov_len;
 
             // Set the acknowledgement information to the virtual address of
             // send state object on the origin task if a local callback of the
             // remote receive completion event is requested. If this is set to
             // NULL no acknowledgement will be received by the origin task.
-            if (parameters->simple.remote_fn != NULL)
+            if (parameters->events.remote_fn != NULL)
               {
                 state->metadata.ackinfo = state;
-                state->remote_fn = parameters->simple.remote_fn;
+                state->remote_fn = parameters->events.remote_fn;
               }
             else
               {
@@ -246,7 +219,7 @@ namespace XMI
                 state->remote_fn = NULL;
               }
 
-            if (unlikely(parameters->simple.bytes == 0))
+            if (unlikely(parameters->send.data.iov_len == 0))
               {
                 // In the unlikely event that this eager (i.e., multi-packet)
                 // protocol is being used to send zero bytes of application
@@ -261,7 +234,7 @@ namespace XMI
                     TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
 
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
                     {
                       // "'long header' support is disabled.\n"
                       return XMI_INVAL;
@@ -274,19 +247,21 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
                         // "long header" with zero bytes of application data ? Weird.
+                        struct iovec v[1];
+                        v[0].iov_base = NULL;
+                        v[0].iov_len  = 0;
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    (void *) NULL,
-                                                    0);
+                                                    v);
 
                         _longheader_model.postMessage (state->msg[0],
                                                        send_complete,
@@ -294,8 +269,8 @@ namespace XMI
                                                        parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       parameters->send.header.addr,
-                                                       parameters->send.header.bytes);
+                                                       parameters->send.header.iov_base,
+                                                       parameters->send.header.iov_len);
                       }
                     else
                       {
@@ -308,8 +283,7 @@ namespace XMI
                                                     parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    parameters->send.header.addr,
-                                                    parameters->send.header.bytes);
+                                                    (struct iovec (&)[1]) parameters->send.header);
                       }
                   }
                 else
@@ -318,7 +292,7 @@ namespace XMI
                     //XMI_assertf((parameters->send.header.bytes + sizeof(short_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(short_metadata_t), parameters->send.header.bytes, T_Model::packet_model_payload_bytes);
 
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                     {
                       // "'long header' support is disabled.\n"
                       TRACE_ERR((stderr, "EagerSimple::simple_impl() .. error .. 'long header' support is disabled.\n"));
@@ -332,19 +306,20 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload\n"));
 
                         // "long header" with zero bytes of application data ? Weird.
+                        struct iovec v[1];
+                        v[0].iov_base = (void *) &(state->metadata);
+                        v[0].iov_len  = sizeof (short_metadata_t);
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
-                                                    NULL,
-                                                    0,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (short_metadata_t));
+                                                    NULL, 0,
+                                                    v);
 
                         _longheader_model.postMessage (state->msg[0],
                                                        send_complete,
@@ -352,24 +327,25 @@ namespace XMI
                                                        parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       parameters->send.header.addr,
-                                                       parameters->send.header.bytes);
+                                                       parameters->send.header.iov_base,
+                                                       parameters->send.header.iov_len);
                       }
                     else
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does fit in a single packet payload\n"));
 
                         // Single packet header with zero bytes of application data.
+                        struct iovec v[2];
+                        v[0].iov_base = (void *) &(state->metadata);
+                        v[0].iov_len  = sizeof (short_metadata_t);
+                        v[1].iov_base = parameters->send.header.iov_base;
+                        v[1].iov_len  = parameters->send.header.iov_len;
                         _envelope_model.postPacket (state->pkt,
                                                     send_complete,
                                                     (void *) state,
                                                     parameters->send.task,
-                                                    NULL,
-                                                    0,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (short_metadata_t),
-                                                    parameters->send.header.addr,
-                                                    parameters->send.header.bytes);
+                                                    NULL, 0,
+                                                    v);
                       }
                   }
               }
@@ -381,7 +357,7 @@ namespace XMI
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
                   {
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
                     {
                       // "'long header' support is disabled.\n"
                       return XMI_INVAL;
@@ -394,18 +370,20 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > T_Model::packet_model_payload_bytes))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
                       {
                         // Application metadata does not fit in a single packet.
                         // Send a "long header" message.
+                        struct iovec v[1];
+                        v[0].iov_base = NULL;
+                        v[0].iov_len  = 0;
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    (void *)NULL,
-                                                    0);
+                                                    v);
 
                         _longheader_model.postMessage (state->msg[0],
                                                        NULL,
@@ -413,8 +391,8 @@ namespace XMI
                                                        parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       parameters->send.header.addr,
-                                                       parameters->send.header.bytes);
+                                                       parameters->send.header.iov_base,
+                                                       parameters->send.header.iov_len);
                       }
                     else
                       {
@@ -424,14 +402,13 @@ namespace XMI
                                                     parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    parameters->send.header.addr,
-                                                    parameters->send.header.bytes);
+                                                    (struct iovec (&)[1]) parameters->send.header);
                       }
                   }
                 else
                   {
 #ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                     {
                       // "'long header' support is disabled.\n"
                       return XMI_INVAL;
@@ -444,18 +421,20 @@ namespace XMI
                     //
                     // When long header support is enabled the compiler should
                     // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.bytes > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
+                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(short_metadata_t))))
                       {
                         // Protocol metadata + application metadata does not fit in
                         // a single packet. Send a "long header" message.
+                        struct iovec v[1];
+                        v[0].iov_base = NULL;
+                        v[0].iov_len  = 0;
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
                                                     (void *) &(state->metadata),
                                                     sizeof (short_metadata_t),
-                                                    (void *)NULL,
-                                                    0);
+                                                    v);
 
                         _longheader_model.postMessage (state->msg[0],
                                                        NULL,
@@ -463,21 +442,23 @@ namespace XMI
                                                        parameters->send.task,
                                                        (void *) &(state->metadata.fromRank),
                                                        sizeof (xmi_task_t),
-                                                       parameters->send.header.addr,
-                                                       parameters->send.header.bytes);
+                                                       parameters->send.header.iov_base,
+                                                       parameters->send.header.iov_len);
                       }
                     else
                       {
+                        struct iovec v[2];
+                        v[0].iov_base = (void *) &(state->metadata);
+                        v[0].iov_len  = sizeof (short_metadata_t);
+                        v[1].iov_base = parameters->send.header.iov_base;
+                        v[1].iov_len  = parameters->send.header.iov_len;
+
                         _envelope_model.postPacket (state->pkt,
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
-                                                    NULL,
-                                                    0,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (short_metadata_t),
-                                                    parameters->send.header.addr,
-                                                    parameters->send.header.bytes);
+                                                    NULL, 0,
+                                                    v);
                       }
                   }
 
@@ -488,8 +469,8 @@ namespace XMI
                                          parameters->send.task,
                                          (void *) &(state->metadata.fromRank),
                                          sizeof (xmi_task_t),
-                                         parameters->simple.addr,
-                                         parameters->simple.bytes);
+                                         parameters->send.data.iov_base,
+                                         parameters->send.data.iov_len);
               }
 
             TRACE_ERR((stderr, "EagerSimple::simple_impl() <<\n"));
@@ -602,14 +583,15 @@ namespace XMI
 
                 if (unlikely(state->metadata.ackinfo != NULL))
                   {
+                    struct iovec v[1];
+                    v[0].iov_base = (void *) &(state->metadata.ackinfo);
+                    v[0].iov_len  = sizeof (send_state_t *);
                     _ack_model.postPacket (state->pkt,
                                            receive_complete,
                                            (void *) state,
                                            metadata->fromRank,
-                                           (void *) NULL,
-                                           0,
-                                           (void *) &(state->metadata.ackinfo),
-                                           sizeof (send_state_t *));
+                                           NULL, 0,
+                                           v);
                   }
                 else
                   {
@@ -920,14 +902,16 @@ namespace XMI
 
                 if (state->metadata.ackinfo != NULL)
                   {
+                    struct iovec v[1];
+                    v[0].iov_base = (void *) &(state->metadata.ackinfo);
+                    v[0].iov_len  = sizeof (send_state_t *);
                     eager->_ack_model.postPacket (state->pkt,
                                                   receive_complete,
                                                   (void *) state,
                                                   fromRank,
                                                   (void *) NULL,
                                                   0,
-                                                  (void *) &(state->metadata.ackinfo),
-                                                  sizeof (send_state_t *));
+                                                  v);
                   }
                 else
                   {

@@ -116,14 +116,14 @@ static void SendLongHandoff(xmi_context_t   context,
 {
   int quad[] = {0x111, 0x222, 0x333, 0x444};
 
-  xmi_send_simple_t parameters = { {0}, {0} };
-  parameters.send.dispatch     = LONG_DISPATCH;
-  parameters.send.header.addr  = quad;
-  parameters.send.header.bytes = sizeof(quad);
-  parameters.send.cookie       = lbuf;
-  parameters.simple.addr       = lbuf;
-  parameters.simple.bytes      = LSIZE;
-  parameters.simple.local_fn   = SendLongDoneCB;
+  xmi_send_t parameters = { {0}, {0} };
+  parameters.send.dispatch        = LONG_DISPATCH;
+  parameters.send.header.iov_base = quad;
+  parameters.send.header.iov_len  = sizeof(quad);
+  parameters.send.data.iov_base   = lbuf;
+  parameters.send.data.iov_len    = LSIZE;
+  parameters.events.cookie        = lbuf;
+  parameters.events.local_fn      = SendLongDoneCB;
 
   XMI_Send(context, &parameters);
 }
@@ -137,17 +137,17 @@ static void *SendLong(void *clientdata)
 }
 
 static void SendShortHandoff(xmi_context_t   context,
-                      void          * cookie,
-                      xmi_result_t    result)
+                             void          * cookie,
+                             xmi_result_t    result)
 {
   int quad[] = {0x111, 0x222, 0x333, 0x444};
 
-  xmi_send_immediate_t parameters = { {0}, {0} };
-  parameters.send.dispatch     = SHORT_DISPATCH;
-  parameters.send.header.addr  = quad;
-  parameters.send.header.bytes = sizeof(quad);
-  parameters.immediate.addr    = sbuf;
-  parameters.immediate.bytes   = SSIZE;
+  xmi_send_immediate_t parameters;// = { {0}, {0} };
+  parameters.dispatch        = SHORT_DISPATCH;
+  parameters.header.iov_base = quad;
+  parameters.header.iov_len  = sizeof(quad);
+  parameters.data.iov_base   = sbuf;
+  parameters.data.iov_len    = SSIZE;
 
   XMI_Send_immediate(context, &parameters);
   printf("Rank=%zu Channel=%p <Sent short msg>   data=%x\n", rank, context, sbuf[0]);

@@ -126,27 +126,6 @@ namespace XMI
             TRACE_ERR((stderr, "EagerImmediate() [1] status = %d\n", status));
           }
 
-          ///
-          /// \brief Start a new simple send eager operation.
-          ///
-          /// \see XMI::Protocol::Send::immediate
-          ///
-          inline xmi_result_t immediate_impl (xmi_task_t   peer,
-                                              void       * src,
-                                              size_t       bytes,
-                                              void       * msginfo,
-                                              size_t       mbytes)
-          {
-            xmi_send_immediate_t parameters;
-            parameters.send.task         = peer;
-            parameters.immediate.addr    = src;
-            parameters.immediate.bytes   = bytes;
-            parameters.send.header.addr  = msginfo;
-            parameters.send.header.bytes = mbytes;
-
-            return immediate_impl (&parameters);
-          };
-
           inline xmi_result_t immediate_impl (xmi_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
@@ -157,39 +136,39 @@ namespace XMI
             // on the stack.
             protocol_metadata_t metadata;
             metadata.fromRank  = _fromRank;
-            metadata.databytes = parameters->immediate.bytes;
-            metadata.metabytes = parameters->send.header.bytes;
+            metadata.databytes = parameters->data.iov_len;
+            metadata.metabytes = parameters->header.iov_len;
 
-            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->immediate.bytes = %zd\n", parameters->immediate.bytes));
+
             bool posted =
-              _send_model.postPacketImmediate (parameters->send.task,
+              _send_model.postPacketImmediate (parameters->task,
                                                (void *) &metadata,
                                                sizeof (protocol_metadata_t),
-                                               parameters->send.header.addr,
-                                               parameters->send.header.bytes,
-                                               parameters->immediate.addr,
-                                               parameters->immediate.bytes);
-
-            if (!posted)
+                                               parameters->iov);
+#if 1
+            if (unlikely(!posted))
             {
               // For some reason the packet could not be immediately posted.
               // Allocate memory, pack the user data and metadata, and attempt
               // a regular (non-blocking) post.
               send_t * send = (send_t *) _allocator.allocateObject ();
               send->pf = this;
-              memcpy (&(send->data[0]), parameters->send.header.addr, metadata.metabytes);
-              memcpy (&(send->data[metadata.metabytes]), parameters->immediate.addr, metadata.databytes);
+              memcpy (&(send->data[0]), parameters->header.iov_base, metadata.metabytes);
+              memcpy (&(send->data[metadata.metabytes]), parameters->data.iov_base, metadata.databytes);
 
+              struct iovec iov[1];
+              iov[0].iov_base = (void *) &(send->data[0]);
+              iov[0].iov_len  = metadata.databytes+metadata.metabytes;
               _send_model.postPacket (send->pkt,
                                       send_complete,
                                       send,
-                                      parameters->send.task,
+                                      parameters->task,
                                       (void *) &metadata,
                                       sizeof (protocol_metadata_t),
-                                      &(send->data[0]),
-                                      metadata.databytes+metadata.metabytes);
+                                      iov);
             }
-
+#endif
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() <<\n"));
             return XMI_SUCCESS;
           };

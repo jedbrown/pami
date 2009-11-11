@@ -38,7 +38,7 @@ namespace XMI
 
         inline xmi_result_t unlock ();
 
-        inline xmi_result_t send (xmi_send_simple_t * parameters);
+        inline xmi_result_t send (xmi_send_t * parameters);
 
         inline xmi_result_t send (xmi_send_immediate_t * parameters);
 
@@ -191,7 +191,7 @@ namespace XMI
     }
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::send (xmi_send_simple_t * parameters)
+    xmi_result_t Context<T_Context>::send (xmi_send_t * parameters)
     {
       return static_cast<T_Context*>(this)->send_impl(parameters);
     }

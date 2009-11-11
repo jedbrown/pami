@@ -45,19 +45,13 @@ namespace XMI
 {
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
-
   typedef Fifo::FifoPacket <16, 240> ShmemPacket;
-#ifdef NOT_YET
   typedef Fifo::LinearFifo<Counter::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
-#else
-  typedef Fifo::LinearFifo<Atomic::BgpAtomic, ShmemPacket, 128> ShmemFifo;
-#endif
+  //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
 
   typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
   typedef Device::ShmemDevice<ShmemFifo, ShmemPacket> ShmemDevice;
   typedef Device::ShmemModel<ShmemDevice, ShmemMessage> ShmemModel;
-
-
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -264,7 +258,7 @@ namespace XMI
         return XMI_SUCCESS;
       }
 
-      inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
+      inline xmi_result_t send_impl (xmi_send_t * parameters)
       {
         size_t id = (size_t)(parameters->send.dispatch);
         TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
@@ -280,7 +274,7 @@ namespace XMI
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
       {
-        size_t id = (size_t)(parameters->send.dispatch);
+        size_t id = (size_t)(parameters->dispatch);
         TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
         XMI_assert_debug (_dispatch[id] != NULL);
 

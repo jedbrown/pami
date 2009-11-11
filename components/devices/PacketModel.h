@@ -214,52 +214,17 @@ namespace XMI
                                   size_t               target_rank,
                                   void               * metadata,
                                   size_t               metasize,
-                                  void               * payload,
-                                  size_t               bytes);
-
-          ///
-          /// \brief Post a single packet non-contiguous transfer operation
-          ///
-          /// \param[in] obj          Location to store the packet transfer state
-          /// \param[in] cb           Callback to invoke when the operation completes
-          /// \param[in] target_rank  Global rank of the packet destination process
-          /// \param[in] metadata     Virtual address of metadata buffer
-          /// \param[in] metasize     Number of metadata bytes
-          /// \param[in] payload0     Virtual address of the first source buffer
-          /// \param[in] bytes0       Number of bytes to transfer from the first buffer
-          /// \param[in] payload1     Virtual address of the second source buffer
-          /// \param[in] bytes1       Number of bytes to transfer from the second buffer
-          ///
-          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
-                                  xmi_event_function   fn,
-                                  void               * cookie,
-                                  size_t               target_rank,
-                                  void               * metadata,
-                                  size_t               metasize,
-                                  void               * payload0,
-                                  size_t               bytes0,
-                                  void               * payload1,
-                                  size_t               bytes1);
-
-          ///
-          /// \brief Post a single packet non-contiguous transfer operation
-          ///
-          /// \param[in] obj          Location to store the packet transfer state
-          /// \param[in] cb           Callback to invoke when the operation completes
-          /// \param[in] target_rank  Global rank of the packet destination process
-          /// \param[in] metadata     Virtual address of metadata buffer
-          /// \param[in] metasize     Number of metadata bytes
-          /// \param[in] payload      Virtual address of source buffer
-          /// \param[in] bytes        Number of bytes to transfer
-          ///
-          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
-                                  xmi_event_function   fn,
-                                  void               * cookie,
-                                  size_t               target_rank,
-                                  void               * metadata,
-                                  size_t               metasize,
                                   struct iovec       * iov,
                                   size_t               niov);
+
+          template <unsigned T_Niov>
+          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
+                                  xmi_event_function   fn,
+                                  void               * cookie,
+                                  size_t               target_rank,
+                                  void               * metadata,
+                                  size_t               metasize,
+                                  struct iovec         (&iov)[T_Niov]);
 
           ///
           /// \brief Immediate post of a single packet non-contiguous transfer operation
@@ -277,13 +242,11 @@ namespace XMI
           /// \retval true  All data has been immediately sent
           /// \retval false Unable to send data with post immediate
           ///
-          inline bool postPacketImmediate (size_t   target_rank,
-                                           void   * metadata,
-                                           size_t   metasize,
-                                           void   * payload0,
-                                           size_t   bytes0,
-                                           void   * payload1,
-                                           size_t   bytes1);
+          template <unsigned T_Niov>
+          inline bool postPacketImmediate (size_t         target_rank,
+                                           void         * metadata,
+                                           size_t         metasize,
+                                           struct iovec   (&iov)[T_Niov]);
       };
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
@@ -337,38 +300,6 @@ namespace XMI
                                                                             size_t               target_rank,
                                                                             void               * metadata,
                                                                             size_t               metasize,
-                                                                            void               * payload,
-                                                                            size_t               bytes)
-      {
-        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
-                                                             metadata, metasize, payload, bytes);
-      }
-
-      template <class T_Model, class T_Device, unsigned T_StateBytes>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
-                                                                            xmi_event_function   fn,
-                                                                            void               * cookie,
-                                                                            size_t               target_rank,
-                                                                            void               * metadata,
-                                                                            size_t               metasize,
-                                                                            void               * payload0,
-                                                                            size_t               bytes0,
-                                                                            void               * payload1,
-                                                                            size_t               bytes1)
-      {
-        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
-                                                             metadata, metasize,
-                                                             payload0, bytes0,
-                                                             payload1, bytes1);
-      }
-
-      template <class T_Model, class T_Device, unsigned T_StateBytes>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
-                                                                            xmi_event_function   fn,
-                                                                            void               * cookie,
-                                                                            size_t               target_rank,
-                                                                            void               * metadata,
-                                                                            size_t               metasize,
                                                                             struct iovec       * iov,
                                                                             size_t               niov)
       {
@@ -377,18 +308,27 @@ namespace XMI
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacketImmediate (size_t   target_rank,
-                                                                                     void   * metadata,
-                                                                                     size_t   metasize,
-                                                                                     void   * payload0,
-                                                                                     size_t   bytes0,
-                                                                                     void   * payload1,
-                                                                                     size_t   bytes1)
+      template <unsigned T_Niov>
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+                                                                            xmi_event_function   fn,
+                                                                            void               * cookie,
+                                                                            size_t               target_rank,
+                                                                            void               * metadata,
+                                                                            size_t               metasize,
+                                                                            struct iovec         (&iov)[T_Niov])
       {
-        return static_cast<T_Model*>(this)->postPacketImmediate_impl (target_rank,
-                                                                      metadata, metasize,
-                                                                      payload0, bytes0,
-                                                                      payload1, bytes1);
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
+                                                             metadata, metasize, iov);
+      }
+
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
+      template <unsigned T_Niov>
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacketImmediate (size_t         target_rank,
+                                                                                     void         * metadata,
+                                                                                     size_t         metasize,
+                                                                                     struct iovec   (&iov)[T_Niov])
+      {
+        return static_cast<T_Model*>(this)->postPacketImmediate_impl (target_rank, metadata, metasize, iov);
       }
     };
   };

@@ -120,15 +120,15 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  xmi_send_simple_t parameters;
-  parameters.send.dispatch = dispatch;
-  parameters.send.cookie   = (void *) &send_active;
-  parameters.send.header.addr = (void *)&dispatch; // send *something*
-  parameters.send.header.bytes = sizeof(size_t);
-  parameters.simple.addr  = (void *)&dispatch; // send *something*
-  parameters.simple.bytes = sizeof(size_t);
-  parameters.simple.local_fn  = send_done_local;
-  parameters.simple.remote_fn = send_done_remote;
+  xmi_send_t parameters;
+  parameters.send.dispatch        = dispatch;
+  parameters.send.header.iov_base = (void *)&dispatch; // send *something*
+  parameters.send.header.iov_len  = sizeof(size_t);
+  parameters.send.data.iov_base   = (void *)&dispatch; // send *something*
+  parameters.send.data.iov_len    = sizeof(size_t);
+  parameters.events.cookie    = (void *) &send_active;
+  parameters.events.local_fn  = send_done_local;
+  parameters.events.remote_fn = send_done_remote;
 
   {
     fprintf (stderr, "before send ...\n");

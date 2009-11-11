@@ -246,4 +246,13 @@ inline void local_barriered_shmemzero(void *shmem, size_t len,
 }
 #endif // __local_barriered_shmemzero_fn__
 
+/// Templatized iovec array, used as pointer parameters in template specialization.
+template <unsigned T_Niov>
+struct iov
+{
+  struct iovec v[T_Niov];
+};
+
+
+
 #endif // __util_common_h__

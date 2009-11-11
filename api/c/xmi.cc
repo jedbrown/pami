@@ -200,8 +200,8 @@ extern "C" xmi_result_t XMI_Context_unlock (xmi_context_t context)
 ///
 /// \copydoc XMI_Send
 ///
-extern "C" xmi_result_t XMI_Send (xmi_context_t       context,
-                                  xmi_send_simple_t * parameters)
+extern "C" xmi_result_t XMI_Send (xmi_context_t   context,
+                                  xmi_send_t    * parameters)
 {
   XMI::Context * ctx = (XMI::Context *) context;
   return ctx->send (parameters);

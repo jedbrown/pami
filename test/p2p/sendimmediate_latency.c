@@ -124,11 +124,11 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
   header.sndlen = sndlen;
 
   xmi_send_immediate_t parameters;
-  parameters.send.dispatch = dispatch;
-  parameters.send.header.addr = &header;
-  parameters.send.header.bytes = sizeof(header_t);
-  parameters.immediate.addr  = buffer;
-  parameters.immediate.bytes = sndlen;
+  parameters.dispatch = dispatch;
+  parameters.header.iov_base = &header;
+  parameters.header.iov_len = sizeof(header_t);
+  parameters.data.iov_base  = buffer;
+  parameters.data.iov_len = sndlen;
 
   barrier ();
 
@@ -136,7 +136,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
   unsigned long long t1 = XMI_Wtimebase();
   if (myrank == 0)
   {
-    parameters.send.task = 1;
+    parameters.task = 1;
     for (i = 0; i < ITERATIONS; i++)
     {
       TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));
@@ -149,7 +149,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
   }
   else if (myrank == 1)
   {
-    parameters.send.task = 0;
+    parameters.task = 0;
     for (i = 0; i < ITERATIONS; i++)
     {
       TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));

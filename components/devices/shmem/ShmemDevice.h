@@ -103,24 +103,78 @@ namespace XMI
                                            void                      * recv_func_parm,
                                            uint16_t                  & id);
 
-        inline xmi_result_t writeSinglePacket (size_t     fnum,
-                                               uint16_t   dispatch_id,
-                                               void     * metadata,
-                                               size_t     metasize,
-                                               void     * payload,
-                                               size_t     bytes,
-                                               size_t   & sequence);
+        ///
+        /// \brief Write a single packet into the injection fifo.
+        ///
+        /// \param[in]  fnum        Injection fifo identifier
+        /// \param[in]  dispatch_id Packet dispatch identifier
+        /// \param[in]  metadata    Packet header metadata source buffer
+        /// \param[in]  metasize    Packet header metadata size in bytes
+        /// \param[in]  iov         Iovec array to pack into the packet payload
+        /// \param[out] sequence    Packet sequence number
+        ///
+        template <unsigned T_Niov>
+        inline xmi_result_t writeSinglePacket (size_t         fnum,
+                                               uint16_t       dispatch_id,
+                                               void         * metadata,
+                                               size_t         metasize,
+                                               struct iovec   (&iov)[T_Niov],
+                                               size_t       & sequence);
 
-        inline xmi_result_t writeSinglePacket (size_t     fnum,
-                                               uint16_t   dispatch_id,
-                                               void     * metadata,
-                                               size_t     metasize,
-                                               void     * payload0,
-                                               size_t     bytes0,
-                                               void     * payload1,
-                                               size_t     bytes1,
-                                               size_t   & sequence);
+        ///
+        /// \brief Write a single packet into the injection fifo.
+        ///
+        /// This method is a \b template \b specialization for the case where
+        /// a single iovec element describes the packet payload, a.k.a. a
+        /// contiguous source buffer.
+        ///
+        /// \param[in]  fnum        Injection fifo identifier
+        /// \param[in]  dispatch_id Packet dispatch identifier
+        /// \param[in]  metadata    Packet header metadata source buffer
+        /// \param[in]  metasize    Packet header metadata size in bytes
+        /// \param[in]  iov         Single element iovec array to copy into
+        ///                         the packet payload
+        /// \param[out] sequence    Packet sequence number
+        ///
+        inline xmi_result_t writeSinglePacket (size_t         fnum,
+                                               uint16_t       dispatch_id,
+                                               void         * metadata,
+                                               size_t         metasize,
+                                               struct iovec   (&iov)[1],
+                                               size_t       & sequence);
 
+        ///
+        /// \brief Write a single packet into the injection fifo.
+        ///
+        /// This method is a \b template \b specialization for the case where
+        /// two iovec elements describe the packet payload.
+        ///
+        /// \param[in]  fnum        Injection fifo identifier
+        /// \param[in]  dispatch_id Packet dispatch identifier
+        /// \param[in]  metadata    Packet header metadata source buffer
+        /// \param[in]  metasize    Packet header metadata size in bytes
+        /// \param[in]  iov         Two element iovec array to pack into
+        ///                         the packet payload
+        /// \param[out] sequence    Packet sequence number
+        ///
+        inline xmi_result_t writeSinglePacket (size_t         fnum,
+                                               uint16_t       dispatch_id,
+                                               void         * metadata,
+                                               size_t         metasize,
+                                               struct iovec   (&iov)[2],
+                                               size_t       & sequence);
+
+        ///
+        /// \brief Write a single packet into the injection fifo.
+        ///
+        /// \param[in]  fnum        Injection fifo identifier
+        /// \param[in]  dispatch_id Packet dispatch identifier
+        /// \param[in]  metadata    Packet header metadata source buffer
+        /// \param[in]  metasize    Packet header metadata size in bytes
+        /// \param[in]  iov         Iovec array to pack into the packet payload
+        /// \param[in]  niov        Number of iovec array elements
+        /// \param[out] sequence    Packet sequence number
+        ///
         inline xmi_result_t writeSinglePacket (size_t           fnum,
                                                uint16_t         dispatch_id,
                                                void           * metadata,
@@ -219,15 +273,16 @@ namespace XMI
     }
 
     template <class T_Fifo, class T_Packet>
+    template <unsigned T_Niov>
     xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
-        size_t     fnum,
-        uint16_t   dispatch_id,
-        void     * metadata,
-        size_t     metasize,
-        void     * payload,
-        size_t     bytes,
-        size_t   & sequence)
+        size_t         fnum,
+        uint16_t       dispatch_id,
+        void         * metadata,
+        size_t         metasize,
+        struct iovec   (&iov)[T_Niov],
+        size_t       & sequence)
     {
+      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. T_Niov = %d\n", T_Niov));
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
       if (pkt != NULL)
@@ -242,8 +297,13 @@ namespace XMI
           memcpy ((void *) &hdr[1], metadata, metasize);
 
           // Write the packet payload data
-          void * data = (void *) pkt->getPayload ();
-          memcpy (data, payload, bytes);
+          uint8_t * data = (uint8_t *) pkt->getPayload ();
+          unsigned i;
+          for (i=0; i<T_Niov; i++)
+          {
+            memcpy ((void *) data, iov[i].iov_base, iov[i].iov_len);
+            data += iov[i].iov_len;
+          }
 
           sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
@@ -258,18 +318,14 @@ namespace XMI
 
     template <class T_Fifo, class T_Packet>
     xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
-        size_t     fnum,
-        uint16_t   dispatch_id,
-        void     * metadata,
-        size_t     metasize,
-        void     * payload0,
-        size_t     bytes0,
-        void     * payload1,
-        size_t     bytes1,
-        size_t   & sequence)
+        size_t         fnum,
+        uint16_t       dispatch_id,
+        void         * metadata,
+        size_t         metasize,
+        struct iovec   (&iov)[1],
+        size_t       & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, ...) >>\n", __global.mapping.task(), fnum, dispatch_id));
-
+      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. template specialization, niov = 1\n"));
       T_Packet * pkt = _fifo[fnum].nextInjPacket ();
 
       if (pkt != NULL)
@@ -280,23 +336,60 @@ namespace XMI
           hdr[0] = dispatch_id;
 
           // Remaining header bytes are metadata.
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket () .. metadata = %p\n", __global.mapping.task(), metadata));
           memcpy ((void *) &hdr[1], metadata, metasize);
 
           // Write the packet payload data
           uint8_t * data = (uint8_t *) pkt->getPayload ();
-          memcpy ((void *)data, payload0, bytes0);
-          memcpy ((void *)(data + bytes0), payload1, bytes1);
+          memcpy (data, iov[0].iov_base, iov[0].iov_len);
 
           sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, ...) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, ...) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id));
+      return XMI_EAGAIN;
+    };
+
+    template <class T_Fifo, class T_Packet>
+    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
+        size_t         fnum,
+        uint16_t       dispatch_id,
+        void         * metadata,
+        size_t         metasize,
+        struct iovec   (&iov)[2],
+        size_t       & sequence)
+    {
+      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. template specialization, niov = 2\n"));
+      T_Packet * pkt = _fifo[fnum].nextInjPacket ();
+
+      if (pkt != NULL)
+        {
+          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
+
+          // First 2 bytes is the dispatch id.
+          hdr[0] = dispatch_id;
+
+          // Remaining header bytes are metadata.
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket () .. metadata = %p\n", __global.mapping.task(), metadata));
+          memcpy ((void *) &hdr[1], metadata, metasize);
+
+          // Write the packet payload data
+          uint8_t * data = (uint8_t *) pkt->getPayload ();
+          memcpy (data, iov[0].iov_base, iov[0].iov_len);
+          memcpy (data+iov[0].iov_len, iov[1].iov_base, iov[1].iov_len);
+
+          sequence = _fifo[fnum].getPacketSequenceId (pkt);
+
+          // "produce" the packet into the fifo.
+          _fifo[fnum].producePacket (pkt);
+
+          return XMI_SUCCESS;
+        }
+
       return XMI_EAGAIN;
     };
 
@@ -409,8 +502,6 @@ namespace XMI
 
       // Advance any pending send messages.
       if (__sendQMask != 0) events += advance_sendQ ();
-
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... __doneQMask = 0x%0x\n", __global.mapping.task(), __doneQMask));
 
       // Advance any pending receive messages.
       T_Packet * pkt = NULL;

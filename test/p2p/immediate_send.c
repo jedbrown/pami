@@ -103,17 +103,16 @@ int main (int argc, char ** argv)
   size_t data_bytes   = 1 + snprintf (data_string, 1024, "Data: Hello!");
 
   xmi_send_immediate_t parameters;
-  parameters.send.dispatch = dispatch;
-  parameters.send.cookie   = (void *) &send_active;
-  parameters.send.header.addr = header_string;
-  parameters.send.header.bytes = header_bytes;
-  parameters.immediate.addr  = data_string;
-  parameters.immediate.bytes = data_bytes;
+  parameters.dispatch        = dispatch;
+  parameters.header.iov_base = header_string;
+  parameters.header.iov_len  = header_bytes;
+  parameters.data.iov_base   = data_string;
+  parameters.data.iov_len    = data_bytes;
 
   if (task_id == 0)
   {
     fprintf (stderr, "before send immediate ...\n");
-    parameters.send.task = 1;
+    parameters.task = 1;
     result = XMI_Send_immediate (context, &parameters);
     fprintf (stderr, "... after send immediate.\n");
 
@@ -144,7 +143,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "... after recv advance loop\n");
 
     fprintf (stderr, "before send ...\n");
-    parameters.send.task = 0;
+    parameters.task = 0;
     result = XMI_Send_immediate (context, &parameters);
     fprintf (stderr, "... after send.\n");
 

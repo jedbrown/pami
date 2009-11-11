@@ -89,79 +89,6 @@ namespace XMI
                                      size_t               target_rank,
                                      void               * metadata,
                                      size_t               metasize,
-                                     void               * payload,
-                                     size_t               bytes)
-        {
-          size_t peer, sequence;
-          XMI::Interface::Mapping::nodeaddr_t addr;
-          TRACE_ERR((stderr, ">> ShmemModel::postPacket_impl(1) .. target_rank = %zd\n", target_rank));
-          __global.mapping.task2node (target_rank, addr);
-          TRACE_ERR((stderr, "  ShmemModel::postPacket_impl(1) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
-          __global.mapping.node2peer (addr, peer);
-          TRACE_ERR((stderr, "  ShmemModel::postPacket_impl(1) .. {%zd, %zd} -> %zd\n", addr.global, addr.local, peer));
-
-          TRACE_ERR((stderr, "ShmemModel::postPacket_impl(1) .. target_rank = %zd, peer = %zd\n", target_rank, peer));
-
-          if (_device.isSendQueueEmpty (peer) &&
-              _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
-                                         payload, bytes, sequence) == XMI_SUCCESS)
-            {
-              if (fn) fn (_context, cookie, XMI_SUCCESS);
-
-              return true;
-            }
-
-          T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (_context, fn, cookie, _dispatch_id, metadata, metasize, payload, bytes, true);
-
-          _device.post (peer, obj);
-
-          return false;
-        };
-
-        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
-                                     xmi_event_function   fn,
-                                     void               * cookie,
-                                     size_t               target_rank,
-                                     void               * metadata,
-                                     size_t               metasize,
-                                     void               * payload0,
-                                     size_t               bytes0,
-                                     void               * payload1,
-                                     size_t               bytes1)
-        {
-          size_t peer, sequence;
-          XMI::Interface::Mapping::nodeaddr_t addr;
-          __global.mapping.task2node (target_rank, addr);
-          __global.mapping.node2peer (addr, peer);
-
-          if (_device.isSendQueueEmpty (peer) &&
-              _device.writeSinglePacket (peer, _dispatch_id,
-                                         metadata, metasize,
-                                         payload0, bytes0,
-                                         payload1, bytes1,
-                                         sequence) == XMI_SUCCESS)
-            {
-              if (fn) fn (_context, cookie, XMI_SUCCESS);
-
-              return true;
-            }
-
-          T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (_context, fn, cookie, _dispatch_id, metadata, metasize,
-                               payload0, bytes0, payload1, bytes1, true);
-
-          _device.post (peer, obj);
-
-          return false;
-        };
-
-        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
-                                     xmi_event_function   fn,
-                                     void               * cookie,
-                                     size_t               target_rank,
-                                     void               * metadata,
-                                     size_t               metasize,
                                      struct iovec_t     * iov,
                                      size_t               niov)
         {
@@ -187,13 +114,42 @@ namespace XMI
           return false;
         };
 
-        inline bool postPacketImmediate_impl (size_t   target_rank,
-                                              void   * metadata,
-                                              size_t   metasize,
-                                              void   * payload0,
-                                              size_t   bytes0,
-                                              void   * payload1,
-                                              size_t   bytes1)
+        template <unsigned T_Niov>
+        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
+                                     xmi_event_function   fn,
+                                     void               * cookie,
+                                     size_t               target_rank,
+                                     void               * metadata,
+                                     size_t               metasize,
+                                     struct iovec         (&iov)[T_Niov])
+        {
+          size_t peer, sequence;
+          XMI::Interface::Mapping::nodeaddr_t addr;
+          __global.mapping.task2node (target_rank, addr);
+          __global.mapping.node2peer (addr, peer);
+
+          if (_device.isSendQueueEmpty (peer) &&
+              _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
+                                         iov, sequence) == XMI_SUCCESS)
+            {
+              if (fn) fn (_context, cookie, XMI_SUCCESS);
+
+              return true;
+            }
+
+          T_Message * obj = (T_Message *) & state[0];
+          new (obj) T_Message (_context, fn, cookie, _dispatch_id, metadata, metasize, iov, T_Niov, true);
+
+          _device.post (peer, obj);
+
+          return false;
+        };
+
+        template <unsigned T_Niov>
+        inline bool postPacketImmediate_impl (size_t         target_rank,
+                                              void         * metadata,
+                                              size_t         metasize,
+                                              struct iovec   (&iov)[T_Niov])
         {
           size_t peer = 0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
@@ -205,10 +161,9 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemModel::postPacketImmediate_impl(1) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
           return (_device.isSendQueueEmpty (peer) &&
                   _device.writeSinglePacket (peer, _dispatch_id,
-                                             metadata, metasize,
-                                             payload0, bytes0,
-                                             payload1, bytes1,
+                                             metadata, metasize, iov,
                                              sequence) == XMI_SUCCESS);
+          return false;
         };
 
         inline bool postMessage_impl (uint8_t              (&state)[sizeof(T_Message)],
