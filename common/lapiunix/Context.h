@@ -434,7 +434,13 @@ namespace XMI
                                                         int algorithm_type,
                                                         xmi_metadata_t *mdata)
         {
-          return XMI_UNIMPL;
+          MPIGeometry *new_geometry = (MPIGeometry*) geometry;
+          MPICollfactory  *collfactory;
+          collfactory = (MPICollfactory*)
+            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
+          return collfactory->algorithm_info(colltype, algorithm,
+                                             algorithm_type, mdata);
+
         }
 
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
