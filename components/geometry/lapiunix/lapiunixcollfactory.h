@@ -168,10 +168,12 @@ namespace XMI
         if (mdata)
         {
           for(i = 0; i < num; i++)
+          {
             mdata[i].geometry = (*rq)[i]->_metadata.geometry;
-          mdata[i].buffer = (*rq)[i]->_metadata.buffer;
-          mdata[i].misc = (*rq)[i]->_metadata.misc;
-          strcpy(mdata[i].name, (*rq)[i]->_metadata.name);
+            mdata[i].buffer = (*rq)[i]->_metadata.buffer;
+            mdata[i].misc = (*rq)[i]->_metadata.misc;
+            strcpy(mdata[i].name, (*rq)[i]->_metadata.name);
+          }
         }
         return XMI_SUCCESS;
       }
