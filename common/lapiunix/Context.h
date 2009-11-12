@@ -203,37 +203,25 @@ namespace XMI
           assert(0);
           return XMI_UNIMPL;
         }
-
-      inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
+      inline xmi_result_t send_impl (xmi_send_t * parameters)
         {
           size_t id = (size_t)(parameters->send.dispatch);
           XMI_assert_debug (_dispatch[id] != NULL);
           XMI::Protocol::Send::Send * send =
             (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->simple (parameters->simple.local_fn,
-                        parameters->simple.remote_fn,
-                        parameters->send.cookie,
-                        parameters->send.task,
-                        parameters->simple.addr,
-                        parameters->simple.bytes,
-                        parameters->send.header.addr,
-                        parameters->send.header.bytes);
+          send->simple (parameters);
           return XMI_SUCCESS;
         }
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
-          size_t id = (size_t)(parameters->send.dispatch);
+          size_t id = (size_t)(parameters->dispatch);
           TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
           XMI_assert_debug (_dispatch[id] != NULL);
 
           XMI::Protocol::Send::Send * send =
             (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->immediate (parameters->send.task,
-                           parameters->immediate.addr,
-                           parameters->immediate.bytes,
-                           parameters->send.header.addr,
-                           parameters->send.header.bytes);
+          send->immediate (parameters);
 
           TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
           return XMI_SUCCESS;
@@ -243,7 +231,7 @@ namespace XMI
         {
           assert(0);
           return XMI_UNIMPL;
-        }
+        }        
 
       inline xmi_result_t put_impl (xmi_put_simple_t * parameters)
         {
