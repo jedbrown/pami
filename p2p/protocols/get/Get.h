@@ -38,15 +38,6 @@ namespace XMI
   {
     namespace Get
     {
-      ///
-      /// \brief Get protocol factory for CDI dma devices.
-      ///
-      /// \param T_Model   Template CDI dma model class
-      /// \param T_Device  Template CDI dma device class
-      ///
-      /// \see XMI::CDI::DMA::DmaModel
-      /// \see XMI::CDI::DMA::DmaDevice
-      ///
       template <class T_Model, class T_Device>
       class Get
       {
@@ -56,9 +47,9 @@ namespace XMI
 
           typedef struct get_state
           {
-            msg_t                   msg;
-            xmi_event_function      local_fn;
-            void                  * cookie;    ///< Application callback cookie
+            msg_t                       msg;
+            xmi_event_function          local_fn;
+            void                      * cookie;    ///< Application callback cookie
             Get < T_Model, T_Device > * get;    ///< get protocol object
           } get_state_t;
 
@@ -116,10 +107,10 @@ namespace XMI
         protected:
           MemoryAllocator < sizeof(get_state), 16 > _get_allocator;
 
-          T_Model 					_get_model;
+          T_Model                    _get_model;
+          T_Device                 & _device;
           xmi_context_t              _context;
           size_t                     _contextid;
-          T_Device                 & _device;
 
           inline get_state_t * allocateGetState ()
           {

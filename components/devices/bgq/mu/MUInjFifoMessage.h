@@ -68,25 +68,21 @@ namespace XMI
             return _wrapper.requiresCallback ();
           }
 
-          inline void setSourceBuffer (void            * payload,
-                                       size_t            bytes)
+          inline void setSourceBuffer (struct iovec (&iov)[1])
           {
-            __iov[0].iov_base = payload;
-            __iov[0].iov_len  = bytes;
+            __iov[0].iov_base = iov[0].iov_base;
+            __iov[0].iov_len  = iov[0].iov_len;
 
             _iov  = &__iov[0];
             _niov = 1;
           }
 
-          inline void setSourceBuffer (void            * payload0,
-                                       size_t            bytes0,
-                                       void            * payload1,
-                                       size_t            bytes1)
+          inline void setSourceBuffer (struct iovec (&iov)[2])
           {
-            __iov[0].iov_base = payload0;
-            __iov[0].iov_len  = bytes0;
-            __iov[1].iov_base = payload1;
-            __iov[1].iov_len  = bytes1;
+            __iov[0].iov_base = iov[0].iov_base;
+            __iov[0].iov_len  = iov[0].iov_len;
+            __iov[1].iov_base = iov[1].iov_base;
+            __iov[1].iov_len  = iov[1].iov_len;
 
             _iov  = &__iov[0];
             _niov = 2;

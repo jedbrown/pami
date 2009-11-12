@@ -174,7 +174,7 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
+      inline xmi_result_t send_impl (xmi_send_t * parameters)
       {
         size_t id = (size_t)(parameters->send.dispatch);
         TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
@@ -190,7 +190,7 @@ namespace XMI
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
       {
-        size_t id = (size_t)(parameters->send.dispatch);
+        size_t id = (size_t)(parameters->dispatch);
         TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
         XMI_assert_debug (_dispatch[id] != NULL);
 
