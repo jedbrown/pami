@@ -210,6 +210,9 @@ namespace XMI
           msg->_p2p_msg._payloadsize0=iov[0].iov_len;
           if (T_Niov == 2)
             msg->_p2p_msg._payloadsize1=iov[1].iov_len;
+          else
+            msg->_p2p_msg._payloadsize1=0;
+
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
           if (T_Niov)

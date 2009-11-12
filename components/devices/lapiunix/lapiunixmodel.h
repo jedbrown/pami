@@ -61,15 +61,16 @@ namespace XMI
           return true;
         }
 
+      template <unsigned T_Niov>
       inline bool postPacket_impl (uint8_t              (&state)[LAPIModel::packet_model_status_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
                                    size_t               target_rank,
                                    void               * metadata,
                                    size_t               metasize,
-                                   void               * payload,
-                                   size_t               bytes)
+                                   struct iovec   (&iov)[T_Niov])
         {
+          XMI_assert(T_Niov==1);
           int rc;
           LAPIMessage * msg = (LAPIMessage *)state;
           new(msg)LAPIMessage(this->_context,
@@ -78,12 +79,10 @@ namespace XMI
                              cookie);
           msg->_freeme=0;
           msg->_p2p_msg._metadatasize=metasize;
-          msg->_p2p_msg._payloadsize0=bytes;
+          msg->_p2p_msg._payloadsize0=iov[0].iov_len;
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
-          memcpy(&msg->_p2p_msg._payload[0], payload, bytes);
-
-
+          memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
 
           _device.enqueue(msg);
           assert(rc == LAPI_SUCCESS);
@@ -97,36 +96,21 @@ namespace XMI
                                    size_t               target_rank,
                                    void               * metadata,
                                    size_t               metasize,
-                                   void               * payload0,
-                                   size_t               bytes0,
-                                   void               * payload1,
-                                   size_t               bytes1)
-        {
-          assert(0);
-          return false;
-        };
-
-      inline bool postPacket_impl (uint8_t              (&state)[LAPIModel::packet_model_status_bytes],
-                                   xmi_event_function   fn,
-                                   void               * cookie,
-                                   size_t               target_rank,
-                                   void               * metadata,
-                                   size_t               metasize,
                                    struct iovec_t     * iov,
                                    size_t               niov)
         {
-          assert(0);
+          XMI_abort();
           return false;
         };
 
-      inline bool postPacketImmediate (size_t   target_rank,
-                                       void   * metadata,
-                                       size_t   metasize,
-                                       void   * payload0,
-                                       size_t   bytes0,
-                                       void   * payload1,
-                                       size_t   bytes1)
+      template <unsigned T_Niov>
+      inline bool postPacketImmediate (size_t         target_rank,
+                                       void         * metadata,
+                                       size_t         metasize,
+                                       struct iovec   (&iov)[T_Niov])
         {
+          XMI_assert(T_Niov<=2);
+
           int rc;
           void       * obj = malloc(sizeof(LAPIMessage));
           LAPIMessage * msg = (LAPIMessage *)obj;
@@ -136,11 +120,16 @@ namespace XMI
                              0);
           msg->_freeme=1;
           msg->_p2p_msg._metadatasize=metasize;
-          msg->_p2p_msg._payloadsize0=bytes0;
-          msg->_p2p_msg._payloadsize1=bytes1;
+          msg->_p2p_msg._payloadsize0=iov[0].iov_len;
+          if (T_Niov == 2)
+            msg->_p2p_msg._payloadsize1=iov[1].iov_len;
+          else
+            msg->_p2p_msg._payloadsize1=0;
+
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
-          memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
-          memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
+          memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
+          if (T_Niov == 2)
+            memcpy(&msg->_p2p_msg._payload[iov[0].iov_len], iov[1].iov_base, iov[1].iov_len);
           _device.enqueue(msg);
           assert(rc == LAPI_SUCCESS);
           return true;
