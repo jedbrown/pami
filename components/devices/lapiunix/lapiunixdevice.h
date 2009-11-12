@@ -402,7 +402,6 @@ namespace XMI
                 if(mcast->_done_fn)
                   mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
                 _dev->_mcastrecvQ.remove(mcast);
-                free (msg);
                 if(found)
                   free (mcast);
 
