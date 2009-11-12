@@ -19,7 +19,7 @@
 #include <spi/include/mu/RecFifo.h>
 
 #include "components/devices/BaseDevice.h"
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 #include "components/devices/DmaDevice.h"
 #include "components/devices/bgq/mu/InjFifoSubGroup.h"
 #include "components/devices/bgq/mu/MUChannel.h"

@@ -15,7 +15,7 @@
 #define __components_devices_lapiunix_lapiunixmodel_h__
 
 #include "sys/xmi.h"
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "errno.h"
 

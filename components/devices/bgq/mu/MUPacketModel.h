@@ -20,7 +20,7 @@
 #include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
 #include <spi/include/kernel/memory.h>
 
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"

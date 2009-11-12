@@ -15,7 +15,7 @@
 #define __components_devices_mpi_mpimodel_h__
 
 #include "sys/xmi.h"
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "errno.h"
 

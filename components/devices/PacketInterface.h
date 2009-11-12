@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/PacketModel.h
+ * \file components/devices/PacketInterface.h
  * \brief ???
  */
 
-#ifndef __components_devices_PacketModel_h__
-#define __components_devices_PacketModel_h__
+#ifndef __components_devices_PacketInterface_h__
+#define __components_devices_PacketInterface_h__
 
 #include <sys/uio.h>
 
@@ -483,7 +483,7 @@ namespace XMI
     };
   };
 };
-#endif // __components_devices_packetmodel_h__
+#endif // __components_devices_PacketInterface_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

@@ -15,7 +15,7 @@
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 
 namespace XMI
 {

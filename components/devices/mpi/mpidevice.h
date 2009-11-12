@@ -15,7 +15,7 @@
 #define __components_devices_mpi_mpidevice_h__
 
 #include "components/devices/BaseDevice.h"
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
 #include <map>
 #include <list>

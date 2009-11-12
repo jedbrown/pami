@@ -22,7 +22,7 @@
 #include "sys/xmi.h"
 
 #include "components/devices/myDmaModel.h" //for now using a separate model than M
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 #include "components/devices/shmem/ShmemDevice.h"
 
 #ifndef TRACE_ERR

@@ -15,7 +15,7 @@
 #define __components_devices_lapiunix_lapiunixdevice_h__
 
 #include "components/devices/BaseDevice.h"
-#include "components/devices/PacketModel.h"
+#include "components/devices/PacketInterface.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include <map>
 #include <list>
