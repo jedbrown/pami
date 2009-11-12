@@ -14,6 +14,8 @@
 #ifndef __components_devices_MessageModel_h__
 #define __components_devices_MessageModel_h__
 
+#error deprecated
+
 #include "util/common.h"
 
 #include "components/devices/PacketModel.h"

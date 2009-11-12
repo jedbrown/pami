@@ -19,7 +19,7 @@
 #include <spi/include/mu/RecFifo.h>
 
 #include "components/devices/BaseDevice.h"
-#include "components/devices/MessageDevice.h"
+#include "components/devices/PacketModel.h"
 #include "components/devices/DmaDevice.h"
 #include "components/devices/bgq/mu/InjFifoSubGroup.h"
 #include "components/devices/bgq/mu/MUChannel.h"
@@ -44,7 +44,7 @@ namespace XMI
     {
       typedef   MUSPI_RecvFunction_t  MUDevice_DispatchFn_t;
 
-      class MUDevice : public Interface::BaseDevice<MUDevice,SysDep>, public Interface::MessageDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
+      class MUDevice : public Interface::BaseDevice<MUDevice,SysDep>, public Interface::PacketDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
           //class MUDevice : public BaseDevice, public CDI::Base::Device<MUDevice>, public CDI::Message::Device<MUDevice>//, public CDI::Dma::Device<MUDevice>
       {
 

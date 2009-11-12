@@ -10,7 +10,7 @@
  * \file components/devices/PacketDevice.h
  * \brief ???
  */
-
+#error deprecated
 #ifndef __components_devices_PacketDevice_h__
 #define __components_devices_PacketDevice_h__
 

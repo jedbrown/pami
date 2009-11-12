@@ -144,10 +144,10 @@ namespace XMI
 
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
             bool posted =
-              _send_model.postPacketImmediate (parameters->task,
-                                               (void *) & metadata,
-                                               sizeof (protocol_metadata_t),
-                                               parameters->iov);
+              _send_model.postPacket (parameters->task,
+                                      (void *) & metadata,
+                                      sizeof (protocol_metadata_t),
+                                      parameters->iov);
 
             if (!posted)
               {

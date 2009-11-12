@@ -142,10 +142,10 @@ namespace XMI
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->immediate.bytes = %zd\n", parameters->immediate.bytes));
 
             bool posted =
-              _send_model.postPacketImmediate (parameters->task,
-                                               (void *) &metadata,
-                                               sizeof (protocol_metadata_t),
-                                               parameters->iov);
+              _send_model.postPacket (parameters->task,
+                                      (void *) &metadata,
+                                      sizeof (protocol_metadata_t),
+                                      parameters->iov);
 #if 1
             if (unlikely(!posted))
             {

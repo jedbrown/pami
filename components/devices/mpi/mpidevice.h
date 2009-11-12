@@ -15,7 +15,7 @@
 #define __components_devices_mpi_mpidevice_h__
 
 #include "components/devices/BaseDevice.h"
-#include "components/devices/MessageDevice.h"
+#include "components/devices/PacketModel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include <map>
 #include <list>
@@ -48,13 +48,13 @@ namespace XMI
 
     template <class T_SysDep>
     class MPIDevice : public Interface::BaseDevice<MPIDevice<T_SysDep>, T_SysDep>,
-                      public Interface::MessageDevice<MPIDevice<T_SysDep> >
+                      public Interface::PacketDevice<MPIDevice<T_SysDep> >
     {
     public:
       static const size_t packet_payload_size = 224;
       inline MPIDevice () :
       Interface::BaseDevice<MPIDevice<T_SysDep>, T_SysDep> (),
-      Interface::MessageDevice<MPIDevice<T_SysDep> >(),
+      Interface::PacketDevice<MPIDevice<T_SysDep> >(),
       _dispatch_id(0)
       {
         MPI_Comm_size(MPI_COMM_WORLD, (int*)&_peers);

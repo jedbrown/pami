@@ -15,7 +15,7 @@
 #define __components_devices_lapiunix_lapiunixdevice_h__
 
 #include "components/devices/BaseDevice.h"
-#include "components/devices/MessageDevice.h"
+#include "components/devices/PacketModel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include <map>
 #include <list>
@@ -49,12 +49,12 @@ namespace XMI
 
     template <class T_SysDep>
     class LAPIDevice : public Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep>,
-                       public Interface::MessageDevice<LAPIDevice<T_SysDep> >
+                       public Interface::PacketDevice<LAPIDevice<T_SysDep> >
     {
     public:
       inline LAPIDevice () :
         Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep> (),
-        Interface::MessageDevice<LAPIDevice<T_SysDep> >(),
+        Interface::PacketDevice<LAPIDevice<T_SysDep> >(),
         _dispatch_id(0)
         {
         };

@@ -22,7 +22,7 @@
 
 #include "components/atomic/Counter.h"
 #include "components/devices/BaseDevice.h"
-#include "components/devices/MessageDevice.h"
+#include "components/devices/PacketModel.h"
 #include "components/devices/shmem/ShmemMessage.h"
 
 #include "util/fifo/LinearFifo.h"
@@ -51,12 +51,12 @@ namespace XMI
 
     template < class T_Fifo, class T_Packet >
     class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep>,
-        public Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet> >
+        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Packet> >
     {
       public:
         inline ShmemDevice () :
             Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep> (),
-            Interface::MessageDevice<ShmemDevice<T_Fifo, T_Packet> > (),
+            Interface::PacketDevice<ShmemDevice<T_Fifo, T_Packet> > (),
             _fifo (NULL),
             __sendQ (),
             __sendQMask (0)

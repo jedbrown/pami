@@ -43,7 +43,7 @@ namespace XMI
       {
 
         protected:
-          typedef uint8_t msg_t[T_Model::message_model_state_bytes];
+          typedef uint8_t msg_t[T_Model::packet_model_state_bytes];
 
           typedef struct get_state
           {

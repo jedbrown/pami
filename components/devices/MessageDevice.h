@@ -10,11 +10,11 @@
  * \file components/devices/MessageDevice.h
  * \brief ???
  */
-
+#error deprecated
 #ifndef __components_devices_MessageDevice_h__
 #define __components_devices_MessageDevice_h__
 
-#include "components/devices/PacketDevice.h"
+#include "components/devices/PacketModel.h"
 
 namespace XMI
 {

@@ -48,7 +48,6 @@ namespace XMI
         protected:
 
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
-          typedef uint8_t msg_t[T_Model::message_model_state_bytes];
 
           typedef struct __attribute__((__packed__)) short_metadata
           {
@@ -61,8 +60,7 @@ namespace XMI
 
           typedef struct send_state
           {
-            pkt_t                   pkt;
-            msg_t                   msg[2];
+            pkt_t                   pkt[3];
             short_metadata_t        metadata;  ///< Eager protocol envelope metadata
             xmi_event_function      local_fn;  ///< Application send injection completion callback
             xmi_event_function      remote_fn; ///< Application remote receive acknowledgement callback
@@ -135,9 +133,9 @@ namespace XMI
 
             // Assert that the size of the packet metadata area is large
             // enough to transfer a single xmi_task_t. This is used in the
-            // various postMessage() calls to transfer long header and data
+            // various postMultiPacket() calls to transfer long header and data
             // messages.
-            COMPILE_TIME_ASSERT(sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes);
+            COMPILE_TIME_ASSERT(sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes);
 
             // Assert that the size of the packet payload area is large
             // enough to transfer a single virtual address. This is used in
@@ -255,7 +253,7 @@ namespace XMI
                         struct iovec v[1];
                         v[0].iov_base = NULL;
                         v[0].iov_len  = 0;
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
@@ -263,21 +261,20 @@ namespace XMI
                                                     sizeof (short_metadata_t),
                                                     v);
 
-                        _longheader_model.postMessage (state->msg[0],
-                                                       send_complete,
-                                                       (void *) state,
-                                                       parameters->send.task,
-                                                       (void *) &(state->metadata.fromRank),
-                                                       sizeof (xmi_task_t),
-                                                       parameters->send.header.iov_base,
-                                                       parameters->send.header.iov_len);
+                        _longheader_model.postMultiPacket (state->pkt[1],
+                                                           send_complete,
+                                                           (void *) state,
+                                                           parameters->send.task,
+                                                           (void *) &(state->metadata.fromRank),
+                                                           sizeof (xmi_task_t),
+                                                           (struct iovec (&)[1]) parameters->send.header);
                       }
                     else
                       {
                         TRACE_ERR((stderr, "EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does fit in a single packet payload\n"));
 
                         // Single packet header with zero bytes of application data.
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     send_complete,
                                                     (void *) state,
                                                     parameters->send.task,
@@ -314,21 +311,20 @@ namespace XMI
                         struct iovec v[1];
                         v[0].iov_base = (void *) &(state->metadata);
                         v[0].iov_len  = sizeof (short_metadata_t);
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
                                                     NULL, 0,
                                                     v);
 
-                        _longheader_model.postMessage (state->msg[0],
-                                                       send_complete,
-                                                       (void *) state,
-                                                       parameters->send.task,
-                                                       (void *) &(state->metadata.fromRank),
-                                                       sizeof (xmi_task_t),
-                                                       parameters->send.header.iov_base,
-                                                       parameters->send.header.iov_len);
+                        _longheader_model.postMultiPacket (state->pkt[1],
+                                                           send_complete,
+                                                           (void *) state,
+                                                           parameters->send.task,
+                                                           (void *) &(state->metadata.fromRank),
+                                                           sizeof (xmi_task_t),
+                                                           (struct iovec (&)[1]) parameters->send.header);
                       }
                     else
                       {
@@ -340,7 +336,7 @@ namespace XMI
                         v[0].iov_len  = sizeof (short_metadata_t);
                         v[1].iov_base = parameters->send.header.iov_base;
                         v[1].iov_len  = parameters->send.header.iov_len;
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     send_complete,
                                                     (void *) state,
                                                     parameters->send.task,
@@ -377,7 +373,7 @@ namespace XMI
                         struct iovec v[1];
                         v[0].iov_base = NULL;
                         v[0].iov_len  = 0;
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
@@ -385,18 +381,17 @@ namespace XMI
                                                     sizeof (short_metadata_t),
                                                     v);
 
-                        _longheader_model.postMessage (state->msg[0],
-                                                       NULL,
-                                                       NULL,
-                                                       parameters->send.task,
-                                                       (void *) &(state->metadata.fromRank),
-                                                       sizeof (xmi_task_t),
-                                                       parameters->send.header.iov_base,
-                                                       parameters->send.header.iov_len);
+                        _longheader_model.postMultiPacket (state->pkt[1],
+                                                           NULL,
+                                                           NULL,
+                                                           parameters->send.task,
+                                                           (void *) &(state->metadata.fromRank),
+                                                           sizeof (xmi_task_t),
+                                                           (struct iovec (&)[1]) parameters->send.header);
                       }
                     else
                       {
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
@@ -428,7 +423,7 @@ namespace XMI
                         struct iovec v[1];
                         v[0].iov_base = NULL;
                         v[0].iov_len  = 0;
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
@@ -436,14 +431,13 @@ namespace XMI
                                                     sizeof (short_metadata_t),
                                                     v);
 
-                        _longheader_model.postMessage (state->msg[0],
-                                                       NULL,
-                                                       NULL,
-                                                       parameters->send.task,
-                                                       (void *) &(state->metadata.fromRank),
-                                                       sizeof (xmi_task_t),
-                                                       parameters->send.header.iov_base,
-                                                       parameters->send.header.iov_len);
+                        _longheader_model.postMultiPacket (state->pkt[1],
+                                                           NULL,
+                                                           NULL,
+                                                           parameters->send.task,
+                                                           (void *) &(state->metadata.fromRank),
+                                                           sizeof (xmi_task_t),
+                                                           (struct iovec (&)[1]) parameters->send.header);
                       }
                     else
                       {
@@ -453,7 +447,7 @@ namespace XMI
                         v[1].iov_base = parameters->send.header.iov_base;
                         v[1].iov_len  = parameters->send.header.iov_len;
 
-                        _envelope_model.postPacket (state->pkt,
+                        _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
                                                     NULL,
                                                     parameters->send.task,
@@ -463,14 +457,13 @@ namespace XMI
                   }
 
                 TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _data_model.postPacket()\n"));
-                _data_model.postMessage (state->msg[1],
-                                         send_complete,
-                                         (void *) state,
-                                         parameters->send.task,
-                                         (void *) &(state->metadata.fromRank),
-                                         sizeof (xmi_task_t),
-                                         parameters->send.data.iov_base,
-                                         parameters->send.data.iov_len);
+                _data_model.postMultiPacket (state->pkt[2],
+                                             send_complete,
+                                             (void *) state,
+                                             parameters->send.task,
+                                             (void *) &(state->metadata.fromRank),
+                                             sizeof (xmi_task_t),
+                                             (struct iovec (&)[1]) parameters->send.data);
               }
 
             TRACE_ERR((stderr, "EagerSimple::simple_impl() <<\n"));

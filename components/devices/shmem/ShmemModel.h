@@ -22,7 +22,7 @@
 #include "sys/xmi.h"
 
 #include "components/devices/myDmaModel.h" //for now using a separate model than M
-#include "components/devices/MessageModel.h"
+#include "components/devices/PacketModel.h"
 #include "components/devices/shmem/ShmemDevice.h"
 
 #ifndef TRACE_ERR
@@ -46,7 +46,7 @@ namespace XMI
     /// \see ShmemPacketDevice
     ///
     template < class T_Device, class T_Message>
-    class ShmemModel : public Interface::MessageModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > ,
+    class ShmemModel : public Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > ,
         public myInterface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) >
     {
       public:
@@ -56,23 +56,18 @@ namespace XMI
         /// \param[in] device  Shared memory device
         ///
         ShmemModel (T_Device & device, xmi_context_t context) :
-            Interface::MessageModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
+            Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
             myInterface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
             _device (device),
             _context (context)
         {};
 
-        static const bool   deterministic_packet_model   = true;
-        static const bool   reliable_packet_model        = true;
-        static const size_t packet_model_metadata_bytes  = T_Device::metadata_size;
-        static const size_t packet_model_payload_bytes   = T_Device::payload_size;
-        static const size_t packet_model_state_bytes     = sizeof(T_Message);
-
-        static const bool   deterministic_message_model  = true;
-        static const bool   reliable_message_model       = true;
-        static const size_t message_model_metadata_bytes = T_Device::metadata_size;
-        static const size_t message_model_payload_bytes  = T_Device::payload_size;
-        static const size_t message_model_state_bytes    = sizeof(T_Message);
+        static const bool   deterministic_packet_model        = true;
+        static const bool   reliable_packet_model             = true;
+        static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
+        static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
+        static const size_t packet_model_payload_bytes        = T_Device::payload_size;
+        static const size_t packet_model_state_bytes          = sizeof(T_Message);
 
         xmi_result_t init_impl (size_t                      dispatch,
                                 Interface::RecvFunction_t   direct_recv_func,
@@ -146,10 +141,10 @@ namespace XMI
         };
 
         template <unsigned T_Niov>
-        inline bool postPacketImmediate_impl (size_t         target_rank,
-                                              void         * metadata,
-                                              size_t         metasize,
-                                              struct iovec   (&iov)[T_Niov])
+        inline bool postPacket_impl (size_t         target_rank,
+                                     void         * metadata,
+                                     size_t         metasize,
+                                     struct iovec   (&iov)[T_Niov])
         {
           size_t peer = 0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
@@ -166,15 +161,17 @@ namespace XMI
           return false;
         };
 
-        inline bool postMessage_impl (uint8_t              (&state)[sizeof(T_Message)],
-                                      xmi_event_function   fn,
-                                      void               * cookie,
-                                      size_t               target_rank,
-                                      void               * metadata,
-                                      size_t               metasize,
-                                      void               * src,
-                                      size_t               bytes)
+        template <unsigned T_Niov>
+        inline bool postMultiPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
+                                          xmi_event_function   fn,
+                                          void               * cookie,
+                                          size_t               target_rank,
+                                          void               * metadata,
+                                          size_t               metasize,
+                                          struct iovec         (&iov)[T_Niov])
         {
+          XMI_assert(T_Niov==1);
+
           TRACE_ERR((stderr, ">> ShmemModel::postMessage_impl() .. target_rank = %zd\n", target_rank));
           size_t sequence;
 
@@ -188,7 +185,7 @@ namespace XMI
 
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. target_rank = %zd, peer = %zd\n", target_rank, peer));
           T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (_context, fn, cookie, _dispatch_id, metadata, metasize, src, bytes, false);
+          new (obj) T_Message (_context, fn, cookie, _dispatch_id, metadata, metasize, iov[0].iov_base, iov[0].iov_len, false);
 
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. 0\n"));
 

@@ -26,7 +26,7 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 XMI::Device::MU::MUDevice::MUDevice () :
   //BaseDevice (),
   Interface::BaseDevice<MUDevice,SysDep> (),
-  Interface::MessageDevice<MUDevice> (),
+  Interface::PacketDevice<MUDevice> (),
   sysdep (NULL),
   _colChannel (NULL),
   _initialized (false)
