@@ -125,72 +125,57 @@ namespace XMI
           return rq;
         }
 
-      inline xmi_result_t  algorithm_impl(xmi_xfer_type_t       collective,
-                                          xmi_algorithm_t      *alglist,
-                                          int                  *num)
-        {
-          RegQueue *rq = getRegQ(collective);
-          if(rq==NULL)
-            return XMI_UNIMPL;
-          int i = rq->size();
-          *num = MIN(*num, i);
-          for(i=0; i<*num; i++)
-            alglist[i] = (size_t)i;
-          return XMI_SUCCESS;
-        }
-
-      inline size_t        num_algorithm_impl   (xmi_xfer_type_t           collective)
-        {
-          RegQueue *rq = getRegQ(collective);
-          if(rq==NULL)
-            return XMI_UNIMPL;
-          return rq->size();
-        }
-     inline xmi_result_t algorithms_num_impl (xmi_xfer_type_t collective,
-                                              int *lists_lengths)
-     {
-       RegQueue *rq = getRegQ(collective);
-       if(rq == NULL)
-         return XMI_UNIMPL;
-       lists_lengths[0] = rq->size();
+      inline xmi_result_t algorithms_num_impl (xmi_xfer_type_t collective,
+                                               int *lists_lengths)
+      {
+        RegQueue *rq = getRegQ(collective);
+        if(rq == NULL)
+          return XMI_UNIMPL;
+        lists_lengths[0] = rq->size();
        
-       /* we return 0 for now for the "sometimes works" list */
-       lists_lengths[1] = 0;
-       return XMI_SUCCESS;
-     }
+        /* we return 0 for now for the "sometimes works" list */
+        lists_lengths[1] = 0;
+        return XMI_SUCCESS;
+      }
       
+      inline xmi_result_t algorithms_info_impl(xmi_xfer_type_t collective,
+                                               xmi_algorithm_t *alglist,
+                                               xmi_metadata_t *mdata,
+                                               int algorithm_type,
+                                               int num)
+      {
+        int i;
+        RegQueue *rq = (RegQueue *) NULL;
 
-     inline xmi_result_t algorithm_info_impl(xmi_xfer_type_t collective,
-                                             xmi_algorithm_t algorithm,
-                                             int algorithm_type,
-                                             xmi_metadata_t *mdata)
-     {
-       RegQueue *rq = (RegQueue *) NULL;
-
-       /* if type is 0, then we want the list of "always works" list */
-       if (algorithm_type == 0)
-         rq = getRegQ(collective);
-       else
-       {
+        /* if type is 0, then we want the list of "always works" list */
+        if (algorithm_type == 0)
+          rq = getRegQ(collective);
+        else
+        {
 #warning need to implement this later
-         ; //
-       }
+          ; //
+        }
        
-       if(rq == NULL)
-         return XMI_UNIMPL;
+        if(rq == NULL)
+          return XMI_UNIMPL;
+
+        if (num > rq->size())
+          return XMI_ERROR;
        
-       if (algorithm >= rq->size())
-         return XMI_ERROR;
-       
-       mdata->geometry = (*rq)[algorithm]->_metadata.geometry;
-       mdata->buffer = (*rq)[algorithm]->_metadata.buffer;
-       mdata->misc = (*rq)[algorithm]->_metadata.misc;
-       strcpy(mdata->name, (*rq)[algorithm]->_metadata.name);
-       return XMI_SUCCESS;
-     }
+        for(i = 0; i < num; i++)
+          alglist[i] = (size_t) i;
 
-
-
+        if (mdata)
+        {
+          for(i = 0; i < num; i++)
+            mdata[i].geometry = (*rq)[i]->_metadata.geometry;
+          mdata[i].buffer = (*rq)[i]->_metadata.buffer;
+          mdata[i].misc = (*rq)[i]->_metadata.misc;
+          strcpy(mdata[i].name, (*rq)[i]->_metadata.name);
+        }
+        return XMI_SUCCESS;
+      }
+     
 
       inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g,
                                        XMI_NBCollManager  *mgr,

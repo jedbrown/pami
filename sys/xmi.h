@@ -1117,42 +1117,27 @@ extern "C"
                                             int *lists_lengths);
 
   /**
-   * \brief fills in the attributes for a given algorithm.
+   * \brief fills in the protocols and attributes for a given xfer type.
    *
    * \param[in]     context        xmi context.
    * \param[in]     geometry       An input geometry to be analyzed.
-   * \param[in]     coll_type      type of collective op.
-   * \param[in]     algorithm      algorithm's id
+   * \param[in]     type           type of collective op.
+   * \param[in]     algs           array of algorithm to be filled in.
+   * \param[out]    mdata          metadata array to be filled in if algorithms 
+   *                               are applicable, can be NULL.
    * \param[in]     algorithm_type tells whether this an "always works"
    *                               or "works under-condition"
-   * \param[out]    mdata          metadata to be filled in if algorithm is
-   *                               applicable.
+   * \param[in]     num            number of algorithms to fill in.
    * \retval        XMI_SUCCESS    algorithm is applicable to geometry.
    * \retval        ?????          Error in input arguments or not applicable.
    */
-
-  xmi_result_t XMI_Geometry_algorithm_info (xmi_context_t context,
-                                            xmi_geometry_t geometry,
-                                            xmi_xfer_type_t type,
-                                            xmi_algorithm_t algorithm,
-                                            int algorithm_type,
-                                            xmi_metadata_t *mdata);
-
-  /**
-   * \brief Analyze a protocol to ensure that it will run on the specified geometry
-   *
-   * \param[in]     geometry   An input geometry to be analyzed.
-   * \param[in/out] algorithm  Storage for a list of algorithm id's
-   * \param[in/out] num        number of algorithms in the list in/requested, out/actual
-   * \retval        XMI_SUCCESS The protocol will run on the current geometry
-   * \retval        ?????      The protocol does not support the current geometry
-   */
-  xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
-                                       xmi_xfer_type_t            colltype,
-                                       xmi_geometry_t             geometry,
-                                       xmi_algorithm_t           *algorithm,
-                                       //                                       int                        algorithm_type,
-                                       int                       *num);
+  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
+                                             xmi_geometry_t geometry,
+                                             xmi_xfer_type_t type,
+                                             xmi_algorithm_t *algs,
+                                             xmi_metadata_t *mdata,
+                                             int algorithm_type,
+                                             int num);
 
   /**
    * \brief Free any memory allocated inside of a geometry.
@@ -3282,7 +3267,7 @@ extern "C"
     XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
     XMI_MEM_SIZE,        /**<  Q  : size_t            : Size of the core main memory, in units of 1024^2 Bytes    */
     XMI_PROCESSOR_NAME,  /**<  Q  : char[]            : A unique name string for the calling node. */
-    XMI_PROCESSOR_NAME_SIZE,/**< Q: size_t            : The size of the unique name string     */
+    XMI_PROCESSOR_NAME_SIZE/**< Q: size_t            : The size of the unique name string     */
   } xmi_attribute_name_t;
 
   typedef union

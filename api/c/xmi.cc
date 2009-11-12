@@ -437,19 +437,6 @@ extern "C" xmi_result_t XMI_Geometry_world (xmi_context_t               context,
 }
 
 ///
-/// \copydoc XMI_Geometry_algorithm
-///
-extern "C" xmi_result_t XMI_Geometry_algorithm (xmi_context_t              context,
-						xmi_xfer_type_t            colltype,
-						xmi_geometry_t             geometry,
-						xmi_algorithm_t           *algorithm,
-						int                       *num)
-{
-  XMI::Context * ctx = (XMI::Context *) context;
-  return ctx->geometry_algorithm (colltype,geometry, algorithm, num);
-}
-
-///
 /// \copydoc XMI_Geometry_finalize
 ///
 extern "C" xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
@@ -483,20 +470,24 @@ extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
                                       lists_lengths);
 }
 
-extern "C"  xmi_result_t XMI_Geometry_algorithm_info (xmi_context_t context,
-                                                      xmi_geometry_t geometry,
-                                                      xmi_xfer_type_t type,
-                                                      xmi_algorithm_t algorithm,
-                                                      int algorithm_type,
-                                                      xmi_metadata_t *mdata)
+/// \copydoc XMI_Geometry_algorithms_info
+///
+extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
+                                                       xmi_geometry_t geometry,
+                                                       xmi_xfer_type_t type,
+                                                       xmi_algorithm_t *algs,
+                                                       xmi_metadata_t *mdata,
+                                                       int algorithm_type,
+                                                       int num)
 {
   XMI::Context * ctx = (XMI::Context *) context;
-  return ctx->geometry_algorithm_info (context,
-                                       geometry,
-                                       type,
-                                       algorithm,
-                                       algorithm_type,
-                                       mdata);
+  return ctx->geometry_algorithms_info (context,
+                                        geometry,
+                                        type,
+                                        algs,
+                                        mdata,
+                                        algorithm_type,
+                                        num);
 }
 ///
 

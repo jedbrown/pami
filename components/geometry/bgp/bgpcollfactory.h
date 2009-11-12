@@ -102,29 +102,57 @@ namespace XMI
         return rq;
       }
 
-      inline xmi_result_t  algorithm_impl(xmi_xfer_type_t collective,
-                                          xmi_algorithm_t *alglist,
-                                          int *num)
+      inline xmi_result_t algorithms_num_impl (xmi_xfer_type_t collective,
+                                               int *lists_lengths)
       {
         RegQueue *rq = getRegQ(collective);
-        if(rq==NULL)
+        if(rq == NULL)
           return XMI_UNIMPL;
-        int i = rq->size();
-        *num = MIN(*num, i);
-        for(i=0; i<*num; i++)
-          alglist[i] = (size_t)i;
+        lists_lengths[0] = rq->size();
+       
+        /* we return 0 for now for the "sometimes works" list */
+        lists_lengths[1] = 0;
         return XMI_SUCCESS;
       }
-
-      inline size_t num_algorithm_impl(xmi_xfer_type_t collective)
+      
+      inline xmi_result_t algorithms_info_impl(xmi_xfer_type_t collective,
+                                               xmi_algorithm_t *alglist,
+                                               xmi_metadata_t *mdata,
+                                               int algorithm_type,
+                                               int num)
       {
-        RegQueue *rq = getRegQ(collective);
-        if(rq==NULL)
+        int i;
+        RegQueue *rq = (RegQueue *) NULL;
+
+        /* if type is 0, then we want the list of "always works" list */
+        if (algorithm_type == 0)
+          rq = getRegQ(collective);
+        else
+        {
+#warning need to implement this later
+          ; //
+        }
+       
+        if(rq == NULL)
           return XMI_UNIMPL;
-        return rq->size();
+
+        if (num > rq->size())
+          return XMI_ERROR;
+       
+        for(i = 0; i < num; i++)
+          alglist[i] = (size_t) i;
+
+        if (mdata)
+        {
+          for(i = 0; i < num; i++)
+            mdata[i].geometry = (*rq)[i]->_metadata.geometry;
+          mdata[i].buffer = (*rq)[i]->_metadata.buffer;
+          mdata[i].misc = (*rq)[i]->_metadata.misc;
+          strcpy(mdata[i].name, (*rq)[i]->_metadata.name);
+        }
+        return XMI_SUCCESS;
       }
-
-
+     
 
       /*
         we need to pass in global barrier instead

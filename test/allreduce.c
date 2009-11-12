@@ -292,32 +292,73 @@ int main(int argc, char*argv[])
     return 1;
   }
 
-  xmi_algorithm_t algorithm[1];
-  int             num_algorithm = 1;
-  result = XMI_Geometry_algorithm(context,
-				  XMI_XFER_BARRIER,
-				  world_geometry,
-				  &algorithm[0],
-				  &num_algorithm);
+  int algorithm_type = 0;
+  xmi_algorithm_t *algorithm;
+  int num_algorithm[2] = {0};
+  result = XMI_Geometry_algorithms_num(context,
+                                       world_geometry,
+                                       XMI_XFER_BARRIER,
+                                       num_algorithm);
   if (result != XMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to query barrier algorithm. result = %d\n", result);
+    fprintf (stderr,
+             "Error. Unable to query barrier algorithm. result = %d\n",
+             result);
     return 1;
   }
 
-  xmi_algorithm_t allreducealgorithm[20];
-  int             allreducenum_algorithm = 20;
-  result = XMI_Geometry_algorithm(context,
-				  XMI_XFER_ALLREDUCE,
-				  world_geometry,
-				  &allreducealgorithm[0],
-				  &allreducenum_algorithm);
-  if (result != XMI_SUCCESS)
+  if (num_algorithm[0])
   {
-    fprintf (stderr, "Error. Unable to query broadcast algorithm. result = %d\n", result);
-    return 1;
+    algorithm = (xmi_algorithm_t*)
+                malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
+    result = XMI_Geometry_algorithms_info(context,
+                                          world_geometry,
+                                          XMI_XFER_BROADCAST,
+                                          algorithm,
+                                          (xmi_metadata_t*)NULL,
+                                          algorithm_type,
+                                          num_algorithm[0]);
+
   }
 
+  xmi_algorithm_t *allreducealgorithm;
+  xmi_metadata_t *metas;
+  int allreducenum_algorithm[2] = {0};
+  result = XMI_Geometry_algorithms_num(context,
+                                       world_geometry,
+                                       XMI_XFER_BROADCAST,
+                                       allreducenum_algorithm);
+
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr,
+             "Error. Unable to query allreduce algorithm. result = %d\n",
+             result);
+    return 1;
+  }
+  
+  if (allreducenum_algorithm[0])
+  {
+    allreducealgorithm = (xmi_algorithm_t*)
+      malloc(sizeof(xmi_algorithm_t) * allreducenum_algorithm[0]);
+    metas = (xmi_metadata_t*)
+      malloc(sizeof(xmi_metadata_t) * allreducenum_algorithm[0]);
+    
+    result = XMI_Geometry_algorithms_info(context,
+                                          world_geometry,
+                                          XMI_XFER_ALLREDUCE,
+                                          allreducealgorithm,
+                                          metas,
+                                          algorithm_type = 0,
+                                          allreducenum_algorithm[0]);
+
+    if (result != XMI_SUCCESS)
+    {
+      fprintf(stderr, "Error. Unable to query allreduce algorithm attributes."
+              "result = %d\n", result);
+      return 1;
+    }
+  }
 
   unsigned** validTable=
     alloc2DContig(op_count,dt_count);
@@ -362,19 +403,12 @@ int main(int argc, char*argv[])
 
 #if 1
   int nalg;
-  for(nalg=0; nalg<allreducenum_algorithm; nalg++)
+  for(nalg=0; nalg<allreducenum_algorithm[algorithm_type]; nalg++)
   {
-    xmi_metadata_t meta;
-    result = XMI_Geometry_algorithm_info(context,
-                                         world_geometry,
-                                         XMI_XFER_ALLREDUCE,
-                                         allreducealgorithm[nalg],
-                                         0,
-                                         &meta);
     if (rank == root)
     {
       printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root,
-             meta.name);
+             metas[nalg].name);
       printf("# Size(bytes)           cycles    bytes/sec    usec\n");
       printf("# -----------      -----------    -----------    ---------\n");
     }
@@ -460,6 +494,8 @@ int main(int argc, char*argv[])
     fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
     return 1;
   }
-
+  free(metas);
+  free(algorithm);
+  free(allreducealgorithm);
   return 0;
 }

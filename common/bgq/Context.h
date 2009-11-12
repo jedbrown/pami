@@ -327,13 +327,6 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_algorithm (xmi_xfer_type_t  colltype,
-                                              xmi_geometry_t   geometry,
-                                              xmi_algorithm_t *algorithm,
-                                              int             *num)
-      {
-        return XMI_UNIMPL;
-      }
 
       inline xmi_result_t geometry_finalize (xmi_geometry_t geometry)
       {
@@ -353,15 +346,18 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_algorithm_info_impl (xmi_context_t context,
-                                                        xmi_geometry_t geometry,
-                                                        xmi_xfer_type_t type,
-                                                        xmi_algorithm_t algorithm,
-                                                        int algorithm_type,
-                                                        xmi_metadata_t *mdata)
-      {
-        return XMI_UNIMPL;
-      }
+      inline
+      xmi_result_t geometry_algorithms_info_impl (xmi_context_t context,
+                                                  xmi_geometry_t geometry,
+                                                  xmi_xfer_type_t colltype,
+                                                  xmi_algorithm_t *algs,
+                                                  xmi_metadata_t *mdata,
+                                                  int algorithm_type,
+                                                  int num)
+        {
+          return XMI_UNIMPL;
+          
+        }
 
       inline xmi_result_t dispatch_impl (size_t                     id,
                                          xmi_dispatch_callback_fn   fn,

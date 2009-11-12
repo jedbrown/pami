@@ -145,31 +145,34 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  xmi_algorithm_t algorithm[1];
-  int             num_algorithm = 1;
-  result = XMI_Geometry_algorithm(context,
-				  XMI_XFER_BARRIER,
-				  world_geometry,
-				  &algorithm[0],
-				  &num_algorithm);
+  int algorithm_type = 0;
+  xmi_algorithm_t *algorithm;
+  int num_algorithm[2] = {0};
+  result = XMI_Geometry_algorithms_num(context,
+                                       world_geometry,
+                                       XMI_XFER_BARRIER,
+                                       num_algorithm);
   if (result != XMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to query barrier algorithm. result = %d\n", result);
-        return 1;
-      }
+  {
+    fprintf (stderr,
+             "Error. Unable to query barrier algorithm. result = %d\n",
+             result);
+    return 1;
+  }
 
-  xmi_algorithm_t bcastalgorithm[1];
-  int             bcastnum_algorithm = 1;
-  result = XMI_Geometry_algorithm(context,
-				  XMI_XFER_BROADCAST,
-				  world_geometry,
-				  &bcastalgorithm[0],
-				  &bcastnum_algorithm);
-  if (result != XMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to query broadcast algorithm. result = %d\n", result);
-        return 1;
-      }
+  if (num_algorithm[0])
+  {
+    algorithm = (xmi_algorithm_t*)
+                malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
+    result = XMI_Geometry_algorithms_info(context,
+                                          world_geometry,
+                                          XMI_XFER_BARRIER,
+                                          algorithm,
+                                          (xmi_metadata_t*)NULL,
+                                          algorithm_type,
+                                          num_algorithm[0]);
+
+  }
 
   unsigned     rank = task_id;
   unsigned i,j,root = 0;
@@ -191,7 +194,34 @@ int main(int argc, char*argv[])
   barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
 
+  xmi_algorithm_t *bcastalgorithm;
+  int bcastnum_algorithm[2] = {0};
+  result = XMI_Geometry_algorithms_num(context,
+                                       world_geometry,
+                                       XMI_XFER_BROADCAST,
+                                       bcastnum_algorithm);
 
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr,
+             "Error. Unable to query bcast algorithm. result = %d\n",
+             result);
+    return 1;
+  }
+  
+  if (bcastnum_algorithm[0])
+  {
+    bcastalgorithm = (xmi_algorithm_t*)
+      malloc(sizeof(xmi_algorithm_t) * bcastnum_algorithm[0]);
+    
+    result = XMI_Geometry_algorithms_info(context,
+                                          world_geometry,
+                                          XMI_XFER_BROADCAST,
+                                          bcastalgorithm,
+                                          (xmi_metadata_t*)NULL,
+                                          algorithm_type = 0,
+                                          bcastnum_algorithm[0]);
+  }
   xmi_ambroadcast_t broadcast;
   broadcast.xfer_type = XMI_XFER_AMBROADCAST;
   broadcast.cb_done   = cb_broadcast;
@@ -254,5 +284,8 @@ int main(int argc, char*argv[])
         fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
         return 1;
       }
+
+  free(algorithm);
+  free(bcastalgorithm);
   return 0;
 }

@@ -80,14 +80,36 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
       return 1;
     }
+  
+  int algorithm_type = 0;
+  xmi_algorithm_t *algorithm;
+  int num_algorithm[2] = {0};
+  result = XMI_Geometry_algorithms_num(context,
+                                       world_geometry,
+                                       XMI_XFER_BARRIER,
+                                       num_algorithm);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr,
+             "Error. Unable to query barrier algorithm. result = %d\n",
+             result);
+    return 1;
+  }
 
-  xmi_algorithm_t algorithm[20];
-  int             num_algorithm = 20;
-  result = XMI_Geometry_algorithm(context,
-				  XMI_XFER_BARRIER,
-				  world_geometry,
-				  &algorithm[0],
-				  &num_algorithm);
+  if (num_algorithm[0])
+  {
+    algorithm = (xmi_algorithm_t*)
+                malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
+    result = XMI_Geometry_algorithms_info(context,
+                                          world_geometry,
+                                          XMI_XFER_BROADCAST,
+                                          algorithm,
+                                          (xmi_metadata_t*)NULL,
+                                          algorithm_type,
+                                          num_algorithm[0]);
+
+  }
+  
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);
@@ -111,7 +133,7 @@ int main (int argc, char ** argv)
   _barrier(context, &barrier);
 
   int algo;
-  for(algo=0; algo<num_algorithm; algo++)
+  for(algo=0; algo<num_algorithm[algorithm_type]; algo++)
       {
         double ti, tf, usec;
         barrier.algorithm = algorithm[algo];
@@ -136,7 +158,7 @@ int main (int argc, char ** argv)
 
         if(!task_id)
           fprintf(stderr, "Test Barrier Performance %d of %d algorithms\n",
-                  algo+1, num_algorithm);
+                  algo+1, num_algorithm[algorithm_type]);
         int niter=10000;
         _barrier(context, &barrier);
 

@@ -111,32 +111,63 @@ int main (int argc, char ** argv)
         return 1;
       }
 
-  xmi_algorithm_t algorithm[1];
-  int             num_algorithm = 1;
-  result = XMI_Geometry_algorithm(context,
-				  XMI_XFER_BARRIER,
-				  world_geometry,
-				  &algorithm[0],
-				  &num_algorithm);
+  int algorithm_type = 0;
+  xmi_algorithm_t *algorithm;
+  int num_algorithm[2] = {0};
+  result = XMI_Geometry_algorithms_num(context,
+                                       world_geometry,
+                                       XMI_XFER_BARRIER,
+                                       num_algorithm);
   if (result != XMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to query barrier algorithm. result = %d\n", result);
-        return 1;
-      }
+  {
+    fprintf (stderr,
+             "Error. Unable to query barrier algorithm. result = %d\n",
+             result);
+    return 1;
+  }
 
-  xmi_algorithm_t scattervalgorithm[1];
-  int             scattervnum_algorithm = 1;
-  result = XMI_Geometry_algorithm(context,
-				  XMI_XFER_SCATTERV,
-				  world_geometry,
-				  &scattervalgorithm[0],
-				  &scattervnum_algorithm);
+  if (num_algorithm[0])
+  {
+    algorithm = (xmi_algorithm_t*)
+                malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
+    result = XMI_Geometry_algorithms_info(context,
+                                          world_geometry,
+                                          XMI_XFER_BARRIER,
+                                          algorithm,
+                                          (xmi_metadata_t*)NULL,
+                                          algorithm_type,
+                                          num_algorithm[0]);
+
+  }
+  
+  xmi_algorithm_t *scattervalgorithm;
+  int scattervnum_algorithm[2] = {0};
+  result = XMI_Geometry_algorithms_num(context,
+                                       world_geometry,
+                                       XMI_XFER_SCATTERV,
+                                       scattervnum_algorithm);
+
   if (result != XMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to query scatterv algorithm. result = %d\n", result);
-        return 1;
-      }
-
+  {
+    fprintf (stderr,
+             "Error. Unable to query scatter algorithm. result = %d\n",
+             result);
+    return 1;
+  }
+  
+  if (scattervnum_algorithm[0])
+  {
+    scattervalgorithm = (xmi_algorithm_t*)
+      malloc(sizeof(xmi_algorithm_t) * scattervnum_algorithm[0]);
+    
+    result = XMI_Geometry_algorithms_info(context,
+                                          world_geometry,
+                                          XMI_XFER_SCATTERV,
+                                          scattervalgorithm,
+                                          (xmi_metadata_t*)NULL,
+                                          algorithm_type = 0,
+                                          scattervnum_algorithm[0]);
+  }
 
 
   double ti, tf, usec;
@@ -223,6 +254,7 @@ int main (int argc, char ** argv)
         fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
         return 1;
       }
-
+  free(scattervalgorithm);
+  free(algorithm);
   return 0;
 };
