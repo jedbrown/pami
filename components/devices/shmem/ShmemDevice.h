@@ -298,10 +298,11 @@ namespace XMI
 
           // Write the packet payload data
           uint8_t * data = (uint8_t *) pkt->getPayload ();
-          unsigned i;
+          size_t i, j;
           for (i=0; i<T_Niov; i++)
           {
-            memcpy ((void *) data, iov[i].iov_base, iov[i].iov_len);
+            uint8_t * src  = (uint8_t *) iov[i].iov_base;
+            for (j=0; j<iov[i].iov_len; j++) data[j] = src[j];
             data += iov[i].iov_len;
           }
 
@@ -341,7 +342,9 @@ namespace XMI
 
           // Write the packet payload data
           uint8_t * data = (uint8_t *) pkt->getPayload ();
-          memcpy (data, iov[0].iov_base, iov[0].iov_len);
+          uint8_t * src  = (uint8_t *) iov[0].iov_base;
+          size_t i;
+          for (i=0; i<iov[0].iov_len; i++) data[i] = src[i];
 
           sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
@@ -379,8 +382,12 @@ namespace XMI
 
           // Write the packet payload data
           uint8_t * data = (uint8_t *) pkt->getPayload ();
-          memcpy (data, iov[0].iov_base, iov[0].iov_len);
-          memcpy (data+iov[0].iov_len, iov[1].iov_base, iov[1].iov_len);
+          uint8_t * src  = (uint8_t *) iov[0].iov_base;
+          size_t i;
+          for (i=0; i<iov[0].iov_len; i++) data[i] = src[i];
+          data += iov[0].iov_len;
+          src   = (uint8_t *) iov[1].iov_base;
+          for (i=0; i<iov[1].iov_len; i++) data[i] = src[i];
 
           sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
