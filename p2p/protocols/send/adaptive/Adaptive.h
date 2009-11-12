@@ -61,30 +61,30 @@ namespace XMI
           /// \param[out] status       Constructor status
           ///
           inline Adaptive (size_t                     dispatch,
-                        xmi_dispatch_callback_fn   dispatch_fn,
-                        void                     * cookie,
-                        T_Device                 & device,
-                        size_t                     origin_task,
-                        xmi_context_t              context,
-                        size_t                     contextid,
-                        xmi_result_t             & status) :
+                           xmi_dispatch_callback_fn   dispatch_fn,
+                           void                     * cookie,
+                           T_Device                 & device,
+                           size_t                     origin_task,
+                           xmi_context_t              context,
+                           size_t                     contextid,
+                           xmi_result_t             & status) :
               XMI::Protocol::Send::Send (),
               AdaptiveImmediate<T_Model, T_Device> (dispatch,
-                                                 dispatch_fn,
-                                                 cookie,
-                                                 device,
-                                                 origin_task,
-                                                 context,
-                                                 contextid,
-                                                 status),
+                                                    dispatch_fn,
+                                                    cookie,
+                                                    device,
+                                                    origin_task,
+                                                    context,
+                                                    contextid,
+                                                    status),
               AdaptiveSimple<T_Model, T_Device, T_LongHeader> (dispatch,
-                                                            dispatch_fn,
-                                                            cookie,
-                                                            device,
-                                                            origin_task,
-                                                            context,
-                                                            contextid,
-                                                            status)
+                                                               dispatch_fn,
+                                                               cookie,
+                                                               device,
+                                                               origin_task,
+                                                               context,
+                                                               contextid,
+                                                               status)
           {
           };
 
@@ -95,18 +95,6 @@ namespace XMI
           ///
           /// \see XMI::Protocol::Send::immediate
           ///
-          virtual xmi_result_t immediate (xmi_task_t   peer,
-                                          void       * src,
-                                          size_t       bytes,
-                                          void       * msginfo,
-                                          size_t       mbytes)
-          {
-            TRACE_ERR((stderr, ">> Adaptive::immediate()\n"));
-            xmi_result_t result = this->immediate_impl (peer, src, bytes, msginfo, mbytes);
-            TRACE_ERR((stderr, "<< Adaptive::immediate()\n"));
-            return result;
-          };
-
           virtual xmi_result_t immediate (xmi_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, ">> Adaptive::immediate()\n"));
@@ -120,22 +108,7 @@ namespace XMI
           ///
           /// \see XMI::Protocol::Send::simple
           ///
-          virtual xmi_result_t simple (xmi_event_function   local_fn,
-                                       xmi_event_function   remote_fn,
-                                       void               * cookie,
-                                       xmi_task_t           peer,
-                                       void               * src,
-                                       size_t               bytes,
-                                       void               * msginfo,
-                                       size_t               mbytes)
-          {
-            TRACE_ERR((stderr, ">> Adaptive::simple()\n"));
-            xmi_result_t result = this->simple_impl (local_fn, remote_fn, cookie, peer, src, bytes, msginfo, mbytes);
-            TRACE_ERR((stderr, "<< Adaptive::simple()\n"));
-            return result;
-          };
-
-          virtual xmi_result_t simple (xmi_send_simple_t * parameters)
+          virtual xmi_result_t simple (xmi_send_t * parameters)
           {
             TRACE_ERR((stderr, ">> Adaptive::simple()\n"));
             xmi_result_t result = this->simple_impl (parameters);

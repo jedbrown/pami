@@ -36,6 +36,7 @@
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/Eager.h"
+#include "p2p/protocols/send/adaptive/Adaptive.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -463,6 +464,7 @@ namespace XMI
               {
                 _dispatch[id] = _protocol.allocateObject ();
                 new (_dispatch[id])
+//                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
                 (id, fn, cookie, _shmem, __global.mapping.task(),
                  _context, _contextid, result);
@@ -472,6 +474,7 @@ namespace XMI
                 _dispatch[id] = _protocol.allocateObject ();
                 new (_dispatch[id])
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
+//                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
                 (id, fn, cookie, _shmem, __global.mapping.task(),
                  _context, _contextid, result);
               }

@@ -62,8 +62,8 @@ namespace XMI
           {
             uint8_t                    data[T_Model::packet_model_payload_bytes]; ///< Packed data
             pkt_t                      pkt;
-            AdaptiveImmediate<T_Model,
-                           T_Device> * pf;  ///< Adaptive immediate protocol
+            AdaptiveImmediate < T_Model,
+            T_Device > * pf; ///< Adaptive immediate protocol
           } send_t;
 
           ///
@@ -74,7 +74,7 @@ namespace XMI
             xmi_task_t     fromRank;  ///< Origin task id
             uint16_t       databytes; ///< Number of bytes of data
             uint16_t       metabytes; ///< Number of bytes of metadata
-          } protocol_metadata_t;
+        } protocol_metadata_t;
 
         public:
 
@@ -90,13 +90,13 @@ namespace XMI
           /// \param[out] status       Constructor status
           ///
           inline AdaptiveImmediate (size_t                     dispatch,
-                                 xmi_dispatch_callback_fn   dispatch_fn,
-                                 void                     * cookie,
-                                 T_Device                 & device,
-                                 xmi_task_t                 origin_task,
-                                 xmi_context_t              context,
-                                 size_t                     contextid,
-                                 xmi_result_t             & status) :
+                                    xmi_dispatch_callback_fn   dispatch_fn,
+                                    void                     * cookie,
+                                    T_Device                 & device,
+                                    xmi_task_t                 origin_task,
+                                    xmi_context_t              context,
+                                    size_t                     contextid,
+                                    xmi_result_t             & status) :
               _send_model (device, context),
               _fromRank (origin_task),
               _context (context),
@@ -112,7 +112,7 @@ namespace XMI
             // This protocol only works with reliable networks.
             COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
 
-           
+
             // ----------------------------------------------------------------
             // Compile-time assertions
             // ----------------------------------------------------------------
@@ -131,19 +131,6 @@ namespace XMI
           ///
           inline xmi_result_t immediate_impl (xmi_send_immediate_t * parameters)
           {
-           return immediate_impl (parameters->send.task,
-                                  parameters->immediate.addr,
-                                  parameters->immediate.bytes,
-                                  parameters->send.header.addr,
-                                  parameters->send.header.bytes);
-          }
-
-          inline xmi_result_t immediate_impl (xmi_task_t   peer,
-                                              void       * src,
-                                              size_t       bytes,
-                                              void       * msginfo,
-                                              size_t       mbytes)
-          {
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() >>\n"));
 
             // Specify the protocol metadata to send with the application
@@ -152,38 +139,37 @@ namespace XMI
             // on the stack.
             protocol_metadata_t metadata;
             metadata.fromRank  = _fromRank;
-            metadata.databytes = bytes;
-            metadata.metabytes = mbytes;
+            metadata.databytes = parameters->data.iov_len;
+            metadata.metabytes = parameters->header.iov_len;
 
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
             bool posted =
-              _send_model.postPacketImmediate (peer,
-                                               (void *) &metadata,
+              _send_model.postPacketImmediate (parameters->task,
+                                               (void *) & metadata,
                                                sizeof (protocol_metadata_t),
-                                               msginfo,
-                                               mbytes,
-                                               src,
-                                               bytes);
+                                               parameters->iov);
 
             if (!posted)
-            {
-              // For some reason the packet could not be immediately posted.
-              // Allocate memory, pack the user data and metadata, and attempt
-              // a regular (non-blocking) post.
-              send_t * send = (send_t *) _allocator.allocateObject ();
-              send->pf = this;
-              memcpy (&(send->data[0]), msginfo, mbytes);
-              memcpy (&(send->data[mbytes]), src, bytes);
+              {
+                // For some reason the packet could not be immediately posted.
+                // Allocate memory, pack the user data and metadata, and attempt
+                // a regular (non-blocking) post.
+                send_t * send = (send_t *) _allocator.allocateObject ();
+                send->pf = this;
+                memcpy (&(send->data[0]), parameters->header.iov_base, parameters->header.iov_len);
+                memcpy (&(send->data[parameters->header.iov_len]), parameters->data.iov_base, parameters->data.iov_len);
 
-              _send_model.postPacket (send->pkt,
-                                      send_complete,
-                                      send,
-                                      peer,
-                                      (void *) &metadata,
-                                      sizeof (protocol_metadata_t),
-                                      &(send->data[0]),
-                                      mbytes+bytes);
-            }
+                struct iovec v[1];
+                v[0].iov_base = (void *) & (send->data[0]);
+                v[0].iov_len  = metadata.databytes + metadata.metabytes;
+                _send_model.postPacket (send->pkt,
+                                        send_complete,
+                                        send,
+                                        parameters->task,
+                                        (void *) &metadata,
+                                        sizeof (protocol_metadata_t),
+                                        v);
+              }
 
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() <<\n"));
             return XMI_SUCCESS;
