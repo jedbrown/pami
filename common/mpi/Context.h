@@ -15,6 +15,7 @@
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpimodel.h"
 #include "components/devices/mpi/mpimessage.h"
+#include "p2p/protocols/send/adaptive/Adaptive.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
@@ -46,6 +47,7 @@ namespace XMI
     typedef CollFactory::MPI<MPIDevice, SysDep> MPICollfactory;
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice> EagerMPI;
+    //typedef XMI::Protocol::Send::Adaptive <MPIModel,MPIDevice> EagerMPI;
 
 
     class Work : public Queue
@@ -235,36 +237,25 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
-      inline xmi_result_t send_impl (xmi_send_simple_t * parameters)
+      inline xmi_result_t send_impl (xmi_send_t * parameters)
         {
           size_t id = (size_t)(parameters->send.dispatch);
           XMI_assert_debug (_dispatch[id] != NULL);
           XMI::Protocol::Send::Send * send =
             (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->simple (parameters->simple.local_fn,
-                        parameters->simple.remote_fn,
-                        parameters->send.cookie,
-                        parameters->send.task,
-                        parameters->simple.addr,
-                        parameters->simple.bytes,
-                        parameters->send.header.addr,
-                        parameters->send.header.bytes);
+          send->simple (parameters);
           return XMI_SUCCESS;
         }
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
-          size_t id = (size_t)(parameters->send.dispatch);
+          size_t id = (size_t)(parameters->dispatch);
           TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
           XMI_assert_debug (_dispatch[id] != NULL);
 
           XMI::Protocol::Send::Send * send =
             (XMI::Protocol::Send::Send *) _dispatch[id];
-          send->immediate (parameters->send.task,
-                           parameters->immediate.addr,
-                           parameters->immediate.bytes,
-                           parameters->send.header.addr,
-                           parameters->send.header.bytes);
+          send->immediate (parameters);
 
           TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
           return XMI_SUCCESS;

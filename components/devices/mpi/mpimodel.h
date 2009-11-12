@@ -73,8 +73,34 @@ namespace XMI
                                    size_t               target_rank,
                                    void               * metadata,
                                    size_t               metasize,
-                                   void               * payload,
-                                   size_t               bytes)
+                                   struct iovec_t     * iov,
+                                   size_t               niov)
+        {
+          XMI_abort();
+          return false;
+        };
+
+      template <unsigned T_Niov>
+      inline bool postPacket_impl (uint8_t              (&state)[MPIModel::packet_model_state_bytes],
+                                   xmi_event_function   fn,
+                                   void               * cookie,
+                                   size_t               target_rank,
+                                   void               * metadata,
+                                   size_t               metasize,
+                                   struct iovec         (&iov)[T_Niov])
+        {
+          XMI_abort();
+          return false;
+        };
+
+
+      inline bool postPacket_impl (uint8_t              (&state)[MPIModel::packet_model_state_bytes],
+                                   xmi_event_function   fn,
+                                   void               * cookie,
+                                   size_t               target_rank,
+                                   void               * metadata,
+                                   size_t               metasize,
+                                   struct iovec         (&iov)[1])
         {
           int rc;
           MPIMessage * msg = (MPIMessage *)state;
@@ -89,10 +115,10 @@ namespace XMI
                              cookie);
           msg->_freeme=0;
           msg->_p2p_msg._metadatasize=metasize;
-          msg->_p2p_msg._payloadsize0=bytes;
+          msg->_p2p_msg._payloadsize0=iov[0].iov_len;
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
-          memcpy(&msg->_p2p_msg._payload[0], payload, bytes);
+          memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket_impl MPI_Isend %zd to %zd\n",(int)this,
                          sizeof(msg->_p2p_msg),target_rank));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
@@ -118,10 +144,7 @@ namespace XMI
                                    size_t               target_rank,
                                    void               * metadata,
                                    size_t               metasize,
-                                   void               * payload0,
-                                   size_t               bytes0,
-                                   void               * payload1,
-                                   size_t               bytes1)
+                                   struct iovec         (&iov)[2])
         {
           int rc;
 //          void       * obj = malloc(sizeof(MPIMessage));
@@ -137,11 +160,11 @@ namespace XMI
                              cookie);
           msg->_freeme=0;
           msg->_p2p_msg._metadatasize=metasize;
-          msg->_p2p_msg._payloadsize0=bytes0;
-          msg->_p2p_msg._payloadsize1=bytes1;
+          msg->_p2p_msg._payloadsize0=iov[0].iov_len;
+          msg->_p2p_msg._payloadsize1=iov[1].iov_len;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
-          memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
-          memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
+          memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
+          memcpy(&msg->_p2p_msg._payload[iov[0].iov_len], iov[1].iov_base, iov[1].iov_len);
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacket MPI_Isend %zd to %zd\n",(int)this,
                          sizeof(msg->_p2p_msg),target_rank));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
@@ -161,27 +184,15 @@ namespace XMI
           return true;
         };
 
-      inline bool postPacket_impl (uint8_t              (&state)[MPIModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
-                                   void               * cookie,
-                                   size_t               target_rank,
-                                   void               * metadata,
-                                   size_t               metasize,
-                                   struct iovec_t     * iov,
-                                   size_t               niov)
-        {
-          assert(0);
-          return false;
-        };
 
-      inline bool postPacketImmediate (size_t   target_rank,
-                                       void   * metadata,
-                                       size_t   metasize,
-                                       void   * payload0,
-                                       size_t   bytes0,
-                                       void   * payload1,
-                                       size_t   bytes1)
+      template <unsigned T_Niov>
+      inline bool postPacketImmediate (size_t         target_rank,
+                                       void         * metadata,
+                                       size_t         metasize,
+                                       struct iovec   (&iov)[T_Niov])
         {
+          XMI_assert(T_Niov<=2);
+
           int rc;
           void       * obj = malloc(sizeof(MPIMessage));
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate %d \n",(int)this, this->_dispatch_id));
@@ -196,11 +207,13 @@ namespace XMI
                              0);
           msg->_freeme=1;
           msg->_p2p_msg._metadatasize=metasize;
-          msg->_p2p_msg._payloadsize0=bytes0;
-          msg->_p2p_msg._payloadsize1=bytes1;
+          msg->_p2p_msg._payloadsize0=iov[0].iov_len;
+          if (T_Niov == 2)
+            msg->_p2p_msg._payloadsize1=iov[1].iov_len;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
-          memcpy(&msg->_p2p_msg._payload[0], payload0, bytes0);
-          memcpy(&msg->_p2p_msg._payload[bytes0], payload1, bytes1);
+          memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
+          if (T_Niov)
+            memcpy(&msg->_p2p_msg._payload[iov[0].iov_len], iov[1].iov_base, iov[1].iov_len);
           TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::postPacketImmediate MPI_Isend %zd to %zd\n",(int)this,
                          sizeof(msg->_p2p_msg),target_rank));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
