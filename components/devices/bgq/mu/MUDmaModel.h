@@ -22,7 +22,6 @@
 #include <spi/include/mu/Pt2PtDirectPutDescriptorXX.h>
 #include <spi/include/kernel/memory.h>
 
-//#include "components/devices/DmaModel.h"
 #include "components/devices/myDmaModel.h"
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"

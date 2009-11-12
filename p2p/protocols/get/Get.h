@@ -25,13 +25,6 @@
 
 #include "Memregion.h"
 
-//#include "get/Get.h"
-//#include "devices/prod/cdi/DmaModel.h"
-//#include "devices/prod/cdi/DmaDevice.h"
-//#include "devices/prod/cdi/DmaMemregion.h"
-//#include "SysDep.h"
-//#include "Util.h"
-
 namespace XMI
 {
   namespace Protocol
