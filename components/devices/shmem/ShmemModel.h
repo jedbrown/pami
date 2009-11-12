@@ -21,8 +21,9 @@
 
 #include "sys/xmi.h"
 
-#include "components/devices/myDmaModel.h" //for now using a separate model than M
 #include "components/devices/PacketInterface.h"
+#include "components/devices/DmaInterface.h"
+
 #include "components/devices/shmem/ShmemDevice.h"
 
 #ifndef TRACE_ERR
@@ -47,7 +48,7 @@ namespace XMI
     ///
     template < class T_Device, class T_Message>
     class ShmemModel : public Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > ,
-        public myInterface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) >
+        public Interface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) >
     {
       public:
         ///
@@ -57,7 +58,7 @@ namespace XMI
         ///
         ShmemModel (T_Device & device, xmi_context_t context) :
             Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
-            myInterface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
+            Interface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
             _device (device),
             _context (context)
         {};

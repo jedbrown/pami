@@ -7,23 +7,22 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/DmaModel.h
+ * \file components/devices/DmaInterface.h
  * \brief ???
  */
 
-#ifndef __componenets_devices_dmamodel_h__
-#define __componenets_devices_dmamodel_h__
+#ifndef __componenets_devices_DmaInterface_h__
+#define __componenets_devices_DmaInterface_h__
 
 #include <errno.h>
 #include "Memregion.h"
 #include "sys/xmi.h"
 
-
 namespace XMI
 {
   namespace Device
   {
-    namespace myInterface
+    namespace Interface
     {
       ///
       /// \todo Need A LOT MORE documentation on this interface and its use
@@ -174,7 +173,7 @@ namespace XMI
     };
   };
 };
-#endif // __componenets_devices_dmamodel_h__
+#endif // __componenets_devices_DmaInterface_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

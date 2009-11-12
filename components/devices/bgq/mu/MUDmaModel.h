@@ -22,7 +22,7 @@
 #include <spi/include/mu/Pt2PtDirectPutDescriptorXX.h>
 #include <spi/include/kernel/memory.h>
 
-#include "components/devices/myDmaModel.h"
+#include "components/devices/DmaInterface.h"
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
@@ -41,7 +41,7 @@ namespace XMI
   {
     namespace MU
     {
-      class MUDmaModel : public myInterface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)>
+      class MUDmaModel : public Interface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)>
       {
         public:
 

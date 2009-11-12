@@ -16,7 +16,7 @@
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
 XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device, xmi_context_t context) :
-    myInterface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)> (device, context),
+    Interface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)> (device, context),
     _device (device),
     _wrapper_model (),
     _context (context)
