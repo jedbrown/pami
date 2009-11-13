@@ -14,7 +14,6 @@ XMI::Topology otopo;
 int main(int argc, char ** argv) {
 	unsigned x;
 	xmi_client_t client;
-	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
 
 	status = XMI_Client_initialize("multicast test", &client);
@@ -23,7 +22,7 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 
-	{ int _n = 1; status = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+	status = XMI_Context_create(client, NULL, 0, 1);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
 		return 1;
@@ -32,7 +31,7 @@ int main(int argc, char ** argv) {
 	xmi_configuration_t configuration;
 
 	configuration.name = XMI_TASK_ID;
-	status = XMI_Configuration_query(context, &configuration);
+	status = XMI_Configuration_query(client, 0, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -41,7 +40,7 @@ int main(int argc, char ** argv) {
 	//fprintf(stderr, "My task id = %zd\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
-	status = XMI_Configuration_query(context, &configuration);
+	status = XMI_Configuration_query(client, 0, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -85,12 +84,6 @@ int main(int argc, char ** argv) {
 	fprintf(stderr, "PASS %s\n", test);
 
 // ------------------------------------------------------------------------
-	status = XMI_Context_destroy(context);
-	if (status != XMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);
-		return 1;
-	}
-
 	status = XMI_Client_finalize(client);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);

@@ -254,7 +254,6 @@ int main(int argc, char*argv[])
   char rbuf[MAXBUFSIZE];
   int  op, dt;
   xmi_client_t  client;
-  xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
   char          cl_string[] = "TEST";
   result = XMI_Client_initialize (cl_string, &client);
@@ -264,7 +263,7 @@ int main(int argc, char*argv[])
     return 1;
   }
 
-	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+  result = XMI_Context_create(client, NULL, 0, 1);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -273,7 +272,7 @@ int main(int argc, char*argv[])
 
   xmi_configuration_t configuration;
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query (client, 0, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -285,7 +284,7 @@ int main(int argc, char*argv[])
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, 0, &world_geometry);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -295,7 +294,7 @@ int main(int argc, char*argv[])
   int algorithm_type = 0;
   xmi_algorithm_t *algorithm;
   int num_algorithm[2] = {0};
-  result = XMI_Geometry_algorithms_num(context,
+  result = XMI_Geometry_algorithms_num(client, 0,
                                        world_geometry,
                                        XMI_XFER_BARRIER,
                                        num_algorithm);
@@ -311,7 +310,7 @@ int main(int argc, char*argv[])
   {
     algorithm = (xmi_algorithm_t*)
                 malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
-    result = XMI_Geometry_algorithms_info(context,
+    result = XMI_Geometry_algorithms_info(client, 0,
                                           world_geometry,
                                           XMI_XFER_BROADCAST,
                                           algorithm,
@@ -324,7 +323,7 @@ int main(int argc, char*argv[])
   xmi_algorithm_t *allreducealgorithm;
   xmi_metadata_t *metas;
   int allreducenum_algorithm[2] = {0};
-  result = XMI_Geometry_algorithms_num(context,
+  result = XMI_Geometry_algorithms_num(client, 0,
                                        world_geometry,
                                        XMI_XFER_BROADCAST,
                                        allreducenum_algorithm);
@@ -344,7 +343,7 @@ int main(int argc, char*argv[])
     metas = (xmi_metadata_t*)
       malloc(sizeof(xmi_metadata_t) * allreducenum_algorithm[0]);
     
-    result = XMI_Geometry_algorithms_info(context,
+    result = XMI_Geometry_algorithms_info(client, 0,
                                           world_geometry,
                                           XMI_XFER_ALLREDUCE,
                                           allreducealgorithm,
@@ -480,13 +479,6 @@ int main(int argc, char*argv[])
       }
   }
 #endif
-
-  result = XMI_Context_destroy (context);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
-    return 1;
-  }
 
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)

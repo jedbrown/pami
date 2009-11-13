@@ -65,7 +65,6 @@ int main (int argc, char ** argv)
 
 
   xmi_client_t client;
-  xmi_context_t context;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
 
@@ -76,7 +75,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+  result = XMI_Context_create(client, NULL, 0, 1);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -86,7 +85,7 @@ int main (int argc, char ** argv)
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query (client, 0, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -96,7 +95,7 @@ int main (int argc, char ** argv)
   fprintf (stderr, "My task id = %zd\n", task_id);
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query (client, 0, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -109,7 +108,7 @@ int main (int argc, char ** argv)
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
   fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active);
-  result = XMI_Dispatch_set (context,
+  result = XMI_Dispatch_set (client, 0,
                              dispatch,
                              (xmi_dispatch_callback_fn) fn,
                              (void *)&recv_active,
@@ -133,7 +132,7 @@ int main (int argc, char ** argv)
   {
     fprintf (stderr, "before send ...\n");
     parameters.send.task = task_id;
-    result = XMI_Send (context, &parameters);
+    result = XMI_Send (client, 0, &parameters);
     fprintf (stderr, "... after send.\n");
 
     fprintf (stderr, "before send-recv advance loop (send_active = %zd, recv_active = %zd) ...\n", send_active, recv_active);
@@ -147,13 +146,6 @@ int main (int argc, char ** argv)
       }
     }
     fprintf (stderr, "... after send-recv advance loop\n");
-  }
-
-  result = XMI_Context_destroy (context);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
-    return 1;
   }
 
   result = XMI_Client_finalize (client);

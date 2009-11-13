@@ -69,13 +69,13 @@ static void send_done_remote (xmi_context_t   context,
 }
 
 
-unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
+unsigned do_test (xmi_client_t client, size_t contextid)
 {
   volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
 
   /* Lock the context */
-  xmi_result_t result = XMI_Context_lock (context);
+  xmi_result_t result = XMI_Context_lock (client, contextid);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to lock the xmi context. result = %d\n", result);
@@ -85,7 +85,7 @@ unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query (client, contextid, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -95,7 +95,7 @@ unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
   //TRACE((stderr, "My task id = %zd\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query (client, contextid, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -114,7 +114,7 @@ unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
   //TRACE((stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active));
-  result = XMI_Dispatch_set (context,
+  result = XMI_Dispatch_set (client, contextid,
                              dispatch,
                              fn,
                              (void *)&recv_active,
@@ -140,7 +140,7 @@ unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
   {
     TRACE((stderr, "before send ...\n"));
     parameters.send.task = 1;
-    result = XMI_Send (context, &parameters);
+    result = XMI_Send (client, contextid, &parameters);
     TRACE((stderr, "... after send.\n"));
 
     TRACE((stderr, "before send-recv advance loop ...\n"));
@@ -171,7 +171,7 @@ unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
 
     TRACE((stderr, "before send ...\n"));
     parameters.send.task = 0;
-    result = XMI_Send (context, &parameters);
+    result = XMI_Send (client, contextid, &parameters);
     TRACE((stderr, "... after send.\n"));
 
     TRACE((stderr, "before send advance loop ...\n"));
@@ -188,7 +188,7 @@ unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
   }
 
   /* Unlock the context */
-  result = XMI_Context_unlock (context);
+  result = XMI_Context_unlock (client, contextid);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to unlock the xmi context. result = %d\n", result);
@@ -202,7 +202,6 @@ unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
-  xmi_context_t context[2];
   //xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
@@ -214,9 +213,8 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  int num = 2;
-  result = XMI_Context_createv (client, NULL, 0, &context[0], &num);
-  if (result != XMI_SUCCESS || num != 2)
+  result = XMI_Context_create(client, NULL, 0, 2);
+  if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create the two xmi context. result = %d\n", result);
     return 1;
@@ -224,28 +222,14 @@ int main (int argc, char ** argv)
 
   /* Test pt-2-pt send on the first context */
   TRACE((stderr, "Before do_test(0)\n"));
-  do_test (client, context[0], 0);
+  do_test (client, 0);
   TRACE((stderr, " After do_test(0)\n"));
 
   /* Test pt-2-pt send on the second context */
   TRACE((stderr, "Before do_test(1)\n"));
-  do_test (client, context[1], 1);
+  do_test (client, 1);
   TRACE((stderr, " After do_test(1)\n"));
 
-
-  result = XMI_Context_destroy (context[0]);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy the first xmi context. result = %d\n", result);
-    return 1;
-  }
-
-  result = XMI_Context_destroy (context[1]);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy the second xmi context. result = %d\n", result);
-    return 1;
-  }
 
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)

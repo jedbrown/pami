@@ -141,6 +141,11 @@ namespace XMI
 		return _ncontexts;
 	}
 
+	inline XMI::Context *getContext(size_t ctx)
+	{
+		return _contexts + ctx;
+	}
+
 	inline XMI::Context *getContexts()
 	{
 		return _contexts;

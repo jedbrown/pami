@@ -3457,10 +3457,10 @@ extern "C"
    * \param[out] context       XMI communication context
    * \param[in,out] ncontexts  num contexts requested (in), created (out)
    */
-  xmi_result_t XMI_Context_createv (xmi_client_t           client,
-                                   xmi_configuration_t    configuration[],
-                                   size_t                 count,
-				   int			  ncontexts);
+  xmi_result_t XMI_Context_create(xmi_client_t           client,
+                                  xmi_configuration_t    configuration[],
+                                  size_t                 count,
+				  int			  ncontexts);
 
   /**
    * \brief Atomically post work to a context

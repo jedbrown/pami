@@ -10,7 +10,6 @@
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
-  xmi_context_t context;
   xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
 
@@ -23,17 +22,10 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-	{ int _n = 1; result = XMI_Context_createv(client, configuration, 0, &context, &_n); }
+  result = XMI_Context_createv(client, configuration, 0, 1);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
-    return 1;
-  }
-
-  result = XMI_Context_destroy (context);
-  if (result != XMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
     return 1;
   }
 

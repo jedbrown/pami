@@ -26,7 +26,6 @@
 static xmi_client_t client;
 #warning How do I determine the optimal number of contexts?
 #define NUM_CONTEXTS 2
-static xmi_context_t contexts[NUM_CONTEXTS];
 static size_t SHORT_DISPATCH=1, LONG_DISPATCH=13;
 
 
@@ -125,14 +124,14 @@ static void SendLongHandoff(xmi_context_t   context,
   parameters.events.cookie        = lbuf;
   parameters.events.local_fn      = SendLongDoneCB;
 
-  XMI_Send(context, &parameters);
+  XMI_Send(client, contextid, &parameters);
 }
 
 static void *SendLong(void *clientdata)
 {
-  XMI_Context_post(contexts[0], SendLongHandoff, NULL);
+  XMI_Context_post(client, 0, SendLongHandoff, NULL);
   while (!done.s.s)
-    XMI_Context_multiadvance(contexts, NUM_CONTEXTS, 1);
+    XMI_Context_multiadvance(client, 0, NUM_CONTEXTS, 1);
   return NULL;
 }
 
@@ -149,23 +148,23 @@ static void SendShortHandoff(xmi_context_t   context,
   parameters.data.iov_base   = sbuf;
   parameters.data.iov_len    = SSIZE;
 
-  XMI_Send_immediate(context, &parameters);
+  XMI_Send_immediate(client, contextid, &parameters);
   printf("Rank=%zu Channel=%p <Sent short msg>   data=%x\n", rank, context, sbuf[0]);
   done.s.s = 1;
 }
 
 static void *SendShort(void *clientdata)
 {
-  XMI_Context_post(contexts[1], SendShortHandoff, NULL);
+  XMI_Context_post(client, 1, SendShortHandoff, NULL);
   while (!done.s.s)
-    XMI_Context_multiadvance(contexts, NUM_CONTEXTS, 1);
+    XMI_Context_multiadvance(client, 0, NUM_CONTEXTS, 1);
   return NULL;
 }
 
 static void *advance(void* c)
 {
   while (!(done.s.s && done.s.r && done.l.s && done.l.r))
-    XMI_Context_multiadvance(contexts, NUM_CONTEXTS, 13);
+    XMI_Context_multiadvance(client, 0, NUM_CONTEXTS, 13);
 
   return NULL;
 }
@@ -182,18 +181,16 @@ static void init()
 
   XMI_Client_initialize("XMId ADI Example", &client);
 
-#warning Do I really have to loop to create all the contexts?
-    int num = NUM_CONTEXTS;
-    XMI_Context_createv(client, NULL, 0, contexts, &num);
+    XMI_Context_create(client, NULL, 0, NUM_CONTEXTS);
 
   unsigned i;
   for (i=0; i<NUM_CONTEXTS; ++i) {
-    XMI_Dispatch_set(contexts[i],
+    XMI_Dispatch_set(client, i,
                      SHORT_DISPATCH,
                      RecvShortFN,
                      NULL,
                      options);
-    XMI_Dispatch_set(contexts[i],
+    XMI_Dispatch_set(client, i,
                      LONG_DISPATCH,
                      RecvLongFN,
                      NULL,
@@ -201,11 +198,11 @@ static void init()
   }
 
   query.name = XMI_TASK_ID;
-  XMI_Configuration_query (contexts[0], &query);
+  XMI_Configuration_query (client, 0, &query);
   rank = query.value.intval;
 
   query.name = XMI_NUM_TASKS;
-  XMI_Configuration_query (contexts[0], &query);
+  XMI_Configuration_query (client, 0, &query);
   size = query.value.intval;
 
 #warning We need to clairify the threading nature of XMI

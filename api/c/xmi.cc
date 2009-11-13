@@ -27,10 +27,12 @@ extern "C" size_t XMI_Error_text (char * string, size_t length)
 ///
 /// \copydoc XMI_Configuration_query
 ///
-extern "C" xmi_result_t XMI_Configuration_query (xmi_context_t         context,
+extern "C" xmi_result_t XMI_Configuration_query (xmi_client_t client,
+						 size_t         context,
                                                  xmi_configuration_t * configuration)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
 
   return ctx->queryConfiguration (configuration);
 }
@@ -38,7 +40,8 @@ extern "C" xmi_result_t XMI_Configuration_query (xmi_context_t         context,
 ///
 /// \copydoc XMI_Configuration_update
 ///
-extern "C" xmi_result_t XMI_Configuration_update (xmi_context_t         context,
+extern "C" xmi_result_t XMI_Configuration_update (xmi_client_t client,
+						  size_t         context,
                                                   xmi_configuration_t * configuration)
 {
   return XMI_UNIMPL;
@@ -99,39 +102,29 @@ extern "C" xmi_result_t XMI_Client_finalize (xmi_client_t client)
 ///
 /// \copydoc XMI_Context_createv
 ///
-extern "C" xmi_result_t XMI_Context_createv (xmi_client_t           client,
-                                            xmi_configuration_t    configuration[],
-                                            size_t                 count,
-                                            xmi_context_t        * context,
-					    int			 * ncontexts)
+extern "C" xmi_result_t XMI_Context_create(xmi_client_t           client,
+                                           xmi_configuration_t    configuration[],
+                                           size_t                 count,
+					   int			  ncontexts)
 {
   xmi_result_t result;
   XMI::Client * xmi = (XMI::Client *) client;
 
-  result = xmi->createContext (configuration, count, context, ncontexts);
+  result = xmi->createContext (configuration, count, ncontexts);
 
   return result;
 }
 
 ///
-/// \copydoc XMI_Context_destroy
-///
-extern "C" xmi_result_t XMI_Context_destroy (xmi_context_t context)
-{
-  XMI::Context * ctx = (XMI::Context *) context;
-  XMI::Client  * client = (XMI::Client *) ctx->getClient ();
-
-  return client->destroyContext (ctx);
-}
-
-///
 /// \copydoc XMI_Context_post
 ///
-extern "C" xmi_result_t XMI_Context_post (xmi_context_t        context,
+extern "C" xmi_result_t XMI_Context_post (xmi_client_t client,
+					  size_t        context,
                                           xmi_event_function   work_fn,
                                           void               * cookie)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
 
   return ctx->post (work_fn, cookie);
 }
@@ -143,7 +136,7 @@ extern "C" xmi_result_t XMI_Context_advance(xmi_client_t client, size_t context,
 {
   xmi_result_t result;
   XMI::Client * clnt = (XMI::Client *) client;
-  XMI::Context * ctx = clnt->getContexts() + context;
+  XMI::Context * ctx = clnt->getContext(context);
   ctx->advance (maximum, result);
 #warning need a real return value here
   return result;
@@ -152,12 +145,14 @@ extern "C" xmi_result_t XMI_Context_advance(xmi_client_t client, size_t context,
 ///
 /// \copydoc XMI_Context_multiadvance
 ///
-extern "C" xmi_result_t XMI_Context_multiadvance (xmi_context_t context[],
+extern "C" xmi_result_t XMI_Context_multiadvance (xmi_client_t client,
+						  size_t context[],
                                                   size_t        count,
                                                   size_t        maximum)
 {
   unsigned m, c;
   XMI::Context * ctx;
+  XMI::Client * clnt = (XMI::Client *) client;
 
   xmi_result_t result = XMI_EAGAIN;
   size_t events = 0;
@@ -166,7 +161,7 @@ extern "C" xmi_result_t XMI_Context_multiadvance (xmi_context_t context[],
   {
     for (c=0; c<count && result==XMI_SUCCESS; c++)
     {
-      ctx = (XMI::Context *) context[c];
+      ctx = clnt->getContext(c);
       events += ctx->advance (1, result);
     }
   }
@@ -177,27 +172,30 @@ extern "C" xmi_result_t XMI_Context_multiadvance (xmi_context_t context[],
 ///
 /// \copydoc XMI_Context_lock
 ///
-extern "C" xmi_result_t XMI_Context_lock (xmi_context_t context)
+extern "C" xmi_result_t XMI_Context_lock (xmi_client_t client, size_t context)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->lock ();
 }
 
 ///
 /// \copydoc XMI_Context_trylock
 ///
-extern "C" xmi_result_t XMI_Context_trylock (xmi_context_t context)
+extern "C" xmi_result_t XMI_Context_trylock (xmi_client_t client, size_t context)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->trylock ();
 }
 
 ///
 /// \copydoc XMI_Context_unlock
 ///
-extern "C" xmi_result_t XMI_Context_unlock (xmi_context_t context)
+extern "C" xmi_result_t XMI_Context_unlock (xmi_client_t client, size_t context)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->unlock ();
 }
 
@@ -209,30 +207,36 @@ extern "C" xmi_result_t XMI_Context_unlock (xmi_context_t context)
 ///
 /// \copydoc XMI_Send
 ///
-extern "C" xmi_result_t XMI_Send (xmi_context_t   context,
+extern "C" xmi_result_t XMI_Send (xmi_client_t client,
+				  size_t   context,
                                   xmi_send_t    * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->send (parameters);
 }
 
 ///
 /// \copydoc XMI_Send_immediate
 ///
-extern "C" xmi_result_t XMI_Send_immediate (xmi_context_t          context,
+extern "C" xmi_result_t XMI_Send_immediate (xmi_client_t client,
+					    size_t          context,
                                             xmi_send_immediate_t * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->send (parameters);
 }
 
 ///
 /// \copydoc XMI_Send_typed
 ///
-extern "C" xmi_result_t XMI_Send_typed (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Send_typed (xmi_client_t client,
+					size_t      context,
                                         xmi_send_typed_t * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->send (parameters);
 }
 
@@ -240,10 +244,12 @@ extern "C" xmi_result_t XMI_Send_typed (xmi_context_t      context,
 ///
 /// \copydoc XMI_Put
 ///
-extern "C" xmi_result_t XMI_Put (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Put (xmi_client_t client,
+				 size_t      context,
                                  xmi_put_simple_t * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->put (parameters);
 }
 
@@ -251,20 +257,24 @@ extern "C" xmi_result_t XMI_Put (xmi_context_t      context,
 ///
 /// \copydoc XMI_Put_typed
 ///
-extern "C" xmi_result_t XMI_Put_typed (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Put_typed (xmi_client_t client,
+				       size_t      context,
                                        xmi_put_typed_t  * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->put_typed (parameters);
 }
 
 ///
 /// \copydoc XMI_Get
 ///
-extern "C" xmi_result_t XMI_Get (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Get (xmi_client_t client,
+				 size_t      context,
                                  xmi_get_simple_t * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->get (parameters);
 }
 
@@ -272,10 +282,12 @@ extern "C" xmi_result_t XMI_Get (xmi_context_t      context,
 ///
 /// \copydoc XMI_Get_typed
 ///
-extern "C" xmi_result_t XMI_Get_typed (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Get_typed (xmi_client_t client,
+				       size_t      context,
                                        xmi_get_typed_t  * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->get_typed (parameters);
 }
 
@@ -283,22 +295,26 @@ extern "C" xmi_result_t XMI_Get_typed (xmi_context_t      context,
 ///
 /// \copydoc XMI_Rmw
 ///
-extern "C" xmi_result_t XMI_Rmw (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Rmw (xmi_client_t client,
+				 size_t      context,
                                  xmi_rmw_t * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->rmw (parameters);
 }
 
 ///
 /// \copydoc XMI_Memregion_register
 ///
-extern "C" xmi_result_t XMI_Memregion_register (xmi_context_t     context,
+extern "C" xmi_result_t XMI_Memregion_register (xmi_client_t client,
+						size_t     context,
                                                 void            * address,
                                                 size_t            bytes,
                                                 xmi_memregion_t * memregion)
 {
-    XMI::Context   * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
     return ctx->memregion_register(address, bytes, memregion);
 }
 
@@ -306,10 +322,12 @@ extern "C" xmi_result_t XMI_Memregion_register (xmi_context_t     context,
 ///
 /// \copydoc XMI_Rput
 ///
-extern "C" xmi_result_t XMI_Rput (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Rput (xmi_client_t client,
+				  size_t      context,
                                  xmi_rput_simple_t * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->rput (parameters);
 }
 
@@ -317,20 +335,24 @@ extern "C" xmi_result_t XMI_Rput (xmi_context_t      context,
 ///
 /// \copydoc XMI_Rput_typed
 ///
-extern "C" xmi_result_t XMI_Rput_typed (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Rput_typed (xmi_client_t client,
+					size_t      context,
                                        xmi_rput_typed_t  * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->rput_typed (parameters);
 }
 
 ///
 /// \copydoc XMI_Rget
 ///
-extern "C" xmi_result_t XMI_Rget (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Rget (xmi_client_t client,
+				  size_t      context,
                                  xmi_rget_simple_t * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->rget (parameters);
 }
 
@@ -338,10 +360,12 @@ extern "C" xmi_result_t XMI_Rget (xmi_context_t      context,
 ///
 /// \copydoc XMI_Rget_typed
 ///
-extern "C" xmi_result_t XMI_Rget_typed (xmi_context_t      context,
+extern "C" xmi_result_t XMI_Rget_typed (xmi_client_t client,
+					size_t      context,
                                         xmi_rget_typed_t  * parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->rget_typed (parameters);
 }
 
@@ -349,11 +373,13 @@ extern "C" xmi_result_t XMI_Rget_typed (xmi_context_t      context,
 ///
 /// \copydoc XMI_Purge_totask
 ///
-extern "C" xmi_result_t XMI_Purge_totask (xmi_context_t   context,
+extern "C" xmi_result_t XMI_Purge_totask (xmi_client_t client,
+					  size_t   context,
                                           size_t        * dest,
                                           size_t          count)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->purge_totask (dest, count);
 }
 
@@ -361,11 +387,13 @@ extern "C" xmi_result_t XMI_Purge_totask (xmi_context_t   context,
 ///
 /// \copydoc XMI_Resume_totask
 ///
-extern "C" xmi_result_t XMI_Resume_totask (xmi_context_t   context,
+extern "C" xmi_result_t XMI_Resume_totask (xmi_client_t client,
+					   size_t   context,
                                            size_t        * dest,
                                            size_t          count)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->resume_totask (dest, count);
 }
 
@@ -377,43 +405,51 @@ extern "C" xmi_result_t XMI_Resume_totask (xmi_context_t   context,
 ///
 /// \copydoc XMI_Fence_begin
 ///
-extern "C" xmi_result_t XMI_Fence_begin (xmi_context_t      context)
+extern "C" xmi_result_t XMI_Fence_begin (xmi_client_t client,
+					 size_t      context)
 
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->fence_begin ();
 }
 
 ///
 /// \copydoc XMI_Fence_end
 ///
-extern "C" xmi_result_t XMI_Fence_end (xmi_context_t      context)
+extern "C" xmi_result_t XMI_Fence_end (xmi_client_t client,
+				       size_t      context)
 
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->fence_end ();
 }
 
 ///
 /// \copydoc XMI_Fence_all
 ///
-extern "C" xmi_result_t XMI_Fence_all (xmi_context_t        context,
+extern "C" xmi_result_t XMI_Fence_all (xmi_client_t client,
+				       size_t        context,
                                        xmi_event_function   done_fn,
                                        void               * cookie)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->fence_all (done_fn, cookie);
 }
 
 ///
 /// \copydoc XMI_Fence_task
 ///
-extern "C" xmi_result_t XMI_Fence_task (xmi_context_t        context,
+extern "C" xmi_result_t XMI_Fence_task (xmi_client_t client,
+					size_t        context,
                                         xmi_event_function   done_fn,
                                         void               * cookie,
                                         size_t               task)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->fence_task (done_fn, cookie, task);
 }
 
@@ -425,33 +461,39 @@ extern "C" xmi_result_t XMI_Fence_task (xmi_context_t        context,
 ///
 /// \copydoc XMI_Geometry_initialize
 ///
-extern "C" xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+extern "C" xmi_result_t XMI_Geometry_initialize (xmi_client_t client,
+						size_t               context,
                                       xmi_geometry_t            * geometry,
                                       unsigned                    id,
                                       xmi_geometry_range_t      * rank_slices,
                                       size_t                      slice_count)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->geometry_initialize (geometry,id,rank_slices,slice_count);
 }
 
 ///
 /// \copydoc XMI_Geometry_world
 ///
-extern "C" xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+extern "C" xmi_result_t XMI_Geometry_world (xmi_client_t client,
+					    size_t               context,
                                  xmi_geometry_t            * world_geometry)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->geometry_world (world_geometry);
 }
 
 ///
 /// \copydoc XMI_Geometry_finalize
 ///
-extern "C" xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+extern "C" xmi_result_t XMI_Geometry_finalize(xmi_client_t client,
+					      size_t   context,
                                    xmi_geometry_t  geometry)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->geometry_finalize (geometry);
 }
 
@@ -463,18 +505,20 @@ extern "C" xmi_result_t XMI_Collective (xmi_client_t   client,
                                         xmi_xfer_t     *parameters)
 {
   XMI::Client * clnt = (XMI::Client *) client;
-  XMI::Context * ctx = clnt->getContexts() + context;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->collective (parameters);
 }
 
 /// \copydoc XMI_Geometry_algorithms_num
 ///
-extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
+extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_client_t client,
+						     size_t context,
                                                      xmi_geometry_t geometry,
                                                      xmi_xfer_type_t coll_type,
                                                      int *lists_lengths)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->geometry_algorithms_num (context,
                                       geometry,
                                       coll_type,
@@ -483,7 +527,8 @@ extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
 
 /// \copydoc XMI_Geometry_algorithms_info
 ///
-extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
+extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_client_t client,
+						       size_t context,
                                                        xmi_geometry_t geometry,
                                                        xmi_xfer_type_t type,
                                                        xmi_algorithm_t *algs,
@@ -491,7 +536,8 @@ extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
                                                        int algorithm_type,
                                                        int num)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->geometry_algorithms_info (context,
                                         geometry,
                                         type,
@@ -510,52 +556,62 @@ extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
 ///
 /// \copydoc XMI_Multisend_getroles
 ///
-extern "C" xmi_result_t XMI_Multisend_getroles(xmi_context_t   context,
+extern "C" xmi_result_t XMI_Multisend_getroles(xmi_client_t client,
+					       size_t   context,
                                                size_t          dispatch,
                                                int            *numRoles,
                                                int            *replRole)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->multisend_getroles (dispatch,numRoles,replRole);
 }
 
 ///
 /// \copydoc XMI_Multicast
 ///
-extern "C" xmi_result_t XMI_Multicast(xmi_context_t    context,
+extern "C" xmi_result_t XMI_Multicast(xmi_client_t client,
+				      size_t    context,
                                       xmi_multicast_t *mcastinfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->multicast (mcastinfo);
 }
 
 ///
 /// \copydoc XMI_Manytomany
 ///
-extern "C" xmi_result_t XMI_Manytomany(xmi_context_t     context,
+extern "C" xmi_result_t XMI_Manytomany(xmi_client_t client,
+				       size_t     context,
                                        xmi_manytomany_t *m2minfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->manytomany (m2minfo);
 }
 
 ///
 /// \copydoc XMI_Multisync
 ///
-extern "C" xmi_result_t XMI_Multisync(xmi_context_t    context,
+extern "C" xmi_result_t XMI_Multisync(xmi_client_t client,
+				      size_t    context,
                                       xmi_multisync_t *msyncinfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->multisync (msyncinfo);
 }
 
 ///
 /// \copydoc XMI_Multicombine
 ///
-extern "C" xmi_result_t XMI_Multicombine(xmi_context_t       context,
+extern "C" xmi_result_t XMI_Multicombine(xmi_client_t client,
+					 size_t       context,
                                          xmi_multicombine_t *mcombineinfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->multicombine (mcombineinfo);
 }
 
@@ -567,13 +623,15 @@ extern "C" xmi_result_t XMI_Multicombine(xmi_context_t       context,
 ///
 /// \copydoc XMI_Dispatch_set
 ///
-extern "C" xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
+extern "C" xmi_result_t XMI_Dispatch_set (xmi_client_t client,
+					  size_t              context,
                                           size_t                     dispatch,
                                           xmi_dispatch_callback_fn   fn,
                                           void                     * cookie,
                                           xmi_send_hint_t            options)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContext(context);
   return ctx->dispatch (dispatch, fn, cookie, options);
 }
 
