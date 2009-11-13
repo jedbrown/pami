@@ -234,8 +234,8 @@ int main(int argc, char*argv[])
 
   if (num_algorithm[0])
   {
-    algorithm = (xmi_algorithm_t*)
-                malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
+    alltoallvalgorithm = (xmi_algorithm_t*)
+      malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
     result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           XMI_XFER_ALLTOALLV,
