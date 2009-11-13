@@ -114,67 +114,14 @@ namespace Generic {
 ///  have been executed.
 //////////////////////////////////////////////////////////////////////
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Construct the Generic Device
+	/// \brief The first generic device of a client
 	///
-	/// This does simple initialization.
-	/// \todo How much of this should be moved to init()?
-	///
-	/// \param[in] sd	The SysDep object
-	///
-	//////////////////////////////////////////////////////////////////
-	inline Device<T_NumContexts>::Device(XMI_SYSDEP_CLASS &sd) :
-	__lastThreadUsed(0),
-	__sysdep(sd)
+	inline Device::Device() :
+	__GenericQueue(),
+	__Threads(),
+	__contextId((size_t)-1),
+	__nContexts(0)
 	{
-		for (int x = 0; x < T_NumContexts; ++x) {
-			new (&__Threads[x]) ThreadQueue(sd);
-		}
-		//
-		// Each thread must have it's own "private queue" where it keeps
-		// messages that it starts. This way, completions are executed only
-		// on the thread that originated the message - regardless of where
-		// the actual work is performed. More investigation is required to
-		// to know just how much, if any, coordination of completions is needed.
-		// Another benefit is this avoids locking which would be needed if
-		// a single queue were used by all threads in a process. Unless it
-		// becomes necessary to share completions between threads, this is
-		// probably the right way to do it.
-		//
-		// This constructor is called by the initial thread only, so it must
-		// initialize all the queues. Since only application threads will start
-		// communications, helper (comm_)threads need not check their
-		// __GenericQueue[] for completions - only the application calls to
-		// advance(), if any, do that.
-		//
-		// Problems/Questions:
-		//
-		// Is it true that only the application threads will start communications?
-		// or does a hand-off start communications, and will that result in a
-		// problem here?
-		//
-		// Also, what about multiple application threads per hwthread? In this
-		// case, and current implementation, __GenericQueue[x] would be shared
-		// between several software contexts. Does __GenericQueue[] need to be
-		// enlarged and indexed by software thread ID instead of hwthread?
-		// With multiple app threads per hwthread, there can be only one app
-		// running at a time so perhaps the queue can be shared, as long as
-		// an app thread is not preempted in the middle of a queue operation.
-		//
-		for (int x = 0; x < T_NumContexts; ++x) {
-			new (&__GenericQueue[x]) MultiQueue<2, 1>();
-		}
-		xmi_result_t rc = XMI_ERROR;
-		int y = 0;
-
-#ifdef USE_WAKEUP_VECTORS
-		size_t me = __global.mapping.t(); // only works on BG/P...?
-		rc = __sysdep.wakeupManager().allocWakeVecs((int)XMI_MAX_PROC_PER_NODE,
-			XMI_MAX_THREAD_PER_PROC * MAX_REG_THREADS, (int)me,
-			&__wakeupVectors);
-		XMI_assert(rc == XMI_SUCCESS);
-#endif /* USE_WAKEUP_VECTORS */
-		__maxThreads = T_NumContexts;
 	}
 
 	/// \brief Initialize the Generic Device and all subdevices.
@@ -184,8 +131,28 @@ namespace Generic {
 	///
 	/// \param[in] sd	The SysDep object
 	///
-	inline void Device<T_NumContexts>::init(XMI_SYSDEP_CLASS &sd) {
+	inline void Device::init(XMI_SYSDEP_CLASS &sd, size_t context, size_t num_contexts) {
+		__contextId = context;
+		__nContexts = num_contexts;
+#ifdef USE_WAKEUP_VECTORS
+		xmi_result_t rc = XMI_ERROR;
+		size_t me = __global.mapping.t(); // only works on BG/P...?
+		rc = __sysdep.wakeupManager().allocWakeVecs((int)XMI_MAX_PROC_PER_NODE,
+			XMI_MAX_THREAD_PER_PROC * MAX_REG_THREADS, (int)me,
+			&__wakeupVectors);
+		XMI_assert(rc == XMI_SUCCESS);
+#endif /* USE_WAKEUP_VECTORS */
 		// These are all the devices we know how to play well with...
+
+		// todo: need to work out how to handle devices that need
+		// a new instance for each client, or context. For now,
+		// these devices will check __contextId and __nContexts, or
+		// some static init variable, to avoid repeated initialization.
+		// Subdevice instances could be part of the generic device
+		// (per context) or created only when 'context' is zero
+		// (per client). Then need to work out how to pass around
+		// those instances.
+
 		_g_progfunc_dev.init(sd, this);
 		_g_lmbarrier_dev.init(sd, this);
 		_g_wqreduce_dev.init(sd, this);
@@ -213,13 +180,13 @@ namespace Generic {
 	///
 	/// Currently not used, since subdevices have to be polled for recvs.
 	///
-	inline bool Device<T_NumContexts>::isAdvanceNeeded(int ctx) {
+	inline bool Device::isAdvanceNeeded() {
 #if 1
 		return true;
 #else
 		// There can be no threads to advance unless there is at least one
 		// message, on the __GenericQueue[].
-		return !__GenericQueue[ctx].isEmpty();
+		return !__GenericQueue.isEmpty();
 #endif
 	}
 
@@ -235,30 +202,30 @@ namespace Generic {
 	/// \param[in]	ctx	The channel to poll
 	/// \return	Number of work units processed
 	///
-	inline int Device<T_NumContexts>::__advanceRecv(int ctx) {
+	inline int Device::__advanceRecv() {
 		int events = 0;
 		// not all devices actually have "unexpected" messages, but we call anyway.
 		// Presumably, empty functions will be optimized away by the compiler.
 		// Has no concept of recv at all: _g_progfunc_dev
-		events += _g_lmbarrier_dev.advanceRecv(ctx);
-		events += _g_wqreduce_dev.advanceRecv(ctx);
-		events += _g_wqbcast_dev.advanceRecv(ctx);
-		events += _g_l_allreducewq_dev.advanceRecv(ctx);
-		events += _g_l_reducewq_dev.advanceRecv(ctx);
-		events += _g_l_bcastwq_dev.advanceRecv(ctx);
+		events += _g_lmbarrier_dev.advanceRecv(__contextId);
+		events += _g_wqreduce_dev.advanceRecv(__contextId);
+		events += _g_wqbcast_dev.advanceRecv(__contextId);
+		events += _g_l_allreducewq_dev.advanceRecv(__contextId);
+		events += _g_l_reducewq_dev.advanceRecv(__contextId);
+		events += _g_l_bcastwq_dev.advanceRecv(__contextId);
 
 #ifdef __bgp__
 #ifdef NOT_YET
-		events += _g_mbarrier_dev.advanceRecv(ctx);
-		events += _g_llscbarrier_dev.advanceRecv(ctx);
+		events += _g_mbarrier_dev.advanceRecv(__contextId);
+		events += _g_llscbarrier_dev.advanceRecv(__contextId);
 #endif
-		events += _g_gibarrier_dev.advanceRecv(ctx);
+		events += _g_gibarrier_dev.advanceRecv(__contextId);
 
-		events += _g_cnallreduce_dev.advanceRecv(ctx);
-		//events += _g_cnallreduceshort_dev.advanceRecv(ctx);
-		events += _g_cnallreducepp_dev.advanceRecv(ctx);
-		events += _g_cnallreduce2p_dev.advanceRecv(ctx);
-		events += _g_cnbroadcast_dev.advanceRecv(ctx);
+		events += _g_cnallreduce_dev.advanceRecv(__contextId);
+		//events += _g_cnallreduceshort_dev.advanceRecv(__contextId);
+		events += _g_cnallreducepp_dev.advanceRecv(__contextId);
+		events += _g_cnallreduce2p_dev.advanceRecv(__contextId);
+		events += _g_cnbroadcast_dev.advanceRecv(__contextId);
 #endif // __bgp__
 		return events;
 	}
@@ -270,16 +237,15 @@ namespace Generic {
 	/// \returns:  Return code of the advance routine (number of
 	///            events processed)
 	//////////////////////////////////////////////////////////////////
-	inline int Device<T_NumContexts>::advance(int ctx) {
-		int t = ctx;
+	inline int Device::advance() {
 		int events = 0;
 		//+ Need to ensure only one of these runs per core
 		//+ (even if multi-threads per core)
 		//+ if (core_mutex.tryAcquire()) {
 
 		// Advance any recvs on this "channel" (only 1 channel)...
-		events += __advanceRecv(t);
-		//if (!__Threads[t].mutex()->tryAcquire()) continue;
+		events += __advanceRecv();
+		//if (!__Threads.mutex()->tryAcquire()) continue;
 		GenericAdvanceThread *thr;
 #ifdef USE_WAKEUP_VECTORS
 #error WakeupManager TBD
@@ -304,27 +270,27 @@ namespace Generic {
 			}
 		}
 #endif /* USE_WAKEUP_VECTORS */
-		for (thr = (GenericAdvanceThread *)__Threads[t].peekHead();
+		for (thr = (GenericAdvanceThread *)__Threads.peekHead();
 					thr; thr = (GenericAdvanceThread *)thr->next()) {
 			GenericMessage *msg = (GenericMessage *)thr->getMsg();
 			// currently, advanceThread() does not distinguish between
 			// not-done and no-progress.
 			++events;
 			if (msg->advanceThread(thr) == Done) {
-				__Threads[t].deleteElem(thr);
+				__Threads.deleteElem(thr);
 			}
 		}
-		//__Threads[t].mutex()->release();
+		//__Threads.mutex()->release();
 
 		//+ core_mutex.release();
 
 		// Now check everything on the completion queue...
 		GenericMessage *msg;
-		for (msg = (GenericMessage *)__GenericQueue[t].peekHead();
+		for (msg = (GenericMessage *)__GenericQueue.peekHead();
 				msg; msg = (GenericMessage *)msg->next(1)) {
 			if (msg->getStatus() == Done) {
 				++events;
-				__GenericQueue[t].deleteElem(msg);
+				__GenericQueue.deleteElem(msg);
 				msg->complete();
 			}
 		}
