@@ -106,9 +106,12 @@ namespace XMI
 
 		rc = posix_memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
 		XMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+		int x;
+		for (x = 0; x < n; ++x) {
+			new (&_generics[x]) XMI::Device::Generic::Device();
+		}
 		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
-		int x;
 		for (x = 0; x < n; ++x) {
 			contexts[x] = &_contexts[x];
 			void *base = NULL;

@@ -98,6 +98,10 @@ namespace XMI
                 _contexts = (XMI::Context*)malloc(sizeof(XMI::Context)*n);
 		XMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
 #endif
+		int x;
+		for (x = 0; x < n; ++x) {
+			new (&_generics[x]) XMI::Device::Generic::Device();
+		}
 		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
 		int x;
