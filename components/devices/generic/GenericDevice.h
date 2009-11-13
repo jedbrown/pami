@@ -123,11 +123,11 @@ namespace Generic {
 	/// \param[in] sd	The SysDep object
 	///
 	//////////////////////////////////////////////////////////////////
-	inline Device::Device(XMI_SYSDEP_CLASS &sd) :
+	inline Device<T_NumContexts>::Device(XMI_SYSDEP_CLASS &sd) :
 	__lastThreadUsed(0),
 	__sysdep(sd)
 	{
-		for (int x = 0; x < XMI_MAX_THREAD_PER_PROC; ++x) {
+		for (int x = 0; x < T_NumContexts; ++x) {
 			new (&__Threads[x]) ThreadQueue(sd);
 		}
 		//
@@ -161,7 +161,7 @@ namespace Generic {
 		// running at a time so perhaps the queue can be shared, as long as
 		// an app thread is not preempted in the middle of a queue operation.
 		//
-		for (int x = 0; x < XMI_MAX_THREAD_PER_PROC; ++x) {
+		for (int x = 0; x < T_NumContexts; ++x) {
 			new (&__GenericQueue[x]) MultiQueue<2, 1>();
 		}
 		xmi_result_t rc = XMI_ERROR;
@@ -174,90 +174,7 @@ namespace Generic {
 			&__wakeupVectors);
 		XMI_assert(rc == XMI_SUCCESS);
 #endif /* USE_WAKEUP_VECTORS */
-#if defined(__bgp__) and !defined(__bgq__)
-		// This is for setting up comm_threads on BG/P.
-		// These threads are used only by the Tree device,
-		// even though this code is fairly abstract. Use of
-		// comm_threads by other subdevices is probably risky.
-		// This is also not the way to do parallelism in general.
-		// Something else should cause separate threads to advance
-		// each channel in parallel.
-		unsigned cores = 0;
-		switch (__global.mapping.tSize()) {
-		case 1: // SMP mode
-			cores = (1 << 1) | (1 << 2) | (1 << 3);
-			break;
-		case 2: // DUAL mode
-			switch (__global.mapping.t()) {
-			case 0:
-				cores = (1 << 1);
-				break;
-			case 1:
-			default:
-				cores = (1 << 3);
-				break;
-			}
-			break;
-		case 4: // VN mode
-			break;
-		default:
-			XMI_abort();
-		}
-
-		static int opcd[NUM_CORES] = {
-			COMMTHRD_OPCODE_CORE0,
-			COMMTHRD_OPCODE_CORE1,
-			COMMTHRD_OPCODE_CORE2,
-			COMMTHRD_OPCODE_CORE3,
-		};
-		static XMI::Mutex::LockBoxNodeMutex _mtx[NUM_CORES];
-
-		void *ct;
-		int id, op;
-		int x;
-		//
-		// core 0 always has a process running, others might also.
-		// comm_thread[1] will serve channel 0,
-		// comm_thread[2] will serve channel 1,
-		// comm_thread[3] will serve channel 2,
-		// This means that any device using comm_threads must ensure
-		// that messages intended for comm_threads are posted on the
-		// proper channel(s). __maxHWThreads should ensure that
-		// messages are only posted to channels backed by comm_threads.
-		// This may not always be the best option?
-		//
-		for (x = 1; x < NUM_CORES && y < XMI_MAX_THREAD_PER_PROC; ++x) {
-			if (!(cores & (1 << x))) continue;
-			id = Kernel_MkInterruptID(0, 24 + x);
-			// Note! this must be setup as a lockbox mutex!
-			_mtx[y].init(&__sysdep);
-			ct = _mtx[y].returnLock();
-			op = opcd[x] |
-				COMMTHRD_OPCODE_CALLFUNC |
-				COMMTHRD_OPCODE_DISABLEINTONENTRY |
-				COMMTHRD_OPCODE_ENABLEINTONPOOF;
-			rc = (xmi_result_t)Kernel_SetCommThreadConfig(id, op,
-				(uint32_t *)ct,
-				advanceHelper,
-				(uint32_t)this,
-				(uint32_t)y,
-				(uint32_t)0,
-				(uint32_t)0);
-			if (rc) {
-				fprintf(stderr, "failed to config send/recv thread (%d)\n", rc);
-			} else {
-				_thrIPI[y] = (1 << x);
-				++y;
-			}
-		}
-#else
-#warning generic device not configured for helper threads
-		y = XMI_MAX_THREAD_PER_PROC - 1;
-		rc = rc;
-#endif
-		__maxHWThreads = y;
-		__maxSWThreads = y + 1;
-		// assert(__maxSWThreads <= XMI_MAX_THREAD_PER_PROC);
+		__maxThreads = T_NumContexts;
 	}
 
 	/// \brief Initialize the Generic Device and all subdevices.
@@ -267,7 +184,7 @@ namespace Generic {
 	///
 	/// \param[in] sd	The SysDep object
 	///
-	inline void Device::init(XMI_SYSDEP_CLASS &sd) {
+	inline void Device<T_NumContexts>::init(XMI_SYSDEP_CLASS &sd) {
 		// These are all the devices we know how to play well with...
 		_g_progfunc_dev.init(sd, this);
 		_g_lmbarrier_dev.init(sd, this);
@@ -277,7 +194,7 @@ namespace Generic {
 		_g_l_reducewq_dev.init(sd, this);
 		_g_l_bcastwq_dev.init(sd, this);
 
-#if defined(__bgp__) and !defined(__bgq__)
+#ifdef __bgp__
 #ifdef NOT_YET
 		_g_mbarrier_dev.init(sd, this);
 		_g_llscbarrier_dev.init(sd, this);
@@ -289,27 +206,20 @@ namespace Generic {
 		_g_cnallreducepp_dev.init(sd, this);
 		_g_cnallreduce2p_dev.init(sd, this);
 		_g_cnbroadcast_dev.init(sd, this);
-#endif // __bgp__ and !__bgq__
+#endif // __bgp__
 	}
 
 	/// \brief Quick check whether full advance is needed.
 	///
 	/// Currently not used, since subdevices have to be polled for recvs.
 	///
-	inline bool Device::isAdvanceNeeded() {
+	inline bool Device<T_NumContexts>::isAdvanceNeeded(int ctx) {
 #if 1
 		return true;
 #else
 		// There can be no threads to advance unless there is at least one
 		// message, on the __GenericQueue[].
-		int t;
-#if defined(__bgp__) and !defined(__bgq__)
-		t = Kernel_PhysicalProcessorID();
-#else
-#warning need way to get thread id
-		t = 0;
-#endif
-		return !__GenericQueue[t].isEmpty();
+		return !__GenericQueue[ctx].isEmpty();
 #endif
 	}
 
@@ -322,48 +232,34 @@ namespace Generic {
 	/// will have one call to advanceRecv, either here or in the multi-channel
 	/// routine.
 	///
+	/// \param[in]	ctx	The channel to poll
 	/// \return	Number of work units processed
 	///
-	inline int Device::__advanceRecv() {
+	inline int Device<T_NumContexts>::__advanceRecv(int ctx) {
 		int events = 0;
 		// not all devices actually have "unexpected" messages, but we call anyway.
 		// Presumably, empty functions will be optimized away by the compiler.
 		// Has no concept of recv at all: _g_progfunc_dev
-		events += _g_lmbarrier_dev.advanceRecv();
-		events += _g_wqreduce_dev.advanceRecv();
-		events += _g_wqbcast_dev.advanceRecv();
-		events += _g_l_allreducewq_dev.advanceRecv();
-		events += _g_l_reducewq_dev.advanceRecv();
-		events += _g_l_bcastwq_dev.advanceRecv();
+		events += _g_lmbarrier_dev.advanceRecv(ctx);
+		events += _g_wqreduce_dev.advanceRecv(ctx);
+		events += _g_wqbcast_dev.advanceRecv(ctx);
+		events += _g_l_allreducewq_dev.advanceRecv(ctx);
+		events += _g_l_reducewq_dev.advanceRecv(ctx);
+		events += _g_l_bcastwq_dev.advanceRecv(ctx);
 
-#if defined(__bgp__) and !defined(__bgq__)
+#ifdef __bgp__
 #ifdef NOT_YET
-		events += _g_mbarrier_dev.advanceRecv();
-		events += _g_llscbarrier_dev.advanceRecv();
+		events += _g_mbarrier_dev.advanceRecv(ctx);
+		events += _g_llscbarrier_dev.advanceRecv(ctx);
 #endif
-		events += _g_gibarrier_dev.advanceRecv();
+		events += _g_gibarrier_dev.advanceRecv(ctx);
 
-		events += _g_cnallreduce_dev.advanceRecv();
-		//events += _g_cnallreduceshort_dev.advanceRecv();
-		events += _g_cnallreducepp_dev.advanceRecv();
-		events += _g_cnallreduce2p_dev.advanceRecv();
-		events += _g_cnbroadcast_dev.advanceRecv();
-#endif // __bgp__ and !__bgq__
-		return events;
-	}
-
-	/// \brief Advance (poll) Recvs on subdevices that have channels
-	///
-	/// When a new subdevice is added, and it supports multiple channels,
-	/// a call to its advanceRecv function is added here.
-	///
-	/// \param[in]	channel	The channel to poll
-	/// \return	Number of work units processed
-	///
-	inline int Device::__advanceRecv(int channel) {
-		int events = 0;
-		// No subdevices use recv channels, yet...
-		// _g_some_dev.advanceRecv(channel);
+		events += _g_cnallreduce_dev.advanceRecv(ctx);
+		//events += _g_cnallreduceshort_dev.advanceRecv(ctx);
+		events += _g_cnallreducepp_dev.advanceRecv(ctx);
+		events += _g_cnallreduce2p_dev.advanceRecv(ctx);
+		events += _g_cnbroadcast_dev.advanceRecv(ctx);
+#endif // __bgp__
 		return events;
 	}
 
@@ -374,71 +270,55 @@ namespace Generic {
 	/// \returns:  Return code of the advance routine (number of
 	///            events processed)
 	//////////////////////////////////////////////////////////////////
-	inline int Device::advance() {
+	inline int Device<T_NumContexts>::advance(int ctx) {
+		int t = ctx;
 		int events = 0;
 		//+ Need to ensure only one of these runs per core
 		//+ (even if multi-threads per core)
 		//+ if (core_mutex.tryAcquire()) {
 
-		// Advance any recvs that have no "channels" (only 1 channel)...
-		events += __advanceRecv();
-		int t;
-#if defined(__bgp__) and !defined(__bgq__)
-		t = Kernel_PhysicalProcessorID();
-#else
-		t = 0;
-#endif
-		if (__GenericQueue[t].isEmpty()) {
-			// still need per-channel advanceRecv... if any exist.
-			return events;
-		}
-		for (int x = 0; x < __maxSWThreads; ++x) {
-			if (!__Threads[x].mutex()->tryAcquire()) continue;
-			GenericAdvanceThread *thr;
-			// Advance any recvs specific to this channel...
-			events += __advanceRecv(x);
+		// Advance any recvs on this "channel" (only 1 channel)...
+		events += __advanceRecv(t);
+		//if (!__Threads[t].mutex()->tryAcquire()) continue;
+		GenericAdvanceThread *thr;
 #ifdef USE_WAKEUP_VECTORS
-			// poll the wake-up arena for any "wake ups".
-			for (int y = 0; y < __numRegThreads; ++y) {
+#error WakeupManager TBD
+		// poll the wake-up arena for any "wake ups".
+		for (int y = 0; y < __numRegThreads; ++y) {
 #if 0
-				thr = __thrRegistry[y];
-				if (thr->isDone()) {
-					//__sysdep.wakeupManager().resetWakeup(vec);
-					continue;
-				}
-				void *vec = thr->getWakeVec();
-#endif
-				void *vec = __sysdep.wakeupManager().getWakeVec(__wakeupVectors, y)) {
-				if (__sysdep.wakeupManager().pollWakeup(vec)) {
-					__sysdep.wakeupManager().callWakeup(__wakeupVectors, vec);
-					GenericMessage *msg = (GenericMessage *)thr->getMsg();
-					// currently, advanceThread() does not distinguish between
-					// not-done and no-progress.
-					++events;
-					msg->advanceThread(thr);
-				}
+			thr = __thrRegistry[y];
+			if (thr->isDone()) {
+				//__sysdep.wakeupManager().resetWakeup(vec);
+				continue;
 			}
-#endif /* USE_WAKEUP_VECTORS */
-			for (thr = (GenericAdvanceThread *)__Threads[x].peekHead();
-					thr; thr = (GenericAdvanceThread *)thr->next()) {
+			void *vec = thr->getWakeVec();
+#endif
+			void *vec = __sysdep.wakeupManager().getWakeVec(__wakeupVectors, y)) {
+			if (__sysdep.wakeupManager().pollWakeup(vec)) {
+				__sysdep.wakeupManager().callWakeup(__wakeupVectors, vec);
 				GenericMessage *msg = (GenericMessage *)thr->getMsg();
 				// currently, advanceThread() does not distinguish between
 				// not-done and no-progress.
 				++events;
-				if (msg->advanceThread(thr) == Done) {
-					__Threads[x].deleteElem(thr);
-				}
+				msg->advanceThread(thr);
 			}
-			__Threads[x].mutex()->release();
 		}
+#endif /* USE_WAKEUP_VECTORS */
+		for (thr = (GenericAdvanceThread *)__Threads[t].peekHead();
+					thr; thr = (GenericAdvanceThread *)thr->next()) {
+			GenericMessage *msg = (GenericMessage *)thr->getMsg();
+			// currently, advanceThread() does not distinguish between
+			// not-done and no-progress.
+			++events;
+			if (msg->advanceThread(thr) == Done) {
+				__Threads[t].deleteElem(thr);
+			}
+		}
+		//__Threads[t].mutex()->release();
+
 		//+ core_mutex.release();
-		//+ }
-		// Now check everything on the private queue...
-		// Need to ensure that __GenericQueue is totally private,
-		// to core and thread - to ensure the exact same conext
-		// is used to invoke the completion callback.
-		// (is this required?)
-		// TBD: what about multiple pthreads per hwthread???
+
+		// Now check everything on the completion queue...
 		GenericMessage *msg;
 		for (msg = (GenericMessage *)__GenericQueue[t].peekHead();
 				msg; msg = (GenericMessage *)msg->next(1)) {

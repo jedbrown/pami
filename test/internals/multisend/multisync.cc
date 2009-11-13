@@ -72,7 +72,8 @@ int main(int argc, char ** argv) {
 	xmi_multisync_t msync;
 
 	// simple allreduce on the tree... SMP mode (todo: check and error)
-	msync.context = context;
+	msync.client = client;
+	msync.context = 0;
 	msync.roles = (unsigned)-1;
 	msync.participants = (xmi_topology_t *)&__global.topology_local;
 

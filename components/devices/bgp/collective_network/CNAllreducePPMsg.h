@@ -57,6 +57,7 @@ class CNAllreducePPMessage : public XMI::Device::BGP::BaseGenericCNPPMessage {
 	};
 public:
 	CNAllreducePPMessage(Generic::BaseGenericDevice &qs,
+			xmi_multicombine_t *mcomb,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
@@ -65,7 +66,10 @@ public:
 			const xmi_callback_t cb,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup tas) :
-	BaseGenericCNPPMessage(qs, swq, rwq, bytes, doStore, roles, cb,
+	BaseGenericCNPPMessage(qs, (XMI::Client *)mcomb->client, mcomb->context,
+				(XMI::PipeWorkQueue *)mcomb->data,
+				(XMI::PipeWorkQueue *)mcomb->results,
+				bytes, doStore, mcomb->roles, mcomb->cb_done,
 				dispatch_id, tas),
 	_roles(roles)
 	{
@@ -227,9 +231,7 @@ XMI_abort();
 	// __post() will still try early advance... (after construction)
 	CNAllreducePPMessage *msg;
 	msg = new (mcomb->request) CNAllreducePPMessage(_g_cnallreducepp_dev,
-			(XMI::PipeWorkQueue *)mcomb->data,
-			(XMI::PipeWorkQueue *)mcomb->results,
-			bytes, doStore, mcomb->roles, mcomb->cb_done, _dispatch_id, tas);
+			mcomb, bytes, doStore, _dispatch_id, tas);
 	_g_cnallreducepp_dev.__post<CNAllreducePPMessage>(msg);
 	return true;
 }

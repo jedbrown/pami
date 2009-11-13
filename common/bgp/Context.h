@@ -137,7 +137,7 @@ namespace XMI
           _mm (addr, bytes),
           _sysdep (_mm),
 #ifdef ENABLE_GENERIC_DEVICE
-          _generic(_sysdep),
+          _generic(),
 #endif
           _shmem (),
           _lock (),
@@ -158,7 +158,7 @@ namespace XMI
         _lock.init(&_sysdep);
 
 #ifdef ENABLE_GENERIC_DEVICE
-        _generic.init (_sysdep);
+        _generic.init (_sysdep, id, ((XMI::Client *)client)->getNumContexts());
 #endif
         _shmem.init (&_sysdep);
       }

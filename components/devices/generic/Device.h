@@ -52,10 +52,6 @@ typedef XMI::Counter::Pthread GenericDeviceCounter;
 
 #endif /* !__bgp__ */
 
-
-// For BG/P, NUM_CORES is the max number of threads.
-#define MAX_REG_THREADS	16	// >= total max threads in all subdevices
-
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/Device.h
 ///  \brief Generic Device
@@ -111,14 +107,7 @@ public:
 
 	inline void init(XMI::SysDep &sd);
 
-	inline bool isAdvanceNeeded();
-
-	// Helper thread runs this...
-	// NOT run from application call to XMI_Messager_advance()!
-	static void advanceHelper(uint32_t arg1,	// Generic::Device *
-				uint32_t arg2,		// thread index
-				uint32_t arg3, uint32_t arg4);
-
+	inline bool isAdvanceNeeded(size_t ctx);
 
 	//////////////////////////////////////////////////////////////////
 	/// \brief     Advance routine for the device.  This pulls the
@@ -127,7 +116,7 @@ public:
 	/// \returns:  Return code of the advance routine (number of
 	///            events processed)
 	//////////////////////////////////////////////////////////////////
-	inline int advance();
+	inline int advance(size_t ctx);
 
 	//////////////////////////////////////////////////////////////////
 	/// \brief       Post a message to the device queuing system
@@ -136,65 +125,40 @@ public:
 	inline void post(GenericMessage *msg, GenericAdvanceThread *thr,
 							size_t len, int num) {
 		// early advance was done by the "real" device post()
-		{ int t;
-#if defined(__bgp__) and !defined(__bgq__)
-		t = Kernel_PhysicalProcessorID();
-#else
-		t = 0;
-#endif
-		__GenericQueue[t].pushTail(msg);
-		}
+		size_t t = msg->getContext();
+		size_t n = msg->getClient()->getNumContexts();
+		XMI::Context *c0 = msg->getClient()->getContexts();
+		XMI::Context *c = c0 + t;
+		c->generic().__GenericQueue.pushTail(msg);
+
 		// round-robin threads to available "channels"...
 		// does this need to be made thread-safe?
 		// note: might be called from a completion callback.
-		// only assigns work to HW threads, unless there are no
-		// HW threads in which case all work is on a single (SW) thread.
-		int t = msg->numThreadsWanted();
-		if (t > __maxHWThreads) t = __maxHWThreads;
+
+		// t = msg->getClient()->__lastThreadUsed;
 		for (int x = 0; x < num; ++x) {
 			if (!thr->isDone()) {
-				int n = thr->getChannel();
+				if (++t >= n) {
+					c = c0;
+					t = 0;
+				} else {
+					++c;
+				}
 #ifdef USE_WAKEUP_VECTORS
 				if (thr->isPolled()) {
-					__Threads[n].pushTail(thr);
+					c->generic().__Threads.pushTail(thr);
 				}
 #else /* !USE_WAKEUP_VECTORS */
-				__Threads[n].pushTail(thr);
+				c->generic().__Threads.pushTail(thr);
 #endif /* !USE_WAKEUP_VECTORS */
-				if (t > 0) {
-#if defined(__bgp__) and !defined(__bgq__)
-					// Just kick off threads... they compete for work units.
-					// Presumably, each will get one...
-					// TBD: need to keep track of in-use threads...
-					// for now we assume all are available...
-					(void)Kernel_DeliverCommSignal(0, _thrIPI[n]);
-#else
-#warning generic device cannot activate thread to do work
-#endif
-					--t;
-				}
 			}
 			thr = (GenericAdvanceThread *)((char *)thr + len);
 		}
+		// msg->getClient()->__lastThreadUsed = t;
 	}
 
-	inline void registerThreads(GenericAdvanceThread *thr, size_t len, int num) {
-		int x, y;
-		int n = __lastThreadUsed;
-		for (x = 0, y = __numRegThreads; x < num; ++x, ++y) {
-#ifdef USE_WAKEUP_VECTORS
-			XMI_assert_debug(y < MAX_REG_THREADS);
-			__thrRegistry[y] = thr;
-			void *vec = __sysdep.wakeupManager().getWakeVec(__myWakeupVectors, n * MAX_REG_THREADS + y);
-			thr->setWakeVec(vec);
-#endif /* USE_WAKEUP_VECTORS */
-			thr->setChannel(n);
-			thr = (GenericAdvanceThread *)((char *)thr + len);
-			if (++n >= __maxHWThreads) n = 0;
-		}
-		__lastThreadUsed = n;
-		__numRegThreads = y;
-	}
+	inline size_t contextId() { return __contextId; }
+	inline size_t nContexts() { return __nContexts; }
 
 private:
 	/// \brief Advance a reception channel
@@ -204,36 +168,32 @@ private:
 	/// \param[in] channel	The channel to check, or context to check within
 	/// \return	Number of work units performed (typically, 0 or 1)
 	///
-	inline int __advanceRecv(int channel);
-	inline int __advanceRecv();
+	inline int __advanceRecv(int ctx);
 
 	//////////////////////////////////////////////////////////////////
 	/// \brief Storage for the queue of messages
 	//////////////////////////////////////////////////////////////////
-	MultiQueue<2, 1> __GenericQueue[XMI_MAX_THREAD_PER_PROC];
+	MultiQueue<2, 1> __GenericQueue;
 
 	//////////////////////////////////////////////////////////////////
 	/// \brief Storage for the queue of threads (a.k.a. channels)
 	//////////////////////////////////////////////////////////////////
-	ThreadQueue __Threads[XMI_MAX_THREAD_PER_PROC];
-	int __lastThreadUsed;
-#if defined(__bgp__) and !defined(__bgq__)
-	unsigned _thrIPI[NUM_CORES];
-#endif
-	int __maxHWThreads;
-	int __maxSWThreads;
+	ThreadQueue __Threads;
+
+	size_t __contextId;
+	size_t __nContexts;
 
 #ifdef USE_WAKEUP_VECTORS
 	void *__wakeupVectors;
 	void *__myWakeupVectors;
 	GenericAdvanceThread *__thrRegistry[MAX_REG_THREADS];
-#endif /* USE_WAKEUP_VECTORS */
 	int __numRegThreads;
 
 	//////////////////////////////////////////////////////////////////
-	/// \brief Lockmanager object for local barrier calls
+	/// \brief SysDep object - only used to get WakeupManager
 	//////////////////////////////////////////////////////////////////
 	XMI::SysDep &__sysdep;
+#endif /* USE_WAKEUP_VECTORS */
 
 }; /* class Device */
 

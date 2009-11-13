@@ -23,7 +23,7 @@ namespace XMI
           Interface::Client<XMI::Client,XMI::Context>(name, result),
           _client ((xmi_client_t) this),
           _references (1),
-          _contexts (0),
+          _ncontexts (0),
           _mm ()
         {
           // Set the client name string.
@@ -90,12 +90,12 @@ namespace XMI
 					int *ncontexts) {
 		//_context_list->lock ();
 		int n = *ncontexts;
-		if (_contexts != 0) {
+		if (_ncontexts != 0) {
 			*ncontexts = 0;
 			return XMI_ERROR;
 		}
-		if (_contexts + n > 4) {
-			n = 4 - _contexts;
+		if (_ncontexts + n > 4) {
+			n = 4 - _ncontexts;
 		}
 		*ncontexts = n;
 		if (n <= 0) { // impossible?
@@ -112,10 +112,11 @@ namespace XMI
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&context[x]) XMI::Context(this->getClient(), _contexts++, base, bytes);
+			new (&context[x]) XMI::Context(this->getClient(), _ncontexts++, base, bytes);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
 		}
+		_contexts = context;
 		return XMI_SUCCESS;
 	}
 
@@ -134,12 +135,26 @@ namespace XMI
           return _client;
         }
 
+	// the friend clause is actually global, but this helps us remember why...
+	friend class XMI::Device::Generic::Device;
+
+	inline size_t getNumContexts()
+	{
+		return _ncontexts;
+	}
+
+	inline XMI::Context *getContexts()
+	{
+		return _contexts;
+	}
+
       private:
 
         xmi_client_t _client;
 
         size_t       _references;
-        size_t       _contexts;
+        size_t       _ncontexts;
+        XMI::Context *_contexts;
 
         char         _name[256];
 

@@ -179,14 +179,16 @@ public:
 	/// \brief  Generic Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb) :
+	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb,
+			XMI::Client *client, size_t context) :
 	MultiQueueMessage<2>(Generic_QS, cb),
-	_threadsWanted(0)
+	_client(client),
+	_context(context)
 	{
 	}
 
-	inline void setThreadsWanted(int n) { _threadsWanted = n; }
-	inline int numThreadsWanted() { return _threadsWanted; }
+	XMI::Client *getClient() { return _client; }
+	size_t getContext() { return _context; }
 
 	/// \brief Message is Done, perform all completion tasks
 	///
@@ -203,7 +205,8 @@ public:
 	virtual MessageStatus advanceThread(GenericAdvanceThread *thr) = 0;
 
 protected:
-	int _threadsWanted;
+	XMI::Client  *_client;
+	size_t _context;
 }; /* class GenericMessage */
 
 }; /* namespace Generic */

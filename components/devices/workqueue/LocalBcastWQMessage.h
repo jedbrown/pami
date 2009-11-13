@@ -56,16 +56,14 @@ public:
           ///                         broadcast buffer
           ///
           inline LocalBcastWQMessage(Generic::BaseGenericDevice &device,
-                                      xmi_callback_t   cb,
+                                      xmi_multicast_t *mcast,
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
-                                      bool              isrootrole,
-                                      XMI::PipeWorkQueue   * sbuffer,
-                                      XMI::PipeWorkQueue   * rbuffer,
-                                      size_t            nbytes) :
-            XMI::Device::Generic::GenericMessage (device, cb),
+                                      bool              isrootrole) :
+            XMI::Device::Generic::GenericMessage (device, mcast->cb_done,
+					(XMI::Client *)mcast->client, mcast->context),
             _isrootrole (isrootrole),
-            _sbuffer (*sbuffer),
-            _rbuffer (*rbuffer),
+            _sbuffer ((XMI::PipeWorkQueue *)mcast->src),
+            _rbuffer ((XMI::PipeWorkQueue *)mcast->dst),
             _shared (workqueue)
           {
           }
@@ -166,9 +164,7 @@ inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	_shared.setConsumers(_npeers - 1, consumer);
 	LocalBcastWQMessage *msg =
 		new (mcast->request) LocalBcastWQMessage(_g_l_bcastwq_dev,
-			mcast->cb_done, _shared, isrootrole,
-			(XMI::PipeWorkQueue *)mcast->src, (XMI::PipeWorkQueue *)mcast->dst,
-			mcast->bytes);
+			mcast, _shared, isrootrole);
 	_g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
 	return true;
 }

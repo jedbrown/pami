@@ -91,8 +91,8 @@ protected:
 
 	AtomicBarrierMsg(Generic::BaseGenericDevice &Generic_QS,
 		T_Barrier *barrier,
-		xmi_callback_t cb) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
+		xmi_multisync_t *msync) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done, msync->client, msync->context),
 	_barrier(barrier)
 	{
 		// assert(role == DEFAULT_ROLE);
@@ -173,7 +173,7 @@ inline bool XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(xmi_mul
 	}
 	// must "continue" current barrier, not start new one!
 	AtomicBarrierMsg<T_Barrier> *msg;
-	msg = new (msync->request) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync->cb_done);
+	msg = new (msync->request) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync);
 	_g_lmbarrier_dev.__post<AtomicBarrierMsg<T_Barrier> >(msg);
 	return true;
 }

@@ -23,7 +23,8 @@
 typedef int XMI_ProgressFunc(void *clientdata);
 
 typedef struct {
-	xmi_context_t context;
+	xmi_client_t client;
+	size_t context;
 	void *request;
 	XMI_ProgressFunc *func;
 	void *clientdata;
@@ -73,13 +74,12 @@ protected:
 	friend class ProgressFunctionMdl;
 
 	ProgressFunctionMsg(Generic::BaseGenericDevice &Generic_QS,
-		XMI_ProgressFunc *func,
-		void *clientdata,
-		xmi_callback_t cb) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
+		XMI_ProgressFunc_t *pf) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, pf->cb_done,
+				(XMI::Client *)pf->client, pf->context),
 	_thread(),
-	_func(func),
-	_clientdata(clientdata),
+	_func(pf->func),
+	_clientdata(pf->clientdata),
 	_rc(XMI_SUCCESS)
 	{
 	}
@@ -175,7 +175,7 @@ inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t
 		}
 		return true;
 	}
-	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf->func, pf->clientdata, pf->cb_done);
+	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf);
 	_g_progfunc_dev.__post<ProgressFunctionMsg>(msg);
 	return true;
 }

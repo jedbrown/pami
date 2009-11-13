@@ -64,15 +64,15 @@ class CNAllreduceShortMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	};
 public
 	CNAllreduceShortMessage(Generic::BaseGenericDevice &qs,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			xmi_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,
-			unsigned roles,
-			const xmi_callback_t cb,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup &tas) :
-	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb,
+	BaseGenericCNMessage(qs, (XMI::Client *)mcomb->client, mcomb->context,
+				(XMI::PipeWorkQueue *)mcomb->data,
+				(XMI::PipeWorkQueue *)mcomb->results,
+				bytes, doStore, mcomb->roles, mcomb->cb_done,
 				dispatch_id, tas._hhfunc, tas._opsize),
 	_roles(roles)
 	{
@@ -485,9 +485,8 @@ inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage
 	// __post() will still try early advance... (after construction)
 	// details TBD...
 	new (msg) CNAllreduceShortMessage(_g_cnallreduceshort_dev,
-			(XMI::PipeWorkQueue *)_getData(),
-			(XMI::PipeWorkQueue *)_getResults(),
-			bytes, doStore, _getRoles(), _getCallback(), _dispatch_id, tas
+			mcomb,
+			bytes, doStore, _dispatch_id, tas
 			// context from possible pre-ctor advance???
 			);
 	_g_cnallreduceshort_dev.__post(msg);

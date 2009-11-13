@@ -102,7 +102,7 @@ public:
 
 	inline XMI_SYSDEP_CLASS *getSysdep() { return _sd; }
 
-	inline int advanceRecv(int channel = -1);
+	inline int advanceRecv(size_t context);
 
 	/// \brief default blocking advance and prototype
 	///
@@ -250,11 +250,10 @@ protected:
 
 	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
 		_generic = device;
-		_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		___init(sd);
 	}
 
-	inline int advanceRecv(int channel = -1) { return 0; }
+	inline int advanceRecv(size_t context) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.
@@ -333,11 +332,10 @@ protected:
 		_generic = device;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
-		_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		___init(sd);
 	}
 
-	inline int advanceRecv(int channel = -1) { return 0; }
+	inline int advanceRecv(size_t context) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.
@@ -394,7 +392,7 @@ private:
 /// A multi-thread basic sub-device - standard boilerplate
 /// N threads, no roles, no "receive" polling.
 /// Allows more than one message to be active at a time.
-/// This means each message must supply the thread structure.
+/// This means each message must supply the thread structure(s).
 ///
 template <class T_Thread, int N_Threads>
 class MultiThrdSubDevice : public GenericSubDevice {
@@ -439,11 +437,10 @@ protected:
 		_generic = device;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
-		//_generic->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		___init(sd);
 	}
 
-	inline int advanceRecv(int channel = -1) { return 0; }
+	inline int advanceRecv(size_t context) { return 0; }
 
 //private:
 	// For some reason, we can't declare friends like this.
@@ -637,13 +634,12 @@ protected:
 //		for (int x = 0; x < NUM_THREADS; ++x) {
 //			//_threads[x].setPolled(true);
 //		}
-		device->registerThreads(&_threads[0], sizeof(_threads[0]), NUM_THREADS);
 		if (!_common->isInit()) {
 			_common->init(sd, device);
 		}
 	}
 
-	inline int advanceRecv(int channel = -1) { return 0; }
+	inline int advanceRecv(size_t context) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.

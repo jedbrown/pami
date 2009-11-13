@@ -65,15 +65,14 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	};
 public:
 	CNBroadcastMessage(Generic::BaseGenericDevice &qs,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			xmi_multicast_t *mcast,
 			size_t bytes,
 			bool doStore,
 			bool doData,
-			unsigned roles,
-			const xmi_callback_t cb,
 			unsigned dispatch_id) :
-	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb,
+	BaseGenericCNMessage(qs, (XMI::Client *)mcast->client, mcast->context,
+		(XMI::PipeWorkQueue *)mcast->src, (XMI::PipeWorkQueue *)mcast->dst,
+		bytes, doStore, mcast->roles, mcast->cb_done,
 		dispatch_id, XMI::Device::BGP::COMBINE_OP_OR, BGPCN_PKT_SIZE),
 	_doData(doData),
 	_roles(roles)
@@ -244,9 +243,7 @@ inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// __post() will still try early advance... (after construction)
 	CNBroadcastMessage *msg;
 	msg = new (mcast->request) CNBroadcastMessage(_g_cnbroadcast_dev,
-			(XMI::PipeWorkQueue *)mcast->src,
-			(XMI::PipeWorkQueue *)mcast->dst, mcast->bytes,
-			doStore, doData, mcast->roles, mcast->cb_done, _dispatch_id);
+			mcast, mcast->bytes, doStore, doData, _dispatch_id);
 	_g_cnbroadcast_dev.__post<CNBroadcastMessage>(msg);
 	return true;
 }
