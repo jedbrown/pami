@@ -11,6 +11,8 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
+#include "components/devices/generic/GenericDevice.h"
+
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemModel.h"
 #include "components/devices/shmem/ShmemMessage.h"
@@ -65,13 +67,16 @@ namespace XMI
   class Context : public Interface::Context<XMI::Context>
   {
     public:
-      inline Context (xmi_client_t client, size_t contextid, void * addr, size_t bytes) :
+      inline Context (xmi_client_t client, size_t contextid, size_t num,
+				XMI::Device::Generic::Device *generics,
+				void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
           _contextid (contextid),
           _mm (addr, bytes),
           _sysdep (_mm),
+	  _generic(generics[contextid]),
           _mu (),
           _shmem ()
       {
@@ -90,6 +95,7 @@ namespace XMI
         // ----------------------------------------------------------------
 
         _mu.init (&_sysdep);
+	_generic.init(_sysdep, contextid, num, generics);
         _shmem.init (&_sysdep);
 
         _get = (void *) _request.allocateObject ();
@@ -152,6 +158,7 @@ namespace XMI
           {
             events += _shmem.advance_impl();
             events += _mu.advance();
+	    events += _generic.advance();
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -421,6 +428,7 @@ namespace XMI
 
       // devices...
       Device::MU::MUDevice _mu;
+      XMI::Device::Generic::Device &_generic;
       ShmemDevice          _shmem;
 
       void * _dispatch[1024];

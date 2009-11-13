@@ -22,7 +22,7 @@ namespace XMI
         Interface::Client<XMI::Client,XMI::Context>(name, result),
         _client ((xmi_client_t) this),
         _references (1),
-        _contexts (0)
+        _ncontexts (0)
         {
         }
 
@@ -60,30 +60,31 @@ namespace XMI
         {
 		//_context_list->lock ();
 		int n = *ncontexts;
-		if (_contexts != 0) {
+		if (_ncontexts != 0) {
 			*ncontexts = 0;
 			return XMI_ERROR;
 		}
-		if (_contexts + n > 4) {
-			n = 4 - _contexts;
+		if (_ncontexts + n > 4) {
+			n = 4 - _ncontexts;
 		}
 		*ncontexts = n;
 		if (n <= 0) { // impossible?
 			return XMI_ERROR;
 		}
-		XMI::Context *context = NULL;
-		context = (XMI::Context *)malloc(sizeof(XMI::Context) * n);
-		XMI_assertf(context!=0, "malloc failed for context[%d], errno=%d\n", n, errno);
-		memset((void *)context, 0, sizeof(XMI::Context) * n);
+		_generics = (XMI::Device::Generic::Device *)malloc(sizeof(*_generics) * n);
+		XMI_assertf(_generics!=0, "malloc failed for _generics[%d], errno=%d\n", n, errno);
+		_contexts = (XMI::Context *)malloc(sizeof(XMI::Context) * n);
+		XMI_assertf(_contexts!=0, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
+		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		// size_t bytes = _mm.size() / n;
 		int x;
 		for (x = 0; x < n; ++x) {
-			contexts[x] = &context[x];
+			contexts[x] = &_contexts[x];
 			// void *base = NULL;
 			// _mm.memalign((void **)&base, 16, bytes);
 			// XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
 			// new (&context[x]) XMI::Context(this->getClient(), _contexts++, base, bytes);
-			new (&context[x]) XMI::Context(this->getClient(), _contexts++);
+			new (&_contexts[x]) XMI::Context(this->getClient(), x, n, _generics);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
 		}
@@ -96,6 +97,15 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
+	inline size_t getNumContexts()
+	{
+		return _ncontexts;
+	}
+	inline XMI::Context *getContexts()
+	{
+		return _contexts;
+	}
+
     protected:
 
       inline xmi_client_t getClient () const
@@ -106,7 +116,9 @@ namespace XMI
     private:
       xmi_client_t _client;
       size_t       _references;
-      size_t       _contexts;
+      size_t       _ncontexts;
+	XMI::Context *_contexts;
+	XMI::Device::Generic::Device *_generics;
     }; // end class XMI::Client
 }; // end namespace XMI
 

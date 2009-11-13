@@ -22,9 +22,7 @@
 #include "SysDep.h"
 #include "components/geometry/mpi/mpicollfactory.h"
 #include "components/geometry/mpi/mpicollregistration.h"
-#ifdef ENABLE_GENERIC_DEVICE
 #include "components/devices/generic/GenericDevice.h"
-#endif
 #include "Mapping.h"
 #include <new>
 #include <map>
@@ -132,7 +130,9 @@ namespace XMI
     class Context : public Interface::Context<XMI::Context>
     {
     public:
-      inline Context (xmi_client_t client, size_t id, void * addr, size_t bytes) :
+      inline Context (xmi_client_t client, size_t id, size_t num,
+				XMI::Device::Generic::Device *generics,
+				void * addr, size_t bytes) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
         _contextid (id),
@@ -141,10 +141,8 @@ namespace XMI
         _lock (),
         _empty_advance(0),
         _shmem(),
-        _work (_context, &_sysdep)
-#ifdef ENABLE_GENERIC_DEVICE
-	, _generic(_sysdep)
-#endif
+        _work (_context, &_sysdep),
+	_generic(generics[id])
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
@@ -159,9 +157,7 @@ namespace XMI
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
 
-#ifdef ENABLE_GENERIC_DEVICE
-	  _generic.init (_sysdep);
-#endif
+	  _generic.init (_sysdep, id, num, generics);
           _shmem.init(&_sysdep);
           _lock.init(&_sysdep);
 
@@ -230,9 +226,7 @@ namespace XMI
           for (i=0; i<maximum && events==0; i++)
               {
                 events += _mpi.advance_impl();
-#ifdef ENABLE_GENERIC_DEVICE
 	        events += _generic.advance();
-#endif
                 events += _shmem.advance_impl();
 
                 if(events == 0)
@@ -617,9 +611,7 @@ namespace XMI
       // This is a bringup hack .. it should be replaced with something better
       Work _work;
 
-#ifdef ENABLE_GENERIC_DEVICE
-      XMI::Device::Generic::Device _generic;
-#endif
+      XMI::Device::Generic::Device &_generic;
       MemoryAllocator<1024,16>  _request;
       MPIDevice                 _mpi;
       MPICollreg               *_collreg;
