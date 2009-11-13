@@ -104,7 +104,6 @@ namespace XMI
 		}
 		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
-		int x;
 		for (x = 0; x < n; ++x) {
 			contexts[x] = &_contexts[x];
 			void *base = NULL;
