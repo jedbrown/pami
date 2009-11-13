@@ -288,7 +288,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters Send simple parameter structure
    */
-  xmi_result_t XMI_Send (xmi_context_t       context,
+  xmi_result_t XMI_Send (xmi_client_t client,
+			 size_t context,
                          xmi_send_t * parameters);
 
   /**
@@ -324,7 +325,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters Send parameter structure
    */
-  xmi_result_t XMI_Send_immediate (xmi_context_t   context,
+  xmi_result_t XMI_Send_immediate (xmi_client_t client,
+				   size_t   context,
                                    xmi_send_immediate_t    * parameters);
 
   /**
@@ -340,7 +342,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters Send typed parameter structure
    */
-  xmi_result_t XMI_Send_typed (xmi_context_t      context,
+  xmi_result_t XMI_Send_typed (xmi_client_t client,
+			       size_t      context,
                                xmi_send_typed_t * parameters);
 
   /**
@@ -480,7 +483,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters Simple put input parameters
    */
-  xmi_result_t XMI_Put (xmi_context_t      context,
+  xmi_result_t XMI_Put (xmi_client_t client,
+			size_t      context,
                         xmi_put_simple_t * parameters);
 
   /**
@@ -489,7 +493,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters Typed put input parameters
    */
-  xmi_result_t XMI_Put_typed (xmi_context_t     context,
+  xmi_result_t XMI_Put_typed (xmi_client_t client,
+			      size_t     context,
                               xmi_put_typed_t * parameters);
 
 
@@ -536,7 +541,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters Simple get input parameters
    */
-  xmi_result_t XMI_Get (xmi_context_t      context,
+  xmi_result_t XMI_Get (xmi_client_t client,
+			size_t      context,
                         xmi_get_simple_t * parameters);
 
   /**
@@ -545,7 +551,8 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters Typed get input parameters
    */
-  xmi_result_t XMI_Get_typed (xmi_context_t     context,
+  xmi_result_t XMI_Get_typed (xmi_client_t client,
+			      size_t     context,
                               xmi_get_typed_t * parameters);
 
   /** \} */ /* end of "get" group */
@@ -653,7 +660,7 @@ extern "C"
    * \param[in] context    XMI communication context
    * \param[in] parameters read-modify-write input parameters
    */
-  xmi_result_t XMI_Rmw (xmi_context_t context, xmi_rmw_t * parameters);
+  xmi_result_t XMI_Rmw (xmi_client_t client, size_t context, xmi_rmw_t * parameters);
 
   /** \} */ /* end of "rmw" group */
 
@@ -695,7 +702,8 @@ extern "C"
    * \param[in]  bytes     Number of bytes to register
    * \param[out] memregion Memory region object. Can be NULL.
    */
-  xmi_result_t XMI_Memregion_register (xmi_context_t     context,
+  xmi_result_t XMI_Memregion_register (xmi_client_t client,
+				       size_t     context,
                                        void            * address,
                                        size_t            bytes,
                                        xmi_memregion_t * memregion);
@@ -708,7 +716,8 @@ extern "C"
    * \param[in] context   XMI application context
    * \param[in] memregion Memory region object
    */
-  xmi_result_t XMI_Memregion_deregister (xmi_context_t   context,
+  xmi_result_t XMI_Memregion_deregister (xmi_client_t client,
+					 size_t   context,
                                          xmi_memregion_t memregion);
 
   /**
@@ -722,7 +731,8 @@ extern "C"
    * \param[out] bytes     Number of contiguous bytes from the base address
    * \param[out] task      XMI task that registered the memory region
    */
-  xmi_result_t XMI_Memregion_query (xmi_context_t      context,
+  xmi_result_t XMI_Memregion_query (xmi_client_t client,
+				    size_t      context,
                                     xmi_memregion_t    memregion,
                                     void            ** address,
                                     size_t           * bytes,
@@ -768,7 +778,7 @@ extern "C"
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
    */
-  xmi_result_t XMI_Rput (xmi_context_t context, xmi_rput_simple_t * parameters);
+  xmi_result_t XMI_Rput (xmi_client_t client, size_t context, xmi_rput_simple_t * parameters);
 
   /**
    * \brief Put operation for data type specific one-sided data transfer.
@@ -776,7 +786,7 @@ extern "C"
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
    */
-  xmi_result_t XMI_Rput_typed (xmi_context_t context, xmi_rput_typed_t * parameters);
+  xmi_result_t XMI_Rput_typed (xmi_client_t client, size_t context, xmi_rput_typed_t * parameters);
 
   /**
    * \brief Input parameter structure for simple rput transfers
@@ -815,7 +825,7 @@ extern "C"
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
    */
-  xmi_result_t XMI_Rget (xmi_context_t context, xmi_rget_simple_t * parameters);
+  xmi_result_t XMI_Rget (xmi_client_t client, size_t context, xmi_rget_simple_t * parameters);
 
   /**
    * \brief Get operation for data type specific one-sided data transfer.
@@ -823,7 +833,7 @@ extern "C"
    * \param[in] context    XMI application context
    * \param[in] parameters Input parameters structure
    */
-  xmi_result_t XMI_Rget_typed (xmi_context_t context, xmi_rget_typed_t * parameters);
+  xmi_result_t XMI_Rget_typed (xmi_client_t client, size_t context, xmi_rget_typed_t * parameters);
 
   /** \} */ /* end of "rdma" group */
   /** \} */ /* end of "rma" group */
@@ -852,7 +862,8 @@ extern "C"
    * \param[in] count      Number of tasks in the array dest
    */
 
-  xmi_result_t XMI_Purge_totask (xmi_context_t   context,
+  xmi_result_t XMI_Purge_totask (xmi_client_t client,
+				 size_t   context,
                                  size_t        * dest,
                                  size_t          count);
 
@@ -864,7 +875,8 @@ extern "C"
    * \param[in] dest       Array of destination tasks to resume connections to
    * \param[in] count      Number of tasks in the array dest
    */
-  xmi_result_t XMI_Resume_totask (xmi_context_t   context,
+  xmi_result_t XMI_Resume_totask (xmi_client_t client,
+				  size_t   context,
                                   size_t        * dest,
                                   size_t          count);
 
@@ -894,7 +906,7 @@ extern "C"
    *
    * \param[in] context XMI communication context
    */
-  xmi_result_t XMI_Fence_begin (xmi_context_t context);
+  xmi_result_t XMI_Fence_begin (xmi_client_t client, size_t context);
 
   /**
    * \brief End a memory synchronization region
@@ -910,7 +922,7 @@ extern "C"
    *
    * \param[in] context XMI communication context
    */
-  xmi_result_t XMI_Fence_end (xmi_context_t context);
+  xmi_result_t XMI_Fence_end (xmi_client_t client, size_t context);
 
 
   /**
@@ -920,7 +932,8 @@ extern "C"
    * \param[in] done_fn Event callback to invoke when the fence is complete
    * \param[in] cookie  Event callback argument
    */
-  xmi_result_t XMI_Fence_all (xmi_context_t        context,
+  xmi_result_t XMI_Fence_all (xmi_client_t client,
+			      size_t        context,
                               xmi_event_function   done_fn,
                               void               * cookie);
 
@@ -932,7 +945,8 @@ extern "C"
    * \param[in] cookie  Event callback argument
    * \param[in] task    Remote task to synchronize
    */
-  xmi_result_t XMI_Fence_task (xmi_context_t        context,
+  xmi_result_t XMI_Fence_task (xmi_client_t client,
+			       size_t        context,
                                xmi_event_function   done_fn,
                                void               * cookie,
                                size_t               task);
@@ -1083,7 +1097,8 @@ extern "C"
    *                             duration of the geometry's existence
    * \param[in]  slice_count     Number of nodes participating in the geometry
    */
-  xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+  xmi_result_t XMI_Geometry_initialize (xmi_client_t client,
+					size_t               context,
                                         xmi_geometry_t            * geometry,
                                         unsigned                    id,
                                         xmi_geometry_range_t      * task_slices,
@@ -1095,7 +1110,8 @@ extern "C"
    * \param[in]  context         xmi context
    * \param[in]  world_geometry  world geometry object
    */
-  xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+  xmi_result_t XMI_Geometry_world (xmi_client_t client,
+				   size_t               context,
                                    xmi_geometry_t            * world_geometry);
 
   /**
@@ -1111,7 +1127,8 @@ extern "C"
    * \retval        XMI_SUCCESS   number of algorithms is determined.
    * \retval        ?????         There is an error with input parameters
    */
-  xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
+  xmi_result_t XMI_Geometry_algorithms_num (xmi_client_t client,
+					    size_t context,
                                             xmi_geometry_t geometry,
                                             xmi_xfer_type_t coll_type,
                                             int *lists_lengths);
@@ -1131,7 +1148,8 @@ extern "C"
    * \retval        XMI_SUCCESS    algorithm is applicable to geometry.
    * \retval        ?????          Error in input arguments or not applicable.
    */
-  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
+  xmi_result_t XMI_Geometry_algorithms_info (xmi_client_t client,
+					     size_t context,
                                              xmi_geometry_t geometry,
                                              xmi_xfer_type_t type,
                                              xmi_algorithm_t *algs,
@@ -1144,7 +1162,8 @@ extern "C"
    * \param[in] geometry The geometry object to free
    * \retval XMI_SUCCESS Memory free didn't fail
    */
-  xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+  xmi_result_t XMI_Geometry_finalize(xmi_client_t client,
+				     size_t   context,
                                      xmi_geometry_t  geometry);
 
   /**
@@ -2739,7 +2758,8 @@ extern "C"
    *				or -1 if no additional roles are used.
    * \return	success or failure
    */
-  xmi_result_t XMI_Multisend_getroles(xmi_context_t  context,
+  xmi_result_t XMI_Multisend_getroles(xmi_client_t client,
+				      size_t  context,
                                       size_t         dispatch,
                                       int           *numRoles,
                                       int           *replRole);
@@ -2799,7 +2819,7 @@ extern "C"
                                                   the data being sent, for one-sided. */
     unsigned            msgcount;          /**< info count*/
   } xmi_multicast_t;
-  xmi_result_t XMI_Multicast(xmi_context_t context,xmi_multicast_t *mcastinfo);
+  xmi_result_t XMI_Multicast(xmi_client_t client, size_t context,xmi_multicast_t *mcastinfo);
 
 
   /**  Deprecated Multicast:  To be deleted soon!!! */
@@ -2981,7 +3001,7 @@ extern "C"
    * \param[in] m2minfo	Paramters for ManyToMany operation to be performed
    * \return	XMI_SUCCESS or error code
    */
-  xmi_result_t XMI_Manytomany(xmi_context_t context,xmi_manytomany_t *m2minfo);
+  xmi_result_t XMI_Manytomany(xmi_client_t client, size_t context,xmi_manytomany_t *m2minfo);
 
   /******************************************************************************
    *       Multisync Personalized synchronization/coordination
@@ -3027,7 +3047,7 @@ extern "C"
    * \param[in] msyncinfo	Struct of all params needed to perform operation
    * \return	XMI_SUCCESS or error codes
    */
-  xmi_result_t XMI_Multisync(xmi_context_t context,xmi_multisync_t *msyncinfo);
+  xmi_result_t XMI_Multisync(xmi_client_t client, size_t context,xmi_multisync_t *msyncinfo);
 
 
   /******************************************************************************
@@ -3076,7 +3096,7 @@ extern "C"
    * \param[in] mcombineinfo	Struct of all params needed to perform operation
    * \return	XMI_SUCCESS or error codes
    */
-  xmi_result_t XMI_Multicombine(xmi_context_t context,xmi_multicombine_t *mcombineinfo);
+  xmi_result_t XMI_Multicombine(xmi_client_t client, size_t context,xmi_multicombine_t *mcombineinfo);
 
   /*****************************************************************************/
   /**
@@ -3232,7 +3252,8 @@ extern "C"
    * \param[in] options    Dispatch registration assertions
    *
    */
-  xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
+  xmi_result_t XMI_Dispatch_set (xmi_client_t client,
+				 size_t              context,
                                  size_t                     dispatch,
                                  xmi_dispatch_callback_fn   fn,
                                  void                     * cookie,
@@ -3306,7 +3327,8 @@ extern "C"
    *   XMI_ERR_ATTRIBUTE
    *   XMI_ERR_VALUE
    */
-  xmi_result_t XMI_Configuration_query (xmi_context_t         context,
+  xmi_result_t XMI_Configuration_query (xmi_client_t client,
+					size_t         context,
                                         xmi_configuration_t * configuration);
 
   /**
@@ -3322,7 +3344,8 @@ extern "C"
    *   XMI_ERR_ATTRIBUTE
    *   XMI_ERR_VALUE
    */
-  xmi_result_t XMI_Configuration_update (xmi_context_t         context,
+  xmi_result_t XMI_Configuration_update (xmi_client_t client,
+					 size_t         context,
                                          xmi_configuration_t * configuration);
 
   /**
@@ -3437,19 +3460,7 @@ extern "C"
   xmi_result_t XMI_Context_createv (xmi_client_t           client,
                                    xmi_configuration_t    configuration[],
                                    size_t                 count,
-                                   xmi_context_t        * context,
-				   int			* ncontexts);
-
-  /**
-   * \brief Destroy an independent communication context
-   *
-   * \warning It is \b illegal to invoke any XMI functions using the
-   *          communication context from any thread after the context is
-   *          destroyed.
-   *
-   * \param[in] context XMI communication context
-   */
-  xmi_result_t XMI_Context_destroy (xmi_context_t context);
+				   int			  ncontexts);
 
   /**
    * \brief Atomically post work to a context
@@ -3473,7 +3484,8 @@ extern "C"
    * \param[in] work_fn Event callback function to post to the context
    * \param[in] cookie  Opaque data pointer to pass to the event function
    */
-  xmi_result_t XMI_Context_post (xmi_context_t        context,
+  xmi_result_t XMI_Context_post (xmi_client_t client,
+				 size_t        context,
                                  xmi_event_function   work_fn,
                                  void               * cookie);
 
@@ -3534,7 +3546,8 @@ extern "C"
    * \param[in] count   Number of communication contexts
    * \param[in] maximum Maximum number of internal poll iterations on each context
    */
-  xmi_result_t XMI_Context_multiadvance (xmi_context_t context[],
+  xmi_result_t XMI_Context_multiadvance (xmi_client_t client,
+					 size_t context[],
                                          size_t        count,
                                          size_t        maximum);
 
@@ -3545,7 +3558,7 @@ extern "C"
    *
    * \param[in] context XMI communication context
    */
-  xmi_result_t XMI_Context_lock (xmi_context_t context);
+  xmi_result_t XMI_Context_lock (xmi_client_t client, size_t context);
 
   /**
    * \brief Attempt to acquire an atomic lock on a communication context
@@ -3554,14 +3567,14 @@ extern "C"
    *
    * \param[in] context XMI communication context
    */
-  xmi_result_t XMI_Context_trylock (xmi_context_t context);
+  xmi_result_t XMI_Context_trylock (xmi_client_t client, size_t context);
 
   /**
    * \brief Release an atomic lock on a communication context
    *
    * \param[in] context XMI communication context
    */
-  xmi_result_t XMI_Context_unlock (xmi_context_t context);
+  xmi_result_t XMI_Context_unlock (xmi_client_t client, size_t context);
 
   /** \} */ /* end of "context" group */
 
