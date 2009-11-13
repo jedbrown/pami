@@ -3370,6 +3370,12 @@ extern "C"
    */
   unsigned long long XMI_Wtimebase();
 
+  /**
+   * \brief  Returns the clock megahertz
+   * \return Returns the clock megahertz
+   */
+  size_t XMI_Wclockmhz ();
+  
   /** \} */ /* end of "Time" group */
 
 

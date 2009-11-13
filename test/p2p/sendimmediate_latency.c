@@ -21,7 +21,7 @@
 
 //#define ITERATIONS 1
 //#define ITERATIONS 1000
-#define ITERATIONS 100
+#define ITERATIONS 1000
 
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
@@ -178,8 +178,8 @@ int main ()
   { int _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
-  double clockMHz = 850.0;
-
+  double clockMHz = XMI_Wclockmhz();
+  
   TRACE_ERR((stderr, "... before barrier_init()\n"));
   barrier_init (context, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));

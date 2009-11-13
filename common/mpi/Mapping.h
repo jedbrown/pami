@@ -240,7 +240,7 @@ namespace XMI
         }
       inline xmi_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
         {
-		size_t x, r = address.global;
+		size_t x, r = address.local;
 		for (x = 0; x < _npeers && r != _peers[x]; ++x);
 		if (x < _npeers) {
 			peer = x;

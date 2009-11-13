@@ -30,6 +30,17 @@
 #include <map>
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
+#include <sched.h>
+
+
+#warning shmem device must become sub-device of generic device
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemModel.h"
+#include "components/devices/shmem/ShmemMessage.h"
+#include "util/fifo/FifoPacket.h"
+#include "util/fifo/LinearFifo.h"
+
+
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -49,6 +60,15 @@ namespace XMI
     typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice> EagerMPI;
     //typedef XMI::Protocol::Send::Adaptive <MPIModel,MPIDevice> EagerMPI;
 
+    typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
+    typedef Fifo::FifoPacket <16, 240> ShmemPacket;
+//    typedef Fifo::LinearFifo<Counter::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
+    typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
+    typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
+    typedef Device::ShmemDevice<ShmemFifo, ShmemPacket> ShmemDevice;
+    typedef Device::ShmemModel<ShmemDevice, ShmemMessage> ShmemModel;
+
+    typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
     class Work : public Queue
     {
@@ -115,10 +135,12 @@ namespace XMI
       inline Context (xmi_client_t client, size_t id, void * addr, size_t bytes) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
-        _id (id),
+        _contextid (id),
         _mm (addr, bytes),
 	_sysdep(_mm),
         _lock (),
+        _empty_advance(0),
+        _shmem(),
         _work (_context, &_sysdep)
 #ifdef ENABLE_GENERIC_DEVICE
 	, _generic(_sysdep)
@@ -140,7 +162,14 @@ namespace XMI
 #ifdef ENABLE_GENERIC_DEVICE
 	  _generic.init (_sysdep);
 #endif
+          _shmem.init(&_sysdep);
+          _lock.init(&_sysdep);
 
+          // this barrier is here because the shared memory init
+          // needs to be synchronized
+          // we shoudl find a way to remove this
+          
+          MPI_Barrier(MPI_COMM_WORLD);
         }
 
         inline xmi_client_t getClient_impl ()
@@ -150,7 +179,7 @@ namespace XMI
 
         inline size_t getId_impl ()
         {
-          return _id;
+          return _contextid;
         }
 
 
@@ -204,7 +233,22 @@ namespace XMI
 #ifdef ENABLE_GENERIC_DEVICE
 	        events += _generic.advance();
 #endif
+                events += _shmem.advance_impl();
+
+                if(events == 0)
+                  _empty_advance++;
+                else
+                  _empty_advance=0;
               }
+          if(_empty_advance==10)
+              {
+                sched_yield();
+                _empty_advance=0;
+              }
+
+          
+
+          
           return events;
         }
 
@@ -240,9 +284,14 @@ namespace XMI
       inline xmi_result_t send_impl (xmi_send_t * parameters)
         {
           size_t id = (size_t)(parameters->send.dispatch);
-          XMI_assert_debug (_dispatch[id] != NULL);
+          int local;
+          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task()))
+            local=1;
+          else
+            local=0;
+          XMI_assert_debug (_dispatch[id][local] != NULL);
           XMI::Protocol::Send::Send * send =
-            (XMI::Protocol::Send::Send *) _dispatch[id];
+            (XMI::Protocol::Send::Send *) _dispatch[id][local];
           send->simple (parameters);
           return XMI_SUCCESS;
         }
@@ -250,11 +299,17 @@ namespace XMI
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
           size_t id = (size_t)(parameters->dispatch);
-          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
-          XMI_assert_debug (_dispatch[id] != NULL);
+          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+          XMI_assert_debug (_dispatch[id][0] != NULL);
+
+          int local;
+          if(__global.mapping.isPeer(parameters->task, __global.mapping.task()))
+            local=1;
+          else
+            local=0;
 
           XMI::Protocol::Send::Send * send =
-            (XMI::Protocol::Send::Send *) _dispatch[id];
+            (XMI::Protocol::Send::Send *) _dispatch[id][local];
           send->immediate (parameters);
 
           TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
@@ -494,10 +549,57 @@ namespace XMI
                                          void                     * cookie,
                                          xmi_send_hint_t            options)
         {
-          if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
-          _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
+          size_t index = (size_t) id;
+          // Off node registration
+          // This is for communication off node
+          if (_dispatch[(size_t)id][0] != NULL) return XMI_ERROR;
+          _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
-          new (_dispatch[(size_t)id]) EagerMPI (id, fn, cookie, _mpi, __global.mapping.task(), _context, _id, result);
+          new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi,
+                                                __global.mapping.task(),
+                                                _context, _contextid, result);
+          if(result!=XMI_SUCCESS)
+              {
+                assert(0);
+                goto result_error;
+              }
+          // Shared Memory Registration
+          // This is for communication on node
+          TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", index, _dispatch[index][0]));
+
+          // currently, shared memory is off, because this dispatch_id will  not be null
+//          if (_dispatch[index][1] == NULL)
+              {
+                TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
+
+                if (options.no_long_header == 1)
+                    {
+                      _dispatch[id][1] = _protocol.allocateObject ();
+                      new (_dispatch[id][1])
+                        Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
+                        (id, fn, cookie, _shmem, __global.mapping.task(),
+                         _context, _contextid, result);
+                    }
+                else
+                    {
+                      _dispatch[id][1] = _protocol.allocateObject ();
+                      new (_dispatch[id][1])
+                        Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
+                        (id, fn, cookie, _shmem, __global.mapping.task(),
+                         _context, _contextid, result);
+                    }
+                
+                TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
+                if (result != XMI_SUCCESS)
+                    {
+                      _protocol.returnObject (_dispatch[id][1]);
+                      _dispatch[id][1] = NULL;
+                    }
+              }
+              assert(result == XMI_SUCCESS);
+
+          result_error:
+          TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index][0]));
           return result;
         }
 
@@ -505,8 +607,9 @@ namespace XMI
       std::map <unsigned, xmi_geometry_t>   _geometry_id;
       xmi_client_t              _client;
       xmi_context_t             _context;
-      size_t                    _id;
-      void                     *_dispatch[1024];
+      size_t                    _contextid;
+      void                     *_dispatch[1024][2];
+      ProtocolAllocator         _protocol;
       Memory::MemoryManager     _mm;
       SysDep                    _sysdep;
       ContextLock _lock;
@@ -522,6 +625,8 @@ namespace XMI
       MPICollreg               *_collreg;
       MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;
+      unsigned                  _empty_advance;
+      ShmemDevice               _shmem;
       xmi_geometry_range_t      _world_range;
       int                       _myrank;
       int                       _mysize;

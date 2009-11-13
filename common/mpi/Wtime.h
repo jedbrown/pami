@@ -16,7 +16,6 @@
 #include "sys/xmi.h"
 #include <sys/time.h>
 #include "common/BaseTimeInterface.h"
-#include <mpi.h>
 #include <stdio.h>
 
 namespace XMI
@@ -73,9 +72,8 @@ namespace XMI
       ///
       inline xmi_result_t init_impl (size_t dummy)
         {
-          _clockMHz      = clockMHz()/1e6;
+          _clockMHz      = clockMHz()/1e9;
           _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
-          //fprintf(stderr, "clockmhz=%lld\n", _clockMHz);
           if(_clockMHz == -1ULL)
             return XMI_ERROR;
           else
@@ -138,6 +136,7 @@ namespace XMI
                           }
                     }
                 while(endBase < startBase);
+                
                 return ticks/(sampleTime*1e-6);
               }
           else

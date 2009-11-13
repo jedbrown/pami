@@ -19,7 +19,7 @@
 #include "sys/xmi.h"
 #include "../util.h"
 
-#define ITERATIONS 1
+#define ITERATIONS 100
 //#define ITERATIONS 1000
 //#define ITERATIONS 100
 
@@ -182,7 +182,7 @@ int main ()
   { int _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
-  double clockMHz = 850.0;
+  double clockMHz = XMI_Wclockmhz();
 
   TRACE_ERR((stderr, "... before barrier_init()\n"));
   barrier_init (context, 0);
@@ -242,7 +242,7 @@ int main ()
 
     fprintf (stdout, "# XMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
     fprintf (stdout, "#\n");
-    fprintf (stdout, "%s", testcase_str);
+//    fprintf (stdout, "%s", testcase_str);
     fprintf (stdout, "#\n");
     fprintf (stdout, "%s\n", str[0]);
     fprintf (stdout, "%s\n", str[1]);

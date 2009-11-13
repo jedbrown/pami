@@ -69,6 +69,14 @@ unsigned long long XMI_Wtimebase()
   return __global.time.timebase();
 }
 
+///
+/// \copydoc XMI_Wclockmhz
+///
+size_t XMI_Wclockmhz ()
+{
+  return __global.time.clockMHz();
+}
+
 
 ///
 /// \copydoc XMI_Client_initialize

@@ -19,7 +19,6 @@
 #include "components/devices/mpi/mpimessage.h"
 #include <map>
 #include <list>
-#include <sched.h>
 #include "util/ccmi_debug.h"
 
 #define DISPATCH_SET_SIZE 256
@@ -478,10 +477,6 @@ namespace XMI
             break;
           }
         }
-        // This isn't performance sensitive because this device is just for testing
-        // but we want to play nice with other
-        // processes, so let's be nice and yield to them.
-        sched_yield();
         return events;
       };
 

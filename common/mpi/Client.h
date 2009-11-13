@@ -37,7 +37,6 @@ namespace XMI
 
           // Get some shared memory for this client
           initializeMemoryManager ();
-
           result = XMI_SUCCESS;
         }
 
@@ -136,32 +135,26 @@ namespace XMI
           char   shmemfile[1024];
           size_t bytes     = 1024*1024;
           size_t pagesize  = 4096;
-
+          
           snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
-
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-
           int fd, rc;
           size_t n = bytes;
 
           // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-          rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          rc = shm_open (shmemfile, O_CREAT|O_RDWR,0600);
           if ( rc != -1 )
           {
             fd = rc;
             rc = ftruncate( fd, n );
-            if ( rc != -1 )
-            {
-              void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-              if ( ptr != MAP_FAILED )
-              {
-                _mm.init (ptr, n);
-                return;
-              }
-            }
+            void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0);
+            if ( ptr != MAP_FAILED )
+                {
+                  _mm.init (ptr, n);
+                  return;
+                }
           }
-
           // Failed to create shared memory .. fake it using the heap ??
           _mm.init (malloc (n), n);
 
