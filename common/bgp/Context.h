@@ -11,10 +11,7 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
-#define ENABLE_GENERIC_DEVICE
-#ifdef ENABLE_GENERIC_DEVICE
 #include "components/devices/generic/GenericDevice.h"
-#endif
 
 #warning shmem device must become sub-device of generic device
 #include "components/devices/shmem/ShmemDevice.h"
@@ -129,16 +126,16 @@ namespace XMI
   class Context : public Interface::Context<XMI::Context>
   {
     public:
-      inline Context (xmi_client_t client, size_t id, void * addr, size_t bytes) :
+      inline Context (xmi_client_t client, size_t id, size_t num,
+				XMI::Device::Generic::Device *generics,
+				void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, id),
           _client (client),
           _context ((xmi_context_t)this),
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-#ifdef ENABLE_GENERIC_DEVICE
-          _generic(),
-#endif
+          _generic(generics[id]),
           _shmem (),
           _lock (),
           _work (_context, &_sysdep)
@@ -157,9 +154,7 @@ namespace XMI
 
         _lock.init(&_sysdep);
 
-#ifdef ENABLE_GENERIC_DEVICE
-        _generic.init (_sysdep, id, ((XMI::Client *)client)->getNumContexts());
-#endif
+        _generic.init (_sysdep, id, num, generics);
         _shmem.init (&_sysdep);
       }
 
@@ -219,9 +214,7 @@ namespace XMI
         for (i = 0; i < maximum && events == 0; i++)
           {
             events += _shmem.advance_impl();
-#ifdef ENABLE_GENERIC_DEVICE
             events += _generic.advance();
-#endif
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -523,9 +516,7 @@ namespace XMI
       SysDep _sysdep;
 
       // devices...
-#ifdef ENABLE_GENERIC_DEVICE
-      XMI::Device::Generic::Device _generic;
-#endif
+      XMI::Device::Generic::Device &_generic;
       ShmemDevice _shmem;
       ContextLock _lock;
 

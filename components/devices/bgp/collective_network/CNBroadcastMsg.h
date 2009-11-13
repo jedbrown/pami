@@ -70,12 +70,12 @@ public:
 			bool doStore,
 			bool doData,
 			unsigned dispatch_id) :
-	BaseGenericCNMessage(qs, (XMI::Client *)mcast->client, mcast->context,
+	BaseGenericCNMessage(qs, mcast->client, mcast->context,
 		(XMI::PipeWorkQueue *)mcast->src, (XMI::PipeWorkQueue *)mcast->dst,
 		bytes, doStore, mcast->roles, mcast->cb_done,
 		dispatch_id, XMI::Device::BGP::COMBINE_OP_OR, BGPCN_PKT_SIZE),
 	_doData(doData),
-	_roles(roles)
+	_roles(mcast->roles)
 	{
 	}
 
@@ -107,9 +107,6 @@ protected:
 		}
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
-		if (_bytes > 4096) {
-			setThreadsWanted(nt);
-		}
 		return nt;
 	}
 

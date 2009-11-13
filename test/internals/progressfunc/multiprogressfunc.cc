@@ -114,7 +114,8 @@ int main(int argc, char **argv) {
 		work[x].t0 = 0;
 		work[x].count = count;
 		work[x].u = x + 1;
-		pf.context = context;
+		pf.client = client;
+		pf.context = 0;
 		pf.request = &msgbuf[x];
 		pf.func = my_func;
 		pf.clientdata = &work[x];
@@ -126,7 +127,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	while (done < NUM_MULTI) {
-		XMI_Context_advance(context, 100);
+		XMI_Context_advance(pf.client, pf.context, 100);
 	}
 	fprintf(stderr, "Test completed\n");
 

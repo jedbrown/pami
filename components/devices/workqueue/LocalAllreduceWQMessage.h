@@ -71,7 +71,7 @@ public:
                                           coremath          func,
                                           int               dtshift) :
             XMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
-				(XMI::Client *)mcomb->client, mcomb->context),
+				mcomb->client, mcomb->context),
             _peer (peer),
             _func (func),
             _dtshift (dtshift),

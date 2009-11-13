@@ -102,16 +102,16 @@ void send_once (xmi_context_t context, xmi_send_immediate_t * parameters)
   xmi_result_t result = XMI_Send_immediate (context, parameters);
 }
 
-void recv_once (xmi_context_t context)
+void recv_once (xmi_client_t client, size_t context)
 {
   TRACE_ERR((stderr, "(%zd) recv_once() Before advance\n", _my_rank));
-  while (_recv_active) XMI_Context_advance (context, 100);
+  while (_recv_active) XMI_Context_advance (client, context, 100);
 
   _recv_active = 1;
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, size_t myrank)
+unsigned long long test (xmi_client_t client, xmi_context_t context, size_t dispatch, size_t sndlen, size_t myrank)
 {
   TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
   _recv_active = 1;
@@ -141,7 +141,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
     {
       TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));
       send_once (context, &parameters);
-      recv_once (context);
+      recv_once (client, 0);
 
       _recv_active = 1;
       _send_active = 1;
@@ -153,7 +153,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
     for (i = 0; i < ITERATIONS; i++)
     {
       TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));
-      recv_once (context);
+      recv_once (client, 0);
       send_once (context, &parameters);
 
       _recv_active = 1;
@@ -181,7 +181,7 @@ int main ()
   double clockMHz = XMI_Wclockmhz();
   
   TRACE_ERR((stderr, "... before barrier_init()\n"));
-  barrier_init (context, 0);
+  barrier_init (client, context, 0, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));
 
 
@@ -262,9 +262,9 @@ int main ()
     for (i=0; i<_dispatch_count; i++)
     {
 #ifdef WARMUP
-      test (context, &_dispatch[i], sndlen, _my_rank);
+      test (client, context, &_dispatch[i], sndlen, _my_rank);
 #endif
-      cycles = test (context, _dispatch[i], sndlen, _my_rank);
+      cycles = test (client, context, _dispatch[i], sndlen, _my_rank);
       usec   = cycles/clockMHz;
       index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
     }

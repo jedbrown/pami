@@ -9,6 +9,7 @@
  * \brief ???
  */
 
+#include "Global.h"
 #include "SysDep.h"
 
 #ifndef TRACE_ERR

@@ -97,23 +97,23 @@ void cb_alltoallv (xmi_context_t ctxt, void * clientdata, xmi_result_t res)
 }
 
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_client_t client, size_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
       exit(1);
     }
   while (_g_barrier_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 
 }
 
 
-void _alltoallv (xmi_context_t    context,
+void _alltoallv (xmi_client_t client, size_t    context,
                  xmi_alltoallv_t *xfer,
                  char            *sndbuf,
                  size_t          *sndlens,
@@ -132,9 +132,9 @@ void _alltoallv (xmi_context_t    context,
   xfer->rtype         = XMI_BYTE;
   xfer->rtypecounts   = rcvlens;
   xfer->rdispls       = rdispls;
-  result = XMI_Collective (NULL, (xmi_xfer_t*)xfer);
+  result = XMI_Collective (client, context, (xmi_xfer_t*)xfer);
   while (_g_alltoallv_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 }
 
 
@@ -285,12 +285,12 @@ int main(int argc, char*argv[])
 	      INIT_BUFS( j );
 	    }
 
-	  _barrier (context, &barrier);
+	  _barrier (client, 0, &barrier);
 	  ti = timer();
 
 	  for (j=0; j<niter; j++)
 	      {
-		_alltoallv ( context,
+		_alltoallv ( client, 0,
                              &alltoallv,
                              sbuf,
                              sndlens,
@@ -303,7 +303,7 @@ int main(int argc, char*argv[])
 
 	  CHCK_BUFS(sz, task_id);
 
-	  _barrier (context, &barrier);
+	  _barrier (client, 0, &barrier);
 
 	  usec = (tf - ti)/(double)niter;
 	  if (task_id == 0)

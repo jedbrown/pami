@@ -69,7 +69,7 @@ static void send_done_remote (xmi_context_t   context,
 }
 
 
-unsigned do_test (xmi_context_t context)
+unsigned do_test (xmi_client_t client, xmi_context_t context, size_t contextid)
 {
   volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
@@ -146,7 +146,7 @@ unsigned do_test (xmi_context_t context)
     TRACE((stderr, "before send-recv advance loop ...\n"));
     while (send_active || recv_active)
     {
-      result = XMI_Context_advance (context, 100);
+      result = XMI_Context_advance (client, contextid, 100);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -160,7 +160,7 @@ unsigned do_test (xmi_context_t context)
     TRACE((stderr, "before recv advance loop ...\n"));
     while (recv_active != 0)
     {
-      result = XMI_Context_advance (context, 100);
+      result = XMI_Context_advance (client, contextid, 100);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -177,7 +177,7 @@ unsigned do_test (xmi_context_t context)
     TRACE((stderr, "before send advance loop ...\n"));
     while (send_active)
     {
-      result = XMI_Context_advance (context, 100);
+      result = XMI_Context_advance (client, contextid, 100);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -224,12 +224,12 @@ int main (int argc, char ** argv)
 
   /* Test pt-2-pt send on the first context */
   TRACE((stderr, "Before do_test(0)\n"));
-  do_test (context[0]);
+  do_test (client, context[0], 0);
   TRACE((stderr, " After do_test(0)\n"));
 
   /* Test pt-2-pt send on the second context */
   TRACE((stderr, "Before do_test(1)\n"));
-  do_test (context[1]);
+  do_test (client, context[1], 1);
   TRACE((stderr, " After do_test(1)\n"));
 
 

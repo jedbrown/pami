@@ -139,12 +139,13 @@ extern "C" xmi_result_t XMI_Context_post (xmi_context_t        context,
 ///
 /// \copydoc XMI_Context_advance
 ///
-extern "C" xmi_result_t XMI_Context_advance (xmi_context_t context, size_t maximum)
+extern "C" xmi_result_t XMI_Context_advance(xmi_client_t client, size_t context, size_t maximum)
 {
   xmi_result_t result;
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContexts() + context;
   ctx->advance (maximum, result);
-
+#warning need a real return value here
   return result;
 }
 
@@ -457,10 +458,12 @@ extern "C" xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
 ///
 /// \copydoc XMI_Collective
 ///
-extern "C" xmi_result_t XMI_Collective (xmi_context_t   context,
+extern "C" xmi_result_t XMI_Collective (xmi_client_t   client,
+					size_t   context,
                                         xmi_xfer_t     *parameters)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * clnt = (XMI::Client *) client;
+  XMI::Context * ctx = clnt->getContexts() + context;
   return ctx->collective (parameters);
 }
 

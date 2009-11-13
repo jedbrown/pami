@@ -23,18 +23,18 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_client_t client, size_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
       exit(1);
     }
   while (_g_barrier_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 
 }
 
@@ -126,11 +126,11 @@ int main (int argc, char ** argv)
 
   if(!task_id)
     fprintf(stderr, "Test Barrier 1\n");
-  _barrier(context, &barrier);
+  _barrier(client, 0, &barrier);
   if(!task_id)
     fprintf(stderr, "Test Barrier 2, then correctness\n");
-  _barrier(context, &barrier);
-  _barrier(context, &barrier);
+  _barrier(client, 0, &barrier);
+  _barrier(client, 0, &barrier);
 
   int algo;
   for(algo=0; algo<num_algorithm[algorithm_type]; algo++)
@@ -140,7 +140,7 @@ int main (int argc, char ** argv)
         if(!task_id)
             {
               ti=timer();
-              _barrier(context, &barrier);
+              _barrier(client, 0, &barrier);
               tf=timer();
               usec = tf - ti;
 
@@ -153,19 +153,19 @@ int main (int argc, char ** argv)
         else
             {
               sleep(2);
-              _barrier(context, &barrier);
+              _barrier(client, 0, &barrier);
             }
 
         if(!task_id)
           fprintf(stderr, "Test Barrier Performance %d of %d algorithms\n",
                   algo+1, num_algorithm[algorithm_type]);
         int niter=10000;
-        _barrier(context, &barrier);
+        _barrier(client, 0, &barrier);
 
         ti=timer();
         int i;
         for(i=0; i<niter; i++)
-          _barrier(context, &barrier);
+          _barrier(client, 0, &barrier);
 
         tf=timer();
         usec = tf - ti;

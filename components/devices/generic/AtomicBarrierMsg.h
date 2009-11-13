@@ -92,7 +92,8 @@ protected:
 	AtomicBarrierMsg(Generic::BaseGenericDevice &Generic_QS,
 		T_Barrier *barrier,
 		xmi_multisync_t *msync) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done, msync->client, msync->context),
+	XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
+					msync->client, msync->context),
 	_barrier(barrier)
 	{
 		// assert(role == DEFAULT_ROLE);

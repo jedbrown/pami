@@ -32,33 +32,33 @@ static double timer()
   return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_client_t client, size_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
     exit(1);
   }
   while (_g_barrier_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 
 }
 
-void _broadcast (xmi_context_t context, xmi_broadcast_t *broadcast)
+void _broadcast (xmi_client_t client, size_t context, xmi_broadcast_t *broadcast)
 {
   _g_broadcast_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)broadcast);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)broadcast);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to issue broadcast collective. result = %d\n", result);
     exit(1);
   }
   while (_g_broadcast_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 
 }
 
@@ -180,7 +180,7 @@ int main (int argc, char ** argv)
   barrier.cookie    = (void*)&_g_barrier_active;
   barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
-  _barrier(context, &barrier);
+  _barrier(client, 0, &barrier);
 
   int nalg = 0;
   for(nalg=0; nalg<bcastnum_algorithm[algorithm_type]; nalg++)
@@ -210,15 +210,15 @@ int main (int argc, char ** argv)
     {
       long long dataSent = i;
       int          niter = 100;
-      _barrier(context, &barrier);
+      _barrier(client, 0, &barrier);
       ti = timer();
       for (j=0; j<niter; j++)
       {
         broadcast.typecount = i;
-        _broadcast (context, &broadcast);
+        _broadcast (client, 0, &broadcast);
       }
       tf = timer();
-      _barrier(context, &barrier);
+      _barrier(client, 0, &barrier);
 
       usec = (tf - ti)/(double)niter;
       if (task_id == (size_t)root)

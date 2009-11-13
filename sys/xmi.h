@@ -2067,7 +2067,7 @@ extern "C"
     xmi_barrier_t          xfer_barrier;
   } xmi_xfer_t;
 
-  xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
+  xmi_result_t XMI_Collective (xmi_client_t client, size_t context, xmi_xfer_t *cmd);
 
   typedef xmi_quad_t xmi_pipeworkqueue_t[4];
   typedef xmi_quad_t xmi_pipeworkqueue_ext_t[2];
@@ -3497,10 +3497,11 @@ extern "C"
    *
    * \todo Define return code, event bitmask ?
    *
-   * \param[in] context XMI communication context
-   * \param[in] maximum Maximum number of internal poll iterations
+   * \param[in] client	XMI communication client
+   * \param[in] context	XMI communication context index in client
+   * \param[in] maximum	Maximum number of internal poll iterations
    */
-  xmi_result_t XMI_Context_advance (xmi_context_t context, size_t maximum);
+  xmi_result_t XMI_Context_advance(xmi_client_t client, size_t context, size_t maximum);
 
   /**
    * \brief Advance the progress engine for multiple communication contexts

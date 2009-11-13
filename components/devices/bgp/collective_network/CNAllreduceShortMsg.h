@@ -69,7 +69,7 @@ public
 			bool doStore,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup &tas) :
-	BaseGenericCNMessage(qs, (XMI::Client *)mcomb->client, mcomb->context,
+	BaseGenericCNMessage(qs, mcomb->client, mcomb->context,
 				(XMI::PipeWorkQueue *)mcomb->data,
 				(XMI::PipeWorkQueue *)mcomb->results,
 				bytes, doStore, mcomb->roles, mcomb->cb_done,
@@ -107,9 +107,6 @@ protected:
 		}
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
-		if (_bytes >= DCMF_TREE_HELPER_THRESH) {
-			setThreadsWanted(MIN(nt, maxnt));
-		}
 		return nt;
 	}
 

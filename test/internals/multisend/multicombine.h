@@ -88,7 +88,7 @@ public:
 
 		//fprintf(stderr, "... before advance loop for %s.postMulticombine\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(mcomb->context, 100);
+			rc = XMI_Context_advance(mcomb->client, mcomb->context, 100);
 			if (rc != XMI_SUCCESS) {
 				fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", rc);
 				return XMI_ERROR;

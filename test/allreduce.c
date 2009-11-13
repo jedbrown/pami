@@ -200,33 +200,33 @@ void cb_allreduce (void *ctxt, void * clientdata, xmi_result_t err)
   (*active)--;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_client_t client, size_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
     exit(1);
   }
   while (_g_barrier_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 
 }
 
-void _allreduce (xmi_context_t context, xmi_allreduce_t *allreduce)
+void _allreduce (xmi_client_t client, size_t context, xmi_allreduce_t *allreduce)
 {
   _g_allreduce_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)allreduce);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)allreduce);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to issue allreduce collective. result = %d\n", result);
     exit(1);
   }
   while (_g_allreduce_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 
 }
 
@@ -419,7 +419,7 @@ int main(int argc, char*argv[])
     barrier.cookie    = (void*)&_g_barrier_active;
     barrier.geometry  = world_geometry;
     barrier.algorithm = algorithm[0];
-    _barrier(context, &barrier);
+    _barrier(client, 0, &barrier);
 
     xmi_allreduce_t allreduce;
     allreduce.xfer_type = XMI_XFER_ALLREDUCE;
@@ -452,7 +452,7 @@ int main(int argc, char*argv[])
             else
               niter = NITERBW;
 
-            _barrier(context, &barrier);
+            _barrier(client, 0, &barrier);
             ti = timer();
             for (j=0; j<niter; j++)
             {
@@ -460,10 +460,10 @@ int main(int argc, char*argv[])
               allreduce.rtypecount=i;
               allreduce.dt=dt_array[dt];
               allreduce.op=op_array[op];
-              _allreduce(context, &allreduce);
+              _allreduce(client, 0, &allreduce);
             }
             tf = timer();
-            _barrier(context, &barrier);
+            _barrier(client, 0, &barrier);
 
             usec = (tf - ti)/(double)niter;
             if (rank == root)

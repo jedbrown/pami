@@ -120,7 +120,8 @@ namespace Generic {
 	__GenericQueue(),
 	__Threads(),
 	__contextId((size_t)-1),
-	__nContexts(0)
+	__nContexts(0),
+	__generics(NULL)
 	{
 	}
 
@@ -129,11 +130,15 @@ namespace Generic {
 	/// When a new subdevice is added, a call to its init routine is
 	/// added here.
 	///
-	/// \param[in] sd	The SysDep object
+	/// \param[in] sd		The SysDep object
+	/// \param[in] context		The specific context being initialized
+	/// \param[in] num_contexts	Total number of contexts in current client
 	///
-	inline void Device::init(XMI_SYSDEP_CLASS &sd, size_t context, size_t num_contexts) {
+	inline void Device::init(XMI_SYSDEP_CLASS &sd, size_t context, size_t num_contexts,
+				Generic::Device *generics) {
 		__contextId = context;
 		__nContexts = num_contexts;
+		__generics = generics;
 #ifdef USE_WAKEUP_VECTORS
 		xmi_result_t rc = XMI_ERROR;
 		size_t me = __global.mapping.t(); // only works on BG/P...?
@@ -190,16 +195,19 @@ namespace Generic {
 #endif
 	}
 
-	/// \brief Advance (poll) Recvs on subdevices that are non channel-oriented
+	/// \brief Advance (poll) Recvs on subdevices
 	///
-	/// When a new subdevice is added, and it supports only one channel,
-	/// a call to its advanceRecv function is added here. Convention is
-	/// to add a call here even if the device has no recvs (unexpected msgs),
-	/// and the compiler will optimize it away. Typically, every subdevice
-	/// will have one call to advanceRecv, either here or in the multi-channel
-	/// routine.
+	/// Each device known to the generic device is polled here.
+	/// The context ID is passed, so that the device can device if
+	/// this particular channel has anything to poll. If the device
+	/// has only one channel, it must handle being polled from
+	/// multiple channels.
 	///
-	/// \param[in]	ctx	The channel to poll
+	/// When a new subdevice is added, a call to its advanceRecv function
+	/// is added here. Convention is to add a call here even if the device
+	/// has no recvs (unexpected msgs), and the compiler will optimize it away.
+	/// Typically, every subdevice will have one call to advanceRecv.
+	///
 	/// \return	Number of work units processed
 	///
 	inline int Device::__advanceRecv() {
@@ -230,13 +238,14 @@ namespace Generic {
 		return events;
 	}
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief     Advance routine for the device.  This pulls the
-	///            message from the front of the queue and calls the
-	///            advance routine on the message.
-	/// \returns:  Return code of the advance routine (number of
-	///            events processed)
-	//////////////////////////////////////////////////////////////////
+	/// \brief Advance routine for (one channel of) the generic device.
+	///
+	/// This advances all units of work on this context's queue, and
+	/// checks the message queue for completions. It also calls the
+	/// advanceRecv routine for all devices.
+	///
+	/// \return	number of events processed
+	///
 	inline int Device::advance() {
 		int events = 0;
 		//+ Need to ensure only one of these runs per core
@@ -245,6 +254,10 @@ namespace Generic {
 
 		// Advance any recvs on this "channel" (only 1 channel)...
 		events += __advanceRecv();
+		// could check the queues here and return if empty, but it
+		// probably takes just as much as the for loops would, and
+		// just further delay the advance of real work when present.
+
 		//if (!__Threads.mutex()->tryAcquire()) continue;
 		GenericAdvanceThread *thr;
 #ifdef USE_WAKEUP_VECTORS

@@ -104,7 +104,8 @@ int main(int argc, char **argv) {
 		work.count = 300000ULL;	// the printf takes time, ensure we don't
 	}				// finish too soon.
 
-	pf.context = context;
+	pf.client = client;
+	pf.context = 0;
 	pf.request = &msgbuf[0];
 	pf.func = my_func;
 	pf.clientdata = &work;
@@ -115,7 +116,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	while (!done) {
-		XMI_Context_advance(context, 100);
+		XMI_Context_advance(pf.client, pf.context, 100);
 	}
 	fprintf(stderr, "Test completed\n");
 

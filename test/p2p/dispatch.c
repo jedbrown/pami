@@ -57,7 +57,7 @@ int main (int argc, char ** argv)
   }
 
 
-  result = XMI_Context_advance (context, 1);
+  result = XMI_Context_advance (client, 0, 1);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);

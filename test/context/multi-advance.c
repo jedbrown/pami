@@ -33,7 +33,7 @@ int main (int argc, char ** argv)
   if (result == XMI_SUCCESS)
   {
     fprintf (stdout, "Before XMI_Context_advance()\n");
-    result = XMI_Context_advance (context[0], 1);
+    result = XMI_Context_advance (client, 0, 1);
     fprintf (stdout, " After XMI_Context_advance(), result = %d\n", result);
 
     result = XMI_Context_destroy (context[0]);
@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
   if (result == XMI_SUCCESS)
   {
     fprintf (stdout, "Before XMI_Context_advance()\n");
-    result = XMI_Context_advance (context[1], 1);
+    result = XMI_Context_advance (client, 1, 1);
     fprintf (stdout, " After XMI_Context_advance(), result = %d\n", result);
 
     result = XMI_Context_destroy (context[1]);

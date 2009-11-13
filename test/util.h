@@ -40,6 +40,8 @@ size_t __barrier_next_task;
 
 size_t         __barrier_dispatch;
 xmi_context_t  __barrier_context;
+size_t  __barrier_contextid;
+xmi_client_t  __barrier_client;
 
 
 /* ************************************************************************* */
@@ -115,17 +117,17 @@ void barrier ()
 
   TRACE_ERR((stderr, "     barrier() Before send advance\n"));
   while (__barrier_active[index].send % __barrier_size != 0)
-    XMI_Context_advance (__barrier_context, 100);
+    XMI_Context_advance (__barrier_client, __barrier_contextid, 100);
 
   TRACE_ERR((stderr, "     barrier() Before recv advance\n"));
   while (__barrier_active[index].recv % __barrier_size != 0)
-    XMI_Context_advance (__barrier_context, 100);
+    XMI_Context_advance (__barrier_client, __barrier_contextid, 100);
 
   TRACE_ERR((stderr, "####  exit barrier(), \"poor man's barrier\"\n"));
   return;
 }
 
-void barrier_init (xmi_context_t context, size_t dispatch)
+void barrier_init (xmi_client_t client, xmi_context_t context, size_t contextid, size_t dispatch)
 {
   TRACE_ERR((stderr, "enter barrier_init() ...\n"));
 
@@ -141,7 +143,9 @@ void barrier_init (xmi_context_t context, size_t dispatch)
 
   __barrier_next_task = (__barrier_task + 1) % __barrier_size;
 
+  __barrier_client  = client;
   __barrier_context  = context;
+  __barrier_contextid  = contextid;
   __barrier_dispatch = dispatch;
   __barrier_phase = 0;
   __barrier_active[0].send = 0;

@@ -119,7 +119,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "before advance loop ...\n");
     while (recv_active != 0)
     {
-      result = XMI_Context_advance (context, 100);
+      result = XMI_Context_advance (client, 0, 100);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -133,7 +133,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "before recv advance loop ...\n");
     while (recv_active != 0)
     {
-      result = XMI_Context_advance (context, 100);
+      result = XMI_Context_advance (client, 0, 100);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -148,7 +148,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "... after send.\n");
 
     fprintf (stderr, "before send advance loop ...\n");
-    result = XMI_Context_advance (context, 100);
+    result = XMI_Context_advance (client, 0, 100);
     if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);

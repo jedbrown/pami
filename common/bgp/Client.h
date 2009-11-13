@@ -101,22 +101,24 @@ namespace XMI
 		if (n <= 0) { // impossible?
 			return XMI_ERROR;
 		}
-		XMI::Context *context = NULL;
-		int rc = posix_memalign((void **)&context, 16, sizeof(XMI::Context) * n);
-		XMI_assertf(rc==0, "posix_memalign failed for context[%d], errno=%d\n", n, errno);
-		memset((void *)context, 0, sizeof(XMI::Context) * n);
+		int rc = posix_memalign((void **)&_generics, 16, sizeof(*_generics) * n);
+		XMI_assertf(rc==0, "posix_memalign failed for _generics[%d], errno=%d\n", n, errno);
+
+		rc = posix_memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
+		XMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
 		int x;
 		for (x = 0; x < n; ++x) {
-			contexts[x] = &context[x];
+			contexts[x] = &_contexts[x];
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&context[x]) XMI::Context(this->getClient(), _ncontexts++, base, bytes);
+			new (&_contexts[x]) XMI::Context(this->getClient(), x, n,
+							_generics, base, bytes);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
 		}
-		_contexts = context;
 		return XMI_SUCCESS;
 	}
 
@@ -128,15 +130,9 @@ namespace XMI
           //_context_list->unlock ();
         }
 
-      protected:
-
-        inline xmi_client_t getClient () const
-        {
-          return _client;
-        }
-
 	// the friend clause is actually global, but this helps us remember why...
-	friend class XMI::Device::Generic::Device;
+	//friend class XMI::Device::Generic::Device;
+	//friend class xmi.cc
 
 	inline size_t getNumContexts()
 	{
@@ -148,6 +144,13 @@ namespace XMI
 		return _contexts;
 	}
 
+      protected:
+
+        inline xmi_client_t getClient () const
+        {
+          return _client;
+        }
+
       private:
 
         xmi_client_t _client;
@@ -155,6 +158,7 @@ namespace XMI
         size_t       _references;
         size_t       _ncontexts;
         XMI::Context *_contexts;
+	XMI::Device::Generic::Device *_generics;
 
         char         _name[256];
 

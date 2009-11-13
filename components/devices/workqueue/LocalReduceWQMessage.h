@@ -69,14 +69,14 @@ public:
                                        coremath          func,
                                        int               dtshift) :
             XMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
-				(XMI::Client *)mcomb->client, mcomb->context),
+				mcomb->client, mcomb->context),
             _isrootpeer (peer == rootpeer),
             //_iscopypeer (peer == ((rootpeer+1)%peers)),
             _iscopypeer (peer == ((rootpeer+1) >= peers ? (rootpeer+1) - peers : (rootpeer+1))),
             _func (func),
             _dtshift (dtshift),
-            _source ((XMI::PipeWorkQueue *mcomb->data),
-            _result ((XMI::PipeWorkQueue *mcomb->results),
+            _source (*(XMI::PipeWorkQueue *)mcomb->data),
+            _result (*(XMI::PipeWorkQueue *)mcomb->results),
             _shared (workqueue)
           {
             // Producer 0 will always be the "copy peer"

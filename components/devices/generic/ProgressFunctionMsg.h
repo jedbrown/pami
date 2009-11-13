@@ -76,7 +76,7 @@ protected:
 	ProgressFunctionMsg(Generic::BaseGenericDevice &Generic_QS,
 		XMI_ProgressFunc_t *pf) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, pf->cb_done,
-				(XMI::Client *)pf->client, pf->context),
+				pf->client, pf->context),
 	_thread(),
 	_func(pf->func),
 	_clientdata(pf->clientdata),

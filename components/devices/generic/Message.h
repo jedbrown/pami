@@ -180,14 +180,14 @@ public:
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
 	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb,
-			XMI::Client *client, size_t context) :
+			xmi_client_t client, size_t context) :
 	MultiQueueMessage<2>(Generic_QS, cb),
 	_client(client),
 	_context(context)
 	{
 	}
 
-	XMI::Client *getClient() { return _client; }
+	xmi_client_t getClient() { return _client; }
 	size_t getContext() { return _context; }
 
 	/// \brief Message is Done, perform all completion tasks
@@ -205,7 +205,7 @@ public:
 	virtual MessageStatus advanceThread(GenericAdvanceThread *thr) = 0;
 
 protected:
-	XMI::Client  *_client;
+	xmi_client_t _client;
 	size_t _context;
 }; /* class GenericMessage */
 

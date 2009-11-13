@@ -78,13 +78,13 @@ int main (int argc, char ** argv)
 
   while (_value[0] || _value[1])
   {
-    result = XMI_Context_advance (context[0], 1);
+    result = XMI_Context_advance (client, 0, 1);
     if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to advance the first xmi context. result = %d\n", result);
       return 1;
     }
-    result = XMI_Context_advance (context[1], 1);
+    result = XMI_Context_advance (client, 1, 1);
     if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to advance the second xmi context. result = %d\n", result);

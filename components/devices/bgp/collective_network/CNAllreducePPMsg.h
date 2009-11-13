@@ -58,20 +58,16 @@ class CNAllreducePPMessage : public XMI::Device::BGP::BaseGenericCNPPMessage {
 public:
 	CNAllreducePPMessage(Generic::BaseGenericDevice &qs,
 			xmi_multicombine_t *mcomb,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
-			unsigned roles,
-			const xmi_callback_t cb,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup tas) :
-	BaseGenericCNPPMessage(qs, (XMI::Client *)mcomb->client, mcomb->context,
+	BaseGenericCNPPMessage(qs, mcomb->client, mcomb->context,
 				(XMI::PipeWorkQueue *)mcomb->data,
 				(XMI::PipeWorkQueue *)mcomb->results,
 				bytes, doStore, mcomb->roles, mcomb->cb_done,
 				dispatch_id, tas),
-	_roles(roles)
+	_roles(mcomb->roles)
 	{
 	}
 
@@ -105,9 +101,6 @@ protected:
 		}
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
-		if (_bytes >= 16384 /* DCMF_TREE_HELPER_THRESH */) {
-			setThreadsWanted(MIN(nt, maxnt));
-		}
 		return nt;
 	}
 

@@ -58,7 +58,7 @@ public:
 		XMI::PipeWorkQueue *swq,
 		XMI::PipeWorkQueue *rwq) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
-				(XMI::Client *)mcast->client, mcast->context),
+				mcast->client, mcast->context),
 	_iwq(iwq),
 	_swq(swq), // might be NULL
 	_rwq(rwq), // might be NULL (but not both)

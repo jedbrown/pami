@@ -133,13 +133,13 @@ public:
 		bool doStore,
 		unsigned dispatch_id_e,
 		unsigned dispatch_id_m) :
-	BaseGenericCN2PMessage(qs, (XMI::Client *)mcomb->client, mcomb->context,
+	BaseGenericCN2PMessage(qs, mcomb->client, mcomb->context,
 				ewq, mwq, xwq,
 				(XMI::PipeWorkQueue *)mcomb->data,
 				(XMI::PipeWorkQueue *)mcomb->results,
 				bytes, doStore, mcomb->roles, mcomb->cb_done,
 				dispatch_id_e, dispatch_id_m),
-	_roles(roles),
+	_roles(mcomb->roles),
 	_offx(0)
 	{
 	}
@@ -174,9 +174,6 @@ protected:
 		}
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
-		if (_bytes >= 16384 /*DCMF_TREE_HELPER_THRESH*/) {
-			setThreadsWanted(MIN(nt, maxnt));
-		}
 		return nt;
 	}
 

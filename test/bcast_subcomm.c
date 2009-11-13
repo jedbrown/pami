@@ -45,34 +45,34 @@ void cb_broadcast (void *context, void * clientdata, xmi_result_t res)
     (*active)--;
 }
 
-void _barrier (xmi_context_t  context,
+void _barrier (xmi_client_t client, size_t  context,
                xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
         exit(1);
       }
   while (_g_barrier_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 }
 
-void _broadcast (xmi_context_t    context,
+void _broadcast (xmi_client_t client, size_t    context,
                  xmi_broadcast_t *broadcast)
 {
   _g_broadcast_active++;
   xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)broadcast);
+  result = XMI_Collective(client, context, (xmi_xfer_t*)broadcast);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to issue broadcast collective. result = %d\n", result);
         exit(1);
       }
   while (_g_broadcast_active)
-    result = XMI_Context_advance (context, 1);
+    result = XMI_Context_advance (client, context, 1);
 }
 
 
@@ -164,7 +164,7 @@ int main(int argc, char*argv[])
   world_barrier.cookie    = (void*)&_g_barrier_active;
   world_barrier.geometry  = world_geometry;
   world_barrier.algorithm = world_algorithm[0];
-  _barrier(context, &world_barrier);
+  _barrier(client, 0, &world_barrier);
 
 
   xmi_geometry_t           bottom_geometry;
@@ -214,7 +214,7 @@ int main(int argc, char*argv[])
           
         }
 
-        _barrier (context, &world_barrier);
+        _barrier (client, 0, &world_barrier);
         bottom_barrier.xfer_type = XMI_XFER_BARRIER;
         bottom_barrier.cb_done   = cb_barrier;
         bottom_barrier.cookie    = (void*)&_g_barrier_active;
@@ -262,7 +262,7 @@ int main(int argc, char*argv[])
                                           2,
                                           &top_range,
                                           1);
-        _barrier (context, &world_barrier);
+        _barrier (client, 0, &world_barrier);
 
         result = XMI_Geometry_algorithms_num(context,
                                              top_geometry,
@@ -344,22 +344,22 @@ int main(int argc, char*argv[])
             {
               printf("Participant:  %d\n", (int)rank);
               fflush(stdout);
-              _barrier (context, barriers[k]);
+              _barrier (client, 0, barriers[k]);
               for(i=1; i<=BUFSIZE; i*=2)
                   {
                     long long dataSent = i;
                     int          niter = 100;
-                    _barrier (context, barriers[k]);
+                    _barrier (client, 0, barriers[k]);
                     ti = timer();
                     for (j=0; j<niter; j++)
                         {
                           broadcasts[k]->root      = roots[k];
                           broadcasts[k]->buf       = buf;
                           broadcasts[k]->typecount = i;
-                          _broadcast(context, broadcasts[k]);
+                          _broadcast(client, 0, broadcasts[k]);
                         }
                     tf = timer();
-                    _barrier (context, barriers[k]);
+                    _barrier (client, 0, barriers[k]);
                     usec = (tf - ti)/(double)niter;
                     if (rank == roots[k])
                         {
@@ -372,9 +372,9 @@ int main(int argc, char*argv[])
                         }
                   }
             }
-        _barrier (context, &world_barrier);
+        _barrier (client, 0, &world_barrier);
       }
-  _barrier (context, &world_barrier);
+  _barrier (client, 0, &world_barrier);
 
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)

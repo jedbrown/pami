@@ -103,20 +103,18 @@ public:
 	//////////////////////////////////////////////////////////////////
 	/// \brief  A device
 	//////////////////////////////////////////////////////////////////
-	inline Device(XMI::SysDep &sd);
+	inline Device();
 
-	inline void init(XMI::SysDep &sd);
+	inline void init(XMI::SysDep &sd, size_t context, size_t num_contexts, Device *generics);
 
-	inline bool isAdvanceNeeded(size_t ctx);
+	inline bool isAdvanceNeeded();
 
 	//////////////////////////////////////////////////////////////////
-	/// \brief     Advance routine for the device.  This pulls the
-	///            message from the front of the queue and calls the
-	///            advance routine on the message.
-	/// \returns:  Return code of the advance routine (number of
-	///            events processed)
+	/// \brief     Advance routine for the generic device.
+	///
+	/// \return	number of events processed
 	//////////////////////////////////////////////////////////////////
-	inline int advance(size_t ctx);
+	inline int advance();
 
 	//////////////////////////////////////////////////////////////////
 	/// \brief       Post a message to the device queuing system
@@ -125,31 +123,35 @@ public:
 	inline void post(GenericMessage *msg, GenericAdvanceThread *thr,
 							size_t len, int num) {
 		// early advance was done by the "real" device post()
+
+		// get access to client-global contexts array,
+		// in order to stage work on separate contexts.
+		// the context specified in the msg is used only for
+		// completion, even the first thread of work is posted
+		// to a different context.
+
 		size_t t = msg->getContext();
-		size_t n = msg->getClient()->getNumContexts();
-		XMI::Context *c0 = msg->getClient()->getContexts();
-		XMI::Context *c = c0 + t;
-		c->generic().__GenericQueue.pushTail(msg);
+		size_t n = __nContexts;
+		Generic::Device *g0 = __generics;
+		g0[t].__GenericQueue.pushTail(msg);
 
 		// round-robin threads to available "channels"...
 		// does this need to be made thread-safe?
+		// we expect to make enqueue routines atomic, lockless.
 		// note: might be called from a completion callback.
 
 		// t = msg->getClient()->__lastThreadUsed;
 		for (int x = 0; x < num; ++x) {
 			if (!thr->isDone()) {
 				if (++t >= n) {
-					c = c0;
 					t = 0;
-				} else {
-					++c;
 				}
 #ifdef USE_WAKEUP_VECTORS
 				if (thr->isPolled()) {
-					c->generic().__Threads.pushTail(thr);
+					g0[t].__Threads.pushTail(thr);
 				}
 #else /* !USE_WAKEUP_VECTORS */
-				c->generic().__Threads.pushTail(thr);
+				g0[t].__Threads.pushTail(thr);
 #endif /* !USE_WAKEUP_VECTORS */
 			}
 			thr = (GenericAdvanceThread *)((char *)thr + len);
@@ -168,7 +170,7 @@ private:
 	/// \param[in] channel	The channel to check, or context to check within
 	/// \return	Number of work units performed (typically, 0 or 1)
 	///
-	inline int __advanceRecv(int ctx);
+	inline int __advanceRecv();
 
 	//////////////////////////////////////////////////////////////////
 	/// \brief Storage for the queue of messages
@@ -182,6 +184,7 @@ private:
 
 	size_t __contextId;
 	size_t __nContexts;
+	Generic::Device *__generics;
 
 #ifdef USE_WAKEUP_VECTORS
 	void *__wakeupVectors;

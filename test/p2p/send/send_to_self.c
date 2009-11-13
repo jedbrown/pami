@@ -139,7 +139,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "before send-recv advance loop (send_active = %zd, recv_active = %zd) ...\n", send_active, recv_active);
     while (send_active || recv_active)
     {
-      result = XMI_Context_advance (context, 100);
+      result = XMI_Context_advance (client, 0, 100);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);

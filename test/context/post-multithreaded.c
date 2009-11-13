@@ -16,6 +16,7 @@
 #define TRACE(x)
 #endif
 
+xmi_client_t g_client;
 
 typedef struct endpoint
 {
@@ -108,7 +109,7 @@ void * endpoint (void * arg)
     TRACE((stderr, "   endpoint(%zd), before blocking advance for recv, _endpoint[0].recv = %zd\n", id, _endpoint[0].recv));
     while (_endpoint[0].recv)
     {
-      result = XMI_Context_advance (_endpoint[0].context, 1);
+      result = XMI_Context_advance (g_client, 0, 1);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
@@ -123,7 +124,7 @@ void * endpoint (void * arg)
     TRACE((stderr, "   endpoint(%zd), before blocking advance for recv, _endpoint[1].recv = %zd\n", id, _endpoint[1].recv));
     while (_endpoint[1].recv)
     {
-      result = XMI_Context_advance (_endpoint[1].context, 1);
+      result = XMI_Context_advance (g_client, 1, 1);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
@@ -180,6 +181,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
     return 1;
   }
+  g_client = client;
 
   _endpoint[0].recv = 1;
   {
