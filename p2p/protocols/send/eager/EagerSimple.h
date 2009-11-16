@@ -928,7 +928,7 @@ namespace XMI
           /// callback function and, if notification of remote receive
           /// completion is not required, free the send state memory.
           ///
-          static void send_complete (xmi_context_t   context,
+          static void send_complete (xmi_client_t   client, size_t   context,
                                      void          * cookie,
                                      xmi_result_t    result)
           {
@@ -940,7 +940,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (eager->_context, state->cookie, XMI_SUCCESS);
+                state->local_fn (eager->client, eager->_context, state->cookie, XMI_SUCCESS);
               }
 
             if (state->remote_fn == NULL)

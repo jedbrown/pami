@@ -31,6 +31,7 @@ xmi_result_t xmi_advisor_init()
   algorithm_ids[XMI_XFER_BROADCAST][2] = 0;
   algorithm_ids[XMI_XFER_BROADCAST][3] = 2;
 #endif
+  return XMI_SUCCESS;
 }
 
 xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
@@ -51,7 +52,8 @@ xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
 // we have to manually sit the hints in the protocols.
 // then here we also have to manually add each procotol to the list and
 // order them
-xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
+xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
+				   size_t context,
                                    xmi_xfer_type_t xfer_type)
 {
   int i, j;
@@ -64,7 +66,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
     return XMI_ERROR;
 
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, context, &world_geometry);
   
   if (coll_repo_enabled[xfer_type] == REPO_TO_BE_INITIALIZED)
   {
@@ -73,7 +75,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
     
     coll_repo_enabled[xfer_type] = REPO_INITIALIZED;
 
-    XMI_Geometry_algorithms_num(context,
+    XMI_Geometry_algorithms_num(client, context,
                                 world_geometry,
                                 xfer_type, 
                                 &alg_list[algorithm_type]);
@@ -84,7 +86,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
       metas = (xmi_metadata_t*)
         malloc(sizeof(xmi_metadata_t) * alg_list[algorithm_type]);
       
-      XMI_Geometry_algorithms_info(context, world_geometry, xfer_type,
+      XMI_Geometry_algorithms_info(client, context, world_geometry, xfer_type,
                                    algs, metas, algorithm_type,
                                    alg_list[algorithm_type]);
     }
@@ -93,7 +95,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
                             malloc(sizeof(xmi_alg_repo) * alg_list[0]);
     for (i = 0, j = 0; i < alg_list[0]; i++)
     {
-      result = XMI_Geometry_algorithm_info(context,
+      result = XMI_Geometry_algorithm_info(client, context,
                                            world_geometry,
                                            xfer_type,
                                            algorithm_ids[xfer_type][i],
@@ -111,7 +113,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
 }
 
 
-xmi_result_t xmi_advisor_coll(xmi_context_t context,
+xmi_result_t xmi_advisor_coll(xmi_client_t client, size_t context,
                               xmi_xfer_t *collective,
                               xmi_metadata_t meta)
 {

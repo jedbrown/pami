@@ -40,7 +40,8 @@ extern "C"
    * \param[in] cookie    Event callback application argument
    * \param[in] result    Asynchronous result information (was error information)
    */
-  typedef void (*xmi_event_function) ( xmi_context_t   context,
+  typedef void (*xmi_event_function) ( xmi_client_t client,
+				       size_t   context,
                                        void          * cookie,
                                        xmi_result_t    result );
 
@@ -3317,7 +3318,7 @@ extern "C"
   /**
    * \brief Query the value of an attribute
    *
-   * \param [in]     context        The XMI context
+   * \param [in]     client        The XMI client
    * \param [in,out] configuration  The configuration attribute of interest
    *
    * \note
@@ -3328,13 +3329,12 @@ extern "C"
    *   XMI_ERR_VALUE
    */
   xmi_result_t XMI_Configuration_query (xmi_client_t client,
-					size_t         context,
                                         xmi_configuration_t * configuration);
 
   /**
    * \brief Update the value of an attribute
    *
-   * \param [in] context       The XMI context
+   * \param [in] client       The XMI client
    * \param [in] configuration The configuration attribute to update
    *
    * \note
@@ -3345,7 +3345,6 @@ extern "C"
    *   XMI_ERR_VALUE
    */
   xmi_result_t XMI_Configuration_update (xmi_client_t client,
-					 size_t         context,
                                          xmi_configuration_t * configuration);
 
   /**

@@ -85,7 +85,7 @@ unsigned do_test (xmi_client_t client, size_t contextid)
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (client, contextid, &configuration);
+  result = XMI_Configuration_query (client, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -95,7 +95,7 @@ unsigned do_test (xmi_client_t client, size_t contextid)
   //TRACE((stderr, "My task id = %zd\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (client, contextid, &configuration);
+  result = XMI_Configuration_query (client, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);

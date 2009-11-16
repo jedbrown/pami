@@ -214,11 +214,11 @@ int main ()
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (client, 0, &configuration);
+  result = XMI_Configuration_query (client, &configuration);
   size_t _my_rank = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (client, 0, &configuration);
+  result = XMI_Configuration_query (client, &configuration);
   size_t num_tasks = configuration.value.intval;
 
   /* Display some test header information */

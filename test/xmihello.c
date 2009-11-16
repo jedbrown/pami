@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
 	xmi_configuration_t configuration;
 
 	configuration.name = XMI_TASK_ID;
-	status = XMI_Configuration_query(client, 0, &configuration);
+	status = XMI_Configuration_query(client, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 	size_t task_id = configuration.value.intval;
 
 	configuration.name = XMI_NUM_TASKS;
-	status = XMI_Configuration_query(client, 0, &configuration);
+	status = XMI_Configuration_query(client, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;

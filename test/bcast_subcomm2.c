@@ -92,7 +92,7 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  result = XMI_Context_createv(client, NULL, 0, 1);
+  result = XMI_Context_create(client, NULL, 0, 1);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -102,7 +102,7 @@ int main(int argc, char*argv[])
 
   xmi_configuration_t configuration;
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (client, 0, &configuration);
+  result = XMI_Configuration_query (client, &configuration);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -111,7 +111,7 @@ int main(int argc, char*argv[])
   size_t rank = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (client, 0, &configuration);
+  result = XMI_Configuration_query (client, &configuration);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);

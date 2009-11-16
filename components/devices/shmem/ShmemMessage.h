@@ -36,7 +36,7 @@ namespace XMI
           RMA
         };
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_client_t client, size_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -46,6 +46,7 @@ namespace XMI
                              size_t               bytes,
                              bool                 packed) :
             QueueElem (),
+            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -62,7 +63,7 @@ namespace XMI
           memcpy(_metadata, metadata, metasize);
         };
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_client_t client, size_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -74,6 +75,7 @@ namespace XMI
                              size_t               bytes1,
                              bool                 packed) :
             QueueElem (),
+            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -92,7 +94,7 @@ namespace XMI
           memcpy(_metadata, metadata, metasize);
         };
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_client_t client, size_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -102,6 +104,7 @@ namespace XMI
                              size_t               niov,
                              bool                 packed) :
             QueueElem (),
+            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -116,13 +119,14 @@ namespace XMI
         };
 
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (xmi_client_t client, size_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
                              void               * metadata,
                              size_t               metasize) :
             QueueElem (),
+            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -231,7 +235,8 @@ namespace XMI
 
 
       protected:
-        xmi_context_t        _context;
+        xmi_client_t        _client;
+        size_t        _context;
 
         // Client callback information.
         xmi_event_function   _fn;

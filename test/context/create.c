@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = XMI_Context_createv(client, configuration, 0, 1);
+  result = XMI_Context_create(client, configuration, 0, 1);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);

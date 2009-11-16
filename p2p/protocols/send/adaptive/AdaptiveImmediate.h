@@ -296,7 +296,7 @@ namespace XMI
           ///
           /// This callback will free the send state memory.
           ///
-          static void send_complete (xmi_context_t   context,
+          static void send_complete (xmi_client_t client, size_t   context,
                                      void          * cookie,
                                      xmi_result_t    result)
           {

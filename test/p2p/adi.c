@@ -109,7 +109,7 @@ static void SendLongDoneCB(xmi_context_t   context,
   done.l.s = 1;
 }
 
-static void SendLongHandoff(xmi_context_t   context,
+static void SendLongHandoff(xmi_client_t client, size_t   context,
                      void          * cookie,
                      xmi_result_t    result)
 {
@@ -124,7 +124,7 @@ static void SendLongHandoff(xmi_context_t   context,
   parameters.events.cookie        = lbuf;
   parameters.events.local_fn      = SendLongDoneCB;
 
-  XMI_Send(client, contextid, &parameters);
+  XMI_Send(client, context, &parameters);
 }
 
 static void *SendLong(void *clientdata)
@@ -135,7 +135,7 @@ static void *SendLong(void *clientdata)
   return NULL;
 }
 
-static void SendShortHandoff(xmi_context_t   context,
+static void SendShortHandoff(xmi_client_t client, size_t   context,
                              void          * cookie,
                              xmi_result_t    result)
 {
@@ -148,8 +148,8 @@ static void SendShortHandoff(xmi_context_t   context,
   parameters.data.iov_base   = sbuf;
   parameters.data.iov_len    = SSIZE;
 
-  XMI_Send_immediate(client, contextid, &parameters);
-  printf("Rank=%zu Channel=%p <Sent short msg>   data=%x\n", rank, context, sbuf[0]);
+  XMI_Send_immediate(client, context, &parameters);
+  printf("Rank=%zu Channel=%p,%zd <Sent short msg>   data=%x\n", rank, client, context, sbuf[0]);
   done.s.s = 1;
 }
 
@@ -198,11 +198,11 @@ static void init()
   }
 
   query.name = XMI_TASK_ID;
-  XMI_Configuration_query (client, 0, &query);
+  XMI_Configuration_query (client, &query);
   rank = query.value.intval;
 
   query.name = XMI_NUM_TASKS;
-  XMI_Configuration_query (client, 0, &query);
+  XMI_Configuration_query (client, &query);
   size = query.value.intval;
 
 #warning We need to clairify the threading nature of XMI

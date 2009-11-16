@@ -43,6 +43,8 @@
 
 namespace XMI
 {
+  typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
+
   typedef Fifo::FifoPacket <32, 992> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
@@ -64,6 +66,70 @@ namespace XMI
 
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
+  class Work : public Queue
+  {
+    private:
+      class WorkObject : public QueueElem
+      {
+        public:
+          inline WorkObject (xmi_event_function   fn,
+                             void               * cookie) :
+              QueueElem (),
+              _fn (fn),
+              _cookie (cookie)
+          {};
+
+          xmi_event_function   _fn;
+          void               * _cookie;
+      };
+
+      xmi_client_t _client;
+      xmi_context_t _context;
+      ContextLock   _lock;  
+      MemoryAllocator < sizeof(WorkObject), 16 > _allocator;
+
+    public:
+      inline Work (xmi_client_t client, size_t context, SysDep * sysdep) :
+          Queue (),
+          _client (client),
+          _context (context),
+          _lock (),
+          _allocator ()
+      {
+        _lock.init (sysdep);
+      };
+
+      inline void post (xmi_event_function   fn,
+                        void               * cookie)
+      {
+        _lock.acquire ();
+        WorkObject * obj = (WorkObject *) _allocator.allocateObject ();
+        new (obj) WorkObject (fn, cookie);
+        pushTail ((QueueElem *) obj);
+        _lock.release ();
+      };
+
+      inline size_t advance ()
+      {
+        size_t events = 0;
+
+        if (_lock.tryAcquire ())
+          {
+            WorkObject * obj = NULL;
+
+            while ((obj = (WorkObject *) popHead()) != NULL)
+              {
+                obj->_fn(_client, _contextid, obj->_cookie, XMI_SUCCESS);
+                events++;
+              }
+
+            _lock.release ();
+          }
+
+        return events;
+      };
+  }; // class Work
+
   class Context : public Interface::Context<XMI::Context>
   {
     public:
@@ -78,7 +144,8 @@ namespace XMI
           _sysdep (_mm),
 	  _generic(generics[contextid]),
           _mu (),
-          _shmem ()
+          _shmem (),
+	  _work (client, contextid, &_sysdep)
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -144,7 +211,8 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
       {
-        return XMI_UNIMPL;
+        _work.post (work_fn, cookie);
+	return XMI_SUCCESS;
       }
 
       inline size_t advance_impl (size_t maximum, xmi_result_t & result)
@@ -156,6 +224,7 @@ namespace XMI
 
         for (i = 0; i < maximum && events == 0; i++)
           {
+	    events += _work.advance ();
             events += _shmem.advance_impl();
             events += _mu.advance();
 	    events += _generic.advance();
@@ -168,17 +237,22 @@ namespace XMI
 
       inline xmi_result_t lock_impl ()
       {
-        return XMI_UNIMPL;
+        _lock.acquire ();
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t trylock_impl ()
       {
-        return XMI_UNIMPL;
+        if (_lock.tryAcquire ()) {
+		return XMI_SUCCESS;
+	}
+	return XMI_EAGAIN;
       }
 
       inline xmi_result_t unlock_impl ()
       {
-        return XMI_UNIMPL;
+        _lock.release ();
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t send_impl (xmi_send_t * parameters)
@@ -345,8 +419,7 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
-                                                        xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                         xmi_xfer_type_t ctype,
                                                         int *lists_lengths)
       {
@@ -354,8 +427,7 @@ namespace XMI
       }
 
       inline
-      xmi_result_t geometry_algorithms_info_impl (xmi_context_t context,
-                                                  xmi_geometry_t geometry,
+      xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
                                                   xmi_xfer_type_t colltype,
                                                   xmi_algorithm_t *algs,
                                                   xmi_metadata_t *mdata,
@@ -434,6 +506,8 @@ namespace XMI
       void * _dispatch[1024];
       void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
+      ContextLock _lock;
+      Work _work;
   }; // end XMI::Context
 }; // end namespace XMI
 

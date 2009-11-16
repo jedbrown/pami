@@ -80,6 +80,8 @@ protected:
 	_thread(),
 	_func(pf->func),
 	_clientdata(pf->clientdata),
+	_client(pf->client),
+	_context(pf->context),
 	_rc(XMI_SUCCESS)
 	{
 	}
@@ -120,6 +122,8 @@ protected:
 	ProgressFunctionThr _thread;
 	XMI_ProgressFunc *_func;
 	void *_clientdata;
+	xmi_client_t _client;
+	size_t _context;
 	xmi_result_t _rc;
 }; //-- ProgressFunctionMsg
 
@@ -166,12 +170,12 @@ inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t
 	int rc = pf->func(pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(NULL, pf->cb_done.clientdata, XMI_SUCCESS);
+			pf->cb_done.function(pf->client, pf->context, pf->cb_done.clientdata, XMI_SUCCESS);
 		}
 		return true;
 	} else if (rc < 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(NULL, pf->cb_done.clientdata, (xmi_result_t)-rc);
+			pf->cb_done.function(pf->client, pf->context, pf->cb_done.clientdata, (xmi_result_t)-rc);
 		}
 		return true;
 	}

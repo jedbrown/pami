@@ -57,13 +57,15 @@ namespace XMI
             void               * _cookie;
         };
 
-        xmi_context_t _context;
+        xmi_client_t _client;
+        size_t _context;
         ContextLock   _lock;
         MemoryAllocator<sizeof(WorkObject),16> _allocator;
 
       public:
-        inline Work (xmi_context_t context, SysDep * sysdep) :
+        inline Work (xmi_client_t client, size_t context, SysDep * sysdep) :
           Queue (),
+          _client (client),
           _context (context),
           _lock (),
           _allocator ()
@@ -88,7 +90,7 @@ namespace XMI
             WorkObject * obj = NULL;
             while ((obj = (WorkObject *) popHead()) != NULL)
             {
-              obj->_fn(_context, obj->_cookie, XMI_SUCCESS);
+              obj->_fn(_client, _contextid, obj->_cookie, XMI_SUCCESS);
               events++;
             }
             _lock.release ();
@@ -114,7 +116,7 @@ namespace XMI
 	_sysdep(_mm),
         _lock (),
         _empty_advance(0),
-        _work (_context, &_sysdep),
+        _work (client, id, &_sysdep),
 	_generic(generics[id])
         {
           lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
@@ -256,6 +258,9 @@ namespace XMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
+		// don't we want this advanced too?
+		// events += _work.advance ();
+
                 events += _lapi_device.advance_impl();
               }
           return events;
@@ -472,8 +477,7 @@ namespace XMI
           return collfactory->collective(parameters);
         }
 
-      inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
-                                                        xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                         xmi_xfer_type_t colltype,
                                                         int *lists_lengths)
         {
@@ -483,8 +487,7 @@ namespace XMI
           return collfactory->algorithms_num(colltype, lists_lengths);
         }
 
-      inline xmi_result_t geometry_algorithms_info_impl (xmi_context_t context,
-                                                         xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
                                                          xmi_xfer_type_t colltype,
                                                          xmi_algorithm_t *algs,
                                                          xmi_metadata_t *mdata,

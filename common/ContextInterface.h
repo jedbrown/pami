@@ -99,13 +99,11 @@ namespace XMI
 
         inline xmi_result_t collective (xmi_xfer_t * parameters);
 
-      inline xmi_result_t geometry_algorithms_num (xmi_context_t context,
-                                                   xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_num (xmi_geometry_t geometry,
                                                    xmi_xfer_type_t ctype,
                                                    int *lists_lengths);
 
-      inline xmi_result_t geometry_algorithms_info (xmi_context_t context,
-                                                    xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_info (xmi_geometry_t geometry,
                                                     xmi_xfer_type_t type,
                                                     xmi_algorithm_t *algs,
                                                     xmi_metadata_t *mdata,
@@ -356,28 +354,25 @@ namespace XMI
     }
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_algorithms_num (xmi_context_t context,
-                                                              xmi_geometry_t geometry,
+    xmi_result_t Context<T_Context>::geometry_algorithms_num (xmi_geometry_t geometry,
                                                               xmi_xfer_type_t coll_type,
                                                               int *lists_lengths)
     {
-      return static_cast<T_Context*>(this)->geometry_algorithms_num_impl(context,
-                                                                         geometry,
+      return static_cast<T_Context*>(this)->geometry_algorithms_num_impl(geometry,
                                                                          coll_type,
                                                                          lists_lengths);
     }
 
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_algorithms_info (xmi_context_t context,
-                                                              xmi_geometry_t geometry,
+    xmi_result_t Context<T_Context>::geometry_algorithms_info (xmi_geometry_t geometry,
                                                               xmi_xfer_type_t type,
                                                               xmi_algorithm_t *algs,
                                                               xmi_metadata_t *mdata,
                                                               int algorithm_type,
                                                               int num)
     {
-      return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(context, geometry, type, algs, mdata, algorithm_type, num);
+      return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(geometry, type, algs, mdata, algorithm_type, num);
 
     }
     

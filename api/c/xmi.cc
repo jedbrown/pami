@@ -28,20 +28,17 @@ extern "C" size_t XMI_Error_text (char * string, size_t length)
 /// \copydoc XMI_Configuration_query
 ///
 extern "C" xmi_result_t XMI_Configuration_query (xmi_client_t client,
-						 size_t         context,
                                                  xmi_configuration_t * configuration)
 {
   XMI::Client * clnt = (XMI::Client *) client;
-  XMI::Context * ctx = clnt->getContext(context);
 
-  return ctx->queryConfiguration (configuration);
+  return clnt->queryConfiguration (configuration);
 }
 
 ///
 /// \copydoc XMI_Configuration_update
 ///
 extern "C" xmi_result_t XMI_Configuration_update (xmi_client_t client,
-						  size_t         context,
                                                   xmi_configuration_t * configuration)
 {
   return XMI_UNIMPL;
@@ -519,8 +516,7 @@ extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_client_t client,
 {
   XMI::Client * clnt = (XMI::Client *) client;
   XMI::Context * ctx = clnt->getContext(context);
-  return ctx->geometry_algorithms_num (context,
-                                      geometry,
+  return ctx->geometry_algorithms_num (geometry,
                                       coll_type,
                                       lists_lengths);
 }
@@ -538,8 +534,7 @@ extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_client_t client,
 {
   XMI::Client * clnt = (XMI::Client *) client;
   XMI::Context * ctx = clnt->getContext(context);
-  return ctx->geometry_algorithms_info (context,
-                                        geometry,
+  return ctx->geometry_algorithms_info (geometry,
                                         type,
                                         algs,
                                         mdata,
