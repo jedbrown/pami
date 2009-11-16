@@ -27,9 +27,10 @@ namespace XMI
     class MPIModel : public Interface::PacketModel<MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
     {
     public:
-      MPIModel (T_Device & device, xmi_context_t context) :
-        Interface::PacketModel < MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,context),
+      MPIModel (T_Device & device, xmi_client_t client, size_t context) :
+        Interface::PacketModel < MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,client,context),
         _device (device),
+        _client(client),
         _context(context)
         {};
 
@@ -51,7 +52,7 @@ namespace XMI
       static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
       static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes        = T_Device::payload_size;
-      static const size_t packet_model_state_bytes          = sizeof(T_Message);
+      static const size_t packet_model_state_bytes          = 512; //sizeof(T_Message);
 
       xmi_result_t init_impl (size_t                      dispatch,
                               Interface::RecvFunction_t   direct_recv_func,
@@ -106,7 +107,7 @@ namespace XMI
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
 #endif
-          new(msg)MPIMessage(this->_context,
+          new(msg)MPIMessage(this->_client, this->_context,
                              this->_dispatch_id,
                              fn,
                              cookie);
@@ -151,7 +152,7 @@ namespace XMI
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
 #endif
           MPIMessage * msg = (MPIMessage *)state;
-          new(msg)MPIMessage(this->_context,
+          new(msg)MPIMessage(this->_client, this->_context,
                              this->_dispatch_id,
                              fn,
                              cookie);
@@ -198,7 +199,7 @@ namespace XMI
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
 #endif
           MPIMessage * msg = (MPIMessage *)obj;
-          new(msg)MPIMessage(this->_context,
+          new(msg)MPIMessage(this->_client,this->_context,
                              this->_dispatch_id,
                              NULL,
                              0);
@@ -252,7 +253,7 @@ namespace XMI
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
 #endif
           MPIMessage * msg = (MPIMessage *)malloc(sizeof(MPIMessage)+metasize+iov[0].iov_len-128-224);
-          new(msg)MPIMessage(this->_context,
+          new(msg)MPIMessage(this->_client,this->_context,
                              this->_dispatch_id,
                              fn,
                              cookie);
@@ -283,7 +284,8 @@ namespace XMI
 
     protected:
       T_Device                    & _device;
-      xmi_context_t                 _context;
+      xmi_client_t                 _client;
+      size_t                 _context;
       size_t                        _dispatch_id;
       Interface::RecvFunction_t     _direct_recv_func;
       void                        * _direct_recv_func_parm;

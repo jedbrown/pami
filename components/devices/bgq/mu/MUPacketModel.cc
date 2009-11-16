@@ -19,10 +19,11 @@
 
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
-XMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device, xmi_context_t context) :
-    Interface::PacketModel<MUPacketModel, MUDevice, sizeof(MUInjFifoMessage)> (device, context),
+XMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device, xmi_client_t client, size_t context) :
+    Interface::PacketModel<MUPacketModel, MUDevice, sizeof(MUInjFifoMessage)> (device, client, context),
     _device (device),
     _wrapper_model (&_desc_model),
+    _client (client),
     _context (context)
 {
   MUSPI_BaseDescriptorInfoFields_t base =

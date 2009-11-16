@@ -49,12 +49,12 @@ namespace XMI
         void                    *user_cookie;
       };
 
-      static void client_done(void *context, void *rdata, xmi_result_t res)
+      static void client_done(xmi_client_t client, size_t context, void *rdata, xmi_result_t res)
       {
         reqObj * robj = (reqObj*)rdata;
         MPI    * mpi  = robj->factory;
         if(robj->user_done_fn)
-          robj->user_done_fn(context, robj->user_cookie, res);
+          robj->user_done_fn(client, context, robj->user_cookie, res);
         mpi->_reqAllocator.returnObject(robj);
       }
 
@@ -300,7 +300,7 @@ namespace XMI
         break;
         case XMI::CollInfo::CI_BROADCAST1:
         {
-          XMI_Callback_t cb_done;
+          xmi_callback_t cb_done;
           XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
             (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
           reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
@@ -324,7 +324,7 @@ namespace XMI
         break;
         case XMI::CollInfo::CI_BROADCAST2:
         {
-          XMI_Callback_t cb_done;
+          xmi_callback_t cb_done;
           XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
             (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
 
@@ -404,7 +404,7 @@ namespace XMI
           XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep> *cinfo=
             (XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>*)info;
 
-          XMI_Callback_t cb_done;
+          xmi_callback_t cb_done;
           reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
           XMI_assertf(robj,"allreduce alg 1:  memory allocation failure\n");
 
@@ -462,7 +462,7 @@ namespace XMI
           XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep> *cinfo=
             (XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep>*)info;
 
-          XMI_Callback_t cb_done;
+          xmi_callback_t cb_done;
           reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
           XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
 
@@ -658,7 +658,7 @@ namespace XMI
           XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep> *cinfo=
             (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
 
-          XMI_Callback_t cb_done;
+          xmi_callback_t cb_done;
           cb_done.function   = alltoallv->cb_done;
           cb_done.clientdata = alltoallv->cookie;
 
@@ -721,7 +721,7 @@ namespace XMI
           CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
             (CCMI::Adaptor::Broadcast::AsyncBinomialFactory *) &info->_bcast_registration;
           if(ambroadcast->stypecount == 0)
-            ambroadcast->cb_done(NULL, ambroadcast->cookie, XMI_SUCCESS);
+            ambroadcast->cb_done(NULL, 0, ambroadcast->cookie, XMI_SUCCESS);
           else
           {
             xmi_callback_t cb_done;

@@ -34,7 +34,7 @@ namespace CCMI
 
     private:
       /// Static function to be passed into the done of multisend send
-      static void pipeAllreduceNotifySend (void *ctxt, void *cd, xmi_result_t err)
+      static void pipeAllreduceNotifySend (xmi_client_t client, size_t ctxt, void *cd, xmi_result_t err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
         xmi_quad_t *info = (xmi_quad_t *)cd;
@@ -43,7 +43,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend postRecv
-      static void pipeAllreduceNotifyReceive (void *ctxt, void *cd, xmi_result_t err)
+      static void pipeAllreduceNotifyReceive (xmi_client_t client, size_t ctxt, void *cd, xmi_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         xmi_quad_t *info = (xmi_quad_t *)cd;
@@ -62,7 +62,7 @@ namespace CCMI
 
         if(_donecount == 2 && this->_cb_done)
         {
-          this->_cb_done (NULL, this->_clientdata, XMI_SUCCESS);
+          this->_cb_done (NULL, 0, this->_clientdata, XMI_SUCCESS);
           //_curSendPhase = -1;
           //_curRecvPhase = -1;
         }

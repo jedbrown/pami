@@ -3009,24 +3009,6 @@ extern "C"
    ******************************************************************************/
 
   /**
-   * \brief Recv callback for Multisync.
-   *
-   * Not normally used.
-   *
-   * Note, certain flavors of Multisync do not use a Receive Callback and
-   * constructing or registering with a non-NULL cb_recv will result in error.
-   *
-   * \param[in] clientdata	Opaque arg
-   * \param[in] msginfo		Metadata
-   * \param[in] msgcount	Number of xmi_quad_ts in msginfo
-   * \param[in] conn_id		Instance ID
-   * \return	XMI_Request opaque memory for message
-   */
-  typedef void (*xmi_dispatch_multisync_fn)(void       *clientdata,
-                                            xmi_quad_t *msginfo,
-                                            unsigned    msgcount,
-                                            unsigned    conn_id);
-  /**
    * \brief structure defining interface to Multisync
    */
   typedef struct
@@ -3229,7 +3211,6 @@ extern "C"
     xmi_dispatch_amreduce_fn    amreduce;
     xmi_dispatch_multicast_fn   multicast;
     xmi_dispatch_manytomany_fn  manytomany;
-    xmi_dispatch_multisync_fn   multisync;
   } xmi_dispatch_callback_fn;
 
   /*****************************************************************************/

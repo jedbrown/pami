@@ -30,17 +30,19 @@ namespace XMI
     class MPIMessage
     {
     public:
-      inline MPIMessage (xmi_context_t       context,
+      inline MPIMessage (xmi_client_t client, size_t       context,
                          size_t              dispatch_id,
                          xmi_event_function  done_fn,
                          void               *cookie):
+        _client(client),
         _context(context),
         _done_fn(done_fn),
         _cookie(cookie)
         {
           _p2p_msg._dispatch_id=dispatch_id;
         };
-      xmi_context_t       _context;
+      xmi_client_t       _client;
+      size_t       _context;
       xmi_event_function  _done_fn;
       void               *_cookie;
       int                 _freeme;
@@ -64,7 +66,8 @@ namespace XMI
     class MPIMcastMessage
     {
     public:
-      xmi_context_t  _context;
+      xmi_client_t  _client;
+      size_t  _context;
       size_t         _dispatch_id;
       xmi_quad_t     _info[2];
       int            _info_count;
@@ -97,7 +100,8 @@ namespace XMI
     class MPIM2MMessage
     {
     public:
-      xmi_context_t       _context;
+      xmi_client_t       _client;
+      size_t       _context;
       size_t              _dispatch_id;
       unsigned            _conn;
       xmi_event_function  _done_fn;

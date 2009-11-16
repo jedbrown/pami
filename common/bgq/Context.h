@@ -64,7 +64,7 @@ namespace XMI
 
   typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
 
-  typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+  typedef MemoryAllocator<1152, 16> ProtocolAllocator;
 
   class Work : public Queue
   {
@@ -84,7 +84,7 @@ namespace XMI
       };
 
       xmi_client_t _client;
-      xmi_context_t _context;
+      size_t _context;
       ContextLock   _lock;  
       MemoryAllocator < sizeof(WorkObject), 16 > _allocator;
 
@@ -119,7 +119,7 @@ namespace XMI
 
             while ((obj = (WorkObject *) popHead()) != NULL)
               {
-                obj->_fn(_client, _contextid, obj->_cookie, XMI_SUCCESS);
+                obj->_fn(_client, _context, obj->_cookie, XMI_SUCCESS);
                 events++;
               }
 
@@ -478,8 +478,8 @@ namespace XMI
       SysDep _sysdep;
 
       // devices...
-      Device::MU::MUDevice _mu;
       XMI::Device::Generic::Device &_generic;
+      Device::MU::MUDevice _mu;
       ShmemDevice          _shmem;
 
       void * _dispatch[1024];

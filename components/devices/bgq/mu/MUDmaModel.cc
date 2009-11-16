@@ -15,10 +15,11 @@
 
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
-XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device, xmi_context_t context) :
-    Interface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)> (device, context),
+XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device, xmi_client_t client, size_t context) :
+    Interface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)> (device, client, context),
     _device (device),
     _wrapper_model (),
+    _client (client),
     _context (context)
 {
   // --------------------------------------------------------------------------

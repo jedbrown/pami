@@ -47,7 +47,7 @@ namespace XMI
 
           /// \see XMI::Device::Interface::PacketModel::PacketModel
           /// \see XMI::Device::Interface::MessageModel::MessageModel
-          MUPacketModel (MUDevice & device, xmi_context_t context);
+          MUPacketModel (MUDevice & device, xmi_client_t client, size_t context);
 
           /// \see XMI::Device::Interface::PacketModel::~PacketModel
           /// \see XMI::Device::Interface::MessageModel::~MessageModel
@@ -114,7 +114,8 @@ namespace XMI
           MUDevice                        & _device;
           MUDescriptorWrapper               _wrapper_model;
           MUSPI_Pt2PtMemoryFIFODescriptor   _desc_model;
-          xmi_context_t                     _context;
+          xmi_client_t                     _client;
+          size_t                     _context;
       };
 
       void MUPacketModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
@@ -252,7 +253,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                fn (_client, _context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
               }
           }
         else
@@ -260,7 +261,7 @@ namespace XMI
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. after nextInjectionDescriptor(), no space in fifo\n", T_Niov));
             // Construct a message and post to the device to be processed later.
             MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _context);
+            new (obj) MUInjFifoMessage (fn, cookie, _client, _context);
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before setSourceBuffer\n", T_Niov));
             obj->setSourceBuffer (iov);
 
@@ -440,7 +441,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                    fn (_client, _context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif
@@ -451,7 +452,7 @@ namespace XMI
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-                    new (obj) MUInjFifoMessage (fn, cookie, _context, sequenceNum);
+                    new (obj) MUInjFifoMessage (fn, cookie, _client, _context, sequenceNum);
 
                     // Queue it.
                     _device.addToDoneQ (target_rank, obj->getWrapper());
@@ -462,7 +463,7 @@ namespace XMI
           {
             // Construct a message and post to the device to be processed later.
             MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _context);
+            new (obj) MUInjFifoMessage (fn, cookie, _client, _context);
             obj->setSourceBuffer (iov);
 
             // Initialize the descriptor directly in the injection fifo.

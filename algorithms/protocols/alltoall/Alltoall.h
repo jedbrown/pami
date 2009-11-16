@@ -24,8 +24,8 @@ namespace CCMI
     protected:
       XMI_Request_t    _sreq    __attribute__((__aligned__(16)));
       XMI_Request_t    _rreq    __attribute__((__aligned__(16)));
-      XMI_Callback_t   _my_cb_done;
-      XMI_Callback_t   _app_cb_done;
+      xmi_callback_t   _my_cb_done;
+      xmi_callback_t   _app_cb_done;
 
       unsigned             _donecount;
 
@@ -39,7 +39,7 @@ namespace CCMI
     public:
       A2AProtocol (T_Sysdep           * mapping,
                    T_Manytomany       * minterface,
-                   XMI_Callback_t       cb_done,
+                   xmi_callback_t       cb_done,
                    xmi_consistency_t     consistency,
                    XMI_GEOMETRY_CLASS * geometry,
                    const char         * sndbuf,
@@ -119,12 +119,12 @@ namespace CCMI
                              _geometry->nranks());
       }
 
-      static void done (void *ctxt, void *arg, xmi_result_t err)
+      static void done (xmi_client_t client, size_t ctxt, void *arg, xmi_result_t err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->_donecount ++;
         if((proto->_donecount == 2) && (proto->_app_cb_done.function))
-          proto->_app_cb_done.function (NULL, proto->_app_cb_done.clientdata, XMI_SUCCESS);
+          proto->_app_cb_done.function (NULL, 0, proto->_app_cb_done.clientdata, XMI_SUCCESS);
       }
     };
 
@@ -152,7 +152,7 @@ namespace CCMI
       }
 
       virtual unsigned generate (XMI_CollectiveRequest_t   * request,
-                                 XMI_Callback_t    cb_done,
+                                 xmi_callback_t    cb_done,
                                  xmi_consistency_t   consistency,
                                  XMI_GEOMETRY_CLASS         * geometry,
                                  const char       * sndbuf,
@@ -183,7 +183,7 @@ namespace CCMI
         return 0;
       }
 
-      static void cb_barrier_done (void *ctxt, void *arg, xmi_result_t err)
+      static void cb_barrier_done (xmi_client_t client, size_t ctxt, void *arg, xmi_result_t err)
       {
         A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *proto = (A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *) arg;
         proto->start();

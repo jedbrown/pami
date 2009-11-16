@@ -36,11 +36,13 @@ namespace XMI
 
           inline void setCallback (xmi_event_function function,
                                    void *             cookie,
-                                   xmi_context_t      context)
+                                   xmi_client_t      client,
+                                   size_t      context)
           {
             _requiresCallback = true;
             _function = function;
             _cookie   = cookie;
+            _client  = client;
             _context  = context;
           };
 
@@ -51,7 +53,7 @@ namespace XMI
 
           inline void invokeCallback ()
           {
-            _function (_context, _cookie, XMI_SUCCESS);
+            _function (_client, _context, _cookie, XMI_SUCCESS);
           };
 
         protected:
@@ -59,7 +61,8 @@ namespace XMI
           bool               _requiresCallback;
           xmi_event_function _function;
           void *             _cookie;
-          xmi_context_t      _context;
+          xmi_client_t      _client;
+          size_t      _context;
 
       }; // XMI::Device::MU::MUDescriptorWrapper class
     };   // XMI::Device::MU namespace

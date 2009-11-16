@@ -87,7 +87,7 @@ namespace XMI
         };
 
         xmi_client_t _client;
-        xmi_context_t _context;
+        size_t _context;
         ContextLock   _lock;
         MemoryAllocator<sizeof(WorkObject),16> _allocator;
 
@@ -141,10 +141,10 @@ namespace XMI
         _mm (addr, bytes),
 	_sysdep(_mm),
         _lock (),
-        _empty_advance(0),
-        _shmem(),
         _work (client, id, &_sysdep),
-	_generic(generics[id])
+	_generic(generics[id]),
+        _shmem(),
+        _empty_advance(0)
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
@@ -592,13 +592,13 @@ namespace XMI
       Work _work;
 
       XMI::Device::Generic::Device &_generic;
+      ShmemDevice               _shmem;
       MemoryAllocator<1024,16>  _request;
       MPIDevice                 _mpi;
       MPICollreg               *_collreg;
       MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;
       unsigned                  _empty_advance;
-      ShmemDevice               _shmem;
       xmi_geometry_range_t      _world_range;
       int                       _myrank;
       int                       _mysize;

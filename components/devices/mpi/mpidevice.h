@@ -170,13 +170,14 @@ namespace XMI
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl() p2p\n",(int)this)); dbg = 1;
             xmi_event_function  done_fn = (*it_p2p)->_done_fn;
             void               *cookie  = (*it_p2p)->_cookie;
-            xmi_context_t       context = (*it_p2p)->_context;
+            xmi_client_t       client = (*it_p2p)->_client;
+            size_t       context = (*it_p2p)->_context;
             _sendQ.remove((*it_p2p));
             if((*it_p2p)->_freeme)
               free(*it_p2p);
 
             if(done_fn)
-              done_fn(context,cookie,XMI_SUCCESS);
+              done_fn(client,context,cookie,XMI_SUCCESS);
             break;
           }
         }
@@ -192,7 +193,7 @@ namespace XMI
             events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl mc\n",(int)this)); dbg = 1;
             if((*it_mcast)->_cb_done.function )
-              (*(*it_mcast)->_cb_done.function)((*it_mcast)->_context, (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
+              (*(*it_mcast)->_cb_done.function)((*it_mcast)->_client,(*it_mcast)->_context, (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
             free ((*it_mcast)->_req);
             free (*it_mcast);
             _mcastsendQ.remove((*it_mcast));
@@ -211,7 +212,7 @@ namespace XMI
             events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl m2m\n",(int)this)); dbg = 1;
             if((*it)->_done_fn )
-              ((*it)->_done_fn)(NULL, (*it)->_cookie, XMI_SUCCESS);
+              ((*it)->_done_fn)(NULL, 0, (*it)->_cookie, XMI_SUCCESS);
 
             free ((*it)->_reqs);
             free ((*it)->_bufs);
@@ -348,7 +349,7 @@ namespace XMI
               if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
               {
                 if(mcast->_done_fn)
-                  mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn (msg->_client, msg->_context, mcast->_cookie, XMI_SUCCESS);
 
                 _mcastrecvQ.remove(mcast);
                 free (msg);
@@ -370,7 +371,7 @@ namespace XMI
 
               //for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
               //if(mcast->_done_fn)
-              //  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+              //  mcast->_done_fn(msg->_client, msg->context, mcast->_cookie, XMI_SUCCESS);
 
               // XMI_assert (nbytes <= mcast->_pwidth);
 
@@ -380,7 +381,7 @@ namespace XMI
                                (int)this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
                 mcast->_counter += mcast->_pwidth;
                 if(mcast->_done_fn)
-                  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn(msg->_client, msg->_context, mcast->_cookie, XMI_SUCCESS);
               }
 
               if(mcast->_counter >= mcast->_size)
@@ -441,7 +442,7 @@ namespace XMI
                 if( m2m->_num == 0 )
                 {
                   if( m2m->_done_fn )
-                    (m2m->_done_fn)(NULL, m2m->_cookie,XMI_SUCCESS);
+                    (m2m->_done_fn)(NULL, 0, m2m->_cookie,XMI_SUCCESS);
                   free ( m2m );
                   return NULL;
                 }
@@ -466,7 +467,7 @@ namespace XMI
                 {
                   if( m2m->_done_fn )
                   {
-                    m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+                    m2m->_done_fn(NULL, 0, m2m->_cookie,XMI_SUCCESS);
                   }
                   _m2mrecvQ.remove(m2m);
                   free ( m2m );
