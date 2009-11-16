@@ -49,12 +49,20 @@ namespace XMI
             return (void *) &_data[0];
           };
 
-          inline void copyHeader_impl (void * addr)
+          inline void copyHeader_impl (void * dst)
           {
-            if(likely((size_t)addr & 0x0f == 0))
-              Type<xmi_quad_t>::copy<T_HeaderSize>((xmi_quad_t *) addr, _data);
+            if(likely((size_t)dst & 0x0f == 0))
+              Type<xmi_quad_t>::copy<T_HeaderSize>((xmi_quad_t *) dst, _data);
             else
-              Type<size_t>::copy<T_HeaderSize>((size_t *) addr, (size_t *) _data);
+              Type<size_t>::copy<T_HeaderSize>((size_t *) dst, (size_t *) _data);
+          };
+
+          inline void writeHeader_impl (void * src)
+          {
+            if(likely((size_t)src & 0x0f == 0))
+              Type<xmi_quad_t>::copy<T_HeaderSize>(_data, (xmi_quad_t *) src);
+            else
+              Type<size_t>::copy<T_HeaderSize>((size_t *) _data, (size_t *) src);
           };
 
           inline void * getPayload ()

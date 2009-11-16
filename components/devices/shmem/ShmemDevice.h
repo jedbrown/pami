@@ -53,6 +53,129 @@ namespace XMI
     class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep>,
         public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Packet> >
     {
+      protected:
+        class PacketImpl : public T_Packet
+        {
+          public:
+            inline  PacketImpl () {};
+            inline ~PacketImpl () {};
+
+            ///
+            /// \brief Write metadata and iovec data to the packet
+            ///
+            /// This method allows for template specialization via the T_Niov
+            /// template parameter.
+            ///
+            /// \param[in] dispatch  Packet dispatch identifier
+            /// \param[in] metadata  Pointer to packet metadata source
+            /// \param[in] iov       Array of T_Niov source data iovec elements
+            ///
+            template <unsigned T_Niov>
+            inline void write (uint16_t       dispatch,
+                               void         * metadata,
+                               struct iovec   (&iov)[T_Niov])
+            {
+              // First, bulk copy the metadata into the packet header
+              if(likely(metadata!=NULL))
+                this->writeHeader (metadata);
+
+              // Next, copy the packet dispatch id into the header
+              uint16_t * hdr = (uint16_t *) this->getHeader ();
+              hdr[(T_Packet::headerSize_impl>>1)-1] = dispatch;
+
+              // Finally, copy the packet payload data from the iovec
+              unsigned i, j, n;
+              if (T_Niov == 1)
+              {
+                // Constant-expression template specialization.
+                n = (iov[0].iov_len >> 2) + (iov[0].iov_len & 0x03 != 0);
+                uint32_t * dst = (uint32_t *) this->getPayload ();
+                uint32_t * src = (uint32_t *) iov[0].iov_base;
+                for (i=0; i<n; i++) dst[i] = src[i];
+
+                return;
+              }
+
+              if (T_Niov == 2)
+              {
+                // Constant-expression template specialization.
+                uint32_t * dst = (uint32_t *) this->getPayload ();
+                uint32_t * src = (uint32_t *) iov[0].iov_base;
+                n = (iov[0].iov_len >> 2) + (iov[0].iov_len & 0x03 != 0);
+                for (i=0; i<n; i++) dst[i] = src[i];
+
+                dst = (uint32_t *)((uint8_t *) dst + iov[0].iov_len);
+                src = (uint32_t *) iov[1].iov_base;
+                n = (iov[1].iov_len >> 2) + (iov[1].iov_len & 0x03 != 0);
+                for (i=0; i<n; i++) dst[i] = src[i];
+
+                return;
+              }
+
+              uint8_t  * payload = (uint8_t *) this->getPayload ();
+              uint32_t * dst;
+              uint32_t * src;
+              for (i=0; i<T_Niov; i++)
+              {
+                dst = (uint32_t *) payload;
+                src = (uint32_t *) iov[i].iov_base;
+                n = (iov[i].iov_len >> 2) + (iov[i].iov_len & 0x03 != 0);
+                for (j=0; j<n; j++) dst[j] = src[j];
+                payload += iov[i].iov_len;
+              }
+            };
+
+            ///
+            /// \brief Write metadata and iovec data to the packet
+            ///
+            /// \param[in] dispatch  Packet dispatch identifier
+            /// \param[in] metadata  Pointer to packet metadata source
+            /// \param[in] iov       Array of source data iovec elements
+            /// \param[in] niov      Number of iovec array elements
+            ///
+            inline void write (uint16_t       dispatch,
+                               void         * metadata,
+                               struct iovec * iov,
+                               size_t         niov)
+            {
+              // First, bulk copy the metadata into the packet header
+              if(likely(metadata!=NULL))
+                this->writeHeader (metadata);
+
+              // Next, copy the packet dispatch id into the header
+              uint16_t * hdr = (uint16_t *) this->getHeader ();
+              hdr[(T_Packet::headerSize_impl>>1)-1] = dispatch;
+
+              // Finally, copy the packet payload data from the iovec
+              unsigned i, j, n;
+              uint8_t  * payload = (uint8_t *) this->getPayload ();
+              uint32_t * dst;
+              uint32_t * src;
+              for (i=0; i<niov; i++)
+              {
+                dst = (uint32_t *) payload;
+                src = (uint32_t *) iov[i].iov_base;
+                n = (iov[i].iov_len >> 2) + (iov[i].iov_len & 0x03 != 0);
+                for (j=0; j<n; j++) dst[j] = src[j];
+                payload += iov[i].iov_len;
+              }
+            }
+
+            ///
+            /// \brief Retrieve the packet dispatch identifier and metadata pointer
+            /// \param[out] dispatch  Packet dispatch identifier
+            /// \return Pointer to packet metadata
+            ///
+            inline void * metadata (uint16_t & dispatch)
+            {
+              uint16_t * hdr = (uint16_t *) this->getHeader ();
+              dispatch = hdr[(T_Packet::headerSize_impl>>1)-1];
+              //fprintf(stderr, "PacketImpl::metadata(), dispatch = %d, (%d>>1)-1 = %d\n", dispatch, T_Packet::headerSize_impl, (T_Packet::headerSize_impl>>1)-1);
+
+              return hdr;
+            };
+        };
+
       public:
         inline ShmemDevice () :
             Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep> (),
@@ -119,49 +242,6 @@ namespace XMI
                                                void         * metadata,
                                                size_t         metasize,
                                                struct iovec   (&iov)[T_Niov],
-                                               size_t       & sequence);
-
-        ///
-        /// \brief Write a single packet into the injection fifo.
-        ///
-        /// This method is a \b template \b specialization for the case where
-        /// a single iovec element describes the packet payload, a.k.a. a
-        /// contiguous source buffer.
-        ///
-        /// \param[in]  fnum        Injection fifo identifier
-        /// \param[in]  dispatch_id Packet dispatch identifier
-        /// \param[in]  metadata    Packet header metadata source buffer
-        /// \param[in]  metasize    Packet header metadata size in bytes
-        /// \param[in]  iov         Single element iovec array to copy into
-        ///                         the packet payload
-        /// \param[out] sequence    Packet sequence number
-        ///
-        inline xmi_result_t writeSinglePacket (size_t         fnum,
-                                               uint16_t       dispatch_id,
-                                               void         * metadata,
-                                               size_t         metasize,
-                                               struct iovec   (&iov)[1],
-                                               size_t       & sequence);
-
-        ///
-        /// \brief Write a single packet into the injection fifo.
-        ///
-        /// This method is a \b template \b specialization for the case where
-        /// two iovec elements describe the packet payload.
-        ///
-        /// \param[in]  fnum        Injection fifo identifier
-        /// \param[in]  dispatch_id Packet dispatch identifier
-        /// \param[in]  metadata    Packet header metadata source buffer
-        /// \param[in]  metasize    Packet header metadata size in bytes
-        /// \param[in]  iov         Two element iovec array to pack into
-        ///                         the packet payload
-        /// \param[out] sequence    Packet sequence number
-        ///
-        inline xmi_result_t writeSinglePacket (size_t         fnum,
-                                               uint16_t       dispatch_id,
-                                               void         * metadata,
-                                               size_t         metasize,
-                                               struct iovec   (&iov)[2],
                                                size_t       & sequence);
 
         ///
@@ -283,113 +363,13 @@ namespace XMI
         size_t       & sequence)
     {
       TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. T_Niov = %d\n", T_Niov));
-      T_Packet * pkt = _fifo[fnum].nextInjPacket ();
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
 
       if (pkt != NULL)
         {
-          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
+          pkt->write (dispatch_id, metadata, iov);
 
-          // First 2 bytes is the dispatch id.
-          hdr[0] = dispatch_id;
-
-          // Remaining header bytes are metadata.
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket () .. metadata = %p\n", __global.mapping.task(), metadata));
-          memcpy ((void *) &hdr[1], metadata, metasize);
-
-          // Write the packet payload data
-          uint8_t * data = (uint8_t *) pkt->getPayload ();
-          size_t i, j;
-          for (i=0; i<T_Niov; i++)
-          {
-            uint8_t * src  = (uint8_t *) iov[i].iov_base;
-            for (j=0; j<iov[i].iov_len; j++) data[j] = src[j];
-            data += iov[i].iov_len;
-          }
-
-          sequence = _fifo[fnum].getPacketSequenceId (pkt);
-
-          // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket (pkt);
-
-          return XMI_SUCCESS;
-        }
-
-      return XMI_EAGAIN;
-    };
-
-    template <class T_Fifo, class T_Packet>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
-        size_t         fnum,
-        uint16_t       dispatch_id,
-        void         * metadata,
-        size_t         metasize,
-        struct iovec   (&iov)[1],
-        size_t       & sequence)
-    {
-      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. template specialization, niov = 1\n"));
-      T_Packet * pkt = _fifo[fnum].nextInjPacket ();
-
-      if (pkt != NULL)
-        {
-          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
-
-          // First 2 bytes is the dispatch id.
-          hdr[0] = dispatch_id;
-
-          // Remaining header bytes are metadata.
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket () .. metadata = %p\n", __global.mapping.task(), metadata));
-          memcpy ((void *) &hdr[1], metadata, metasize);
-
-          // Write the packet payload data
-          uint8_t * data = (uint8_t *) pkt->getPayload ();
-          uint8_t * src  = (uint8_t *) iov[0].iov_base;
-          size_t i;
-          for (i=0; i<iov[0].iov_len; i++) data[i] = src[i];
-
-          sequence = _fifo[fnum].getPacketSequenceId (pkt);
-
-          // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket (pkt);
-
-          return XMI_SUCCESS;
-        }
-
-      return XMI_EAGAIN;
-    };
-
-    template <class T_Fifo, class T_Packet>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
-        size_t         fnum,
-        uint16_t       dispatch_id,
-        void         * metadata,
-        size_t         metasize,
-        struct iovec   (&iov)[2],
-        size_t       & sequence)
-    {
-      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. template specialization, niov = 2\n"));
-      T_Packet * pkt = _fifo[fnum].nextInjPacket ();
-
-      if (pkt != NULL)
-        {
-          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
-
-          // First 2 bytes is the dispatch id.
-          hdr[0] = dispatch_id;
-
-          // Remaining header bytes are metadata.
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket () .. metadata = %p\n", __global.mapping.task(), metadata));
-          memcpy ((void *) &hdr[1], metadata, metasize);
-
-          // Write the packet payload data
-          uint8_t * data = (uint8_t *) pkt->getPayload ();
-          uint8_t * src  = (uint8_t *) iov[0].iov_base;
-          size_t i;
-          for (i=0; i<iov[0].iov_len; i++) data[i] = src[i];
-          data += iov[0].iov_len;
-          src   = (uint8_t *) iov[1].iov_base;
-          for (i=0; i<iov[1].iov_len; i++) data[i] = src[i];
-
-          sequence = _fifo[fnum].getPacketSequenceId (pkt);
+          sequence = _fifo[fnum].getPacketSequenceId ((T_Packet *)pkt);
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pkt);
@@ -412,32 +392,16 @@ namespace XMI
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
 
-      T_Packet * pkt = _fifo[fnum].nextInjPacket ();
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
 
       if (pkt != NULL)
         {
-          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
-
-          // First 2 bytes is the dispatch id.
-          hdr[0] = dispatch_id;
-
-          // Remaining header bytes are metadata.
-          memcpy ((void *) &hdr[1], metadata, metasize);
-
-          // Write the packet payload data
-          uint8_t * data = (uint8_t *) pkt->getPayload ();
-          unsigned i, n = 0;
-
-          for (i = 0; i < niov; i++)
-            {
-              memcpy ((void *)&data[n], iov[i].iov_base, iov[i].iov_len);
-              n += iov[i].iov_len;
-            }
+          pkt->write (dispatch_id, metadata, iov, niov);
 
           sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
           // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket (pkt);
+          _fifo[fnum].producePacket ((T_Packet *)pkt);
 
           TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
           return XMI_SUCCESS;
@@ -455,10 +419,12 @@ namespace XMI
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
 
-      T_Packet * pkt = _fifo[fnum].nextInjPacket ();
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
 
       if (pkt != NULL)
         {
+XMI_abort();
+#if 0
           uint16_t * hdr = (uint16_t *) pkt->getHeader ();
 
           // First 2 bytes is the dispatch id.
@@ -490,6 +456,7 @@ namespace XMI
 
           TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << CM_SUCCESS\n", __global.mapping.task(), fnum, msg));
           return XMI_SUCCESS;
+#endif
         }
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << CM_EAGAIN\n", __global.mapping.task(), fnum, msg));
@@ -511,23 +478,19 @@ namespace XMI
       if (__sendQMask != 0) events += advance_sendQ ();
 
       // Advance any pending receive messages.
-      T_Packet * pkt = NULL;
+      PacketImpl * pkt = NULL;
+      uint16_t id;
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->nextRecPacket()\n", __global.mapping.task()));
 
-      while ((pkt = _rfifo->nextRecPacket()) != NULL)
+      while ((pkt = (PacketImpl *)_rfifo->nextRecPacket()) != NULL)
         {
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before pkt->getHeader()\n", __global.mapping.task()));
-          uint8_t * hdr = (uint8_t *) pkt->getHeader ();
-
-          uint16_t id = *((uint16_t *) & hdr[0]);
-          void * meta = (void *) & hdr[2];
+          void * meta = (void *) pkt->metadata (id);
           void * data = pkt->getPayload ();
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... hdr = %p, hdr[0] = 0x%0x, hdr[1] = 0x%0x, id = %d, meta = %p, data = %p\n", __global.mapping.task(), hdr, hdr[0], hdr[1], id, meta, data));
+          _dispatch[id].function (meta, data, T_Packet::payloadSize_impl, _dispatch[id].clientdata, data);
 
-          mem_sync (); // TODO -- is this needed?
-
-          _dispatch[id].function (meta, data, pkt->payloadSize(), _dispatch[id].clientdata, data);
+mem_sync (); // TODO -- is this needed?
 
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
@@ -537,12 +500,10 @@ namespace XMI
         }
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
-
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl() << ... events = %d\n", __global.mapping.task(), events));
+
 #ifdef TRAP_ADVANCE_DEADLOCK
-
       if (events) iteration = 0;
-
 #endif
       return events;
     }

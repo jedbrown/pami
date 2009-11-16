@@ -33,7 +33,8 @@ namespace XMI
 
           inline void * getHeader ();
           size_t headerSize ();
-          inline void copyHeader (void * addr);
+          inline void copyHeader (void * dst);
+          inline void writeHeader (void * src);
 
           inline void * getPayload ();
           size_t payloadSize ();
@@ -59,9 +60,15 @@ namespace XMI
       }
 
       template <class T_Packet>
-      void Packet<T_Packet>::copyHeader (void * addr)
+      void Packet<T_Packet>::copyHeader (void * dst)
       {
-        static_cast<T_Packet*>(this)->copyHeader_impl (addr);
+        static_cast<T_Packet*>(this)->copyHeader_impl (dst);
+      }
+
+      template <class T_Packet>
+      void Packet<T_Packet>::writeHeader (void * src)
+      {
+        static_cast<T_Packet*>(this)->writeHeader_impl (src);
       }
 
       template <class T_Packet>
