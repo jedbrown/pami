@@ -423,43 +423,20 @@ namespace XMI
 
       if (pkt != NULL)
         {
-XMI_abort();
-#if 0
-          uint16_t * hdr = (uint16_t *) pkt->getHeader ();
-
-          // First 2 bytes is the dispatch id.
-          hdr[0] = msg->getDispatchId ();
-
-          // Remaining header bytes are metadata.
-          memcpy (&hdr[1], msg->getMetadata(), T_Packet::headerSize_impl - sizeof(uint16_t));
-
-          // Write the packet payload data
-          uint8_t * data = (uint8_t *) pkt->getPayload ();
-          size_t n = 0;
-          size_t max = pkt->payloadSize();
-
-          void * payload;
-          size_t bytes;
-
-          do
-            {
-              msg->next (&payload, bytes, max);
-              memcpy ((void *)(data + n), payload, bytes);
-              n += bytes;
-            }
-          while (!msg->done() && (n < max));
+          struct iovec iov[1];
+          iov[0].iov_base = msg->next (iov[0].iov_len, T_Packet::payloadSize_impl);
+          pkt->write (msg->getDispatchId (), msg->getMetadata(), iov);
 
           sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
           // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket (pkt);
+          _fifo[fnum].producePacket ((T_Packet *)pkt);
 
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << CM_SUCCESS\n", __global.mapping.task(), fnum, msg));
+          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << XMI_SUCCESS\n", __global.mapping.task(), fnum, msg));
           return XMI_SUCCESS;
-#endif
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << CM_EAGAIN\n", __global.mapping.task(), fnum, msg));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << XMI_EAGAIN\n", __global.mapping.task(), fnum, msg));
       return XMI_EAGAIN;
     };
 
