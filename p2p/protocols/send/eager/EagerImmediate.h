@@ -86,7 +86,8 @@ namespace XMI
           /// \param[in]  cookie       Opaque application dispatch data
           /// \param[in]  device       Device that implements the message interface
           /// \param[in]  origin_task  Origin task identifier
-          /// \param[in]  context      Communication context
+          /// \param[in]  client      Communication client
+          /// \param[in]  contextid      Communication context
           /// \param[out] status       Constructor status
           ///
           inline EagerImmediate (size_t                     dispatch,
@@ -97,7 +98,7 @@ namespace XMI
                                  xmi_client_t              client,
                                  size_t                     contextid,
                                  xmi_result_t             & status) :
-              _send_model (device, context),
+              _send_model (device, client, contextid),
               _fromRank (origin_task),
               _client (client),
               _contextid (contextid),
@@ -225,7 +226,7 @@ namespace XMI
             xmi_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
 
             // Invoke the registered dispatch function.
-            send->_dispatch_fn.p2p (send->_client,   // Communication context handle
+            send->_dispatch_fn.p2p (send->_client,   // Communication client handle
                                     send->_contextid, // Communication context id
                                     send->_cookie,    // Dispatch cookie
                                     m->fromRank,      // Origin (sender) rank

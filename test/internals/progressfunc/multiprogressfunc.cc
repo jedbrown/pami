@@ -48,7 +48,7 @@ static int my_func(void *cd) {
 	return 1;
 }
 
-void done_cb(xmi_context_t ctx, void *cd, xmi_result_t err) {
+void done_cb(xmi_client_t client, size_t ctx, void *cd, xmi_result_t err) {
 	unsigned *done = (unsigned *)cd;
 	if (err != XMI_SUCCESS) {
 		fprintf(stderr, "Completion callback: done ERROR: %d\n", err);

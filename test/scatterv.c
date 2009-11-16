@@ -12,13 +12,13 @@
 volatile unsigned       _g_barrier_active;
 volatile unsigned       _g_scatterv_active;
 
-void cb_barrier (void *ctxt, void * clientdata, xmi_result_t err)
+void cb_barrier (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void cb_scatterv (void *ctxt, void * clientdata, xmi_result_t err)
+void cb_scatterv (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t err)
 {
     int * active = (int *) clientdata;
     (*active)--;

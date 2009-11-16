@@ -57,8 +57,8 @@ namespace XMI
         /// \param[in] device  Shared memory device
         ///
         ShmemModel (T_Device & device, xmi_client_t client, size_t context) :
-            Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
-            Interface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, context),
+            Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, client, context),
+            Interface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, client, context),
             _device (device),
             _client (client),
             _context (context)

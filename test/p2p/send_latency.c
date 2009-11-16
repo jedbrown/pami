@@ -52,7 +52,7 @@ typedef struct
 
 /* --------------------------------------------------------------- */
 
-static void decrement (xmi_context_t   context,
+static void decrement (xmi_client_t client, size_t   context,
                        void          * cookie,
                        xmi_result_t    result)
 {
@@ -63,7 +63,7 @@ static void decrement (xmi_context_t   context,
 
 /* --------------------------------------------------------------- */
 static void test_dispatch (
-    xmi_context_t        context,      /**< IN: XMI context */
+    xmi_client_t        client,      /**< IN: XMI client */
     size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
     xmi_task_t           task,         /**< IN: source task */

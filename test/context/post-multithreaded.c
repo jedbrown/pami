@@ -35,7 +35,7 @@ typedef struct work
 
 endpoint_t _endpoint[2];
 
-void do_work (xmi_context_t   context,
+void do_work (xmi_client_t client, size_t   context,
               void          * cookie,
               xmi_result_t    result)
 {

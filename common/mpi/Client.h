@@ -119,6 +119,26 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
+	inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
+	{
+		xmi_result_t result = XMI_ERROR;
+
+		switch (configuration->name)
+		{
+		case XMI_TASK_ID:
+			configuration->value.intval = __global.mapping.task();
+			result = XMI_SUCCESS;
+			break;
+		case XMI_NUM_TASKS:
+			configuration->value.intval = __global.mapping.size();
+			result = XMI_SUCCESS;
+			break;
+		default:
+			break;
+		}
+		return result;
+	}
+
 	inline size_t getNumContexts()
 	{
 		return _ncontexts;

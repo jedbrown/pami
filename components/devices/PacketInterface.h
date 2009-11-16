@@ -100,7 +100,7 @@ namespace XMI
           /// \param[in] device  Packet device reference
           /// \param[in] context Communication context
           ///
-          PacketModel (T_Device & device, xmi_context_t context)
+          PacketModel (T_Device & device, xmi_client_t client, size_t context)
           {
             // This compile time assert verify that the specific packet model
             // class, T_Model, has correctly specified the same value for the

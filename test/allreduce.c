@@ -179,7 +179,7 @@ unsigned elemsize_array[] =
 volatile unsigned       _g_barrier_active;
 volatile unsigned       _g_allreduce_active;
 
-void cb_barrier (void *ctxt, void * clientdata, xmi_result_t err)
+void cb_barrier (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
@@ -194,7 +194,7 @@ static double timer()
 }
 
 
-void cb_allreduce (void *ctxt, void * clientdata, xmi_result_t err)
+void cb_allreduce (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;

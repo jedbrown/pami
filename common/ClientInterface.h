@@ -46,6 +46,8 @@ namespace XMI
 
         inline xmi_result_t destroyContext (xmi_context_t context);
 
+	inline xmi_result_t queryConfiguration (xmi_configuration_t * configuration);
+
     }; // end class XMI::Client::Client
 
     template <class T_Client, class T_Context>
@@ -77,6 +79,12 @@ namespace XMI
     inline xmi_result_t Client<T_Client,T_Context>::destroyContext (xmi_context_t context)
     {
       return static_cast<T_Client*>(this)->destroyContext_impl(context);
+    }
+
+    template <class T_Client, class T_Context>
+    xmi_result_t Client<T_Client,T_Context>::queryConfiguration (xmi_configuration_t * configuration)
+    {
+        return static_cast<T_Client*>(this)->queryConfiguration_impl(configuration);
     }
 
   }; // end namespace Interface

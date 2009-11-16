@@ -83,13 +83,13 @@ static double timer()
 }
 
 
-void cb_barrier (xmi_context_t ctxt, void * clientdata, xmi_result_t err)
+void cb_barrier (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void cb_alltoallv (xmi_context_t ctxt, void * clientdata, xmi_result_t res)
+void cb_alltoallv (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t res)
 {
   int * active = (int *) clientdata;
   TRACE(("%d: cb_alltoallv active:%d(%p)\n",XMI_Rank(),*active,active));

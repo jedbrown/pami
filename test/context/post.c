@@ -8,7 +8,7 @@
 
 volatile unsigned _value[2];
 
-void do_work (xmi_context_t   context,
+void do_work (xmi_client_t client, size_t   context,
               void          * cookie,
               xmi_result_t    result)
 {

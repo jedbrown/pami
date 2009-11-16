@@ -97,7 +97,7 @@ namespace XMI
           /// \param[in]  cookie       Opaque application dispatch data
           /// \param[in]  device       Device that implements the message interface
           /// \param[in]  origin_task  Origin task identifier
-          /// \param[in]  context      Communication context
+          /// \param[in]  client      Communication client
           /// \param[out] status       Constructor status
           ///
           inline EagerSimple (size_t                     dispatch,
@@ -105,16 +105,16 @@ namespace XMI
                               void                     * cookie,
                               T_Device                 & device,
                               xmi_task_t                 origin_task,
-                              xmi_context_t              context,
+                              xmi_client_t              client,
                               size_t                     contextid,
                               xmi_result_t             & status) :
-              _envelope_model (device, context),
-              _longheader_model (device, context),
-              _data_model (device, context),
-              _ack_model (device, context),
+              _envelope_model (device, client, contextid),
+              _longheader_model (device, client, contextid),
+              _data_model (device, client, contextid),
+              _ack_model (device, client, contextid),
               _device (device),
               _fromRank (origin_task),
-              _context (context),
+              _client (client),
               _contextid (contextid),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
@@ -147,7 +147,7 @@ namespace XMI
             // ----------------------------------------------------------------
 
 
-            _connection = _connection_manager.getConnectionArray (context);
+            _connection = _connection_manager.getConnectionArray (client, contextid);
 
             TRACE_ERR((stderr, "EagerSimple() [0]\n"));
             status = _envelope_model.init (dispatch,
@@ -481,7 +481,7 @@ namespace XMI
           T_Model         _ack_model;
           T_Device      & _device;
           xmi_task_t      _fromRank;
-          xmi_context_t   _context;
+          xmi_client_t   _client;
           size_t          _contextid;
 
           xmi_dispatch_callback_fn   _dispatch_fn;
@@ -543,7 +543,7 @@ namespace XMI
             TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. rank = %zd, header = %p, header bytes = %zd\n", metadata->fromRank, header, metadata->metabytes));
 
             // Invoke the registered dispatch function.
-            _dispatch_fn.p2p (_context,            // Communication context
+            _dispatch_fn.p2p (_client,            // Communication client
                               _contextid,          // Context index
                               _cookie,             // Dispatch cookie
                               metadata->fromRank,  // Origin (sender) rank
@@ -568,7 +568,7 @@ namespace XMI
                 TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->info.local_fn = %p\n", state->info.local_fn));
 
                 if (state->info.local_fn)
-                  state->info.local_fn (_context,
+                  state->info.local_fn (_client, _contextid,
                                         state->info.cookie,
                                         XMI_SUCCESS);
 
@@ -615,7 +615,7 @@ namespace XMI
 
             eager->freeSendState (state);
 
-            if (remote_fn) remote_fn (eager->_context, fn_cookie, XMI_SUCCESS);
+            if (remote_fn) remote_fn (eager->_client, eager->_contextid, fn_cookie, XMI_SUCCESS);
 
             TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_direct()\n"));
             return 0;
@@ -889,7 +889,7 @@ namespace XMI
                 // No more data is to be written to the receive buffer.
                 // Invoke the receive done callback.
                 if (state->info.local_fn)
-                  state->info.local_fn (eager->_context,
+                  state->info.local_fn (eager->_client, eager->_contextid,
                                         state->info.cookie,
                                         XMI_SUCCESS);
 
@@ -940,7 +940,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (eager->client, eager->_context, state->cookie, XMI_SUCCESS);
+                state->local_fn (eager->_client, eager->_contextid, state->cookie, XMI_SUCCESS);
               }
 
             if (state->remote_fn == NULL)
@@ -959,7 +959,7 @@ namespace XMI
           /// completion callback and free the receive state object
           /// memory.
           ///
-          static void receive_complete (xmi_context_t   context,
+          static void receive_complete (xmi_client_t client, size_t   context,
                                         void          * cookie,
                                         xmi_result_t    result)
           {

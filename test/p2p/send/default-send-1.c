@@ -15,7 +15,7 @@
 #define TRACE(x)
 #endif
 
-static void recv_done (xmi_context_t   context,
+static void recv_done (xmi_client_t client, size_t   context,
                        void          * cookie,
                        xmi_result_t    result)
 {
@@ -48,7 +48,7 @@ static void test_dispatch (
   return;
 }
 
-static void send_done_local (xmi_context_t   context,
+static void send_done_local (xmi_client_t client, size_t   context,
                              void          * cookie,
                              xmi_result_t    result)
 {
@@ -57,7 +57,7 @@ static void send_done_local (xmi_context_t   context,
   (*active)--;
 }
 
-static void send_done_remote (xmi_context_t   context,
+static void send_done_remote (xmi_client_t client, size_t   context,
                               void          * cookie,
                               xmi_result_t    result)
 {

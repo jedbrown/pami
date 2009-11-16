@@ -47,17 +47,17 @@ static struct
 } done = { {0,0}, {0,0} };
 
 
-static void RecvLongDoneCB(xmi_context_t   context,
+static void RecvLongDoneCB(xmi_client_t client, size_t   context,
                     void          * cookie,
                     xmi_result_t    result)
 {
   unsigned *data = (unsigned*)cookie;
-  printf("Rank=%zu Channel=%p <Fini long  msg>   data=%x\n", rank, context, data[0]);
+  printf("Rank=%zu Channel=%p/%zd <Fini long  msg>   data=%x\n", rank, client, context, data[0]);
   done.l.r = 1;
   free(cookie);
 }
 
-static void RecvLongCB(xmi_context_t   context,
+static void RecvLongCB(xmi_client_t   client,
                        size_t          contextid,
                        void          * cookie,
                        xmi_task_t      remote_task,
@@ -79,10 +79,10 @@ static void RecvLongCB(xmi_context_t   context,
   recv->data.simple.bytes = size;
 
 #warning I need each channel to have an id number/index to write a multi-context recv-queue.
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu -- context id = %zd\n", rank, context, remote_task, msginfo[0], size, contextid);
+  printf("Rank=%zu Channel=%p/%zd <Got  short msg>   remote=%zu msginfo=%x len=%zu -- context id = %zd\n", rank, client, contextid, remote_task, msginfo[0], size, contextid);
 }
 
-static void RecvShortCB(xmi_context_t   context,
+static void RecvShortCB(xmi_client_t   client,
                         size_t          contextid,
                         void          * cookie,
                         xmi_task_t      remote_task,
@@ -96,16 +96,16 @@ static void RecvShortCB(xmi_context_t   context,
   assert(msginfo_size >= sizeof(unsigned));
   unsigned* msginfo = (unsigned*)_msginfo;
   unsigned* data    = (unsigned*)_addr;
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu data=%x -- context id = %zd\n", rank, context, remote_task, msginfo[0], size, data[0], contextid);
+  printf("Rank=%zu Channel=%p/%zd <Got  short msg>   remote=%zu msginfo=%x len=%zu data=%x -- context id = %zd\n", rank, client, contextid, remote_task, msginfo[0], size, data[0], contextid);
   done.s.r = 1;
 }
 
-static void SendLongDoneCB(xmi_context_t   context,
+static void SendLongDoneCB(xmi_client_t client, size_t   context,
                     void          * cookie,
                     xmi_result_t    result)
 {
   unsigned *data = (unsigned*)cookie;
-  printf("Rank=%zu Channel=%p <Sent long  msg>   data=%x\n", rank, context, data[0]);
+  printf("Rank=%zu Channel=%p/%zd <Sent long  msg>   data=%x\n", rank, client, context, data[0]);
   done.l.s = 1;
 }
 

@@ -167,7 +167,7 @@ inline bool XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(xmi_mul
 	for (int x = 0; x < 32; ++x) {
 		if (_barrier.poll() == XMI::Atomic::Interface::Done) {
 			if (msync->cb_done.function) {
-				msync->cb_done.function(NULL, msync->cb_done.clientdata, XMI_SUCCESS);
+				msync->cb_done.function(msync->client, msync->context, msync->cb_done.clientdata, XMI_SUCCESS);
 			}
 			return true;
 		}

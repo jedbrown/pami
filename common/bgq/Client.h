@@ -129,6 +129,26 @@ namespace XMI
           //_context_list->unlock ();
         }
 
+	inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
+	{
+		xmi_result_t result = XMI_ERROR;
+
+		switch (configuration->name)
+		{
+		case XMI_TASK_ID:
+			configuration->value.intval = __global.mapping.task();
+			result = XMI_SUCCESS;
+			break;
+		case XMI_NUM_TASKS:
+			configuration->value.intval = __global.mapping.size();
+			result = XMI_SUCCESS;
+			break;
+		default:
+			break;
+		}
+		return result;
+	}
+
 	// the friend clause is actually global, but this helps us remember why...
 	//friend class XMI::Device::Generic::Device;
 	//friend class xmi.cc

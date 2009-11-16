@@ -33,13 +33,13 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void cb_barrier (void *context, void * clientdata, xmi_result_t res)
+void cb_barrier (xmi_client_t client, size_t context, void * clientdata, xmi_result_t res)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void cb_broadcast (void *context, void * clientdata, xmi_result_t res)
+void cb_broadcast (xmi_client_t client, size_t context, void * clientdata, xmi_result_t res)
 {
     int * active = (int *) clientdata;
     (*active)--;
