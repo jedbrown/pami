@@ -171,9 +171,9 @@ namespace XMI
           return 0;
         };
 
-        inline void next (void **addr, size_t & bytes, size_t max)
+        inline void * next (size_t & bytes, size_t max)
         {
-          *addr = (void *)(((uint8_t *)_iov[_niov].iov_base) + _nbytes);
+          void * addr = (void *)(((uint8_t *)_iov[_niov].iov_base) + _nbytes);
 
           // Return minimum of the bytes remaining in this iov and the
           // maximum packet payload.
@@ -185,6 +185,8 @@ namespace XMI
               _nbytes = 0;
               _niov++;
             }
+
+          return addr;
         };
 
         inline bool done ()

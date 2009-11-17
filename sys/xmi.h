@@ -3267,19 +3267,17 @@ extern "C"
    */
   typedef enum {
     /* Attribute            Init / Query / Update                                              */
-    XMI_ATTRIBUTES,      /**<  Q  : xmi_attribute_t[] : NULL terminated list of all attributes */
     XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task (AKA "rank")           */
-    XMI_NUM_TASKS,       /**<  Q  : size_t            : total number of tasks                  */
+    XMI_NUM_TASKS,       /**<  Q  : size_t            : Total number of tasks                  */
     XMI_CLOCK_MHZ,       /**<  Q  : size_t            : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
     XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
     XMI_MEM_SIZE,        /**<  Q  : size_t            : Size of the core main memory, in units of 1024^2 Bytes    */
     XMI_PROCESSOR_NAME,  /**<  Q  : char[]            : A unique name string for the calling node. */
-    XMI_PROCESSOR_NAME_SIZE/**< Q: size_t            : The size of the unique name string     */
+    XMI_PROCESSOR_NAME_SIZE/**<Q  : size_t            : The size of the unique name string     */
   } xmi_attribute_name_t;
 
   typedef union
   {
-    xmi_attribute_name_t * attributes;
     size_t                 intval;
     char                 * carray;
   } xmi_attribute_value_t;

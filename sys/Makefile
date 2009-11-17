@@ -1,4 +1,3 @@
-SUBDIRS   = examples examples/config
 HEADERS   = ${shell echo *.h}
 HEADERS_O = ${patsubst %.h,  %.h.o, ${HEADERS}}
 .PHONY: docs clean check ${SUBDIRS} default all install
@@ -9,7 +8,7 @@ docs:
 	${RM} -r html
 	doxygen ./Doxyfile
 
-check: ${HEADERS_O} examples examples/config xmi_checkall.h.o
+check: ${HEADERS_O} xmi_checkall.h.o
 xmi_checkall.h.o: ${HEADERS}
 	@perl cmp ${CC} $@ ${HEADERS}
 	@echo All of {${HEADERS}} parse together

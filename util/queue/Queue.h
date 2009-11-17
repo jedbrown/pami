@@ -193,6 +193,8 @@ namespace XMI
 
       void deleteElem (QueueElem *elem);
 
+      void insertElem (QueueElem *elem, size_t position);
+
       //////////////////////////////////////////////////////////////////
       /// \brief      Dump the queue state
       /// \param str: A string to append to the output
@@ -363,6 +365,29 @@ inline void XMI::Queue::deleteElem (QueueElem *elem)
       _size --;
     }
 }
+
+inline void XMI::Queue::insertElem (QueueElem *elem, size_t position)
+{
+  if (position == 0)
+  {
+    pushHead (elem);
+    return;
+  }
+
+  size_t i;
+  QueueElem * insert = _head;
+  for (i=1; i<position; i++)
+  {
+    insert = insert->next();
+  }
+  elem->setPrev (insert);
+  elem->setNext (insert->next());
+  insert->setNext (elem);
+  _size++;
+
+  return;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // The following are similar to above but support multi-threaded queues in the
