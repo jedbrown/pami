@@ -143,6 +143,7 @@ namespace XMI
             // to the start of the fifo.
             if (p == &_packet[T_FifoSize-1])
               {
+                mem_sync ();
                 _tail.fetch_and_clear ();
               }
           };
