@@ -174,6 +174,8 @@ namespace XMI
             //if ((((((unsigned) dst) | ((unsigned) src)) & 0x0f) == 0) && (n == _worksize))
             bool ismultiple256 = !(n & 0x000000ff);
 
+#ifdef NOT_WORKING
+#error this overruns buffers because copy<256> is the wrong expression for Type<size_t>
             typedef uint8_t uint2048_t[256];
             uint2048_t * d = (uint2048_t *) dst;
             uint2048_t * s = (uint2048_t *) src;
@@ -183,13 +185,12 @@ namespace XMI
               unsigned i, loop = n >> 8; // --> n/256
               for (i=0; i<loop; i++)
               {
-                //Type<xmi_quad_t>::copy<256>((xmi_quad_t *)d,(xmi_quad_t *)s);
-                //Type<uint32_t>::copy<256>((uint32_t *)d,(uint32_t *)s);
                 Type<size_t>::copy<256>((size_t *)d,(size_t *)s);
                 d++; s++;
               }
             }
             else
+#endif // NOT_WORKING
             {
               memcpy(dst,src,n);
             }
