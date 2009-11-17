@@ -6,9 +6,8 @@ int main(int argc, char ** argv) {
 	unsigned x;
 	xmi_client_t client;
 	xmi_result_t status = XMI_ERROR;
-	char *name = "multicombine test";
 
-	status = XMI_Client_initialize(name, &client);
+	status = XMI_Client_initialize("xmitest", &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
 		return 1;

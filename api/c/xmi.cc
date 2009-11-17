@@ -135,7 +135,6 @@ extern "C" xmi_result_t XMI_Context_advance(xmi_client_t client, size_t context,
   XMI::Client * clnt = (XMI::Client *) client;
   XMI::Context * ctx = clnt->getContext(context);
   ctx->advance (maximum, result);
-#warning need a real return value here
   return result;
 }
 

@@ -110,6 +110,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
     }
 #endif
   }
+  return XMI_SUCCESS;
 }
 
 
