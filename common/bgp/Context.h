@@ -184,20 +184,32 @@ namespace XMI
 
         switch (configuration->name)
           {
-            case XMI_TASK_ID:
-              configuration->value.intval = __global.mapping.task();
-              result = XMI_SUCCESS;
-              break;
-            case XMI_NUM_TASKS:
-              configuration->value.intval = __global.mapping.size();
-              result = XMI_SUCCESS;
-              break;
-            default:
-              break;
+          case XMI_TASK_ID:
+            configuration->value.intval = __global.mapping.task();
+            result = XMI_SUCCESS;
+            break;
+          case XMI_NUM_TASKS:
+            configuration->value.intval = __global.mapping.size();
+            result = XMI_SUCCESS;
+            break;
+          case XMI_CLOCK_MHZ:
+          case XMI_WTIMEBASE_MHZ:
+            configuration->value.intval = __global.time.clockMHz();
+            result = XMI_SUCCESS;
+            break;
+          case XMI_WTICK:
+            configuration->value.doubleval =__global.time.tick();
+            result = XMI_SUCCESS;
+            break;
+          case XMI_MEM_SIZE:
+          case XMI_PROCESSOR_NAME:
+          case XMI_PROCESSOR_NAME_SIZE:
+          default:
+            break;
           };
 
         return result;
-      };
+      }
 
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
       {

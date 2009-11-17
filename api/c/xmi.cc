@@ -54,27 +54,11 @@ double XMI_Wtime ()
 }
 
 ///
-/// \copydoc XMI_Wtick
-///
-double XMI_Wtick()
-{
-  return __global.time.tick();
-}
-
-///
 /// \copydoc XMI_Wtimebase
 ///
 unsigned long long XMI_Wtimebase()
 {
   return __global.time.timebase();
-}
-
-///
-/// \copydoc XMI_Wclockmhz
-///
-size_t XMI_Wclockmhz ()
-{
-  return __global.time.clockMHz();
 }
 
 

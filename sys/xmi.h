@@ -3264,6 +3264,7 @@ extern "C"
     XMI_NUM_TASKS,       /**<  Q  : size_t            : Total number of tasks                  */
     XMI_CLOCK_MHZ,       /**<  Q  : size_t            : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
     XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
+    XMI_WTICK,           /**<  Q  : double            : This has the same definition as MPI_Wtick(). */
     XMI_MEM_SIZE,        /**<  Q  : size_t            : Size of the core main memory, in units of 1024^2 Bytes    */
     XMI_PROCESSOR_NAME,  /**<  Q  : char[]            : A unique name string for the calling node. */
     XMI_PROCESSOR_NAME_SIZE/**<Q  : size_t            : The size of the unique name string     */
@@ -3271,8 +3272,9 @@ extern "C"
 
   typedef union
   {
-    size_t                 intval;
-    char                 * carray;
+    size_t   intval;
+    double   doubleval;
+    char   * chararray;
   } xmi_attribute_value_t;
 
 #define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */
@@ -3353,13 +3355,6 @@ extern "C"
   double XMI_Wtime();
 
   /**
-   * \brief  Computes the smallest clock resolution theoretically possible
-   * \note   This has the same definition as MPI_Wtick
-   * \return The duration of a single timebase clock increment in seconds
-   */
-  double XMI_Wtick();
-
-  /**
    * \brief  Returns the number of "cycles" elapsed on the calling processor.
    * \return Number of "cycles" since an arbitrary time in the past.
    *
@@ -3367,12 +3362,6 @@ extern "C"
    * if true cycles are unavailable.
    */
   unsigned long long XMI_Wtimebase();
-
-  /**
-   * \brief  Returns the clock megahertz
-   * \return Returns the clock megahertz
-   */
-  size_t XMI_Wclockmhz ();
 
   /** \} */ /* end of "Time" group */
 
