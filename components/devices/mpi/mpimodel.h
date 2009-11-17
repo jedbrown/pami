@@ -74,6 +74,9 @@ namespace XMI
                               Interface::RecvFunction_t   read_recv_func,
                               void                      * read_recv_func_parm)
         {
+#ifdef USE_GCC_ICE_WORKAROUND
+          COMPILE_TIME_ASSERT(sizeof(T_Message) <= 512);
+#endif // USE_GCC_ICE_WORKAROUND
           _dispatch_id = _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm);
          TRACE_ADAPTOR((stderr,"<%#.8X>MPIModel::init_impl %d \n",(int)this, _dispatch_id));
          return XMI_SUCCESS;
