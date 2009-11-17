@@ -231,7 +231,7 @@ namespace XMI
         {
           assert(0);
           return XMI_UNIMPL;
-        }        
+        }
 
       inline xmi_result_t put_impl (xmi_put_simple_t * parameters)
         {

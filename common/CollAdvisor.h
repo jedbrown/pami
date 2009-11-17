@@ -23,7 +23,7 @@
 extern "C"
 {
 #endif
-  
+
 typedef struct
 {
   xmi_metadata_t metadata;
@@ -40,9 +40,9 @@ xmi_result_t xmi_advisor_init();
 
 xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
                                            xmi_metadata_t alg_meta,
-                                           xmi_xfer_type_t coll_op, 
+                                           xmi_xfer_type_t coll_op,
                                            xmi_algorithm_t *alg);
-  
+
 xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
                                    xmi_xfer_type_t xfer_type);
 

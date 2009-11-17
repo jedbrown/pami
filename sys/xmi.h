@@ -199,7 +199,7 @@ extern "C"
   } xmi_metadata_t;
 
   extern void xmi_metadata_multiset(xmi_ca_t *, ...);
-                           
+
   /** \} */ /* end of "Compact attributes" group */
 
 
@@ -1123,7 +1123,7 @@ extern "C"
    * \param[in]     geometry       An input geometry to be analyzed.
    * \param[in]     type           type of collective op.
    * \param[in]     algs           array of algorithm to be filled in.
-   * \param[out]    mdata          metadata array to be filled in if algorithms 
+   * \param[out]    mdata          metadata array to be filled in if algorithms
    *                               are applicable, can be NULL.
    * \param[in]     algorithm_type tells whether this an "always works"
    *                               or "works under-condition"
@@ -3373,7 +3373,7 @@ extern "C"
    * \return Returns the clock megahertz
    */
   size_t XMI_Wclockmhz ();
-  
+
   /** \} */ /* end of "Time" group */
 
 

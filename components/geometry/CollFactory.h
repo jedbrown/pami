@@ -34,7 +34,7 @@ namespace XMI
                                             xmi_metadata_t *mdata,
                                             int algorithm_type,
                                             int num);
-      
+
       inline xmi_result_t  collective      (xmi_xfer_t           *collective);
       inline xmi_result_t  ibroadcast      (xmi_broadcast_t      *broadcast);
       inline xmi_result_t  iallreduce      (xmi_allreduce_t      *allreduce);
@@ -69,7 +69,7 @@ namespace XMI
     {
       return static_cast<T_Collfactory*>(this)->algorithms_num_impl(collective, lists_lengths);
     }
-    
+
     template <class T_Collfactory>
     inline xmi_result_t CollFactory<T_Collfactory>::algorithms_info(xmi_xfer_type_t collective,
                                                                    xmi_algorithm_t *alglist,
@@ -79,8 +79,8 @@ namespace XMI
     {
       return static_cast<T_Collfactory*>(this)->algorithms_info_impl(collective, alglist, mdata, algorithm_type, num);
     }
-    
-    
+
+
     template <class T_Collfactory>
     inline xmi_result_t
     CollFactory<T_Collfactory>::ibroadcast(xmi_broadcast_t *broadcast)

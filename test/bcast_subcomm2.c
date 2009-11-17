@@ -155,7 +155,7 @@ int main(int argc, char*argv[])
                                           num_algorithm[0]);
 
   }
- 
+
 
   xmi_barrier_t world_barrier;
   world_barrier.xfer_type = XMI_XFER_BARRIER;
@@ -208,7 +208,7 @@ int main(int argc, char*argv[])
              result);
           return 1;
         }
-        
+
         if (num_algorithm[0])
         {
           bottom_algorithm = (xmi_algorithm_t*)
@@ -220,9 +220,9 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
-        
+
         _barrier (context, &world_barrier);
         bottom_barrier.xfer_type = XMI_XFER_BARRIER;
         bottom_barrier.cb_done   = cb_barrier;
@@ -241,7 +241,7 @@ int main(int argc, char*argv[])
              result);
           return 1;
         }
-        
+
         if (num_algorithm[0])
         {
           result = XMI_Geometry_algorithms_info(context,
@@ -251,9 +251,9 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
-        
+
         bottom_broadcast.xfer_type = XMI_XFER_BROADCAST;
         bottom_broadcast.cb_done   = cb_broadcast;
         bottom_broadcast.cookie    = (void*)&_g_broadcast_active;
@@ -302,7 +302,7 @@ int main(int argc, char*argv[])
              result);
           return 1;
         }
-        
+
         if (num_algorithm[0])
         {
           top_algorithm = (xmi_algorithm_t*)
@@ -314,7 +314,7 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
 
 
@@ -335,7 +335,7 @@ int main(int argc, char*argv[])
              result);
           return 1;
         }
-        
+
         if (num_algorithm[0])
         {
           result = XMI_Geometry_algorithms_info(context,
@@ -345,7 +345,7 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
 
         top_broadcast.xfer_type = XMI_XFER_BROADCAST;

@@ -111,7 +111,7 @@ namespace XMI
                                                     xmi_metadata_t *mdata,
                                                     int algorithm_type,
                                                     int num);
-      
+
         inline xmi_result_t multisend_getroles(size_t          dispatch,
                                                int            *numRoles,
                                                int            *replRole);
@@ -380,7 +380,7 @@ namespace XMI
       return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(context, geometry, type, algs, mdata, algorithm_type, num);
 
     }
-    
+
     template <class T_Context>
     xmi_result_t Context<T_Context>::multisend_getroles(size_t          dispatch,
                                                         int            *numRoles,

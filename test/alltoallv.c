@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/alltoall.c
+ * \file test/alltoallv.c
  * \brief ???
  */
 

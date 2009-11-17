@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file protocols/prod/get/cdi/GetFactory.h
+/// \file p2p/protocols/get/Get.h
 /// \brief Get protocol factory for CDI devices that implement the 'dma' interface.
 ///
 /// The GetProtocolFactory class defined in this file uses C++ templates
@@ -18,8 +18,8 @@
 /// \b protocol for CDI dma devices defined here is split into \b three files
 /// for readability.
 ///
-#ifndef __xmi_protocol_get_cdi_factory_h__
-#define __xmi_protocol_get_cdi_factory_h__
+#ifndef __p2p_protocols_get_Get_h__
+#define __p2p_protocols_get_Get_h__
 
 #include <string.h>
 

@@ -426,7 +426,7 @@ namespace XMI
                                                   int num)
         {
           return XMI_UNIMPL;
-          
+
         }
 
       inline xmi_result_t collective (xmi_xfer_t * parameters)

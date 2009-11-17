@@ -109,12 +109,12 @@ namespace XMI
         if(rq == NULL)
           return XMI_UNIMPL;
         lists_lengths[0] = rq->size();
-       
+
         /* we return 0 for now for the "sometimes works" list */
         lists_lengths[1] = 0;
         return XMI_SUCCESS;
       }
-      
+
       inline xmi_result_t algorithms_info_impl(xmi_xfer_type_t collective,
                                                xmi_algorithm_t *alglist,
                                                xmi_metadata_t *mdata,
@@ -132,13 +132,13 @@ namespace XMI
 #warning need to implement this later
           ; //
         }
-       
+
         if(rq == NULL)
           return XMI_UNIMPL;
 
         if (num > rq->size())
           return XMI_ERROR;
-       
+
         for(i = 0; i < num; i++)
           alglist[i] = (size_t) i;
 
@@ -154,7 +154,7 @@ namespace XMI
         }
         return XMI_SUCCESS;
       }
-     
+
 
       /*
         we need to pass in global barrier instead
