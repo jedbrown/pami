@@ -3269,6 +3269,8 @@ extern "C"
     /* Attribute            Init / Query / Update                                              */
     XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task (AKA "rank")           */
     XMI_NUM_TASKS,       /**<  Q  : size_t            : Total number of tasks                  */
+    XMI_NUM_CONTEXTS,    /**<  Q  : size_t            : The maximum number of contexts allowed on this process */
+    XMI_CONST_CONTEXTS,  /**<  Q  : size_t            : All processes will return the same XMI_NUM_CONTEXTS */
     XMI_CLOCK_MHZ,       /**<  Q  : size_t            : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
     XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
     XMI_MEM_SIZE,        /**<  Q  : size_t            : Size of the core main memory, in units of 1024^2 Bytes    */
