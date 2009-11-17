@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file arch/i386/Arch.h
+ * \file arch/x86_64/Arch.h
  * \brief ???
  */
 
-#ifndef __arch_i386_Arch_h__
-#define __arch_i386_Arch_h__
+#ifndef __arch_x86_64_Arch_h__
+#define __arch_x86_64_Arch_h__
 
 #include "arch/ArchInterface.h"
 

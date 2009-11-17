@@ -62,7 +62,7 @@ static void send_done_remote (xmi_client_t client, size_t   context,
                               xmi_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  
+
   TRACE((stderr, "Called send_done_remote function.  active: %zd -> %zd\n", *active, *active-1));
   (*active)--;
   TRACE((stderr, "... send_done_remote function.  active = %zd\n", *active));

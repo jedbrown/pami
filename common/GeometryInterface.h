@@ -70,19 +70,19 @@ namespace XMI
                             unsigned     numcolors,
                             bool         globalcontext)
             {
-              xmi_ca_unset_all(&attributes);              
+              xmi_ca_unset_all(&attributes);
             }
             inline Geometry (T_Mapping *mapping,
                              unsigned   comm,
                              int        numranges,
                              xmi_geometry_range_t rangelist[])
             {
-              xmi_ca_unset_all(&attributes);              
+              xmi_ca_unset_all(&attributes);
             }
-            
+
             // list of attribute bits holding geometry info
             xmi_ca_t attributes;
-                 
+
             // These methods were originally from the CCMI Geometry class
             inline int                        getColorsArray();
             inline void                       setAsyncAllreduceMode(unsigned value);

@@ -97,8 +97,8 @@ namespace XMI
           return events;
         };
     };
-  
-  
+
+
     class Context : public Interface::Context<XMI::Context>
     {
     public:
@@ -286,7 +286,7 @@ namespace XMI
         {
           assert(0);
           return XMI_UNIMPL;
-        }        
+        }
 
       inline xmi_result_t put_impl (xmi_put_simple_t * parameters)
         {
@@ -533,12 +533,12 @@ namespace XMI
       SysDep                                _sysdep;
       ContextLock                           _lock;
       Work                                  _work;
-      XMI::Device::Generic::Device         &_generic;      
+      XMI::Device::Generic::Device         &_generic;
       MemoryAllocator<1024,16>              _request;
       LAPIDevice                            _lapi_device;
       LAPICollreg                          *_collreg;
       LAPIGeometry                         *_world_geometry;
-      LAPICollfactory                      *_world_collfactory;      
+      LAPICollfactory                      *_world_collfactory;
       xmi_geometry_range_t                  _world_range;
       unsigned                              _empty_advance;
       int                                   _myrank;

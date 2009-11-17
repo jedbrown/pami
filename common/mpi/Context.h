@@ -166,7 +166,7 @@ namespace XMI
           // this barrier is here because the shared memory init
           // needs to be synchronized
           // we shoudl find a way to remove this
-          
+
           MPI_Barrier(MPI_COMM_WORLD);
         }
 
@@ -203,7 +203,7 @@ namespace XMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
-		// this must be inside the loop, 
+		// this must be inside the loop,
 		// or else we only advance work when any exists.
 		events += _work.advance ();
 
@@ -222,9 +222,9 @@ namespace XMI
                 _empty_advance=0;
               }
 
-          
 
-          
+
+
           return events;
         }
 
@@ -486,7 +486,7 @@ namespace XMI
 
         }
 
-        
+
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
                                                   int            *numRoles,
                                                   int            *replRole)
@@ -562,7 +562,7 @@ namespace XMI
                         (id, fn, cookie, _shmem, __global.mapping.task(),
                          _context, _contextid, result);
                     }
-                
+
                 TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
                 if (result != XMI_SUCCESS)
                     {

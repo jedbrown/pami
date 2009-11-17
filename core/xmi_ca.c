@@ -23,13 +23,12 @@ void xmi_metadata_multiset(xmi_ca_t *ca_list, ...)
   va_start(arg_ptr, ca_list);
 
   value = va_arg(arg_ptr, int);
-  
+
   do
   {
     xmi_ca_set(ca_list, value);
-    value = va_arg(arg_ptr, int);      
+    value = va_arg(arg_ptr, int);
   } while (value > CA_END_ARGS);
-  
-  va_end(arg_ptr);  
-}
 
+  va_end(arg_ptr);
+}

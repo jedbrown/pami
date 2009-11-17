@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocols/send/eager/EagerSimple.h
+/// \file p2p/protocols/send/adaptive/AdaptiveSimple.h
 /// \brief Simple eager send protocol for reliable devices.
 ///
 /// The EagerSimple class defined in this file uses C++ templates and
@@ -15,8 +15,8 @@
 ///
 /// C++ templates require all source code to be #include'd from a header file.
 ///
-#ifndef __xmi_p2p_protocol_send_adaptive_adaptivesimple_h__
-#define __xmi_p2p_protocol_send_adaptive_adaptivesimple_h__
+#ifndef __p2p_protocols_send_adaptive_AdaptiveSimple_h__
+#define __p2p_protocols_send_adaptive_AdaptiveSimple_h__
 
 #include "components/memory/MemoryAllocator.h"
 

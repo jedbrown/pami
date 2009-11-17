@@ -136,7 +136,7 @@ namespace XMI
                           }
                     }
                 while(endBase < startBase);
-                
+
                 return ticks/(sampleTime*1e-6);
               }
           else

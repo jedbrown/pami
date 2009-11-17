@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
                                           num_algorithm[0]);
 
   }
-  
+
   xmi_algorithm_t *scatteralgorithm;
   int scatternum_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(client, 0,
@@ -153,12 +153,12 @@ int main (int argc, char ** argv)
              result);
     return 1;
   }
-  
+
   if (scatternum_algorithm[0])
   {
     scatteralgorithm = (xmi_algorithm_t*)
       malloc(sizeof(xmi_algorithm_t) * scatternum_algorithm[0]);
-    
+
     result = XMI_Geometry_algorithms_info(client, 0,
                                           world_geometry,
                                           XMI_XFER_SCATTER,

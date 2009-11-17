@@ -83,7 +83,7 @@ namespace XMI
 			return XMI_ERROR;
 		}
 
-#ifdef USE_MEMALIGN                
+#ifdef USE_MEMALIGN
 		int rc = posix_memalign((void **)&_generics, 16, sizeof(*_generics) * n);
 		XMI_assertf(rc==0, "posix_memalign failed for _generics[%d], errno=%d\n", n, errno);
 
@@ -176,7 +176,7 @@ namespace XMI
           char   shmemfile[1024];
           size_t bytes     = 1024*1024;
           size_t pagesize  = 4096;
-          
+
           snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);

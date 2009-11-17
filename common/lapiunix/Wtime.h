@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/mpi/Wtime.h
+/// \file common/lapiunix/Wtime.h
 /// \brief ???
 ///
-#ifndef __common_mpi_Wtime_h__
-#define __common_mpi_Wtime_h__
+#ifndef __common_lapiunix_Wtime_h__
+#define __common_lapiunix_Wtime_h__
 
 #include "sys/xmi.h"
 #include <sys/time.h>
@@ -136,7 +136,7 @@ namespace XMI
                           }
                     }
                 while(endBase < startBase);
-                
+
                 return ticks/(sampleTime*1e-6);
               }
           else

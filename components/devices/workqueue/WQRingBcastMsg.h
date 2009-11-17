@@ -227,7 +227,7 @@ inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 			meix_1 -= dst_topo->size();
 		}
 		me_1 = dst_topo->index2Rank(meix_1);
-		// if my downstream is "root", or if root is not in dst_topo and 
+		// if my downstream is "root", or if root is not in dst_topo and
 		if (dst_topo->isRankMember(root)) {
 			iamlast = (me_1 == root);
 		} else {

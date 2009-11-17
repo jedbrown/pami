@@ -100,7 +100,7 @@ int main (int argc, char ** argv)
             configuration.name, result);
     return 1;
   }
-  
+
   size_t task_id = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
@@ -153,7 +153,7 @@ int main (int argc, char ** argv)
                                           num_algorithm[0]);
 
   }
-  
+
   xmi_algorithm_t *allgatheralgorithm;
   int allgathernum_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(client, 0,
@@ -168,12 +168,12 @@ int main (int argc, char ** argv)
              result);
     return 1;
   }
-  
+
   if (allgathernum_algorithm[0])
   {
     allgatheralgorithm = (xmi_algorithm_t*)
       malloc(sizeof(xmi_algorithm_t) * allgathernum_algorithm[0]);
-    
+
     result = XMI_Geometry_algorithms_info(client, 0,
                                           world_geometry,
                                           XMI_XFER_ALLGATHER,

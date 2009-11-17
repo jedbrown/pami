@@ -85,7 +85,7 @@ namespace XMI
 
       xmi_client_t _client;
       size_t _context;
-      ContextLock   _lock;  
+      ContextLock   _lock;
       MemoryAllocator < sizeof(WorkObject), 16 > _allocator;
 
     public:
@@ -414,7 +414,7 @@ namespace XMI
                                                   int num)
         {
           return XMI_UNIMPL;
-          
+
         }
 
       inline xmi_result_t dispatch_impl (size_t                     id,

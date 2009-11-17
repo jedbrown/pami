@@ -127,7 +127,7 @@ int main(int argc, char*argv[])
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
         return 1;
       }
-  
+
   int algorithm_type = 0;
   xmi_algorithm_t *world_algorithm;
   int num_algorithm[2] = {0};
@@ -156,7 +156,7 @@ int main(int argc, char*argv[])
                                           num_algorithm[0]);
 
   }
-  
+
   xmi_barrier_t world_barrier;
   world_barrier.xfer_type = XMI_XFER_BARRIER;
   world_barrier.cb_done   = cb_barrier;
@@ -210,7 +210,7 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
 
         _barrier (client, 0, &world_barrier);
@@ -234,7 +234,7 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
 
         bottom_broadcast.xfer_type = XMI_XFER_BROADCAST;
@@ -286,9 +286,9 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
-        
+
         top_barrier.xfer_type = XMI_XFER_BARRIER;
         top_barrier.cb_done   = cb_barrier;
         top_barrier.cookie    = (void*)&_g_barrier_active;
@@ -308,7 +308,7 @@ int main(int argc, char*argv[])
                                                 (xmi_metadata_t*)NULL,
                                                 algorithm_type,
                                                 num_algorithm[0]);
-          
+
         }
 
         top_broadcast.xfer_type = XMI_XFER_BROADCAST;

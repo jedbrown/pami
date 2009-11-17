@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
       return 1;
     }
-  
+
   int algorithm_type = 0;
   xmi_algorithm_t *algorithm;
   int num_algorithm[2] = {0};
@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
                                           num_algorithm[0]);
 
   }
-  
+
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);

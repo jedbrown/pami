@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __componenets_devices_DmaInterface_h__
-#define __componenets_devices_DmaInterface_h__
+#ifndef __components_devices_DmaInterface_h__
+#define __components_devices_DmaInterface_h__
 
 #include <errno.h>
 #include "Memregion.h"

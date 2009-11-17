@@ -178,7 +178,7 @@ int main ()
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
   double clockMHz = XMI_Wclockmhz();
-  
+
   TRACE_ERR((stderr, "... before barrier_init()\n"));
   barrier_init (client, 0, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));

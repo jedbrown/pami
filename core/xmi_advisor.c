@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file core/Advisor.c
+ * \file core/xmi_advisor.c
  * \brief ???
  */
 #define _ENABLE_COLLADVISOR_
@@ -36,14 +36,14 @@ xmi_result_t xmi_advisor_init()
 
 xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
                                            xmi_metadata_t alg_meta,
-                                           xmi_xfer_type_t xfer_type, 
+                                           xmi_xfer_type_t xfer_type,
                                            xmi_algorithm_t *alg)
 {
   /*
   int i, match = 0, repo_size = coll_repo_size[xfer_type];
   for (i = 0; i < alg_list[0]; i++)
   {
-    
+
   }
   */
   return XMI_UNIMPL;
@@ -67,17 +67,17 @@ xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
 
 
   result = XMI_Geometry_world (client, context, &world_geometry);
-  
+
   if (coll_repo_enabled[xfer_type] == REPO_TO_BE_INITIALIZED)
   {
     xmi_algorithm_t *algs;
     xmi_metadata_t *metas;
-    
+
     coll_repo_enabled[xfer_type] = REPO_INITIALIZED;
 
     XMI_Geometry_algorithms_num(client, context,
                                 world_geometry,
-                                xfer_type, 
+                                xfer_type,
                                 &alg_list[algorithm_type]);
     if (alg_list[algorithm_type])
     {
@@ -85,7 +85,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
         malloc(sizeof(xmi_algorithm_t) * alg_list[algorithm_type]);
       metas = (xmi_metadata_t*)
         malloc(sizeof(xmi_metadata_t) * alg_list[algorithm_type]);
-      
+
       XMI_Geometry_algorithms_info(client, context, world_geometry, xfer_type,
                                    algs, metas, algorithm_type,
                                    alg_list[algorithm_type]);
@@ -184,6 +184,6 @@ xmi_result_t xmi_advisor_coll(xmi_client_t client, size_t context,
   }
 #endif
     return XMI_UNIMPL;
-  
+
 }
 #endif
