@@ -190,7 +190,7 @@ namespace XMI
             // enough to transfer a single xmi_task_t. This is used in the
             // various postMessage() calls to transfer long header and data
             // messages.
-            COMPILE_TIME_ASSERT(sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes);
+            COMPILE_TIME_ASSERT(sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes);
 
             // Assert that the size of the packet payload area is large
             // enough to transfer a single virtual address. This is used in
@@ -308,7 +308,7 @@ namespace XMI
                           {
                             TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
                                 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
@@ -360,7 +360,7 @@ namespace XMI
                             TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
 
                                 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
@@ -418,7 +418,7 @@ namespace XMI
                           {
                             TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
                                 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
@@ -461,7 +461,7 @@ namespace XMI
                           {
                             TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
                                 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
@@ -691,7 +691,7 @@ namespace XMI
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. protocol cts_info_t fits in the packet metadata\n"));
 
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                    if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                       {
                         TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol cts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -717,7 +717,7 @@ namespace XMI
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. protocol cts_info_t does not fit in the packet metadata\n"));
 
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                    if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                       {
                         TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol cts_info_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -756,7 +756,7 @@ namespace XMI
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. header_rts_ack_t fits in the packet metadata\n"));
 
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                    if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                       {
                         TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol header_rts_ack_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -782,7 +782,7 @@ namespace XMI
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. protocol header_rts_ack_t does not fit in the packet metadata\n"));
 
-                    if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                    if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                       {
                         TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol header_rts_ack_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -868,7 +868,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() .. protocol header_metadata_t fits in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -894,7 +894,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1029,7 +1029,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() .. protocol cts_info_t fits in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() ..  protocol cts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1055,7 +1055,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() .. protocol cts_info_t does not fit in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() ..  protocol cts_info_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1133,7 +1133,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. protocol header_metadata_t fits in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1159,7 +1159,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1204,7 +1204,7 @@ namespace XMI
                           {
                             TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
                                 TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
@@ -1260,7 +1260,7 @@ namespace XMI
                           {
                             TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
                                 TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
@@ -1321,7 +1321,7 @@ namespace XMI
                           {
                             TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
                                 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
@@ -1368,7 +1368,7 @@ namespace XMI
 
                             TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
-                            if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                            if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                               {
                                 TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
@@ -1546,7 +1546,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send() .. protocol header_metadata_t fits in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1572,7 +1572,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1664,7 +1664,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send() .. protocol header_metadata_t fits in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
@@ -1690,7 +1690,7 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
-                if (sizeof(xmi_task_t) <= T_Model::message_model_metadata_bytes)
+                if (sizeof(xmi_task_t) <= T_Model::packet_model_multi_metadata_bytes)
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 

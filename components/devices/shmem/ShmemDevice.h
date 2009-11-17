@@ -24,13 +24,19 @@
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/shmem/ShmemMessage.h"
-
+#include "components/memory/MemoryAllocator.h"
 #include "util/fifo/LinearFifo.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/queue/Queue.h"
 
 //#define TRAP_ADVANCE_DEADLOCK
 #define ADVANCE_DEADLOCK_MAX_LOOP 10000
+
+//#define EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
+#define EMULATE_NONDETERMINISTIC_SHMEM_DEVICE_FREQUENCY 4
+
+//#define EMULATE_UNRELIABLE_SHMEM_DEVICE
+#define EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY 10
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -176,11 +182,34 @@ namespace XMI
             };
         };
 
+#ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
+        class UnexpectedPacket : public QueueElem
+        {
+          public:
+            inline UnexpectedPacket (PacketImpl * packet, size_t s) :
+              QueueElem (),
+              sequence (s)
+            {
+              memcpy ((void *) meta, packet->metadata (id), T_Packet::headerSize_impl);
+              memcpy ((void *) data, packet->getPayload (), T_Packet::payloadSize_impl);
+            };
+
+            uint16_t id;
+            size_t   sequence;
+            uint8_t  meta[T_Packet::headerSize_impl];
+            uint8_t  data[T_Packet::payloadSize_impl];
+        };
+#endif
+
       public:
         inline ShmemDevice () :
             Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep> (),
             Interface::PacketDevice<ShmemDevice<T_Fifo, T_Packet> > (),
             _fifo (NULL),
+#ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
+            __ndQ (),
+            __ndpkt (),
+#endif
             __sendQ (),
             __sendQMask (0)
         {
@@ -314,6 +343,11 @@ namespace XMI
 
         dispatch_t  _dispatch[256*256];
 
+#ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
+        Queue                                            __ndQ;
+        MemoryAllocator < sizeof(UnexpectedPacket), 16 > __ndpkt;
+#endif
+
         Queue * __sendQ;
         unsigned          __sendQMask;
 
@@ -363,6 +397,12 @@ namespace XMI
         size_t       & sequence)
     {
       TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. T_Niov = %d\n", T_Niov));
+
+#ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
+      unsigned long long t = __global.time.timebase ();
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+#endif
+
       PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
 
       if (pkt != NULL)
@@ -391,6 +431,11 @@ namespace XMI
         size_t       & sequence)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+
+#ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
+      unsigned long long t = __global.time.timebase ();
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+#endif
 
       PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
 
@@ -463,18 +508,57 @@ namespace XMI
       while ((pkt = (PacketImpl *)_rfifo->nextRecPacket()) != NULL)
         {
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before pkt->getHeader()\n", __global.mapping.task()));
+
+#ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
+          UnexpectedPacket * uepkt = (UnexpectedPacket *) __ndpkt.allocateObject();
+          new (uepkt) UnexpectedPacket (pkt, _rfifo->getPacketSequenceId((T_Packet *)pkt));
+          unsigned long long t = __global.time.timebase ();
+          size_t position = t % __ndQ.size();
+          //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...  before enqueue nd packet, __ndQ.size() = %d, t = %lld, position = %zd\n", __global.mapping.task(), __ndQ.size(), t, position);
+          if (__ndQ.size() == 0)
+            __ndQ.pushHead ((QueueElem *) uepkt);
+          else
+            __ndQ.insertElem ((QueueElem *) uepkt, position);
+          //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...   after enqueue nd packet, __ndQ.size() = %d\n", __global.mapping.task(), __ndQ.size());
+#else
           void * meta = (void *) pkt->metadata (id);
           void * data = pkt->getPayload ();
           _dispatch[id].function (meta, data, T_Packet::payloadSize_impl, _dispatch[id].clientdata, data);
 
-mem_sync (); // TODO -- is this needed?
+          mem_sync (); // TODO -- is this needed?
 
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
           _rfifo->consumePacket (pkt);
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ...  after _rfifo->consumePacket()\n", __global.mapping.task()));
           events++;
+#endif
         }
+
+#ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
+      // Advance any "nondeterministic" packets. This is not done on every
+      // advance to allow the nondeterministic queue to grow so that the
+      // packet insertion will randomize the packet order when the queue is
+      // advanced.
+      unsigned long long t = __global.time.timebase ();
+      if (t % EMULATE_NONDETERMINISTIC_SHMEM_DEVICE_FREQUENCY == 0 && !__ndQ.isEmpty())
+      //if (!__ndQ.isEmpty())
+      {
+        //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...  before dequeue nd packet, __ndQ.size() = %d\n", __global.mapping.task(), __ndQ.size());
+        UnexpectedPacket * uepkt = NULL;
+        while ((uepkt = (UnexpectedPacket *) __ndQ.popHead()) != NULL)
+        {
+          fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...         dequeue nd packet, __ndQ.size() = %3d -> %3d, uepkt->sequence = %zd\n", __global.mapping.task(), __ndQ.size()+1, __ndQ.size(), uepkt->sequence);
+          _dispatch[uepkt->id].function (uepkt->meta,
+                                         uepkt->data,
+                                         T_Packet::payloadSize_impl,
+                                         _dispatch[uepkt->id].clientdata,
+                                         uepkt->data);
+          __ndpkt.returnObject ((void *) uepkt);
+        }
+        //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...   after dequeue nd packet, __ndQ.size() = %d\n", __global.mapping.task(), __ndQ.size());
+      }
+#endif
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl() << ... events = %d\n", __global.mapping.task(), events));

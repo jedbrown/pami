@@ -63,8 +63,12 @@ namespace XMI
             _context (context)
         {};
 
-        static const bool   deterministic_packet_model        = true;
+#ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
+        static const bool   reliable_packet_model             = false;
+#else
         static const bool   reliable_packet_model             = true;
+#endif
+        static const bool   deterministic_packet_model        = true;
         static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
         static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
         static const size_t packet_model_payload_bytes        = T_Device::payload_size;
