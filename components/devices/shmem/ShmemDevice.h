@@ -525,8 +525,6 @@ namespace XMI
           void * data = pkt->getPayload ();
           _dispatch[id].function (meta, data, T_Packet::payloadSize_impl, _dispatch[id].clientdata, data);
 
-          mem_sync (); // TODO -- is this needed?
-
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
           _rfifo->consumePacket (pkt);
