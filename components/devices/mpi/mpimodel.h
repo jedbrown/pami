@@ -24,11 +24,11 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class MPIModel : public Interface::PacketModel<MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
+    class MPIModel : public Interface::PacketModel<MPIModel<T_Device, T_Message>, T_Device, 512>
     {
     public:
       MPIModel (T_Device & device, xmi_client_t client, size_t context) :
-        Interface::PacketModel < MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,client,context),
+        Interface::PacketModel < MPIModel<T_Device, T_Message>, T_Device, 512 > (device,client,context),
         _device (device),
         _client(client),
         _context(context)
@@ -52,7 +52,7 @@ namespace XMI
       static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
       static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes        = T_Device::payload_size;
-      static const size_t packet_model_state_bytes          = 512; //sizeof(T_Message);
+      static const size_t packet_model_state_bytes          = 512; // sizeof(T_Message);
 
       xmi_result_t init_impl (size_t                      dispatch,
                               Interface::RecvFunction_t   direct_recv_func,
