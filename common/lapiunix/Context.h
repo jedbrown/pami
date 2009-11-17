@@ -38,42 +38,41 @@ namespace XMI
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
-
     class Work : public Queue
     {
-      private:
-        class WorkObject : public QueueElem
-        {
-          public:
-            inline WorkObject (xmi_event_function   fn,
-                               void               * cookie) :
-              QueueElem (),
-              _fn (fn),
-              _cookie (cookie)
-            {};
-            inline ~WorkObject() { };
-
-            xmi_event_function   _fn;
-            void               * _cookie;
-        };
-
-        xmi_client_t _client;
-        size_t _context;
-        ContextLock   _lock;
-        MemoryAllocator<sizeof(WorkObject),16> _allocator;
-
+    private:
+      class WorkObject : public QueueElem
+      {
       public:
-        inline Work (xmi_client_t client, size_t context, SysDep * sysdep) :
-          Queue (),
-          _client (client),
-          _context (context),
-          _lock (),
-          _allocator ()
+        inline WorkObject (xmi_event_function   fn,
+                           void               * cookie) :
+          QueueElem (),
+          _fn (fn),
+          _cookie (cookie)
+          {};
+        inline ~WorkObject() { };
+
+        xmi_event_function   _fn;
+        void               * _cookie;
+      };
+
+      xmi_client_t _client;
+      size_t _context;
+      ContextLock   _lock;
+      MemoryAllocator<sizeof(WorkObject),16> _allocator;
+
+    public:
+      inline Work (xmi_client_t client, size_t context, SysDep * sysdep) :
+        Queue (),
+        _client (client),
+        _context (context),
+        _lock (),
+        _allocator ()
         {
           _lock.init (sysdep);
         };
-        inline void post (xmi_event_function   fn,
-                          void               * cookie)
+      inline void post (xmi_event_function   fn,
+                        void               * cookie)
         {
           _lock.acquire ();
           WorkObject * obj = (WorkObject *) _allocator.allocateObject ();
@@ -82,26 +81,23 @@ namespace XMI
           _lock.release ();
         };
 
-        inline size_t advance ()
+      inline size_t advance ()
         {
           size_t events = 0;
           if (_lock.tryAcquire ())
-          {
-            WorkObject * obj = NULL;
-            while ((obj = (WorkObject *) popHead()) != NULL)
-            {
-              obj->_fn(_client, _contextid, obj->_cookie, XMI_SUCCESS);
-              events++;
-            }
-            _lock.release ();
-          }
+              {
+                WorkObject * obj = NULL;
+                while ((obj = (WorkObject *) popHead()) != NULL)
+                    {
+                      obj->_fn(_client, _context, obj->_cookie, XMI_SUCCESS);
+                      events++;
+                    }
+                _lock.release ();
+              }
           return events;
         };
     };
-
-
-
-
+  
   
     class Context : public Interface::Context<XMI::Context>
     {
