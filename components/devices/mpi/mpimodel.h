@@ -14,6 +14,8 @@
 #ifndef __components_devices_mpi_mpimodel_h__
 #define __components_devices_mpi_mpimodel_h__
 
+#define USE_GCC_ICE_WORKAROUND
+
 #include "sys/xmi.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
@@ -24,11 +26,19 @@ namespace XMI
   namespace Device
   {
     template <class T_Device, class T_Message>
+#ifdef USE_GCC_ICE_WORKAROUND
     class MPIModel : public Interface::PacketModel<MPIModel<T_Device, T_Message>, T_Device, 512>
+#else // USE_GCC_ICE_WORKAROUND
+    class MPIModel : public Interface::PacketModel<MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
+#endif // USE_GCC_ICE_WORKAROUND
     {
     public:
       MPIModel (T_Device & device, xmi_client_t client, size_t context) :
+#ifdef USE_GCC_ICE_WORKAROUND
         Interface::PacketModel < MPIModel<T_Device, T_Message>, T_Device, 512 > (device,client,context),
+#else // USE_GCC_ICE_WORKAROUND
+        Interface::PacketModel < MPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,client,context),
+#endif // USE_GCC_ICE_WORKAROUND
         _device (device),
         _client(client),
         _context(context)
@@ -52,7 +62,11 @@ namespace XMI
       static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
       static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes        = T_Device::payload_size;
-      static const size_t packet_model_state_bytes          = 512; // sizeof(T_Message);
+#ifdef USE_GCC_ICE_WORKAROUND
+      static const size_t packet_model_state_bytes          = 512;
+#else // USE_GCC_ICE_WORKAROUND
+      static const size_t packet_model_state_bytes          = sizeof(T_Message);
+#endif // USE_GCC_ICE_WORKAROUND
 
       xmi_result_t init_impl (size_t                      dispatch,
                               Interface::RecvFunction_t   direct_recv_func,
