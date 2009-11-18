@@ -39,15 +39,14 @@ size_t __barrier_task;
 size_t __barrier_next_task;
 
 size_t         __barrier_dispatch;
-size_t  __barrier_contextid;
-xmi_client_t  __barrier_client;
+xmi_context_t  __barrier_context;
 
 
 /* ************************************************************************* */
 /* ************************************************************************* */
 /* ************************************************************************* */
 static void barrier_dispatch_function (
-    xmi_client_t        client,      /**< IN: XMI client */
+    xmi_context_t        context,      /**< IN: XMI context */
     size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
     xmi_task_t           task,         /**< IN: source task */
@@ -79,7 +78,7 @@ static void barrier_dispatch_function (
 
     TRACE_ERR((stderr, "    forward barrier notification (phase = %zd => %zd) to task: %zd\n", phase, index, parameters.send.task));
 
-    xmi_result_t result = XMI_Send_immediate (__barrier_client, __barrier_contextid, &parameters);
+    xmi_result_t result = XMI_Send_immediate (__barrier_context, &parameters);
     __barrier_active[index].send++;
   }
   TRACE_ERR((stderr, "<<< barrier_dispatch_function(), __barrier_active[%zd].send = %zd, __barrier_active[%zd].recv = %zd\n", index, __barrier_active[index].send, index, __barrier_active[index].recv));
@@ -108,7 +107,7 @@ void barrier ()
   parameters.task            = __barrier_next_task;
 
   TRACE_ERR((stderr, "     barrier(), before send, phase = %zd, __barrier_active[%zd].send = %zd, __barrier_active[%zd].recv = %zd\n", phase, index, __barrier_active[index].send, index, __barrier_active[index].recv));
-  xmi_result_t result = XMI_Send_immediate (__barrier_client, __barrier_contextid, &parameters);
+  xmi_result_t result = XMI_Send_immediate (__barrier_context, &parameters);
   TRACE_ERR((stderr, "     barrier(),  after send, phase = %zd, __barrier_active[%zd].send = %zd, __barrier_active[%zd].recv = %zd\n", phase, index, __barrier_active[index].send, index, __barrier_active[index].recv));
 
   // Increment barrier notification count to account fo this task.
@@ -116,34 +115,33 @@ void barrier ()
 
   TRACE_ERR((stderr, "     barrier() Before send advance\n"));
   while (__barrier_active[index].send % __barrier_size != 0)
-    XMI_Context_advance (__barrier_client, __barrier_contextid, 100);
+    XMI_Context_advance (__barrier_context, 100);
 
   TRACE_ERR((stderr, "     barrier() Before recv advance\n"));
   while (__barrier_active[index].recv % __barrier_size != 0)
-    XMI_Context_advance (__barrier_client, __barrier_contextid, 100);
+    XMI_Context_advance (__barrier_context, 100);
 
   TRACE_ERR((stderr, "####  exit barrier(), \"poor man's barrier\"\n"));
   return;
 }
 
-void barrier_init (xmi_client_t client, size_t contextid, size_t dispatch)
+void barrier_init (xmi_context_t context, size_t dispatch)
 {
   TRACE_ERR((stderr, "enter barrier_init() ...\n"));
 
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  xmi_result_t result = XMI_Configuration_query (client, &configuration);
+  xmi_result_t result = XMI_Configuration_query (context, &configuration);
   __barrier_task = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (client, &configuration);
+  result = XMI_Configuration_query (context, &configuration);
   __barrier_size = configuration.value.intval;
 
   __barrier_next_task = (__barrier_task + 1) % __barrier_size;
 
-  __barrier_client  = client;
-  __barrier_contextid  = contextid;
+  __barrier_context  = context;
   __barrier_dispatch = dispatch;
   __barrier_phase = 0;
   __barrier_active[0].send = 0;
@@ -155,7 +153,7 @@ void barrier_init (xmi_client_t client, size_t contextid, size_t dispatch)
   fn.p2p = barrier_dispatch_function;
   xmi_send_hint_t options={0};
   TRACE_ERR((stderr, "Before XMI_Dispatch_set() ...\n"));
-  result = XMI_Dispatch_set (client, contextid,
+  result = XMI_Dispatch_set (context,
                              dispatch,
                              fn,
                              (void *)__barrier_active,

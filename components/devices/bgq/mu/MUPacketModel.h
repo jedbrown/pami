@@ -253,7 +253,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (_client, _context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS); // Descriptor is done...notify.
               }
           }
         else
@@ -441,7 +441,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    fn (_client, _context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                    fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif

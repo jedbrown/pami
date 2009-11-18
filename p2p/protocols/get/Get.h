@@ -122,7 +122,7 @@ namespace XMI
           /// callback function and, if notification of remote receive
           /// completion is not required, free the send state memory.
           ///
-          static void get_complete (xmi_client_t client, size_t context,
+          static void get_complete (xmi_context_t context,
                                     void          * cookie,
                                     xmi_result_t    result)
           {
@@ -133,7 +133,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (get->_client, get->_contextid, state->cookie, XMI_SUCCESS);
+                state->local_fn (XMI_Client_getcontext(get->_client, get->_contextid), state->cookie, XMI_SUCCESS);
               }
 
             get->freeGetState(state);

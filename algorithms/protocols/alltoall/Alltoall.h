@@ -119,12 +119,12 @@ namespace CCMI
                              _geometry->nranks());
       }
 
-      static void done (xmi_client_t client, size_t ctxt, void *arg, xmi_result_t err)
+      static void done (xmi_context_t context, void *arg, xmi_result_t err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->_donecount ++;
         if((proto->_donecount == 2) && (proto->_app_cb_done.function))
-          proto->_app_cb_done.function (NULL, 0, proto->_app_cb_done.clientdata, XMI_SUCCESS);
+          proto->_app_cb_done.function (NULL, proto->_app_cb_done.clientdata, XMI_SUCCESS);
       }
     };
 
@@ -183,7 +183,7 @@ namespace CCMI
         return 0;
       }
 
-      static void cb_barrier_done (xmi_client_t client, size_t ctxt, void *arg, xmi_result_t err)
+      static void cb_barrier_done (xmi_context_t context, void *arg, xmi_result_t err)
       {
         A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *proto = (A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *) arg;
         proto->start();

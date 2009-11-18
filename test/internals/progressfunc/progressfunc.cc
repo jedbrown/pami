@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2009                               */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/progressfunc/progressfunc.cc
+ * \file test/internals/progressfunc/multiprogressfunc.cc
  * \brief Test the generic progress function feature
  */
 
@@ -43,7 +43,7 @@ static int my_func(void *cd) {
 	return 1;
 }
 
-void done_cb(xmi_client_t client, size_t ctx, void *cd, xmi_result_t err) {
+void done_cb(xmi_context_t ctx, void *cd, xmi_result_t err) {
 	unsigned *done = (unsigned *)cd;
 	if (err != XMI_SUCCESS) {
 		fprintf(stderr, "Completion callback: done ERROR: %d\n", err);
@@ -56,6 +56,7 @@ void done_cb(xmi_client_t client, size_t ctx, void *cd, xmi_result_t err) {
 int main(int argc, char **argv) {
 	unsigned x;
 	xmi_client_t client;
+	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
 
 	status = XMI_Client_initialize("progressfunc test", &client);
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	status = XMI_Context_create(client, NULL, 0, 1);
+	{ int _n = 1; status = XMI_Context_createv(client, NULL, 0, &context, &_n); }
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
 		return 1;
@@ -73,7 +74,7 @@ int main(int argc, char **argv) {
 	xmi_configuration_t configuration;
 
 	configuration.name = XMI_TASK_ID;
-	status = XMI_Configuration_query(client, &configuration);
+	status = XMI_Configuration_query(context, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -82,7 +83,7 @@ int main(int argc, char **argv) {
 	//fprintf(stderr, "My task id = %zd\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
-	status = XMI_Configuration_query(client, &configuration);
+	status = XMI_Configuration_query(context, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -115,11 +116,18 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	while (!done) {
-		XMI_Context_advance(client, 0, 100);
+		XMI_Context_advance(context, 100);
 	}
 	fprintf(stderr, "Test completed\n");
 
 // ------------------------------------------------------------------------
+
+	status = XMI_Context_destroy(context);
+	if (status != XMI_SUCCESS) {
+		fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);
+		return 1;
+	}
+
 	status = XMI_Client_finalize(client);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);

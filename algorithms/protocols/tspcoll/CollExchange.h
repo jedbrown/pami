@@ -79,8 +79,8 @@ namespace TSPColl
                                           unsigned        * pipewidth,
                                           XMI_Callback_t * cb_done);
 
-    static void   cb_recvcomplete (xmi_client_t client, size_t context, void * arg, xmi_result_t error);
-    static void   cb_senddone     (xmi_client_t, size_t, void*, xmi_result_t);
+    static void   cb_recvcomplete (xmi_context_t context, void * arg, xmi_result_t error);
+    static void   cb_senddone     (xmi_context_t, void*, xmi_result_t);
   protected:
     /* ------------------------------ */
     /* static: set by constructor     */
@@ -306,7 +306,7 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
 	      _phase++;
 	      TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
 		     this->_cb_complete, this->_arg));
-	      this->_cb_complete (NULL, 0, this->_arg, XMI_SUCCESS);
+	      this->_cb_complete (NULL, this->_arg, XMI_SUCCESS);
 	  }
 
  the_end:
@@ -378,7 +378,7 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 /*                             send complete                               */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (xmi_client_t client, size_t ctxt, void * arg, xmi_result_t err)
+inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (xmi_context_t context, void * arg, xmi_result_t err)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   MUTEX_LOCK(&base->_mutex);
@@ -399,7 +399,7 @@ inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (xmi_client_t client, si
 /* *********************************************************************** */
 template <class T_Mcast>
 inline void
-TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (xmi_client_t client, size_t context, void * arg, xmi_result_t error)
+TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (xmi_context_t context, void * arg, xmi_result_t error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;

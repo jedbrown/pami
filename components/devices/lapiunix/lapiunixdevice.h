@@ -213,7 +213,7 @@ namespace XMI
           if(m2m->_num==0)
               {
                 if( m2m->_done_fn )
-                  m2m->_done_fn(NULL, 0, m2m->_cookie,XMI_SUCCESS);
+                  m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
                 m2m->_m2mrecvQ->remove(m2m);
                 free ( m2m );
               }
@@ -269,7 +269,7 @@ namespace XMI
                 if( m2m->_num == 0 )
                     {
                       if( m2m->_done_fn )
-                        (m2m->_done_fn)(NULL, 0, m2m->_cookie,XMI_SUCCESS);
+                        (m2m->_done_fn)(NULL, m2m->_cookie,XMI_SUCCESS);
                       free ( m2m );
                       return NULL;
                     }
@@ -298,7 +298,7 @@ namespace XMI
                 if(m2m->_num==0)
                     {
                       if( m2m->_done_fn )
-                        m2m->_done_fn(NULL, 0, m2m->_cookie,XMI_SUCCESS);
+                        m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
                       dev->_m2mrecvQ.remove(m2m);
                       free ( m2m );
                     }
@@ -325,7 +325,7 @@ namespace XMI
               {
                 req->_mcast._counter += req->_mcast._pwidth;
                 if(req->_mcast._done_fn)
-                  req->_mcast._done_fn(NULL, 0, req->_mcast._cookie, XMI_SUCCESS);
+                  req->_mcast._done_fn(NULL, req->_mcast._cookie, XMI_SUCCESS);
               }
           if(req->_mcast._counter >= req->_mcast._size)
             req->_mcastrecvQ->remove(&req->_mcast);

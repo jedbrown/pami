@@ -41,7 +41,7 @@ namespace XMI
           if(sreq->_numdone == sreq->_num)
               {
                 if (sreq->_user_done_fn)
-                  sreq->_user_done_fn (NULL, 0, sreq->_cookie, XMI_SUCCESS);
+                  sreq->_user_done_fn (NULL, sreq->_cookie, XMI_SUCCESS);
                 free(sreq->_send_headers);
               }
         }
@@ -169,7 +169,7 @@ namespace XMI
           if( msg->_num == 0 )
           {
             if( msg->_done_fn )
-              (*msg->_done_fn)(NULL, 0, msg->_cookie,XMI_SUCCESS);
+              (*msg->_done_fn)(NULL, msg->_cookie,XMI_SUCCESS);
             free(msg);
           }
           msg->_buf      = buf;

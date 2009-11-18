@@ -42,7 +42,8 @@ namespace XMI
 	///
         inline xmi_result_t createContext (xmi_configuration_t   configuration[],
                                            size_t                count,
-					   int ncontexts);
+                                           xmi_context_t *context,
+					   int *ncontexts);
 
         inline xmi_result_t destroyContext (xmi_context_t context);
 
@@ -71,8 +72,9 @@ namespace XMI
     template <class T_Client, class T_Context>
     inline xmi_result_t Client<T_Client,T_Context>::createContext (xmi_configuration_t configuration[],
                                            size_t                count,
-					   int ncontexts) {
-	return static_cast<T_Client*>(this)->createContext_impl(configuration, count, ncontexts);
+					   xmi_context_t *context,
+					   int *ncontexts) {
+	return static_cast<T_Client*>(this)->createContext_impl(configuration, count, context, ncontexts);
     }
 
     template <class T_Client, class T_Context>

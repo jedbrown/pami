@@ -28,7 +28,7 @@ private:
 	int _done;
 	const char *_name;
 
-	static void _done_cb(xmi_client_t client, size_t context, void *cookie, xmi_result_t result) {
+	static void _done_cb(xmi_context_t context, void *cookie, xmi_result_t result) {
 		XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *thus =
 			(XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *)cookie;
 		//fprintf(stderr, "... completion callback for %s, done %d ++\n", thus->_name, thus->_done);
@@ -83,7 +83,7 @@ public:
 
 		//fprintf(stderr, "... before advance loop for %s.postMulticast\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(mcast->client, mcast->context, 100);
+			rc = XMI_Context_advance(XMI_Client_getcontext(mcast->client,mcast->context), 100);
 			if (rc != XMI_SUCCESS) {
 				fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", rc);
 				return rc;

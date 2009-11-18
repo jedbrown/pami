@@ -181,7 +181,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend
-      static void staticNotifySendDone(xmi_client_t client, size_t context, void *cd, xmi_result_t err)
+      static void staticNotifySendDone(xmi_context_t context, void *cd, xmi_result_t err)
       {
         xmi_quad_t * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));
@@ -549,7 +549,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend
-      static void staticNotifySendDone(xmi_client_t client, size_t context, void *cd, xmi_result_t err)
+      static void staticNotifySendDone(xmi_context_t context, void *cd, xmi_result_t err)
       {
         xmi_quad_t * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));
@@ -650,7 +650,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
     TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext DONE _cb_done %X, _phase %d, _clientdata %X\n",
                (int) this, (int)_cb_done, _phase, (int)_clientdata));
     if(_cb_done)
-      _cb_done(NULL, 0, _clientdata, XMI_SUCCESS);
+      _cb_done(NULL, _clientdata, XMI_SUCCESS);
     _senddone = false;
 
     return;

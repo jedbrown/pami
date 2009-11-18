@@ -114,7 +114,7 @@ namespace CCMI
       inline void postReceives();
 
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (xmi_client_t client, size_t context, void *cd, xmi_result_t err)
+      static void staticNotifySendDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifySendDone() enter\n",(int)((SendCallbackData *)cd)->me));
         ((SendCallbackData *)cd)->me->notifySendDone (*(xmi_quad_t *)cd);
@@ -123,7 +123,7 @@ namespace CCMI
 
       /// \brief Static function to be passed into the done of multisend postRecv
 
-      static void staticNotifyReceiveDone (xmi_client_t client, size_t ctxt, void *cd, xmi_result_t err)
+      static void staticNotifyReceiveDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
@@ -925,7 +925,7 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance(
   {
     TRACE_ADVANCE((stderr,"<%#.8X>Executor::Allreduce::advance() DONE %#X/%#X\n",(int)this,
                    (int)this->_cb_done, (int)this->_clientdata));
-    if(this->_cb_done) (*this->_cb_done)(NULL, 0, this->_clientdata, XMI_SUCCESS);
+    if(this->_cb_done) (*this->_cb_done)(NULL, this->_clientdata, XMI_SUCCESS);
     _curRcvPhase = CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE; // executer is done
     if((_state->getRoot() == -1) | (_state->getRoot() == (int)_state->getMyRank()))
       TRACE_DATA(("_dstbuf",this->_dstbuf, _state->getBytes()));

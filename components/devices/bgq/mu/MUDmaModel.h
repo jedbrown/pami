@@ -76,7 +76,7 @@ namespace XMI
           {
             xmi_callback_t * cb = (xmi_callback_t *) metadata;
             TRACE((stderr, "MUDmaModel::dispatch_notify() >> cb = %p, cb->function = %p, cb->clientdata = %p\n", cb, cb->function, cb->clientdata));
-            cb->function (NULL, 0, cb->clientdata, XMI_SUCCESS);
+            cb->function (NULL, cb->clientdata, XMI_SUCCESS);
             TRACE((stderr, "MUDmaModel::dispatch_notify() <<\n"));
             return 0;
           };
@@ -177,7 +177,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    cb.function (_client, _context, cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
+                    cb.function (XMI_Client_getcontext(_client, _context), cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif

@@ -87,9 +87,10 @@ namespace XMI
 
 	inline xmi_result_t createContext_impl (xmi_configuration_t configuration[],
 					size_t count,
-					int ncontexts) {
+					xmi_context_t *context,
+					int *ncontexts) {
 		//_context_list->lock ();
-		int n = ncontexts;
+		int n = *ncontexts;
 		if (_ncontexts != 0) {
 			return XMI_ERROR;
 		}
@@ -110,7 +111,9 @@ namespace XMI
 		}
 		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
+		*ncontexts = n;
 		for (x = 0; x < n; ++x) {
+			context[x] = (xmi_context_t)&_contexts[x];
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");

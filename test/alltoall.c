@@ -83,13 +83,13 @@ static double timer()
 }
 
 
-void cb_barrier (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t err)
+void cb_barrier (xmi_context_t ctxt, void * clientdata, xmi_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void cb_alltoallv (xmi_client_t client, size_t ctxt, void * clientdata, xmi_result_t res)
+void cb_alltoallv (xmi_context_t ctxt, void * clientdata, xmi_result_t res)
 {
   int * active = (int *) clientdata;
   TRACE(("%d: cb_alltoallv active:%d(%p)\n",XMI_Rank(),*active,active));
@@ -97,23 +97,23 @@ void cb_alltoallv (xmi_client_t client, size_t ctxt, void * clientdata, xmi_resu
 }
 
 
-void _barrier (xmi_client_t client, size_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
-  result = XMI_Collective(client, context, (xmi_xfer_t*)barrier);
+  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
       exit(1);
     }
   while (_g_barrier_active)
-    result = XMI_Context_advance (client, context, 1);
+    result = XMI_Context_advance (context, 1);
 
 }
 
 
-void _alltoallv (xmi_client_t client, size_t    context,
+void _alltoallv (xmi_context_t    context,
                  xmi_alltoallv_t *xfer,
                  char            *sndbuf,
                  size_t          *sndlens,
@@ -132,15 +132,16 @@ void _alltoallv (xmi_client_t client, size_t    context,
   xfer->rtype         = XMI_BYTE;
   xfer->rtypecounts   = rcvlens;
   xfer->rdispls       = rdispls;
-  result = XMI_Collective (client, context, (xmi_xfer_t*)xfer);
+  result = XMI_Collective (NULL, (xmi_xfer_t*)xfer);
   while (_g_alltoallv_active)
-    result = XMI_Context_advance (client, context, 1);
+    result = XMI_Context_advance (context, 1);
 }
 
 
 int main(int argc, char*argv[])
 {
   xmi_client_t  client;
+  xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
   char          cl_string[] = "TEST";
   double ti, tf, usec;
@@ -151,7 +152,7 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  result = XMI_Context_create(client, NULL, 0, 1);
+	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -161,7 +162,7 @@ int main(int argc, char*argv[])
 
   xmi_configuration_t configuration;
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (client, &configuration);
+  result = XMI_Configuration_query (context, &configuration);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -170,7 +171,7 @@ int main(int argc, char*argv[])
   size_t task_id = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (client, &configuration);
+  result = XMI_Configuration_query (context, &configuration);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -181,7 +182,7 @@ int main(int argc, char*argv[])
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (client, 0, &world_geometry);
+  result = XMI_Geometry_world (context, &world_geometry);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -191,7 +192,7 @@ int main(int argc, char*argv[])
   int algorithm_type = 0;
   xmi_algorithm_t *algorithm;
   int num_algorithm[2] = {0};
-  result = XMI_Geometry_algorithms_num(client, 0,
+  result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,
                                        XMI_XFER_BARRIER,
                                        num_algorithm);
@@ -207,7 +208,7 @@ int main(int argc, char*argv[])
   {
     algorithm = (xmi_algorithm_t*)
                 malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
-    result = XMI_Geometry_algorithms_info(client, 0,
+    result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           XMI_XFER_BARRIER,
                                           algorithm,
@@ -220,7 +221,7 @@ int main(int argc, char*argv[])
 
   xmi_algorithm_t *alltoallvalgorithm;
   int             alltoallvnum_algorithm[2];
-  result = XMI_Geometry_algorithms_num(client, 0,
+  result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,
                                        XMI_XFER_ALLTOALLV,
                                        alltoallvnum_algorithm);
@@ -235,7 +236,7 @@ int main(int argc, char*argv[])
   {
     alltoallvalgorithm = (xmi_algorithm_t*)
       malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
-    result = XMI_Geometry_algorithms_info(client, 0,
+    result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           XMI_XFER_ALLTOALLV,
                                           alltoallvalgorithm,
@@ -284,12 +285,12 @@ int main(int argc, char*argv[])
 	      INIT_BUFS( j );
 	    }
 
-	  _barrier (client, 0, &barrier);
+	  _barrier (context, &barrier);
 	  ti = timer();
 
 	  for (j=0; j<niter; j++)
 	      {
-		_alltoallv ( client, 0,
+		_alltoallv ( context,
                              &alltoallv,
                              sbuf,
                              sndlens,
@@ -302,7 +303,7 @@ int main(int argc, char*argv[])
 
 	  CHCK_BUFS(sz, task_id);
 
-	  _barrier (client, 0, &barrier);
+	  _barrier (context, &barrier);
 
 	  usec = (tf - ti)/(double)niter;
 	  if (task_id == 0)
@@ -315,6 +316,13 @@ int main(int argc, char*argv[])
 			 usec);
 		  fflush(stdout);
 	      }
+      }
+
+  result = XMI_Context_destroy (context);
+  if (result != XMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+        return 1;
       }
 
   result = XMI_Client_finalize (client);

@@ -38,7 +38,7 @@ namespace CCMI
       } __attribute__((__aligned__(16)));
     private:
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (xmi_client_t client, size_t ctxt, void *cd, xmi_result_t err)
+      static void staticNotifySendDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
         xmi_quad_t *info = (xmi_quad_t *)cd;
@@ -48,7 +48,7 @@ namespace CCMI
       }
 
       /// \brief Static function to be passed into the done of multisend postRecv
-      static void staticNotifyReceiveDone (xmi_client_t client, size_t ctxt, void *cd, xmi_result_t err)
+      static void staticNotifyReceiveDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
@@ -58,7 +58,7 @@ namespace CCMI
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
       }
 
-      static void short_recv_done (xmi_client_t client, size_t ctxt, void *me, xmi_result_t res)
+      static void short_recv_done (xmi_context_t context, void *me, xmi_result_t res)
       {
         AllreduceBase *allreduce = (AllreduceBase *)me;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::short_recv_done enter\n", (int)allreduce));
@@ -630,7 +630,7 @@ inline void CCMI::Executor::AllreduceBase<T_Mcastinterface, T_Sysdep, T_Connecti
     {
       // Call application done callback
       if(_cb_done)
-        _cb_done (NULL, 0, _clientdata, XMI_SUCCESS);
+        _cb_done (NULL, _clientdata, XMI_SUCCESS);
 
       break;
     }

@@ -83,7 +83,7 @@ namespace XMI
           if( m2m->_num == 0 )
           {
             if( m2m->_done_fn )
-              m2m->_done_fn(NULL, 0, m2m->_cookie,XMI_SUCCESS);
+              m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
             free ( m2m );
             return ;
           }
@@ -147,7 +147,7 @@ namespace XMI
           if( msg->_num == 0 )
           {
             if( msg->_done_fn )
-              (*msg->_done_fn)(NULL, 0, msg->_cookie,XMI_SUCCESS);
+              (*msg->_done_fn)(NULL, msg->_cookie,XMI_SUCCESS);
             free(msg);
           }
           msg->_buf     = buf;

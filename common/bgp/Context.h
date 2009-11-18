@@ -77,15 +77,13 @@ namespace XMI
           void               * _cookie;
       };
 
-      xmi_client_t _client;
-      size_t _context;
+      xmi_context_t _context;
       ContextLock   _lock;
       MemoryAllocator < sizeof(WorkObject), 16 > _allocator;
 
     public:
-      inline Work (xmi_client_t client, size_t context, SysDep * sysdep) :
+      inline Work (xmi_context_t context, SysDep * sysdep) :
           Queue (),
-          _client (client),
           _context (context),
           _lock (),
           _allocator ()
@@ -113,7 +111,7 @@ namespace XMI
 
             while ((obj = (WorkObject *) popHead()) != NULL)
               {
-                obj->_fn(_client, _context, obj->_cookie, XMI_SUCCESS);
+                obj->_fn(_context, obj->_cookie, XMI_SUCCESS);
                 events++;
               }
 
@@ -140,7 +138,7 @@ namespace XMI
           _generic(generics[id]),
           _shmem (),
           _lock (),
-          _work (client, id, &_sysdep)
+          _work ((xmi_context_t *)this, &_sysdep)
       {
         // ----------------------------------------------------------------
         // Compile-time assertions

@@ -722,7 +722,7 @@ namespace XMI
                     CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
                       (CCMI::Adaptor::Broadcast::AsyncBinomialFactory *) &info->_bcast_registration;
                     if(ambroadcast->stypecount == 0)
-                      ambroadcast->cb_done(NULL, 0, ambroadcast->cookie, XMI_SUCCESS);
+                      ambroadcast->cb_done(NULL, ambroadcast->cookie, XMI_SUCCESS);
                     else
                         {
                           xmi_callback_t cb_done;

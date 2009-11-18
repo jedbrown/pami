@@ -53,7 +53,7 @@ namespace XMI
 
           inline void invokeCallback ()
           {
-            _function (_client, _context, _cookie, XMI_SUCCESS);
+            _function (XMI_Client_getcontext(_client, _context), _cookie, XMI_SUCCESS);
           };
 
         protected:

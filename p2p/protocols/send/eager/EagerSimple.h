@@ -568,7 +568,7 @@ namespace XMI
                 TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->info.local_fn = %p\n", state->info.local_fn));
 
                 if (state->info.local_fn)
-                  state->info.local_fn (_client, _contextid,
+                  state->info.local_fn (XMI_Client_getcontext(_client, _contextid),
                                         state->info.cookie,
                                         XMI_SUCCESS);
 
@@ -615,7 +615,7 @@ namespace XMI
 
             eager->freeSendState (state);
 
-            if (remote_fn) remote_fn (eager->_client, eager->_contextid, fn_cookie, XMI_SUCCESS);
+            if (remote_fn) remote_fn (XMI_Client_getcontext(eager->_client, eager->_contextid), fn_cookie, XMI_SUCCESS);
 
             TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_direct()\n"));
             return 0;
@@ -889,7 +889,7 @@ namespace XMI
                 // No more data is to be written to the receive buffer.
                 // Invoke the receive done callback.
                 if (state->info.local_fn)
-                  state->info.local_fn (eager->_client, eager->_contextid,
+                  state->info.local_fn (XMI_Client_getcontext(eager->_client, eager->_contextid),
                                         state->info.cookie,
                                         XMI_SUCCESS);
 
@@ -928,7 +928,7 @@ namespace XMI
           /// callback function and, if notification of remote receive
           /// completion is not required, free the send state memory.
           ///
-          static void send_complete (xmi_client_t   client, size_t   context,
+          static void send_complete (xmi_context_t   context,
                                      void          * cookie,
                                      xmi_result_t    result)
           {
@@ -940,7 +940,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (eager->_client, eager->_contextid, state->cookie, XMI_SUCCESS);
+                state->local_fn (XMI_Client_getcontext(eager->_client, eager->_contextid), state->cookie, XMI_SUCCESS);
               }
 
             if (state->remote_fn == NULL)
@@ -959,7 +959,7 @@ namespace XMI
           /// completion callback and free the receive state object
           /// memory.
           ///
-          static void receive_complete (xmi_client_t client, size_t   context,
+          static void receive_complete (xmi_context_t context,
                                         void          * cookie,
                                         xmi_result_t    result)
           {

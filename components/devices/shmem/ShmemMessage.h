@@ -165,7 +165,7 @@ namespace XMI
         {
           if (_fn)
             {
-              _fn (_client, _context, _cookie, status);
+              _fn (XMI_Client_getcontext(_client, _context), _cookie, status);
             }
 
           return 0;

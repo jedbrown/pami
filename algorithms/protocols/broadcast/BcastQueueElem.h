@@ -76,7 +76,7 @@ namespace CCMI
         ///        unexpected and the application wants to provide the final target
         ///        buffer
         void  setPosted (unsigned bytes, char *buf,
-                         XMI_Callback_t &cb_done)
+                         xmi_callback_t &cb_done)
         {
           CCMI_assert(bytes >= _bytes);
           _appbuf = buf;
@@ -127,13 +127,13 @@ namespace CCMI
           memcpy (_appbuf, _rcvbuf, _bytes);
 
           if(_cb_done.function)
-            _cb_done.function(NULL, 0, _cb_done.clientdata, XMI_SUCCESS);
+            _cb_done.function(NULL, _cb_done.clientdata, XMI_SUCCESS);
         }
 
         void completePosted ()
         {
           if(_cb_done.function)
-            _cb_done.function(NULL, 0, _cb_done.clientdata, XMI_SUCCESS);
+            _cb_done.function(NULL, _cb_done.clientdata, XMI_SUCCESS);
         }
 
       } __attribute__((__aligned__(16))); //- BcastQueueElem

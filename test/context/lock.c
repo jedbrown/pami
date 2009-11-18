@@ -9,6 +9,7 @@
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
+  xmi_context_t context;
   xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
@@ -20,7 +21,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = XMI_Context_create(client, configuration, 0, 1);
+	{ int _n = 1; result = XMI_Context_createv(client, configuration, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create the xmi context. result = %d\n", result);
@@ -29,7 +30,7 @@ int main (int argc, char ** argv)
 
 
   /* Test a context lock */
-  result = XMI_Context_lock (client, 0);
+  result = XMI_Context_lock (context);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to lock the xmi context. result = %d\n", result);
@@ -37,7 +38,7 @@ int main (int argc, char ** argv)
   }
 
   /* Test a context unlock */
-  result = XMI_Context_unlock (client, 0);
+  result = XMI_Context_unlock (context);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to unlock the xmi context. result = %d\n", result);
@@ -45,7 +46,7 @@ int main (int argc, char ** argv)
   }
 
   /* Test a context trylock */
-  result = XMI_Context_trylock (client, 0);
+  result = XMI_Context_trylock (context);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to aquire a context lock via trylock() on an uncontested lock. result = %d\n", result);
@@ -53,7 +54,7 @@ int main (int argc, char ** argv)
   }
 
   /* Test a context trylock .. should return XMI_EAGAIN. */
-  result = XMI_Context_trylock (client, 0);
+  result = XMI_Context_trylock (context);
   if (result == XMI_SUCCESS)
   {
     fprintf (stderr, "Error. trylock was 'successful' when it should have failed. result = %d\n", result);
@@ -66,7 +67,7 @@ int main (int argc, char ** argv)
   }
 
   /* Test a context unlock */
-  result = XMI_Context_unlock (client, 0);
+  result = XMI_Context_unlock (context);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to unlock the xmi context. result = %d\n", result);
@@ -80,6 +81,16 @@ int main (int argc, char ** argv)
   /* already aqcuired. XMI_Context_lock () will block until it acquires the  */
   /* lock.                                                                   */
   /* ----------------------------------------------------------------------- */
+
+
+
+  /* Destroy the context */
+  result = XMI_Context_destroy (context);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable to destroy the xmi context. result = %d\n", result);
+    return 1;
+  }
 
   /* Finalize (destroy) the client */
   result = XMI_Client_finalize (client);

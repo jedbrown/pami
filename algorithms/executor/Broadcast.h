@@ -91,7 +91,7 @@ namespace CCMI
 
     public:
 
-      static void staticSendDone (xmi_client_t client, size_t context, void *clientdata, xmi_result_t err)
+      static void staticSendDone (xmi_context_t context, void *clientdata, xmi_result_t err)
       {
         xmi_quad_t * info = NULL;
         Broadcast *bcast = (Broadcast *) clientdata;
@@ -237,7 +237,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
-    _cb_done (NULL, 0, _clientdata, XMI_SUCCESS);
+    _cb_done (NULL, _clientdata, XMI_SUCCESS);
 
   else if(__global.mapping.task() == _root)
   {
@@ -255,7 +255,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
   if(_startphase == _nphases || _nmessages == 0)
   {
     if(_bytesrecvd == _buflen && _cb_done)
-      _cb_done (NULL, 0, _clientdata, XMI_SUCCESS);
+      _cb_done (NULL, _clientdata, XMI_SUCCESS);
     return;
   }
 
@@ -271,7 +271,7 @@ inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :
   if(_bytessent == _buflen)
   {
     if(_cb_done)
-      _cb_done (NULL, 0, _clientdata, XMI_SUCCESS);
+      _cb_done (NULL, _clientdata, XMI_SUCCESS);
     return;
   }
 

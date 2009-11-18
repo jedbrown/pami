@@ -170,12 +170,12 @@ inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t
 	int rc = pf->func(pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(pf->client, pf->context, pf->cb_done.clientdata, XMI_SUCCESS);
+			pf->cb_done.function(XMI_Client_getcontext(pf->client, pf->context), pf->cb_done.clientdata, XMI_SUCCESS);
 		}
 		return true;
 	} else if (rc < 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(pf->client, pf->context, pf->cb_done.clientdata, (xmi_result_t)-rc);
+			pf->cb_done.function(XMI_Client_getcontext(pf->client, pf->context), pf->cb_done.clientdata, (xmi_result_t)-rc);
 		}
 		return true;
 	}

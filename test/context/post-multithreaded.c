@@ -16,10 +16,10 @@
 #define TRACE(x)
 #endif
 
-xmi_client_t g_client;
 
 typedef struct endpoint
 {
+  xmi_context_t   context;
   volatile size_t recv;
 } endpoint_t;
 
@@ -35,7 +35,7 @@ typedef struct work
 
 endpoint_t _endpoint[2];
 
-void do_work (xmi_client_t client, size_t   context,
+void do_work (xmi_context_t   context,
               void          * cookie,
               xmi_result_t    result)
 {
@@ -66,7 +66,7 @@ void * endpoint (void * arg)
   TRACE((stderr, ">> endpoint (%zd)\n", id));
 
   /* Lock this context */
-  xmi_result_t result = XMI_Context_lock (g_client, id);
+  xmi_result_t result = XMI_Context_lock (_endpoint[id].context);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to lock the xmi context. result = %d\n", result);
@@ -92,7 +92,7 @@ void * endpoint (void * arg)
     work.from = 0;
     work.to   = 1;
 
-    result = XMI_Context_post (g_client, 1, do_work, (void *)&work);
+    result = XMI_Context_post (_endpoint[1].context, do_work, (void *)&work);
     if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to post work to the xmi context. result = %d\n", result);
@@ -108,7 +108,7 @@ void * endpoint (void * arg)
     TRACE((stderr, "   endpoint(%zd), before blocking advance for recv, _endpoint[0].recv = %zd\n", id, _endpoint[0].recv));
     while (_endpoint[0].recv)
     {
-      result = XMI_Context_advance (g_client, 0, 1);
+      result = XMI_Context_advance (_endpoint[0].context, 1);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
@@ -123,7 +123,7 @@ void * endpoint (void * arg)
     TRACE((stderr, "   endpoint(%zd), before blocking advance for recv, _endpoint[1].recv = %zd\n", id, _endpoint[1].recv));
     while (_endpoint[1].recv)
     {
-      result = XMI_Context_advance (g_client, 1, 1);
+      result = XMI_Context_advance (_endpoint[1].context, 1);
       if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
@@ -140,7 +140,7 @@ void * endpoint (void * arg)
     work.from = 1;
     work.to   = 0;
 
-    result = XMI_Context_post (g_client, 0, do_work, (void *)&work);
+    result = XMI_Context_post (_endpoint[0].context, do_work, (void *)&work);
     if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to post work to the xmi context. result = %d\n", result);
@@ -154,7 +154,7 @@ void * endpoint (void * arg)
   }
 
   /* Unlock the context and exit */
-  result = XMI_Context_unlock (g_client, id);
+  result = XMI_Context_unlock (_endpoint[id].context);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to unlock the xmi context. result = %d\n", result);
@@ -169,6 +169,7 @@ void * endpoint (void * arg)
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
+  xmi_context_t context[2];
   xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
@@ -179,14 +180,18 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
     return 1;
   }
-  g_client = client;
 
   _endpoint[0].recv = 1;
-  result = XMI_Context_create(client, configuration, 0, 2);
-  if (result != XMI_SUCCESS)
+  {
+  int num = 2;
+  result = XMI_Context_createv (client, configuration, 0, &context[0], &num);
+  if (result != XMI_SUCCESS || num != 2)
   {
     fprintf (stderr, "Error. Unable to create first xmi context. result = %d\n", result);
     return 1;
+  }
+  _endpoint[0].context = context[0];
+  _endpoint[1].context = context[1];
   }
 
   _endpoint[1].recv = 1;
@@ -202,6 +207,20 @@ int main (int argc, char ** argv)
 
   /* enter the "endpoint function" for the main thread */
   endpoint ((void *)0);
+
+
+  result = XMI_Context_destroy (_endpoint[0].context);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable to destroy first xmi context. result = %d\n", result);
+    return 1;
+  }
+  result = XMI_Context_destroy (_endpoint[1].context);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable to destroy second xmi context. result = %d\n", result);
+    return 1;
+  }
 
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)

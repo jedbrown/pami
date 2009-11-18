@@ -25,6 +25,7 @@ static void test_dispatch (
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
+  xmi_context_t context;
   xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
@@ -36,7 +37,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = XMI_Context_create(client, configuration, 0, 1);
+	{ int _n = 1; result = XMI_Context_createv(client, configuration, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -48,7 +49,7 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
-  result = XMI_Dispatch_set (client, 0, dispatch, fn, NULL, options);
+  result = XMI_Dispatch_set (context, dispatch, fn, NULL, options);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
@@ -56,10 +57,18 @@ int main (int argc, char ** argv)
   }
 
 
-  result = XMI_Context_advance (client, 0, 1);
+  result = XMI_Context_advance (context, 1);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+    return 1;
+  }
+
+
+  result = XMI_Context_destroy (context);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
     return 1;
   }
 

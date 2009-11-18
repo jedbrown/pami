@@ -102,7 +102,7 @@ namespace XMI
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
                                          iov, niov, sequence) == XMI_SUCCESS)
             {
-              if (fn) fn (_client, _context, cookie, XMI_SUCCESS);
+              if (fn) fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
 
               return true;
             }
@@ -133,7 +133,7 @@ namespace XMI
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
                                          iov, sequence) == XMI_SUCCESS)
             {
-              if (fn) fn (_client, _context, cookie, XMI_SUCCESS);
+              if (fn) fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
 
               return true;
             }
@@ -246,7 +246,7 @@ namespace XMI
                                       remote_offset,
                                       bytes);
 
-              if (local_fn) local_fn (_client, _context, cookie, XMI_SUCCESS);
+              if (local_fn) local_fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
 
               return XMI_SUCCESS;
 
@@ -287,7 +287,7 @@ namespace XMI
                                      remote_offset,
                                      bytes);
 
-              if (local_fn) local_fn (_client, _context, cookie, XMI_SUCCESS);
+              if (local_fn) local_fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
 
               return XMI_SUCCESS;
 

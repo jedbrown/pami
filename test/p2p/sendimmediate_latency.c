@@ -97,21 +97,21 @@ static void test_dispatch (
   _recv_iteration++;
 }
 
-void send_once (xmi_client_t client, size_t context, xmi_send_immediate_t * parameters)
+void send_once (xmi_context_t context, xmi_send_immediate_t * parameters)
 {
-  xmi_result_t result = XMI_Send_immediate (client, context, parameters);
+  xmi_result_t result = XMI_Send_immediate (context, parameters);
 }
 
-void recv_once (xmi_client_t client, size_t context)
+void recv_once (xmi_context_t context)
 {
   TRACE_ERR((stderr, "(%zd) recv_once() Before advance\n", _my_rank));
-  while (_recv_active) XMI_Context_advance (client, context, 100);
+  while (_recv_active) XMI_Context_advance (context, 100);
 
   _recv_active = 1;
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (xmi_client_t client, size_t context, size_t dispatch, size_t sndlen, size_t myrank)
+unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, size_t myrank)
 {
   TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
   _recv_active = 1;
@@ -140,8 +140,8 @@ unsigned long long test (xmi_client_t client, size_t context, size_t dispatch, s
     for (i = 0; i < ITERATIONS; i++)
     {
       TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));
-      send_once (client, context, &parameters);
-      recv_once (client, context);
+      send_once (context, &parameters);
+      recv_once (context);
 
       _recv_active = 1;
       _send_active = 1;
@@ -153,8 +153,8 @@ unsigned long long test (xmi_client_t client, size_t context, size_t dispatch, s
     for (i = 0; i < ITERATIONS; i++)
     {
       TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));
-      recv_once (client, context);
-      send_once (client, context, &parameters);
+      recv_once (context);
+      send_once (context, &parameters);
 
       _recv_active = 1;
       _send_active = 1;
@@ -173,14 +173,15 @@ int main ()
   TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
   XMI_Client_initialize (clientname, &client);
   TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
+  xmi_context_t context;
   TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
-  XMI_Context_create(client, NULL, 0, 1);
+  { int _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
   double clockMHz = XMI_Wclockmhz();
-
+  
   TRACE_ERR((stderr, "... before barrier_init()\n"));
-  barrier_init (client, 0, 0);
+  barrier_init (context, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));
 
 
@@ -196,7 +197,7 @@ int main ()
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
   TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
-  xmi_result_t result = XMI_Dispatch_set (client, 0,
+  xmi_result_t result = XMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
                                           fn,
                                           (void *)&_recv_active,
@@ -210,11 +211,11 @@ int main ()
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (client, &configuration);
+  result = XMI_Configuration_query (context, &configuration);
   size_t _my_rank = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (client, &configuration);
+  result = XMI_Configuration_query (context, &configuration);
   size_t num_tasks = configuration.value.intval;
 
   /* Display some test header information */
@@ -261,9 +262,9 @@ int main ()
     for (i=0; i<_dispatch_count; i++)
     {
 #ifdef WARMUP
-      test (client, 0, &_dispatch[i], sndlen, _my_rank);
+      test (context, &_dispatch[i], sndlen, _my_rank);
 #endif
-      cycles = test (client, 0, _dispatch[i], sndlen, _my_rank);
+      cycles = test (context, _dispatch[i], sndlen, _my_rank);
       usec   = cycles/clockMHz;
       index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
     }

@@ -1479,7 +1479,7 @@ namespace XMI
           /// \brief Callback invoked after send a rts_data packet.
           ///
 
-          static void cb_rts_send (xmi_client_t client, size_t   context,
+          static void cb_rts_send (xmi_context_t context,
                                    void          * cookie,
                                    xmi_result_t    result)
           {
@@ -1606,7 +1606,7 @@ namespace XMI
           /// \brief Callback invoked after send a data_send packet.
           ///
 
-          static void cb_data_send (xmi_client_t client, size_t   context,
+          static void cb_data_send (xmi_context_t context,
                                     void          * cookie,
                                     xmi_result_t    result)
           {

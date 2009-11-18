@@ -114,7 +114,7 @@ public:
 	///  \returns a return code to indicate reset status
 	//////////////////////////////////////////////////////////////////////
 	void executeCallback(xmi_result_t err = XMI_SUCCESS) {
-		if(_cb.function) _cb.function(_client, _context, _cb.clientdata, err);
+		if(_cb.function) _cb.function(XMI_Client_getcontext(_client, _context), _cb.clientdata, err);
 	}
 
 protected:
@@ -170,7 +170,7 @@ public:
 	///  \returns a return code to indicate reset status
 	//////////////////////////////////////////////////////////////////////
 	void executeCallback(xmi_result_t err = XMI_SUCCESS) {
-		if(_cb.function) _cb.function(_client, _context, _cb.clientdata, err);
+		if(_cb.function) _cb.function(XMI_Client_getcontext(_client, _context), _cb.clientdata, err);
 	}
 
 	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }

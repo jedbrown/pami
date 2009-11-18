@@ -94,7 +94,7 @@ namespace XMI
               if (T_Niov == 1)
               {
                 // Constant-expression template specialization.
-                n = (iov[0].iov_len >> 2) + (iov[0].iov_len & 0x03 != 0);
+                n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
                 uint32_t * dst = (uint32_t *) this->getPayload ();
                 uint32_t * src = (uint32_t *) iov[0].iov_base;
                 for (i=0; i<n; i++) dst[i] = src[i];
@@ -107,12 +107,12 @@ namespace XMI
                 // Constant-expression template specialization.
                 uint32_t * dst = (uint32_t *) this->getPayload ();
                 uint32_t * src = (uint32_t *) iov[0].iov_base;
-                n = (iov[0].iov_len >> 2) + (iov[0].iov_len & 0x03 != 0);
+                n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
                 for (i=0; i<n; i++) dst[i] = src[i];
 
                 dst = (uint32_t *)((uint8_t *) dst + iov[0].iov_len);
                 src = (uint32_t *) iov[1].iov_base;
-                n = (iov[1].iov_len >> 2) + (iov[1].iov_len & 0x03 != 0);
+                n = (iov[1].iov_len >> 2) + ((iov[1].iov_len & 0x03) != 0);
                 for (i=0; i<n; i++) dst[i] = src[i];
 
                 return;
@@ -125,7 +125,7 @@ namespace XMI
               {
                 dst = (uint32_t *) payload;
                 src = (uint32_t *) iov[i].iov_base;
-                n = (iov[i].iov_len >> 2) + (iov[i].iov_len & 0x03 != 0);
+                n = (iov[i].iov_len >> 2) + ((iov[i].iov_len & 0x03) != 0);
                 for (j=0; j<n; j++) dst[j] = src[j];
                 payload += iov[i].iov_len;
               }

@@ -49,12 +49,12 @@ namespace XMI
         void                    *user_cookie;
       };
 
-      static void client_done(xmi_client_t client, size_t context, void *rdata, xmi_result_t res)
+      static void client_done(xmi_context_t context, void *rdata, xmi_result_t res)
       {
         reqObj * robj = (reqObj*)rdata;
         MPI    * mpi  = robj->factory;
         if(robj->user_done_fn)
-          robj->user_done_fn(client, context, robj->user_cookie, res);
+          robj->user_done_fn(context, robj->user_cookie, res);
         mpi->_reqAllocator.returnObject(robj);
       }
 
@@ -721,7 +721,7 @@ namespace XMI
           CCMI::Adaptor::Broadcast::AsyncBinomialFactory *factory =
             (CCMI::Adaptor::Broadcast::AsyncBinomialFactory *) &info->_bcast_registration;
           if(ambroadcast->stypecount == 0)
-            ambroadcast->cb_done(NULL, 0, ambroadcast->cookie, XMI_SUCCESS);
+            ambroadcast->cb_done(NULL, ambroadcast->cookie, XMI_SUCCESS);
           else
           {
             xmi_callback_t cb_done;
