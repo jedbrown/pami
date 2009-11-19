@@ -161,7 +161,7 @@ namespace XMI
               {
                 dst = (uint32_t *) payload;
                 src = (uint32_t *) iov[i].iov_base;
-                n = (iov[i].iov_len >> 2) + (iov[i].iov_len & 0x03 != 0);
+                n = (iov[i].iov_len >> 2) + ((iov[i].iov_len & 0x03) != 0);
                 for (j=0; j<n; j++) dst[j] = src[j];
                 payload += iov[i].iov_len;
               }
@@ -403,16 +403,17 @@ namespace XMI
       if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
 #endif
 
-      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
+      size_t pktid;
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
 
       if (pkt != NULL)
         {
           pkt->write (dispatch_id, metadata, iov);
 
-          sequence = _fifo[fnum].getPacketSequenceId ((T_Packet *)pkt);
+          //sequence = _fifo[fnum].getPacketSequenceId ((T_Packet *)pkt);
 
           // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket (pkt);
+          _fifo[fnum].producePacket (pktid);
 
           return XMI_SUCCESS;
         }
@@ -437,16 +438,17 @@ namespace XMI
       if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
 #endif
 
-      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
+      size_t pktid;
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
 
       if (pkt != NULL)
         {
           pkt->write (dispatch_id, metadata, iov, niov);
 
-          sequence = _fifo[fnum].getPacketSequenceId (pkt);
+          //sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
           // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket ((T_Packet *)pkt);
+          _fifo[fnum].producePacket (pktid);
 
           TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
           return XMI_SUCCESS;
@@ -464,7 +466,8 @@ namespace XMI
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
 
-      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket ();
+      size_t pktid;
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
 
       if (pkt != NULL)
         {
@@ -472,10 +475,10 @@ namespace XMI
           iov[0].iov_base = msg->next (iov[0].iov_len, T_Packet::payloadSize_impl);
           pkt->write (msg->getDispatchId (), msg->getMetadata(), iov);
 
-          sequence = _fifo[fnum].getPacketSequenceId (pkt);
+          //sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
           // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket ((T_Packet *)pkt);
+          _fifo[fnum].producePacket (pktid);
 
           TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << XMI_SUCCESS\n", __global.mapping.task(), fnum, msg));
           return XMI_SUCCESS;
@@ -527,7 +530,7 @@ namespace XMI
 
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
-          _rfifo->consumePacket (pkt);
+          _rfifo->consumePacket ();
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ...  after _rfifo->consumePacket()\n", __global.mapping.task()));
           events++;
 #endif

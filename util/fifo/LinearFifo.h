@@ -40,40 +40,49 @@ namespace XMI
           {
             public:
               inline LinearFifoPacket () :
-                  T_Packet (),
-                  _active (0),
-                  _sequence (0)
-              {};
+                  T_Packet ()
+              {
+                setActive (false);
+              };
 
               inline ~LinearFifoPacket () {};
 
               inline void reset ()
               {
-                _active = 0;
                 T_Packet::clear();
+                setActive (false);
               };
 
-              inline bool isActive () { return _active; };
-              inline void consume () { _active = 0; };
-              inline void produce () { _active = 1; };
+              inline bool isActive ()
+              {
+                size_t * header = (size_t *) T_Packet::getHeader ();
+                return header[(T_Packet::headerSize_impl / sizeof(size_t))-1];
+              };
+              inline void setActive (bool active)
+              {
+                size_t * header = (size_t *) T_Packet::getHeader ();
+                header[(T_Packet::headerSize_impl / sizeof(size_t))-1] = active;
+              };
 
-              inline void setSequenceId (size_t n) { _sequence = n; }
-              inline size_t getSequenceId () { return _sequence; }
-
-            protected:
-              size_t _active __attribute__ ((aligned (16)));
-              size_t _sequence;
+              static const size_t public_header_bytes = T_Packet::headerSize_impl - sizeof(size_t);
           };
+          
+          typedef struct
+          {
+            size_t      active;
+            T_Packet    packet;
+          } linearfifo_packet_t;
 
         public:
           inline LinearFifo () :
               Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet> (),
-            //  _packet (NULL),
               _head (0),
               _tail (),
               _inj_wrap_count (0),
               _last_rec_sequence (0)
-          {};
+          {
+            fprintf (stderr, "LinearFifo() ... sizeof(T_Packet) = %zd, sizeof(LinearFifoPacket) = %zd\n", sizeof(T_Packet), sizeof(LinearFifoPacket));
+          };
 
           inline ~LinearFifo () {};
 
@@ -82,14 +91,6 @@ namespace XMI
           ///
           inline void init_impl (SysDep & sysdep)
           {
-//            _npackets = bytes / sizeof(LinearFifoPacket);
-
-//            size_t size = sizeof(LinearFifoPacket) * T_FifoSize;
-
-  //          TRACE_ERR((stderr, "(%zd) LinearFifo() .. before scratchpad_dynamic_area_memalign()\n", DCMF_Messager_rank()));
-    //        void * tmp = sysdep.memoryManager.scratchpad_dynamic_area_memalign(16, size);
- //           _packet = (LinearFifoPacket *) addr;
-
             _head = 0;
             _tail.init (&sysdep);
             _tail.fetch_and_clear ();
@@ -97,21 +98,24 @@ namespace XMI
             unsigned i;
 
             for (i = 0; i < T_FifoSize; i++)
-              _packet[i].reset ();
+            {
+              _foo[i].active = 0;
+              _foo[i].packet.clear ();
+            }
           }
 
-          inline T_Packet * nextInjPacket_impl ()
+          inline T_Packet * nextInjPacket_impl (size_t & pktid)
           {
-            size_t index = _tail.fetch_and_inc ();
-            TRACE_ERR((stderr, "(%zd) LinearFifo::nextInjPacket_impl() .. _tail.fetch_and_inc() => %zd, T_FifoSize = %d, &_packet[0] = %p\n", DCMF_Messager_rank(), index, T_FifoSize, &_packet[0]));
-            if (index < T_FifoSize)
+            pktid = _tail.fetch_and_inc ();
+            TRACE_ERR((stderr, "(%zd) LinearFifo::nextInjPacket_impl() .. _tail.fetch_and_inc() => %zd, T_FifoSize = %d\n", DCMF_Messager_rank(), pktid, T_FifoSize));
+            if (pktid < T_FifoSize)
               {
                 // Set the packet sequence number at this time to avoid race
                 // condition where a second packet is reserved after this
                 // packet and then "produced" before this packet can be
                 // produced.
-                _packet[index].setSequenceId (index + _inj_wrap_count * T_FifoSize);
-                return (T_Packet *) &_packet[index];
+                //_packet[index].setSequenceId (index + _inj_wrap_count * T_FifoSize);
+                return (T_Packet *) &_foo[_head].packet;
               }
 
             return NULL;
@@ -119,39 +123,45 @@ namespace XMI
 
           inline T_Packet * nextRecPacket_impl ()
           {
-            T_Packet * pkt = NULL;
+            if (_foo[_head].active)
+              return & _foo[_head].packet;
 
-            if (_packet[_head].isActive())
-              {
-                pkt = (T_Packet *) & _packet[_head];
-                _head++;
-
-                if (_head == T_FifoSize) _head = 0;
-              }
-
-            return pkt;
+            return (T_Packet *) NULL;
           };
 
-          inline void consumePacket_impl (T_Packet * pkt)
+          inline void consumePacket_impl ()
           {
-            LinearFifoPacket * p = (LinearFifoPacket *) pkt;
+            //LinearFifoPacket * p = (LinearFifoPacket *) pkt;
 
-            p->consume ();
+            //p->consume ();
+            _foo[_head].active = 0;
             _last_rec_sequence++;
 
             // If this packet is the last packet in the fifo, reset the tail
             // to the start of the fifo.
-            if (p == &_packet[T_FifoSize-1])
-              {
-                mem_sync ();
-                _tail.fetch_and_clear ();
-              }
+            //if (p == &_packet[T_FifoSize-1])
+              //{
+                //mem_sync ();
+     //           _tail.fetch_and_clear ();
+       //       }
+
+            _head++;
+            
+            // If this packet is the last packet in the fifo, reset the tail
+            // to the start of the fifo.
+            if (_head == T_FifoSize)
+            {
+              _head = 0;
+              mem_sync ();
+              _tail.fetch_and_clear ();
+            }
           };
 
-          inline void producePacket_impl (T_Packet * pkt)
+          inline void producePacket_impl (size_t pktid)
           {
-            LinearFifoPacket * p = (LinearFifoPacket *) pkt;
-            p->produce ();
+            _foo[pktid].active = 1;
+//            LinearFifoPacket * p = (LinearFifoPacket *) pkt;
+  //          p->produce ();
             mem_barrier ();
           };
 
@@ -168,15 +178,17 @@ namespace XMI
           {
             return _last_rec_sequence;
           }
-
+#if 0
           inline size_t getPacketSequenceId_impl (T_Packet * pkt)
           {
             LinearFifoPacket * p = (LinearFifoPacket *) pkt;
             return p->getSequenceId ();
           }
-
+#endif
         protected:
-          LinearFifoPacket _packet[T_FifoSize];
+          linearfifo_packet_t _foo[T_FifoSize];
+//          T_Packet         _packet[T_FifoSize];
+  //        size_t           _active[T_FifoSize];
           size_t           _head;
           T_Atomic         _tail;
 
