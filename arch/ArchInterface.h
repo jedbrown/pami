@@ -74,16 +74,7 @@ void Type<size_t>::copy (size_t * dst, size_t * src)
   }
 };
 #else // XMI_NO_SIZE_T_PROTO
-///
-/// \brief Template specialization for size_t copies.
-///
-template <>
-template <unsigned N>
-void Type<size_t>::copy (size_t * dst, size_t * src)
-{
-  size_t i;
-  for (i = 0; i < N; i++) dst[i] = src[i];
-};
+ #warning (XMI_NO_SIZE_T_PROTO) size_t and unsigned definitions conflict
 #endif // XMI_NO_SIZE_T_PROTO
 
 
