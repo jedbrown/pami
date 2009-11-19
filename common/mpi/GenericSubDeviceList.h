@@ -14,17 +14,23 @@
 
 extern XMI::Device::MPIBcastDev _g_mpibcast_dev;
 
-static inline void __platform_generic_init(XMI::SysDep &sd,
-				XMI::Device::Generic::Device *device) {
+namespace XMI {
+namespace Device {
+namespace Generic {
+
+inline void Device::__platform_generic_init(XMI::SysDep &sd,
+			XMI::Device::Generic::Device *device) {
 	_g_mpibcast_dev.init(sd, device);
 }
 
-static inline int __platform_generic_advanceRecv() {
+inline int Device::__platform_generic_advanceRecv(size_t context) {
 	int events = 0;
-
-	events += _g_mpibcast_dev.advanceRecv();
-
+	events += _g_mpibcast_dev.advanceRecv(context);
 	return events;
 }
+
+}; // namespace Generic
+}; // namespace Device
+}; // namespace XMI
 
 #endif // __common_mpi_GenericSubDeviceList_h__

@@ -2808,8 +2808,6 @@ extern "C"
   {
     xmi_client_t         client;	   /**< client to operate within */
     size_t               context;	   /**< primary context to operate within */
-    size_t               dispatch;         /**< Dispatch identifier */
-    xmi_multicast_hint_t hints;            /**< Hints for multicast */
     void                *request; 	   /**< space for operation */
     size_t               dispatch;         /**< Dispatch identifier */
     xmi_multicast_hint_t hints;            /**< Hints for multicast */

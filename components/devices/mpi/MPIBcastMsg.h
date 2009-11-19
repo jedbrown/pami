@@ -53,14 +53,14 @@ private:
 	};
 public:
 	MPIBcastMsg(Generic::BaseGenericDevice &Generic_QS,
-		xmi_multicast_t *mcast,
-		int tag) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done),
+		xmi_multicast_t *mcast) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
+					mcast->client, mcast->context),
 	_dst((XMI::Topology *)mcast->dst_participants),
 	_iwq((XMI::PipeWorkQueue *)mcast->src),
 	_rwq((XMI::PipeWorkQueue *)mcast->dst),
-	_bytes(bytes),
-	_tag(tag),
+	_bytes(mcast->bytes),
+	_tag(mcast->connection_id),
 	_idx(0),
 	_currBytes(0),
 	_currBuf(NULL),
@@ -214,7 +214,7 @@ inline XMI::Device::MessageStatus MPIBcastMsg::advanceThread(XMI::Device::Generi
 }
 
 inline bool MPIBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
-	msg = new (mcast->request) MPIBcastMsg(_g_wqbcast_dev, mcast, _tag);
+	MPIBcastMsg *msg = new (mcast->request) MPIBcastMsg(_g_wqbcast_dev, mcast);
 	_g_wqbcast_dev.__post<MPIBcastMsg>(msg);
 	return true;
 }

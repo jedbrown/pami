@@ -71,7 +71,8 @@ int main(int argc, char ** argv) {
 	xmi_multicast_t mcast;
 
 	// simple allreduce on the local ranks...
-	mcast.context = context;
+	mcast.client = client;
+	mcast.context = 0;
 	mcast.roles = (unsigned)-1;
 	mcast.src_participants = (xmi_topology_t *)&itopo;
 	mcast.dst_participants = (xmi_topology_t *)&otopo;

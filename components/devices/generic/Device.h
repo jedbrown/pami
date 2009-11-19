@@ -99,6 +99,9 @@ protected:
 //////////////////////////////////////////////////////////////////////
 class Device {
 
+	inline void __platform_generic_init(XMI::SysDep &sd, Device *generic);
+	inline int __platform_generic_advanceRecv(size_t context);
+
 public:
 	//////////////////////////////////////////////////////////////////
 	/// \brief  A device

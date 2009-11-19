@@ -12,13 +12,21 @@
 
 // extern XMI::Device::XXX _g_xxx_dev;
 
-static inline void __platform_generic_init(XMI::SysDep &sd,
+namespace XMI {
+namespace Device {
+namespace Generic {
+
+inline void Device::__platform_generic_init(XMI::SysDep &sd,
 			XMI::Device::Generic::Device *device) {
 }
 
-static inline int __platform_generic_advanceRecv() {
+inline int Device::__platform_generic_advanceRecv(size_t context) {
 	int events = 0;
 	return events;
 }
+
+}; // namespace Generic
+}; // namespace Device
+}; // namespace XMI
 
 #endif // __common_bgp_GenericSubDeviceList_h__
