@@ -151,10 +151,12 @@ namespace XMI {
         TRACE_ADAPTOR((stderr,":%d:MPICollectiveMcastMessage done %s, %zd available, %zd done out of %zd\n",__LINE__,_bytesComplete == _bytes?"true":"false", _bytesAvailable, _bytesComplete, _bytes));
         return _bytesComplete == _bytes;
       }
-
+#warning fix complete so it passes the correct context
       const void complete() {
         if(_cb_done.function)
-          (_cb_done.function)(XMI_Client_getcontext(_client,_context),_cb_done.clientdata, XMI_SUCCESS);
+          (_cb_done.function)(NULL, //XMI_Client_getcontext(_client,_context), \todo FIX THIS. It core dumps right now in getcontext.
+                              _cb_done.clientdata, 
+                              XMI_SUCCESS);
       }
 
     };
