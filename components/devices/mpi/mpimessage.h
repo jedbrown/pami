@@ -14,17 +14,10 @@
 #ifndef __components_devices_mpi_mpimessage_h__
 #define __components_devices_mpi_mpimessage_h__
 
-#ifndef TRACE_ADAPTOR
-  #define TRACE_ADAPTOR(x) //fprintf x
-#endif
-
 #include "sys/xmi.h"
 #include "util/common.h"
 #include "util/queue/Queue.h"
 #include <mpi.h>
-#include "components/devices/mpi/mpimessage_old.h"
-#include "common/mpi/PipeWorkQueue.h"
-#include "common/mpi/Topology.h"
 
 //#define EMULATE_NONDETERMINISTIC_DEVICE
 //#define EMULATE_UNRELIABLE_DEVICE
@@ -34,7 +27,7 @@ namespace XMI
 {
   namespace Device
   {
-    class MPICommMcastMessage
+    class MPIMessage
     {
     public:
       inline MPIMessage (xmi_client_t client, size_t       context,
@@ -87,10 +80,22 @@ namespace XMI
       inline int  totalsize () { return _size + sizeof (*this); }
     };
 
+    class MPIMcastRecvMessage
+    {
+    public:
       size_t              _dispatch_id;
-      size_t              _bytesAvailable;
-      size_t              _bytesComplete; 
-      char               *_dataBuffer;
+      unsigned            _conn;
+      xmi_event_function  _done_fn;
+      void               *_cookie;
+      char               *_buf;
+      size_t              _size;
+      size_t              _pwidth;
+      unsigned            _nranks;
+      unsigned            _hint;
+      xmi_op              _op;
+      xmi_dt              _dtype;
+      size_t              _counter;
+    };
 
     class MPIM2MMessage
     {
@@ -107,17 +112,33 @@ namespace XMI
       char               *_bufs;
     };
 
-      const void complete()
-      {
-        if(_cb_done.function)
-          (_cb_done.function)(_context,_cb_done.clientdata, XMI_SUCCESS);
-      }
-
+    template <class T_Counter>
+    class MPIM2MRecvMessage
+    {
+    public:
+      size_t              _dispatch_id;
+      unsigned            _conn;
+      xmi_event_function  _done_fn;
+      void               *_cookie;
+      int                 _num;
+      char               *_buf;
+      T_Counter          *_sizes;
+      T_Counter          *_offsets;
+      unsigned            _nranks;
     };
+
+    class MPIM2MHeader
+    {
+    public:
+      size_t      _dispatch_id;
+      unsigned    _size;
+      unsigned    _conn;
+      inline void *buffer() { return ((char *)this + sizeof (MPIM2MHeader)); }
+      inline int  totalsize () { return _size + sizeof (MPIM2MHeader); }
+    };
+
 
   };
 };
 
 #endif // __components_devices_mpi_mpibasemessage_h__
-
-
