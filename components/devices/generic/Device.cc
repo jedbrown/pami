@@ -21,6 +21,8 @@
 #include "util/common.h"
 #include "components/devices/generic/GenericDevice.h"
 
+#include "GenericSubDeviceList.cc"
+
 // All sub-devices must be instantiated here, but are otherwise unused in
 // this particular source file (see GenericDevice.h).
 //

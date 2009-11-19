@@ -15,6 +15,7 @@
 #undef USE_WAKEUP_VECTORS
 
 #include "components/devices/generic/Device.h"
+#include "GenericSubDeviceList.h"
 
 // All sub-devices are instantiated in generic/Device.cc, but are
 // used here. There must be a call to the init() for each sub-device,
@@ -179,6 +180,7 @@ namespace Generic {
 		_g_cnallreduce2p_dev.init(sd, this);
 		_g_cnbroadcast_dev.init(sd, this);
 #endif // __bgp__
+		__platform_generic_init(sd, this);
 	}
 
 	/// \brief Quick check whether full advance is needed.
@@ -235,6 +237,7 @@ namespace Generic {
 		events += _g_cnallreduce2p_dev.advanceRecv(__contextId);
 		events += _g_cnbroadcast_dev.advanceRecv(__contextId);
 #endif // __bgp__
+		events += __platform_generic_advanceRecv(__contextId);
 		return events;
 	}
 
