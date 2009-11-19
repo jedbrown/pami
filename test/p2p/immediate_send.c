@@ -23,6 +23,7 @@ static void test_dispatch (
   fprintf (stderr, ">>> [%zd] %s\n", header_size, (char *) header_addr);
   fprintf (stderr, ">>> [%zd] %s\n", pipe_size, (char *) pipe_addr);
   fprintf (stderr, "... dispatch function.\n");
+
   return;
 }
 
@@ -80,7 +81,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  size_t dispatch = 0xE0;  
+  size_t dispatch = 0;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
@@ -140,6 +141,7 @@ int main (int argc, char ** argv)
       }
     }
     fprintf (stderr, "... after recv advance loop\n");
+
     fprintf (stderr, "before send ...\n");
     parameters.task = 0;
     result = XMI_Send_immediate (context, &parameters);
@@ -172,6 +174,6 @@ int main (int argc, char ** argv)
   }
 
   fprintf (stderr, "\nTest Completed Successfully.\n");
- 
+
   return 0;
 };

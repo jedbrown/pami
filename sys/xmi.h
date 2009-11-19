@@ -2655,7 +2655,8 @@ extern "C"
   void XMI_Topology_subtract(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other);
 
 /**
- * \brief Multisend interfaces.
+ * \file sys/xmi.h
+ * \brief Multisend interface.
  *
  * A multisend operation allows many message passing transactions to
  * be performed in the same call to amortize software overheads.  It
@@ -2692,9 +2693,9 @@ extern "C"
    * Role information (numRoles and ReplRole) is determined from the factory that
    * was registered. So a typical procedure to generate a multicombine would be:
    *
-   *    factory->getRoles(&numRoles, &replRole);
-   *    // analyze and select role(s)
-   *    factory->generate(..., roles, ...);
+   *	factory->getRoles(&numRoles, &replRole);
+   *	// analyze and select role(s)
+   *	factory->generate(..., roles, ...);
    *
    * Role information is static (?) so the analysis of roles might be done at
    * registration/init time and carried forward. If that is not the case, we may
@@ -2712,19 +2713,19 @@ extern "C"
    * to that core.
    *
    * Example 1: numRoles = 2 and replRole = 0 (e.g. a Reduce)
-   *    All data participants use (replicate) role "0". The root uses role "1".
-   *    If a participant is the root but is not supplying data, it would use
-   *    the data_participants topology to indicate that.
+   *	All data participants use (replicate) role "0". The root uses role "1".
+   *	If a participant is the root but is not supplying data, it would use
+   *	the data_participants topology to indicate that.
    *
    * Example 2: numRoles = 2 and replRole = -1 (e.g. Tree device, injection/reception)
-   *    One participant, closest to the input data, uses role "0". Another
-   *    participant (closest to the results) uses role "1". If there is only one
-   *    (local) participant, i.e. SMP mode, then the role is "0|1" (both roles).
+   *	One participant, closest to the input data, uses role "0". Another
+   *	participant (closest to the results) uses role "1". If there is only one
+   *	(local) participant, i.e. SMP mode, then the role is "0|1" (both roles).
    *
    * Example 3: numRoles = 1 and replRole = -1 (e.g. one-sided bcast)
-   *    (a.k.a multicast)
-   *    Origin uses role "0" and sets results participants to the destinations.
-   *    Destinations all get data via recv callback setup at registration time.
+   *	(a.k.a multicast)
+   *	Origin uses role "0" and sets results participants to the destinations.
+   *	Destinations all get data via recv callback setup at registration time.
    *
    * It is expected that the caller of a multisend has some knowledge of the type
    * of multisend being performed. This is required in order to even setup
@@ -2732,42 +2733,16 @@ extern "C"
    * multisend call, so adding the roles as a dependency of the context should
    * not be overly restrictive.
    *
-   * \param[in] registration    The protocol to be analysed
-   * \param[out] numRoles   The number of different roles supported/required
-   * \param[out] replRole   The role to replicate for additional participants,
-   *                or -1 if no additional roles are used.
-   * \return    success or failure
+   * \param[in] registration	The protocol to be analysed
+   * \param[out] numRoles	The number of different roles supported/required
+   * \param[out] replRole	The role to replicate for additional participants,
+   *				or -1 if no additional roles are used.
+   * \return	success or failure
    */
   xmi_result_t XMI_Multisend_getroles(xmi_context_t  context,
                                       size_t         dispatch,
                                       int           *numRoles,
                                       int           *replRole);
-
-  /**
-   * \brief Hints for multicast
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
-   */
-  typedef struct
-  {
-    /* The first 3 are mutually exclusive                                                        */
-    uint32_t global            : 1; /**< A global (all tasks) multicast                          */
-    uint32_t local             : 1; /**< A local (to this task) multicast                        */
-    uint32_t spanning          : 1; /**< A spanning (one task per local set) multicast           */
-    uint32_t subtopology       : 1; /**< An arbitrary subtopology (use 
-                                                  xmi_dispatch_hint_t.config field for topology) */
-
-    /* The next 2 are mutually exclusive and may be used w/wo active_message enabled             */
-    uint32_t all_sided         : 1; /**< All-sided multicast                                     */
-    uint32_t one_sided         : 1; /**< One-sided multicast                                     */
-
-    uint32_t active_message    : 1; /**< Active message, must specify dispatch function          */
-
-    uint32_t ring_wq           : 1; /**< Bogus hint to select WQRingBcastMdl                     */
-
-    uint32_t reserved          :24; /**< Unused at this time                                     */
-  } xmi_multicast_hint_t;
 
   /**
    * \brief Recv callback for Multicast
@@ -2777,26 +2752,26 @@ extern "C"
    *
    * Does this accept zero-byte (no data, no metadata) operations?
    *
-   * \param[in] msginfo     Metadata
-   * \param[in] msgcount    Count of metadata
+   * \param[in] msginfo		Metadata
+   * \param[in] msgcount	Count of metadata
    * \param[in] connection_id  Stream ID of data
-   * \param[in] root        Sending task
-   * \param[in] sndlen      Length of data sent
-   * \param[in] clientdata  Opaque arg
-   * \param[out] rcvlen     Length of data to receive 
-   * \param[out] rcvpwq     Where to put recv data
-   * \param[out] cb_done    Completion callback to invoke when data received
-   * \return   void
+   * \param[in] root		Sending task
+   * \param[in] sndlen		Length of data sent
+   * \param[in] clientdata	Opaque arg
+   * \param[out] rcvlen		Length of data to receive
+   * \param[out] rcvbuf		Where to put recv data
+   * \param[out] cb_done	Completion callback to invoke when data received
+   * \return	XMI_Request opaque memory for message
    */
-  typedef void (*xmi_dispatch_multicast_fn)(const xmi_quad_t     *msginfo,
+  typedef void (*xmi_dispatch_multicast_fn)(const xmi_quad_t        *msginfo,
                                             unsigned              msgcount,
                                             unsigned              connection_id,
                                             size_t                root,
                                             size_t                sndlen,
                                             void                 *clientdata,
                                             size_t               *rcvlen,
-                                            xmi_pipeworkqueue_t **rcvpwq,
-                                            xmi_callback_t       *cb_done);
+                                            xmi_pipeworkqueue_t **rcvbuf,
+                                            xmi_event_function   *cb_done);
 
   /**
    * \brief The new structure to pass parameters for the multisend multicast operation.
@@ -2806,13 +2781,8 @@ extern "C"
    */
   typedef struct
   {
-    xmi_context_t        context;    /**< context to operate within */
-//#ifndef DISABLE_GENERIC_DEVICE
-//#warning remove request storage
-    void                *request;      /**< space for operation */
-//#endif
-    size_t               dispatch;         /**< Dispatch identifier */
-    xmi_multicast_hint_t hints;            /**< Hints for multicast */
+    xmi_context_t        context;	   /**< context to operate within */
+    void                *request; 	   /**< space for operation */
     xmi_callback_t       cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the
@@ -2823,12 +2793,106 @@ extern "C"
     xmi_topology_t      *src_participants; /**< root */
     xmi_pipeworkqueue_t *dst;              /**< dest buffer (ignored for one-sided) */
     xmi_topology_t      *dst_participants; /**< destinations to multicast to*/
-    const xmi_quad_t    *msginfo;        /**< A extra info field to be sent with the message.
+    const xmi_quad_t    *msginfo;	       /**< A extra info field to be sent with the message.
                                                   This might include information about
                                                   the data being sent, for one-sided. */
     unsigned            msgcount;          /**< info count*/
   } xmi_multicast_t;
   xmi_result_t XMI_Multicast(xmi_context_t context,xmi_multicast_t *mcastinfo);
+
+
+  /**  Deprecated Multicast:  To be deleted soon!!! */
+  /**********************************************************************/
+  typedef enum
+  {
+    XMI_UNDEFINED_CONSISTENCY = -1,
+    XMI_RELAXED_CONSISTENCY,
+    XMI_MATCH_CONSISTENCY,
+    XMI_WEAK_CONSISTENCY,
+    XMI_CONSISTENCY_COUNT
+  } xmi_consistency_t;
+
+#define  LINE_BCAST_MASK    (XMI_LINE_BCAST_XP|XMI_LINE_BCAST_XM|	\
+                             XMI_LINE_BCAST_YP|XMI_LINE_BCAST_YM|	\
+                             XMI_LINE_BCAST_ZP|XMI_LINE_BCAST_ZM)
+  typedef enum
+  {
+    XMI_PT_TO_PT_SUBTASK           =  0,      /**< Send a pt-to-point message */
+    XMI_LINE_BCAST_XP              =  0x20,   /**< Bcast along x+ */
+    XMI_LINE_BCAST_XM              =  0x10,   /**< Bcast along x- */
+    XMI_LINE_BCAST_YP              =  0x08,   /**< Bcast along y+ */
+    XMI_LINE_BCAST_YM              =  0x04,   /**< Bcast along y- */
+    XMI_LINE_BCAST_ZP              =  0x02,   /**< Bcast along z+ */
+    XMI_LINE_BCAST_ZM              =  0x01,   /**< Bcast along z- */
+    XMI_COMBINE_SUBTASK            =  0x0100, /**< Combine the incoming message */
+    /* with the local state */
+    XMI_GI_BARRIER                 =  0x0200,
+    XMI_LOCKBOX_BARRIER            =  0x0300,
+    XMI_TREE_BARRIER               =  0x0400,
+    XMI_TREE_BCAST                 =  0x0500,
+    XMI_TREE_ALLREDUCE             =  0x0600,
+    XMI_REDUCE_RECV_STORE          =  0x0700,
+    XMI_REDUCE_RECV_NOSTORE        =  0x0800,
+    XMI_BCAST_RECV_STORE           =  0x0900,
+    XMI_BCAST_RECV_NOSTORE         =  0x0a00,
+    XMI_LOCALCOPY                  =  0x0b00,
+    XMI_UNDEFINED_SUBTASK          =  (~LINE_BCAST_MASK),
+  } xmi_subtask_t;
+
+
+  typedef xmi_quad_t * (*xmi_olddispatch_multicast_fn) (const xmi_quad_t   * info,
+                                                        unsigned             count,
+                                                        unsigned             peer,
+                                                        unsigned             sndlen,
+                                                        unsigned             conn_id,
+                                                        void               * arg,
+                                                        unsigned           * rcvlen,
+                                                        char              ** rcvbuf,
+                                                        unsigned           * pipewidth,
+                                                        xmi_callback_t     * cb_done);
+  typedef struct
+  {
+    xmi_quad_t        * request;
+    xmi_callback_t      cb_done;
+    unsigned            connection_id;
+    unsigned            bytes;
+    const char        * src;
+    unsigned            ntasks;
+    unsigned          * tasks;
+    xmi_subtask_t     * opcodes;
+    const xmi_quad_t  * msginfo;
+    unsigned            count;
+    unsigned            flags;
+    xmi_op              op;
+    xmi_dt              dt;
+  } xmi_oldmulticast_t;
+
+  typedef struct
+  {
+    xmi_quad_t        * request;
+    xmi_callback_t      cb_done;
+    unsigned            connection_id;
+    unsigned            bytes;
+    char              * rcvbuf;
+    unsigned            pipelineWidth;
+    xmi_subtask_t       opcode;
+    xmi_op              op;
+    xmi_dt              dt;
+  } xmi_oldmulticast_recv_t;
+
+
+  typedef xmi_quad_t * (*xmi_olddispatch_manytomany_fn) (unsigned         conn_id,
+                                                         void           * arg,
+                                                         char          ** rcvbuf,
+                                                         size_t        ** rcvdispls,
+                                                         size_t        ** rcvlens,
+                                                         size_t        ** rcvcounters,
+                                                         size_t         * ntasks,
+                                                         xmi_callback_t * cb_done);
+
+
+  /**********************************************************************/
+
 
 
   /**
@@ -2853,18 +2917,6 @@ extern "C"
   } xmi_manytomanybuf_t;
 
   /**
-   * \brief Hints for manytomany
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
-   */
-  typedef struct
-  {
-    uint32_t global            : 1; /**< Force match ordering semantics                          */
-    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
-    uint32_t reserved          :30; /**< Unused at this time                                     */
-  } xmi_manytomany_hint_t;
-  /**
    * \brief Callback for Manytomany Receive operations
    *
    * Note, certain flavors of ManyToMany do not use a Receive Callback and
@@ -2880,17 +2932,17 @@ extern "C"
    * (lengths and offsets) and is used by the manytomany as an optimization
    * for handling reception data and completion.
    *
-   * \param[in] arg     Client Data
-   * \param[in] connection_id       Instance ID
-   * \param[in] metadata    Pointer to metadata, if any, in message header.
-   * \param[in] metacount   Number of xmi_quad_ts of metadata.
-   * \param[out] recv       Receive parameters for this connection (instance)
-   * \param[out] myIndex    Index of Recv Task in the receive parameters.
-   * \param[out] cb_done    Completion callback when message complete
-   * \return    Request object opaque storage for message.
+   * \param[in] arg		Client Data
+   * \param[in] conn_id		Instance ID
+   * \param[in] metadata	Pointer to metadata, if any, in message header.
+   * \param[in] metacount	Number of xmi_quad_ts of metadata.
+   * \param[out] recv		Receive parameters for this connection (instance)
+   * \param[out] myIndex	Index of Recv Task in the receive parameters.
+   * \param[out] cb_done	Completion callback when message complete
+   * \return	Request object opaque storage for message.
    */
   typedef void (*xmi_dispatch_manytomany_fn)(void                 *arg,
-                                             unsigned              connection_id,
+                                             unsigned              conn_id,
                                              xmi_quad_t           *metadata,
                                              unsigned              metacount,
                                              xmi_manytomanybuf_t **recv,
@@ -2905,47 +2957,33 @@ extern "C"
    */
   typedef struct
   {
-    xmi_context_t        context;      /**< context to operate within */
-    void                *request;        /**< space for operation */
-    xmi_callback_t       cb_done;      /**< User's completion callback */
+    xmi_context_t        context;	     /**< context to operate within */
+    void                *request; 	     /**< space for operation */
+    xmi_callback_t       cb_done;	     /**< User's completion callback */
     unsigned             connection_id;      /**< differentiate data streams */
     unsigned             roles;              /**< bitmap of roles to perform */
-    size_t              *taskIndex;      /**< Index of send in recv parameters */
+    size_t              *taskIndex;	     /**< Index of send in recv parameters */
     size_t               num_index;          /**< Number of entries in "taskIndex".
                                                 should be multiple of send.participants->size()?
                                              */
     xmi_manytomanybuf_t  send;               /**< send data parameters */
-    const xmi_quad_t    *metadata;       /**< A extra info field to be sent with the message.
+    const xmi_quad_t    *metadata;	     /**< A extra info field to be sent with the message.
                                                 This might include information about
                                                 the data being sent, for one-sided. */
-    unsigned             metacount;      /**< metadata count*/
+    unsigned             metacount;	     /**< metadata count*/
   } xmi_manytomany_t;
 
   /**
    * \brief Initiate a ManyToMany
    *
-   * \param[in] m2minfo Paramters for ManyToMany operation to be performed
-   * \return    XMI_SUCCESS or error code
+   * \param[in] m2minfo	Paramters for ManyToMany operation to be performed
+   * \return	XMI_SUCCESS or error code
    */
   xmi_result_t XMI_Manytomany(xmi_context_t context,xmi_manytomany_t *m2minfo);
 
   /******************************************************************************
    *       Multisync Personalized synchronization/coordination
    ******************************************************************************/
-
-
-  /**
-   * \brief Hints for multisync
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
-   */
-  typedef struct
-  {
-    uint32_t global            : 1; /**< Force match ordering semantics                          */
-    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
-    uint32_t reserved          :30; /**< Unused at this time                                     */
-  } xmi_multisync_hint_t;
 
   /**
    * \brief Recv callback for Multisync.
@@ -2955,32 +2993,27 @@ extern "C"
    * Note, certain flavors of Multisync do not use a Receive Callback and
    * constructing or registering with a non-NULL cb_recv will result in error.
    *
-   * \param[in] clientdata  Opaque arg
-   * \param[in] msginfo     Metadata
-   * \param[in] msgcount    Number of xmi_quad_ts in msginfo
-   * \param[in] connection_id       Instance ID
-   * \return    void
+   * \param[in] clientdata	Opaque arg
+   * \param[in] msginfo		Metadata
+   * \param[in] msgcount	Number of xmi_quad_ts in msginfo
+   * \param[in] conn_id		Instance ID
+   * \return	XMI_Request opaque memory for message
    */
   typedef void (*xmi_dispatch_multisync_fn)(void       *clientdata,
                                             xmi_quad_t *msginfo,
                                             unsigned    msgcount,
-                                            unsigned    connection_id);
+                                            unsigned    conn_id);
   /**
    * \brief structure defining interface to Multisync
    */
   typedef struct
   {
-    xmi_context_t      context;   /**< context to operate within */
-//#ifndef DISABLE_GENERIC_DEVICE
-//#warning remove request storage
-    void              *request;         /**< space for operation */
-//#endif
-    xmi_callback_t     cb_done;   /**< User's completion callback */
-    unsigned           connection_id; /**< (remove?) differentiate data streams */
-    unsigned           roles;   /**< bitmap of roles to perform */
-    xmi_topology_t    *participants;  /**< Tasks involved in synchronization */
-    const xmi_quad_t  *msginfo;        /**< A extra meta data info field */
-    unsigned           msgcount;          /**< info count*/
+    xmi_context_t      context;		/**< context to operate within */
+    void              *request;	        /**< space for operation */
+    xmi_callback_t     cb_done;		/**< User's completion callback */
+    unsigned           connection_id;	/**< (remove?) differentiate data streams */
+    unsigned           roles;		/**< bitmap of roles to perform */
+    xmi_topology_t    *participants;	/**< Tasks involved in synchronization */
   } xmi_multisync_t;
   /**
    * \brief Barriers and the like.
@@ -2988,8 +3021,8 @@ extern "C"
    * All participants make this call. So, there is no "send" or "recv"
    * distinction needed.
    *
-   * \param[in] msyncinfo   Struct of all params needed to perform operation
-   * \return    XMI_SUCCESS or error codes
+   * \param[in] msyncinfo	Struct of all params needed to perform operation
+   * \return	XMI_SUCCESS or error codes
    */
   xmi_result_t XMI_Multisync(xmi_context_t context,xmi_multisync_t *msyncinfo);
 
@@ -3011,70 +3044,19 @@ extern "C"
    * then the results parameters are not needed. Details of this are specified by the
    * type of multicombine being registered/used.
    */
-  /**
-   * \brief Hints for multicombine
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
-   */
   typedef struct
   {
-    uint32_t global            : 1; /**< Force match ordering semantics                          */
-    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
-    uint32_t reserved          :30; /**< Unused at this time                                     */
-  } xmi_multicombine_hint_t;
-  /**
-   * \brief Recv callback for Multicombine
-   *
-   * Note, certain flavors of Multicast do not use a Receive Callback and
-   * constructing or registering with a non-NULL cb_recv will result in error.
-   *
-   * Does this accept zero-byte (no data, no metadata) operations?
-   *
-   * \param[in] msginfo     Metadata
-   * \param[in] msgcount    Count of metadata
-   * \param[in] connection_id  Stream ID of data
-   * \param[in] root        Sending task
-   * \param[in] sndlen      Length of data sent
-   * \param[in] clientdata  Opaque arg
-   * \param[out] rcvlen     Length of data to receive
-   * \param[out] rcvpwq     Where to put recv data
-   * \param[out] cb_done    Completion callback to invoke when data received
-   * \return    XMI_Request opaque memory for message
-   */
-  typedef void (*xmi_dispatch_multicombine_fn)(const xmi_quad_t        *msginfo,
-                                               unsigned              msgcount,
-                                               unsigned              connection_id,
-                                               size_t                root,
-                                               size_t                sndlen,
-                                               void                 *clientdata,
-                                               size_t               *rcvlen,
-                                               xmi_pipeworkqueue_t  *data,         /**< Data source */
-                                               xmi_pipeworkqueue_t  *results,        /**< Results destination */
-                                               xmi_op                optor,          /**< Operation to perform on data */
-                                               xmi_dt                dtype,        /**< Datatype of elements */
-                                               size_t                count,          /**< Number of elements */
-                                               xmi_event_function   *cb_done);
-
-  typedef struct
-  {
-    xmi_context_t        context;       /**< context to operate within */
-//#ifndef DISABLE_GENERIC_DEVICE
-//#warning remove request storage
+    xmi_context_t        context;	      /**< context to operate within */
     void                *request;             /**< space for communication struct(s) */
-//#endif
     xmi_callback_t       cb_done;             /**< User's completion callback */
-    unsigned           connection_id; /**< (remove?) differentiate data streams */
-    unsigned             roles;         /**< bitmap of roles to perform */
-    xmi_pipeworkqueue_t *data;          /**< Data source */
+    unsigned             roles;		      /**< bitmap of roles to perform */
+    xmi_pipeworkqueue_t *data;		      /**< Data source */
     xmi_topology_t      *data_participants;   /**< Tasks contributing data */
-    xmi_pipeworkqueue_t *results;       /**< Results destination */
+    xmi_pipeworkqueue_t *results;	      /**< Results destination */
     xmi_topology_t      *results_participants;/**< Tasks receiving results */
-    xmi_op               optor;         /**< Operation to perform on data */
-    xmi_dt               dtype;         /**< Datatype of elements */
-    size_t               count;         /**< Number of elements */
-    const xmi_quad_t  *msginfo;        /**< A extra meta data info field */
-    unsigned           msgcount;          /**< info count*/
+    xmi_op               optor;		      /**< Operation to perform on data */
+    xmi_dt               dtype;		      /**< Datatype of elements */
+    size_t               count;		      /**< Number of elements */
   } xmi_multicombine_t;
 
   /**
@@ -3087,8 +3069,8 @@ extern "C"
    *
    * All participants == {data_participants .U. results_participants}.
    *
-   * \param[in] mcombineinfo    Struct of all params needed to perform operation
-   * \return    XMI_SUCCESS or error codes
+   * \param[in] mcombineinfo	Struct of all params needed to perform operation
+   * \return	XMI_SUCCESS or error codes
    */
   xmi_result_t XMI_Multicombine(xmi_context_t context,xmi_multicombine_t *mcombineinfo);
 
@@ -3216,14 +3198,13 @@ extern "C"
 
   typedef union
   {
-    xmi_dispatch_p2p_fn           p2p;
-    xmi_dispatch_ambroadcast_fn   ambroadcast;
-    xmi_dispatch_amscatter_fn     amscatter;
-    xmi_dispatch_amreduce_fn      amreduce;
-    xmi_dispatch_multicast_fn     multicast;
-    xmi_dispatch_manytomany_fn    manytomany;
-    xmi_dispatch_multisync_fn     multisync;
-    xmi_dispatch_multicombine_fn  multicombine;
+    xmi_dispatch_p2p_fn         p2p;
+    xmi_dispatch_ambroadcast_fn ambroadcast;
+    xmi_dispatch_amscatter_fn   amscatter;
+    xmi_dispatch_amreduce_fn    amreduce;
+    xmi_dispatch_multicast_fn   multicast;
+    xmi_dispatch_manytomany_fn  manytomany;
+    xmi_dispatch_multisync_fn   multisync;
   } xmi_dispatch_callback_fn;
 
   /*****************************************************************************/
@@ -3234,36 +3215,6 @@ extern "C"
    * \{
    */
   /*****************************************************************************/
-
-  /**
-   * \brief XMI type of dispatch
-   */
-  typedef enum
-  {
-    XMI_P2P_SEND,     /**< Point-to-point send         */
-    XMI_MULTICAST,    /**< Multicast                   */
-    XMI_MULTISYNC,    /**< Multisync                   */
-    XMI_MULTICOMBINE, /**< Multicombine                */
-    XMI_MANYTOMANY,   /**< Manytomany                  */
-  } xmi_dispatch_type_t;
-
-  /**
-   * \brief Hints for dispatch
-   *
-   */
-  typedef struct
-  {
-    xmi_dispatch_type_t    type;      /**< Type of dispatch reqistered    */ 
-    union{
-      xmi_multicast_hint_t      multicast;
-      xmi_multisync_hint_t      multisync;
-      xmi_multicombine_hint_t   multicombine;
-      xmi_manytomany_hint_t     manytomany;
-      xmi_send_hint_t           send;     
-    }                      hint;      /**< Type-specific hints            */
-    void*                  config;    /**< Type-specific additional config*/
-  } xmi_dispatch_hint_t;
-
   /**
    * \brief Initialize the dispatch functions for a dispatch id.
    *
@@ -3274,16 +3225,9 @@ extern "C"
    * \param[in] dispatch   Dispatch identifier to initialize
    * \param[in] fn         Dispatch receive function
    * \param[in] cookie     Dispatch function cookie
-   * \param[in] options    Dispatch registration options
+   * \param[in] options    Dispatch registration assertions
    *
    */
-  //#ifdef __xmi_target_mpi__
-  xmi_result_t XMI_Dispatch_set_new(xmi_context_t              context,
-                                 size_t                     dispatch,
-                                 xmi_dispatch_callback_fn   fn,
-                                 void                     * cookie,
-                                 xmi_dispatch_hint_t        options);
-  //#endif
   xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
                                  size_t                     dispatch,
                                  xmi_dispatch_callback_fn   fn,
@@ -3614,11 +3558,8 @@ extern "C"
 
   /** \} */ /* end of "context" group */
 
-#include "xmi_deprecated.h"
-
 #ifdef __cplusplus
 };
 #endif
-
 
 #endif /* __xmi__h__ */
