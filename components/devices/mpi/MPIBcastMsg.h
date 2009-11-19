@@ -35,7 +35,7 @@ typedef XMI::Device::Generic::SimpleSubDevice<MPIBcastThr> MPIBcastDev;
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::MPIBcastDev _g_wqbcast_dev;
+extern XMI::Device::MPIBcastDev _g_mpibcast_dev;
 
 namespace XMI {
 namespace Device {
@@ -196,7 +196,7 @@ public:
 	MPIBcastMdl(xmi_result_t &status) :
 	XMI::Device::Interface::MulticastModel<MPIBcastMdl>(status)
 	{
-		//XMI::SysDep *sd = _g_wqbcast_dev.getSysdep();
+		//XMI::SysDep *sd = _g_mpibcast_dev.getSysdep();
 	}
 
 	inline bool postMulticast_impl(xmi_multicast_t *mcast);
@@ -214,8 +214,8 @@ inline XMI::Device::MessageStatus MPIBcastMsg::advanceThread(XMI::Device::Generi
 }
 
 inline bool MPIBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
-	MPIBcastMsg *msg = new (mcast->request) MPIBcastMsg(_g_wqbcast_dev, mcast);
-	_g_wqbcast_dev.__post<MPIBcastMsg>(msg);
+	MPIBcastMsg *msg = new (mcast->request) MPIBcastMsg(_g_mpibcast_dev, mcast);
+	_g_mpibcast_dev.__post<MPIBcastMsg>(msg);
 	return true;
 }
 
