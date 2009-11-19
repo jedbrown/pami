@@ -13,7 +13,9 @@
 
 #ifndef __components_devices_mpi_mpidevice_h__
 #define __components_devices_mpi_mpidevice_h__
-
+#ifndef TRACE_ADAPTOR
+#define TRACE_ADAPTOR(x) //fprintf x
+#endif
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
@@ -30,7 +32,7 @@ namespace XMI
   {
     typedef struct mpi_dispatch_info_t
     {
-      Interface::RecvFunction_t  recv_func;
+      XMI::Device::Interface::RecvFunction_t  recv_func;
       void                      *recv_func_parm;
     }mpi_dispatch_info_t;
 
@@ -68,10 +70,11 @@ namespace XMI
 
 
       int registerRecvFunction (size_t                     dispatch,
-                                Interface::RecvFunction_t  recv_func,
+                                XMI::Device::Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
         {
           unsigned i;
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::registerRecvFunction dispatch %zd/%zd\n",(int)this,dispatch,dispatch * DISPATCH_SET_SIZE));
           for (i=0; i<DISPATCH_SET_SIZE; i++)
           {
             unsigned id = dispatch * DISPATCH_SET_SIZE + i;
@@ -236,7 +239,7 @@ namespace XMI
           //p2p messages
           switch(sts.MPI_TAG)
           {
-          case 0:
+          case 0: // p2p packet
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -259,7 +262,7 @@ namespace XMI
               free(msg);
             }
             break;
-          case 1:
+          case 1: // p2p packet + data
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -282,7 +285,7 @@ namespace XMI
               free(msg);
             }
             break;
-          case 2:
+          case 2: // old multicast
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -396,7 +399,7 @@ namespace XMI
               free (msg);
             }
             break;
-          case 3:
+          case 3: // old m2m
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
