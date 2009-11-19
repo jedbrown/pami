@@ -159,7 +159,7 @@ namespace XMI
         if(rq == NULL)
           return XMI_UNIMPL;
 
-        if (num > rq->size())
+        if ((size_t)num > (size_t)rq->size())
           return XMI_ERROR;
 
         for(i = 0; i < num; i++)

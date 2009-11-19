@@ -142,12 +142,12 @@ protected:
 		} else { // receive data until done...
 			XMI_assert(_rwq);
 			if (flag) {
-				if (status.count < _currBytes) {
+				if ((size_t)status.count < _currBytes) {
 					// make sure we only count what was recv'ed
 					_currBytes = status.count;
 				} else {
 					// how does MPI_Status.count work?
-					XMI_assertf(status.count <= _currBytes,
+					XMI_assertf((size_t)status.count <= _currBytes,
 						"MPIBcastMsg recv overrun (got %d, kept %d)\n",
 						status.count, _currBytes);
 				}
