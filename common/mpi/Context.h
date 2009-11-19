@@ -13,7 +13,7 @@
 #include "common/ContextInterface.h"
 #include "Geometry.h"
 #include "components/devices/mpi/mpidevice.h"
-#include "components/devices/mpi/mpimodel.h"
+#include "components/devices/mpi/mpipacketmodel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "p2p/protocols/send/adaptive/Adaptive.h"
 #include "p2p/protocols/send/eager/Eager.h"
@@ -51,16 +51,15 @@ namespace XMI
 
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice<SysDep> MPIDevice;
-    typedef Device::MPIModel<MPIDevice,MPIMessage> MPIModel;
+    typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
     typedef CollFactory::MPI<MPIDevice, SysDep> MPICollfactory;
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
-    typedef XMI::Protocol::Send::Eager <MPIModel,MPIDevice> EagerMPI;
+    typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
     //typedef XMI::Protocol::Send::Adaptive <MPIModel,MPIDevice> EagerMPI;
 
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Fifo::FifoPacket <16, 240> ShmemPacket;
-//    typedef Fifo::LinearFifo<Counter::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
     typedef Device::ShmemDevice<ShmemFifo, ShmemPacket> ShmemDevice;
@@ -292,37 +291,37 @@ namespace XMI
 
       inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t put_impl (xmi_put_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t put_typed_impl (xmi_put_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t get_impl (xmi_get_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t get_typed_impl (xmi_get_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rmw_impl (xmi_rmw_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -330,13 +329,13 @@ namespace XMI
                                                    size_t            bytes,
                                                    xmi_memregion_t * memregion)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t memregion_deregister_impl (xmi_memregion_t * memregion)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -346,69 +345,69 @@ namespace XMI
                                                 size_t           * bytes,
                                                 size_t           * task)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
 
       inline xmi_result_t memregion_register_impl (xmi_rmw_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rput_impl (xmi_rput_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rput_typed_impl (xmi_rput_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rget_impl (xmi_rget_simple_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t rget_typed_impl (xmi_rget_typed_t * parameters)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t purge_totask_impl (size_t * dest, size_t count)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t resume_totask_impl (size_t * dest, size_t count)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_begin_impl ()
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_end_impl ()
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t fence_all_impl (xmi_event_function   done_fn,
                                           void               * cookie)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -416,7 +415,7 @@ namespace XMI
                                             void               * cookie,
                                             size_t               task)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -444,7 +443,7 @@ namespace XMI
 
       inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
@@ -489,31 +488,31 @@ namespace XMI
                                                   int            *numRoles,
                                                   int            *replRole)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
 
       inline xmi_result_t multicombine_impl(xmi_multicombine_t *mcombineinfo)
         {
-          assert(0);
+          XMI_abort();
           return XMI_UNIMPL;
         }
       inline xmi_result_t dispatch_impl (size_t                     id,
@@ -527,12 +526,13 @@ namespace XMI
           if (_dispatch[(size_t)id][0] != NULL) return XMI_ERROR;
           _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
+          XMI_assert(_request.objsize >= sizeof(EagerMPI));
           new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi,
                                                 __global.mapping.task(),
                                                 _context, _contextid, result);
           if(result!=XMI_SUCCESS)
               {
-                assert(0);
+                XMI_abort();
                 goto result_error;
               }
           // Shared Memory Registration
