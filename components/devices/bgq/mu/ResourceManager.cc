@@ -149,7 +149,7 @@ init ( ResourceType_t  type,
   XMI_assert ( rc == 0 );
 
   fifoSize[0] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
-  fifoAttr[0].RemoteGet = 0;
+  fifoAttr[0].RemoteGet = 1;
   fifoAttr[0].System    = 0;
 
   rc = _rgetInjFifoSubgroup.init ( 67, 1, (char **) & fifoPtr[0], &fifoSize[0], &fifoAttr[0] );

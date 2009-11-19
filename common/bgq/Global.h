@@ -257,9 +257,23 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   // ranks on this node to see, and wait for them to see it.
   if (participant == 0)
     {
-      // Sized to the addressable MU range.
-      uint16_t rarray [64][64][64][64][2];
-      memset(rarray, 0, sizeof(rarray));
+      // Allocate storage for an array to be used in the loop below to track
+      // the number of physical nodes in the partition.  The loop goes through
+      // each rank, gets that rank's physical node coordinates, and sets a bit 
+      // in the array corresponding to that node, indicating that there is
+      // a rank on that node.  The loop monitors the 0 to 1 transition of a 
+      // bit, and increments numActiveNodesGlobal when it sees the first
+      // rank on the node.  After the loop, the storage for the array is
+      // freed.
+      uint64_t bcdeSize   = bSize * cSize * dSize * eSize;
+      uint64_t cdeSize    = cSize * dSize * eSize;
+      uint64_t deSize     = dSize * eSize;
+      uint64_t numNodes   = aSize * bcdeSize;
+      // Calculate number of array slots needed...
+      uint64_t narraySize = (numNodes+63) >> 6; // Divide by 64 bits.
+      uint8_t *narray = (uint8_t*)malloc(narraySize);
+      XMI_assert(narray != NULL);
+      memset(narray, 0, narraySize);
 
       // Initialize the task and peer mappings to -1 (== "not mapped")
       memset (mapcache->torus.coords2task, (uint32_t)-1, sizeof(uint32_t) * fullSize);
@@ -322,16 +336,22 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
  //fprintf (stderr, "XMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a,b,c,d,e,p,t);
 
-                // Increment the rank count on this node.
-                rarray[a][b][c][d][e]++;
+                // Set the bit corresponding to the physical node of this rank,
+		// indicating that we have found a rank on that node.
+		// Increment numActiveNodesGlobal when the bit goes from 0 to 1.
+		uint64_t tmpIndex    = (a*bcdeSize) + (b*cdeSize) + (c*deSize) + (d*eSize) + e;
+		uint64_t narrayIndex = tmpIndex >> 6;     // Divide by 64 to get narray index.
+		uint64_t bitNumber   = tmpIndex & (64-1); // Mask off high bits to get bit number.
+		uint64_t bitNumberMask = _BN(bitNumber);
+
+                if ( (narray[narrayIndex] & bitNumberMask) == 0)
+		  {
+		    cacheAnchorsPtr->numActiveNodesGlobal++;
+		    narray[narrayIndex] |= bitNumberMask;
+		  }
 
                 // Increment the number of global ranks.
                 cacheAnchorsPtr->numActiveRanksGlobal++;
-
-                // If the rank count on this node is '1', this is the first
-                // rank encountered on this node. Increment the number of active nodes.
-                if (rarray[a][b][c][d][e] == 1)
-                  cacheAnchorsPtr->numActiveNodesGlobal++;
 
                 uint32_t addr_hash = ESTIMATED_TASK(a,b,c,d,e,t,p,aSize,bSize,cSize,dSize,eSize,tSize,pSize);
                 mapcache->torus.coords2task[addr_hash] = i;
