@@ -1,3 +1,8 @@
+/**
+ * \file algorithms/interfaces/Schedule.h
+ * \brief ???
+ */
+
 #ifndef __algorithms_interfaces_Schedule_h__
 #define __algorithms_interfaces_Schedule_h__
 

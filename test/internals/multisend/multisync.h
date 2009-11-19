@@ -1,3 +1,8 @@
+/**
+ * \file test/internals/multisend/multisync.h
+ * \brief ???
+ */
+
 #ifndef __test_internals_multisend_multisync_h__
 #define __test_internals_multisend_multisync_h__
 

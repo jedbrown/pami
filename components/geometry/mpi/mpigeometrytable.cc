@@ -1,3 +1,8 @@
+///
+/// \file components/geometry/mpi/mpigeometrytable.cc
+/// \brief ???
+///
+
 #include "sys/xmi.h"
 #include <map>
 

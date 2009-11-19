@@ -11,6 +11,9 @@
  * \brief ???
  */
 
+#ifndef __algorithms_tools_fakeTorusMapping_h__
+#define __algorithms_tools_fakeTorusMapping_h__
+
 /*
  * Fake TorusMapping so we don't need a real blue-gene system.
  * This must be the first thing included (before any other CCMI
@@ -206,3 +209,5 @@ namespace CCMI
     }
   };
 };
+
+#endif

@@ -1,3 +1,11 @@
+/**
+ * \file components/atomic/example/Mutex.h
+ * \brief ???
+ */
+
+#ifndef __components_atomic_example_Mutex_h__
+#define __components_atomic_example_Mutex_h__
+
 namespace XMI
 {
   namespace Atomic
@@ -48,3 +56,5 @@ inline void XMI::Atomic::Interface::Mutex<T>::release()
 {
   static_cast<T*>(this)->release_impl();
 }
+
+#endif

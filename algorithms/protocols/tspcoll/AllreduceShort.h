@@ -11,6 +11,9 @@
  * \brief ???
  */
 
+#ifndef __algorithms_protocols_tspcoll_AllreduceShort_h__
+#define __algorithms_protocols_tspcoll_AllreduceShort_h__
+
 class ShortAllreduce
 {
 };
@@ -79,3 +82,5 @@ ShortAllreduce::ShortAllreduce ()
 
 
 }
+
+#endif

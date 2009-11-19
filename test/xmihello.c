@@ -1,3 +1,8 @@
+/**
+ * \file test/xmihello.c
+ * \brief ???
+ */
+
 #include <stdio.h>
 #include "sys/xmi.h"
 #include "Global.h"

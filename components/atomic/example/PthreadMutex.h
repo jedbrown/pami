@@ -1,3 +1,11 @@
+/**
+ * \file components/atomic/example/PthreadMutex.h
+ * \brief ???
+ */
+
+#ifndef __components_atomic_example_PthreadMutex_h__
+#define __components_atomic_example_PthreadMutex_h__
+
 namespace XMI
 {
   namespace Atomic
@@ -42,3 +50,5 @@ namespace XMI
     };
   };
 };
+
+#endif

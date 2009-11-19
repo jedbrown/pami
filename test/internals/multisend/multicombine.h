@@ -1,3 +1,8 @@
+/**
+ * \file test/internals/multisend/multicombine.h
+ * \brief ???
+ */
+
 #ifndef __test_internals_multisend_multicombine_h__
 #define __test_internals_multisend_multicombine_h__
 

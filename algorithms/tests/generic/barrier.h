@@ -11,6 +11,9 @@
  * \brief ccmi barrier common routines
  */
 
+#ifndef __algorithms_tests_generic_barrier_h__
+#define __algorithms_tests_generic_barrier_h__
+
 #include "common.h"
 
 inline void barrier_advance ()
@@ -47,3 +50,5 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   return;
 }
+
+#endif

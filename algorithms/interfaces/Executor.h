@@ -1,3 +1,8 @@
+/**
+ * \file algorithms/interfaces/Executor.h
+ * \brief ???
+ */
+
 #ifndef __algorithms_interfaces_Executor_h__
 #define __algorithms_interfaces_Executor_h__
 

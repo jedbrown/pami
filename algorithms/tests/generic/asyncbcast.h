@@ -11,6 +11,9 @@
  * \brief ???
  */
 
+#ifndef __algorithms_tests_generic_asyncbcast_h__
+#define __algorithms_tests_generic_asyncbcast_h__
+
 #include "common.h"
 #include "barrier.h"
 
@@ -67,3 +70,5 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   return;
 }
+
+#endif

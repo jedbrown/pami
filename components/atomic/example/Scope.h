@@ -1,3 +1,11 @@
+/**
+ * \file components/atomic/example/Scope.h
+ * \brief ???
+ */
+
+#ifndef __components_atomic_example_Scope_h__
+#define __components_atomic_example_Scope_h__
+
 namespace XMI
 {
   namespace Atomic
@@ -52,3 +60,5 @@ inline bool XMI::Atomic::Interface::ProcessScope<T>::setProcessScope()
   static_cast<T*>(this)->setProcessScope_impl();
   return T::_scoped;
 }
+
+#endif

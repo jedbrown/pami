@@ -1,3 +1,8 @@
+/**
+ * \file util/compact_attributes.h
+ * \brief ???
+ */
+
 #ifndef __util_compact_attributes_h__
 #define __util_compact_attributes_h__
 

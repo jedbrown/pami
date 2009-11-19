@@ -1,3 +1,8 @@
+/**
+ * \file components/devices/bgq/mu/MUSendMessage.h
+ * \brief ???
+ */
+
 #ifndef __components_devices_bgq_mu_MUSendMessage_h__
 #define __components_devices_bgq_mu_MUSendMessage_h__
 #error FOO!

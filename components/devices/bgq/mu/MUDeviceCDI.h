@@ -1,3 +1,11 @@
+/**
+ * \file components/devices/bgq/mu/MUDeviceCDI.h
+ * \brief ???
+ */
+
+#ifndef __components_devices_bgq_mu_MUDeviceCDI_h__
+#define __components_devices_bgq_mu_MUDeviceCDI_h__
+
 ///
 /// \brief CDI is currently unimplemented in the MU Device.
 ///
@@ -77,3 +85,5 @@ namespace DCMF {
     };
   };
 };
+
+#endif

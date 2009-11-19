@@ -9,6 +9,9 @@
  * \brief ???
  */
 
+#ifndef __components_devices_shmem_ShmemDevice_impl_h__
+#define __components_devices_shmem_ShmemDevice_impl_h__
+
 #include "SysDep.h"
 
 #ifndef TRACE_ERR
@@ -270,6 +273,8 @@ namespace XMI
   };
 };
 #undef TRACE_ERR
+
+#endif
 
 //
 // astyle info    http://astyle.sourceforge.net

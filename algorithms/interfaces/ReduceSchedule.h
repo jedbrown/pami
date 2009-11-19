@@ -1,3 +1,8 @@
+/**
+ * \file algorithms/interfaces/ReduceSchedule.h
+ * \brief ???
+ */
+
 #ifndef __algorithms_interfaces_ReduceSchedule_h__
 #define __algorithms_interfaces_ReduceSchedule_h__
 

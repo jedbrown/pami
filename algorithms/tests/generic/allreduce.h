@@ -11,6 +11,9 @@
  * \brief ccmi allreduce common routines
  */
 
+#ifndef __algorithms_tests_generic_allreduce_h__
+#define __algorithms_tests_generic_allreduce_h__
+
 #include "common.h"
 
 XMI_CollectiveProtocol_t              allreduce_reg;
@@ -80,3 +83,5 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   return;
 }
+
+#endif

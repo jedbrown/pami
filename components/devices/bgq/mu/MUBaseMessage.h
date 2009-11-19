@@ -1,3 +1,8 @@
+/**
+ * \file components/devices/bgq/mu/MUBaseMessage.h
+ * \brief ???
+ */
+
 #ifndef __components_devices_bgq_mu_MUBaseMessage_h__
 #define __components_devices_bgq_mu_MUBaseMessage_h__
 

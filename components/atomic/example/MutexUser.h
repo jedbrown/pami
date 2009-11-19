@@ -1,3 +1,11 @@
+/**
+ * \file components/atomic/example/MutexUser.h
+ * \brief ???
+ */
+
+#ifndef __components_atomic_example_MutexUser_h__
+#define __components_atomic_example_MutexUser_h__
+
 namespace XMI
 {
   template <T_Mutex>
@@ -26,3 +34,5 @@ namespace XMI
      T_Mutex _mutex;
   };
 };
+
+#endif

@@ -1,3 +1,8 @@
+/**
+ * \file util/lapi/lapi_util.h
+ * \brief ???
+ */
+
 #ifndef __util_lapi_lapi_util_h__
 #define __util_lapi_lapi_util_h__
 

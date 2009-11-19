@@ -1,3 +1,11 @@
+/**
+ * \file components/atomic/example/LockboxMutex.h
+ * \brief ???
+ */
+
+#ifndef __components_atomic_example_LockboxMutex_h__
+#define __components_atomic_example_LockboxMutex_h__
+
 namespace XMI
 {
   namespace Atomic
@@ -61,3 +69,5 @@ namespace XMI
     };
   };
 };
+
+#endif

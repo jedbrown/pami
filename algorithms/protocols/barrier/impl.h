@@ -11,6 +11,9 @@
  * \brief ???
  */
 
+#ifndef __algorithms_protocols_barrier_impl_h__
+#define __algorithms_protocols_barrier_impl_h__
+
 #include "algorithms/schedule/BinomialTree.h"
 #include "BarrierT.h"
 
@@ -35,3 +38,5 @@ namespace CCMI
     };
   };
 };
+
+#endif

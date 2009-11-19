@@ -1,3 +1,8 @@
+///
+/// \file components/geometry/bgp/bgpgeometrytable.cc
+/// \brief ???
+///
+
 #include "sys/xmi.h"
 #include <map>
 

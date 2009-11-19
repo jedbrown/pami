@@ -1,3 +1,8 @@
+///
+/// \file components/devices/lapiunix/regTable.cc
+/// \brief ???
+///
+
 #include <map>
 #include "util/lapi/lapi_util.h"
 

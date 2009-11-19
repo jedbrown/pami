@@ -1,3 +1,8 @@
+///
+/// \file components/geometry/lapiunix/lapiunixgeometrytable.cc
+/// \brief ???
+///
+
 #include "sys/xmi.h"
 #include <map>
 
