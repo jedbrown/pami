@@ -452,6 +452,23 @@ namespace XMI
         return result;
       }
 
+      inline xmi_result_t dispatch_new_impl (size_t                     id,
+                                             xmi_dispatch_callback_fn   fn,
+                                             void                     * cookie,
+                                             xmi_dispatch_hint_t        options)
+      {
+        xmi_result_t result        = XMI_ERROR;
+        if(options.type == XMI_P2P_SEND)
+        {
+          return dispatch_impl (id,
+                                fn,
+                                cookie,
+                                options.hint.send);
+        }
+          TRACE_ERR((stderr, "<< dispatch_new_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index]));
+          return result;
+      }
+
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
                                                   int            *numRoles,
                                                   int            *replRole)

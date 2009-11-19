@@ -568,12 +568,80 @@ namespace XMI
                       _dispatch[id][1] = NULL;
                     }
               }
-              assert(result == XMI_SUCCESS);
+              XMI_assert(result == XMI_SUCCESS);
 
           result_error:
           TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index][0]));
           return result;
         }
+
+    inline xmi_result_t dispatch_new_impl (size_t                     id,
+                                           xmi_dispatch_callback_fn   fn,
+                                           void                     * cookie,
+                                           xmi_dispatch_hint_t        options)
+    {
+      xmi_result_t result        = XMI_ERROR;
+      // Off node registration
+      // This is for communication off node
+      if(_dispatch[(size_t)id][0] != NULL)
+      {
+        XMI_abort();
+        goto result_error;
+      }
+      _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
+      if(options.type == XMI_MULTICAST)
+      {
+      }
+      else
+      {
+        XMI_assert(_request.objsize >= sizeof(EagerMPI));
+        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi, 
+                                                 __global.mapping.task(), 
+                                                 _context, _contextid, result);
+        if(result!=XMI_SUCCESS)
+        {
+          XMI_abort();
+          goto result_error;
+        }
+        // Shared Memory Registration
+        // This is for communication on node
+        TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+
+        // currently, shared memory is off, because this dispatch_id will  not be null
+//          if (_dispatch[id][1] == NULL)
+        {
+          TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
+
+          if(options.hint.send.no_long_header == 1)
+          {
+            _dispatch[id][1] = _protocol.allocateObject ();
+            new (_dispatch[id][1])
+            Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
+            (id, fn, cookie, _shmem, __global.mapping.task(),
+             _context, _contextid, result);
+          }
+          else
+          {
+            _dispatch[id][1] = _protocol.allocateObject ();
+            new (_dispatch[id][1])
+            Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
+            (id, fn, cookie, _shmem, __global.mapping.task(),
+             _context, _contextid, result);
+          }
+
+          TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
+          if(result != XMI_SUCCESS)
+          {
+            _protocol.returnObject (_dispatch[id][1]);
+            _dispatch[id][1] = NULL;
+          }
+        }
+        XMI_assert(result == XMI_SUCCESS);
+      }
+      result_error:
+      TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, id, _dispatch[id][0]));
+      return result;
+    }
 
     private:
       std::map <unsigned, xmi_geometry_t>   _geometry_id;
@@ -591,7 +659,7 @@ namespace XMI
 
       XMI::Device::Generic::Device &_generic;
       ShmemDevice               _shmem;
-      MemoryAllocator<1024,16>  _request;
+      MemoryAllocator<2048,16>  _request;
       MPIDevice                 _mpi;
       MPICollreg               *_collreg;
       MPIGeometry              *_world_geometry;
