@@ -54,30 +54,30 @@ void Query1()
 {
     // Query attribute with a simple value
     size_t  *num_tasks;
-    XMI_Configuration_query(context, XMI_NUM_TASKS, &num_tasks);
+    XMI_Configuration_query(client, XMI_NUM_TASKS, &num_tasks);
     printf("num tasks = %d\n", *num_tasks);
 
     // Query attribute with a struct value
     // (need to cast extended attribute type to attribute type)
     xmi_coordinates_t  *coors;
-    XMI_Configuration_query(context, (xmi_attribute_t)XMI_COORDINATES, &coors);
+    XMI_Configuration_query(client, (xmi_attribute_t)XMI_COORDINATES, &coors);
     printf("(%d, %d, %d)\n", coors->x, coors->y, coors->z);
 
     // Query XMI attributes
     // It's not clear how the list of attributes is going to be used
     // All attributes are defined in xmi.h + xmi_ext.h already
     xmi_attribute_t *xmi_attrs;
-    XMI_Configuration_query(context, XMI_ATTRIBUTES, &xmi_attrs);
+    XMI_Configuration_query(client, XMI_ATTRIBUTES, &xmi_attrs);
     for (; *xmi_attrs; xmi_attrs++)
         printf("%d\n", *xmi_attrs);
 
     // Query user defined keys and values
     xmi_user_key_t *user_keys;
-    XMI_Configuration_query(context, XMI_USER_KEYS, &user_keys);
+    XMI_Configuration_query(client, XMI_USER_KEYS, &user_keys);
     for (; *user_keys; user_keys++) {
         xmi_user_config_t  config;
         config.key   = *user_keys;
-        XMI_Configuration_query(context, XMI_USER_CONFIG, &config);
+        XMI_Configuration_query(client, XMI_USER_CONFIG, &config);
         printf("%s = %s\n", config.key, config.value);
     }
 }
@@ -89,13 +89,13 @@ void Query2()
 {
     // Query attribute with a simple value
     size_t  num_tasks;
-    XMI_Configuration_query(context, XMI_NUM_TASKS, &num_tasks);
+    XMI_Configuration_query(client, XMI_NUM_TASKS, &num_tasks);
     printf("num tasks = %d\n", num_tasks);
 
     // Query attribute with a struct value
     // (need to cast extended attribute type to attribute type)
     xmi_coordinates_t  coors;
-    XMI_Configuration_query(context, (xmi_attribute_t)XMI_COORDINATES, &coors);
+    XMI_Configuration_query(client, (xmi_attribute_t)XMI_COORDINATES, &coors);
     printf("(%d, %d, %d)\n", coors.x, coors.y, coors.z);
 
     // Query XMI attributes

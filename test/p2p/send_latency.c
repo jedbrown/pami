@@ -183,7 +183,7 @@ int main ()
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
   TRACE_ERR((stderr, "... before barrier_init()\n"));
-  barrier_init (context, 0);
+  barrier_init (client, context, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));
 
 
@@ -213,15 +213,15 @@ int main ()
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query(client, &configuration);
   size_t _my_rank = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query(client, &configuration);
   size_t num_tasks = configuration.value.intval;
 
   configuration.name = XMI_WTICK;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query(client, &configuration);
   double clockMHz = configuration.value.doubleval;
 
   /* Display some test header information */

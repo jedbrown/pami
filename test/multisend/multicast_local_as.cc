@@ -64,7 +64,7 @@ int main(int argc, char ** argv)
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  status = XMI_Configuration_query(context, &configuration);
+  status = XMI_Configuration_query(client, &configuration);
   if(status != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
@@ -74,7 +74,7 @@ int main(int argc, char ** argv)
   //DBG_FPRINTF((stderr, "My task id = %zd\n", task_id);
 
   configuration.name = XMI_NUM_TASKS;
-  status = XMI_Configuration_query(context, &configuration);
+  status = XMI_Configuration_query(client, &configuration);
   if(status != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);

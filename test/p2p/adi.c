@@ -201,11 +201,11 @@ static void init()
   }
 
   query.name = XMI_TASK_ID;
-  XMI_Configuration_query (contexts[0], &query);
+  XMI_Configuration_query (client, &query);
   rank = query.value.intval;
 
   query.name = XMI_NUM_TASKS;
-  XMI_Configuration_query (contexts[0], &query);
+  XMI_Configuration_query (client, &query);
   size = query.value.intval;
 
 #warning We need to clairify the threading nature of XMI

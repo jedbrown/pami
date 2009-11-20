@@ -19,7 +19,7 @@ int main (int argc, char ** argv)
 
   fprintf (stdout, "Before XMI_Wtick()\n");
 
-  XMI_Configuration_query (context, &query);
+  XMI_Configuration_query(client, &query);
   value = query.value.doubleval;
 
   fprintf (stdout, "After XMI_Wtick, value = %g\n", value);

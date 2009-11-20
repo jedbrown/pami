@@ -125,18 +125,18 @@ void barrier ()
   return;
 }
 
-void barrier_init (xmi_context_t context, size_t dispatch)
+void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
 {
   TRACE_ERR((stderr, "enter barrier_init() ...\n"));
 
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  xmi_result_t result = XMI_Configuration_query (context, &configuration);
+  xmi_result_t result = XMI_Configuration_query(client, &configuration);
   __barrier_task = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query(client, &configuration);
   __barrier_size = configuration.value.intval;
 
   __barrier_next_task = (__barrier_task + 1) % __barrier_size;

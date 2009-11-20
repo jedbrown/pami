@@ -15,6 +15,8 @@
 #define TRACE(x)
 #endif
 
+xmi_client_t g_client;
+
 static void recv_done (xmi_context_t   context,
                        void          * cookie,
                        xmi_result_t    result)
@@ -85,7 +87,7 @@ unsigned do_test (xmi_context_t context)
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query(g_client, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -95,7 +97,7 @@ unsigned do_test (xmi_context_t context)
   //TRACE((stderr, "My task id = %zd\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query(g_client, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -201,13 +203,12 @@ unsigned do_test (xmi_context_t context)
 
 int main (int argc, char ** argv)
 {
-  xmi_client_t client;
   xmi_context_t context[2];
   //xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
 
-  result = XMI_Client_initialize (cl_string, &client);
+  result = XMI_Client_initialize (cl_string, &g_client);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
@@ -215,7 +216,7 @@ int main (int argc, char ** argv)
   }
 
   int num = 2;
-  result = XMI_Context_createv (client, NULL, 0, &context[0], &num);
+  result = XMI_Context_createv (g_client, NULL, 0, &context[0], &num);
   if (result != XMI_SUCCESS || num != 2)
   {
     fprintf (stderr, "Error. Unable to create the two xmi context. result = %d\n", result);
@@ -247,7 +248,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = XMI_Client_finalize (client);
+  result = XMI_Client_finalize (g_client);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
