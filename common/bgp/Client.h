@@ -139,6 +139,14 @@ namespace XMI
 
 		switch (configuration->name)
 		{
+		case XMI_NUM_CONTEXTS:
+			configuration->value.intval = 4; // modified by runmode?
+			result = XMI_SUCCESS;
+			break;
+		case XMI_CONST_CONTEXTS:
+			configuration->value.intval = 1; // .TRUE.
+			result = XMI_SUCCESS;
+			break;
 		case XMI_TASK_ID:
 			configuration->value.intval = __global.mapping.task();
 			result = XMI_SUCCESS;
