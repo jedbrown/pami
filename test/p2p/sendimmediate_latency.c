@@ -23,6 +23,8 @@
 //#define ITERATIONS 1000
 #define ITERATIONS 1000
 
+#define WARMUP
+
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
 //#define BUFSIZE 1024*256
@@ -73,27 +75,9 @@ static void test_dispatch (
     size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
-//
-//  if (pipe_addr != NULL)
-//  {
-    memcpy (_recv_buffer, pipe_addr, pipe_size);
-    unsigned * value = (unsigned *) cookie;
-    TRACE_ERR((stderr, "(%zd) short recv:  decrement cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
-    --*value;
-//  }
-#if 0
-  else
-  {
-    header_t * header = (header_t *) header_addr;
-    TRACE_ERR((stderr, "(%zd) test_dispatch() cookie = %p, header->sndlen = %zd\n", _my_rank, cookie, header->sndlen));
-
-    recv->local_fn = decrement;
-    recv->cookie   = cookie;
-    recv->kind = XMI_AM_KIND_SIMPLE;
-    recv->data.simple.addr  = _recv_buffer;
-    recv->data.simple.bytes = header->sndlen;
-  }
-#endif
+  unsigned * value = (unsigned *) cookie;
+  TRACE_ERR((stderr, "(%zd) short recv:  decrement cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+  --*value;
   _recv_iteration++;
 }
 
@@ -111,13 +95,14 @@ void recv_once (xmi_context_t context)
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, size_t myrank)
+unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank)
 {
   TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
   _recv_active = 1;
   _recv_iteration = 0;
   _send_active = 1;
 
+  char metadata[BUFSIZE];
   char buffer[BUFSIZE];
 
   header_t header;
@@ -125,8 +110,8 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
 
   xmi_send_immediate_t parameters;
   parameters.dispatch = dispatch;
-  parameters.header.iov_base = &header;
-  parameters.header.iov_len = sizeof(header_t);
+  parameters.header.iov_base = metadata;
+  parameters.header.iov_len = hdrlen;
   parameters.data.iov_base  = buffer;
   parameters.data.iov_len = sndlen;
 
@@ -165,9 +150,23 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
   return ((t2-t1)/ITERATIONS)/2;
 }
 
-int main ()
+int main (int argc, char ** argv)
 {
   TRACE_ERR((stderr, "Start test ...\n"));
+  
+  
+  size_t hdrcnt = argc;
+  size_t hdrsize[1024];
+  hdrsize[0] = 0;
+  
+  int arg;
+  for (arg=1; arg<argc; arg++)
+  {
+    hdrsize[arg] = (size_t) strtol (argv[arg], NULL, 10);
+  }
+  
+  
+  
   xmi_client_t client;
   char clientname[]="XMI";
   TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
@@ -231,16 +230,20 @@ int main ()
     index[0] += sprintf (&str[0][index[0]], "#          ");
     index[1] += sprintf (&str[1][index[1]], "#    bytes ");
 
-    unsigned i;
-    for (i=0; i<_dispatch_count; i++)
-    {
-      index[0] += sprintf (&str[0][index[0]], "[--- testcase %d ---] ", i);
-      index[1] += sprintf (&str[1][index[1]], "    cycles     usec  ");
-    }
-
     fprintf (stdout, "# XMI_Send_immediate() nearest-neighor half-pingpong blocking latency performance test\n");
     fprintf (stdout, "#\n");
-    fprintf (stdout, "%s", testcase_str);
+
+    unsigned i;
+    for (i=0; i<hdrcnt; i++)
+    {
+      if (i==0)
+        fprintf (stdout, "# testcase %d : header bytes = %3zd\n", i, hdrsize[i]);
+      else
+        fprintf (stdout, "# testcase %d : header bytes = %3zd (argv[%d])\n", i, hdrsize[i], i);
+      index[0] += sprintf (&str[0][index[0]], "[- testcase %d -] ", i);
+      index[1] += sprintf (&str[1][index[1]], " cycles    usec  ");
+    }
+
     fprintf (stdout, "#\n");
     fprintf (stdout, "%s\n", str[0]);
     fprintf (stdout, "%s\n", str[1]);
@@ -261,14 +264,14 @@ int main ()
     index += sprintf (&str[index], "%10zd ", sndlen);
 
     unsigned i;
-    for (i=0; i<_dispatch_count; i++)
+    for (i=0; i<hdrcnt; i++)
     {
 #ifdef WARMUP
-      test (context, &_dispatch[i], sndlen, _my_rank);
+      test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
 #endif
-      cycles = test (context, _dispatch[i], sndlen, _my_rank);
+      cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
       usec   = cycles/clockMHz;
-      index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
+      index += sprintf (&str[index], "%7lld %7.4f  ", cycles, usec);
     }
 
     if (_my_rank == 0)

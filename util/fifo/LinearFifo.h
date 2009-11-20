@@ -140,8 +140,21 @@ namespace XMI
         inline void producePacket_impl (size_t pktid)
         {
           TRACE_ERR((stderr, "(%zd) >> LinearFifo::producePacket_impl(%zd)\n", __global.mapping.task(), pktid));
-          _packet[pktid].setActive (true);
+
+          // This memory barrier forces all previous memory operations to
+          // complete (header writes, payload write, etc) before the packet is
+          // marked 'active'.  As soon as the receiving process sees that the
+          // 'active' attribute is set it will start to read the packet header
+          // and payload data.
+          //
+          // If this memory barrier is done *after* the packet is marked
+          // 'active', then the processor or memory system may still reorder
+          // any pending writes before the barrier, which could result in the
+          // receiving process reading the 'active' attribute and then reading
+          // stale packet header/payload data.
           mem_barrier ();
+          _packet[pktid].setActive (true);
+
           TRACE_ERR((stderr, "(%zd) << LinearFifo::producePacket_impl(%zd)\n", __global.mapping.task(), pktid));
         };
 
