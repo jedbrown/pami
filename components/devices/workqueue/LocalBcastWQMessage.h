@@ -68,15 +68,14 @@ public:
           {
           }
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
-
 	inline void complete();
 
 private:
 	//friend class LocalBcastWQDevice;
 	friend class XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread>;
 
-	inline XMI::Device::MessageStatus __advanceThread(LocalBcastWQThread *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(LocalBcastWQThread *thr) {
 		// This works around a bug with "g++ -fPIC -O3"...
 		coremath1 func = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
 		if (_isrootrole) {
@@ -93,11 +92,12 @@ private:
 			if (_rbuffer.bytesAvailableToProduce() == 0) setStatus(XMI::Device::Done);
 		}
 
-		return getStatus();
+		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
 	inline int __setThreads(LocalBcastWQThread *t, int n) {
 		t[0].setMsg(this);
+		t[0].setAdv(advanceThread<LocalBcastWQMessage,LocalBcastWQThread>);
 		t[0].setDone(false);
 		return 1;
 	}
@@ -147,10 +147,6 @@ private:
 void LocalBcastWQMessage::complete() {
         ((LocalBcastWQDevice &)_QS).__complete<LocalBcastWQMessage>(this);
         executeCallback();
-}
-
-inline XMI::Device::MessageStatus LocalBcastWQMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((LocalBcastWQThread *)t);
 }
 
 inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {

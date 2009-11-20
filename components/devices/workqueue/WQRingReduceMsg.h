@@ -78,8 +78,6 @@ public:
 	// complaints about multiple definitions.
 	inline void complete();
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
-
 protected:
 	//friend class WQRingReduceDev;
 	friend class XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr>;
@@ -88,6 +86,7 @@ protected:
 		int nt = 0;
 		// assert(nt < n);
 		t[nt].setMsg(this);
+		t[nt].setAdv(advanceThread<WQRingReduceMsg,WQRingReduceThr>);
 		t[nt].setDone(false);
 		t[nt]._bytesLeft = _count << _shift;
 		++nt;
@@ -96,7 +95,8 @@ protected:
 		return nt;
 	}
 
-	inline XMI::Device::MessageStatus __advanceThread(WQRingReduceThr *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(WQRingReduceThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _rwq->bytesAvailableToProduce();
 		if (wq < min) min = wq;
@@ -107,14 +107,14 @@ protected:
 			wq = _swq->bytesAvailableToConsume();
 			if (wq < min) min = wq;
 			if (min == 0) {
-				return XMI::Device::Active;
+				return XMI_EAGAIN;
 			}
 			void *buf[2] = { _iwq->bufferToConsume(), _swq->bufferToConsume() };
 			_func(_rwq->bufferToProduce(), buf, 2, min >> _shift);
 			_swq->consumeBytes(min);
 		} else {
 			if (min == 0) {
-				return XMI::Device::Active;
+				return XMI_EAGAIN;
 			}
 			memcpy(_rwq->bufferToProduce(), _iwq->bufferToConsume(), min);
 		}
@@ -128,9 +128,9 @@ protected:
 			__clearWakeup(thr);
 #endif /* USE_WAKEUP_VECTORS */
 			setStatus(XMI::Device::Done);
-			return XMI::Device::Done;
+			return XMI_SUCCESS;
 		}
-		return XMI::Device::Active;
+		return XMI_EAGAIN;
 	}
 
 	/// \brief arrange to be woken up when inputs/outputs become "ready"
@@ -207,10 +207,6 @@ private:
 void WQRingReduceMsg::complete() {
 	((WQRingReduceDev &)_QS).__complete<WQRingReduceMsg>(this);
 	executeCallback();
-}
-
-inline XMI::Device::MessageStatus WQRingReduceMsg::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((WQRingReduceThr *)t);
 }
 
 inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {

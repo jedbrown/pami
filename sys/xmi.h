@@ -44,6 +44,21 @@ extern "C"
                                        void          * cookie,
                                        xmi_result_t    result );
 
+  /**
+   * \brief Prototype for function used for context-queued work (post)
+   *
+   * Posted function will continue to run as long a return value is > 0.
+   * Return value < 0 indicates -(xmi_result_t) and stops function from
+   * being called. Return value of XMI_SUCCESS (0) stops function.
+   *
+   * \param[in] context   XMI communication context running function
+   * \param[in] cookie    application argument
+   * \return	(0) XMI_SUCCESS causes function to dequeue (stop running)
+   * 		-(xmi_result_t) causes function to dequeue and (optionally) report error
+   * 		>0 causes function to remain queued and is called on next advance.
+   */
+  typedef xmi_result_t (*xmi_work_function)(xmi_context_t context, void *cookie);
+
   typedef struct
   {
     xmi_event_function  function;
@@ -3544,7 +3559,7 @@ xmi_context_t XMI_Client_getcontext(xmi_client_t, size_t);
    * \param[in] cookie  Opaque data pointer to pass to the event function
    */
   xmi_result_t XMI_Context_post (xmi_context_t        context,
-                                 xmi_event_function   work_fn,
+                                 xmi_work_function    work_fn,
                                  void               * cookie);
 
 

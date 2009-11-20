@@ -68,7 +68,6 @@ public:
 	/// \brief     Advance routine
 	/// \returns:  The MsgStatus, Initialized, Active, or Done
 	//////////////////////////////////////////////////////////////////
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
 	inline void complete();
 	inline size_t objsize_impl() { return sizeof(giMessage); }
 
@@ -91,7 +90,8 @@ private:
 
 	static const int GI_CHANNEL = 0;
 
-	inline XMI::Device::MessageStatus __advanceThread(giThread *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(giThread *thr) {
 		XMI::Device::MessageStatus stat = getStatus();
 
 		unsigned loop = 32;
@@ -115,11 +115,12 @@ private:
 			}
 		}
 		setStatus(stat);
-		return stat;
+		return stat == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
 	inline int __setThreads(giThread *t, int n) {
 		t->setMsg(this);
+		t->setAdv(advanceThread<giMessage,giThread>);
 		t->setDone(false);
 		_nThreads = 1;
 		return _nThreads;
@@ -152,10 +153,6 @@ private:
 inline void XMI::Device::BGP::giMessage::complete() {
 	((XMI::Device::BGP::giDevice &)_QS).__complete<giMessage>(this);
 	executeCallback();
-}
-
-inline XMI::Device::MessageStatus XMI::Device::BGP::giMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((giThread *)t);
 }
 
 inline bool XMI::Device::BGP::giModel::postMultisync_impl(xmi_multisync_t *msync) {

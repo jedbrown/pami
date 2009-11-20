@@ -78,7 +78,7 @@ public
 	{
 	}
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
+	inline xmi_result_t advanceThread(xmi_context_t context, void *t);
 	inline void complete();
 protected:
 	//friend class CNAllreduceShortDevice;
@@ -166,7 +166,7 @@ protected:
 		return XMI::Device::Active;
 	}
 
-	inline XMI::Device::MessageStatus __advanceThread(CNAllreduceShortThread *thr) {
+	inline xmi_result_t __advanceThread(CNAllreduceShortThread *thr) {
 		XMI::Device::MessageStatus ms;
 		if (thr->_sender) {
 			ms = __advanceInj(thr);
@@ -176,9 +176,9 @@ protected:
 		if (ms == XMI::Device::Done) {
 			// thread is Done, maybe not message
 			__completeThread(thr);
-			return ms;
+			return XMI_SUCCESS;
 		}
-		return ms;
+		return XMI_EAGAIN;
 	}
 
 	static inline bool __inject_msg(DCMF::Device::WorkQueue::SharedWorkQueue *swqs,
@@ -408,7 +408,7 @@ void CNAllreduceShortMessage::complete() {
 	executeCallback();
 }
 
-XMI::Device::MessageStatus CNAllreduceShortMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
+xmi_result_t CNAllreduceShortMessage::advanceThread(xmi_context_t context, void *t) {
 	return __advanceThread((CNAllreduceShortThread *)t);
 }
 

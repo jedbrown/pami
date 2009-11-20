@@ -117,7 +117,7 @@ extern "C" xmi_result_t XMI_Context_destroy (xmi_context_t context)
 /// \copydoc XMI_Context_post
 ///
 extern "C" xmi_result_t XMI_Context_post (xmi_context_t        context,
-                                          xmi_event_function   work_fn,
+                                          xmi_work_function    work_fn,
                                           void               * cookie)
 {
   XMI::Context * ctx = (XMI::Context *) context;

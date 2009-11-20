@@ -71,18 +71,6 @@ template <class T_Barrier>
 class AtomicBarrierMsg : public XMI::Device::Generic::GenericMessage {
 public:
 
-	/// \brief method to advance a portion of the message
-	///
-	/// If a message is split between multiple threads, each thread
-	/// is responsible for only part of the message.
-	///
-	/// \param in v An opaque pointer to indicate message portion
-	/// \param in l An opaque length to indicate message portion
-	/// \return Message status - typically either Active or Done.
-	///
-	/// status Active => Done
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
-
 	inline void complete();
 	inline size_t objsize_impl() { return sizeof(AtomicBarrierMsg<T_Barrier>); }
 
@@ -103,20 +91,22 @@ private:
 	//friend class AtomicBarrierDev;
 	friend class XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr>;
 
-	inline XMI::Device::MessageStatus __advanceThread(AtomicBarrierThr *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(AtomicBarrierThr *thr) {
 		// TBD: optimize away virt func call - add method
 		// for a persistent advance?
 		for (int x = 0; x < 32; ++x) {
 			if (_barrier->poll() == XMI::Atomic::Interface::Done) {
 				setStatus(XMI::Device::Done);
-				return XMI::Device::Done;
+				return XMI_SUCCESS;
 			}
 		}
-		return XMI::Device::Active;
+		return XMI_EAGAIN;
 	}
 
 	inline int __setThreads(AtomicBarrierThr *t, int n) {
 		t->setMsg(this);
+		t->setAdv(advanceThread<AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr>);
 		t->setDone(false);
 		return 1;
 	}
@@ -153,11 +143,6 @@ template <class T_Barrier>
 inline void XMI::Device::AtomicBarrierMsg<T_Barrier>::complete() {
 	((AtomicBarrierDev &)_QS).__complete<AtomicBarrierMsg<T_Barrier> >(this);
 	executeCallback();
-}
-
-template <class T_Barrier>
-inline XMI::Device::MessageStatus XMI::Device::AtomicBarrierMsg<T_Barrier>::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((AtomicBarrierThr *)t);
 }
 
 template <class T_Barrier>

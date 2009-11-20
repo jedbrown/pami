@@ -108,7 +108,7 @@ public:
 	//////////////////////////////////////////////////////////////////
 	inline Device();
 
-	inline void init(XMI::SysDep &sd, size_t context, size_t num_contexts, Device *generics);
+	inline void init(XMI::SysDep &sd, xmi_context_t ctx, size_t context, size_t num_contexts, Device *generics);
 
 	inline bool isAdvanceNeeded();
 
@@ -185,6 +185,7 @@ private:
 	//////////////////////////////////////////////////////////////////
 	ThreadQueue __Threads;
 
+	xmi_context_t __context;
 	size_t __contextId;
 	size_t __nContexts;
 	Generic::Device *__generics;

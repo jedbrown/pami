@@ -90,18 +90,14 @@ public:
             _shared.setConsumers (1, 0);
           }
 
-	///
-	/// \brief Advance the reduce shared memory message
-	///
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
-
 	inline void complete();
 
 private:
 	// friend class LocalReduceWQDevice;
 	friend class XMI::Device::Generic::SimpleSubDevice<LocalReduceWQThread>;
 
-	inline XMI::Device::MessageStatus __advanceThread(LocalReduceWQThread *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(LocalReduceWQThread *thr) {
 		// workaround for GNU compiler -fPIC -O3 bug
 		volatile coremath1 shmcpy = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
 		if (_iscopypeer) {
@@ -123,11 +119,12 @@ private:
 			// the shared queue then this peer is done.
 			if (_source.bytesAvailableToConsume () == 0) setStatus(XMI::Device::Done);
 		}
-		return getStatus();
+		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
 	inline int __setThreads(LocalReduceWQThread *t, int n) {
 		t[0].setMsg(this);
+		t[0].setAdv(advanceThread<LocalReduceWQMessage,LocalReduceWQThread>);
 		t[0].setDone(false);
 		return 1;
 	}
@@ -182,9 +179,6 @@ private:
 void LocalReduceWQMessage::complete() {
 	((LocalReduceWQDevice &)_QS).__complete<LocalReduceWQMessage>(this);
 	executeCallback();
-}
-inline XMI::Device::MessageStatus LocalReduceWQMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((LocalReduceWQThread *)t);
 }
 
 inline bool LocalReduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {

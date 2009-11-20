@@ -35,11 +35,10 @@ typedef struct work
 
 endpoint_t _endpoint[2];
 
-void do_work (xmi_context_t   context,
-              void          * cookie,
-              xmi_result_t    result)
+xmi_result_t do_work (xmi_context_t   context,
+              void          * cookie)
 {
-  TRACE((stderr, ">> do_work (%0x08x, %p, %d)\n", (unsigned)context, cookie, result));
+  TRACE((stderr, ">> do_work (%0x08x, %p)\n", (unsigned)context, cookie));
   work_t * work = (work_t *) cookie;
 
   /* copy the data to a local buffer. */
@@ -57,7 +56,7 @@ void do_work (xmi_context_t   context,
   _endpoint[to].recv--;
 
   TRACE((stderr, "<< do_work ()\n"));
-  return;
+  return XMI_SUCCESS;
 }
 
 void * endpoint (void * arg)

@@ -81,8 +81,6 @@ public:
 	// complaints about multiple definitions.
 	inline void complete();
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
-
 protected:
 	//friend class MPIBcastDev; // Until C++ catches up with real programming languages:
 	friend class XMI::Device::Generic::SimpleSubDevice<MPIBcastThr>;
@@ -91,6 +89,7 @@ protected:
 		int nt = 0;
 		// assert(nt < n);
 		t[nt].setMsg(this);
+		t[nt].setAdv(advanceThread<MPIBcastMsg,MPIBcastThr>);
 		t[nt].setDone(false);
 		t[nt]._bytesLeft = _bytes;
 		++nt;
@@ -99,10 +98,11 @@ protected:
 		return nt;
 	}
 
-	inline XMI::Device::MessageStatus __advanceThread(MPIBcastThr *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(MPIBcastThr *thr) {
 		if (getStatus() == XMI::Device::Done) {
 			fprintf(stderr, "Warning: message/thread advanced after Done\n");
-			return XMI::Device::Done;
+			return XMI_SUCCESS;
 		}
 		int flag = 0;
 		MPI_Status status;
@@ -111,7 +111,7 @@ protected:
 			if (flag) {
 				_req = MPI_REQUEST_NULL; // redundant?
 			} else {
-				return XMI::Device::Active;
+				return XMI_EAGAIN;
 			}
 			// current message was completed...
 		}
@@ -122,7 +122,7 @@ protected:
 				if (thr->_bytesLeft == 0) {
 					thr->setDone(true);
 					setStatus(XMI::Device::Done);
-					return XMI::Device::Done;
+					return XMI_SUCCESS;
 				}
 				_currBytes = 0;
 			}
@@ -132,7 +132,7 @@ protected:
 				_idx = 0;
 			}
 			if (_currBytes == 0) {
-				return XMI::Device::Active;
+				return XMI_EAGAIN;
 			}
 			MPI_Isend(_currBuf, _currBytes, MPI_BYTE,
 					_dst->index2Rank(_idx), _tag,
@@ -159,12 +159,12 @@ protected:
 			if (thr->_bytesLeft == 0) {
 				thr->setDone(true);
 				setStatus(XMI::Device::Done);
-				return XMI::Device::Done;
+				return XMI_SUCCESS;
 			}
 			_currBytes = _rwq->bytesAvailableToProduce();
 			_currBuf = _rwq->bufferToProduce();
 			if (_currBytes == 0) {
-				return XMI::Device::Active;
+				return XMI_EAGAIN;
 			}
 			MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
 					_dst->index2Rank(0), _tag,
@@ -172,7 +172,7 @@ protected:
 			// error checking?
 		}
 
-		return XMI::Device::Active;
+		return XMI_EAGAIN;
 	}
 
 	unsigned _nThreads;
@@ -207,10 +207,6 @@ private:
 void MPIBcastMsg::complete() {
 	((MPIBcastDev &)_QS).__complete<MPIBcastMsg>(this);
 	executeCallback();
-}
-
-inline XMI::Device::MessageStatus MPIBcastMsg::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((MPIBcastThr *)t);
 }
 
 inline bool MPIBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {

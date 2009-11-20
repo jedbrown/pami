@@ -71,7 +71,6 @@ public:
 	{
 	}
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
 	inline void complete();
 protected:
 	//friend class CNAllreducePPDevice;
@@ -83,6 +82,7 @@ protected:
 		int maxnt = ((CNAllreducePPDevice &)_QS).common()->getMaxThreads();
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceThread<CNAllreduceMessage,CNAllreduceThread>);
 			t[nt].setDone(false);
 			t[nt]._sender = true;
 			t[nt]._wq = _swq;
@@ -92,6 +92,7 @@ protected:
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceThread<CNAllreduceMessage,CNAllreduceThread>);
 			t[nt].setDone(false);
 			t[nt]._sender = false;
 			t[nt]._wq = _rwq;
@@ -151,7 +152,8 @@ protected:
 		return XMI::Device::Active;
 	}
 
-	inline XMI::Device::MessageStatus __advanceThread(CNAllreducePPThread *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(CNAllreducePPThread *thr) {
 		XMI::Device::MessageStatus ms;
 		if (thr->_sender) {
 			ms = __advanceInj(thr);
@@ -161,9 +163,9 @@ protected:
 		if (ms == XMI::Device::Done) {
 			// thread is Done, maybe not message
 			__completeThread(thr);
-			return ms;
+			return XMI_SUCCESS;
 		}
-		return ms;
+		return XMI_EAGAIN;
 	}
 
 	unsigned _roles;
@@ -200,10 +202,6 @@ inline void CNAllreducePPMessage::__completeThread(CNAllreducePPThread *thr) {
 void CNAllreducePPMessage::complete() {
 	((CNAllreducePPDevice &)_QS).__complete<CNAllreducePPMessage>(this);
 	executeCallback();
-}
-
-XMI::Device::MessageStatus CNAllreducePPMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((CNAllreducePPThread *)t);
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")

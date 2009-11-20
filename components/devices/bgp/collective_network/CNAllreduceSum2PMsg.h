@@ -144,7 +144,6 @@ public:
 	{
 	}
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
 	inline void complete();
 
 protected:
@@ -156,6 +155,7 @@ protected:
 		int maxnt = ((CNAllreduce2PDevice &)_QS).common()->getMaxThreads();
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceThread<CNAllreduce2PMessage,CNAllreduce2PThread>);
 			t[nt].setDone(false);
 			t[nt]._sender = true;
 			t[nt]._wq = _swq;
@@ -165,6 +165,7 @@ protected:
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceThread<CNAllreduce2PMessage,CNAllreduce2PThread>);
 			t[nt].setDone(false);
 			t[nt]._sender = false;
 			t[nt]._wq = _rwq;
@@ -258,7 +259,8 @@ CollectiveRawReceivePacketNoHdrNoStore(VIRTUAL_CHANNEL);
 
 	inline void __completeThread(CNAllreduce2PThread *thr);
 
-	inline XMI::Device::MessageStatus __advanceThread(CNAllreduce2PThread *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(CNAllreduce2PThread *thr) {
 		XMI::Device::MessageStatus ms;
 		if (thr->_sender) {
 			ms = __advanceInj(thr);
@@ -268,9 +270,9 @@ CollectiveRawReceivePacketNoHdrNoStore(VIRTUAL_CHANNEL);
 		if (ms == XMI::Device::Done) {
 			// thread is Done, maybe not message
 			__completeThread(thr);
-			return ms;
+			return XMI_SUCCESS;
 		}
-		return ms;
+		return XMI_EAGAIN;
 	}
 private:
 	unsigned _roles;
@@ -340,10 +342,6 @@ inline void CNAllreduce2PMessage::__completeThread(CNAllreduce2PThread *thr) {
 void CNAllreduce2PMessage::complete() {
 	((CNAllreduce2PDevice &)_QS).__complete<CNAllreduce2PMessage>(this);
 	executeCallback();
-}
-
-XMI::Device::MessageStatus CNAllreduce2PMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((CNAllreduce2PThread *)t);
 }
 
 inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {

@@ -87,12 +87,8 @@ protected:
 	//friend class LocalAllreduceWQDevice;
 	friend class XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread>;
 
-          ///
-          /// \brief Advance the allreduce shared memory message
-          ///
-          inline XMI::Device::MessageStatus advanceThread(LocalAllreduceWQThread *thr);
-
-	inline XMI::Device::MessageStatus __advanceThread(LocalAllreduceWQThread *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(LocalAllreduceWQThread *thr) {
 		if (_peer == 0) {
 			_shared.Q2Q (*_source, (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy, 0);
 		} else {
@@ -107,11 +103,12 @@ protected:
 		// actually has a "hard stop".
 		if (_result->bytesAvailableToProduce() == 0) setStatus(XMI::Device::Done);
 
-		return getStatus();
+		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
 	inline int __setThreads(LocalAllreduceWQThread *t, int n) {
 		t->setMsg(this);
+		t->setAdv(advanceThread<LocalAllreduceWQMessage,LocalAllreduceWQThread>);
 		t->setDone(false);
 		return 1;
 	}
@@ -165,10 +162,6 @@ private:
 void LocalAllreduceWQMessage::complete() {
 	((LocalAllreduceWQDevice &)_QS).__complete<LocalAllreduceWQMessage>(this);
 	executeCallback();
-}
-
-inline XMI::Device::MessageStatus LocalAllreduceWQMessage::advanceThread(LocalAllreduceWQThread *thr) {
-	return __advanceThread(thr);
 }
 
 inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {

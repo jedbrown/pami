@@ -79,7 +79,6 @@ public:
 	{
 	}
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
 	inline void complete();
 protected:
 	//friend class CNBroadcastDevice;
@@ -89,6 +88,7 @@ protected:
 		int nt = 0;
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceThread<CNBroadcastMessage,CNBroadcastThread>);
 			t[nt].setDone(false);
 			t[nt]._sender = true;
 			t[nt]._wq = _swq;
@@ -98,6 +98,7 @@ protected:
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceThread<CNBroadcastMessage,CNBroadcastThread>);
 			t[nt].setDone(false);
 			t[nt]._sender = false;
 			t[nt]._wq = _rwq;
@@ -173,7 +174,8 @@ protected:
 		return XMI::Device::Active;
 	}
 
-	inline XMI::Device::MessageStatus __advanceThread(CNBroadcastThread *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(CNBroadcastThread *thr) {
 		XMI::Device::MessageStatus ms;
 		if (thr->_sender) {
 			ms = __advanceInj(thr);
@@ -183,9 +185,9 @@ protected:
 		if (ms == XMI::Device::Done) {
 			// thread is Done, maybe not message
 			__completeThread(thr);
-			return ms;
+			return XMI_SUCCESS;
 		}
-		return ms;
+		return XMI_EAGAIN;
 	}
 
 	bool _doData;
@@ -223,10 +225,6 @@ inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
 void CNBroadcastMessage::complete() {
 	((CNBroadcastDevice &)_QS).__complete<CNBroadcastMessage>(this);
 	executeCallback();
-}
-
-XMI::Device::MessageStatus CNBroadcastMessage::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((CNBroadcastThread *)t);
 }
 
 inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {

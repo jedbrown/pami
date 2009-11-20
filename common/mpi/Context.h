@@ -85,65 +85,6 @@ namespace XMI
 
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
-    class Work : public Queue
-    {
-      private:
-        class WorkObject : public QueueElem
-        {
-          public:
-            inline WorkObject (xmi_event_function   fn,
-                               void               * cookie) :
-              QueueElem (),
-              _fn (fn),
-              _cookie (cookie)
-            {};
-            inline ~WorkObject() { };
-
-            xmi_event_function   _fn;
-            void               * _cookie;
-        };
-
-        xmi_context_t _context;
-        ContextLock   _lock;
-        MemoryAllocator<sizeof(WorkObject),16> _allocator;
-
-      public:
-        inline Work (xmi_context_t context, SysDep * sysdep) :
-          Queue (),
-          _context (context),
-          _lock (),
-          _allocator ()
-        {
-          _lock.init (sysdep);
-        };
-        inline void post (xmi_event_function   fn,
-                          void               * cookie)
-        {
-          _lock.acquire ();
-          WorkObject * obj = (WorkObject *) _allocator.allocateObject ();
-          new (obj) WorkObject (fn, cookie);
-          pushTail ((QueueElem *) obj);
-          _lock.release ();
-        };
-
-        inline size_t advance ()
-        {
-          size_t events = 0;
-          if (_lock.tryAcquire ())
-          {
-            WorkObject * obj = NULL;
-            while ((obj = (WorkObject *) popHead()) != NULL)
-            {
-              obj->_fn(_context, obj->_cookie, XMI_SUCCESS);
-              events++;
-            }
-            _lock.release ();
-          }
-          return events;
-        };
-    };
-
-
     class Context : public Interface::Context<XMI::Context>
     {
     public:
@@ -156,7 +97,8 @@ namespace XMI
         _mm (addr, bytes),
 	_sysdep(_mm),
         _lock (),
-        _work ((xmi_context_t *)this, &_sysdep),
+	_workAllocator (),
+        _work (),
 	_generic(generics[id]),
         _shmem(),
 
@@ -181,7 +123,10 @@ namespace XMI
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
 
-	  _generic.init (_sysdep, id, num, generics);
+	  _generic.init (_sysdep, (xmi_context_t)this, id, num, generics);
+	  _workf.client = client;
+	  _workf.context = id;
+	  _workf.cb_done = (xmi_callback_t){NULL, NULL};
           _shmem.init(&_sysdep);
           _lock.init(&_sysdep);
 
@@ -211,9 +156,12 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
-      inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
+      inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
         {
-          _work.post (work_fn, cookie);
+          _workf.request = (void *)_workAllocator.allocateObject();
+	  _workf.func = work_fn;
+	  _workf.clientdata = cookie;
+	  _work.postWorkDeferred(&_workf);
           return XMI_SUCCESS;
         }
 
@@ -225,10 +173,6 @@ namespace XMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
-		// this must be inside the loop,
-		// or else we only advance work when any exists.
-		events += _work.advance ();
-
                 events += _mpi.advance_impl();
 	        events += _generic.advance();
                 events += _shmem.advance_impl();
@@ -788,8 +732,9 @@ namespace XMI
       SysDep                    _sysdep;
       ContextLock _lock;
 
-      // This is a bringup hack .. it should be replaced with something better
-      Work _work;
+      MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+      XMI::Device::ProgressFunctionMdl _work;
+      XMI_ProgressFunc_t _workf;
 
       XMI::Device::Generic::Device &_generic;
       ShmemDevice               _shmem;

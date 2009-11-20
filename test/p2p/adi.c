@@ -103,16 +103,15 @@ static void RecvShortCB(xmi_context_t   context,
 
 static void SendLongDoneCB(xmi_context_t   context,
                     void          * cookie,
-                    xmi_result_t    result)
+		    xmi_result_t result)
 {
   unsigned *data = (unsigned*)cookie;
   printf("Rank=%zu Channel=%p <Sent long  msg>   data=%x\n", rank, context, data[0]);
   done.l.s = 1;
 }
 
-static void SendLongHandoff(xmi_context_t   context,
-                     void          * cookie,
-                     xmi_result_t    result)
+static xmi_result_t SendLongHandoff(xmi_context_t   context,
+                     void          * cookie)
 {
   int quad[] = {0x111, 0x222, 0x333, 0x444};
 
@@ -126,6 +125,7 @@ static void SendLongHandoff(xmi_context_t   context,
   parameters.events.local_fn      = SendLongDoneCB;
 
   XMI_Send(context, &parameters);
+  return XMI_SUCCESS;
 }
 
 static void *SendLong(void *clientdata)
@@ -136,9 +136,8 @@ static void *SendLong(void *clientdata)
   return NULL;
 }
 
-static void SendShortHandoff(xmi_context_t   context,
-                             void          * cookie,
-                             xmi_result_t    result)
+static xmi_result_t SendShortHandoff(xmi_context_t   context,
+                             void          * cookie)
 {
   int quad[] = {0x111, 0x222, 0x333, 0x444};
 
@@ -152,6 +151,7 @@ static void SendShortHandoff(xmi_context_t   context,
   XMI_Send_immediate(context, &parameters);
   printf("Rank=%zu Channel=%p <Sent short msg>   data=%x\n", rank, context, sbuf[0]);
   done.s.s = 1;
+  return XMI_SUCCESS;
 }
 
 static void *SendShort(void *clientdata)

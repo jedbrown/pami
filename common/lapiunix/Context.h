@@ -38,65 +38,6 @@ namespace XMI
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
-    class Work : public Queue
-    {
-    private:
-      class WorkObject : public QueueElem
-      {
-      public:
-        inline WorkObject (xmi_event_function   fn,
-                           void               * cookie) :
-          QueueElem (),
-          _fn (fn),
-          _cookie (cookie)
-          {};
-        inline ~WorkObject() { };
-
-        xmi_event_function   _fn;
-        void               * _cookie;
-      };
-
-      xmi_context_t _context;
-      ContextLock   _lock;
-      MemoryAllocator<sizeof(WorkObject),16> _allocator;
-
-    public:
-      inline Work (xmi_context_t context, SysDep * sysdep) :
-        Queue (),
-        _context (context),
-        _lock (),
-        _allocator ()
-        {
-          _lock.init (sysdep);
-        };
-      inline void post (xmi_event_function   fn,
-                        void               * cookie)
-        {
-          _lock.acquire ();
-          WorkObject * obj = (WorkObject *) _allocator.allocateObject ();
-          new (obj) WorkObject (fn, cookie);
-          pushTail ((QueueElem *) obj);
-          _lock.release ();
-        };
-
-      inline size_t advance ()
-        {
-          size_t events = 0;
-          if (_lock.tryAcquire ())
-              {
-                WorkObject * obj = NULL;
-                while ((obj = (WorkObject *) popHead()) != NULL)
-                    {
-                      obj->_fn(_context, obj->_cookie, XMI_SUCCESS);
-                      events++;
-                    }
-                _lock.release ();
-              }
-          return events;
-        };
-    };
-
-
     class Context : public Interface::Context<XMI::Context>
     {
     public:
@@ -110,7 +51,8 @@ namespace XMI
 	_sysdep(_mm),
         _lock (),
         _empty_advance(0),
-        _work ((xmi_context_t *)this, &_sysdep),
+	_workAllocator (),
+        _work (),
 	_generic(generics[id])
         {
           lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
@@ -198,6 +140,11 @@ namespace XMI
 
           CALL_AND_CHECK_RC((LAPI_Gfence (_lapi_handle)));
 
+	  _generic.init (_sysdep, (xmi_context_t)this, id, num, generics);
+	  _workf.client = client;
+	  _workf.context = id;
+	  _workf.cb_done = (xmi_callback_t){NULL, NULL};
+
         }
 
       inline xmi_client_t getClient_impl ()
@@ -218,10 +165,13 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
-      inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
+      inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
         {
-          assert(0);
-          return XMI_UNIMPL;
+          _workf.request = (void *)_workAllocator.allocateObject();
+	  _workf.func = work_fn;
+	  _workf.clientdata = cookie;
+	  _work.postWorkDeferred(&_workf);
+          return XMI_SUCCESS;
         }
 
       inline size_t advance_impl (size_t maximum, xmi_result_t & result)
@@ -235,6 +185,7 @@ namespace XMI
 		// events += _work.advance ();
 
                 events += _lapi_device.advance_impl();
+                events += _generic.advance();
               }
           return events;
         }
@@ -548,7 +499,9 @@ namespace XMI
       Memory::MemoryManager                 _mm;
       SysDep                                _sysdep;
       ContextLock                           _lock;
-      Work                                  _work;
+      MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+      XMI::Device::ProgressFunctionMdl      _work;
+      XMI_ProgressFunc_t _workf;
       XMI::Device::Generic::Device         &_generic;
       MemoryAllocator<1024,16>              _request;
       LAPIDevice                            _lapi_device;

@@ -8,13 +8,12 @@
 
 volatile unsigned _value[2];
 
-void do_work (xmi_context_t   context,
-              void          * cookie,
-              xmi_result_t    result)
+xmi_result_t do_work (xmi_context_t   context,
+              void          * cookie)
 {
   fprintf (stderr, "do_work() cookie = %p, %d -> %d\n", cookie, *((unsigned *)cookie), *((unsigned *)cookie)-1);
   (*((unsigned *)cookie))--;
-  return;
+  return XMI_SUCCESS;
 }
 
 int main (int argc, char ** argv)

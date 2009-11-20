@@ -109,8 +109,10 @@ namespace Generic {
 	/// \param[in] context		The specific context being initialized
 	/// \param[in] num_contexts	Total number of contexts in current client
 	///
-	inline void Device::init(XMI_SYSDEP_CLASS &sd, size_t context, size_t num_contexts,
+	inline void Device::init(XMI_SYSDEP_CLASS &sd, xmi_context_t ctx,
+				size_t context, size_t num_contexts,
 				Generic::Device *generics) {
+		__context = ctx;
 		__contextId = context;
 		__nContexts = num_contexts;
 		__generics = generics;
@@ -210,37 +212,15 @@ namespace Generic {
 		// just further delay the advance of real work when present.
 
 		//if (!__Threads.mutex()->tryAcquire()) continue;
-		GenericAdvanceThread *thr;
+		GenericThread *thr;
 #ifdef USE_WAKEUP_VECTORS
 #error WakeupManager TBD
-		// poll the wake-up arena for any "wake ups".
-		for (int y = 0; y < __numRegThreads; ++y) {
-#if 0
-			thr = __thrRegistry[y];
-			if (thr->isDone()) {
-				//__sysdep.wakeupManager().resetWakeup(vec);
-				continue;
-			}
-			void *vec = thr->getWakeVec();
-#endif
-			void *vec = __sysdep.wakeupManager().getWakeVec(__wakeupVectors, y)) {
-			if (__sysdep.wakeupManager().pollWakeup(vec)) {
-				__sysdep.wakeupManager().callWakeup(__wakeupVectors, vec);
-				GenericMessage *msg = (GenericMessage *)thr->getMsg();
-				// currently, advanceThread() does not distinguish between
-				// not-done and no-progress.
-				++events;
-				msg->advanceThread(thr);
-			}
-		}
 #endif /* USE_WAKEUP_VECTORS */
-		for (thr = (GenericAdvanceThread *)__Threads.peekHead();
-					thr; thr = (GenericAdvanceThread *)thr->next()) {
-			GenericMessage *msg = (GenericMessage *)thr->getMsg();
-			// currently, advanceThread() does not distinguish between
-			// not-done and no-progress.
+		for (thr = (GenericThread *)__Threads.peekHead();
+					thr; thr = (GenericThread *)thr->next()) {
 			++events;
-			if (msg->advanceThread(thr) == Done) {
+			xmi_result_t rc = thr->execute(__context);
+			if (rc <= 0) {
 				__Threads.deleteElem(thr);
 			}
 		}

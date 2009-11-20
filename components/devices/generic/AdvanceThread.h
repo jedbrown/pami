@@ -12,6 +12,7 @@
 
 #include "util/queue/Queue.h"
 #include "components/devices/BaseDevice.h"
+#include "components/devices/generic/Message.h"
 #include "SysDep.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -23,6 +24,23 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
+class GenericThread : public QueueElem {
+public:
+	GenericThread() :
+	QueueElem(),
+	_func(NULL),
+	_cookie(NULL)
+	{
+	}
+
+	inline xmi_result_t execute(xmi_context_t context) {
+		return _func(context, _cookie);
+	}
+protected:
+	xmi_work_function _func;
+	void *_cookie;
+}; // class GenericThread
+
 //////////////////////////////////////////////////////////////////////
 ///  \brief A Generic Device implmentation of a thread.
 ///  This class implements a base thread object.
@@ -30,12 +48,11 @@ namespace Generic {
 /// as the device's thread, but all actual working threads inherit
 /// from this class.
 //////////////////////////////////////////////////////////////////////
-class GenericMessage;
-class GenericAdvanceThread : public QueueElem {
+class GenericAdvanceThread : public GenericThread {
 
 public:
 	GenericAdvanceThread() :
-	QueueElem(),
+	GenericThread(),
 	_msg(NULL),
 	_dev_wake(NULL),
 	_dev_chan(0),
@@ -45,6 +62,7 @@ public:
 	}
 
 	inline void setMsg(GenericMessage *msg) { _msg = msg; }
+	inline void setAdv(xmi_work_function advThr) { _func = advThr; _cookie = this; }
 	inline GenericMessage *getMsg() { return _msg; }
 
 	inline void setWakeVec(void *v) { _dev_wake = v; }

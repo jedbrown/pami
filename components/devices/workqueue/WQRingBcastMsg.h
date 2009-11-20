@@ -70,8 +70,6 @@ public:
 	// complaints about multiple definitions.
 	inline void complete();
 
-	inline XMI::Device::MessageStatus advanceThread(XMI::Device::Generic::GenericAdvanceThread *t);
-
 protected:
 	//friend class WQRingBcastDev; // Until C++ catches up with real programming languages:
 	friend class XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr>;
@@ -80,6 +78,7 @@ protected:
 		int nt = 0;
 		// assert(nt < n);
 		t[nt].setMsg(this);
+		t[nt].setAdv(advanceThread<WQRingBcastMsg,WQRingBcastThr>);
 		t[nt].setDone(false);
 		t[nt]._bytesLeft = _bytes;
 		++nt;
@@ -88,7 +87,8 @@ protected:
 		return nt;
 	}
 
-	inline XMI::Device::MessageStatus __advanceThread(WQRingBcastThr *thr) {
+	friend class XMI::Device::Generic::GenericMessage;
+	inline xmi_result_t __advanceThread(WQRingBcastThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _iwq->bytesAvailableToConsume();
 		if (wq < min) min = wq;
@@ -101,7 +101,7 @@ protected:
 			if (wq < min) min = wq;
 		}
 		if (min == 0) {
-			return XMI::Device::Active;
+			return XMI_EAGAIN;
 		}
 		if (_rwq) {
 			memcpy(_rwq->bufferToProduce(), _iwq->bufferToConsume(), min);
@@ -120,9 +120,9 @@ protected:
 			__clearWakeup(thr);
 #endif /* USE_WAKEUP_VECTORS */
 			setStatus(XMI::Device::Done);
-			return XMI::Device::Done;
+			return XMI_SUCCESS;
 		}
-		return XMI::Device::Active;
+		return XMI_EAGAIN;
 	}
 
 	/// \brief arrange to be woken up when inputs/outputs become "ready"
@@ -199,10 +199,6 @@ private:
 void WQRingBcastMsg::complete() {
 	((WQRingBcastDev &)_QS).__complete<WQRingBcastMsg>(this);
 	executeCallback();
-}
-
-inline XMI::Device::MessageStatus WQRingBcastMsg::advanceThread(XMI::Device::Generic::GenericAdvanceThread *t) {
-	return __advanceThread((WQRingBcastThr *)t);
 }
 
 inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {

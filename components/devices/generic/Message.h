@@ -13,7 +13,6 @@
 #include "sys/xmi.h"
 #include "components/devices/generic/BaseGenericDevice.h"
 #include "util/queue/Queue.h"
-#include "components/devices/generic/AdvanceThread.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/Message.h
@@ -215,7 +214,12 @@ public:
 	/// \param[in] thr	Thread to advance
 	/// \return	Resulting status of thread (Done, etc)
 	///
-	virtual MessageStatus advanceThread(GenericAdvanceThread *thr) = 0;
+	template<class T_Message, class T_Thread>
+	static xmi_result_t advanceThread(xmi_context_t context, void *t) {
+		T_Thread *thr = (T_Thread *)t;
+		T_Message *msg = (T_Message *)thr->getMsg();
+		return msg->__advanceThread(thr);
+	}
 
 protected:
 }; /* class GenericMessage */
