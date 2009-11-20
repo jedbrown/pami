@@ -35,8 +35,21 @@ namespace Device {
 class ProgressFunctionMdl;
 class ProgressFunctionMsg;
 
-typedef XMI::Device::Generic::GenericAdvanceThread ProgressFunctionThr;
-typedef XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, XMI_MAX_THREAD_PER_PROC> ProgressFunctionDev;
+class ProgressFunctionDev {
+public:
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
+		_generic = device;
+	}
+
+	inline int advanceRecv(size_t context) { return 0; }
+
+protected:
+	friend class ProgressFunctionMdl;
+	friend class ProgressFunctionMsg;
+	inline void __post(ProgressFunctionMsg *msg);
+private:
+	XMI::Device::Generic::Device *_generic;
+}; // class ProgressFunctionDev
 
 }; //-- Device
 }; //-- XMI
@@ -47,71 +60,30 @@ namespace XMI {
 namespace Device {
 
 ///
-/// \brief A local barrier message that takes advantage of the
-/// Load Linked and Store Conditional instructions
+/// \brief A local function-call message
 ///
-class ProgressFunctionMsg : public XMI::Device::Generic::GenericMessage {
+class ProgressFunctionMsg : public XMI::Device::Generic::GenericThread {
 public:
-
-	inline void complete();
-	inline size_t objsize_impl() { return sizeof(ProgressFunctionMsg); }
 
 protected:
 	friend class ProgressFunctionMdl;
 
-	ProgressFunctionMsg(Generic::BaseGenericDevice &Generic_QS,
-		XMI_ProgressFunc_t *pf) :
-	XMI::Device::Generic::GenericMessage( Generic_QS, pf->cb_done, pf->client, pf->context),
-	_thread(),
-	_func(pf->func),
-	_clientdata(pf->clientdata),
-	_client(pf->client),
-	_context(pf->context),
-	_rc(XMI_SUCCESS)
+	ProgressFunctionMsg(XMI_ProgressFunc_t *pf) :
+	XMI::Device::Generic::GenericThread()
 	{
+		_func = pf->func;
+		_cookie = pf->clientdata;
+		_cb_done = pf->cb_done;
 	}
 
-	friend class XMI::Device::Generic::GenericMessage;
-	inline xmi_result_t __advanceThread(ProgressFunctionThr *thr) {
-		// TBD: optimize away virt func call - add method
-		// for a persistent advance?
-		int rc = _func(XMI_Client_getcontext(_client,_context),_clientdata);
-		if (rc == 0) {
-			setStatus(XMI::Device::Done);
-			return XMI_SUCCESS;
-		} else if (rc < 0) {
-			_rc = (xmi_result_t)-rc;
-			// GenericDevice will call complete()...
-			setStatus(XMI::Device::Done);
-			return (xmi_result_t)rc;
-		}
-		return XMI_EAGAIN;
+public:
+	inline void postWorkDirect() {
+		_g_progfunc_dev.__post(this);
 	}
-
-private:
-	//friend class ProgressFunctionDev;
-	friend class XMI::Device::Generic::MultiThrdSubDevice<ProgressFunctionThr, XMI_MAX_THREAD_PER_PROC>;
-
-	/// \todo for multithreading of this function, need a lot more
-	inline int __setThreads(ProgressFunctionThr *t, int n) {
-		// assert n >= 1 && t == NULL
-		_thread.setMsg(this);
-		_thread.setAdv(advanceThread<ProgressFunctionMsg,ProgressFunctionThr>);
-		_thread.setDone(false);
-		return 1;
-	}
-
-	inline ProgressFunctionThr *__getThreads() {
-		return &_thread;
-	}
-
+	inline void setFunc(xmi_work_function func) { _func = func; }
+	inline void setCookie(void *cookie) { _cookie = cookie; }
+	inline void setDone(xmi_callback_t done) { _cb_done = done; }
 protected:
-	ProgressFunctionThr _thread;
-	xmi_work_function _func;
-	void *_clientdata;
-	xmi_client_t _client;
-	size_t _context;
-	xmi_result_t _rc;
 }; //-- ProgressFunctionMsg
 
 /// If this ever expands into multiple types, need to make this a subclass
@@ -131,7 +103,6 @@ public:
 
 	inline void reset_impl() {}
 
-	inline bool postWorkDeferred(XMI_ProgressFunc_t *pf);
 	inline bool postWork(XMI_ProgressFunc_t *pf);
 
 private:
@@ -140,16 +111,9 @@ private:
 }; //-- Device
 }; //-- XMI
 
-inline void XMI::Device::ProgressFunctionMsg::complete() {
-	((ProgressFunctionDev &)_QS).__complete<ProgressFunctionMsg>(this);
-	executeCallback(_rc);
-}
-
-inline bool XMI::Device::ProgressFunctionMdl::postWorkDeferred(XMI_ProgressFunc_t *pf) {
-	ProgressFunctionMsg *msg = (ProgressFunctionMsg *)pf->request;
-	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf);
-	_g_progfunc_dev.__post<ProgressFunctionMsg>(msg);
-	return true;
+inline void XMI::Device::ProgressFunctionDev::__post(ProgressFunctionMsg *msg) {
+	// 'msg' actually inherits from GenericThread...
+	_generic->postThread(msg);
 }
 
 inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
@@ -167,8 +131,8 @@ inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 		}
 		return true;
 	}
-	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf);
-	_g_progfunc_dev.__post<ProgressFunctionMsg>(msg);
+	new (msg) ProgressFunctionMsg(pf);
+	_g_progfunc_dev.__post(msg);
 	return true;
 }
 

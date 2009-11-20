@@ -119,6 +119,9 @@ public:
 	//////////////////////////////////////////////////////////////////
 	inline int advance();
 
+	inline void postThread(GenericThread *thr) {
+		__Threads.pushTail(thr);
+	}
 	//////////////////////////////////////////////////////////////////
 	/// \brief       Post a message to the device queuing system
 	/// \param msg:  Message to be queued/advanced.

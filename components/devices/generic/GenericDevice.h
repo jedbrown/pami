@@ -219,9 +219,10 @@ namespace Generic {
 		for (thr = (GenericThread *)__Threads.peekHead();
 					thr; thr = (GenericThread *)thr->next()) {
 			++events;
-			xmi_result_t rc = thr->execute(__context);
+			xmi_result_t rc = thr->executeThread(__context);
 			if (rc <= 0) {
 				__Threads.deleteElem(thr);
+				thr->executeCallback(__context);
 			}
 		}
 		//__Threads.mutex()->release();

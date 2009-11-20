@@ -29,16 +29,24 @@ public:
 	GenericThread() :
 	QueueElem(),
 	_func(NULL),
-	_cookie(NULL)
+	_cookie(NULL),
+	_cb_done((xmi_callback_t){NULL,NULL})
 	{
 	}
 
-	inline xmi_result_t execute(xmi_context_t context) {
+	inline xmi_result_t executeThread(xmi_context_t context) {
 		return _func(context, _cookie);
+	}
+
+	inline void executeCallback(xmi_context_t context, xmi_result_t rc = XMI_SUCCESS) {
+		if (_cb_done.function) {
+			_cb_done.function(context, _cb_done.clientdata, rc);
+		}
 	}
 protected:
 	xmi_work_function _func;
 	void *_cookie;
+	xmi_callback_t _cb_done;
 }; // class GenericThread
 
 //////////////////////////////////////////////////////////////////////

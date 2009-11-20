@@ -62,6 +62,10 @@ namespace XMI
 
   class Context : public Interface::Context<XMI::Context>
   {
+      static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
+		XMI::Context *context = (XMI::Context *)ctx;
+		context->_workAllocator.returnObject(cookie);
+      }
     public:
       inline Context (xmi_client_t client, size_t id, size_t num,
 				XMI::Device::Generic::Device *generics,
@@ -75,8 +79,7 @@ namespace XMI
           _generic(generics[id]),
           _shmem (),
           _lock (),
-	  _workAllocator (),
-          _work ()
+	  _workAllocator ()
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -94,9 +97,6 @@ namespace XMI
 
         _generic.init (_sysdep, (xmi_context_t)this, id, num, generics);
         _shmem.init (&_sysdep);
-	_workf.client = client;
-	_workf.context = id;
-	_workf.cb_done = (xmi_callback_t){NULL, NULL};
       }
 
       inline xmi_client_t getClient_impl ()
@@ -116,10 +116,12 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
       {
-        _workf.request = (void *)_workAllocator.allocateObject();
-	_workf.func = work_fn;
-	_workf.clientdata = cookie;
-        _work.postWorkDeferred(&_workf);
+        XMI::Device::ProgressFunctionMsg *work =
+        	(XMI::Device::ProgressFunctionMsg *)_workAllocator.allocateObject();
+	work->setFunc(work_fn);
+	work->setCookie(cookie);
+	work->setDone((xmi_callback_t){__work_done, (void *)work});
+        work->postWorkDirect();
         return XMI_SUCCESS;
       }
 
@@ -459,8 +461,6 @@ namespace XMI
       ProtocolAllocator _protocol;
 
       MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
-      XMI::Device::ProgressFunctionMdl _work;
-      XMI_ProgressFunc_t _workf;
 
   }; // end XMI::Context
 }; // end namespace XMI
