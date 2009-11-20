@@ -15,7 +15,6 @@
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemModel.h"
-#include "components/devices/shmem/ShmemMessage.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
@@ -50,9 +49,8 @@ namespace XMI
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
-  typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
-  typedef Device::ShmemDevice<ShmemFifo, ShmemPacket> ShmemDevice;
-  typedef Device::ShmemModel<ShmemDevice, ShmemMessage> ShmemModel;
+  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
+  typedef Device::ShmemModel<ShmemDevice> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.

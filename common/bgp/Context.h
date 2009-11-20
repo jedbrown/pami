@@ -46,10 +46,8 @@ namespace XMI
   typedef Fifo::FifoPacket <16, 240> ShmemPacket;
   typedef Fifo::LinearFifo<Counter::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
-
-  typedef Device::ShmemMessage<ShmemPacket> ShmemMessage;
-  typedef Device::ShmemDevice<ShmemFifo, ShmemPacket> ShmemDevice;
-  typedef Device::ShmemModel<ShmemDevice, ShmemMessage> ShmemModel;
+  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
+  typedef Device::ShmemModel<ShmemDevice> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.

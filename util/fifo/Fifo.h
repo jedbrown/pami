@@ -22,81 +22,94 @@
 
 namespace XMI
 {
-    namespace Fifo
+  namespace Fifo
+  {
+    template <class T_Fifo, class T_Packet>
+    class Fifo
     {
-      template <class T_Fifo, class T_Packet>
-      class Fifo
-      {
-        public:
-          Fifo () {};
-          ~Fifo () {};
+      public:
 
-          ///
-          /// \brief Initialize the fifo
-          ///
-          inline void init (SysDep &sysdep);
+        typedef T_Packet PacketObject;
 
-          inline T_Packet * nextInjPacket (size_t & pktid);
-          inline T_Packet * nextRecPacket ();
+        Fifo ()
+        {
+          getPacketHeaderSize ();
+          getPacketPayloadSize ();
+        };
 
-          inline void consumePacket ();
-          inline void producePacket (size_t pktid);
+        ~Fifo () {};
 
-          inline size_t nextInjSequenceId ();
-          inline size_t lastRecSequenceId ();
-#if 0
-          inline size_t getPacketSequenceId (T_Packet * pkt);
-#endif
-      };
+        ///
+        /// \brief Initialize the fifo
+        ///
+        inline void init (SysDep &sysdep);
 
-      template <class T_Fifo, class T_Packet>
-      void Fifo<T_Fifo, T_Packet>::init (SysDep &sysdep)
-      {
-        static_cast<T_Fifo*>(this)->init_impl (sysdep);
-      }
+        inline size_t getPacketHeaderSize ();
+        inline size_t getPacketPayloadSize ();
 
-      template <class T_Fifo, class T_Packet>
-      T_Packet * Fifo<T_Fifo, T_Packet>::nextInjPacket (size_t & pktid)
-      {
-        return static_cast<T_Fifo*>(this)->nextInjPacket_impl (pktid);
-      }
+        inline T_Packet * nextInjPacket (size_t & pktid);
+        inline T_Packet * nextRecPacket ();
 
-      template <class T_Fifo, class T_Packet>
-      T_Packet * Fifo<T_Fifo, T_Packet>::nextRecPacket ()
-      {
-        return static_cast<T_Fifo*>(this)->nextRecPacket_impl ();
-      }
+        inline void consumePacket ();
+        inline void producePacket (size_t pktid);
 
-      template <class T_Fifo, class T_Packet>
-      void Fifo<T_Fifo, T_Packet>::consumePacket ()
-      {
-        static_cast<T_Fifo*>(this)->consumePacket_impl ();
-      }
+        inline size_t nextInjSequenceId ();
+        inline size_t lastRecSequenceId ();
+    };
 
-      template <class T_Fifo, class T_Packet>
-      void Fifo<T_Fifo, T_Packet>::producePacket (size_t pktid)
-      {
-        static_cast<T_Fifo*>(this)->producePacket_impl (pktid);
-      }
+    template <class T_Fifo, class T_Packet>
+    void Fifo<T_Fifo, T_Packet>::init (SysDep &sysdep)
+    {
+      static_cast<T_Fifo*>(this)->init_impl (sysdep);
+    }
 
-      template <class T_Fifo, class T_Packet>
-      size_t Fifo<T_Fifo, T_Packet>::nextInjSequenceId ()
-      {
-        return static_cast<T_Fifo*>(this)->nextInjSequenceId_impl ();
-      }
+    template <class T_Fifo, class T_Packet>
+    size_t Fifo<T_Fifo, T_Packet>::getPacketHeaderSize ()
+    {
+      return T_Fifo::packet_header_size;
+    }
 
-      template <class T_Fifo, class T_Packet>
-      size_t Fifo<T_Fifo, T_Packet>::lastRecSequenceId ()
-      {
-        return static_cast<T_Fifo*>(this)->lastRecSequenceId_impl ();
-      }
-#if 0
-      template <class T_Fifo, class T_Packet>
-      size_t Fifo<T_Fifo, T_Packet>::getPacketSequenceId (T_Packet * pkt)
-      {
-        return static_cast<T_Fifo*>(this)->getPacketSequenceId_impl (pkt);
-      }
-#endif
+    template <class T_Fifo, class T_Packet>
+    size_t Fifo<T_Fifo, T_Packet>::getPacketPayloadSize ()
+    {
+      return T_Fifo::packet_payload_size;
+    }
+
+    template <class T_Fifo, class T_Packet>
+    T_Packet * Fifo<T_Fifo, T_Packet>::nextInjPacket (size_t & pktid)
+    {
+      return (T_Packet *) static_cast<T_Fifo*>(this)->nextInjPacket_impl (pktid);
+    }
+
+    template <class T_Fifo, class T_Packet>
+    T_Packet * Fifo<T_Fifo, T_Packet>::nextRecPacket ()
+    {
+      return (T_Packet *) static_cast<T_Fifo*>(this)->nextRecPacket_impl ();
+    }
+
+    template <class T_Fifo, class T_Packet>
+    void Fifo<T_Fifo, T_Packet>::consumePacket ()
+    {
+      static_cast<T_Fifo*>(this)->consumePacket_impl ();
+    }
+
+    template <class T_Fifo, class T_Packet>
+    void Fifo<T_Fifo, T_Packet>::producePacket (size_t pktid)
+    {
+      static_cast<T_Fifo*>(this)->producePacket_impl (pktid);
+    }
+
+    template <class T_Fifo, class T_Packet>
+    size_t Fifo<T_Fifo, T_Packet>::nextInjSequenceId ()
+    {
+      return static_cast<T_Fifo*>(this)->nextInjSequenceId_impl ();
+    }
+
+    template <class T_Fifo, class T_Packet>
+    size_t Fifo<T_Fifo, T_Packet>::lastRecSequenceId ()
+    {
+      return static_cast<T_Fifo*>(this)->lastRecSequenceId_impl ();
+    }
   };
 };
 #endif // __util_fifo_fifo_h__

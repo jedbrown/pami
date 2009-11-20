@@ -39,7 +39,7 @@
 #define EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY 10
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -55,12 +55,12 @@ namespace XMI
       void                      * clientdata;
     } dispatch_t;
 
-    template < class T_Fifo, class T_Packet >
-    class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep>,
-        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Packet> >
+    template < class T_Fifo >
+    class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo>, XMI::SysDep>,
+        public Interface::PacketDevice<ShmemDevice<T_Fifo> >
     {
       protected:
-        class PacketImpl : public T_Packet
+        class PacketImpl : public T_Fifo::PacketObject
         {
           public:
             inline  PacketImpl () {};
@@ -82,53 +82,60 @@ namespace XMI
                                struct iovec   (&iov)[T_Niov])
             {
               // First, bulk copy the metadata into the packet header
-              if(likely(metadata!=NULL))
+              if (likely(metadata != NULL))
                 this->writeHeader (metadata);
 
               // Next, copy the packet dispatch id into the header
               uint16_t * hdr = (uint16_t *) this->getHeader ();
-              hdr[(T_Packet::headerSize_impl>>1)-1] = dispatch;
+              hdr[(T_Fifo::packet_header_size>>1)-1] = dispatch;
 
               // Finally, copy the packet payload data from the iovec
               unsigned i, j, n;
-              if (T_Niov == 1)
-              {
-                // Constant-expression template specialization.
-                n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
-                uint32_t * dst = (uint32_t *) this->getPayload ();
-                uint32_t * src = (uint32_t *) iov[0].iov_base;
-                for (i=0; i<n; i++) dst[i] = src[i];
 
-                return;
-              }
+              if (T_Niov == 1)
+                {
+                  // Constant-expression template specialization.
+                  n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
+                  uint32_t * dst = (uint32_t *) this->getPayload ();
+                  uint32_t * src = (uint32_t *) iov[0].iov_base;
+
+                  for (i = 0; i < n; i++) dst[i] = src[i];
+
+                  return;
+                }
 
               if (T_Niov == 2)
-              {
-                // Constant-expression template specialization.
-                uint32_t * dst = (uint32_t *) this->getPayload ();
-                uint32_t * src = (uint32_t *) iov[0].iov_base;
-                n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
-                for (i=0; i<n; i++) dst[i] = src[i];
+                {
+                  // Constant-expression template specialization.
+                  uint32_t * dst = (uint32_t *) this->getPayload ();
+                  uint32_t * src = (uint32_t *) iov[0].iov_base;
+                  n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
 
-                dst = (uint32_t *)((uint8_t *) dst + iov[0].iov_len);
-                src = (uint32_t *) iov[1].iov_base;
-                n = (iov[1].iov_len >> 2) + ((iov[1].iov_len & 0x03) != 0);
-                for (i=0; i<n; i++) dst[i] = src[i];
+                  for (i = 0; i < n; i++) dst[i] = src[i];
 
-                return;
-              }
+                  dst = (uint32_t *)((uint8_t *) dst + iov[0].iov_len);
+                  src = (uint32_t *) iov[1].iov_base;
+                  n = (iov[1].iov_len >> 2) + ((iov[1].iov_len & 0x03) != 0);
+
+                  for (i = 0; i < n; i++) dst[i] = src[i];
+
+                  return;
+                }
 
               uint8_t  * payload = (uint8_t *) this->getPayload ();
               uint32_t * dst;
               uint32_t * src;
-              for (i=0; i<T_Niov; i++)
-              {
-                dst = (uint32_t *) payload;
-                src = (uint32_t *) iov[i].iov_base;
-                n = (iov[i].iov_len >> 2) + ((iov[i].iov_len & 0x03) != 0);
-                for (j=0; j<n; j++) dst[j] = src[j];
-                payload += iov[i].iov_len;
-              }
+
+              for (i = 0; i < T_Niov; i++)
+                {
+                  dst = (uint32_t *) payload;
+                  src = (uint32_t *) iov[i].iov_base;
+                  n = (iov[i].iov_len >> 2) + ((iov[i].iov_len & 0x03) != 0);
+
+                  for (j = 0; j < n; j++) dst[j] = src[j];
+
+                  payload += iov[i].iov_len;
+                }
             };
 
             ///
@@ -145,26 +152,29 @@ namespace XMI
                                size_t         niov)
             {
               // First, bulk copy the metadata into the packet header
-              if(likely(metadata!=NULL))
+              if (likely(metadata != NULL))
                 this->writeHeader (metadata);
 
               // Next, copy the packet dispatch id into the header
               uint16_t * hdr = (uint16_t *) this->getHeader ();
-              hdr[(T_Packet::headerSize_impl>>1)-1] = dispatch;
+              hdr[(T_Fifo::packet_header_size>>1)-1] = dispatch;
 
               // Finally, copy the packet payload data from the iovec
               unsigned i, j, n;
               uint8_t  * payload = (uint8_t *) this->getPayload ();
               uint32_t * dst;
               uint32_t * src;
-              for (i=0; i<niov; i++)
-              {
-                dst = (uint32_t *) payload;
-                src = (uint32_t *) iov[i].iov_base;
-                n = (iov[i].iov_len >> 2) + ((iov[i].iov_len & 0x03) != 0);
-                for (j=0; j<n; j++) dst[j] = src[j];
-                payload += iov[i].iov_len;
-              }
+
+              for (i = 0; i < niov; i++)
+                {
+                  dst = (uint32_t *) payload;
+                  src = (uint32_t *) iov[i].iov_base;
+                  n = (iov[i].iov_len >> 2) + ((iov[i].iov_len & 0x03) != 0);
+
+                  for (j = 0; j < n; j++) dst[j] = src[j];
+
+                  payload += iov[i].iov_len;
+                }
             }
 
             ///
@@ -175,7 +185,7 @@ namespace XMI
             inline void * metadata (uint16_t & dispatch)
             {
               uint16_t * hdr = (uint16_t *) this->getHeader ();
-              dispatch = hdr[(T_Packet::headerSize_impl>>1)-1];
+              dispatch = hdr[(T_Fifo::packet_header_size>>1)-1];
               //fprintf(stderr, "PacketImpl::metadata(), dispatch = %d, (%d>>1)-1 = %d\n", dispatch, T_Packet::headerSize_impl, (T_Packet::headerSize_impl>>1)-1);
 
               return hdr;
@@ -187,24 +197,24 @@ namespace XMI
         {
           public:
             inline UnexpectedPacket (PacketImpl * packet, size_t s) :
-              QueueElem (),
-              sequence (s)
+                QueueElem (),
+                sequence (s)
             {
-              memcpy ((void *) meta, packet->metadata (id), T_Packet::headerSize_impl);
-              memcpy ((void *) data, packet->getPayload (), T_Packet::payloadSize_impl);
+              memcpy ((void *) meta, packet->metadata (id), T_Fifo::packet_header_size);
+              memcpy ((void *) data, packet->getPayload (), T_Fifo::packet_payload_size);
             };
 
             uint16_t id;
             size_t   sequence;
-            uint8_t  meta[T_Packet::headerSize_impl];
-            uint8_t  data[T_Packet::payloadSize_impl];
+            uint8_t  meta[T_Fifo::packet_header_size];
+            uint8_t  data[T_Fifo::packet_payload_size];
         };
 #endif
 
       public:
         inline ShmemDevice () :
-            Interface::BaseDevice<ShmemDevice<T_Fifo, T_Packet>, XMI::SysDep> (),
-            Interface::PacketDevice<ShmemDevice<T_Fifo, T_Packet> > (),
+            Interface::BaseDevice<ShmemDevice<T_Fifo>, XMI::SysDep> (),
+            Interface::PacketDevice<ShmemDevice<T_Fifo> > (),
             _fifo (NULL),
 #ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
             __ndQ (),
@@ -236,8 +246,8 @@ namespace XMI
         /// \see XMI::Device::Interface::PacketDevice::read()
         inline int read_impl (void * buf, size_t length, void * cookie);
 
-        static const size_t metadata_size = T_Packet::headerSize_impl - sizeof(uint16_t);
-        static const size_t payload_size  = T_Packet::payloadSize_impl;
+        static const size_t metadata_size = T_Fifo::packet_header_size - sizeof(uint16_t);
+        static const size_t payload_size  = T_Fifo::packet_payload_size;
 
         // ------------------------------------------
 
@@ -292,11 +302,11 @@ namespace XMI
                                                size_t           niov,
                                                size_t         & sequence);
 
-        inline xmi_result_t writeSinglePacket (size_t                   ififo,
-                                               ShmemMessage<T_Packet> * msg,
-                                               size_t                 & sequence);
+        inline xmi_result_t writeSinglePacket (size_t        ififo,
+                                               ShmemMessage * msg,
+                                               size_t       & sequence);
 
-        xmi_result_t post (size_t ififo, ShmemMessage<T_Packet> * msg);
+        xmi_result_t post (size_t ififo, ShmemMessage * msg);
 
         ///
         /// \brief Check if the send queue to a local rank is empty
@@ -361,8 +371,8 @@ namespace XMI
         unsigned   _current_pkt_iov;
     };
 
-    template <class T_Fifo, class T_Packet>
-    inline size_t ShmemDevice<T_Fifo, T_Packet>::getLocalRank()
+    template <class T_Fifo>
+    inline size_t ShmemDevice<T_Fifo>::getLocalRank()
     {
       return _local_task;
     }
@@ -372,70 +382,77 @@ namespace XMI
     ///
     /// \param[in] peer  \b Local rank
     ///
-    template <class T_Fifo, class T_Packet>
-    inline bool ShmemDevice<T_Fifo, T_Packet>::isSendQueueEmpty (size_t peer)
+    template <class T_Fifo>
+    inline bool ShmemDevice<T_Fifo>::isSendQueueEmpty (size_t peer)
     {
       return ((__sendQMask >> peer) & 0x01) == 0;
     }
 
     /// \see XMI::Device::Interface::PacketDevice::read()
-    template <class T_Fifo, class T_Packet>
-    int ShmemDevice<T_Fifo, T_Packet>::read_impl (void * dst, size_t length, void * cookie)
+    template <class T_Fifo>
+    int ShmemDevice<T_Fifo>::read_impl (void * dst, size_t length, void * cookie)
     {
       memcpy (dst, cookie, length);
       return 0;
     }
 
-    template <class T_Fifo, class T_Packet>
+    template <class T_Fifo>
     template <unsigned T_Niov>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
-        size_t         fnum,
-        uint16_t       dispatch_id,
-        void         * metadata,
-        size_t         metasize,
-        struct iovec   (&iov)[T_Niov],
-        size_t       & sequence)
+    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+      size_t         fnum,
+      uint16_t       dispatch_id,
+      void         * metadata,
+      size_t         metasize,
+      struct iovec   (&iov)[T_Niov],
+      size_t       & sequence)
     {
-      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. T_Niov = %d\n", T_Niov));
+      TRACE_ERR((stderr, ">> ShmemDevice<>::writeSinglePacket () .. T_Niov = %d\n", T_Niov));
 
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
+
       if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+
 #endif
 
       size_t pktid;
       PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
+      TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. pkt = %p, pktid = %zd\n", pkt, pktid));
 
       if (pkt != NULL)
         {
+          TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before write()\n"));
           pkt->write (dispatch_id, metadata, iov);
 
-          //sequence = _fifo[fnum].getPacketSequenceId ((T_Packet *)pkt);
-
           // "produce" the packet into the fifo.
+          TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before producePacket()\n"));
           _fifo[fnum].producePacket (pktid);
 
+          TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. XMI_SUCCESS\n"));
           return XMI_SUCCESS;
         }
 
+      TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. XMI_EAGAIN\n"));
       return XMI_EAGAIN;
     };
 
-    template <class T_Fifo, class T_Packet>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
-        size_t         fnum,
-        uint16_t       dispatch_id,
-        void         * metadata,
-        size_t         metasize,
-        struct iovec * iov,
-        size_t         niov,
-        size_t       & sequence)
+    template <class T_Fifo>
+    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+      size_t         fnum,
+      uint16_t       dispatch_id,
+      void         * metadata,
+      size_t         metasize,
+      struct iovec * iov,
+      size_t         niov,
+      size_t       & sequence)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
 
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
+
       if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+
 #endif
 
       size_t pktid;
@@ -444,8 +461,6 @@ namespace XMI
       if (pkt != NULL)
         {
           pkt->write (dispatch_id, metadata, iov, niov);
-
-          //sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
@@ -458,11 +473,11 @@ namespace XMI
       return XMI_EAGAIN;
     };
 
-    template <class T_Fifo, class T_Packet>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::writeSinglePacket (
-        size_t                   fnum,
-        ShmemMessage<T_Packet> * msg,
-        size_t                 & sequence)
+    template <class T_Fifo>
+    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+      size_t                   fnum,
+      ShmemMessage * msg,
+      size_t                 & sequence)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
 
@@ -472,10 +487,8 @@ namespace XMI
       if (pkt != NULL)
         {
           struct iovec iov[1];
-          iov[0].iov_base = msg->next (iov[0].iov_len, T_Packet::payloadSize_impl);
+          iov[0].iov_base = msg->next (iov[0].iov_len, T_Fifo::packet_payload_size);
           pkt->write (msg->getDispatchId (), msg->getMetadata(), iov);
-
-          //sequence = _fifo[fnum].getPacketSequenceId (pkt);
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
@@ -488,8 +501,8 @@ namespace XMI
       return XMI_EAGAIN;
     };
 
-    template <class T_Fifo, class T_Packet>
-    int ShmemDevice<T_Fifo, T_Packet>::advance_impl ()
+    template <class T_Fifo>
+    int ShmemDevice<T_Fifo>::advance_impl ()
     {
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
@@ -514,19 +527,19 @@ namespace XMI
 
 #ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
           UnexpectedPacket * uepkt = (UnexpectedPacket *) __ndpkt.allocateObject();
-          new (uepkt) UnexpectedPacket (pkt, _rfifo->getPacketSequenceId((T_Packet *)pkt));
+          new (uepkt) UnexpectedPacket (pkt);
           unsigned long long t = __global.time.timebase ();
           size_t position = t % __ndQ.size();
-          //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...  before enqueue nd packet, __ndQ.size() = %d, t = %lld, position = %zd\n", __global.mapping.task(), __ndQ.size(), t, position);
+
           if (__ndQ.size() == 0)
             __ndQ.pushHead ((QueueElem *) uepkt);
           else
             __ndQ.insertElem ((QueueElem *) uepkt, position);
-          //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...   after enqueue nd packet, __ndQ.size() = %d\n", __global.mapping.task(), __ndQ.size());
+
 #else
           void * meta = (void *) pkt->metadata (id);
           void * data = pkt->getPayload ();
-          _dispatch[id].function (meta, data, T_Packet::payloadSize_impl, _dispatch[id].clientdata, data);
+          _dispatch[id].function (meta, data, T_Fifo::packet_payload_size, _dispatch[id].clientdata, data);
 
           // Complete this message/packet and increment the fifo head.
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
@@ -542,30 +555,33 @@ namespace XMI
       // packet insertion will randomize the packet order when the queue is
       // advanced.
       unsigned long long t = __global.time.timebase ();
+
       if (t % EMULATE_NONDETERMINISTIC_SHMEM_DEVICE_FREQUENCY == 0 && !__ndQ.isEmpty())
-      //if (!__ndQ.isEmpty())
-      {
-        //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...  before dequeue nd packet, __ndQ.size() = %d\n", __global.mapping.task(), __ndQ.size());
-        UnexpectedPacket * uepkt = NULL;
-        while ((uepkt = (UnexpectedPacket *) __ndQ.popHead()) != NULL)
+        //if (!__ndQ.isEmpty())
         {
-          fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...         dequeue nd packet, __ndQ.size() = %3d -> %3d, uepkt->sequence = %zd\n", __global.mapping.task(), __ndQ.size()+1, __ndQ.size(), uepkt->sequence);
-          _dispatch[uepkt->id].function (uepkt->meta,
-                                         uepkt->data,
-                                         T_Packet::payloadSize_impl,
-                                         _dispatch[uepkt->id].clientdata,
-                                         uepkt->data);
-          __ndpkt.returnObject ((void *) uepkt);
+          UnexpectedPacket * uepkt = NULL;
+
+          while ((uepkt = (UnexpectedPacket *) __ndQ.popHead()) != NULL)
+            {
+              TRACE_ERR)(stderr, "(%zd) ShmemDevice::advance_impl()    ...         dequeue nd packet, __ndQ.size() = %3d -> %3d, uepkt->sequence = %zd\n", __global.mapping.task(), __ndQ.size() + 1, __ndQ.size(), uepkt->sequence));
+              _dispatch[uepkt->id].function (uepkt->meta,
+                                             uepkt->data,
+                                             T_Fifo::packet_payload_size,
+                                             _dispatch[uepkt->id].clientdata,
+                                             uepkt->data);
+              __ndpkt.returnObject ((void *) uepkt);
+            }
         }
-        //fprintf(stderr, "(%zd) ShmemDevice::advance_impl()    ...   after dequeue nd packet, __ndQ.size() = %d\n", __global.mapping.task(), __ndQ.size());
-      }
+
 #endif
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl() << ... events = %d\n", __global.mapping.task(), events));
 
 #ifdef TRAP_ADVANCE_DEADLOCK
+
       if (events) iteration = 0;
+
 #endif
       return events;
     }
@@ -575,8 +591,8 @@ namespace XMI
     ///
     /// \param[in] peer  \b Local rank
     ///
-    template <class T_Fifo, class T_Packet>
-    inline void ShmemDevice<T_Fifo, T_Packet>::pushSendQueueTail (size_t peer, QueueElem * element)
+    template <class T_Fifo>
+    inline void ShmemDevice<T_Fifo>::pushSendQueueTail (size_t peer, QueueElem * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", __global.mapping.task(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
       __sendQ[peer].pushTail (element);
@@ -588,8 +604,8 @@ namespace XMI
     ///
     /// \param[in] peer  \b Local rank
     ///
-    template <class T_Fifo, class T_Packet>
-    inline QueueElem * ShmemDevice<T_Fifo, T_Packet>::popSendQueueHead (size_t peer)
+    template <class T_Fifo>
+    inline QueueElem * ShmemDevice<T_Fifo>::popSendQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the sendQ\n"));
       QueueElem * tmp = __sendQ[peer].popHead();

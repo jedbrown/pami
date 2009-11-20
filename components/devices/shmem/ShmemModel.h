@@ -25,9 +25,10 @@
 #include "components/devices/DmaInterface.h"
 
 #include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemMessage.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -46,9 +47,9 @@ namespace XMI
     ///
     /// \see ShmemPacketDevice
     ///
-    template < class T_Device, class T_Message>
-    class ShmemModel : public Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > ,
-        public Interface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) >
+    template <class T_Device>
+    class ShmemModel : public Interface::PacketModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) > ,
+        public Interface::DmaModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) >
     {
       public:
         ///
@@ -57,8 +58,8 @@ namespace XMI
         /// \param[in] device  Shared memory device
         ///
         ShmemModel (T_Device & device, xmi_client_t client, size_t context) :
-            Interface::PacketModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, client, context),
-            Interface::DmaModel < ShmemModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, client, context),
+            Interface::PacketModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) > (device, client, context),
+            Interface::DmaModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) > (device, client, context),
             _device (device),
             _client (client),
             _context (context)
@@ -73,7 +74,7 @@ namespace XMI
         static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
         static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
         static const size_t packet_model_payload_bytes        = T_Device::payload_size;
-        static const size_t packet_model_state_bytes          = sizeof(T_Message);
+        static const size_t packet_model_state_bytes          = sizeof(ShmemMessage);
 
         xmi_result_t init_impl (size_t                      dispatch,
                                 Interface::RecvFunction_t   direct_recv_func,
@@ -84,7 +85,7 @@ namespace XMI
           return _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm, _dispatch_id);
         };
 
-        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
+        inline bool postPacket_impl (uint8_t              (&state)[sizeof(ShmemMessage)],
                                      xmi_event_function   fn,
                                      void               * cookie,
                                      size_t               target_rank,
@@ -107,8 +108,8 @@ namespace XMI
               return true;
             }
 
-          T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov, niov, true);
+          ShmemMessage * obj = (ShmemMessage *) & state[0];
+          new (obj) ShmemMessage (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov, niov, true);
 
           _device.post (peer, obj);
 
@@ -116,7 +117,7 @@ namespace XMI
         };
 
         template <unsigned T_Niov>
-        inline bool postPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
+        inline bool postPacket_impl (uint8_t              (&state)[sizeof(ShmemMessage)],
                                      xmi_event_function   fn,
                                      void               * cookie,
                                      size_t               target_rank,
@@ -138,8 +139,8 @@ namespace XMI
               return true;
             }
 
-          T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov, T_Niov, true);
+          ShmemMessage * obj = (ShmemMessage *) & state[0];
+          new (obj) ShmemMessage (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov, T_Niov, true);
 
           _device.post (peer, obj);
 
@@ -168,7 +169,7 @@ namespace XMI
         };
 
         template <unsigned T_Niov>
-        inline bool postMultiPacket_impl (uint8_t              (&state)[sizeof(T_Message)],
+        inline bool postMultiPacket_impl (uint8_t              (&state)[sizeof(ShmemMessage)],
                                           xmi_event_function   fn,
                                           void               * cookie,
                                           size_t               target_rank,
@@ -176,7 +177,7 @@ namespace XMI
                                           size_t               metasize,
                                           struct iovec         (&iov)[T_Niov])
         {
-          XMI_assert(T_Niov==1);
+          XMI_assert(T_Niov == 1);
 
           TRACE_ERR((stderr, ">> ShmemModel::postMessage_impl() .. target_rank = %zd\n", target_rank));
           size_t sequence;
@@ -190,8 +191,8 @@ namespace XMI
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. {%zd, %zd} -> %zd\n", address.global, address.local, peer));
 
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. target_rank = %zd, peer = %zd\n", target_rank, peer));
-          T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov[0].iov_base, iov[0].iov_len, false);
+          ShmemMessage * obj = (ShmemMessage *) & state[0];
+          new (obj) ShmemMessage (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov[0].iov_base, iov[0].iov_len, false);
 
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. 0\n"));
 
@@ -221,7 +222,7 @@ namespace XMI
           return false;
         };
 
-        inline bool postDmaPut_impl (uint8_t              state[sizeof(T_Message)],
+        inline bool postDmaPut_impl (uint8_t              state[sizeof(ShmemMessage)],
                                      xmi_event_function   local_fn,
                                      void               * cookie,
                                      size_t               target_rank,
@@ -252,17 +253,17 @@ namespace XMI
 
             }
 
-          T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (local_fn, cookie,
-                               local_memregion, local_offset,
-                               remote_memregion, remote_offset,
-                               bytes, true);
+          ShmemMessage * obj = (ShmemMessage *) & state[0];
+          new (obj) ShmemMessage (local_fn, cookie,
+                                  local_memregion, local_offset,
+                                  remote_memregion, remote_offset,
+                                  bytes, true);
 
           _device.post (peer, obj);
           return XMI_SUCCESS;
         };
 
-        inline bool postDmaGet_impl (uint8_t              state[sizeof(T_Message)],
+        inline bool postDmaGet_impl (uint8_t              state[sizeof(ShmemMessage)],
                                      xmi_event_function   local_fn,
                                      void               * cookie,
                                      size_t               target_rank,
@@ -293,11 +294,11 @@ namespace XMI
 
             }
 
-          T_Message * obj = (T_Message *) & state[0];
-          new (obj) T_Message (local_fn, cookie,
-                               local_memregion, local_offset,
-                               remote_memregion, remote_offset,
-                               bytes, false);
+          ShmemMessage * obj = (ShmemMessage *) & state[0];
+          new (obj) ShmemMessage (local_fn, cookie,
+                                  local_memregion, local_offset,
+                                  remote_memregion, remote_offset,
+                                  bytes, false);
 
           _device.post (peer, obj);
 

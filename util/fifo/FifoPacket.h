@@ -26,8 +26,8 @@
 
 namespace XMI
 {
-    namespace Fifo
-    {
+  namespace Fifo
+  {
       template <unsigned T_HeaderSize, unsigned T_PacketSize>
       class FifoPacket : public Packet<FifoPacket <T_HeaderSize, T_PacketSize> >
       {

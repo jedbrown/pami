@@ -23,8 +23,8 @@ namespace XMI
 {
   namespace Device
   {
-    template <class T_Fifo, class T_Packet>
-    int ShmemDevice<T_Fifo, T_Packet>::init_impl (XMI::SysDep * sysdep)
+    template <class T_Fifo>
+    int ShmemDevice<T_Fifo>::init_impl (XMI::SysDep * sysdep)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl ()\n", __global.mapping.task()));
       _sysdep = sysdep;
@@ -85,22 +85,22 @@ namespace XMI
       return 0;
     }
 
-    template <class T_Fifo, class T_Packet>
-    bool ShmemDevice<T_Fifo, T_Packet>::isInit_impl ()
+    template <class T_Fifo>
+    bool ShmemDevice<T_Fifo>::isInit_impl ()
     {
       return true;
     }
 
     /// \see XMI::Device::Interface::BaseDevice::peers()
-    template <class T_Fifo, class T_Packet>
-    size_t ShmemDevice<T_Fifo, T_Packet>::peers_impl ()
+    template <class T_Fifo>
+    size_t ShmemDevice<T_Fifo>::peers_impl ()
     {
       return _num_procs;
     }
 
     /// \see XMI::Device::Interface::BaseDevice::task2peer()
-    template <class T_Fifo, class T_Packet>
-    size_t ShmemDevice<T_Fifo, T_Packet>::task2peer_impl (size_t task)
+    template <class T_Fifo>
+    size_t ShmemDevice<T_Fifo>::task2peer_impl (size_t task)
     {
       XMI::Interface::Mapping::nodeaddr_t address;
       __global.mapping.task2node (task, address);
@@ -120,11 +120,11 @@ namespace XMI
     ///
     /// \return Dispatch id for this registration
     ///
-    template <class T_Fifo, class T_Packet>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::registerRecvFunction (size_t                      set,
-                                                                      Interface::RecvFunction_t   recv_func,
-                                                                      void                      * recv_func_parm,
-                                                                      uint16_t                  & id)
+    template <class T_Fifo>
+    xmi_result_t ShmemDevice<T_Fifo>::registerRecvFunction (size_t                      set,
+                                                            Interface::RecvFunction_t   recv_func,
+                                                            void                      * recv_func_parm,
+                                                            uint16_t                  & id)
     {
       TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction (%d,%p,%p)\n", __global.mapping.task(), id, recv_func, recv_func_parm));
 
@@ -133,13 +133,14 @@ namespace XMI
 
       // Find the next available id for this dispatch set.
       bool found_free_slot = false;
-      for (id = set*256; id < ((set+1)*256); id++)
+
+      for (id = set * 256; id < ((set + 1)*256); id++)
         {
           if (_dispatch[id].function == (Interface::RecvFunction_t) noop)
-          {
-            found_free_slot = true;
-            break;
-          }
+            {
+              found_free_slot = true;
+              break;
+            }
         }
 
       if (!found_free_slot) return XMI_ERROR;
@@ -151,8 +152,8 @@ namespace XMI
       return XMI_SUCCESS;
     };
 
-    template <class T_Fifo, class T_Packet>
-    xmi_result_t ShmemDevice<T_Fifo, T_Packet>::post (size_t fnum, ShmemMessage<T_Packet> * msg)
+    template <class T_Fifo>
+    xmi_result_t ShmemDevice<T_Fifo>::post (size_t fnum, ShmemMessage * msg)
     {
       pushSendQueueTail (fnum, (QueueElem *) msg);
       return XMI_SUCCESS;
@@ -160,20 +161,20 @@ namespace XMI
 
 
 
-    template <class T_Fifo, class T_Packet>
-    int ShmemDevice<T_Fifo, T_Packet>::noop (void   * metadata,
-                                                          void   * payload,
-                                                          size_t   bytes,
-                                                          void   * recv_func_parm,
-                                                          void   * cookie)
+    template <class T_Fifo>
+    int ShmemDevice<T_Fifo>::noop (void   * metadata,
+                                   void   * payload,
+                                   size_t   bytes,
+                                   void   * recv_func_parm,
+                                   void   * cookie)
     {
       XMI_abort();
       return 0;
     }
 
 
-    template <class T_Fifo, class T_Packet>
-    int ShmemDevice<T_Fifo, T_Packet>::advance_sendQ ()
+    template <class T_Fifo>
+    int ShmemDevice<T_Fifo>::advance_sendQ ()
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ () >> _num_procs = %zd\n", __global.mapping.task(), _num_procs));
       unsigned peer;
@@ -187,10 +188,10 @@ namespace XMI
       return events;
     }
 
-    template <class T_Fifo, class T_Packet>
-    int ShmemDevice<T_Fifo, T_Packet>::advance_sendQ (size_t peer)
+    template <class T_Fifo>
+    int ShmemDevice<T_Fifo>::advance_sendQ (size_t peer)
     {
-      ShmemMessage<T_Packet> * msg;
+      ShmemMessage * msg;
       size_t sequence;
       int events = 0;
 
@@ -199,7 +200,7 @@ namespace XMI
       while (!__sendQ[peer].isEmpty())
         {
           // There is a pending message on the send queue.
-          msg = (ShmemMessage<T_Packet> *) __sendQ[peer].peekHead ();
+          msg = (ShmemMessage *) __sendQ[peer].peekHead ();
 
           if (Memregion::shared_address_read_supported ||
               Memregion::shared_address_write_supported)

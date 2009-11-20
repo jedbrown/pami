@@ -25,7 +25,6 @@ namespace XMI
 {
   namespace Device
   {
-    template <class T_Packet>
     class ShmemMessage : public QueueElem
     {
       public:
@@ -35,6 +34,8 @@ namespace XMI
           PTP,
           RMA
         };
+
+        static const size_t SHMEM_MESSAGE_METADATA_SIZE = 128;
 
         inline ShmemMessage (xmi_client_t client, size_t        context,
                              xmi_event_function   fn,
@@ -59,6 +60,8 @@ namespace XMI
         {
           __iov[0].iov_base = src;
           __iov[0].iov_len  = bytes;
+
+          XMI_assert_debugf(metasize <= SHMEM_MESSAGE_METADATA_SIZE, "ShmemMessage metadata size too small: %zd ! <= %zd\n", metasize, SHMEM_MESSAGE_METADATA_SIZE);
 
           memcpy(_metadata, metadata, metasize);
         };
@@ -135,7 +138,7 @@ namespace XMI
             _niov (0),
             _nbytes (0),
             _dispatch_id (dispatch_id),
-           _pkt_type(PTP)
+            _pkt_type(PTP)
         {
           memcpy(_metadata, metadata, metasize);
         };
@@ -252,7 +255,7 @@ namespace XMI
         uint16_t _dispatch_id;
         size_t   _sequence_id;
 
-        shmem_pkt_t		_pkt_type;
+        shmem_pkt_t       _pkt_type;
 
         Memregion * _rma_local_memregion;
         Memregion * _rma_remote_memregion;
@@ -263,7 +266,7 @@ namespace XMI
 
       private:
         struct iovec      __iov[2];
-        uint8_t _metadata[T_Packet::headerSize_impl] __attribute__ ((aligned (16)));
+        uint8_t _metadata[SHMEM_MESSAGE_METADATA_SIZE] __attribute__ ((aligned (16)));
     };
   };
 };
