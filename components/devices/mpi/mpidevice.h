@@ -13,13 +13,17 @@
 
 #ifndef __components_devices_mpi_mpidevice_h__
 #define __components_devices_mpi_mpidevice_h__
-
+#ifndef TRACE_ADAPTOR
+#define TRACE_ADAPTOR(x) //fprintf x
+#endif
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
 #include <map>
 #include <list>
 #include "util/ccmi_debug.h"
+
+
 
 #define DISPATCH_SET_SIZE 256
 namespace XMI
@@ -28,7 +32,7 @@ namespace XMI
   {
     typedef struct mpi_dispatch_info_t
     {
-      Interface::RecvFunction_t  recv_func;
+      XMI::Device::Interface::RecvFunction_t  recv_func;
       void                      *recv_func_parm;
     }mpi_dispatch_info_t;
 
@@ -66,10 +70,11 @@ namespace XMI
 
 
       int registerRecvFunction (size_t                     dispatch,
-                                Interface::RecvFunction_t  recv_func,
+                                XMI::Device::Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
         {
           unsigned i;
+          TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::registerRecvFunction dispatch %zd/%zd\n",(int)this,dispatch,dispatch * DISPATCH_SET_SIZE));
           for (i=0; i<DISPATCH_SET_SIZE; i++)
           {
             unsigned id = dispatch * DISPATCH_SET_SIZE + i;
@@ -170,13 +175,14 @@ namespace XMI
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl() p2p\n",(int)this)); dbg = 1;
             xmi_event_function  done_fn = (*it_p2p)->_done_fn;
             void               *cookie  = (*it_p2p)->_cookie;
-            xmi_context_t       context = (*it_p2p)->_context;
+            xmi_client_t       client = (*it_p2p)->_client;
+            size_t       context = (*it_p2p)->_context;
             _sendQ.remove((*it_p2p));
             if((*it_p2p)->_freeme)
               free(*it_p2p);
 
             if(done_fn)
-              done_fn(context,cookie,XMI_SUCCESS);
+              done_fn(XMI_Client_getcontext(client,context),cookie,XMI_SUCCESS);
             break;
           }
         }
@@ -192,7 +198,7 @@ namespace XMI
             events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl mc\n",(int)this)); dbg = 1;
             if((*it_mcast)->_cb_done.function )
-              (*(*it_mcast)->_cb_done.function)((*it_mcast)->_context, (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
+              (*(*it_mcast)->_cb_done.function)(XMI_Client_getcontext((*it_mcast)->_client,(*it_mcast)->_context), (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
             free ((*it_mcast)->_req);
             free (*it_mcast);
             _mcastsendQ.remove((*it_mcast));
@@ -233,7 +239,7 @@ namespace XMI
           //p2p messages
           switch(sts.MPI_TAG)
           {
-          case 0:
+          case 0: // p2p packet
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -256,7 +262,7 @@ namespace XMI
               free(msg);
             }
             break;
-          case 1:
+          case 1: // p2p packet + data
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -279,7 +285,7 @@ namespace XMI
               free(msg);
             }
             break;
-          case 2:
+          case 2: // old multicast
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -348,7 +354,7 @@ namespace XMI
               if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
               {
                 if(mcast->_done_fn)
-                  mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn (XMI_Client_getcontext(msg->_client, msg->_context), mcast->_cookie, XMI_SUCCESS);
 
                 _mcastrecvQ.remove(mcast);
                 free (msg);
@@ -370,7 +376,7 @@ namespace XMI
 
               //for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
               //if(mcast->_done_fn)
-              //  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+              //  mcast->_done_fn(XMI_Client_getcontext(msg->_client, msg->context), mcast->_cookie, XMI_SUCCESS);
 
               // XMI_assert (nbytes <= mcast->_pwidth);
 
@@ -380,7 +386,7 @@ namespace XMI
                                (int)this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
                 mcast->_counter += mcast->_pwidth;
                 if(mcast->_done_fn)
-                  mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn(XMI_Client_getcontext(msg->_client, msg->_context), mcast->_cookie, XMI_SUCCESS);
               }
 
               if(mcast->_counter >= mcast->_size)
@@ -393,7 +399,7 @@ namespace XMI
               free (msg);
             }
             break;
-          case 3:
+          case 3: // old m2m
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);

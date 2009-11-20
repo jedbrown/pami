@@ -50,12 +50,12 @@ namespace XMI
         public:
           inline Get( T_Device                 & device,
                       xmi_task_t                 origin_task,
-                      xmi_context_t              context,
+                      xmi_client_t              client,
                       size_t                     contextid,
                       xmi_result_t             & status) :
-              _get_model (device, context),
+              _get_model (device, client, contextid),
               _device (device),
-              _context (context),
+              _client (client),
               _contextid (contextid)
           {
             status = XMI_SUCCESS;
@@ -102,7 +102,7 @@ namespace XMI
 
           T_Model                    _get_model;
           T_Device                 & _device;
-          xmi_context_t              _context;
+          xmi_client_t              _client;
           size_t                     _contextid;
 
           inline get_state_t * allocateGetState ()
@@ -122,7 +122,7 @@ namespace XMI
           /// callback function and, if notification of remote receive
           /// completion is not required, free the send state memory.
           ///
-          static void get_complete (xmi_context_t   context,
+          static void get_complete (xmi_context_t context,
                                     void          * cookie,
                                     xmi_result_t    result)
           {
@@ -133,7 +133,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (get->_context, state->cookie, XMI_SUCCESS);
+                state->local_fn (XMI_Client_getcontext(get->_client, get->_contextid), state->cookie, XMI_SUCCESS);
               }
 
             get->freeGetState(state);

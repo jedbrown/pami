@@ -26,8 +26,6 @@ namespace XMI
 
         inline xmi_result_t destroy ();
 
-        inline xmi_result_t queryConfiguration (xmi_configuration_t * configuration);
-
         inline xmi_result_t post (xmi_event_function work_fn, void * cookie);
 
         inline size_t advance (size_t maximum, xmi_result_t & result);
@@ -99,13 +97,11 @@ namespace XMI
 
         inline xmi_result_t collective (xmi_xfer_t * parameters);
 
-      inline xmi_result_t geometry_algorithms_num (xmi_context_t context,
-                                                   xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_num (xmi_geometry_t geometry,
                                                    xmi_xfer_type_t ctype,
                                                    int *lists_lengths);
 
-      inline xmi_result_t geometry_algorithms_info (xmi_context_t context,
-                                                    xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_info (xmi_geometry_t geometry,
                                                     xmi_xfer_type_t type,
                                                     xmi_algorithm_t *algs,
                                                     xmi_metadata_t *mdata,
@@ -129,6 +125,12 @@ namespace XMI
                                       xmi_dispatch_callback_fn   fn,
                                       void                     * cookie,
                                       xmi_send_hint_t            options);
+	//#ifdef __xmi_target_mpi__
+        inline xmi_result_t dispatch_new (size_t                 dispatch,
+                                          xmi_dispatch_callback_fn   fn,
+                                          void                     * cookie,
+                                          xmi_dispatch_hint_t        options);
+	//#endif
 
 
     }; // end class XMI::Context::Context
@@ -149,12 +151,6 @@ namespace XMI
     xmi_result_t Context<T_Context>::destroy ()
     {
       return static_cast<T_Context*>(this)->destroy_impl();
-    }
-
-    template <class T_Context>
-    xmi_result_t Context<T_Context>::queryConfiguration (xmi_configuration_t * configuration)
-    {
-      return static_cast<T_Context*>(this)->queryConfiguration_impl(configuration);
     }
 
     template <class T_Context>
@@ -356,28 +352,25 @@ namespace XMI
     }
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_algorithms_num (xmi_context_t context,
-                                                              xmi_geometry_t geometry,
+    xmi_result_t Context<T_Context>::geometry_algorithms_num (xmi_geometry_t geometry,
                                                               xmi_xfer_type_t coll_type,
                                                               int *lists_lengths)
     {
-      return static_cast<T_Context*>(this)->geometry_algorithms_num_impl(context,
-                                                                         geometry,
+      return static_cast<T_Context*>(this)->geometry_algorithms_num_impl(geometry,
                                                                          coll_type,
                                                                          lists_lengths);
     }
 
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_algorithms_info (xmi_context_t context,
-                                                              xmi_geometry_t geometry,
+    xmi_result_t Context<T_Context>::geometry_algorithms_info (xmi_geometry_t geometry,
                                                               xmi_xfer_type_t type,
                                                               xmi_algorithm_t *algs,
                                                               xmi_metadata_t *mdata,
                                                               int algorithm_type,
                                                               int num)
     {
-      return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(context, geometry, type, algs, mdata, algorithm_type, num);
+      return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(geometry, type, algs, mdata, algorithm_type, num);
 
     }
 
@@ -421,6 +414,16 @@ namespace XMI
     {
         return static_cast<T_Context*>(this)->dispatch_impl(dispatch,fn,cookie,options);
     }
+//#ifdef __xmi_target_mpi__
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::dispatch_new (size_t                 dispatch,
+                                               xmi_dispatch_callback_fn   fn,
+                                               void                     * cookie,
+                                               xmi_dispatch_hint_t        options)
+    {
+        return static_cast<T_Context*>(this)->dispatch_new_impl(dispatch,fn,cookie,options);
+    }
+//#endif
   }; // end namespace Interface
 }; // end namespace XMI
 

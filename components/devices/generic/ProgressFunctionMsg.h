@@ -23,7 +23,8 @@
 typedef int XMI_ProgressFunc(void *clientdata);
 
 typedef struct {
-	xmi_context_t context;
+	xmi_client_t client;
+	size_t context;
 	void *request;
 	XMI_ProgressFunc *func;
 	void *clientdata;
@@ -73,13 +74,14 @@ protected:
 	friend class ProgressFunctionMdl;
 
 	ProgressFunctionMsg(Generic::BaseGenericDevice &Generic_QS,
-		XMI_ProgressFunc *func,
-		void *clientdata,
-		xmi_callback_t cb) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
+		XMI_ProgressFunc_t *pf) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, pf->cb_done,
+				pf->client, pf->context),
 	_thread(),
-	_func(func),
-	_clientdata(clientdata),
+	_func(pf->func),
+	_clientdata(pf->clientdata),
+	_client(pf->client),
+	_context(pf->context),
 	_rc(XMI_SUCCESS)
 	{
 	}
@@ -120,6 +122,8 @@ protected:
 	ProgressFunctionThr _thread;
 	XMI_ProgressFunc *_func;
 	void *_clientdata;
+	xmi_client_t _client;
+	size_t _context;
 	xmi_result_t _rc;
 }; //-- ProgressFunctionMsg
 
@@ -166,16 +170,16 @@ inline bool XMI::Device::ProgressFunctionMdl::generateMessage(XMI_ProgressFunc_t
 	int rc = pf->func(pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(NULL, pf->cb_done.clientdata, XMI_SUCCESS);
+			pf->cb_done.function(XMI_Client_getcontext(pf->client, pf->context), pf->cb_done.clientdata, XMI_SUCCESS);
 		}
 		return true;
 	} else if (rc < 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(NULL, pf->cb_done.clientdata, (xmi_result_t)-rc);
+			pf->cb_done.function(XMI_Client_getcontext(pf->client, pf->context), pf->cb_done.clientdata, (xmi_result_t)-rc);
 		}
 		return true;
 	}
-	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf->func, pf->clientdata, pf->cb_done);
+	new (msg) ProgressFunctionMsg(_g_progfunc_dev, pf);
 	_g_progfunc_dev.__post<ProgressFunctionMsg>(msg);
 	return true;
 }

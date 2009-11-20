@@ -59,7 +59,7 @@ namespace XMI
 
           inline void writeHeader_impl (void * src)
           {
-            if(likely((size_t)src & 0x0f == 0))
+            if(likely(((size_t)src & 0x0f) == 0))
               Type<xmi_quad_t>::copy<T_HeaderSize>(_data, (xmi_quad_t *) src);
             else
               Type<size_t>::copy<T_HeaderSize>((size_t *) _data, (size_t *) src);

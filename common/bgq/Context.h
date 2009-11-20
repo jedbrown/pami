@@ -11,6 +11,8 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
+#include "components/devices/generic/GenericDevice.h"
+
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemModel.h"
 #include "components/devices/shmem/ShmemMessage.h"
@@ -41,6 +43,8 @@
 
 namespace XMI
 {
+  typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
+
   typedef Fifo::FifoPacket <32, 992> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
@@ -60,20 +64,86 @@ namespace XMI
 
   typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
 
-  typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+  typedef MemoryAllocator<1152, 16> ProtocolAllocator;
+
+  class Work : public Queue
+  {
+    private:
+      class WorkObject : public QueueElem
+      {
+        public:
+          inline WorkObject (xmi_event_function   fn,
+                             void               * cookie) :
+              QueueElem (),
+              _fn (fn),
+              _cookie (cookie)
+          {};
+
+          xmi_event_function   _fn;
+          void               * _cookie;
+      };
+
+      xmi_context_t _context;
+      ContextLock   _lock;
+      MemoryAllocator < sizeof(WorkObject), 16 > _allocator;
+
+    public:
+      inline Work (xmi_context_t context, SysDep * sysdep) :
+          Queue (),
+          _context (context),
+          _lock (),
+          _allocator ()
+      {
+        _lock.init (sysdep);
+      };
+
+      inline void post (xmi_event_function   fn,
+                        void               * cookie)
+      {
+        _lock.acquire ();
+        WorkObject * obj = (WorkObject *) _allocator.allocateObject ();
+        new (obj) WorkObject (fn, cookie);
+        pushTail ((QueueElem *) obj);
+        _lock.release ();
+      };
+
+      inline size_t advance ()
+      {
+        size_t events = 0;
+
+        if (_lock.tryAcquire ())
+          {
+            WorkObject * obj = NULL;
+
+            while ((obj = (WorkObject *) popHead()) != NULL)
+              {
+                obj->_fn(_context, obj->_cookie, XMI_SUCCESS);
+                events++;
+              }
+
+            _lock.release ();
+          }
+
+        return events;
+      };
+  }; // class Work
 
   class Context : public Interface::Context<XMI::Context>
   {
     public:
-      inline Context (xmi_client_t client, size_t contextid, void * addr, size_t bytes) :
+      inline Context (xmi_client_t client, size_t contextid, size_t num,
+				XMI::Device::Generic::Device *generics,
+				void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
           _contextid (contextid),
           _mm (addr, bytes),
           _sysdep (_mm),
+	  _generic(generics[contextid]),
           _mu (),
-          _shmem ()
+          _shmem (),
+	  _work ((xmi_context_t *)this, &_sysdep)
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -90,6 +160,7 @@ namespace XMI
         // ----------------------------------------------------------------
 
         _mu.init (&_sysdep);
+	_generic.init(_sysdep, contextid, num, generics);
         _shmem.init (&_sysdep);
 
         _get = (void *) _request.allocateObject ();
@@ -115,42 +186,10 @@ namespace XMI
         return XMI_SUCCESS;
       }
 
-      inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
-      {
-        xmi_result_t result = XMI_ERROR;
-
-        switch (configuration->name)
-          {
-          case XMI_TASK_ID:
-            configuration->value.intval = __global.mapping.task();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_NUM_TASKS:
-            configuration->value.intval = __global.mapping.size();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_CLOCK_MHZ:
-          case XMI_WTIMEBASE_MHZ:
-            configuration->value.intval = __global.time.clockMHz();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_WTICK:
-            configuration->value.doubleval =__global.time.tick();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_MEM_SIZE:
-          case XMI_PROCESSOR_NAME:
-          case XMI_PROCESSOR_NAME_SIZE:
-          default:
-            break;
-          };
-
-        return result;
-      }
-
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
       {
-        return XMI_UNIMPL;
+        _work.post (work_fn, cookie);
+	return XMI_SUCCESS;
       }
 
       inline size_t advance_impl (size_t maximum, xmi_result_t & result)
@@ -162,8 +201,10 @@ namespace XMI
 
         for (i = 0; i < maximum && events == 0; i++)
           {
+	    events += _work.advance ();
             events += _shmem.advance_impl();
             events += _mu.advance();
+	    events += _generic.advance();
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -173,17 +214,22 @@ namespace XMI
 
       inline xmi_result_t lock_impl ()
       {
-        return XMI_UNIMPL;
+        _lock.acquire ();
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t trylock_impl ()
       {
-        return XMI_UNIMPL;
+        if (_lock.tryAcquire ()) {
+		return XMI_SUCCESS;
+	}
+	return XMI_EAGAIN;
       }
 
       inline xmi_result_t unlock_impl ()
       {
-        return XMI_UNIMPL;
+        _lock.release ();
+	return XMI_SUCCESS;
       }
 
       inline xmi_result_t send_impl (xmi_send_t * parameters)
@@ -350,8 +396,7 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
-                                                        xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                         xmi_xfer_type_t ctype,
                                                         int *lists_lengths)
       {
@@ -359,8 +404,7 @@ namespace XMI
       }
 
       inline
-      xmi_result_t geometry_algorithms_info_impl (xmi_context_t context,
-                                                  xmi_geometry_t geometry,
+      xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
                                                   xmi_xfer_type_t colltype,
                                                   xmi_algorithm_t *algs,
                                                   xmi_metadata_t *mdata,
@@ -389,6 +433,22 @@ namespace XMI
 
         return result;
       }
+
+    inline xmi_result_t dispatch_new_impl (size_t                     id,
+                                           xmi_dispatch_callback_fn   fn,
+                                           void                     * cookie,
+                                           xmi_dispatch_hint_t        options)
+    {
+      xmi_result_t result        = XMI_ERROR;
+      if(options.type == XMI_P2P_SEND)
+      {
+        return dispatch_impl (id,
+                              fn,
+                              cookie,
+                              options.hint.send);
+      }
+        return result;
+    }
 
       inline xmi_result_t multisend_getroles(size_t          dispatch,
                                              int            *numRoles,
@@ -432,12 +492,15 @@ namespace XMI
       SysDep _sysdep;
 
       // devices...
+      XMI::Device::Generic::Device &_generic;
       Device::MU::MUDevice _mu;
       ShmemDevice          _shmem;
 
       void * _dispatch[1024];
       void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
+      ContextLock _lock;
+      Work _work;
   }; // end XMI::Context
 }; // end namespace XMI
 

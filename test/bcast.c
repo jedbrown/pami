@@ -147,14 +147,14 @@ int main (int argc, char ** argv)
              result);
     return 1;
   }
-
+  
   if (bcastnum_algorithm[0])
   {
     bcastalgorithm = (xmi_algorithm_t*)
       malloc(sizeof(xmi_algorithm_t) * bcastnum_algorithm[0]);
     metas = (xmi_metadata_t*)
       malloc(sizeof(xmi_metadata_t) * bcastnum_algorithm[0]);
-
+    
     result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           XMI_XFER_BROADCAST,
@@ -196,7 +196,7 @@ int main (int argc, char ** argv)
     broadcast.buf       = buf;
     broadcast.type      = XMI_BYTE;
     broadcast.typecount = 0;
-
+   
     if (task_id == (size_t)root)
     {
       printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,

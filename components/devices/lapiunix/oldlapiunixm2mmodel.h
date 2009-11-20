@@ -89,7 +89,7 @@ namespace XMI
           if( m2m->_num == 0 )
           {
             if( m2m->_user_done_fn )
-              m2m->_user_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+              m2m->_user_done_fn(NULL,0, m2m->_cookie,XMI_SUCCESS);
             free ( m2m );
             return ;
           }

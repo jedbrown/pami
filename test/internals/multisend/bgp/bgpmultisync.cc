@@ -1,19 +1,14 @@
 ///
-/// \file test/internals/multisend/bgp/multicombine.cc
+/// \file test/internals/multisend/bgp/multisync.cc
 /// \brief ???
 ///
 
 #include <stdio.h>
 #include "sys/xmi.h"
 
-#include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
-#include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
-#include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
-#include "test/internals/multisend/multicombine.h"
+#include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
+#include "test/internals/multisend/multisync.h"
 
-#ifndef TEST_BUF_SIZE
-#define TEST_BUF_SIZE	1024
-#endif // TEST_BUF_SIZE
 
 int main(int argc, char ** argv) {
 	unsigned x;
@@ -21,7 +16,7 @@ int main(int argc, char ** argv) {
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
 
-	status = XMI_Client_initialize("multicombine test", &client);
+	status = XMI_Client_initialize("multisync test", &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
 		return 1;
@@ -36,7 +31,7 @@ int main(int argc, char ** argv) {
 	xmi_configuration_t configuration;
 
 	configuration.name = XMI_TASK_ID;
-	status = XMI_Configuration_query(context, &configuration);
+	status = XMI_Configuration_query(client, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -45,7 +40,7 @@ int main(int argc, char ** argv) {
 	//fprintf(stderr, "My task id = %zd\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
-	status = XMI_Configuration_query(context, &configuration);
+	status = XMI_Configuration_query(client, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -54,45 +49,35 @@ int main(int argc, char ** argv) {
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
 	if (__global.mapping.tSize() != 1) {
-		fprintf(stderr, "this test requires SMP mode\n");
+		fprintf(stderr, "This test requires SMP mode\n");
 		exit(1);
 	}
 
 // END standard setup
 // ------------------------------------------------------------------------
 
-	// Register some multicombines, C++ style
+	// Register some multisyncs, C++ style
 	xmi_result_t rc;
-	size_t root = 0;
 
-	xmi_multicombine_t mcomb;
+	xmi_multisync_t msync;
 
-	// simple allreduce on the tree... SMP mode (todo: check and error)
-	mcomb.context = context;
-	mcomb.roles = (unsigned)-1;
-	mcomb.data_participants = NULL;
-	mcomb.results_participants = NULL;
-	mcomb.optor = XMI_SUM;
-	mcomb.dtype = XMI_UNSIGNED_INT;
-	mcomb.count = TEST_BUF_SIZE / sizeof(unsigned);
+	// simple barrier on the GI network... SMP mode
+	msync.client = client;
+	msync.context = 0;
+	msync.roles = (unsigned)-1;
+	msync.participants = (xmi_topology_t *)&__global.topology_global;
 
-	const char *test = "XMI::Device::BGP::CNAllreduceModel";
+	const char *test = "XMI::Device::BGP::giModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicombine<XMI::Device::BGP::CNAllreduceModel,TEST_BUF_SIZE> test1(test);
-	rc = test1.perform_test(task_id, num_tasks, &mcomb);
+	XMI::Test::Multisend::Multisync<XMI::Device::BGP::giModel> test1(test);
+	rc = test1.perform_test(task_id, num_tasks, &msync);
 	if (rc != XMI_SUCCESS) {
-		fprintf(stderr, "Failed %s test\n", test);
+		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
 		exit(1);
 	}
-	fprintf(stderr, "PASS %s\n", test);
+	fprintf(stderr, "PASS? %5lld (%5lld) [delay: %lld, time: %lld]\n", test1.total_time, test1.barrier_time, test1.delay, test1.raw_time);
 
 // ------------------------------------------------------------------------
-	status = XMI_Context_destroy(context);
-	if (status != XMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);
-		return 1;
-	}
-
 	status = XMI_Client_finalize(client);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);

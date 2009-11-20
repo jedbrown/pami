@@ -79,8 +79,8 @@ namespace TSPColl
 					 char           ** rcvbuf,
 					 unsigned        * pipewidth,
 					 XMI_Callback_t * cb_done);
-    static void cb_recvcomplete (void* ctxt, void *arg, xmi_result_t err);
-    static void cb_senddone(void* ctxt, void *arg, xmi_result_t err);
+    static void cb_recvcomplete (xmi_context_t context, void *arg, xmi_result_t err);
+    static void cb_senddone(xmi_context_t context, void *arg, xmi_result_t err);
   };
 };
 template <class T_Mcast>
@@ -202,7 +202,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
 /*               send completion in scatter                         */
 /* **************************************************************** */
 template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::cb_senddone (void* ctxt, void *arg, xmi_result_t err)
+void TSPColl::Scatter<T_Mcast>::cb_senddone (xmi_context_t context, void *arg, xmi_result_t err)
 {
   Scatter * self = ((struct scatter_header *)arg)->self;
   /* LOCK */
@@ -291,11 +291,11 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 /*           active message reception complete                      */
 /* **************************************************************** */
 template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::cb_recvcomplete (void* ctxt, void *arg, xmi_result_t err)
+void TSPColl::Scatter<T_Mcast>::cb_recvcomplete (xmi_context_t context, void *arg, xmi_result_t err)
 {
   Scatter * s = (Scatter *) arg;
   s->_complete++;
-  if (s->_cb_complete) s->_cb_complete (ctxt, s->_arg, err);
+  if (s->_cb_complete) s->_cb_complete (context, s->_arg, err);
 }
 
 

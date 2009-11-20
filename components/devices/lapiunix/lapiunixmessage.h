@@ -44,7 +44,7 @@ namespace XMI
     class LAPIMessage
     {
     public:
-      inline LAPIMessage (xmi_context_t       context,
+      inline LAPIMessage (size_t       context,
                          size_t              dispatch_id,
                          xmi_event_function  done_fn,
                          void               *cookie):
@@ -54,7 +54,7 @@ namespace XMI
         {
           _p2p_msg._dispatch_id=dispatch_id;
         };
-      xmi_context_t       _context;
+      size_t              _context;
       xmi_event_function  _done_fn;
       void               *_cookie;
       int                 _freeme;

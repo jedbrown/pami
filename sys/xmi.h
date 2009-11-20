@@ -1123,7 +1123,7 @@ extern "C"
    * \param[in]     geometry       An input geometry to be analyzed.
    * \param[in]     type           type of collective op.
    * \param[in]     algs           array of algorithm to be filled in.
-   * \param[out]    mdata          metadata array to be filled in if algorithms
+   * \param[out]    mdata          metadata array to be filled in if algorithms 
    *                               are applicable, can be NULL.
    * \param[in]     algorithm_type tells whether this an "always works"
    *                               or "works under-condition"
@@ -2655,8 +2655,7 @@ extern "C"
   void XMI_Topology_subtract(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other);
 
 /**
- * \file sys/xmi.h
- * \brief Multisend interface.
+ * \brief Multisend interfaces.
  *
  * A multisend operation allows many message passing transactions to
  * be performed in the same call to amortize software overheads.  It
@@ -2745,6 +2744,32 @@ extern "C"
                                       int           *replRole);
 
   /**
+   * \brief Hints for multicast
+   *
+   * \todo better names for the hints
+   * \todo better documentation for the hints
+   */
+  typedef struct
+  {
+    /* The first 3 are mutually exclusive                                                        */
+    uint32_t global            : 1; /**< A global (all tasks) multicast                          */
+    uint32_t local             : 1; /**< A local (to this task) multicast                        */
+    uint32_t spanning          : 1; /**< A spanning (one task per local set) multicast           */
+    uint32_t subtopology       : 1; /**< An arbitrary subtopology (use 
+                                                  xmi_dispatch_hint_t.config field for topology) */
+
+    /* The next 2 are mutually exclusive and may be used w/wo active_message enabled             */
+    uint32_t all_sided         : 1; /**< All-sided multicast                                     */
+    uint32_t one_sided         : 1; /**< One-sided multicast                                     */
+
+    uint32_t active_message    : 1; /**< Active message, must specify dispatch function          */
+
+    uint32_t ring_wq           : 1; /**< Bogus hint to select WQRingBcastMdl                     */
+
+    uint32_t reserved          :24; /**< Unused at this time                                     */
+  } xmi_multicast_hint_t;
+
+  /**
    * \brief Recv callback for Multicast
    *
    * Note, certain flavors of Multicast do not use a Receive Callback and
@@ -2755,13 +2780,13 @@ extern "C"
    * \param[in] msginfo		Metadata
    * \param[in] msgcount	Count of metadata
    * \param[in] connection_id  Stream ID of data
-   * \param[in] root		Sending task
-   * \param[in] sndlen		Length of data sent
-   * \param[in] clientdata	Opaque arg
-   * \param[out] rcvlen		Length of data to receive
-   * \param[out] rcvbuf		Where to put recv data
-   * \param[out] cb_done	Completion callback to invoke when data received
-   * \return	XMI_Request opaque memory for message
+   * \param[in] root        Sending task
+   * \param[in] sndlen      Length of data sent
+   * \param[in] clientdata  Opaque arg
+   * \param[out] rcvlen     Length of data to receive 
+   * \param[out] rcvpwq     Where to put recv data
+   * \param[out] cb_done    Completion callback to invoke when data received
+   * \return   void
    */
   typedef void (*xmi_dispatch_multicast_fn)(const xmi_quad_t        *msginfo,
                                             unsigned              msgcount,
@@ -2770,8 +2795,8 @@ extern "C"
                                             size_t                sndlen,
                                             void                 *clientdata,
                                             size_t               *rcvlen,
-                                            xmi_pipeworkqueue_t **rcvbuf,
-                                            xmi_event_function   *cb_done);
+                                            xmi_pipeworkqueue_t **rcvpwq,
+                                            xmi_callback_t       *cb_done);
 
   /**
    * \brief The new structure to pass parameters for the multisend multicast operation.
@@ -2781,8 +2806,11 @@ extern "C"
    */
   typedef struct
   {
-    xmi_context_t        context;	   /**< context to operate within */
+    xmi_client_t         client;	   /**< client to operate within */
+    size_t               context;	   /**< primary context to operate within */
     void                *request; 	   /**< space for operation */
+    size_t               dispatch;         /**< Dispatch identifier */
+    xmi_multicast_hint_t hints;            /**< Hints for multicast */
     xmi_callback_t       cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the
@@ -2798,7 +2826,7 @@ extern "C"
                                                   the data being sent, for one-sided. */
     unsigned            msgcount;          /**< info count*/
   } xmi_multicast_t;
-  xmi_result_t XMI_Multicast(xmi_context_t context,xmi_multicast_t *mcastinfo);
+  xmi_result_t XMI_Multicast(xmi_multicast_t *mcastinfo);
 
 
   /**  Deprecated Multicast:  To be deleted soon!!! */
@@ -2917,6 +2945,18 @@ extern "C"
   } xmi_manytomanybuf_t;
 
   /**
+   * \brief Hints for manytomany
+   *
+   * \todo better names for the hints
+   * \todo better documentation for the hints
+   */
+  typedef struct
+  {
+    uint32_t global            : 1; /**< Force match ordering semantics                          */
+    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
+    uint32_t reserved          :30; /**< Unused at this time                                     */
+  } xmi_manytomany_hint_t;
+  /**
    * \brief Callback for Manytomany Receive operations
    *
    * Note, certain flavors of ManyToMany do not use a Receive Callback and
@@ -2957,7 +2997,8 @@ extern "C"
    */
   typedef struct
   {
-    xmi_context_t        context;	     /**< context to operate within */
+    xmi_client_t         client;	     /**< client to operate within */
+    size_t               context;	     /**< primary context to operate within */
     void                *request; 	     /**< space for operation */
     xmi_callback_t       cb_done;	     /**< User's completion callback */
     unsigned             connection_id;      /**< differentiate data streams */
@@ -2979,36 +3020,33 @@ extern "C"
    * \param[in] m2minfo	Paramters for ManyToMany operation to be performed
    * \return	XMI_SUCCESS or error code
    */
-  xmi_result_t XMI_Manytomany(xmi_context_t context,xmi_manytomany_t *m2minfo);
+  xmi_result_t XMI_Manytomany(xmi_manytomany_t *m2minfo);
 
   /******************************************************************************
    *       Multisync Personalized synchronization/coordination
    ******************************************************************************/
 
+
   /**
-   * \brief Recv callback for Multisync.
+   * \brief Hints for multisync
    *
-   * Not normally used.
-   *
-   * Note, certain flavors of Multisync do not use a Receive Callback and
-   * constructing or registering with a non-NULL cb_recv will result in error.
-   *
-   * \param[in] clientdata	Opaque arg
-   * \param[in] msginfo		Metadata
-   * \param[in] msgcount	Number of xmi_quad_ts in msginfo
-   * \param[in] conn_id		Instance ID
-   * \return	XMI_Request opaque memory for message
+   * \todo better names for the hints
+   * \todo better documentation for the hints
    */
-  typedef void (*xmi_dispatch_multisync_fn)(void       *clientdata,
-                                            xmi_quad_t *msginfo,
-                                            unsigned    msgcount,
-                                            unsigned    conn_id);
+  typedef struct
+  {
+    uint32_t global            : 1; /**< Force match ordering semantics                          */
+    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
+    uint32_t reserved          :30; /**< Unused at this time                                     */
+  } xmi_multisync_hint_t;
+
   /**
    * \brief structure defining interface to Multisync
    */
   typedef struct
   {
-    xmi_context_t      context;		/**< context to operate within */
+    xmi_client_t       client;	        /**< client to operate within */
+    size_t             context;	        /**< primary context to operate within */
     void              *request;	        /**< space for operation */
     xmi_callback_t     cb_done;		/**< User's completion callback */
     unsigned           connection_id;	/**< (remove?) differentiate data streams */
@@ -3024,7 +3062,7 @@ extern "C"
    * \param[in] msyncinfo	Struct of all params needed to perform operation
    * \return	XMI_SUCCESS or error codes
    */
-  xmi_result_t XMI_Multisync(xmi_context_t context,xmi_multisync_t *msyncinfo);
+  xmi_result_t XMI_Multisync(xmi_multisync_t *msyncinfo);
 
 
   /******************************************************************************
@@ -3046,7 +3084,15 @@ extern "C"
    */
   typedef struct
   {
-    xmi_context_t        context;	      /**< context to operate within */
+    uint32_t global            : 1; /**< Force match ordering semantics                          */
+    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
+    uint32_t reserved          :30; /**< Unused at this time                                     */
+  } xmi_multicombine_hint_t;
+
+  typedef struct
+  {
+    xmi_client_t         client;	      /**< client to operate within */
+    size_t               context;	      /**< primary context to operate within */
     void                *request;             /**< space for communication struct(s) */
     xmi_callback_t       cb_done;             /**< User's completion callback */
     unsigned             roles;		      /**< bitmap of roles to perform */
@@ -3072,7 +3118,7 @@ extern "C"
    * \param[in] mcombineinfo	Struct of all params needed to perform operation
    * \return	XMI_SUCCESS or error codes
    */
-  xmi_result_t XMI_Multicombine(xmi_context_t context,xmi_multicombine_t *mcombineinfo);
+  xmi_result_t XMI_Multicombine(xmi_multicombine_t *mcombineinfo);
 
   /*****************************************************************************/
   /**
@@ -3204,7 +3250,6 @@ extern "C"
     xmi_dispatch_amreduce_fn    amreduce;
     xmi_dispatch_multicast_fn   multicast;
     xmi_dispatch_manytomany_fn  manytomany;
-    xmi_dispatch_multisync_fn   multisync;
   } xmi_dispatch_callback_fn;
 
   /*****************************************************************************/
@@ -3215,6 +3260,36 @@ extern "C"
    * \{
    */
   /*****************************************************************************/
+
+  /**
+   * \brief XMI type of dispatch
+   */
+  typedef enum
+  {
+    XMI_P2P_SEND,     /**< Point-to-point send         */
+    XMI_MULTICAST,    /**< Multicast                   */
+    XMI_MULTISYNC,    /**< Multisync                   */
+    XMI_MULTICOMBINE, /**< Multicombine                */
+    XMI_MANYTOMANY,   /**< Manytomany                  */
+  } xmi_dispatch_type_t;
+
+  /**
+   * \brief Hints for dispatch
+   *
+   */
+  typedef struct
+  {
+    xmi_dispatch_type_t    type;      /**< Type of dispatch reqistered    */ 
+    union{
+      xmi_multicast_hint_t      multicast;
+      xmi_multisync_hint_t      multisync;
+      xmi_multicombine_hint_t   multicombine;
+      xmi_manytomany_hint_t     manytomany;
+      xmi_send_hint_t           send;     
+    }                      hint;      /**< Type-specific hints            */
+    void*                  config;    /**< Type-specific additional config*/
+  } xmi_dispatch_hint_t;
+
   /**
    * \brief Initialize the dispatch functions for a dispatch id.
    *
@@ -3228,6 +3303,13 @@ extern "C"
    * \param[in] options    Dispatch registration assertions
    *
    */
+  //#ifdef __xmi_target_mpi__
+  xmi_result_t XMI_Dispatch_set_new(xmi_context_t              context,
+                                 size_t                     dispatch,
+                                 xmi_dispatch_callback_fn   fn,
+                                 void                     * cookie,
+                                 xmi_dispatch_hint_t        options);
+  //#endif
   xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
                                  size_t                     dispatch,
                                  xmi_dispatch_callback_fn   fn,
@@ -3262,6 +3344,8 @@ extern "C"
     /* Attribute            Init / Query / Update                                              */
     XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task (AKA "rank")           */
     XMI_NUM_TASKS,       /**<  Q  : size_t            : Total number of tasks                  */
+    XMI_NUM_CONTEXTS,    /**<  Q  : size_t            : The maximum number of contexts allowed on this process */
+    XMI_CONST_CONTEXTS,  /**<  Q  : size_t            : All processes will return the same XMI_NUM_CONTEXTS */
     XMI_CLOCK_MHZ,       /**<  Q  : size_t            : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
     XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
     XMI_WTICK,           /**<  Q  : double            : This has the same definition as MPI_Wtick(). */
@@ -3292,7 +3376,7 @@ extern "C"
   /**
    * \brief Query the value of an attribute
    *
-   * \param [in]     context        The XMI context
+   * \param [in]     client        The XMI client
    * \param [in,out] configuration  The configuration attribute of interest
    *
    * \note
@@ -3302,13 +3386,13 @@ extern "C"
    *   XMI_ERR_ATTRIBUTE
    *   XMI_ERR_VALUE
    */
-  xmi_result_t XMI_Configuration_query (xmi_context_t         context,
+  xmi_result_t XMI_Configuration_query (xmi_client_t client,
                                         xmi_configuration_t * configuration);
 
   /**
    * \brief Update the value of an attribute
    *
-   * \param [in] context       The XMI context
+   * \param [in] client       The XMI client
    * \param [in] configuration The configuration attribute to update
    *
    * \note
@@ -3318,7 +3402,7 @@ extern "C"
    *   XMI_ERR_ATTRIBUTE
    *   XMI_ERR_VALUE
    */
-  xmi_result_t XMI_Configuration_update (xmi_context_t         context,
+  xmi_result_t XMI_Configuration_update (xmi_client_t client,
                                          xmi_configuration_t * configuration);
 
   /**
@@ -3400,6 +3484,9 @@ extern "C"
    * \param[in] client XMI client handle
    */
   xmi_result_t XMI_Client_finalize (xmi_client_t client);
+
+#warning need to make callback interface efficient and consistent
+xmi_context_t XMI_Client_getcontext(xmi_client_t, size_t);
 
   /**
    * \brief Create a new independent communication context for a client

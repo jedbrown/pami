@@ -91,7 +91,7 @@ namespace CCMI
 
     public:
 
-      static void staticSendDone (void *context, void *clientdata, xmi_result_t err)
+      static void staticSendDone (xmi_context_t context, void *clientdata, xmi_result_t err)
       {
         xmi_quad_t * info = NULL;
         Broadcast *bcast = (Broadcast *) clientdata;

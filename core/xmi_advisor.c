@@ -31,6 +31,7 @@ xmi_result_t xmi_advisor_init()
   algorithm_ids[XMI_XFER_BROADCAST][2] = 0;
   algorithm_ids[XMI_XFER_BROADCAST][3] = 2;
 #endif
+  return XMI_SUCCESS;
 }
 
 xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
@@ -108,6 +109,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
     }
 #endif
   }
+  return XMI_SUCCESS;
 }
 
 

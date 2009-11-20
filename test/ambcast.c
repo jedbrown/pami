@@ -208,12 +208,12 @@ int main(int argc, char*argv[])
              result);
     return 1;
   }
-
+  
   if (bcastnum_algorithm[0])
   {
     bcastalgorithm = (xmi_algorithm_t*)
       malloc(sizeof(xmi_algorithm_t) * bcastnum_algorithm[0]);
-
+    
     result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           XMI_XFER_BROADCAST,

@@ -162,17 +162,17 @@ namespace XMI
                                  void                     * cookie,
                                  T_Device                 & device,
                                  xmi_task_t                 origin_task,
-                                 xmi_context_t              context,
+                                 xmi_client_t              client,
                                  size_t                     contextid,
                                  xmi_result_t             & status) :
-              _rts_model (device, context),
-              _rts_ack_model (device, context),
-              _rts_data_model (device, context),
-              _data_model (device, context),
-              _cts_model (device, context),
+              _rts_model (device, client, contextid),
+              _rts_ack_model (device, client, contextid),
+              _rts_data_model (device, client, contextid),
+              _data_model (device, client, contextid),
+              _cts_model (device, client, contextid),
               _device (device),
               _fromRank (origin_task),
-              _context (context),
+              _client (client),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _connection ((void **)NULL),
@@ -202,7 +202,7 @@ namespace XMI
             // ----------------------------------------------------------------
 
 
-            _connection = _connection_manager.getConnectionArray (context);
+            _connection = _connection_manager.getConnectionArray (client, contextid);
 
             //No tested
             //Queue Setup
@@ -346,7 +346,7 @@ namespace XMI
 
                             //End Sender side, 0 bytes
                             if (parameters->events.remote_fn)
-                              parameters->events.remote_fn (_context, parameters->events.cookie, XMI_SUCCESS);
+                              parameters->events.remote_fn (_client, _contextid, parameters->events.cookie, XMI_SUCCESS);
                             else
                               freeSendState (send);
                           }
@@ -402,7 +402,7 @@ namespace XMI
 
                             //End Sender side, 0 bytes
                             if (parameters->events.remote_fn)
-                              parameters->events.remote_fn (_context, parameters->events.cookie, XMI_SUCCESS);
+                              parameters->events.remote_fn (_client, _contextid, parameters->events.cookie, XMI_SUCCESS);
                             else
                               freeSendState (send);
                           }
@@ -569,7 +569,7 @@ namespace XMI
           T_Model         _cts_model;
           T_Device      & _device;
           xmi_task_t      _fromRank;
-          xmi_context_t   _context;
+          xmi_client_t   _client;
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
           void ** _connection;
@@ -650,7 +650,7 @@ namespace XMI
 
 
                 // Invoke the registered dispatch function.
-                adaptive->_dispatch_fn.p2p (adaptive->_context,  // Communication context
+                adaptive->_dispatch_fn.p2p (adaptive->_client,  // Communication context
                                             adaptive->_contextid,                //context id
                                             adaptive->_cookie,                   // Dispatch cookie
                                             send->fromRank,                   // Origin (sender) rank
@@ -677,7 +677,7 @@ namespace XMI
                     // state memory which was allocated above.
 
                     if (rcv->info.local_fn)
-                      rcv->info.local_fn (adaptive->_context,
+                      rcv->info.local_fn (adaptive->_client, adaptive->_contextid,
                                           rcv->info.cookie,
                                           XMI_SUCCESS);
 
@@ -984,7 +984,7 @@ namespace XMI
             TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() ..before  _dispatch_fn.p2p  adaptive->_context = %p , adaptive->_contextid =%d , adaptive->_cookie =%p , header->va_recv->fromRank =%d,   msginfo =%p , header->va_recv->count = %d, header->va_recv->cts.bytes = %d , header->va_recv->info =%p ,adaptive = %p ,_dispatch_fn.p2p = %p \n", adaptive->_context, adaptive->_contextid, adaptive->_cookie, header->va_recv->fromRank, msginfo, header->va_recv->count,  header->va_recv->cts.bytes,  (xmi_recv_t *) &(header->va_recv->info), adaptive ,  adaptive->_dispatch_fn.p2p));
 
             // Invoke the registered dispatch function.
-            adaptive->_dispatch_fn.p2p (adaptive->_context,              // Communication context
+            adaptive->_dispatch_fn.p2p (adaptive->_client,              // Communication client
                                         adaptive->_contextid,              // contextid
                                         adaptive->_cookie,                 // Dispatch cookie
                                         header->va_recv->fromRank,      // Origin (sender) rank
@@ -1014,7 +1014,7 @@ namespace XMI
 
                 if (header->va_recv->info.local_fn)
                   {
-                    header->va_recv->info.local_fn (adaptive->_context,
+                    header->va_recv->info.local_fn (adaptive->_client, adaptive->_contextid,
                                                     header->va_recv->info.cookie,
                                                     XMI_SUCCESS);
 
@@ -1244,7 +1244,7 @@ namespace XMI
 
                             //End Sender side, 0 bytes
                             if (send->remote_fn)
-                              send->remote_fn (adaptive->_context, send->cookie, XMI_SUCCESS);
+                              send->remote_fn (adaptive->_client, adaptive->_contextid, send->cookie, XMI_SUCCESS);
 
                             if (send->remote_fn == NULL)
                               {
@@ -1301,7 +1301,7 @@ namespace XMI
 
                             //End Sender side, 0 bytes
                             if (send->remote_fn)
-                              send->remote_fn (adaptive->_context, send->cookie, XMI_SUCCESS);
+                              send->remote_fn (adaptive->_client, adaptive->_contextid, send->cookie, XMI_SUCCESS);
 
                             if (send->remote_fn == NULL)
                               {
@@ -1463,7 +1463,7 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_data() ..  all data Received \n"));
 
                 if (header->va_recv->info.local_fn)
-                  header->va_recv->info.local_fn (header->va_recv->adaptive->_context, header->va_recv->info.cookie, XMI_SUCCESS);
+                  header->va_recv->info.local_fn (header->va_recv->adaptive->_client, header->va_recv->adaptive->_contextid, header->va_recv->info.cookie, XMI_SUCCESS);
 
 
                 return 0;
@@ -1479,7 +1479,7 @@ namespace XMI
           /// \brief Callback invoked after send a rts_data packet.
           ///
 
-          static void cb_rts_send (xmi_context_t   context,
+          static void cb_rts_send (xmi_context_t context,
                                    void          * cookie,
                                    xmi_result_t    result)
           {
@@ -1520,11 +1520,11 @@ namespace XMI
 
                     if (send->local_fn != NULL)
                       {
-                        send->local_fn (adaptive->_context, send->cookie, XMI_SUCCESS);
+                        send->local_fn (adaptive->_client, adaptive->_contextid, send->cookie, XMI_SUCCESS);
                       }
 
                     if (send->remote_fn)
-                      send->remote_fn (adaptive->_context, send->cookie, XMI_SUCCESS);
+                      send->remote_fn (adaptive->_client, adaptive->_contextid, send->cookie, XMI_SUCCESS);
 
                     if (send->remote_fn == NULL)
                       {
@@ -1606,7 +1606,7 @@ namespace XMI
           /// \brief Callback invoked after send a data_send packet.
           ///
 
-          static void cb_data_send (xmi_context_t   context,
+          static void cb_data_send (xmi_context_t context,
                                     void          * cookie,
                                     xmi_result_t    result)
           {
@@ -1642,12 +1642,12 @@ namespace XMI
 
                 if (send->local_fn != NULL)
                   {
-                    send->local_fn (adaptive->_context, send->cookie, XMI_SUCCESS);
+                    send->local_fn (adaptive->_client, adaptive->_contextid, send->cookie, XMI_SUCCESS);
                   }
 
                 if (send->remote_fn != NULL)
                   {
-                    send->remote_fn (adaptive->_context, send->cookie, XMI_SUCCESS);
+                    send->remote_fn (adaptive->_client, adaptive->_contextid, send->cookie, XMI_SUCCESS);
                   }
 
                 if (send->remote_fn == NULL)

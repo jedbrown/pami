@@ -57,17 +57,17 @@ class CNAllreducePPMessage : public XMI::Device::BGP::BaseGenericCNPPMessage {
 	};
 public:
 	CNAllreducePPMessage(Generic::BaseGenericDevice &qs,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			xmi_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,
-			unsigned roles,
-			const xmi_callback_t cb,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup tas) :
-	BaseGenericCNPPMessage(qs, swq, rwq, bytes, doStore, roles, cb,
+	BaseGenericCNPPMessage(qs, mcomb->client, mcomb->context,
+				(XMI::PipeWorkQueue *)mcomb->data,
+				(XMI::PipeWorkQueue *)mcomb->results,
+				bytes, doStore, mcomb->roles, mcomb->cb_done,
 				dispatch_id, tas),
-	_roles(roles)
+	_roles(mcomb->roles)
 	{
 	}
 
@@ -101,9 +101,6 @@ protected:
 		}
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
-		if (_bytes >= 16384 /* DCMF_TREE_HELPER_THRESH */) {
-			setThreadsWanted(MIN(nt, maxnt));
-		}
 		return nt;
 	}
 
@@ -227,9 +224,7 @@ XMI_abort();
 	// __post() will still try early advance... (after construction)
 	CNAllreducePPMessage *msg;
 	msg = new (mcomb->request) CNAllreducePPMessage(_g_cnallreducepp_dev,
-			(XMI::PipeWorkQueue *)mcomb->data,
-			(XMI::PipeWorkQueue *)mcomb->results,
-			bytes, doStore, mcomb->roles, mcomb->cb_done, _dispatch_id, tas);
+			mcomb, bytes, doStore, _dispatch_id, tas);
 	_g_cnallreducepp_dev.__post<CNAllreducePPMessage>(msg);
 	return true;
 }

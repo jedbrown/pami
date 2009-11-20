@@ -400,7 +400,7 @@ namespace XMI
           if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
               {
                 if(mcast->_done_fn)
-                  mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn (&msg->_context, 0, mcast->_cookie, XMI_SUCCESS);
                 _dev->_mcastrecvQ.remove(mcast);
                 if(found)
                   free (mcast);
@@ -427,7 +427,7 @@ namespace XMI
                 for(; incoming_bytes > 0; incoming_bytes -= mcast->_pwidth)
                     {
                       if(mcast->_done_fn)
-                        mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                        mcast->_done_fn(&msg->_context, 0, mcast->_cookie, XMI_SUCCESS);
                     }
                 if(mcast->_counter >= mcast->_size)
                     {

@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
 	xmi_configuration_t configuration;
 
 	configuration.name = XMI_TASK_ID;
-	status = XMI_Configuration_query(context, &configuration);
+	status = XMI_Configuration_query(client, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
 	//fprintf(stderr, "My task id = %zd\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
-	status = XMI_Configuration_query(context, &configuration);
+	status = XMI_Configuration_query(client, &configuration);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
@@ -79,7 +79,8 @@ int main(int argc, char ** argv) {
 	xmi_multicast_t mcast;
 
 	// simple allreduce on the local ranks...
-	mcast.context = context;
+	mcast.client = client;
+	mcast.context = 0;
 	mcast.roles = (unsigned)-1;
 	mcast.src_participants = (xmi_topology_t *)&itopo;
 	mcast.dst_participants = (xmi_topology_t *)&otopo;
@@ -108,12 +109,6 @@ int main(int argc, char ** argv) {
 	fprintf(stderr, "PASS %s\n", test);
 
 // ------------------------------------------------------------------------
-	status = XMI_Context_destroy(context);
-	if (status != XMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);
-		return 1;
-	}
-
 	status = XMI_Client_finalize(client);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);

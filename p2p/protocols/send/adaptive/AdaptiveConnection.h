@@ -32,7 +32,8 @@ namespace XMI
 	struct adaptive_connection_t
           {
 	    public:
-            xmi_context_t     context;
+            xmi_client_t     client;
+            size_t     context;
             void           ** array;
           };
 
@@ -45,7 +46,7 @@ namespace XMI
           ~AdaptiveConnection () {}
 
           /// \todo Do this in a threadsafe way
-          inline void ** getConnectionArray (xmi_context_t context)
+          inline void ** getConnectionArray (xmi_client_t client, size_t context)
           {
             void ** connection = NULL;
 
@@ -63,7 +64,8 @@ namespace XMI
                   found_empty_connection = true;
                 }
               }
-              else if (_adaptive_connection[i].context == context)
+              else if (_adaptive_connection[i].client == client &&
+              		_adaptive_connection[i].context == context)
               {
                 found_previous_connection = true;
                 connection = _adaptive_connection[i].array;
@@ -76,6 +78,7 @@ namespace XMI
               {
                 return NULL;
               }
+              _adaptive_connection[first_empty_connection].client = client;
               _adaptive_connection[first_empty_connection].context = context;
               _adaptive_connection[first_empty_connection].array =
                 (void **) calloc (_device.peers(), sizeof(void *));

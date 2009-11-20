@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2009                               */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -114,7 +114,8 @@ int main(int argc, char **argv) {
 		work[x].t0 = 0;
 		work[x].count = count;
 		work[x].u = x + 1;
-		pf.context = context;
+		pf.client = client;
+		pf.context = 0;
 		pf.request = &msgbuf[x];
 		pf.func = my_func;
 		pf.clientdata = &work[x];

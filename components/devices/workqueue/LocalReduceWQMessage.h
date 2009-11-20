@@ -61,24 +61,22 @@ public:
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
           inline LocalReduceWQMessage (Generic::BaseGenericDevice &device,
-                                       xmi_callback_t   cb,
+                                       xmi_multicombine_t *mcomb,
                                        XMI::Device::WorkQueue::SharedWorkQueue &workqueue,
                                        unsigned          peer,
                                        unsigned          peers,
                                        unsigned          rootpeer,
-                                       XMI::PipeWorkQueue *sbuffer,
-                                       XMI::PipeWorkQueue *rbuffer,
-                                       unsigned          count,
                                        coremath          func,
                                        int               dtshift) :
-            XMI::Device::Generic::GenericMessage (device, cb),
+            XMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
+				mcomb->client, mcomb->context),
             _isrootpeer (peer == rootpeer),
             //_iscopypeer (peer == ((rootpeer+1)%peers)),
             _iscopypeer (peer == ((rootpeer+1) >= peers ? (rootpeer+1) - peers : (rootpeer+1))),
             _func (func),
             _dtshift (dtshift),
-            _source (*sbuffer),
-            _result (*rbuffer),
+            _source (*(XMI::PipeWorkQueue *)mcomb->data),
+            _result (*(XMI::PipeWorkQueue *)mcomb->results),
             _shared (workqueue)
           {
             // Producer 0 will always be the "copy peer"
@@ -199,10 +197,8 @@ inline bool LocalReduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb)
 	unsigned rootpeer = __global.topology_local.rank2Index(results_topo->index2Rank(0));
 	LocalReduceWQMessage *msg =
 		new (mcomb->request) LocalReduceWQMessage(_g_l_reducewq_dev,
-				mcomb->cb_done, _shared, _peer, _npeers, rootpeer,
-				(XMI::PipeWorkQueue *)mcomb->data,
-				(XMI::PipeWorkQueue *)mcomb->results,
-				mcomb->count, func, dtshift);
+				mcomb, _shared, _peer, _npeers, rootpeer,
+				func, dtshift);
 	_g_l_reducewq_dev.__post<LocalReduceWQMessage>(msg);
 	return true;
 }

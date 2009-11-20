@@ -14,6 +14,7 @@
 #ifndef __algorithms_executor_AllreduceBase_h__
 #define __algorithms_executor_AllreduceBase_h__
 
+#include "sys/xmi.h"
 #include "algorithms/schedule/Schedule.h"
 #include "algorithms/executor/Executor.h"
 #include "util/ccmi_debug.h"
@@ -37,7 +38,7 @@ namespace CCMI
       } __attribute__((__aligned__(16)));
     private:
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (void *ctxt, void *cd, xmi_result_t err)
+      static void staticNotifySendDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
         xmi_quad_t *info = (xmi_quad_t *)cd;
@@ -47,7 +48,7 @@ namespace CCMI
       }
 
       /// \brief Static function to be passed into the done of multisend postRecv
-      static void staticNotifyReceiveDone (void *ctxt, void *cd, xmi_result_t err)
+      static void staticNotifyReceiveDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));
@@ -57,7 +58,7 @@ namespace CCMI
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::staticNotifyReceiveDone() exit\n",(int)cdata->allreduce));
       }
 
-      static void short_recv_done (void *ctxt, void *me, xmi_result_t res)
+      static void short_recv_done (xmi_context_t context, void *me, xmi_result_t res)
       {
         AllreduceBase *allreduce = (AllreduceBase *)me;
         TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBase::short_recv_done enter\n", (int)allreduce));
@@ -67,7 +68,6 @@ namespace CCMI
       }
 
     protected:
-      typedef void (*Callback_t) (void* ctxt, void *cd, xmi_result_t res);
 
       void inline_math_isum (void *dst, void *src1, void *src2, xmi_op op, xmi_dt dt, unsigned count)
       {
@@ -141,8 +141,8 @@ namespace CCMI
       //void (*_sendCallbackHandler) (void*, xmi_result_t *);
       //void (*_recvCallbackHandler) (void*, xmi_result_t *);
 
-      Callback_t         _sendCallbackHandler;
-      Callback_t         _recvCallbackHandler;
+      xmi_event_function         _sendCallbackHandler;
+      xmi_event_function         _recvCallbackHandler;
 
       T_Mcastinterface  * _msendInterface;
       T_ConnectionManager * _rconnmgr;  ///Reduce connection manager
@@ -326,7 +326,7 @@ namespace CCMI
                                                 unsigned        * rcvlen,
                                                 char           ** rcvbuf,
                                                 unsigned        * pipewidth,
-                                                XMI_Callback_t * cb_done);
+                                                xmi_callback_t *cb_done);
 
       ///
       ///  \fast callback for short allreduce operations
@@ -337,7 +337,7 @@ namespace CCMI
                                              unsigned          srcindex,
                                              unsigned        * rcvlen,
                                              char           ** rcvbuf,
-                                             XMI_Callback_t * cb_done);
+                                             xmi_callback_t *cb_done);
 
       ///
       /// \brief Set the buffer info for the allreduce collective
@@ -399,7 +399,7 @@ namespace CCMI
                     (int)this));
       }
 
-      Callback_t  getRecvCallbackHandler ()
+      xmi_event_function  getRecvCallbackHandler ()
       {
         return _recvCallbackHandler;
       }
@@ -824,7 +824,7 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>:
  unsigned        * rcvlen,
  char           ** rcvbuf,
  unsigned        * pipewidth,
- XMI_Callback_t * cb_done)
+ xmi_callback_t *cb_done)
 {
   XMI_assert_debug(count == 1);
   XMI_assert_debug(info);
@@ -935,7 +935,7 @@ CCMI::Executor::AllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>:
  unsigned          srcindex,
  unsigned        * rcvlen,
  char           ** rcvbuf,
- XMI_Callback_t * cb_done)
+ xmi_callback_t *cb_done)
 {
   *rcvbuf = _astate.getPhaseRecvBufs (phase, srcindex);
   *rcvlen = sndlen;

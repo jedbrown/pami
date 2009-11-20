@@ -42,10 +42,12 @@ namespace XMI
 	///
         inline xmi_result_t createContext (xmi_configuration_t   configuration[],
                                            size_t                count,
-                                           xmi_context_t *contexts,
+                                           xmi_context_t *context,
 					   int *ncontexts);
 
         inline xmi_result_t destroyContext (xmi_context_t context);
+
+	inline xmi_result_t queryConfiguration (xmi_configuration_t * configuration);
 
     }; // end class XMI::Client::Client
 
@@ -70,15 +72,21 @@ namespace XMI
     template <class T_Client, class T_Context>
     inline xmi_result_t Client<T_Client,T_Context>::createContext (xmi_configuration_t configuration[],
                                            size_t                count,
-                                           xmi_context_t *contexts,
+					   xmi_context_t *context,
 					   int *ncontexts) {
-	return static_cast<T_Client*>(this)->createContext_impl(configuration, count, contexts, ncontexts);
+	return static_cast<T_Client*>(this)->createContext_impl(configuration, count, context, ncontexts);
     }
 
     template <class T_Client, class T_Context>
     inline xmi_result_t Client<T_Client,T_Context>::destroyContext (xmi_context_t context)
     {
       return static_cast<T_Client*>(this)->destroyContext_impl(context);
+    }
+
+    template <class T_Client, class T_Context>
+    xmi_result_t Client<T_Client,T_Context>::queryConfiguration (xmi_configuration_t * configuration)
+    {
+        return static_cast<T_Client*>(this)->queryConfiguration_impl(configuration);
     }
 
   }; // end namespace Interface

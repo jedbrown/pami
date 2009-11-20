@@ -27,18 +27,18 @@ extern "C" size_t XMI_Error_text (char * string, size_t length)
 ///
 /// \copydoc XMI_Configuration_query
 ///
-extern "C" xmi_result_t XMI_Configuration_query (xmi_context_t         context,
+extern "C" xmi_result_t XMI_Configuration_query (xmi_client_t         client,
                                                  xmi_configuration_t * configuration)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client * cln = (XMI::Client *) client;
 
-  return ctx->queryConfiguration (configuration);
+  return cln->queryConfiguration (configuration);
 }
 
 ///
 /// \copydoc XMI_Configuration_update
 ///
-extern "C" xmi_result_t XMI_Configuration_update (xmi_context_t         context,
+extern "C" xmi_result_t XMI_Configuration_update (xmi_client_t         client,
                                                   xmi_configuration_t * configuration)
 {
   return XMI_UNIMPL;
@@ -78,6 +78,11 @@ extern "C" xmi_result_t XMI_Client_finalize (xmi_client_t client)
 {
   XMI::Client::destroy ((XMI::Client *) client);
   return XMI_SUCCESS;
+}
+
+extern "C" xmi_context_t XMI_Client_getcontext(xmi_client_t client, size_t context) {
+	XMI::Client *clnt = (XMI::Client *)client;
+	return (xmi_context_t)clnt->getContext(context);
 }
 
 ///
@@ -456,8 +461,7 @@ extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
                                                      int *lists_lengths)
 {
   XMI::Context * ctx = (XMI::Context *) context;
-  return ctx->geometry_algorithms_num (context,
-                                      geometry,
+  return ctx->geometry_algorithms_num (geometry,
                                       coll_type,
                                       lists_lengths);
 }
@@ -473,8 +477,7 @@ extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
                                                        int num)
 {
   XMI::Context * ctx = (XMI::Context *) context;
-  return ctx->geometry_algorithms_info (context,
-                                        geometry,
+  return ctx->geometry_algorithms_info (geometry,
                                         type,
                                         algs,
                                         mdata,
@@ -503,40 +506,40 @@ extern "C" xmi_result_t XMI_Multisend_getroles(xmi_context_t   context,
 ///
 /// \copydoc XMI_Multicast
 ///
-extern "C" xmi_result_t XMI_Multicast(xmi_context_t    context,
-                                      xmi_multicast_t *mcastinfo)
+extern "C" xmi_result_t XMI_Multicast(xmi_multicast_t *mcastinfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client *clnt = (XMI::Client *)mcastinfo->client;
+  XMI::Context *ctx = clnt->getContext(mcastinfo->context);
   return ctx->multicast (mcastinfo);
 }
 
 ///
 /// \copydoc XMI_Manytomany
 ///
-extern "C" xmi_result_t XMI_Manytomany(xmi_context_t     context,
-                                       xmi_manytomany_t *m2minfo)
+extern "C" xmi_result_t XMI_Manytomany(xmi_manytomany_t *m2minfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client *clnt = (XMI::Client *)m2minfo->client;
+  XMI::Context *ctx = clnt->getContext(m2minfo->context);
   return ctx->manytomany (m2minfo);
 }
 
 ///
 /// \copydoc XMI_Multisync
 ///
-extern "C" xmi_result_t XMI_Multisync(xmi_context_t    context,
-                                      xmi_multisync_t *msyncinfo)
+extern "C" xmi_result_t XMI_Multisync(xmi_multisync_t *msyncinfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client *clnt = (XMI::Client *)msyncinfo->client;
+  XMI::Context *ctx = clnt->getContext(msyncinfo->context);
   return ctx->multisync (msyncinfo);
 }
 
 ///
 /// \copydoc XMI_Multicombine
 ///
-extern "C" xmi_result_t XMI_Multicombine(xmi_context_t       context,
-                                         xmi_multicombine_t *mcombineinfo)
+extern "C" xmi_result_t XMI_Multicombine(xmi_multicombine_t *mcombineinfo)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
+  XMI::Client *clnt = (XMI::Client *)mcombineinfo->client;
+  XMI::Context *ctx = clnt->getContext(mcombineinfo->context);
   return ctx->multicombine (mcombineinfo);
 }
 
@@ -557,6 +560,17 @@ extern "C" xmi_result_t XMI_Dispatch_set (xmi_context_t              context,
   XMI::Context * ctx = (XMI::Context *) context;
   return ctx->dispatch (dispatch, fn, cookie, options);
 }
+//#ifdef __xmi_target_mpi__
+extern "C" xmi_result_t XMI_Dispatch_set_new(xmi_context_t  context,
+                                 size_t                     dispatch,
+                                 xmi_dispatch_callback_fn   fn,
+                                 void                     * cookie,
+                                 xmi_dispatch_hint_t        options)
+  {
+    XMI::Context * ctx = (XMI::Context *) context;
+    return ctx->dispatch_new(dispatch, fn, cookie, options);
+  }
+//#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////

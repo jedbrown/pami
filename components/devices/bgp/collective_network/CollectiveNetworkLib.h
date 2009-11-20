@@ -74,6 +74,8 @@ public:
 	static const unsigned classroute = 3;
 
 	BaseGenericCNMessage(Generic::BaseGenericDevice &qs,
+			xmi_client_t client,
+			size_t context,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
@@ -83,7 +85,7 @@ public:
 			unsigned disp_id,
 			unsigned hhfunc,
 			unsigned opsize) :
-	XMI::Device::Generic::GenericMessage(qs, cb),
+	XMI::Device::Generic::GenericMessage(qs, cb, client, context),
 	_swq(swq),
 	_rwq(rwq),
 	_bytes(bytes),
@@ -338,6 +340,8 @@ protected:
 class BaseGenericCNPPMessage : public BaseGenericCNMessage {
 public:
 	BaseGenericCNPPMessage(Generic::BaseGenericDevice &qs,
+			xmi_client_t client,
+			size_t context,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
 			size_t bytes,
@@ -346,7 +350,7 @@ public:
 			xmi_callback_t cb,
 			unsigned disp_id,
 			XMI::Device::BGP::CNAllreduceSetup &tas) :
-	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb, disp_id,
+	BaseGenericCNMessage(qs, client, context, swq, rwq, bytes, doStore, roles, cb, disp_id,
 			tas._hhfunc, tas._opsize),
 	_allreduceSetup(tas)
 	{
@@ -458,6 +462,8 @@ protected:
 class BaseGenericCN2PMessage : public BaseGenericCNMessage {
 public:
 	BaseGenericCN2PMessage(Generic::BaseGenericDevice &qs,
+			xmi_client_t client,
+			size_t context,
 			XMI::Device::WorkQueue::WorkQueue &ewq,
 			XMI::Device::WorkQueue::WorkQueue &mwq,
 			XMI::Device::WorkQueue::WorkQueue &xwq,
@@ -469,7 +475,7 @@ public:
 			const xmi_callback_t cb,
 			unsigned dispatch_id_e,
 			unsigned dispatch_id_m) :
-	BaseGenericCNMessage(qs, swq, rwq, bytes, doStore, roles, cb, 0, 0, 0),
+	BaseGenericCNMessage(qs, client, context, swq, rwq, bytes, doStore, roles, cb, 0, 0, 0),
 	_expcount(bytes>>3),
 	_mancount(bytes>>3),
 	_expcycle(EXPCOUNT), /// \todo Set according to collective network depth?

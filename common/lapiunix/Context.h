@@ -19,12 +19,16 @@
 #include "SysDep.h"
 #include "components/geometry/lapiunix/lapiunixcollfactory.h"
 #include "components/geometry/lapiunix/lapiunixcollregistration.h"
+#include "components/devices/generic/GenericDevice.h"
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/gcc/GccCounter.h"
 #include "Mapping.h"
 #include <new>
 #include <map>
 
 namespace XMI
 {
+    typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Device::LAPIMessage LAPIMessage;
     typedef Device::LAPIDevice<SysDep> LAPIDevice;
     typedef Device::LAPIModel<LAPIDevice,LAPIMessage> LAPIModel;
@@ -32,15 +36,82 @@ namespace XMI
     typedef CollFactory::LAPI<LAPIDevice, SysDep> LAPICollfactory;
     typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep> LAPICollreg;
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
+    typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+
+    class Work : public Queue
+    {
+    private:
+      class WorkObject : public QueueElem
+      {
+      public:
+        inline WorkObject (xmi_event_function   fn,
+                           void               * cookie) :
+          QueueElem (),
+          _fn (fn),
+          _cookie (cookie)
+          {};
+        inline ~WorkObject() { };
+
+        xmi_event_function   _fn;
+        void               * _cookie;
+      };
+
+      xmi_context_t _context;
+      ContextLock   _lock;
+      MemoryAllocator<sizeof(WorkObject),16> _allocator;
+
+    public:
+      inline Work (xmi_context_t context, SysDep * sysdep) :
+        Queue (),
+        _context (context),
+        _lock (),
+        _allocator ()
+        {
+          _lock.init (sysdep);
+        };
+      inline void post (xmi_event_function   fn,
+                        void               * cookie)
+        {
+          _lock.acquire ();
+          WorkObject * obj = (WorkObject *) _allocator.allocateObject ();
+          new (obj) WorkObject (fn, cookie);
+          pushTail ((QueueElem *) obj);
+          _lock.release ();
+        };
+
+      inline size_t advance ()
+        {
+          size_t events = 0;
+          if (_lock.tryAcquire ())
+              {
+                WorkObject * obj = NULL;
+                while ((obj = (WorkObject *) popHead()) != NULL)
+                    {
+                      obj->_fn(_context, obj->_cookie, XMI_SUCCESS);
+                      events++;
+                    }
+                _lock.release ();
+              }
+          return events;
+        };
+    };
+
 
     class Context : public Interface::Context<XMI::Context>
     {
     public:
-      inline Context (xmi_client_t client, size_t id):
+      inline Context (xmi_client_t client, size_t id, size_t num,
+				XMI::Device::Generic::Device *generics,
+				void * addr, size_t bytes) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
-        _id (id),
-        _sysdep(_mm)
+        _contextid (id),
+        _mm (addr, bytes),
+	_sysdep(_mm),
+        _lock (),
+        _empty_advance(0),
+        _work ((xmi_context_t *)this, &_sysdep),
+	_generic(generics[id])
         {
           lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
           lapi_extend_t * extend_info;   /* holds IP addresses and ports */
@@ -136,7 +207,7 @@ namespace XMI
 
       inline size_t getId_impl ()
         {
-          return _id;
+          return _contextid;
         }
 
 
@@ -146,39 +217,6 @@ namespace XMI
           CALL_AND_CHECK_RC((LAPI_Term(_lapi_handle)));
           return XMI_SUCCESS;
         }
-
-      inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
-      {
-        xmi_result_t result = XMI_ERROR;
-
-        switch (configuration->name)
-          {
-          case XMI_TASK_ID:
-            configuration->value.intval = __global.mapping.task();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_NUM_TASKS:
-            configuration->value.intval = __global.mapping.size();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_CLOCK_MHZ:
-          case XMI_WTIMEBASE_MHZ:
-            configuration->value.intval = __global.time.clockMHz();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_WTICK:
-            configuration->value.doubleval =__global.time.tick();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_MEM_SIZE:
-          case XMI_PROCESSOR_NAME:
-          case XMI_PROCESSOR_NAME_SIZE:
-          default:
-            break;
-          };
-
-        return result;
-      }
 
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
         {
@@ -193,6 +231,9 @@ namespace XMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
+		// don't we want this advanced too?
+		// events += _work.advance ();
+
                 events += _lapi_device.advance_impl();
               }
           return events;
@@ -409,8 +450,7 @@ namespace XMI
           return collfactory->collective(parameters);
         }
 
-      inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
-                                                        xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                         xmi_xfer_type_t colltype,
                                                         int *lists_lengths)
         {
@@ -420,8 +460,7 @@ namespace XMI
           return collfactory->algorithms_num(colltype, lists_lengths);
         }
 
-      inline xmi_result_t geometry_algorithms_info_impl (xmi_context_t context,
-                                                         xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
                                                          xmi_xfer_type_t colltype,
                                                          xmi_algorithm_t *algs,
                                                          xmi_metadata_t *mdata,
@@ -478,29 +517,50 @@ namespace XMI
           xmi_result_t result        = XMI_ERROR;
           new (_dispatch[(size_t)id]) EagerLAPI (id, fn, cookie, _lapi_device,
                                                  __global.mapping.task(), _context,
-                                                 _id, result);
+                                                 _contextid, result);
           return result;
         }
 
+    inline xmi_result_t dispatch_new_impl (size_t                     id,
+                                           xmi_dispatch_callback_fn   fn,
+                                           void                     * cookie,
+                                           xmi_dispatch_hint_t        options)
+    {
+      xmi_result_t result        = XMI_ERROR;
+      if(options.type == XMI_P2P_SEND)
+      {
+        return dispatch_impl (id,
+                              fn,
+                              cookie,
+                              options.hint.send);
+      }
+        return result;
+    }
+
+
     private:
       std::map <unsigned, xmi_geometry_t>   _geometry_id;
-      Memory::MemoryManager     _mm;
-      xmi_client_t              _client;
-      xmi_context_t             _context;
-      size_t                    _id;
-      SysDep                    _sysdep;
-      lapi_handle_t             _lapi_handle;
-      void                     *_dispatch[1024];
-      MemoryAllocator<1024,16>  _request;
-      LAPIDevice                _lapi_device;
-      LAPICollreg              *_collreg;
-      LAPIGeometry             *_world_geometry;
-      LAPICollfactory          *_world_collfactory;
-      xmi_geometry_range_t      _world_range;
-      int                       _myrank;
-      int                       _mysize;
-      unsigned                 *_ranklist;
-
+      xmi_client_t                          _client;
+      xmi_context_t                         _context;
+      size_t                                _contextid;
+      void                                 *_dispatch[1024];
+      ProtocolAllocator                     _protocol;
+      Memory::MemoryManager                 _mm;
+      SysDep                                _sysdep;
+      ContextLock                           _lock;
+      Work                                  _work;
+      XMI::Device::Generic::Device         &_generic;
+      MemoryAllocator<1024,16>              _request;
+      LAPIDevice                            _lapi_device;
+      LAPICollreg                          *_collreg;
+      LAPIGeometry                         *_world_geometry;
+      LAPICollfactory                      *_world_collfactory;
+      xmi_geometry_range_t                  _world_range;
+      unsigned                              _empty_advance;
+      int                                   _myrank;
+      int                                   _mysize;
+      unsigned                             *_ranklist;
+      lapi_handle_t                        _lapi_handle;
     }; // end XMI::Context
 }; // end namespace XMI
 

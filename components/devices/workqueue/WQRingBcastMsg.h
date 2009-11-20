@@ -53,16 +53,16 @@ private:
 	};
 public:
 	WQRingBcastMsg(Generic::BaseGenericDevice &Generic_QS,
+		xmi_multicast_t *mcast,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
-		XMI::PipeWorkQueue *rwq,
-		size_t bytes,
-		xmi_callback_t cb) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
+		XMI::PipeWorkQueue *rwq) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
+				mcast->client, mcast->context),
 	_iwq(iwq),
 	_swq(swq), // might be NULL
 	_rwq(rwq), // might be NULL (but not both)
-	_bytes(bytes)
+	_bytes(mcast->bytes)
 	{
 	}
 
@@ -242,14 +242,14 @@ inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
-					(XMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL, mcast->bytes, mcast->cb_done);
+		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+					(XMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL);
 	} else if (iamlast) {
 		// I am tail of stream - no one is downstream from me.
 		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] ===> results
-		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
-					&_wq[meix], NULL, (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
+		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+					&_wq[meix], NULL, (XMI::PipeWorkQueue *)mcast->dst);
 	} else {
 		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] =+=> results
@@ -257,8 +257,8 @@ inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev,
-					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst, mcast->bytes, mcast->cb_done);
+		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst);
 	}
 	_g_wqbcast_dev.__post<WQRingBcastMsg>(msg);
 	return true;

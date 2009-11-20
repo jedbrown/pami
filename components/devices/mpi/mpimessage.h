@@ -23,6 +23,10 @@
 //#define EMULATE_UNRELIABLE_DEVICE
 #define EMULATE_UNRELIABLE_DEVICE_FREQUENCY 10
 
+#ifndef TRACE_ADAPTOR
+#define TRACE_ADAPTOR(x) //fprintf x
+#endif
+
 namespace XMI
 {
   namespace Device
@@ -30,17 +34,20 @@ namespace XMI
     class MPIMessage
     {
     public:
-      inline MPIMessage (xmi_context_t       context,
+      inline MPIMessage (xmi_client_t client, size_t       context,
                          size_t              dispatch_id,
                          xmi_event_function  done_fn,
                          void               *cookie):
+        _client(client),
         _context(context),
         _done_fn(done_fn),
         _cookie(cookie)
         {
+        TRACE_ADAPTOR((stderr,"%s dispatch_id %d\n",__PRETTY_FUNCTION__, dispatch_id));
           _p2p_msg._dispatch_id=dispatch_id;
         };
-      xmi_context_t       _context;
+      xmi_client_t       _client;
+      size_t       _context;
       xmi_event_function  _done_fn;
       void               *_cookie;
       int                 _freeme;
@@ -64,7 +71,8 @@ namespace XMI
     class MPIMcastMessage
     {
     public:
-      xmi_context_t  _context;
+      xmi_client_t  _client;
+      size_t  _context;
       size_t         _dispatch_id;
       xmi_quad_t     _info[2];
       int            _info_count;
@@ -97,7 +105,8 @@ namespace XMI
     class MPIM2MMessage
     {
     public:
-      xmi_context_t       _context;
+      xmi_client_t       _client;
+      size_t       _context;
       size_t              _dispatch_id;
       unsigned            _conn;
       xmi_event_function  _done_fn;
@@ -137,4 +146,4 @@ namespace XMI
   };
 };
 
-#endif // __components_devices_mpi_mpibasemessage_h__
+#endif // __components_devices_mpi_mpimessage_h__

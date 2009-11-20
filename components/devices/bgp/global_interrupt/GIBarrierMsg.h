@@ -79,8 +79,9 @@ protected:
 	/// \brief  GI Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	giMessage(Generic::BaseGenericDevice &GI_QS, xmi_callback_t cb) :
-	XMI::Device::Generic::GenericMessage(GI_QS, cb)
+	giMessage(Generic::BaseGenericDevice &GI_QS, xmi_multisync_t *msync) :
+	XMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
+				msync->client, msync->context)
 	{
 	}
 
@@ -161,7 +162,7 @@ inline bool XMI::Device::BGP::giModel::postMultisync_impl(xmi_multisync_t *msync
 	// assert(participants == ctor topology)
 	giMessage *msg;
 
-	msg = new (msync->request) giMessage(_g_gibarrier_dev, msync->cb_done);
+	msg = new (msync->request) giMessage(_g_gibarrier_dev, msync);
 	_g_gibarrier_dev.__post<giMessage>(msg);
 	return true;
 }

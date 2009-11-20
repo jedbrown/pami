@@ -45,7 +45,7 @@ namespace XMI
       {
         public:
 
-          MUDmaModel (MUDevice & device, xmi_context_t context);
+          MUDmaModel (MUDevice & device, xmi_client_t client, size_t context);
 
           ~MUDmaModel ();
 
@@ -76,7 +76,7 @@ namespace XMI
           {
             xmi_callback_t * cb = (xmi_callback_t *) metadata;
             TRACE((stderr, "MUDmaModel::dispatch_notify() >> cb = %p, cb->function = %p, cb->clientdata = %p\n", cb, cb->function, cb->clientdata));
-            cb->function (cb->clientdata, NULL, XMI_SUCCESS);
+            cb->function (NULL, cb->clientdata, XMI_SUCCESS);
             TRACE((stderr, "MUDmaModel::dispatch_notify() <<\n"));
             return 0;
           };
@@ -90,7 +90,8 @@ namespace XMI
           MUSPI_Pt2PtDirectPutDescriptor    _rput_desc_model;
           MUSPI_Pt2PtMemoryFIFODescriptor   _rmem_desc_model;
 
-          xmi_context_t                     _context;
+          xmi_client_t                     _client;
+          size_t                     _context;
       };
 
       bool MUDmaModel::postDmaPut_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
@@ -176,7 +177,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    cb.function (_context, cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
+                    cb.function (XMI_Client_getcontext(_client, _context), cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif
@@ -186,7 +187,7 @@ namespace XMI
                     // later and the callback will be invoked when the descriptor is
                     // complete.
                     MUInjFifoMessage * msg = (MUInjFifoMessage *) obj;
-                    new (msg) MUInjFifoMessage (cb.function, cb.clientdata, _context, sequenceNum);
+                    new (msg) MUInjFifoMessage (cb.function, cb.clientdata, _client, _context, sequenceNum);
 
                     // Queue it.
                     _device.addToDoneQ (target_rank, msg->getWrapper());

@@ -64,21 +64,19 @@ public:
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
           inline LocalAllreduceWQMessage (Generic::BaseGenericDevice      & device,
-                                          xmi_callback_t   cb,
+					  xmi_multicombine_t *mcomb,
                                           XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
                                           unsigned          npeers,
-                                          XMI::PipeWorkQueue *swq,
-                                          XMI::PipeWorkQueue *rwq,
-                                          unsigned          count,
                                           coremath          func,
                                           int               dtshift) :
-            XMI::Device::Generic::GenericMessage (device, cb),
+            XMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
+				mcomb->client, mcomb->context),
             _peer (peer),
             _func (func),
             _dtshift (dtshift),
-            _source (swq),
-            _result (rwq),
+            _source ((XMI::PipeWorkQueue *)mcomb->data),
+            _result ((XMI::PipeWorkQueue *)mcomb->results),
             _shared (workqueue)
           {
           }
@@ -180,10 +178,8 @@ inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mco
 
 	LocalAllreduceWQMessage *msg =
 		new (mcomb->request) LocalAllreduceWQMessage(_g_l_allreducewq_dev,
-					mcomb->cb_done, _shared, _peer, _npeers,
-					(XMI::PipeWorkQueue *)mcomb->data,
-					(XMI::PipeWorkQueue *)mcomb->results,
-					mcomb->count, func, dtshift);
+					mcomb, _shared, _peer, _npeers,
+					func, dtshift);
 	_g_l_allreducewq_dev.__post<LocalAllreduceWQMessage>(msg);
 	return true;
 }

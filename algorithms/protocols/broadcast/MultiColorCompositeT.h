@@ -82,7 +82,7 @@ namespace CCMI
       ///
       /// \brief Receive the broadcast message and notify the executor
       ///
-        static void staticRecvFn (void *ctxt, void *executor, xmi_result_t err)
+        static void staticRecvFn(xmi_context_t context, void *executor, xmi_result_t err)
           {
             xmi_quad_t *info = NULL;
 
@@ -189,7 +189,7 @@ namespace CCMI
         /// \brief For sync broadcasts, the done call back to be called
         ///        when barrier finishes
         ///
-        static void cb_barrier_done(void *ctxt, void *me, xmi_result_t err)
+        static void cb_barrier_done(xmi_context_t context, void *me, xmi_result_t err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -207,7 +207,7 @@ namespace CCMI
           }
         }
 
-        static void cb_bcast_done(void *ctxt, void *me, xmi_result_t err)
+        static void cb_bcast_done(xmi_context_t context, void *me, xmi_result_t err)
         {
           MultiColorCompositeT * bcast_composite = (MultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -217,7 +217,7 @@ namespace CCMI
 
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
-            bcast_composite->_cb_done.function(ctxt, bcast_composite->_cb_done.clientdata, XMI_SUCCESS);
+            bcast_composite->_cb_done.function(context, bcast_composite->_cb_done.clientdata, XMI_SUCCESS);
           }
         }
       };  //-- MultiColorCompositeT

@@ -27,9 +27,10 @@ namespace XMI
     class LAPIModel : public Interface::PacketModel<LAPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
     {
     public:
-      LAPIModel (T_Device & device, xmi_context_t context) :
-        Interface::PacketModel < LAPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,context),
+      LAPIModel (T_Device & device, xmi_client_t client, size_t context) :
+        Interface::PacketModel < LAPIModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device,client,context),
         _device (device),
+        _client (client),
         _context(context)
         {};
       static const bool   deterministic_packet_model         = true;
@@ -161,7 +162,8 @@ namespace XMI
 
     protected:
       T_Device                    & _device;
-      xmi_context_t                 _context;
+      xmi_client_t                  _client;
+      size_t                        _context;
       size_t                        _dispatch_id;
       Interface::RecvFunction_t     _direct_recv_func;
       void                        * _direct_recv_func_parm;

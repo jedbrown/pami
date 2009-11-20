@@ -76,7 +76,7 @@ namespace CCMI
         ///        unexpected and the application wants to provide the final target
         ///        buffer
         void  setPosted (unsigned bytes, char *buf,
-                         XMI_Callback_t &cb_done)
+                         xmi_callback_t &cb_done)
         {
           CCMI_assert(bytes >= _bytes);
           _appbuf = buf;

@@ -62,11 +62,11 @@ namespace TSPColl
     Allgatherv<T_Mcast> _allgatherv;
 
   private:
-    static void scattercomplete(xmi_context_t ctxt, void *arg, xmi_result_t res);
-    static void barriercomplete(xmi_context_t ctxt, void *arg, xmi_result_t res);
-    static void barrier2complete(xmi_context_t ctxt, void *arg, xmi_result_t res);
-    static void barrier3complete(xmi_context_t ctxt, void *arg, xmi_result_t res);
-    static void allgathervcomplete(xmi_context_t ctxt, void *arg, xmi_result_t res);
+    static void scattercomplete(xmi_context_t context, void *arg, xmi_result_t res);
+    static void barriercomplete(xmi_context_t context, void *arg, xmi_result_t res);
+    static void barrier2complete(xmi_context_t context, void *arg, xmi_result_t res);
+    static void barrier3complete(xmi_context_t context, void *arg, xmi_result_t res);
+    static void allgathervcomplete(xmi_context_t context, void *arg, xmi_result_t res);
   };
 }
 
@@ -143,7 +143,7 @@ inline void TSPColl::ScBcast<T_Mcast>::kick (T_Mcast *mcast_iface)
 /*               first phase is complete: start allgather                  */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::scattercomplete(xmi_context_t ctxt, void *arg, xmi_result_t res)
+inline void TSPColl::ScBcast<T_Mcast>::scattercomplete(xmi_context_t context, void *arg, xmi_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST scattercomplete\n", PGASRT_MYNODE));
@@ -155,7 +155,7 @@ inline void TSPColl::ScBcast<T_Mcast>::scattercomplete(xmi_context_t ctxt, void 
 /* *********************************************************************** */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::barriercomplete(xmi_context_t ctxt, void *arg, xmi_result_t res)
+inline void TSPColl::ScBcast<T_Mcast>::barriercomplete(xmi_context_t context, void *arg, xmi_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barriercomplete\n", PGASRT_MYNODE));
@@ -166,7 +166,7 @@ inline void TSPColl::ScBcast<T_Mcast>::barriercomplete(xmi_context_t ctxt, void 
 /* *********************************************************************** */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::barrier2complete(xmi_context_t ctxt, void *arg, xmi_result_t res)
+inline void TSPColl::ScBcast<T_Mcast>::barrier2complete(xmi_context_t context, void *arg, xmi_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barrier2complete\n", PGASRT_MYNODE));
@@ -177,7 +177,7 @@ inline void TSPColl::ScBcast<T_Mcast>::barrier2complete(xmi_context_t ctxt, void
 /* *********************************************************************** */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::barrier3complete(xmi_context_t ctxt, void *arg, xmi_result_t res)
+inline void TSPColl::ScBcast<T_Mcast>::barrier3complete(xmi_context_t context, void *arg, xmi_result_t res)
 {
   TRACE((stderr, "%d: SCBCAST barrier3complete\n", PGASRT_MYNODE));
   // ScBcast * self = (ScBcast *) arg;
@@ -186,7 +186,7 @@ inline void TSPColl::ScBcast<T_Mcast>::barrier3complete(xmi_context_t ctxt, void
 /* *********************************************************************** */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::allgathervcomplete(xmi_context_t ctxt, void *arg, xmi_result_t res)
+inline void TSPColl::ScBcast<T_Mcast>::allgathervcomplete(xmi_context_t context, void *arg, xmi_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST agvcomplete\n", PGASRT_MYNODE));

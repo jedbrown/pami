@@ -53,23 +53,21 @@ private:
 
 public:
 	WQRingReduceMsg(Generic::BaseGenericDevice &Generic_QS,
+		xmi_multicombine_t *mcomb,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
-		XMI::PipeWorkQueue *rwq,
-		xmi_op op,
-		xmi_dt dt,
-		size_t count,
-		xmi_callback_t cb) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, cb),
+		XMI::PipeWorkQueue *rwq) :
+	XMI::Device::Generic::GenericMessage(Generic_QS, mcomb->cb_done,
+				mcomb->client, mcomb->context),
 	_iwq(iwq),
 	_swq(swq), // might be NULL
 	_rwq(rwq),
-	_count(count),
-	_shift(xmi_dt_shift[dt])
+	_count(mcomb->count),
+	_shift(xmi_dt_shift[mcomb->dtype])
 	{
 		if (_swq) {
 			// full combine...
-			_func = MATH_OP_FUNCS(dt, op, 2);
+			_func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
 		} else {
 			// copy only
 			_func = NULL;
@@ -254,27 +252,24 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 		// I am root - downstream from eveyone.
 		// _input (op) _wq[meix_1] => _output
 		// XMI_assert(roles == ROOT_ROLE);
-		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev,
-					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (XMI::PipeWorkQueue *)mcomb->results,
-					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
+		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (XMI::PipeWorkQueue *)mcomb->results);
 	} else if (results_topo->isRankMember(me_1)) {
 		// I am head of stream.
 		// XMI_assert(roles == NON_ROOT_ROLE);
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev,
-					(XMI::PipeWorkQueue *)mcomb->data, NULL, &_wq[meix],
-					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
+		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+					(XMI::PipeWorkQueue *)mcomb->data, NULL, &_wq[meix]);
 	} else {
 		// I am upstream of root, but not head.
 		// XMI_assert(roles == NON_ROOT_ROLE);
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev,
-					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix],
-					mcomb->optor, mcomb->dtype, mcomb->count, mcomb->cb_done);
+		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix]);
 	}
 	_g_wqreduce_dev.__post<WQRingReduceMsg>(msg);
 	return true;

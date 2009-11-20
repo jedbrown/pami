@@ -20,7 +20,7 @@ namespace XMI
           Interface::Client<XMI::Client,XMI::Context>(name, result),
           _client ((xmi_client_t) this),
           _references (1),
-          _contexts (0),
+          _ncontexts (0),
           _mm ()
         {
           // Set the client name string.
@@ -84,34 +84,39 @@ namespace XMI
 
         inline xmi_result_t createContext_impl (xmi_configuration_t   configuration[],
                                                  size_t                count,
-                                                 xmi_context_t *contexts,
+						 xmi_context_t *context,
 						 int *ncontexts)
         {
 		//_context_list->lock ();
 		int n = *ncontexts;
-		if (_contexts != 0) {
-			*ncontexts = 0;
+		if (_ncontexts != 0) {
 			return XMI_ERROR;
 		}
-		if (_contexts + n > 4) {
-			n = 4 - _contexts;
+		if (_ncontexts + n > 4) {
+			n = 4 - _ncontexts;
 		}
-		*ncontexts = n;
 		if (n <= 0) { // impossible?
 			return XMI_ERROR;
 		}
-		XMI::Context *context = NULL;
-		int rc = posix_memalign((void **)&context, 16, sizeof(XMI::Context) * n);
-		XMI_assertf(rc==0, "posix_memalign failed for context[%d], errno=%d\n", n, errno);
-		memset((void *)context, 0, sizeof(XMI::Context) * n);
-		size_t bytes = _mm.size() / n;
+		int rc = posix_memalign((void **)&_generics, 16, sizeof(*_generics) * n);
+		XMI_assertf(rc==0, "posix_memalign failed for _generics[%d], errno=%d\n", n, errno);
+
+		rc = posix_memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
+		XMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
 		int x;
 		for (x = 0; x < n; ++x) {
-			contexts[x] = &context[x];
+			new (&_generics[x]) XMI::Device::Generic::Device();
+		}
+		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
+		size_t bytes = _mm.size() / n;
+		*ncontexts = n;
+		for (x = 0; x < n; ++x) {
+			context[x] = (xmi_context_t)&_contexts[x];
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&context[x]) XMI::Context(this->getClient(), _contexts++, base, bytes);
+			new (&_contexts[x]) XMI::Context(this->getClient(), x, n,
+							_generics, base, bytes);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
 		}
@@ -126,6 +131,57 @@ namespace XMI
           //_context_list->unlock ();
         }
 
+	inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
+	{
+		xmi_result_t result = XMI_ERROR;
+
+		switch (configuration->name)
+		{
+		case XMI_TASK_ID:
+			configuration->value.intval = __global.mapping.task();
+			result = XMI_SUCCESS;
+			break;
+		case XMI_NUM_TASKS:
+			configuration->value.intval = __global.mapping.size();
+			result = XMI_SUCCESS;
+			break;
+		case XMI_CLOCK_MHZ:
+		case XMI_WTIMEBASE_MHZ:
+			configuration->value.intval = __global.time.clockMHz();
+			result = XMI_SUCCESS;
+			break;
+		case XMI_WTICK:
+			configuration->value.doubleval =__global.time.tick();
+			result = XMI_SUCCESS;
+			break;
+		case XMI_MEM_SIZE:
+		case XMI_PROCESSOR_NAME:
+		case XMI_PROCESSOR_NAME_SIZE:
+		default:
+			break;
+		}
+		return result;
+	}
+
+	// the friend clause is actually global, but this helps us remember why...
+	//friend class XMI::Device::Generic::Device;
+	//friend class xmi.cc
+
+	inline size_t getNumContexts()
+	{
+		return _ncontexts;
+	}
+
+	inline XMI::Context *getContext(size_t ctx)
+	{
+		return _contexts + ctx;
+	}
+
+	inline XMI::Context *getContexts()
+	{
+		return _contexts;
+	}
+
       protected:
 
         inline xmi_client_t getClient () const
@@ -138,7 +194,9 @@ namespace XMI
         xmi_client_t _client;
 
         size_t       _references;
-        size_t       _contexts;
+        size_t       _ncontexts;
+	XMI::Context *_contexts;
+	XMI::Device::Generic::Device *_generics;
         char         _name[256];
 
         Memory::MemoryManager _mm;

@@ -95,7 +95,7 @@ namespace CCMI
         ///
         /// \brief Receive the broadcast message and notify the executor
         ///
-        static void staticAsyncRecvFn (void * context, void *clientdata, xmi_result_t err)
+        static void staticAsyncRecvFn (xmi_context_t context, void *clientdata, xmi_result_t err)
         {
           xmi_quad_t *info = NULL;
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
@@ -287,7 +287,7 @@ namespace CCMI
           return bcast->executor().getRecvRequest();
         }
 
-        static void unexpected_done (void *context, void *cd, xmi_result_t err)
+        static void unexpected_done (xmi_context_t context, void *cd, xmi_result_t err)
         {
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe = ((T_Schedule *) cd)->bqelem();
@@ -301,7 +301,7 @@ namespace CCMI
           }
         }
 
-        static void posted_done (void *context, void *cd, xmi_result_t err)
+        static void posted_done (xmi_context_t context, void *cd, xmi_result_t err)
         {
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe =

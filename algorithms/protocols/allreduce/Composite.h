@@ -82,7 +82,7 @@ namespace CCMI
         /// \brief Client's callback to call when the allreduce has
         /// finished
         ///
-        void               (* _myClientFunction)(void*, void *, xmi_result_t );
+        xmi_event_function _myClientFunction;
         void                * _myClientData;
       public:
         Composite () :
@@ -143,7 +143,7 @@ namespace CCMI
                           xmi_op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, void *, xmi_result_t ) = cb_compositeDone,
+                          xmi_event_function                cb_done = cb_compositeDone,
                           void                            * cd = NULL
                         )
         {
@@ -281,7 +281,7 @@ namespace CCMI
         /// It means the is done, but the client done isn't called
         /// until both the composite and (optional) barrier are done.
         ///
-        static void cb_barrierDone(void *ctxt, void *me, xmi_result_t err)
+        static void cb_barrierDone(xmi_context_t context, void *me, xmi_result_t err)
         {
 
           TRACE_ADAPTOR((stderr,
@@ -306,7 +306,7 @@ namespace CCMI
         /// the client done isn't called until both the composite and
         /// (optional) barrier are done.
         ///
-        static void cb_compositeDone(void *ctxt, void *me, xmi_result_t err)
+        static void cb_compositeDone(xmi_context_t context, void *me, xmi_result_t err)
         {
           TRACE_ADAPTOR((stderr,
                          "<%#.8X>Allreduce::Composite::cb_compositeDone()\n",

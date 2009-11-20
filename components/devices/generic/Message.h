@@ -67,13 +67,19 @@ public:
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
-	Message(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb) :
+	Message(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb,
+					xmi_client_t client, size_t context) :
 	QueueElem(),
 	_status(0),
 	_QS(QS),
+	_client(client),
+	_context(context),
 	_cb(cb)
 	{
 	}
+
+	xmi_client_t getClient() { return _client; }
+	size_t getContext() { return _context; }
 
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Reset a message
@@ -107,11 +113,15 @@ public:
 	///  \brief Executes the callback
 	///  \returns a return code to indicate reset status
 	//////////////////////////////////////////////////////////////////////
-	void executeCallback(xmi_result_t err = XMI_SUCCESS) {if(_cb.function) _cb.function(NULL, _cb.clientdata, err);}
+	void executeCallback(xmi_result_t err = XMI_SUCCESS) {
+		if(_cb.function) _cb.function(XMI_Client_getcontext(_client, _context), _cb.clientdata, err);
+	}
 
 protected:
 	int _status;
 	Device::Generic::BaseGenericDevice &_QS;
+	xmi_client_t _client;
+	size_t _context;
 	xmi_callback_t _cb;
 }; /* class Message */
 
@@ -124,13 +134,19 @@ public:
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
-	MultiQueueMessage(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb) :
+	MultiQueueMessage(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb,
+						xmi_client_t client, size_t context) :
 	MultiQueueElem<numElems>(),
 	_status(Uninitialized),
 	_QS(QS),
+	_client(client),
+	_context(context),
 	_cb(cb)
 	{
 	}
+
+	xmi_client_t getClient() { return _client; }
+	size_t getContext() { return _context; }
 
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Query function to determine message state
@@ -154,7 +170,7 @@ public:
 	///  \returns a return code to indicate reset status
 	//////////////////////////////////////////////////////////////////////
 	void executeCallback(xmi_result_t err = XMI_SUCCESS) {
-		if(_cb.function) _cb.function(NULL, _cb.clientdata, err);
+		if(_cb.function) _cb.function(XMI_Client_getcontext(_client, _context), _cb.clientdata, err);
 	}
 
 	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }
@@ -162,6 +178,8 @@ public:
 protected:
 	MessageStatus _status;
 	Device::Generic::BaseGenericDevice &_QS;
+	xmi_client_t _client;
+	size_t _context;
 	xmi_callback_t _cb;
 }; /* class MultiQueueMessage */
 
@@ -179,14 +197,11 @@ public:
 	/// \brief  Generic Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb) :
-	MultiQueueMessage<2>(Generic_QS, cb),
-	_threadsWanted(0)
+	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb,
+			xmi_client_t client, size_t context) :
+	MultiQueueMessage<2>(Generic_QS, cb, client, context)
 	{
 	}
-
-	inline void setThreadsWanted(int n) { _threadsWanted = n; }
-	inline int numThreadsWanted() { return _threadsWanted; }
 
 	/// \brief Message is Done, perform all completion tasks
 	///
@@ -203,7 +218,6 @@ public:
 	virtual MessageStatus advanceThread(GenericAdvanceThread *thr) = 0;
 
 protected:
-	int _threadsWanted;
 }; /* class GenericMessage */
 
 }; /* namespace Generic */

@@ -40,7 +40,7 @@ namespace XMI
           /// \param[in] device  dma device
           /// \param[in] context Communication context
           ///
-          inline DmaModel (T_Device & device, xmi_context_t context) {};
+          inline DmaModel (T_Device & device, xmi_client_t client, size_t context) {};
           inline ~DmaModel () {};
 
           ///

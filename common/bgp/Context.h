@@ -11,10 +11,7 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
-#define ENABLE_GENERIC_DEVICE
-#ifdef ENABLE_GENERIC_DEVICE
 #include "components/devices/generic/GenericDevice.h"
-#endif
 
 #warning shmem device must become sub-device of generic device
 #include "components/devices/shmem/ShmemDevice.h"
@@ -129,19 +126,19 @@ namespace XMI
   class Context : public Interface::Context<XMI::Context>
   {
     public:
-      inline Context (xmi_client_t client, size_t id, void * addr, size_t bytes) :
+      inline Context (xmi_client_t client, size_t id, size_t num,
+				XMI::Device::Generic::Device *generics,
+				void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, id),
           _client (client),
           _context ((xmi_context_t)this),
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-#ifdef ENABLE_GENERIC_DEVICE
-          _generic(_sysdep),
-#endif
+          _generic(generics[id]),
           _shmem (),
           _lock (),
-          _work (_context, &_sysdep)
+          _work ((xmi_context_t *)this, &_sysdep)
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -157,9 +154,7 @@ namespace XMI
 
         _lock.init(&_sysdep);
 
-#ifdef ENABLE_GENERIC_DEVICE
-        _generic.init (_sysdep);
-#endif
+        _generic.init (_sysdep, id, num, generics);
         _shmem.init (&_sysdep);
       }
 
@@ -178,39 +173,6 @@ namespace XMI
         return XMI_SUCCESS;
       }
 
-      inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
-      {
-        xmi_result_t result = XMI_ERROR;
-
-        switch (configuration->name)
-          {
-          case XMI_TASK_ID:
-            configuration->value.intval = __global.mapping.task();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_NUM_TASKS:
-            configuration->value.intval = __global.mapping.size();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_CLOCK_MHZ:
-          case XMI_WTIMEBASE_MHZ:
-            configuration->value.intval = __global.time.clockMHz();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_WTICK:
-            configuration->value.doubleval =__global.time.tick();
-            result = XMI_SUCCESS;
-            break;
-          case XMI_MEM_SIZE:
-          case XMI_PROCESSOR_NAME:
-          case XMI_PROCESSOR_NAME_SIZE:
-          default:
-            break;
-          };
-
-        return result;
-      }
-
       inline xmi_result_t post_impl (xmi_event_function work_fn, void * cookie)
       {
         _work.post (work_fn, cookie);
@@ -223,17 +185,16 @@ namespace XMI
         result = XMI_SUCCESS;
         size_t events = 0;
 
-        // Should this go inside the loop?
-        events += _work.advance ();
-
         unsigned i;
 
         for (i = 0; i < maximum && events == 0; i++)
           {
+            // this must be inside the loop,
+	    // or else we only advance work when any exists.
+            events += _work.advance ();
+
             events += _shmem.advance_impl();
-#ifdef ENABLE_GENERIC_DEVICE
             events += _generic.advance();
-#endif
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -420,8 +381,7 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_algorithms_num_impl (xmi_context_t context,
-                                                        xmi_geometry_t geometry,
+      inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                         xmi_xfer_type_t ctype,
                                                         int *lists_lengths)
       {
@@ -429,8 +389,7 @@ namespace XMI
       }
 
       inline
-      xmi_result_t geometry_algorithms_info_impl (xmi_context_t context,
-                                                  xmi_geometry_t geometry,
+      xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
                                                   xmi_xfer_type_t colltype,
                                                   xmi_algorithm_t *algs,
                                                   xmi_metadata_t *mdata,
@@ -493,6 +452,23 @@ namespace XMI
         return result;
       }
 
+      inline xmi_result_t dispatch_new_impl (size_t                     id,
+                                             xmi_dispatch_callback_fn   fn,
+                                             void                     * cookie,
+                                             xmi_dispatch_hint_t        options)
+      {
+        xmi_result_t result        = XMI_ERROR;
+        if(options.type == XMI_P2P_SEND)
+        {
+          return dispatch_impl (id,
+                                fn,
+                                cookie,
+                                options.hint.send);
+        }
+          TRACE_ERR((stderr, "<< dispatch_new_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index]));
+          return result;
+      }
+
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
                                                   int            *numRoles,
                                                   int            *replRole)
@@ -535,9 +511,7 @@ namespace XMI
       SysDep _sysdep;
 
       // devices...
-#ifdef ENABLE_GENERIC_DEVICE
-      XMI::Device::Generic::Device _generic;
-#endif
+      XMI::Device::Generic::Device &_generic;
       ShmemDevice _shmem;
       ContextLock _lock;
 

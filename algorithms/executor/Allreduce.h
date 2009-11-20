@@ -114,7 +114,7 @@ namespace CCMI
       inline void postReceives();
 
       /// \brief Static function to be passed into the done of multisend send
-      static void staticNotifySendDone (void *context, void *cd, xmi_result_t err)
+      static void staticNotifySendDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifySendDone() enter\n",(int)((SendCallbackData *)cd)->me));
         ((SendCallbackData *)cd)->me->notifySendDone (*(xmi_quad_t *)cd);
@@ -123,7 +123,7 @@ namespace CCMI
 
       /// \brief Static function to be passed into the done of multisend postRecv
 
-      static void staticNotifyReceiveDone (void *ctxt, void *cd, xmi_result_t err)
+      static void staticNotifyReceiveDone (xmi_context_t context, void *cd, xmi_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
         TRACE_FLOW((stderr,"<%#.8X>Executor::Allreduce::staticNotifyReceiveDone() enter\n",(int)cdata->allreduce));

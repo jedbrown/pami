@@ -125,20 +125,21 @@ class CNAllreduce2PMessage : public XMI::Device::BGP::BaseGenericCN2PMessage {
 	};
 public:
 	CNAllreduce2PMessage(Generic::BaseGenericDevice &qs,
+		xmi_multicombine_t *mcomb,
 		XMI::Device::WorkQueue::WorkQueue &ewq,
 		XMI::Device::WorkQueue::WorkQueue &mwq,
 		XMI::Device::WorkQueue::WorkQueue &xwq,
-		XMI::PipeWorkQueue *swq,
-		XMI::PipeWorkQueue *rwq,
 		size_t bytes,
 		bool doStore,
-		unsigned roles,
-		const xmi_callback_t cb,
 		unsigned dispatch_id_e,
 		unsigned dispatch_id_m) :
-	BaseGenericCN2PMessage(qs, ewq, mwq, xwq, swq, rwq, bytes, doStore,
-				roles, cb, dispatch_id_e, dispatch_id_m),
-	_roles(roles),
+	BaseGenericCN2PMessage(qs, mcomb->client, mcomb->context,
+				ewq, mwq, xwq,
+				(XMI::PipeWorkQueue *)mcomb->data,
+				(XMI::PipeWorkQueue *)mcomb->results,
+				bytes, doStore, mcomb->roles, mcomb->cb_done,
+				dispatch_id_e, dispatch_id_m),
+	_roles(mcomb->roles),
 	_offx(0)
 	{
 	}
@@ -173,9 +174,6 @@ protected:
 		}
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
-		if (_bytes >= 16384 /*DCMF_TREE_HELPER_THRESH*/) {
-			setThreadsWanted(MIN(nt, maxnt));
-		}
 		return nt;
 	}
 
@@ -358,11 +356,8 @@ inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb)
 	// __post() will still try early advance... (after construction)
 	CNAllreduce2PMessage *msg;
 	msg = new (mcomb->request) CNAllreduce2PMessage(_g_cnallreduce2p_dev,
-			_ewq, _mwq, _xwq,
-			(XMI::PipeWorkQueue *)mcomb->data,
-			(XMI::PipeWorkQueue *)mcomb->results,
-			bytes, doStore, mcomb->roles, mcomb->cb_done,
-			_dispatch_id_e, _dispatch_id_m);
+			mcomb, _ewq, _mwq, _xwq,
+			bytes, doStore, _dispatch_id_e, _dispatch_id_m);
 	_g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);
 	return true;
 }
