@@ -34,7 +34,7 @@ asm volatile ("lfpdux %0,%1,%2" : "=f"(x), "+Ob"(ptr) : "r"(incr) : "memory")
 asm volatile ("stfpdux %2,%0,%1": "+Ob" (ptr) : "r" (incr), "f" (x) : "memory")
 
 
-
+#if 0
 template <>
 template <unsigned N>
 void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
@@ -118,6 +118,6 @@ void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
 #endif
   }
 }
-
+#endif
 
 #endif // __xmi_arch_ppc450d_h__
