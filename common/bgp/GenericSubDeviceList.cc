@@ -6,12 +6,16 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file common/bgp/GenericSubDeviceList.cc
+ * \brief ???
+ */
 
 #include "GenericSubDeviceList.h"
 
 // This gets included in a C++ file so it needs to actually instantiate things...
 
-#ifdef NOT_YET 
+#ifdef NOT_YET
 XMI::Device::BGP::MemoryBarrierDev _g_mbarrier_dev;
 XMI::Device::BGP::LLSCDev _g_llscbarrier_dev;
 #endif
@@ -24,4 +28,3 @@ XMI::Device::BGP::CNAllreduceDevice     _g_cnallreduce_dev(&_g_cncommon_dev);
 XMI::Device::BGP::CNAllreducePPDevice   _g_cnallreducepp_dev(&_g_cncommon_dev);
 XMI::Device::BGP::CNAllreduce2PDevice   _g_cnallreduce2p_dev(&_g_cncommon_dev);
 XMI::Device::BGP::CNBroadcastDevice     _g_cnbroadcast_dev(&_g_cncommon_dev);
-

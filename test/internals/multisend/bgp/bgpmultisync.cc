@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/bgp/multisync.cc
+/// \file test/internals/multisend/bgp/bgpmultisync.cc
 /// \brief ???
 ///
 

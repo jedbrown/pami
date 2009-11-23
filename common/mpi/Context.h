@@ -71,7 +71,7 @@ namespace XMI
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
     typedef XMI::Device::MPIMulticastHeader<XMI::Device::MPICollectiveMcastMessage> MPIMcastHeader;
-    typedef XMI::Device::MPICollectiveDevice<MPIMcastHeader> MPICollDevice; 
+    typedef XMI::Device::MPICollectiveDevice<MPIMcastHeader> MPICollDevice;
     typedef XMI::Protocol::MPI::OneSidedMulticastProtocol<MPICollDevice, MPIMcastHeader > MPIOneSidedMulticastProtocol;
 // /\/\/\ Experimental non-generic "collective" mpi device and protocol
 #endif //ifndef DISABLE_COLLDEVICE
@@ -476,7 +476,7 @@ namespace XMI
           TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zd/%zd] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
           XMI_assert_debug (_dispatch[id] != NULL);
           // I need to look at hints until I get down to one object for mcast...
-          //  now it's either a protocol or a model.   
+          //  now it's either a protocol or a model.
 
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
@@ -617,7 +617,7 @@ namespace XMI
           if(options.hint.multicast.global)
           {
             XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
-            new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie, 
+            new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie,
                                                                 &_mpi_global_coll_device,
                                                                 this->_context,
                                                                 this->_contextid,
@@ -627,7 +627,7 @@ namespace XMI
           else if(options.hint.multicast.local)
           {
             XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
-            new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie, 
+            new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie,
                                                                 &_mpi_local_coll_device,
                                                                 this->_context,
                                                                 this->_contextid,
@@ -669,8 +669,8 @@ namespace XMI
       else if(options.type == XMI_P2P_SEND)
       {
         XMI_assert(_request.objsize >= sizeof(EagerMPI));
-        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi, 
-                                                 __global.mapping.task(), 
+        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi,
+                                                 __global.mapping.task(),
                                                  _context, _contextid, result);
         if(result!=XMI_SUCCESS)
         {

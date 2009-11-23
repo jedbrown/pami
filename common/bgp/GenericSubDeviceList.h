@@ -6,6 +6,10 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file common/bgp/GenericSubDeviceList.h
+ * \brief ???
+ */
 
 #ifndef __common_bgp_GenericSubDeviceList_h__
 #define __common_bgp_GenericSubDeviceList_h__
@@ -15,7 +19,7 @@
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
 
-#ifdef NOT_YET 
+#ifdef NOT_YET
 #include "components/devices/bgp/memory/MemoryBarrierMsg.h"
 #include "components/devices/bgp/memory/LLSCMsg.h"
 #endif
@@ -26,7 +30,7 @@
 #include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 
-#ifdef NOT_YET 
+#ifdef NOT_YET
 extern XMI::Device::BGP::MemoryBarrierDev _g_mbarrier_dev;
 extern XMI::Device::BGP::LLSCDev _g_llscbarrier_dev;
 #endif

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/workqueue/MPIBcastMsg.h
+ * \file components/devices/mpi/MPIBcastMsg.h
  * \brief ???
  */
 
-#ifndef __components_devices_workqueue_MPIBcastMsg_h__
-#define __components_devices_workqueue_MPIBcastMsg_h__
+#ifndef __components_devices_mpi_MPIBcastMsg_h__
+#define __components_devices_mpi_MPIBcastMsg_h__
 
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"

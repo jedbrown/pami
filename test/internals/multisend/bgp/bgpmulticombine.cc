@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/bgp/multicombine.cc
+/// \file test/internals/multisend/bgp/bgpmulticombine.cc
 /// \brief ???
 ///
 

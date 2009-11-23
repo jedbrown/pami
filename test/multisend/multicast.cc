@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/multisend/multicast.cc
- * \brief Simple multicast tests.  
+ * \brief Simple multicast tests.
  */
 
 #include "test/multisend/Buffer.h"
@@ -60,7 +60,7 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
 
 }
 
-void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err) 
+void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 {
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
@@ -82,7 +82,7 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  int n = 1; 
+  int n = 1;
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
   {
@@ -99,7 +99,7 @@ int main(int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
   }
-  size_t task_id = configuration.value.intval;   
+  size_t task_id = configuration.value.intval;
   //DBG_FPRINTF((stderr, "My task id = %zd\n", task_id);
 
   configuration.name = XMI_NUM_TASKS;
@@ -109,7 +109,7 @@ int main(int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
   }
-  size_t num_tasks = configuration.value.intval;    
+  size_t num_tasks = configuration.value.intval;
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
 // END standard setup
@@ -194,7 +194,7 @@ int main(int argc, char ** argv)
     {
       status = XMI_Context_advance (context, 10);
     }
-    size_t 
+    size_t
     bytesConsumed = 0,
     bytesProduced = 0;
 
@@ -204,7 +204,7 @@ int main(int argc, char ** argv)
                        bytesProduced,
                        true,   // isRoot = true
                        false); // isDest = false
-      if((bytesConsumed != TEST_BUF_SIZE) || 
+      if((bytesConsumed != TEST_BUF_SIZE) ||
          (bytesProduced != 0))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -216,7 +216,7 @@ int main(int argc, char ** argv)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced);
-      if((bytesConsumed != 0) || 
+      if((bytesConsumed != 0) ||
          (bytesProduced != TEST_BUF_SIZE))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -249,7 +249,7 @@ int main(int argc, char ** argv)
       status = XMI_Context_advance (context, 10);
     }
 
-    size_t 
+    size_t
     bytesConsumed = 0,
     bytesProduced = 0;
 
@@ -259,7 +259,7 @@ int main(int argc, char ** argv)
                        bytesProduced,
                        true,   // isRoot = true
                        true);  // isDest = true
-      if((bytesConsumed != TEST_BUF_SIZE) || 
+      if((bytesConsumed != TEST_BUF_SIZE) ||
          (bytesProduced != TEST_BUF_SIZE))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -271,7 +271,7 @@ int main(int argc, char ** argv)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced);
-      if((bytesConsumed != 0) || 
+      if((bytesConsumed != 0) ||
          (bytesProduced != TEST_BUF_SIZE))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);

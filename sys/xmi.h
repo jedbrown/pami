@@ -1138,7 +1138,7 @@ extern "C"
    * \param[in]     geometry       An input geometry to be analyzed.
    * \param[in]     type           type of collective op.
    * \param[in]     algs           array of algorithm to be filled in.
-   * \param[out]    mdata          metadata array to be filled in if algorithms 
+   * \param[out]    mdata          metadata array to be filled in if algorithms
    *                               are applicable, can be NULL.
    * \param[in]     algorithm_type tells whether this an "always works"
    *                               or "works under-condition"
@@ -2770,7 +2770,7 @@ extern "C"
     uint32_t global            : 1; /**< A global (all tasks) multicast                          */
     uint32_t local             : 1; /**< A local (to this task) multicast                        */
     uint32_t spanning          : 1; /**< A spanning (one task per local set) multicast           */
-    uint32_t subtopology       : 1; /**< An arbitrary subtopology (use 
+    uint32_t subtopology       : 1; /**< An arbitrary subtopology (use
                                                   xmi_dispatch_hint_t.config field for topology) */
 
     /* The next 2 are mutually exclusive and may be used w/wo active_message enabled             */
@@ -2798,7 +2798,7 @@ extern "C"
    * \param[in] root        Sending task
    * \param[in] sndlen      Length of data sent
    * \param[in] clientdata  Opaque arg
-   * \param[out] rcvlen     Length of data to receive 
+   * \param[out] rcvlen     Length of data to receive
    * \param[out] rcvpwq     Where to put recv data
    * \param[out] cb_done    Completion callback to invoke when data received
    * \return   void
@@ -3294,13 +3294,13 @@ extern "C"
    */
   typedef struct
   {
-    xmi_dispatch_type_t    type;      /**< Type of dispatch reqistered    */ 
+    xmi_dispatch_type_t    type;      /**< Type of dispatch reqistered    */
     union{
       xmi_multicast_hint_t      multicast;
       xmi_multisync_hint_t      multisync;
       xmi_multicombine_hint_t   multicombine;
       xmi_manytomany_hint_t     manytomany;
-      xmi_send_hint_t           send;     
+      xmi_send_hint_t           send;
     }                      hint;      /**< Type-specific hints            */
     void*                  config;    /**< Type-specific additional config*/
   } xmi_dispatch_hint_t;

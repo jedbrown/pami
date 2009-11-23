@@ -336,14 +336,14 @@ int main(int argc, char*argv[])
              result);
     return 1;
   }
-  
+
   if (allreducenum_algorithm[0])
   {
     allreducealgorithm = (xmi_algorithm_t*)
       malloc(sizeof(xmi_algorithm_t) * allreducenum_algorithm[0]);
     metas = (xmi_metadata_t*)
       malloc(sizeof(xmi_metadata_t) * allreducenum_algorithm[0]);
-    
+
     result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           XMI_XFER_ALLREDUCE,
@@ -435,7 +435,7 @@ int main(int argc, char*argv[])
     allreduce.rtypecount= 0;
 
 
-   
+
     for(dt=0; dt<dt_count; dt++)
       for(op=0; op<op_count; op++)
       {

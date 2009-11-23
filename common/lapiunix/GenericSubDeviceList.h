@@ -6,6 +6,10 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file common/lapiunix/GenericSubDeviceList.h
+ * \brief ???
+ */
 
 #ifndef __common_lapiunix_GenericSubDeviceList_h__
 #define __common_lapiunix_GenericSubDeviceList_h__

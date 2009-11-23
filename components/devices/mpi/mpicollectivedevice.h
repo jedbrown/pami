@@ -36,7 +36,7 @@ namespace XMI
     typedef void (*device_dispatch_fn)(void    *header,
                                        uint16_t headerLength,
                                        void    *cookie    );
-    typedef struct 
+    typedef struct
     {
       device_dispatch_fn    function;
       void                        *cookie;
@@ -153,7 +153,7 @@ namespace XMI
         {
           TRACE_DEVICE((stderr, "<%#.8X>MPICollectiveDevice::getDispatchHeader %#.8X %#.8X %#.8X %#.8X\n", (int)this, ((unsigned*)header->header())[i],((unsigned*)header->header())[i+1],((unsigned*)header->header())[i+2],((unsigned*)header->header())[i+3]));
         }
-        TRACE_DEVICE((stderr, "<%#.8X>MPICollectiveDevice::getDispatchHeader length %d, root %d, id %d, connection id %d, sndlen %d, msgcount %d \n", 
+        TRACE_DEVICE((stderr, "<%#.8X>MPICollectiveDevice::getDispatchHeader length %d, root %d, id %d, connection id %d, sndlen %d, msgcount %d \n",
                       (int)this, length, header->root(), header->id(), header->connection_id(), header->sndlen(), header->msgcount()));
       }
       inline bool getBytesAvailable(T_Dispatch_Header * header)
@@ -320,4 +320,3 @@ namespace XMI
 
 #endif // DISABLE_COLLDEVICE
 #endif // __components_devices_mpi_mpicollectivedevice_h__
-

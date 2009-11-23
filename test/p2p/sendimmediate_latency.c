@@ -177,7 +177,7 @@ int main ()
   TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
   { int _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
-  
+
   TRACE_ERR((stderr, "... before barrier_init()\n"));
   barrier_init (client, context, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));

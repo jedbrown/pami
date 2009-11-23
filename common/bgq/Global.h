@@ -259,9 +259,9 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
     {
       // Allocate storage for an array to be used in the loop below to track
       // the number of physical nodes in the partition.  The loop goes through
-      // each rank, gets that rank's physical node coordinates, and sets a bit 
+      // each rank, gets that rank's physical node coordinates, and sets a bit
       // in the array corresponding to that node, indicating that there is
-      // a rank on that node.  The loop monitors the 0 to 1 transition of a 
+      // a rank on that node.  The loop monitors the 0 to 1 transition of a
       // bit, and increments numActiveNodesGlobal when it sees the first
       // rank on the node.  After the loop, the storage for the array is
       // freed.

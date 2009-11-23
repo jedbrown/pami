@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file devices/mpi/mpicollectiveprotocol.h
+/// \file components/devices/mpi/mpicollectiveprotocol.h
 /// \brief Defines base protocol class interface for multicast
 ///
-#ifndef __devices_mpi_mpicollectiveprotocol_h__
-#define __devices_mpi_mpicollectiveprotocol_h__
+#ifndef __components_devices_mpi_mpicollectiveprotocol_h__
+#define __components_devices_mpi_mpicollectiveprotocol_h__
 #ifndef DISABLE_COLLDEVICE
 
 #include "sys/xmi.h"
@@ -65,7 +65,7 @@ namespace XMI
       /// \brief Base class for multicast implementations.
       ///
       template <
-      class T_Device, 
+      class T_Device,
       class T_Header>
       class OneSidedMulticastProtocol : public MulticastProtocol
       {
@@ -78,7 +78,7 @@ namespace XMI
         {
           TRACE_ADAPTOR((stderr,":%d:OneSidedMulticastProtocol\n",__LINE__));
         };
-        inline OneSidedMulticastProtocol(size_t                     dispatch_id,       
+        inline OneSidedMulticastProtocol(size_t                     dispatch_id,
                                          xmi_dispatch_multicast_fn  dispatch,
                                          void                     * cookie,
                                          T_Device                 * device,
@@ -153,7 +153,7 @@ namespace XMI
           client->dispatchAdvance((T_Header*)header, length);
         }
 
-        void dispatchHeader(T_Header *device_header, 
+        void dispatchHeader(T_Header *device_header,
                             uint16_t  length)
         {
           TRACE_ADAPTOR((stderr,":%d:OneSidedMulticastProtocol::dispatchHeader length %d device_header->id() %d, device_header->root() %zd, _cookie %p\n",__LINE__,
@@ -228,8 +228,3 @@ namespace XMI
 
 #endif // DISABLE_COLLDEVICE
 #endif //__devices_mpi_mpicollectiveprotocol_h__
-
-
-
-
-

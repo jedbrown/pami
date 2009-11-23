@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/bgp/multicast.cc
+/// \file test/internals/multisend/mpi/mpimulticast.cc
 /// \brief ???
 ///
 

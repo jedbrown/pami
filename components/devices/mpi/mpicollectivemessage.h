@@ -66,7 +66,7 @@ namespace XMI {
 
       size_t              _dispatch_id;
       size_t              _bytesAvailable;
-      size_t              _bytesComplete; 
+      size_t              _bytesComplete;
       char               *_dataBuffer;
 
       void setId(size_t  dispatch_id) {
@@ -121,12 +121,12 @@ namespace XMI {
             dstPwq->produceBytes(dataBytes);
           }
           // seems premature but we are handing back the buffer so it can be consumed, so count the bytes now
-          srcPwq->consumeBytes(dataBytes);  
+          srcPwq->consumeBytes(dataBytes);
           _bytesComplete = srcPwq->getBytesConsumed();
         } else {
           _dataBuffer = dstPwq->bufferToProduce();
           // seems premature but we are handing back the buffer so it can be produced, so count the bytes now
-          dstPwq->produceBytes(dataBytes); 
+          dstPwq->produceBytes(dataBytes);
           _bytesComplete = dstPwq->getBytesProduced();
         }
         return _dataBuffer;
@@ -155,7 +155,7 @@ namespace XMI {
       const void complete() {
         if(_cb_done.function)
           (_cb_done.function)(NULL, //XMI_Client_getcontext(_client,_context), \todo FIX THIS. It core dumps right now in getcontext.
-                              _cb_done.clientdata, 
+                              _cb_done.clientdata,
                               XMI_SUCCESS);
       }
 

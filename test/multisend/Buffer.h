@@ -10,8 +10,8 @@
  * \file test/multisend/Buffer.h
  * \brief Multicast test buffer support class
  */
-#ifndef __test_multisend_buffer_h__
-#define __test_multisend_buffer_h__
+#ifndef __test_multisend_Buffer_h__
+#define __test_multisend_Buffer_h__
 
 #include <stdio.h>
 
@@ -65,11 +65,11 @@ namespace XMI
       ~Buffer()
       {
       }
-      XMI::PipeWorkQueue * srcPwq() 
+      XMI::PipeWorkQueue * srcPwq()
       {
         return _pSrcPwq;
       }
-      XMI::PipeWorkQueue * dstPwq() 
+      XMI::PipeWorkQueue * dstPwq()
       {
         return _pDstPwq;
       }
@@ -234,5 +234,3 @@ namespace XMI
 }; // namespace XMI
 
 #endif // __test_multisend_buffer_h__
-
-

@@ -8,8 +8,8 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file components/devices/mpi/mpicollectiveheader.h
- * \brief Various MPI headers 
- * \todo CRTP'ify it to define the common header interface 
+ * \brief Various MPI headers
+ * \todo CRTP'ify it to define the common header interface
  */
 
 #ifndef __components_devices_mpi_mpicollectiveheader_h__
@@ -49,9 +49,9 @@ namespace XMI
       #define HDR_LEN 8 // temp - until I fix alignment issues with structs
       static const unsigned MAX_HEADER = 512;
     private:
-      struct header_t 
+      struct header_t
       {
-        uint32_t   _root;         // source/root 
+        uint32_t   _root;         // source/root
         uint16_t _id;             // dispatch id
         // annoying union because I'm limited to 8 bytes long_long allreduce :(
         //   dispatch headers put header length in these two bytes (so we can pull metadata)
@@ -60,7 +60,7 @@ namespace XMI
         {
           uint16_t _connection_id;// connection id of most headers
           uint16_t _length;       //of remaining dispatch header (in quads)
-        } _u; 
+        } _u;
       } *_header;
       char _buffer[MAX_HEADER];
       struct msginfo_t // the user's msginfo (in _buffer)
@@ -137,13 +137,13 @@ namespace XMI
         xmi_multicast_t minfo;
         minfo.context = context;
         minfo.dispatch = dispatch_id;
-        // who cares now? minfo.hints = 
+        // who cares now? minfo.hints =
         minfo.cb_done = cb_done;
         minfo.connection_id = header->connection_id();
         minfo.roles = 0;
         minfo.bytes = rcvlen;
         minfo.src = NULL;
-        minfo.src_participants = (xmi_topology_t*) new XMI::Topology(header->root()); 
+        minfo.src_participants = (xmi_topology_t*) new XMI::Topology(header->root());
         minfo.dst = rcvpwq;
         minfo.dst_participants = (xmi_topology_t*) new XMI::Topology(task_id);
         minfo.msginfo = header->msginfo();
@@ -178,7 +178,7 @@ namespace XMI
 
       }
  */
-      /* let the compile fail if misused 
+      /* let the compile fail if misused
       MPIMulticastHeader(xmi_multisync_t *minfo):  QueueElem() ,
       _protocol(MULTISYNC)
       {
@@ -218,9 +218,9 @@ namespace XMI
         memcpy(&_msginfo->msginfo,_msg->msginfo(),_msg->msgcount()*sizeof(xmi_quad_t));
         for(unsigned i = 0; i < _msginfo->msgcount*4; i+=4)
         {
-          TRACE_DEVICE((stderr, "<%#.8X><%d:%d>msginfo %#.8X %#.8X %#.8X %#.8X\n", 
-                        (unsigned)(&_msginfo->msginfo), 
-                        i+1, _msginfo->msgcount, 
+          TRACE_DEVICE((stderr, "<%#.8X><%d:%d>msginfo %#.8X %#.8X %#.8X %#.8X\n",
+                        (unsigned)(&_msginfo->msginfo),
+                        i+1, _msginfo->msgcount,
                         ((unsigned*)&_msginfo->msginfo)[i],
                         ((unsigned*)&_msginfo->msginfo)[i+1],
                         ((unsigned*)&_msginfo->msginfo)[i+2],
