@@ -204,7 +204,7 @@ namespace CCMI
 	topology->list(&srcpelist);
 	XMI_assert(srcpelist == NULL);
 
-	nsrc = 0;
+	unsigned nsrc = 0;
         if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
                                                 (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
                                                 phase == _recvph)) || phase == _auxrecvph)
@@ -216,6 +216,9 @@ namespace CCMI
 	for (unsigned count = 0; count < nsrc; count ++) {
           srcpes[count] = _map->getGlobalRank(srcpes[count]);
         }
+
+	//Convert to a list topology
+	new (topology) Topology (srcpelist, nsrc);
       }
 
       /**
@@ -230,19 +233,22 @@ namespace CCMI
 	topology->list(&dstpelist);
 	XMI_assert(dstpelist == NULL);
 
-	ndst = 0;
+	unsigned ndst = 0;
         if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
                                                 (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
                                                 phase == _sendph)) || phase == _auxsendph)
         {
           NEXT_NODES(CHILD, phase, dstpes, ndst);
         }
-	XMI_assert (nsrc <= topology->size());
+	XMI_assert (ndst <= topology->size());
 
 	for (unsigned count = 0; count < ndst; count ++)
         {
           dstpes[count]   = _map->getGlobalRank(dstpes[count]);
         }
+
+	//Convert to a list topology of the accurate size
+	new (topology) Topology (dstpelist, ndst);
       }
 
     protected:
