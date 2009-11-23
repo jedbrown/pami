@@ -78,7 +78,7 @@ public:
 	}
 
 	xmi_client_t getClient() { return _client; }
-	size_t getContext() { return _context; }
+	size_t getContextId() { return _context; }
 
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Reset a message
@@ -112,8 +112,8 @@ public:
 	///  \brief Executes the callback
 	///  \returns a return code to indicate reset status
 	//////////////////////////////////////////////////////////////////////
-	void executeCallback(xmi_result_t err = XMI_SUCCESS) {
-		if(_cb.function) _cb.function(XMI_Client_getcontext(_client, _context), _cb.clientdata, err);
+	void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS) {
+		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
 	}
 
 protected:
@@ -145,7 +145,7 @@ public:
 	}
 
 	xmi_client_t getClient() { return _client; }
-	size_t getContext() { return _context; }
+	size_t getContextId() { return _context; }
 
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Query function to determine message state
@@ -168,8 +168,8 @@ public:
 	///  \brief Executes the callback
 	///  \returns a return code to indicate reset status
 	//////////////////////////////////////////////////////////////////////
-	void executeCallback(xmi_result_t err = XMI_SUCCESS) {
-		if(_cb.function) _cb.function(XMI_Client_getcontext(_client, _context), _cb.clientdata, err);
+	void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS) {
+		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
 	}
 
 	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }
@@ -207,7 +207,7 @@ public:
 	/// Typically the message will invoke the device complete() method
 	/// (to be dequeued from the device) and then execute the users callback.
 	///
-	virtual void complete() = 0;
+	virtual void complete(xmi_context_t context) = 0;
 
 	/// \brief Advance a thread of a message
 	///

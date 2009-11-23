@@ -99,7 +99,8 @@ protected:
 //////////////////////////////////////////////////////////////////////
 class Device {
 
-	inline void __platform_generic_init(XMI::SysDep &sd, Device *generic);
+	inline void __platform_generic_init(bool first_global, bool first_client,
+								XMI::SysDep &sd);
 	inline int __platform_generic_advanceRecv(size_t context);
 
 public:
@@ -136,7 +137,7 @@ public:
 		// completion, even the first thread of work is posted
 		// to a different context.
 
-		size_t t = msg->getContext();
+		size_t t = msg->getContextId();
 		size_t n = __nContexts;
 		Generic::Device *g0 = __generics;
 		g0[t].__GenericQueue.pushTail(msg);
@@ -167,6 +168,7 @@ public:
 
 	inline size_t contextId() { return __contextId; }
 	inline size_t nContexts() { return __nContexts; }
+	inline xmi_context_t getContext() { return __context; }
 
 private:
 	/// \brief Advance a reception channel

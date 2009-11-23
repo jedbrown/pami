@@ -110,7 +110,7 @@ public:
 	 *
 	 * All environment variables are sampled at this point.
 	 */
-	void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device);
+	void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId);
 
 	inline int getMaxThreads() { return _threadRoles; }
 

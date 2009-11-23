@@ -79,7 +79,7 @@ public
 	}
 
 	inline xmi_result_t advanceThread(xmi_context_t context, void *t);
-	inline void complete();
+	inline void complete(xmi_context_t context);
 protected:
 	//friend class CNAllreduceShortDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceShortModel,CNDevice,CNAllreduceShortMessage,CNAllreduceShortThread,2>;
@@ -403,9 +403,9 @@ inline void CNAllreduceShortMessage::__completeThread(CNAllreduceShortThread *th
 	}
 }
 
-void CNAllreduceShortMessage::complete() {
+void CNAllreduceShortMessage::complete(xmi_context_t context) {
 	((CNAllreduceShortDevice &)_QS).__complete(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 xmi_result_t CNAllreduceShortMessage::advanceThread(xmi_context_t context, void *t) {

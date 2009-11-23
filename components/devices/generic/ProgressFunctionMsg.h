@@ -37,8 +37,8 @@ class ProgressFunctionMsg;
 
 class ProgressFunctionDev {
 public:
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *device) {
-		_generic = device;
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+		_generics = devices;
 	}
 
 	inline int advanceRecv(size_t context) { return 0; }
@@ -48,7 +48,7 @@ protected:
 	friend class ProgressFunctionMsg;
 	inline void __post(ProgressFunctionMsg *msg);
 private:
-	XMI::Device::Generic::Device *_generic;
+	XMI::Device::Generic::Device *_generics;
 }; // class ProgressFunctionDev
 
 }; //-- Device
@@ -74,6 +74,7 @@ protected:
 		_func = pf->func;
 		_cookie = pf->clientdata;
 		_cb_done = pf->cb_done;
+		_contextId = pf->context;
 	}
 
 public:
@@ -83,7 +84,10 @@ public:
 	inline void setFunc(xmi_work_function func) { _func = func; }
 	inline void setCookie(void *cookie) { _cookie = cookie; }
 	inline void setDone(xmi_callback_t done) { _cb_done = done; }
+	inline void setContext(size_t ctx) { _contextId = ctx; }
+	inline size_t getContextId() { return _contextId; }
 protected:
+	size_t _contextId;
 }; //-- ProgressFunctionMsg
 
 /// If this ever expands into multiple types, need to make this a subclass
@@ -113,21 +117,23 @@ private:
 
 inline void XMI::Device::ProgressFunctionDev::__post(ProgressFunctionMsg *msg) {
 	// 'msg' actually inherits from GenericThread...
-	_generic->postThread(msg);
+	_generics[msg->getContextId()].postThread(msg);
 }
 
 inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 	ProgressFunctionMsg *msg = (ProgressFunctionMsg *)pf->request;
+	// need a better way to get xmi_context_t... perhaps via generic device?
+	xmi_context_t ctx = XMI_Client_getcontext(pf->client, pf->context);
 
-	int rc = pf->func(XMI_Client_getcontext(pf->client, pf->context), pf->clientdata);
+	int rc = pf->func(ctx, pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(XMI_Client_getcontext(pf->client, pf->context), pf->cb_done.clientdata, XMI_SUCCESS);
+			pf->cb_done.function(ctx, pf->cb_done.clientdata, XMI_SUCCESS);
 		}
 		return true;
 	} else if (rc < 0) {
 		if (pf->cb_done.function) {
-			pf->cb_done.function(XMI_Client_getcontext(pf->client, pf->context), pf->cb_done.clientdata, (xmi_result_t)-rc);
+			pf->cb_done.function(ctx, pf->cb_done.clientdata, (xmi_result_t)-rc);
 		}
 		return true;
 	}

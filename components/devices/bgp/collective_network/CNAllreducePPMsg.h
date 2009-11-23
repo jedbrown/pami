@@ -71,7 +71,7 @@ public:
 	{
 	}
 
-	inline void complete();
+	inline void complete(xmi_context_t context);
 protected:
 	//friend class CNAllreducePPDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2>;
@@ -199,9 +199,9 @@ inline void CNAllreducePPMessage::__completeThread(CNAllreducePPThread *thr) {
 	}
 }
 
-void CNAllreducePPMessage::complete() {
+void CNAllreducePPMessage::complete(xmi_context_t context) {
 	((CNAllreducePPDevice &)_QS).__complete<CNAllreducePPMessage>(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")

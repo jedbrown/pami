@@ -41,19 +41,32 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
-inline void Device::__platform_generic_init(XMI::SysDep &sd,
-			XMI::Device::Generic::Device *device) {
+/// \brief Initialize sub-devices specific to this platform
+///
+/// Called within the C++ object XMI::Device::Generic::Device being
+/// initialized (this == Generic::Device *).
+///
+/// \param[in] first_global	True if first init call ever
+/// \param[in] first_client	True if first init call for current client
+/// \param[in] sd		XMI::SysDep object
+///
+inline void Device::__platform_generic_init(bool first_global, bool first_client,
+								XMI::SysDep &sd) {
+	if (first_global) {
+		// These sub-devices only execute one message at a time,
+		// and so there is only one instance of each, globally.
 #ifdef NOT_YET
-	        _g_mbarrier_dev.init(sd, this);
-	        _g_llscbarrier_dev.init(sd, this);
+	        _g_mbarrier_dev.init(sd, __generics, __contextId);
+	        _g_llscbarrier_dev.init(sd, __generics, __contextId);
 #endif
-	        _g_gibarrier_dev.init(sd, this);
+	        _g_gibarrier_dev.init(sd, __generics, __contextId);
 
-	        _g_cnallreduce_dev.init(sd, this);
-	        //_g_cnallreduceshort_dev.init(sd, this);
-	        _g_cnallreducepp_dev.init(sd, this);
-	        _g_cnallreduce2p_dev.init(sd, this);
-	        _g_cnbroadcast_dev.init(sd, this);
+	        _g_cnallreduce_dev.init(sd, __generics, __contextId);
+	        //_g_cnallreduceshort_dev.init(sd, __generics, __contextId);
+	        _g_cnallreducepp_dev.init(sd, __generics, __contextId);
+	        _g_cnallreduce2p_dev.init(sd, __generics, __contextId);
+	        _g_cnbroadcast_dev.init(sd, __generics, __contextId);
+	}
 }
 
 inline int Device::__platform_generic_advanceRecv(size_t context) {

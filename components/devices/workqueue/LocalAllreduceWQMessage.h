@@ -81,7 +81,7 @@ public:
           {
           }
 
-	inline void complete();
+	inline void complete(xmi_context_t context);
 
 protected:
 	//friend class LocalAllreduceWQDevice;
@@ -159,9 +159,9 @@ private:
 	unsigned _npeers;
 }; // class LocalAllreduceWQModel
 
-void LocalAllreduceWQMessage::complete() {
+void LocalAllreduceWQMessage::complete(xmi_context_t context) {
 	((LocalAllreduceWQDevice &)_QS).__complete<LocalAllreduceWQMessage>(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {

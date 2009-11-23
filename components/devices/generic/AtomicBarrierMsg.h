@@ -71,7 +71,7 @@ template <class T_Barrier>
 class AtomicBarrierMsg : public XMI::Device::Generic::GenericMessage {
 public:
 
-	inline void complete();
+	inline void complete(xmi_context_t context);
 	inline size_t objsize_impl() { return sizeof(AtomicBarrierMsg<T_Barrier>); }
 
 protected:
@@ -140,9 +140,9 @@ private:
 }; //-- XMI
 
 template <class T_Barrier>
-inline void XMI::Device::AtomicBarrierMsg<T_Barrier>::complete() {
+inline void XMI::Device::AtomicBarrierMsg<T_Barrier>::complete(xmi_context_t context) {
 	((AtomicBarrierDev &)_QS).__complete<AtomicBarrierMsg<T_Barrier> >(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 template <class T_Barrier>

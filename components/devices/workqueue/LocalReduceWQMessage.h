@@ -90,7 +90,7 @@ public:
             _shared.setConsumers (1, 0);
           }
 
-	inline void complete();
+	inline void complete(xmi_context_t context);
 
 private:
 	// friend class LocalReduceWQDevice;
@@ -176,9 +176,9 @@ private:
 	unsigned _npeers;
 }; // class LocalReduceWQModel
 
-void LocalReduceWQMessage::complete() {
+void LocalReduceWQMessage::complete(xmi_context_t context) {
 	((LocalReduceWQDevice &)_QS).__complete<LocalReduceWQMessage>(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 inline bool LocalReduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {

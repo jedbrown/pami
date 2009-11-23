@@ -242,14 +242,16 @@ private:
 	}
 
 	inline void __post_msg(XMI::Device::Generic::GenericMessage *msg) {
-		_generic->post(msg, &_threads[0], sizeof(_threads[0]), NUM_THREADS);
+		// doesn't matter which generic device "slice" we use to post...
+		// the routine selects actual slice(s) based on msg.
+		_generics->post(msg, &_threads[0], sizeof(_threads[0]), NUM_THREADS);
 	}
 
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
-		_generic = device;
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+		_generics = devices;
 		___init(sd);
 	}
 
@@ -268,7 +270,7 @@ public: // temporary
 			__start_msg<T_Message>(msg);
 			static_cast<T_Message*>(msg)->__advanceThread(&_threads[0]);
 			if (msg->getStatus() == XMI::Device::Done) {
-				msg->executeCallback();
+				msg->executeCallback(_generics[msg->getContextId()].getContext());
 				return;
 			}
 			__post_msg(msg);
@@ -289,7 +291,7 @@ public: // temporary
 	}
 
 protected:
-	XMI::Device::Generic::Device *_generic;
+	XMI::Device::Generic::Device *_generics;
 	T_Thread _threads[NUM_THREADS];
 }; // class SimpleSubDevice
 
@@ -324,12 +326,14 @@ private:
 	}
 
 	inline void __post_msg(T_Message *msg) {
-		_generic->post((XMI::Device::Generic::GenericMessage *)msg, &_threads[0], sizeof(_threads[0]), _nActiveThreads);
+		// doesn't matter which generic device "slice" we use to post...
+		// the routine selects actual slice(s) based on msg.
+		_generics->post((XMI::Device::Generic::GenericMessage *)msg, &_threads[0], sizeof(_threads[0]), _nActiveThreads);
 	}
 
 protected:
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
-		_generic = device;
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+		_generics = devices;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
 		___init(sd);
@@ -352,7 +356,7 @@ private:
 				msg->__advanceThread(&_threads[x]);
 			}
 			if (msg->getStatus() == XMI::Device::Done) {
-				msg->executeCallback();
+				msg->executeCallback(_generics[msg->getContextId()].getContext());
 				return;
 			}
 			__post_msg(msg);
@@ -383,7 +387,7 @@ private:
 	char _atomic_buf[ATOMIC_BUF_SIZE] __attribute__((__aligned__(16)));
 	T_Thread _threads[NUM_THREADS];
 	int _nActiveThreads;
-	XMI::Device::Generic::Device *_generic;
+	XMI::Device::Generic::Device *_generics;
 	GenericDeviceCounter _doneThreads;
 }; // class ThreadedSubDevice
 
@@ -427,14 +431,16 @@ private:
 			if (y >= NUM_THREADS) y = 0;
 		}
 		_nextChan = y;
-		_generic->post(msg, thr, sizeof(T_Thread), _nActiveThreads);
+		// doesn't matter which generic device "slice" we use to post...
+		// the routine selects actual slice(s) based on msg.
+		_generics->post(msg, thr, sizeof(T_Thread), _nActiveThreads);
 	}
 
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
-		_generic = device;
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+		_generics = devices;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
 		___init(sd);
@@ -481,7 +487,7 @@ public:
 private:
 	int _nActiveThreads;
 	int _nextChan;
-	XMI::Device::Generic::Device *_generic;
+	XMI::Device::Generic::Device *_generics;
 	GenericDeviceCounter _doneThreads;
 }; // class MultiThrdSubDevice
 
@@ -528,7 +534,7 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	virtual void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) = 0;
+	virtual void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -538,8 +544,8 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	inline void __init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
-		_generic = device;
+	inline void __init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+		_generics = devices;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
 		_init = 1;
@@ -547,7 +553,9 @@ public:
 	}
 
 	inline void post_msg(XMI::Device::Generic::GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
-		_generic->post(msg, t, l, n);
+		// doesn't matter which generic device "slice" we use to post...
+		// the routine selects actual slice(s) based on msg.
+		_generics->post(msg, t, l, n);
 	}
 
 	inline void __resetThreads() {
@@ -577,9 +585,11 @@ public:
 		return getCurrent();
 	}
 
+	inline XMI::Device::Generic::Device *getGeneric(size_t contextId) { return &_generics[contextId]; }
+
 private:
 	int _init;
-	XMI::Device::Generic::Device *_generic;
+	XMI::Device::Generic::Device *_generics;
 	GenericDeviceCounter _doneThreads;
 	unsigned _dispatch_id;
 }; // class CommonQueueSubDevice
@@ -629,13 +639,13 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *device) {
+	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		// do this now so we don't have to every time we post
 //		for (int x = 0; x < NUM_THREADS; ++x) {
 //			//_threads[x].setPolled(true);
 //		}
 		if (!_common->isInit()) {
-			_common->init(sd, device);
+			_common->init(sd, devices, contextId);
 		}
 	}
 
@@ -658,7 +668,7 @@ public:	// temporary?
 				static_cast<T_Message*>(msg)->__advanceThread(&_threads[x]);
 			}
 			if (msg->getStatus() == XMI::Device::Done) {
-				msg->executeCallback();
+				msg->executeCallback(_common->getGeneric(msg->getContextId())->getContext());
 				return;
 			}
 			__post_msg(msg);

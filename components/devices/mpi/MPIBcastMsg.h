@@ -79,7 +79,7 @@ public:
 
 	// This is a virtual function, but declaring inline here avoids linker
 	// complaints about multiple definitions.
-	inline void complete();
+	inline void complete(xmi_context_t context);
 
 protected:
 	//friend class MPIBcastDev; // Until C++ catches up with real programming languages:
@@ -204,9 +204,9 @@ public:
 private:
 }; // class MPIBcastMdl
 
-void MPIBcastMsg::complete() {
+void MPIBcastMsg::complete(xmi_context_t context) {
 	((MPIBcastDev &)_QS).__complete<MPIBcastMsg>(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 inline bool MPIBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {

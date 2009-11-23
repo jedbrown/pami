@@ -68,7 +68,7 @@ public:
 	/// \brief     Advance routine
 	/// \returns:  The MsgStatus, Initialized, Active, or Done
 	//////////////////////////////////////////////////////////////////
-	inline void complete();
+	inline void complete(xmi_context_t context);
 	inline size_t objsize_impl() { return sizeof(giMessage); }
 
 protected:
@@ -150,9 +150,9 @@ private:
 }; // namespace Device
 }; // namespace XMI
 
-inline void XMI::Device::BGP::giMessage::complete() {
+inline void XMI::Device::BGP::giMessage::complete(xmi_context_t context) {
 	((XMI::Device::BGP::giDevice &)_QS).__complete<giMessage>(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 inline bool XMI::Device::BGP::giModel::postMultisync_impl(xmi_multisync_t *msync) {

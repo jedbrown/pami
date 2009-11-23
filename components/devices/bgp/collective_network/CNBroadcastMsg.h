@@ -79,7 +79,7 @@ public:
 	{
 	}
 
-	inline void complete();
+	inline void complete(xmi_context_t context);
 protected:
 	//friend class CNBroadcastDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>;
@@ -222,9 +222,9 @@ inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
 	}
 }
 
-void CNBroadcastMessage::complete() {
+void CNBroadcastMessage::complete(xmi_context_t context) {
 	((CNBroadcastDevice &)_QS).__complete<CNBroadcastMessage>(this);
-	executeCallback();
+	executeCallback(context);
 }
 
 inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
