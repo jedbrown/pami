@@ -11,6 +11,12 @@
  * \brief Simple multicast tests on local topology.  
  */
 
+#ifdef DISABLE_COLLDEVICE
+  #warning generic device disabled
+int main(int argc, char **argv) {
+return 0;
+}
+#else
 #include "test/multisend/Buffer.h"
 
 #include "Global.h"
@@ -132,6 +138,7 @@ int main(int argc, char ** argv)
 
   options.hint.multicast.local = 1;
   options.hint.multicast.one_sided = 1;
+  options.hint.multicast.collective = 1;
   options.hint.multicast.active_message = 1;
 
   status = XMI_Dispatch_set_new(context,
@@ -306,3 +313,4 @@ int main(int argc, char ** argv)
   DBG_FPRINTF((stderr, "return 0;\n"));
   return 0;
 }  
+#endif

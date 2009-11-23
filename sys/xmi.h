@@ -2764,6 +2764,7 @@ extern "C"
 
     uint32_t active_message    : 1; /**< Active message, must specify dispatch function          */
 
+    uint32_t collective        : 1; /**< Bogus hint to select collective device                  */
     uint32_t ring_wq           : 1; /**< Bogus hint to select WQRingBcastMdl                     */
 
     uint32_t reserved          :24; /**< Unused at this time                                     */

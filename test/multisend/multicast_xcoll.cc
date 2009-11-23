@@ -7,9 +7,15 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast_local.cc
- * \brief Simple multicast tests on local topology.  
+ * \file test/multisend/multicast.cc
+ * \brief Simple multicast tests.  
  */
+#ifdef DISABLE_COLLDEVICE
+  #warning generic device disabled
+int main(int argc, char **argv) {
+return 0;
+}
+#else
 
 #include "test/multisend/Buffer.h"
 
@@ -130,8 +136,9 @@ int main(int argc, char ** argv)
 
   options.config = NULL;
 
-  options.hint.multicast.local = 1;
+  options.hint.multicast.global = 1;
   options.hint.multicast.one_sided = 1;
+  options.hint.multicast.collective = 1;
   options.hint.multicast.active_message = 1;
 
   status = XMI_Dispatch_set_new(context,
@@ -144,17 +151,17 @@ int main(int argc, char ** argv)
   __global.topology_global.convertTopology(XMI_LIST_TOPOLOGY);
   __global.topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
-  // local topology variables
-  size_t  lRoot    = __global.topology_local.index2Rank(0);
-  size_t *lRankList; __global.topology_local.rankList(&lRankList);
-  size_t  lSize   =  __global.topology_local.size();
+  // global topology variables
+  size_t  gRoot    = __global.topology_global.index2Rank(0);
+  size_t *gRankList; __global.topology_global.rankList(&gRankList);
+  size_t  gSize    = __global.topology_global.size();
 
   XMI::Topology src_participants;
   XMI::Topology dst_participants;
 
   xmi_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
-  if(lRoot == task_id)
+  if(gRoot == task_id)
   {
 
     mcast.dispatch = dispatch;
@@ -177,15 +184,15 @@ int main(int argc, char ** argv)
   }
 
 // ------------------------------------------------------------------------
-// simple local mcast to all except root
+// simple mcast to all except root
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
     sleep(5); // instead of syncing
 
-    new (&src_participants) XMI::Topology(lRoot); // local root
-    new (&dst_participants) XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
-    if(lRoot == task_id)
+    new (&src_participants) XMI::Topology(gRoot); // global root
+    new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
+    if(gRoot == task_id)
     {
       _buffer.reset(true); // isRoot = true
 
@@ -200,7 +207,7 @@ int main(int argc, char ** argv)
     bytesConsumed = 0,
     bytesProduced = 0;
 
-    if(lRoot == task_id)
+    if(gRoot == task_id)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced,
@@ -229,18 +236,18 @@ int main(int argc, char ** argv)
   }
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
-// simple local mcast to all including root
+// simple mcast to all including root
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
     sleep(5); // instead of syncing
 
-    new (&src_participants) XMI::Topology(lRoot); // local root
-    new (&dst_participants) XMI::Topology(lRankList, lSize); // include root in dst_participants
-    if(lRoot == task_id)
+    new (&src_participants) XMI::Topology(gRoot); // global root
+    new (&dst_participants) XMI::Topology(gRankList, gSize); // include root in dst_participants
+    if(gRoot == task_id)
     {
       _buffer.reset(true); // isRoot = true
-      // need a non-null dst pwq since I'm now including myself as a dst
+      // Need a non-null dst pwq since I'm now including myself as a dst
       mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
 
       status = XMI_Multicast(&mcast);
@@ -255,7 +262,7 @@ int main(int argc, char ** argv)
     bytesConsumed = 0,
     bytesProduced = 0;
 
-    if(lRoot == task_id)
+    if(gRoot == task_id)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced,
@@ -305,4 +312,5 @@ int main(int argc, char ** argv)
 
   DBG_FPRINTF((stderr, "return 0;\n"));
   return 0;
-}  
+}
+#endif

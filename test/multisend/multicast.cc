@@ -81,7 +81,7 @@ int main(int argc, char ** argv)
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
     return 1;
   }
-
+  DBG_FPRINTF((stderr,"Client %p\n",client));
   int n = 1; 
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
@@ -113,7 +113,7 @@ int main(int argc, char ** argv)
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
 // END standard setup
-// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------ 
   _cb_done.function   = &_done_cb;
   _cb_done.clientdata = &_doneCountdown;
 
@@ -124,6 +124,7 @@ int main(int argc, char ** argv)
   fn.multicast = &dispatch_multicast_fn;
 
   xmi_dispatch_hint_t        options;
+  memset(&options, 0x00, sizeof(options));
 
   options.type = XMI_MULTICAST;
 
@@ -152,6 +153,7 @@ int main(int argc, char ** argv)
   XMI::Topology dst_participants;
 
   xmi_multicast_t mcast;
+  memset(&mcast, 0x00, sizeof(mcast));
   if(gRoot == task_id)
   {
 
@@ -166,8 +168,8 @@ int main(int argc, char ** argv)
     mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
     mcast.dst = (xmi_pipeworkqueue_t *)NULL;
 
-	mcast.client = client;
-	mcast.context = 0;
+    mcast.client = client;
+    mcast.context = 0;
     mcast.roles = -1;
     mcast.bytes = TEST_BUF_SIZE;
 
@@ -186,7 +188,6 @@ int main(int argc, char ** argv)
     if(gRoot == task_id)
     {
       _buffer.reset(true); // isRoot = true
-
       status = XMI_Multicast(&mcast);
     }
 
@@ -225,6 +226,7 @@ int main(int argc, char ** argv)
         fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
     }
   }
+
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
 // simple mcast to all including root
@@ -238,7 +240,7 @@ int main(int argc, char ** argv)
     if(gRoot == task_id)
     {
       _buffer.reset(true); // isRoot = true
-      // need a non-null dst pwq since I'm now including myself as a dst
+      // Need a non-null dst pwq since I'm now including myself as a dst
       mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
 
       status = XMI_Multicast(&mcast);

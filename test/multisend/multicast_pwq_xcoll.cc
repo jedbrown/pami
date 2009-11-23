@@ -10,6 +10,12 @@
  * \file test/multisend/multicast_pwq.cc 
  * \brief Simple multicast test using pwq's to chain operations.  
  */
+#ifdef DISABLE_COLLDEVICE
+  #warning generic device disabled
+int main(int argc, char **argv) {
+return 0;
+}
+#else
 
 #include "test/multisend/Buffer.h"
 
@@ -140,6 +146,7 @@ int main(int argc, char ** argv)
 
   options.hint.multicast.global = 1;
   options.hint.multicast.one_sided = 1;
+  options.hint.multicast.collective = 1;
   options.hint.multicast.active_message = 1;
 
   status = XMI_Dispatch_set_new(context,
@@ -302,8 +309,6 @@ int main(int argc, char ** argv)
       mcast.src = (xmi_pipeworkqueue_t *)srcPwq;
       mcast.dst = (xmi_pipeworkqueue_t *)NULL;
 
-#warning shouldnt need this advance but MPIBcastMsg only advances one msg at a time so start receiving first...
-      status = XMI_Context_advance (context, 100);
       status = XMI_Multicast(&mcast);
     }
     else _buffer1.reset(); // non-root reset
@@ -427,6 +432,7 @@ int main(int argc, char ** argv)
 
     options.hint.multicast.spanning = 1; 
     options.hint.multicast.one_sided = 1;
+    options.hint.multicast.collective = 1;
     options.hint.multicast.active_message = 1;
 
     size_t                     spanning_dispatch = dispatch+1;
@@ -438,6 +444,7 @@ int main(int argc, char ** argv)
 
     options.hint.multicast.local = 1;
     options.hint.multicast.one_sided = 1;
+    options.hint.multicast.collective = 1;
     options.hint.multicast.active_message = 1;
 
     size_t                     local_dispatch = spanning_dispatch+1;
@@ -583,3 +590,4 @@ int main(int argc, char ** argv)
   DBG_FPRINTF((stderr, "return 0;\n"));
   return 0;
 }
+#endif

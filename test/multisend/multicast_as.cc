@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast_local.cc
- * \brief Simple multicast tests on local topology.  
+ * \file test/multisend/multicast_as.cc
+ * \brief Simple all-sided multicast tests.  
  */
 
 #include "test/multisend/Buffer.h"
@@ -22,49 +22,15 @@
 
 static XMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
 
-static   void       *_cookie=(void*)"HI COOKIE";
 static int           _doneCountdown;
 xmi_callback_t       _cb_done;
 const xmi_quad_t     _msginfo = {0,1,2,3};
-
-void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
-                           unsigned              msgcount,
-                           unsigned              connection_id,
-                           size_t                root,
-                           size_t                sndlen,
-                           void                 *clientdata,
-                           size_t               *rcvlen,
-                           xmi_pipeworkqueue_t **rcvpwq,
-                           xmi_callback_t       *cb_done)
-{
-  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %d, sndlen %d, cookie %s\n",
-               __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
-  XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
-  XMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zd\n",sndlen);
-  XMI_assertf(msgcount == 1,"msgcount %d",msgcount);
-  XMI_assertf(msginfo->w0 == _msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
-  XMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
-  XMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
-  XMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
-
-  XMI::PipeWorkQueue * pwq;
-  pwq = _buffer.dstPwq();
-  DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %d, %d done out of %d\n",__FILE__,__PRETTY_FUNCTION__,
-               pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
-
-  *rcvlen = sndlen;
-
-  *rcvpwq = (xmi_pipeworkqueue_t*) pwq;
-
-  *cb_done = _cb_done;
-
-}
 
 void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err) 
 {
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
-  DBG_FPRINTF((stderr, "%s:%s done %d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown));
+  DBG_FPRINTF((stderr, "%s:%s done %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
   --*doneCountdown;
 }
 
@@ -121,7 +87,7 @@ int main(int argc, char ** argv)
 
   xmi_dispatch_callback_fn   fn;
 
-  fn.multicast = &dispatch_multicast_fn;
+  fn.multicast = NULL; // all-sided, no recv callback
 
   xmi_dispatch_hint_t        options;
   memset(&options, 0x00, sizeof(options));
@@ -130,77 +96,74 @@ int main(int argc, char ** argv)
 
   options.config = NULL;
 
-  options.hint.multicast.local = 1;
-  options.hint.multicast.one_sided = 1;
-  options.hint.multicast.active_message = 1;
+  options.hint.multicast.global = 1;
+  options.hint.multicast.all_sided = 1;
+  options.hint.multicast.active_message = 0;
 
   status = XMI_Dispatch_set_new(context,
                                 dispatch,
                                 fn,
-                                _cookie,
+                                NULL,
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
   __global.topology_global.convertTopology(XMI_LIST_TOPOLOGY);
   __global.topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
-  // local topology variables
-  size_t  lRoot    = __global.topology_local.index2Rank(0);
-  size_t *lRankList; __global.topology_local.rankList(&lRankList);
-  size_t  lSize   =  __global.topology_local.size();
+  // global topology variables
+  size_t  gRoot    = __global.topology_global.index2Rank(0);
+  size_t *gRankList; __global.topology_global.rankList(&gRankList);
+  size_t  gSize    = __global.topology_global.size();
 
   XMI::Topology src_participants;
   XMI::Topology dst_participants;
 
   xmi_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
-  if(lRoot == task_id)
-  {
 
-    mcast.dispatch = dispatch;
-    mcast.hints = options.hint.multicast; //?
-    mcast.connection_id = task_id; //0xB;
-    mcast.msginfo = &_msginfo;
-    mcast.msgcount = 1;
-    mcast.src_participants = (xmi_topology_t *)&src_participants;
-    mcast.dst_participants = (xmi_topology_t *)&dst_participants;
+  mcast.dispatch = dispatch;
+  mcast.hints = options.hint.multicast; //?
+  mcast.connection_id = 0xB;
+  mcast.msginfo = &_msginfo;
+  mcast.msgcount = 1;
+  mcast.src_participants = (xmi_topology_t *)&src_participants;
+  mcast.dst_participants = (xmi_topology_t *)&dst_participants;
 
-    mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
-    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+  mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
+  mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
 
-	mcast.client = client;
-	mcast.context = 0;
-    mcast.roles = -1;
-    mcast.bytes = TEST_BUF_SIZE;
+  mcast.client = client;
+  mcast.context = 0;
+  mcast.roles = -1;
+  mcast.bytes = TEST_BUF_SIZE;
 
-    mcast.cb_done = _cb_done;
-  }
+  mcast.cb_done = _cb_done;
 
 // ------------------------------------------------------------------------
-// simple local mcast to all except root
+// simple mcast to all except root
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
     sleep(5); // instead of syncing
 
-    new (&src_participants) XMI::Topology(lRoot); // local root
-    new (&dst_participants) XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
-    if(lRoot == task_id)
-    {
+    new (&src_participants) XMI::Topology(gRoot); // global root
+    new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
+    if(gRoot == task_id)
       _buffer.reset(true); // isRoot = true
+    else _buffer.reset(false);  // isRoot = false
 
-      status = XMI_Multicast(&mcast);
-    }
+    status = XMI_Multicast(&mcast);
 
     while(_doneCountdown)
     {
       status = XMI_Context_advance (context, 10);
     }
+
     size_t 
     bytesConsumed = 0,
     bytesProduced = 0;
 
-    if(lRoot == task_id)
+    if(gRoot == task_id)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced,
@@ -229,22 +192,23 @@ int main(int argc, char ** argv)
   }
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
-// simple local mcast to all including root
+// simple mcast to all including root
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
     sleep(5); // instead of syncing
 
-    new (&src_participants) XMI::Topology(lRoot); // local root
-    new (&dst_participants) XMI::Topology(lRankList, lSize); // include root in dst_participants
-    if(lRoot == task_id)
+    new (&src_participants) XMI::Topology(gRoot); // global root
+    new (&dst_participants) XMI::Topology(gRankList, gSize); // include root in dst_participants
+    if(gRoot == task_id)
     {
       _buffer.reset(true); // isRoot = true
       // need a non-null dst pwq since I'm now including myself as a dst
       mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
-
-      status = XMI_Multicast(&mcast);
     }
+    else _buffer.reset(false);  // isRoot = false
+
+    status = XMI_Multicast(&mcast);
 
     while(_doneCountdown)
     {
@@ -255,7 +219,7 @@ int main(int argc, char ** argv)
     bytesConsumed = 0,
     bytesProduced = 0;
 
-    if(lRoot == task_id)
+    if(gRoot == task_id)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced,
@@ -305,4 +269,4 @@ int main(int argc, char ** argv)
 
   DBG_FPRINTF((stderr, "return 0;\n"));
   return 0;
-}  
+}
