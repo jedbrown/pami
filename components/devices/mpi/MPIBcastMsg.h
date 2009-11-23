@@ -74,23 +74,41 @@ namespace XMI
       _idx(0),
       _currBytes(0),
       _currBuf(NULL),
-      _req(MPI_REQUEST_NULL)
+      _req(MPI_REQUEST_NULL),
+      _pendingStatus(XMI::Device::Initialized)
       {
         XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
         XMI_assert(src_topo != NULL);
         _root = src_topo->index2Rank(0); // assert size(0 == 1...
-        TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg client %p, context %zd, root %zd\n",(unsigned)this,
-                      mcast->client, mcast->context, _root));
+        TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg client %p, context %zd, root %zd, iwq %p, rwq %p, bytes %zd\n",(unsigned)this,
+                      mcast->client, mcast->context, _root, _iwq, _rwq, _bytes));
         bool iamroot = (_root == __global.mapping.task());
         if(iamroot)
         {
           //_rwq = NULL;// \todo Why?  Can't a source (root) also be a destination?
+          
+          // no actual data to send, indicate we're done with a pending status (for advance)
+          if((_iwq == NULL) && (_bytes == 0))
+          {
+            TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg root has no data\n",(unsigned)this));
+            // We have to use a local pending status because the sub device is too smart for us and will
+            // reset the _status to initialized after __setThreads
+            _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
+          }
         }
         else
         {
+          // no actual data to send, indicate we're done with a pending status (for advance)
+          if((_rwq == NULL) && (_bytes == 0))
+          {
+            TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg dst expects no data\n",(unsigned)this));
+            // We have to use a local pending status because the sub device is too smart for us and will
+            // reset the _status to initialized after __setThreads
+            _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
+          }
           _iwq = NULL;
         }
-        XMI_assertf(_rwq || _iwq, "MPIBcastMsg has neither input or output data\n");
+        //XMI_assertf(_rwq || _iwq, "MPIBcastMsg has neither input or output data\n");
       }
 
       // This is a virtual function, but declaring inline here avoids linker
@@ -123,6 +141,15 @@ namespace XMI
         if(getStatus() == XMI::Device::Done)
         {
           fprintf(stderr, "Warning: message/thread advanced after Done\n");
+          return XMI_SUCCESS;
+        }
+        if(_pendingStatus == XMI::Device::Done)
+        {
+          // This happens when there is no data to send/receive and ctor set a "pending status" to done,
+          //  so on the first advance, setDone and return.
+          thr->setDone(true); 
+          setStatus(XMI::Device::Done);
+          TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() done - no data\n",(unsigned)this));
           return XMI_SUCCESS;
         }
         int flag = 0;
@@ -241,6 +268,7 @@ namespace XMI
       size_t _currBytes;
       char *_currBuf;
       MPI_Request _req;
+      MessageStatus _pendingStatus;
     }; //-- MPIBcastMsg
 
     class MPIBcastMdl : public XMI::Device::Interface::MulticastModel<MPIBcastMdl>

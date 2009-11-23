@@ -47,7 +47,7 @@ int main(int argc, char ** argv)
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
     return 1;
   }
-
+  DBG_FPRINTF((stderr,"Client %p\n",client));
   int n = 1; 
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
@@ -191,6 +191,7 @@ int main(int argc, char ** argv)
     }
   }
 // ------------------------------------------------------------------------
+
 // ------------------------------------------------------------------------
 // simple mcast to all including root
 // ------------------------------------------------------------------------
@@ -244,6 +245,34 @@ int main(int argc, char ** argv)
       }
       else
         fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+    }
+  }
+// ------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------
+// simple mcast to all except root, no ndata
+// (Note all-sided, no active message doesn't support metadata so this 
+//  really does nothing)
+// ------------------------------------------------------------------------
+  {
+    _doneCountdown = 1;
+    sleep(5); // instead of syncing
+
+    new (&src_participants) XMI::Topology(gRoot); // global root
+    new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
+
+    mcast.connection_id = 1; 
+
+    mcast.src = (xmi_pipeworkqueue_t *)NULL;
+    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+
+    mcast.bytes = 0;
+
+    status = XMI_Multicast(&mcast);
+
+    while(_doneCountdown)
+    {
+      status = XMI_Context_advance (context, 10);
     }
   }
 // ------------------------------------------------------------------------

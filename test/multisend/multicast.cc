@@ -1,5 +1,5 @@
 /* begin_generated_IBM_copyright_prolog                             */
-/*                                                                  */
+/*                                                                  */  
 /* ---------------------------------------------------------------- */
 /* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
@@ -47,14 +47,25 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
   XMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
   XMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
 
-  XMI::PipeWorkQueue * pwq;
-  pwq = _buffer.dstPwq();
-  DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %d, %d done out of %d\n",__FILE__,__PRETTY_FUNCTION__,
-               pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
-
-  *rcvlen = sndlen;
-
-  *rcvpwq = (xmi_pipeworkqueue_t*) pwq;
+  if(connection_id == 1) // no data being sent
+  {
+    *rcvlen = 0;
+    *rcvpwq = (xmi_pipeworkqueue_t*) NULL;
+    if(sndlen == 0)
+      fprintf(stderr, "PASS: msgdata received with no data\n");
+    else
+      fprintf(stderr, "FAIL: no data expected\n");
+  }
+  else
+  {
+    XMI::PipeWorkQueue * pwq;
+    pwq = _buffer.dstPwq();
+    DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %d, %d done out of %d\n",__FILE__,__PRETTY_FUNCTION__,
+                 pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
+  
+    *rcvlen = sndlen;
+    *rcvpwq = (xmi_pipeworkqueue_t*) pwq;
+  }
 
   *cb_done = _cb_done;
 
@@ -64,7 +75,7 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 {
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
-  DBG_FPRINTF((stderr, "%s:%s done %d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown));
+  DBG_FPRINTF((stderr, "%s:%s done %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
   --*doneCountdown;
 }
 
@@ -73,7 +84,7 @@ int main(int argc, char ** argv)
   unsigned x;
   xmi_client_t client;
   xmi_context_t context;
-  xmi_result_t status = XMI_ERROR;
+  xmi_result_t status = XMI_ERROR; 
 
   status = XMI_Client_initialize("multicast test", &client);
   if(status != XMI_SUCCESS)
@@ -226,8 +237,8 @@ int main(int argc, char ** argv)
         fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
     }
   }
-
 // ------------------------------------------------------------------------
+
 // ------------------------------------------------------------------------
 // simple mcast to all including root
 // ------------------------------------------------------------------------
@@ -280,6 +291,35 @@ int main(int argc, char ** argv)
       }
       else
         fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+    }
+  }
+// ------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------
+// simple mcast to all except root, metadata only
+// ------------------------------------------------------------------------
+  {
+    _doneCountdown = 1;
+    sleep(5); // instead of syncing
+
+    new (&src_participants) XMI::Topology(gRoot); // global root
+    new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
+
+    mcast.connection_id = 1; // arbitrary - dispatch knows this means no data 
+
+    mcast.src = (xmi_pipeworkqueue_t *)NULL;
+    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+
+    mcast.bytes = 0;
+
+    if(gRoot == task_id)
+    {
+      status = XMI_Multicast(&mcast);
+    }
+
+    while(_doneCountdown)
+    {
+      status = XMI_Context_advance (context, 10);
     }
   }
 // ------------------------------------------------------------------------
