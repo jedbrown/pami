@@ -371,7 +371,7 @@ namespace XMI
         if (_dispatch[id] == NULL)
           {
             // Allocate memory for the protocol object.
-            _dispatch[id] = (void *) _request.allocateObject ();
+            _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
             //new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, __global.mapping.task(), _context, result);
             new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
@@ -447,6 +447,7 @@ namespace XMI
       MemoryAllocator<1024, 16> _request;
       ContextLock _lock;
       MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+      ProtocolAllocator _protocolAllocator;
   }; // end XMI::Context
 }; // end namespace XMI
 

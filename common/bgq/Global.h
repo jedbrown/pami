@@ -379,6 +379,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
             //  }
           }
 
+	free(narray); narray=NULL;
         cacheAnchorsPtr->maxRank = max_rank;
         cacheAnchorsPtr->minRank = min_rank;
 	memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &_ll, sizeof(_ll));
