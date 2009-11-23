@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include "sys/xmi.h"
-
+ 
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "test/internals/multisend/multicast.h"
 
@@ -74,7 +74,7 @@ int main(int argc, char ** argv) {
 	__global.topology_global.subtractTopology(&otopo, &itopo);
 
 	xmi_multicast_t mcast;
-
+	memset(&mcast, 0x00, sizeof(mcast));
 	// simple allreduce on the local ranks...
 	mcast.client = client;
 	mcast.context = 0;
@@ -82,6 +82,7 @@ int main(int argc, char ** argv) {
 	mcast.src_participants = (xmi_topology_t *)&itopo;
 	mcast.dst_participants = (xmi_topology_t *)&otopo;
 	mcast.bytes = TEST_BUF_SIZE;
+    mcast.connection_id = 5;  
 
 	const char *test = GLOBAL_BCAST_NAME;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);

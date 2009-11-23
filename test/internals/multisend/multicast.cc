@@ -77,6 +77,7 @@ int main(int argc, char ** argv) {
 	__global.topology_local.subtractTopology(&otopo, &itopo);
 
 	xmi_multicast_t mcast;
+    memset(&mcast, 0x00, sizeof(mcast));
 
 	// simple allreduce on the local ranks...
 	mcast.client = client;

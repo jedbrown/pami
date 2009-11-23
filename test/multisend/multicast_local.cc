@@ -124,6 +124,7 @@ int main(int argc, char ** argv)
   fn.multicast = &dispatch_multicast_fn;
 
   xmi_dispatch_hint_t        options;
+  memset(&options, 0x00, sizeof(options));
 
   options.type = XMI_MULTICAST;
 
@@ -152,6 +153,7 @@ int main(int argc, char ** argv)
   XMI::Topology dst_participants;
 
   xmi_multicast_t mcast;
+  memset(&mcast, 0x00, sizeof(mcast));
   if(lRoot == task_id)
   {
 

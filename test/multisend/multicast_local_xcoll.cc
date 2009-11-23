@@ -7,10 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast_local_as.cc
- * \brief Simple all-sided multicast tests on local topology.
+ * \file test/multisend/multicast_local.cc
+ * \brief Simple multicast tests on local topology.  
  */
 
+#ifdef DISABLE_COLLDEVICE
+  #warning generic device disabled
+int main(int argc, char **argv) {
+return 0;
+}
+#else
 #include "test/multisend/Buffer.h"
 
 #include "Global.h"
@@ -22,15 +28,49 @@
 
 static XMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
 
+static   void       *_cookie=(void*)"HI COOKIE";
 static int           _doneCountdown;
 xmi_callback_t       _cb_done;
 const xmi_quad_t     _msginfo = {0,1,2,3};
 
-void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
+void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
+                           unsigned              msgcount,
+                           unsigned              connection_id,
+                           size_t                root,
+                           size_t                sndlen,
+                           void                 *clientdata,
+                           size_t               *rcvlen,
+                           xmi_pipeworkqueue_t **rcvpwq,
+                           xmi_callback_t       *cb_done)
+{
+  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %d, sndlen %d, cookie %s\n",
+               __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
+  XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
+  XMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zd\n",sndlen);
+  XMI_assertf(msgcount == 1,"msgcount %d",msgcount);
+  XMI_assertf(msginfo->w0 == _msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
+  XMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
+  XMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
+  XMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
+
+  XMI::PipeWorkQueue * pwq;
+  pwq = _buffer.dstPwq();
+  DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %d, %d done out of %d\n",__FILE__,__PRETTY_FUNCTION__,
+               pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
+
+  *rcvlen = sndlen;
+
+  *rcvpwq = (xmi_pipeworkqueue_t*) pwq;
+
+  *cb_done = _cb_done;
+
+}
+
+void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err) 
 {
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
-  DBG_FPRINTF((stderr, "%s:%s done %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
+  DBG_FPRINTF((stderr, "%s:%s done %d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown));
   --*doneCountdown;
 }
 
@@ -48,7 +88,7 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  int n = 1;
+  int n = 1; 
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
   {
@@ -59,23 +99,23 @@ int main(int argc, char ** argv)
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  status = XMI_Configuration_query(client, &configuration);
+  status = XMI_Configuration_query(context, &configuration);
   if(status != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
   }
-  size_t task_id = configuration.value.intval;
+  size_t task_id = configuration.value.intval;   
   //DBG_FPRINTF((stderr, "My task id = %zd\n", task_id);
 
   configuration.name = XMI_NUM_TASKS;
-  status = XMI_Configuration_query(client, &configuration);
+  status = XMI_Configuration_query(context, &configuration);
   if(status != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
   }
-  size_t num_tasks = configuration.value.intval;
+  size_t num_tasks = configuration.value.intval;    
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
 // END standard setup
@@ -83,11 +123,11 @@ int main(int argc, char ** argv)
   _cb_done.function   = &_done_cb;
   _cb_done.clientdata = &_doneCountdown;
 
-  size_t ldispatch = 2, rdispatch=3;
+  size_t                     dispatch = 2;
 
   xmi_dispatch_callback_fn   fn;
 
-  fn.multicast = NULL; // all-sided, no recv callback
+  fn.multicast = &dispatch_multicast_fn;
 
   xmi_dispatch_hint_t        options;
   memset(&options, 0x00, sizeof(options));
@@ -96,25 +136,15 @@ int main(int argc, char ** argv)
 
   options.config = NULL;
 
-  options.hint.multicast.local     = 1;
-  options.hint.multicast.all_sided = 1;
-  options.hint.multicast.active_message = 0;
-  // register local bcast 
+  options.hint.multicast.local = 1;
+  options.hint.multicast.one_sided = 1;
+  options.hint.multicast.collective = 1;
+  options.hint.multicast.active_message = 1;
+
   status = XMI_Dispatch_set_new(context,
-                                ldispatch,
+                                dispatch,
                                 fn,
-                                NULL,
-                                options);
-
-
-
-  options.hint.multicast.ring_wq   = 1;
-
-  // register local ring bcast
-  status = XMI_Dispatch_set_new(context,
-                                rdispatch,
-                                fn,
-                                NULL,
+                                _cookie,
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
@@ -131,86 +161,28 @@ int main(int argc, char ** argv)
 
   xmi_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
-
-  mcast.connection_id = 0xB;
-  mcast.msginfo = &_msginfo;
-  mcast.msgcount = 1;
-  mcast.src_participants = (xmi_topology_t *)&src_participants;
-  mcast.dst_participants = (xmi_topology_t *)&dst_participants;
-
-  mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
-  mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
-
-  mcast.client = client;
-  mcast.context = 0;
-  mcast.roles = -1;
-  mcast.bytes = TEST_BUF_SIZE;
-
-  mcast.cb_done = _cb_done;
-
-// ------------------------------------------------------------------------
-// simple ring local mcast to all except root
-// ------------------------------------------------------------------------
+  if(lRoot == task_id)
   {
-    _doneCountdown = 1;
-    sleep(5); // instead of syncing
 
-    new (&src_participants) XMI::Topology(lRoot); // local root
-    new (&dst_participants) XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
+    mcast.dispatch = dispatch;
+    mcast.hints = options.hint.multicast; //?
+    mcast.connection_id = task_id; //0xB;
+    mcast.msginfo = &_msginfo;
+    mcast.msgcount = 1;
+    mcast.src_participants = (xmi_topology_t *)&src_participants;
+    mcast.dst_participants = (xmi_topology_t *)&dst_participants;
 
-    DBG_FPRINTF((stderr,"lRoot %d, lSize %d\n",lRoot, lSize));
-    for(size_t j=0;j<lSize;++j)
-    {
-      DBG_FPRINTF((stderr,"lRankList[%d] = %d\n",j, lRankList[j]));
-    }
+    mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
+    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
 
-    if(lRoot == task_id)
-      _buffer.reset(true); // isRoot = true
-    else _buffer.reset(false);  // isRoot = false
+	mcast.client = client;
+	mcast.context = 0;
+    mcast.roles = -1;
+    mcast.bytes = TEST_BUF_SIZE;
 
-
-    mcast.dispatch = rdispatch;
-    mcast.hints = options.hint.multicast;
-    mcast.hints.ring_wq = 1;
-
-    status = XMI_Multicast(&mcast);
-
-    while(_doneCountdown)
-    {
-      status = XMI_Context_advance (context, 10);
-    }
-
-    size_t
-    bytesConsumed = 0,
-    bytesProduced = 0;
-
-    if(lRoot == task_id)
-    {
-      _buffer.validate(bytesConsumed,
-                       bytesProduced,
-                       true,   // isRoot = true
-                       false); // isDest = false
-      if((bytesConsumed != TEST_BUF_SIZE) ||
-         (bytesProduced != 0))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-    }
-    else
-    {
-      _buffer.validate(bytesConsumed,
-                       bytesProduced);
-      if((bytesConsumed != 0) ||
-         (bytesProduced != TEST_BUF_SIZE))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-    }
+    mcast.cb_done = _cb_done;
   }
+
 // ------------------------------------------------------------------------
 // simple local mcast to all except root
 // ------------------------------------------------------------------------
@@ -220,30 +192,18 @@ int main(int argc, char ** argv)
 
     new (&src_participants) XMI::Topology(lRoot); // local root
     new (&dst_participants) XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
-
-    DBG_FPRINTF((stderr,"lRoot %d, lSize %d\n",lRoot, lSize));
-    for(size_t j=0;j<lSize;++j)
-    {
-      DBG_FPRINTF((stderr,"lRankList[%d] = %d\n",j, lRankList[j]));
-    }
-
     if(lRoot == task_id)
+    {
       _buffer.reset(true); // isRoot = true
-    else _buffer.reset(false);  // isRoot = false
 
-
-    mcast.dispatch = ldispatch;
-    mcast.hints = options.hint.multicast;
-    mcast.hints.ring_wq = 0;
-
-    status = XMI_Multicast(&mcast);
+      status = XMI_Multicast(&mcast);
+    }
 
     while(_doneCountdown)
     {
       status = XMI_Context_advance (context, 10);
     }
-
-    size_t
+    size_t 
     bytesConsumed = 0,
     bytesProduced = 0;
 
@@ -253,7 +213,7 @@ int main(int argc, char ** argv)
                        bytesProduced,
                        true,   // isRoot = true
                        false); // isDest = false
-      if((bytesConsumed != TEST_BUF_SIZE) ||
+      if((bytesConsumed != TEST_BUF_SIZE) || 
          (bytesProduced != 0))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -265,7 +225,7 @@ int main(int argc, char ** argv)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced);
-      if((bytesConsumed != 0) ||
+      if((bytesConsumed != 0) || 
          (bytesProduced != TEST_BUF_SIZE))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -274,7 +234,6 @@ int main(int argc, char ** argv)
         fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
     }
   }
-#if 0
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
 // simple local mcast to all including root
@@ -299,7 +258,7 @@ int main(int argc, char ** argv)
       status = XMI_Context_advance (context, 10);
     }
 
-    size_t
+    size_t 
     bytesConsumed = 0,
     bytesProduced = 0;
 
@@ -309,7 +268,7 @@ int main(int argc, char ** argv)
                        bytesProduced,
                        true,   // isRoot = true
                        true);  // isDest = true
-      if((bytesConsumed != TEST_BUF_SIZE) ||
+      if((bytesConsumed != TEST_BUF_SIZE) || 
          (bytesProduced != TEST_BUF_SIZE))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -321,7 +280,7 @@ int main(int argc, char ** argv)
     {
       _buffer.validate(bytesConsumed,
                        bytesProduced);
-      if((bytesConsumed != 0) ||
+      if((bytesConsumed != 0) || 
          (bytesProduced != TEST_BUF_SIZE))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -333,7 +292,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 
   sleep(5);
-#endif
+
 // ------------------------------------------------------------------------
   DBG_FPRINTF((stderr, "XMI_Context_destroy(context);\n"));
   status = XMI_Context_destroy(context);
@@ -353,4 +312,5 @@ int main(int argc, char ** argv)
 
   DBG_FPRINTF((stderr, "return 0;\n"));
   return 0;
-}
+}  
+#endif

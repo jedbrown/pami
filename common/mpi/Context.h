@@ -51,6 +51,8 @@
 #warning Experimental non-generic collective mpi device is disabled
 #endif //ifndef DISABLE_COLLDEVICE
 
+#include "components/devices/mpi/mpimulticastprotocol.h"
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
@@ -75,6 +77,8 @@ namespace XMI
     typedef XMI::Protocol::MPI::OneSidedMulticastProtocol<MPICollDevice, MPIMcastHeader > MPIOneSidedMulticastProtocol;
 // /\/\/\ Experimental non-generic "collective" mpi device and protocol
 #endif //ifndef DISABLE_COLLDEVICE
+
+    typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2pDispatchMulticastProtocol;
 
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Fifo::FifoPacket <16, 240> ShmemPacket;
@@ -175,14 +179,15 @@ namespace XMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
-                events += _mpi.advance_impl();
-	        events += _generic.advance();
-                events += _shmem.advance_impl();
+
+        events += _mpi.advance_impl();
+        events += _generic.advance();
+        events += _shmem.advance_impl();
 
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
-            events += _mpi_global_coll_device.advance_impl();
-            events += _mpi_local_coll_device.advance_impl();
+        events += _mpi_global_coll_device.advance_impl();
+        events += _mpi_local_coll_device.advance_impl();
 // /\/\/\ Experimental non-generic "collective" mpi device and protocol
 #endif //ifndef DISABLE_COLLDEVICE
 
@@ -236,7 +241,9 @@ namespace XMI
         {
           size_t id = (size_t)(parameters->send.dispatch);
           int local;
-          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task()))
+#warning isPeer does not support XMI_MAPPING_TSIZE
+//          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
+          if(__global.topology_local.isRankMember(parameters->send.task))
             local=1;
           else
             local=0;
@@ -250,14 +257,16 @@ namespace XMI
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
           size_t id = (size_t)(parameters->dispatch);
-          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           XMI_assert_debug (_dispatch[id][0] != NULL);
 
           int local;
-          if(__global.mapping.isPeer(parameters->task, __global.mapping.task()))
+#warning isPeer does not support XMI_MAPPING_TSIZE
+//          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
+          if(__global.topology_local.isRankMember(parameters->task))
             local=1;
           else
             local=0;
+          TRACE_ERR((stderr, ">> send_impl('immediate') dispatch[%zd][%d] = %p\n", id, local,_dispatch[id][local]));
 
           XMI::Protocol::Send::Send * send =
             (XMI::Protocol::Send::Send *) _dispatch[id][local];
@@ -480,35 +489,56 @@ namespace XMI
 
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
-          if(mcastinfo->hints.one_sided)
+          if(mcastinfo->hints.one_sided && mcastinfo->hints.collective)
           {
             MPIOneSidedMulticastProtocol * multicast = (MPIOneSidedMulticastProtocol *) _dispatch[id][0];
-            TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
+            TRACE_ERR((stderr, ">> multicast_impl, one sided collective multicast %p\n", multicast));
             multicast->multicast(mcastinfo);
           }
           else
 // /\/\/\ Experimental non-generic "collective" mpi device and protocol
 #endif //ifndef DISABLE_COLLDEVICE
-          if(mcastinfo->hints.all_sided)
+
+          if(mcastinfo->hints.one_sided)
           {
-            if(mcastinfo->hints.ring_wq ) // \todo bogus!  the problem with hints is ....
-            {
-              XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
-              TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
-              if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+            P2pDispatchMulticastProtocol * multicast = (P2pDispatchMulticastProtocol *) _dispatch[id][0];
+            TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
+            multicast->multicast(mcastinfo);
+          }
+          else if(mcastinfo->hints.all_sided)
+          {
+            if(mcastinfo->hints.local)
+            {  
+              if(mcastinfo->hints.ring_wq ) // \todo bogus!  the problem with hints is ....
               {
-                char *msgbuf = new char[XMI::Device::WQRingBcastMdl::sizeof_msg];
-                mcastinfo->request = msgbuf;
+                XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
+                TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
+                if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+                {
+                  char *msgbuf = new char[XMI::Device::WQRingBcastMdl::sizeof_msg];
+                  mcastinfo->request = msgbuf;
+                }
+                multicast->postMulticast(mcastinfo);
               }
-              multicast->postMulticast(mcastinfo);
+              else
+              {
+                XMI::Device::LocalBcastWQModel  * multicast = (XMI::Device::LocalBcastWQModel *) _dispatch[id][0];
+                TRACE_ERR((stderr, ">> multicast_impl, all sided multicast %p\n", multicast));
+                if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+                {
+                  char *msgbuf = new char[XMI::Device::LocalBcastWQModel::sizeof_msg];
+                  mcastinfo->request = msgbuf;
+                }
+                multicast->postMulticast(mcastinfo);
+              }
             }
-            else
+            else if(mcastinfo->hints.global)
             {
-              XMI::Device::LocalBcastWQModel  * multicast = (XMI::Device::LocalBcastWQModel *) _dispatch[id][0];
-              TRACE_ERR((stderr, ">> multicast_impl, all sided multicast %p\n", multicast));
+              XMI::Device::MPIBcastMdl  * multicast = (XMI::Device::MPIBcastMdl *) _dispatch[id][0];
+              TRACE_ERR((stderr, ">> multicast_impl, all sided global multicast %p\n", multicast));
               if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
               {
-                char *msgbuf = new char[XMI::Device::LocalBcastWQModel::sizeof_msg];
+                char *msgbuf = new char[XMI::Device::MPIBcastMdl::sizeof_msg];
                 mcastinfo->request = msgbuf;
               }
               multicast->postMulticast(mcastinfo);
@@ -550,10 +580,10 @@ namespace XMI
                                                 __global.mapping.task(),
                                                 _context, _contextid, result);
           if(result!=XMI_SUCCESS)
-              {
-                XMI_abort();
-                goto result_error;
-              }
+          {
+             XMI_abort();
+             goto result_error;
+          }
           // Shared Memory Registration
           // This is for communication on node
           TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", index, _dispatch[index][0]));
@@ -612,7 +642,7 @@ namespace XMI
       {
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
-        if(options.hint.multicast.one_sided)
+        if(options.hint.multicast.one_sided && options.hint.multicast.collective)
         {
           if(options.hint.multicast.global)
           {
@@ -622,7 +652,7 @@ namespace XMI
                                                                 this->_context,
                                                                 this->_contextid,
                                                                 result);
-            TRACE_ERR((stderr, "<< dispatch_impl() mcast global _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+            TRACE_ERR((stderr, "<< dispatch_impl() mcast global collective _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           }
           else if(options.hint.multicast.local)
           {
@@ -632,14 +662,24 @@ namespace XMI
                                                                 this->_context,
                                                                 this->_contextid,
                                                                 result);
-            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided collective _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           }
         }
         else
 // /\/\/\ Experimental non-generic "collective" mpi device and protocol
 #endif //ifndef DISABLE_COLLDEVICE
-
-        if((options.hint.multicast.all_sided) && (options.hint.multicast.local)) // only local all-sided shmem (for now)
+        if(options.hint.multicast.one_sided)
+        {
+          XMI_assertf(_request.objsize >= sizeof(P2pDispatchMulticastProtocol),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2pDispatchMulticastProtocol),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
+          new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie, 
+                                                                      _mpi,
+                                                                      this->_client,
+                                                                      this->_context,
+                                                                      this->_contextid,
+                                                                      result);
+          TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+        }
+        else if((options.hint.multicast.all_sided) && (options.hint.multicast.local)) 
         {
           if(options.hint.multicast.ring_wq ) // \todo bogus!  the problem with hints is ....
           {
@@ -654,7 +694,13 @@ namespace XMI
             TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           }
         }
-        else // !experimental collective and !local allsided shmem
+        else if((options.hint.multicast.all_sided) && (options.hint.multicast.global))  
+        {
+          XMI_assertf(_request.objsize >= sizeof(XMI::Device::MPIBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::MPIBcastMdl));
+          new (_dispatch[(size_t)id][0]) XMI::Device::MPIBcastMdl(result);
+          TRACE_ERR((stderr, "<< dispatch_impl(), mcast global allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+        }
+        else // !experimental collective and !local allsided shmem and !global allsided 
         {
           XMI_abort();
           return XMI_UNIMPL;
