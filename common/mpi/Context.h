@@ -290,7 +290,9 @@ namespace XMI
         {
           size_t id = (size_t)(parameters->send.dispatch);
           int local;
-          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task()))
+#warning isPeer does not support XMI_MAPPING_TSIZE
+//          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
+          if(__global.topology_local.isRankMember(parameters->send.task))
             local=1;
           else
             local=0;
@@ -308,7 +310,7 @@ namespace XMI
           XMI_assert_debug (_dispatch[id][0] != NULL);
 
           int local;
-          if(__global.mapping.isPeer(parameters->task, __global.mapping.task()))
+          if(__global.topology_local.isRankMember(parameters->task))
             local=1;
           else
             local=0;
