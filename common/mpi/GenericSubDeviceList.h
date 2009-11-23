@@ -21,6 +21,7 @@ namespace Generic {
 inline void Device::__platform_generic_init(XMI::SysDep &sd,
 			XMI::Device::Generic::Device *device) {
 	_g_mpibcast_dev.init(sd, device);
+    MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpi_communicator);
 }
 
 inline int Device::__platform_generic_advanceRecv(size_t context) {
