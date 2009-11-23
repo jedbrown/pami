@@ -182,7 +182,8 @@ namespace XMI
               free(*it_p2p);
 
             if(done_fn)
-              done_fn(XMI_Client_getcontext(client,context),cookie,XMI_SUCCESS);
+              done_fn(NULL,//XMI_Client_getcontext(client,context),  \todo fix this
+                      cookie,XMI_SUCCESS);
             break;
           }
         }
@@ -198,7 +199,8 @@ namespace XMI
             events++;
             TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl mc\n",(int)this)); dbg = 1;
             if((*it_mcast)->_cb_done.function )
-              (*(*it_mcast)->_cb_done.function)(XMI_Client_getcontext((*it_mcast)->_client,(*it_mcast)->_context), (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
+              (*(*it_mcast)->_cb_done.function)(NULL,//XMI_Client_getcontext((*it_mcast)->_client,(*it_mcast)->_context),   \todo fix this
+                                                (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
             free ((*it_mcast)->_req);
             free (*it_mcast);
             _mcastsendQ.remove((*it_mcast));
@@ -354,7 +356,8 @@ namespace XMI
               if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
               {
                 if(mcast->_done_fn)
-                  mcast->_done_fn (XMI_Client_getcontext(msg->_client, msg->_context), mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn (NULL,//XMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
+                                   mcast->_cookie, XMI_SUCCESS);
 
                 _mcastrecvQ.remove(mcast);
                 free (msg);
@@ -386,7 +389,8 @@ namespace XMI
                                (int)this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
                 mcast->_counter += mcast->_pwidth;
                 if(mcast->_done_fn)
-                  mcast->_done_fn(XMI_Client_getcontext(msg->_client, msg->_context), mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn(NULL,//XMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
+                                  mcast->_cookie, XMI_SUCCESS);
               }
 
               if(mcast->_counter >= mcast->_size)
