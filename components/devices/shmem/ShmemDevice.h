@@ -524,6 +524,7 @@ namespace XMI
       while ((pkt = (PacketImpl *)_rfifo->nextRecPacket()) != NULL)
         {
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before pkt->getHeader()\n", __global.mapping.task()));
+          mem_sync ();
 
 #ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
           UnexpectedPacket * uepkt = (UnexpectedPacket *) __ndpkt.allocateObject();

@@ -140,19 +140,20 @@ namespace XMI
             metadata.databytes = parameters->data.iov_len;
             metadata.metabytes = parameters->header.iov_len;
 
-            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->immediate.bytes = %zd\n", parameters->immediate.bytes));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zd, parameters->data.iov_len = %zd\n", parameters->header.iov_len, parameters->data.iov_len));
 
             bool posted =
               _send_model.postPacket (parameters->task,
                                       (void *) &metadata,
                                       sizeof (protocol_metadata_t),
                                       parameters->iov);
-#if 1
+
             if (unlikely(!posted))
             {
               // For some reason the packet could not be immediately posted.
               // Allocate memory, pack the user data and metadata, and attempt
               // a regular (non-blocking) post.
+              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. immediate post packet unsuccessful.\n"));
               send_t * send = (send_t *) _allocator.allocateObject ();
               send->pf = this;
               memcpy (&(send->data[0]), parameters->header.iov_base, metadata.metabytes);
@@ -169,7 +170,11 @@ namespace XMI
                                       sizeof (protocol_metadata_t),
                                       iov);
             }
-#endif
+            else
+            {
+              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. immediate post packet successful.\n"));
+            }
+
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() <<\n"));
             return XMI_SUCCESS;
           };
