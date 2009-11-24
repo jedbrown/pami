@@ -19,16 +19,18 @@
 #include "sys/xmi.h"
 #include "../util.h"
 
-#define ITERATIONS 100
-//#define ITERATIONS 1000
+//#define ITERATIONS 100
+#define ITERATIONS 1000
 //#define ITERATIONS 100
 
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
-#define BUFSIZE 1024*1024
+#define BUFSIZE 1024*128
 //#define BUFSIZE 16
 //#define BUFSIZE 1024
 #endif
+
+#define WARMUP
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
@@ -75,7 +77,7 @@ static void test_dispatch (
 {
   if (pipe_addr != NULL)
   {
-    memcpy (_recv_buffer, pipe_addr, pipe_size);
+    //memcpy (_recv_buffer, pipe_addr, pipe_size);
     unsigned * value = (unsigned *) cookie;
     TRACE_ERR((stderr, "(%zd) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
     --*value;
@@ -112,13 +114,14 @@ void recv_once (xmi_context_t context)
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, size_t myrank)
+unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, size_t myrank)
 {
   TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
   _recv_active = 1;
   _recv_iteration = 0;
   _send_active = 1;
 
+  char metadata[BUFSIZE];
   char buffer[BUFSIZE];
 
   header_t header;
@@ -126,8 +129,8 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
 
   xmi_send_t parameters;
   parameters.send.dispatch        = dispatch;
-  parameters.send.header.iov_base = &header;
-  parameters.send.header.iov_len  = sizeof(header_t);
+  parameters.send.header.iov_base = metadata;
+  parameters.send.header.iov_len  = hdrsize;
   parameters.send.data.iov_base   = buffer;
   parameters.send.data.iov_len    = sndlen;
   parameters.events.cookie        = (void *) &_send_active;
@@ -169,9 +172,20 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t sndlen, 
   return ((t2-t1)/ITERATIONS)/2;
 }
 
-int main ()
+int main (int argc, char ** argv)
 {
   TRACE_ERR((stderr, "Start test ...\n"));
+
+  size_t hdrcnt = argc;
+  size_t hdrsize[1024];
+  hdrsize[0] = 0;
+
+  int arg;
+  for (arg=1; arg<argc; arg++)
+  {
+    hdrsize[arg] = (size_t) strtol (argv[arg], NULL, 10);
+  }
+
   char clientname[] = "XMI";
   xmi_client_t client;
   TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
@@ -222,7 +236,7 @@ int main ()
 
   configuration.name = XMI_WTICK;
   result = XMI_Configuration_query(client, &configuration);
-  double clockMHz = configuration.value.doubleval;
+  double tick = configuration.value.doubleval;
 
   /* Display some test header information */
   if (_my_rank == 0)
@@ -236,10 +250,14 @@ int main ()
     index[1] += sprintf (&str[1][index[1]], "#    bytes ");
 
     unsigned i;
-    for (i=0; i<_dispatch_count; i++)
+    for (i=0; i<hdrcnt; i++)
     {
-      index[0] += sprintf (&str[0][index[0]], "[--- testcase %d ---] ", i);
-      index[1] += sprintf (&str[1][index[1]], "    cycles     usec  ");
+      if (i==0)
+        fprintf (stdout, "# testcase %d : header bytes = %3zd\n", i, hdrsize[i]);
+      else
+        fprintf (stdout, "# testcase %d : header bytes = %3zd (argv[%d])\n", i, hdrsize[i], i);
+      index[0] += sprintf (&str[0][index[0]], "[-- testcase %d --] ", i);
+      index[1] += sprintf (&str[1][index[1]], "  cycles     usec  ");
     }
 
     fprintf (stdout, "# XMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
@@ -265,14 +283,14 @@ int main ()
     index += sprintf (&str[index], "%10zd ", sndlen);
 
     unsigned i;
-    for (i=0; i<_dispatch_count; i++)
+    for (i=0; i<hdrcnt; i++)
     {
 #ifdef WARMUP
-      test (context, &_dispatch[i], sndlen, _my_rank);
+      test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
 #endif
-      cycles = test (context, _dispatch[i], sndlen, _my_rank);
-      usec   = cycles/clockMHz;
-      index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
+      cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
+      usec   = cycles * tick * 1000000.0;
+      index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
     }
 
     if (_my_rank == 0)
