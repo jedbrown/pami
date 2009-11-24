@@ -45,7 +45,7 @@ namespace XMI
           LAPIMcastSendReq * sreq = (LAPIMcastSendReq *) param;
           sreq->_count++;
           if (sreq->_user_done.function && sreq->_count == sreq->_total)
-            sreq->_user_done.function (NULL,0, sreq->_user_done.clientdata, XMI_SUCCESS);
+            sreq->_user_done.function (NULL, sreq->_user_done.clientdata, XMI_SUCCESS);
         }
 
 
@@ -117,7 +117,7 @@ namespace XMI
                       CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
                     }
                 if (sreq->_user_done.function)
-                  sreq->_user_done.function(NULL,0, sreq->_user_done.clientdata, XMI_SUCCESS);
+                  sreq->_user_done.function(NULL,sreq->_user_done.clientdata, XMI_SUCCESS);
               }
           else
               {

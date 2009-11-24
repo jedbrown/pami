@@ -49,12 +49,12 @@ namespace XMI
         void                    *user_cookie;
       };
 
-      static void client_done(xmi_client_t client, size_t context, void *rdata, xmi_result_t res)
+      static void client_done(xmi_context_t context, void *rdata, xmi_result_t res)
         {
           reqObj * robj = (reqObj*)rdata;
           LAPI    * lapi  = robj->factory;
           if(robj->user_done_fn)
-            robj->user_done_fn(client, context, robj->user_cookie, res);
+            robj->user_done_fn(context, robj->user_cookie, res);
           lapi->_reqAllocator.returnObject(robj);
         }
 
