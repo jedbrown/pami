@@ -74,7 +74,7 @@ namespace XMI
       // Initialize the registered receive function array to noop().
       // The array is limited to 256 dispatch ids because of the size of the
       // dispatch id field in the packet header.
-      for (i = 0; i < 256*256; i++)
+      for (i = 0; i < DISPATCH_SET_COUNT*DISPATCH_SET_SIZE; i++)
         {
           _dispatch[i].function   = noop;
           _dispatch[i].clientdata = NULL;
@@ -126,16 +126,17 @@ namespace XMI
                                                             void                      * recv_func_parm,
                                                             uint16_t                  & id)
     {
-      TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction (%d,%p,%p)\n", __global.mapping.task(), id, recv_func, recv_func_parm));
+      TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction(%d,%p,%p) .. DISPATCH_SET_COUNT = %d\n", __global.mapping.task(), set, recv_func, recv_func_parm, DISPATCH_SET_COUNT));
 
       // This device only supports up to 256 dispatch sets.
-      if (set >= 256) return XMI_ERROR;
+      if (set >= DISPATCH_SET_COUNT) return XMI_ERROR;
 
       // Find the next available id for this dispatch set.
       bool found_free_slot = false;
-
-      for (id = set * 256; id < ((set + 1)*256); id++)
+      size_t n = set * DISPATCH_SET_SIZE + DISPATCH_SET_COUNT;
+      for (id = set * DISPATCH_SET_SIZE; id < n; id++)
         {
+          TRACE_ERR((stderr, "   (%zd) ShmemDevice::registerRecvFunction(), _dispatch[%d].function= %p\n", __global.mapping.task(), id, _dispatch[id].function));
           if (_dispatch[id].function == (Interface::RecvFunction_t) noop)
             {
               found_free_slot = true;
@@ -148,7 +149,7 @@ namespace XMI
       _dispatch[id].function   = recv_func;
       _dispatch[id].clientdata = recv_func_parm;
 
-      TRACE_ERR((stderr, "<< (%zd) ShmemDevice::registerRecvFunction (%d,%p,%p) => %d\n", __global.mapping.task(), set, recv_func, recv_func_parm, id));
+      TRACE_ERR((stderr, "<< (%zd) ShmemDevice::registerRecvFunction() => %d\n", __global.mapping.task(), id));
       return XMI_SUCCESS;
     };
 

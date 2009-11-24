@@ -38,6 +38,11 @@
 //#define EMULATE_UNRELIABLE_SHMEM_DEVICE
 #define EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY 10
 
+
+#define DISPATCH_SET_COUNT 256
+#define DISPATCH_SET_SIZE   16
+
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 #endif
@@ -351,7 +356,7 @@ namespace XMI
 
         XMI::SysDep      * _sysdep;
 
-        dispatch_t  _dispatch[256*256];
+        dispatch_t  _dispatch[DISPATCH_SET_COUNT*DISPATCH_SET_SIZE];
 
 #ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
         Queue                                            __ndQ;
@@ -619,6 +624,9 @@ namespace XMI
 
 // Include the non-inline method definitions
 #include "ShmemDevice_impl.h"
+
+#undef DISPATCH_SET_COUNT
+#undef DISPATCH_SET_SIZE
 
 #endif // __components_devices_shmem_shmembasedevice_h__
 
