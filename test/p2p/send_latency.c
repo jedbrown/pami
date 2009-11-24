@@ -34,7 +34,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 volatile unsigned _send_active;
@@ -178,7 +178,8 @@ int main (int argc, char ** argv)
 
   size_t hdrcnt = argc;
   size_t hdrsize[1024];
-  hdrsize[0] = 0;
+  //hdrsize[0] = 0;
+  hdrsize[0] = 32;
 
   int arg;
   for (arg=1; arg<argc; arg++)

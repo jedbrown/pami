@@ -347,7 +347,7 @@ namespace XMI
               }
             else
               {
-                TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _envelope_model.postPacket() .. bytes = %zd\n", bytes));
+                TRACE_ERR((stderr, "EagerSimple::simple_impl() .. before _envelope_model.postPacket() .. parameters->send.header.iov_len = %zd, parameters->send.data.iov_len = %zd\n", parameters->send.header.iov_len, parameters->send.data.iov_len));
 
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(short_metadata_t) <= T_Model::packet_model_metadata_bytes)
@@ -710,8 +710,11 @@ namespace XMI
                 // Check for long header
                 size_t header_bytes = m->metabytes;
 
-                if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes -
-                                               sizeof(short_metadata_t) > T_Model::packet_model_metadata_bytes ? sizeof(short_metadata_t) : 0)))
+                size_t pbytes = (sizeof(short_metadata_t) > T_Model::packet_model_metadata_bytes) ? sizeof(short_metadata_t) : 0;
+
+                TRACE_ERR ((stderr, "   EagerSimple::dispatch_envelope_direct() .. header_bytes = %zd, T_Model::packet_model_payload_bytes = %zd, pbytes = %zd\n", header_bytes, T_Model::packet_model_payload_bytes, pbytes));
+
+                if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes - pbytes)))
                   {
                     state->longheader.addr   = (uint8_t *) malloc(header_bytes);
                     state->longheader.bytes  = header_bytes;
