@@ -390,7 +390,7 @@ int main(int argc, char*argv[])
         return 1;
       }
   free(world_algorithm);
-  free(top_algorithm);
-  free(bottom_algorithm);
+  //  free(top_algorithm);
+  //  free(bottom_algorithm);
   return 0;
 }

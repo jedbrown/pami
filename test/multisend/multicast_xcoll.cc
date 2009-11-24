@@ -20,6 +20,7 @@ return 0;
 #include "test/multisend/Buffer.h"
 
 #include "Global.h"
+#include <unistd.h>
 
 #ifndef TEST_BUF_SIZE
   #define TEST_BUF_SIZE	32
