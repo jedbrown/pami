@@ -153,20 +153,17 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
 int main (int argc, char ** argv)
 {
   TRACE_ERR((stderr, "Start test ...\n"));
-  
-  
+
   size_t hdrcnt = argc;
   size_t hdrsize[1024];
   hdrsize[0] = 0;
-  
+
   int arg;
   for (arg=1; arg<argc; arg++)
   {
     hdrsize[arg] = (size_t) strtol (argv[arg], NULL, 10);
   }
-  
-  
-  
+
   xmi_client_t client;
   char clientname[]="XMI";
   TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
@@ -217,7 +214,7 @@ int main (int argc, char ** argv)
 
   configuration.name = XMI_WTICK;
   result = XMI_Configuration_query(client, &configuration);
-  double clockMHz = configuration.value.doubleval;
+  double tick = configuration.value.doubleval;
 
   /* Display some test header information */
   if (_my_rank == 0)
@@ -270,7 +267,7 @@ int main (int argc, char ** argv)
       test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
 #endif
       cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
-      usec   = cycles/clockMHz;
+      usec   = cycles * tick * 1000000.0;
       index += sprintf (&str[index], "%7lld %7.4f  ", cycles, usec);
     }
 
