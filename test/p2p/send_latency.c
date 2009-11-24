@@ -21,7 +21,7 @@
 
 //#define ITERATIONS 100
 #define ITERATIONS 1000
-//#define ITERATIONS 100
+//#define ITERATIONS 1
 
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
@@ -178,8 +178,7 @@ int main (int argc, char ** argv)
 
   size_t hdrcnt = argc;
   size_t hdrsize[1024];
-  //hdrsize[0] = 0;
-  hdrsize[0] = 32;
+  hdrsize[0] = 0;
 
   int arg;
   for (arg=1; arg<argc; arg++)
@@ -250,6 +249,8 @@ int main (int argc, char ** argv)
     index[0] += sprintf (&str[0][index[0]], "#          ");
     index[1] += sprintf (&str[1][index[1]], "#    bytes ");
 
+    fprintf (stdout, "# XMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
+    fprintf (stdout, "#\n");
     unsigned i;
     for (i=0; i<hdrcnt; i++)
     {
@@ -260,10 +261,6 @@ int main (int argc, char ** argv)
       index[0] += sprintf (&str[0][index[0]], "[-- testcase %d --] ", i);
       index[1] += sprintf (&str[1][index[1]], "  cycles     usec  ");
     }
-
-    fprintf (stdout, "# XMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
-    fprintf (stdout, "#\n");
-//    fprintf (stdout, "%s", testcase_str);
     fprintf (stdout, "#\n");
     fprintf (stdout, "%s\n", str[0]);
     fprintf (stdout, "%s\n", str[1]);
