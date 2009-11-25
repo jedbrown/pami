@@ -54,10 +54,10 @@ namespace XMI
             // Constant-expression branch should be optimized out by the compiler.
             if (sizeof(size_t) == 8)
             {
-              size_t i, n16 = T_HeaderSize >> 4;
+              size_t i, n = T_HeaderSize >> 3;
               size_t * d = (size_t *) dst;
               size_t * s = (size_t *) _data;
-              for (i=0; i<n16; i+=2)
+              for (i=0; i<n; i+=2)
               {
                 d[i]   = s[i];
                 d[i+1] = s[i+1];
@@ -65,10 +65,10 @@ namespace XMI
             }
             else if (sizeof(size_t) == 4)
             {
-              size_t i, n16 = T_HeaderSize >> 4;
+              size_t i, n = T_HeaderSize >> 2;
               size_t * d = (size_t *) dst;
               size_t * s = (size_t *) _data;
-              for (i=0; i<n16; i+=4)
+              for (i=0; i<n; i+=4)
               {
                 d[i]   = s[i];
                 d[i+1] = s[i+1];
@@ -93,10 +93,10 @@ namespace XMI
             // Constant-expression branch should be optimized out by the compiler.
             if (sizeof(size_t) == 8)
             {
-              size_t i, n16 = T_HeaderSize >> 4;
+              size_t i, n = T_HeaderSize >> 3;
               size_t * d = (size_t *) _data;
               size_t * s = (size_t *) src;
-              for (i=0; i<n16; i+=2)
+              for (i=0; i<n; i+=2)
               {
                 d[i]   = s[i];
                 d[i+1] = s[i+1];
@@ -104,10 +104,10 @@ namespace XMI
             }
             else if (sizeof(size_t) == 4)
             {
-              size_t i, n16 = T_HeaderSize >> 4;
+              size_t i, n = T_HeaderSize >> 2;
               size_t * d = (size_t *) _data;
               size_t * s = (size_t *) src;
-              for (i=0; i<n16; i+=4)
+              for (i=0; i<n; i+=4)
               {
                 d[i]   = s[i];
                 d[i+1] = s[i+1];
