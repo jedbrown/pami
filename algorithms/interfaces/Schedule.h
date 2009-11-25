@@ -9,7 +9,7 @@
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
 #include "algorithms/ccmi.h"
-
+#include "Topology.h"
 
 /*-------------------------------------------------*/
 /*     Basic utility classes collectives           */
@@ -33,7 +33,7 @@ namespace CCMI
     /**
      * \brief Abstract reference class to define the schedule of a collective
      */
-    template <class Topology> class Schedule
+    class Schedule
     {
     public:
 
@@ -71,26 +71,26 @@ namespace CCMI
        * \param[IN] phase : phase of the collective
        * \param[INOUT] topology : the topolgy that sends messages to me in this phase
        */
-      virtual void getSrcTopology (unsigned  phase, Topology *topology) = 0;
+      virtual void getSrcTopology (unsigned  phase, XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the downstream processors to send data to.
        * \param phase : phase of the collective
        * \param[INOUT] topology : The topology to send messages to in this phase
        */
-      virtual void getDstTopology (unsigned  phase, Topology *topology) = 0;
+      virtual void getDstTopology (unsigned  phase, XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getSrcUnionTopology (Topology *topology) = 0;
+      virtual void getSrcUnionTopology (XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual getDstUnionTopology (Topology *topology) = 0;
+      virtual void getDstUnionTopology (XMI::Topology *topology) = 0;
 
     };  //-- Schedule
   };  //-- Schedule

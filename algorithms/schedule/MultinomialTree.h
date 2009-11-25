@@ -36,7 +36,7 @@ namespace CCMI
     //------ Supports a generic barrier and allreduce -------------
     //------ The number of phases is logrithmic with a max of 20 --
     //-------------------------------------------------------------
-    template <class M> class MultinomialTreeT : public Schedule
+    template <class M> class MultinomialTreeT : public Interfaces::Schedule
     {
     protected:
 
@@ -198,11 +198,11 @@ namespace CCMI
        * \param[in] phase	Phase to work on
        * \param[INOUT] srcranks are filled in the topology
        */
-      virtual void getSrcPeList(unsigned phase, Topology *topology)
+      virtual void getSrcTopology(unsigned phase, XMI::Topology *topology)
       {
 	unsigned *srcpelist;
 	topology->list(&srcpelist);
-	XMI_assert(srcpelist == NULL);
+	CCMI_assert(srcpelist == NULL);
 
 	unsigned nsrc = 0;
         if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
@@ -211,14 +211,14 @@ namespace CCMI
         {
           NEXT_NODES(PARENT, phase, srcpes, nsrc);
         }
-	XMI_assert (nsrc <= topology->size());
+	CCMI_assert (nsrc <= topology->size());
 
 	for (unsigned count = 0; count < nsrc; count ++) {
           srcpes[count] = _map->getGlobalRank(srcpes[count]);
         }
 
 	//Convert to a list topology
-	new (topology) Topology (srcpelist, nsrc);
+	new (topology) XMI::Topology (srcpelist, nsrc);
       }
 
       /**
@@ -227,11 +227,11 @@ namespace CCMI
        * \param[in] phase	Phase to work on
        * \param[INOUT] dstranks are filled in the topology
        */
-      virtual void getDstPeList(unsigned phase, Topology *topology)
+      virtual void getDstTopology(unsigned phase, XMI::Topology *topology)
       {
 	unsigned *dstpelist;
 	topology->list(&dstpelist);
-	XMI_assert(dstpelist == NULL);
+	CCMI_assert(dstpelist == NULL);
 
 	unsigned ndst = 0;
         if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
@@ -240,7 +240,7 @@ namespace CCMI
         {
           NEXT_NODES(CHILD, phase, dstpes, ndst);
         }
-	XMI_assert (ndst <= topology->size());
+	CCMI_assert (ndst <= topology->size());
 
 	for (unsigned count = 0; count < ndst; count ++)
         {
@@ -248,8 +248,11 @@ namespace CCMI
         }
 
 	//Convert to a list topology of the accurate size
-	new (topology) Topology (dstpelist, ndst);
+	new (topology) XMI::Topology (dstpelist, ndst);
       }
+
+      virtual void getSrcCumulativeTopology(XMI::Topology *topo) { CCMI_assert (0); }
+      virtual void getDstCumulativeTopology(XMI::Topology *topo) { CCMI_assert (0); }
 
     protected:
       unsigned     _nphases;    /// \brief Number of phases total
