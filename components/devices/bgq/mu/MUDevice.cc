@@ -56,8 +56,10 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
 
   //const int L1D_CACHE_LINE_SIZE = 64;
 
-  // Initialze the dispatch table.
-  for ( i = 0; i < 256*DISPATCH_SET_SIZE; i++)
+  // Initialize the dispatch table.
+  // There are DISPATCH_SET_COUNT sets of dispatch functions.
+  // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
+  for ( i = 0; i < DISPATCH_SET_COUNT*DISPATCH_SET_SIZE; i++)
   {
     _dispatch[i].f = noop;
     _dispatch[i].p = (void *) i;
@@ -117,6 +119,10 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
                                                        uint16_t                  & id)
 {
   TRACE((stderr, ">> MUDevice::registerPacketHandler(%d, %p, %p, %d), _dispatch = %p\n", dispatch, function, arg, id, _dispatch));
+
+  // There are DISPATCH_SET_COUNT sets of dispatch functions.
+  // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
+  if (dispatch >= DISPATCH_SET_COUNT) return false;
 
   unsigned i;
   for (i=0; i<DISPATCH_SET_SIZE; i++)

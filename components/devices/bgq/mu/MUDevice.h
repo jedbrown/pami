@@ -34,7 +34,16 @@
 #define TRACE(x) //fprintf x
 
 #define ENABLE_MAMBO_WORKAROUNDS
-#define DISPATCH_SET_SIZE 64
+
+// \brief Number of dispatch sets
+//
+// There are DISPATCH_SET_COUNT possible dispatch IDs.
+//
+#define DISPATCH_SET_COUNT 256
+
+// \brief Number of dispatch functions in a dispatch set
+#define DISPATCH_SET_SIZE   16
+
 namespace XMI
 {
   namespace Device
@@ -377,8 +386,7 @@ namespace XMI
           ColChannel        * _colChannel;                     /**< Collective channel */
           bool                _initialized;                    /**< true when init() invoked successfully */
 
-/** \todo This table is 256 KB. Can this be made smaller? */
-          dispatch_t      _dispatch[256*DISPATCH_SET_SIZE];
+          dispatch_t      _dispatch[DISPATCH_SET_COUNT * DISPATCH_SET_SIZE];
           //uint8_t         _dispatch_num;
 
         private:
