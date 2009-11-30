@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <errno.h>
 
 #undef USE_WAKEUP_VECTORS
 
@@ -77,12 +78,14 @@ namespace XMI {
 		}
 
 		inline xmi_result_t clear_impl(void *v) {
-			union semun arg;
+			// union semun a;
+			int a;
 			size_t z = (size_t)v;
 			int sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
-			arg.val = 0;
+			// a.val = 0;
+			a = 0;
 			// assert(_semSet == (z & MAX_SEMID));
-			int err = semctl(_semSet, sem_num, SETVAL, &arg);
+			int err = semctl(_semSet, sem_num, SETVAL, &a);
 			if (err < 0) {
 				return XMI_ERROR;
 			}
