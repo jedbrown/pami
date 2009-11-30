@@ -47,13 +47,13 @@ namespace CCMI
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template<class T_Sysdep, class T_Msync>
+      template<class T_Sysdep>
         class BarrierFactory : private BaseBarrierFactory
         {
         protected:
-          T_Msync               * _msyncInterface;
-          T_Sysdep              * _mapping;
-          xmi_mapidtogeometry_fn    _cb_geometry;
+	  Interfaces::NativeInterface   * _msyncInterface;
+          T_Sysdep                      * _mapping;
+          xmi_mapidtogeometry_fn          _cb_geometry;
 
         public:
           /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -65,8 +65,8 @@ namespace CCMI
           ///
           /// \brief Constructor for barrier factory implementations.
           ///
-          BarrierFactory (T_Msync               * minterface,
-                          T_Sysdep              * map,
+          BarrierFactory ( Interfaces::NativeInterface   * minterface,
+                          T_Sysdep                       * map,
                           xmi_mapidtogeometry_fn    cb_geometry) :
           _msyncInterface (minterface),
           _mapping (map),

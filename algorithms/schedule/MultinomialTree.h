@@ -60,12 +60,12 @@ namespace CCMI
         if( ((ph == _auxsendph) && !parent) || 
 	    ((ph == _auxrecvph) &&  parent) )	  
         {
-	  if (_map->isAuxProc(_map->getMyRank())) {
-	    nodes[0] = _map->getPeerForAux(_map->getMyRank());
+	  if (_map.isAuxProc(_map.getMyRank())) {
+	    nodes[0] = _map.getPeerForAux(_map.getMyRank());
 	    nranks = 1;
 	  }
-	  else if (_map->isPeerProc(_map->getMyRank())) {
-	    nodes[0] = _map->getAuxForPeer(_map->getMyRank());
+	  else if (_map.isPeerProc(_map.getMyRank())) {
+	    nodes[0] = _map.getAuxForPeer(_map.getMyRank());
 	    nranks = 1;
 	  }
 	}
@@ -77,7 +77,7 @@ namespace CCMI
           // algorithm requires zero.
           ph -= 1;
           
-	  BINO(nodes, nranks, _map->getMyRank(), ph, _nphbino, _radix, _logradix);
+	  BINO(nodes, nranks, _map.getMyRank(), ph, _nphbino, _radix, _logradix);
 	  CCMI_assert (nranks >= 1);
         }
       }
@@ -95,7 +95,7 @@ namespace CCMI
        */
       inline void initBinoSched()
       {
-	_nranks = _map->getNumRanks();
+	_nranks = _map.getNumRanks();
         _op = -1;
 	
 	_radix = getRadix (_nranks);
@@ -170,6 +170,16 @@ namespace CCMI
       _nphases(0)
       {
       }
+      
+      /**
+       * \brief Constructor for list of ranks
+       *
+       * \param[in] mapping	Simple mapping for ranks
+       * \param[in] nranks	Number of ranks in list
+       * \param[in] ranks	Ranks list
+       */
+      MultinomialTreeT (unsigned myrank, Topology *topo);
+      
 
       /**
        * \brief Constructor for list of ranks
@@ -178,7 +188,7 @@ namespace CCMI
        * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
        */
-      MultinomialTreeT (M *map);
+      MultinomialTreeT (unsigned myrank, unsigned *ranks, unsigned nranks);
 
       /**
        * \brief Initialize Multinomial Schedule
@@ -214,7 +224,7 @@ namespace CCMI
 	CCMI_assert (nsrc <= topology->size());
 
 	for (unsigned count = 0; count < nsrc; count ++) {
-          srcpes[count] = _map->getGlobalRank(srcpes[count]);
+          srcpes[count] = _map.getGlobalRank(srcpes[count]);
         }
 
 	//Convert to a list topology
@@ -244,7 +254,7 @@ namespace CCMI
 
 	for (unsigned count = 0; count < ndst; count ++)
         {
-          dstpes[count]   = _map->getGlobalRank(dstpes[count]);
+          dstpes[count]   = _map.getGlobalRank(dstpes[count]);
         }
 
 	//Convert to a list topology of the accurate size
@@ -267,7 +277,8 @@ namespace CCMI
       unsigned     _auxsendph;  /// \brief outside send phase
       unsigned     _auxrecvph;  /// \brief outside recv phase
 
-      M          * _map;
+      Topology     _topology;  /// \brief goes away when geoemetries store topologies
+      M            _map;
 
       static const bool PARENT = true;
       static const bool CHILD  = false;
@@ -287,15 +298,27 @@ namespace CCMI
 /**
  * \brief Constructor for list of ranks
  *
- * \param[in] mapping	Simple mapping for ranks
+ * \param[in] myrank	My rank in COMM_WORLD
+ * \param[in] topology	topology across which the binomial must be performed
+ */
+template <class M>
+inline CCMI::Schedule::MultinomialTreeT<M>::
+MultinomialTreeT(unsigned myrank, XMI::Topology *topology):_map(myrank, topology)
+{
+}
+
+
+/**
+ * \brief Constructor for list of ranks
+ *
+ * \param[in] myrank	My rank in COMM_WORLD
  * \param[in] nranks	Number of ranks in list
  * \param[in] ranks	Ranks list
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
-MultinomialTreeT(M *map)
+MultinomialTreeT(unsigned myrank, unsigned nranks, unsigned *ranks):_topology(ranks, nranks), _map(myrank, _topology)
 {
-  _map = map;
 }
 
 
@@ -326,7 +349,7 @@ setupContext(unsigned &startph, unsigned &nph)
   _auxrecvph = NO_PHASES;
   _auxsendph = NO_PHASES;
 
-  if(_map->isPeerProc(_map->getMyRank()))
+  if(_map.isPeerProc(_map.getMyRank()))
   {
     /* non-power of two */
     switch(_op)
@@ -351,7 +374,7 @@ setupContext(unsigned &startph, unsigned &nph)
     }
   }
 
-  if(_map->isAuxProc(_map->getMyRank()))
+  if(_map.isAuxProc(_map.getMyRank()))
   {
     /* non-power of two */
     switch(_op)
@@ -386,17 +409,17 @@ setupContext(unsigned &startph, unsigned &nph)
       _recvph = ALL_PHASES;
       break;
     case REDUCE_OP:
-      if(_map->getMyRank() == 0) // root
+      if(_map.getMyRank() == 0) // root
       {
         _recvph = ALL_PHASES;
         _sendph = NO_PHASES;
       }
       else
       {
-        //np = ffs(_map->getMyRank()) + 1 - st;
+        //np = ffs(_map.getMyRank()) + 1 - st;
         //_sendph = st + np - 1;
 
-	int distance = _map->getMyRank() + 1;
+	int distance = _map.getMyRank() + 1;
 	int n = 0, d = 1;
 	//We are computing Log(distance)
 	while (d < distance) {
@@ -410,15 +433,15 @@ setupContext(unsigned &startph, unsigned &nph)
       }
       break;
     case BROADCAST_OP:
-      if(_map->getMyRank() == 0) // root
+      if(_map.getMyRank() == 0) // root
       {
         _recvph = NO_PHASES;
         _sendph = ALL_PHASES;
       }
       else
       {
-        //int n = (_nphbino - ffs(_map->getMyRank()));
-	int distance = _map->getMyRank() + 1;
+        //int n = (_nphbino - ffs(_map.getMyRank()));
+	int distance = _map.getMyRank() + 1;
 	int n = 0, d = 1;
 	//We are computing Log(distance)
 	while (d < distance) {
@@ -462,7 +485,7 @@ init(int root, int comm_op, int &start, int &nph, int &nranks)
 
   if (comm_op == REDUCE_OP ||
       comm_op == BROADCAST_OP) 
-    _map->setRoot (root);
+    _map.setRoot (root);
 
   setupContext(st, np);
 

@@ -35,7 +35,7 @@ namespace CCMI
         ///
         /// \brief The schedule for binomial barrier protocol
         ///
-        T_Schedule                             _myschedule;
+        T_Schedule                          _myschedule;
 
       public:
         ///
@@ -45,15 +45,16 @@ namespace CCMI
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-        BarrierT  (Interfaces::NativeInterface  * mInterface,
+        BarrierT  (T_Sysdep            * mapping,
+		   Interfaces::NativeInterface  * mInterface,
                    XMI_GEOMETRY_CLASS           * geometry) :
-          CCMI::Executor::Barrier (geometry->nranks(),
-				   geometry->ranks(),
-				   geometry->comm(),
-				   0,
-				   mInterface),
-          _myschedule (mapping, geometry->nranks(), geometry->ranks())
-        {
+	CCMI::Executor::Barrier (geometry->nranks(),
+				 geometry->ranks(),
+				 geometry->comm(),
+				 0,
+				 mInterface),
+	_myschedule (mapping->rank(), geometry->ranks(), geometry->nranks())
+	{
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
                      (int)this, geometry->comm()));
           setCommSchedule (&_myschedule);
@@ -69,8 +70,8 @@ namespace CCMI
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template <class T>
-      class BarrierFactoryT : private BarrierFactory
+      template<class T, class T_Sysdep>
+      class BarrierFactoryT : private BarrierFactory<T_Sysdep>
       {
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -83,8 +84,9 @@ namespace CCMI
         /// \brief Constructor for barrier factory implementations.
         ///
         BarrierFactoryT (Interfaces::NativeInterface  * mInterface,
-                         xmi_mapidtogeometry_fn   cb_geometry) :
-          BarrierFactory (minterface, map, cb_geometry)
+			 T_Sysdep                     * map,
+                         xmi_mapidtogeometry_fn         cb_geometry) :
+	BarrierFactory<T_Sysdep> (mInterface, map, cb_geometry)
         {
         }
 
@@ -104,7 +106,7 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         XMI_GEOMETRY_CLASS                  * geometry)
+         XMI_GEOMETRY_CLASS        * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
           return new (request) T (this->_mapping, this->_msyncInterface, geometry);
