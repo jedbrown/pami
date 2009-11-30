@@ -202,6 +202,7 @@ namespace XMI
         }
       inline bool isPeer_impl (size_t task1, size_t task2)
         {
+#warning isPeer does not support XMI_MAPPING_TSIZE
 		// this really needs to be global, but if we only check locally it
 		// will at least work for Topology.
 		Interface::Mapping::nodeaddr_t addr;

@@ -77,6 +77,7 @@ namespace XMI
 // /\/\/\ Experimental non-generic "collective" mpi device and protocol
 #endif //ifndef DISABLE_COLLDEVICE
 
+    // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
     typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2pDispatchMulticastProtocol;
 
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
@@ -240,7 +241,6 @@ namespace XMI
         {
           size_t id = (size_t)(parameters->send.dispatch);
           int local;
-#warning isPeer does not support XMI_MAPPING_TSIZE
 //          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
           if(__global.topology_local.isRankMember(parameters->send.task))
             local=1;
@@ -259,7 +259,6 @@ namespace XMI
           XMI_assert_debug (_dispatch[id][0] != NULL);
 
           int local;
-#warning isPeer does not support XMI_MAPPING_TSIZE
 //          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
           if(__global.topology_local.isRankMember(parameters->task))
             local=1;

@@ -111,8 +111,8 @@ int main(int argc, char ** argv)
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  //DBG_FPRINTF((stderr, "My task id = %zd\n", task_id);
-
+  DBG_FPRINTF((stderr, "My task id = %zd\n", task_id));
+ 
   configuration.name = XMI_NUM_TASKS;
   status = XMI_Configuration_query(client, &configuration);
   if(status != XMI_SUCCESS)
@@ -192,7 +192,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
-    sleep(5); // instead of syncing
+    //sleep(5); // instead of syncing
 
     new (&src_participants) XMI::Topology(gRoot); // global root
     new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
@@ -244,7 +244,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
-    sleep(5); // instead of syncing
+    //sleep(5); // instead of syncing
 
     new (&src_participants) XMI::Topology(gRoot); // global root
     new (&dst_participants) XMI::Topology(gRankList, gSize); // include root in dst_participants
@@ -300,7 +300,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
-    sleep(5); // instead of syncing
+    //sleep(5); // instead of syncing
 
     new (&src_participants) XMI::Topology(gRoot); // global root
     new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
@@ -324,7 +324,7 @@ int main(int argc, char ** argv)
   }
 // ------------------------------------------------------------------------
 
-  sleep(5);
+  //sleep(5);
 
 // ------------------------------------------------------------------------
   DBG_FPRINTF((stderr, "XMI_Context_destroy(context);\n"));

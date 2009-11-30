@@ -22,7 +22,6 @@
 #include "util/ccmi_debug.h"
 #include "mpi.h"
 
-#define DISPATCH_SET_SIZE 256
 
 #ifndef TRACE_DEVICE
   #define TRACE_DEVICE(x) //fprintf x
@@ -314,7 +313,7 @@ namespace XMI
       dispatch_table_t                          _dispatch[256][256];
       XMI::Topology                            *_topology;
     };
-
+#undef SOME_ARBITRARY_LIMIT 
   };
 };
 

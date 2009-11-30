@@ -108,6 +108,7 @@ namespace XMI
           _device->enqueueData(dummy);
           status = XMI_SUCCESS;
           TRACE_ADAPTOR((stderr,":%d:OneSidedMulticastProtocol status %d\n",__LINE__,status));
+          memset(&_connection_table, 0x00, sizeof(_connection_table));
         }
 
         ///

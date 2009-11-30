@@ -78,7 +78,7 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 {
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
-  DBG_FPRINTF((stderr, "%s:%s done %d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown));
+  DBG_FPRINTF((stderr, "%s:%s done %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
   --*doneCountdown;
 }
 
@@ -95,7 +95,7 @@ int main(int argc, char ** argv)
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
     return 1;
   }
-
+  DBG_FPRINTF((stderr,"Client %p\n",client));
   int n = 1; 
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
@@ -107,17 +107,17 @@ int main(int argc, char ** argv)
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  status = XMI_Configuration_query(context, &configuration);
+  status = XMI_Configuration_query(client, &configuration);
   if(status != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
   }
   size_t task_id = configuration.value.intval;   
-  //DBG_FPRINTF((stderr, "My task id = %zd\n", task_id);
+  DBG_FPRINTF((stderr, "My task id = %zd\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
-  status = XMI_Configuration_query(context, &configuration);
+  status = XMI_Configuration_query(client, &configuration);
   if(status != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
@@ -179,14 +179,12 @@ int main(int argc, char ** argv)
 
     mcast.dispatch = dispatch;
     mcast.hints = options.hint.multicast; //?
-//    mcast.connection_id = task_id; //0xB;
+
     mcast.msginfo = &_msginfo;
     mcast.msgcount = 1;
     mcast.src_participants = (xmi_topology_t *)&src_participants;
     mcast.dst_participants = (xmi_topology_t *)&dst_participants;
 
-//    mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
-//    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
 
 	mcast.client = client;
 	mcast.context = 0;
@@ -203,7 +201,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 1;
-    sleep(5); // instead of syncing
+    //sleep(5); // instead of syncing
 
     if(gRoot == task_id)
     {
@@ -214,7 +212,7 @@ int main(int argc, char ** argv)
       {
         DBG_FPRINTF((stderr,"gRankList[%d] = %d\n",j, gRankList[j]));
       }
-      XMI_assert(!dst_participants.isRankMember(task_id));
+      XMI_assert(!dst_participants.isRankMember(gRoot));
 
       _buffer1.reset(true); // isRoot = true
 
@@ -279,7 +277,7 @@ int main(int argc, char ** argv)
   }
 // ------------------------------------------------------------------------
 
-  sleep(5);
+  //sleep(5);
 // ------------------------------------------------------------------------
 // 1) The last rank slowly mcasts to all 
 // 2) Global root pipelines/mcast's the output from 1) to all
@@ -287,7 +285,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     _doneCountdown = 2;
-    sleep(5); // instead of syncing
+    //sleep(5); // instead of syncing
 
     if(gRoot == task_id)
     {
@@ -413,163 +411,6 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
 
-  sleep(5);
-#if 0 //doesn't work at this time
-// ------------------------------------------------------------------------
-// 1) Root mcast to "spanning" topology (0th rank in each local)
-// 2) 0th rank in each locale mcast's the output from 1) to locale
-// 3) Validate the buffers on root.
-// ------------------------------------------------------------------------
-  {
-    // local topology variables
-    size_t  lRoot    = __global.topology_local.index2Rank(0);
-    size_t *lRankList; __global.topology_local.rankList(&lRankList);
-    size_t  lSize   =  __global.topology_local.size();
-
-    options.type = XMI_MULTICAST;
-
-    options.config = NULL;
-
-    options.hint.multicast.spanning = 1; 
-    options.hint.multicast.one_sided = 1;
-    options.hint.multicast.collective = 1;
-    options.hint.multicast.active_message = 1;
-
-    size_t                     spanning_dispatch = dispatch+1;
-    status = XMI_Dispatch_set_new(context,
-                                  spanning_dispatch, 
-                                  fn,
-                                  _cookie,
-                                  options);
-
-    options.hint.multicast.local = 1;
-    options.hint.multicast.one_sided = 1;
-    options.hint.multicast.collective = 1;
-    options.hint.multicast.active_message = 1;
-
-    size_t                     local_dispatch = spanning_dispatch+1;
-    status = XMI_Dispatch_set_new(context,
-                                  local_dispatch, 
-                                  fn,
-                                  _cookie,
-                                  options);
-
-    _doneCountdown = 1;
-    sleep(5); // instead of syncing
-
-    if(gRoot == task_id)
-    {
-      new (&src_participants) XMI::Topology(gRoot); // global root
-      __global.topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale
-
-
-      mcast.dispatch = spanning_dispatch;
-      mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into.
-
-      _buffer1.reset(true); // isRoot = true;
-
-
-      mcast.src = (xmi_pipeworkqueue_t *)_buffer1.srcPwq();
-      mcast.dst = (xmi_pipeworkqueue_t *)NULL;
-
-      status = XMI_Multicast(&mcast);
-    }
-    else _buffer1.reset(); // non-root reset
-
-    if(__global.topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology
-    {
-
-      ++_doneCountdown;  // I'm doing another multicast so another cb_done is expected
-
-
-      new (&dst_participants) XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
-      new (&src_participants) XMI::Topology(task_id); // root
-
-      _buffer2.reset(true ); // isRoot = true
-
-      // set buffer2 input from buffer1 output
-
-      XMI::PipeWorkQueue * srcPwq =_buffer1.dstPwq();
-      _buffer2.set(srcPwq, _buffer1.dstPwq()); // isRoot = true
-
-      mcast.dispatch = local_dispatch;
-      mcast.connection_id = 2;  // I'm going to use connection id to specify which buffer to receive into.
-
-      mcast.src = (xmi_pipeworkqueue_t *)srcPwq;
-      mcast.dst = (xmi_pipeworkqueue_t *)NULL;
-
-      status = XMI_Multicast(&mcast);
-
-      sleep(1);
-    }
-    else
-      _buffer2.reset();  // non-root reset
-
-    while(_doneCountdown)
-    {
-      status = XMI_Context_advance (context, 10);
-    }
-    size_t 
-    bytesConsumed = 0,
-    bytesProduced = 0;
-
-    if(gRoot == task_id)
-    {
-      _buffer1.validate(bytesConsumed,
-                        bytesProduced,
-                        true,   // isRoot = true
-                        false); // isDest = false
-      if((bytesConsumed != TEST_BUF_SIZE) || 
-         (bytesProduced != 0))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-    }
-    else
-    {
-      _buffer1.validate(bytesConsumed,
-                        bytesProduced);
-      if((bytesConsumed != 0) || 
-         (bytesProduced != TEST_BUF_SIZE))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-    }
-    if(gRankList[gSize-1] == task_id) // last rank will mcast back
-    {
-      _buffer2.validate(bytesConsumed,
-                        bytesProduced,
-                        true,   // isRoot = true
-                        false); // isDest = false
-      if((bytesConsumed != TEST_BUF_SIZE) || 
-         (bytesProduced != 0))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-    }
-    else
-    {
-      _buffer2.validate(bytesConsumed,
-                        bytesProduced);
-      if((bytesConsumed != 0) || 
-         (bytesProduced != TEST_BUF_SIZE))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
-    }
-  }
-// ------------------------------------------------------------------------
-
-  sleep(5);
-#endif
 // ------------------------------------------------------------------------
   DBG_FPRINTF((stderr, "XMI_Context_destroy(context);\n"));
   status = XMI_Context_destroy(context);

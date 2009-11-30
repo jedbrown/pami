@@ -10,13 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = time client context p2p multisend @XTRA_TEST_SUBDIRS@ topology
+SUBDIRS         = 
 NOTBUILT        = 
-APPS            = xmihello.${EXTENSION} barrier.${EXTENSION} bcast.${EXTENSION} \
-		bcast_advisor.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} allgatherv.${EXTENSION} \
-		scatter.${EXTENSION} scatterv.${EXTENSION} bcast_subcomm.${EXTENSION} \
-		ambcast.${EXTENSION} alltoall.${EXTENSION} bcast_subcomm2.${EXTENSION} 
-
+APPS            = topology.${EXTENSION} 
 include @abs_top_builddir@/Build.rules
 
 ifeq (@BUILDENV@,ade)
@@ -32,11 +28,11 @@ ifeq (@BUILDENV@,ade)
 else
 
 %.${EXTENSION}: %.c
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cc
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cpp
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 
 endif
 

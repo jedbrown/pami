@@ -58,7 +58,7 @@ namespace XMI
       _pSrcPwq(&_srcPwq),
       _pDstPwq(&_dstPwq)
       {
-        DBG_FPRINTF((stderr,"%s\n",__PRETTY_FUNCTION__));
+        DBG_FPRINTF((stderr,"<%#8.8X>%s src %p/%p, dst %p/%p\n",(unsigned)this,__PRETTY_FUNCTION__, &_srcPwq, _source, &_dstPwq, _destination));
         reset(isRoot);
       }
 
@@ -84,6 +84,7 @@ namespace XMI
                         bool isRoot  = false)
       {
         DBGF_FUNCTIONNAME;
+        DBG_FPRINTF((stderr,"<%#8.8X> src %p, dst %p\n",(unsigned)this,src, dst));
         src->configure(NULL, _source, sizeof(_source), sizeof(_source));
         src->reset();
 
@@ -97,6 +98,7 @@ namespace XMI
                       XMI::PipeWorkQueue* dst)
       {
         DBGF_FUNCTIONNAME;
+        DBG_FPRINTF((stderr,"<%#8.8X> src %p, dst %p\n",(unsigned)this,src, dst));
         _pSrcPwq = src;
         _pDstPwq = dst;
         return;
@@ -124,6 +126,8 @@ namespace XMI
 
         char* source      = _pSrcPwq->bufferToConsume();
         char* destination = _pDstPwq->bufferToProduce();
+        DBG_FPRINTF((stderr, "src %p/%p, dst %p/%p\n",
+                     src, source, dst, destination));
 
         size_t count_of_unsigneds = count/sizeof(unsigned);
         unsigned value = 0;
@@ -167,13 +171,15 @@ namespace XMI
 
         bytesConsumed = _pSrcPwq->getBytesConsumed();
         bytesProduced = _pDstPwq->getBytesProduced();
-        DBG_FPRINTF((stderr, "bytesConsumed %zd, bytesProduced %zd\n",bytesConsumed, bytesProduced));
 
         _pSrcPwq->reset();
         _pDstPwq->reset();
 
         char* source      = _pSrcPwq->bufferToConsume();
         char* destination = _pDstPwq->bufferToProduce();
+
+        DBG_FPRINTF((stderr, "src %p/%p, dst %p/%p, bytesConsumed %zd, bytesProduced %zd\n",
+                     src, source, dst, destination, bytesConsumed, bytesProduced));
 
         unsigned errors = 0;
         unsigned value = 0;

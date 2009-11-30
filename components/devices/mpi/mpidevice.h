@@ -25,11 +25,11 @@
 
 
 
-#define DISPATCH_SET_SIZE 256
 namespace XMI
 {
   namespace Device
   {
+#define DISPATCH_SET_SIZE 256
     typedef struct mpi_dispatch_info_t
     {
       XMI::Device::Interface::RecvFunction_t  recv_func;
@@ -567,6 +567,7 @@ namespace XMI
       mpi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       mpi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
     };
+#undef DISPATCH_SET_SIZE
   };
 };
 #endif // __components_devices_mpi_mpipacketdevice_h__
