@@ -24,14 +24,14 @@
 #undef USE_FLAT_BUFFER	// (4*1024*1024)
 
 #define ALLOC_SHMEM(memptr, align, size)	\
-	((XMI_SYSDEP_CLASS *)_sysdep)->mm.memalign((void **)&memptr, align, size)
+	((XMI::SysDep *)_sysdep)->mm.memalign((void **)&memptr, align, size)
 
 /// \todo Fix shmem free so that it doesn't assert
 #define FREE_SHMEM(memptr)	\
-	//((XMI_SYSDEP_CLASS *)_sysdep)->mm.free(memptr)
+	//((XMI::SysDep *)_sysdep)->mm.free(memptr)
 
 #define WAKEUP(vector)		\
-	// ((XMI_SYSDEP_CLASS *)_sysdep)->wakeupManager().wakeup(vector)
+	// ((XMI::SysDep *)_sysdep)->wakeupManager().wakeup(vector)
 
 namespace XMI {
 

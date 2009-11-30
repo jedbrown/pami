@@ -109,7 +109,7 @@ namespace Generic {
 	/// \param[in] context		The specific context being initialized
 	/// \param[in] num_contexts	Total number of contexts in current client
 	///
-	inline void Device::init(XMI_SYSDEP_CLASS &sd, xmi_context_t ctx,
+	inline void Device::init(XMI::SysDep &sd, xmi_context_t ctx,
 				size_t context, size_t num_contexts,
 				Generic::Device *generics) {
 		static bool first_global = true;

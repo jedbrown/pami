@@ -100,7 +100,7 @@ public:
 
 	virtual ~GenericSubDevice() { }
 
-	inline XMI_SYSDEP_CLASS *getSysdep() { return _sd; }
+	inline XMI::SysDep *getSysdep() { return _sd; }
 
 	inline int advanceRecv(size_t context);
 
@@ -178,7 +178,7 @@ public:
 	}
 
 protected:
-	inline void ___init(XMI_SYSDEP_CLASS &sd) {
+	inline void ___init(XMI::SysDep &sd) {
 		_sd = &sd;
 	}
 
@@ -207,7 +207,7 @@ protected:
 	bool _hasBlockingAdvance;
 	int _nRoles;
 	int _repl;
-	XMI_SYSDEP_CLASS *_sd;
+	XMI::SysDep *_sd;
 }; /* class GenericSubDevice */
 
 /// \brief Simple Sub-Device where no threading is used.
@@ -250,7 +250,7 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		_generics = devices;
 		___init(sd);
 	}
@@ -332,7 +332,7 @@ private:
 	}
 
 protected:
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		_generics = devices;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
@@ -439,7 +439,7 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		_generics = devices;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
@@ -534,7 +534,7 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	virtual void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) = 0;
+	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -544,7 +544,7 @@ public:
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
 	///
-	inline void __init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		_generics = devices;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
@@ -639,7 +639,7 @@ private:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI_SYSDEP_CLASS &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		// do this now so we don't have to every time we post
 //		for (int x = 0; x < NUM_THREADS; ++x) {
 //			//_threads[x].setPolled(true);
