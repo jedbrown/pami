@@ -97,14 +97,15 @@ namespace XMI
           	// memory from the heap instead.
           	//
           	// TODO - verify the run mode is actually SMP.
-#warning should not use 1MB of stack here
-          	size_t buffer[bytes];
+          	size_t * buffer = (size_t *) malloc (sizeof(size_t) * bytes);
           	size_t bytes_used = _mapcache.init (personality, buffer, bytes);
 
           	posix_memalign ((void **)&_memptr, 16, bytes_used);
           	memcpy (_memptr, buffer, bytes_used);
           	//memset (_memptr, 0, bytes);
           	_memsize = bytes_used;
+          	
+          	free (buffer);
 	  }
 	  mapping.init(_mapcache, personality);
 	  lockboxFactory.init(&mapping);
