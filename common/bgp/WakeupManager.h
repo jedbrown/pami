@@ -39,7 +39,7 @@ namespace XMI {
 			return XMI_ERROR;
 		}
 
-		inline xmi_result_t try_impl(void *v) {
+		inline xmi_result_t trySleep_impl(void *v) {
 			return XMI_ERROR;
 		}
 

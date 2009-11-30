@@ -93,11 +93,11 @@ namespace Interface {
 		///		XMI_EAGAIN = no wakeup (yet)
 		///		XMI_ERROR = internal errors
 		///
-		inline xmi_result_t try(void *v);
+		inline xmi_result_t trySleep(void *v);
 
 		/// \brief Check if wakeup has happened
 		///
-		/// Requires subsequent try() or sleep() in order to
+		/// Requires subsequent trySleep() or sleep() in order to
 		/// clear condition (if return was XMI_SUCCESS).
 		///
 		/// It is generally expected that only one thread
@@ -144,9 +144,9 @@ namespace Interface {
         }
 
         template <class T_WakeupManager>
-        xmi_result_t WakeupManager<T_WakeupManager>::try(void *v)
+        xmi_result_t WakeupManager<T_WakeupManager>::trySleep(void *v)
         {
-            return static_cast<T_WakeupManager*>(this)->try_impl(v);
+            return static_cast<T_WakeupManager*>(this)->trySleep_impl(v);
         }
 
         template <class T_WakeupManager>

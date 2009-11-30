@@ -104,7 +104,7 @@ namespace XMI {
 			return XMI_SUCCESS;
 		}
 
-		inline xmi_result_t try_impl(void *v) {
+		inline xmi_result_t trySleep_impl(void *v) {
 			struct sembuf op;
 			size_t z = (size_t)v;
 			op.sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
