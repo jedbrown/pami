@@ -12,6 +12,7 @@
 #include <mpi.h>
 #include "common/ContextInterface.h"
 #include "Geometry.h"
+#include "WakeupManager.h"
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpipacketmodel.h"
 #include "components/devices/mpi/mpimessage.h"
@@ -130,6 +131,9 @@ namespace XMI
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
 
+#ifdef USE_WAKEUP_VECTORS
+	  _wakeupManager.init(1, 0x57550000 | id); // check errors?
+#endif // USE_WAKEUP_VECTORS
 	  _generic.init (_sysdep, (xmi_context_t)this, id, num, generics);
           _shmem.init(&_sysdep);
           _lock.init(&_sysdep);
@@ -202,8 +206,13 @@ namespace XMI
                 _empty_advance=0;
               }
 
-
-
+#ifdef USE_WAKEUP_VECTORS
+	  // this is only for advances that are allowed to sleep...
+	  if (!events) {
+	  	_wakeupManager.sleep(xxx); // check errors?
+		goto repeat;
+	  }
+#endif // USE_WAKEUP_VECTORS
 
           return events;
         }
@@ -781,6 +790,9 @@ namespace XMI
       MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
 
       XMI::Device::Generic::Device &_generic;
+#ifdef USE_WAKEUP_VECTORS
+      XMI::WakeupManager _wakeupManager;
+#endif /* USE_WAKEUP_VECTORS */
       ShmemDevice               _shmem;
       MemoryAllocator<2048,16>  _request;
       MPIDevice                 _mpi;

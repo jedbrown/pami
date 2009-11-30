@@ -81,6 +81,10 @@ protected:
 		t[nt].setAdv(advanceThread<WQRingBcastMsg,WQRingBcastThr>);
 		t[nt].setDone(false);
 		t[nt]._bytesLeft = _bytes;
+#ifdef USE_WAKEUP_VECTORS
+		// not here - but somewhere/somehow...
+		__setWakeup(thr);
+#endif // USE_WAKEUP_VECTORS
 		++nt;
 		// assert(nt > 0? && nt < n);
 		_nThreads = nt;
@@ -118,7 +122,7 @@ protected:
 			thr->setDone(true);
 #ifdef USE_WAKEUP_VECTORS
 			__clearWakeup(thr);
-#endif /* USE_WAKEUP_VECTORS */
+#endif // USE_WAKEUP_VECTORS
 			setStatus(XMI::Device::Done);
 			return XMI_SUCCESS;
 		}
@@ -134,6 +138,7 @@ protected:
 	/// \param[in] thr	The thread which wishes to be woken
 	///
 	inline void __setWakeup(WQRingBcastThr *thr) {
+#ifdef USE_WAKEUP_VECTORS
 		void *v = thr->getWakeVec();
 		_iwq->setConsumerWakeup(v);
 		if (_rwq) {
@@ -142,6 +147,7 @@ protected:
 		if (_swq) {
 			_swq->setProducerWakeup(v);
 		}
+#endif // USE_WAKEUP_VECTORS
 	}
 
 	/// \brief clear a previously set wakeup
@@ -149,6 +155,7 @@ protected:
 	/// \param[in] thr	The thread which no longer wishes to be woken
 	///
 	inline void __clearWakeup(WQRingBcastThr *thr) {
+#ifdef USE_WAKEUP_VECTORS
 		_iwq->setConsumerWakeup(NULL);
 		if (_rwq) {
 			_rwq->setProducerWakeup(NULL);
@@ -156,6 +163,7 @@ protected:
 		if (_swq) {
 			_swq->setProducerWakeup(NULL);
 		}
+#endif // USE_WAKEUP_VECTORS
 	}
 
 	unsigned _nThreads;

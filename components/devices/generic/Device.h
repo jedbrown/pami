@@ -14,6 +14,7 @@
 // used by messaging (advance).
 
 #include "SysDep.h"
+#include "WakeupManager.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
@@ -153,13 +154,7 @@ public:
 				if (++t >= n) {
 					t = 0;
 				}
-#ifdef USE_WAKEUP_VECTORS
-				if (thr->isPolled()) {
-					g0[t].__Threads.pushTail(thr);
-				}
-#else /* !USE_WAKEUP_VECTORS */
 				g0[t].__Threads.pushTail(thr);
-#endif /* !USE_WAKEUP_VECTORS */
 			}
 			thr = (GenericAdvanceThread *)((char *)thr + len);
 		}
@@ -194,18 +189,6 @@ private:
 	size_t __contextId;
 	size_t __nContexts;
 	Generic::Device *__generics;
-
-#ifdef USE_WAKEUP_VECTORS
-	void *__wakeupVectors;
-	void *__myWakeupVectors;
-	GenericAdvanceThread *__thrRegistry[MAX_REG_THREADS];
-	int __numRegThreads;
-
-	//////////////////////////////////////////////////////////////////
-	/// \brief SysDep object - only used to get WakeupManager
-	//////////////////////////////////////////////////////////////////
-	XMI::SysDep &__sysdep;
-#endif /* USE_WAKEUP_VECTORS */
 
 }; /* class Device */
 

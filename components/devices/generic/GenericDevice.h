@@ -12,8 +12,6 @@
 // This file implements the interfaces used by messaging (advance).
 // See generic/Device.h for interfaces used by sub-devices.
 
-#undef USE_WAKEUP_VECTORS
-
 #include "components/devices/generic/Device.h"
 #include "GenericSubDeviceList.h"
 
@@ -118,14 +116,6 @@ namespace Generic {
 		__contextId = context;
 		__nContexts = num_contexts;
 		__generics = generics;
-#ifdef USE_WAKEUP_VECTORS
-		xmi_result_t rc = XMI_ERROR;
-		size_t me = __global.mapping.t(); // only works on BG/P...?
-		rc = __sysdep.wakeupManager().allocWakeVecs((int)XMI_MAX_PROC_PER_NODE,
-			XMI_MAX_THREAD_PER_PROC * MAX_REG_THREADS, (int)me,
-			&__wakeupVectors);
-		XMI_assert(rc == XMI_SUCCESS);
-#endif /* USE_WAKEUP_VECTORS */
 		// These are all the devices we know how to play well with...
 
 		// todo: need to work out how to handle devices that need
@@ -223,9 +213,6 @@ namespace Generic {
 		// just further delay the advance of real work when present.
 
 		//if (!__Threads.mutex()->tryAcquire()) continue;
-#ifdef USE_WAKEUP_VECTORS
-#error WakeupManager TBD
-#endif /* USE_WAKEUP_VECTORS */
 		GenericThread *thr, *nxt;
 		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxt) {
 			nxt = (GenericThread *)thr->next();
