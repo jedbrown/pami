@@ -23,7 +23,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "components/devices/MulticastModel.h"
-
+#undef TRACE_DEVICE
 #ifndef TRACE_DEVICE
   #define TRACE_DEVICE(x) //fprintf x
 #endif
@@ -79,7 +79,12 @@ namespace XMI
       {
         XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
         XMI_assert(src_topo != NULL);
-        _root = src_topo->index2Rank(0); // assert size(0 == 1...
+        _root = src_topo->index2Rank(0); 
+
+        //I've had some bad topo's, so try to detect it here...
+        XMI_assert(src_topo->size() == 1); //techinically only one root...
+        XMI_assert((0 == src_topo->rank2Index(_root)) && src_topo->isRankMember(_root));
+
         TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg client %p, context %zd, root %zd, iwq %p, rwq %p, bytes %zd\n",(unsigned)this,
                       mcast->client, mcast->context, _root, _iwq, _rwq, _bytes));
         bool iamroot = (_root == __global.mapping.task());
@@ -96,8 +101,9 @@ namespace XMI
             _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
           }
         }
-        else
+        else // I must be a dst_participant
         {
+          XMI_assert(_dst->isRankMember(__global.mapping.task()));
           // no actual data to send, indicate we're done with a pending status (for advance)
           if((_rwq == NULL) && (_bytes == 0))
           {
@@ -106,7 +112,7 @@ namespace XMI
             // reset the _status to initialized after __setThreads
             _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
           }
-          _iwq = NULL;
+          _iwq = NULL; // ignore the src pwq
         }
         //XMI_assertf(_rwq || _iwq, "MPIBcastMsg has neither input or output data\n");
       }
@@ -154,6 +160,9 @@ namespace XMI
         }
         int flag = 0;
         MPI_Status status;
+        //static unsigned count = 5; if(count) count--;
+        //if(count)TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() idx %zd/%zd, currBytes %zd, bytesLeft %zd, tag %d %s\n",(unsigned)this,
+        //              _idx, _dst->size(), _currBytes, thr->_bytesLeft, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
         if(_req != MPI_REQUEST_NULL)
         {
           MPI_Test(&_req, &flag, &status);
@@ -194,7 +203,7 @@ namespace XMI
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() sending, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
                         _idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           int rc = 0;
-          if(_dst->index2Rank(_idx) == __global.mapping.task()) // This task is also a dst? do a local copy
+          if(_dst->index2Rank(_idx) == __global.mapping.task()) // This src task is also a dst? do a local copy
           {
             memcpy(_rwq->bufferToProduce(), _currBuf, _currBytes);
             _rwq->produceBytes(_currBytes);
@@ -207,6 +216,7 @@ namespace XMI
           }
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
                         rc,_idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
+          //count = 5;
           // error checking?
           ++_idx;
         }
@@ -246,6 +256,7 @@ namespace XMI
           {
             return XMI_EAGAIN;
           }
+          //count = 5;
           int rc = MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
                              _root, _tag,
                              _g_mpi_communicator, &_req);
@@ -299,8 +310,8 @@ namespace XMI
 
     inline bool MPIBcastMdl::postMulticast_impl(xmi_multicast_t *mcast)
     {
-      TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd\n",(unsigned)this,
-                    mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes));
+      TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",(unsigned)this,
+                    mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, mcast->request));
       MPIBcastMsg *msg = new (mcast->request) MPIBcastMsg(_g_mpibcast_dev, mcast);
       _g_mpibcast_dev.__post<MPIBcastMsg>(msg);
       return true;
@@ -308,5 +319,5 @@ namespace XMI
 
   }; //-- Device
 }; //-- XMI
-
+#undef TRACE_DEVICE
 #endif // __components_devices_workqueue_MPIBcastMsg_h__
