@@ -34,6 +34,26 @@ asm volatile ("lfpdux %0,%1,%2" : "=f"(x), "+Ob"(ptr) : "r"(incr) : "memory")
 asm volatile ("stfpdux %2,%0,%1": "+Ob" (ptr) : "r" (incr), "f" (x) : "memory")
 
 
+///
+/// \brief Template specialization for size_t copies.
+///
+template <>
+template <unsigned N>
+void Type<size_t>::copy (size_t * dst, size_t * src)
+{
+  size_t i;
+  for (i=0; i<(N/sizeof(size_t)); i++) dst[i] = src[i];
+
+  if (N%(sizeof(size_t)))
+  {
+    uint8_t * const d = (uint8_t * const) dst[N%(sizeof(size_t))];
+    uint8_t * const s = (uint8_t * const) src[N%(sizeof(size_t))];
+
+    for (i=0; i<(N%(sizeof(size_t))); i++) d[i] = s[i];
+  }
+};
+
+
 #if 0
 template <>
 template <unsigned N>

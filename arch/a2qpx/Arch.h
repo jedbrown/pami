@@ -26,4 +26,23 @@
 #undef  mem_barrier
 #define mem_barrier() __sync_synchronize()
 
+///
+/// \brief Template specialization for size_t copies.
+///
+template <>
+template <unsigned N>
+void Type<size_t>::copy (size_t * dst, size_t * src)
+{
+  size_t i;
+  for (i=0; i<(N/sizeof(size_t)); i++) dst[i] = src[i];
+
+  if (N%(sizeof(size_t)))
+  {
+    uint8_t * const d = (uint8_t * const) dst[N%(sizeof(size_t))];
+    uint8_t * const s = (uint8_t * const) src[N%(sizeof(size_t))];
+
+    for (i=0; i<(N%(sizeof(size_t))); i++) d[i] = s[i];
+  }
+};
+
 #endif // __xmi_arch_a2qpx_h__
