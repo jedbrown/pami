@@ -2602,51 +2602,45 @@ extern "C"
   /**
    * \brief Determine role information for a multisend protocol
    *
-   * Roles are numbered 0..(N-1). Role 0 is the first role in the data-chain.
-   * Role 0 performs the root task(s) of a broadcast operation, for example.
-   * Role (N-1) (may also be 0 if numRoles is 1) is the last role in the data-chain.
-   * It performs the root task(s) of a reduce operation, as an example. Roles between
-   * 0 and (N-1) are intermediate roles of non-specific task. Typically, all roles
-   * pass in "data" and "results", even though some roles may ignore them.
+   * Roles are numbered 0..(N-1). The roles field of the multisend call structs
+   * is a bitmask of the roles to be used, LSB is role 0. The meanings of roles
+   * is defined by the actual multisend, or family of multisends. For example,
+   * The BG/P Collective Network multisends define role 0 as the injection role
+   * and role 1 as reception. Note, this is not the same as root/non-root or
+   * source/destination - sender/receiver (in a multicast). Since data locality
+   * is important for roles such as injection/reception, roles are generally
+   * expected to conform to the pattern that role 0 will be reading from the
+   * source/data buffer and role (N-1) will be writing to the destination/results buffer.
+   *
    * Roles also specify how to assign roles when there are more processes than roles.
    * The "R" (replication role) indicates which role to replicate for any additional
-   * processes. Beyond that, each process is assigned role "N" (an invalid role).
-   * Role information (numRoles and ReplRole) is determined from the factory that
+   * processes. Beyond that, each additional process would not call the multisend.
+   * Role information (numRoles and ReplRole) is determined from the class that
    * was registered. So a typical procedure to generate a multicombine would be:
    *
-   *	factory->getRoles(&numRoles, &replRole);
+   *	model->getRoles(&numRoles, &replRole);
    *	// analyze and select role(s)
-   *	factory->generate(..., roles, ...);
+   *	model->postXXX(..., roles, ...);
    *
-   * Role information is static (?) so the analysis of roles might be done at
+   * Role information is static so the analysis of roles might be done at
    * registration/init time and carried forward. If that is not the case, we may
    * need to add additional params or perhaps even split this out by multi* type.
-   * For example, if there is not a 1:1 relationship between factory (registration)
+   * For example, if there is not a 1:1 relationship between model (registration)
    * and message/device, then some other way must be found to determine the roles
-   * before calling factory->generate(). This might require passing some or all of
-   * the generate() parameters into the getRoles() call (i.e. pass in the param struct).
-   * Or, perhaps generate() returns the role information and then roles must be set
-   * after generate(), but this creates problems not only with optimizations but
-   * also because generate() often starts the message and roles must be known by that time.
-   * Perhaps, generate() passes generic role info, such as "I am #2 of 4" and let
-   * generate setup roles according to some standard algorithm. But that may not
+   * before calling model->postXXX(). This might require passing some or all of
+   * the postXXX() parameters into the getRoles() call (i.e. pass in the param struct).
+   * Or, perhaps postXXX() returns the role information and then roles must be set
+   * after postXXX(), but this creates problems not only with optimizations but
+   * also because postXXX() often starts the message and roles must be known by that time.
+   * Perhaps, postXXX() passes generic role info, such as "I am #2 of 4" and let
+   * postXXX setup roles according to some standard algorithm. But that may not
    * allow for special treatment based on locality of data or other work assigned
    * to that core.
    *
-   * Example 1: numRoles = 2 and replRole = 0 (e.g. a Reduce)
-   *	All data participants use (replicate) role "0". The root uses role "1".
-   *	If a participant is the root but is not supplying data, it would use
-   *	the data_participants topology to indicate that.
-   *
-   * Example 2: numRoles = 2 and replRole = -1 (e.g. Tree device, injection/reception)
+   * Example: numRoles = 2 and replRole = -1 (e.g. Tree device, injection/reception)
    *	One participant, closest to the input data, uses role "0". Another
    *	participant (closest to the results) uses role "1". If there is only one
    *	(local) participant, i.e. SMP mode, then the role is "0|1" (both roles).
-   *
-   * Example 3: numRoles = 1 and replRole = -1 (e.g. one-sided bcast)
-   *	(a.k.a multicast)
-   *	Origin uses role "0" and sets results participants to the destinations.
-   *	Destinations all get data via recv callback setup at registration time.
    *
    * It is expected that the caller of a multisend has some knowledge of the type
    * of multisend being performed. This is required in order to even setup
@@ -2654,7 +2648,8 @@ extern "C"
    * multisend call, so adding the roles as a dependency of the context should
    * not be overly restrictive.
    *
-   * \param[in] registration	The protocol to be analysed
+   * \param[in] context		The context in which the dispatch was registered
+   * \param[in] registration	The dispatch (model) to be analyzed
    * \param[out] numRoles	The number of different roles supported/required
    * \param[out] replRole	The role to replicate for additional participants,
    *				or -1 if no additional roles are used.
