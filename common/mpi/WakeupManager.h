@@ -83,7 +83,7 @@ namespace XMI {
 			arg.val = 0;
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semctl(_semSet, sem_num, SETVAL, &arg);
-			if (err < 0) { 
+			if (err < 0) {
 				return XMI_ERROR;
 			}
 			return XMI_SUCCESS;
@@ -97,7 +97,7 @@ namespace XMI {
 			op.sem_flg = 0;
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semop(_semSet, &op, 1);
-			if (err < 0) { 
+			if (err < 0) {
 				return XMI_ERROR;
 			}
 			clear_impl(v);
@@ -112,10 +112,10 @@ namespace XMI {
 			op.sem_flg = IPC_NOWAIT;
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semop(_semSet, &op, 1);
-			if (err == EAGAIN) { 
+			if (err == EAGAIN) {
 				return XMI_EAGAIN;
 			}
-			if (err < 0) { 
+			if (err < 0) {
 				return XMI_ERROR;
 			}
 			clear_impl(v);
@@ -127,10 +127,10 @@ namespace XMI {
 			int s = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semctl(_semSet, s, GETVAL);
-			if (err < 0) { 
+			if (err < 0) {
 				return XMI_ERROR;
 			}
-			if ((short)err <= 0) { 
+			if ((short)err <= 0) {
 				return XMI_EAGAIN;
 			}
 			return XMI_SUCCESS;
