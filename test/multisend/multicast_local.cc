@@ -158,7 +158,6 @@ int main(int argc, char ** argv)
   {
 
     mcast.dispatch = dispatch;
-    mcast.hints = options.hint.multicast; //?
     mcast.connection_id = task_id; //0xB;
     mcast.msginfo = &_msginfo;
     mcast.msgcount = 1;

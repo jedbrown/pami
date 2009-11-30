@@ -487,72 +487,71 @@ namespace XMI
         }
 
       inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
-        {
-          size_t id = (size_t)(mcastinfo->dispatch);
-          TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zd/%zd] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
-          XMI_assert_debug (_dispatch[id] != NULL);
-          // I need to look at hints until I get down to one object for mcast...
-          //  now it's either a protocol or a model.
+      {
+      size_t id = (size_t)(mcastinfo->dispatch);
+      TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zd/%zd] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
+      XMI_assert_debug (_dispatch[id][0] != NULL);
+
+      // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, we used the 
+      // second (unused by mcast) entry to store an id of what we put in the first entry.  Now 
+      // we know what class to pull out of _dispatch[][0] and (eventually) what allocator to use.
+      XMI_assert_debug (_dispatch[id][1] > (void*)0 && _dispatch[id][1] < (void*)6);
 
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
-          if(mcastinfo->hints.one_sided && mcastinfo->hints.collective)
-          {
-            MPIOneSidedMulticastProtocol * multicast = (MPIOneSidedMulticastProtocol *) _dispatch[id][0];
-            TRACE_ERR((stderr, ">> multicast_impl, one sided collective multicast %p\n", multicast));
-            multicast->multicast(mcastinfo);
-          }
-          else
+      if(_dispatch[id][1] == (void*)1) // see HACK comment above
+      {
+        MPIOneSidedMulticastProtocol * multicast = (MPIOneSidedMulticastProtocol *) _dispatch[id][0];
+        TRACE_ERR((stderr, ">> multicast_impl, one sided collective multicast %p\n", multicast));
+        multicast->multicast(mcastinfo);
+      }
+      else
 // /\/\/\ Experimental non-generic "collective" mpi device and protocol
 #endif //ifndef DISABLE_COLLDEVICE
 
-          if(mcastinfo->hints.one_sided)
-          {
-            P2pDispatchMulticastProtocol * multicast = (P2pDispatchMulticastProtocol *) _dispatch[id][0];
-            TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
-            multicast->multicast(mcastinfo);
-          }
-          else if(mcastinfo->hints.all_sided)
-          {
-            if(mcastinfo->hints.local)
-            {  
-              if(mcastinfo->hints.ring_wq ) // \todo bogus!  the problem with hints is ....
-              {
-                XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
-                TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
-                if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-                {
-                  char *msgbuf = new char[XMI::Device::WQRingBcastMdl::sizeof_msg];
-                  mcastinfo->request = msgbuf;
-                }
-                multicast->postMulticast(mcastinfo);
-              }
-              else
-              {
-                XMI::Device::LocalBcastWQModel  * multicast = (XMI::Device::LocalBcastWQModel *) _dispatch[id][0];
-                TRACE_ERR((stderr, ">> multicast_impl, all sided multicast %p\n", multicast));
-                if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-                {
-                  char *msgbuf = new char[XMI::Device::LocalBcastWQModel::sizeof_msg];
-                  mcastinfo->request = msgbuf;
-                }
-                multicast->postMulticast(mcastinfo);
-              }
-            }
-            else if(mcastinfo->hints.global)
-            {
-              XMI::Device::MPIBcastMdl  * multicast = (XMI::Device::MPIBcastMdl *) _dispatch[id][0];
-              TRACE_ERR((stderr, ">> multicast_impl, all sided global multicast %p\n", multicast));
-              if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-              {
-                char *msgbuf = new char[XMI::Device::MPIBcastMdl::sizeof_msg];
-                mcastinfo->request = msgbuf;
-              }
-              multicast->postMulticast(mcastinfo);
-            }
-          }
-          return XMI_UNIMPL;
+      if(_dispatch[id][1] == (void*)2) // see HACK comment above
+      {
+        P2pDispatchMulticastProtocol * multicast = (P2pDispatchMulticastProtocol *) _dispatch[id][0];
+        TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
+        multicast->multicast(mcastinfo);
+      }
+      else if(_dispatch[id][1] == (void*)3) // see HACK comment above
+      {
+        XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
+        TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
+        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+        {
+          char *msgbuf = new char[XMI::Device::WQRingBcastMdl::sizeof_msg];
+          mcastinfo->request = msgbuf;
         }
+        multicast->postMulticast(mcastinfo);
+      }
+      else if(_dispatch[id][1] == (void*)4) // see HACK comment above
+      {
+        XMI::Device::LocalBcastWQModel  * multicast = (XMI::Device::LocalBcastWQModel *) _dispatch[id][0];
+        TRACE_ERR((stderr, ">> multicast_impl, all sided multicast %p\n", multicast));
+        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+        {
+          char *msgbuf = new char[XMI::Device::LocalBcastWQModel::sizeof_msg];
+          mcastinfo->request = msgbuf;
+        }
+        multicast->postMulticast(mcastinfo);
+      }
+      else if(_dispatch[id][1] == (void*)5) // see HACK comment above
+      {
+        XMI::Device::MPIBcastMdl  * multicast = (XMI::Device::MPIBcastMdl *) _dispatch[id][0];
+        TRACE_ERR((stderr, ">> multicast_impl, all sided global multicast %p\n", multicast));
+        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+        {
+          char *msgbuf = new char[XMI::Device::MPIBcastMdl::sizeof_msg];
+          mcastinfo->request = msgbuf;
+        }
+        multicast->postMulticast(mcastinfo);
+      }
+      else
+        XMI_abort();
+      return XMI_SUCCESS;
+      }
 
       inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
         {
@@ -647,12 +646,18 @@ namespace XMI
       _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
       if(options.type == XMI_MULTICAST)
       {
+        // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, use the 
+        // second (unused by mcast) entry to store an id of what we put in the first entry.
+        // sample:
+        //  _dispatch[(size_t)id][1] = (void*) ARBITRARY_ID;
+
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
         if(options.hint.multicast.one_sided && options.hint.multicast.collective)
         {
           if(options.hint.multicast.global)
           {
+            _dispatch[(size_t)id][1] = (void*) 1; // see HACK comments above
             XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
             new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie,
                                                                 &_mpi_global_coll_device,
@@ -663,6 +668,7 @@ namespace XMI
           }
           else if(options.hint.multicast.local)
           {
+            _dispatch[(size_t)id][1] = (void*) 1; // see HACK comments above
             XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
             new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie,
                                                                 &_mpi_local_coll_device,
@@ -677,6 +683,7 @@ namespace XMI
 #endif //ifndef DISABLE_COLLDEVICE
         if(options.hint.multicast.one_sided)
         {
+          _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(P2pDispatchMulticastProtocol),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2pDispatchMulticastProtocol),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie, 
                                                                       _mpi,
@@ -690,12 +697,14 @@ namespace XMI
         {
           if(options.hint.multicast.ring_wq ) // \todo bogus!  the problem with hints is ....
           {
+            _dispatch[(size_t)id][1] = (void*) 3; // see HACK comments above
             XMI_assertf(_request.objsize >= sizeof(XMI::Device::WQRingBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::WQRingBcastMdl));
             new (_dispatch[(size_t)id][0]) XMI::Device::WQRingBcastMdl(result);
             TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided ring _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           }
         else
         {
+            _dispatch[(size_t)id][1] = (void*) 4; // see HACK comments above
             XMI_assertf(_request.objsize >= sizeof(XMI::Device::LocalBcastWQModel),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::LocalBcastWQModel));
             new (_dispatch[(size_t)id][0]) XMI::Device::LocalBcastWQModel(result);
             TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
@@ -703,6 +712,7 @@ namespace XMI
         }
         else if((options.hint.multicast.all_sided) && (options.hint.multicast.global))  
         {
+          _dispatch[(size_t)id][1] = (void*) 5; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(XMI::Device::MPIBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) XMI::Device::MPIBcastMdl(result);
           TRACE_ERR((stderr, "<< dispatch_impl(), mcast global allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));

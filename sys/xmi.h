@@ -2728,7 +2728,6 @@ extern "C"
     size_t               context;	   /**< primary context to operate within */
     void                *request; 	   /**< space for operation */
     size_t               dispatch;         /**< Dispatch identifier */
-    xmi_multicast_hint_t hints;            /**< Hints for multicast */
     xmi_callback_t       cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the

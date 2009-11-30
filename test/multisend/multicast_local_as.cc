@@ -170,8 +170,6 @@ int main(int argc, char ** argv)
 
 
     mcast.dispatch = rdispatch;
-    mcast.hints = options.hint.multicast;
-    mcast.hints.ring_wq = 1;
 
     status = XMI_Multicast(&mcast);
 
@@ -233,8 +231,6 @@ int main(int argc, char ** argv)
 
 
     mcast.dispatch = ldispatch;
-    mcast.hints = options.hint.multicast;
-    mcast.hints.ring_wq = 0;
 
     status = XMI_Multicast(&mcast);
 
