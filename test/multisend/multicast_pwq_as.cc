@@ -109,13 +109,16 @@ int main(int argc, char ** argv)
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  __global.topology_global.convertTopology(XMI_LIST_TOPOLOGY);
-  __global.topology_local.convertTopology(XMI_LIST_TOPOLOGY);
+  XMI::Topology topology_global = __global.topology_global; 
+  topology_global.convertTopology(XMI_LIST_TOPOLOGY);
+
+  XMI::Topology topology_local  = __global.topology_local; 
+  topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // global topology variables
-  size_t  gRoot    = __global.topology_global.index2Rank(0);
-  size_t *gRankList; __global.topology_global.rankList(&gRankList);
-  size_t  gSize    = __global.topology_global.size();
+  size_t  gRoot    = topology_global.index2Rank(0);
+  size_t *gRankList; topology_global.rankList(&gRankList);
+  size_t  gSize    = topology_global.size();
 
   DBG_FPRINTF((stderr,"gRoot %d, gSize %d\n",gRoot, gSize));
   for(size_t j=0;j<gSize;++j)
@@ -227,9 +230,9 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     // local topology variables
-    size_t  lRoot    = __global.topology_local.index2Rank(0);
-    size_t *lRankList; __global.topology_local.rankList(&lRankList);
-    size_t  lSize   =  __global.topology_local.size();
+    size_t  lRoot    = topology_local.index2Rank(0);
+    size_t *lRankList; topology_local.rankList(&lRankList);
+    size_t  lSize   =  topology_local.size();
 
     options.type = XMI_MULTICAST;
 
@@ -264,7 +267,7 @@ int main(int argc, char ** argv)
       DBG_FPRINTF((stderr,"task_id %zd -> 1st ranks\n", gRoot));
       mcast.src_participants = (xmi_topology_t *)new XMI::Topology(gRoot); // global root (mem leak)
       // This isn't working correctly, so do it the hard way
-      //__global.topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale
+      //topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale
 
       XMI::Topology topology(gRankList, (gSize)), subtopology; 
       topology.convertTopology(XMI_COORD_TOPOLOGY);
@@ -386,7 +389,7 @@ int main(int argc, char ** argv)
                         true,   // isRoot = true
                         false); // isDest = false
     }
-    else if(__global.topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology 
+    else if(topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology 
     {
       bytesConsumed = _buffer1.srcPwq()->getBytesConsumed();
       bytesProduced = _buffer1.dstPwq()->getBytesProduced();

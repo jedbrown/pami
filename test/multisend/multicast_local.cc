@@ -141,13 +141,16 @@ int main(int argc, char ** argv)
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  __global.topology_global.convertTopology(XMI_LIST_TOPOLOGY);
-  __global.topology_local.convertTopology(XMI_LIST_TOPOLOGY);
+  XMI::Topology topology_global = __global.topology_global; 
+  topology_global.convertTopology(XMI_LIST_TOPOLOGY);
+
+  XMI::Topology topology_local  = __global.topology_local; 
+  topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // local topology variables
-  size_t  lRoot    = __global.topology_local.index2Rank(0);
-  size_t *lRankList; __global.topology_local.rankList(&lRankList);
-  size_t  lSize   =  __global.topology_local.size();
+  size_t  lRoot    = topology_local.index2Rank(0);
+  size_t *lRankList; topology_local.rankList(&lRankList);
+  size_t  lSize   =  topology_local.size();
 
   XMI::Topology src_participants;
   XMI::Topology dst_participants;

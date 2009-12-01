@@ -13,7 +13,7 @@
 
 #define DBG_FPRINTF(x) //fprintf x
 
-//#define FPRINTF_TOPOLOGY(topo,global_size)    // disable fprintf's                                 
+#define FPRINTF_TOPOLOGY(topo)    // disable fprintf's                                 
 
 #ifndef FPRINTF_TOPOLOGY // otherwise enable fprintfs
 #define FPRINTF_TOPOLOGY(topo)                                                 \
@@ -169,7 +169,7 @@ if(task_id == 0)
   fprintf(stderr,"\n");fprintf(stderr,"global\n");
   TEST_TOPOLOGY(__global.topology_global,gSize);
 
-  fprintf(stderr,"\n");fprintf(stderr,"global converted to list\n");
+  fprintf(stderr,"\n");fprintf(stderr,"global converted to list - DO NOT DO THIS TO GLOBAL IN REAL APPS\n");
   __global.topology_global.convertTopology(XMI_LIST_TOPOLOGY);
   TEST_TOPOLOGY(__global.topology_global,gSize);
 
@@ -178,7 +178,7 @@ if(task_id == 0)
   fprintf(stderr,"\n");fprintf(stderr,"local\n");
   TEST_TOPOLOGY(__global.topology_local,__global.topology_local.size());
 
-  fprintf(stderr,"\n");fprintf(stderr,"local converted to list\n");
+  fprintf(stderr,"\n");fprintf(stderr,"local converted to list - DO NOT DO THIS TO GLOBAL IN REAL APPS\n");
   __global.topology_local.convertTopology(XMI_LIST_TOPOLOGY);
   TEST_TOPOLOGY(__global.topology_local,__global.topology_local.size());
 
