@@ -646,9 +646,9 @@ namespace XMI {
 					if (c0.net_coord(x) < ll || c0.net_coord(x) > ur) {
 						return (size_t)-1;
 					}
+					nn = ur - ll + 1;
 					ix *= nn;
 					ix += c0.net_coord(x) - ll;
-					nn = ur - ll + 1;
 				}
 				return ix;
 				break;
