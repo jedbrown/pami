@@ -18,6 +18,7 @@ void check_index2rank(XMI::Topology *topo, const char *str) {
 	unsigned x;
 	for (x = 0; x < topo->size(); ++x) {
 		size_t r = topo->index2Rank(x);
+		size_t i = topo->rank2Index(r);
 		xmi_coord_t c;
 		__global.mapping.task2network(r, &c, XMI_N_TORUS_NETWORK);
 		static char buf[1024];
@@ -29,7 +30,7 @@ void check_index2rank(XMI::Topology *topo, const char *str) {
 		}
 		*s++ = ')';
 		*s++ = '\0';
-		fprintf(stderr, "%s.index2Rank(%zd) => %zd %s\n", str, x, r, buf);
+		fprintf(stderr, "%s.index2Rank(%zd) => %zd => %zd %s\n", str, x, r, i, buf);
 	}
 }
 
@@ -39,7 +40,7 @@ int main(int argc, char **argv) {
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
 
-	status = XMI_Client_initialize("progressfunc test", &client);
+	status = XMI_Client_initialize("topology_index test", &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
 		return 1;
