@@ -917,6 +917,34 @@ namespace XMI {
 				// may produce empty topology, if "n" is out of range.
 			} else {
 				// the hard way... impractical?
+
+				size_t s = __size;
+				size_t *rl = (size_t *)malloc(s * sizeof(*rl));
+				size_t k = 0;
+				size_t r;
+				XMI::Interface::Mapping::nodeaddr_t a;
+				size_t i;
+				for (i = 0; i < s; ++i) {
+					r = index2Rank(i);
+					// assert(r != -1);
+					mapping->task2node(r, a);
+					if (a.local == n) {
+						rl[k++] = r;
+					}
+				}
+				if (k == 1) {
+					_new->__type = XMI_SINGLE_TOPOLOGY;
+					_new->__size = 1;
+					_new->topo_rank = rl[0];
+					free(rl);
+					return;
+				}
+				if (k > 1) {
+					_new->__type = XMI_LIST_TOPOLOGY;
+					_new->topo_ranklist = rl;
+					_new->__size = k;
+					return;
+				}
 				_new->__type = XMI_EMPTY_TOPOLOGY;
 				_new->__size = 0;
 			}
