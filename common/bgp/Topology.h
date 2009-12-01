@@ -293,6 +293,7 @@ namespace XMI {
 			for (x = 0; x < ndims; ++x) {
 				ur->net_coord(x) = ll->net_coord(x) = c0->net_coord(x);
 			}
+			ll->network = ur->network = XMI_N_TORUS_NETWORK;
 		}
 
 		/// \brief compute size of rectangular segment
@@ -500,6 +501,7 @@ namespace XMI {
 			__type = XMI_COORD_TOPOLOGY;
 			topo_llcoord = *ll;
 			topo_urcoord = *ur;
+			topo_llcoord.network = topo_urcoord.network = XMI_N_TORUS_NETWORK;
 			if (tl) {
 				memcpy(topo_istorus, tl, mapping->globalDims());
 			} else {
@@ -890,6 +892,7 @@ namespace XMI {
 			} else {
 				// the hard way...
 				size_t rank = 0;
+				// assert(c0->network == XMI_N_TORUS_NETWORK);
 				rc = COORDS2RANK(c0, &rank);
 				return isRankMember(rank);
 			}
