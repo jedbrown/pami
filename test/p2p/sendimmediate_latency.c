@@ -28,7 +28,7 @@
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
 //#define BUFSIZE 1024*256
-#define BUFSIZE 128
+#define BUFSIZE 256
 //#define BUFSIZE 1024
 #endif
 

@@ -71,6 +71,26 @@ namespace XMI
             inline  PacketImpl () {};
             inline ~PacketImpl () {};
 
+            inline void writeDispatch (uint16_t dispatch)
+            {
+              uint16_t * hdr = (uint16_t *) this->getHeader ();
+              hdr[(T_Fifo::packet_header_size>>1)-1] = dispatch;
+            };
+
+            template <unsigned T_Bytes>
+            inline void writeMetadata (uint8_t (&metadata)[T_Bytes])
+            {
+              writeMetadata (metadata, T_Bytes);
+            };
+
+            inline void writeMetadata (uint8_t * metadata,
+                                       size_t    bytes)
+            {
+              unsigned i;
+              uint8_t * hdr = (uint8_t *) this->getHeader ();
+              for (i=0; i<bytes; i++) hdr[i] = metadata[i];
+            };
+
             ///
             /// \brief Write metadata and iovec data to the packet
             ///
@@ -82,19 +102,8 @@ namespace XMI
             /// \param[in] iov       Array of T_Niov source data iovec elements
             ///
             template <unsigned T_Niov>
-            inline void write (uint16_t       dispatch,
-                               void         * metadata,
-                               struct iovec   (&iov)[T_Niov])
+            inline void writePayload (struct iovec (&iov)[T_Niov])
             {
-              // First, bulk copy the metadata into the packet header
-              if (likely(metadata != NULL))
-                this->writeHeader (metadata);
-
-              // Next, copy the packet dispatch id into the header
-              uint16_t * hdr = (uint16_t *) this->getHeader ();
-              hdr[(T_Fifo::packet_header_size>>1)-1] = dispatch;
-
-              // Finally, copy the packet payload data from the iovec
               unsigned i, j, n;
 
               if (T_Niov == 1)
@@ -144,27 +153,14 @@ namespace XMI
             };
 
             ///
-            /// \brief Write metadata and iovec data to the packet
+            /// \brief Write iovec data to the packet payload
             ///
-            /// \param[in] dispatch  Packet dispatch identifier
-            /// \param[in] metadata  Pointer to packet metadata source
             /// \param[in] iov       Array of source data iovec elements
             /// \param[in] niov      Number of iovec array elements
             ///
-            inline void write (uint16_t       dispatch,
-                               void         * metadata,
-                               struct iovec * iov,
-                               size_t         niov)
+            inline void writePayload (struct iovec * iov,
+                                      size_t         niov)
             {
-              // First, bulk copy the metadata into the packet header
-              if (likely(metadata != NULL))
-                this->writeHeader (metadata);
-
-              // Next, copy the packet dispatch id into the header
-              uint16_t * hdr = (uint16_t *) this->getHeader ();
-              hdr[(T_Fifo::packet_header_size>>1)-1] = dispatch;
-
-              // Finally, copy the packet payload data from the iovec
               unsigned i, j, n;
               uint8_t  * payload = (uint8_t *) this->getPayload ();
               uint32_t * dst;
@@ -183,17 +179,21 @@ namespace XMI
             }
 
             ///
-            /// \brief Retrieve the packet dispatch identifier and metadata pointer
-            /// \param[out] dispatch  Packet dispatch identifier
-            /// \return Pointer to packet metadata
+            /// \brief Retrieve the packet dispatch identifier
             ///
-            inline void * metadata (uint16_t & dispatch)
+            inline uint16_t getDispatch ()
             {
               uint16_t * hdr = (uint16_t *) this->getHeader ();
-              dispatch = hdr[(T_Fifo::packet_header_size>>1)-1];
-              //fprintf(stderr, "PacketImpl::metadata(), dispatch = %d, (%d>>1)-1 = %d\n", dispatch, T_Packet::headerSize_impl, (T_Packet::headerSize_impl>>1)-1);
+              return hdr[(T_Fifo::packet_header_size>>1)-1];
+            };
 
-              return hdr;
+            ///
+            /// \brief Retrieve the packet metadata pointer
+            /// \return Pointer to packet metadata
+            ///
+            inline void * getMetadata ()
+            {
+              return this->getHeader ();
             };
         };
 
@@ -427,7 +427,10 @@ namespace XMI
       if (pkt != NULL)
         {
           TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before write()\n"));
-          pkt->write (dispatch_id, metadata, iov);
+          //if (likely(metadata!=NULL))
+            pkt->writeMetadata ((uint8_t *) metadata, metasize);
+          pkt->writeDispatch (dispatch_id);
+          pkt->writePayload (iov);
 
           // "produce" the packet into the fifo.
           TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before producePacket()\n"));
@@ -465,7 +468,10 @@ namespace XMI
 
       if (pkt != NULL)
         {
-          pkt->write (dispatch_id, metadata, iov, niov);
+          //if (likely(metadata!=NULL))
+            pkt->writeMetadata (metadata, metasize);
+          pkt->writeDispatch (dispatch_id);
+          pkt->writePayload (iov);
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
@@ -493,7 +499,10 @@ namespace XMI
         {
           struct iovec iov[1];
           iov[0].iov_base = msg->next (iov[0].iov_len, T_Fifo::packet_payload_size);
-          pkt->write (msg->getDispatchId (), msg->getMetadata(), iov);
+          //if (likely(metadata!=NULL))
+            pkt->writeMetadata ((uint8_t *) msg->getMetadata(), metadata_size);
+          pkt->writeDispatch (msg->getDispatchId());
+          pkt->writePayload (iov);
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
@@ -543,7 +552,8 @@ namespace XMI
             __ndQ.insertElem ((QueueElem *) uepkt, position);
 
 #else
-          void * meta = (void *) pkt->metadata (id);
+          id = pkt->getDispatch ();
+          void * meta = (void *) pkt->getMetadata ();
           void * data = pkt->getPayload ();
           _dispatch[id].function (meta, data, T_Fifo::packet_payload_size, _dispatch[id].clientdata, data);
 

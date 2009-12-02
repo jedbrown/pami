@@ -15,6 +15,7 @@
 #define __components_devices_shmem_ShmemModel_h__
 
 #include <errno.h>
+#include <sys/uio.h>
 
 #include "Arch.h"
 #include "Memregion.h"
@@ -125,6 +126,14 @@ namespace XMI
                                      size_t               metasize,
                                      struct iovec         (&iov)[T_Niov])
         {
+#ifdef ERROR_CHECKS
+          {
+            unsigned i;
+            size_t bytes = 0;
+            for (i=0; i<T_Niov; i++) bytes += iov[i].iov_len;
+            XMI_assert(bytes<=packet_model_payload_bytes);
+          }
+#endif
           size_t peer, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
           __global.mapping.task2node (target_rank, addr);
@@ -153,6 +162,14 @@ namespace XMI
                                      size_t         metasize,
                                      struct iovec   (&iov)[T_Niov])
         {
+#ifdef ERROR_CHECKS
+          {
+            unsigned i;
+            size_t bytes = 0;
+            for (i=0; i<T_Niov; i++) bytes += iov[i].iov_len;
+            XMI_assert(bytes<=packet_model_payload_bytes);
+          }
+#endif
           size_t peer = 0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
           TRACE_ERR((stderr, ">> ShmemModel::postPacketImmediate_impl(1) .. target_rank = %zd\n", target_rank));
