@@ -74,11 +74,12 @@ protected:
 	//friend class WQRingBcastDev; // Until C++ catches up with real programming languages:
 	friend class XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr>;
 
+	ADVANCE_ROUTINE(advanceThread,WQRingBcastMsg,WQRingBcastThr);
 	inline int __setThreads(WQRingBcastThr *t, int n) {
 		int nt = 0;
 		// assert(nt < n);
 		t[nt].setMsg(this);
-		t[nt].setAdv(advanceThread<WQRingBcastMsg,WQRingBcastThr>);
+		t[nt].setAdv(advanceThread);
 		t[nt].setDone(false);
 		t[nt]._bytesLeft = _bytes;
 #ifdef USE_WAKEUP_VECTORS

@@ -84,11 +84,12 @@ protected:
 	//friend class CNBroadcastDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>;
 
+	ADVANCE_ROUTINE(advanceThread,CNBroadcastMessage,CNBroadcastThread);
 	inline int __setThreads(CNBroadcastThread *t, int n) {
 		int nt = 0;
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread<CNBroadcastMessage,CNBroadcastThread>);
+			t[nt].setAdv(advanceThread);
 			t[nt].setDone(false);
 			t[nt]._sender = true;
 			t[nt]._wq = _swq;
@@ -98,7 +99,7 @@ protected:
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread<CNBroadcastMessage,CNBroadcastThread>);
+			t[nt].setAdv(advanceThread);
 			t[nt].setDone(false);
 			t[nt]._sender = false;
 			t[nt]._wq = _rwq;

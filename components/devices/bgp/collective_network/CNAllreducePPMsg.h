@@ -76,13 +76,14 @@ protected:
 	//friend class CNAllreducePPDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2>;
 
+	ADVANCE_ROUTINE(advanceThread,CNAllreducePPMessage,CNAllreducePPThread);
 	// _bytesLeft == bytes on network!
 	inline int __setThreads(CNAllreduceThread *t, int n) {
 		int nt = 0;
 		int maxnt = ((CNAllreducePPDevice &)_QS).common()->getMaxThreads();
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread<CNAllreduceMessage,CNAllreduceThread>);
+			t[nt].setAdv(advanceThread);
 			t[nt].setDone(false);
 			t[nt]._sender = true;
 			t[nt]._wq = _swq;
@@ -92,7 +93,7 @@ protected:
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread<CNAllreduceMessage,CNAllreduceThread>);
+			t[nt].setAdv(advanceThread);
 			t[nt].setDone(false);
 			t[nt]._sender = false;
 			t[nt]._wq = _rwq;

@@ -87,6 +87,7 @@ protected:
 	//friend class LocalAllreduceWQDevice;
 	friend class XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread>;
 
+	ADVANCE_ROUTINE(advanceThread,LocalAllreduceWQMessage,LocalAllreduceWQThread);
 	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(LocalAllreduceWQThread *thr) {
 		if (_peer == 0) {
@@ -108,7 +109,7 @@ protected:
 
 	inline int __setThreads(LocalAllreduceWQThread *t, int n) {
 		t->setMsg(this);
-		t->setAdv(advanceThread<LocalAllreduceWQMessage,LocalAllreduceWQThread>);
+		t->setAdv(advanceThread);
 		t->setDone(false);
 		return 1;
 	}

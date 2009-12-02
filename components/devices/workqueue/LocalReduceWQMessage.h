@@ -96,6 +96,7 @@ private:
 	// friend class LocalReduceWQDevice;
 	friend class XMI::Device::Generic::SimpleSubDevice<LocalReduceWQThread>;
 
+	ADVANCE_ROUTINE(advanceThread,LocalReduceWQMessage,LocalReduceWQThread);
 	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(LocalReduceWQThread *thr) {
 		// workaround for GNU compiler -fPIC -O3 bug
@@ -124,7 +125,7 @@ private:
 
 	inline int __setThreads(LocalReduceWQThread *t, int n) {
 		t[0].setMsg(this);
-		t[0].setAdv(advanceThread<LocalReduceWQMessage,LocalReduceWQThread>);
+		t[0].setAdv(advanceThread);
 		t[0].setDone(false);
 		return 1;
 	}

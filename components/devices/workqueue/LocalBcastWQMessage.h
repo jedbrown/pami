@@ -74,6 +74,7 @@ private:
 	//friend class LocalBcastWQDevice;
 	friend class XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread>;
 
+	ADVANCE_ROUTINE(advanceThread,LocalBcastWQMessage,LocalBcastWQThread);
 	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(LocalBcastWQThread *thr) {
 		// This works around a bug with "g++ -fPIC -O3"...
@@ -97,7 +98,7 @@ private:
 
 	inline int __setThreads(LocalBcastWQThread *t, int n) {
 		t[0].setMsg(this);
-		t[0].setAdv(advanceThread<LocalBcastWQMessage,LocalBcastWQThread>);
+		t[0].setAdv(advanceThread);
 		t[0].setDone(false);
 		return 1;
 	}

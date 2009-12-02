@@ -125,12 +125,13 @@ namespace XMI
       //friend class MPIBcastDev; // Until C++ catches up with real programming languages:
       friend class XMI::Device::Generic::SimpleSubDevice<MPIBcastThr>;
 
+      ADVANCE_ROUTINE(advanceThread,MPIBcastMsg,MPIBcastThr);
       inline int __setThreads(MPIBcastThr *t, int n)
       {
         int nt = 0;
         // assert(nt < n);
         t[nt].setMsg(this);
-        t[nt].setAdv(advanceThread<MPIBcastMsg,MPIBcastThr>);
+        t[nt].setAdv(advanceThread);
         t[nt].setDone(false);
         t[nt]._bytesLeft = _bytes;
         ++nt;

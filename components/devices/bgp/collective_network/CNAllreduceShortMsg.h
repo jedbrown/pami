@@ -84,6 +84,7 @@ protected:
 	//friend class CNAllreduceShortDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceShortModel,CNDevice,CNAllreduceShortMessage,CNAllreduceShortThread,2>;
 
+	ADVANCE_ROUTINE(advanceThread); // declares __advanceThread() as our routine
 	inline int __setThreads(CNAllreduceShortThread *t, int n) {
 		int nt = 0;
 		int maxnt = ((CNAllreduceShortDevice &)_QS).common()->getMaxThreads();

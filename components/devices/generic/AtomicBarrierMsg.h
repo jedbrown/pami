@@ -91,6 +91,7 @@ private:
 	//friend class AtomicBarrierDev;
 	friend class XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr>;
 
+	ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
 	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(AtomicBarrierThr *thr) {
 		// TBD: optimize away virt func call - add method
@@ -106,7 +107,7 @@ private:
 
 	inline int __setThreads(AtomicBarrierThr *t, int n) {
 		t->setMsg(this);
-		t->setAdv(advanceThread<AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr>);
+		t->setAdv(advanceThread);
 		t->setDone(false);
 		return 1;
 	}

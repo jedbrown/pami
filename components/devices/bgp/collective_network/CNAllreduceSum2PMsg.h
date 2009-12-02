@@ -150,12 +150,13 @@ protected:
 	//friend class CNAllreduce2PDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2>;
 
+	ADVANCE_ROUTINE(advanceThread,CNAllreduce2PMessage,CNAllreduce2PThread);
 	inline int __setThreads(CNAllreduceThread *t, int n) {
 		int nt = 0;
 		int maxnt = ((CNAllreduce2PDevice &)_QS).common()->getMaxThreads();
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread<CNAllreduce2PMessage,CNAllreduce2PThread>);
+			t[nt].setAdv(advanceThread);
 			t[nt].setDone(false);
 			t[nt]._sender = true;
 			t[nt]._wq = _swq;
@@ -165,7 +166,7 @@ protected:
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread<CNAllreduce2PMessage,CNAllreduce2PThread>);
+			t[nt].setAdv(advanceThread);
 			t[nt].setDone(false);
 			t[nt]._sender = false;
 			t[nt]._wq = _rwq;

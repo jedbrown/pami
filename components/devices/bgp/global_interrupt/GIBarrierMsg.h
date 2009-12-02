@@ -90,6 +90,7 @@ private:
 
 	static const int GI_CHANNEL = 0;
 
+	ADVANCE_ROUTINE(advanceThread,giMessage,giThread);
 	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(giThread *thr) {
 		XMI::Device::MessageStatus stat = getStatus();
@@ -120,7 +121,7 @@ private:
 
 	inline int __setThreads(giThread *t, int n) {
 		t->setMsg(this);
-		t->setAdv(advanceThread<giMessage,giThread>);
+		t->setAdv(advanceThread);
 		t->setDone(false);
 		_nThreads = 1;
 		return _nThreads;

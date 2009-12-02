@@ -82,11 +82,12 @@ protected:
 	//friend class WQRingReduceDev;
 	friend class XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr>;
 
+	ADVANCE_ROUTINE(advanceThread,WQRingReduceMsg,WQRingReduceThr);
 	inline int __setThreads(WQRingReduceThr *t, int n) {
 		int nt = 0;
 		// assert(nt < n);
 		t[nt].setMsg(this);
-		t[nt].setAdv(advanceThread<WQRingReduceMsg,WQRingReduceThr>);
+		t[nt].setAdv(advanceThread);
 		t[nt].setDone(false);
 		t[nt]._bytesLeft = _count << _shift;
 #ifdef USE_WAKEUP_VECTORS

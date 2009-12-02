@@ -185,6 +185,14 @@ protected:
 // still in namespace XMI::Device...
 namespace Generic {
 
+// This is a bit klunky, but until templates allow methods as parameters...
+#define ADVANCE_ROUTINE(method,message,thread)			\
+static xmi_result_t method(xmi_context_t context, void *t) {	\
+	thread *thr = (thread *)t;				\
+	message *msg = (message *)thr->getMsg();		\
+	return msg->__##method(thr);				\
+}
+
 //////////////////////////////////////////////////////////////////////
 ///  \brief interprocess communication message class
 ///  This message is posted to a Generic device
@@ -208,18 +216,6 @@ public:
 	/// (to be dequeued from the device) and then execute the users callback.
 	///
 	virtual void complete(xmi_context_t context) = 0;
-
-	/// \brief Advance a thread of a message
-	///
-	/// \param[in] thr	Thread to advance
-	/// \return	Resulting status of thread (Done, etc)
-	///
-	template<class T_Message, class T_Thread>
-	static xmi_result_t advanceThread(xmi_context_t context, void *t) {
-		T_Thread *thr = (T_Thread *)t;
-		T_Message *msg = (T_Message *)thr->getMsg();
-		return msg->__advanceThread(thr);
-	}
 
 protected:
 }; /* class GenericMessage */
