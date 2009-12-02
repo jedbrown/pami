@@ -18,9 +18,9 @@
 #ifndef FPRINTF_TOPOLOGY // otherwise enable fprintfs
 #define FPRINTF_TOPOLOGY(topo)                                                 \
 {                                                                              \
-size_t global_size = __global.topology_global.size();                          \
+xmi_ntask_t global_size = __global.topology_global.size();                          \
 xmi_topology_type_t type = topo.type();                                        \
-fprintf(stderr,"type %d/%s, size %zd\n",                                       \
+fprintf(stderr,"type %d/%s, size %d\n",                                       \
         type,                                                                  \
         type==XMI_EMPTY_TOPOLOGY?"XMI_EMPTY_TOPOLOGY":                         \
         ((type==XMI_SINGLE_TOPOLOGY)?"XMI_SINGLE_TOPOLOGY":                    \
@@ -30,12 +30,12 @@ fprintf(stderr,"type %d/%s, size %zd\n",                                       \
         topo.size());                                                          \
 for(unsigned j=0; j< topo.size(); ++j)                                         \
 {                                                                              \
-  fprintf(stderr,"index2Rank(%d)=%zd\n",                                       \
+  fprintf(stderr,"index2Rank(%d)=%d\n",                                       \
                  j,topo.index2Rank(j));                                        \
 }                                                                              \
 for(unsigned j=0; j< global_size; ++j)                                         \
 {                                                                              \
-  fprintf(stderr,"Is rank %d a member? %s. rank2Index(%d)=%zd\n",              \
+  fprintf(stderr,"Is rank %d a member? %s. rank2Index(%d)=%d\n",              \
                  j,topo.isRankMember(j)?"yes":"no",                            \
                  j,topo.rank2Index(j));                                        \
 }                                                                              \
@@ -46,7 +46,7 @@ fprintf(stderr,"\n");                                                          \
 // Topology, expected size (-1 means size should be > 0 but unknown)
 #define TEST_TOPOLOGY(topo,expected_size)                                      \
 {                                                                              \
-size_t global_size = __global.topology_global.size();                          \
+xmi_ntask_t global_size = __global.topology_global.size();                          \
 FPRINTF_TOPOLOGY(topo);                                                        \
 xmi_topology_type_t type = topo.type();                                        \
 if((expected_size==(unsigned)-1) && (!topo.size()))                            \
@@ -72,7 +72,7 @@ if((type!=XMI_EMPTY_TOPOLOGY) &&                                               \
    (type!=XMI_RANGE_TOPOLOGY) &&                                               \
    (type!=XMI_LIST_TOPOLOGY) &&                                                \
    (type!=XMI_COORD_TOPOLOGY))                                                 \
-  fprintf(stderr,"FAIL: type %d/%s, size %zd\n",                               \
+  fprintf(stderr,"FAIL: type %d/%s, size %d\n",                               \
         type,                                                                  \
         type==XMI_EMPTY_TOPOLOGY?"XMI_EMPTY_TOPOLOGY":                         \
         ((type==XMI_SINGLE_TOPOLOGY)?"XMI_SINGLE_TOPOLOGY":                    \
@@ -83,33 +83,33 @@ if((type!=XMI_EMPTY_TOPOLOGY) &&                                               \
 for(unsigned j=0; j< topo.size(); ++j)                                         \
 {                                                                              \
   if(!topo.isRankMember(topo.index2Rank(j)))                                   \
-  fprintf(stderr,"FAIL: index2Rank(%d)=%zd is not a member\n",                 \
+  fprintf(stderr,"FAIL: index2Rank(%d)=%d is not a member\n",                 \
                  j,topo.index2Rank(j));                                        \
 }                                                                              \
-size_t nmembers = 0;                                                           \
+xmi_ntask_t nmembers = 0;                                                           \
 for(unsigned j=0; j< global_size; ++j)                                         \
 {                                                                              \
   if(topo.isRankMember(j)) nmembers++;                                         \
   if((topo.rank2Index(j)!=(unsigned)-1) && (topo.rank2Index(j) >= topo.size()))\
-    fprintf(stderr,"FAIL: rank2Index(%d)= %zd, index >= size %zd\n",           \
+    fprintf(stderr,"FAIL: rank2Index(%d)= %d, index >= size %d\n",           \
             j,topo.rank2Index(j),topo.size());                                 \
   if(!topo.isRankMember(j) && (topo.rank2Index(j) != (unsigned)-1))            \
-    fprintf(stderr,"FAIL: Is %d a member? %s. rank2Index(%d)=%zd\n",           \
+    fprintf(stderr,"FAIL: Is %d a member? %s. rank2Index(%d)=%d\n",           \
             j,topo.isRankMember(j)?"yes":"no",                                 \
             j,topo.rank2Index(j));                                             \
   if(topo.isRankMember(j) && (topo.rank2Index(j) == (unsigned)-1))             \
-    fprintf(stderr,"FAIL: Is %d a member? %s. rank2Index(%d)=%zd\n",           \
+    fprintf(stderr,"FAIL: Is %d a member? %s. rank2Index(%d)=%d\n",           \
             j,topo.isRankMember(j)?"yes":"no",                                 \
             j,topo.rank2Index(j));                                             \
   if(topo.isRankMember(j) &&                                                   \
      (j != topo.index2Rank(topo.rank2Index(j))))                               \
-    fprintf(stderr,"FAIL: Is %d a member? %s. rank2Index(%d)=%zd index2Rank(%d)=%zd\n",\
+    fprintf(stderr,"FAIL: Is %d a member? %s. rank2Index(%d)=%d index2Rank(%d)=%d\n",\
             j,topo.isRankMember(j)?"yes":"no",                                 \
             j,topo.rank2Index(j),                                              \
             topo.rank2Index(j),topo.index2Rank(topo.rank2Index(j)));           \
 }                                                                              \
 if(nmembers != topo.size())                                                    \
-    fprintf(stderr,"FAIL: nmembers %zd != size %zd\n",                         \
+    fprintf(stderr,"FAIL: nmembers %d != size %d\n",                         \
             nmembers,topo.size());                                             \
 }
 
@@ -163,7 +163,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 if(task_id == 0)
 {
-  size_t  gSize    = __global.topology_global.size();
+  xmi_ntask_t  gSize    = __global.topology_global.size();
   XMI::Topology topology, subtopology, copy_topology;
 
   fprintf(stderr,"\n");fprintf(stderr,"global\n");
@@ -173,7 +173,7 @@ if(task_id == 0)
   __global.topology_global.convertTopology(XMI_LIST_TOPOLOGY);
   TEST_TOPOLOGY(__global.topology_global,gSize);
 
-  size_t *gRankList; __global.topology_global.rankList(&gRankList);//valid only after converting to list
+  xmi_task_t *gRankList; __global.topology_global.rankList(&gRankList);//valid only after converting to list
 
   fprintf(stderr,"\n");fprintf(stderr,"local\n");
   TEST_TOPOLOGY(__global.topology_local,__global.topology_local.size());
@@ -239,10 +239,10 @@ if(task_id == 0)
   topology.convertTopology(XMI_COORD_TOPOLOGY);
   topology.subTopologyNthGlobal(&subtopology, 0); 
 
-  size_t *ranklist = new size_t[subtopology.size()];
+  xmi_task_t *ranklist = new xmi_task_t[subtopology.size()];
 
   // loop all global ranks, if they're in the subtopology, put then in a ranklist.
-  for(size_t i = 0, j = 0; i < gSize; ++i)
+  for(xmi_ntask_t i = 0, j = 0; i < gSize; ++i)
   {
      if(subtopology.isRankMember(i)) ranklist[j++] = i;
      XMI_assert(j<=subtopology.size());

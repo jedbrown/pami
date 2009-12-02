@@ -305,7 +305,7 @@ namespace XMI
         {
           return MPI_TDIMS + MPI_LDIMS;
         }
-      inline xmi_result_t task2network (size_t task, xmi_coord_t *addr, xmi_network type)
+      inline xmi_result_t task2network (xmi_task_t task, xmi_coord_t *addr, xmi_network type)
         {
 		if (task >= _size ||
 			(type != XMI_N_TORUS_NETWORK && type != XMI_DEFAULT_NETWORK)) {
@@ -318,7 +318,7 @@ namespace XMI
 		return XMI_SUCCESS;
         }
       inline xmi_result_t network2task_impl(const xmi_coord_t *addr,
-						size_t *task,
+						xmi_task_t *task,
 						xmi_network *type)
 	{
 		if (addr->network != XMI_N_TORUS_NETWORK) {

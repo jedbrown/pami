@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
 	XMI::Topology topo, topo2, topo3;
 	xmi_coord_t c0, c1;
 	bool flag;
-	size_t *ranks = (size_t *)malloc(num_tasks * sizeof(*ranks));
-	size_t num;
+	xmi_task_t *ranks = (xmi_task_t *)malloc(num_tasks * sizeof(*ranks));
+	xmi_ntask_t num;
 
 	dump(&__global.topology_global, "world");
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 
 	if (__global.topology_global.type() != XMI_LIST_TOPOLOGY) {
 		//-- ranklist-based topologies...
-		__global.topology_global.getRankList(num_tasks, ranks, &num);
+		__global.topology_global.getRankList((xmi_ntask_t)num_tasks, ranks, &num);
 		if (num != num_tasks) {
 			fprintf(stderr, "getRankList() did not return entire partition\n");
 		}
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 	}
 	if (__global.topology_global.type() != XMI_RANGE_TOPOLOGY) {
 		//-- rankrange-based topologies...
-		new (&topo) XMI::Topology((size_t)0, num_tasks - 1);
+		new (&topo) XMI::Topology((xmi_task_t)0, num_tasks - 1);
 		dump(&topo, "rankrange");
 
 		topo.subTopologyLocalToMe(&topo2);

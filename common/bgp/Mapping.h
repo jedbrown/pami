@@ -88,7 +88,7 @@ namespace XMI
 
       protected:
 	XMI::BgpPersonality &_personality;
-        size_t _task;
+        xmi_task_t _task;
         size_t _size;
         size_t _nodes;
         size_t _peers;
@@ -122,7 +122,7 @@ namespace XMI
         /// \brief Return the BGP global task for this process
         /// \see XMI::Interface::Mapping::Base::task()
         ///
-        inline size_t task_impl()
+        inline xmi_task_t task_impl()
         {
           return _task;
         }
@@ -165,7 +165,7 @@ namespace XMI
           return ((xyzt1 >> 8) == (xyzt2 >> 8));
         }
         inline xmi_result_t network2task_impl (const xmi_coord_t  * addr,
-                                              size_t                     * task,
+                                              xmi_task_t                 * task,
                                               xmi_network               * type)
         {
 		size_t xSize = _personality.xSize();
@@ -198,7 +198,7 @@ namespace XMI
 		return XMI_SUCCESS;
         }
 
-        inline xmi_result_t task2network_impl (size_t                task,
+        inline xmi_result_t task2network_impl (xmi_task_t            task,
                                                xmi_coord_t * addr,
                                                xmi_network          type)
         {
@@ -516,7 +516,7 @@ xmi_result_t XMI::Mapping::init(XMI::BgpMapCache &mapcache,
   task2node (_task, _nodeaddr);
 
   size_t peer = 0;
-  size_t task;
+  xmi_task_t task;
   xmi_network dummy;
   xmi_coord_t c;
   c.network = XMI_N_TORUS_NETWORK;
@@ -529,13 +529,10 @@ xmi_result_t XMI::Mapping::init(XMI::BgpMapCache &mapcache,
   {
     if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
     {
-      if (network2task(&c, &task, &dummy) == XMI_SUCCESS)
-        {
           //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", c.n_torus.coords[3], peer);
           _peercache[c.u.n_torus.coords[3]] = peer++;
           _localranks[_peers] = task;
           _peers++;
-        }
     }
   }
   //fprintf (stderr, "Mapping::init_impl <<\n");

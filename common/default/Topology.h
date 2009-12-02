@@ -63,12 +63,12 @@ namespace XMI {
 
 		/// \brief how a topology represents each type
 		union topology_u {
-			size_t _rank;	///< XMI_SINGLE_TOPOLOGY - the rank
+			xmi_task_t _rank;	///< XMI_SINGLE_TOPOLOGY - the rank
 			struct {	///< XMI_RANGE_TOPOLOGY
-				size_t _first;	///< first rank in range
-				size_t _last;	///< last rank in range
+				xmi_task_t _first;	///< first rank in range
+				xmi_task_t _last;	///< last rank in range
 			} _rankrange;
-			size_t *_ranklist; ///< XMI_LIST_TOPOLOGY - the rank array
+			xmi_task_t *_ranklist; ///< XMI_LIST_TOPOLOGY - the rank array
 			struct {	///< XMI_COORD_TOPOLOGY
 				xmi_coord_t _llcorner; ///< lower-left coord
 				xmi_coord_t _urcorner; ///< upper-right coord
@@ -139,7 +139,7 @@ namespace XMI {
 					_new->topo_urcoord = *MY_COORDS;
 					// might be able to get better torus info from mapping
 					memset(_new->topo_istorus, 0, mapping->torusDims());
-					size_t s = 1;
+					xmi_ntask_t s = 1;
 					unsigned x;
 					for (x = mapping->torusDims(); x < mapping->globalDims(); ++x) {
 						_new->topo_lldim(x) = topo_lldim(x);
@@ -158,12 +158,13 @@ namespace XMI {
 						return;
 					}
 				} else {
-					size_t s = 0, z;
+					xmi_ntask_t s = 0;
+					size_t z;
 					mapping->nodePeers(z);
-					size_t *rl = (size_t *)malloc(z * sizeof(*rl));
-					size_t *rp = rl;
+					xmi_task_t *rl = (xmi_task_t *)malloc(z * sizeof(*rl));
+					xmi_task_t *rp = rl;
 					if (__type == XMI_RANGE_TOPOLOGY) {
-						size_t r;
+						xmi_task_t r;
 						for (r = topo_first; r <= topo_last; ++r) {
 							if (IS_LOCAL_PEER(r)) {
 								++s;
@@ -208,7 +209,7 @@ namespace XMI {
 		void __subTopologyNthGlobal(XMI::Topology *_new, int n) {
 			// What order do we sequence multiple "local" dimensions???
 			*_new = *this;
-			size_t s = __sizeRange(&topo_llcoord,
+			xmi_ntask_t s = __sizeRange(&topo_llcoord,
 						&topo_urcoord,
 						mapping->torusDims());
 			unsigned x;
@@ -244,7 +245,7 @@ namespace XMI {
 		///
 		void __subTopologyReduceDims(XMI::Topology *_new, xmi_coord_t *fmt) {
 			*_new = *this;
-			size_t s = 1;
+			xmi_ntask_t s = 1;
 			unsigned x;
 			for (x = 0; x < mapping->globalDims(); ++x) {
 				if (fmt->net_coord(x) == (unsigned)-1) {
@@ -304,9 +305,9 @@ namespace XMI {
 		/// \param[in] ndims	number of significant dimensions
 		/// \return	size of rectangular segment
 		///
-		static size_t __sizeRange(xmi_coord_t *ll, xmi_coord_t *ur,
+		static xmi_ntask_t __sizeRange(xmi_coord_t *ll, xmi_coord_t *ur,
 									unsigned ndims) {
-			size_t s = 1;
+			xmi_ntask_t s = 1;
 			unsigned x;
 			for (x = 0; x < ndims; ++x) {
 				unsigned n = ur->net_coord(x) - ll->net_coord(x) + 1;
@@ -340,14 +341,14 @@ namespace XMI {
 			xmi_result_t rc;
 			xmi_coord_t ll, ur;
 			xmi_coord_t c0;
-			size_t r = topo_first;
+			xmi_task_t r = topo_first;
 			rc = RANK2COORDS(r, &c0);
 			__initRange(&ll, &ur, &c0, mapping->globalDims());
 			for (r += 1; r <= topo_last; ++r) {
 				RANK2COORDS(r, &c0);
 				__bumpRange(&ll, &ur, &c0, mapping->globalDims());
 			}
-			size_t s = __sizeRange(&ll, &ur, mapping->globalDims());
+			xmi_ntask_t s = __sizeRange(&ll, &ur, mapping->globalDims());
 			if (s == __size) {
 				__type = XMI_COORD_TOPOLOGY;
 				topo_llcoord = ll;
@@ -376,7 +377,7 @@ namespace XMI {
 				RANK2COORDS(topo_list(i), &c0);
 				__bumpRange(&ll, &ur, &c0, mapping->globalDims());
 			}
-			size_t s = __sizeRange(&ll, &ur, mapping->globalDims());
+			xmi_ntask_t s = __sizeRange(&ll, &ur, mapping->globalDims());
 			if (s == __size) {
 				__type = XMI_COORD_TOPOLOGY;
 				topo_llcoord = ll;
@@ -395,7 +396,7 @@ namespace XMI {
 		///
 		/// \return 'true' means "this" was altered!
 		bool __analyzeRangeList() {
-			size_t min, max;
+			xmi_task_t min, max;
 			unsigned i = 0;
 			min = max = topo_list(i);
 			for (i += 1; i < __size; ++i) {
@@ -515,7 +516,7 @@ namespace XMI {
 		///
 		/// \param[in] rank	The rank
 		///
-		Topology(size_t rank) {
+		Topology(xmi_task_t rank) {
 			__type = XMI_SINGLE_TOPOLOGY;
 			__size = 1;
 			__topo._rank = rank;
@@ -526,7 +527,7 @@ namespace XMI {
 		/// \param[in] rank0	first rank in range
 		/// \param[in] rankn	last rank in range
 		///
-		Topology(size_t rank0, size_t rankn) {
+		Topology(xmi_task_t rank0, xmi_task_t rankn) {
 			__type = XMI_RANGE_TOPOLOGY;
 			__size = rankn - rank0 + 1;
 			__topo._rankrange._first = rank0;
@@ -544,7 +545,7 @@ namespace XMI {
 		///
 		/// \todo create destructor to free list, or establish rules
 		///
-		Topology(size_t *ranks, size_t nranks) {
+		Topology(xmi_task_t *ranks, xmi_ntask_t nranks) {
 			__type = XMI_LIST_TOPOLOGY;
 			__size = nranks;
 			topo_ranklist = ranks;
@@ -558,7 +559,7 @@ namespace XMI {
 
 		/// \brief number of ranks in topology
 		/// \return	number of ranks
-		size_t size_impl() { return __size; }
+		xmi_ntask_t size_impl() { return __size; }
 
 		/// \brief type of topology
 		/// \return	topology type
@@ -567,10 +568,10 @@ namespace XMI {
 		/// \brief Nth rank in topology
 		///
 		/// \param[in] ix	Which rank to select
-		/// \return	Nth rank or (size_t)-1 if does not exist
+		/// \return	Nth rank or (xmi_ntask_t)-1 if does not exist
 		///
-		size_t index2Rank_impl(size_t ix) {
-			size_t rank = 0;
+		xmi_task_t index2Rank_impl(xmi_ntask_t ix) {
+			xmi_task_t rank = 0;
 			if (ix < __size) switch (__type) {
 			case XMI_SINGLE_TOPOLOGY:
 				return topo_rank;
@@ -603,7 +604,7 @@ namespace XMI {
 			default:
 				break;
 			}
-			return (size_t)-1;
+			return (xmi_task_t)-1;
 		}
 
 		/// \brief determine index of rank in topology
@@ -611,10 +612,10 @@ namespace XMI {
 		/// This is the inverse function to index2Rank(ix) above.
 		///
 		/// \param[in] rank	Which rank to get index for
-		/// \return	index of rank (rank(ix) == rank) or (size_t)-1
+		/// \return	index of rank (rank(ix) == rank) or (xmi_ntask_t)-1
 		///
-		size_t rank2Index_impl(size_t rank) {
-			size_t x, ix, nn;
+		xmi_ntask_t rank2Index_impl(xmi_task_t rank) {
+			xmi_ntask_t x, ix, nn;
 			xmi_coord_t c0;
 			xmi_result_t rc;
 			switch (__type) {
@@ -645,7 +646,7 @@ namespace XMI {
 					unsigned ll = topo_lldim(x);
 					unsigned ur = topo_urdim(x);
 					if (c0.net_coord(x) < ll || c0.net_coord(x) > ur) {
-						return (size_t)-1;
+						return (xmi_ntask_t)-1;
 					}
 					nn = ur - ll + 1;
 					ix *= nn;
@@ -657,7 +658,7 @@ namespace XMI {
 			default:
 				break;
 			}
-			return (size_t)-1;
+			return (xmi_ntask_t)-1;
 		}
 
 		/// \brief return range
@@ -666,7 +667,7 @@ namespace XMI {
 		/// \param[out] last	Where to put last rank in range
 		/// \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
 		///
-		xmi_result_t rankRange_impl(size_t *first, size_t *last) {
+		xmi_result_t rankRange_impl(xmi_task_t *first, xmi_task_t *last) {
 			if (__type != XMI_RANGE_TOPOLOGY) {
 				return XMI_UNIMPL;
 			}
@@ -680,7 +681,7 @@ namespace XMI {
 		/// \param[out] list	pointer to list stored here
 		/// \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
 		///
-		xmi_result_t rankList_impl(size_t **list) {
+		xmi_result_t rankList_impl(xmi_task_t **list) {
 			if (__type != XMI_LIST_TOPOLOGY) {
 				return XMI_UNIMPL;
 			}
@@ -755,7 +756,7 @@ namespace XMI {
 					xmi_coord_t c0, c1;
 					rc = RANK2COORDS(topo_first, &c0);
 					XMI_assert_debugf(rc == XMI_SUCCESS, "RANK2COORDS failed\n");
-					size_t r;
+					xmi_task_t r;
 					for (r = topo_first + 1; r <= topo_last; ++r) {
 						RANK2COORDS(r, &c1);
 						if (!__isLocalCoord(&c0, &c1)) {
@@ -797,7 +798,7 @@ namespace XMI {
 				if (__type == XMI_SINGLE_TOPOLOGY) {
 					return IS_LOCAL_PEER(__topo._rank);
 				} else if (__type == XMI_RANGE_TOPOLOGY) {
-					size_t r;
+					xmi_task_t r;
 					for (r = topo_first; r <= topo_last; ++r) {
 						if (!IS_LOCAL_PEER(r)) {
 							return false;
@@ -854,7 +855,7 @@ namespace XMI {
 		/// \param[in] rank	Rank to test
 		/// \return	boolean indicating rank is in topology
 		///
-		bool isRankMember_impl(size_t rank) {
+		bool isRankMember_impl(xmi_task_t rank) {
 			xmi_result_t rc;
 			if (unlikely(__type == XMI_COORD_TOPOLOGY)) {
 				xmi_coord_t c0;
@@ -893,7 +894,7 @@ namespace XMI {
 				return false;
 			} else {
 				// the hard way...
-				size_t rank = 0;
+				xmi_task_t rank = 0;
 				// assert(c0->network == XMI_N_TORUS_NETWORK);
 				rc = COORDS2RANK(c0, &rank);
 				return isRankMember(rank);
@@ -920,12 +921,12 @@ namespace XMI {
 			} else {
 				// the hard way... impractical?
 
-				size_t s = __size;
-				size_t *rl = (size_t *)malloc(s * sizeof(*rl));
-				size_t k = 0;
-				size_t r;
+				xmi_ntask_t s = __size;
+				xmi_task_t *rl = (xmi_task_t *)malloc(s * sizeof(*rl));
+				xmi_ntask_t k = 0;
+				xmi_task_t r;
 				XMI::Interface::Mapping::nodeaddr_t a;
-				size_t i;
+				xmi_ntask_t i;
 				for (i = 0; i < s; ++i) {
 					r = index2Rank(i);
 					// assert(r != -1);
@@ -987,7 +988,7 @@ namespace XMI {
 		/// \param[out] ranks	array where rank list is placed
 		/// \param[out] nranks	actual number of ranks put into array
 		///
-		void getRankList_impl(size_t max, size_t *ranks, size_t *nranks) {
+		void getRankList_impl(xmi_ntask_t max, xmi_task_t *ranks, xmi_ntask_t *nranks) {
 			xmi_result_t rc;
 			*nranks = __size; // might exceed "max" - caller detects error.
 			XMI_assert_debugf(max != 0, "getRankList called with no array space\n");
@@ -999,7 +1000,7 @@ namespace XMI {
 			} else if (__type == XMI_COORD_TOPOLOGY) {
 				// the hard way...
 				xmi_coord_t c0;
-				size_t rank = 0;
+				xmi_task_t rank = 0;
 				unsigned x;
 				// c0 = llcorner;
 				c0.network = XMI_N_TORUS_NETWORK;
@@ -1015,7 +1016,7 @@ namespace XMI {
 			} else if (__type == XMI_SINGLE_TOPOLOGY) {
 				ranks[0] = __topo._rank;
 			} else if (__type == XMI_RANGE_TOPOLOGY) {
-				size_t r;
+				xmi_task_t r;
 				unsigned x;
 				for (x = 0, r = topo_first; r <= topo_last && x < max; ++x, ++r) {
 					ranks[x] = r;
@@ -1042,7 +1043,7 @@ namespace XMI {
 					// it might not always be desirable to
 					// convert a coord to single rank...
 					// maybe shouldn't at all...
-					size_t rank = 0;
+					xmi_task_t rank = 0;
 					COORDS2RANK(&topo_llcoord, &rank);
 					__type = XMI_SINGLE_TOPOLOGY;
 					topo_rank = rank;
@@ -1077,9 +1078,9 @@ namespace XMI {
 		bool convertTopology_impl(xmi_topology_type_t new_type) {
 			xmi_result_t rc;
 			xmi_coord_t c0;
-			size_t rank = 0;
-			size_t *rl, *rp;
-			size_t min, max;
+			xmi_task_t rank = 0;
+			xmi_task_t *rl, *rp;
+			xmi_task_t min, max;
 			switch (__type) {
 			case XMI_SINGLE_TOPOLOGY:
 				switch (new_type) {
@@ -1101,7 +1102,7 @@ namespace XMI {
 					return true;
 					break;
 				case XMI_LIST_TOPOLOGY:
-					rl = (size_t *)malloc(sizeof(*rl));
+					rl = (xmi_task_t *)malloc(sizeof(*rl));
 					__type = XMI_LIST_TOPOLOGY;
 					*rl = topo_rank;
 					topo_ranklist = rl;
@@ -1126,10 +1127,10 @@ namespace XMI {
 					}
 					break;
 				case XMI_LIST_TOPOLOGY:
-					rl = (size_t *)malloc(__size * sizeof(*rl));
+					rl = (xmi_task_t *)malloc(__size * sizeof(*rl));
 					rp = rl;
 					__type = XMI_LIST_TOPOLOGY;
-					size_t r;
+					xmi_task_t r;
 					for (r = topo_first; r <= topo_last; ++r) {
 						*rp++ = r;
 					}
@@ -1176,7 +1177,7 @@ namespace XMI {
 					}
 					break;
 				case XMI_LIST_TOPOLOGY:
-					rl = (size_t *)malloc(__size * sizeof(*rl));
+					rl = (xmi_task_t *)malloc(__size * sizeof(*rl));
 					rp = rl;
 					c0 = topo_llcoord;
 					do {
@@ -1188,7 +1189,7 @@ namespace XMI {
 					return true;
 					break;
 				case XMI_RANGE_TOPOLOGY:
-					min = (size_t)-1;
+					min = (xmi_task_t)-1;
 					max = 0;
 					c0 = topo_llcoord;
 					do {
@@ -1225,7 +1226,7 @@ namespace XMI {
 		XMI_abortf("Topology::unionTopology not implemented\n");
 #if 0
 		if (likely(__type == other->__type)) {
-			// size_t s;
+			// xmi_ntask_t s;
 			// size_t i, j, k;
 			switch (__type) {
 			case XMI_COORD_TOPOLOGY:
@@ -1304,9 +1305,9 @@ namespace XMI {
 	///
 	void intersectTopology_impl(Topology *_new, Topology *other) {
 		if (likely(__type == other->__type)) {
-			size_t s;
-			size_t i, j, k;
-			size_t *rl;
+			xmi_ntask_t s;
+			xmi_ntask_t i, j, k;
+			xmi_task_t *rl;
 			switch (__type) {
 			case XMI_COORD_TOPOLOGY:
 				// This always results in a rectangle...
@@ -1363,7 +1364,7 @@ namespace XMI {
 				// guess at size: smallest topology.
 				s = (__size < other->__size ?
 						__size : other->__size);
-				rl = (size_t *)malloc(s * sizeof(*rl));
+				rl = (xmi_task_t *)malloc(s * sizeof(*rl));
 				k = 0;
 				for (i = 0; i < __size; ++i) {
 					for (j = 0; j < other->__size; ++j) {
@@ -1454,11 +1455,11 @@ namespace XMI {
 	void subtractTopology_impl(Topology *_new, Topology *other) {
 		xmi_result_t rc;
 		xmi_coord_t ll, ur, c0;
-		size_t rank = 0;
-		size_t min = 0, max = 0;
-		size_t s;
-		size_t i, j, k;
-		size_t *rl;
+		xmi_task_t rank = 0;
+		xmi_task_t min = 0, max = 0;
+		xmi_ntask_t s;
+		xmi_ntask_t i, j, k;
+		xmi_task_t *rl;
 		unsigned flag;
 		if (likely(__type == other->__type)) {
 			switch (__type) {
@@ -1467,7 +1468,7 @@ namespace XMI {
 				// that we don't check for. We just create a
 				// list and then try to convert it to coords.
 				s = __size;
-				rl = (size_t *)malloc(s * sizeof(*rl));
+				rl = (xmi_task_t *)malloc(s * sizeof(*rl));
 				k = 0;
 				c0 = topo_llcoord;
 				do {
@@ -1549,7 +1550,7 @@ namespace XMI {
 					s = other->topo_first - topo_first +
 						topo_last - other->topo_last;
 					XMI_assert_debugf(s != 0, "subtraction results in empty topology\n");
-					rl = (size_t *)malloc(s * sizeof(*rl));
+					rl = (xmi_task_t *)malloc(s * sizeof(*rl));
 					k = 0;
 					for (j = topo_first; j < other->topo_first; ++j) {
 						rl[k++] = j;
@@ -1587,7 +1588,7 @@ namespace XMI {
 			case XMI_LIST_TOPOLOGY:
 				/// \todo keep this from being O(n^2)
 				s = __size;
-				rl = (size_t *)malloc(s * sizeof(*rl));
+				rl = (xmi_task_t *)malloc(s * sizeof(*rl));
 				k = 0;
 				for (i = 0; i < s; ++i) {
 					if (other->isRankMember(topo_list(i))) {
@@ -1625,7 +1626,7 @@ namespace XMI {
 				if (isRankMember(other->topo_rank)) {
 					// convert rectangle to list and remove one...
 					s = __size;
-					rl = (size_t *)malloc(s * sizeof(*rl));
+					rl = (xmi_task_t *)malloc(s * sizeof(*rl));
 					k = 0;
 					c0 = topo_llcoord;
 					do {
@@ -1659,7 +1660,7 @@ namespace XMI {
 				if (isRankMember(other->topo_rank)) {
 					// convert range into list...
 					s = __size;
-					rl = (size_t *)malloc(s * sizeof(*rl));
+					rl = (xmi_task_t *)malloc(s * sizeof(*rl));
 					k = 0;
 					for (i = topo_first; i < other->topo_rank; ++i) {
 						rl[k++] = i;
@@ -1688,7 +1689,7 @@ namespace XMI {
 				break;
 			case XMI_LIST_TOPOLOGY:
 				s = __size;
-				rl = (size_t *)malloc(s * sizeof(*rl));
+				rl = (xmi_task_t *)malloc(s * sizeof(*rl));
 				k = 0;
 				for (i = 0; i < s; ++i) {
 					if (topo_list(i) != other->topo_rank) {
@@ -1763,7 +1764,7 @@ namespace XMI {
 	}
 
 	private:
-		size_t	__size;		///< number of ranks in this topology
+		xmi_ntask_t	__size;		///< number of ranks in this topology
 		xmi_topology_type_t __type;	///< type of topology this is
 		union topology_u __topo;///< topoloy info
 

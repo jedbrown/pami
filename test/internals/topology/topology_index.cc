@@ -15,22 +15,22 @@
 #include "topology_test.h"
 
 void check_index2rank(XMI::Topology *topo, const char *str) {
-	unsigned x;
+	xmi_ntask_t x;
 	for (x = 0; x < topo->size(); ++x) {
-		size_t r = topo->index2Rank(x);
-		size_t i = topo->rank2Index(r);
+		xmi_task_t r = topo->index2Rank(x);
+		xmi_ntask_t i = topo->rank2Index(r);
 		xmi_coord_t c;
 		__global.mapping.task2network(r, &c, XMI_N_TORUS_NETWORK);
 		static char buf[1024];
 		char *s = buf;
 		char comma = '(';
-		for (int y = 0; y < __global.mapping.globalDims(); ++y) {
+		for (size_t y = 0; y < __global.mapping.globalDims(); ++y) {
 			s += sprintf(s, "%c%zd", comma, c.u.n_torus.coords[y]);
 			comma = ',';
 		}
 		*s++ = ')';
 		*s++ = '\0';
-		fprintf(stderr, "%s.index2Rank(%zd) => %zd => %zd %s\n", str, x, r, i, buf);
+		fprintf(stderr, "%s.index2Rank(%d) => %d => %d %s\n", str, x, r, i, buf);
 	}
 }
 
@@ -75,8 +75,8 @@ int main(int argc, char **argv) {
 // END standard setup
 // ------------------------------------------------------------------------
 	bool flag;
-	size_t num;
-	size_t *ranks = (size_t *)malloc(num_tasks * sizeof(*ranks));
+	xmi_ntask_t num;
+	xmi_task_t *ranks = (xmi_task_t *)malloc(num_tasks * sizeof(*ranks));
 
 	dump(&__global.topology_global, "world");
 	check_index2rank(&__global.topology_global, "topology_global");

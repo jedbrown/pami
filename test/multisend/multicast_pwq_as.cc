@@ -116,9 +116,9 @@ int main(int argc, char ** argv)
   topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // global topology variables
-  size_t  gRoot    = topology_global.index2Rank(0);
-  size_t *gRankList; topology_global.rankList(&gRankList);
-  size_t  gSize    = topology_global.size();
+  xmi_task_t  gRoot    = topology_global.index2Rank(0);
+  xmi_task_t *gRankList; topology_global.rankList(&gRankList);
+  xmi_ntask_t  gSize    = topology_global.size();
 
   DBG_FPRINTF((stderr,"gRoot %d, gSize %d\n",gRoot, gSize));
   for(size_t j=0;j<gSize;++j)
@@ -230,9 +230,9 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     // local topology variables
-    size_t  lRoot    = topology_local.index2Rank(0);
-    size_t *lRankList; topology_local.rankList(&lRankList);
-    size_t  lSize   =  topology_local.size();
+    xmi_task_t  lRoot    = topology_local.index2Rank(0);
+    xmi_task_t *lRankList; topology_local.rankList(&lRankList);
+    xmi_ntask_t  lSize   =  topology_local.size();
 
     options.type = XMI_MULTICAST;
 
@@ -273,7 +273,7 @@ int main(int argc, char ** argv)
       topology.convertTopology(XMI_COORD_TOPOLOGY);
       topology.subTopologyNthGlobal(&subtopology, 0); 
 
-      size_t *ranklist = new size_t[subtopology.size()];
+      xmi_task_t *ranklist = new xmi_task_t[subtopology.size()];
 
       // loop all global ranks, if they're in the subtopology, put then in a ranklist.
       for(size_t i = 0, j = 0; i < gSize; ++i)

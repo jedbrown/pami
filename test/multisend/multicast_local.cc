@@ -148,9 +148,9 @@ int main(int argc, char ** argv)
   topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // local topology variables
-  size_t  lRoot    = topology_local.index2Rank(0);
-  size_t *lRankList; topology_local.rankList(&lRankList);
-  size_t  lSize   =  topology_local.size();
+  xmi_task_t  lRoot    = topology_local.index2Rank(0);
+  xmi_task_t *lRankList; topology_local.rankList(&lRankList);
+  xmi_ntask_t  lSize   =  topology_local.size();
 
   XMI::Topology src_participants;
   XMI::Topology dst_participants;

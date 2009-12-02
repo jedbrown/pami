@@ -41,10 +41,10 @@ namespace XMI
 
 
           inline xmi_result_t network2task (const xmi_coord_t  * addr,
-                                           size_t              * rank,
+                                           xmi_task_t          * rank,
                                            xmi_network         * type);
 
-          inline xmi_result_t task2network (size_t               rank,
+          inline xmi_result_t task2network (xmi_task_t           rank,
                                            xmi_coord_t         * addr,
                                            xmi_network           type);
 	  inline size_t globalDims();
@@ -63,14 +63,14 @@ namespace XMI
       }
       template <class T_Mapping>
       inline xmi_result_t Base<T_Mapping>::network2task (const xmi_coord_t  * addr,
-                                                         size_t             * rank,
+                                                         xmi_task_t         * rank,
                                                          xmi_network        * type)
       {
         return static_cast<T_Mapping*>(this)->network2task_impl (addr, rank, type);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Base<T_Mapping>::task2network (size_t        rank,
+      inline xmi_result_t Base<T_Mapping>::task2network (xmi_task_t    rank,
                                                          xmi_coord_t * addr,
                                                          xmi_network   type)
       {

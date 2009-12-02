@@ -30,7 +30,7 @@ const char *topo_types[] = {
 void dump(XMI::Topology *topo, const char *title) {
 	static char buf[4096];
 	char *s = buf;
-	size_t f = 0, l = 0;
+	xmi_task_t f = 0, l = 0;
 	xmi_coord_t *ll, *ur;
 	xmi_result_t rc;
 	size_t x;
@@ -44,13 +44,13 @@ void dump(XMI::Topology *topo, const char *title) {
 	case XMI_SINGLE_TOPOLOGY:
 	case XMI_LIST_TOPOLOGY:
 		for (x = 0; x < z; ++x) {
-			s += sprintf(s, " %zu", topo->index2Rank(x));
+			s += sprintf(s, " %u", topo->index2Rank(x));
 		}
 		*s++ = ' ';
 		break;
 	case XMI_RANGE_TOPOLOGY:
 		topo->rankRange(&f, &l);
-		s += sprintf(s, " %zu..%zu ", f, l);
+		s += sprintf(s, " %u..%u ", f, l);
 		break;
 	case XMI_COORD_TOPOLOGY:
 		rc = topo->rectSeg(&ll, &ur);

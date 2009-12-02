@@ -309,7 +309,7 @@ namespace XMI
         ///
         /// \todo Error path
         ///
-        inline xmi_result_t task2network_impl (size_t task,
+        inline xmi_result_t task2network_impl (xmi_task_t task,
 						xmi_coord_t *addr,
 						xmi_network type)
         {
@@ -332,7 +332,7 @@ namespace XMI
         /// \todo Error path
         ///
         inline xmi_result_t network2task_impl (const xmi_coord_t *addr,
-						size_t *task,
+						xmi_task_t *task,
 						xmi_network *type)
         {
           size_t aSize = _pers.aSize();
