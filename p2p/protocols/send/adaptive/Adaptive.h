@@ -15,8 +15,8 @@
 ///
 /// C++ templates require all source code to be #include'd from a header file.
 ///
-#ifndef __p2p_protocols_send_adaptive_Adaptive_h__
-#define __p2p_protocols_send_adaptive_Adaptive_h__
+#ifndef __p2p_protocols_send_adaptive_Eager_h__
+#define __p2p_protocols_send_adaptive_Eager_h__
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/adaptive/AdaptiveImmediate.h"

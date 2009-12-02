@@ -32,8 +32,8 @@ namespace XMI
 	struct adaptive_connection_t
           {
 	    public:
-            xmi_client_t     client;
-            size_t     context;
+		    xmi_client_t     client;
+            size_t          context;
             void           ** array;
           };
 
@@ -64,8 +64,7 @@ namespace XMI
                   found_empty_connection = true;
                 }
               }
-              else if (_adaptive_connection[i].client == client &&
-              		_adaptive_connection[i].context == context)
+              else if (_adaptive_connection[i].client == client && _adaptive_connection[i].context == context)
               {
                 found_previous_connection = true;
                 connection = _adaptive_connection[i].array;
@@ -78,7 +77,7 @@ namespace XMI
               {
                 return NULL;
               }
-              _adaptive_connection[first_empty_connection].client = client;
+			  _adaptive_connection[first_empty_connection].client = client;
               _adaptive_connection[first_empty_connection].context = context;
               _adaptive_connection[first_empty_connection].array =
                 (void **) calloc (_device.peers(), sizeof(void *));

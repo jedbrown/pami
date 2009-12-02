@@ -94,12 +94,12 @@ namespace XMI
                                     void                     * cookie,
                                     T_Device                 & device,
                                     xmi_task_t                 origin_task,
-                                    xmi_context_t              context,
+                                    xmi_client_t              client,
                                     size_t                     contextid,
                                     xmi_result_t             & status) :
-              _send_model (device, context),
+              _send_model (device,client, contextid),
               _fromRank (origin_task),
-              _context (context),
+              _client (client),
               _contextid (contextid),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
@@ -149,7 +149,7 @@ namespace XMI
                                       sizeof (protocol_metadata_t),
                                       parameters->iov);
 
-            if (!posted)
+            if (unlikely(!posted))
               {
                 // For some reason the packet could not be immediately posted.
                 // Allocate memory, pack the user data and metadata, and attempt
@@ -187,7 +187,7 @@ namespace XMI
           T_Model         _send_model;
           xmi_task_t      _fromRank;
 
-          xmi_context_t              _context;
+          xmi_client_t              _client;
           size_t                     _contextid;
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
@@ -227,7 +227,7 @@ namespace XMI
             xmi_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
 
             // Invoke the registered dispatch function.
-            send->_dispatch_fn.p2p (send->_context,   // Communication context handle
+            send->_dispatch_fn.p2p (send->_client,   // Communication context handle
                                     send->_contextid, // Communication context id
                                     send->_cookie,    // Dispatch cookie
                                     m->fromRank,      // Origin (sender) rank
@@ -296,7 +296,7 @@ namespace XMI
           ///
           /// This callback will free the send state memory.
           ///
-          static void send_complete (xmi_client_t client, size_t   context,
+          static void send_complete (xmi_context_t   context,
                                      void          * cookie,
                                      xmi_result_t    result)
           {
