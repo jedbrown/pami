@@ -910,7 +910,7 @@ void XMI_Topology_create_range(xmi_topology_t *topo, xmi_task_t rank0, xmi_task_
 ///
 /// \copydoc XMI_Topology_create_list
 ///
-void XMI_Topology_create_list(xmi_topology_t *topo, xmi_task_t *ranks, xmi_task_t nranks)
+void XMI_Topology_create_list(xmi_topology_t *topo, xmi_task_t *ranks, xmi_ntask_t nranks)
 {
     assert(0);
 }
@@ -935,7 +935,7 @@ unsigned XMI_Topology_size_of(xmi_topology_t *topo)
 ///
 /// \copydoc XMI_Topology_size
 ///
-xmi_task_t XMI_Topology_size(xmi_topology_t *topo)
+xmi_ntask_t XMI_Topology_size(xmi_topology_t *topo)
 {
     XMI::Topology * t = (XMI::Topology *) topo;
     return t->size();
@@ -953,7 +953,7 @@ xmi_topology_type_t xmi_topology_type(xmi_topology_t *topo)
 ///
 /// \copydoc XMI_Topology_index2TaskID
 ///
-xmi_task_t XMI_Topology_index2TaskID(xmi_topology_t *topo, xmi_task_t ix)
+xmi_task_t XMI_Topology_index2TaskID(xmi_topology_t *topo, xmi_ntask_t ix)
 {
     XMI::Topology * t = (XMI::Topology *) topo;
     return t->index2Rank(ix);
@@ -962,7 +962,7 @@ xmi_task_t XMI_Topology_index2TaskID(xmi_topology_t *topo, xmi_task_t ix)
 ///
 /// \copydoc XMI_Topology_taskID2Index
 ///
-xmi_task_t XMI_Topology_taskID2Index(xmi_topology_t *topo, xmi_task_t rank)
+xmi_ntask_t XMI_Topology_taskID2Index(xmi_topology_t *topo, xmi_task_t rank)
 {
     XMI::Topology * t = (XMI::Topology *) topo;
     return t->rank2Index(rank);
@@ -1073,7 +1073,7 @@ void XMI_Topology_sub_ReduceDims(xmi_topology_t *_new, xmi_topology_t *topo, xmi
 ///
 /// \copydoc XMI_Topology_getTaskList
 ///
-void XMI_Topology_getTaskList(xmi_topology_t *topo, xmi_task_t max, xmi_task_t *ranks, xmi_task_t *nranks)
+void XMI_Topology_getTaskList(xmi_topology_t *topo, xmi_ntask_t max, xmi_task_t *ranks, xmi_ntask_t *nranks)
 {
     XMI::Topology * t = (XMI::Topology *) topo;
     t->getRankList(max,ranks,nranks);

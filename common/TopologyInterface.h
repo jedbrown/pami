@@ -11,8 +11,6 @@
 
 #include "sys/xmi.h"
 
-typedef uint32_t xmi_ntask_t;   /**< appropriate type for "number of tasks" values */
-
 namespace XMI
 {
     namespace Interface
