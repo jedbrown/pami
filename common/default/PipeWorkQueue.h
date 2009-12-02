@@ -7,24 +7,24 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/mpi/PipeWorkQueue.h
+ * \file common/default/PipeWorkQueue.h
  * \brief Implementation of PipeWorkQueue
  */
 
-#ifndef __common_mpi_PipeWorkQueue_h__
-#define __common_mpi_PipeWorkQueue_h__
+#ifndef __common_default_PipeWorkQueue_h__
+#define __common_default_PipeWorkQueue_h__
 
 #include "Arch.h"
 #include "SysDep.h"
-#include "util/common.h"
 #include "common/PipeWorkQueueInterface.h"
+#include "util/common.h"
 
 // undef/define to control workqueues that are optimized for the flat buffer case.
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
 #undef USE_FLAT_BUFFER	// (4*1024*1024)
 
 #define ALLOC_SHMEM(memptr, align, size)	\
-	((XMI::SysDep *)_sysdep)->mm.memalign((void **)&memptr, align, size)
+	{ memptr = NULL; ((XMI::SysDep *)_sysdep)->mm.memalign((void **)&memptr, align, size); }
 
 /// \todo Fix shmem free so that it doesn't assert
 #define FREE_SHMEM(memptr)	\
@@ -589,4 +589,4 @@ private:
 
 }; /* namespace XMI */
 
-#endif // __components_pipeworkqueue_mpi_pipeworkqueue_h__
+#endif // __components_pipeworkqueue_default_pipeworkqueue_h__
