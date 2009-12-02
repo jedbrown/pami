@@ -1414,6 +1414,7 @@ namespace XMI {
 				default:
 					break;
 				}
+				break;
 			case XMI_LIST_TOPOLOGY:
 				switch (other->__type) {
 				case XMI_COORD_TOPOLOGY:
@@ -1425,6 +1426,7 @@ namespace XMI {
 				default:
 					break;
 				}
+				break;
 			case XMI_RANGE_TOPOLOGY:
 				switch (other->__type) {
 				case XMI_COORD_TOPOLOGY:
@@ -1436,6 +1438,7 @@ namespace XMI {
 				default:
 					break;
 				}
+				break;
 			case XMI_SINGLE_TOPOLOGY: // already handled
 			default:
 				break;
@@ -1732,6 +1735,7 @@ namespace XMI {
 				default:
 					break;
 				}
+				break;
 			case XMI_LIST_TOPOLOGY:
 				switch (other->__type) {
 				case XMI_COORD_TOPOLOGY:
@@ -1743,6 +1747,7 @@ namespace XMI {
 				default:
 					break;
 				}
+				break;
 			case XMI_RANGE_TOPOLOGY:
 				switch (other->__type) {
 				case XMI_COORD_TOPOLOGY:
@@ -1754,6 +1759,7 @@ namespace XMI {
 				default:
 					break;
 				}
+				break;
 			case XMI_SINGLE_TOPOLOGY: // already handled
 			default:
 				break;
