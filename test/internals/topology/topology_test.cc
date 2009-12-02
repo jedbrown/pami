@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 	}
 	if (__global.topology_global.type() != XMI_RANGE_TOPOLOGY) {
 		//-- rankrange-based topologies...
-		new (&topo) XMI::Topology((xmi_task_t)0, num_tasks - 1);
+		new (&topo) XMI::Topology((xmi_task_t)0, (xmi_task_t)num_tasks - 1);
 		dump(&topo, "rankrange");
 
 		topo.subTopologyLocalToMe(&topo2);
