@@ -18,7 +18,7 @@
 #ifndef FPRINTF_TOPOLOGY // otherwise enable fprintfs
 #define FPRINTF_TOPOLOGY(topo)                                                 \
 {                                                                              \
-xmi_ntask_t global_size = __global.topology_global.size();                          \
+size_t global_size = __global.topology_global.size();                          \
 xmi_topology_type_t type = topo.type();                                        \
 fprintf(stderr,"type %d/%s, size %d\n",                                       \
         type,                                                                  \
@@ -46,7 +46,7 @@ fprintf(stderr,"\n");                                                          \
 // Topology, expected size (-1 means size should be > 0 but unknown)
 #define TEST_TOPOLOGY(topo,expected_size)                                      \
 {                                                                              \
-xmi_ntask_t global_size = __global.topology_global.size();                          \
+size_t global_size = __global.topology_global.size();                          \
 FPRINTF_TOPOLOGY(topo);                                                        \
 xmi_topology_type_t type = topo.type();                                        \
 if((expected_size==(unsigned)-1) && (!topo.size()))                            \
@@ -86,7 +86,7 @@ for(unsigned j=0; j< topo.size(); ++j)                                         \
   fprintf(stderr,"FAIL: index2Rank(%d)=%d is not a member\n",                 \
                  j,topo.index2Rank(j));                                        \
 }                                                                              \
-xmi_ntask_t nmembers = 0;                                                           \
+size_t nmembers = 0;                                                           \
 for(unsigned j=0; j< global_size; ++j)                                         \
 {                                                                              \
   if(topo.isRankMember(j)) nmembers++;                                         \
@@ -163,7 +163,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 if(task_id == 0)
 {
-  xmi_ntask_t  gSize    = __global.topology_global.size();
+  size_t  gSize    = __global.topology_global.size();
   XMI::Topology topology, subtopology, copy_topology;
 
   fprintf(stderr,"\n");fprintf(stderr,"global\n");
@@ -242,7 +242,7 @@ if(task_id == 0)
   xmi_task_t *ranklist = new xmi_task_t[subtopology.size()];
 
   // loop all global ranks, if they're in the subtopology, put then in a ranklist.
-  for(xmi_ntask_t i = 0, j = 0; i < gSize; ++i)
+  for(size_t i = 0, j = 0; i < gSize; ++i)
   {
      if(subtopology.isRankMember(i)) ranklist[j++] = i;
      XMI_assert(j<=subtopology.size());

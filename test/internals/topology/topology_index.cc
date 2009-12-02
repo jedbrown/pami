@@ -15,10 +15,10 @@
 #include "topology_test.h"
 
 void check_index2rank(XMI::Topology *topo, const char *str) {
-	xmi_ntask_t x;
+	size_t x;
 	for (x = 0; x < topo->size(); ++x) {
 		xmi_task_t r = topo->index2Rank(x);
-		xmi_ntask_t i = topo->rank2Index(r);
+		size_t i = topo->rank2Index(r);
 		xmi_coord_t c;
 		__global.mapping.task2network(r, &c, XMI_N_TORUS_NETWORK);
 		static char buf[1024];
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 // END standard setup
 // ------------------------------------------------------------------------
 	bool flag;
-	xmi_ntask_t num;
+	size_t num;
 	xmi_task_t *ranks = (xmi_task_t *)malloc(num_tasks * sizeof(*ranks));
 
 	dump(&__global.topology_global, "world");

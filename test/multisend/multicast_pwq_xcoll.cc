@@ -165,7 +165,7 @@ int main(int argc, char ** argv)
   // global topology variables
   xmi_task_t  gRoot    = topology_global.index2Rank(0);
   xmi_task_t *gRankList; topology_global.rankList(&gRankList);
-  xmi_ntask_t  gSize    = topology_global.size();
+  size_t  gSize    = topology_global.size();
 
   DBG_FPRINTF((stderr,"gRoot %d, gSize %d\n",gRoot, gSize));
   for(size_t j=0;j<gSize;++j)

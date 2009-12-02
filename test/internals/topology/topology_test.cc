@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 	xmi_coord_t c0, c1;
 	bool flag;
 	xmi_task_t *ranks = (xmi_task_t *)malloc(num_tasks * sizeof(*ranks));
-	xmi_ntask_t num;
+	size_t num;
 
 	dump(&__global.topology_global, "world");
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 
 	if (__global.topology_global.type() != XMI_LIST_TOPOLOGY) {
 		//-- ranklist-based topologies...
-		__global.topology_global.getRankList((xmi_ntask_t)num_tasks, ranks, &num);
+		__global.topology_global.getRankList((size_t)num_tasks, ranks, &num);
 		if (num != num_tasks) {
 			fprintf(stderr, "getRankList() did not return entire partition\n");
 		}

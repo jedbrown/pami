@@ -56,7 +56,7 @@ namespace XMI
             ///
             /// \todo create destructor to free list, or establish rules
             ///
-            inline Topology(xmi_task_t *ranks, xmi_ntask_t nranks) {}
+            inline Topology(xmi_task_t *ranks, size_t nranks) {}
 
             /// \brief accessor for size of a Topology object
             /// \return	size of XMI::Topology
@@ -64,7 +64,7 @@ namespace XMI
 
             /// \brief number of ranks in topology
             /// \return	number of ranks
-            inline xmi_ntask_t size();
+            inline size_t size();
 
             /// \brief type of topology
             /// \return	topology type
@@ -73,18 +73,18 @@ namespace XMI
             /// \brief Nth rank in topology
             ///
             /// \param[in] ix	Which rank to select
-            /// \return	Nth rank or (xmi_ntask_t)-1 if does not exist
+            /// \return	Nth rank or (size_t)-1 if does not exist
             ///
-            inline xmi_task_t index2Rank(xmi_ntask_t ix);
+            inline xmi_task_t index2Rank(size_t ix);
 
             /// \brief determine index of rank in topology
             ///
             /// This is the inverse function to index2Rank(ix) above.
             ///
             /// \param[in] rank	Which rank to get index for
-            /// \return	index of rank (rank(ix) == rank) or (xmi_ntask_t)-1
+            /// \return	index of rank (rank(ix) == rank) or (size_t)-1
             ///
-            inline xmi_ntask_t rank2Index(xmi_task_t rank);
+            inline size_t rank2Index(xmi_task_t rank);
 
             /// \brief return range
             ///
@@ -215,7 +215,7 @@ namespace XMI
             /// \param[out] ranks	array where rank list is placed
             /// \param[out] nranks	actual number of ranks put into array
             ///
-            inline void getRankList(xmi_ntask_t max, xmi_task_t *ranks, xmi_ntask_t *nranks);
+            inline void getRankList(size_t max, xmi_task_t *ranks, size_t *nranks);
 
             /// \brief check if rank range or list can be converted to rectangle
             ///
@@ -277,7 +277,7 @@ namespace XMI
         }
 
         template <class T_Topology>
-        xmi_ntask_t Topology<T_Topology>::size()
+        size_t Topology<T_Topology>::size()
         {
             return static_cast<T_Topology*>(this)->size_impl();
         }
@@ -289,13 +289,13 @@ namespace XMI
         }
 
         template <class T_Topology>
-	xmi_task_t Topology<T_Topology>::index2Rank(xmi_ntask_t ix)
+	xmi_task_t Topology<T_Topology>::index2Rank(size_t ix)
         {
             return static_cast<T_Topology*>(this)->index2Rank_impl(ix);
         }
 
         template <class T_Topology>
-	xmi_ntask_t Topology<T_Topology>::rank2Index(xmi_task_t rank)
+	size_t Topology<T_Topology>::rank2Index(xmi_task_t rank)
         {
             return static_cast<T_Topology*>(this)->rank2Index_impl(rank);
         }
@@ -388,7 +388,7 @@ namespace XMI
         }
 
         template <class T_Topology>
-	void Topology<T_Topology>::getRankList(xmi_ntask_t max, xmi_task_t *ranks, xmi_ntask_t *nranks)
+	void Topology<T_Topology>::getRankList(size_t max, xmi_task_t *ranks, size_t *nranks)
         {
             return static_cast<T_Topology*>(this)->getRankList_impl(max,ranks,nranks);
         }
