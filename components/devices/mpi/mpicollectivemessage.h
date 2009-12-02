@@ -19,8 +19,8 @@
 #include "util/common.h"
 #include "util/queue/Queue.h"
 #include <mpi.h>
-#include "common/mpi/PipeWorkQueue.h"
-#include "common/mpi/Topology.h"
+#include "PipeWorkQueue.h"
+#include "Topology.h"
 
 namespace XMI {
   namespace Device {

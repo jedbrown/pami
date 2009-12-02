@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __common_bgq_Topology_h__
-#define __common_bgq_Topology_h__
+#ifndef __common_default_Topology_h__
+#define __common_default_Topology_h__
 
 ////////////////////////////////////////////////////////////////////////
-/// \file common/bgq/Topology.h
+/// \file common/default/Topology.h
 ///
 /// \brief Coordinate/Address Topology Class
 ///
@@ -826,6 +826,7 @@ namespace XMI {
 			// is this too difficult/expensive? is it needed?
 			// Note, this is NOT simply "!isLocal()"...
 			XMI_abortf("Topology::isGlobal not implemented\n");
+			return false;
 		}
 
 		/// \brief is topology a rectangular segment
@@ -929,7 +930,7 @@ namespace XMI {
 					r = index2Rank(i);
 					// assert(r != -1);
 					mapping->task2node(r, a);
-					if (a.local == n) {
+					if (a.local == (size_t)n) {
 						rl[k++] = r;
 					}
 				}
@@ -1770,7 +1771,7 @@ namespace XMI {
 
 }; // namespace XMI
 
-#endif // __components_topology_bgq_bgqtopology_h__
+#endif // __components_topology_default_bgqtopology_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

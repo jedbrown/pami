@@ -19,6 +19,7 @@
 #include "common/TorusMappingInterface.h"
 #include "common/NodeMappingInterface.h"
 #include "sys/xmi.h"
+#include "util/common.h"
 #include <mpi.h>
 #include <errno.h>
 #include <unistd.h>

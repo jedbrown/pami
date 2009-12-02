@@ -17,9 +17,9 @@
 #ifndef DISABLE_COLLDEVICE
 
 #include "components/devices/mpi/mpimessage.h"
-#include "common/mpi/PipeWorkQueue.h"
-#include "common/mpi/Topology.h"
-#include "common/mpi/Global.h"
+#include "PipeWorkQueue.h"
+#include "Topology.h"
+#include "Global.h"
 #include "util/ccmi_debug.h"
 
 #ifndef TRACE_ADAPTOR
