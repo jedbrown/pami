@@ -1,5 +1,8 @@
 
-#include "interfaces/Schedule.h"
+#ifndef   __multinomial_map_h__
+#define   __multinomial_map_h__
+
+#include "algorithms/interfaces/Schedule.h"
 
 namespace CCMI {
   namespace Schedule {
@@ -86,7 +89,7 @@ namespace CCMI {
     };  //Multinomial map
 
 
-    class LinearMap : public MultinomialMap <LinearMap> {
+    class LinearMap : public MultinomialMap<LinearMap> {
     public:
 
       LinearMap (unsigned myrank, XMI::Topology *topology) 
@@ -184,12 +187,12 @@ namespace CCMI {
     };  
 
     
-    class ListMap : public MultinomialMap <ListMap> {
+    class ListMap : public MultinomialMap<ListMap> {
     public:
       
-      ListMap (unsigned myrank, Topology *topology)
+      ListMap (unsigned myrank, XMI::Topology *topology)
       {
-	topology->list (&ranks);
+	topology->rankList(&_ranks);
 	_nranks = topology->size();	
 	
 	unsigned nph = 0;
@@ -282,7 +285,7 @@ namespace CCMI {
       unsigned getNumRanks () { return _nranks; }
 
     protected:
-      unsigned             * _ranks;     /** List of ranks */
+      size_t              * _ranks;     /** List of ranks */
       unsigned              _nranks;    /** Number of ranks */       
       unsigned              _hnranks;   /** Nearest power of 2 */
       unsigned              _rootindex; /** Index of the root */
@@ -290,3 +293,5 @@ namespace CCMI {
     };  
   };
 };
+
+#endif

@@ -2,7 +2,7 @@
 #ifndef __multinomial_tree_schedule__
 #define __multinomial_tree_schedule__
 
-#include "interfaces/Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "MultinomialMap.h"
 
 namespace CCMI
@@ -131,8 +131,7 @@ namespace CCMI
 	return radix;
       }
       
-      static unsigned getMaxPhases(Mapping *mapping, unsigned nranks,
-                                   unsigned *nbino = NULL)
+      static unsigned getMaxPhases(unsigned nranks, unsigned *nbino = NULL)
       {
         unsigned nph;
 	unsigned radix = getRadix (nranks);
@@ -174,21 +173,19 @@ namespace CCMI
       /**
        * \brief Constructor for list of ranks
        *
-       * \param[in] mapping	Simple mapping for ranks
        * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
        */
-      MultinomialTreeT (unsigned myrank, Topology *topo);
+      MultinomialTreeT (unsigned myrank, XMI::Topology *topo);
       
 
       /**
        * \brief Constructor for list of ranks
        *
-       * \param[in] mapping	Simple mapping for ranks
-       * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
+       * \param[in] nranks	Number of ranks in list
        */
-      MultinomialTreeT (unsigned myrank, unsigned *ranks, unsigned nranks);
+      MultinomialTreeT (unsigned myrank, size_t *ranks, unsigned nranks);
 
       /**
        * \brief Initialize Multinomial Schedule
@@ -200,7 +197,7 @@ namespace CCMI
        * \param[out] nranks		Max num steps per phase
        */
       virtual void init(int root, int comm_op, int &startphase,
-                        int &nphases, int &nranks);
+                        int &nphases);
 
       /**
        * \brief Get source phase steps
@@ -210,25 +207,25 @@ namespace CCMI
        */
       virtual void getSrcTopology(unsigned phase, XMI::Topology *topology)
       {
-	unsigned *srcpelist;
-	topology->list(&srcpelist);
-	CCMI_assert(srcpelist == NULL);
+	unsigned *srcranks;
+	topology->rankList(&srcranks);
+	CCMI_assert(srcranks == NULL);
 
 	unsigned nsrc = 0;
         if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
                                                 (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
                                                 phase == _recvph)) || phase == _auxrecvph)
         {
-          NEXT_NODES(PARENT, phase, srcpes, nsrc);
+          NEXT_NODES(PARENT, phase, srcranks, nsrc);
         }
 	CCMI_assert (nsrc <= topology->size());
 
 	for (unsigned count = 0; count < nsrc; count ++) {
-          srcpes[count] = _map.getGlobalRank(srcpes[count]);
+          srcranks[count] = _map.getGlobalRank(srcranks[count]);
         }
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (srcpelist, nsrc);
+	new (topology) XMI::Topology (srcranks, nsrc);
       }
 
       /**
@@ -239,30 +236,39 @@ namespace CCMI
        */
       virtual void getDstTopology(unsigned phase, XMI::Topology *topology)
       {
-	unsigned *dstpelist;
-	topology->list(&dstpelist);
-	CCMI_assert(dstpelist == NULL);
+	unsigned *dstranks;
+	topology->rankList(&dstranks);
+	CCMI_assert(dstranks == NULL);
 
 	unsigned ndst = 0;
         if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
                                                 (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
                                                 phase == _sendph)) || phase == _auxsendph)
         {
-          NEXT_NODES(CHILD, phase, dstpes, ndst);
+          NEXT_NODES(CHILD, phase, dstranks, ndst);
         }
 	CCMI_assert (ndst <= topology->size());
 
 	for (unsigned count = 0; count < ndst; count ++)
         {
-          dstpes[count]   = _map.getGlobalRank(dstpes[count]);
+          dstranks[count]   = _map.getGlobalRank(dstranks[count]);
         }
 
 	//Convert to a list topology of the accurate size
-	new (topology) XMI::Topology (dstpelist, ndst);
+	new (topology) XMI::Topology (dstranks, ndst);
       }
 
-      virtual void getSrcCumulativeTopology(XMI::Topology *topo) { CCMI_assert (0); }
-      virtual void getDstCumulativeTopology(XMI::Topology *topo) { CCMI_assert (0); }
+      /**
+       * \brief Get the union of all sources across all phases
+       * \param[INOUT] topology : the union of all sources
+       */
+      virtual void getSrcUnionTopology (XMI::Topology *topology) { CCMI_assert (0); }
+
+      /**
+       * \brief Get the union of all destinations across all phases
+       * \param[INOUT] topology : the union of all sources
+       */
+      virtual void getDstUnionTopology (XMI::Topology *topology) { CCMI_assert (0); }
 
     protected:
       unsigned     _nphases;    /// \brief Number of phases total
@@ -277,7 +283,7 @@ namespace CCMI
       unsigned     _auxsendph;  /// \brief outside send phase
       unsigned     _auxrecvph;  /// \brief outside recv phase
 
-      Topology     _topology;  /// \brief goes away when geoemetries store topologies
+      XMI::Topology     _topology;  /// \brief goes away when geoemetries store topologies
       M            _map;
 
       static const bool PARENT = true;
@@ -317,7 +323,7 @@ MultinomialTreeT(unsigned myrank, XMI::Topology *topology):_map(myrank, topology
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
-MultinomialTreeT(unsigned myrank, unsigned nranks, unsigned *ranks):_topology(ranks, nranks), _map(myrank, _topology)
+MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks):_topology(ranks, nranks), _map(myrank, &_topology)
 {
 }
 
@@ -472,7 +478,7 @@ setupContext(unsigned &startph, unsigned &nph)
  */
 template <class M>
 void CCMI::Schedule::MultinomialTreeT<M>::
-init(int root, int comm_op, int &start, int &nph, int &nranks)
+init(int root, int comm_op, int &start, int &nph)
 {
   unsigned st, np;
 
@@ -491,7 +497,6 @@ init(int root, int comm_op, int &start, int &nph, int &nranks)
 
   nph = np;
   start = st;
-  nranks = np; // maximum number of recvs total
 }
 
 

@@ -28,6 +28,8 @@
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
 #include "algorithms/protocols/tspcoll/NBColl.h"
 
+#include "MPINativeInterface.h"
+
 // CCMI includes
 
 typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep>,
@@ -221,10 +223,10 @@ namespace XMI
     };
 
     template <class T_Device, class T_Sysdep>
-    class CCMIBinomBarrierInfo:public CollInfo<T_Device>
+    class OldCCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
     public:
-      CCMIBinomBarrierInfo(T_Device *dev,
+      OldCCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
                            xmi_mapidtogeometry_fn fcn):
         CollInfo<T_Device>(dev),
@@ -236,8 +238,29 @@ namespace XMI
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "CCMI_BinomBarrier");
         }
+      XMI_Request_t                                     _request;
+      MPIMcastModel                                     _model;
+      CCMI::Adaptor::Barrier::OldBinomialBarrierFactory _barrier_registration;
+      CCMI_Executor_t                                   _barrier_executor;
+    };
+
+    template <class T_Device, class T_Sysdep>
+    class CCMIBinomBarrierInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIBinomBarrierInfo(T_Device *dev,
+                           T_Sysdep * sd,
+                           xmi_mapidtogeometry_fn fcn):
+        CollInfo<T_Device>(dev),
+	_minterface(dev),
+        _barrier_registration(&_minterface,
+                              fcn)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_BinomBarrier");
+        }
       XMI_Request_t                                  _request;
-      MPIMcastModel                                  _model;
+      MPINativeInterface<T_Device>                   _minterface;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                _barrier_executor;
     };

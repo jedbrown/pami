@@ -22,6 +22,8 @@
 #include "components/geometry/mpi/mpicollfactory.h"
 #include "components/memory/MemoryAllocator.h"
 
+#include "MPINativeInterface.h"
+
 namespace XMI
 {
   extern std::map<unsigned, xmi_geometry_t> geometry_map;
