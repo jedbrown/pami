@@ -141,14 +141,14 @@ namespace XMI
                          sizeof(msg->_p2p_msg),target_rank));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_rank;
-          _device.addToNonDeterministicQueue (msg);
+          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_rank,
                           0,
-                          MPI_COMM_WORLD,
+                          _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
@@ -187,14 +187,14 @@ namespace XMI
                          sizeof(msg->_p2p_msg),target_rank));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_rank;
-          _device.addToNonDeterministicQueue (msg);
+          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_rank,
                           0,
-                          MPI_COMM_WORLD,
+                          _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
@@ -239,14 +239,14 @@ namespace XMI
                          sizeof(msg->_p2p_msg),target_rank));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_rank;
-          _device.addToNonDeterministicQueue (msg);
+          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_rank,
                           0,
-                          MPI_COMM_WORLD,
+                          _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);
@@ -287,14 +287,14 @@ namespace XMI
                          sizeof(msg->_p2p_msg),metasize,(sizeof(msg->_p2p_msg)+metasize+iov[0].iov_len-128-224),target_rank));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_rank;
-          _device.addToNonDeterministicQueue (msg);
+          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg)+metasize+iov[0].iov_len-128-224,
                           MPI_CHAR,
                           target_rank,
                           1,
-                          MPI_COMM_WORLD,
+                          _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
           assert(rc == MPI_SUCCESS);

@@ -20,33 +20,72 @@
 
 namespace XMI
 {
-    namespace Device
+  namespace Device
+  {
+    namespace Interface
     {
-        namespace Interface
+      ///
+      /// \todo Need A LOT MORE documentation on this interface and its use
+      /// \param T_Model   Multicast model template class
+      ///
+      /// \see Multicast::Model
+      ///
+      template <class T_Model>
+      class MulticastModel
+      {
+      public:
+        MulticastModel (xmi_result_t &status)
         {
-            ///
-            /// \todo Need A LOT MORE documentation on this interface and its use
-            /// \param T_Model   Multicast model template class
-            ///
-            /// \see Multicast::Model
-            ///
-            template <class T_Model>
-            class MulticastModel
-            {
-            public:
-                MulticastModel (xmi_result_t &status) { status = XMI_SUCCESS; };
-                ~MulticastModel () {};
-                inline bool postMulticast (xmi_multicast_t *mcast);
-            };
-
-            template <class T_Model>
-            bool MulticastModel<T_Model>::postMulticast (xmi_multicast_t *mcast)
-            {
-	      return static_cast<T_Model*>(this)->postMulticast_impl(mcast);
-            }
-
+          status = XMI_SUCCESS;
         };
+        ~MulticastModel ()
+        {
+        };
+        // \todo what's it supposed to return in the bool?
+        inline bool postMulticast (xmi_multicast_t *mcast);
+      };
+
+      template <class T_Model>
+      bool MulticastModel<T_Model>::postMulticast (xmi_multicast_t *mcast)
+      {
+        return static_cast<T_Model*>(this)->postMulticast_impl(mcast);
+      }
+
+      ///
+      /// \brief Add an active message dispatch to the multicast model.
+      /// 
+      /// \todo Need A LOT MORE documentation on this interface and its use
+      /// 
+      /// \param T_Model   Multicast model template class
+      ///
+      /// \see Multicast::Model
+      ///
+      template <class T_Model>
+      class ActiveMessageMulticastModel : public MulticastModel<T_Model>
+      {
+      public:
+        ActiveMessageMulticastModel (xmi_result_t &status) :
+        MulticastModel<T_Model> (status)
+        {
+        };
+        ~ActiveMessageMulticastModel ()
+        {
+        };
+        inline void registerMcastRecvFunction (int dispatch_id,
+                                               xmi_dispatch_multicast_fn     recv_func,
+                                               void                         *async_arg);
+      };
+      template <class T_Model>
+      void ActiveMessageMulticastModel<T_Model>::registerMcastRecvFunction (int dispatch_id,
+                                                                            xmi_dispatch_multicast_fn     recv_func,
+                                                                            void                         *async_arg)
+      {
+        return static_cast<T_Model*>(this)->registerMcastRecvFunction_impl (dispatch_id,
+                                                                            recv_func,
+                                                                            async_arg);
+      }
     };
+  };
 };
 #endif // __components_device_multicastmodel_h__
 

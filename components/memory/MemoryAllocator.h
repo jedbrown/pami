@@ -17,7 +17,9 @@
 #define __components_memory_MemoryAllocator_h__
 
 #include "components/atomic/noop/Noop.h"
-
+#ifdef USE_MEMALIGN
+  #include <errno.h>
+#endif
 //#define USE_MEMALIGN
 
 namespace XMI

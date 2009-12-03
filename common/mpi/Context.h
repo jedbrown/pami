@@ -109,6 +109,7 @@ namespace XMI
 	_workAllocator (),
 	_generic(generics[id]),
         _shmem(),
+        _mpi(&__global.mpi_device),
 
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
@@ -126,7 +127,7 @@ namespace XMI
           new(_world_geometry) MPIGeometry(&__global.mapping,0, 1,&_world_range);
 
 	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
-	  new(_collreg) MPICollreg(&_mpi, &_sysdep);
+	  new(_collreg) MPICollreg(_mpi, &_sysdep);
 
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
@@ -184,7 +185,7 @@ namespace XMI
           for (i=0; i<maximum && events==0; i++)
               {
 
-        events += _mpi.advance_impl();
+        events += _mpi->advance_impl();
         events += _generic.advance();
         events += _shmem.advance_impl();
 
@@ -582,7 +583,7 @@ namespace XMI
           _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
           XMI_assert(_request.objsize >= sizeof(EagerMPI));
-          new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi,
+          new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi,
                                                 __global.mapping.task(),
                                                 _context, _contextid, result);
           if(result!=XMI_SUCCESS)
@@ -686,7 +687,7 @@ namespace XMI
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(P2pDispatchMulticastProtocol),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2pDispatchMulticastProtocol),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie, 
-                                                                      _mpi,
+                                                                      *_mpi,
                                                                       this->_client,
                                                                       this->_context,
                                                                       this->_contextid,
@@ -732,7 +733,7 @@ namespace XMI
       else if(options.type == XMI_P2P_SEND)
       {
         XMI_assert(_request.objsize >= sizeof(EagerMPI));
-        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, _mpi,
+        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi,
                                                  __global.mapping.task(),
                                                  _context, _contextid, result);
         if(result!=XMI_SUCCESS)
@@ -805,7 +806,7 @@ namespace XMI
 #endif /* USE_WAKEUP_VECTORS */
       ShmemDevice               _shmem;
       MemoryAllocator<2048,16>  _request;
-      MPIDevice                 _mpi;
+      MPIDevice                *_mpi;
 #ifndef DISABLE_COLLDEVICE
 // \/\/\/ Experimental non-generic "collective" mpi device and protocol
       MPICollDevice             _mpi_global_coll_device;

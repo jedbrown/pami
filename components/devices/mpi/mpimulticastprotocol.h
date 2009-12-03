@@ -14,8 +14,13 @@
 #define __devices_mpi_mpimulticastprotocol_h__
 
 #include "sys/xmi.h"
-#include <list>
-#include "components/devices/mpi/mpicollectiveheader.h"
+#include "SysDep.h"
+#include "components/memory/MemoryAllocator.h"
+#include "PipeWorkQueue.h"
+#include "Topology.h"
+#include "Global.h"
+//#include <list>
+//#include "components/devices/mpi/mpicollectiveheader.h"
 
 #undef TRACE_ADAPTOR
 #ifndef TRACE_ADAPTOR
@@ -36,7 +41,7 @@ namespace XMI
       class T_P2P_DEVICE, 
       class T_P2P_PROTOCOL,
       class T_MULTICAST_MODEL>
-      class P2pDispatchMulticastProtocol 
+      class P2pDispatchMulticastProtocol  : public XMI::Device::Interface::ActiveMessageMulticastModel<P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>  >
       {
         ///
         /// Point-to-point dispatch header.  
@@ -56,13 +61,28 @@ namespace XMI
           XMI::Topology            topology; ///  storage for src_participants
           xmi_callback_t           cb_done;  ///  original user's cb_done
           P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>  
-                                   *protocol;/// this protocol object - to retrieve allocator
+          *protocol;/// this protocol object - to retrieve allocator
         } allocation_t;
       public:
 
         ///
         /// \brief Base class constructor
         ///
+        inline P2pDispatchMulticastProtocol(xmi_result_t             & status) :
+        XMI::Device::Interface::ActiveMessageMulticastModel<P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>  >(status),
+        _dst_participants(__global.mapping.task()), // default dst is this task when dispatched from another src
+        _dispatch_id(0),
+        _dispatch_fn(NULL),
+//          _task_id(origin_task),
+        _client(NULL),
+        _context(NULL),
+        _contextid(0),
+        _task_id((size_t)__global.mapping.task()),
+        _cookie(NULL),
+        _multicast_model(status)
+        {
+          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol(status)  allocator size %zd\n",(unsigned)this,_allocator.objsize));
+        }
         inline P2pDispatchMulticastProtocol(size_t                     dispatch_id,       
                                             xmi_dispatch_multicast_fn  dispatch,
                                             void                     * cookie,
@@ -72,6 +92,7 @@ namespace XMI
                                             xmi_context_t              context,
                                             size_t                     contextid,
                                             xmi_result_t             & status) :
+        XMI::Device::Interface::ActiveMessageMulticastModel<P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>  >(status),
         _dst_participants(__global.mapping.task()), // default dst is this task when dispatched from another src
         _dispatch_id(dispatch_id),
         _dispatch_fn(dispatch),
@@ -94,6 +115,25 @@ namespace XMI
           TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol status %d\n",(unsigned)this,status));
         }
 
+        void registerMcastRecvFunction_impl(int dispatch_id,
+                                            xmi_dispatch_multicast_fn     dispatch,
+                                            void                         *cookie)
+        {
+          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::register id %zd, fn %p, cookie %p\n",(unsigned)this,dispatch_id, dispatch, cookie));
+          xmi_result_t status = XMI_SUCCESS;
+          _dispatch_id=dispatch_id;
+          _dispatch_fn=dispatch;
+          _cookie=cookie;
+          // Construct a p2p protocol for dispatching
+          xmi_dispatch_callback_fn fn; 
+          fn.p2p = dispatch_p2p;
+          new (&_p2p_protocol) T_P2P_PROTOCOL(_dispatch_id, fn, (void*)this, 
+                                              __global.mpi_device,
+                                              __global.mapping.task(),
+                                              NULL, 0, status);
+          XMI_assertf(status == XMI_SUCCESS,"<%#8.8X>P2pDispatchMulticastProtocol::register status=%d\n",(unsigned)this,status);
+
+        }
         ///
         /// \brief Base class destructor.
         ///
@@ -109,7 +149,12 @@ namespace XMI
         ///
         /// \param[in] mcast
         ///
-        xmi_result_t multicast(xmi_multicast_t *mcast)
+        xmi_result_t multicast(xmi_multicast_t *mcast) // \todo deprecated - remove
+        {
+          postMulticast_impl(mcast);
+          return XMI_SUCCESS;
+        };
+        bool postMulticast_impl(xmi_multicast_t *mcast)
         {
           TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() id %zd, connection_id %d\n",(unsigned)this,mcast->dispatch,mcast->connection_id));
 
@@ -160,9 +205,9 @@ namespace XMI
           l_mcast.cb_done.function = &done;
 
           //This is an all-sided multicast
-          _multicast_model.postMulticast(&l_mcast);
+          
 
-          return XMI_SUCCESS;
+          return _multicast_model.postMulticast(&l_mcast);
         }
         ///
         /// \brief multicast is done, free the allocation and call user cb_done
@@ -190,8 +235,9 @@ namespace XMI
           protocol->_allocator.returnObject(cookie);  // and release storage
 
           // call original done
+#warning hack
           if(cb_done.function)
-            (cb_done.function)(XMI_Client_getcontext(protocol->_client,protocol->_contextid),
+            (cb_done.function)(NULL,//XMI_Client_getcontext(protocol->_client,protocol->_contextid),
                                cb_done.clientdata, result);
 
           return;

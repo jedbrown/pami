@@ -22,6 +22,7 @@
 #include <map>
 #include <list>
 #include "util/ccmi_debug.h"
+#include "SysDep.h"
 
 
 
@@ -60,7 +61,14 @@ namespace XMI
       Interface::PacketDevice<MPIDevice<T_SysDep> >(),
       _dispatch_id(0)
       {
-        MPI_Comm_size(MPI_COMM_WORLD, (int*)&_peers);
+        int rc = MPI_Init(0, NULL);
+        if(rc != MPI_SUCCESS)
+        {
+          fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
+          XMI_abort();
+        }
+        MPI_Comm_dup(MPI_COMM_WORLD,&_communicator);
+        MPI_Comm_size(_communicator, (int*)&_peers);
         TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice()\n",(int)this));
       };
 
@@ -158,7 +166,7 @@ namespace XMI
                      MPI_CHAR,
                      msg->_target_task,
                      0,
-                     MPI_COMM_WORLD,
+                     _communicator,
                      &msg->_request);
           enqueue(msg);
         }
@@ -232,7 +240,7 @@ namespace XMI
 
 
         flag = 0;
-        int rc = MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &sts);
+        int rc = MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, _communicator, &flag, &sts);
         assert (rc == MPI_SUCCESS);
         if(flag)
         {
@@ -248,7 +256,7 @@ namespace XMI
               MPIMessage *msg = (MPIMessage *) malloc (sizeof(*msg));
               int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
                                 MPI_SOURCE,sts.MPI_TAG,
-                                MPI_COMM_WORLD,&sts);
+                                _communicator,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
               TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
@@ -271,7 +279,7 @@ namespace XMI
               MPIMessage *msg = (MPIMessage *) malloc (sizeof(*msg)+nbytes);
               int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
                                 MPI_SOURCE,sts.MPI_TAG,
-                                MPI_COMM_WORLD,&sts);
+                                _communicator,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
               TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
@@ -293,7 +301,7 @@ namespace XMI
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
               MPIMcastMessage *msg = (MPIMcastMessage *) malloc (nbytes);
               assert(msg != NULL);
-              int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, MPI_COMM_WORLD,&sts);
+              int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, _communicator,&sts);
               XMI_assert (rc == MPI_SUCCESS);
               unsigned         rcvlen;
               char           * rcvbuf;
@@ -408,7 +416,7 @@ namespace XMI
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
               MPIM2MHeader *msg = (MPIM2MHeader *) malloc (nbytes);
-              int rc            = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, MPI_COMM_WORLD,&sts);
+              int rc            = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, _communicator,&sts);
               XMI_assert (rc == MPI_SUCCESS);
               TRACE_ADAPTOR((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d\n",
                              (int)this, nbytes));
@@ -541,14 +549,15 @@ namespace XMI
         _m2msendQ.push_front(msg);
       }
 
-      inline void addToNonDeterministicQueue(MPIMessage* msg)
+      inline void addToNonDeterministicQueue(MPIMessage* msg, unsigned long long random)
       {
-        size_t index, insert = __global.time.timebase() % _pendingQ.size();
+        size_t index, insert = random % _pendingQ.size();
         std::list<MPIMessage*>::iterator it;
         for (index = 0; index < insert; index++) it++;
         _pendingQ.insert(it,msg);
       }
 
+      MPI_Comm                                  _communicator;
       char                                     *_currentBuf;
       size_t                                    _peers;
       size_t                                    _dispatch_id;
