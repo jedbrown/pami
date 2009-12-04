@@ -297,7 +297,7 @@ extern "C"
     xmi_send_event_t     events;   /**< Non-blocking event parameters */
     struct
     {
-      size_t             offset;   /**< Starting offset from \code send.data.iov_base */
+      size_t             offset;   /**< Starting offset from \code send.data.iov_base \endcode */
       xmi_type_t         datatype; /**< Datatype */
     } typed;                       /**< Typed send parameters */
   } xmi_send_typed_t;
@@ -3173,7 +3173,7 @@ extern "C"
    */
   xmi_result_t XMI_Type_destroy (xmi_type_t type);
 
-  /*
+  /**
    * \brief Pack data from a non-contiguous buffer to a contiguous buffer
    *
    * \param[in] src_type   source data type
@@ -3188,7 +3188,7 @@ extern "C"
                                    void     * dst_addr,
                                    size_t     dst_size);
 
-  /*
+  /**
    * \brief Unpack data from a contiguous buffer to a non-contiguous buffer
    *
    * \param[in] dst_type   destination data type
