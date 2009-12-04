@@ -100,6 +100,7 @@ private:
 		t[0].setMsg(this);
 		t[0].setAdv(advanceThread);
 		t[0].setDone(false);
+		__advanceThread(t);
 		return 1;
 	}
 

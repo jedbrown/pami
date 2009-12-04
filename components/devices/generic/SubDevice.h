@@ -236,8 +236,8 @@ private:
 	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {
 		// While threads aren't used, a thread object is needed
 		// for the advance queue
-		int t = static_cast<T_Message*>(msg)->__setThreads(&_threads[0], NUM_THREADS);
 		msg->setStatus(XMI::Device::Initialized);
+		int t = static_cast<T_Message*>(msg)->__setThreads(&_threads[0], NUM_THREADS);
 		XMI_assert_debug(t == NUM_THREADS); t = t;
 	}
 
@@ -267,8 +267,7 @@ public: // temporary
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		bool first = (getCurrent() == NULL);
 		if (first) {
-			__start_msg<T_Message>(msg);
-			static_cast<T_Message*>(msg)->__advanceThread(&_threads[0]);
+			__start_msg<T_Message>(msg); // may also try advance...
 			if (msg->getStatus() == XMI::Device::Done) {
 				msg->executeCallback(_generics[msg->getContextId()].getContext());
 				return;
@@ -284,8 +283,8 @@ public: // temporary
 		dequeue();
 		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
 		if (nxt) {
-			__start_msg<T_Message>(nxt);
-			// could try to advance here?
+			__start_msg<T_Message>(nxt); // may also try advance...
+			// don't complete here - too complicated recursion potential
 			__post_msg(nxt);
 		}
 	}
@@ -320,8 +319,8 @@ public:
 private:
 	inline void __start_msg(T_Message *msg) {
 		_doneThreads.fetch_and_clear();
-		int t = msg->__setThreads(&_threads[0], NUM_THREADS);
 		msg->setStatus(XMI::Device::Initialized);
+		int t = msg->__setThreads(&_threads[0], NUM_THREADS);
 		_nActiveThreads = t;
 	}
 
@@ -350,11 +349,7 @@ private:
 	inline void __post(T_Message *msg) {
 		bool first = (getCurrent() == NULL);
 		if (first) {
-			__start_msg(msg);
-			// Don't check each thread for "Done", we only care about msg
-			for (int x = 0; x < _nActiveThreads; ++x) {
-				msg->__advanceThread(&_threads[x]);
-			}
+			__start_msg(msg); // may try advance...
 			if (msg->getStatus() == XMI::Device::Done) {
 				msg->executeCallback(_generics[msg->getContextId()].getContext());
 				return;
@@ -377,8 +372,8 @@ private:
 		dequeue();
 		T_Message *nxt = (T_Message *)getCurrent();
 		if (nxt) {
-			__start_msg(nxt);
-			// could try to advance here?
+			__start_msg(nxt); // may try advance...
+			// don't complete here - too complicated recursion potential
 			__post_msg(nxt);
 		}
 	}
@@ -416,8 +411,8 @@ private:
 	template <class T_Message>
 	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {
 		_doneThreads.fetch_and_clear();
-		int t = static_cast<T_Message*>(msg)->__setThreads(NULL, NUM_THREADS);
 		msg->setStatus(XMI::Device::Initialized);
+		int t = static_cast<T_Message*>(msg)->__setThreads(NULL, NUM_THREADS);
 		_nActiveThreads = t;
 	}
 
@@ -458,7 +453,7 @@ public:
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		// assume early advance already tried... just queue it up
-		__start_msg<T_Message>(msg);
+		__start_msg<T_Message>(msg); // may try advance...?
 		__post_msg<T_Message>(msg);
 		// Don't queue locally... all are active
 		//XMI::Device::Generic::GenericSubDevice::post(msg);
@@ -478,8 +473,8 @@ public:
 		//dequeue();
 //		XMI::Device::Generic::GenericMessage *nxt;
 //		while (nxt = getCurrent()) {
-//			__start_msg<T_Message>(nxt);
-//			// could try to advance here?
+//			__start_msg<T_Message>(nxt); // may try advance...
+//			// don't complete here - too complicated recursion potential
 //			__post_msg<T_Message>(nxt);
 //		}
 	}
@@ -662,11 +657,7 @@ public:	// temporary?
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		bool first = (_common->getCurrent() == NULL);
 		if (first) {
-			__start_msg<T_Message>(msg);
-			// Don't check each thread for "Done", we only care about msg
-			for (int x = 0; x < _nActiveThreads; ++x) {
-				static_cast<T_Message*>(msg)->__advanceThread(&_threads[x]);
-			}
+			__start_msg<T_Message>(msg); // may try advance...
 			if (msg->getStatus() == XMI::Device::Done) {
 				msg->executeCallback(_common->getGeneric(msg->getContextId())->getContext());
 				return;
@@ -685,8 +676,8 @@ public:	// temporary?
 		_nActiveThreads = 0;
 		T_Message *nxt = (T_Message *)_common->__complete(msg);
 		if (nxt) {
-			__start_msg<T_Message>(nxt);
-			// could try to advance here?
+			__start_msg<T_Message>(nxt); // may try advance...
+			// don't complete here - too complicated recursion potential
 			__post_msg(nxt);
 		}
 	}

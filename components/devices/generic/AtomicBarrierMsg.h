@@ -94,8 +94,6 @@ private:
 	ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
 	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(AtomicBarrierThr *thr) {
-		// TBD: optimize away virt func call - add method
-		// for a persistent advance?
 		for (int x = 0; x < 32; ++x) {
 			if (_barrier->poll() == XMI::Atomic::Interface::Done) {
 				setStatus(XMI::Device::Done);
@@ -109,6 +107,7 @@ private:
 		t->setMsg(this);
 		t->setAdv(advanceThread);
 		t->setDone(false);
+		__advanceThread(t);
 		return 1;
 	}
 

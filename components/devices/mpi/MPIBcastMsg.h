@@ -130,13 +130,15 @@ namespace XMI
       {
         int nt = 0;
         // assert(nt < n);
+        _nThreads = 1;	// must predict total number of threads now,
+			// so early advance(s) work
         t[nt].setMsg(this);
         t[nt].setAdv(advanceThread);
         t[nt].setDone(false);
         t[nt]._bytesLeft = _bytes;
+	__advanceThread(&t[nt]);
         ++nt;
         // assert(nt > 0? && nt < n);
-        _nThreads = nt;
         TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zd\n",(unsigned)this,
                       n,nt,t[nt]._bytesLeft));
         return nt;

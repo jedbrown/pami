@@ -55,15 +55,11 @@ class BaseGenericCNThread : public XMI::Device::Generic::SimpleAdvanceThread {
 public:
 	BaseGenericCNThread() :
 	XMI::Device::Generic::SimpleAdvanceThread(),
-	_roles(0),
-	_sender(false),
 	_wq(NULL),
 	_cycles(0)
 	{
 	}
 public:
-	unsigned _roles;
-	bool _sender;
 	XMI::PipeWorkQueue *_wq;
 	unsigned _cycles;
 }; // class BaseGenericCNThread

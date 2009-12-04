@@ -111,6 +111,7 @@ protected:
 		t->setMsg(this);
 		t->setAdv(advanceThread);
 		t->setDone(false);
+		__advanceThread(t);
 		return 1;
 	}
 

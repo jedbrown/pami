@@ -150,37 +150,38 @@ protected:
 	//friend class CNAllreduce2PDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2>;
 
-	ADVANCE_ROUTINE(advanceThread,CNAllreduce2PMessage,CNAllreduce2PThread);
+	ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
+	ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
 	inline int __setThreads(CNAllreduceThread *t, int n) {
 		int nt = 0;
 		int maxnt = ((CNAllreduce2PDevice &)_QS).common()->getMaxThreads();
+		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread);
+			t[nt].setAdv(advanceInj);
 			t[nt].setDone(false);
-			t[nt]._sender = true;
 			t[nt]._wq = _swq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 1;
+			__advanceInj(&t[nt]);
 			++nt;
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread);
+			t[nt].setAdv(advanceRcp);
 			t[nt].setDone(false);
-			t[nt]._sender = false;
 			t[nt]._wq = _rwq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE;
+			__advanceRcp(&t[nt]);
 			++nt;
 		}
 		// assert(nt > 0? && nt < n);
-		_nThreads = nt;
 		return nt;
 	}
 
-	inline XMI::Device::MessageStatus __advanceInj(CNAllreduce2PThread *thr) {
-		XMI::Device::MessageStatus rc = XMI::Device::Active;
+	inline xmi_result_t __advanceInj(CNAllreduce2PThread *thr) {
+		xmi_result_t rc = XMI_EAGAIN;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
 		size_t avail = thr->_wq->bytesAvailableToConsume();
 		char *buf = thr->_wq->bufferToConsume();
@@ -202,14 +203,15 @@ protected:
 			_offx -= did;
 		}
 		if (thr->_bytesLeft == 0) {
-			rc = XMI::Device::Done;
+			rc = XMI_SUCCESS;
 			thr->setDone(true);
+			__completeThread(thr);
 		}
 		return rc;
 	}
 
-	inline XMI::Device::MessageStatus __advanceRcp(CNAllreduceThread *thr) {
-		XMI::Device::MessageStatus rc = XMI::Device::Active;
+	inline xmi_result_t __advanceRcp(CNAllreduceThread *thr) {
+		xmi_result_t rc = XMI_EAGAIN;
 		register unsigned hcount = 0, dcount = 0;
 		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
 			return rc;
@@ -251,8 +253,9 @@ CollectiveRawReceivePacketNoHdrNoStore(VIRTUAL_CHANNEL);
 			thr->_bytesLeft -= total;
 			thr->_wq->produceBytes(total);
 			if (thr->_bytesLeft == 0) {
-				rc = XMI::Device::Done;
+				rc = XMI_SUCCESS;
 				thr->setDone(true);
+				__completeThread(thr);
 			}
 		}
 		return rc;
@@ -261,20 +264,6 @@ CollectiveRawReceivePacketNoHdrNoStore(VIRTUAL_CHANNEL);
 	inline void __completeThread(CNAllreduce2PThread *thr);
 
 	friend class XMI::Device::Generic::GenericMessage;
-	inline xmi_result_t __advanceThread(CNAllreduce2PThread *thr) {
-		XMI::Device::MessageStatus ms;
-		if (thr->_sender) {
-			ms = __advanceInj(thr);
-		} else {
-			ms = __advanceRcp(thr);
-		}
-		if (ms == XMI::Device::Done) {
-			// thread is Done, maybe not message
-			__completeThread(thr);
-			return XMI_SUCCESS;
-		}
-		return XMI_EAGAIN;
-	}
 private:
 	unsigned _roles;
 	unsigned _offx;

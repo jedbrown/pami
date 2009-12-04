@@ -120,16 +120,15 @@ private:
 	}
 
 	inline int __setThreads(giThread *t, int n) {
+		// assert(n == 1);
 		t->setMsg(this);
 		t->setAdv(advanceThread);
 		t->setDone(false);
-		_nThreads = 1;
-		return _nThreads;
+		__advanceThread(t);
+		return 1;
 	}
 
 protected:
-	int _nThreads;  // needs to be atomic, if we use multiple threads
-
 }; // class giMessage
 
 class giModel : public XMI::Device::Interface::MultisyncModel<giModel> {

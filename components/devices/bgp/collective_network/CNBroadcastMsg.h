@@ -84,42 +84,43 @@ protected:
 	//friend class CNBroadcastDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>;
 
-	ADVANCE_ROUTINE(advanceThread,CNBroadcastMessage,CNBroadcastThread);
+	ADVANCE_ROUTINE(advanceInj,CNBroadcastMessage,CNBroadcastThread);
+	ADVANCE_ROUTINE(advanceRcp,CNBroadcastMessage,CNBroadcastThread);
 	inline int __setThreads(CNBroadcastThread *t, int n) {
 		int nt = 0;
+		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread);
+			t[nt].setAdv(advanceInj);
 			t[nt].setDone(false);
-			t[nt]._sender = true;
 			t[nt]._wq = _swq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 1;
+			__advanceInj(&t[nt]);
 			++nt;
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
-			t[nt].setAdv(advanceThread);
+			t[nt].setAdv(advanceRcp);
 			t[nt].setDone(false);
-			t[nt]._sender = false;
 			t[nt]._wq = _rwq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE...
+			__advanceRcp(&t[nt]);
 			++nt;
 		}
 		// assert(nt > 0? && nt < n);
-		_nThreads = nt;
 		return nt;
 	}
 
 	inline void __completeThread(CNBroadcastThread *thr);
 
-	inline XMI::Device::MessageStatus __advanceInj(CNBroadcastThread *thr) {
-		if (thr->_bytesLeft == 0) return XMI::Device::Done;
+	inline xmi_result_t __advanceInj(CNBroadcastThread *thr) {
+		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
 		// thr->_wq is not valid unless _doData...
 		if (__wait_send_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI::Device::Active;
+			return XMI_EAGAIN;
 		}
 		if (_doData) {
 			size_t avail = thr->_wq->bytesAvailableToConsume();
@@ -127,7 +128,7 @@ protected:
 			bool aligned = (((unsigned)buf & 0x0f) == 0);
 			size_t did = 0;
 			if (avail < BGPCN_PKT_SIZE && avail < thr->_bytesLeft) {
-				return XMI::Device::Active;
+				return XMI_EAGAIN;
 			}
 			// is this possible??
 			if (avail > thr->_bytesLeft) avail = thr->_bytesLeft;
@@ -139,17 +140,18 @@ protected:
 		}
 		if (thr->_bytesLeft == 0) {
 			thr->setDone(true);
-			return XMI::Device::Done;
+			__completeThread(thr);
+			return XMI_SUCCESS;
 		}
-		return XMI::Device::Active;
+		return XMI_EAGAIN;
 	}
 
-	inline XMI::Device::MessageStatus __advanceRcp(CNBroadcastThread *thr) {
-		if (thr->_bytesLeft == 0) return XMI::Device::Done;
+	inline xmi_result_t __advanceRcp(CNBroadcastThread *thr) {
+		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = 0, dcount = 0;
 		size_t did = 0;
 		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI::Device::Active;
+			return XMI_EAGAIN;
 		}
 		// thr->_wq is not valid unless _doStore...
 		if (_doStore) {
@@ -158,7 +160,7 @@ protected:
 			char *buf = thr->_wq->bufferToProduce();
 			bool aligned = (((unsigned)buf & 0x0f) == 0);
 			if (avail < toCopy) {
-				return XMI::Device::Active;
+				return XMI_EAGAIN;
 			}
 			__recv_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
 			__recv_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
@@ -170,26 +172,13 @@ protected:
 		}
 		if (thr->_bytesLeft == 0) {
 			thr->setDone(true);
-			return XMI::Device::Done;
-		}
-		return XMI::Device::Active;
-	}
-
-	friend class XMI::Device::Generic::GenericMessage;
-	inline xmi_result_t __advanceThread(CNBroadcastThread *thr) {
-		XMI::Device::MessageStatus ms;
-		if (thr->_sender) {
-			ms = __advanceInj(thr);
-		} else {
-			ms = __advanceRcp(thr);
-		}
-		if (ms == XMI::Device::Done) {
-			// thread is Done, maybe not message
 			__completeThread(thr);
 			return XMI_SUCCESS;
 		}
 		return XMI_EAGAIN;
 	}
+
+	friend class XMI::Device::Generic::GenericMessage;
 
 	bool _doData;
 	unsigned _roles;

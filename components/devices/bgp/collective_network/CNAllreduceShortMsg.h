@@ -84,30 +84,33 @@ protected:
 	//friend class CNAllreduceShortDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceShortModel,CNDevice,CNAllreduceShortMessage,CNAllreduceShortThread,2>;
 
-	ADVANCE_ROUTINE(advanceThread); // declares __advanceThread() as our routine
+	ADVANCE_ROUTINE(advanceInj,CNAllreduceShortMessage,CNAllreduceShortThread);
+	ADVANCE_ROUTINE(advanceRcp,CNAllreduceShortMessage,CNAllreduceShortThread);
 	inline int __setThreads(CNAllreduceShortThread *t, int n) {
 		int nt = 0;
 		int maxnt = ((CNAllreduceShortDevice &)_QS).common()->getMaxThreads();
+		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceInj);
 			t[nt].setDone(false);
-			t[nt]._sender = true;
 			t[nt]._wq = _swq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 1;
+			__advanceInj(&t[nt]);
 			++nt;
 		}
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
+			t[nt].setAdv(advanceRcp);
 			t[nt].setDone(false);
-			t[nt]._sender = false;
 			t[nt]._wq = _rwq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = DCMF_PERSISTENT_ADVANCE;
+			__advanceRcp(&t[nt]);
 			++nt;
 		}
 		// assert(nt > 0? && nt < n);
-		_nThreads = nt;
 		return nt;
 	}
 
@@ -118,33 +121,34 @@ protected:
 	///
 	///
 	///
-	inline XMI::Device::MessageStatus __advanceInj(CNAllreduceShortThread *thr) {
+	inline xmi_result_t __advanceInj(CNAllreduceShortThread *thr) {
 		unsigned hcount = TREE_FIFO_SIZE, dcount = TREE_QUADS_PER_FIFO;
 		size_t avail = thr->_wq->bytesAvailableToConsume();
 		char *buf = thr->_wq->bufferToConsume();
 		bool aligned = (((unsigned)buf & 0x0f) == 0);
 		size_t did = 0;
 		if (avail < TREE_PKT_SIZE && avail < thr->_bytesLeft) {
-			return XMI::Device::Active;
+			return XMI_EAGAIN;
 		}
 		// is this possible??
 		if (avail > thr->_bytesLeft) avail = thr->_bytesLeft;
 		if (__wait_send_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI::Device::Active;
+			return XMI_EAGAIN;
 		}
 		__send_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
 		__send_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
 		thr->_wq->consumeBytes(did);
 		if (thr->_bytesLeft == 0) {
 			thr->setDone(true);
-			return XMI::Device::Done;
+			__completeThread(thr);
+			return XMI_SUCCESS;
 		}
-		return XMI::Device::Active;
+		return XMI_EAGAIN;
 	}
 
 
-	inline XMI::Device::MessageStatus __advanceRcp(CNAllreduceShortThread *thr) {
-		if (thr->_bytesLeft == 0) return XMI::Device::Done;
+	inline xmi_result_t __advanceRcp(CNAllreduceShortThread *thr) {
+		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = 0, dcount = 0;
 		unsigned toCopy = thr->_bytesLeft >= TREE_PKT_SIZE ? TREE_PKT_SIZE : thr->_bytesLeft;
 		size_t avail = thr->_wq->bytesAvailableToProduce();
@@ -152,30 +156,16 @@ protected:
 		bool aligned = (((unsigned)buf & 0x0f) == 0);
 		size_t did = 0;
 		if (avail < toCopy) {
-			return XMI::Device::Active;
+			return XMI_EAGAIN;
 		}
 		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI::Device::Active;
+			return XMI_EAGAIN;
 		}
 		__recv_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
 		__recv_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
 		thr->_wq->produceBytes(did);
 		if (thr->_bytesLeft == 0) {
 			thr->setDone(true);
-			return XMI::Device::Done;
-		}
-		return XMI::Device::Active;
-	}
-
-	inline xmi_result_t __advanceThread(CNAllreduceShortThread *thr) {
-		XMI::Device::MessageStatus ms;
-		if (thr->_sender) {
-			ms = __advanceInj(thr);
-		} else {
-			ms = __advanceRcp(thr);
-		}
-		if (ms == XMI::Device::Done) {
-			// thread is Done, maybe not message
 			__completeThread(thr);
 			return XMI_SUCCESS;
 		}
