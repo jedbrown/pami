@@ -1,3 +1,8 @@
+/**
+ * \file test/internals/multisend/bgp/bgpmulticast.cc
+ * \brief ???
+ */
+
 #include <stdio.h>
 #include "sys/xmi.h"
 
