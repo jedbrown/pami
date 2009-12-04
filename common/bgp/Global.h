@@ -67,46 +67,36 @@ namespace XMI
 
 	  // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-          if ( rc != -1 )
-          {
-	    fd = rc;
-            rc = ftruncate( fd, n );
-            if ( rc != -1 )
-            {
-              void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-              if ( ptr != MAP_FAILED )
-              {
-                _memptr  = ptr;
-                _memsize = n;
+          XMI_assertf(rc != -1, "shm_open(\"%s\", O_CREAT | O_RDWR, 0600) failed, errno=%d\n", shmemfile, errno)
+	  fd = rc;
+          rc = ftruncate( fd, n );
+          XMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, n, errno);
+          void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+          if (ptr == MAP_FAILED) {
+		XMI_assertf(errno == ENOMEM, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0) failed, errno = %d\n", n, fd, errno);
+		// assert(mode == SMP)
+		close(fd);
+		shm_unlink(shmemfile);
+		fd = -1;
+		// just get some memory... remember, this is a ctor and is called pre-main
+		ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		XMI_assertf(ptr != MAP_FAILED, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0) failed, errno = %d\n", n, errno);
+	  }
 
-                size_t bytes_used = _mapcache.init (personality,
-                                                    _memptr,
-                                                    _memsize);
-                // Round up to the page size
-                size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
-
+          size_t bytes_used = _mapcache.init (personality, ptr, n);
+          // Round up to the page size
+          size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
+	  if (fd != -1) {
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
-              } else { rc = -1; }
-            }
-          }
-          if (rc == -1) {
-
-          	// There was a failure obtaining the shared memory segment, most
-          	// likely because the applicatino is running in SMP mode. Allocate
-          	// memory from the heap instead.
-          	//
-          	// TODO - verify the run mode is actually SMP.
-#warning should not use 1MB of stack here
-		size_t buffer[bytes];
-          	size_t bytes_used = _mapcache.init (personality, buffer, bytes);
-
-          	posix_memalign ((void **)&_memptr, 16, bytes_used);
-          	memcpy (_memptr, buffer, bytes_used);
-          	//memset (_memptr, 0, bytes);
-          	_memsize = bytes_used;
-
+          	XMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, size, errno);
+	  } else {
+		void *v = ptr;
+		ptr = mremap(v, n, size, 0);
+		XMI_assertf(ptr != MAP_FAILED, "mremap(%p, %zd, %zd, 0) failed, errno = %d\n", v, n, size, errno);
 	  }
+          _memptr  = ptr;
+          _memsize = bytes_used;
 	  mapping.init(_mapcache, personality);
 	  lockboxFactory.init(&mapping);
 	  xmi_coord_t ll, ur;
