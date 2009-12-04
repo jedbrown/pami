@@ -1,3 +1,8 @@
+/**
+ * \file sys/xmi.h
+ * \brief Common external interface for IBM's XMI message layer.
+ */
+
 #ifndef __xmi_h__
 #define __xmi_h__
 
