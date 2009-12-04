@@ -1,4 +1,3 @@
-
 ///
 /// \file common/bgq/WakeupManager.h
 /// \brief XMI wakeup manager implementation.

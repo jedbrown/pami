@@ -64,7 +64,7 @@ namespace XMI
           _mytopo = 0;
           _rank = mapping->task();
           _numtopos = (numranges == 1)? 1 : numranges + 1;
-          
+
           _topos = new XMI::Topology[numranges];
 
           for (i = 0; i < numranges; i++)
@@ -75,7 +75,7 @@ namespace XMI
           for (k = 0, i = 0; i < numranges; i++)
           {
             size = rangelist[i].hi - rangelist[i].lo + 1;
-            
+
             for (j = 0; j < size; j++, k++)
             {
               ranks[k] = rangelist[i].lo + j;
@@ -87,13 +87,13 @@ namespace XMI
           // this creates the topology including all subtopologies
           new(&_topos[0]) XMI::Topology(ranks, nranks);
           _topos[0].rankList(&_ranks);
-          
+
           // now build up the individual subtopologies
           for (i = 1; i < numranges; i++)
           {
             new(&_topos[i]) XMI::Topology(rangelist[i].lo, rangelist[i].hi);
             size = rangelist[i].hi - rangelist[i].lo + 1;
-            
+
             for (j = 0; j < size; j++)
             {
               ranks[j] = rangelist[i].lo + j;
@@ -131,7 +131,7 @@ namespace XMI
       inline int getNumTopos_impl()
       {
         return _numtopos;
-      }      
+      }
       inline int                       getColorsArray_impl()
       {
         assert(0);
@@ -358,7 +358,7 @@ namespace XMI
         {
           _topos[i].rankRange(&first, &last);
           range_size = _topos[i].size();
-          
+
           rank_left -= range_size;
           if(rank_left <= 0)
           {

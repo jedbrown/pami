@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file test/internals/topology/topology_test.cc
+ * \file test/internals/topology/topology_index.cc
  * \brief Test the generic topology features
  */
 

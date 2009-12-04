@@ -33,7 +33,7 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
                            unsigned              connection_id,
                            size_t                root,
                            size_t                sndlen,
-                           void                 *clientdata, 
+                           void                 *clientdata,
                            size_t               *rcvlen,
                            xmi_pipeworkqueue_t **rcvpwq,
                            xmi_callback_t       *cb_done)
@@ -150,10 +150,10 @@ int main(int argc, char ** argv)
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  XMI::Topology topology_global = __global.topology_global; 
+  XMI::Topology topology_global = __global.topology_global;
   topology_global.convertTopology(XMI_LIST_TOPOLOGY);
 
-  XMI::Topology topology_local  = __global.topology_local; 
+  XMI::Topology topology_local  = __global.topology_local;
   topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // global topology variables
@@ -167,7 +167,7 @@ int main(int argc, char ** argv)
     DBG_FPRINTF((stderr,"gRankList[%d] = %d\n",j, gRankList[j]));
   }
 
-  xmi_multicast_t mcast; 
+  xmi_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
 
   mcast.dispatch = dispatch;
@@ -206,7 +206,7 @@ int main(int argc, char ** argv)
 
       _buffer1.reset(true); // isRoot = true
 
-      mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into. 
+      mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into.
 
       XMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
       srcPwq->configure(NULL, _buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
@@ -222,7 +222,7 @@ int main(int argc, char ** argv)
       {
         status = XMI_Context_advance (context, 10);
         if(dataCountDown && !(--dataCountDown % 4)) // slowly feed the src pwq
-        {  
+        {
           sleep(1);
         DBG_FPRINTF((stderr,"pwq %p, produce %d\n",srcPwq, TEST_BUF_SIZE/4));
         srcPwq->produceBytes(TEST_BUF_SIZE/4);
@@ -309,9 +309,9 @@ int main(int argc, char ** argv)
       // This isn't working correctly, so do it the hard way
       //topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale
 
-      XMI::Topology topology(gRankList, (gSize)), subtopology; 
+      XMI::Topology topology(gRankList, (gSize)), subtopology;
       topology.convertTopology(XMI_COORD_TOPOLOGY);
-      topology.subTopologyNthGlobal(&subtopology, 0); 
+      topology.subTopologyNthGlobal(&subtopology, 0);
 
       xmi_task_t *ranklist = new xmi_task_t[subtopology.size()];
 
@@ -325,7 +325,7 @@ int main(int argc, char ** argv)
       mcast.dst_participants = (xmi_topology_t *)new XMI::Topology(ranklist, subtopology.size());// (mem leak)
 
       mcast.dispatch = spanning_dispatch;
-      mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into.      
+      mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into.
 
       _buffer1.reset(true); // isRoot = true;
 
@@ -341,7 +341,7 @@ int main(int argc, char ** argv)
     }
     else _buffer1.reset(); // non-root reset
 
-    if(topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology 
+    if(topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology
     {
       DBG_FPRINTF((stderr,"task_id %zd -> local ranks\n",task_id));
       ++_doneCountdown;  // I'm doing another multicast so another cb_done is expected
@@ -358,8 +358,8 @@ int main(int argc, char ** argv)
       XMI::PipeWorkQueue * srcPwq =_buffer1.dstPwq();
       _buffer2.set(srcPwq, _buffer2.dstPwq()); // isRoot = true
 
-      mcast.dispatch = local_dispatch; 
-      mcast.connection_id = 2;  // I'm going to use connection id to specify which buffer to receive into.  
+      mcast.dispatch = local_dispatch;
+      mcast.connection_id = 2;  // I'm going to use connection id to specify which buffer to receive into.
 
       mcast.src = (xmi_pipeworkqueue_t *)srcPwq;
       mcast.dst = (xmi_pipeworkqueue_t *)NULL;
@@ -368,7 +368,7 @@ int main(int argc, char ** argv)
       DBG_FPRINTF((stderr,"Context %p\n",context));
 #warning shouldnt need this advance but MPIBcastMsg only advances one msg at a time so start receiving first...
       sleep(2); status = XMI_Context_advance (context, 100);
-       
+
       status = XMI_Multicast(&mcast);
 
 
@@ -395,7 +395,7 @@ int main(int argc, char ** argv)
     while(_doneCountdown)
     {
       status = XMI_Context_advance (context, 10);
-    } 
+    }
     size_t
     bytesConsumed = 0,
     bytesProduced = 0;
@@ -421,7 +421,7 @@ int main(int argc, char ** argv)
                         true,   // isRoot = true
                         false); // isDest = false
     }
-    else if(topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology 
+    else if(topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology
     {
       bytesConsumed = _buffer1.srcPwq()->getBytesConsumed();
       bytesProduced = _buffer1.dstPwq()->getBytesProduced();
@@ -475,4 +475,3 @@ int main(int argc, char ** argv)
   DBG_FPRINTF((stderr, "return 0;\n"));
   return 0;
 }
-

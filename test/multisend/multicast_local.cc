@@ -141,10 +141,10 @@ int main(int argc, char ** argv)
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  XMI::Topology topology_global = __global.topology_global; 
+  XMI::Topology topology_global = __global.topology_global;
   topology_global.convertTopology(XMI_LIST_TOPOLOGY);
 
-  XMI::Topology topology_local  = __global.topology_local; 
+  XMI::Topology topology_local  = __global.topology_local;
   topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // local topology variables

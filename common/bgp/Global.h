@@ -104,7 +104,7 @@ namespace XMI
           	memcpy (_memptr, buffer, bytes_used);
           	//memset (_memptr, 0, bytes);
           	_memsize = bytes_used;
-          	
+
           	free (buffer);
 	  }
 	  mapping.init(_mapcache, personality);

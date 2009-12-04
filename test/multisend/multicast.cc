@@ -1,5 +1,5 @@
 /* begin_generated_IBM_copyright_prolog                             */
-/*                                                                  */  
+/*                                                                  */
 /* ---------------------------------------------------------------- */
 /* (C)Copyright IBM Corp.  2009, 2009                               */
 /* IBM CPL License                                                  */
@@ -62,7 +62,7 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
     pwq = _buffer.dstPwq();
     DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %d, %d done out of %d\n",__FILE__,__PRETTY_FUNCTION__,
                  pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
-  
+
     *rcvlen = sndlen;
     *rcvpwq = (xmi_pipeworkqueue_t*) pwq;
   }
@@ -84,7 +84,7 @@ int main(int argc, char ** argv)
   unsigned x;
   xmi_client_t client;
   xmi_context_t context;
-  xmi_result_t status = XMI_ERROR; 
+  xmi_result_t status = XMI_ERROR;
 
   status = XMI_Client_initialize("multicast test", &client);
   if(status != XMI_SUCCESS)
@@ -93,7 +93,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
-  int n = 1; 
+  int n = 1;
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
   {
@@ -112,7 +112,7 @@ int main(int argc, char ** argv)
   }
   size_t task_id = configuration.value.intval;
   DBG_FPRINTF((stderr, "My task id = %zd\n", task_id));
- 
+
   configuration.name = XMI_NUM_TASKS;
   status = XMI_Configuration_query(client, &configuration);
   if(status != XMI_SUCCESS)
@@ -124,7 +124,7 @@ int main(int argc, char ** argv)
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
 // END standard setup
-// ------------------------------------------------------------------------ 
+// ------------------------------------------------------------------------
   _cb_done.function   = &_done_cb;
   _cb_done.clientdata = &_doneCountdown;
 
@@ -152,10 +152,10 @@ int main(int argc, char ** argv)
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  XMI::Topology topology_global = __global.topology_global; 
+  XMI::Topology topology_global = __global.topology_global;
   topology_global.convertTopology(XMI_LIST_TOPOLOGY);
 
-  XMI::Topology topology_local  = __global.topology_local; 
+  XMI::Topology topology_local  = __global.topology_local;
   topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // global topology variables
@@ -307,7 +307,7 @@ int main(int argc, char ** argv)
     new (&src_participants) XMI::Topology(gRoot); // global root
     new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
 
-    mcast.connection_id = 1; // arbitrary - dispatch knows this means no data 
+    mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
 
     mcast.src = (xmi_pipeworkqueue_t *)NULL;
     mcast.dst = (xmi_pipeworkqueue_t *)NULL;

@@ -13,7 +13,7 @@
 
 #define DBG_FPRINTF(x) //fprintf x
 
-#define FPRINTF_TOPOLOGY(topo)    // disable fprintf's                                 
+#define FPRINTF_TOPOLOGY(topo)    // disable fprintf's
 
 #ifndef FPRINTF_TOPOLOGY // otherwise enable fprintfs
 #define FPRINTF_TOPOLOGY(topo)                                                 \
@@ -129,7 +129,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
-  int n = 1; 
+  int n = 1;
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
   {
@@ -191,7 +191,7 @@ if(task_id == 0)
   TEST_TOPOLOGY(subtopology,(unsigned)-1);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global from a list size(%d)\n",gSize);
-  new (&topology) XMI::Topology(gRankList, (gSize)); 
+  new (&topology) XMI::Topology(gRankList, (gSize));
   TEST_TOPOLOGY(topology,gSize);
 
   fprintf(stderr,"\n");fprintf(stderr,"copy the topology\n");
@@ -203,11 +203,11 @@ if(task_id == 0)
   TEST_TOPOLOGY(topology,gSize);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global from a list: subTopologyNthGlobal(0)\n");
-  topology.subTopologyNthGlobal(&subtopology, 0); 
+  topology.subTopologyNthGlobal(&subtopology, 0);
   TEST_TOPOLOGY(subtopology,(unsigned)-1);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global from a list: subTopologyNthGlobal(1)\n");
-  topology.subTopologyNthGlobal(&subtopology, 1); 
+  topology.subTopologyNthGlobal(&subtopology, 1);
   TEST_TOPOLOGY(subtopology,(unsigned)-1);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global from a list: coord coverted back to list\n");
@@ -215,7 +215,7 @@ if(task_id == 0)
   TEST_TOPOLOGY(topology,gSize);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global with last 1/2 list\n");
-  new (&topology) XMI::Topology(gRankList+(gSize/2), (gSize/2)); // everyone except 0 
+  new (&topology) XMI::Topology(gRankList+(gSize/2), (gSize/2)); // everyone except 0
   TEST_TOPOLOGY(topology,(gSize/2));
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global with last 1/2 list: coverted to coord\n");
@@ -223,11 +223,11 @@ if(task_id == 0)
   TEST_TOPOLOGY(topology,(gSize/2));
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global with last 1/2 list: subTopologyNthGlobal(0)\n");
-  topology.subTopologyNthGlobal(&subtopology, 0); 
+  topology.subTopologyNthGlobal(&subtopology, 0);
   TEST_TOPOLOGY(subtopology,(unsigned)-1);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global with last 1/2 list: subTopologyNthGlobal(1)\n");
-  topology.subTopologyNthGlobal(&subtopology, 1); 
+  topology.subTopologyNthGlobal(&subtopology, 1);
   TEST_TOPOLOGY(subtopology,(unsigned)-1);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a global with last 1/2 list: coord coverted back to list\n");
@@ -235,9 +235,9 @@ if(task_id == 0)
   TEST_TOPOLOGY(topology,gSize/2);
 
   fprintf(stderr,"\n");fprintf(stderr,"make a nth topology and manually make a ranklist topology from it\n");
-  new (&topology) XMI::Topology(gRankList, (gSize)); 
+  new (&topology) XMI::Topology(gRankList, (gSize));
   topology.convertTopology(XMI_COORD_TOPOLOGY);
-  topology.subTopologyNthGlobal(&subtopology, 0); 
+  topology.subTopologyNthGlobal(&subtopology, 0);
 
   xmi_task_t *ranklist = new xmi_task_t[subtopology.size()];
 

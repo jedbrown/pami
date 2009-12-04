@@ -313,7 +313,7 @@ namespace XMI
       dispatch_table_t                          _dispatch[256][256];
       XMI::Topology                            *_topology;
     };
-#undef SOME_ARBITRARY_LIMIT 
+#undef SOME_ARBITRARY_LIMIT
   };
 };
 

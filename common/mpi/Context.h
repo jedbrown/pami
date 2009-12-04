@@ -492,8 +492,8 @@ namespace XMI
       TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zd/%zd] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
       XMI_assert_debug (_dispatch[id][0] != NULL);
 
-      // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, we used the 
-      // second (unused by mcast) entry to store an id of what we put in the first entry.  Now 
+      // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, we used the
+      // second (unused by mcast) entry to store an id of what we put in the first entry.  Now
       // we know what class to pull out of _dispatch[][0] and (eventually) what allocator to use.
       XMI_assert_debug (_dispatch[id][1] > (void*)0 && _dispatch[id][1] < (void*)6);
 
@@ -646,7 +646,7 @@ namespace XMI
       _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
       if(options.type == XMI_MULTICAST)
       {
-        // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, use the 
+        // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, use the
         // second (unused by mcast) entry to store an id of what we put in the first entry.
         // sample:
         //  _dispatch[(size_t)id][1] = (void*) ARBITRARY_ID;
@@ -685,7 +685,7 @@ namespace XMI
         {
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(P2pDispatchMulticastProtocol),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2pDispatchMulticastProtocol),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
-          new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie, 
+          new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie,
                                                                       _mpi,
                                                                       this->_client,
                                                                       this->_context,
@@ -693,7 +693,7 @@ namespace XMI
                                                                       result);
           TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
         }
-        else if((options.hint.multicast.all_sided) && (options.hint.multicast.local)) 
+        else if((options.hint.multicast.all_sided) && (options.hint.multicast.local))
         {
           if(options.hint.multicast.ring_wq ) // \todo bogus!  the problem with hints is ....
           {
@@ -710,14 +710,14 @@ namespace XMI
             TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           }
         }
-        else if((options.hint.multicast.all_sided) && (options.hint.multicast.global))  
+        else if((options.hint.multicast.all_sided) && (options.hint.multicast.global))
         {
           _dispatch[(size_t)id][1] = (void*) 5; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(XMI::Device::MPIBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) XMI::Device::MPIBcastMdl(result);
           TRACE_ERR((stderr, "<< dispatch_impl(), mcast global allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
         }
-        else // !experimental collective and !local allsided shmem and !global allsided 
+        else // !experimental collective and !local allsided shmem and !global allsided
         {
           XMI_abort();
           return XMI_UNIMPL;

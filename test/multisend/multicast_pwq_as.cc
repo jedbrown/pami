@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast_pwq_as.cc 
- * \brief Simple all-sided multicast test using pwq's to chain operations.  
+ * \file test/multisend/multicast_pwq_as.cc
+ * \brief Simple all-sided multicast test using pwq's to chain operations.
  */
 
 #include "test/multisend/Buffer.h"
@@ -27,7 +27,7 @@ static int           _doneCountdown;
 xmi_callback_t       _cb_done;
 const xmi_quad_t     _msginfo = {0,1,2,3};
 
-void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err) 
+void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 {
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
@@ -49,7 +49,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
-  int n = 1; 
+  int n = 1;
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
   {
@@ -67,7 +67,7 @@ int main(int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
   }
-  size_t task_id = configuration.value.intval;   
+  size_t task_id = configuration.value.intval;
   DBG_FPRINTF((stderr, "My task id = %zd\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
@@ -77,7 +77,7 @@ int main(int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
   }
-  size_t num_tasks = configuration.value.intval;    
+  size_t num_tasks = configuration.value.intval;
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
 
 // END standard setup
@@ -109,10 +109,10 @@ int main(int argc, char ** argv)
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  XMI::Topology topology_global = __global.topology_global; 
+  XMI::Topology topology_global = __global.topology_global;
   topology_global.convertTopology(XMI_LIST_TOPOLOGY);
 
-  XMI::Topology topology_local  = __global.topology_local; 
+  XMI::Topology topology_local  = __global.topology_local;
   topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // global topology variables
@@ -146,7 +146,7 @@ int main(int argc, char ** argv)
 
 // ------------------------------------------------------------------------
 // 1) Simple mcast to all except root using empty src pwq on root
-// 2) Slowly produce into src on root.  
+// 2) Slowly produce into src on root.
 // 3) Validate the buffers.
 // ------------------------------------------------------------------------
   {
@@ -161,7 +161,7 @@ int main(int argc, char ** argv)
       DBG_FPRINTF((stderr,"gRankList[%d] = %d\n",j, gRankList[j]));
     }
 
-    mcast.connection_id = 1; 
+    mcast.connection_id = 1;
     XMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
     if(gRoot == task_id)
     {
@@ -192,7 +192,7 @@ int main(int argc, char ** argv)
           srcPwq->produceBytes(TEST_BUF_SIZE/4);
         }
     }
-    size_t 
+    size_t
     bytesConsumed = 0,
     bytesProduced = 0;
 
@@ -202,7 +202,7 @@ int main(int argc, char ** argv)
                         bytesProduced,
                         true,   // isRoot = true
                         false); // isDest = false
-      if((bytesConsumed != TEST_BUF_SIZE) || 
+      if((bytesConsumed != TEST_BUF_SIZE) ||
          (bytesProduced != 0))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -214,7 +214,7 @@ int main(int argc, char ** argv)
     {
       _buffer1.validate(bytesConsumed,
                         bytesProduced);
-      if((bytesConsumed != 0) || 
+      if((bytesConsumed != 0) ||
          (bytesProduced != TEST_BUF_SIZE))
       {
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
@@ -269,9 +269,9 @@ int main(int argc, char ** argv)
       // This isn't working correctly, so do it the hard way
       //topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale
 
-      XMI::Topology topology(gRankList, (gSize)), subtopology; 
+      XMI::Topology topology(gRankList, (gSize)), subtopology;
       topology.convertTopology(XMI_COORD_TOPOLOGY);
-      topology.subTopologyNthGlobal(&subtopology, 0); 
+      topology.subTopologyNthGlobal(&subtopology, 0);
 
       xmi_task_t *ranklist = new xmi_task_t[subtopology.size()];
 
@@ -315,7 +315,7 @@ int main(int argc, char ** argv)
       mcast.src_participants = (xmi_topology_t *)new XMI::Topology(lRoot); // root (mem leak)
       mcast.dst_participants = (xmi_topology_t *)new XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants (mem leak)
 
-      if(lRoot == task_id) // I am 0th rank on this local topology 
+      if(lRoot == task_id) // I am 0th rank on this local topology
       {
         DBG_FPRINTF((stderr,"task_id %zd -> local ranks\n",task_id));
         ++_doneCountdown;  // I'm doing another multicast so another cb_done is expected
@@ -323,7 +323,7 @@ int main(int argc, char ** argv)
 
         // set buffer2 input from buffer1 output (for validation)
         XMI::PipeWorkQueue * srcPwq =_buffer1.dstPwq();
-        _buffer2.set(srcPwq, _buffer2.dstPwq()); 
+        _buffer2.set(srcPwq, _buffer2.dstPwq());
 
         mcast.src = (xmi_pipeworkqueue_t *)srcPwq;
         mcast.dst = (xmi_pipeworkqueue_t *)NULL;
@@ -334,7 +334,7 @@ int main(int argc, char ** argv)
         mcast.src = (xmi_pipeworkqueue_t *)NULL;
         mcast.dst = (xmi_pipeworkqueue_t *)_buffer2.dstPwq();
       }
-      mcast.dispatch = local_dispatch; 
+      mcast.dispatch = local_dispatch;
       mcast.connection_id = 2;
 
 
@@ -364,7 +364,7 @@ int main(int argc, char ** argv)
     {
       status = XMI_Context_advance (context, 10);
     }
-    size_t 
+    size_t
     bytesConsumed = 0,
     bytesProduced = 0;
 
@@ -389,7 +389,7 @@ int main(int argc, char ** argv)
                         true,   // isRoot = true
                         false); // isDest = false
     }
-    else if(topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology 
+    else if(topology_local.index2Rank(0) == task_id) // I am 0th rank on this local topology
     {
       bytesConsumed = _buffer1.srcPwq()->getBytesConsumed();
       bytesProduced = _buffer1.dstPwq()->getBytesProduced();
@@ -414,7 +414,7 @@ int main(int argc, char ** argv)
     {
       _buffer2.validate(bytesConsumed,
                         bytesProduced);
-      if((bytesConsumed != 0) || 
+      if((bytesConsumed != 0) ||
          (bytesProduced != (TEST_BUF_SIZE/4)*4))
         fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
       else
@@ -443,4 +443,3 @@ int main(int argc, char ** argv)
   DBG_FPRINTF((stderr, "return 0;\n"));
   return 0;
 }
-

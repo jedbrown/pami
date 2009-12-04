@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file devices/mpi/mpimulticastprotocol.h
+/// \file components/devices/mpi/mpimulticastprotocol.h
 /// \brief Defines protocol classes for multicast
 ///
-#ifndef __devices_mpi_mpimulticastprotocol_h__
-#define __devices_mpi_mpimulticastprotocol_h__
+#ifndef __components_devices_mpi_mpimulticastprotocol_h__
+#define __components_devices_mpi_mpimulticastprotocol_h__
 
 #include "sys/xmi.h"
 #include <list>
@@ -33,13 +33,13 @@ namespace XMI
       /// \brief 1-sided multicast protocol built on a p2p dispatch and all-sided multicast
       ///
       template <
-      class T_P2P_DEVICE, 
+      class T_P2P_DEVICE,
       class T_P2P_PROTOCOL,
       class T_MULTICAST_MODEL>
-      class P2pDispatchMulticastProtocol 
+      class P2pDispatchMulticastProtocol
       {
         ///
-        /// Point-to-point dispatch header.  
+        /// Point-to-point dispatch header.
         ///
         typedef struct _p2p_header_
         {
@@ -55,7 +55,7 @@ namespace XMI
           char                     request[T_MULTICAST_MODEL::sizeof_msg]; /// request storage for the message
           XMI::Topology            topology; ///  storage for src_participants
           xmi_callback_t           cb_done;  ///  original user's cb_done
-          P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>  
+          P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>
                                    *protocol;/// this protocol object - to retrieve allocator
         } allocation_t;
       public:
@@ -63,7 +63,7 @@ namespace XMI
         ///
         /// \brief Base class constructor
         ///
-        inline P2pDispatchMulticastProtocol(size_t                     dispatch_id,       
+        inline P2pDispatchMulticastProtocol(size_t                     dispatch_id,
                                             xmi_dispatch_multicast_fn  dispatch,
                                             void                     * cookie,
                                             T_P2P_DEVICE             & p2p_device,
@@ -85,9 +85,9 @@ namespace XMI
         {
           TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol.  allocator size %zd\n",(unsigned)this,_allocator.objsize));
           // Construct a p2p protocol for dispatching
-          xmi_dispatch_callback_fn fn; 
+          xmi_dispatch_callback_fn fn;
           fn.p2p = dispatch_p2p;
-          new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn, (void*)this, 
+          new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn, (void*)this,
                                               p2p_device,
                                               __global.mapping.task(),
                                               context, contextid, status);
@@ -127,7 +127,7 @@ namespace XMI
           sendi.data.iov_len    = mcast->msgcount*sizeof(xmi_quad_t);
 
           // \todo indexToRank() doesn't always work so convert a local copy to a list topology...
-          XMI::Topology l_dst_participants = *((XMI::Topology*)mcast->dst_participants); 
+          XMI::Topology l_dst_participants = *((XMI::Topology*)mcast->dst_participants);
           l_dst_participants.convertTopology(XMI_LIST_TOPOLOGY);
           size_t *rankList;  l_dst_participants.rankList(&rankList);
           size_t  size    = l_dst_participants.size();
@@ -213,17 +213,17 @@ namespace XMI
         {
           TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::dispatch_p2p header size %zd, data size %zd\n",(unsigned)cookie, header_size, data_size));
           P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *p = (P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *)cookie;
-          p->dispatch(context_hdl,    
-                      context_idx, 
-                      task,        
-                      header,      
-                      header_size, 
-                      data,        
-                      data_size,   
-                      recv);        
+          p->dispatch(context_hdl,
+                      context_idx,
+                      task,
+                      header,
+                      header_size,
+                      data,
+                      data_size,
+                      recv);
         }
         ///
-        /// \brief Received a p2p dispatch from another src (member function).  
+        /// \brief Received a p2p dispatch from another src (member function).
         /// Call user's dispatch, allocate some storage and start all-sided multicast.
         ///
         void dispatch(xmi_context_t        context_hdl,  /**< IN:  communication context handle */
@@ -239,14 +239,14 @@ namespace XMI
 
           // Call user's dispatch to get receive pwq and cb_done.
           xmi_multicast_t mcast;
-          mcast.connection_id = ((p2p_hdr_t*)header)->connection_id;   
+          mcast.connection_id = ((p2p_hdr_t*)header)->connection_id;
           mcast.bytes         = ((p2p_hdr_t*)header)->bytes;
 
           _dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)task, mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
 
           // Allocate storage and call all-sided multicast.
           mcast.client = _client;
-          mcast.context  = _contextid;     
+          mcast.context  = _contextid;
 
           allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
           allocation->protocol = this; // so we can free it later
@@ -263,14 +263,14 @@ namespace XMI
           mcast.cb_done.clientdata = (void*) allocation;
           mcast.cb_done.function = &done;
 
-          mcast.dispatch = _dispatch_id;        
-          //mcast.hints = 0;           
-          mcast.roles = 0;           
+          mcast.dispatch = _dispatch_id;
+          //mcast.hints = 0;
+          mcast.roles = 0;
 
-          mcast.src = NULL;             
+          mcast.src = NULL;
           mcast.dst_participants = (xmi_topology_t *) &_dst_participants; // this task is dst
-          mcast.msginfo = NULL;        
-          mcast.msgcount = 0;         
+          mcast.msginfo = NULL;
+          mcast.msgcount = 0;
 
           _multicast_model.postMulticast(&mcast);
 
@@ -295,5 +295,3 @@ namespace XMI
 };     // XMI namespace
 #undef TRACE_ADAPTOR
 #endif //__devices_mpi_mpimulticastprotocol_h__
-
-

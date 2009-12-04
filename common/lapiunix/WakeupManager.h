@@ -1,4 +1,3 @@
-
 ///
 /// \file common/lapiunix/WakeupManager.h
 /// \brief XMI wakeup manager implementation.

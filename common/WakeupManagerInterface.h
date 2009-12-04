@@ -1,4 +1,3 @@
-
 ///
 /// \file common/WakeupManagerInterface.h
 /// \brief XMI wakeup manager interface.

@@ -60,7 +60,7 @@ namespace XMI
 
 
     template <class T_Geometry, class T_Mapping>
-      class Geometry 
+      class Geometry
     {
     public:
       inline Geometry(T_Mapping   *mapping,
@@ -151,7 +151,7 @@ namespace XMI
       inline void                       setKey(keys_t key, void*value);
       inline void                      *getKey(keys_t key);
     }; // class Geometry
-    
+
     template <class T_Geometry, class T_Mapping>
       inline int Geometry<T_Geometry, T_Mapping>::getColorsArray()
     {
@@ -175,7 +175,7 @@ namespace XMI
       return static_cast<T_Geometry*>(this)->getNumTopos_impl();
     }
 
-        
+
     template <class T_Geometry, class T_Mapping>
       inline void Geometry<T_Geometry, T_Mapping>::setAsyncAllreduceMode(unsigned value)
     {

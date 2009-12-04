@@ -17,5 +17,4 @@
 
 XMI::Device::MPIBcastDev _g_mpibcast_dev;
 // The generic device needs its own communicator so it doesn't conflict with XMI::Device::MPIDevice
-MPI_Comm                 _g_mpi_communicator; 
-
+MPI_Comm                 _g_mpi_communicator;

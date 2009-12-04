@@ -103,7 +103,7 @@ namespace XMI
 
 		// This memset has been removed due to the amount of cycles it takes
 		// on simulators.  Lower level initializers should be setting the
-		// relevant fields of the context, so this memset should not be 
+		// relevant fields of the context, so this memset should not be
 		// needed anyway.
 		//memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;

@@ -42,7 +42,7 @@ namespace XMI
 }; //-- XMI
 
 extern XMI::Device::MPIBcastDev _g_mpibcast_dev;
-extern MPI_Comm                 _g_mpi_communicator; 
+extern MPI_Comm                 _g_mpi_communicator;
 
 namespace XMI
 {
@@ -50,7 +50,7 @@ namespace XMI
   {
 
 ///
-/// \brief 
+/// \brief
 ///
     class MPIBcastMsg : public XMI::Device::Generic::GenericMessage
     {
@@ -79,7 +79,7 @@ namespace XMI
       {
         XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
         XMI_assert(src_topo != NULL);
-        _root = src_topo->index2Rank(0); 
+        _root = src_topo->index2Rank(0);
 
         //I've had some bad topo's, so try to detect it here...
         XMI_assert(src_topo->size() == 1); //techinically only one root...
@@ -91,7 +91,7 @@ namespace XMI
         if(iamroot)
         {
           //_rwq = NULL;// \todo Why?  Can't a source (root) also be a destination?
-          
+
           // no actual data to send, indicate we're done with a pending status (for advance)
           if((_iwq == NULL) && (_bytes == 0))
           {
@@ -154,7 +154,7 @@ namespace XMI
         {
           // This happens when there is no data to send/receive and ctor set a "pending status" to done,
           //  so on the first advance, setDone and return.
-          thr->setDone(true); 
+          thr->setDone(true);
           setStatus(XMI::Device::Done);
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() done - no data\n",(unsigned)this));
           return XMI_SUCCESS;
