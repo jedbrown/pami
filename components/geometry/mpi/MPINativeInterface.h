@@ -3,6 +3,7 @@
 #define   __mpi_native_interface_h__
 
 #include "common/GlobalInterface.h"
+#include "common/mpi/Context.h"
 #include "common/mpi/Global.h"
 #include "Mapping.h"
 #include "algorithms/interfaces/NativeInterface.h"
@@ -16,13 +17,24 @@ namespace XMI {
   template <class T_Device>
   class MPINativeInterface : public CCMI::Interfaces::NativeInterface {
   public:
-  MPINativeInterface(T_Device *dev): CCMI::Interfaces::NativeInterface(__global.mapping.task(), __global.mapping.size()), _device(dev){}
-    
+  MPINativeInterface(T_Device *dev): CCMI::Interfaces::NativeInterface(__global.mapping.task(), __global.mapping.size()), _device(dev), _protocol(&_status) {}
+  
     /// \brief this call is called when the native interface is initialized
     virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie) {
       static size_t dispatch = DISPATCH_START;
 
       //_device->registerMcastRecvFunction (dispatch, fn.multicast, cookie);
+
+      new (&_protocol) P2pDispatchMulticastProtocol ( dispatch,       
+						      fn.multicast,
+						      cookie,
+						      _device,
+						      NULL,
+						      NULL,
+						      0, 
+						      & _status);
+      
+      CCMI_assert (_status = XMI_SUCCESS);
       dispatch ++;
     }
 
@@ -32,6 +44,9 @@ namespace XMI {
 
   private:
     T_Device                 *_device;
+
+    P2pDispatchMulticastProtocol      _protocol;
+    xmi_result_t                      _status;
   };
 };
 
