@@ -12,7 +12,9 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            =  mpimulticast.${EXTENSION} mpimulticast_as.${EXTENSION} # mpimulticombine.${EXTENSION} mpimultisync.${EXTENSION}
+APPS            =  mpimulticast.${EXTENSION} mpimulticast_as.${EXTENSION} 
+APPS            +=  mpimultisync.${EXTENSION}
+APPS            +=  # mpimulticombine.${EXTENSION} 
 
 include @abs_top_builddir@/Build.rules
 

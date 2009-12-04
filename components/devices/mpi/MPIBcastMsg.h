@@ -42,7 +42,7 @@ namespace XMI
 }; //-- XMI
 
 extern XMI::Device::MPIBcastDev _g_mpibcast_dev;
-extern MPI_Comm                 _g_mpi_communicator; 
+extern MPI_Comm                 _g_mpibcast_communicator; 
 
 namespace XMI
 {
@@ -213,7 +213,7 @@ namespace XMI
           {
             rc = MPI_Isend(_currBuf, _currBytes, MPI_BYTE,
                            _dst->index2Rank(_idx), _tag,
-                           _g_mpi_communicator, &_req);
+                           _g_mpibcast_communicator, &_req);
           }
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
                         rc,_idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
@@ -260,7 +260,7 @@ namespace XMI
           //count = 5;
           int rc = MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
                              _root, _tag,
-                             _g_mpi_communicator, &_req);
+                             _g_mpibcast_communicator, &_req);
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",(unsigned)this,
                         rc, _idx, _currBytes, thr->_bytesLeft, _root, _tag, _req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           // error checking?

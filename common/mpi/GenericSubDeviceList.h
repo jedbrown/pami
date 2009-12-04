@@ -15,6 +15,7 @@
 #define __common_mpi_GenericSubDeviceList_h__
 
 #include "components/devices/mpi/MPIBcastMsg.h"
+#include "components/devices/mpi/MPISyncMsg.h"
 
 extern XMI::Device::MPIBcastDev _g_mpibcast_dev;
 
@@ -37,13 +38,15 @@ inline void Device::__platform_generic_init(bool first_global, bool first_client
 		// These sub-devices only execute one message at a time,
 		// and so there is only one instance of each, globally.
 		_g_mpibcast_dev.init(sd, __generics, __contextId);
-        MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpi_communicator);
+        MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpibcast_communicator);
+		_g_mpisync_dev.init(sd, __generics, __contextId);
 	}
 }
 
 inline int Device::__platform_generic_advanceRecv(size_t context) {
 	int events = 0;
-	events += _g_mpibcast_dev.advanceRecv(context);
+    events += _g_mpibcast_dev.advanceRecv(context);
+	events += _g_mpisync_dev.advanceRecv(context);
 	return events;
 }
 
