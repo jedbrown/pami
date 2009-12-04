@@ -19,12 +19,13 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "Global.h"
+#include "components/devices/MulticastModel.h"
 //#include <list>
 //#include "components/devices/mpi/mpicollectiveheader.h"
 
-#undef TRACE_ADAPTOR
-#ifndef TRACE_ADAPTOR
-  #define TRACE_ADAPTOR(x) //fprintf x
+#undef TRACE_DEVICE
+#ifndef TRACE_DEVICE
+  #define TRACE_DEVICE(x) //fprintf x
 #endif
 
 namespace XMI
@@ -81,7 +82,7 @@ namespace XMI
         _cookie(NULL),
         _multicast_model(status)
         {
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol(status)  allocator size %zd\n",(unsigned)this,_allocator.objsize));
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol(status)  allocator size %zd\n",(unsigned)this,_allocator.objsize));
         }
         inline P2pDispatchMulticastProtocol(size_t                     dispatch_id,       
                                             xmi_dispatch_multicast_fn  dispatch,
@@ -104,7 +105,7 @@ namespace XMI
         _cookie(cookie),
         _multicast_model(status)
         {
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol.  allocator size %zd\n",(unsigned)this,_allocator.objsize));
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol.  allocator size %zd\n",(unsigned)this,_allocator.objsize));
           // Construct a p2p protocol for dispatching
           xmi_dispatch_callback_fn fn; 
           fn.p2p = dispatch_p2p;
@@ -112,14 +113,14 @@ namespace XMI
                                               p2p_device,
                                               __global.mapping.task(),
                                               context, contextid, status);
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol status %d\n",(unsigned)this,status));
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol status %d\n",(unsigned)this,status));
         }
 
         void registerMcastRecvFunction_impl(int dispatch_id,
                                             xmi_dispatch_multicast_fn     dispatch,
                                             void                         *cookie)
         {
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::register id %zd, fn %p, cookie %p\n",(unsigned)this,dispatch_id, dispatch, cookie));
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::register id %zd, fn %p, cookie %p\n",(unsigned)this,dispatch_id, dispatch, cookie));
           xmi_result_t status = XMI_SUCCESS;
           _dispatch_id=dispatch_id;
           _dispatch_fn=dispatch;
@@ -156,7 +157,7 @@ namespace XMI
         };
         bool postMulticast_impl(xmi_multicast_t *mcast)
         {
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() id %zd, connection_id %d\n",(unsigned)this,mcast->dispatch,mcast->connection_id));
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() id %zd, connection_id %d\n",(unsigned)this,mcast->dispatch,mcast->connection_id));
 
           // First, send (p2p) the header/msgdata to dispatch destinations.  They will start all-sided multicasts when dispatched.
           p2p_hdr_t header;
@@ -181,14 +182,14 @@ namespace XMI
             if(rankList[i]==_task_id) continue; // don't dispatch myself
             sendi.task = rankList[i];
             // Dispatch over p2p
-            TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() send dispatch task_id[%d] %zd\n",
+            TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() send dispatch task_id[%d] %zd\n",
                            (unsigned)this, i, rankList[i]));
             ((T_P2P_PROTOCOL*)&_p2p_protocol)->immediate(&sendi);
           }
 
           allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
           allocation->protocol = this; // so we can free it later
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() allocated %p, mcast %p, cb_done %p, client data %p\n",
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() allocated %p, mcast %p, cb_done %p, client data %p\n",
                          (unsigned)this, allocation, mcast, mcast->cb_done.function, mcast->cb_done.clientdata));
 
           // work with a local copy of mcast and override cb_done and (maybe) src topology since all-sided requires it.
@@ -228,7 +229,7 @@ namespace XMI
           // Find (this) protocol and it's associated allocator
           P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>  *protocol = allocation->protocol;
 
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::done() free allocation %p, cb_done %p, client data %p\n",
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::done() free allocation %p, cb_done %p, client data %p\n",
                          (unsigned)protocol, cookie, cb_done.function, cb_done.clientdata));
 
           memset(cookie, 0x00, sizeof(allocation_t)); // cleanup for debug
@@ -257,7 +258,7 @@ namespace XMI
                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                  xmi_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
         {
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::dispatch_p2p header size %zd, data size %zd\n",(unsigned)cookie, header_size, data_size));
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::dispatch_p2p header size %zd, data size %zd\n",(unsigned)cookie, header_size, data_size));
           P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *p = (P2pDispatchMulticastProtocol<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *)cookie;
           p->dispatch(context_hdl,    
                       context_idx, 
@@ -281,7 +282,7 @@ namespace XMI
                       size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                       xmi_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
         {
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::dispatch() header size %zd, data size %zd\n",(unsigned)this, header_size, data_size));
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::dispatch() header size %zd, data size %zd\n",(unsigned)this, header_size, data_size));
 
           // Call user's dispatch to get receive pwq and cb_done.
           xmi_multicast_t mcast;
@@ -296,7 +297,7 @@ namespace XMI
 
           allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
           allocation->protocol = this; // so we can free it later
-          TRACE_ADAPTOR((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::dispatch_p2p() allocated %p, cb_done %p, client data %p\n",
+          TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::dispatch_p2p() allocated %p, cb_done %p, client data %p\n",
                          (unsigned)this, allocation, mcast.cb_done.function, mcast.cb_done.clientdata));
 
           mcast.request  = (void *)&allocation->request;
@@ -339,7 +340,7 @@ namespace XMI
     };   // XMI::Protocol::MPI namespace
   };   // XMI::Protocol namespace
 };     // XMI namespace
-#undef TRACE_ADAPTOR
+#undef TRACE_DEVICE
 #endif //__devices_mpi_mpimulticastprotocol_h__
 
 
