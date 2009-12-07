@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/mpi/mpimulticast.cc
+/// \file test/internals/multisend/mpi/MPIBcastMdl.cc
 /// \brief ???
 ///
 
@@ -9,7 +9,7 @@
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "test/internals/multisend/multicast.h"
 
-#ifndef TEST_BUF_SIZE
+#ifndef TEST_BUF_SIZE 
 #define TEST_BUF_SIZE	1024
 #endif // TEST_BUF_SIZE
 
