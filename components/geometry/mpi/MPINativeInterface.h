@@ -41,7 +41,7 @@ namespace XMI {
 
       _protocol.registerMcastRecvFunction (dispatch, fn.multicast, cookie);
 
-      //CCMI_assert (_status == XMI_SUCCESS);
+      CCMI_assert (_status == XMI_SUCCESS);
       dispatch ++;
     }
 
