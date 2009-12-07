@@ -55,12 +55,13 @@ namespace XMI
                 mapping.init(min, max, num, &ranks);
 
 		XMI::Topology::static_init(&mapping);
+#warning remove these casts when conversion to xmi_task_t is complete
 		if (mapping.size() == max - min + 1) {
-			new (&topology_global) XMI::Topology(min, max);
+			new (&topology_global) XMI::Topology((xmi_task_t)min, (xmi_task_t)max);
 		} else {
 			XMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
 		}
-		new (&topology_local) XMI::Topology(ranks, num);
+		new (&topology_local) XMI::Topology((xmi_task_t *)ranks, num);
 		// could try to optimize list into range, etc...
 	  }
         };
