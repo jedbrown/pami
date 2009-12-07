@@ -982,6 +982,7 @@ namespace XMI
             EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
               (EagerSimple<T_Model, T_Device, T_LongHeader> *) state->eager;
 
+	    eager->clearConnection(state->metadata.fromRank);
             eager->freeRecvState (state);
 
             TRACE_ERR((stderr, "EagerSimple::receive_complete() << \n"));
