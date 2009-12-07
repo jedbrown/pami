@@ -63,7 +63,7 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalAllreduceWQMessage (Generic::BaseGenericDevice      & device,
+          inline LocalAllreduceWQMessage (Generic::GenericSubDevice      & device,
 					  xmi_multicombine_t *mcomb,
                                           XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
@@ -81,7 +81,7 @@ public:
           {
           }
 
-	STD_POSTNEXT(LocalAllreduceWQDevice,LocalAllreduceWQThread)
+	STD_POSTNEXT(LocalAllreduceWQDevice,LocalAllreduceWQThread,&_g_l_allreducewq_dev)
 
 protected:
 	//friend class LocalAllreduceWQDevice;

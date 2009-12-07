@@ -43,90 +43,23 @@ namespace Device {
 ///
 ///  Definitions:
 ///  - Message:    A communication object that can be inserted into a q
-///  - advance():  A method that makes the queue make progress
-///  - start():    A method that starts progress
-///  - reset():    A method that resets/reinitializes a message
-///
-///  Namespace:  DCMF, the messaging namespace.
-///  Namespace:  Queueing, the queueing namespace
 ///
 ////////////////////////////////////////////////////////////////////////
+
 enum MessageStatus {
-	Uninitialized = 0,
-	Initialized,
-	Active,
-	Done
+	Uninitialized = 0,	///< status for uninitialized message
+	Initialized,		///< status for initialized message
+	Active,			///< status for active message
+	Done			///< status for completed message
 };
 
-//////////////////////////////////////////////////////////////////////
-///  \brief Base Class for Messages
-//////////////////////////////////////////////////////////////////////
-class Message : public QueueElem {
-public:
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Constructor
-	//////////////////////////////////////////////////////////////////////
-	Message(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb,
-					xmi_client_t client, size_t context) :
-	QueueElem(),
-	_status(0),
-	_QS(QS),
-	_client(client),
-	_context(context),
-	_cb(cb)
-	{
-	}
-
-	xmi_client_t getClient() { return _client; }
-	size_t getContextId() { return _context; }
-
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Reset a message
-	///  \returns a return code to indicate reset status
-	//////////////////////////////////////////////////////////////////////
-	virtual int reset() = 0;
-
-	//////////////////////////////////////////////////////////////////////
-	///  \brief posts a message and begins the send
-	//////////////////////////////////////////////////////////////////////
-	virtual xmi_result_t start() = 0;
-
-	//////////////////////////////////////////////////////////////////////
-	///  \brief advance function
-	///  \returns a return code to indicate progress was made
-	//////////////////////////////////////////////////////////////////////
-	virtual int advance() = 0;
-
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Query function to determine message state
-	///  \returns an integer indicating status
-	//////////////////////////////////////////////////////////////////////
-	int getStatus() {return _status;}
-
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Sets the callback
-	//////////////////////////////////////////////////////////////////////
-	void setCallback(xmi_callback_t cb) {_cb = cb;}
-
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Executes the callback
-	///  \returns a return code to indicate reset status
-	//////////////////////////////////////////////////////////////////////
-	void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS) {
-		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
-	}
-
-protected:
-	int _status;
-	Device::Generic::BaseGenericDevice &_QS;
-	xmi_client_t _client;
-	size_t _context;
-	xmi_callback_t _cb;
-}; /* class Message */
-
-//////////////////////////////////////////////////////////////////////
-///  \brief Base Class for Messages
-//////////////////////////////////////////////////////////////////////
+/// \brief Base Class for Messages
+///
+/// Messages must be able to exist on two queues at the same time.
+/// This requires two actual QueueElem structs, handled by MultiQueueElem.
+/// In fact, this class is templatized by number of queue elements and thus
+/// is general for any number of queues.
+///
 template <int numElems>
 class MultiQueueMessage : public MultiQueueElem<numElems> {
 public:
@@ -144,37 +77,61 @@ public:
 	{
 	}
 
+	/// \brief get client associated with message
+	/// \return	client for message posting/completion
 	xmi_client_t getClient() { return _client; }
+
+	/// \brief get context ID associated with message
+	/// \return	Context ID for message posting/completion
+	///
 	size_t getContextId() { return _context; }
 
-	//////////////////////////////////////////////////////////////////////
 	///  \brief Query function to determine message state
-	///  \returns an integer indicating status
-	//////////////////////////////////////////////////////////////////////
+	///  \return	message status
+	///
 	inline MessageStatus getStatus() {return _status;}
+
+	/// \brief Set message status
+	///
+	/// \param[in] status	Message status to set
+	///
 	inline void setStatus(MessageStatus status) {_status = status;}
 
-	//////////////////////////////////////////////////////////////////
 	/// \brief     Returns the done status of the message
-	//////////////////////////////////////////////////////////////////
+	///
+	/// \return	true is message is Done
 	inline bool isDone() {return (getStatus() == Done);}
 
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Sets the callback
-	//////////////////////////////////////////////////////////////////////
+	///  \brief Sets the message completion callback
+	///
+	/// \param[in] cb	Callback to use for message completion
+	///
 	void setCallback(xmi_callback_t cb) {_cb = cb;}
 
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Executes the callback
-	///  \returns a return code to indicate reset status
-	//////////////////////////////////////////////////////////////////////
+	///  \brief Executes the message completion callback
+	///
+	/// \param[in] ctx	The context object on which completion is called
+	/// \param[in] err	Optional error status (default is success)
+	///
 	void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS) {
 		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
 	}
 
+	/// \brief accessor for sub-device linked to message
 	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }
 
 	/// \brief virtual method used to activate a message that was enqueued earlier
+	///
+	/// Performs the setup of a message (and threads) in preparation
+	/// for becoming active (on the generic device queues). Used for
+	/// both first-time messages (not queued anywhere) and for when
+	/// a message reaches the top of the sub-device queue (for devices
+	/// that only perform one message at a time). In the latter case,
+	/// 'devPosted' will be true.
+	///
+	/// If this returns true, then the message is complete and should be
+	/// destroyed/freed (after invoking the callback). This can only return
+	/// true if 'devPosted' is false.
 	///
 	/// \param[in] devPosted	was msg was previously posted to sub-device?
 	/// \return	bool whether message is complete
@@ -193,6 +150,17 @@ protected:
 namespace Generic {
 
 // This is a bit klunky, but until templates allow methods as parameters...
+/// \brief Macro for declaring a routine as an advance routine for a thread
+///
+/// Creates a static function named 'method' that may be used for a
+/// thread's advance routine (thr->setAdv('method')). Assumes there is
+/// also an inlined function named __'method' which contains the actual
+/// advance code for the thread(s).
+///
+/// \param[in] method	Basename of method used to advance thread(s)
+/// \param[in] message	Class of message
+/// \param[in] thread	Class of thread
+///
 #define ADVANCE_ROUTINE(method,message,thread)			\
 static xmi_result_t method(xmi_context_t context, void *t) {	\
 	thread *thr = (thread *)t;				\
@@ -200,10 +168,12 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	return msg->__##method(thr);				\
 }
 
-//////////////////////////////////////////////////////////////////////
-///  \brief interprocess communication message class
-///  This message is posted to a Generic device
-//////////////////////////////////////////////////////////////////////
+/// \brief Message class used by the Generic Device
+///
+/// Generic Device allows messages to exist on two queues at the same time.
+/// One queue (1) is used by the generic device, the other (0) may be used as
+/// needed by the sub-device. Usage of queue 1 is in code in GenericDevice.h/Device.h
+///
 class GenericMessage : public MultiQueueMessage<2> {
 
 public:

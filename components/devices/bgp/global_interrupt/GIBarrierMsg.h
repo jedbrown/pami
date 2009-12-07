@@ -71,13 +71,13 @@ protected:
 	/// \brief  GI Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	giMessage(Generic::BaseGenericDevice &GI_QS, xmi_multisync_t *msync) :
+	giMessage(Generic::GenericSubDevice &GI_QS, xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
 				msync->client, msync->context)
 	{
 	}
 
-	STD_POSTNEXT(giDevice,giThread)
+	STD_POSTNEXT(giDevice,giThread,&_g_gibarrier_dev)
 
 private:
 	//friend class giDevice;

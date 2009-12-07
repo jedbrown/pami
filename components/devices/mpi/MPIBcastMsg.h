@@ -62,7 +62,7 @@ namespace XMI
         NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
       };
     public:
-      MPIBcastMsg(Generic::BaseGenericDevice &Generic_QS,
+      MPIBcastMsg(Generic::GenericSubDevice &Generic_QS,
                   xmi_multicast_t *mcast) :
       XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
                                            mcast->client, mcast->context),
@@ -117,7 +117,7 @@ namespace XMI
         //XMI_assertf(_rwq || _iwq, "MPIBcastMsg has neither input or output data\n");
       }
 
-	STD_POSTNEXT(MPIBcastDev,MPIBcastThr)
+	STD_POSTNEXT(MPIBcastDev,MPIBcastThr,&_g_mpibcast_dev)
 
     protected:
       //friend class MPIBcastDev; // Until C++ catches up with real programming languages:

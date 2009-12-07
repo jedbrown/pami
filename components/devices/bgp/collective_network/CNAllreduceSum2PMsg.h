@@ -124,7 +124,7 @@ class CNAllreduce2PMessage : public XMI::Device::BGP::BaseGenericCN2PMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduce2PMessage(Generic::BaseGenericDevice &qs,
+	CNAllreduce2PMessage(Generic::GenericSubDevice &qs,
 		xmi_multicombine_t *mcomb,
 		XMI::Device::WorkQueue::WorkQueue &ewq,
 		XMI::Device::WorkQueue::WorkQueue &mwq,
@@ -144,7 +144,7 @@ public:
 	{
 	}
 
-	CN_STD_POSTNEXT(CNAllreduce2PDevice,CNAllreduce2PThread)
+	STD_POSTNEXT(CNAllreduce2PDevice,CNAllreduce2PThread,&_g_cnallreduce2p_dev)
 
 protected:
 	//friend class CNAllreduce2PDevice;
@@ -152,9 +152,10 @@ protected:
 
 	ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
 	ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
-	inline int __setThreads(CNAllreduceThread *t, int n) {
+	inline int __setThreads(CNAllreduce2PThread *t, int n) {
 		int nt = 0;
-		int maxnt = ((CNAllreduce2PDevice &)_QS).common()->getMaxThreads();
+		_g_cnallreduce2p_dev.common()->__resetThreads();
+		int maxnt = _g_cnallreduce2p_dev.common()->getMaxThreads();
 		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
@@ -210,7 +211,7 @@ protected:
 		return rc;
 	}
 
-	inline xmi_result_t __advanceRcp(CNAllreduceThread *thr) {
+	inline xmi_result_t __advanceRcp(CNAllreduce2PThread *thr) {
 		xmi_result_t rc = XMI_EAGAIN;
 		register unsigned hcount = 0, dcount = 0;
 		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
@@ -323,7 +324,7 @@ private:
 }; // class CNAllreduce2PModel
 
 inline void CNAllreduce2PMessage::__completeThread(CNAllreduce2PThread *thr) {
-	unsigned c = ((CNAllreduce2PDevice &)_QS).__completeThread(thr);
+	unsigned c = _g_cnallreduce2p_dev.common()->__completeThread(thr);
 	if (c >= _nThreads) {
 		setStatus(XMI::Device::Done);
 	}
@@ -338,7 +339,7 @@ inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb)
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNAllreduce2PMessage *msg;
-	msg = new (mcomb->request) CNAllreduce2PMessage(_g_cnallreduce2p_dev,
+	msg = new (mcomb->request) CNAllreduce2PMessage(*_g_cnallreduce2p_dev.common(),
 			mcomb, _ewq, _mwq, _xwq,
 			bytes, doStore, _dispatch_id_e, _dispatch_id_m);
 	_g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);

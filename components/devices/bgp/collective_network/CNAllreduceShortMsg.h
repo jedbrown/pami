@@ -63,7 +63,7 @@ class CNAllreduceShortMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		LOCAL_ROLE = (1 << 2), // local-only work
 	};
 public
-	CNAllreduceShortMessage(Generic::BaseGenericDevice &qs,
+	CNAllreduceShortMessage(Generic::GenericSubDevice &qs,
 			xmi_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,
@@ -78,7 +78,7 @@ public
 	{
 	}
 
-	CN_STD_POSTNEXT(CNAllreduceShortDevice,CNAllreduceShortThread)
+	STD_POSTNEXT(CNAllreduceShortDevice,CNAllreduceShortThread,&_g_cnallreduceshort_dev)
 
 	inline xmi_result_t advanceThread(xmi_context_t context, void *t);
 protected:
@@ -89,7 +89,8 @@ protected:
 	ADVANCE_ROUTINE(advanceRcp,CNAllreduceShortMessage,CNAllreduceShortThread);
 	inline int __setThreads(CNAllreduceShortThread *t, int n) {
 		int nt = 0;
-		int maxnt = ((CNAllreduceShortDevice &)_QS).common()->getMaxThreads();
+		_g_cnallreduceshort_dev.common()->__resetThreads();
+		int maxnt = _g_cnallreduceshort_dev.common()->getMaxThreads();
 		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
@@ -389,7 +390,7 @@ private:
 }; // class CNAllreduceShortModel
 
 inline void CNAllreduceShortMessage::__completeThread(CNAllreduceShortThread *thr) {
-	unsigned c = ((CNAllreduceShortDevice &)_QS).__completeThread(thr);
+	unsigned c = _g_cnallreduceshort_dev.common()->__completeThread(thr);
 	if (c >= _nThreads) {
 		setStatus(XMI::Device::Done);
 	}
@@ -468,7 +469,7 @@ inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	// details TBD...
-	new (msg) CNAllreduceShortMessage(_g_cnallreduceshort_dev,
+	new (msg) CNAllreduceShortMessage(*_g_cnallreduceshort_dev.common(),
 			mcomb,
 			bytes, doStore, _dispatch_id, tas
 			// context from possible pre-ctor advance???

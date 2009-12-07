@@ -52,7 +52,7 @@ private:
 		NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
 	};
 public:
-	WQRingBcastMsg(Generic::BaseGenericDevice &Generic_QS,
+	WQRingBcastMsg(Generic::GenericSubDevice &Generic_QS,
 		xmi_multicast_t *mcast,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
@@ -66,7 +66,7 @@ public:
 	{
 	}
 
-	STD_POSTNEXT(WQRingBcastDev,WQRingBcastThr)
+	STD_POSTNEXT(WQRingBcastDev,WQRingBcastThr,&_g_wqbcast_dev)
 
 protected:
 	//friend class WQRingBcastDev; // Until C++ catches up with real programming languages:

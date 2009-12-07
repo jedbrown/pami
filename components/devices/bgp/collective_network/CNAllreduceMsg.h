@@ -76,7 +76,7 @@ class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduceMessage(Generic::BaseGenericDevice &qs,
+	CNAllreduceMessage(Generic::GenericSubDevice &qs,
 			xmi_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,
@@ -91,7 +91,7 @@ public:
 	{
 	}
 
-	CN_STD_POSTNEXT(CNAllreduceDevice,CNAllreduceThread)
+	STD_POSTNEXT(CNAllreduceDevice,CNAllreduceThread,&_g_cnallreduce_dev)
 
 protected:
 	//friend class CNAllreduceDevice;
@@ -101,7 +101,8 @@ protected:
 	ADVANCE_ROUTINE(advanceRcp,CNAllreduceMessage,CNAllreduceThread);
 	inline int __setThreads(CNAllreduceThread *t, int n) {
 		int nt = 0;
-		int maxnt = ((CNAllreduceDevice &)_QS).common()->getMaxThreads();
+		_g_cnallreduce_dev.common()->__resetThreads();
+		int maxnt = _g_cnallreduce_dev.common()->getMaxThreads();
 		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
@@ -212,7 +213,7 @@ private:
 }; // class CNAllreduceModel
 
 inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
-	unsigned c = ((CNAllreduceDevice &)_QS).__completeThread(thr);
+	unsigned c = _g_cnallreduce_dev.common()->__completeThread(thr);
 	if (c >= _nThreads) {
 		setStatus(XMI::Device::Done);
 	}
@@ -233,7 +234,7 @@ inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNAllreduceMessage *msg;
-	msg = new (mcomb->request) CNAllreduceMessage(_g_cnallreduce_dev,
+	msg = new (mcomb->request) CNAllreduceMessage(*_g_cnallreduce_dev.common(),
 			mcomb, bytes, doStore, _dispatch_id, tas);
 	_g_cnallreduce_dev.__post<CNAllreduceMessage>(msg);
 	return true;

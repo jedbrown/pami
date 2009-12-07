@@ -52,7 +52,7 @@ private:
 	};
 
 public:
-	WQRingReduceMsg(Generic::BaseGenericDevice &Generic_QS,
+	WQRingReduceMsg(Generic::GenericSubDevice &Generic_QS,
 		xmi_multicombine_t *mcomb,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
@@ -74,7 +74,7 @@ public:
 		}
 	}
 
-	STD_POSTNEXT(WQRingReduceDev,WQRingReduceThr)
+	STD_POSTNEXT(WQRingReduceDev,WQRingReduceThr,&_g_wqreduce_dev)
 
 protected:
 	//friend class WQRingReduceDev;

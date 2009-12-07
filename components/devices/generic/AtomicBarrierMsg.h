@@ -74,7 +74,7 @@ public:
 protected:
 	friend class AtomicBarrierMdl<T_Barrier>;
 
-	AtomicBarrierMsg(Generic::BaseGenericDevice &Generic_QS,
+	AtomicBarrierMsg(Generic::GenericSubDevice &Generic_QS,
 		T_Barrier *barrier,
 		xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
@@ -84,7 +84,7 @@ protected:
 		// assert(role == DEFAULT_ROLE);
 	}
 
-	STD_POSTNEXT(AtomicBarrierDev,AtomicBarrierThr);
+	STD_POSTNEXT(AtomicBarrierDev,AtomicBarrierThr,&_g_lmbarrier_dev)
 
 private:
 	//friend class AtomicBarrierDev;

@@ -55,7 +55,7 @@ public:
           /// \param[in] consumers    Number of consumers that will recieve the
           ///                         broadcast buffer
           ///
-          inline LocalBcastWQMessage(Generic::BaseGenericDevice &device,
+          inline LocalBcastWQMessage(Generic::GenericSubDevice &device,
                                       xmi_multicast_t *mcast,
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole) :
@@ -68,7 +68,7 @@ public:
           {
           }
 
-	STD_POSTNEXT(LocalBcastWQDevice,LocalBcastWQThread)
+	STD_POSTNEXT(LocalBcastWQDevice,LocalBcastWQThread,&_g_l_bcastwq_dev)
 
 private:
 	//friend class LocalBcastWQDevice;

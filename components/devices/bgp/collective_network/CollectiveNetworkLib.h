@@ -51,9 +51,6 @@ namespace XMI {
 namespace Device {
 namespace BGP {
 
-#define CN_STD_POSTNEXT(T_Device,T_Thread)						\
-	STD_POSTNEXT(T_Device,T_Thread)
-
 class BaseGenericCNThread : public XMI::Device::Generic::SimpleAdvanceThread {
 public:
 	BaseGenericCNThread() :

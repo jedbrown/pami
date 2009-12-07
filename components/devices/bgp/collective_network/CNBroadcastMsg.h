@@ -64,7 +64,7 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNBroadcastMessage(Generic::BaseGenericDevice &qs,
+	CNBroadcastMessage(Generic::GenericSubDevice &qs,
 			xmi_multicast_t *mcast,
 			size_t bytes,
 			bool doStore,
@@ -79,7 +79,7 @@ public:
 	{
 	}
 
-	CN_STD_POSTNEXT(CNBroadcastDevice,CNBroadcastThread)
+	STD_POSTNEXT(CNBroadcastDevice,CNBroadcastThread,&_g_cnbroadcast_dev)
 
 protected:
 	//friend class CNBroadcastDevice;
@@ -89,6 +89,7 @@ protected:
 	ADVANCE_ROUTINE(advanceRcp,CNBroadcastMessage,CNBroadcastThread);
 	inline int __setThreads(CNBroadcastThread *t, int n) {
 		int nt = 0;
+		_g_cnbroadcast_dev.common()->__resetThreads();
 		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
@@ -207,7 +208,7 @@ private:
 }; // class CNBroadcastModel
 
 inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
-	unsigned c = ((CNBroadcastDevice &)_QS).__completeThread(thr);
+	unsigned c = _g_cnbroadcast_dev.common()->__completeThread(thr);
 	if (c >= _nThreads) {
 		setStatus(XMI::Device::Done);
 	}
@@ -223,7 +224,7 @@ inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNBroadcastMessage *msg;
-	msg = new (mcast->request) CNBroadcastMessage(_g_cnbroadcast_dev,
+	msg = new (mcast->request) CNBroadcastMessage(*_g_cnbroadcast_dev.common(),
 			mcast, mcast->bytes, doStore, doData, _dispatch_id);
 	_g_cnbroadcast_dev.__post<CNBroadcastMessage>(msg);
 	return true;
