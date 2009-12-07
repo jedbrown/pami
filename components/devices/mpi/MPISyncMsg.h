@@ -78,7 +78,8 @@ namespace XMI
       _tag(msync->connection_id),
       _idx(0),
       _req(MPI_REQUEST_NULL),
-      _pendingStatus(XMI::Device::Initialized)
+      _pendingStatus(XMI::Device::Initialized),
+      _root(_participants->index2Rank(0))
       {
         TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg client %p, context %zd\n",(unsigned)this,
                       msync->client, msync->context));
@@ -87,7 +88,24 @@ namespace XMI
           // We have to use a local pending status because the sub device is too smart for us and will
           // reset the _status to initialized after __setThreads
           _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
+          return;
         }
+        if(_root == __global.mapping.task())
+        {
+          _idx++;
+        }
+        else
+        {
+          int rc = MPI_Send(NULL, 0, MPI_BYTE,
+                            _root,_tag,_g_mpisync_dev._msync_communicator);
+          TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::ctor send rc = %d, dst %zd, tag %d \n",(unsigned)this,
+                        rc, _root, _tag));
+        }
+        int rc = MPI_Irecv(NULL,0, MPI_BYTE,
+                           _participants->index2Rank(_idx),_tag,
+                           _g_mpisync_dev._msync_communicator, &_req);
+        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::ctor irecv rc = %d, dst %zd, tag %d \n",(unsigned)this,
+                      rc, _participants->index2Rank(_idx), _tag));
       }
 
       // This is a virtual function, but declaring inline here avoids linker
@@ -109,8 +127,8 @@ namespace XMI
         ++nt;
         // assert(nt > 0? && nt < n);
         _nThreads = nt;
-        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__setThreads(%d) _nThreads %d, bytes left %zd\n",(unsigned)this,
-                      n,nt,t[nt]._bytesLeft));
+        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__setThreads(%d) _nThreads %d\n",(unsigned)this,
+                      n,nt));
         return nt;
       }
 
@@ -141,6 +159,8 @@ namespace XMI
           MPI_Test(&_req, &flag, &status);
           if(flag)
           {
+            TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread test done, dst %zd, tag %d \n",(unsigned)this,
+                          _participants->index2Rank(_idx), _tag));
             _req = MPI_REQUEST_NULL; // redundant?
           }
           else
@@ -149,31 +169,41 @@ namespace XMI
           }
           // current message was completed...
         }
-        int tag = __global.mapping.task();
-        for(int idx=0; idx < _participants->size(); ++idx)
+        if(_root == __global.mapping.task())
         {
-          int rc = MPI_Send(NULL, 0, MPI_BYTE,
-                        _participants->index2Rank(idx),tag,
-                        _g_mpisync_dev._msync_communicator);
-          TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
-                        rc,idx, _participants->index2Rank(idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
+          if(++_idx < _participants->size())
+          {
+            int rc = MPI_Irecv(NULL,0, MPI_BYTE,
+                               _participants->index2Rank(_idx),_tag,
+                               _g_mpisync_dev._msync_communicator, &_req);
+            TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread irecv rc = %d, dst %zd, tag %d \n",(unsigned)this,
+                          rc, _participants->index2Rank(_idx), _tag));
+            return XMI_EAGAIN;
+          }
+          else
+          {
+            for(int idx=1; idx < _participants->size(); ++idx)
+            {
+              int rc = MPI_Send(NULL, 0, MPI_BYTE,
+                                _participants->index2Rank(idx),_tag,
+                                _g_mpisync_dev._msync_communicator);
+              TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() sending rc = %d, idx %zd, dst %zd, tag %d\n",(unsigned)this,
+                            rc,idx, _participants->index2Rank(idx), _tag));
+            }
+          }
         }
-        int rc = MPI_Irecv(NULL,0, MPI_BYTE,
-                           _participants->index2Rank(0),_tag,
-                           _g_mpisync_dev._msync_communicator, &_req);
-        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",(unsigned)this,
-                      rc, _idx, _tag, _req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
-        // error checking?
-
-        return XMI_EAGAIN;
+        thr->setDone(true);
+        setStatus(XMI::Device::Done);
+        return XMI_SUCCESS;
       }
 
       unsigned _nThreads;
       XMI::Topology *_participants;
-      int _tag;
-      size_t _idx;
-      MPI_Request _req;
-      MessageStatus _pendingStatus;
+      int            _tag;
+      size_t         _idx;
+      MPI_Request    _req;
+      MessageStatus  _pendingStatus;
+      size_t         _root; // first rank in the sync - arbitrary 'root'
     }; //-- MPISyncMsg
 
     class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl>
@@ -204,8 +234,8 @@ namespace XMI
 
     inline bool MPISyncMdl::postMultisync_impl(xmi_multisync_t *msync)
     {
-      TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",(unsigned)this,
-                    msync->dispatch, msync->connection_id, msync->msgcount, msync->bytes, msync->request));
+      TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() connection_id %d, request %p\n",(unsigned)this,
+                    msync->connection_id, msync->request));
       MPISyncMsg *msg = new (msync->request) MPISyncMsg(_g_mpisync_dev, msync);
       _g_mpisync_dev.__post<MPISyncMsg>(msg);
       return true;

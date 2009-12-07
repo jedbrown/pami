@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/mpi/mpimultisync.cc
+/// \file test/internals/multisend/mpi/MPISyncMdl.cc
 /// \brief ???
 ///
 
@@ -62,8 +62,9 @@ int main(int argc, char ** argv)
 
   xmi_multisync_t multisync;
 
-  // simple barrier on the GI network... SMP mode
+  // simple barrier on the GI network... SMP mode    
   multisync.client = client;
+  multisync.connection_id = 0;
   multisync.context = 0;
   multisync.roles = (unsigned)-1;
   multisync.participants = (xmi_topology_t *)&__global.topology_global;
