@@ -84,8 +84,9 @@ public:
 		}
 		// printf skews timing too much...
 		//fprintf(stderr, "... before advance loop for %s.postMultisync\n", _name);
+		xmi_context_t ctx = XMI_Client_getcontext(msync->client,msync->context);
 		while (!_done) {
-			rc = XMI_Context_advance(XMI_Client_getcontext(msync->client,msync->context), 100);
+			rc = XMI_Context_advance(ctx, 100);
 			if (rc != XMI_SUCCESS) {
 				fprintf (stderr, "Failed advance first \"%s\"\n", _name);
 				return rc;
@@ -102,7 +103,7 @@ public:
 			return XMI_ERROR;
 		}
 		while (!_done) {
-			rc = XMI_Context_advance(XMI_Client_getcontext(msync->client,msync->context), 100);
+			rc = XMI_Context_advance(ctx, 100);
 			if (rc != XMI_SUCCESS) {
 				fprintf (stderr, "Failed advance second \"%s\"\n", _name);
 				return rc;
@@ -145,7 +146,7 @@ public:
 		// printf skews timing too much...
 		//fprintf(stderr, "... before advance loop for %s.postMultisync\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(XMI_Client_getcontext(msync->client,msync->context), 100);
+			rc = XMI_Context_advance(ctx, 100);
 			if (rc != XMI_SUCCESS) {
 				fprintf (stderr, "Failed advance last \"%s\"\n", _name);
 				return rc;

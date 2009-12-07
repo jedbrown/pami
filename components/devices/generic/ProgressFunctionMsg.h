@@ -122,9 +122,12 @@ inline void XMI::Device::ProgressFunctionDev::__post(ProgressFunctionMsg *msg) {
 
 inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 	ProgressFunctionMsg *msg = (ProgressFunctionMsg *)pf->request;
-	// need a better way to get xmi_context_t... perhaps via generic device?
-	xmi_context_t ctx = XMI_Client_getcontext(pf->client, pf->context);
 
+	// need a better way to get xmi_context_t...
+	// problem is that this "message" has not even been constructed yet,
+	// let alone posted to a generic device queue, so we have no other
+	// way to derive the xmi_context_t (unless it is passed-in).
+	xmi_context_t ctx = XMI_Client_getcontext(pf->client, pf->context);
 	int rc = pf->func(ctx, pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {
