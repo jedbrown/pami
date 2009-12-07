@@ -3,21 +3,21 @@
 #define __algorithms_executor_Barrier_h__
 
 #include "algorithms/interfaces/Schedule.h"
-#include "algorithms/interfaces/Executor.h"
+#include "algorithms/executor/Executor.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "algorithms/executor/OldBarrier.h"
 
-#include "algorithms/executor/ScheduleCache.h"
-
 #undef TRACE_ERR
-//#define TRACE_ERR(x) fprintf x
-#define TRACE_ERR(x)
+#define TRACE_ERR(x) fprintf x
+//#define TRACE_ERR(x)
+
+#include "algorithms/executor/ScheduleCache.h"
 
 namespace CCMI
 {
   namespace Executor
   {
-    class Barrier : public Interfaces::Executor
+    class BarrierExec : public Executor
     {
     public:      
       /// pointer to the multicast interface to send messages
@@ -61,8 +61,8 @@ namespace CCMI
         {
           _phasevec[count][_iteration] -= _cache.getSrcTopology(count)->size();
 
-          TRACE_ERR((stderr,"<%X>Executor::Barrier::decrementVector phase %d, nranks %d, vec %d\n",
-                     (int) this,count,_cache.getSrcNumRanks(count),  _phasevec[count][_iteration]));
+          TRACE_ERR((stderr,"<%X>Executor::BarrierExec::decrementVector phase %d, nranks %d, vec %d\n",
+                     (int) this,count,_cache.getSrcTopology(count)->size(),  _phasevec[count][_iteration]));
         }
 
         _senddone  =   false;
@@ -72,16 +72,16 @@ namespace CCMI
       static void staticNotifySendDone(xmi_context_t context, void *cd, xmi_result_t err)
       {
         xmi_quad_t * info = NULL;
-        TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));
+        TRACE_ERR((stderr,"<%X>Executor::BarrierExec::staticNotifySendDone\n",(int)cd));
 
-        Barrier *barrier = (Barrier *) cd;
+        BarrierExec *barrier = (BarrierExec *) cd;
         barrier->internalNotifySendDone( *info );
       }
 
     public:
 
       /// Default Constructor
-      Barrier() : Executor()
+      BarrierExec() : Executor()
       {
         _start    = 0;
         _phase    = 0;
@@ -89,14 +89,14 @@ namespace CCMI
       }
 
       /// Main constructor to initialize the executor
-      Barrier(unsigned nranks, unsigned *ranks,unsigned comm,
+      BarrierExec(unsigned nranks, unsigned *ranks,unsigned comm,
               unsigned connid,
               Interfaces::NativeInterface *ninterface):
       Executor(),
       _native(ninterface),
       _connid(connid)
       {
-        TRACE_ERR((stderr,"<%X>Executor::Barrier::::ctor(nranks %d,comm %X,connid %d)\n",
+        TRACE_ERR((stderr,"<%X>Executor::BarrierExec::::ctor(nranks %d,comm %X,connid %d)\n",
                    (int)this, nranks, comm, connid));
         _start          =  0;
         _phase          =  0;
@@ -146,17 +146,17 @@ namespace CCMI
       /// Start sending barrier operation
       virtual void start();
 
-    };  //-- Barrier
+    };  //-- BarrierExec
   };
 };  // namespace CCMI::Executor
 
-inline void CCMI::Executor::Barrier::sendNext()
+inline void CCMI::Executor::BarrierExec::sendNext()
 {
   CCMI_assert(_phase <= (_start + _nphases));
 
   if(_phase == (_start + _nphases))
   {
-    TRACE_ERR((stderr,"<%X>Executor::Barrier::sendNext DONE _cb_done %X, _phase %d, _clientdata %X\n",
+    TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext DONE _cb_done %X, _phase %d, _clientdata %X\n",
                (int) this, (int)_cb_done, _phase, (int)_clientdata));
     if(_cb_done) _cb_done(_clientdata, NULL, XMI_SUCCESS);
     _senddone = false;
@@ -169,7 +169,7 @@ inline void CCMI::Executor::Barrier::sendNext()
   int ndest = topology->size();
   _minfo.dst_participants = (xmi_topology_t *)topology;
   
-  TRACE_ERR((stderr,"<%X>Executor::Barrier::sendNext _phase %d, ndest %zd, _destrank %zd, _connid %d, _clientdata %X\n", (int) this,_phase, ndest, dstranks[0], _connid, (int)_clientdata));
+  TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext _phase %d, ndest %zd, _connid %d, _clientdata %X\n", (int) this,_phase, ndest, _connid, (int)_clientdata));
 
   ///We can now send any number of messages in barrier
   if(ndest > 0)
@@ -181,7 +181,7 @@ inline void CCMI::Executor::Barrier::sendNext()
     if( (_phase == (_start + _nphases - 1)) &&
         (_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size()) )
     {
-      TRACE_ERR((stderr,"<%X>Executor::Barrier::sendNext set callback %X\n",(int)this, (int)_cb_done));
+      TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext set callback %X\n",(int)this, (int)_cb_done));
       _minfo.cb_done.function   = _cb_done;
       _minfo.cb_done.clientdata = _clientdata;
       _phase ++;
@@ -203,9 +203,9 @@ inline void CCMI::Executor::Barrier::sendNext()
 }
 
 /// Entry function called to start the barrier
-inline void  CCMI::Executor::Barrier::start()
+inline void  CCMI::Executor::BarrierExec::start()
 {
-  TRACE_ERR((stderr,"<%X>Executor::Barrier::start\n",(int) this));
+  TRACE_ERR((stderr,"<%X>Executor::BarrierExec::start\n",(int) this));
   decrementVector();
   sendNext();
 }
@@ -214,7 +214,7 @@ inline void  CCMI::Executor::Barrier::start()
 ///
 /// \brief grab the info of the message
 ///
-inline void CCMI::Executor::Barrier::notifyRecv(unsigned          src,
+inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
 						const xmi_quad_t  & info,
 						char            * buf,
 						unsigned          size)
@@ -224,7 +224,7 @@ inline void CCMI::Executor::Barrier::notifyRecv(unsigned          src,
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] ++;
 
-  TRACE_ERR((stderr,"<%X>Executor::Barrier::notifyRecv phase %d, vec %d\n",(int)this,
+  TRACE_ERR((stderr,"<%X>Executor::BarrierExec::notifyRecv phase %d, vec %d\n",(int)this,
              hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration]));
 
   //Start has not been called, just record recv and return
@@ -246,9 +246,9 @@ inline void CCMI::Executor::Barrier::notifyRecv(unsigned          src,
 ///
 /// \brief Entry function to indicate the send has finished
 ///
-inline void CCMI::Executor::Barrier::internalNotifySendDone( const xmi_quad_t & info )
+inline void CCMI::Executor::BarrierExec::internalNotifySendDone( const xmi_quad_t & info )
 {
-  TRACE_ERR((stderr,"<%X>Executor::Barrier::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
+  TRACE_ERR((stderr,"<%X>Executor::BarrierExec::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
 
   _senddone = true;
 

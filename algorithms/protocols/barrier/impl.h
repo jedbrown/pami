@@ -37,9 +37,9 @@ namespace CCMI
                            binomial_analyze,
                            XMI_SYSDEP_CLASS,
                            XMI_COLL_MCAST_CLASS> OldBinomialBarrier;
-      typedef OldBarrierFactoryT <BinomialBarrier,
-                                  XMI_SYSDEP_CLASS,
-                                  XMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
+      typedef OldBarrierFactoryT <OldBinomialBarrier,
+	                          XMI_SYSDEP_CLASS,
+	                          XMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
     };
   };
 };

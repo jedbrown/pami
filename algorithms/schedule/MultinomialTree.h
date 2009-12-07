@@ -106,7 +106,7 @@ namespace CCMI
 	else if (_radix == 4)
 	  _logradix = 2;
 	
-        _nphases = getMaxPhases(NULL, _nranks, &_nphbino);
+        _nphases = getMaxPhases(_nranks, &_nphbino);
         _hnranks = (1 << (_nphbino * _logradix)); // threshold for special handling
       }
 
@@ -311,6 +311,7 @@ template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
 MultinomialTreeT(unsigned myrank, XMI::Topology *topology):_map(myrank, topology)
 {
+  initBinoSched();
 }
 
 
@@ -325,6 +326,7 @@ template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
 MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks):_topology(ranks, nranks), _map(myrank, &_topology)
 {
+  initBinoSched();
 }
 
 

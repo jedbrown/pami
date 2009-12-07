@@ -95,14 +95,14 @@ namespace CCMI
 	    XMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
 	  }
 	  assert(geometry != NULL);
-	  CCMI::Executor::Barrier *executor = (CCMI::Executor::Barrier*)
+	  CCMI::Executor::BarrierExec *executor = (CCMI::Executor::BarrierExec*)
 	    geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
 	  CCMI_assert (executor != NULL);
 	  TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
 		      (int)factory,cdata->_comm,(int)executor));
 	  
 	  //Override poly morphism
-	  executor->CCMI::Executor::Barrier::notifyRecv (peer, *info, NULL, 0);
+	  executor->CCMI::Executor::BarrierExec::notifyRecv (peer, *info, NULL, 0);
 	  
 	  *rcvlen    = 0;
 	  *recvpwq   = 0;

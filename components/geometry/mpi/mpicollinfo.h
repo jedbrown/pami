@@ -56,6 +56,7 @@ typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep>,
 
 #include "algorithms/protocols/alltoall/Alltoall.h"
 
+#define OLD_CCMI_BARRIER  1
 
 typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep, size_t> AlltoallProtocol;
 typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep, size_t> AlltoallFactory;
@@ -222,11 +223,12 @@ namespace XMI
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
+#if  OLD_CCMI_BARRIER
     template <class T_Device, class T_Sysdep>
-    class OldCCMIBinomBarrierInfo:public CollInfo<T_Device>
+    class CCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
     public:
-      OldCCMIBinomBarrierInfo(T_Device *dev,
+      CCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
                            xmi_mapidtogeometry_fn fcn):
         CollInfo<T_Device>(dev),
@@ -244,6 +246,7 @@ namespace XMI
       CCMI_Executor_t                                   _barrier_executor;
     };
 
+#else
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
@@ -264,7 +267,7 @@ namespace XMI
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                _barrier_executor;
     };
-
+#endif
 
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBroadcastInfo:public CollInfo<T_Device>

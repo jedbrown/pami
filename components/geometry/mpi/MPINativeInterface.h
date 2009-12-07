@@ -33,7 +33,7 @@ namespace XMI {
   typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<T_Device,EagerMPI,XMI::Device::MPIBcastMdl> P2pDispatchMulticastProtocol;
 
   public:
-  MPINativeInterface(T_Device *dev): CCMI::Interfaces::NativeInterface(__global.mapping.task(), __global.mapping.size()), _device(dev), _protocol(_status) {}
+  MPINativeInterface(T_Device *dev): CCMI::Interfaces::NativeInterface(__global.mapping.task(), __global.mapping.size()), _device(dev), _protocol(_status), _dispatch(0) {}
   
     /// \brief this call is called when the native interface is initialized
     virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie) {
@@ -41,11 +41,15 @@ namespace XMI {
 
       _protocol.registerMcastRecvFunction (dispatch, fn.multicast, cookie);
 
-      CCMI_assert (_status == XMI_SUCCESS);
+      //CCMI_assert (_status == XMI_SUCCESS);
+      _dispatch = dispatch;
       dispatch ++;
     }
 
-    virtual xmi_result_t multicast    (xmi_multicast_t *mcast) { XMI_Multicast (mcast); }
+    virtual xmi_result_t multicast    (xmi_multicast_t *mcast) { 
+      mcast->dispatch = _dispatch;
+      XMI_Multicast (mcast); 
+    }
     virtual xmi_result_t multysync    (xmi_multisync_t *msync) { XMI_Multisync (msync); }
     virtual xmi_result_t multicombine (xmi_multicombine_t *mcombine) { XMI_Multicombine (mcombine); }
 
@@ -54,6 +58,7 @@ namespace XMI {
 
     P2pDispatchMulticastProtocol      _protocol;
     xmi_result_t                      _status;
+    unsigned                          _dispatch;
   };
 };
 

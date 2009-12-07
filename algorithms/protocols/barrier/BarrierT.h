@@ -30,7 +30,7 @@ namespace CCMI
       /// \brief Binomial barrier
       ///
       template <class T_Schedule, AnalyzeFn afn>
-      class BarrierT : public CCMI::Executor::Barrier
+      class BarrierT : public CCMI::Executor::BarrierExec
       {
         ///
         /// \brief The schedule for binomial barrier protocol
@@ -46,11 +46,11 @@ namespace CCMI
         ///
         BarrierT  (Interfaces::NativeInterface  * mInterface,
                    XMI_GEOMETRY_CLASS           * geometry) :
-	CCMI::Executor::Barrier (geometry->nranks(),
-				 geometry->ranks(),
-				 geometry->comm(),
-				 0,
-				 mInterface),
+	CCMI::Executor::BarrierExec (geometry->nranks(),
+				     geometry->ranks(),
+				     geometry->comm(),
+				     0,
+				     mInterface),
 	  _myschedule (__global.mapping.task(), geometry->ranks(), geometry->nranks())
 	{
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
