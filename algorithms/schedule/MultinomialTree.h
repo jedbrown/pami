@@ -209,7 +209,7 @@ namespace CCMI
       {
 	unsigned *srcranks;
 	topology->rankList(&srcranks);
-	CCMI_assert(srcranks == NULL);
+	CCMI_assert(srcranks != NULL);
 
 	unsigned nsrc = 0;
         if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
@@ -238,7 +238,7 @@ namespace CCMI
       {
 	unsigned *dstranks;
 	topology->rankList(&dstranks);
-	CCMI_assert(dstranks == NULL);
+	CCMI_assert(dstranks != NULL);
 
 	unsigned ndst = 0;
         if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||

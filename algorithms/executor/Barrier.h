@@ -8,8 +8,8 @@
 #include "algorithms/executor/OldBarrier.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
-//#define TRACE_ERR(x)
+//#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x)
 
 #include "algorithms/executor/ScheduleCache.h"
 
