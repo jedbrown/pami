@@ -56,7 +56,7 @@ typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep>,
 
 #include "algorithms/protocols/alltoall/Alltoall.h"
 
-#define OLD_CCMI_BARRIER  0
+#define OLD_CCMI_BARRIER  1
 
 typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep, size_t> AlltoallProtocol;
 typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep, size_t> AlltoallFactory;
