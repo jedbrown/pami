@@ -174,6 +174,13 @@ public:
 
 	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }
 
+	/// \brief virtual method used to activate a message that was enqueued earlier
+	///
+	/// \param[in] devPosted	was msg was previously posted to sub-device?
+	/// \return	bool whether message is complete
+	///
+	virtual bool postNext(bool devPosted) = 0;
+
 protected:
 	MessageStatus _status;
 	Device::Generic::BaseGenericDevice &_QS;
@@ -209,13 +216,6 @@ public:
 	MultiQueueMessage<2>(Generic_QS, cb, client, context)
 	{
 	}
-
-	/// \brief Message is Done, perform all completion tasks
-	///
-	/// Typically the message will invoke the device complete() method
-	/// (to be dequeued from the device) and then execute the users callback.
-	///
-	virtual void complete(xmi_context_t context) = 0;
 
 protected:
 }; /* class GenericMessage */

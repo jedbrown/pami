@@ -66,9 +66,7 @@ public:
 	{
 	}
 
-	// This is a virtual function, but declaring inline here avoids linker
-	// complaints about multiple definitions.
-	inline void complete(xmi_context_t context);
+	STD_POSTNEXT(WQRingBcastDev,WQRingBcastThr)
 
 protected:
 	//friend class WQRingBcastDev; // Until C++ catches up with real programming languages:
@@ -205,11 +203,6 @@ private:
 	size_t _me;
 	XMI::PipeWorkQueue _wq[XMI_MAX_PROC_PER_NODE];
 }; // class WQRingBcastMdl
-
-void WQRingBcastMsg::complete(xmi_context_t context) {
-	((WQRingBcastDev &)_QS).__complete<WQRingBcastMsg>(this);
-	executeCallback(context);
-}
 
 inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;

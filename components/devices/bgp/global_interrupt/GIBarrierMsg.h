@@ -64,13 +64,6 @@ namespace BGP {
 class giMessage : public XMI::Device::Generic::GenericMessage {
 public:
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief     Advance routine
-	/// \returns:  The MsgStatus, Initialized, Active, or Done
-	//////////////////////////////////////////////////////////////////
-	inline void complete(xmi_context_t context);
-	inline size_t objsize_impl() { return sizeof(giMessage); }
-
 protected:
 	friend class giModel;
 
@@ -83,6 +76,8 @@ protected:
 				msync->client, msync->context)
 	{
 	}
+
+	STD_POSTNEXT(giDevice,giThread)
 
 private:
 	//friend class giDevice;
@@ -112,7 +107,7 @@ private:
 				thr->setDone(true);
 				break;
 			default:
-				XMI_abort();
+				XMI_abortf("Unexpected message status of %d (loop %d)\n", stat, loop);
 			}
 		}
 		setStatus(stat);
@@ -149,11 +144,6 @@ private:
 }; // namespace BGP
 }; // namespace Device
 }; // namespace XMI
-
-inline void XMI::Device::BGP::giMessage::complete(xmi_context_t context) {
-	((XMI::Device::BGP::giDevice &)_QS).__complete<giMessage>(this);
-	executeCallback(context);
-}
 
 inline bool XMI::Device::BGP::giModel::postMultisync_impl(xmi_multisync_t *msync) {
 	// assert(participants == ctor topology)

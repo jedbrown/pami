@@ -68,7 +68,7 @@ public:
           {
           }
 
-	inline void complete(xmi_context_t context);
+	STD_POSTNEXT(LocalBcastWQDevice,LocalBcastWQThread)
 
 private:
 	//friend class LocalBcastWQDevice;
@@ -145,11 +145,6 @@ private:
 	unsigned _peer;
 	unsigned _npeers;
 }; // class LocalBcastWQModel
-
-void LocalBcastWQMessage::complete(xmi_context_t context) {
-        ((LocalBcastWQDevice &)_QS).__complete<LocalBcastWQMessage>(this);
-        executeCallback(context);
-}
 
 inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);

@@ -91,7 +91,8 @@ public:
 	{
 	}
 
-	inline void complete(xmi_context_t context);
+	CN_STD_POSTNEXT(CNAllreduceDevice,CNAllreduceThread)
+
 protected:
 	//friend class CNAllreduceDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2>;
@@ -215,11 +216,6 @@ inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
 	if (c >= _nThreads) {
 		setStatus(XMI::Device::Done);
 	}
-}
-
-void CNAllreduceMessage::complete(xmi_context_t context) {
-	((CNAllreduceDevice &)_QS).__complete<CNAllreduceMessage>(this);
-	executeCallback(context);
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")

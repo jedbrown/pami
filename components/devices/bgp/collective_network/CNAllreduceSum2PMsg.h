@@ -144,7 +144,7 @@ public:
 	{
 	}
 
-	inline void complete(xmi_context_t context);
+	CN_STD_POSTNEXT(CNAllreduce2PDevice,CNAllreduce2PThread)
 
 protected:
 	//friend class CNAllreduce2PDevice;
@@ -327,11 +327,6 @@ inline void CNAllreduce2PMessage::__completeThread(CNAllreduce2PThread *thr) {
 	if (c >= _nThreads) {
 		setStatus(XMI::Device::Done);
 	}
-}
-
-void CNAllreduce2PMessage::complete(xmi_context_t context) {
-	((CNAllreduce2PDevice &)_QS).__complete<CNAllreduce2PMessage>(this);
-	executeCallback(context);
 }
 
 inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {

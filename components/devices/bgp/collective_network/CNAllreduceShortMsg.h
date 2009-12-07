@@ -78,8 +78,9 @@ public
 	{
 	}
 
+	CN_STD_POSTNEXT(CNAllreduceShortDevice,CNAllreduceShortThread)
+
 	inline xmi_result_t advanceThread(xmi_context_t context, void *t);
-	inline void complete(xmi_context_t context);
 protected:
 	//friend class CNAllreduceShortDevice;
 	friend class XMI::Device::Generic::SharedQueueSubDevice<CNAllreduceShortModel,CNDevice,CNAllreduceShortMessage,CNAllreduceShortThread,2>;
@@ -392,11 +393,6 @@ inline void CNAllreduceShortMessage::__completeThread(CNAllreduceShortThread *th
 	if (c >= _nThreads) {
 		setStatus(XMI::Device::Done);
 	}
-}
-
-void CNAllreduceShortMessage::complete(xmi_context_t context) {
-	((CNAllreduceShortDevice &)_QS).__complete(this);
-	executeCallback(context);
 }
 
 xmi_result_t CNAllreduceShortMessage::advanceThread(xmi_context_t context, void *t) {

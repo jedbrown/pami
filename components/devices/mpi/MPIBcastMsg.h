@@ -117,9 +117,7 @@ namespace XMI
         //XMI_assertf(_rwq || _iwq, "MPIBcastMsg has neither input or output data\n");
       }
 
-      // This is a virtual function, but declaring inline here avoids linker
-      // complaints about multiple definitions.
-      inline void complete(xmi_context_t context);
+	STD_POSTNEXT(MPIBcastDev,MPIBcastThr)
 
     protected:
       //friend class MPIBcastDev; // Until C++ catches up with real programming languages:
@@ -303,13 +301,6 @@ namespace XMI
 
     private:
     }; // class MPIBcastMdl
-
-    void MPIBcastMsg::complete(xmi_context_t context)
-    {
-      ((MPIBcastDev &)_QS).__complete<MPIBcastMsg>(this);
-      TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::complete() \n",(unsigned)this));
-      executeCallback(context);
-    }
 
     inline bool MPIBcastMdl::postMulticast_impl(xmi_multicast_t *mcast)
     {

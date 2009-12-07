@@ -74,9 +74,7 @@ public:
 		}
 	}
 
-	// This is a virtual function, but declaring inline here avoids linker
-	// complaints about multiple definitions.
-	inline void complete(xmi_context_t context);
+	STD_POSTNEXT(WQRingReduceDev,WQRingReduceThr)
 
 protected:
 	//friend class WQRingReduceDev;
@@ -213,11 +211,6 @@ private:
 	size_t _me;
 	XMI::PipeWorkQueue _wq[XMI_MAX_PROC_PER_NODE];
 }; // class WQRingReduceMdl
-
-void WQRingReduceMsg::complete(xmi_context_t context) {
-	((WQRingReduceDev &)_QS).__complete<WQRingReduceMsg>(this);
-	executeCallback(context);
-}
 
 inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	XMI::Topology *data_topo = (XMI::Topology *)mcomb->data_participants;

@@ -78,6 +78,23 @@ public:
 protected:
 }; // class GenericSubDevSendq
 
+// in this case, threads come from sub-device...
+// (others might have threads in the message, or ???)
+// postToGeneric() will only post threads that are not Done...
+#define STD_POSTNEXT(T_Device,T_Thread)							\
+	inline bool postNext(bool devPosted) {						\
+		T_Thread *t;								\
+		int N, n;								\
+		setStatus(XMI::Device::Initialized);					\
+		static_cast<T_Device &>(_QS).getThreads(&t, &N);			\
+		n = __setThreads(t, N);							\
+		if (!devPosted && getStatus() == XMI::Device::Done) {			\
+			return true;							\
+		}									\
+		static_cast<T_Device &>(_QS).postToGeneric(this, t, sizeof(*t), n);	\
+		return false;								\
+	}
+
 class GenericSubDevice : public BaseGenericDevice {
 private:
 public:
@@ -177,9 +194,31 @@ public:
 		return _queue.size();
 	}
 
+	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
+		/* assert msg == dequeue(); */
+		dequeue();
+		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
+		if (nxt) {
+			// skips posting to sub-device... that was already done.
+			// must setup threads and post threads+message to generic device.
+			(void)nxt->postNext(true);
+			// Note: message might have completed here, but handling
+			// that is too complicated so we just let the generic
+			// device do the completion when it finds it on the queue.
+			// (recursion possibility is one complication)
+		}
+	}
+
+	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
+		_generics->post(msg, t, l, n);
+	}
+
+	inline XMI::Device::Generic::Device *getGeneric(size_t contextId) { return &_generics[contextId]; }
+
 protected:
-	inline void ___init(XMI::SysDep &sd) {
+	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *generics) {
 		_sd = &sd;
+		_generics = generics;
 	}
 
 	/// \brief tell whether messages support blocking advance
@@ -208,6 +247,7 @@ protected:
 	int _nRoles;
 	int _repl;
 	XMI::SysDep *_sd;
+	XMI::Device::Generic::Device *_generics;
 }; /* class GenericSubDevice */
 
 /// \brief Simple Sub-Device where no threading is used.
@@ -231,28 +271,16 @@ public:
 //		}
 	}
 
-private:
-	template <class T_Message>
-	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {
-		// While threads aren't used, a thread object is needed
-		// for the advance queue
-		msg->setStatus(XMI::Device::Initialized);
-		int t = static_cast<T_Message*>(msg)->__setThreads(&_threads[0], NUM_THREADS);
-		XMI_assert_debug(t == NUM_THREADS); t = t;
-	}
-
-	inline void __post_msg(XMI::Device::Generic::GenericMessage *msg) {
-		// doesn't matter which generic device "slice" we use to post...
-		// the routine selects actual slice(s) based on msg.
-		_generics->post(msg, &_threads[0], sizeof(_threads[0]), NUM_THREADS);
+	inline void getThreads(T_Thread **t, int *n) {
+		*t = _threads;
+		*n = NUM_THREADS;
 	}
 
 protected:
 	friend class XMI::Device::Generic::Device;
 
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
-		_generics = devices;
-		___init(sd);
+		___init(sd, devices);
 	}
 
 	inline int advanceRecv(size_t context) { return 0; }
@@ -265,32 +293,18 @@ public: // temporary
 
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
+		// assert(isLocked(msg->getContext()));
 		bool first = (getCurrent() == NULL);
 		if (first) {
-			__start_msg<T_Message>(msg); // may also try advance...
-			if (msg->getStatus() == XMI::Device::Done) {
-				msg->executeCallback(_generics[msg->getContextId()].getContext());
+			if (static_cast<T_Message*>(msg)->postNext(false)) {
+				msg->executeCallback(getGeneric(msg->getContextId())->getContext());
 				return;
 			}
-			__post_msg(msg);
 		}
 		XMI::Device::Generic::GenericSubDevice::post(msg);
 	}
 
-	template <class T_Message>
-	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
-		/* assert msg == dequeue(); */
-		dequeue();
-		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
-		if (nxt) {
-			__start_msg<T_Message>(nxt); // may also try advance...
-			// don't complete here - too complicated recursion potential
-			__post_msg(nxt);
-		}
-	}
-
 protected:
-	XMI::Device::Generic::Device *_generics;
 	T_Thread _threads[NUM_THREADS];
 }; // class SimpleSubDevice
 
@@ -348,11 +362,10 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	///
 	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
-		_generics = devices;
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
 		_init = 1;
-		___init(sd);
+		___init(sd, devices);
 	}
 
 	inline void post_msg(XMI::Device::Generic::GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
@@ -388,11 +401,8 @@ public:
 		return getCurrent();
 	}
 
-	inline XMI::Device::Generic::Device *getGeneric(size_t contextId) { return &_generics[contextId]; }
-
 private:
 	int _init;
-	XMI::Device::Generic::Device *_generics;
 	GenericDeviceCounter _doneThreads;
 	unsigned _dispatch_id;
 }; // class CommonQueueSubDevice
@@ -425,6 +435,15 @@ public:
 	}
 
 	inline T_CommonDevice *common() { return _common; }
+
+	inline void getThreads(T_Thread **t, int *n) {
+		*t = _threads;
+		*n = NUM_THREADS;
+	}
+
+	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
+		_common->postToGeneric(msg, t, l, n);
+	}
 private:
 	template <class T_Message>
 	inline void __start_msg(XMI::Device::Generic::GenericMessage *msg) {

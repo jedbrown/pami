@@ -213,9 +213,9 @@ namespace Generic {
 		// just further delay the advance of real work when present.
 
 		//if (!__Threads.mutex()->tryAcquire()) continue;
-		GenericThread *thr, *nxt;
-		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxt) {
-			nxt = (GenericThread *)thr->next();
+		GenericThread *thr, *nxtthr;
+		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
+			nxtthr = (GenericThread *)thr->next();
 			++events;
 			xmi_result_t rc = thr->executeThread(__context);
 			if (rc <= 0) {
@@ -228,13 +228,14 @@ namespace Generic {
 		//+ core_mutex.release();
 
 		// Now check everything on the completion queue...
-		GenericMessage *msg;
-		for (msg = (GenericMessage *)__GenericQueue.peekHead();
-				msg; msg = (GenericMessage *)msg->next(1)) {
+		GenericMessage *msg, *nxtmsg;
+		for (msg = (GenericMessage *)__GenericQueue.peekHead(); msg; msg = nxtmsg) {
+			nxtmsg = (GenericMessage *)msg->next(1);
 			if (msg->getStatus() == Done) {
 				++events;
 				__GenericQueue.deleteElem(msg);
-				msg->complete(__context);
+				static_cast<GenericSubDevice &>(msg->getQS()).__complete(msg);
+				msg->executeCallback(__context);
 			}
 		}
 		return events;

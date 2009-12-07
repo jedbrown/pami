@@ -119,6 +119,7 @@ namespace XMI
 	work->setFunc(work_fn);
 	work->setCookie(cookie);
 	work->setDone((xmi_callback_t){__work_done, (void *)work});
+	work->setContext(_contextid);
         work->postWorkDirect();
         return XMI_SUCCESS;
       }
