@@ -65,6 +65,9 @@ namespace XMI
           *protocol;/// this protocol object - to retrieve allocator
         } allocation_t;
       public:
+      static const int NUM_ROLES = 2;
+      static const int REPL_ROLE = 1;
+      static const size_t sizeof_msg = sizeof(allocation_t);
 
         ///
         /// \brief Base class constructor
@@ -116,7 +119,7 @@ namespace XMI
           TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol status %d\n",(unsigned)this,status));
         }
 
-        void registerMcastRecvFunction_impl(int dispatch_id,
+        xmi_result_t registerMcastRecvFunction_impl(int dispatch_id,
                                             xmi_dispatch_multicast_fn     dispatch,
                                             void                         *cookie)
         {
@@ -133,7 +136,7 @@ namespace XMI
                                               __global.mapping.task(),
                                               NULL, 0, status);
           XMI_assertf(status == XMI_SUCCESS,"<%#8.8X>P2pDispatchMulticastProtocol::register status=%d\n",(unsigned)this,status);
-
+          return status;
         }
         ///
         /// \brief Base class destructor.

@@ -71,12 +71,12 @@ namespace XMI
         ~ActiveMessageMulticastModel ()
         {
         };
-        inline void registerMcastRecvFunction (int dispatch_id,
+        inline xmi_result_t registerMcastRecvFunction (int dispatch_id,
                                                xmi_dispatch_multicast_fn     recv_func,
                                                void                         *async_arg);
       };
       template <class T_Model>
-      void ActiveMessageMulticastModel<T_Model>::registerMcastRecvFunction (int dispatch_id,
+      xmi_result_t ActiveMessageMulticastModel<T_Model>::registerMcastRecvFunction (int dispatch_id,
                                                                             xmi_dispatch_multicast_fn     recv_func,
                                                                             void                         *async_arg)
       {
