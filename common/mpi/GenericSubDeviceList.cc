@@ -15,9 +15,7 @@
 
 // This gets included in a C++ file so it needs to actually instantiate things...
 
-XMI::Device::MPISyncDev  _g_mpisync_dev;
+XMI::Device::MPISyncDev<XMI::Device::MPISyncThr>  _g_mpisync_dev;
 
-XMI::Device::MPIBcastDev _g_mpibcast_dev;
-// The generic bcast device needs its own communicator so it doesn't conflict with XMI::Device::MPIDevice
-MPI_Comm                 _g_mpibcast_communicator; 
+XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> _g_mpibcast_dev;
 

@@ -284,7 +284,7 @@ public: // temporary
 		dequeue();
 		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
 		if (nxt) {
-			__start_msg<T_Message>(nxt);
+			__start_msg<T_Message >(nxt);
 			// could try to advance here?
 			__post_msg(nxt);
 		}

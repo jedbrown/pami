@@ -36,20 +36,21 @@ namespace XMI
     class MPISyncMdl;
     class MPISyncMsg;
     typedef XMI::Device::Generic::SimpleAdvanceThread MPISyncThr; //GenericAdvanceThread
-    class MPISyncDev : public XMI::Device::Generic::SimpleSubDevice<MPISyncThr>
+    template< class T_Thread>
+    class MPISyncDev : public XMI::Device::Generic::SimpleSubDevice<T_Thread>
     {
     public:
-      MPI_Comm _communicator; 
+      MPI_Comm _msync_communicator; 
       MPISyncDev() :
-      XMI::Device::Generic::SimpleSubDevice<MPISyncThr>() 
+      XMI::Device::Generic::SimpleSubDevice<T_Thread>() 
       {
-        MPI_Comm_dup(MPI_COMM_WORLD,&_communicator);
+        MPI_Comm_dup(MPI_COMM_WORLD,&_msync_communicator);
       };
     };
   }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::MPISyncDev _g_mpisync_dev;
+extern XMI::Device::MPISyncDev<XMI::Device::MPISyncThr> _g_mpisync_dev;
 
 namespace XMI
 {
@@ -94,7 +95,7 @@ namespace XMI
       inline void complete(xmi_context_t context);
 
     protected:
-      friend class MPISyncDev; 
+      friend class MPISyncDev<XMI::Device::MPISyncThr>; 
       friend class XMI::Device::Generic::SimpleSubDevice<MPISyncThr>; // this makes no sense
 
       ADVANCE_ROUTINE(advanceThread,MPISyncMsg,MPISyncThr);
@@ -153,13 +154,13 @@ namespace XMI
         {
           int rc = MPI_Send(NULL, 0, MPI_BYTE,
                         _participants->index2Rank(idx),tag,
-                        _g_mpisync_dev._communicator);
+                        _g_mpisync_dev._msync_communicator);
           TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
                         rc,idx, _participants->index2Rank(idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
         }
         int rc = MPI_Irecv(NULL,0, MPI_BYTE,
                            _participants->index2Rank(0),_tag,
-                           _g_mpisync_dev._communicator, &_req);
+                           _g_mpisync_dev._msync_communicator, &_req);
         TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",(unsigned)this,
                       rc, _idx, _tag, _req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
         // error checking?
@@ -196,7 +197,7 @@ namespace XMI
 
     void MPISyncMsg::complete(xmi_context_t context)
     {
-      ((MPISyncDev &)_QS).__complete<MPISyncMsg>(this);
+      ((MPISyncDev<XMI::Device::MPISyncThr> &)_QS).__complete<MPISyncMsg>(this);
       TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::complete() \n",(unsigned)this));
       executeCallback(context);
     }

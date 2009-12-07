@@ -34,15 +34,23 @@ namespace XMI
   {
 
     class MPIBcastMdl;
-    class MPIBcastMsg;
     typedef XMI::Device::Generic::SimpleAdvanceThread MPIBcastThr;
-    typedef XMI::Device::Generic::SimpleSubDevice<MPIBcastThr> MPIBcastDev;
 
+    template< class T_Thread>
+    class MPIBcastDev : public XMI::Device::Generic::SimpleSubDevice<T_Thread>
+    {
+    public:
+      MPI_Comm _mcast_communicator; 
+      MPIBcastDev() :
+      XMI::Device::Generic::SimpleSubDevice<T_Thread>() 
+      {
+        MPI_Comm_dup(MPI_COMM_WORLD,&_mcast_communicator);
+      };
+    };
   }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::MPIBcastDev _g_mpibcast_dev;
-extern MPI_Comm                 _g_mpibcast_communicator; 
+extern XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> _g_mpibcast_dev;
 
 namespace XMI
 {
@@ -52,6 +60,7 @@ namespace XMI
 ///
 /// \brief 
 ///
+    template < class T_Device >
     class MPIBcastMsg : public XMI::Device::Generic::GenericMessage
     {
     private:
@@ -62,10 +71,11 @@ namespace XMI
         NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
       };
     public:
-      MPIBcastMsg(Generic::BaseGenericDevice &Generic_QS,
+      MPIBcastMsg(T_Device &Generic_QS, //Generic::BaseGenericDevice &Generic_QS,
                   xmi_multicast_t *mcast) :
       XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
                                            mcast->client, mcast->context),
+      _device(&Generic_QS),
       _dst((XMI::Topology *)mcast->dst_participants),
       _iwq((XMI::PipeWorkQueue *)mcast->src),
       _rwq((XMI::PipeWorkQueue *)mcast->dst),
@@ -91,9 +101,9 @@ namespace XMI
         if(iamroot)
         {
           //_rwq = NULL;// \todo Why?  Can't a source (root) also be a destination?
-          
+
           // no actual data to send, indicate we're done with a pending status (for advance)
-          if((_iwq == NULL) && (_bytes == 0))
+          if((_iwq == NULL) || (_bytes == 0))
           {
             TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg root has no data\n",(unsigned)this));
             // We have to use a local pending status because the sub device is too smart for us and will
@@ -120,12 +130,19 @@ namespace XMI
       // This is a virtual function, but declaring inline here avoids linker
       // complaints about multiple definitions.
       inline void complete(xmi_context_t context);
+/* Compile with xl but not gcc.
+      {
+        ((T_Device &)_QS).__complete<MPIBcastMsg>(this);
+        TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::complete() \n",(unsigned)this));
+        executeCallback(context);
+      }
+*/
 
     protected:
       //friend class MPIBcastDev; // Until C++ catches up with real programming languages:
       friend class XMI::Device::Generic::SimpleSubDevice<MPIBcastThr>;
 
-      ADVANCE_ROUTINE(advanceThread,MPIBcastMsg,MPIBcastThr);
+      ADVANCE_ROUTINE(advanceThread,MPIBcastMsg<T_Device>,MPIBcastThr);
       inline int __setThreads(MPIBcastThr *t, int n)
       {
         int nt = 0;
@@ -200,7 +217,7 @@ namespace XMI
           if(_currBytes == 0)
           {
             return XMI_EAGAIN;
-           }
+          }
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() sending, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
                         _idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           int rc = 0;
@@ -213,7 +230,7 @@ namespace XMI
           {
             rc = MPI_Isend(_currBuf, _currBytes, MPI_BYTE,
                            _dst->index2Rank(_idx), _tag,
-                           _g_mpibcast_communicator, &_req);
+                           _device->_mcast_communicator, &_req);
           }
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
                         rc,_idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
@@ -226,17 +243,19 @@ namespace XMI
           XMI_assert(_rwq);
           if(flag)
           {
-            if((size_t)status.count < _currBytes)
+            int scount;
+            MPI_Get_count(&status, MPI_BYTE, &scount);
+            if((size_t)scount < _currBytes)
             {
               // make sure we only count what was recv'ed
-              _currBytes = status.count;
+              _currBytes = scount;
             }
             else
             {
               // how does MPI_Status.count work?
-              XMI_assertf((size_t)status.count <= _currBytes,
+              XMI_assertf((size_t)scount <= _currBytes,
                           "MPIBcastMsg recv overrun (got %d, kept %d)\n",
-                          status.count, _currBytes);
+                          scount, _currBytes);
             }
           }
 
@@ -260,7 +279,7 @@ namespace XMI
           //count = 5;
           int rc = MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
                              _root, _tag,
-                             _g_mpibcast_communicator, &_req);
+                             _device->_mcast_communicator, &_req);
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",(unsigned)this,
                         rc, _idx, _currBytes, thr->_bytesLeft, _root, _tag, _req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           // error checking?
@@ -270,6 +289,7 @@ namespace XMI
       }
 
       unsigned _nThreads;
+      T_Device *_device;
       XMI::Topology *_dst;
       XMI::PipeWorkQueue *_iwq;
       XMI::PipeWorkQueue *_rwq;
@@ -282,19 +302,35 @@ namespace XMI
       MPI_Request _req;
       MessageStatus _pendingStatus;
     }; //-- MPIBcastMsg
+    template<>
+    inline void MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> >::complete(xmi_context_t context)
+    {
+      ((XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> &)_QS).__complete<MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> > >(this);
+      TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::complete() \n",(unsigned)this));
+      executeCallback(context);
+    }
+/* Compile with xl but not gcc.
+    template< class T_Device>
+    inline void MPIBcastMsg<T_Device>::complete(xmi_context_t context)
+    {
+      ((T_Device &)_QS).__complete<MPIBcastMsg<T_Device> >(this);
+      TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::complete() \n",(unsigned)this));
+      executeCallback(context);
+    }
+*/
+
 
     class MPIBcastMdl : public XMI::Device::Interface::MulticastModel<MPIBcastMdl>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
-      static const size_t sizeof_msg = sizeof(MPIBcastMsg);
+      static const size_t sizeof_msg = sizeof(MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> >);
 
       MPIBcastMdl(xmi_result_t &status) :
       XMI::Device::Interface::MulticastModel<MPIBcastMdl>(status)
       {
         TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl()\n",(unsigned)this));
-        //XMI::SysDep *sd = _g_mpibcast_dev.getSysdep();
       }
 
       inline bool postMulticast_impl(xmi_multicast_t *mcast);
@@ -302,19 +338,13 @@ namespace XMI
     private:
     }; // class MPIBcastMdl
 
-    void MPIBcastMsg::complete(xmi_context_t context)
-    {
-      ((MPIBcastDev &)_QS).__complete<MPIBcastMsg>(this);
-      TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::complete() \n",(unsigned)this));
-      executeCallback(context);
-    }
-
     inline bool MPIBcastMdl::postMulticast_impl(xmi_multicast_t *mcast)
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",(unsigned)this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, mcast->request));
-      MPIBcastMsg *msg = new (mcast->request) MPIBcastMsg(_g_mpibcast_dev, mcast);
-      _g_mpibcast_dev.__post<MPIBcastMsg>(msg);
+      MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> > *msg = 
+      new (mcast->request) MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> >(_g_mpibcast_dev, mcast);
+      _g_mpibcast_dev.__post<MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::MPIBcastThr> > >(msg);
       return true;
     }
 
