@@ -34,8 +34,7 @@ namespace XMI
   {
 
     class MPISyncMdl;
-    class MPISyncMsg;
-    typedef XMI::Device::Generic::SimpleAdvanceThread MPISyncThr; //GenericAdvanceThread
+
     template< class T_Thread>
     class MPISyncDev : public XMI::Device::Generic::SimpleSubDevice<T_Thread>
     {
@@ -50,7 +49,7 @@ namespace XMI
   }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::MPISyncDev<XMI::Device::MPISyncThr> _g_mpisync_dev;
+extern XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> _g_mpisync_dev;
 
 namespace XMI
 {
@@ -60,6 +59,7 @@ namespace XMI
 ///
 /// \brief 
 ///
+    template < class T_Device >
     class MPISyncMsg : public XMI::Device::Generic::GenericMessage
     {
     private:
@@ -70,10 +70,11 @@ namespace XMI
         NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
       };
     public:
-      MPISyncMsg(Generic::BaseGenericDevice &Generic_QS,
+      MPISyncMsg(T_Device &Generic_QS,
                  xmi_multisync_t *msync) :
       XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
                                            msync->client, msync->context),
+      _device(&Generic_QS),
       _participants((XMI::Topology *)msync->participants),
       _tag(msync->connection_id),
       _idx(0),
@@ -108,16 +109,16 @@ namespace XMI
                       rc, _participants->index2Rank(_idx), _tag));
       }
 
-      // This is a virtual function, but declaring inline here avoids linker
-      // complaints about multiple definitions.
-      inline void complete(xmi_context_t context);
+      STD_POSTNEXT(T_Device,XMI::Device::Generic::SimpleAdvanceThread,_device)
+
+
 
     protected:
-      friend class MPISyncDev<XMI::Device::MPISyncThr>; 
-      friend class XMI::Device::Generic::SimpleSubDevice<MPISyncThr>; // this makes no sense
+      friend class MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread>; 
+      friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>; // this makes no sense
 
-      ADVANCE_ROUTINE(advanceThread,MPISyncMsg,MPISyncThr);
-      inline int __setThreads(MPISyncThr *t, int n)
+      ADVANCE_ROUTINE(advanceThread,MPISyncMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
+      inline int __setThreads(XMI::Device::Generic::SimpleAdvanceThread *t, int n)
       {
         int nt = 0;
         // assert(nt < n);
@@ -133,7 +134,7 @@ namespace XMI
       }
 
       friend class XMI::Device::Generic::GenericMessage;
-      inline xmi_result_t __advanceThread(MPISyncThr *thr)
+      inline xmi_result_t __advanceThread(XMI::Device::Generic::SimpleAdvanceThread *thr)
       {
         if(getStatus() == XMI::Device::Done)
         {
@@ -198,6 +199,7 @@ namespace XMI
       }
 
       unsigned _nThreads;
+      T_Device *_device;
       XMI::Topology *_participants;
       int            _tag;
       size_t         _idx;
@@ -211,7 +213,7 @@ namespace XMI
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
-      static const size_t sizeof_msg = sizeof(MPISyncMsg);
+      static const size_t sizeof_msg = sizeof(MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >);
 
       MPISyncMdl(xmi_result_t &status) :
       XMI::Device::Interface::MultisyncModel<MPISyncMdl>(status)
@@ -225,19 +227,13 @@ namespace XMI
     private:
     }; // class MPISyncMdl
 
-    void MPISyncMsg::complete(xmi_context_t context)
-    {
-      ((MPISyncDev<XMI::Device::MPISyncThr> &)_QS).__complete<MPISyncMsg>(this);
-      TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::complete() \n",(unsigned)this));
-      executeCallback(context);
-    }
-
     inline bool MPISyncMdl::postMultisync_impl(xmi_multisync_t *msync)
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() connection_id %d, request %p\n",(unsigned)this,
                     msync->connection_id, msync->request));
-      MPISyncMsg *msg = new (msync->request) MPISyncMsg(_g_mpisync_dev, msync);
-      _g_mpisync_dev.__post<MPISyncMsg>(msg);
+      MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg = 
+        new (msync->request) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);
+      _g_mpisync_dev.__post<MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
       return true;
     }
 
