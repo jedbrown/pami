@@ -13,6 +13,18 @@
 // used by the sub-devices. See GenericDevice.h for interfaces
 // used by messaging (advance).
 
+/// \defgroup gendev_internal_api Internal API for Generic::Device
+///
+/// The internal API is the set of methods that are/may be called by
+/// sub-devices.
+///
+
+/// \defgroup gendev_private_api Private API for Generic::Device
+///
+/// The private API is the set of methods that are/may be called by
+/// by/from various parts of the Generic::Device.
+///
+
 #include "SysDep.h"
 #include "WakeupManager.h"
 #include "components/devices/BaseDevice.h"
@@ -100,8 +112,10 @@ protected:
 //////////////////////////////////////////////////////////////////////
 class Device {
 
+	/// \ingroup gendev_private_api
 	inline void __platform_generic_init(bool first_global, bool first_client,
 								XMI::SysDep &sd);
+	/// \ingroup gendev_private_api
 	inline int __platform_generic_advanceRecv(size_t context);
 
 public:
@@ -114,20 +128,30 @@ public:
 
 	inline bool isAdvanceNeeded();
 
-	//////////////////////////////////////////////////////////////////
 	/// \brief     Advance routine for the generic device.
-	///
 	/// \return	number of events processed
+	/// \ingroup gendev_public_api
 	//////////////////////////////////////////////////////////////////
 	inline int advance();
 
 	inline void postThread(GenericThread *thr) {
 		__Threads.pushTail(thr);
 	}
-	//////////////////////////////////////////////////////////////////
-	/// \brief       Post a message to the device queuing system
-	/// \param msg:  Message to be queued/advanced.
-	//////////////////////////////////////////////////////////////////
+	/// \brief Post a message to the generic-device queuing system
+	///
+	/// Only threads that are !isDone() are enqueued. The message is
+	/// not checked for Done, assuming that was previously checked
+	/// if needed. In some cases, a message is intentionally posted
+	/// even though it is done. This is to avoid recursion within
+	/// a callback that is posting the next message from the sub-device.
+	///
+	/// \param[in] msg	Message to be queued/advanced.
+	/// \param[in] thr	Array of thread objects to post
+	/// \param[in] len	sizeof each thread
+	/// \param[in] num	number of threads to post
+	///
+	/// \ingroup gendev_internal_api
+	///
 	inline void post(GenericMessage *msg, GenericAdvanceThread *thr,
 							size_t len, int num) {
 		// early advance was done by the "real" device post()
@@ -161,8 +185,19 @@ public:
 		// msg->getClient()->__lastThreadUsed = t;
 	}
 
+	/// \brief accessor for the context-id associated with generic device slice
+	/// \return	context ID
+	/// \ingroup gendev_internal_api
 	inline size_t contextId() { return __contextId; }
+
+	/// \brief accessor for the total number of contexts in this client
+	/// \return	number of contexts/generic device slices
+	/// \ingroup gendev_internal_api
 	inline size_t nContexts() { return __nContexts; }
+
+	/// \brief accessor for the context associated with generic device slice
+	/// \return	context handle
+	/// \ingroup gendev_internal_api
 	inline xmi_context_t getContext() { return __context; }
 
 private:
@@ -170,8 +205,8 @@ private:
 	///
 	/// Check a channel for received messages (or within the context of a channel)
 	///
-	/// \param[in] channel	The channel to check, or context to check within
 	/// \return	Number of work units performed (typically, 0 or 1)
+	/// \ingroup gendev_private_api
 	///
 	inline int __advanceRecv();
 

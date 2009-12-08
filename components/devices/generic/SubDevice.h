@@ -15,6 +15,12 @@
 #include "components/devices/generic/Device.h"
 #include "sys/xmi.h"
 
+/// \defgroup gendev_subdev_api Internal API for Generic::Device sub-devices
+///
+/// The internal API is the set of functions called by Generic::Device
+/// on the various sub-devices.
+///
+
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/SubDevice.h
 ///  \brief Generic Device

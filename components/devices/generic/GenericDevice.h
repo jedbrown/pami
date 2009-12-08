@@ -12,6 +12,12 @@
 // This file implements the interfaces used by messaging (advance).
 // See generic/Device.h for interfaces used by sub-devices.
 
+/// \defgroup gendev_public_api Public API for Generic::Device
+///
+/// The public API is the set of functions called by XMI::Context
+/// for initialization and progress.
+///
+
 #include "components/devices/generic/Device.h"
 #include "GenericSubDeviceList.h"
 
@@ -107,6 +113,8 @@ namespace Generic {
 	/// \param[in] context		The specific context being initialized
 	/// \param[in] num_contexts	Total number of contexts in current client
 	///
+	/// \ingroup gendev_public_api
+	///
 	inline void Device::init(XMI::SysDep &sd, xmi_context_t ctx,
 				size_t context, size_t num_contexts,
 				Generic::Device *generics) {
@@ -199,6 +207,8 @@ namespace Generic {
 	/// advanceRecv routine for all devices.
 	///
 	/// \return	number of events processed
+	///
+	/// \ingroup gendev_public_api
 	///
 	inline int Device::advance() {
 		int events = 0;
