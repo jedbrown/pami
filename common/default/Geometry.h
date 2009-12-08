@@ -63,7 +63,8 @@ namespace XMI
           nranks = 0;
           _mytopo = 0;
           _rank = mapping->task();
-          _numtopos = (numranges == 1)? 1 : numranges + 1;
+          //_numtopos = (numranges == 1)? 1 : numranges + 1;
+          _numtopos =  numranges + 1;
 
           _topos = new XMI::Topology[numranges];
 
