@@ -354,7 +354,7 @@ namespace XMI
         // implementation to account for other topologies
         int i, range_size, rank_left = rank;
         size_t first, last;
-        for(i = 0; i < _numtopos; i++)
+        for(i = 1; i < _numtopos; i++)
         {
           _topos[i].rankRange(&first, &last);
           range_size = _topos[i].size();
