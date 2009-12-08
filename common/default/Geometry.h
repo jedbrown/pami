@@ -62,10 +62,9 @@ namespace XMI
           nranks = 0;
           _mytopo = 0;
           _rank = mapping->task();
-          //_numtopos = (numranges == 1)? 1 : numranges + 1;
           _numtopos =  numranges + 1;
 
-          _topos = new XMI::Topology[numranges];
+          _topos = new XMI::Topology[_numtopos];
 
           for (i = 0; i < numranges; i++)
             nranks += (rangelist[i].hi - rangelist[i].lo + 1);
@@ -102,7 +101,6 @@ namespace XMI
 
           geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
-          //free(ranks);
 
           // now we should set the attributes of the topologies or geometry
           // i guess we should have attributes per topo and per geometry
