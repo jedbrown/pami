@@ -93,7 +93,7 @@ namespace XMI
 			      MPI_CHAR,
 			      ranks[count],
 			      2,
-			      MPI_COMM_WORLD,
+			      _device._communicator,
 			      &hdr->_req[count]);
 	      XMI_assert (rc == MPI_SUCCESS);
 	    }

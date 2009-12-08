@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/mpi/mpimulticast.cc
+/// \file test/internals/multisend/mpi/P2pDispatchMulticastProtocol.cc
 /// \brief ???
 ///
 
@@ -7,14 +7,30 @@
 #include "sys/xmi.h"
 
 #include "components/devices/mpi/MPIBcastMsg.h"
+#include "components/devices/mpi/mpimulticastprotocol.h"
+#include "components/devices/mpi/mpidevice.h"
+#include "components/devices/mpi/mpipacketmodel.h"
+#include "components/devices/mpi/mpimessage.h"
+#include "p2p/protocols/send/adaptive/Adaptive.h"
+#include "p2p/protocols/send/eager/Eager.h"
+#include "p2p/protocols/send/eager/EagerSimple.h"
+#include "p2p/protocols/send/eager/EagerImmediate.h"
+#include "SysDep.h"
+
+typedef XMI::Device::MPIDevice<XMI::SysDep> MPIDevice;
+typedef XMI::Device::MPIMessage MPIMessage;
+typedef XMI::Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
+typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
+typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2pDispatchMulticastProtocol;
+
 #include "test/internals/multisend/multicast.h"
 
 #ifndef TEST_BUF_SIZE
 #define TEST_BUF_SIZE	1024
 #endif // TEST_BUF_SIZE
 
-#define GLOBAL_BCAST_NAME	"XMI::Device::MPIBcastMdl"
-#define GLOBAL_BCAST_MODEL	XMI::Device::MPIBcastMdl
+#define GLOBAL_BCAST_NAME	"P2pDispatchMulticastProtocol"
+#define GLOBAL_BCAST_MODEL	P2pDispatchMulticastProtocol
 
 XMI::Topology itopo;
 XMI::Topology otopo;
@@ -86,16 +102,24 @@ int main(int argc, char ** argv) {
 
 	const char *test = GLOBAL_BCAST_NAME;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicast<GLOBAL_BCAST_MODEL, TEST_BUF_SIZE> test1(test);
+	XMI::Test::Multisend::Multicast<GLOBAL_BCAST_MODEL, TEST_BUF_SIZE> test1(test, 1);
 
-	rc = test1.perform_test(task_id, num_tasks, &mcast);
+	rc = test1.perform_test_active_message(task_id, num_tasks, &mcast);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);
 		exit(1);
 	}
 	fprintf(stderr, "PASS %s\n", test);
 
-// ------------------------------------------------------------------------
+	mcast.bytes = 0;
+    mcast.connection_id = 0;  
+	rc = test1.perform_test_active_message(task_id, num_tasks, &mcast);
+	if (rc != XMI_SUCCESS) {
+		fprintf(stderr, "Failed %s test\n", test);
+		exit(1);
+	}
+	fprintf(stderr, "PASS %s\n", test);
+// ------------------------------------------------------------------------   
 	status = XMI_Context_destroy(context);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);

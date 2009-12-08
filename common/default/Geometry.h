@@ -55,7 +55,6 @@ namespace XMI
         {
           int i, j, k, size;
           xmi_task_t nranks;
-          xmi_task_t *ranks;
 
           xmi_ca_unset_all(&attributes);
 
@@ -71,7 +70,7 @@ namespace XMI
           for (i = 0; i < numranges; i++)
             nranks += (rangelist[i].hi - rangelist[i].lo + 1);
 
-          ranks = (xmi_task_t*)malloc(nranks * sizeof(xmi_task_t));
+          _ranks = (xmi_task_t*)malloc(nranks * sizeof(xmi_task_t));
 
           for (k = 0, i = 0; i < numranges; i++)
           {
@@ -79,33 +78,31 @@ namespace XMI
 
             for (j = 0; j < size; j++, k++)
             {
-              ranks[k] = rangelist[i].lo + j;
-              if (ranks[k] == (xmi_task_t) _rank)
+              _ranks[k] = rangelist[i].lo + j;
+              if (_ranks[k] == (xmi_task_t) _rank)
                 _virtual_rank = k;
             }
           }
 
           // this creates the topology including all subtopologies
-          new(&_topos[0]) XMI::Topology(ranks, nranks);
-          _topos[0].rankList(&_ranks);
+          new(&_topos[0]) XMI::Topology(_ranks, nranks);
 
           // now build up the individual subtopologies
-          for (i = 1; i < numranges; i++)
+          for (i = 1; i < _numtopos; i++)
           {
-            new(&_topos[i]) XMI::Topology(rangelist[i].lo, rangelist[i].hi);
-            size = rangelist[i].hi - rangelist[i].lo + 1;
-
+            new(&_topos[i]) XMI::Topology(rangelist[i-1].lo, rangelist[i-1].hi);
+            size = rangelist[i-1].hi - rangelist[i-1].lo + 1;
+            
             for (j = 0; j < size; j++)
             {
-              ranks[j] = rangelist[i].lo + j;
-              if (ranks[j] == (xmi_task_t) _rank)
+              if ((rangelist[i-1].lo + j) == (xmi_task_t) _rank)
                 _mytopo = i;
             }
           }
 
           geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
-          free(ranks);
+          //free(ranks);
 
           // now we should set the attributes of the topologies or geometry
           // i guess we should have attributes per topo and per geometry
@@ -357,9 +354,9 @@ namespace XMI
         size_t first, last;
         for(i = 1; i < _numtopos; i++)
         {
-          _topos[i].rankRange(&first, &last);
+          xmi_result_t result = _topos[i].rankRange(&first, &last);
+          XMI_assert(result == XMI_SUCCESS);
           range_size = _topos[i].size();
-
           rank_left -= range_size;
           if(rank_left <= 0)
           {
@@ -370,7 +367,6 @@ namespace XMI
             return first + offset;
           }
         }
-
         return -1;
       }
       inline xmi_task_t virtrankof_impl (int rank)

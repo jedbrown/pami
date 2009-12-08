@@ -29,32 +29,30 @@ namespace CCMI
       ///
       /// \brief Binomial barrier
       ///
-      template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Msync, class T_Topology>
-      class BarrierT : public CCMI::Executor::Barrier<T_Msync, T_Topology>
+      template <class T_Schedule, AnalyzeFn afn>
+      class BarrierT : public CCMI::Executor::BarrierExec
       {
         ///
         /// \brief The schedule for binomial barrier protocol
         ///
-        T_Schedule                             _myschedule;
+        T_Schedule                          _myschedule;
 
       public:
         ///
         /// \brief Constructor for non-blocking barrier protocols.
         ///
-        /// \param[in] mapping     Pointer to mapping class
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-        BarrierT  (T_Sysdep                     * mapping,
-                   T_Msync                      * mInterface,
+        BarrierT  (Interfaces::NativeInterface  * mInterface,
                    XMI_GEOMETRY_CLASS           * geometry) :
-          CCMI::Executor::Barrier<T_Msync, T_Topology> (geometry->nranks(),
-                                                        geometry->ranks(),
-                                                        geometry->comm(),
-                                                        0,
-                                                        mInterface),
-          _myschedule (mapping, geometry->nranks(), geometry->ranks())
-        {
+	CCMI::Executor::BarrierExec (geometry->nranks(),
+				     geometry->ranks(),
+				     geometry->comm(),
+				     0,
+				     mInterface),
+	  _myschedule (__global.mapping.task(), geometry->ranks(), geometry->nranks())
+	{
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
                      (int)this, geometry->comm()));
           setCommSchedule (&_myschedule);
@@ -70,8 +68,8 @@ namespace CCMI
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template <class T, class T_Sysdep, class T_Msync>
-      class BarrierFactoryT : private BarrierFactory<T_Sysdep, T_Msync>
+      template<class T>
+      class BarrierFactoryT : private BarrierFactory
       {
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -83,10 +81,9 @@ namespace CCMI
         ///
         /// \brief Constructor for barrier factory implementations.
         ///
-        BarrierFactoryT (T_Msync              * minterface,
-                         T_Sysdep             * map,
-                         xmi_mapidtogeometry_fn   cb_geometry) :
-          BarrierFactory<T_Sysdep, T_Msync> (minterface, map, cb_geometry)
+        BarrierFactoryT (Interfaces::NativeInterface  * mInterface,
+                         xmi_mapidtogeometry_fn         cb_geometry) :
+	BarrierFactory (mInterface, cb_geometry)
         {
         }
 
@@ -106,10 +103,10 @@ namespace CCMI
         ///
         CCMI::Executor::Executor *generate
         (CCMI_Executor_t           * request,
-         XMI_GEOMETRY_CLASS                  * geometry)
+         XMI_GEOMETRY_CLASS        * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
-          return new (request) T (this->_mapping, this->_msyncInterface, geometry);
+          return (CCMI::Executor::Executor *) (new (request) T (this->_msyncInterface, geometry));
         }
 
       };  //- BarrierFactoryT

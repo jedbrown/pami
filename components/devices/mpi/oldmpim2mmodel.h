@@ -112,7 +112,7 @@ namespace XMI
                             MPI_CHAR,
                             ranks[index],
                             3,
-                            MPI_COMM_WORLD,
+                            _device._communicator,
                             req);
             XMI_assert (rc == MPI_SUCCESS);
             hdr = (MPIM2MHeader *)((char *)hdr + hdr->totalsize());

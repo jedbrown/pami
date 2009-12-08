@@ -14,6 +14,7 @@
 #ifndef __algorithms_protocols_barrier_impl_h__
 #define __algorithms_protocols_barrier_impl_h__
 
+#include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "BarrierT.h"
 
@@ -28,13 +29,17 @@ namespace CCMI
         return true;
       }
 
+      typedef BarrierT <CCMI::Schedule::ListMultinomial,
+	binomial_analyze> BinomialBarrier;
+      typedef BarrierFactoryT <BinomialBarrier> BinomialBarrierFactory;
+
       typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
                            binomial_analyze,
                            XMI_SYSDEP_CLASS,
-                           XMI_COLL_MCAST_CLASS> BinomialBarrier;
-      typedef OldBarrierFactoryT <BinomialBarrier,
-                                  XMI_SYSDEP_CLASS,
-                                  XMI_COLL_MCAST_CLASS> BinomialBarrierFactory;
+                           XMI_COLL_MCAST_CLASS> OldBinomialBarrier;
+      typedef OldBarrierFactoryT <OldBinomialBarrier,
+	                          XMI_SYSDEP_CLASS,
+	                          XMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
     };
   };
 };

@@ -24,6 +24,7 @@
 #include "Topology.h"
 #include "Wtime.h"
 #include <mpi.h>
+#include "components/devices/mpi/mpidevice.h"
 namespace XMI
 {
     static void shutdownfunc()
@@ -44,12 +45,12 @@ namespace XMI
 	  Interface::Global<XMI::Global>::time.init(0);
 	  {
 		size_t min, max, num, *ranks;
-                int rc = MPI_Init(0, NULL);
-                if(rc != MPI_SUCCESS)
-                    {
-                      fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
-                      XMI_abort();
-                    }
+//              int rc = MPI_Init(0, NULL);
+//              if(rc != MPI_SUCCESS)
+//                  {
+//                    fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
+//                    XMI_abort();
+//                  }
                 atexit(shutdownfunc);
 
                 mapping.init(min, max, num, &ranks);
@@ -73,6 +74,7 @@ namespace XMI
       public:
 
 	XMI::Mapping		mapping;
+    XMI::Device::MPIDevice<SysDep> mpi_device;
 
   };   // class Global
 };     // namespace XMI

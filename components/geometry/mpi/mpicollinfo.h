@@ -28,6 +28,8 @@
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
 #include "algorithms/protocols/tspcoll/NBColl.h"
 
+#include "MPINativeInterface.h"
+
 // CCMI includes
 
 typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep>,
@@ -54,6 +56,7 @@ typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep>,
 
 #include "algorithms/protocols/alltoall/Alltoall.h"
 
+#define OLD_CCMI_BARRIER  0
 
 typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep, size_t> AlltoallProtocol;
 typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep, size_t> AlltoallFactory;
@@ -220,13 +223,17 @@ namespace XMI
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
+#if  OLD_CCMI_BARRIER
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
     public:
       CCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
-                           xmi_mapidtogeometry_fn fcn):
+                           xmi_mapidtogeometry_fn fcn, 
+			   xmi_client_t           client,
+			   xmi_context_t          context,
+			   size_t                 context_id):
         CollInfo<T_Device>(dev),
 	_model(*dev),
         _barrier_registration(&_model,
@@ -236,12 +243,43 @@ namespace XMI
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "CCMI_BinomBarrier");
         }
-      XMI_Request_t                                  _request;
-      MPIMcastModel                                  _model;
-      CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
-      CCMI_Executor_t                                _barrier_executor;
+      XMI_Request_t                                     _request;
+      MPIMcastModel                                     _model;
+      CCMI::Adaptor::Barrier::OldBinomialBarrierFactory _barrier_registration;
+      CCMI_Executor_t                                   _barrier_executor;
     };
 
+#else
+    template <class T_Device, class T_Sysdep>
+    class CCMIBinomBarrierInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIBinomBarrierInfo(T_Device *dev,
+                           T_Sysdep * sd,
+                           xmi_mapidtogeometry_fn fcn, 
+			   xmi_client_t           client,
+			   xmi_context_t          context,
+			   size_t                 context_id):
+        CollInfo<T_Device>(dev),
+	_minterface(dev, client, context, context_id),
+        _barrier_registration(&_minterface,
+                              fcn),
+        _client(client),
+        _context(context),
+	_contextid (context_id)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_BinomBarrier");
+        }
+      XMI_Request_t                                  _request;
+      MPINativeInterface<T_Device>                   _minterface;
+      CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
+      CCMI_Executor_t                                _barrier_executor;
+      xmi_client_t                                   _client;
+      xmi_context_t                                  _context;
+      size_t                                         _contextid;
+    };
+#endif
 
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
