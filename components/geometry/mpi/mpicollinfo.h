@@ -56,7 +56,7 @@ typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep>,
 
 #include "algorithms/protocols/alltoall/Alltoall.h"
 
-#define OLD_CCMI_BARRIER  1
+#define OLD_CCMI_BARRIER  0
 
 typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep, size_t> AlltoallProtocol;
 typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep, size_t> AlltoallFactory;
@@ -230,7 +230,10 @@ namespace XMI
     public:
       CCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
-                           xmi_mapidtogeometry_fn fcn):
+                           xmi_mapidtogeometry_fn fcn, 
+			   xmi_client_t           client,
+			   xmi_context_t          context,
+			   size_t                 context_id):
         CollInfo<T_Device>(dev),
 	_model(*dev),
         _barrier_registration(&_model,
@@ -253,11 +256,17 @@ namespace XMI
     public:
       CCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
-                           xmi_mapidtogeometry_fn fcn):
+                           xmi_mapidtogeometry_fn fcn, 
+			   xmi_client_t           client,
+			   xmi_context_t          context,
+			   size_t                 context_id):
         CollInfo<T_Device>(dev),
-	_minterface(dev),
+	_minterface(dev, client, context, context_id),
         _barrier_registration(&_minterface,
-                              fcn)
+                              fcn),
+        _client(client),
+        _context(context),
+	_contextid (context_id)
         {
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "CCMI_BinomBarrier");
@@ -266,6 +275,9 @@ namespace XMI
       MPINativeInterface<T_Device>                   _minterface;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                _barrier_executor;
+      xmi_client_t                                   _client;
+      xmi_context_t                                  _context;
+      size_t                                         _contextid;
     };
 #endif
 

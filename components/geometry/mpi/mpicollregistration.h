@@ -33,10 +33,13 @@ namespace XMI
     class MPI : public CollRegistration<XMI::CollRegistration::MPI<XMI_GEOMETRY_CLASS, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
     {
     public:
-      inline MPI(T_Device *dev, T_Sysdep *sd):
+      inline MPI(T_Device *dev, T_Sysdep *sd, xmi_client_t client, xmi_context_t context, size_t context_id):
         CollRegistration<XMI::CollRegistration::MPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>(),
 	_dev(dev),
         _sysdep(sd),
+	_client (client),
+	_context (context),	  
+	_contextid (context_id),
 	_pgbroadcast(dev),
 	_pgallgather(dev),
 	_pgallgatherv(dev),
@@ -45,7 +48,7 @@ namespace XMI
 	_pgallreduce(dev),
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
-        _ccmibarrier(dev, sd, mapidtogeometry),
+	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id), 
         _ccmibinombroadcast(dev, sd, mapidtogeometry),
         _ccmiringbroadcast(dev, sd, mapidtogeometry),
         _ccmiringallreduce(dev, sd, mapidtogeometry),
@@ -137,8 +140,11 @@ namespace XMI
 
     public:
       T_Device                        *_dev;
-      T_Sysdep                        *_sysdep;
+      T_Sysdep                        *_sysdep;      
       XMI_NBCollManager                _nbCollMgr;
+      xmi_client_t                     _client;
+      xmi_context_t                    _context;
+      size_t                           _contextid;
       MemoryAllocator<sizeof(XMI_COLLFACTORY_CLASS), 16> _fact_alloc;
 
       XMI::CollInfo::PGBroadcastInfo<T_Device>    _pgbroadcast;

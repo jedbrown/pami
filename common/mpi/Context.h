@@ -127,7 +127,7 @@ namespace XMI
           new(_world_geometry) MPIGeometry(&__global.mapping,0, 1,&_world_range);
 
 	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
-	  new(_collreg) MPICollreg(_mpi, &_sysdep);
+	  new(_collreg) MPICollreg(_mpi, &_sysdep, getClient(), (xmi_context_t)(void *)this, getId());
 
           _world_collfactory=_collreg->analyze(_world_geometry);
 	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
