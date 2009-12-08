@@ -17,12 +17,15 @@
 ///
 /// The internal API is the set of methods that are/may be called by
 /// sub-devices.
+/// SubDevice -> Generic::Device
+/// SubDeviceTemplate -> Generic::Device
 ///
 
 /// \defgroup gendev_private_api Private API for Generic::Device
 ///
 /// The private API is the set of methods that are/may be called by
 /// by/from various parts of the Generic::Device.
+/// Generic::Device -> Generic::Device
 ///
 
 #include "SysDep.h"
@@ -88,6 +91,7 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
+/// \brief Object for implementing a generic device queue for thread objects (work units)
 class ThreadQueue : public Queue {
 public:
 	ThreadQueue() : Queue() { }
@@ -112,28 +116,55 @@ protected:
 //////////////////////////////////////////////////////////////////////
 class Device {
 
+	/// \brief Initialize platform-specific sub-devices
+	/// \param[in] first_global	Flag indicating if this is the first call, globally
+	/// \param[in] first_client	Flag indicating if this is the first call on client
+	/// \param[in] sd		SysDep object
 	/// \ingroup gendev_private_api
 	inline void __platform_generic_init(bool first_global, bool first_client,
 								XMI::SysDep &sd);
+
+	/// \brief advance unexpected(received) messages for platform devices
+	/// \param[in] context	Context ID/slice to check
+	/// \return	Number of "events"
 	/// \ingroup gendev_private_api
 	inline int __platform_generic_advanceRecv(size_t context);
 
 public:
-	//////////////////////////////////////////////////////////////////
-	/// \brief  A device
-	//////////////////////////////////////////////////////////////////
+	/// \brief  A generic device (wrapper for sub-devices)
+	///
 	inline Device();
 
+	/// \brief Initialize a generic device slice
+	/// \param[in] sd	SysDep object
+	/// \param[in] ctx	Context object associated with slice
+	/// \param[in] context	Context ID associated with slice
+	/// \param[in] num_contexts	Number of contexts/slices
+	/// \param[in] generics		Array of generic device slices
+	/// \ingroup gendev_public_api
+	///
 	inline void init(XMI::SysDep &sd, xmi_context_t ctx, size_t context, size_t num_contexts, Device *generics);
 
+	/// \brief     Advance routine for the generic device.
+	/// \return	number of events processed
+	/// \ingroup gendev_public_api
+	///
 	inline bool isAdvanceNeeded();
 
 	/// \brief     Advance routine for the generic device.
 	/// \return	number of events processed
 	/// \ingroup gendev_public_api
-	//////////////////////////////////////////////////////////////////
+	///
 	inline int advance();
 
+	/// \brief     Post a thread object on a generic device slice's queue
+	///
+	/// Not normally used. ProgressFuncionDev uses this to post a thread
+	/// without an associated message.
+	///
+	/// \param[in] thr	Thread object to post
+	/// \ingroup gendev_internal_api
+	///
 	inline void postThread(GenericThread *thr) {
 		__Threads.pushTail(thr);
 	}
@@ -210,14 +241,14 @@ private:
 	///
 	inline int __advanceRecv();
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief Storage for the queue of messages
-	//////////////////////////////////////////////////////////////////
+	/// \brief Storage for the queue for message completion
+	///
+	/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
+	/// By convention, queue[0] is used for attaching messages to a sub-device.
+	///
 	MultiQueue<2, 1> __GenericQueue;
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief Storage for the queue of threads (a.k.a. channels)
-	//////////////////////////////////////////////////////////////////
+	/// \brief Storage for the queue of threads (a.k.a. work units)
 	ThreadQueue __Threads;
 
 	xmi_context_t __context;

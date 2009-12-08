@@ -19,6 +19,20 @@
 ///
 /// The internal API is the set of functions called by Generic::Device
 /// on the various sub-devices.
+/// Generic::Device -> SubDevice
+///
+
+/// \defgroup gendev_subdev_internal_api Internal API for sub-device templates
+///
+/// The internal API is the set of functions called by sub-devices
+/// on the various sub-device-templates.
+/// SubDevice -> SubDeviceTemplate
+///
+
+/// \defgroup gendev_subdev_private_api Private API for sub-device templates
+///
+/// The private API is the set of functions called by/from sub-device templates.
+/// SubDeviceTemplate -> SubDeviceTemplate
 ///
 
 ////////////////////////////////////////////////////////////////////////
@@ -44,6 +58,12 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
+/// \brief Queue object used for messages on sub-devices
+///
+/// Instantiates queue[0] of a two-queue system. Queue[0] by convention
+/// is the queue used for attaching messages to a sub-device queue.
+/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
+///
 class GenericSubDevSendq : public MultiQueue<2, 0> {
 public:
 
@@ -53,6 +73,7 @@ public:
 	/// already attempted early advance.
 	///
 	/// \param[in] msg	New message to be posted
+	/// \ingroup gendev_subdev_api
 	///
 	inline void post(GenericMessage *msg) {
 		pushTail(msg);
@@ -61,6 +82,7 @@ public:
 	/// \brief peek at "next" message on queue
 	///
 	/// \return	Top message on queue
+	/// \ingroup gendev_subdev_api
 	///
 	inline GenericMessage *getCurrent() {
 		return (GenericMessage *)peekHead();
@@ -69,6 +91,7 @@ public:
 	/// \brief pop "next" message off queue and return it
 	///
 	/// \return	Former top message on queue
+	/// \ingroup gendev_subdev_api
 	///
 	inline GenericMessage *dequeue() {
 		return (GenericMessage *)popHead();
@@ -77,6 +100,7 @@ public:
 	/// \brief number of messages on the queue
 	///
 	/// \return	number of messages on the queue
+	/// \ingroup gendev_subdev_api
 	///
 	inline int queueSize() {
 		return size();
@@ -93,6 +117,7 @@ protected:
 /// \param[in] T_Device		Sub-device class
 /// \param[in] T_Thread		Sub-device thread class
 /// \param[in] I_Device		Sub-device instance pointer
+/// \ingroup gendev_subdev_api
 ///
 #define STD_POSTNEXT(T_Device,T_Thread,I_Device)			\
 	inline bool postNext(bool devPosted) {				\
@@ -119,6 +144,7 @@ public:
 	virtual ~GenericSubDevice() { }
 
 	/// \brief accessor for sysdep object associated with sub-device
+	/// \ingroup gendev_subdev_api
 	inline XMI::SysDep *getSysdep() { return _sd; }
 
 	/// \brief advance routine for unexpected (received) messages
@@ -132,6 +158,7 @@ public:
 	/// already attempted early advance.
 	///
 	/// \param[in] msg	New message to be posted
+	/// \ingroup gendev_subdev_api
 	///
 	inline void post(GenericMessage *msg) {
 		_queue.pushTail(msg);
@@ -140,6 +167,7 @@ public:
 	/// \brief peek at "next" message on queue
 	///
 	/// \return	Top message on queue
+	/// \ingroup gendev_subdev_api
 	///
 	inline GenericMessage *getCurrent() {
 		return (GenericMessage *)_queue.peekHead();
@@ -148,6 +176,7 @@ public:
 	/// \brief pop "next" message off queue and return it
 	///
 	/// \return	Former top message on queue
+	/// \ingroup gendev_subdev_api
 	///
 	inline GenericMessage *dequeue() {
 		return (GenericMessage *)_queue.popHead();
@@ -156,6 +185,7 @@ public:
 	/// \brief Remove a message from the middle of the queue
 	///
 	/// \param[in] msg	New message to be removed
+	/// \ingroup gendev_subdev_api
 	///
 	inline void deleteElem(GenericMessage *msg) {
 		_queue.deleteElem(msg);
@@ -164,6 +194,7 @@ public:
 	/// \brief number of messages on the queue
 	///
 	/// \return	number of messages on the queue
+	/// \ingroup gendev_subdev_api
 	///
 	inline int queueSize() {
 		return _queue.size();
@@ -176,6 +207,7 @@ public:
 	/// This routine is inlined, by the postNext() call is virtual.
 	///
 	/// \param[in] msg	The message that is completed
+	/// \ingroup gendev_subdev_api
 	///
 	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
 		/* assert msg == dequeue(); */
@@ -203,13 +235,16 @@ public:
 	/// \param[in] t	array of threads to enqueue
 	/// \param[in] l	size of each thread in array
 	/// \param[in] n	number of threads to enqueue
+	/// \ingroup gendev_subdev_api
 	///
 	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
 		_generics->post(msg, t, l, n);
 	}
 
 	/// \brief accessor for specific generic device for context-id
+	/// \param[in] contextId	Context ID to get generic device slice
 	/// \return	Pointer to specific generic device object
+	/// \ingroup gendev_subdev_api
 	///
 	inline XMI::Device::Generic::Device *getGeneric(size_t contextId) { return &_generics[contextId]; }
 
@@ -218,6 +253,7 @@ protected:
 	///
 	/// \param[in] sd	SysDep for device/context/client... not used?
 	/// \param[in] generics	Array of generic devices used for parallelism
+	/// \ingroup gendev_private_api
 	///
 	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *generics) {
 		_sd = &sd;
@@ -254,6 +290,7 @@ public:
 	///
 	/// \param[out] t	Pointer to threads array
 	/// \param[out] n	Pointer to number of threads in array
+	/// \ingroup gendev_subdev_api
 	///
 	inline void getThreads(T_Thread **t, int *n) {
 		*t = _threads;
@@ -268,6 +305,7 @@ protected:
 	/// \param[in] sd		SysDep object (not used?)
 	/// \param[in] devices		Array of Generic::Device objects for client
 	/// \param[in] contextId	Id of current context (index into devices[])
+	/// \ingroup gendev_subdev_api
 	///
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		___init(sd, devices);
@@ -278,6 +316,7 @@ protected:
 	/// These devices do not have any unexpected messages, so routine is nil.
 	///
 	/// \param[in] context	Id of context which is being advanced
+	/// \ingroup gendev_internal_api
 	///
 	inline int advanceRecv(size_t context) { return 0; }
 
@@ -293,6 +332,7 @@ public: // temporary
 	/// also complete it. This is tested and appropriate action taken.
 	///
 	/// \param[in] msg	Message to start and/or enqueue
+	/// \ingroup gendev_subdev_api
 	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
@@ -334,6 +374,7 @@ public:
 	/// \brief returns a unique ID relative to this common sub-device
 	///
 	/// \return integer ID unique to this CommonQueueSubDevice
+	/// \ingroup gendev_subdev_api
 	///
 	inline unsigned newDispID() {
 		// caller must ensure number os valid for their hardware,
@@ -352,6 +393,7 @@ public:
 	/// calling each device's init() routine so there is no problem.
 	///
 	/// \return	Number of init() calls previously made
+	/// \ingroup gendev_subdev_api
 	///
 	int isInit() { return _init; }
 
@@ -362,6 +404,7 @@ public:
 	///
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
+	/// \ingroup gendev_subdev_api
 	///
 	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) = 0;
 
@@ -372,6 +415,7 @@ public:
 	///
 	/// \param[in] sd	SysDep object
 	/// \param[in] device	Generic::Device to be used.
+	/// \ingroup gendev_subdev_api
 	///
 	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
 		_doneThreads.init(&sd);
@@ -381,6 +425,7 @@ public:
 	}
 
 	/// \brief Reset for threads prior to being re-used.
+	/// \ingroup gendev_subdev_api
 	///
 	inline void __resetThreads() {
 		_doneThreads.fetch_and_clear();
@@ -390,6 +435,7 @@ public:
 	///
 	/// \param[in] t	Thread being completed
 	/// \return	Total number of threads completed for message
+	/// \ingroup gendev_subdev_api
 	///
 	inline unsigned __completeThread(GenericAdvanceThread *t) {
 		// fetchIncr() returns value *before* increment,

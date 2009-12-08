@@ -16,6 +16,7 @@
 ///
 /// The public API is the set of functions called by XMI::Context
 /// for initialization and progress.
+/// XMI::Context -> Generic::Device
 ///
 
 #include "components/devices/generic/Device.h"
@@ -159,6 +160,9 @@ namespace Generic {
 	///
 	/// Currently not used, since subdevices have to be polled for recvs.
 	///
+	/// \return	Boolean indicating if device needs advancing
+	/// \ingroup gendev_public_api
+	///
 	inline bool Device::isAdvanceNeeded() {
 #if 1
 		return true;
@@ -183,6 +187,7 @@ namespace Generic {
 	/// Typically, every subdevice will have one call to advanceRecv.
 	///
 	/// \return	Number of work units processed
+	/// \ingroup gendev_internal_api
 	///
 	inline int Device::__advanceRecv() {
 		int events = 0;
