@@ -356,7 +356,8 @@ namespace XMI
         size_t first, last;
         for(i = 0; i < _numtopos; i++)
         {
-          _topos[i].rankRange(&first, &last);
+          xmi_result_t result = _topos[i].rankRange(&first, &last);
+          XMI_assert(result == XMI_SUCCESS);                   
           range_size = _topos[i].size();
           
           rank_left -= range_size;
