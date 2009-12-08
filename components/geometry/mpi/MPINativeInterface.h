@@ -39,7 +39,7 @@ namespace XMI {
     virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie) {
       static size_t dispatch = DISPATCH_START;
 
-      printf ("In set dispatch, id = %d\n", dispatch);
+      //printf ("In set dispatch, id = %d\n", dispatch);
 
       /*new (&_protocol) P2pDispatchMulticastProtocol(dispatch, fn.multicast, cookie, *_device, _client, _context, _contextid, _status);
       //_protocol.registerMcastRecvFunction (dispatch, fn.multicast, cookie);*/
