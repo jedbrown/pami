@@ -535,7 +535,7 @@ namespace XMI
 		//send lost list sender
 		static int send_lost_list(send_state_t * send){
 		 					  
-			struct iovec v[1];
+			struct iovec v[2];
 			 size_t i = 0;
 		                      TRACE_ERR((stderr, "	DatagramSimple::send_lost_list() .. nlost =%d \n",send->nlost));
 																		
@@ -544,15 +544,16 @@ namespace XMI
 																		 
 																		 TRACE_ERR((stderr, "	DatagramSimple::send_lost_list() .. data lost =%d was sent\n",send->lost_list[i]));
 																		
-
+                                                                           v[0].iov_base = &send->header;
+																		   v[0].iov_len  = sizeof (header_metadata_t);
 																		send->header.seqno=send->lost_list[i];																		
 																		if(send->lost_list[i]==0){
-																		   v[0].iov_base = (void *)(send->send_buffer );
-																		   v[0].iov_len  = (size_t)send->fbytes;
+																		   v[1].iov_base = (void *)(send->send_buffer );
+																		   v[1].iov_len  = (size_t)send->fbytes;
 																		   send->header.bsend = send->fbytes;
 																		}else{
-																		   v[0].iov_base = (void *)(send->send_buffer + ((send->lost_list[i]-1)*T_Model::packet_model_payload_bytes + send->fbytes));
-																		   v[0].iov_len  = (size_t)send->header.bsend;
+																		   v[1].iov_base = (void *)(send->send_buffer + ((send->lost_list[i]-1)*T_Model::packet_model_payload_bytes + send->fbytes));
+																		   v[1].iov_len  = (size_t)send->header.bsend;
 																		   send->header.bsend = T_Model::packet_model_payload_bytes; 
 																		}						
 																			
@@ -560,21 +561,24 @@ namespace XMI
 																							NULL,
 																							(void *)send,
 																							send->rts.destRank,  
-																							(void *) &send->header,
-																							sizeof (header_metadata_t),
+																							(void *) NULL ,
+																							0,
 																							v);
 																	  
 																	  }
-													  
+													                    
+																		
+																		   v[0].iov_base = &send->header;
+																		   v[0].iov_len  = sizeof (header_metadata_t);
 																		TRACE_ERR((stderr, "	DatagramSimple::send_lost_list() .. data lost package =%d was sent\n",send->lost_list[i]));
 																	 send->header.seqno=send->lost_list[i];
 																	  if(send->lost_list[i]==0){
-																		   v[0].iov_base = (void *)(send->send_buffer );
-																		   v[0].iov_len  = (size_t)send->fbytes;
+																		   v[1].iov_base = (void *)(send->send_buffer );
+																		   v[1].iov_len  = (size_t)send->fbytes;
 																		   send->header.bsend = send->fbytes;
 																		}else{
-																		   v[0].iov_base = (void *)(send->send_buffer + ((send->lost_list[i]-1)*T_Model::packet_model_payload_bytes + send->fbytes));
-																		   v[0].iov_len  = (size_t)send->header.bsend;
+																		   v[1].iov_base = (void *)(send->send_buffer + ((send->lost_list[i]-1)*T_Model::packet_model_payload_bytes + send->fbytes));
+																		   v[1].iov_len  = (size_t)send->header.bsend;
 																		   send->header.bsend = T_Model::packet_model_payload_bytes; 
 																		}						
 																			
@@ -582,8 +586,8 @@ namespace XMI
 																							send->cb_data,
 																							(void *)send,
 																							send->rts.destRank,  
-																							(void *) &send->header,
-																							sizeof (header_metadata_t),
+																							(void *) NULL,
+																							0,
 																							v);
 													 
 													                     send->nlost=0;
@@ -592,79 +596,6 @@ namespace XMI
 			
                  return 0;			
 			}															 
-		
-		//send lost list receiver
-		int send_lost_list_rx(recv_state_t * send){
-		     
-							  
-			struct iovec v[1];
-			 size_t i = 0;
-		                      TRACE_ERR((stderr, "	DatagramSimple::send_lost_list() .. nlost =%d \n",send->nlost));
-																		
-																for(i = 0; i< send->nlost-1;i++){
-													   
-																		 
-																		 TRACE_ERR((stderr, "	DatagramSimple::send_lost_list() .. data lost =%d was sent\n",send->lost_list[i]));
-																		
-
-																		send->header.seqno=send->lost_list[i];																		
-																		if(send->lost_list[i]==0){
-																		   v[0].iov_base = (void *)(send->send_buffer );
-																		   v[0].iov_len  = (size_t)send->fbytes;
-																		   send->header.bsend = send->fbytes;
-																		}else{
-																		   v[0].iov_base = (void *)(send->send_buffer + ((send->lost_list[i]-1)*T_Model::packet_model_payload_bytes + send->fbytes));
-																		   v[0].iov_len  = (size_t)send->header.bsend;
-																		   send->header.bsend = T_Model::packet_model_payload_bytes; 
-																		}						
-																			
-																			send->datagram->_data_model.postPacket (send->pkt,
-																							NULL,
-																							(void *)send,
-																							send->rts.destRank,  
-																							(void *) &send->header,
-																							sizeof (header_metadata_t),
-																							v);
-																	  
-																	  }
-													  
-																		TRACE_ERR((stderr, "	DatagramSimple::send_lost_list() .. data lost package =%d was sent\n",send->lost_list[i]));
-																	 send->header.seqno=send->lost_list[i];
-																	  if(send->lost_list[i]==0){
-																		   v[0].iov_base = (void *)(send->send_buffer );
-																		   v[0].iov_len  = (size_t)send->fbytes;
-																		   send->header.bsend = send->fbytes;
-																		}else{
-																		   v[0].iov_base = (void *)(send->send_buffer + ((send->lost_list[i]-1)*T_Model::packet_model_payload_bytes + send->fbytes));
-																		   v[0].iov_len  = (size_t)send->header.bsend;
-																		   send->header.bsend = T_Model::packet_model_payload_bytes; 
-																		}						
-																			
-																			send->datagram->_data_model.postPacket (send->pkt,
-																							send->cb_data,
-																							(void *)send,
-																							send->rts.destRank,  
-																							(void *) &send->header,
-																							sizeof (header_metadata_t),
-																							v);
-													 
-													                     send->nlost=0;
-																		 send->header.seqno=send->last_seqno;			
-																		 
-			
-                 return 0;			
-			}															 
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		
 		
 		
@@ -720,10 +651,12 @@ namespace XMI
 
 												 //Post First Data package 
 
-												    struct iovec v[1];
-													
-															v[0].iov_base = &send->send_buffer;
-														    v[0].iov_len  = send->header.bsend;
+												    struct iovec v[2];
+													        
+															v[0].iov_base = &send->header;
+														    v[0].iov_len  = sizeof (header_metadata_t);
+															v[1].iov_base = &send->send_buffer;
+														    v[1].iov_len  = send->header.bsend;
 														
                                                       if(send->header.seqno == 0){	
 
@@ -735,8 +668,8 @@ namespace XMI
 																											send->cb_data,         ///Callback to execute when done
 																											(void *)send,
 																											send->rts.destRank,                 ///target Rank
-																											&send->header,         ///metadata
-																											sizeof (header_metadata_t),    ///metadata size   
+																											(void *)NULL,         ///metadata
+																											0,    ///metadata size   
 																											v);                      ///iovec to send
 																											
 																															
@@ -802,15 +735,18 @@ namespace XMI
                                                       TRACE_ERR((stderr, "   DatagramSimple::Timer send_ack() sending ack.  Protocol header_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 																		 
 											//Post cts package 
-													struct iovec v[1];
-															v[0].iov_base = rcv->lost_list;
-														    v[0].iov_len  = 4*rcv->nlost;											
+													struct iovec v[2];
+													        v[0].iov_base = &rcv->ack;
+														    v[0].iov_len  = sizeof (header_ack_t);	
+															v[1].iov_base = rcv->lost_list;
+														    v[1].iov_len  = 4*rcv->nlost;
+                                                            																
 							                    rcv->datagram->_ack_model.postPacket (rcv->pkt,
 													NULL,
 													rcv->info.cookie,
 													rcv->fromRank,
-													&rcv->ack,
-													sizeof (header_ack_t),
+													(void *)NULL,
+													0,
 													v);	
 													
                                             } 													
@@ -956,16 +892,20 @@ namespace XMI
 												TRACE_ERR((stderr, "    DatagramSimple::Timer send_rts_ack() ..  Sending rts_ack.  Protocol rts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 																							 
 																//Post cts package  
-													 struct iovec v[1];
-														v[0].iov_base = NULL;
-														v[0].iov_len  = 0;	
+													 struct iovec v[2];
+													    v[0].iov_base = &rcv->ack;
+														v[0].iov_len  = sizeof (header_ack_t);	
+														v[1].iov_base = NULL;
+														v[1].iov_len  = 0;	
 														
+														
+													
 												   rcv->datagram->_rts_ack_model.postPacket (rcv->pkt,
 																		NULL,
 																		rcv->info.cookie,
 																		rcv->fromRank,
-																		&rcv->ack,
-																		sizeof (header_ack_t),
+																		(void *)NULL,
+																		0,
 																		v);
 																		
 												TRACE_ERR((stderr, "	DatagramSimple::Timer send_rts_ack() .. rts_ack (%d) was sent\n", ++rcv->datagram->_cont));					
@@ -1265,16 +1205,32 @@ namespace XMI
 				                                     rcv->rcv_list[i]= 0;											 
 						                 /// end initialize array					
 										 
-                                          
-										  //Determine short_data package bytes, first one to receive
-										   if((rts->bytes % (T_Model::packet_model_payload_bytes) == 0)) {            
-											   rcv->fbytes = T_Model::packet_model_payload_bytes;
-											   rcv->pkgnum = rts->bytes/T_Model::packet_model_payload_bytes;
-										  }else{
-												rcv->fbytes = (rts->bytes % (T_Model::packet_model_payload_bytes));
-												rcv->pkgnum = rts->bytes/T_Model::packet_model_payload_bytes+1;
-			  									}				
-													
+                                         
+
+
+                                        	if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
+					                          {
+										 
+												  //Determine short_data package bytes, first one to receive
+												   if((rts->bytes % (T_Model::packet_model_payload_bytes) == 0)) {            
+													   rcv->fbytes = T_Model::packet_model_payload_bytes;
+													   rcv->pkgnum = rts->bytes/T_Model::packet_model_payload_bytes;
+												  }else{
+														rcv->fbytes = (rts->bytes % (T_Model::packet_model_payload_bytes));
+														rcv->pkgnum = rts->bytes/T_Model::packet_model_payload_bytes+1;
+														}				
+											}else{
+											   //Determine short_data package bytes, first one to receive
+												   if((rts->bytes % (T_Model::packet_model_payload_bytes-sizeof(header_metadata_t)) == 0)) {            
+													   rcv->fbytes = T_Model::packet_model_payload_bytes-sizeof(header_metadata_t);
+													   rcv->pkgnum = rts->bytes/(T_Model::packet_model_payload_bytes-sizeof(header_metadata_t));
+												  }else{
+														rcv->fbytes = (rts->bytes % (T_Model::packet_model_payload_bytes-sizeof(header_metadata_t)));
+														rcv->pkgnum = rts->bytes/(T_Model::packet_model_payload_bytes-sizeof(header_metadata_t))+1;
+														}				
+											}
+
+											
 											TRACE_ERR((stderr,"   DatagramSimple::process_rts() ..  _context=%p , -contextid =%d , cookie=%p ,Sender = %d, msinfo= %p , msgbytes = %d , bytes = %d, Recv_inof addr = %p \n",datagram->_client,datagram->_contextid,datagram->_cookie, rts->fromRank,   msginfo,  rts->mbytes, rts->bytes ,(void *)(rcv->info.data.simple.addr)));
 															  
 											
@@ -1290,9 +1246,12 @@ namespace XMI
 													 (xmi_recv_t *) &(rcv->info));     //Recv_state struct
 							  
 										    
-											struct iovec v[1];
-																v[0].iov_base = NULL;
-																v[0].iov_len  = 0;
+											struct iovec v[2];
+											                    v[0].iov_base = &rcv->ack;
+														        v[0].iov_len  = sizeof (header_ack_t);	
+																v[1].iov_base = NULL;
+																v[1].iov_len  = 0;
+																
 
 											// Only handle simple receives .. until the non-contiguous support
 											// is available
@@ -1320,8 +1279,8 @@ namespace XMI
 																		receive_complete,
 																		(void *)rcv,
 																		rts->fromRank,
-																		&rcv->ack,
-																		sizeof (header_ack_t),
+																		(void *)NULL,
+																		0,
 																		v);
 													
 													
@@ -1345,8 +1304,8 @@ namespace XMI
 																		NULL,
 																		rcv->info.cookie,
 																		rts->fromRank,
-																		&rcv->ack,
-																		sizeof (header_ack_t),
+																		(void *)NULL,
+																		0,
 																		v);
 																							
 																  
@@ -1380,11 +1339,23 @@ namespace XMI
             DatagramSimple<T_Model, T_Device, T_LongHeader> * datagram=
               (DatagramSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 			  
-			
+		   header_ack_t * ack;
 		  
-		   TRACE_ERR((stderr, "   DatagramSimple::process_rts_ack() .. header_acks_t coming inside metadata\n")); 			 
-           		   
-		   header_ack_t * ack= (header_ack_t *) metadata;
+		  if (sizeof(header_ack_t) <= T_Model::packet_model_metadata_bytes)
+					  {
+					      TRACE_ERR((stderr, "   DatagramSimple::process_rts_ack() .. header_acks_t is coming inside metadata\n"));
+		   
+						 ack = (header_ack_t *) metadata;         
+							
+					}else{
+					
+					     TRACE_ERR((stderr, "   DatagramSimple::process_rts_ack() .. header_acks_t is coming inside payload\n"));
+		   
+						 ack = (header_ack_t *) payload; 
+					 }
+		  
+		  
+		  
 		 
 		   
 			StopTxTimer(ack->va_send, 0);     //stop timer0; 	
@@ -1415,6 +1386,10 @@ namespace XMI
 				ack->va_send->header.seqno  = 0;                     ///Initialize seqno to zero
 				ack->va_send->pf = recv_func_parm;                   ///Save pointer to recv_func_param
 				
+				
+				
+			if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
+					                          {	
 				//Determine short_data package and total of packages to send
 				   if((ack->va_send->rts.bytes % (T_Model::packet_model_payload_bytes) == 0)) {            
 				       ack->va_send->fbytes = T_Model::packet_model_payload_bytes;
@@ -1423,6 +1398,21 @@ namespace XMI
 					    ack->va_send->fbytes = (ack->va_send->rts.bytes % (T_Model::packet_model_payload_bytes));
 						ack->va_send->pkgnum = ack->va_send->rts.bytes/T_Model::packet_model_payload_bytes+1;
 			        }
+			}else{
+
+                 //Determine short_data package and total of packages to send
+				   if((ack->va_send->rts.bytes % (T_Model::packet_model_payload_bytes-sizeof(header_metadata_t)) == 0)) {            
+				       ack->va_send->fbytes = T_Model::packet_model_payload_bytes-sizeof(header_metadata_t);
+					   ack->va_send->pkgnum = ack->va_send->rts.bytes/(T_Model::packet_model_payload_bytes-sizeof(header_metadata_t));
+				   }else{
+					    ack->va_send->fbytes = (ack->va_send->rts.bytes % (T_Model::packet_model_payload_bytes-sizeof(header_metadata_t)));
+						ack->va_send->pkgnum = ack->va_send->rts.bytes/(T_Model::packet_model_payload_bytes-sizeof(header_metadata_t))+1;
+			        }
+
+
+
+
+				}			
 			
 				ack->va_send->header.bsend=ack->va_send->fbytes;  //update header
 			
@@ -1432,18 +1422,20 @@ namespace XMI
 			
 				TRACE_ERR((stderr, "   DatagramSimple::process_rts_ack() ..  Sending data.  Protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
             
-												struct iovec v[1];
-																v[0].iov_base = &ack->va_send->send_buffer;
-																v[0].iov_len  = ack->va_send->header.bsend;
+												struct iovec v[2];
+																v[0].iov_base =  &ack->va_send->header;
+																v[0].iov_len  = sizeof (header_metadata_t);
+																v[1].iov_base = &ack->va_send->send_buffer;
+																v[1].iov_len  = ack->va_send->header.bsend;
 			
 							 //Post First Data package   			 
 							datagram->_short_data_model.postPacket   ( ack->va_send->pkt,          ///T_message to send
 												ack->va_send->cb_data,         ///Callback to execute when done
 												(void *)ack->va_send,
 												ack->va_send->rts.destRank,                 ///target Rank
-											    &ack->va_send->header,         ///metadata
-												sizeof (header_metadata_t),    ///metadata size   
-												v);                      ///iovec to send
+											    (void *)NULL,                     ///metadata
+												0,                                 ///metadata size   
+												v);                              ///iovec to send
 						 
 			
 				 
@@ -1462,17 +1454,19 @@ namespace XMI
 					
 										TRACE_ERR((stderr, "DatagramSimple::process_ack_rts() .. Sending queue request,  protocol header_info_t fits in the packet metadata, application metadata fits in a single packet payload\n"));
 												
-												struct iovec v[1];
-																v[0].iov_base = send->msginfo;
-																v[0].iov_len  = send->rts.mbytes;
+												struct iovec v[2];
+																v[0].iov_base = &send->rts;
+																v[0].iov_len  = sizeof(rts_info_t);
+																v[1].iov_base = send->msginfo;
+																v[1].iov_len  = send->rts.mbytes;
 											  //OK CASE
 						                     datagram->_rts_model.postPacket (send->pkt,       ///T_Message to send
-														NULL,                    ///Callback to execute when done 
-														(void *) send->cookie,             /// Cookie
-														send->rts.destRank,                        ///Target Rank
-														(void *)&send->rts,          ///rts_info_t struct
-														sizeof(rts_info_t),          ///sizeof rts_info_t
-														v);  		             ///Number of bytes
+														NULL,                      ///Callback to execute when done 
+														(void *) send->cookie,     /// Cookie
+														send->rts.destRank,        ///Target Rank
+														(void *)NULL,             ///rts_info_t struct
+														0,                        ///sizeof rts_info_t
+														v);  		              ///Number of bytes
 					
 				 
 				//reset timer 
@@ -1505,22 +1499,38 @@ namespace XMI
             DatagramSimple<T_Model, T_Device, T_LongHeader> * datagram=
               (DatagramSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 			 
-       		   
-		      //Pointer to metadata
-		      header_metadata_t * header = (header_metadata_t *) metadata;
-		   
-		      CloseRxTimer(header->va_recv, 0);     //close timer; 	
-			  
+       		   header_metadata_t * header; 
+		     
+		        
 		      
-			   header->va_recv->rcv_list[header->seqno] = header->seqno;  //saved seqno in received list
-			
-				TRACE_ERR((stderr, "   DatagramSimple::process_short_data() .. header_metadata_t coming inside metadata\n"));
+			   if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
+					  {
+					      TRACE_ERR((stderr, "   DatagramSimple::process_short_data() .. header_metadata_t coming inside metadata\n"));
+		   
+						
+                         //Pointer to metadata
+		                 header= (header_metadata_t *) metadata;
+			  			 memcpy ((char *)(header->va_recv->info.data.simple.addr) + header->seqno, (payload), header->va_recv->fbytes); 
+				 																					 
+							
+					}else{
+					
+					     TRACE_ERR((stderr, "   DatagramSimple::process_short_data() .. header_metadata_t coming inside payload\n"));
+		   
+						
+                         //Pointer to metadata
+		                 header= (header_metadata_t *) payload;
+			  			 memcpy ((char *)(header->va_recv->info.data.simple.addr) + header->seqno, (header+1), header->va_recv->fbytes); 
+					 }
+		  
+		        
+				 CloseRxTimer(header->va_recv, 0);     //close timer; 	
+				
+			    header->va_recv->rcv_list[header->seqno] = header->seqno;  //saved seqno in received list
+				
 				    
 				TRACE_ERR((stderr,"   DatagramSimple::process_short_data() .. buffer address =%p ,  bytes for receiving =%d, offset = %d, bsend = %d\n", header->va_recv->info.data.simple.addr, header->va_recv->info.data.simple.bytes , header->seqno, header->va_recv->fbytes));
-			 
-				  				  
-				 memcpy ((char *)(header->va_recv->info.data.simple.addr) + header->seqno, (payload), header->va_recv->fbytes); 
-				 																		
+			 																	
    
                 //Update total of bytes received
                 header->va_recv->info.data.simple.bytes -= header->bsend;
@@ -1530,16 +1540,19 @@ namespace XMI
 			   
 			    
 				//Start timer (initial value = 0, max number of cycles = 20, rate = 1200 , receiver, function send_ack, timer1)		                
-			    //StartRxTimer(0, 20 ,1200, header->va_recv , send_ack, 1) ; 
+			    StartRxTimer(0, 20 ,1200, header->va_recv , send_ack, 1) ; 
 				
 				header->va_recv->lost_list[0] =0;  //set lost list to zero 
 		      				 
 				 //are all bytes received?
 				 if ((header->va_recv->info.data.simple.bytes == 0) && ( header->va_recv->pkgnum ==1 )  )					 
 			      {
-				              struct iovec v[1];
-											v[0].iov_base = (void *)header->va_recv->lost_list;
-											v[0].iov_len  = 4;
+				              struct iovec v[2];
+							                v[0].iov_base = &header->va_recv->ack;
+											v[0].iov_len  = sizeof (header_ack_t);
+											v[1].iov_base = (void *)header->va_recv->lost_list;
+											v[1].iov_len  = 4* header->va_recv->nlost;
+												
 		 
 										    header->va_recv->ack.wrate=0;   //window rate to zero = end condition
 															  
@@ -1547,8 +1560,8 @@ namespace XMI
 																NULL,
 																header->va_recv->info.cookie,
 																header->va_recv->fromRank,
-																&header->va_recv->ack,
-																sizeof (header_ack_t),
+																(void *)NULL,
+																0,
 																v);
 				  			
                               TRACE_ERR((stderr,"   DatagramSimple::process_short_data() ..  all data Received \n")); 
@@ -1573,7 +1586,7 @@ namespace XMI
 		  //Control mechanism
 		  static int control_ack(header_metadata_t * header){
 		     
-			 struct iovec v[1];
+			 struct iovec v[2];
 			 
 					if(header->va_recv->rpkg == header->va_recv->ack.wsize){
 			   
@@ -1613,10 +1626,11 @@ namespace XMI
 					
                                  TRACE_ERR((stderr, "   DatagramSimple::control_ack()  Window size = %d , wminseq = %d , wmaxseq = %d , nlost = %d ",header->va_recv->ack.wsize, header->va_recv->wminseq ,header->va_recv->wmaxseq ,header->va_recv->nlost ));
 											
-                                
-								  v[0].iov_base = (void *)header->va_recv->lost_list;
-								  v[0].iov_len  = 4* header->va_recv->nlost;
-								
+                                  v[0].iov_base = &header->va_recv->ack;
+								  v[0].iov_len  = sizeof (header_ack_t);
+								  v[1].iov_base = (void *)header->va_recv->lost_list;
+								  v[1].iov_len  = 4* header->va_recv->nlost;
+								  	 
 								
 								  if ((header->va_recv->wmaxseq+1 == header->va_recv->pkgnum)&& (header->va_recv->nlost==0)){
 								           header->va_recv->ack.wrate=0;         //end condition  
@@ -1627,8 +1641,8 @@ namespace XMI
 																			NULL,
 																			header->va_recv->info.cookie,
 																			header->va_recv->fromRank,
-																			&header->va_recv->ack,
-																			sizeof (header_ack_t),
+																			(void *)NULL,
+																			0,
 																			v);
 										
 										TRACE_ERR((stderr,"   DatagramSimple::control_ack() ..  all data Received \n")); 
@@ -1652,8 +1666,8 @@ namespace XMI
 																NULL,
 																header->va_recv->info.cookie,
 																header->va_recv->fromRank,
-																&header->va_recv->ack,
-																sizeof (header_ack_t),
+																(void *)NULL,
+																0,
 																v);
 									
 									
@@ -1684,12 +1698,39 @@ namespace XMI
               DatagramSimple<T_Model, T_Device, T_LongHeader> * datagram=
                 (DatagramSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 			  
-			  		   
+			   
+			   
 		      //Pointer to metadata
-		   	   header_metadata_t * header = (header_metadata_t *) metadata;
+		   	   header_metadata_t * header;
+			   
+			   
+			    if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
+					  {
+					      TRACE_ERR((stderr, "   DatagramSimple::process_data() .. header_metadata_t coming inside metadata\n"));
 		   
-		      StopRxTimer(header->va_recv, 1);     //stop timer; 	
-			  
+						
+                         //Pointer to metadata
+		                 header= (header_metadata_t *) metadata;
+			  			//copy data to buffer
+				         memcpy ((char *)(header->va_recv->info.data.simple.addr) + ((header->seqno-1)*header->bsend + header->va_recv->fbytes), (payload), header->bsend);      				  
+			   
+		        
+				 																					 
+							
+					}else{
+					
+					     TRACE_ERR((stderr, "   DatagramSimple::process_data() .. header_metadata_t coming inside payload\n"));
+		   
+						
+                         //Pointer to metadata
+		                 header= (header_metadata_t *) payload;
+			  			 
+						 //copy data to buffer
+				         memcpy ((char *)(header->va_recv->info.data.simple.addr) + ((header->seqno-1)*header->bsend + header->va_recv->fbytes), (header+1), header->bsend);      				  
+			   
+					 }
+		  
+			   	StopRxTimer(header->va_recv, 1);     //stop timer; 			  
 		      
 		        //Save maximun received seqno  
 		  		if(header->seqno > header->va_recv->wmaxseq)
@@ -1704,10 +1745,7 @@ namespace XMI
 				 TRACE_ERR((stderr, "   DatagramSimple::process_data() .. header_metadata_t coming inside metadata\n"));
 				    
 				 
-				  //copy data to buffer
-				  memcpy ((char *)(header->va_recv->info.data.simple.addr) + ((header->seqno-1)*header->bsend + header->va_recv->fbytes), (payload), header->bsend);      				  
-			   
-		       
+				  
                  //Update total of bytes received
                  header->va_recv->info.data.simple.bytes -= header->bsend;
 			 
@@ -1718,15 +1756,19 @@ namespace XMI
 			 
 			     TRACE_ERR((stderr, "   DatagramSimple::process_data() Window size = %d, rpkg = %d , pkgnum = %d .  Protocol header_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n",header->va_recv->ack.wsize, header->va_recv->rpkg,header->va_recv->pkgnum ));
 							
-			     struct iovec v[1];
+			     struct iovec v[2];
 						  
 			    //are all bytes received?
 				if ((header->va_recv->info.data.simple.bytes == 0) && (header->va_recv->wmaxseq+1 == header->va_recv->pkgnum))					 
 			      {
 							header->va_recv->lost_list[0] =0;    //nothing lost
 							header->va_recv->nlost = 0;
-							v[0].iov_base = (void *)header->va_recv->lost_list;
-							v[0].iov_len  = 4* header->va_recv->nlost;
+							v[0].iov_base = &header->va_recv->ack;
+						    v[0].iov_len  = sizeof (header_ack_t);	
+							v[1].iov_base = (void *)header->va_recv->lost_list;
+							v[1].iov_len  = 4* header->va_recv->nlost;
+							
+							
 							header->va_recv->ack.wrate=0;         //end condition
 			                
 							//post ack package 
@@ -1734,8 +1776,8 @@ namespace XMI
 																NULL,
 																header->va_recv->info.cookie,
 																header->va_recv->fromRank,
-																&header->va_recv->ack,
-																sizeof (header_ack_t),
+																(void *)NULL,
+																0,
 																v);
 				  			
 							TRACE_ERR((stderr,"   DatagramSimple::process_data() ..  all data Received \n")); 
@@ -1782,14 +1824,34 @@ namespace XMI
             TRACE_ERR((stderr, "   DatagramSimple::process_ack() .. header_info coming inside metadata\n"));   		   
            
 		   //ack is inside metadata		   
-		    header_ack_t * ack = (header_ack_t *) metadata; 
+		    header_ack_t * ack;
+            size_t * lost;
+
+
+            if (sizeof(header_ack_t) <= T_Model::packet_model_metadata_bytes)
+					  {
+					      TRACE_ERR((stderr, "   DatagramSimple::process_ack() .. header_metadata_t coming inside metadata\n"));
+		   
+                         //Pointer to metadata
+		                 ack = (header_ack_t *) metadata;
+						 
+						 //lost list is coming inside payload
+		                 lost = (size_t *) payload;
+			  			 
+			}else{
+					
+					     TRACE_ERR((stderr, "   DatagramSimple::process_ack() .. header_metadata_t coming inside payload\n"));
+		   
+                        //Pointer to metadata
+		                 ack = (header_ack_t *) payload;
+						 
+						 //lost list is coming inside payload
+		                 lost = (size_t *) (ack+1);
+					 }
+
+
 		    
-			//lost list is coming inside payload
-		    size_t * lost = (size_t *) payload;
-		    
-			size_t i=0;
-			struct iovec v[1];
-			
+									
             //Pointer to Protocol object
             DatagramSimple<T_Model, T_Device, T_LongHeader> * datagram=
               (DatagramSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
@@ -1929,11 +1991,11 @@ namespace XMI
 									   v2[0].iov_base = (void *) &window->pkg[i].header;
 									   v2[0].iov_len  = sizeof (header_metadata_t);
 									   v2[1].iov_base = (void *)(window->va_send->send_buffer + ((window->va_send->header.seqno-1)*T_Model::packet_model_payload_bytes + window->va_send->fbytes));
-									   v2[1].iov_len  = (size_t)window->pkg[1].header.bsend;
+									   v2[1].iov_len  = (size_t)window->pkg[i].header.bsend;
 								  } else{
 								   					   
 									   v1[0].iov_base = (void *)(window->va_send->send_buffer + ((window->va_send->header.seqno-1)*T_Model::packet_model_payload_bytes + window->va_send->fbytes));
-									   v1[0].iov_len  = (size_t)window->pkg[1].header.bsend;
+									   v1[0].iov_len  = (size_t)window->pkg[i].header.bsend;
 					               }
 						
 					
@@ -2017,11 +2079,11 @@ namespace XMI
 									   v2[0].iov_base = (void *) &window->pkg[i].header;
 									   v2[0].iov_len  = sizeof (header_metadata_t);
 									   v2[1].iov_base = (void *)(window->va_send->send_buffer + ((window->va_send->header.seqno-1)*T_Model::packet_model_payload_bytes + window->va_send->fbytes));
-									   v2[1].iov_len  = (size_t)window->pkg[1].header.bsend;
+									   v2[1].iov_len  = (size_t)window->pkg[i].header.bsend;
 								  } else{
 								   					   
 									   v1[0].iov_base = (void *)(window->va_send->send_buffer + ((window->va_send->header.seqno-1)*T_Model::packet_model_payload_bytes + window->va_send->fbytes));
-									   v1[0].iov_len  = (size_t)window->pkg[1].header.bsend;
+									   v1[0].iov_len  = (size_t)window->pkg[i].header.bsend;
 					               }
 								   
 								   						
@@ -2091,7 +2153,7 @@ namespace XMI
 											
 						
 					   ///function to send window	
-					   send_window ((window_t *) &send->window[0],  1, send->rts.wsize);
+					   send_window ((window_t *) &send->window[0],  2, send->rts.wsize);
 					   
 								
 					   TRACE_ERR((stderr, "   DatagramSimple::Callback_data_send() ..  Stop Sending, send->pkgsend =%d,  send->rts.window= %d , send->header.seqno = %d \n",send->pkgsend , send->rts.wsize, send->header.seqno));
