@@ -23,7 +23,7 @@
 static XMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
 
 static   void       *_cookie=(void*)"HI COOKIE";
-static int           _doneCountdown;
+static int           _doneCountdown, _countNoData=0;
 xmi_callback_t       _cb_done;
 const xmi_quad_t     _msginfo = {0,1,2,3};
 
@@ -49,6 +49,7 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
 
   if(connection_id == 1) // no data being sent
   {
+    ++_countNoData;
     *rcvlen = 0;
     *rcvpwq = (xmi_pipeworkqueue_t*) NULL;
     if(sndlen == 0)
@@ -304,7 +305,7 @@ int main(int argc, char ** argv)
 
   int idx = 0;
   xmi_task_t *ranks = (xmi_task_t *) malloc (gSize * sizeof(xmi_task_t));
-  for (int count = 0; count < gSize; count++)
+  for(int count = 0; count < gSize; count++)
     if(count != task_id)
       ranks[idx++] = count;
 
@@ -313,8 +314,22 @@ int main(int argc, char ** argv)
 
   //for (int iter = 0; iter < 10; iter++)
   {
-    _doneCountdown = gSize - 1;
+    _doneCountdown = gSize;
     //sleep(5); // instead of syncing
+
+    mcast.dispatch = dispatch;
+//    mcast.connection_id = task_id; //0xB;
+    mcast.msginfo = &_msginfo;
+    mcast.msgcount = 1;
+    mcast.src_participants = (xmi_topology_t *)&src_participants;
+    mcast.dst_participants = (xmi_topology_t *)&dst_participants;
+
+
+    mcast.client = client;
+    mcast.context = 0;
+    mcast.roles = -1;
+
+    mcast.cb_done = _cb_done;
 
     mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
 
@@ -332,6 +347,27 @@ int main(int argc, char ** argv)
     {
       status = XMI_Context_advance (context, 10);
     }
+    if(_countNoData != (gSize -1))
+      fprintf(stderr,"FAIL didn't receive %d expected metadata - received %d\n",gSize-1, _countNoData);
+    else fprintf(stderr,"PASS received %d expected metadata\n",_countNoData);
+    XMI::Topology *srcT = (XMI::Topology*) &src_participants;
+    XMI::Topology *dstT = (XMI::Topology*) &dst_participants;
+    if((srcT->size() != 1) ||
+       (!srcT->isRankMember(task_id)) ||
+       (dstT->size() != (gSize-1)))
+      fprintf(stderr,"FAIL topo sanity\n");
+    else fprintf(stderr,"PASS topo sanity\n");
+    xmi_task_t *dranks = (xmi_task_t*) malloc(gSize * sizeof(xmi_task_t));
+    dstT->rankList(&dranks);
+    bool fail = false;
+    for(int count = 0; count < gSize-1; count++)
+      if(ranks[count] != dranks[count])
+      {
+        fprintf(stderr,"FAIL %d\n", count);
+        fail = true;
+        break;
+      }
+    if(!fail) fprintf(stderr,"PASS dst topo ranks\n");
   }
 // ------------------------------------------------------------------------
 
