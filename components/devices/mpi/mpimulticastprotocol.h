@@ -239,9 +239,8 @@ namespace XMI
           protocol->_allocator.returnObject(cookie);  // and release storage
 
           // call original done
-#warning hack
           if(cb_done.function)
-            (cb_done.function)(NULL,//XMI_Client_getcontext(protocol->_client,protocol->_contextid),
+            (cb_done.function)(XMI_Client_getcontext(protocol->_client,protocol->_contextid),
                                cb_done.clientdata, result);
 
           return;
