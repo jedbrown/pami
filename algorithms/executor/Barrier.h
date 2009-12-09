@@ -8,8 +8,8 @@
 #include "algorithms/executor/OldBarrier.h"
 
 #undef TRACE_ERR
-//#define TRACE_ERR(x) fprintf x
-#define TRACE_ERR(x)
+#define TRACE_ERR(x) fprintf x
+//#define TRACE_ERR(x)
 
 #include "algorithms/executor/ScheduleCache.h"
 
@@ -39,7 +39,9 @@ namespace CCMI
       ///\brief A cache of the barrier schedule
       ScheduleCache         _cache;
 
-      char                  _request[1024];  //A 1024 byte request
+      char                  *_request;  //A 1024 byte request
+
+      XMI::Topology         _srctopology;
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -94,7 +96,8 @@ namespace CCMI
               Interfaces::NativeInterface *ninterface):
       Executor(),
       _native(ninterface),
-      _connid(connid)
+      _connid(connid),
+      _srctopology(ninterface->myrank())
       {
         TRACE_ERR((stderr,"<%X>Executor::BarrierExec::::ctor(nranks %d,comm %X,connid %d)\n",
                    (int)this, nranks, comm, connid));
@@ -109,10 +112,16 @@ namespace CCMI
 	_minfo.msginfo       = (xmi_quad_t *)(void *) &_cdata;
 	_minfo.msgcount      = 1;
 	_minfo.src           = NULL;
+	_minfo.dst           = NULL;
+	_minfo.bytes         = 0;
+
+	_request = (char *) malloc (16384); //Large buffer for request. 
 	_minfo.request       = (void *)&_request;
-        _minfo.connection_id = _connid;
+        //_minfo.connection_id = _connid;
         _minfo.roles         = -1U;
         _minfo.dst_participants  = NULL;
+	_minfo.src_participants  = (xmi_topology_t *)&_srctopology;
+	
         _iteration           = 0;
       }
 
@@ -164,16 +173,29 @@ inline void CCMI::Executor::BarrierExec::sendNext()
     return;
   }
 
+  fprintf(stderr, "<%X> %d BarrierExec::sendNext phase %d\n", (int)this, _native->myrank(), _phase);
+
   _senddone = false;
   XMI::Topology *topology = _cache.getDstTopology(_phase);
   int ndest = topology->size();
   _minfo.dst_participants = (xmi_topology_t *)topology;
-  
-  TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext _phase %d, ndest %zd, _connid %d, _clientdata %X\n", (int) this,_phase, ndest, _connid, (int)_clientdata));
 
   ///We can now send any number of messages in barrier
-  if(ndest > 0)
+  if(ndest > 0)    
   {
+#if 1
+    size_t *dstranks = NULL;
+    topology->rankList(&dstranks);
+    CCMI_assert (dstranks != NULL);
+    
+    TRACE_ERR((stderr,"Executor::BarrierExec::sendNext dstranks %p\n", dstranks));
+    
+    for (int count = 0; count < ndest; count++)
+      TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext _phase %d, ndest %zd, _dstranks[count] %d, _connid %d, _clientdata %X\n", (int) this,_phase, ndest, dstranks[count], _connid, (int)_clientdata));
+    CCMI_assert (topology->type() == XMI_LIST_TOPOLOGY);
+#endif
+        
+    _minfo.connection_id = _phase; //set connection id to phase
     _cdata._phase     = _phase;
     _cdata._iteration = _iteration;  //Send the last bit of iteration
 
@@ -219,6 +241,12 @@ inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
 						char            * buf,
 						unsigned          size)
 {
+  ///Test code
+  XMI::Topology *topology = _cache.getDstTopology(_phase);
+  size_t *dstranks = NULL;
+  topology->rankList(&dstranks);
+  CCMI_assert (dstranks != NULL);
+
   CollHeaderData *hdr = (CollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);
   //Process this message by incrementing the phase vec
@@ -248,6 +276,13 @@ inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
 ///
 inline void CCMI::Executor::BarrierExec::internalNotifySendDone( const xmi_quad_t & info )
 {
+  ///Test
+  XMI::Topology *topology = _cache.getDstTopology(_phase);
+  size_t *dstranks = NULL;
+  topology->rankList(&dstranks);
+  CCMI_assert (dstranks != NULL);
+
+
   TRACE_ERR((stderr,"<%X>Executor::BarrierExec::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
 
   _senddone = true;

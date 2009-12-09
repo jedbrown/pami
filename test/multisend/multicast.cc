@@ -241,6 +241,7 @@ int main(int argc, char ** argv)
   }
 // ------------------------------------------------------------------------
 
+
 // ------------------------------------------------------------------------
 // simple mcast to all including root
 // ------------------------------------------------------------------------
@@ -300,12 +301,20 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 // simple mcast to all except root, metadata only
 // ------------------------------------------------------------------------
-  {
-    _doneCountdown = 1;
-    //sleep(5); // instead of syncing
 
-    new (&src_participants) XMI::Topology(gRoot); // global root
-    new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
+  int idx = 0;
+  xmi_task_t *ranks = (xmi_task_t *) malloc (gSize * sizeof(xmi_task_t));
+  for (int count = 0; count < gSize; count++)
+    if(count != task_id)
+      ranks[idx++] = count;
+
+  new (&src_participants) XMI::Topology(task_id); // global root
+  new (&dst_participants) XMI::Topology(ranks, (gSize-1)); // everyone except root in dst_participants
+
+  //for (int iter = 0; iter < 10; iter++)
+  {
+    _doneCountdown = gSize - 1;
+    //sleep(5); // instead of syncing
 
     mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
 
@@ -314,7 +323,7 @@ int main(int argc, char ** argv)
 
     mcast.bytes = 0;
 
-    if(gRoot == task_id)
+    //if(gRoot == task_id)
     {
       status = XMI_Multicast(&mcast);
     }

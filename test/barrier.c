@@ -129,9 +129,10 @@ int main (int argc, char ** argv)
   _barrier(context, &barrier);
   if(!task_id)
     fprintf(stderr, "Test Barrier 2, then correctness\n");
+  barrier.algorithm = algorithm[1];
   _barrier(context, &barrier);
   _barrier(context, &barrier);
-
+  
   int algo;
   for(algo=0; algo<num_algorithm[algorithm_type]; algo++)
       {

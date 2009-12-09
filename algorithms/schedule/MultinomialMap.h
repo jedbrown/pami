@@ -92,9 +92,11 @@ namespace CCMI {
     class LinearMap : public MultinomialMap<LinearMap> {
     public:
 
+      LinearMap () {}
+
       LinearMap (unsigned myrank, XMI::Topology *topology) 
       {
-        CCMI_assert (topology->analyzeTopology() == XMI_RANGE_TOPOLOGY);
+        CCMI_assert (topology->type() == XMI_RANGE_TOPOLOGY);
 	topology->rankRange(&_x0, &_xN);       
 	_nranks = _xN - _x0 + 1;
 	_xM = myrank - _x0;
@@ -190,8 +192,11 @@ namespace CCMI {
     class ListMap : public MultinomialMap<ListMap> {
     public:
       
+      ListMap() {}
+
       ListMap (unsigned myrank, XMI::Topology *topology)
       {
+        CCMI_assert (topology->type() == XMI_LIST_TOPOLOGY);
 	topology->rankList(&_ranks);
 	_nranks = topology->size();	
 	

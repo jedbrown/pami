@@ -80,6 +80,9 @@ namespace CCMI
 	  BINO(nodes, nranks, _map.getMyRank(), ph, _nphbino, _radix, _logradix);
 	  CCMI_assert (nranks >= 1);
         }
+
+        if (nranks > 0)
+          fprintf (stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]);  
       }
 
       /**
@@ -220,12 +223,14 @@ namespace CCMI
         }
 	CCMI_assert (nsrc <= topology->size());
 
-	for (unsigned count = 0; count < nsrc; count ++) {
-          srcranks[count] = _map.getGlobalRank(srcranks[count]);
-        }
-
-	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, nsrc);
+	if (nsrc > 0) {
+	  for (unsigned count = 0; count < nsrc; count ++) {
+	    srcranks[count] = _map.getGlobalRank(srcranks[count]);
+	  }
+	  
+	  //Convert to a list topology
+	  new (topology) XMI::Topology (srcranks, nsrc);
+	}
       }
 
       /**
@@ -249,13 +254,16 @@ namespace CCMI
         }
 	CCMI_assert (ndst <= topology->size());
 
-	for (unsigned count = 0; count < ndst; count ++)
-        {
-          dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-        }
-
-	//Convert to a list topology of the accurate size
-	new (topology) XMI::Topology (dstranks, ndst);
+	if (ndst > 0) {
+	  for (unsigned count = 0; count < ndst; count ++)
+	    {
+	      dstranks[count]   = _map.getGlobalRank(dstranks[count]);
+	      fprintf (stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]);  
+	    }
+	  
+	  //Convert to a list topology of the accurate size
+	  new (topology) XMI::Topology (dstranks, ndst);
+	}
       }
 
       /**
@@ -324,8 +332,11 @@ MultinomialTreeT(unsigned myrank, XMI::Topology *topology):_map(myrank, topology
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
-MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks):_topology(ranks, nranks), _map(myrank, &_topology)
+MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks):_topology(ranks, nranks), _map()
 {
+  CCMI_assert (_topology.type() == XMI_LIST_TOPOLOGY);
+
+  new (&_map) M (myrank, &_topology);
   initBinoSched();
 }
 
