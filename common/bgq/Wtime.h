@@ -70,7 +70,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
 
           return result.d;
 #else
-          return 0;
+          return GetTimeBase(); // From hwi/include/bqc/A2_inlines.h
 #endif
         };
 
