@@ -12,9 +12,9 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            =  multicast.${EXTENSION} multicast_as.${EXTENSION} multicast_xcoll.${EXTENSION}
-APPS            += multicast_local.${EXTENSION} multicast_local_as.${EXTENSION} multicast_local_xcoll.${EXTENSION}
-APPS            += multicast_pwq.${EXTENSION} multicast_pwq_as.${EXTENSION} multicast_pwq_xcoll.${EXTENSION}
+APPS            =  multicast.${EXTENSION} multicast_as.${EXTENSION}
+APPS            += multicast_local.${EXTENSION} multicast_local_as.${EXTENSION} 
+APPS            += multicast_pwq.${EXTENSION} multicast_pwq_as.${EXTENSION}
 APPS            += #multicombine.${EXTENSION}
 APPS            += #multisync.${EXTENSION} 
 

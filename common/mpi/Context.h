@@ -40,16 +40,6 @@
 
 
 
-#ifndef DISABLE_COLLDEVICE
-// \/\/\/ Experimental non-generic "collective" mpi device and protocol
-#include "components/devices/mpi/mpicollectiveprotocol.h"
-#include "components/devices/mpi/mpicollectiveheader.h"
-#include "components/devices/mpi/mpicollectivedevice.h"
-#include "components/devices/mpi/mpicollectivemessage.h"
-// /\/\/\ Experimental non-generic "collective" mpi device and protocol
-#else
-#warning Experimental non-generic collective mpi device is disabled
-#endif //ifndef DISABLE_COLLDEVICE
 
 #include "components/devices/mpi/mpimulticastprotocol.h"
 
@@ -70,13 +60,6 @@ namespace XMI
     typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
 
-#ifndef DISABLE_COLLDEVICE
-// \/\/\/ Experimental non-generic "collective" mpi device and protocol
-    typedef XMI::Device::MPIMulticastHeader<XMI::Device::MPICollectiveMcastMessage> MPIMcastHeader;
-    typedef XMI::Device::MPICollectiveDevice<MPIMcastHeader> MPICollDevice;
-    typedef XMI::Protocol::MPI::OneSidedMulticastProtocol<MPICollDevice, MPIMcastHeader > MPIOneSidedMulticastProtocol;
-// /\/\/\ Experimental non-generic "collective" mpi device and protocol
-#endif //ifndef DISABLE_COLLDEVICE
 
     // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
     typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2pDispatchMulticastProtocol;
@@ -111,12 +94,6 @@ namespace XMI
         _shmem(),
         _mpi(&__global.mpi_device),
 
-#ifndef DISABLE_COLLDEVICE
-// \/\/\/ Experimental non-generic "collective" mpi device and protocol
-        _mpi_global_coll_device((size_t)__global.mapping.task()),
-        _mpi_local_coll_device(&__global.topology_local, (size_t)__global.mapping.task()),
-// /\/\/\ Experimental non-generic "collective" mpi device and protocol
-#endif //ifndef DISABLE_COLLDEVICE
         _empty_advance(0)
         {
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
@@ -189,12 +166,6 @@ namespace XMI
         events += _generic.advance();
         events += _shmem.advance_impl();
 
-#ifndef DISABLE_COLLDEVICE
-// \/\/\/ Experimental non-generic "collective" mpi device and protocol
-        events += _mpi_global_coll_device.advance_impl();
-        events += _mpi_local_coll_device.advance_impl();
-// /\/\/\ Experimental non-generic "collective" mpi device and protocol
-#endif //ifndef DISABLE_COLLDEVICE
 
                 if(events == 0)
                   _empty_advance++;
@@ -498,17 +469,6 @@ namespace XMI
       // we know what class to pull out of _dispatch[][0] and (eventually) what allocator to use.
       XMI_assert_debug (_dispatch[id][1] > (void*)0 && _dispatch[id][1] < (void*)6);
 
-#ifndef DISABLE_COLLDEVICE
-// \/\/\/ Experimental non-generic "collective" mpi device and protocol
-      if(_dispatch[id][1] == (void*)1) // see HACK comment above
-      {
-        MPIOneSidedMulticastProtocol * multicast = (MPIOneSidedMulticastProtocol *) _dispatch[id][0];
-        TRACE_ERR((stderr, ">> multicast_impl, one sided collective multicast %p\n", multicast));
-        multicast->multicast(mcastinfo);
-      }
-      else
-// /\/\/\ Experimental non-generic "collective" mpi device and protocol
-#endif //ifndef DISABLE_COLLDEVICE
 
       if(_dispatch[id][1] == (void*)2) // see HACK comment above
       {
@@ -652,36 +612,6 @@ namespace XMI
         // sample:
         //  _dispatch[(size_t)id][1] = (void*) ARBITRARY_ID;
 
-#ifndef DISABLE_COLLDEVICE
-// \/\/\/ Experimental non-generic "collective" mpi device and protocol
-        if(options.hint.multicast.one_sided && options.hint.multicast.collective)
-        {
-          if(options.hint.multicast.global)
-          {
-            _dispatch[(size_t)id][1] = (void*) 1; // see HACK comments above
-            XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
-            new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie,
-                                                                &_mpi_global_coll_device,
-                                                                this->_context,
-                                                                this->_contextid,
-                                                                result);
-            TRACE_ERR((stderr, "<< dispatch_impl() mcast global collective _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
-          }
-          else if(options.hint.multicast.local)
-          {
-            _dispatch[(size_t)id][1] = (void*) 1; // see HACK comments above
-            XMI_assertf(_request.objsize >= sizeof(MPIOneSidedMulticastProtocol),"%zd >= %zd\n",_request.objsize,sizeof(MPIOneSidedMulticastProtocol));
-            new (_dispatch[(size_t)id][0]) MPIOneSidedMulticastProtocol(id, fn.multicast, cookie,
-                                                                &_mpi_local_coll_device,
-                                                                this->_context,
-                                                                this->_contextid,
-                                                                result);
-            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided collective _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
-          }
-        }
-        else
-// /\/\/\ Experimental non-generic "collective" mpi device and protocol
-#endif //ifndef DISABLE_COLLDEVICE
         if(options.hint.multicast.one_sided)
         {
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
@@ -807,12 +737,6 @@ namespace XMI
       ShmemDevice               _shmem;
       MemoryAllocator<2048,16>  _request;
       MPIDevice                *_mpi;
-#ifndef DISABLE_COLLDEVICE
-// \/\/\/ Experimental non-generic "collective" mpi device and protocol
-      MPICollDevice             _mpi_global_coll_device;
-      MPICollDevice             _mpi_local_coll_device;
-// /\/\/\ Experimental non-generic "collective" mpi device and protocol
-#endif //ifndef DISABLE_COLLDEVICE
       MPICollreg               *_collreg;
       MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;
