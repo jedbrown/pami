@@ -190,6 +190,16 @@ namespace XMI
             ((T_P2P_PROTOCOL*)&_p2p_protocol)->immediate(&sendi);
           }
 
+          // No data? We're done.
+          if(mcast->bytes == 0)
+          {
+            // call original done
+            if(mcast->cb_done.function)
+              (mcast->cb_done.function)(XMI_Client_getcontext(mcast->client,mcast->context),
+                                 mcast->cb_done.clientdata, XMI_SUCCESS);
+            return true;
+          }
+
           allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
           allocation->protocol = this; // so we can free it later
           TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol::multicast() allocated %p, mcast %p, cb_done %p, client data %p\n",
@@ -292,6 +302,16 @@ namespace XMI
           mcast.bytes         = ((p2p_hdr_t*)header)->bytes;
 
           _dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)task, mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
+
+          // No data? We're done.
+          if(mcast.bytes == 0)
+          {
+            // call original done
+            if(mcast.cb_done.function)
+              (mcast.cb_done.function)(XMI_Client_getcontext(_client,_contextid),
+                                       mcast.cb_done.clientdata, XMI_SUCCESS);
+            return;
+          }
 
           // Allocate storage and call all-sided multicast.
           mcast.client = _client;
