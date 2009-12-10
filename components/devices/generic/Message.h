@@ -79,11 +79,12 @@ public:
 
 	/// \brief get client associated with message
 	/// \return	client for message posting/completion
+	/// \ingroup gendev_subdev_api
 	xmi_client_t getClient() { return _client; }
 
 	/// \brief get context ID associated with message
 	/// \return	Context ID for message posting/completion
-	///
+	/// \ingroup gendev_subdev_api
 	size_t getContextId() { return _context; }
 
 	///  \brief Query function to determine message state
@@ -100,6 +101,8 @@ public:
 	/// \brief     Returns the done status of the message
 	///
 	/// \return	true is message is Done
+	/// \ingroup gendev_subdev_api
+	///
 	inline bool isDone() {return (getStatus() == Done);}
 
 	///  \brief Sets the message completion callback
@@ -112,12 +115,20 @@ public:
 	///
 	/// \param[in] ctx	The context object on which completion is called
 	/// \param[in] err	Optional error status (default is success)
+	/// \ingroup gendev_subdev_api
 	///
 	void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS) {
 		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
 	}
 
 	/// \brief accessor for sub-device linked to message
+	///
+	/// Returns reference to device object which contains "send queues".
+	/// This may not be the actual sub-device paired with the message.
+	///
+	/// \return	Reference to sub-device
+	/// \ingroup gendev_subdev_api
+	///
 	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }
 
 	/// \brief virtual method used to activate a message that was enqueued earlier
@@ -135,6 +146,17 @@ public:
 	///
 	/// \param[in] devPosted	was msg was previously posted to sub-device?
 	/// \return	bool whether message is complete
+	/// \ingroup gendev_subdev_api
+	///
+	bool __postNext(bool devPosted);
+
+	/// \brief virtual wrapper for __postNext() method
+	///
+	/// Used during message complete to post the next message.
+	///
+	/// \param[in] devPosted	was msg was previously posted to sub-device?
+	/// \return	bool whether message is complete
+	/// \ingroup gendev_subdev_api
 	///
 	virtual bool postNext(bool devPosted) = 0;
 

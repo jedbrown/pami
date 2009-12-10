@@ -146,7 +146,10 @@ public:
 	inline void init(XMI::SysDep &sd, xmi_context_t ctx, size_t context, size_t num_contexts, Device *generics);
 
 	/// \brief     Advance routine for the generic device.
-	/// \return	number of events processed
+	///
+	/// Currently not used, since subdevices have to be polled for recvs.
+	///
+	/// \return	Boolean indicating if device needs advancing
 	/// \ingroup gendev_public_api
 	///
 	inline bool isAdvanceNeeded();

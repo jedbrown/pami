@@ -120,7 +120,7 @@ protected:
 /// \ingroup gendev_subdev_api
 ///
 #define STD_POSTNEXT(T_Device,T_Thread,I_Device)			\
-	inline bool postNext(bool devPosted) {				\
+	inline bool __postNext(bool devPosted) {			\
 		T_Thread *t;						\
 		int N, n;						\
 		setStatus(XMI::Device::Initialized);			\
@@ -131,7 +131,8 @@ protected:
 		}							\
 		(I_Device)->postToGeneric(this, t, sizeof(*t), n);	\
 		return false;						\
-	}
+	}								\
+	bool postNext(bool devPosted) { return __postNext(devPosted); }
 
 class GenericSubDevice : public BaseGenericDevice {
 private:
@@ -204,7 +205,7 @@ public:
 	///
 	/// Basically, just dequeue the message from the sub-device
 	/// and see if there was anything waiting to run afterwards.
-	/// This routine is inlined, by the postNext() call is virtual.
+	/// This routine is inlined, but the postNext() call is virtual.
 	///
 	/// \param[in] msg	The message that is completed
 	/// \ingroup gendev_subdev_api
@@ -332,7 +333,7 @@ public: // temporary
 	/// also complete it. This is tested and appropriate action taken.
 	///
 	/// \param[in] msg	Message to start and/or enqueue
-	/// \ingroup gendev_subdev_api
+	/// \ingroup gendev_subdev_internal_api
 	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
@@ -425,7 +426,7 @@ public:
 	}
 
 	/// \brief Reset for threads prior to being re-used.
-	/// \ingroup gendev_subdev_api
+	/// \ingroup gendev_subdev_internal_api
 	///
 	inline void __resetThreads() {
 		_doneThreads.fetch_and_clear();
@@ -435,7 +436,7 @@ public:
 	///
 	/// \param[in] t	Thread being completed
 	/// \return	Total number of threads completed for message
-	/// \ingroup gendev_subdev_api
+	/// \ingroup gendev_subdev_internal_api
 	///
 	inline unsigned __completeThread(GenericAdvanceThread *t) {
 		// fetchIncr() returns value *before* increment,
@@ -450,13 +451,14 @@ public:
 	/// also complete it. This is tested and appropriate action taken.
 	///
 	/// \param[in] msg	Message to start and/or enqueue
+	/// \ingroup gendev_subdev_internal_api
 	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		// assert(isLocked(msg->getContext()));
 		bool first = (getCurrent() == NULL);
 		if (first) {
-			if (static_cast<T_Message*>(msg)->postNext(false)) {
+			if (static_cast<T_Message*>(msg)->__postNext(false)) {
 				msg->executeCallback(getGeneric(msg->getContextId())->getContext());
 				return;
 			}
@@ -503,6 +505,7 @@ public:
 
 	/// \brief accessor for the common device for this sub-device
 	/// \return	CommonQueueSubDevice
+	/// \ingroup gendev_subdev_internal_api
 	inline T_CommonDevice *common() { return _common; }
 
 	/// \brief Inform caller of where the threads array is
@@ -512,6 +515,7 @@ public:
 	///
 	/// \param[out] t	Pointer to threads array
 	/// \param[out] n	Pointer to number of threads in array
+	/// \ingroup gendev_subdev_internal_api
 	///
 	inline void getThreads(T_Thread **t, int *n) {
 		*t = _threads;
@@ -529,6 +533,7 @@ public:
 	/// \param[in] t	array of threads to enqueue
 	/// \param[in] l	size of each thread in array
 	/// \param[in] n	number of threads to enqueue
+	/// \ingroup gendev_subdev_internal_api
 	///
 	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
 		_common->postToGeneric(msg, t, l, n);
@@ -562,6 +567,7 @@ public:	// temporary?
 	/// also complete it. This is tested and appropriate action taken.
 	///
 	/// \param[in] msg	Message to start and/or enqueue
+	/// \ingroup gendev_subdev_internal_api
 	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
@@ -574,6 +580,7 @@ public:	// temporary?
 	///
 	/// \param[in] t	Thread being completed
 	/// \return	Total number of threads completed for message
+	/// \ingroup gendev_subdev_internal_api
 	///
 	inline unsigned __completeThread(T_Thread *thr) {
 		return _common->__completeThread(thr);

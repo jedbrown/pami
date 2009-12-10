@@ -187,7 +187,7 @@ namespace Generic {
 	/// Typically, every subdevice will have one call to advanceRecv.
 	///
 	/// \return	Number of work units processed
-	/// \ingroup gendev_internal_api
+	/// \ingroup gendev_private_api
 	///
 	inline int Device::__advanceRecv() {
 		int events = 0;
