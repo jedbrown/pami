@@ -116,9 +116,9 @@ namespace XMI
             xmi_ca_set(&attributes, XMI_GEOMETRY_ODD);
         }
 
-      inline XMI::Topology* getTopology_impl(int topo_num)
+      inline xmi_topology_t* getTopology_impl(int topo_num)
       {
-        return _topos[topo_num];
+        return (xmi_topology_t *)(&_topos[topo_num]);
       }
       inline int myTopologyId_impl()
       {

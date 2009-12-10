@@ -51,7 +51,7 @@ namespace CCMI
 				     geometry->comm(),
 				     0,
 				     mInterface),
-	  _myschedule (__global.mapping.task(), geometry->ranks(), geometry->nranks())
+	  _myschedule (__global.mapping.task(), (XMI::Topology *)geometry->getTopology(0))
 	{
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
                      (int)this, geometry->comm()));
