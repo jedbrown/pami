@@ -8,8 +8,8 @@
 #include "algorithms/executor/OldBarrier.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
-//#define TRACE_ERR(x)
+//#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x)
 
 #include "algorithms/executor/ScheduleCache.h"
 
@@ -167,13 +167,11 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   {
     TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext DONE _cb_done %X, _phase %d, _clientdata %X\n",
                (int) this, (int)_cb_done, _phase, (int)_clientdata));
-    if(_cb_done) _cb_done(_clientdata, NULL, XMI_SUCCESS);
+    if(_cb_done) _cb_done(NULL, _clientdata, XMI_SUCCESS);
     _senddone = false;
 
     return;
   }
-
-  fprintf(stderr, "<%X> %d BarrierExec::sendNext phase %d\n", (int)this, _native->myrank(), _phase);
 
   _senddone = false;
   XMI::Topology *topology = _cache.getDstTopology(_phase);
@@ -183,7 +181,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   ///We can now send any number of messages in barrier
   if(ndest > 0)    
   {
-#if 1
+#if 0
     size_t *dstranks = NULL;
     topology->rankList(&dstranks);
     CCMI_assert (dstranks != NULL);
@@ -241,12 +239,6 @@ inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
 						char            * buf,
 						unsigned          size)
 {
-  ///Test code
-  XMI::Topology *topology = _cache.getDstTopology(_phase);
-  size_t *dstranks = NULL;
-  topology->rankList(&dstranks);
-  CCMI_assert (dstranks != NULL);
-
   CollHeaderData *hdr = (CollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);
   //Process this message by incrementing the phase vec
@@ -276,13 +268,6 @@ inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
 ///
 inline void CCMI::Executor::BarrierExec::internalNotifySendDone( const xmi_quad_t & info )
 {
-  ///Test
-  XMI::Topology *topology = _cache.getDstTopology(_phase);
-  size_t *dstranks = NULL;
-  topology->rankList(&dstranks);
-  CCMI_assert (dstranks != NULL);
-
-
   TRACE_ERR((stderr,"<%X>Executor::BarrierExec::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
 
   _senddone = true;

@@ -18,10 +18,10 @@ namespace CCMI
       unsigned          _nphases;    //Number of phases
 
       ///A vector of source topologies with one for each phase
-      XMI::Topology          * _srctopologies;
+      XMI::Topology          ** _srctopologies;
 
       ///A vector of destination topologies with one of each phase
-      XMI::Topology          * _dsttopologies;
+      XMI::Topology          ** _dsttopologies;
 
       size_t                 * _srcranks;  //Cache buffer of source ranks
       size_t                 * _dstranks;  //Cache buffer of destination ranks
@@ -58,8 +58,8 @@ namespace CCMI
 	CCMI_assert(_start + _nphases  <=  SC_MAXPHASES);
 	CCMI_assert(nmessages <=  (int)SC_MAXRANKS);
 
-	unsigned ntotal_src = 0, ntotal_dst = 0;
-	for(unsigned count = _start; count < (_start + _nphases); count ++)
+	unsigned ntotal_src = 0, ntotal_dst = 0, count = 0;
+	for(count = _start; count < (_start + _nphases); count ++)
         {
 	  size_t srcranks[SC_MAXRANKS], dstranks[SC_MAXRANKS];
 	  XMI::Topology src_topology((size_t *)&srcranks, SC_MAXRANKS);
@@ -70,41 +70,50 @@ namespace CCMI
 	  
 	  schedule->getDstTopology(count, &dst_topology);        
 	  ntotal_dst += dst_topology.size();
+
+	  //fprintf (stderr, "Schedule Cache take_1 phase %d ndst %d dstrank %d\n", count, dst_topology.size(), dstranks[0]);
 	} 
 	
 	allocate (_start + _nphases, ntotal_src, ntotal_dst);
 	
-	unsigned srcindex = 0, dstindex = 0, count = 0;
+	unsigned srcindex = 0, dstindex = 0;
 	for(count = _start; count < (_start + _nphases); count ++)
         {
-	  new (&_srctopologies[count]) XMI::Topology (_srcranks + srcindex, ntotal_src - srcindex);
-	  new (&_dsttopologies[count]) XMI::Topology (_dstranks + dstindex, ntotal_dst - dstindex);
+	  //fprintf (stderr, "Schedule Cache : construct topology of size src %d dst %d\n", ntotal_src - srcindex, ntotal_dst - dstindex);
 
-	  schedule->getSrcTopology(count, &_srctopologies[count]);        
-	  schedule->getDstTopology(count, &_dsttopologies[count]);        	  
-	  srcindex += _srctopologies[count].size();
-	  dstindex += _dsttopologies[count].size();
+	  new (_srctopologies[count]) XMI::Topology (_srcranks + srcindex, ntotal_src - srcindex);
+	  new (_dsttopologies[count]) XMI::Topology (_dstranks + dstindex, ntotal_dst - dstindex);
+
+	  CCMI_assert (_srctopologies[count]->type() == XMI_LIST_TOPOLOGY);
+	  CCMI_assert (_dsttopologies[count]->type() == XMI_LIST_TOPOLOGY);
+
+	  schedule->getSrcTopology(count, _srctopologies[count]);        
+	  schedule->getDstTopology(count, _dsttopologies[count]);        	  
+	  srcindex += _srctopologies[count]->size();
+	  dstindex += _dsttopologies[count]->size();
 	}
 
+#if 0
 	for( count = _start; count < (_start + _nphases); count ++)
 	  if (getDstTopology(count)->size() > 0) {
 	    size_t *dstranks;
 	    getDstTopology(count)->rankList(&dstranks);
-	    fprintf (stderr, "Schedule Cache phase %d ndst %d dstrank %d\n", count, _dsttopologies[count].size(), dstranks[0]);
+	    TRACE_ERR ((stderr, "Schedule Cache take_2 phase %d ndst %d dstrank %d\n", count, _dsttopologies[count]->size(), dstranks[0]));
 	  }
+#endif
 	
       }
 
       XMI::Topology  *getSrcTopology (unsigned phase)
       {
 	CCMI_assert ((phase >= _start) && (phase < _start + _nphases)); 
-	return &_srctopologies[phase]; 
+	return _srctopologies[phase]; 
       }
       
       XMI::Topology  *getDstTopology (unsigned phase)
       {
 	CCMI_assert ((phase >= _start) && (phase < _start + _nphases)); 
-	return &_dsttopologies[phase]; 
+	return _dsttopologies[phase]; 
       }
       
       unsigned  getStartPhase()
@@ -130,7 +139,7 @@ inline void CCMI::Executor::ScheduleCache::allocate
 {  
   //Compute space for nsrcranks, srcoffsets, srcranks, srcsubstasks + 
   //ndstranks, dstoffsets, dstranks, dstsubstasks 
-  unsigned buf_size = 2 * sizeof(xmi_topology_t) * nphases + (nsrc + ndst)*sizeof(size_t);
+  unsigned buf_size = 2 * (sizeof(XMI::Topology *) + sizeof(xmi_topology_t)) * nphases + (nsrc + ndst)*sizeof(size_t);
 
   if (_cachesize < buf_size) {
     if (_cachebuf != NULL) 
@@ -142,12 +151,20 @@ inline void CCMI::Executor::ScheduleCache::allocate
     memset (_cachebuf, 0, buf_size);
   }
 
-  unsigned offset = 0;
-  _srctopologies =  (XMI::Topology *)(_cachebuf + offset);
-  offset       += nphases * sizeof(xmi_topology_t);
+  unsigned offset = 0, count = 0;
+  _srctopologies =  (XMI::Topology **)(_cachebuf + offset);
+  offset += nphases * sizeof(XMI::Topology *);
+  for (count = 0; count < nphases; count ++) {
+    _srctopologies[count] = (XMI::Topology *)(_cachebuf + offset);
+    offset += sizeof(xmi_topology_t);
+  }
 
-  _dsttopologies =  (XMI::Topology *)(_cachebuf + offset);
-  offset       += nphases * sizeof(xmi_topology_t);
+  _dsttopologies =  (XMI::Topology **)(_cachebuf + offset);
+  offset += nphases * sizeof(XMI::Topology *);
+  for (count = 0; count < nphases; count ++) {
+    _dsttopologies[count] = (XMI::Topology *)(_cachebuf + offset);
+    offset += sizeof(xmi_topology_t);
+  }
 
   _srcranks   =  (size_t *)(_cachebuf + offset);
   offset       += nsrc * sizeof(size_t);

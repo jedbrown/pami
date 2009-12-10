@@ -78,11 +78,11 @@ namespace CCMI
           ph -= 1;
           
 	  BINO(nodes, nranks, _map.getMyRank(), ph, _nphbino, _radix, _logradix);
-	  CCMI_assert (nranks >= 1);
+	  CCMI_assert(nranks >= 1);
         }
 
         if (nranks > 0)
-          fprintf (stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]);  
+          TRACE_ERR ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));  
       }
 
       /**
@@ -121,6 +121,8 @@ namespace CCMI
       static unsigned getRadix (unsigned nranks) {
 	int nph = 0;
 	int radix = 2;
+	return radix;
+
 	for(unsigned i = nranks; i > 1; i >>= 1) {
 	  nph++;
 	}
@@ -211,7 +213,8 @@ namespace CCMI
       virtual void getSrcTopology(unsigned phase, XMI::Topology *topology)
       {
 	unsigned *srcranks;
-	topology->rankList(&srcranks);
+	xmi_result_t rc = topology->rankList(&srcranks);
+	CCMI_assert (rc == XMI_SUCCESS);
 	CCMI_assert(srcranks != NULL);
 
 	unsigned nsrc = 0;
@@ -242,7 +245,8 @@ namespace CCMI
       virtual void getDstTopology(unsigned phase, XMI::Topology *topology)
       {
 	unsigned *dstranks;
-	topology->rankList(&dstranks);
+	xmi_result_t rc = topology->rankList(&dstranks);
+	CCMI_assert (rc == XMI_SUCCESS);
 	CCMI_assert(dstranks != NULL);
 
 	unsigned ndst = 0;
@@ -252,14 +256,14 @@ namespace CCMI
         {
           NEXT_NODES(CHILD, phase, dstranks, ndst);
         }
-	CCMI_assert (ndst <= topology->size());
 
 	if (ndst > 0) {
+	  CCMI_assert (ndst <= topology->size());
 	  for (unsigned count = 0; count < ndst; count ++)
-	    {
-	      dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-	      fprintf (stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]);  
-	    }
+	  {
+	    dstranks[count]   = _map.getGlobalRank(dstranks[count]);
+	    TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
+	  }
 	  
 	  //Convert to a list topology of the accurate size
 	  new (topology) XMI::Topology (dstranks, ndst);
