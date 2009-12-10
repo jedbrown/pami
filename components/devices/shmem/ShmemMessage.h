@@ -58,6 +58,9 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
+#ifdef ERROR_CHECKS
+          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
+#endif
           __iov[0].iov_base = src;
           __iov[0].iov_len  = bytes;
 
@@ -89,6 +92,10 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
+#ifdef ERROR_CHECKS
+          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
+#endif
+
           __iov[0].iov_base = src0;
           __iov[0].iov_len  = bytes0;
           __iov[1].iov_base = src1;
@@ -118,6 +125,9 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
+#ifdef ERROR_CHECKS
+          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
+#endif
           memcpy(_metadata, metadata, metasize);
         };
 
@@ -140,6 +150,9 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
+#ifdef ERROR_CHECKS
+          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
+#endif
           memcpy(_metadata, metadata, metasize);
         };
 
@@ -162,6 +175,9 @@ namespace XMI
             _rma_bytes (bytes),
             _rma_is_put (is_put)
         {
+#ifdef ERROR_CHECKS
+          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
+#endif
         };
 
         inline int executeCallback (xmi_result_t status = XMI_SUCCESS)
