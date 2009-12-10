@@ -340,7 +340,7 @@ public: // temporary
 		// assert(isLocked(msg->getContext()));
 		bool first = (getCurrent() == NULL);
 		if (first) {
-			if (static_cast<T_Message*>(msg)->postNext(false)) {
+			if (static_cast<T_Message*>(msg)->__postNext(false)) {
 				msg->executeCallback(getGeneric(msg->getContextId())->getContext());
 				return;
 			}
