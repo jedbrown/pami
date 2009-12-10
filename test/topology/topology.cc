@@ -163,6 +163,8 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 if(task_id == 0)
 {
+  COMPILE_TIME_ASSERT(sizeof(xmi_topology_t) >= sizeof(XMI::Topology));
+
   size_t  gSize    = __global.topology_global.size();
   XMI::Topology topology, subtopology, copy_topology;
 
@@ -178,7 +180,7 @@ if(task_id == 0)
   fprintf(stderr,"\n");fprintf(stderr,"local\n");
   TEST_TOPOLOGY(__global.topology_local,__global.topology_local.size());
 
-  fprintf(stderr,"\n");fprintf(stderr,"local converted to list - DO NOT DO THIS TO GLOBAL IN REAL APPS\n");
+  fprintf(stderr,"\n");fprintf(stderr,"local converted to list - DO NOT DO THIS TO GLOBAL IN REAL APPS\n"); 
   __global.topology_local.convertTopology(XMI_LIST_TOPOLOGY);
   TEST_TOPOLOGY(__global.topology_local,__global.topology_local.size());
 
@@ -250,6 +252,43 @@ if(task_id == 0)
   new (&topology) XMI::Topology(ranklist, subtopology.size());
   // See if we built a good list topology from the Nth global subtopology
   TEST_TOPOLOGY(topology,subtopology.size());
+
+  struct{
+    xmi_topology_t topology_t_array[11];
+    XMI::Topology topology_array[11];
+  } s;
+
+  memset(s.topology_array, -1, (sizeof(XMI::Topology) * 11));
+  for(size_t i = 0; i < 11; ++i)
+    new (&s.topology_array[i]) XMI::Topology(gRankList, (gSize));
+  memset(s.topology_t_array, -1, (sizeof(xmi_topology_t) * 11));
+  for(size_t i = 0; i < 11; ++i)
+    new (&s.topology_t_array[i]) XMI::Topology(gRankList, (gSize));
+
+  fprintf(stderr,"\n");fprintf(stderr,"An array of XMI::Topology sizeof %zd * 11 = %zd\n",sizeof(XMI::Topology),sizeof(XMI::Topology)*11);
+  for(size_t i = 0; i < 11; ++i)
+    TEST_TOPOLOGY(s.topology_array[i],gSize);
+ 
+  fprintf(stderr,"\n");fprintf(stderr,"An array of xmi_topology_t sizeof %zd * 11 = %zd\n",sizeof(xmi_topology_t),sizeof(xmi_topology_t)*11);
+  for(size_t i = 0; i < 11; ++i)
+    TEST_TOPOLOGY((*(XMI::Topology*)&s.topology_t_array[i]),gSize);
+
+  for(size_t i = 0; i < 11; ++i) 
+    s.topology_array[i].convertTopology(XMI_COORD_TOPOLOGY);
+
+  for(size_t i = 0; i < 11; ++i)
+    ((XMI::Topology*)&s.topology_t_array[i])->convertTopology(XMI_COORD_TOPOLOGY);
+
+  fprintf(stderr,"\n");fprintf(stderr,"An array of XMI::Topology sizeof %zd * 11 = %zd : converted to XMI_COORD_TOPOLOGY \n",sizeof(XMI::Topology),sizeof(XMI::Topology)*11);
+  for(size_t i = 0; i < 11; ++i) 
+    TEST_TOPOLOGY(s.topology_array[i],gSize);
+ 
+  fprintf(stderr,"\n");fprintf(stderr,"An array of xmi_topology_t sizeof %zd * 11 = %zd : converted to XMI_COORD_TOPOLOGY \n",sizeof(xmi_topology_t),sizeof(xmi_topology_t)*11);
+  for(size_t i = 0; i < 11; ++i)
+    TEST_TOPOLOGY((*(XMI::Topology*)&s.topology_t_array[i]),gSize);
+
+  XMI_assertf(sizeof(xmi_topology_t) >= sizeof(XMI::Topology),"sizeof(xmi_topology_t) %zd >= %zd sizeof(XMI::Topology)\n",sizeof(xmi_topology_t),sizeof(XMI::Topology));
+  fprintf(stderr,"\n");fprintf(stderr,"DONE\n");
 }
 
 // ------------------------------------------------------------------------
