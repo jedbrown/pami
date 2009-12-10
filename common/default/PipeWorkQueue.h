@@ -575,6 +575,7 @@ public:
 
 	static inline void compile_time_assert () {
 		COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(xmi_pipeworkqueue_ext_t));
+		COMPILE_TIME_ASSERT(sizeof(PipeWorkQueue) <= sizeof(xmi_pipeworkqueue_t));
 	}
 
 private:

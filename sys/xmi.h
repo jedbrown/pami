@@ -1996,7 +1996,7 @@ extern "C"
 
   xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
 
-  typedef xmi_quad_t xmi_pipeworkqueue_t[4];
+  typedef xmi_quad_t xmi_pipeworkqueue_t[8];
   typedef xmi_quad_t xmi_pipeworkqueue_ext_t[2];
 
   /**
