@@ -1,6 +1,10 @@
+/*
+ * \file algorithms/schedule/MultinomialTree.h
+ * \brief ???
+ */
 
-#ifndef __multinomial_tree_schedule__
-#define __multinomial_tree_schedule__
+#ifndef __algorithms_schedule_MultinomialTree_h__
+#define __algorithms_schedule_MultinomialTree_h__
 
 #include "algorithms/interfaces/Schedule.h"
 #include "MultinomialMap.h"
@@ -30,7 +34,7 @@ namespace CCMI
 #define BINO(nodes, nranks, mynode, phase, nph, radix, lradix)	\
     nranks = 0;							\
     for (unsigned r=1; r < radix; r ++)				\
-      nodes[nranks++] = (mynode ^ (r << (phase * lradix))); 
+      nodes[nranks++] = (mynode ^ (r << (phase * lradix)));
 
     //-------------------------------------------------------------
     //------ Supports a generic barrier and allreduce -------------
@@ -57,8 +61,8 @@ namespace CCMI
 	// between outside and peer. Don't care
 	// about 'parent' here - simply flip to
 	// other side of what we are.
-        if( ((ph == _auxsendph) && !parent) || 
-	    ((ph == _auxrecvph) &&  parent) )	  
+        if( ((ph == _auxsendph) && !parent) ||
+	    ((ph == _auxrecvph) &&  parent) )
         {
 	  if (_map.isAuxProc(_map.getMyRank())) {
 	    nodes[0] = _map.getPeerForAux(_map.getMyRank());
@@ -76,13 +80,13 @@ namespace CCMI
           // Phase numbers start at one here, but the
           // algorithm requires zero.
           ph -= 1;
-          
+
 	  BINO(nodes, nranks, _map.getMyRank(), ph, _nphbino, _radix, _logradix);
 	  CCMI_assert(nranks >= 1);
         }
 
         if (nranks > 0)
-          TRACE_ERR ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));  
+          TRACE_ERR ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));
       }
 
       /**
@@ -100,15 +104,15 @@ namespace CCMI
       {
 	_nranks = _map.getNumRanks();
         _op = -1;
-	
+
 	_radix = getRadix (_nranks);
 	_logradix = 1;
-	
+
 	if (_radix == 8)
 	  _logradix = 3;
 	else if (_radix == 4)
 	  _logradix = 2;
-	
+
         _nphases = getMaxPhases(_nranks, &_nphbino);
         _hnranks = (1 << (_nphbino * _logradix)); // threshold for special handling
       }
@@ -126,16 +130,16 @@ namespace CCMI
 	for(unsigned i = nranks; i > 1; i >>= 1) {
 	  nph++;
 	}
-	
+
 	//Capping the number of phases
 	if ((nranks <= 4096) && (nph % 3) == 0)  //multiple of 3
 	  radix = 8;
 	else if ((nph & 1) == 0) //multiple of 2
 	  radix = 4;
-	
+
 	return radix;
       }
-      
+
       static unsigned getMaxPhases(unsigned nranks, unsigned *nbino = NULL)
       {
         unsigned nph;
@@ -148,11 +152,11 @@ namespace CCMI
 	  for(unsigned i = nranks; i > 1; i >>= 1) {
 	    nph++;
 	  }
-	  
+
 	  if (radix == 8)
 	    nph /= 3;
 	  else if (radix == 4)
-	    nph /= 2;	    
+	    nph /= 2;
         }
         if(nbino)
         {
@@ -174,7 +178,7 @@ namespace CCMI
       _nphases(0)
       {
       }
-      
+
       /**
        * \brief Constructor for list of ranks
        *
@@ -182,7 +186,7 @@ namespace CCMI
        * \param[in] ranks	Ranks list
        */
       MultinomialTreeT (unsigned myrank, XMI::Topology *topo);
-      
+
 
       /**
        * \brief Constructor for list of ranks
@@ -230,7 +234,7 @@ namespace CCMI
 	  for (unsigned count = 0; count < nsrc; count ++) {
 	    srcranks[count] = _map.getGlobalRank(srcranks[count]);
 	  }
-	  
+
 	  //Convert to a list topology
 	  new (topology) XMI::Topology (srcranks, nsrc);
 	}
@@ -264,7 +268,7 @@ namespace CCMI
 	    dstranks[count]   = _map.getGlobalRank(dstranks[count]);
 	    TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
 	  }
-	  
+
 	  //Convert to a list topology of the accurate size
 	  new (topology) XMI::Topology (dstranks, ndst);
 	}
@@ -285,7 +289,7 @@ namespace CCMI
     protected:
       unsigned     _nphases;    /// \brief Number of phases total
       unsigned     _nphbino;    /// \brief Num of phases in pow-of-2 sec
-      unsigned     _op;         /// \brief Collective op	           
+      unsigned     _op;         /// \brief Collective op
       unsigned     _radix;      /// \brief Radix of the collective operation (default 2)
       unsigned     _logradix;   /// \brief Log of radix of the collective operation (default 1)
       unsigned     _nranks;     /// \brief Number of ranks[]
@@ -302,7 +306,7 @@ namespace CCMI
       static const bool CHILD  = false;
 
     };    //Multinomial Tree Schedule
-    
+
     typedef MultinomialTreeT<LinearMap>  LinearMultinomial;
     typedef MultinomialTreeT<ListMap> ListMultinomial;
   };   //Schedule
@@ -449,9 +453,9 @@ setupContext(unsigned &startph, unsigned &nph)
 	  d *= _radix; //radix of the collective
 	  n ++;
 	}
-	
+
 	np -= n;  //np - n -1 ?
-	_sendph = st + np - 1;	
+	_sendph = st + np - 1;
         _recvph = NOT_SEND_PHASE;
       }
       break;
@@ -507,7 +511,7 @@ init(int root, int comm_op, int &start, int &nph)
   _op = comm_op;
 
   if (comm_op == REDUCE_OP ||
-      comm_op == BROADCAST_OP) 
+      comm_op == BROADCAST_OP)
     _map.setRoot (root);
 
   setupContext(st, np);

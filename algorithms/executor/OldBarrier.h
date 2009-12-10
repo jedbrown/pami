@@ -1,3 +1,7 @@
+/*
+ * \file algorithms/executor/OldBarrier.h
+ * \brief ???
+ */
 
 #ifndef __algorithms_executor_OldBarrier_h__
 #define __algorithms_executor_OldBarrier_h__

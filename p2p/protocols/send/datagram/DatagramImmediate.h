@@ -131,11 +131,11 @@ namespace XMI
           ///
           /// \see XMI::Protocol::Send::immediate
           ///
-		  
-		  
+
+
 		  inline xmi_result_t immediate_impl (xmi_send_immediate_t * parameters)
           {
-                    
+
             TRACE_ERR((stderr, "DatagramImmediate::immediate_impl() >>\n"));
 
             // Specify the protocol metadata to send with the application

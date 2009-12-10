@@ -18,5 +18,3 @@
 XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread>  _g_mpisync_dev;
 
 XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> _g_mpibcast_dev;
-
-

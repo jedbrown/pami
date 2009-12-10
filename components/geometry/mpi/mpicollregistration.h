@@ -38,7 +38,7 @@ namespace XMI
 	_dev(dev),
         _sysdep(sd),
 	_client (client),
-	_context (context),	  
+	_context (context),
 	_contextid (context_id),
 	_pgbroadcast(dev),
 	_pgallgather(dev),
@@ -48,7 +48,7 @@ namespace XMI
 	_pgallreduce(dev),
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
-	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id), 
+	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id),
         _ccmibinombroadcast(dev, sd, mapidtogeometry),
         _ccmiringbroadcast(dev, sd, mapidtogeometry),
         _ccmiringallreduce(dev, sd, mapidtogeometry),
@@ -140,7 +140,7 @@ namespace XMI
 
     public:
       T_Device                        *_dev;
-      T_Sysdep                        *_sysdep;      
+      T_Sysdep                        *_sysdep;
       XMI_NBCollManager                _nbCollMgr;
       xmi_client_t                     _client;
       xmi_context_t                    _context;

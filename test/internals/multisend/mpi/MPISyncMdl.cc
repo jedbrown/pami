@@ -62,7 +62,7 @@ int main(int argc, char ** argv)
 
   xmi_multisync_t multisync;
 
-  // simple barrier on the GI network... SMP mode    
+  // simple barrier on the GI network... SMP mode
   multisync.client = client;
   multisync.connection_id = 0;
   multisync.context = 0;

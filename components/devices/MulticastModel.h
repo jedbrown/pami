@@ -53,9 +53,9 @@ namespace XMI
 
       ///
       /// \brief Add an active message dispatch to the multicast model.
-      /// 
+      ///
       /// \todo Need A LOT MORE documentation on this interface and its use
-      /// 
+      ///
       /// \param T_Model   Multicast model template class
       ///
       /// \see Multicast::Model

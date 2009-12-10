@@ -91,7 +91,7 @@ namespace XMI
           {
             new(&_topos[i]) XMI::Topology(rangelist[i-1].lo, rangelist[i-1].hi);
             size = rangelist[i-1].hi - rangelist[i-1].lo + 1;
-            
+
             for (j = 0; j < size; j++)
             {
               if ((rangelist[i-1].lo + j) == (xmi_task_t) _rank)

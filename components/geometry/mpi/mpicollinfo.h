@@ -230,7 +230,7 @@ namespace XMI
     public:
       CCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
-                           xmi_mapidtogeometry_fn fcn, 
+                           xmi_mapidtogeometry_fn fcn,
 			   xmi_client_t           client,
 			   xmi_context_t          context,
 			   size_t                 context_id):
@@ -256,7 +256,7 @@ namespace XMI
     public:
       CCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
-                           xmi_mapidtogeometry_fn fcn, 
+                           xmi_mapidtogeometry_fn fcn,
 			   xmi_client_t           client,
 			   xmi_context_t          context,
 			   size_t                 context_id):

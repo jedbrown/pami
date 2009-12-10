@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_mpi_mpisyncmsg_h__
-#define __components_devices_mpi_mpisyncmsg_h__
+#ifndef __components_devices_mpi_MPISyncMsg_h__
+#define __components_devices_mpi_MPISyncMsg_h__
 
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/Message.h"
@@ -39,9 +39,9 @@ namespace XMI
     class MPISyncDev : public XMI::Device::Generic::SimpleSubDevice<T_Thread>
     {
     public:
-      MPI_Comm _msync_communicator; 
+      MPI_Comm _msync_communicator;
       MPISyncDev() :
-      XMI::Device::Generic::SimpleSubDevice<T_Thread>() 
+      XMI::Device::Generic::SimpleSubDevice<T_Thread>()
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_msync_communicator);
       };
@@ -57,7 +57,7 @@ namespace XMI
   {
 
 ///
-/// \brief 
+/// \brief
 ///
     template < class T_Device >
     class MPISyncMsg : public XMI::Device::Generic::GenericMessage
@@ -114,7 +114,7 @@ namespace XMI
 
 
     protected:
-      friend class MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread>; 
+      friend class MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread>;
       friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>; // this makes no sense
 
       ADVANCE_ROUTINE(advanceThread,MPISyncMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
@@ -145,7 +145,7 @@ namespace XMI
         {
           // This happens when there is no data to send/receive and ctor set a "pending status" to done,
           //  so on the first advance, setDone and return.
-          thr->setDone(true); 
+          thr->setDone(true);
           setStatus(XMI::Device::Done);
           TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() done - no participants\n",(unsigned)this));
           return XMI_SUCCESS;
@@ -231,7 +231,7 @@ namespace XMI
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() connection_id %d, request %p\n",(unsigned)this,
                     msync->connection_id, msync->request));
-      MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg = 
+      MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
         new (msync->request) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);
       _g_mpisync_dev.__post<MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
       return true;

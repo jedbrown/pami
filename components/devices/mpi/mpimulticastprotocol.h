@@ -87,7 +87,7 @@ namespace XMI
         {
           TRACE_DEVICE((stderr,"<%#8.8X>P2pDispatchMulticastProtocol(status)  allocator size %zd\n",(unsigned)this,_allocator.objsize));
         }
-        inline P2pDispatchMulticastProtocol(size_t                     dispatch_id,       
+        inline P2pDispatchMulticastProtocol(size_t                     dispatch_id,
                                             xmi_dispatch_multicast_fn  dispatch,
                                             void                     * cookie,
                                             T_P2P_DEVICE             & p2p_device,
@@ -129,9 +129,9 @@ namespace XMI
           _dispatch_fn=dispatch;
           _cookie=cookie;
           // Construct a p2p protocol for dispatching
-          xmi_dispatch_callback_fn fn; 
+          xmi_dispatch_callback_fn fn;
           fn.p2p = dispatch_p2p;
-          new (&_p2p_protocol) T_P2P_PROTOCOL(_dispatch_id, fn, (void*)this, 
+          new (&_p2p_protocol) T_P2P_PROTOCOL(_dispatch_id, fn, (void*)this,
                                               __global.mpi_device,
                                               __global.mapping.task(),
                                               NULL, 0, status);
@@ -219,7 +219,7 @@ namespace XMI
           l_mcast.cb_done.function = &done;
 
           //This is an all-sided multicast
-          
+
 
           return _multicast_model.postMulticast(&l_mcast);
         }

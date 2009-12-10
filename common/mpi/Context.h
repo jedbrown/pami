@@ -616,7 +616,7 @@ namespace XMI
         {
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(P2pDispatchMulticastProtocol),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2pDispatchMulticastProtocol),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
-          new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie, 
+          new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie,
                                                                       *_mpi,
                                                                       this->_client,
                                                                       this->_context,

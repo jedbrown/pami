@@ -1,3 +1,7 @@
+/*
+ * \file algorithms/executor/Barrier.h
+ * \brief ???
+ */
 
 #ifndef __algorithms_executor_Barrier_h__
 #define __algorithms_executor_Barrier_h__
@@ -19,7 +23,7 @@ namespace CCMI
   {
     class BarrierExec : public Executor
     {
-    public:      
+    public:
       /// pointer to the multicast interface to send messages
       Interfaces::NativeInterface    * _native;
       bool                 _senddone;  /// has send finished or not?
@@ -115,13 +119,13 @@ namespace CCMI
 	_minfo.dst           = NULL;
 	_minfo.bytes         = 0;
 
-	_request = (char *) malloc (16384); //Large buffer for request. 
+	_request = (char *) malloc (16384); //Large buffer for request.
 	_minfo.request       = (void *)&_request;
         //_minfo.connection_id = _connid;
         _minfo.roles         = -1U;
         _minfo.dst_participants  = NULL;
 	_minfo.src_participants  = (xmi_topology_t *)&_srctopology;
-	
+
         _iteration           = 0;
       }
 
@@ -179,20 +183,20 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   _minfo.dst_participants = (xmi_topology_t *)topology;
 
   ///We can now send any number of messages in barrier
-  if(ndest > 0)    
+  if(ndest > 0)
   {
 #if 0
     size_t *dstranks = NULL;
     topology->rankList(&dstranks);
     CCMI_assert (dstranks != NULL);
-    
+
     TRACE_ERR((stderr,"Executor::BarrierExec::sendNext dstranks %p\n", dstranks));
-    
+
     for (int count = 0; count < ndest; count++)
       TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext _phase %d, ndest %zd, _dstranks[count] %d, _connid %d, _clientdata %X\n", (int) this,_phase, ndest, dstranks[count], _connid, (int)_clientdata));
     CCMI_assert (topology->type() == XMI_LIST_TOPOLOGY);
 #endif
-        
+
     _minfo.connection_id = _phase; //set connection id to phase
     _cdata._phase     = _phase;
     _cdata._iteration = _iteration;  //Send the last bit of iteration
@@ -210,7 +214,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
       _minfo.cb_done.function   = staticNotifySendDone;
       _minfo.cb_done.clientdata = this;
     }
-    
+
     ///Initiate multisend
     _native->multicast(&_minfo);
   }

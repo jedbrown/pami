@@ -1,6 +1,10 @@
+/*
+ * \file algorithms/schedule/MultinomialMap.h
+ * \brief ???
+ */
 
-#ifndef   __multinomial_map_h__
-#define   __multinomial_map_h__
+#ifndef __algorithms_schedule_MultinomialMap_h__
+#define __algorithms_schedule_MultinomialMap_h__
 
 #include "algorithms/interfaces/Schedule.h"
 
@@ -9,12 +13,12 @@ namespace CCMI {
 
     ///
     /// \brief The Map interface for the Multinomial schedule. The
-    ///        multinomial schedule just operates on ranks 0-N, where 
-    ///        0-m nodes for a multinomial tree of radix k. The remaining 
-    ///        nodes are auxilliary nodes that send messages to the 
+    ///        multinomial schedule just operates on ranks 0-N, where
+    ///        0-m nodes for a multinomial tree of radix k. The remaining
+    ///        nodes are auxilliary nodes that send messages to the
     ///        internal nodes.
     ///
-    template <class T> class MultinomialMap {      
+    template <class T> class MultinomialMap {
     public:
       MultinomialMap () {}
 
@@ -32,11 +36,11 @@ namespace CCMI {
 
       ///
       /// \brief Is the rank a peer processor that takes the data from
-      ///        the auxillary processor and participates in the 
-      ///        binomial collective. At the end of the collective 
-      ///        operation result will be returned to the auxillary 
+      ///        the auxillary processor and participates in the
+      ///        binomial collective. At the end of the collective
+      ///        operation result will be returned to the auxillary
       ///        processor
-      /// \param [in] the rank of the processor      
+      /// \param [in] the rank of the processor
       ///
       bool isPeerProc  (unsigned rank) {
 	return static_cast<T*>(this)->isPeerProc(rank);
@@ -58,7 +62,7 @@ namespace CCMI {
       ///
       unsigned  getPeerForAux (unsigned rank) {
 	return static_cast<T*>(this)->getPeerForAux(rank);
-      }      
+      }
 
       ///
       /// \brief Convert the rank to the global rank for the msend
@@ -74,7 +78,7 @@ namespace CCMI {
       unsigned getRoot () {
 	return static_cast<T*>(this)->getRoot();
       }
-      
+
       ///
       /// \brief Get my rank in the collective
       ///
@@ -94,13 +98,13 @@ namespace CCMI {
 
       LinearMap () {}
 
-      LinearMap (unsigned myrank, XMI::Topology *topology) 
+      LinearMap (unsigned myrank, XMI::Topology *topology)
       {
         CCMI_assert (topology->type() == XMI_RANGE_TOPOLOGY);
-	topology->rankRange(&_x0, &_xN);       
+	topology->rankRange(&_x0, &_xN);
 	_nranks = _xN - _x0 + 1;
 	_xM = myrank - _x0;
-	
+
 	unsigned nph = 0;
 	for(unsigned i = _nranks; i > 1; i >>= 1) {
 	  nph++;
@@ -108,10 +112,10 @@ namespace CCMI {
 	_hnranks = 1 << nph;
 
 	_xR      = (unsigned) -1;
-      }          
+      }
 
       void setRoot (unsigned r) {
-	CCMI_assert (r >= _x0 && r <= _xN);	
+	CCMI_assert (r >= _x0 && r <= _xN);
 	_xR = r - _x0;
       }
 
@@ -127,11 +131,11 @@ namespace CCMI {
 
       ///
       /// \brief Is the rank a peer processor that takes the data from
-      ///        the auxillary processor and participates in the 
-      ///        binomial collective. At the end of the collective 
-      ///        operation result will be returned to the auxillary 
+      ///        the auxillary processor and participates in the
+      ///        binomial collective. At the end of the collective
+      ///        operation result will be returned to the auxillary
       ///        processor
-      /// \param [in] the rank of the processor      
+      /// \param [in] the rank of the processor
       ///
       bool isPeerProc  (unsigned rank) {
 	if (rank < (_nranks - _hnranks))
@@ -155,7 +159,7 @@ namespace CCMI {
       ///
       unsigned  getPeerForAux (unsigned rank) {
 	return rank - _hnranks;
-      }      
+      }
 
       ///
       /// \brief Convert the rank to the global rank for the msend
@@ -166,15 +170,15 @@ namespace CCMI {
         if(relrank >= _nranks) relrank -= _nranks;
 	return relrank + _x0;
       }
-      
+
       ///
       /// \brief Get my rank in the collective
       ///
       unsigned getMyRank () {
 	if (_xM > _xR)
 	  return _xM - _xR;
-	
-	return _xM + _nranks - _xR;	  
+
+	return _xM + _nranks - _xR;
       }
 
       unsigned getNumRanks () { return _nranks; }
@@ -184,47 +188,47 @@ namespace CCMI {
       unsigned              _xN;     /** The rank of the last node  */
       unsigned              _xR;     /** The relative rank of the root */
       unsigned              _xM;     /** My relative rank */
-      unsigned              _nranks;  /** Number of ranks */       
+      unsigned              _nranks;  /** Number of ranks */
       unsigned              _hnranks; /** Nearest power of 2 */
-    };  
+    };
 
-    
+
     class ListMap : public MultinomialMap<ListMap> {
     public:
-      
+
       ListMap() {}
 
       ListMap (unsigned myrank, XMI::Topology *topology)
       {
         CCMI_assert (topology->type() == XMI_LIST_TOPOLOGY);
 	topology->rankList(&_ranks);
-	_nranks = topology->size();	
-	
+	_nranks = topology->size();
+
 	unsigned nph = 0;
 	for(unsigned i = _nranks; i > 1; i >>= 1) {
 	  nph++;
 	}
-	_hnranks = 1 << nph;	
+	_hnranks = 1 << nph;
 	_rootindex = 0;
-	
+
 #if 0
-	for (unsigned count = 0; count < _nranks; count++) 
+	for (unsigned count = 0; count < _nranks; count++)
 	  if (_ranks[count] == _mapping->rank()) {
 	    _myindex = count;
 	    break;
 	  }
 #endif
 	_myindex = myrank;
-      }          
+      }
 
-      void setRoot (unsigned gr) {	
-	for (unsigned count = 0; count < _nranks; count++) 
+      void setRoot (unsigned gr) {
+	for (unsigned count = 0; count < _nranks; count++)
 	  if (_ranks[count] == gr) {
 	    _rootindex = count;
 	    break;
 	  }
       }
-      
+
       ///
       /// \brief Is the rank an auxilary processor
       /// \param [in] rank the rank of the processor
@@ -237,11 +241,11 @@ namespace CCMI {
 
       ///
       /// \brief Is the rank a peer processor that takes the data from
-      ///        the auxillary processor and participates in the 
-      ///        binomial collective. At the end of the collective 
-      ///        operation result will be returned to the auxillary 
+      ///        the auxillary processor and participates in the
+      ///        binomial collective. At the end of the collective
+      ///        operation result will be returned to the auxillary
       ///        processor
-      /// \param [in] the rank of the processor      
+      /// \param [in] the rank of the processor
       ///
       bool isPeerProc  (unsigned rank) {
 	if (rank < (_nranks - _hnranks))
@@ -265,7 +269,7 @@ namespace CCMI {
       ///
       unsigned  getPeerForAux (unsigned rank) {
 	return rank - _hnranks;
-      }      
+      }
 
       ///
       /// \brief Convert the rank to the global rank for the msend
@@ -276,26 +280,26 @@ namespace CCMI {
         if(relrank >= _nranks) relrank -= _nranks;
 	return _ranks[relrank];
       }
-      
+
       ///
       /// \brief Get my rank in the collective
       ///
       unsigned getMyRank () {
 	if (_myindex >= _rootindex)
 	  return _myindex - _rootindex;
-	
-	return _myindex + _nranks - _rootindex; 
+
+	return _myindex + _nranks - _rootindex;
       }
 
       unsigned getNumRanks () { return _nranks; }
 
     protected:
       size_t              * _ranks;     /** List of ranks */
-      unsigned              _nranks;    /** Number of ranks */       
+      unsigned              _nranks;    /** Number of ranks */
       unsigned              _hnranks;   /** Nearest power of 2 */
       unsigned              _rootindex; /** Index of the root */
       unsigned              _myindex;   /** Index of my node */
-    };  
+    };
   };
 };
 

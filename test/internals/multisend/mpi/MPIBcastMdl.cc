@@ -5,11 +5,11 @@
 
 #include <stdio.h>
 #include "sys/xmi.h"
- 
+
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "test/internals/multisend/multicast.h"
 
-#ifndef TEST_BUF_SIZE 
+#ifndef TEST_BUF_SIZE
 #define TEST_BUF_SIZE	1024
 #endif // TEST_BUF_SIZE
 
@@ -82,7 +82,7 @@ int main(int argc, char ** argv) {
 	mcast.src_participants = (xmi_topology_t *)&itopo;
 	mcast.dst_participants = (xmi_topology_t *)&otopo;
 	mcast.bytes = TEST_BUF_SIZE;
-    mcast.connection_id = 5;  
+    mcast.connection_id = 5;
 
 	const char *test = GLOBAL_BCAST_NAME;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);

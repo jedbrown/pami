@@ -52,7 +52,7 @@ namespace CCMI
       protected:
 	Interfaces::NativeInterface   * _msyncInterface;
 	xmi_mapidtogeometry_fn          _cb_geometry;
-	
+
         public:
 	/// NOTE: This is required to make "C" programs link successfully with virtual destructors
 	void operator delete(void * p)
@@ -74,7 +74,7 @@ namespace CCMI
 	    fn.multicast = (xmi_dispatch_multicast_fn) cb_head;
             _msyncInterface->setDispatch (fn, this);
           }
-	
+
 	static void *   cb_head   (const xmi_quad_t    * info,
 				   unsigned              count,
 				   unsigned              conn_id,
@@ -87,7 +87,7 @@ namespace CCMI
 	{
 	  CollHeaderData  *cdata = (CollHeaderData *) info;
 	  BarrierFactory *factory = (BarrierFactory *) arg;
-	  
+
 	  XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *) XMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
 	  if(geometry == NULL)
 	  {
@@ -100,18 +100,18 @@ namespace CCMI
 	  CCMI_assert (executor != NULL);
 	  TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
 		      (int)factory,cdata->_comm,(int)executor));
-	  
+
 	  //Override poly morphism
 	  executor->CCMI::Executor::BarrierExec::notifyRecv (peer, *info, NULL, 0);
-	  
+
 	  *rcvlen    = 0;
 	  *recvpwq   = 0;
 	  cb_done->function    = NULL;
 	  cb_done->clientdata = NULL;
-	  
+
 	  return NULL;
 	}
-	
+
       };  //- BarrierFactory
 
 // Old, deprecated, interfaces for transition from OldMulticast to Multisync

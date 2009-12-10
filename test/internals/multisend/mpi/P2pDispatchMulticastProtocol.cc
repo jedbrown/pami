@@ -112,14 +112,14 @@ int main(int argc, char ** argv) {
 	fprintf(stderr, "PASS %s\n", test);
 
 	mcast.bytes = 0;
-    mcast.connection_id = 0;  
+    mcast.connection_id = 0;
 	rc = test1.perform_test_active_message(task_id, num_tasks, &mcast);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);
 		exit(1);
 	}
 	fprintf(stderr, "PASS %s\n", test);
-// ------------------------------------------------------------------------   
+// ------------------------------------------------------------------------
 	status = XMI_Context_destroy(context);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);

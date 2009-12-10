@@ -15,8 +15,8 @@
 ///
 /// C++ templates require all source code to be #include'd from a header file.
 ///
-#ifndef __p2p_protocols_send_datagram_h__
-#define __p2p_protocols_send_datagram_h__
+#ifndef __p2p_protocols_send_datagram_Datagram_h__
+#define __p2p_protocols_send_datagram_Datagram_h__
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/datagram/DatagramImmediate.h"
@@ -95,7 +95,7 @@ namespace XMI
           ///
           /// \see XMI::Protocol::Send::immediate
           ///
-		  
+
 		  virtual xmi_result_t immediate (xmi_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, ">> Datagram::immediate()\n"));
@@ -103,9 +103,9 @@ namespace XMI
             TRACE_ERR((stderr, "<< Datagram::immediate()\n"));
             return result;
           };
-		  
-		  
-		  
+
+
+
                     ///
           /// \brief Start a new simple send operation.
           ///
@@ -118,8 +118,8 @@ namespace XMI
             TRACE_ERR((stderr, "<< Datagram::simple()\n"));
             return result;
           };
-		  
-          
+
+
 
       };  // XMI::Protocol::Send::Datagram class
     };    // XMI::Protocol::Send namespace

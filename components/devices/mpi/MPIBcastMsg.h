@@ -39,9 +39,9 @@ namespace XMI
     class MPIBcastDev : public XMI::Device::Generic::SimpleSubDevice<T_Thread>
     {
     public:
-      MPI_Comm _mcast_communicator; 
+      MPI_Comm _mcast_communicator;
       MPIBcastDev() :
-      XMI::Device::Generic::SimpleSubDevice<T_Thread>() 
+      XMI::Device::Generic::SimpleSubDevice<T_Thread>()
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_mcast_communicator);
       };
@@ -329,7 +329,7 @@ namespace XMI
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",(unsigned)this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, mcast->request));
-      MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg = 
+      MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
       new (mcast->request) MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpibcast_dev, mcast);
       _g_mpibcast_dev.__post<MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
       return true;

@@ -1,6 +1,10 @@
+/*
+ * \file components/geometry/mpi/MPINativeInterface.h
+ * \brief ???
+ */
 
-#ifndef   __mpi_native_interface_h__
-#define   __mpi_native_interface_h__
+#ifndef __components_geometry_mpi_MPINativeInterface_h__
+#define __components_geometry_mpi_MPINativeInterface_h__
 
 #include "common/GlobalInterface.h"
 #include "Global.h"
@@ -34,7 +38,7 @@ namespace XMI {
 
   public:
   MPINativeInterface(T_Device *dev, xmi_client_t client, xmi_context_t context, size_t context_id): CCMI::Interfaces::NativeInterface(__global.mapping.task(), __global.mapping.size()), _device(dev), /*_protocol(_status),*/ _dispatch(0), _client(client), _context(context), _contextid(context_id) {}
-  
+
     /// \brief this call is called when the native interface is initialized
     virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie) {
       static size_t dispatch = DISPATCH_START;
@@ -50,19 +54,19 @@ namespace XMI {
       options.config = NULL;
       options.hint.multicast.global = 1;
       options.hint.multicast.one_sided = 1;
-      options.hint.multicast.active_message = 1;      
+      options.hint.multicast.active_message = 1;
       XMI_Dispatch_set_new (_context, dispatch, fn, cookie, options);
-      
+
       CCMI_assert (_status == XMI_SUCCESS);
       _dispatch = dispatch;
       dispatch ++;
     }
 
-    virtual xmi_result_t multicast (xmi_multicast_t *mcast) { 
+    virtual xmi_result_t multicast (xmi_multicast_t *mcast) {
       mcast->dispatch =  _dispatch;
       mcast->client   =  _client;
       mcast->context  =  _contextid;
-      XMI_Multicast (mcast); 
+      XMI_Multicast (mcast);
     }
     virtual xmi_result_t multysync    (xmi_multisync_t *msync) { XMI_Multisync (msync); }
     virtual xmi_result_t multicombine (xmi_multicombine_t *mcombine) { XMI_Multicombine (mcombine); }

@@ -54,7 +54,7 @@ private:
         {
           //fprintf(stderr,"%s:%s msgcount %d, connection_id %d, root %d, sndlen %d, cookie %s\n",
           //        __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata);
-          XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *test = 
+          XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *test =
             (XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *) clientdata;
           XMI_assertf(sndlen <= T_BufSize,"sndlen %zd\n",sndlen);
           XMI_assertf(msgcount == 1,"msgcount %d",msgcount);
