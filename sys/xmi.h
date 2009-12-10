@@ -2297,7 +2297,7 @@ extern "C"
     XMI_TOPOLOGY_COUNT
   } xmi_topology_type_t;
 
-  typedef xmi_quad_t xmi_topology_t[2];
+  typedef xmi_quad_t xmi_topology_t[5];
 
   /**
    * \brief default constructor (XMI_EMPTY_TOPOLOGY)

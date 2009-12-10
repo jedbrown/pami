@@ -479,6 +479,7 @@ namespace XMI {
 
 	public:
 		static void static_init(XMI::Mapping *map) {
+			COMPILE_TIME_ASSERT(sizeof(Topology) <= sizeof(xmi_topology_t));
 			mapping = map;
 			RANK2COORDS(mapping->task(), &my_coords);
 		}
