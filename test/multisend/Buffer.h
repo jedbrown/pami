@@ -29,7 +29,7 @@ namespace XMI
   {
     char* _function_name(const char*name)
     {
-      char* pName = strstr(name,">::");
+      char* pName = strstr((char*)name,">::");
       pName += strlen(">::");
       return pName;
     }
