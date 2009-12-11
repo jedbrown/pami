@@ -161,7 +161,7 @@ int main(int argc, char ** argv)
 
   // global topology variables
   xmi_task_t  gRoot    = topology_global.index2Rank(0);
-  xmi_task_t *gRankList; topology_global.rankList(&gRankList);
+  xmi_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
   size_t  gSize    = topology_global.size();
 
   XMI::Topology src_participants;
@@ -305,7 +305,7 @@ int main(int argc, char ** argv)
 
   int idx = 0;
   xmi_task_t *ranks = (xmi_task_t *) malloc (gSize * sizeof(xmi_task_t));
-  for(int count = 0; count < gSize; count++)
+  for(size_t count = 0; count < gSize; count++)
     if(count != task_id)
       ranks[idx++] = count;
 
@@ -347,8 +347,8 @@ int main(int argc, char ** argv)
     {
       status = XMI_Context_advance (context, 10);
     }
-    if(_countNoData != (gSize -1))
-      fprintf(stderr,"FAIL didn't receive %d expected metadata - received %d\n",gSize-1, _countNoData);
+    if(_countNoData != (int)(gSize -1))
+      fprintf(stderr,"FAIL didn't receive %zd expected metadata - received %d\n",gSize-1, _countNoData);
     else fprintf(stderr,"PASS received %d expected metadata\n",_countNoData);
     XMI::Topology *srcT = (XMI::Topology*) &src_participants;
     XMI::Topology *dstT = (XMI::Topology*) &dst_participants;
@@ -360,10 +360,10 @@ int main(int argc, char ** argv)
     xmi_task_t *dranks = (xmi_task_t*) malloc(gSize * sizeof(xmi_task_t));
     dstT->rankList(&dranks);
     bool fail = false;
-    for(int count = 0; count < gSize-1; count++)
+    for(size_t count = 0; count < gSize-1; count++)
       if(ranks[count] != dranks[count])
       {
-        fprintf(stderr,"FAIL %d\n", count);
+        fprintf(stderr,"FAIL %zd\n", count);
         fail = true;
         break;
       }
