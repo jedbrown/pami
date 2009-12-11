@@ -152,7 +152,7 @@ namespace XMI
 			// so early advance(s) work
         t[nt].setMsg(this);
         t[nt].setAdv(advanceThread);
-        t[nt].setDone(false);
+        t[nt].setStatus(XMI::Device::Ready);
         t[nt]._bytesLeft = _bytes;
 	__advanceThread(&t[nt]);
         ++nt;
@@ -174,7 +174,7 @@ namespace XMI
         {
           // This happens when there is no data to send/receive and ctor set a "pending status" to done,
           //  so on the first advance, setDone and return.
-          thr->setDone(true);
+          thr->setStatus(XMI::Device::Complete);
           setStatus(XMI::Device::Done);
           TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() done - no data\n",(unsigned)this));
           return XMI_SUCCESS;
@@ -205,7 +205,7 @@ namespace XMI
             _iwq->consumeBytes(_currBytes);
             if(thr->_bytesLeft == 0)
             {
-              thr->setDone(true);
+              thr->setStatus(XMI::Device::Complete);
               setStatus(XMI::Device::Done);
               return XMI_SUCCESS;
             }
@@ -267,7 +267,7 @@ namespace XMI
           _rwq->produceBytes(_currBytes);
           if(thr->_bytesLeft == 0)
           {
-            thr->setDone(true);
+            thr->setStatus(XMI::Device::Complete);
             setStatus(XMI::Device::Done);
             return XMI_SUCCESS;
           }

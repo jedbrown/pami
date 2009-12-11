@@ -96,6 +96,7 @@ private:
 		for (int x = 0; x < 32; ++x) {
 			if (_barrier->poll() == XMI::Atomic::Interface::Done) {
 				setStatus(XMI::Device::Done);
+				thr->setStatus(XMI::Device::Complete);
 				return XMI_SUCCESS;
 			}
 		}
@@ -105,7 +106,7 @@ private:
 	inline int __setThreads(AtomicBarrierThr *t, int n) {
 		t->setMsg(this);
 		t->setAdv(advanceThread);
-		t->setDone(false);
+		t->setStatus(XMI::Device::Ready);
 		__advanceThread(t);
 		return 1;
 	}

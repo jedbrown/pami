@@ -87,7 +87,7 @@ protected:
 		_nThreads = 1; // must predict total number of threads
 		t[nt].setMsg(this);
 		t[nt].setAdv(advanceThread);
-		t[nt].setDone(false);
+		t[nt].setStatus(XMI::Device::Ready);
 		t[nt]._bytesLeft = _count << _shift;
 #ifdef USE_WAKEUP_VECTORS
 		// not here - but somewhere/somehow...
@@ -127,7 +127,7 @@ protected:
 		thr->_bytesLeft -= min;
 		if (thr->_bytesLeft == 0) {
 			// thread is Done, maybe not message
-			thr->setDone(true);
+			thr->setStatus(XMI::Device::Complete);
 #ifdef USE_WAKEUP_VECTORS
 			__clearWakeup(thr);
 #endif // USE_WAKEUP_VECTORS

@@ -75,10 +75,13 @@ protected:
 		_cookie = pf->clientdata;
 		_cb_done = pf->cb_done;
 		_contextId = pf->context;
+		setStatus(XMI::Device::Ready);
 	}
 
 public:
 	inline void postWorkDirect() {
+		// should there be a status for "one-shot"?
+		setStatus(XMI::Device::Ready);
 		_g_progfunc_dev.__post(this);
 	}
 	inline void setFunc(xmi_work_function func) { _func = func; }

@@ -173,7 +173,7 @@ public:
 	}
 	/// \brief Post a message to the generic-device queuing system
 	///
-	/// Only threads that are !isDone() are enqueued. The message is
+	/// Only threads that are !Complete are enqueued. The message is
 	/// not checked for Done, assuming that was previously checked
 	/// if needed. In some cases, a message is intentionally posted
 	/// even though it is done. This is to avoid recursion within
@@ -208,7 +208,7 @@ public:
 
 		// t = msg->getClient()->__lastThreadUsed;
 		for (int x = 0; x < num; ++x) {
-			if (!thr->isDone()) {
+			if (thr->getStatus() != Complete) {
 				if (++t >= n) {
 					t = 0;
 				}

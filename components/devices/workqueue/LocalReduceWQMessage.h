@@ -101,24 +101,34 @@ private:
 	inline xmi_result_t __advanceThread(LocalReduceWQThread *thr) {
 		// workaround for GNU compiler -fPIC -O3 bug
 		volatile coremath1 shmcpy = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
+		// these should each be separate advanceThread routines...
 		if (_iscopypeer) {
 			_shared.Q2Q (_source, shmcpy, 0);
 
 			// If all bytes have been copied from the local source buffer into
 			// the shared queue then this peer is done.
-			if (_source.bytesAvailableToConsume () == 0) setStatus(XMI::Device::Done);
+			if (_source.bytesAvailableToConsume () == 0) {
+				thr->setStatus(XMI::Device::Complete);
+				setStatus(XMI::Device::Done);
+			}
 		} else if (_isrootpeer) {
 			_shared.reduce2Q (_source, _result, _func, _dtshift);
 
 			// If all bytes have been copied from the shared queue into the
 			// local result buffer then the root is done.
-			if (_result.bytesAvailableToProduce () == 0) setStatus(XMI::Device::Done);
+			if (_result.bytesAvailableToProduce () == 0) {
+				thr->setStatus(XMI::Device::Complete);
+				setStatus(XMI::Device::Done);
+			}
 		} else {
 			_shared.reduceInPlace (_source, _func, _dtshift);
 
 			// If all bytes have been copied from the local source buffer into
 			// the shared queue then this peer is done.
-			if (_source.bytesAvailableToConsume () == 0) setStatus(XMI::Device::Done);
+			if (_source.bytesAvailableToConsume () == 0) {
+				thr->setStatus(XMI::Device::Complete);
+				setStatus(XMI::Device::Done);
+			}
 		}
 		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
@@ -126,7 +136,7 @@ private:
 	inline int __setThreads(LocalReduceWQThread *t, int n) {
 		t[0].setMsg(this);
 		t[0].setAdv(advanceThread);
-		t[0].setDone(false);
+		t[0].setStatus(XMI::Device::Ready);
 		__advanceThread(t);
 		return 1;
 	}

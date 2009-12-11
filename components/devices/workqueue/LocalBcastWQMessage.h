@@ -84,13 +84,19 @@ private:
 			_shared.Q2Q(_sbuffer, func, 0);
 
 			// If all bytes have been copied to the shared queue then the root is done.
-			if (_sbuffer.bytesAvailableToConsume() == 0) setStatus(XMI::Device::Done);
+			if (_sbuffer.bytesAvailableToConsume() == 0) {
+				thr->setStatus(XMI::Device::Complete);
+				setStatus(XMI::Device::Done);
+			}
 		} else {
 			// read bytes from the shared queue into the local result buffer.
 			_shared.Q2Qr(_rbuffer, func, 0);
 
 			// If all bytes have been copied from the shared queue then the recv is done.
-			if (_rbuffer.bytesAvailableToProduce() == 0) setStatus(XMI::Device::Done);
+			if (_rbuffer.bytesAvailableToProduce() == 0) {
+				thr->setStatus(XMI::Device::Complete);
+				setStatus(XMI::Device::Done);
+			}
 		}
 
 		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
@@ -99,7 +105,7 @@ private:
 	inline int __setThreads(LocalBcastWQThread *t, int n) {
 		t[0].setMsg(this);
 		t[0].setAdv(advanceThread);
-		t[0].setDone(false);
+		t[0].setStatus(XMI::Device::Ready);
 		__advanceThread(t);
 		return 1;
 	}

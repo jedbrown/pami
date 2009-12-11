@@ -124,7 +124,7 @@ namespace XMI
         // assert(nt < n);
         t[nt].setMsg(this);
         t[nt].setAdv(advanceThread);
-        t[nt].setDone(false);
+        t[nt].setStatus(XMI::Device::Ready);
         ++nt;
         // assert(nt > 0? && nt < n);
         _nThreads = nt;
@@ -145,7 +145,7 @@ namespace XMI
         {
           // This happens when there is no data to send/receive and ctor set a "pending status" to done,
           //  so on the first advance, setDone and return.
-          thr->setDone(true);
+          thr->setStatus(XMI::Device::Complete);
           setStatus(XMI::Device::Done);
           TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() done - no participants\n",(unsigned)this));
           return XMI_SUCCESS;
@@ -193,7 +193,7 @@ namespace XMI
             }
           }
         }
-        thr->setDone(true);
+        thr->setStatus(XMI::Device::Complete);
         setStatus(XMI::Device::Done);
         return XMI_SUCCESS;
       }

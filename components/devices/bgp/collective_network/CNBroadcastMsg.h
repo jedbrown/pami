@@ -94,7 +94,7 @@ protected:
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
 			t[nt].setAdv(advanceInj);
-			t[nt].setDone(false);
+			t[nt].setStatus(XMI::Device::Ready);
 			t[nt]._wq = _swq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 1;
@@ -104,7 +104,7 @@ protected:
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
 			t[nt].setAdv(advanceRcp);
-			t[nt].setDone(false);
+			t[nt].setStatus(XMI::Device::Ready);
 			t[nt]._wq = _rwq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE...
@@ -141,7 +141,7 @@ protected:
 			__send_null_packets(thr, hcount, dcount);
 		}
 		if (thr->_bytesLeft == 0) {
-			thr->setDone(true);
+			thr->setStatus(XMI::Device::Complete);
 			__completeThread(thr);
 			return XMI_SUCCESS;
 		}
@@ -173,7 +173,7 @@ protected:
 			__recv_null_packets(thr, hcount, dcount, did);
 		}
 		if (thr->_bytesLeft == 0) {
-			thr->setDone(true);
+			thr->setStatus(XMI::Device::Complete);
 			__completeThread(thr);
 			return XMI_SUCCESS;
 		}

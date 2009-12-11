@@ -104,7 +104,7 @@ private:
 				stat = XMI::Device::Done;
 				// FALLTHROUGH
 			case XMI::Device::Done:
-				thr->setDone(true);
+				thr->setStatus(XMI::Device::Complete);
 				break;
 			default:
 				XMI_abortf("Unexpected message status of %d (loop %d)\n", stat, loop);
@@ -118,7 +118,7 @@ private:
 		// assert(n == 1);
 		t->setMsg(this);
 		t->setAdv(advanceThread);
-		t->setDone(false);
+		t->setStatus(XMI::Device::Ready);
 		__advanceThread(t);
 		return 1;
 	}

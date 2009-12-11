@@ -102,7 +102,10 @@ protected:
 		// local result buffer then the peer is done.
 		// NOTE! This assumes the result WQ is a "flat buffer" and thus
 		// actually has a "hard stop".
-		if (_result->bytesAvailableToProduce() == 0) setStatus(XMI::Device::Done);
+		if (_result->bytesAvailableToProduce() == 0) {
+			setStatus(XMI::Device::Done);
+			thr->setStatus(XMI::Device::Complete);
+		}
 
 		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
@@ -110,7 +113,7 @@ protected:
 	inline int __setThreads(LocalAllreduceWQThread *t, int n) {
 		t->setMsg(this);
 		t->setAdv(advanceThread);
-		t->setDone(false);
+		t->setStatus(XMI::Device::Ready);
 		__advanceThread(t);
 		return 1;
 	}

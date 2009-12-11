@@ -22,6 +22,14 @@
 ////////////////////////////////////////////////////////////////////////
 namespace XMI {
 namespace Device {
+
+	enum ThreadStatus {
+		New = 0,	///< Thread has only been constructed
+		Idle,		///< Thread has no work (do not call)
+		Ready,		///< Thread has work, make call to func
+		Complete	///< Thread  should be dequeued
+	};
+
 namespace Generic {
 
 class GenericThread : public QueueElem {
@@ -30,7 +38,8 @@ public:
 	QueueElem(),
 	_func(NULL),
 	_cookie(NULL),
-	_cb_done((xmi_callback_t){NULL,NULL})
+	_cb_done((xmi_callback_t){NULL,NULL}),
+	_status(New)
 	{
 	}
 
@@ -43,10 +52,14 @@ public:
 			_cb_done.function(context, _cb_done.clientdata, rc);
 		}
 	}
+
+	inline ThreadStatus getStatus() { return _status; }
+	inline void setStatus(ThreadStatus stat) { _status = stat; }
 protected:
 	xmi_work_function _func;
 	void *_cookie;
 	xmi_callback_t _cb_done;
+	ThreadStatus _status;
 }; // class GenericThread
 
 //////////////////////////////////////////////////////////////////////
@@ -62,10 +75,7 @@ public:
 	GenericAdvanceThread() :
 	GenericThread(),
 	_msg(NULL),
-	_dev_wake(NULL),
-	_dev_chan(0),
-	_polled(true),
-	_done(false)
+	_dev_wake(NULL)
 	{
 	}
 
@@ -76,21 +86,9 @@ public:
 	inline void setWakeVec(void *v) { _dev_wake = v; }
 	inline void *getWakeVec() { return _dev_wake; }
 
-	inline void setChannel(int c) { _dev_chan = c; }
-	inline int getChannel() { return _dev_chan; }
-
-	inline void setDone(bool f) { _done = f; }
-	inline bool isDone() { return _done; }
-
-	inline void setPolled(bool f) { _polled = f; }
-	inline bool isPolled() { return _polled; }
-
 protected:
 	GenericMessage *_msg;
 	void *_dev_wake;
-	int _dev_chan;
-	bool _polled;
-	bool _done;
 }; /* class GenericAdvanceThread */
 
 //////////////////////////////////////////////////////////////////////

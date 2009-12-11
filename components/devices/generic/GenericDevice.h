@@ -231,11 +231,22 @@ namespace Generic {
 		GenericThread *thr, *nxtthr;
 		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
 			nxtthr = (GenericThread *)thr->next();
-			++events;
-			xmi_result_t rc = thr->executeThread(__context);
-			if (rc <= 0) {
+			if (thr->getStatus() == XMI::Device::Ready) {
+				++events;
+				xmi_result_t rc = thr->executeThread(__context);
+				// should this just check != XMI_EAGAIN ?
+				if (rc <= 0) {
+					// thr->setStatus(XMI::Device::Complete);
+					__Threads.deleteElem(thr);
+					thr->executeCallback(__context);
+					continue;
+				}
+			}
+			// This allows a thread to be "completed" by something else...
+			if (thr->getStatus() == XMI::Device::Complete) {
 				__Threads.deleteElem(thr);
 				thr->executeCallback(__context);
+				continue;
 			}
 		}
 		//__Threads.mutex()->release();
