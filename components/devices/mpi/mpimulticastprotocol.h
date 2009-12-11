@@ -193,9 +193,10 @@ namespace XMI
           // No data? We're done.
           if(mcast->bytes == 0)
           {
+#warning hack
             // call original done
             if(mcast->cb_done.function)
-              (mcast->cb_done.function)(XMI_Client_getcontext(mcast->client,mcast->context),
+              (mcast->cb_done.function)(NULL,//XMI_Client_getcontext(mcast->client,mcast->context),
                                  mcast->cb_done.clientdata, XMI_SUCCESS);
             return true;
           }
@@ -249,8 +250,9 @@ namespace XMI
           protocol->_allocator.returnObject(cookie);  // and release storage
 
           // call original done
+#warning hack
           if(cb_done.function)
-            (cb_done.function)(XMI_Client_getcontext(protocol->_client,protocol->_contextid),
+            (cb_done.function)(NULL,//XMI_Client_getcontext(protocol->_client,protocol->_contextid),
                                cb_done.clientdata, result);
 
           return;
@@ -307,8 +309,9 @@ namespace XMI
           if(mcast.bytes == 0)
           {
             // call original done
+#warning hack
             if(mcast.cb_done.function)
-              (mcast.cb_done.function)(XMI_Client_getcontext(_client,_contextid),
+              (mcast.cb_done.function)(NULL,//XMI_Client_getcontext(_client,_contextid),
                                        mcast.cb_done.clientdata, XMI_SUCCESS);
             return;
           }
