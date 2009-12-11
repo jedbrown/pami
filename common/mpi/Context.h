@@ -116,6 +116,9 @@ namespace XMI
           _shmem.init(&_sysdep);
           _lock.init(&_sysdep);
 
+          // dispatch_impl relies on the table being initialized to NULL's.
+          memset(_dispatch, 0x00, sizeof(_dispatch));
+
           // this barrier is here because the shared memory init
           // needs to be synchronized
           // we shoudl find a way to remove this

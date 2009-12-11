@@ -108,6 +108,9 @@ namespace XMI
 
         new ((void *)_get) GetShmem(_shmem, __global.mapping.task(), _context, _contextid, result);
 
+        // dispatch_impl relies on the table being initialized to NULL's.
+        memset(_dispatch, 0x00, sizeof(_dispatch));
+
       }
 
       inline xmi_client_t getClient_impl ()

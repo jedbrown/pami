@@ -95,6 +95,9 @@ namespace XMI
 
         _generic.init (_sysdep, (xmi_context_t)this, id, num, generics);
         _shmem.init (&_sysdep);
+
+        // dispatch_impl relies on the table being initialized to NULL's.
+        memset(_dispatch, 0x00, sizeof(_dispatch));
       }
 
       inline xmi_client_t getClient_impl ()

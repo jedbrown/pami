@@ -143,6 +143,9 @@ namespace XMI
 
           CALL_AND_CHECK_RC((LAPI_Gfence (_lapi_handle)));
 
+          // dispatch_impl relies on the table being initialized to NULL's.
+          memset(_dispatch, 0x00, sizeof(_dispatch));
+
 	  _generic.init (_sysdep, (xmi_context_t)this, id, num, generics);
 
         }
