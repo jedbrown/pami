@@ -199,10 +199,22 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 class GenericMessage : public MultiQueueMessage<2> {
 
 public:
-	//////////////////////////////////////////////////////////////////
 	/// \brief  Generic Message constructor
-	/// \param cb: A "done" callback structure to be executed
-	//////////////////////////////////////////////////////////////////
+	///
+	/// Note: Generic_QS must be (inherit from) GenericSubDevice.
+	/// This is because Generic::Device will use the QS in order
+	/// to invoke the __complete() method when the message is Done,
+	/// and that is used to start any subsequent message(s) that
+	/// were waiting. This method is inlined for efficiency (especially
+	/// when the sub-device has no sendq or the queue is empty).
+	/// This means that it cannot be overridden and the object ('this')
+	/// must actually be the class that Generic::Device expects.
+	///
+	/// \param[in] Generic_QS	The subdevice containing the sendqueue(s)
+	/// \param[in] cb		Completion callback
+	/// \param[in] client		The client handle
+	/// \param[in] context		The (posting) context ID
+	///
 	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb,
 			xmi_client_t client, size_t context) :
 	MultiQueueMessage<2>(Generic_QS, cb, client, context)

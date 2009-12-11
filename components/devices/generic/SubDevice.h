@@ -266,6 +266,73 @@ protected:
 	XMI::Device::Generic::Device *_generics;
 }; /* class GenericSubDevice */
 
+/// \brief Example sub-device for using multiple send queues
+///
+/// This is typically what 'local' point-to-point devices do, to enforce
+/// ordering to a peer.
+///
+/// In this example, the actual Model/Message/Device would use
+/// getSendQDev(peer) to get the "QS" object to pass to the Message ctor.
+/// i.e. msg->getSQ() must return one of the _sendQs[] objects so that
+/// the generic device can run the __complete() method on it.
+///
+/// An alternative is that the actual device might simply add a
+/// GenericSubDevice element to each of it's FIFO objects (instead of
+/// the simple sendQ). It would still need to ensure that the Message
+/// contained a reference to that GenericSubDevice object in it's 'QS'.
+///
+template <int N_Queues>
+class MultiSendQSubDevice {
+public:
+	MultiSendQSubDevice() {
+		for (int x = 0; x < N_Queues; ++x) {
+			new (&_sendQs[x]) GenericSubDevice();
+		}
+	}
+
+	GenericSubDevice &getSendQDev(int index) { return _sendQs[index]; }
+
+protected:
+	friend class XMI::Device::Generic::Device;
+
+	/// \brief Initialization for the subdevice
+	///
+	/// \param[in] sd		SysDep object (not used?)
+	/// \param[in] devices		Array of Generic::Device objects for client
+	/// \param[in] contextId	Id of current context (index into devices[])
+	/// \ingroup gendev_subdev_api
+	///
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+		for (int x = 0; x < N_Queues; ++x) {
+			_sendQs[x].___init(sd, devices);
+		}
+	}
+
+	/// \brief Actual advance routine for unexpected(received) messages
+	///
+	/// This would process messages which have arrived on the device's
+	/// receive queue(s). If the device is instantiated per-context,
+	/// then the 'context' param is probably ignored. But a device
+	/// that is instantiated once per client would use this to narrow
+	/// the scope of the advance. Devices that are instnatiated once
+	/// globally might also need to use the client Id to uniquely
+	/// identify reception queues.
+	///
+	/// \todo Add client ID
+	///
+	/// \param[in] context	Id of context which is being advanced
+	/// \ingroup gendev_internal_api
+	///
+	inline int advanceRecv(size_t context) {
+		// determine if any messages have arrived on this context,
+		// and process them...
+		return 0;
+	}
+
+private:
+	GenericSubDevice _sendQs[N_Queues];
+}; // class MultiSendQSubDevice
+
 /// \brief Simple Sub-Device where no threading is used.
 ///
 /// A single-thread basic sub-device - standard boilerplate
@@ -273,6 +340,11 @@ protected:
 /// Thread object is 'empty', used only to queue work to Generic::Device.
 ///
 /// Supports only one active message at a time.
+///
+/// Some users of this class simply typedef to it. But others may wish
+/// to inherit from it. In that case, the new class should have it's
+/// own init() method, which (among other things) calls
+/// Generic::SimpleSubDevice::init().
 ///
 template <class T_Thread>
 class SimpleSubDevice : public GenericSubDevice {
