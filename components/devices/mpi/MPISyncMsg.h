@@ -41,10 +41,22 @@ namespace XMI
     public:
       MPI_Comm _msync_communicator;
       MPISyncDev() :
-      XMI::Device::Generic::SimpleSubDevice<T_Thread>()
+      XMI::Device::Generic::SimpleSubDevice<T_Thread>(),
+      _msync_communicator(MPI_COMM_NULL)
+      {
+      };
+      /// \brief Initialization for the subdevice
+      ///
+      /// \param[in] sd		SysDep object (not used?)
+      /// \param[in] devices		Array of Generic::Device objects for client
+      /// \param[in] contextId	Id of current context (index into devices[])
+      /// \ingroup gendev_subdev_api
+      ///
+      inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId)
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_msync_communicator);
-      };
+        Generic::SimpleSubDevice<T_Thread>::init(sd, devices, contextId);
+      }
     };
   }; //-- Device
 }; //-- XMI
@@ -110,9 +122,6 @@ namespace XMI
       }
 
       STD_POSTNEXT(T_Device,XMI::Device::Generic::SimpleAdvanceThread,_device)
-
-
-
     protected:
       friend class MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread>;
       friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>; // this makes no sense
@@ -232,7 +241,7 @@ namespace XMI
       TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() connection_id %d, request %p\n",(unsigned)this,
                     msync->connection_id, msync->request));
       MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
-        new (msync->request) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);
+      new (msync->request) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);
       _g_mpisync_dev.__post<MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
       return true;
     }

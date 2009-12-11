@@ -61,12 +61,7 @@ namespace XMI
       Interface::PacketDevice<MPIDevice<T_SysDep> >(),
       _dispatch_id(0)
       {
-        int rc = MPI_Init(0, NULL);
-        if(rc != MPI_SUCCESS)
-        {
-          fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
-          XMI_abort();
-        }
+        // \todo These MPI functions should probably move out of the constructor if we keep this class
         MPI_Comm_dup(MPI_COMM_WORLD,&_communicator);
         MPI_Comm_size(_communicator, (int*)&_peers);
         TRACE_DEVICE((stderr,"<%#.8X>MPIDevice()\n",(int)this));

@@ -32,9 +32,23 @@ namespace XMI
       MPI_Finalize();
     }
 
-
     class Global : public Interface::Global<XMI::Global>
     {
+	  // Simple class to control MPI initialization independent of other classes.
+	  class MPI
+		{
+		public:
+		  inline MPI()
+		  {
+			int rc = MPI_Init(0, NULL);
+			if(rc != MPI_SUCCESS)
+			{
+			  fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
+			  XMI_abort();
+			}
+		  }
+	  };
+
       public:
 
         inline Global () :
@@ -72,7 +86,7 @@ namespace XMI
         inline ~Global () {};
 
       public:
-
+	MPI        		    mpi; // First data member to initialize MPI first.
 	XMI::Mapping		mapping;
     XMI::Device::MPIDevice<SysDep> mpi_device;
 

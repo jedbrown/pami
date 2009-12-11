@@ -41,10 +41,23 @@ namespace XMI
     public:
       MPI_Comm _mcast_communicator;
       MPIBcastDev() :
-      XMI::Device::Generic::SimpleSubDevice<T_Thread>()
+      XMI::Device::Generic::SimpleSubDevice<T_Thread>(),
+      _mcast_communicator(MPI_COMM_NULL)
+      {
+      };
+      /// \brief Initialization for the subdevice
+      ///
+      /// \param[in] sd		SysDep object (not used?)
+      /// \param[in] devices		Array of Generic::Device objects for client
+      /// \param[in] contextId	Id of current context (index into devices[])
+      /// \ingroup gendev_subdev_api
+      ///
+      inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId)
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_mcast_communicator);
-      };
+        Generic::SimpleSubDevice<T_Thread>::init(sd, devices, contextId);
+      }
+
     };
   }; //-- Device
 }; //-- XMI
@@ -126,8 +139,9 @@ namespace XMI
         //XMI_assertf(_rwq || _iwq, "MPIBcastMsg has neither input or output data\n");
       }
 
-	STD_POSTNEXT(T_Device,XMI::Device::Generic::SimpleAdvanceThread,_device)
-    //	STD_POSTNEXT(MPIBcastDev,XMI::Device::Generic::SimpleAdvanceThread,&_g_mpibcast_dev)
+      STD_POSTNEXT(T_Device,XMI::Device::Generic::SimpleAdvanceThread,_device)
+    protected:
+      //	STD_POSTNEXT(MPIBcastDev,XMI::Device::Generic::SimpleAdvanceThread,&_g_mpibcast_dev)
 /*      // This is a virtual function, but declaring inline here avoids linker
       // complaints about multiple definitions.
       inline void complete(xmi_context_t context);
@@ -138,8 +152,6 @@ namespace XMI
         executeCallback(context);
       }
 */
-
-    protected:
       //friend class MPIBcastDev; // Until C++ catches up with real programming languages:
       friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>;
 
@@ -148,13 +160,13 @@ namespace XMI
       {
         int nt = 0;
         // assert(nt < n);
-        _nThreads = 1;	// must predict total number of threads now,
-			// so early advance(s) work
+        _nThreads = 1;  // must predict total number of threads now,
+        // so early advance(s) work
         t[nt].setMsg(this);
         t[nt].setAdv(advanceThread);
         t[nt].setStatus(XMI::Device::Ready);
         t[nt]._bytesLeft = _bytes;
-	__advanceThread(&t[nt]);
+        __advanceThread(&t[nt]);
         ++nt;
         // assert(nt > 0? && nt < n);
         TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zd\n",(unsigned)this,
