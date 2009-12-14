@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
 	const char *test = "XMI::Device::BGP::CNAllreduceModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicombine<XMI::Device::BGP::CNAllreduceModel,TEST_BUF_SIZE> test1(test);
-	rc = test1.perform_test(task_id, num_tasks, &mcomb);
+	rc = test1.perform_test(task_id, num_tasks, context, &mcomb);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);
 		exit(1);

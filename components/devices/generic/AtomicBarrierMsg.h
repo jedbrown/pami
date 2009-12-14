@@ -78,7 +78,7 @@ protected:
 		T_Barrier *barrier,
 		xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
-					msync->client, msync->context),
+					XMI_GD_ClientId(msync->client), msync->context),
 	_barrier(barrier)
 	{
 		// assert(role == DEFAULT_ROLE);
@@ -146,7 +146,8 @@ inline bool XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(xmi_mul
 	for (int x = 0; x < 32; ++x) {
 		if (_barrier.poll() == XMI::Atomic::Interface::Done) {
 			if (msync->cb_done.function) {
-				msync->cb_done.function(XMI_Client_getcontext(msync->client, msync->context), msync->cb_done.clientdata, XMI_SUCCESS);
+xmi_context_t ctx = _g_lmbarrier_dev.getGeneric(XMI_GD_ClientId(msync->client), msync->context)->getContext();
+				msync->cb_done.function(ctx, msync->cb_done.clientdata, XMI_SUCCESS);
 			}
 			return true;
 		}

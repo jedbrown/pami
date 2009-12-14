@@ -36,6 +36,14 @@
 #include "components/atomic/Mutex.h"
 #include "sys/xmi.h"
 
+#ifndef XMI_MAX_NUM_CLIENTS
+#warning XMI_MAX_NUM_CLIENTS needs to be setup by xmi.h
+#define XMI_MAX_NUM_CLIENTS	4
+#endif // !XMI_MAX_NUM_CLIENTS
+
+extern size_t XMI_GD_ClientId(xmi_client_t client);
+// #define XMI_GD_ClientId(client)	(client)
+
 // NOTE, these typedefs choose which type of atomic to use for a specific device.
 // since the fine details of all this have not been designed yet, these will
 // remain here until such time.
@@ -125,10 +133,9 @@ class Device {
 								XMI::SysDep &sd);
 
 	/// \brief advance unexpected(received) messages for platform devices
-	/// \param[in] context	Context ID/slice to check
 	/// \return	Number of "events"
 	/// \ingroup gendev_private_api
-	inline int __platform_generic_advanceRecv(size_t context);
+	inline int __platform_generic_advanceRecv();
 
 public:
 	/// \brief  A generic device (wrapper for sub-devices)
@@ -143,7 +150,7 @@ public:
 	/// \param[in] generics		Array of generic device slices
 	/// \ingroup gendev_public_api
 	///
-	inline void init(XMI::SysDep &sd, xmi_context_t ctx, size_t context, size_t num_contexts, Device *generics);
+	inline void init(XMI::SysDep &sd, xmi_context_t ctx, size_t client, size_t context, size_t num_contexts, Device *generics);
 
 	/// \brief     Advance routine for the generic device.
 	///
@@ -196,9 +203,10 @@ public:
 		// completion, even the first thread of work is posted
 		// to a different context.
 
+		size_t c = msg->getClientId();
 		size_t t = msg->getContextId();
 		size_t n = __nContexts;
-		Generic::Device *g0 = __generics;
+		Generic::Device *g0 = __generics[c];
 		g0[t].__GenericQueue.pushTail(msg);
 
 		// round-robin threads to available "channels"...
@@ -255,9 +263,10 @@ private:
 	ThreadQueue __Threads;
 
 	xmi_context_t __context;
+	size_t __clientId;
 	size_t __contextId;
 	size_t __nContexts;
-	Generic::Device *__generics;
+	Generic::Device *__generics[XMI_MAX_NUM_CLIENTS];
 
 }; /* class Device */
 

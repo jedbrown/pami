@@ -67,7 +67,7 @@ public:
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
 	MultiQueueMessage(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb,
-						xmi_client_t client, size_t context) :
+						size_t client, size_t context) :
 	MultiQueueElem<numElems>(),
 	_status(Uninitialized),
 	_QS(QS),
@@ -80,7 +80,7 @@ public:
 	/// \brief get client associated with message
 	/// \return	client for message posting/completion
 	/// \ingroup gendev_subdev_api
-	xmi_client_t getClient() { return _client; }
+	size_t getClientId() { return _client; }
 
 	/// \brief get context ID associated with message
 	/// \return	Context ID for message posting/completion
@@ -163,7 +163,7 @@ public:
 protected:
 	MessageStatus _status;
 	Device::Generic::BaseGenericDevice &_QS;
-	xmi_client_t _client;
+	size_t _client;
 	size_t _context;
 	xmi_callback_t _cb;
 }; /* class MultiQueueMessage */
@@ -216,7 +216,7 @@ public:
 	/// \param[in] context		The (posting) context ID
 	///
 	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb,
-			xmi_client_t client, size_t context) :
+			size_t client, size_t context) :
 	MultiQueueMessage<2>(Generic_QS, cb, client, context)
 	{
 	}

@@ -45,11 +45,12 @@ namespace XMI
 		context->_workAllocator.returnObject(cookie);
 	}
     public:
-      inline Context (xmi_client_t client, size_t id, size_t num,
+      inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				XMI::Device::Generic::Device *generics,
 				void * addr, size_t bytes) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
+        _clientid (clientid),
         _contextid (id),
         _mm (addr, bytes),
 	_sysdep(_mm),
@@ -146,7 +147,7 @@ namespace XMI
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
 
-	  _generic.init (_sysdep, (xmi_context_t)this, id, num, generics);
+	  _generic.init (_sysdep, (xmi_context_t)this, clientid, id, num, generics);
 
         }
 
@@ -175,6 +176,8 @@ namespace XMI
 	  work->setFunc(work_fn);
 	  work->setCookie(cookie);
 	  work->setDone((xmi_callback_t){__work_done, (void *)work});
+	  work->setContext(_contextid);
+	  work->setClient(_clientid);
 	  work->postWorkDirect();
           return XMI_SUCCESS;
         }
@@ -498,6 +501,7 @@ namespace XMI
       std::map <unsigned, xmi_geometry_t>   _geometry_id;
       xmi_client_t                          _client;
       xmi_context_t                         _context;
+      size_t                                _clientid;
       size_t                                _contextid;
       void                                 *_dispatch[1024];
       ProtocolAllocator                     _protocol;

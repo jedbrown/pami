@@ -91,7 +91,7 @@ int main(int argc, char ** argv) {
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, TEST_BUF_SIZE> test1(test);
 
-	rc = test1.perform_test(task_id, num_tasks, &mcast);
+	rc = test1.perform_test(task_id, num_tasks, context, &mcast);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);
 		exit(1);
@@ -102,7 +102,7 @@ int main(int argc, char ** argv) {
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL2, TEST_BUF_SIZE> test2(test);
 
-	rc = test2.perform_test(task_id, num_tasks, &mcast);
+	rc = test2.perform_test(task_id, num_tasks, context, &mcast);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);
 		exit(1);

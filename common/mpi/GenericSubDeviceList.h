@@ -40,10 +40,10 @@ inline void Device::__platform_generic_init(bool first_global, bool first_client
 	}
 }
 
-inline int Device::__platform_generic_advanceRecv(size_t context) {
+inline int Device::__platform_generic_advanceRecv() {
 	int events = 0;
-    events += _g_mpibcast_dev.advanceRecv(context);
-	events += _g_mpisync_dev.advanceRecv(context);
+	events += _g_mpibcast_dev.advanceRecv(__clientId, __contextId);
+	events += _g_mpisync_dev.advanceRecv(__clientId, __contextId);
 	return events;
 }
 

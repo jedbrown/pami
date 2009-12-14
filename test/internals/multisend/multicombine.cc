@@ -91,7 +91,7 @@ int main(int argc, char ** argv) {
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,TEST_BUF_SIZE> test1(test);
 
-	rc = test1.perform_test(task_id, num_tasks, &mcomb);
+	rc = test1.perform_test(task_id, num_tasks, context, &mcomb);
 
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);
@@ -103,7 +103,7 @@ int main(int argc, char ** argv) {
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,TEST_BUF_SIZE> test2(test);
 
-	rc = test2.perform_test(task_id, num_tasks, &mcomb);
+	rc = test2.perform_test(task_id, num_tasks, context, &mcomb);
 
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);

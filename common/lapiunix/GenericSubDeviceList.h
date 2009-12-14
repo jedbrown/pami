@@ -33,7 +33,7 @@ inline void Device::__platform_generic_init(bool first_global, bool first_client
 								XMI::SysDep &sd) {
 }
 
-inline int Device::__platform_generic_advanceRecv(size_t context) {
+inline int Device::__platform_generic_advanceRecv() {
 	int events = 0;
 	return events;
 }

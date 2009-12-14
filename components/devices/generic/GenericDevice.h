@@ -99,9 +99,9 @@ namespace Generic {
 	inline Device::Device() :
 	__GenericQueue(),
 	__Threads(),
+	__clientId((size_t)-1),
 	__contextId((size_t)-1),
-	__nContexts(0),
-	__generics(NULL)
+	__nContexts(0)
 	{
 	}
 
@@ -117,14 +117,15 @@ namespace Generic {
 	/// \ingroup gendev_public_api
 	///
 	inline void Device::init(XMI::SysDep &sd, xmi_context_t ctx,
-				size_t context, size_t num_contexts,
+				size_t client, size_t context, size_t num_contexts,
 				Generic::Device *generics) {
-		static bool first_global = true;
+		bool first_global = (client == 0);
 		bool first_client = (context == 0);
 		__context = ctx;
+		__clientId = client;
 		__contextId = context;
 		__nContexts = num_contexts;
-		__generics = generics;
+		__generics[client] = generics;
 		// These are all the devices we know how to play well with...
 
 		// todo: need to work out how to handle devices that need
@@ -139,13 +140,13 @@ namespace Generic {
 		if (first_global) {
 			// These sub-devices only execute one message at a time,
 			// and so there is only one instance of each, globally.
-			_g_progfunc_dev.init(sd, __generics, __contextId);
-			_g_lmbarrier_dev.init(sd, __generics, __contextId);
-			_g_wqreduce_dev.init(sd, __generics, __contextId);
-			_g_wqbcast_dev.init(sd, __generics, __contextId);
-			_g_l_allreducewq_dev.init(sd, __generics, __contextId);
-			_g_l_reducewq_dev.init(sd, __generics, __contextId);
-			_g_l_bcastwq_dev.init(sd, __generics, __contextId);
+			_g_progfunc_dev.init(sd, &__generics, __clientId, __contextId);
+			_g_lmbarrier_dev.init(sd, &__generics, __clientId, __contextId);
+			_g_wqreduce_dev.init(sd, &__generics, __clientId, __contextId);
+			_g_wqbcast_dev.init(sd, &__generics, __clientId, __contextId);
+			_g_l_allreducewq_dev.init(sd, &__generics, __clientId, __contextId);
+			_g_l_reducewq_dev.init(sd, &__generics, __clientId, __contextId);
+			_g_l_bcastwq_dev.init(sd, &__generics, __clientId, __contextId);
 		}
 
 		// sub-devices initialized here, if any, may or may not
@@ -153,7 +154,6 @@ namespace Generic {
 		// for details. They may use "first_global" and "first_client"
 		// to avoid repeat inits, or may use internal mechanisms.
 		__platform_generic_init(first_global, first_client, sd);
-		first_global = false;
 	}
 
 	/// \brief Quick check whether full advance is needed.
@@ -194,14 +194,14 @@ namespace Generic {
 		// not all devices actually have "unexpected" messages, but we call anyway.
 		// Presumably, empty functions will be optimized away by the compiler.
 		// Has no concept of recv at all: _g_progfunc_dev
-		events += _g_lmbarrier_dev.advanceRecv(__contextId);
-		events += _g_wqreduce_dev.advanceRecv(__contextId);
-		events += _g_wqbcast_dev.advanceRecv(__contextId);
-		events += _g_l_allreducewq_dev.advanceRecv(__contextId);
-		events += _g_l_reducewq_dev.advanceRecv(__contextId);
-		events += _g_l_bcastwq_dev.advanceRecv(__contextId);
+		events += _g_lmbarrier_dev.advanceRecv(__clientId, __contextId);
+		events += _g_wqreduce_dev.advanceRecv(__clientId, __contextId);
+		events += _g_wqbcast_dev.advanceRecv(__clientId, __contextId);
+		events += _g_l_allreducewq_dev.advanceRecv(__clientId, __contextId);
+		events += _g_l_reducewq_dev.advanceRecv(__clientId, __contextId);
+		events += _g_l_bcastwq_dev.advanceRecv(__clientId, __contextId);
 
-		events += __platform_generic_advanceRecv(__contextId);
+		events += __platform_generic_advanceRecv();
 		return events;
 	}
 

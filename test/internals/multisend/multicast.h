@@ -109,7 +109,7 @@ public:
 	~Multicast() { }
 
 	inline xmi_result_t perform_test(size_t task_id, size_t num_tasks,
-						xmi_multicast_t *mcast) {
+					xmi_context_t ctx, xmi_multicast_t *mcast) {
 		xmi_result_t rc;
 		bool res;
 		size_t x, root;
@@ -148,7 +148,7 @@ public:
         }
 		//fprintf(stderr, "... before advance loop for %s.postMulticast\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(XMI_Client_getcontext(mcast->client,mcast->context), 100);
+			rc = XMI_Context_advance(ctx, 100);
 			if (rc != XMI_SUCCESS) {
 				fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", rc);
 				return rc;
@@ -184,7 +184,7 @@ public:
 	}
 
 	inline xmi_result_t perform_test_active_message(size_t task_id, size_t num_tasks,
-						xmi_multicast_t *mcast) {
+					xmi_context_t ctx, xmi_multicast_t *mcast) {
 		xmi_result_t rc;
 		bool res;
 		size_t x, root;
@@ -224,7 +224,6 @@ public:
           }
         }
 		//fprintf(stderr, "... before advance loop for %s.postMulticast\n", _name);
-		xmi_context_t ctx = XMI_Client_getcontext(mcast->client,mcast->context);
 		while (!_done) {
 			rc = XMI_Context_advance(ctx, 100);
 			if (rc != XMI_SUCCESS) {

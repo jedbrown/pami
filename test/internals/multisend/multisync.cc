@@ -85,7 +85,7 @@ int main(int argc, char ** argv) {
 	const char *test = BARRIER_NAME;
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multisync<Barrier_Model> test1(test);
-	rc = test1.perform_test(task_id, num_tasks, &msync);
+	rc = test1.perform_test(task_id, num_tasks, context, &msync);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
 		exit(1);
@@ -101,7 +101,7 @@ int main(int argc, char ** argv) {
 	test = BARRIER_NAME2;
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multisync<Barrier_Model2> test2(test);
-	rc = test2.perform_test(task_id, num_tasks, &msync);
+	rc = test2.perform_test(task_id, num_tasks, context, &msync);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
 		exit(1);

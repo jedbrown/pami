@@ -182,8 +182,8 @@ int main(int argc, char ** argv)
     mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
     mcast.dst = (xmi_pipeworkqueue_t *)NULL;
 
-    mcast.client = client;
-    mcast.context = 0;
+    mcast.client = client;	// client ID
+    mcast.context = 0;	// context ID
     mcast.roles = -1;
     mcast.bytes = TEST_BUF_SIZE;
 
@@ -325,8 +325,8 @@ int main(int argc, char ** argv)
     mcast.dst_participants = (xmi_topology_t *)&dst_participants;
 
 
-    mcast.client = client;
-    mcast.context = 0;
+    mcast.client = client;	// client ID
+    mcast.context = 0;	// context ID
     mcast.roles = -1;
 
     mcast.cb_done = _cb_done;

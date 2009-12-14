@@ -71,16 +71,17 @@ namespace XMI
 		context->_workAllocator.returnObject(cookie);
 	}
     public:
-      inline Context (xmi_client_t client, size_t contextid, size_t num,
+      inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				XMI::Device::Generic::Device *generics,
 				void * addr, size_t bytes) :
-          Interface::Context<XMI::Context> (client, contextid),
+          Interface::Context<XMI::Context> (client, id),
           _client (client),
           _context ((xmi_context_t)this),
-          _contextid (contextid),
+          _clientid (clientid),
+          _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-	  _generic(generics[contextid]),
+	  _generic(generics[id]),
           _mu (),
           _shmem (),
 	  _workAllocator()
@@ -100,7 +101,7 @@ namespace XMI
         // ----------------------------------------------------------------
 
         _mu.init (&_sysdep);
-	_generic.init(_sysdep, (xmi_context_t)this, contextid, num, generics);
+	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
         _shmem.init (&_sysdep);
 
         _get = (void *) _request.allocateObject ();
@@ -136,6 +137,8 @@ namespace XMI
 	work->setFunc(work_fn);
 	work->setCookie(cookie);
 	work->setDone((xmi_callback_t){__work_done, (void *)work});
+	work->setContext(_contextid);
+	work->setClient(_clientid);
 	work->postWorkDirect();
 	return XMI_SUCCESS;
       }
@@ -433,6 +436,7 @@ namespace XMI
 
       xmi_client_t  _client;
       xmi_context_t _context;
+      size_t        _clientid;
       size_t        _contextid;
 
       XMI::Memory::MemoryManager _mm;

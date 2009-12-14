@@ -31,9 +31,13 @@ namespace XMI
         _ncontexts (0),
         _mm ()
         {
+	  static size_t next_client_id = 0;
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
+
+	  _clientid = next_client_id++;
+	  // assert(_clientid < XMI_MAX_NUM_CLIENTS);
 
           // Get some shared memory for this client
           initializeMemoryManager ();
@@ -44,16 +48,16 @@ namespace XMI
         {
         }
 
-      static xmi_result_t generate_impl (const char * name, xmi_client_t * in_client)
+      static xmi_result_t generate_impl (const char * name, xmi_client_t * client)
         {
           int rc = 0;
-          XMI::Client * client;
-          client = (XMI::Client *)malloc(sizeof (XMI::Client));
-          assert(client != NULL);
-          memset ((void *)client, 0x00, sizeof(XMI::Client));
+          XMI::Client * clientp;
+          clientp = (XMI::Client *)malloc(sizeof (XMI::Client));
+          assert(clientp != NULL);
+          memset ((void *)clientp, 0x00, sizeof(XMI::Client));
           xmi_result_t res;
-          new (client) XMI::Client (name, res);
-          *in_client = (xmi_client_t*) client;
+          new (clientp) XMI::Client (name, res);
+          *client = (xmi_client_t) clientp;
           return XMI_SUCCESS;
         }
 
@@ -113,7 +117,7 @@ namespace XMI
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&_contexts[x]) XMI::Context(this->getClient(), x, n,
+			new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
 							_generics, base, bytes);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
@@ -181,6 +185,11 @@ namespace XMI
 		return _contexts;
 	}
 
+	inline size_t getClientId()
+	{
+		return _clientid;
+	}
+
     protected:
 
       inline xmi_client_t getClient () const
@@ -190,6 +199,7 @@ namespace XMI
 
     private:
       xmi_client_t _client;
+      size_t _clientid;
       size_t       _references;
       size_t       _ncontexts;
 	XMI::Context *_contexts;

@@ -70,7 +70,7 @@ int main(int argc, char ** argv) {
 	const char *test = "XMI::Device::BGP::giModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multisync<XMI::Device::BGP::giModel> test1(test);
-	rc = test1.perform_test(task_id, num_tasks, &msync);
+	rc = test1.perform_test(task_id, num_tasks, context, &msync);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
 		exit(1);

@@ -70,7 +70,7 @@ public:
 	static const unsigned classroute = 3;
 
 	BaseGenericCNMessage(Generic::BaseGenericDevice &qs,
-			xmi_client_t client,
+			size_t client,
 			size_t context,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
@@ -336,7 +336,7 @@ protected:
 class BaseGenericCNPPMessage : public BaseGenericCNMessage {
 public:
 	BaseGenericCNPPMessage(Generic::BaseGenericDevice &qs,
-			xmi_client_t client,
+			size_t client,
 			size_t context,
 			XMI::PipeWorkQueue *swq,
 			XMI::PipeWorkQueue *rwq,
@@ -458,7 +458,7 @@ protected:
 class BaseGenericCN2PMessage : public BaseGenericCNMessage {
 public:
 	BaseGenericCN2PMessage(Generic::BaseGenericDevice &qs,
-			xmi_client_t client,
+			size_t client,
 			size_t context,
 			XMI::Device::WorkQueue::WorkQueue &ewq,
 			XMI::Device::WorkQueue::WorkQueue &mwq,

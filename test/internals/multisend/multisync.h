@@ -49,7 +49,7 @@ public:
 	/// msync is partially filled-in.
 	///
 	inline xmi_result_t perform_test(size_t task_id, size_t num_tasks,
-					xmi_multisync_t *msync) {
+					xmi_context_t ctx, xmi_multisync_t *msync) {
 		unsigned long long t0, t1, t2;
 		xmi_result_t rc;
 		bool res;
@@ -84,7 +84,6 @@ public:
 		}
 		// printf skews timing too much...
 		//fprintf(stderr, "... before advance loop for %s.postMultisync\n", _name);
-		xmi_context_t ctx = XMI_Client_getcontext(msync->client,msync->context);
 		while (!_done) {
 			rc = XMI_Context_advance(ctx, 100);
 			if (rc != XMI_SUCCESS) {

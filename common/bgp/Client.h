@@ -26,9 +26,13 @@ namespace XMI
           _ncontexts (0),
           _mm ()
         {
+	  static size_t next_client_id = 0;
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
+
+	  _clientid = next_client_id++;
+	  // assert(_clientid < XMI_MAX_NUM_CLIENTS);
 
           // Get some shared memory for this client
           initializeMemoryManager ();
@@ -122,7 +126,7 @@ namespace XMI
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&_contexts[x]) XMI::Context(this->getClient(), x, n,
+			new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
 							_generics, base, bytes);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
@@ -197,6 +201,11 @@ namespace XMI
 		return _contexts;
 	}
 
+	inline size_t getClientId()
+	{
+		return _clientid;
+	}
+
       protected:
 
         inline xmi_client_t getClient () const
@@ -207,6 +216,7 @@ namespace XMI
       private:
 
         xmi_client_t _client;
+	size_t _clientid;
 
         size_t       _references;
         size_t       _ncontexts;

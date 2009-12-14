@@ -51,7 +51,7 @@ public:
 	~Multicombine() { }
 
 	inline xmi_result_t perform_test(size_t task_id, size_t num_tasks,
-						xmi_multicombine_t *mcomb) {
+					xmi_context_t ctx, xmi_multicombine_t *mcomb) {
 		xmi_result_t rc;
 		bool res;
 		size_t x;
@@ -92,7 +92,6 @@ public:
 		}
 
 		//fprintf(stderr, "... before advance loop for %s.postMulticombine\n", _name);
-		xmi_context_t ctx = XMI_Client_getcontext(mcomb->client,mcomb->context);
 		while (!_done) {
 			rc = XMI_Context_advance(ctx, 100);
 			if (rc != XMI_SUCCESS) {

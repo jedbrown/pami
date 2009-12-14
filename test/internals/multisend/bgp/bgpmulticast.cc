@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
 	const char *test = "XMI::Device::BGP::CNBroadcastModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicast<XMI::Device::BGP::CNBroadcastModel, TEST_BUF_SIZE> test1(test);
-	rc = test1.perform_test(task_id, num_tasks, &mcast);
+	rc = test1.perform_test(task_id, num_tasks, context, &mcast);
 
 
 	if (rc != XMI_SUCCESS) {

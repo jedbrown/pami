@@ -69,7 +69,7 @@ public:
                                        coremath          func,
                                        int               dtshift) :
             XMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
-				mcomb->client, mcomb->context),
+				XMI_GD_ClientId(mcomb->client), mcomb->context),
             _isrootpeer (peer == rootpeer),
             //_iscopypeer (peer == ((rootpeer+1)%peers)),
             _iscopypeer (peer == ((rootpeer+1) >= peers ? (rootpeer+1) - peers : (rootpeer+1))),

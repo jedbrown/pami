@@ -72,7 +72,7 @@ int main(int argc, char ** argv)
   const char *test = "XMI::Device::MPISyncMsg";
   if(task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
   XMI::Test::Multisend::Multisync<XMI::Device::MPISyncMdl> test1(test);
-  rc = test1.perform_test(task_id, num_tasks, &multisync);
+  rc = test1.perform_test(task_id, num_tasks, context, &multisync);
   if(rc != XMI_SUCCESS)
   {
     fprintf(stderr, "Failed %s test result = %d\n", test, rc);

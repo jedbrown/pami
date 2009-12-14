@@ -70,7 +70,7 @@ public:
 			bool doStore,
 			bool doData,
 			unsigned dispatch_id) :
-	BaseGenericCNMessage(qs, mcast->client, mcast->context,
+	BaseGenericCNMessage(qs, XMI_GD_ClientId(mcast->client), mcast->context,
 		(XMI::PipeWorkQueue *)mcast->src, (XMI::PipeWorkQueue *)mcast->dst,
 		bytes, doStore, mcast->roles, mcast->cb_done,
 		dispatch_id, XMI::Device::BGP::COMBINE_OP_OR, BGPCN_PKT_SIZE),

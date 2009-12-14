@@ -85,7 +85,7 @@ namespace XMI
       MPISyncMsg(T_Device &Generic_QS,
                  xmi_multisync_t *msync) :
       XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
-                                           msync->client, msync->context),
+                                           XMI_GD_ClientId(msync->client), msync->context),
       _device(&Generic_QS),
       _participants((XMI::Topology *)msync->participants),
       _tag(msync->connection_id),

@@ -37,18 +37,18 @@ class ProgressFunctionMsg;
 
 class ProgressFunctionDev {
 public:
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
 		_generics = devices;
 	}
 
-	inline int advanceRecv(size_t context) { return 0; }
+	inline int advanceRecv(size_t client, size_t context) { return 0; }
 
 protected:
 	friend class ProgressFunctionMdl;
 	friend class ProgressFunctionMsg;
 	inline void __post(ProgressFunctionMsg *msg);
 private:
-	XMI::Device::Generic::Device *_generics;
+	XMI::Device::Generic::Device *((*_generics)[XMI_MAX_NUM_CLIENTS]);
 }; // class ProgressFunctionDev
 
 }; //-- Device
@@ -75,6 +75,7 @@ protected:
 		_cookie = pf->clientdata;
 		_cb_done = pf->cb_done;
 		_contextId = pf->context;
+		_clientId = XMI_GD_ClientId(pf->client);
 		setStatus(XMI::Device::Ready);
 	}
 
@@ -88,8 +89,11 @@ public:
 	inline void setCookie(void *cookie) { _cookie = cookie; }
 	inline void setDone(xmi_callback_t done) { _cb_done = done; }
 	inline void setContext(size_t ctx) { _contextId = ctx; }
+	inline void setClient(size_t clt) { _clientId = clt; }
 	inline size_t getContextId() { return _contextId; }
+	inline size_t getClientId() { return _clientId; }
 protected:
+	size_t _clientId;
 	size_t _contextId;
 }; //-- ProgressFunctionMsg
 
@@ -110,6 +114,7 @@ public:
 
 	inline void reset_impl() {}
 
+	inline bool postWork(void *msg, xmi_work_function func, void *cookie, xmi_callback_t done, size_t ctx);
 	inline bool postWork(XMI_ProgressFunc_t *pf);
 
 private:
@@ -120,7 +125,7 @@ private:
 
 inline void XMI::Device::ProgressFunctionDev::__post(ProgressFunctionMsg *msg) {
 	// 'msg' actually inherits from GenericThread...
-	_generics[msg->getContextId()].postThread(msg);
+	(*_generics)[msg->getClientId()][msg->getContextId()].postThread(msg);
 }
 
 inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
@@ -145,6 +150,18 @@ inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 	}
 	new (msg) ProgressFunctionMsg(pf);
 	_g_progfunc_dev.__post(msg);
+	return true;
+}
+
+inline bool XMI::Device::ProgressFunctionMdl::postWork(void *msg, xmi_work_function func, void *cookie, xmi_callback_t done, size_t ctx) {
+	ProgressFunctionMsg *work = (ProgressFunctionMsg *)msg;
+	// can we get away without 'new'ing this?
+	work->setFunc(func);
+	work->setCookie(cookie);
+	work->setDone(done);
+	work->setContext(ctx);	// this tells generic device which slice to use,
+				// but does not tell which client.
+	work->postWorkDirect();
 	return true;
 }
 

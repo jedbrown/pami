@@ -149,7 +149,7 @@ public:
 	inline XMI::SysDep *getSysdep() { return _sd; }
 
 	/// \brief advance routine for unexpected (received) messages
-	inline int advanceRecv(size_t context);
+	inline int advanceRecv(size_t client, size_t context);
 
 	// wrappers for GenericSubDevSendq...
 
@@ -229,7 +229,7 @@ public:
 	///
 	/// Only posts threads which are not yet "Done". Simple pass-through
 	/// to generic device post(), which does not care which object the
-	/// method is actually call on - uses 'msg' to determine where to
+	/// method is actually called on - uses 'msg' to determine where to
 	/// actually post/enqueue the objects.
 	///
 	/// \param[in] msg	Message object to enqueue
@@ -239,7 +239,7 @@ public:
 	/// \ingroup gendev_subdev_api
 	///
 	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
-		_generics->post(msg, t, l, n);
+		(*_generics)[0]->post(msg, t, l, n);
 	}
 
 	/// \brief accessor for specific generic device for context-id
@@ -247,7 +247,9 @@ public:
 	/// \return	Pointer to specific generic device object
 	/// \ingroup gendev_subdev_api
 	///
-	inline XMI::Device::Generic::Device *getGeneric(size_t contextId) { return &_generics[contextId]; }
+	inline XMI::Device::Generic::Device *getGeneric(size_t client, size_t contextId) {
+		return &(*_generics)[client][contextId];
+	}
 
 protected:
 	/// \brief internal initialization routine for GenericSubDevice sub-class
@@ -256,14 +258,14 @@ protected:
 	/// \param[in] generics	Array of generic devices used for parallelism
 	/// \ingroup gendev_private_api
 	///
-	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *generics) {
+	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*generics)[XMI_MAX_NUM_CLIENTS])) {
 		_sd = &sd;
 		_generics = generics;
 	}
 
 	GenericSubDevSendq _queue;
 	XMI::SysDep *_sd;
-	XMI::Device::Generic::Device *_generics;
+	XMI::Device::Generic::Device *((*_generics)[XMI_MAX_NUM_CLIENTS]);
 }; /* class GenericSubDevice */
 
 /// \brief Example sub-device for using multiple send queues
@@ -302,7 +304,7 @@ protected:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
 		for (int x = 0; x < N_Queues; ++x) {
 			_sendQs[x].___init(sd, devices);
 		}
@@ -323,7 +325,7 @@ protected:
 	/// \param[in] context	Id of context which is being advanced
 	/// \ingroup gendev_internal_api
 	///
-	inline int advanceRecv(size_t context) {
+	inline int advanceRecv(size_t client, size_t context) {
 		// determine if any messages have arrived on this context,
 		// and process them...
 		return 0;
@@ -380,7 +382,7 @@ protected:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
 		___init(sd, devices);
 	}
 
@@ -391,7 +393,7 @@ protected:
 	/// \param[in] context	Id of context which is being advanced
 	/// \ingroup gendev_internal_api
 	///
-	inline int advanceRecv(size_t context) { return 0; }
+	inline int advanceRecv(size_t client, size_t context) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.
@@ -413,7 +415,7 @@ public: // temporary
 		bool first = (getCurrent() == NULL);
 		if (first) {
 			if (static_cast<T_Message*>(msg)->__postNext(false)) {
-				msg->executeCallback(getGeneric(msg->getContextId())->getContext());
+				msg->executeCallback(getGeneric(msg->getClientId(), msg->getContextId())->getContext());
 				return;
 			}
 		}
@@ -479,7 +481,7 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) = 0;
+	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -490,7 +492,7 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
 		_init = 1;
@@ -531,7 +533,7 @@ public:
 		bool first = (getCurrent() == NULL);
 		if (first) {
 			if (static_cast<T_Message*>(msg)->__postNext(false)) {
-				msg->executeCallback(getGeneric(msg->getContextId())->getContext());
+				msg->executeCallback(getGeneric(msg->getClientId(), msg->getContextId())->getContext());
 				return;
 			}
 		}
@@ -614,17 +616,17 @@ public:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
 		// do this now so we don't have to every time we post
-//		for (int x = 0; x < NUM_THREADS; ++x) {
+//		for (int x = 0; x < NUM_THREADS; ++x) 
 //			//_threads[x].setPolled(true);
 //		}
 		if (!_common->isInit()) {
-			_common->init(sd, devices, contextId);
+			_common->init(sd, devices, client, contextId);
 		}
 	}
 
-	inline int advanceRecv(size_t context) { return 0; }
+	inline int advanceRecv(size_t client, size_t context) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.

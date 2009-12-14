@@ -21,6 +21,13 @@
 #include "util/common.h"
 #include "components/devices/generic/GenericDevice.h"
 
+#warning When client-id is supported in api this can be removed
+#include "Client.h"
+size_t XMI_GD_ClientId(xmi_client_t client) {
+	XMI::Client *clnt = (XMI::Client *)client;
+	return clnt->getClientId();
+}
+
 #include "GenericSubDeviceList.cc"
 
 // All sub-devices must be instantiated here, but are otherwise unused in
