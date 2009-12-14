@@ -1114,3 +1114,10 @@ void XMI_Topology_subtract(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topol
     XMI::Topology * t = (XMI::Topology *) topo;
     return t->subtractTopology((XMI::Topology *)_new, (XMI::Topology *)other);
 }
+
+// This is temporary!
+#warning When client-id is supported in api this can be removed
+size_t XMI_GD_ClientId(xmi_client_t client) {
+	XMI::Client *clnt = (XMI::Client *)client;
+	return clnt->getClientId();
+}

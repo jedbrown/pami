@@ -35,8 +35,8 @@ inline void Device::__platform_generic_init(bool first_global, bool first_client
 	if (first_global) {
 		// These sub-devices only execute one message at a time,
 		// and so there is only one instance of each, globally.
-		_g_mpibcast_dev.init(sd, __generics, __contextId);
-		_g_mpisync_dev.init(sd, __generics, __contextId);
+		_g_mpibcast_dev.init(sd, &__generics, __clientId, __contextId);
+		_g_mpisync_dev.init(sd, &__generics, __clientId, __contextId);
 	}
 }
 

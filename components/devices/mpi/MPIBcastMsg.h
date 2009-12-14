@@ -52,10 +52,10 @@ namespace XMI
       /// \param[in] contextId	Id of current context (index into devices[])
       /// \ingroup gendev_subdev_api
       ///
-      inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t contextId)
+      inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t clientId, size_t contextId)
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_mcast_communicator);
-        Generic::SimpleSubDevice<T_Thread>::init(sd, devices, contextId);
+        Generic::SimpleSubDevice<T_Thread>::init(sd, devices, clientId, contextId);
       }
 
     };
