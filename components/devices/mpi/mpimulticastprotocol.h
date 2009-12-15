@@ -178,7 +178,7 @@ namespace XMI
           // \todo indexToRank() doesn't always work so convert a local copy to a list topology...
           XMI::Topology l_dst_participants = *((XMI::Topology*)mcast->dst_participants);
           l_dst_participants.convertTopology(XMI_LIST_TOPOLOGY);
-          xmi_task_t *rankList;  l_dst_participants.rankList(&rankList);
+          xmi_task_t *rankList=NULL;  l_dst_participants.rankList(&rankList);
           size_t  size    = l_dst_participants.size();
           for(unsigned i = 0; i< size; ++i)
           {
@@ -193,7 +193,7 @@ namespace XMI
           // No data? We're done.
           if(mcast->bytes == 0)
           {
-#warning hack
+/** \todo fix or remove this hack */
             // call original done
             if(mcast->cb_done.function)
               (mcast->cb_done.function)(NULL,//XMI_Client_getcontext(mcast->client,mcast->context),
@@ -250,7 +250,7 @@ namespace XMI
           protocol->_allocator.returnObject(cookie);  // and release storage
 
           // call original done
-#warning hack
+/** \todo fix or remove this hack */
           if(cb_done.function)
             (cb_done.function)(NULL,//XMI_Client_getcontext(protocol->_client,protocol->_contextid),
                                cb_done.clientdata, result);
@@ -309,7 +309,7 @@ namespace XMI
           if(mcast.bytes == 0)
           {
             // call original done
-#warning hack
+            /** \todo fix or remove this hack */
             if(mcast.cb_done.function)
               (mcast.cb_done.function)(NULL,//XMI_Client_getcontext(_client,_contextid),
                                        mcast.cb_done.clientdata, XMI_SUCCESS);

@@ -192,7 +192,7 @@ namespace XMI
           }
           else
           {
-            for(int idx=1; idx < _participants->size(); ++idx)
+            for(size_t idx=1; idx < _participants->size(); ++idx)
             {
               int rc = MPI_Send(NULL, 0, MPI_BYTE,
                                 _participants->index2Rank(idx),_tag,

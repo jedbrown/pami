@@ -134,7 +134,7 @@ namespace XMI
             XMI_assert(bytes<=packet_model_payload_bytes);
           }
 #endif
-          size_t peer, sequence;
+          size_t peer=0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
           __global.mapping.task2node (target_rank, addr);
           __global.mapping.node2peer (addr, peer);
@@ -203,7 +203,7 @@ namespace XMI
           __global.mapping.task2node (target_rank, address);
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. target_rank = %zd -> {%zd, %zd}\n", target_rank, address.global, address.local));
 
-          size_t peer;
+          size_t peer=0;
           __global.mapping.node2peer (address, peer);
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl() .. {%zd, %zd} -> %zd\n", address.global, address.local, peer));
 

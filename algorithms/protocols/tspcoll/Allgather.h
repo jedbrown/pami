@@ -105,7 +105,7 @@ void TSPColl::Allgather<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t nb
       this->_rbuf[phase]   = (char *)rbuf + nextindex*nbytes;
       this->_rbuf[phase+1] = (char *)rbuf;
 
-      if (rank + (1<<i) >= this->_comm->size())
+      if ((size_t)rank + (1<<i) >= this->_comm->size())
  	{
 	  this->_sbufln[phase]   = nbytes * (this->_comm->size() - rank);
 	  this->_sbufln[phase+1] = nbytes * (rank + (1<<i) - this->_comm->size());

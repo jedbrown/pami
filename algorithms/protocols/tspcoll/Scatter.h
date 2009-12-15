@@ -149,7 +149,7 @@ template<class T_Mcast>
 void TSPColl::Scatter<T_Mcast>::
 reset (int root, const void * sbuf, void * rbuf, size_t length)
 {
-  _isroot = (root == this->_comm->virtrank());
+  _isroot = ((size_t)root == this->_comm->virtrank());
   _rbuf   = rbuf;
   _sbuf   = (const char *)sbuf;
   _length = length;
@@ -167,7 +167,7 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
   TRACE((stderr, "SCATTER KICK START\n"));
   if (!_isroot) return;
   _req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
-  for (int i=0; i < this->_comm->size(); i++)
+  for (size_t i=0; i < this->_comm->size(); i++)
     if (i == this->_comm->virtrank())
       {
 	memcpy (_rbuf, _sbuf+i*_length, _length);
@@ -208,7 +208,7 @@ void TSPColl::Scatter<T_Mcast>::cb_senddone (xmi_context_t context, void *arg, x
   /* LOCK */
   TRACE((stderr, "SCATTER SDONE ctr=%d cplt=%d sidx=%d\n",
 	 self->_counter, self->_complete, self->_sendidx));
-  if (++(self->_sendidx) < self->_comm->size()) return;
+  if ((size_t)++(self->_sendidx) < self->_comm->size()) return;
   self->_sendidx = 0;
   self->_complete++;
   /* UNLOCK */
@@ -226,7 +226,7 @@ template<class T_Mcast>
 void TSPColl::Scatterv<T_Mcast>::
 reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 {
-  this->_isroot = (root == this->_comm->virtrank());
+  this->_isroot = ((size_t)root == this->_comm->virtrank());
   this->_rbuf   = rbuf;
   this->_sbuf   = (const char *)sbuf;
   this->_lengths = lengths;
@@ -250,9 +250,9 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 	 this->_counter, this->_complete));
 
   this->_req = (XMI_Request_t*) malloc(this->_comm->size()*sizeof(XMI_Request_t));
-  for (int i=0; i < this->_comm->size(); i++)
+  for (size_t i=0; i < this->_comm->size(); i++)
       {
-        const char * s = this->_sbuf; for (int j=0; j<i; j++) s += this->_lengths[j];
+        const char * s = this->_sbuf; for (unsigned j=0; j<i; j++) s += this->_lengths[j];
         TRACE((stderr, "SCATTERV SEND ctr=%d cplt=%d (%d/%d) len=%d "
                "s=%p 0x%02x 0x%02x 0x%02x\n",
                this->_counter, this->_complete, i, this->_comm->size(), this->_lengths[i],

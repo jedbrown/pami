@@ -104,10 +104,10 @@ namespace XMI
 
           // now we should set the attributes of the topologies or geometry
           // i guess we should have attributes per topo and per geometry
-#warning need to do the following per topology maybe
+/** \todo need to do the following per topology maybe */
           if (_topos[0].isRectSeg())
             xmi_ca_set(&attributes, XMI_GEOMETRY_RECT);
-#warning isGlobal is not yet implemented
+/** \todo isGlobal is not yet implemented */
 	  //          if (_topos[0].isGlobal())
 	  //            xmi_ca_set(&attributes, XMI_GEOMETRY_GLOBAL);
           if (XMI_ISPOF2(_topos[0].size()))

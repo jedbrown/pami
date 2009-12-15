@@ -60,7 +60,7 @@ namespace XMI
       ///
       /// \see Multicast::Model
       ///
-      #warning We probably need client and context passed to the model
+      /** \todo We probably need client and context passed to the model */
       template <class T_Model>
       class ActiveMessageMulticastModel : public MulticastModel<T_Model>
       {

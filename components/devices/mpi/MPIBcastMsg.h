@@ -269,7 +269,7 @@ namespace XMI
             {
               // how does MPI_Status.count work?
               XMI_assertf((size_t)scount <= _currBytes,
-                          "MPIBcastMsg recv overrun (got %d, kept %d)\n",
+                          "MPIBcastMsg recv overrun (got %d, kept %ld)\n",
                           scount, _currBytes);
             }
           }

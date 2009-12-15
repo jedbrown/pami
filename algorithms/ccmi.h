@@ -61,8 +61,8 @@ typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 #define __ccmi_callback_defined__
 
 
+/** \todo fix NDIMS */
 #define XMI_X_DIM 0
-#warning fix NDIMS
 #define XMI_Y_DIM 0//1
 #define XMI_Z_DIM 0//2
 #define XMI_T_DIM 0//3

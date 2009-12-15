@@ -127,7 +127,7 @@ int main (int argc, char ** argv)
   }
 
   int algorithm_type = 0;
-  xmi_algorithm_t *algorithm;
+  xmi_algorithm_t *algorithm=NULL;
   int num_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,
@@ -155,7 +155,7 @@ int main (int argc, char ** argv)
 
   }
 
-  xmi_algorithm_t *allgatheralgorithm;
+  xmi_algorithm_t *allgatheralgorithm=NULL;
   int allgathernum_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,

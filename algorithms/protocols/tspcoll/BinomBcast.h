@@ -72,7 +72,7 @@ template<class T_Mcast>
 inline void TSPColl::BinomBcast<T_Mcast>::
 reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
 {
-  if (rootindex >= this->_comm->size())
+  if ((size_t)rootindex >= this->_comm->size())
     CCMI_FATALERROR (-1, "Invalid root index in BinomBcast");
 
   /* --------------------------------------------------- */
@@ -92,7 +92,7 @@ reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
       int  sendmask   = (1<<(this->_numphases/2-i))-1;
       int  destrelrank= myrelrank + dist;
       int  srcrelrank = myrelrank - dist;
-      bool dosend     = ((myrelrank&sendmask)==0)&&(destrelrank<this->_comm->size());
+      bool dosend     = ((myrelrank&sendmask)==0)&&((size_t)destrelrank<this->_comm->size());
       bool dorecv     = ((srcrelrank&sendmask)==0)&&(srcrelrank>=0);
       int  destindex  = (destrelrank + rootindex)%this->_comm->size();
       this->_dest[phase]    = this->_comm->absrankof(destindex);

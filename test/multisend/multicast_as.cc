@@ -116,7 +116,7 @@ int main(int argc, char ** argv)
 
   // global topology variables
   xmi_task_t  gRoot    = topology_global.index2Rank(0);
-  xmi_task_t *gRankList; topology_global.rankList(&gRankList);
+  xmi_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
   size_t  gSize    = topology_global.size();
 
   XMI::Topology src_participants;

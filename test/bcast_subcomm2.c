@@ -128,7 +128,7 @@ int main(int argc, char*argv[])
         return 1;
       }
   int algorithm_type = 0;
-  xmi_algorithm_t *world_algorithm;
+  xmi_algorithm_t *world_algorithm=NULL;
   int num_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,
@@ -168,13 +168,13 @@ int main(int argc, char*argv[])
 
   xmi_geometry_t           bottom_geometry;
   xmi_geometry_range_t    *bottom_range;
-  xmi_algorithm_t         *bottom_algorithm;
+  xmi_algorithm_t         *bottom_algorithm=NULL;
   xmi_barrier_t            bottom_barrier;
   xmi_broadcast_t          bottom_broadcast;
 
   xmi_geometry_t           top_geometry;
   xmi_geometry_range_t    *top_range;
-  xmi_algorithm_t         *top_algorithm;
+  xmi_algorithm_t         *top_algorithm=NULL;
   xmi_barrier_t            top_barrier;
   xmi_broadcast_t          top_broadcast;
   if(((rank%2)==0))

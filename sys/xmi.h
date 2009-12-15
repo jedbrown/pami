@@ -3407,8 +3407,8 @@ extern "C"
    */
   xmi_result_t XMI_Client_finalize (xmi_client_t client);
 
-#warning need to make callback interface efficient and consistent
-xmi_context_t XMI_Client_getcontext(xmi_client_t, size_t);
+  /** \todo need to make callback interface efficient and consistent */
+  xmi_context_t XMI_Client_getcontext(xmi_client_t, size_t);
 
   /**
    * \brief Create a new independent communication context for a client

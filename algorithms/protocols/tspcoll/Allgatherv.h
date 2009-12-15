@@ -73,7 +73,7 @@ inline void TSPColl::
 Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
 {
   size_t allsumbytes= 0;
-  for(int i=0;i<this->_comm->size();i++)
+  for(size_t i=0;i<this->_comm->size();i++)
     allsumbytes+=lengths[i];
 
   size_t mysumbytes = 0;

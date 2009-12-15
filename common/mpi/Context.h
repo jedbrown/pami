@@ -32,7 +32,7 @@
 #include <sched.h>
 
 
-#warning shmem device must become sub-device of generic device
+/** \todo shmem device must become sub-device of generic device */
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemModel.h"
 #include "util/fifo/FifoPacket.h"
@@ -113,7 +113,7 @@ namespace XMI
 #ifdef USE_WAKEUP_VECTORS
 	  _wakeupManager.init(1, 0x57550000 | id); // check errors?
 #endif // USE_WAKEUP_VECTORS
-#warning need client-id to handle multiple clients in generic device
+/** \todo need client-id to handle multiple clients in generic device */
 	  _generic.init (_sysdep, (xmi_context_t)this, clientid, id, num, generics);
           _shmem.init(&_sysdep);
           _lock.init(&_sysdep);

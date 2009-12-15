@@ -203,7 +203,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
 
     //if last receive has arrived before the last send dont call executor notifySendDone rather app done callback
     if( (_phase == (_start + _nphases - 1)) &&
-        (_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size()) )
+        ((size_t)_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size()) )
     {
       TRACE_ERR((stderr,"<%X>Executor::BarrierExec::sendNext set callback %X\n",(int)this, (int)_cb_done));
       _minfo.cb_done.function   = _cb_done;
@@ -256,7 +256,7 @@ inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
     return;
 
   ///Check the current iteration's number of messages received. Have we received all messages
-  if(_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size())
+  if((size_t)_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size())
   {
     if(_senddone)
     {
@@ -277,7 +277,7 @@ inline void CCMI::Executor::BarrierExec::internalNotifySendDone( const xmi_quad_
   _senddone = true;
 
   //Message for that phase has been received
-  if( _phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size())
+  if((size_t)_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size())
   {
     _phase ++;
     sendNext();

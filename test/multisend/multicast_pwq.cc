@@ -158,7 +158,7 @@ int main(int argc, char ** argv)
 
   // global topology variables
   xmi_task_t  gRoot    = topology_global.index2Rank(0);
-  xmi_task_t *gRankList; topology_global.rankList(&gRankList);
+  xmi_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
   size_t  gSize    = topology_global.size();
 
   DBG_FPRINTF((stderr,"gRoot %d, gSize %d\n",gRoot, gSize));
@@ -270,7 +270,7 @@ int main(int argc, char ** argv)
   {
     // local topology variables
     xmi_task_t  lRoot    = topology_local.index2Rank(0);
-    xmi_task_t *lRankList; topology_local.rankList(&lRankList);
+    xmi_task_t *lRankList=NULL; topology_local.rankList(&lRankList);
     size_t  lSize   =  topology_local.size();
 
     options.type = XMI_MULTICAST;
@@ -366,7 +366,7 @@ int main(int argc, char ** argv)
 
 
       DBG_FPRINTF((stderr,"Context %p\n",context));
-#warning shouldnt need this advance but MPIBcastMsg only advances one msg at a time so start receiving first...
+/** \todo shouldnt need this advance but MPIBcastMsg only advances one msg at a time so start receiving first... */
       sleep(2); status = XMI_Context_advance (context, 100);
 
       status = XMI_Multicast(&mcast);

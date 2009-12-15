@@ -339,8 +339,8 @@ namespace XMI {
 		/// \return 'true' means "this" was altered!
 		bool __analyzeCoordsRange() {
 			xmi_result_t rc;
-			xmi_coord_t ll, ur;
-			xmi_coord_t c0;
+			static xmi_coord_t ll, ur;
+			static xmi_coord_t c0;
 			xmi_task_t r = topo_first;
 			rc = RANK2COORDS(r, &c0);
 			__initRange(&ll, &ur, &c0, mapping->globalDims());
@@ -368,8 +368,8 @@ namespace XMI {
 		/// \return 'true' means "this" was altered!
 		bool __analyzeCoordsList() {
 			xmi_result_t rc;
-			xmi_coord_t ll, ur;
-			xmi_coord_t c0;
+			static xmi_coord_t ll, ur;
+			static xmi_coord_t c0;
 			unsigned i = 0;
 			rc = RANK2COORDS(topo_list(i), &c0);
 			__initRange(&ll, &ur, &c0, mapping->globalDims());
@@ -617,7 +617,7 @@ namespace XMI {
 		///
 		size_t rank2Index_impl(xmi_task_t rank) {
 			size_t x, ix, nn;
-			xmi_coord_t c0;
+			static xmi_coord_t c0;
 			xmi_result_t rc;
 			switch (__type) {
 			case XMI_SINGLE_TOPOLOGY:
@@ -1458,7 +1458,7 @@ namespace XMI {
 	///
 	void subtractTopology_impl(Topology *_new, Topology *other) {
 		xmi_result_t rc;
-		xmi_coord_t ll, ur, c0;
+		static xmi_coord_t ll, ur, c0;
 		xmi_task_t rank = 0;
 		xmi_task_t min = 0, max = 0;
 		size_t s;

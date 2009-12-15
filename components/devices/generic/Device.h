@@ -37,7 +37,7 @@
 #include "sys/xmi.h"
 
 #ifndef XMI_MAX_NUM_CLIENTS
-#warning XMI_MAX_NUM_CLIENTS needs to be setup by xmi.h
+/** \todo XMI_MAX_NUM_CLIENTS needs to be setup by xmi.h */
 #define XMI_MAX_NUM_CLIENTS	4
 #endif // !XMI_MAX_NUM_CLIENTS
 

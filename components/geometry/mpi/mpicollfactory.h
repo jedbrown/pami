@@ -152,7 +152,7 @@ namespace XMI
           rq = getRegQ(collective);
         else
         {
-#warning need to implement this later
+/** \todo  need to implement this later */
           ; //
         }
 

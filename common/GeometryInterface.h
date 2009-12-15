@@ -97,7 +97,7 @@ namespace XMI
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
       inline xmi_task_t                 *permutation_sizet();
-#warning need to replace by attributes
+/** \todo  need to replace by attributes */
 #if 1
       // no need for these as they are embedded inside attributes
       inline bool                       isRectangle();
@@ -261,7 +261,7 @@ namespace XMI
       return static_cast<T_Geometry*>(this)->permutation_sizet_impl();
     }
 
-#warning replace by attributes
+/** \todo replace by attributes */
 #if 1
     // to be removed eventually
     template <class T_Geometry, class T_Mapping>

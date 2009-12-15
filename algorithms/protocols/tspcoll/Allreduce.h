@@ -115,7 +115,7 @@ Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
 {
   _dbuf   = NULL;
   _nelems = 0;
-  for (_logMaxBF = 0; (1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
+  for (_logMaxBF = 0; (size_t)(1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
   int maxBF  = 1<<_logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
@@ -298,7 +298,7 @@ Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   _tmpbuf = NULL;
   _dbuf = NULL;
   _nelems = 0;
-  for (_logMaxBF = 0; (1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
+  for (_logMaxBF = 0; (size_t)(1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
   int maxBF  = 1<<_logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;

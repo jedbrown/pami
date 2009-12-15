@@ -149,7 +149,7 @@ int main(int argc, char ** argv)
 
   // local topology variables
   xmi_task_t  lRoot    = topology_local.index2Rank(0);
-  xmi_task_t *lRankList; topology_local.rankList(&lRankList);
+  xmi_task_t *lRankList=NULL; topology_local.rankList(&lRankList);
   size_t  lSize   =  topology_local.size();
 
   XMI::Topology src_participants;

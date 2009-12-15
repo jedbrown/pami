@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
 	status = __global.mapping.task2network(task_id, &c, XMI_N_TORUS_NETWORK);
 	if (status == XMI_SUCCESS) {
 		for (d = 0; d < __global.mapping.globalDims(); ++d) {
-			s += sprintf(s, "%c%d", p, c.u.n_torus.coords[d]);
+			s += sprintf(s, "%c%ld", p, c.u.n_torus.coords[d]);
 			p = ',';
 		}
 		*s++ = ')';

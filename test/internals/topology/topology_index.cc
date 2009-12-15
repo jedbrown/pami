@@ -30,7 +30,7 @@ void check_index2rank(XMI::Topology *topo, const char *str) {
 		}
 		*s++ = ')';
 		*s++ = '\0';
-		fprintf(stderr, "%s.index2Rank(%d) => %d => %d %s\n", str, x, r, i, buf);
+		fprintf(stderr, "%s.index2Rank(%ld) => %d => %ld %s\n", str, x, r, i, buf);
 	}
 }
 

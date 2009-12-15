@@ -66,10 +66,10 @@ namespace XMI {
       mcast->dispatch =  _dispatch;
       mcast->client   =  _client;
       mcast->context  =  _contextid;
-      XMI_Multicast (mcast);
+      return XMI_Multicast (mcast);      
     }
-    virtual xmi_result_t multysync    (xmi_multisync_t *msync) { XMI_Multisync (msync); }
-    virtual xmi_result_t multicombine (xmi_multicombine_t *mcombine) { XMI_Multicombine (mcombine); }
+    virtual xmi_result_t multysync    (xmi_multisync_t *msync) { return XMI_Multisync (msync); }
+    virtual xmi_result_t multicombine (xmi_multicombine_t *mcombine) { return XMI_Multicombine (mcombine); }
 
   private:
     T_Device                 *_device;

@@ -24,7 +24,7 @@
 
 
 static xmi_client_t client;
-#warning How do I determine the optimal number of contexts?
+/** \todo How do I determine the optimal number of contexts? */
 #define NUM_CONTEXTS 2
 static xmi_context_t contexts[NUM_CONTEXTS];
 static size_t SHORT_DISPATCH=1, LONG_DISPATCH=13;
@@ -79,8 +79,9 @@ static void RecvLongCB(xmi_context_t   context,
   recv->data.simple.addr  = buf;
   recv->data.simple.bytes = size;
 
-#warning I need each channel to have an id number/index to write a multi-context recv-queue.
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu -- context id = %zd\n", rank, context, remote_task, msginfo[0], size, contextid);
+/** \todo I need each channel to have an id number/index to write a multi-context recv-queue. */
+  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%d msginfo=%x len=%zu -- context id = %zd\n",
+         rank, context, remote_task, msginfo[0], size, contextid);
 }
 
 static void RecvShortCB(xmi_context_t   context,
@@ -97,7 +98,7 @@ static void RecvShortCB(xmi_context_t   context,
   assert(msginfo_size >= sizeof(unsigned));
   unsigned* msginfo = (unsigned*)_msginfo;
   unsigned* data    = (unsigned*)_addr;
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%zu msginfo=%x len=%zu data=%x -- context id = %zd\n", rank, context, remote_task, msginfo[0], size, data[0], contextid);
+  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%d msginfo=%x len=%zu data=%x -- context id = %zd\n", rank, context, remote_task, msginfo[0], size, data[0], contextid);
   done.s.r = 1;
 }
 
@@ -182,7 +183,7 @@ static void init()
 
   XMI_Client_initialize("XMId ADI Example", &client);
 
-#warning Do I really have to loop to create all the contexts?
+/** \todo Do I really have to loop to create all the contexts? */
     int num = NUM_CONTEXTS;
     XMI_Context_createv(client, NULL, 0, contexts, &num);
 
@@ -208,7 +209,7 @@ static void init()
   XMI_Configuration_query (client, &query);
   size = query.value.intval;
 
-#warning We need to clairify the threading nature of XMI
+/** \todo We need to clairify the threading nature of XMI */
   /* dcmf_config.thread_level = DCMF_THREAD_MULTIPLE; */
 
   printf("Rank=%zu Size=%zu    <XMI Initialized> thread-level=%d\n", rank, size, 13);
