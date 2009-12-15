@@ -294,7 +294,7 @@ namespace CCMI {
       unsigned getNumRanks () { return _nranks; }
 
     protected:
-      size_t              * _ranks;     /** List of ranks */
+      xmi_task_t          * _ranks;     /** List of ranks */
       unsigned              _nranks;    /** Number of ranks */
       unsigned              _hnranks;   /** Nearest power of 2 */
       unsigned              _rootindex; /** Index of the root */

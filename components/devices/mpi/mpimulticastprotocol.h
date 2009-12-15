@@ -135,7 +135,7 @@ namespace XMI
                                               __global.mpi_device,
                                               __global.mapping.task(),
                                               NULL, 0, status);
-          XMI_assertf(status == XMI_SUCCESS,"<%#8.8X>P2pDispatchMulticastProtocol::register status=%d\n",(unsigned)this,status);
+          XMI_assertf(status == XMI_SUCCESS,"<%p>P2pDispatchMulticastProtocol::register status=%d\n",this,status);
           return status;
         }
         ///
@@ -178,7 +178,7 @@ namespace XMI
           // \todo indexToRank() doesn't always work so convert a local copy to a list topology...
           XMI::Topology l_dst_participants = *((XMI::Topology*)mcast->dst_participants);
           l_dst_participants.convertTopology(XMI_LIST_TOPOLOGY);
-          size_t *rankList;  l_dst_participants.rankList(&rankList);
+          xmi_task_t *rankList;  l_dst_participants.rankList(&rankList);
           size_t  size    = l_dst_participants.size();
           for(unsigned i = 0; i< size; ++i)
           {

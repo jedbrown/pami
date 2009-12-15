@@ -66,8 +66,8 @@ namespace CCMI
 	for(count = _start; count < (_start + _nphases); count ++)
         {
 	  size_t srcranks[SC_MAXRANKS], dstranks[SC_MAXRANKS];
-	  XMI::Topology src_topology((size_t *)&srcranks, SC_MAXRANKS);
-	  XMI::Topology dst_topology((size_t *)&dstranks, SC_MAXRANKS);
+	  XMI::Topology src_topology((xmi_task_t *)&srcranks, SC_MAXRANKS);
+	  XMI::Topology dst_topology((xmi_task_t *)&dstranks, SC_MAXRANKS);
 
 	  schedule->getSrcTopology(count, &src_topology);
 	  ntotal_src += src_topology.size();
@@ -85,8 +85,8 @@ namespace CCMI
         {
 	  //fprintf (stderr, "Schedule Cache : construct topology of size src %d dst %d\n", ntotal_src - srcindex, ntotal_dst - dstindex);
 
-	  new (_srctopologies[count]) XMI::Topology (_srcranks + srcindex, ntotal_src - srcindex);
-	  new (_dsttopologies[count]) XMI::Topology (_dstranks + dstindex, ntotal_dst - dstindex);
+	  new (_srctopologies[count]) XMI::Topology ((xmi_task_t*)_srcranks + srcindex, ntotal_src - srcindex);
+	  new (_dsttopologies[count]) XMI::Topology ((xmi_task_t*)_dstranks + dstindex, ntotal_dst - dstindex);
 
 	  CCMI_assert (_srctopologies[count]->type() == XMI_LIST_TOPOLOGY);
 	  CCMI_assert (_dsttopologies[count]->type() == XMI_LIST_TOPOLOGY);

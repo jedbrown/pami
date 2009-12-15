@@ -349,7 +349,7 @@ namespace XMI
         // the following was written assuming range topologies, must change
         // implementation to account for other topologies
         int i, range_size, rank_left = rank;
-        size_t first, last;
+        xmi_task_t first, last;
         for(i = 1; i < _numtopos; i++)
         {
           xmi_result_t result = _topos[i].rankRange(&first, &last);
