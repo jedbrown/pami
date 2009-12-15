@@ -110,7 +110,7 @@ namespace XMI
             // ----------------------------------------------------------------
 
             // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
+            //COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
 
 
             // ----------------------------------------------------------------

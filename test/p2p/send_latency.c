@@ -20,13 +20,13 @@
 #include "../util.h"
 
 //#define ITERATIONS 100
-#define ITERATIONS 1000
-//#define ITERATIONS 1
+//#define ITERATIONS 1000
+#define ITERATIONS 1
 
 #ifndef BUFSIZE
 //#define BUFSIZE 2048
-#define BUFSIZE 1024*256
-//#define BUFSIZE 16
+//#define BUFSIZE 1024*256
+#define BUFSIZE 16
 //#define BUFSIZE 1024
 #endif
 

@@ -26,7 +26,7 @@
 #define WINDOW 8
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) fprintf x
 #endif
 
 namespace XMI
@@ -210,7 +210,7 @@ namespace XMI
             // ----------------------------------------------------------------
 
             // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
+            //COMPILE_TIME_ASSERT(T_Model::reliable_packet_model == true);
 
 
             // Assert that the size of the packet payload area is large
