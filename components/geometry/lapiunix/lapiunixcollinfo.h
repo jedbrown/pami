@@ -28,6 +28,8 @@
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
 #include "algorithms/protocols/tspcoll/NBColl.h"
 
+#include "lapiNativeInterface.h"
+
 // CCMI includes
 
 typedef XMI::Device::LAPIOldmulticastModel<XMI::Device::LAPIDevice<XMI::SysDep>,
@@ -185,6 +187,7 @@ namespace XMI
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
+#if  OLD_CCMI_BARRIER
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
@@ -204,7 +207,37 @@ namespace XMI
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                _barrier_executor;
     };
-
+#else
+    template <class T_Device, class T_Sysdep>
+    class CCMIBinomBarrierInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIBinomBarrierInfo(T_Device *dev,
+                           T_Sysdep * sd,
+                           xmi_mapidtogeometry_fn fcn,
+			   xmi_client_t           client,
+			   xmi_context_t          context,
+			   size_t                 context_id):
+        CollInfo<T_Device>(dev),
+	_minterface(dev, client, context, context_id),
+        _barrier_registration(&_minterface,
+                              fcn),
+        _client(client),
+        _context(context),
+	_contextid (context_id)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_BinomBarrier");
+        }
+      XMI_Request_t                                  _request;
+      lapiNativeInterface<T_Device>                   _minterface;
+      CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
+      CCMI_Executor_t                                _barrier_executor;
+      xmi_client_t                                   _client;
+      xmi_context_t                                  _context;
+      size_t                                         _contextid;
+    };
+#endif
 
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBroadcastInfo:public CollInfo<T_Device>

@@ -31,10 +31,13 @@ namespace XMI
     class LAPI : public CollRegistration<XMI::CollRegistration::LAPI<XMI_GEOMETRY_CLASS, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
     {
     public:
-      inline LAPI(T_Device *dev, T_Sysdep *sd):
+      inline LAPI(T_Device *dev, T_Sysdep *sd, xmi_client_t client, xmi_context_t context, size_t context_id):
         CollRegistration<XMI::CollRegistration::LAPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>(),
 	_dev(dev),
         _sysdep(sd),
+	_client (client),
+	_context (context),
+	_contextid (context_id),
 	_pgbroadcast(dev),
 	_pgallgather(dev),
 	_pgallgatherv(dev),
@@ -43,7 +46,7 @@ namespace XMI
 	_pgallreduce(dev),
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
-        _ccmibarrier(dev, sd, mapidtogeometry),
+	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id),
         _ccmibinombroadcast(dev, sd, mapidtogeometry),
         _ccmiringbroadcast(dev, sd, mapidtogeometry),
         _ccmiringallreduce(dev, sd, mapidtogeometry),
@@ -87,7 +90,7 @@ namespace XMI
 	  _ambroadcasts.push_back(&_ccmiambroadcast);
 
           _ccmibarrier._colltype=XMI::CollInfo::CI_BARRIER1;
-          _barriers.push_back(&_ccmiambroadcast);
+          _barriers.push_back(&_ccmibarrier);
 
           _ccmibinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST1;
           _broadcasts.push_back(&_ccmibinombroadcast);
@@ -138,6 +141,9 @@ namespace XMI
       T_Sysdep                        *_sysdep;
       XMI_NBCollManager                _nbCollMgr;
       MemoryAllocator<sizeof(XMI_COLLFACTORY_CLASS), 16> _fact_alloc;
+      xmi_client_t                     _client;
+      xmi_context_t                    _context;
+      size_t                           _contextid;
 
       XMI::CollInfo::PGBroadcastInfo<T_Device>    _pgbroadcast;
       XMI::CollInfo::PGAllgatherInfo<T_Device>    _pgallgather;

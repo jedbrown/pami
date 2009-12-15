@@ -92,7 +92,7 @@ namespace XMI
 	  _ambroadcasts.push_back(&_ccmiambroadcast);
 
           _ccmibarrier._colltype=XMI::CollInfo::CI_BARRIER1;
-          _barriers.push_back(&_ccmiambroadcast);
+          _barriers.push_back(&_ccmibarrier);
 
           _ccmibinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST1;
           _broadcasts.push_back(&_ccmibinombroadcast);

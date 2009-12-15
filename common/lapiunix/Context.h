@@ -137,7 +137,7 @@ namespace XMI
           new(_world_geometry) LAPIGeometry(&__global.mapping,0, 1,&_world_range);
 
           _collreg=(LAPICollreg*) malloc(sizeof(*_collreg));
-          new(_collreg) LAPICollreg(&_lapi_device, &_sysdep);
+          new(_collreg) LAPICollreg(&_lapi_device, &_sysdep,getClient(), (xmi_context_t)(void *)this, getId());
 
           _world_collfactory=_collreg->analyze(_world_geometry);
           _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
