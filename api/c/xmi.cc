@@ -785,6 +785,46 @@ void XMI_PipeWorkQueue_setProducerWakeup(xmi_pipeworkqueue_t *wq,
 }
 
 ///
+/// \copydoc XMI_PipeWorkQueue_setProducerUserInfo
+///
+void XMI_PipeWorkQueue_setProducerUserInfo(xmi_pipeworkqueue_t *wq,
+                                         void *word1, void *word2)
+{
+    XMI::PipeWorkQueue * pwq = (XMI::PipeWorkQueue *) wq;
+    pwq->setProducerUserInfo (word1, word2);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_setConsumerUserInfo
+///
+void XMI_PipeWorkQueue_setConsumerUserInfo(xmi_pipeworkqueue_t *wq,
+                                         void *word1, void *word2)
+{
+    XMI::PipeWorkQueue * pwq = (XMI::PipeWorkQueue *) wq;
+    pwq->setConsumerUserInfo (word1, word2);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_getProducerUserInfo
+///
+void XMI_PipeWorkQueue_getProducerUserInfo(xmi_pipeworkqueue_t *wq,
+                                         void **word1, void **word2)
+{
+    XMI::PipeWorkQueue * pwq = (XMI::PipeWorkQueue *) wq;
+    pwq->getProducerUserInfo (word1, word2);
+}
+
+///
+/// \copydoc XMI_PipeWorkQueue_getConsumerUserInfo
+///
+void XMI_PipeWorkQueue_getConsumerUserInfo(xmi_pipeworkqueue_t *wq,
+                                         void **word1, void **word2)
+{
+    XMI::PipeWorkQueue * pwq = (XMI::PipeWorkQueue *) wq;
+    pwq->getConsumerUserInfo (word1, word2);
+}
+
+///
 /// \copydoc XMI_PipeWorkQueue_bytesAvailableToProduce
 ///
 size_t XMI_PipeWorkQueue_bytesAvailableToProduce(xmi_pipeworkqueue_t *wq)

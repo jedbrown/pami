@@ -2199,6 +2199,45 @@ extern "C"
   void XMI_PipeWorkQueue_setProducerWakeup(xmi_pipeworkqueue_t *wq, void *vec);
 
   /**
+   * \brief register user-defined info for producer
+   *
+   * Cooperating consumer/producers may share information using
+   * these interfaces. The information is static, i.e. after a
+   * call to setConsumerUserInfo() with values A and B, all subsequent
+   * calls to getConsumerUserInfo() will return values A and B
+   * (until another call to setConsumerUserInfo() is made).
+   *
+   * "Producer" and "Consumer" here are just convenience references,
+   * either side (or potentially third-parties) may use these
+   * methods as desired to set/get the info.
+   *
+   * \param[in] word1    First piece of info
+   * \param[in] word2    Second piece of info
+   */
+  void XMI_PipeWorkQueue_setProducerUserInfo(xmi_pipeworkqueue_t *wq, void *word1, void *word2);
+
+  /**
+   * \brief register user-defined info for consumer
+   * \param[in] word1    First piece of info
+   * \param[in] word2    Second piece of info
+   */
+  void XMI_PipeWorkQueue_setConsumerUserInfo(xmi_pipeworkqueue_t *wq, void *word1, void *word2);
+
+  /**
+   * \brief get user-defined info for producer
+   * \param[in] word1    First piece of info
+   * \param[in] word2    Second piece of info
+   */
+  void XMI_PipeWorkQueue_getProducerUserInfo(xmi_pipeworkqueue_t *wq, void **word1, void **word2);
+
+  /**
+   * \brief get user-defined info for consumer
+   * \param[in] word1    First piece of info
+   * \param[in] word2    Second piece of info
+   */
+  void XMI_PipeWorkQueue_getConsumerUserInfo(xmi_pipeworkqueue_t *wq, void **word1, void **word2);
+
+  /**
    * \brief Return the number of contiguous bytes that can be produced into this work queue.
    *
    * Bytes must be produced into the memory location returned by bufferToProduce() and then

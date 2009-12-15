@@ -45,18 +45,24 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue> {
 /// NOTE! configure() is a one-time operation. cannot re-configure().
 ///
 
+	struct workqueue_hdr_t {
+		volatile size_t producedBytes;
+		volatile size_t consumedBytes;
+		volatile void *producerWakeVec;
+		volatile void *consumerWakeVec;
+		volatile void *producerWord1;
+		volatile void *producerWord2;
+		volatile void *consumerWord1;
+		volatile void *consumerWord2;
+	};
+	static const int PWQ_HDR_NQUADS	= ((sizeof(struct workqueue_hdr_t) + sizeof(xmi_quad_t) - 1) / sizeof(xmi_quad_t));
 	///
 	/// \brief Work queue structure in shared memory
 	///
 	typedef struct workqueue_t {
 		union {
-			struct {
-				volatile size_t producedBytes;
-				volatile size_t consumedBytes;
-				volatile void *producerWakeVec;
-				volatile void *consumerWakeVec;
-			} _s;
-			xmi_quad_t _pad;
+			struct workqueue_hdr_t _s;
+			xmi_quad_t _pad[PWQ_HDR_NQUADS];
 		} _u;
 		volatile char buffer[0]; ///< Producer-consumer buffer
 	} workqueue_t __attribute__ ((__aligned__(16)));
@@ -342,6 +348,26 @@ public:
 	///
 	inline void setProducerWakeup_impl(void *vec) {
 		_sharedqueue->_u._s.producerWakeVec = vec;
+	}
+
+	inline void setConsumerUserInfo_impl(void *word1, void *word2) {
+		_sharedqueue->_u._s.consumerWord1 = word1;
+		_sharedqueue->_u._s.consumerWord2 = word2;
+	}
+
+	inline void setProducerUserInfo_impl(void *word1, void *word2) {
+		_sharedqueue->_u._s.producerWord1 = word1;
+		_sharedqueue->_u._s.producerWord2 = word2;
+	}
+
+	inline void getConsumerUserInfo_impl(void **word1, void **word2) {
+		*word1 = (void *)_sharedqueue->_u._s.consumerWord1;
+		*word2 = (void *)_sharedqueue->_u._s.consumerWord2;
+	}
+
+	inline void getProducerUserInfo_impl(void **word1, void **word2) {
+		*word1 = (void *)_sharedqueue->_u._s.producerWord1;
+		*word2 = (void *)_sharedqueue->_u._s.producerWord2;
 	}
 
 	///
