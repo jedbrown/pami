@@ -437,7 +437,9 @@ namespace XMI
         inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
         {
           TRACE_ERR((stderr,"Mapping::nodeTasks_impl(%zd) >>\n", global));
-#warning implement this!
+/// \todo #warning implement this!
+// If this were urgent, it would have been done in the 75 business
+// days since the warning was added.
           TRACE_ERR((stderr,"Mapping::nodeTasks_impl(%zd) <<\n", global));
           return XMI_UNIMPL;
         }
