@@ -45,14 +45,14 @@ xmi_result_t do_work (xmi_context_t   context,
   uint8_t local_buffer[1024];
   size_t i, n = work->bytes<1024?work->bytes:1024;
   size_t to = work->to;
-  TRACE((stderr, "   do_work (), work->bytes = %zd, work->addr = %p, to = %zd, n = %zd\n", work->bytes, work->addr, to, n));
+  TRACE((stderr, "   do_work (), work->bytes = %zu, work->addr = %p, to = %zu, n = %zu\n", work->bytes, work->addr, to, n));
   memcpy ((void *) local_buffer, work->addr, n);
 
   /* Notify the 'sender' that the 'receive' is complete. */
   work->active = 0;
 
   /* decrement the recv flag */
-  TRACE((stderr, "   do_work (), _endpoint[%zd].recv = %zd -> %zd\n", to, _endpoint[to].recv, _endpoint[to].recv - 1));
+  TRACE((stderr, "   do_work (), _endpoint[%zu].recv = %zu -> %zu\n", to, _endpoint[to].recv, _endpoint[to].recv - 1));
   _endpoint[to].recv--;
 
   TRACE((stderr, "<< do_work ()\n"));
@@ -62,7 +62,7 @@ xmi_result_t do_work (xmi_context_t   context,
 void * endpoint (void * arg)
 {
   size_t id = (size_t) arg;
-  TRACE((stderr, ">> endpoint (%zd)\n", id));
+  TRACE((stderr, ">> endpoint (%zu)\n", id));
 
   /* Lock this context */
   xmi_result_t result = XMI_Context_lock (_endpoint[id].context);
@@ -99,12 +99,12 @@ void * endpoint (void * arg)
     }
 
     /* block until the work has been "received" */
-    TRACE((stderr, "   endpoint(%zd), before blocking 'advance', work.active = %zd\n", id, work.active));
+    TRACE((stderr, "   endpoint(%zu), before blocking 'advance', work.active = %zu\n", id, work.active));
     while (work.active);
-    TRACE((stderr, "   endpoint(%zd),  after blocking 'advance', work.active = %zd\n", id, work.active));
+    TRACE((stderr, "   endpoint(%zu),  after blocking 'advance', work.active = %zu\n", id, work.active));
 
     /* wait to "receive" a message from endpoint 1 */
-    TRACE((stderr, "   endpoint(%zd), before blocking advance for recv, _endpoint[0].recv = %zd\n", id, _endpoint[0].recv));
+    TRACE((stderr, "   endpoint(%zu), before blocking advance for recv, _endpoint[0].recv = %zu\n", id, _endpoint[0].recv));
     while (_endpoint[0].recv)
     {
       result = XMI_Context_advance (_endpoint[0].context, 1);
@@ -114,12 +114,12 @@ void * endpoint (void * arg)
         exit(1);
       }
     }
-    TRACE((stderr, "   endpoint(%zd),  after blocking advance for recv, _endpoint[0].recv = %zd\n", id, _endpoint[0].recv));
+    TRACE((stderr, "   endpoint(%zu),  after blocking advance for recv, _endpoint[0].recv = %zu\n", id, _endpoint[0].recv));
   }
   else if (id == 1)
   {
     /* wait to "receive" a message from endpoint 0 */
-    TRACE((stderr, "   endpoint(%zd), before blocking advance for recv, _endpoint[1].recv = %zd\n", id, _endpoint[1].recv));
+    TRACE((stderr, "   endpoint(%zu), before blocking advance for recv, _endpoint[1].recv = %zu\n", id, _endpoint[1].recv));
     while (_endpoint[1].recv)
     {
       result = XMI_Context_advance (_endpoint[1].context, 1);
@@ -129,7 +129,7 @@ void * endpoint (void * arg)
         exit(1);
       }
     }
-    TRACE((stderr, "   endpoint(%zd),  after blocking advance for recv, _endpoint[1].recv = %zd\n", id, _endpoint[1].recv));
+    TRACE((stderr, "   endpoint(%zu),  after blocking advance for recv, _endpoint[1].recv = %zu\n", id, _endpoint[1].recv));
 
     /* send a message to endpoint 1 */
     work_t work;
@@ -147,9 +147,9 @@ void * endpoint (void * arg)
     }
 
     /* block until the work has been "received" */
-    TRACE((stderr, "   endpoint(%zd), before blocking 'advance', work.active = %zd\n", id, work.active));
+    TRACE((stderr, "   endpoint(%zu), before blocking 'advance', work.active = %zu\n", id, work.active));
     while (work.active);
-    TRACE((stderr, "   endpoint(%zd),  after blocking 'advance', work.active = %zd\n", id, work.active));
+    TRACE((stderr, "   endpoint(%zu),  after blocking 'advance', work.active = %zu\n", id, work.active));
   }
 
   /* Unlock the context and exit */
@@ -160,7 +160,7 @@ void * endpoint (void * arg)
     exit(1);
   }
 
-  TRACE((stderr, "<< endpoint(%zd)\n", id));
+  TRACE((stderr, "<< endpoint(%zu)\n", id));
   return NULL;
 }
 

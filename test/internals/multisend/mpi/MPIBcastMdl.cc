@@ -46,7 +46,7 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 	size_t task_id = configuration.value.intval;
-	//fprintf(stderr, "My task id = %zd\n", task_id);
+	//fprintf(stderr, "My task id = %zu\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
 	status = XMI_Configuration_query(client, &configuration);
@@ -55,7 +55,7 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 	size_t num_tasks = configuration.value.intval;
-	if (task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
+	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 	if (num_tasks < 2) {
 		fprintf(stderr, "requires at least 2 ranks\n");
 		exit(1);
@@ -68,7 +68,7 @@ int main(int argc, char ** argv) {
 	// Register some multicasts, C++ style
 
 	size_t root = __global.topology_global.index2Rank(0);
-	if (task_id == root) fprintf(stderr, "Number of tasks = %zd\n", __global.topology_global.size());
+	if (task_id == root) fprintf(stderr, "Number of tasks = %zu\n", __global.topology_global.size());
 
 	new (&itopo) XMI::Topology(root);
 	__global.topology_global.subtractTopology(&otopo, &itopo);

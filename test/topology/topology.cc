@@ -54,7 +54,7 @@ size_t global_size = __global.topology_global.size();
 FPRINTF_TOPOLOGY(topo);
 xmi_topology_type_t type = topo.type();
 if((expected_size==(size_t)-1) && (!topo.size()))
-  fprintf(stderr,"FAIL: type %d/%s, expected size > 0, actual size %ld\n",
+  fprintf(stderr,"FAIL: type %d/%s, expected size > 0, actual size %zu\n",
         type,
         type==XMI_EMPTY_TOPOLOGY?"XMI_EMPTY_TOPOLOGY":
         ((type==XMI_SINGLE_TOPOLOGY)?"XMI_SINGLE_TOPOLOGY":
@@ -63,7 +63,7 @@ if((expected_size==(size_t)-1) && (!topo.size()))
            ((type==XMI_COORD_TOPOLOGY)?"XMI_COORD_TOPOLOGY":"bogus")))),
         topo.size());
 if((expected_size!=(unsigned)-1) && (expected_size!=topo.size()))
-  fprintf(stderr,"FAIL: type %d/%s, expected size %ld, actual size %ld\n",
+  fprintf(stderr,"FAIL: type %d/%s, expected size %zu, actual size %zu\n",
         type,
         type==XMI_EMPTY_TOPOLOGY?"XMI_EMPTY_TOPOLOGY":
         ((type==XMI_SINGLE_TOPOLOGY)?"XMI_SINGLE_TOPOLOGY":
@@ -76,7 +76,7 @@ if((type!=XMI_EMPTY_TOPOLOGY) &&
    (type!=XMI_RANGE_TOPOLOGY) &&
    (type!=XMI_LIST_TOPOLOGY) &&
    (type!=XMI_COORD_TOPOLOGY))
-  fprintf(stderr,"FAIL: type %d/%s, size %ld\n",
+  fprintf(stderr,"FAIL: type %d/%s, size %zu\n",
         type,
         type==XMI_EMPTY_TOPOLOGY?"XMI_EMPTY_TOPOLOGY":
         ((type==XMI_SINGLE_TOPOLOGY)?"XMI_SINGLE_TOPOLOGY":
@@ -95,25 +95,25 @@ for(size_t j=0; j< global_size; ++j)
 {
   if(topo.isRankMember(j)) nmembers++;
   if((topo.rank2Index(j)!=(unsigned)-1) && (topo.rank2Index(j) >= topo.size()))
-    fprintf(stderr,"FAIL: rank2Index(%ld)= %ld, index >= size %ld\n",
+    fprintf(stderr,"FAIL: rank2Index(%zu)= %zu, index >= size %zu\n",
             j,topo.rank2Index(j),topo.size());
   if(!topo.isRankMember(j) && (topo.rank2Index(j) != (unsigned)-1))
-    fprintf(stderr,"FAIL: Is %ld a member? %s. rank2Index(%ld)=%ld\n",
+    fprintf(stderr,"FAIL: Is %zu a member? %s. rank2Index(%zu)=%zu\n",
             j,topo.isRankMember(j)?"yes":"no",
             j,topo.rank2Index(j));
   if(topo.isRankMember(j) && (topo.rank2Index(j) == (unsigned)-1))
-    fprintf(stderr,"FAIL: Is %ld a member? %s. rank2Index(%ld)=%ld\n",
+    fprintf(stderr,"FAIL: Is %zu a member? %s. rank2Index(%zu)=%zu\n",
             j,topo.isRankMember(j)?"yes":"no",
             j,topo.rank2Index(j));
   if(topo.isRankMember(j) &&
      (j != topo.index2Rank(topo.rank2Index(j))))
-    fprintf(stderr,"FAIL: Is %ld a member? %s. rank2Index(%ld)=%ld index2Rank(%ld)=%d\n",
+    fprintf(stderr,"FAIL: Is %zu a member? %s. rank2Index(%zu)=%zu index2Rank(%zu)=%d\n",
             j,topo.isRankMember(j)?"yes":"no",
             j,topo.rank2Index(j),
             topo.rank2Index(j),topo.index2Rank(topo.rank2Index(j)));
 }
 if(nmembers != topo.size())
-    fprintf(stderr,"FAIL: nmembers %ld != size %ld\n",
+    fprintf(stderr,"FAIL: nmembers %zu != size %zu\n",
             nmembers,topo.size());
 }
 
@@ -150,7 +150,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  DBG_FPRINTF((stderr, "My task id = %zd\n", task_id));
+  DBG_FPRINTF((stderr, "My task id = %zu\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
   status = XMI_Configuration_query(client, &configuration);
@@ -160,7 +160,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  if(task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
+  if(task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 // END standard setup
 // ------------------------------------------------------------------------
@@ -195,7 +195,7 @@ if(task_id == 0)
   __global.topology_global.subTopologyNthGlobal(&subtopology, 1); //1st rank on each locale
   TEST_TOPOLOGY(subtopology,(unsigned)-1);
 
-  fprintf(stderr,"\n");fprintf(stderr,"make a global from a list size(%ld)\n",gSize);
+  fprintf(stderr,"\n");fprintf(stderr,"make a global from a list size(%zu)\n",gSize);
   new (&topology) XMI::Topology(gRankList, (gSize));
   TEST_TOPOLOGY(topology,gSize);
 
@@ -268,11 +268,11 @@ if(task_id == 0)
   for(size_t i = 0; i < 11; ++i)
     new (&s.topology_t_array[i]) XMI::Topology(gRankList, (gSize));
 
-  fprintf(stderr,"\n");fprintf(stderr,"An array of XMI::Topology sizeof %zd * 11 = %zd\n",sizeof(XMI::Topology),sizeof(XMI::Topology)*11);
+  fprintf(stderr,"\n");fprintf(stderr,"An array of XMI::Topology sizeof %zu * 11 = %zu\n",sizeof(XMI::Topology),sizeof(XMI::Topology)*11);
   for(size_t i = 0; i < 11; ++i)
     TEST_TOPOLOGY(s.topology_array[i],gSize);
 
-  fprintf(stderr,"\n");fprintf(stderr,"An array of xmi_topology_t sizeof %zd * 11 = %zd\n",sizeof(xmi_topology_t),sizeof(xmi_topology_t)*11);
+  fprintf(stderr,"\n");fprintf(stderr,"An array of xmi_topology_t sizeof %zu * 11 = %zu\n",sizeof(xmi_topology_t),sizeof(xmi_topology_t)*11);
   for(size_t i = 0; i < 11; ++i)
     TEST_TOPOLOGY((*(XMI::Topology*)&s.topology_t_array[i]),gSize);
 
@@ -282,15 +282,15 @@ if(task_id == 0)
   for(size_t i = 0; i < 11; ++i)
     ((XMI::Topology*)&s.topology_t_array[i])->convertTopology(XMI_COORD_TOPOLOGY);
 
-  fprintf(stderr,"\n");fprintf(stderr,"An array of XMI::Topology sizeof %zd * 11 = %zd : converted to XMI_COORD_TOPOLOGY \n",sizeof(XMI::Topology),sizeof(XMI::Topology)*11);
+  fprintf(stderr,"\n");fprintf(stderr,"An array of XMI::Topology sizeof %zu * 11 = %zu : converted to XMI_COORD_TOPOLOGY \n",sizeof(XMI::Topology),sizeof(XMI::Topology)*11);
   for(size_t i = 0; i < 11; ++i)
     TEST_TOPOLOGY(s.topology_array[i],gSize);
 
-  fprintf(stderr,"\n");fprintf(stderr,"An array of xmi_topology_t sizeof %zd * 11 = %zd : converted to XMI_COORD_TOPOLOGY \n",sizeof(xmi_topology_t),sizeof(xmi_topology_t)*11);
+  fprintf(stderr,"\n");fprintf(stderr,"An array of xmi_topology_t sizeof %zu * 11 = %zu : converted to XMI_COORD_TOPOLOGY \n",sizeof(xmi_topology_t),sizeof(xmi_topology_t)*11);
   for(size_t i = 0; i < 11; ++i)
     TEST_TOPOLOGY((*(XMI::Topology*)&s.topology_t_array[i]),gSize);
 
-  XMI_assertf(sizeof(xmi_topology_t) >= sizeof(XMI::Topology),"sizeof(xmi_topology_t) %zd >= %zd sizeof(XMI::Topology)\n",sizeof(xmi_topology_t),sizeof(XMI::Topology));
+  XMI_assertf(sizeof(xmi_topology_t) >= sizeof(XMI::Topology),"sizeof(xmi_topology_t) %zu >= %zu sizeof(XMI::Topology)\n",sizeof(xmi_topology_t),sizeof(XMI::Topology));
   fprintf(stderr,"\n");fprintf(stderr,"DONE\n");
 }
 

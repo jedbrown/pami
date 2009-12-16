@@ -64,7 +64,7 @@ void check_bufs(size_t sz, size_t myrank)
       {
 	if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
 	  {
-	    printf("%zd: (E) rbuf[%zd]:%02x instead of %02zx (r:%zd)\n",
+	    printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
                    myrank,
 		   rdispls[r] + k,
 		   rbuf[ rdispls[r] + k ],
@@ -268,7 +268,7 @@ int main(int argc, char*argv[])
   size_t i,j;
   if (task_id == 0)
       {
-	printf("# Alltoallv Bandwidth Test(size:%zd) %p\n",sz, cb_alltoallv);
+	printf("# Alltoallv Bandwidth Test(size:%zu) %p\n",sz, cb_alltoallv);
 	  printf("# Size(bytes)           cycles    bytes/sec      usec\n");
 	  printf("# -----------      -----------    -----------    ---------\n");
       }

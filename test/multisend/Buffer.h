@@ -178,7 +178,7 @@ namespace XMI
         char* source      = _pSrcPwq->bufferToConsume();
         char* destination = _pDstPwq->bufferToProduce();
 
-        DBG_FPRINTF((stderr, "src %p/%p, dst %p/%p, bytesConsumed %zd, bytesProduced %zd\n",
+        DBG_FPRINTF((stderr, "src %p/%p, dst %p/%p, bytesConsumed %zu, bytesProduced %zu\n",
                      src, source, dst, destination, bytesConsumed, bytesProduced));
 
         unsigned errors = 0;
@@ -192,7 +192,7 @@ namespace XMI
           {
             if(((unsigned *)source)[x] != value++)
             {
-              fprintf(stderr, "Corrupted source buffer(%d) at index %zd.\n",((unsigned *)source)[x], x);
+              fprintf(stderr, "Corrupted source buffer(%d) at index %zu.\n",((unsigned *)source)[x], x);
               errors++;//break;
             }
           }
@@ -201,7 +201,7 @@ namespace XMI
           {
             if(((unsigned *)source)[x] != (unsigned)-1)
             {
-              fprintf(stderr, "Corrupted source buffer(%d) at index %zd.\n",((unsigned *)source)[x], x);
+              fprintf(stderr, "Corrupted source buffer(%d) at index %zu.\n",((unsigned *)source)[x], x);
               errors++;//break;
             }
           }
@@ -213,7 +213,7 @@ namespace XMI
           {
             if(((unsigned *)destination)[x] != value++)
             {
-              fprintf(stderr, "Incorrect result buffer(%d) at index %zd.\n",((unsigned *)destination)[x], x);
+              fprintf(stderr, "Incorrect result buffer(%d) at index %zu.\n",((unsigned *)destination)[x], x);
               errors++;//break;
             }
           }
@@ -222,7 +222,7 @@ namespace XMI
           {
             if(((unsigned *)destination)[x] != (unsigned)-1)
             {
-              fprintf(stderr, "Corrupted result buffer(%d) at index %zd.\n",((unsigned *)destination)[x], x);
+              fprintf(stderr, "Corrupted result buffer(%d) at index %zu.\n",((unsigned *)destination)[x], x);
               errors++;//break;
             }
           }

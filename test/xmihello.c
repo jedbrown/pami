@@ -52,13 +52,13 @@ int main(int argc, char ** argv) {
 	status = __global.mapping.task2network(task_id, &c, XMI_N_TORUS_NETWORK);
 	if (status == XMI_SUCCESS) {
 		for (d = 0; d < __global.mapping.globalDims(); ++d) {
-			s += sprintf(s, "%c%ld", p, c.u.n_torus.coords[d]);
+			s += sprintf(s, "%c%zu", p, c.u.n_torus.coords[d]);
 			p = ',';
 		}
 		*s++ = ')';
 	}
 	*s++ = '\0';
-	fprintf(stderr, "Hello world from XMI rank %zd of %zd %s\n", task_id, num_tasks, buf);
+	fprintf(stderr, "Hello world from XMI rank %zu of %zu %s\n", task_id, num_tasks, buf);
 
 	status = XMI_Context_destroy(context);
 	if (status != XMI_SUCCESS) {

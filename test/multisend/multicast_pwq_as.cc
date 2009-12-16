@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  DBG_FPRINTF((stderr, "My task id = %zd\n", task_id));
+  DBG_FPRINTF((stderr, "My task id = %zu\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
   status = XMI_Configuration_query(client, &configuration);
@@ -78,7 +78,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  if(task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
+  if(task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 // END standard setup
 // ------------------------------------------------------------------------
@@ -205,10 +205,10 @@ int main(int argc, char ** argv)
       if((bytesConsumed != TEST_BUF_SIZE) ||
          (bytesProduced != 0))
       {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       }
       else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
     }
     else
     {
@@ -217,10 +217,10 @@ int main(int argc, char ** argv)
       if((bytesConsumed != 0) ||
          (bytesProduced != TEST_BUF_SIZE))
       {
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       }
       else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
     }
   }
 // ------------------------------------------------------------------------
@@ -264,7 +264,7 @@ int main(int argc, char ** argv)
     //sleep(5); // instead of syncing
 
     {
-      DBG_FPRINTF((stderr,"task_id %zd -> 1st ranks\n", gRoot));
+      DBG_FPRINTF((stderr,"task_id %zu -> 1st ranks\n", gRoot));
       mcast.src_participants = (xmi_topology_t *)new XMI::Topology(gRoot); // global root (mem leak)
       // This isn't working correctly, so do it the hard way
       //topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale
@@ -317,7 +317,7 @@ int main(int argc, char ** argv)
 
       if(lRoot == task_id) // I am 0th rank on this local topology
       {
-        DBG_FPRINTF((stderr,"task_id %zd -> local ranks\n",task_id));
+        DBG_FPRINTF((stderr,"task_id %zu -> local ranks\n",task_id));
         ++_doneCountdown;  // I'm doing another multicast so another cb_done is expected
         _buffer2.reset(true ); // isRoot = true
 
@@ -372,18 +372,18 @@ int main(int argc, char ** argv)
     {
       bytesConsumed = _buffer2.srcPwq()->getBytesConsumed();
       if(bytesConsumed != (TEST_BUF_SIZE/4)*4)
-        fprintf(stderr, "FAIL bytesConsumed = %zd\n", bytesConsumed);
+        fprintf(stderr, "FAIL bytesConsumed = %zu\n", bytesConsumed);
       else
-        fprintf(stderr, "PASS bytesConsumed = %zd\n", bytesConsumed);
+        fprintf(stderr, "PASS bytesConsumed = %zu\n", bytesConsumed);
       _buffer1.validate(bytesConsumed,
                         bytesProduced,
                         true,   // isRoot = true
                         true); // isDest = false
       if((bytesConsumed != (TEST_BUF_SIZE/4)*4) ||
          (bytesProduced != (TEST_BUF_SIZE/4)*4))
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       _buffer2.validate(bytesConsumed,
                         bytesProduced,
                         true,   // isRoot = true
@@ -395,18 +395,18 @@ int main(int argc, char ** argv)
       bytesProduced = _buffer1.dstPwq()->getBytesProduced();
       if((bytesProduced != (TEST_BUF_SIZE/4)*4) ||
          (bytesConsumed != 0))
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       _buffer2.validate(bytesConsumed,
                         bytesProduced,
                         true,   // isRoot = true
                         false); // isDest = false
       if((bytesConsumed != (TEST_BUF_SIZE/4)*4) ||
          (bytesProduced != 0))
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       _buffer1.validate(bytesConsumed,
                         bytesProduced);
     }
@@ -416,9 +416,9 @@ int main(int argc, char ** argv)
                         bytesProduced);
       if((bytesConsumed != 0) ||
          (bytesProduced != (TEST_BUF_SIZE/4)*4))
-        fprintf(stderr, "FAIL bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
       else
-        fprintf(stderr, "PASS bytesConsumed = %zd, bytesProduced = %zd\n", bytesConsumed, bytesProduced);
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
     }
   }
 // ------------------------------------------------------------------------

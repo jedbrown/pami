@@ -22,7 +22,7 @@ static void recv_done (xmi_context_t   context,
                        xmi_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  TRACE((stderr, "Called recv_done function.  active: %zd -> %zd\n", *active, *active-1));
+  TRACE((stderr, "Called recv_done function.  active: %zu -> %zu\n", *active, *active-1));
   (*active)--;
 }
 
@@ -38,7 +38,7 @@ static void test_dispatch (
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zd\n", cookie, *active));
+  TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zu\n", cookie, *active));
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;
@@ -55,7 +55,7 @@ static void send_done_local (xmi_context_t   context,
                              xmi_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  TRACE((stderr, "Called send_done_local function.  active: %zd -> %zd\n", *active, *active-1));
+  TRACE((stderr, "Called send_done_local function.  active: %zu -> %zu\n", *active, *active-1));
   (*active)--;
 }
 
@@ -65,9 +65,9 @@ static void send_done_remote (xmi_context_t   context,
 {
   volatile size_t * active = (volatile size_t *) cookie;
 
-  TRACE((stderr, "Called send_done_remote function.  active: %zd -> %zd\n", *active, *active-1));
+  TRACE((stderr, "Called send_done_remote function.  active: %zu -> %zu\n", *active, *active-1));
   (*active)--;
-  TRACE((stderr, "... send_done_remote function.  active = %zd\n", *active));
+  TRACE((stderr, "... send_done_remote function.  active = %zu\n", *active));
 }
 
 
@@ -94,7 +94,7 @@ unsigned do_test (xmi_context_t context)
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  //TRACE((stderr, "My task id = %zd\n", task_id));
+  //TRACE((stderr, "My task id = %zu\n", task_id));
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(g_client, &configuration);
@@ -104,10 +104,10 @@ unsigned do_test (xmi_context_t context)
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  //TRACE((stderr, "Number of tasks = %zd\n", num_tasks));
+  //TRACE((stderr, "Number of tasks = %zu\n", num_tasks));
   if (num_tasks != 2)
   {
-    fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zd\n", num_tasks);
+    fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
   }
 
@@ -115,7 +115,7 @@ unsigned do_test (xmi_context_t context)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
-  //TRACE((stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active));
+  //TRACE((stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = XMI_Dispatch_set (context,
                              dispatch,
                              fn,

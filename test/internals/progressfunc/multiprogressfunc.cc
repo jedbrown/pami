@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	size_t task_id = configuration.value.intval;
-	//fprintf(stderr, "My task id = %zd\n", task_id);
+	//fprintf(stderr, "My task id = %zu\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
 	status = XMI_Configuration_query(client, &configuration);
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	size_t num_tasks = configuration.value.intval;
-	if (task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
+	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 // END standard setup
 // ------------------------------------------------------------------------

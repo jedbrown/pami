@@ -56,7 +56,7 @@ private:
           //        __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata);
           XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *test =
             (XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *) clientdata;
-          XMI_assertf(sndlen <= T_BufSize,"sndlen %zd\n",sndlen);
+          XMI_assertf(sndlen <= T_BufSize,"sndlen %zu\n",sndlen);
           XMI_assertf(msgcount == 1,"msgcount %d",msgcount);
           XMI_assertf(msginfo->w0 == test->_msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
           XMI_assertf(msginfo->w1 == test->_msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
@@ -157,22 +157,22 @@ public:
 		if (task_id == root) {
 			for (x = 0; x < count; ++x) {
 				if (((unsigned *)_source)[x] != 1) {
-					fprintf(stderr, "Corrupted source buffer at index %zd. stop.\n", x);
+					fprintf(stderr, "Corrupted source buffer at index %zu. stop.\n", x);
 					break;
 				}
 				if (((unsigned *)_result)[x] != (unsigned)-1) {
-					fprintf(stderr, "Corrupted result buffer at index %zd. stop.\n", x);
+					fprintf(stderr, "Corrupted result buffer at index %zu. stop.\n", x);
 					break;
 				}
 			}
 		} else {
 			for (x = 0; x < count; ++x) {
 				if (((unsigned *)_source)[x] != 1) {
-					fprintf(stderr, "Corrupted source buffer at index %zd. stop.\n", x);
+					fprintf(stderr, "Corrupted source buffer at index %zu. stop.\n", x);
 					break;
 				}
 				if (((unsigned *)_result)[x] != 1) {
-					fprintf(stderr, "Incorrect result at index %zd. stop.\n", x);
+					fprintf(stderr, "Incorrect result at index %zu. stop.\n", x);
 					break;
 				}
 			}
@@ -234,22 +234,22 @@ public:
 		if (task_id == root) {
 			for (x = 0; x < count; ++x) {
 				if (((unsigned *)_source)[x] != 1) {
-					fprintf(stderr, "Corrupted source buffer at index %zd. stop.\n", x);
+					fprintf(stderr, "Corrupted source buffer at index %zu. stop.\n", x);
 					break;
 				}
 				if (((unsigned *)_result)[x] != (unsigned)-1) {
-					fprintf(stderr, "Corrupted result buffer at index %zd. stop.\n", x);
+					fprintf(stderr, "Corrupted result buffer at index %zu. stop.\n", x);
 					break;
 				}
 			}
 		} else {
 			for (x = 0; x < count; ++x) {
 				if (((unsigned *)_source)[x] != 1) {
-					fprintf(stderr, "Corrupted source buffer at index %zd. stop.\n", x);
+					fprintf(stderr, "Corrupted source buffer at index %zu. stop.\n", x);
 					break;
 				}
 				if (((unsigned *)_result)[x] != 1) {
-					fprintf(stderr, "Incorrect result at index %zd. stop.\n", x);
+					fprintf(stderr, "Incorrect result at index %zu. stop.\n", x);
 					break;
 				}
 			}

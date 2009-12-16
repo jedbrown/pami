@@ -49,7 +49,7 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 	size_t task_id = configuration.value.intval;
-	//fprintf(stderr, "My task id = %zd\n", task_id);
+	//fprintf(stderr, "My task id = %zu\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
 	status = XMI_Configuration_query(client, &configuration);
@@ -58,7 +58,7 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 	size_t num_tasks = configuration.value.intval;
-	if (task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
+	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 	if (__global.topology_local.size() < 2) {
 		fprintf(stderr, "requires at least 2 ranks to be local\n");
 		exit(1);
@@ -71,7 +71,7 @@ int main(int argc, char ** argv) {
 
 	xmi_result_t rc;
 	size_t root = __global.topology_local.index2Rank(0);
-	if (task_id == root) fprintf(stderr, "Number of local tasks = %zd\n", __global.topology_local.size());
+	if (task_id == root) fprintf(stderr, "Number of local tasks = %zu\n", __global.topology_local.size());
 
 	new (&otopo) XMI::Topology(root);
 

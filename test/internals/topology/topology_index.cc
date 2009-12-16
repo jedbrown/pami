@@ -25,12 +25,12 @@ void check_index2rank(XMI::Topology *topo, const char *str) {
 		char *s = buf;
 		char comma = '(';
 		for (size_t y = 0; y < __global.mapping.globalDims(); ++y) {
-			s += sprintf(s, "%c%zd", comma, c.u.n_torus.coords[y]);
+			s += sprintf(s, "%c%zu", comma, c.u.n_torus.coords[y]);
 			comma = ',';
 		}
 		*s++ = ')';
 		*s++ = '\0';
-		fprintf(stderr, "%s.index2Rank(%ld) => %d => %ld %s\n", str, x, r, i, buf);
+		fprintf(stderr, "%s.index2Rank(%zu) => %d => %zu %s\n", str, x, r, i, buf);
 	}
 }
 
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	size_t task_id = configuration.value.intval;
-	//fprintf(stderr, "My task id = %zd\n", task_id);
+	//fprintf(stderr, "My task id = %zu\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
 	status = XMI_Configuration_query(client, &configuration);
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	size_t num_tasks = configuration.value.intval;
-	if (task_id == 0) fprintf(stderr, "Number of tasks = %zd\n", num_tasks);
+	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 // END standard setup
 // ------------------------------------------------------------------------

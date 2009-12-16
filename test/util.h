@@ -59,13 +59,13 @@ static void barrier_dispatch_function (
   size_t phase = *((size_t *) header_addr);
   size_t index = phase%2;
 
-  TRACE_ERR((stderr, ">>> barrier_dispatch_function(), __barrier_active[%zd].send = %zd, __barrier_active[%zd].recv = %zd\n", index, __barrier_active[index].send, index, __barrier_active[index].recv));
+  TRACE_ERR((stderr, ">>> barrier_dispatch_function(), __barrier_active[%zu].send = %zu, __barrier_active[%zu].recv = %zu\n", index, __barrier_active[index].send, index, __barrier_active[index].recv));
 
   __barrier_active[index].recv++;
   recv->data.simple.bytes = 0;
 
   // Forward this barrier notification to the next task.
-  TRACE_ERR((stderr, "    barrier_dispatch_function(), __barrier_active[%zd].send %% __barrier_size (%zd) = %zd\n", index, __barrier_size, __barrier_active[index].send % __barrier_size));
+  TRACE_ERR((stderr, "    barrier_dispatch_function(), __barrier_active[%zu].send %% __barrier_size (%zu) = %zu\n", index, __barrier_size, __barrier_active[index].send % __barrier_size));
   if (__barrier_active[index].send % __barrier_size !=  0)
   {
     xmi_send_immediate_t parameters;
@@ -76,12 +76,12 @@ static void barrier_dispatch_function (
     parameters.data.iov_len    = 0;
     parameters.task            = __barrier_next_task;
 
-    TRACE_ERR((stderr, "    forward barrier notification (phase = %zd => %zd) to task: %zd\n", phase, index, parameters.send.task));
+    TRACE_ERR((stderr, "    forward barrier notification (phase = %zu => %zu) to task: %zu\n", phase, index, parameters.send.task));
 
     xmi_result_t result = XMI_Send_immediate (__barrier_context, &parameters);
     __barrier_active[index].send++;
   }
-  TRACE_ERR((stderr, "<<< barrier_dispatch_function(), __barrier_active[%zd].send = %zd, __barrier_active[%zd].recv = %zd\n", index, __barrier_active[index].send, index, __barrier_active[index].recv));
+  TRACE_ERR((stderr, "<<< barrier_dispatch_function(), __barrier_active[%zu].send = %zu, __barrier_active[%zu].recv = %zu\n", index, __barrier_active[index].send, index, __barrier_active[index].recv));
 }
 
 /* ************************************************************************* */
@@ -106,9 +106,9 @@ void barrier ()
   parameters.data.iov_len    = 0;
   parameters.task            = __barrier_next_task;
 
-  TRACE_ERR((stderr, "     barrier(), before send, phase = %zd, __barrier_active[%zd].send = %zd, __barrier_active[%zd].recv = %zd\n", phase, index, __barrier_active[index].send, index, __barrier_active[index].recv));
+  TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu].send = %zu, __barrier_active[%zu].recv = %zu\n", phase, index, __barrier_active[index].send, index, __barrier_active[index].recv));
   xmi_result_t result = XMI_Send_immediate (__barrier_context, &parameters);
-  TRACE_ERR((stderr, "     barrier(),  after send, phase = %zd, __barrier_active[%zd].send = %zd, __barrier_active[%zd].recv = %zd\n", phase, index, __barrier_active[index].send, index, __barrier_active[index].recv));
+  TRACE_ERR((stderr, "     barrier(),  after send, phase = %zu, __barrier_active[%zu].send = %zu, __barrier_active[%zu].recv = %zu\n", phase, index, __barrier_active[index].send, index, __barrier_active[index].recv));
 
   // Increment barrier notification count to account fo this task.
   __barrier_active[index].send++;

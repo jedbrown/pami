@@ -59,7 +59,7 @@ static void decrement (xmi_context_t   context,
                        xmi_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
-  TRACE_ERR((stderr, "(%zd) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+  TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
   --*value;
 }
 
@@ -79,13 +79,13 @@ static void test_dispatch (
   {
     //memcpy (_recv_buffer, pipe_addr, pipe_size);
     unsigned * value = (unsigned *) cookie;
-    TRACE_ERR((stderr, "(%zd) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
+    TRACE_ERR((stderr, "(%zu) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
     --*value;
   }
   else
   {
     header_t * header = (header_t *) header_addr;
-    TRACE_ERR((stderr, "(%zd) test_dispatch() async recv:  cookie = %p, pipe_size = %zd\n", _my_rank, cookie, pipe_size));
+    TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_rank, cookie, pipe_size));
 
     recv->local_fn = decrement;
     recv->cookie   = cookie;
@@ -100,23 +100,23 @@ static void test_dispatch (
 void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
   xmi_result_t result = XMI_Send (context, parameters);
-  TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_rank));
   while (_send_active) XMI_Context_advance (context, 100);
-  TRACE_ERR((stderr, "(%zd) send_once()  After advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) send_once()  After advance\n", _my_rank));
 }
 
 void recv_once (xmi_context_t context)
 {
-  TRACE_ERR((stderr, "(%zd) recv_once() Before advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) recv_once() Before advance\n", _my_rank));
   while (_recv_active) XMI_Context_advance (context, 100);
 
   _recv_active = 1;
-  TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_rank));
 }
 
 unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, size_t myrank)
 {
-  TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
+  TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen));
   _recv_active = 1;
   _recv_iteration = 0;
   _send_active = 1;
@@ -146,7 +146,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
     parameters.send.task = 1;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       send_once (context, &parameters);
       recv_once (context);
 
@@ -159,7 +159,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
     parameters.send.task = 0;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       recv_once (context);
       send_once (context, &parameters);
 
@@ -212,7 +212,7 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
+  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zu\n", &_recv_active, _recv_active));
   xmi_result_t result = XMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
                                           fn,

@@ -18,10 +18,10 @@ static void test_dispatch (
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called dispatch function.  cookie = %p (active: %zd -> %zd), task = %d, header_size = %zd, pipe_size = %zd\n", cookie, *active, *active-1, task, header_size, pipe_size);
+  fprintf (stderr, "Called dispatch function.  cookie = %p (active: %zu -> %zu), task = %d, header_size = %zu, pipe_size = %zu\n", cookie, *active, *active-1, task, header_size, pipe_size);
   (*active)--;
-  fprintf (stderr, ">>> [%zd] %s\n", header_size, (char *) header_addr);
-  fprintf (stderr, ">>> [%zd] %s\n", pipe_size, (char *) pipe_addr);
+  fprintf (stderr, ">>> [%zu] %s\n", header_size, (char *) header_addr);
+  fprintf (stderr, ">>> [%zu] %s\n", pipe_size, (char *) pipe_addr);
   fprintf (stderr, "... dispatch function.\n");
 
   return;
@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  fprintf (stderr, "My task id = %zd\n", task_id);
+  fprintf (stderr, "My task id = %zu\n", task_id);
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);
@@ -74,10 +74,10 @@ int main (int argc, char ** argv)
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  fprintf (stderr, "Number of tasks = %zd\n", num_tasks);
+  fprintf (stderr, "Number of tasks = %zu\n", num_tasks);
   if (num_tasks != 2)
   {
-    fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zd\n", num_tasks);
+    fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
   }
 
@@ -85,7 +85,7 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
-  fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zd\n", &recv_active, recv_active);
+  fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
   result = XMI_Dispatch_set (context,
                              dispatch,
                              fn,
@@ -99,7 +99,7 @@ int main (int argc, char ** argv)
 
   char header_string[1024];
   char data_string[1024];
-  size_t header_bytes = 1 + snprintf (header_string, 1024, "Header: This message is from task: %zd", task_id);
+  size_t header_bytes = 1 + snprintf (header_string, 1024, "Header: This message is from task: %zu", task_id);
   size_t data_bytes   = 1 + snprintf (data_string, 1024, "Data: Hello!");
 
   xmi_send_immediate_t parameters;
