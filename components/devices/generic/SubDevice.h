@@ -134,6 +134,21 @@ protected:
 	}								\
 	bool postNext(bool devPosted) { return __postNext(devPosted); }
 
+/// \brief Base class from which all sub-devices should inherit
+///
+/// This class works for single-instantiation for multiple-clients,
+/// but does not require the sub-device to instantiate that way.
+///
+/// The data member _generics[] and its accessors provide the capability.
+/// In case of only one client, the additional elements of _generics[] are
+/// not used.  A better way might be to push _generics[] into __global,
+/// but it will still be accessed as an array. We might need to explore
+/// ways that one-per-client and one-per-context sub-devices can avoid
+/// the array handling, if needed.
+///
+/// NOTE: one-per-context sub-devices are not capable of using
+/// multiple contexts in a single communication (e.g. for parallelism).
+///
 class GenericSubDevice : public BaseGenericDevice {
 private:
 public:
@@ -239,7 +254,8 @@ public:
 	/// \ingroup gendev_subdev_api
 	///
 	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
-		(*_generics)[0]->post(msg, t, l, n);
+		size_t c = msg->getClientId();
+		_generics[c]->post(msg, t, l, n);
 	}
 
 	/// \brief accessor for specific generic device for context-id
@@ -248,7 +264,7 @@ public:
 	/// \ingroup gendev_subdev_api
 	///
 	inline XMI::Device::Generic::Device *getGeneric(size_t client, size_t contextId) {
-		return &(*_generics)[client][contextId];
+		return &_generics[client][contextId];
 	}
 
 protected:
@@ -256,16 +272,19 @@ protected:
 	///
 	/// \param[in] sd	SysDep for device/context/client... not used?
 	/// \param[in] generics	Array of generic devices used for parallelism
+	/// \param[in] client	Client ID for which init is being done
+	/// \param[in] context	Context ID for which init is being done
 	/// \ingroup gendev_private_api
 	///
-	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*generics)[XMI_MAX_NUM_CLIENTS])) {
+	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *generics,
+						size_t client, size_t context) {
 		_sd = &sd;
-		_generics = generics;
+		_generics[client] = generics;
 	}
 
 	GenericSubDevSendq _queue;
 	XMI::SysDep *_sd;
-	XMI::Device::Generic::Device *((*_generics)[XMI_MAX_NUM_CLIENTS]);
+	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
 }; /* class GenericSubDevice */
 
 /// \brief Example sub-device for using multiple send queues
@@ -304,9 +323,9 @@ protected:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
 		for (int x = 0; x < N_Queues; ++x) {
-			_sendQs[x].___init(sd, devices);
+			_sendQs[x].___init(sd, devices, client, contextId);
 		}
 	}
 
@@ -382,8 +401,8 @@ protected:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
-		___init(sd, devices);
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
+		___init(sd, devices, client, contextId);
 	}
 
 	/// \brief Actual advance routine for unexpected(received) messages
@@ -481,7 +500,7 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) = 0;
+	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -492,11 +511,11 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
+	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
 		_doneThreads.init(&sd);
 		_doneThreads.fetch_and_clear();
 		_init = 1;
-		___init(sd, devices);
+		___init(sd, devices, client, contextId);
 	}
 
 	/// \brief Reset for threads prior to being re-used.
@@ -616,7 +635,7 @@ public:
 protected:
 	friend class XMI::Device::Generic::Device;
 
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
 		// do this now so we don't have to every time we post
 //		for (int x = 0; x < NUM_THREADS; ++x) 
 //			//_threads[x].setPolled(true);

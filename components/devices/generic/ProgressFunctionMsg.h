@@ -37,8 +37,8 @@ class ProgressFunctionMsg;
 
 class ProgressFunctionDev {
 public:
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *((*devices)[XMI_MAX_NUM_CLIENTS]), size_t client, size_t contextId) {
-		_generics = devices;
+	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
+		_generics[client] = devices;
 	}
 
 	inline int advanceRecv(size_t client, size_t context) { return 0; }
@@ -48,7 +48,7 @@ protected:
 	friend class ProgressFunctionMsg;
 	inline void __post(ProgressFunctionMsg *msg);
 private:
-	XMI::Device::Generic::Device *((*_generics)[XMI_MAX_NUM_CLIENTS]);
+	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
 }; // class ProgressFunctionDev
 
 }; //-- Device
@@ -125,7 +125,7 @@ private:
 
 inline void XMI::Device::ProgressFunctionDev::__post(ProgressFunctionMsg *msg) {
 	// 'msg' actually inherits from GenericThread...
-	(*_generics)[msg->getClientId()][msg->getContextId()].postThread(msg);
+	_generics[msg->getClientId()][msg->getContextId()].postThread(msg);
 }
 
 inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {

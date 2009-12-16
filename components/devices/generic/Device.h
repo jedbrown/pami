@@ -99,23 +99,6 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
-/// \brief Object for implementing a generic device queue for thread objects (work units)
-class ThreadQueue : public Queue {
-public:
-	ThreadQueue() : Queue() { }
-
-	ThreadQueue(XMI::SysDep &sd) : Queue()
-	{
-		// need status/result here...
-		_mutex.init(&sd);
-	}
-
-	GenericDeviceMutex *mutex() { return &_mutex; }
-
-protected:
-	GenericDeviceMutex _mutex;
-}; /* class ThreadQueue */
-
 //////////////////////////////////////////////////////////////////////
 ///  \brief A Device implmentation of a Queuesystem
 ///  This class implements a queue system. The user posts to the queue
@@ -186,6 +169,11 @@ public:
 	/// even though it is done. This is to avoid recursion within
 	/// a callback that is posting the next message from the sub-device.
 	///
+	/// This method does not reference 'this' (the actual object)
+	/// because 'msg' tells us which actual generic device object(s)
+	/// should be used. It is important that this method never depend
+	/// on any particular value for 'this'.
+	///
 	/// \param[in] msg	Message to be queued/advanced.
 	/// \param[in] thr	Array of thread objects to post
 	/// \param[in] len	sizeof each thread
@@ -203,10 +191,9 @@ public:
 		// completion, even the first thread of work is posted
 		// to a different context.
 
-		size_t c = msg->getClientId();
 		size_t t = msg->getContextId();
 		size_t n = __nContexts;
-		Generic::Device *g0 = __generics[c];
+		Generic::Device *g0 = __generics;
 		g0[t].__GenericQueue.pushTail(msg);
 
 		// round-robin threads to available "channels"...
@@ -260,13 +247,13 @@ private:
 	MultiQueue<2, 1> __GenericQueue;
 
 	/// \brief Storage for the queue of threads (a.k.a. work units)
-	ThreadQueue __Threads;
+	Queue __Threads;
 
 	xmi_context_t __context;
 	size_t __clientId;
 	size_t __contextId;
 	size_t __nContexts;
-	Generic::Device *__generics[XMI_MAX_NUM_CLIENTS];
+	Generic::Device *__generics;
 
 }; /* class Device */
 

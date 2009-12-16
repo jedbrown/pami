@@ -100,8 +100,7 @@ namespace Generic {
 	__GenericQueue(),
 	__Threads(),
 	__clientId((size_t)-1),
-	__contextId((size_t)-1),
-	__nContexts(0)
+	__contextId((size_t)-1)
 	{
 	}
 
@@ -125,7 +124,7 @@ namespace Generic {
 		__clientId = client;
 		__contextId = context;
 		__nContexts = num_contexts;
-		__generics[client] = generics;
+		__generics = generics;
 		// These are all the devices we know how to play well with...
 
 		// todo: need to work out how to handle devices that need
@@ -140,13 +139,13 @@ namespace Generic {
 		if (first_global) {
 			// These sub-devices only execute one message at a time,
 			// and so there is only one instance of each, globally.
-			_g_progfunc_dev.init(sd, &__generics, __clientId, __contextId);
-			_g_lmbarrier_dev.init(sd, &__generics, __clientId, __contextId);
-			_g_wqreduce_dev.init(sd, &__generics, __clientId, __contextId);
-			_g_wqbcast_dev.init(sd, &__generics, __clientId, __contextId);
-			_g_l_allreducewq_dev.init(sd, &__generics, __clientId, __contextId);
-			_g_l_reducewq_dev.init(sd, &__generics, __clientId, __contextId);
-			_g_l_bcastwq_dev.init(sd, &__generics, __clientId, __contextId);
+			_g_progfunc_dev.init(sd, __generics, __clientId, __contextId);
+			_g_lmbarrier_dev.init(sd, __generics, __clientId, __contextId);
+			_g_wqreduce_dev.init(sd, __generics, __clientId, __contextId);
+			_g_wqbcast_dev.init(sd, __generics, __clientId, __contextId);
+			_g_l_allreducewq_dev.init(sd, __generics, __clientId, __contextId);
+			_g_l_reducewq_dev.init(sd, __generics, __clientId, __contextId);
+			_g_l_bcastwq_dev.init(sd, __generics, __clientId, __contextId);
 		}
 
 		// sub-devices initialized here, if any, may or may not
