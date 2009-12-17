@@ -111,7 +111,6 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
-#warning "These need to be added to a public interface"
       inline xmi_result_t task2global (size_t task, size_t (&addr)[LAPI_DIMS+LAPI_LDIMS])
         {
           addr[0] = task;

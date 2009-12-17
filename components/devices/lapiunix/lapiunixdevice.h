@@ -157,6 +157,7 @@ namespace XMI
           lock();
           LAPI_Msgpoll (_lapi_handle, 5, &info);
           unlock();
+          return 0;
         };
 
       // Implement MessageDevice Routines

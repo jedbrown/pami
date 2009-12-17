@@ -37,10 +37,8 @@ namespace XMI
 	  // Time gets its own clockMHz
 	  Interface::Global<XMI::Global>::time.init(0);
 	  {
-		size_t min, max;
+		size_t min=0, max=0;
 		mapping.init(min, max);
-
-#warning "Global/Local Topology initializer currently disabled for LAPI Platform"
 #if 0
 
 		XMI::Topology::static_init(&mapping);

@@ -15,7 +15,7 @@
 #define __compiler_xl_Compiler_h__
 
 // Here go things specific to this compiler family
-#warning I am not convinced this is the right way to handle gcc in xl - too much questionable casting
+/** \todo I am not convinced this is the right way to handle gcc in xl - too much questionable casting */
 
 #include "builtins.h"
 #define __sync_fetch_and_or(x,y)	__fetch_and_or((volatile unsigned int *)x,y)

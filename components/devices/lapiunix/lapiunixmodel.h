@@ -66,7 +66,7 @@ namespace XMI
                                    struct iovec   (&iov)[T_Niov])
         {
           XMI_assert(T_Niov==1);
-          int rc;
+          int rc = LAPI_SUCCESS;
           LAPIMessage * msg = (LAPIMessage *)state;
           new(msg)LAPIMessage(this->_context,
                              this->_dispatch_id,
@@ -106,7 +106,7 @@ namespace XMI
         {
           XMI_assert(T_Niov<=2);
 
-          int rc;
+          int rc=LAPI_SUCCESS;
           void       * obj = malloc(sizeof(LAPIMessage));
           LAPIMessage * msg = (LAPIMessage *)obj;
           new(msg)LAPIMessage(this->_context,
@@ -142,7 +142,7 @@ namespace XMI
         {
           XMI_assert(T_Niov==1);  // for now
 
-          int rc;
+          int rc = LAPI_SUCCESS;
           LAPIMessage * msg = (LAPIMessage *)malloc(sizeof(LAPIMessage)+metasize+iov[0].iov_len-DEV_HEADER_SIZE-DEV_PAYLOAD_SIZE);
           new(msg)LAPIMessage(this->_context,
                              this->_dispatch_id,

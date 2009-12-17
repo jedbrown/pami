@@ -877,7 +877,10 @@ namespace CCMI
         {
         case NODE_SET_AB:
           nsnd += 2;
-          /* FALLTHROUGH */
+          setPhase(PHASE_ONE);  // we could just fall through here, but XL complains 
+          nsnd += 1;
+          nsnd += (_rect->xs[XMI_T_DIM] > 1);
+          break;
         case NODE_SET_A:
           setPhase(PHASE_ONE);
           nsnd += 1;
@@ -946,6 +949,7 @@ namespace CCMI
           default:
             break;
           }
+          break;
         default:
           break;
         }
