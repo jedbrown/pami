@@ -31,6 +31,7 @@ typedef XMI::Counter::Pthread GenericDeviceCounter;
 #endif /* !__GNUC__ */
 
 #include "util/queue/Queue.h"
+#include "util/queue/MultiQueue.h"
 
 /// \brief Queue type to use for messages
 typedef XMI::MultiQueue<2,1>		GenericDeviceCompletionQueue;

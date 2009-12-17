@@ -21,6 +21,7 @@ typedef XMI::Mutex::LockBoxProcMutex GenericDeviceMutex;
 typedef XMI::Counter::LockBoxProcCounter GenericDeviceCounter;
 
 #include "util/queue/Queue.h"
+#include "util/queue/MultiQueue.h"
 
 /// \brief Queue type to use for messages
 typedef XMI::MultiQueue<2,1>		GenericDeviceCompletionQueue;
