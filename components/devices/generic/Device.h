@@ -44,37 +44,7 @@
 extern size_t XMI_GD_ClientId(xmi_client_t client);
 // #define XMI_GD_ClientId(client)	(client)
 
-// NOTE, these typedefs choose which type of atomic to use for a specific device.
-// since the fine details of all this have not been designed yet, these will
-// remain here until such time.
-//#warning The atomic class to use for a platform should be a template parameter. These typedefs belong in the context class.
-#if defined(__bgp__) and !defined(__bgq__)
-#include "spi/kernel_interface.h"
-#include "components/atomic/bgp/LockBoxMutex.h"
-#include "components/atomic/bgp/LockBoxCounter.h"
-typedef XMI::Mutex::LockBoxProcMutex GenericDeviceMutex;
-typedef XMI::Counter::LockBoxProcCounter GenericDeviceCounter;
-
-#else
-// Other platform optimizations to follow...
-
-#ifdef __GNUC__
-
-#include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
-typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter> GenericDeviceMutex;
-typedef XMI::Counter::GccProcCounter GenericDeviceCounter;
-
-#else /* !__GNUC__ */
-
-#include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/pthread/Pthread.h"
-typedef XMI::Mutex::CounterMutex<XMI::Counter::Pthread> GenericDeviceMutex;
-typedef XMI::Counter::Pthread GenericDeviceCounter;
-
-#endif /* !__GNUC__ */
-
-#endif /* !__bgp__ */
+#include "GenericDevicePlatform.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/Device.h
@@ -244,15 +214,20 @@ private:
 	/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
 	/// By convention, queue[0] is used for attaching messages to a sub-device.
 	///
-	MultiQueue<2, 1> __GenericQueue;
+	GenericDeviceCompletionQueue __GenericQueue;
 
 	/// \brief Storage for the queue of threads (a.k.a. work units)
-	Queue __Threads;
+	GenericDeviceWorkQueue __Threads;
 
-	xmi_context_t __context;
-	size_t __clientId;
-	size_t __contextId;
-	size_t __nContexts;
+	xmi_context_t __context;	///< context handle for this generic device
+	size_t __clientId;		///< client ID for context
+	size_t __contextId;		///< context ID
+	size_t __nContexts;		///< number of contexts in client
+
+	/// \brief the array of generic devices assigned to client (__clientId).
+	///
+	/// The array has __nContexts elements. This array is per-client.
+	/// This particular context's generic device ('this') is __generics[__contextId].
 	Generic::Device *__generics;
 
 }; /* class Device */

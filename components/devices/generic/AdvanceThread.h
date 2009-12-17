@@ -10,7 +10,7 @@
 #ifndef __components_devices_generic_AdvanceThread_h__
 #define __components_devices_generic_AdvanceThread_h__
 
-#include "util/queue/Queue.h"
+#include "GenericDevicePlatform.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/Message.h"
 #include "SysDep.h"
@@ -32,10 +32,10 @@ namespace Device {
 
 namespace Generic {
 
-class GenericThread : public QueueElem {
+class GenericThread : public GenericDeviceWorkQueueElem {
 public:
 	GenericThread() :
-	QueueElem(),
+	GenericDeviceWorkQueueElem(),
 	_func(NULL),
 	_cookie(NULL),
 	_cb_done((xmi_callback_t){NULL,NULL}),

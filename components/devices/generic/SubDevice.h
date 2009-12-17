@@ -9,7 +9,7 @@
 #ifndef __components_devices_generic_SubDevice_h__
 #define __components_devices_generic_SubDevice_h__
 
-#include "util/queue/Queue.h"
+#include "GenericDevicePlatform.h"
 #include "components/devices/generic/BaseGenericDevice.h"
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/Device.h"
@@ -64,7 +64,7 @@ namespace Generic {
 /// is the queue used for attaching messages to a sub-device queue.
 /// Queue[1] is used by the Generic::Device to enqueue messages for completion.
 ///
-class GenericSubDevSendq : public MultiQueue<2, 0> {
+class GenericSubDevSendq : public GenericDeviceMessageQueue {
 public:
 
 	/// \brief Add a message to the (end of the) queue

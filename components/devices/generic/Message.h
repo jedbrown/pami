@@ -12,7 +12,7 @@
 
 #include "sys/xmi.h"
 #include "components/devices/generic/BaseGenericDevice.h"
-#include "util/queue/Queue.h"
+#include "GenericDevicePlatform.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/Message.h
@@ -60,15 +60,14 @@ enum MessageStatus {
 /// In fact, this class is templatized by number of queue elements and thus
 /// is general for any number of queues.
 ///
-template <int numElems>
-class MultiQueueMessage : public MultiQueueElem<numElems> {
+class MultiQueueMessage : public GenericDeviceMessageQueueElem {
 public:
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
 	MultiQueueMessage(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb,
 						size_t client, size_t context) :
-	MultiQueueElem<numElems>(),
+	GenericDeviceMessageQueueElem(),
 	_status(Uninitialized),
 	_QS(QS),
 	_client(client),
@@ -196,7 +195,7 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 /// One queue (1) is used by the generic device, the other (0) may be used as
 /// needed by the sub-device. Usage of queue 1 is in code in GenericDevice.h/Device.h
 ///
-class GenericMessage : public MultiQueueMessage<2> {
+class GenericMessage : public MultiQueueMessage {
 
 public:
 	/// \brief  Generic Message constructor
@@ -217,7 +216,7 @@ public:
 	///
 	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb,
 			size_t client, size_t context) :
-	MultiQueueMessage<2>(Generic_QS, cb, client, context)
+	MultiQueueMessage(Generic_QS, cb, client, context)
 	{
 	}
 
