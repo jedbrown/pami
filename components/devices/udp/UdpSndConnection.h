@@ -17,6 +17,7 @@
 #include "components/devices/udp/UdpMessage.h"
 #include <list>
 #include "util/ccmi_debug.h"
+#include "trace.h"
 
 #define DISPATCH_SET_SIZE 256
 namespace XMI
@@ -45,6 +46,9 @@ namespace XMI
         UdpSendMessage* msg = *(_sendQ.begin());
         // Use blocking, since will overwrite the data
         int numbytes = sendto(_sendFd, &(msg->_msg), msg->getSize(), 0, (struct sockaddr *)&_sendAddr, _sendAddrLen); 
+        TRACE_COUT( "Sent message.  Bytes sent = " << numbytes ) 
+        DUMP_HEX_DATA( &(msg->_msg), msg->getSize() ); 
+        // PRINT THE MESSAGE 
         if ( msg->_complete == true )
         {
           msg->done(); 

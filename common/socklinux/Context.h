@@ -25,9 +25,9 @@
 #include "SysDep.h"
 //#include "Memregion.h"
 
-#include "p2p/protocols/send/adaptive/Adaptive.h"
-#include "p2p/protocols/send/adaptive/AdaptiveImmediate.h"
-#include "p2p/protocols/send/adaptive/AdaptiveSimple.h"
+#include "p2p/protocols/send/datagram/Datagram.h"
+#include "p2p/protocols/send/datagram/DatagramImmediate.h"
+#include "p2p/protocols/send/datagram/DatagramSimple.h"
 
 #include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
@@ -43,7 +43,7 @@ namespace XMI
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
-  typedef XMI::Protocol::Send::Adaptive < UdpModel, UdpDevice > AdaptiveUdp;
+  typedef XMI::Protocol::Send::Datagram < UdpModel, UdpDevice > DatagramUdp;
 
   typedef MemoryAllocator<1152, 16> ProtocolAllocator;
 
@@ -70,7 +70,7 @@ namespace XMI
 
         // Make sure the memory allocator is large enough for all
         // protocol classes.
-        COMPILE_TIME_ASSERT(sizeof(AdaptiveUdp) <= ProtocolAllocator::objsize);
+        COMPILE_TIME_ASSERT(sizeof(DatagramUdp) <= ProtocolAllocator::objsize);
 
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -325,7 +325,7 @@ namespace XMI
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
-            new ((void *)_dispatch[id]) AdaptiveUdp (id, fn, cookie, _udp, __global.mapping.task(), _context, _contextid, result);
+            new ((void *)_dispatch[id]) DatagramUdp (id, fn, cookie, _udp, __global.mapping.task(), _context, _contextid, result);
           }
 
         return result;

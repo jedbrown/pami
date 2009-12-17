@@ -18,6 +18,7 @@
 #include "util/common.h"
 #include "util/queue/Queue.h"
 #include <stdint.h>
+#include "trace.h"
 //#include <netinet/in.h>
 //#include <sys/socket.h>
 
@@ -48,6 +49,7 @@ namespace XMI
 
        inline void setPayloadSize( size_t payload_size) 
         {
+          TRACE_COUT( "Setting payload size to " << payload_size )
           _payload_size = htonl(payload_size); 
         }
 
@@ -58,21 +60,25 @@ namespace XMI
 
         inline size_t getMetadataSize()
         {
+          TRACE_COUT( "Getting metadata size =  " << ntohl(_metadata_size) )
           return ntohl(_metadata_size); 
         }
  
         inline size_t getPayloadSize()
         {
+          TRACE_COUT( "Getting payload size =  " << ntohl(_payload_size) )
           return ntohl(_payload_size); 
         }
 
         inline void * getMetadataAddr()
         {
+          TRACE_COUT( "Getting metadata addr = " <<  (void*)_var_data )
           return _var_data;
         }
   
         inline void * getPayloadAddr()
         {
+          TRACE_COUT( "Getting payload addr = " << (void *)( (uintptr_t)_var_data+getMetadataSize() ) )
           return (void *)( (uintptr_t)_var_data+getMetadataSize() ); 
         }
 
@@ -103,6 +109,14 @@ namespace XMI
           _on_idx(0), 
           _complete(false)
         {
+          TRACE_COUT( "Creating message" ) 
+          TRACE_COUT( "   metadata len = " << metasize ) 
+          TRACE_COUT( "   niov = " << niov )
+          for ( int kk=0; kk < niov; kk++ ) 
+          {
+             TRACE_COUT( "     iov["<<kk<<"].iov_base = " << iov[kk].iov_base <<
+                         "     iov["<<kk<<"].iov_len = " << iov[kk].iov_len ) 
+             }
           size_t left = 352 - metasize;    // TODO need to make size variable
           void * insert_pt = (void *)((uintptr_t)_msg._var_data+metasize);
           size_t i, amount;          
@@ -126,6 +140,7 @@ namespace XMI
           if ( _single_pkt == true || ( _offset == 0 && _on_idx == 0 ) ) 
           {
             _complete = true; 
+            TRACE_COUT( "Completed   _offset = " << _offset << "   _on_idx = " << _on_idx )
           } 
         }
 
@@ -133,6 +148,7 @@ namespace XMI
         {
           // if no more to do return true; 
           if (_complete == true ) return;  // should I abort? 
+          TRACE_COUT( "Doing the next packet of a multipacket" ) 
           size_t metasize = _msg.getMetadataSize(); 
           size_t left = 352 - metasize;    // TODO need to make size variable
           void * insert_pt = (void *)((uintptr_t)_msg._var_data+metasize);
@@ -162,6 +178,7 @@ namespace XMI
           if ( _offset == 0 && _on_idx == 0 ) 
           {
             _complete = true; 
+            TRACE_COUT( "Completed" ) 
           }          
         }   
           

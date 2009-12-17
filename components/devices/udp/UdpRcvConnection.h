@@ -16,6 +16,8 @@
 
 #include "components/devices/udp/UdpMessage.h"
 #include "util/ccmi_debug.h"
+#include "trace.h"
+
 #define IOV_MAX 256  // TODO WHat is the right value for this?
 
 #define DISPATCH_SET_SIZE 256
@@ -46,6 +48,8 @@ namespace XMI
            abort(); 
          }
 
+         TRACE_COUT( "Packet received.  Bytes = " << bytes_rcv )
+         DUMP_HEX_DATA( &_msg, bytes_rcv );
          // All of the packet is available
          return 0;
       }

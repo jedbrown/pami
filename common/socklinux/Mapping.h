@@ -316,7 +316,12 @@ namespace XMI
      {
        peers = _peers;
        return XMI_SUCCESS;
-     };
+     }
+
+     inline size_t globalDims()
+     {
+          return 1;
+     }
 
    }; // class Mapping
 };	// namespace XMI
