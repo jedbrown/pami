@@ -38,7 +38,9 @@ class ProgressFunctionMsg;
 class ProgressFunctionDev {
 public:
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
-		_generics[client] = devices;
+		if (contextId == 0) {
+			_generics[client] = devices;
+		}
 	}
 
 	inline int advanceRecv(size_t client, size_t context) { return 0; }

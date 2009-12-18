@@ -54,23 +54,20 @@ namespace Generic {
 /// \param[in] first_client	True if first init call for current client
 /// \param[in] sd		XMI::SysDep object
 ///
-inline void Device::__platform_generic_init(bool first_global, bool first_client,
-								XMI::SysDep &sd) {
-	if (first_global) {
-		// These sub-devices only execute one message at a time,
-		// and so there is only one instance of each, globally.
+inline void Device::__platform_generic_init(XMI::SysDep &sd) {
+	// These sub-devices only execute one message at a time,
+	// and so there is only one instance of each, globally.
 #ifdef NOT_YET
-	        _g_mbarrier_dev.init(sd, __generics, __clientId, __contextId);
-	        _g_llscbarrier_dev.init(sd, __generics, __clientId, __contextId);
+	_g_mbarrier_dev.init(sd, __generics, __clientId, __contextId);
+	_g_llscbarrier_dev.init(sd, __generics, __clientId, __contextId);
 #endif
-	        _g_gibarrier_dev.init(sd, __generics, __clientId, __contextId);
+	_g_gibarrier_dev.init(sd, __generics, __clientId, __contextId);
 
-	        _g_cnallreduce_dev.init(sd, __generics, __clientId, __contextId);
-	        //_g_cnallreduceshort_dev.init(sd, __generics, __clientId, __contextId);
-	        _g_cnallreducepp_dev.init(sd, __generics, __clientId, __contextId);
-	        _g_cnallreduce2p_dev.init(sd, __generics, __clientId, __contextId);
-	        _g_cnbroadcast_dev.init(sd, __generics, __clientId, __contextId);
-	}
+	_g_cnallreduce_dev.init(sd, __generics, __clientId, __contextId);
+	//_g_cnallreduceshort_dev.init(sd, __generics, __clientId, __contextId);
+	_g_cnallreducepp_dev.init(sd, __generics, __clientId, __contextId);
+	_g_cnallreduce2p_dev.init(sd, __generics, __clientId, __contextId);
+	_g_cnbroadcast_dev.init(sd, __generics, __clientId, __contextId);
 }
 
 inline int Device::__platform_generic_advanceRecv() {

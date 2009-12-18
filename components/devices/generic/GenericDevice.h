@@ -118,8 +118,6 @@ namespace Generic {
 	inline void Device::init(XMI::SysDep &sd, xmi_context_t ctx,
 				size_t client, size_t context, size_t num_contexts,
 				Generic::Device *generics) {
-		bool first_global = (client == 0);
-		bool first_client = (context == 0);
 		__context = ctx;
 		__clientId = client;
 		__contextId = context;
@@ -136,23 +134,26 @@ namespace Generic {
 		// (per client). Then need to work out how to pass around
 		// those instances.
 
-		if (first_global) {
-			// These sub-devices only execute one message at a time,
-			// and so there is only one instance of each, globally.
-			_g_progfunc_dev.init(sd, __generics, __clientId, __contextId);
-			_g_lmbarrier_dev.init(sd, __generics, __clientId, __contextId);
-			_g_wqreduce_dev.init(sd, __generics, __clientId, __contextId);
-			_g_wqbcast_dev.init(sd, __generics, __clientId, __contextId);
-			_g_l_allreducewq_dev.init(sd, __generics, __clientId, __contextId);
-			_g_l_reducewq_dev.init(sd, __generics, __clientId, __contextId);
-			_g_l_bcastwq_dev.init(sd, __generics, __clientId, __contextId);
-		}
+		// These sub-devices only execute one message at a time,
+		// and so there is only one instance of each, globally.
+		// However, they must be called (at least) for each client
+		// in order to ensure the generics[] array gets setup.
+		// so we leave it up to the sub-device to decide when
+		// init is needed. It can use client and context IDs to
+		// determine first calls (ID == 0).
+		_g_progfunc_dev.init(sd, __generics, __clientId, __contextId);
+		_g_lmbarrier_dev.init(sd, __generics, __clientId, __contextId);
+		_g_wqreduce_dev.init(sd, __generics, __clientId, __contextId);
+		_g_wqbcast_dev.init(sd, __generics, __clientId, __contextId);
+		_g_l_allreducewq_dev.init(sd, __generics, __clientId, __contextId);
+		_g_l_reducewq_dev.init(sd, __generics, __clientId, __contextId);
+		_g_l_bcastwq_dev.init(sd, __generics, __clientId, __contextId);
 
 		// sub-devices initialized here, if any, may or may not
 		// have multiple instances. See each __platform_generic_init()
 		// for details. They may use "first_global" and "first_client"
 		// to avoid repeat inits, or may use internal mechanisms.
-		__platform_generic_init(first_global, first_client, sd);
+		__platform_generic_init(sd);
 	}
 
 	/// \brief Quick check whether full advance is needed.

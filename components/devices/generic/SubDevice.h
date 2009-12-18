@@ -278,8 +278,12 @@ protected:
 	///
 	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *generics,
 						size_t client, size_t context) {
-		_sd = &sd;
-		_generics[client] = generics;
+		if (client == 0) {
+			_sd = &sd;
+		}
+		if (context == 0) {
+			_generics[client] = generics;
+		}
 	}
 
 	GenericSubDevSendq _queue;
@@ -324,8 +328,10 @@ protected:
 	/// \ingroup gendev_subdev_api
 	///
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
-		for (int x = 0; x < N_Queues; ++x) {
-			_sendQs[x].___init(sd, devices, client, contextId);
+		if (client == 0) {
+			for (int x = 0; x < N_Queues; ++x) {
+				_sendQs[x].___init(sd, devices, client, contextId);
+			}
 		}
 	}
 
@@ -460,7 +466,6 @@ public:
 
 	CommonQueueSubDevice() :
 	GenericSubDevice(),
-	_init(0),
 	_dispatch_id(0)
 	{
 	}
@@ -478,18 +483,6 @@ public:
 		// might need to be atomic, in some situations?
 		return ++_dispatch_id;
 	}
-
-	/// \brief test whether this common sub-device has been initialized previously
-	///
-	/// If we find that multiple devices (sharing this queue) are all in init()
-	/// at the same time, this init flag will have to become some sort of atomic op.
-	/// Right now, it should only be the case that a single thread is sequentially
-	/// calling each device's init() routine so there is no problem.
-	///
-	/// \return	Number of init() calls previously made
-	/// \ingroup gendev_subdev_api
-	///
-	int isInit() { return _init; }
 
 	/// \brief init virtual function definition
 	///
@@ -512,9 +505,11 @@ public:
 	/// \ingroup gendev_subdev_api
 	///
 	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
-		_doneThreads.init(&sd);
-		_doneThreads.fetch_and_clear();
-		_init = 1;
+		if (client == 0) {
+			_doneThreads.init(&sd);
+			_doneThreads.fetch_and_clear();
+			_init = 1;
+		}
 		___init(sd, devices, client, contextId);
 	}
 
@@ -636,13 +631,13 @@ protected:
 	friend class XMI::Device::Generic::Device;
 
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
-		// do this now so we don't have to every time we post
-//		for (int x = 0; x < NUM_THREADS; ++x) 
-//			//_threads[x].setPolled(true);
-//		}
-		if (!_common->isInit()) {
-			_common->init(sd, devices, client, contextId);
+		if (client == 0) {
+			// do this now so we don't have to every time we post
+//			for (int x = 0; x < NUM_THREADS; ++x) 
+//				//_threads[x].setPolled(true);
+//			}
 		}
+		_common->init(sd, devices, client, contextId);
 	}
 
 	inline int advanceRecv(size_t client, size_t context) { return 0; }

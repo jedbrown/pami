@@ -82,8 +82,7 @@ class Device {
 	/// \param[in] first_client	Flag indicating if this is the first call on client
 	/// \param[in] sd		SysDep object
 	/// \ingroup gendev_private_api
-	inline void __platform_generic_init(bool first_global, bool first_client,
-								XMI::SysDep &sd);
+	inline void __platform_generic_init(XMI::SysDep &sd);
 
 	/// \brief advance unexpected(received) messages for platform devices
 	/// \return	Number of "events"

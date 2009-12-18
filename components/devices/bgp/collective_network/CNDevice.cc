@@ -66,6 +66,9 @@ namespace BGP {
 
 	void CNDevice::init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
 		__init(sd, devices, client, contextId);
+		if (client != 0) {
+			return;
+		}
 		char *s;
 		/*
 		 * Measure the collective network tramsit time,

@@ -29,8 +29,7 @@ namespace Generic {
 /// \param[in] first_client     True if first init call for current client
 /// \param[in] sd               XMI::SysDep object
 ///
-inline void Device::__platform_generic_init(bool first_global, bool first_client,
-								XMI::SysDep &sd) {
+inline void Device::__platform_generic_init(XMI::SysDep &sd) {
 }
 
 inline int Device::__platform_generic_advanceRecv() {
