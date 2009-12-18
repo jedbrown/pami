@@ -3,8 +3,8 @@
  * \brief ???
  */
 
-#ifndef __components_geometry_lapiunix_lapiNativeInterface_h__
-#define __components_geometry_lapiunix_lapiNativeInterface_h__
+#ifndef __components_geometry_lapiunix_lapinativeinterface_h__
+#define __components_geometry_lapiunix_lapinativeinterface_h__
 
 #include "common/GlobalInterface.h"
 #include "Global.h"

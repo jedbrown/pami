@@ -28,7 +28,7 @@
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
 #include "algorithms/protocols/tspcoll/NBColl.h"
 
-#include "lapiNativeInterface.h"
+#include "lapiunixnativeinterface.h"
 
 // CCMI includes
 
