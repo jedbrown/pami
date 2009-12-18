@@ -229,7 +229,7 @@ namespace Generic {
 		//if (!__Threads.mutex()->tryAcquire()) continue;
 		GenericThread *thr, *nxtthr;
 		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
-			nxtthr = (GenericThread *)thr->next();
+			nxtthr = (GenericThread *)__Threads.nextElem(thr);
 			if (thr->getStatus() == XMI::Device::Ready) {
 				++events;
 				xmi_result_t rc = thr->executeThread(__context);
@@ -255,7 +255,7 @@ namespace Generic {
 		// Now check everything on the completion queue...
 		GenericMessage *msg, *nxtmsg;
 		for (msg = (GenericMessage *)__GenericQueue.peekHead(); msg; msg = nxtmsg) {
-			nxtmsg = (GenericMessage *)msg->next(1);
+			nxtmsg = (GenericMessage *)__GenericQueue.nextElem(msg);
 			if (msg->getStatus() == Done) {
 				++events;
 				__GenericQueue.deleteElem(msg);

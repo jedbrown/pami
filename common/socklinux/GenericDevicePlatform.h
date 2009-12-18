@@ -34,9 +34,12 @@ typedef XMI::Counter::Pthread GenericDeviceCounter;
 #include "util/queue/MultiQueue.h"
 
 /// \brief Queue type to use for messages
-typedef XMI::MultiQueue<2,1>		GenericDeviceCompletionQueue;
-typedef XMI::MultiQueue<2,0>		GenericDeviceMessageQueue;
-typedef XMI::MultiQueueElem<2>		GenericDeviceMessageQueueElem;
+#define GENDEVMSG_SEND_QNUM	0
+#define GENDEVMSG_COMPL_QNUM	1
+#define GENDEVMSG_NUM_QUEUES	2
+typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDeviceCompletionQueue;
+typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
+typedef XMI::MultiQueueElem<GENDEVMSG_NUM_QUEUES>			GenericDeviceMessageQueueElem;
 
 /// \brief Queue type to use for threads (work)
 typedef XMI::Queue		GenericDeviceWorkQueue;

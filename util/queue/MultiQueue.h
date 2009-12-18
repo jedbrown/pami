@@ -21,11 +21,13 @@
 ///  - Queue:         A queue of elements
 ///
 ///
-#ifndef __util_queue_Queue_h__
-#define __util_queue_Queue_h__
+#ifndef __util_queue_MultiQueue_h__
+#define __util_queue_MultiQueue_h__
 
 #include <stdio.h>
 #include "util/common.h"
+#include "util/queue/QueueInterface.h"
+#include "util/queue/Queue.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)
@@ -45,175 +47,87 @@ namespace XMI {
 ///  \brief Base Class for Queue
 //////////////////////////////////////////////////////////////////////
 template<int numElems>
-class MultiQueueElem {
+class MultiQueueElem : public XMI::Interface::QueueElem<MultiQueueElem<numElems> > {
 public:
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Queue Element constructor.  Initializes the next
-	///         and previous pointers to NULL
-	//////////////////////////////////////////////////////////////////
-	MultiQueueElem() {
+	MultiQueueElem() :
+	XMI::Interface::QueueElem<MultiQueueElem<numElems> >() {
 		for (int x = 0; x < numElems; ++x) {
 		          new (&_elem[x]) QueueElem();
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Queue Element destructor.
-	//////////////////////////////////////////////////////////////////
-	virtual ~MultiQueueElem() { }
-	/// NOTE: This is required to make "C" programs link successfully with virtual destructors
-	inline void operator delete(void *p) {
-		XMI_abort();
-	}
+	inline MultiQueueElem<numElems> *prev_impl(int n) { return (MultiQueueElem<numElems> *)_elem[n].prev(); }
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Get the previous Queue Element
-	/// \returns: The previous element
-	//////////////////////////////////////////////////////////////////
-	MultiQueueElem<numElems> *prev(int n = 0)  const { return (MultiQueueElem<numElems> *)_elem[n].prev(); }
+	inline MultiQueueElem<numElems> *next_impl(int n) { return (MultiQueueElem<numElems> *)_elem[n].next(); }
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Get the next Queue Element
-	/// \returns: The next element
-	//////////////////////////////////////////////////////////////////
-	MultiQueueElem<numElems> *next(int n = 0)  const { return (MultiQueueElem<numElems> *)_elem[n].next(); }
+	inline void setPrev_impl(MultiQueueElem<numElems> *msg, int n) { _elem[n].setPrev((QueueElem *)msg); }
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Set the previous Queue Element
-	/// \param msg: A queue element to set to the previous element
-	//////////////////////////////////////////////////////////////////
-	void setPrev(MultiQueueElem<numElems> *msg, int n = 0) { _elem[n].setPrev((QueueElem *)msg); }
+	inline void setNext_impl(MultiQueueElem<numElems> *msg, int n) { _elem[n].setNext((QueueElem *)msg); }
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Set the next Queue Element
-	/// \param msg: A queue element to set to the next element
-	//////////////////////////////////////////////////////////////////
-	void setNext(MultiQueueElem<numElems> *msg, int n = 0) { _elem[n].setNext((QueueElem *)msg); }
-
-	//////////////////////////////////////////////////////////////////
-	/// \brief  Set the previous and next Queue Elements
-	/// \param prev: A queue element to set to the next element
-	/// \param next: A queue element to set to the next element
-	//////////////////////////////////////////////////////////////////
-	void set(MultiQueueElem<numElems> *prev, MultiQueueElem<numElems> *next, int n = 0) {
+	inline void set_impl(MultiQueueElem<numElems> *prev, MultiQueueElem<numElems> *next, int n) {
 		_elem[n].setPrev((QueueElem *)prev);
 		_elem[n].setNext((QueueElem *)next);
 	}
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief allocate a new element, assuming storage is available
-	/// \param size: ignored
-	/// \param addr: address to storage of object to be created
-	/// \returns:  The address of the storage used for the object
-	//////////////////////////////////////////////////////////////////
-	// void *operator new(size_t size, void *addr) { return addr; }
 protected:
 	QueueElem _elem[numElems];
 }; // class MultiQueueElem
 
 template<int numElems, int elemNum>
-class MultiQueue {
+class MultiQueue : public XMI::Interface::Queue<MultiQueue<numElems,elemNum>,MultiQueueElem<numElems> > {
 public:
 	//////////////////////////////////////////////////////////////////
 	/// \brief  Queue constructor.  Initializes the head and tail
 	///         pointers to NULL
 	//////////////////////////////////////////////////////////////////
-	MultiQueue() { _head = _tail = NULL; _size = 0;}
+	MultiQueue() :
+	XMI::Interface::Queue<MultiQueue<numElems,elemNum>,MultiQueueElem<numElems> >() {
+		_head = _tail = NULL;
+		_size = 0;
+	}
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief Add an element to the tail of the queue
-	/// \param msg:  A message to push onto the tail of the queue
-	//////////////////////////////////////////////////////////////////
-	void pushTail(MultiQueueElem<numElems> *msg);
+	inline void pushTail_impl(MultiQueueElem<numElems> *msg);
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief Add an element to the head of the queue
-	/// \param msg:  A message to push onto the head of the queue
-	//////////////////////////////////////////////////////////////////
-	void pushHead(MultiQueueElem<numElems> *msg);
+	inline void pushHead_impl(MultiQueueElem<numElems> *msg);
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief Remove an element from the head of the queue
-	/// \returns:  The removed head element of the queue
-	//////////////////////////////////////////////////////////////////
-	MultiQueueElem<numElems> *popHead();
+	inline MultiQueueElem<numElems> *popHead_impl();
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief Remove an element from the tail of the queue
-	/// \returns:  The removed tail element of the queue
-	//////////////////////////////////////////////////////////////////
-	MultiQueueElem<numElems> *popTail();
+	inline MultiQueueElem<numElems> *popTail_impl();
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief Remove an element from the queue
-	/// \returns:
-	//////////////////////////////////////////////////////////////////
-	void deleteElem(MultiQueueElem<numElems> *item);
+	inline MultiQueueElem<numElems> *peekHead_impl() { return _head; }
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief    Access the head element of the queue without removing
-	/// \returns: The head element of the queue
-	//////////////////////////////////////////////////////////////////
-	MultiQueueElem<numElems> *peekHead() const { return _head; }
+	inline MultiQueueElem<numElems> *peekTail_impl() { return _tail; }
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief   Access the tail element of the queue without removing
-	/// \returns:The tail element of the queue
-	//////////////////////////////////////////////////////////////////
-	MultiQueueElem<numElems> *peekTail() const { return _tail; }
+	inline bool isEmpty_impl() { return _head == NULL; }
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief     Query the queue to see if it's empty.
-	/// \returns:  Queue empty status
-	//////////////////////////////////////////////////////////////////
-	bool isEmpty() const { return _head == NULL; }
+	inline int size_impl();
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief     Query the size of the queue
-	/// \returns:  The size of the queue
-	/// \todo:     use a private data member to track size
-	//////////////////////////////////////////////////////////////////
-	int size() const;
+	inline void dump_impl(const char *str, int n);
 
-	//////////////////////////////////////////////////////////////////
-	/// \brief      Dump the queue state
-	/// \param str: A string to append to the output
-	/// \param n:   An integer to print and append to the output
-	/// \returns:   The size of the queue
-	//////////////////////////////////////////////////////////////////
-	void dump(const char *str, int n) const;
+	inline MultiQueueElem<numElems> *nextElem_impl(MultiQueueElem<numElems> *item);
+
+	inline void deleteElem_impl(MultiQueueElem<numElems> *item);
+
+	inline void insertElem_impl(MultiQueueElem<numElems> *item, size_t position);
 
 #ifdef VALIDATE_ON
-	void validate();
+	inline void validate_impl();
 #endif
-	//////////////////////////////////////////////////////////////////
-	/// \brief allocate a new element, assuming storage is available
-	/// \param size: ignored
-	/// \param addr: address to storage of object to be created
-	/// \returns:  The address of the storage used for the object
-	//////////////////////////////////////////////////////////////////
-	void *operator new (size_t size, void *addr) { return addr; }
 
 protected:
-	//////////////////////////////////////////////////////////////////
 	/// \brief  Head Pointer
-	//////////////////////////////////////////////////////////////////
 	MultiQueueElem<numElems> *_head;
 
-	//////////////////////////////////////////////////////////////////
 	/// \brief  Tail Pointer
-	//////////////////////////////////////////////////////////////////
 	MultiQueueElem<numElems> *_tail;
 
-	//////////////////////////////////////////////////////////////////
 	/// \brief  Queue Size
-	//////////////////////////////////////////////////////////////////
 	int _size;
 }; // class MultiQueue
 }; // namespace XMI
 
 template<int numElems, int elemNum>
-inline void XMI::MultiQueue<numElems, elemNum>::pushTail(MultiQueueElem<numElems> *msg) {
+inline void XMI::MultiQueue<numElems, elemNum>::pushTail_impl(MultiQueueElem<numElems> *msg) {
 	msg->setNext(NULL, elemNum);
 	msg->setPrev(_tail, elemNum);
 	if (!_tail) {
@@ -226,7 +140,7 @@ inline void XMI::MultiQueue<numElems, elemNum>::pushTail(MultiQueueElem<numElems
 }
 
 template<int numElems, int elemNum>
-inline void XMI::MultiQueue<numElems, elemNum>::pushHead(MultiQueueElem<numElems> *msg) {
+inline void XMI::MultiQueue<numElems, elemNum>::pushHead_impl(MultiQueueElem<numElems> *msg) {
 	msg->setPrev(NULL, elemNum);
 	msg->setNext(_head, elemNum);
 	if (!_head) {
@@ -239,7 +153,7 @@ inline void XMI::MultiQueue<numElems, elemNum>::pushHead(MultiQueueElem<numElems
 }
 
 template<int numElems, int elemNum>
-inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::popHead() {
+inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::popHead_impl() {
 	MultiQueueElem<numElems> *p = _head;
 	if (!p) return NULL;
 	_head = p->next(elemNum);
@@ -251,7 +165,7 @@ inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::popHea
 }
 
 template<int numElems, int elemNum>
-inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::popTail() {
+inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::popTail_impl() {
 	MultiQueueElem<numElems> *p = _tail;
 	if (!p) return NULL;
 	_tail = p->prev(elemNum);
@@ -262,27 +176,9 @@ inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::popTai
 	return p;
 }
 
-template<int numElems, int elemNum>
-inline void XMI::MultiQueue<numElems, elemNum>::deleteElem(MultiQueueElem<numElems> *item) {
-	MultiQueueElem<numElems> *prev = (MultiQueueElem<numElems> *)item->prev(elemNum);
-	MultiQueueElem<numElems> *next = (MultiQueueElem<numElems> *)item->next(elemNum);
-
-	if(prev != NULL) {
-		prev->setNext(next, elemNum);
-	} else {
-		_head = next;
-	}
-	if(next != NULL) {
-		next->setPrev(prev, elemNum);
-	} else {
-		_tail = prev;
-	}
-	_size--;
-}
-
 #ifdef VALIDATE_ON
 template<int numElems, int elemNum>
-inline void XMI::MultiQueue<numElems, elemNum>::validate() {
+inline void XMI::MultiQueue<numElems, elemNum>::validate_impl() {
 	MultiQueueElem<numElems> *t = _tail;
 	MultiQueueElem<numElems> *h = _head;
 	int a = 0, b = 0;
@@ -313,14 +209,55 @@ inline void XMI::MultiQueue<numElems, elemNum>::validate() {
 }
 #endif
 template<int numElems, int elemNum>
-inline int XMI::MultiQueue<numElems, elemNum>::size() const {
+inline int XMI::MultiQueue<numElems, elemNum>::size_impl() {
 	return _size;
 }
 
 template<int numElems, int elemNum>
-inline void XMI::MultiQueue<numElems, elemNum>::dump(const char *strg, int n) const {
-	int s = size();
+inline void XMI::MultiQueue<numElems, elemNum>::dump_impl(const char *strg, int n) {
+	int s = size_impl();
 	if (s) printf ("%s %d: %d elements\n", strg, n, s);
 }
 
-#endif // __util_queue_queue_h__
+template<int numElems, int elemNum>
+inline XMI::MultiQueueElem<numElems> *XMI::MultiQueue<numElems, elemNum>::nextElem_impl(XMI::MultiQueueElem<numElems> *item) {
+	return item->next(elemNum);
+}
+
+template<int numElems, int elemNum>
+inline void XMI::MultiQueue<numElems, elemNum>::deleteElem_impl(XMI::MultiQueueElem<numElems> *item) {
+	MultiQueueElem<numElems> *prev = (MultiQueueElem<numElems> *)item->prev(elemNum);
+	MultiQueueElem<numElems> *next = (MultiQueueElem<numElems> *)item->next(elemNum);
+
+	if(prev != NULL) {
+		prev->setNext(next, elemNum);
+	} else {
+		_head = next;
+	}
+	if(next != NULL) {
+		next->setPrev(prev, elemNum);
+	} else {
+		_tail = prev;
+	}
+	_size--;
+}
+
+template<int numElems, int elemNum>
+inline void XMI::MultiQueue<numElems, elemNum>::insertElem_impl(MultiQueueElem<numElems> *item, size_t position) {
+	if (position == 0) {
+		pushHead(item);
+		++_size;
+		return;
+	}
+	size_t i;
+	MultiQueueElem<numElems> *insert = _head;
+	for (i = 1; i < position; ++i) {
+		insert = insert->next(elemNum);
+	}
+	item->setPrev(insert, elemNum);
+	item->setNext(insert->next(elemNum), elemNum);
+	insert->setNext(item, elemNum);
+	++_size;
+}
+
+#endif // __util_queue_MultiQueue_h__

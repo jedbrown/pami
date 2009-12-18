@@ -76,6 +76,8 @@ public:
 	{
 	}
 
+	virtual ~MultiQueueMessage() {}
+
 	/// \brief get client associated with message
 	/// \return	client for message posting/completion
 	/// \ingroup gendev_subdev_api

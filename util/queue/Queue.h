@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include "util/common.h"
+#include "util/queue/QueueInterface.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)
@@ -33,177 +34,96 @@
 
 namespace XMI
 {
+
   //////////////////////////////////////////////////////////////////////
   ///  \brief Base Class for Queue
   //////////////////////////////////////////////////////////////////////
-  class QueueElem
+  class QueueElem : public XMI::Interface::QueueElem<QueueElem>
   {
     public:
       //////////////////////////////////////////////////////////////////
       /// \brief  Queue Element constructor.  Initializes the next
       ///         and previous pointers to NULL
       //////////////////////////////////////////////////////////////////
-      QueueElem    ()
+      QueueElem()
       {
         _prev = _next = NULL;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Queue Element destructor.
-      //////////////////////////////////////////////////////////////////
-      virtual ~QueueElem ()
-      {
-      }
-      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-      inline void operator delete(void * p)
-      {
-        XMI_abort();
-      }
-
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Get the previous Queue Element
-      /// \returns: The previous element
-      //////////////////////////////////////////////////////////////////
-      QueueElem    * prev()  const
+      QueueElem *prev_impl(int n)
       {
         return _prev;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Get the next Queue Element
-      /// \returns: The next element
-      //////////////////////////////////////////////////////////////////
-      QueueElem    * next()  const
+      QueueElem *next_impl(int n)
       {
         return _next;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Set the previous Queue Element
-      /// \param qelem: A queue element to set to the previous element
-      //////////////////////////////////////////////////////////////////
-      void           setPrev (QueueElem * qelem)
+      void setPrev_impl(QueueElem *qelem, int n)
       {
         _prev = qelem;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Set the next Queue Element
-      /// \param qelem: A queue element to set to the next element
-      //////////////////////////////////////////////////////////////////
-      void           setNext (QueueElem * qelem)
+      void setNext_impl(QueueElem *qelem, int n)
       {
         _next = qelem;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Set the previous and next Queue Elements
-      /// \param prev: A queue element to set to the next element
-      /// \param next: A queue element to set to the next element
-      //////////////////////////////////////////////////////////////////
-      void           set     (QueueElem * prev, QueueElem * next)
+      void set_impl(QueueElem *prev, QueueElem *next, int n)
       {
         _prev = prev;
         _next = next;
       }
 
     protected:
-      //////////////////////////////////////////////////////////////////
       /// \brief  Previous pointer
-      //////////////////////////////////////////////////////////////////
-      QueueElem    * _prev;
+      QueueElem *_prev;
 
-      //////////////////////////////////////////////////////////////////
       /// \brief  Next pointer
-      //////////////////////////////////////////////////////////////////
-      QueueElem    * _next;
-  };
+      QueueElem *_next;
+  }; // class QueueElem
 
-  class Queue
+  class Queue : public XMI::Interface::Queue<Queue,QueueElem>
   {
     public:
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Queue constructor.  Initializes the head and tail
-      ///         pointers to NULL
-      //////////////////////////////////////////////////////////////////
-      Queue()
+      Queue() : XMI::Interface::Queue<Queue,QueueElem>()
       {
         _head = _tail = NULL;
         _size = 0;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief Add an element to the tail of the queue
-      /// \param qelem:  A message to push onto the tail of the queue
-      //////////////////////////////////////////////////////////////////
-      void pushTail (QueueElem * qelem);
+      inline void pushTail_impl(QueueElem * qelem);
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief Add an element to the head of the queue
-      /// \param qelem:  A message to push onto the head of the queue
-      //////////////////////////////////////////////////////////////////
-      void pushHead (QueueElem * qelem);
+      inline void pushHead_impl(QueueElem * qelem);
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief Remove an element from the head of the queue
-      /// \returns:  The removed head element of the queue
-      //////////////////////////////////////////////////////////////////
-      QueueElem * popHead();
+      inline QueueElem *popHead_impl();
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief Remove an element from the tail of the queue
-      /// \returns:  The removed tail element of the queue
-      //////////////////////////////////////////////////////////////////
-      QueueElem * popTail();
+      inline QueueElem *popTail_impl();
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief    Access the head element of the queue without removing
-      /// \returns: The head element of the queue
-      //////////////////////////////////////////////////////////////////
-      QueueElem * peekHead() const
+      inline QueueElem *peekHead_impl()
       {
         return _head;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief   Access the tail element of the queue without removing
-      /// \returns:The tail element of the queue
-      //////////////////////////////////////////////////////////////////
-      QueueElem * peekTail() const
+      inline QueueElem *peekTail_impl()
       {
         return _tail;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief     Query the queue to see if it's empty.
-      /// \returns:  Queue empty status
-      //////////////////////////////////////////////////////////////////
-      bool isEmpty() const
+      inline bool isEmpty_impl()
       {
         return _head == NULL;
       }
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief     Query the size of the queue
-      /// \returns:  The size of the queue
-      /// \todo:     use a private data member to track size
-      //////////////////////////////////////////////////////////////////
-      int size() const;
+      inline int size_impl();
+      inline QueueElem *nextElem_impl(QueueElem *elem);
+      inline void deleteElem_impl(QueueElem *elem);
+      inline void insertElem_impl(QueueElem *elem, size_t position);
 
-
-      void deleteElem (QueueElem *elem);
-
-      void insertElem (QueueElem *elem, size_t position);
-
-      //////////////////////////////////////////////////////////////////
-      /// \brief      Dump the queue state
-      /// \param str: A string to append to the output
-      /// \param n:   An integer to print and append to the output
-      /// \returns:   The size of the queue
-      //////////////////////////////////////////////////////////////////
-      void dump(const char *str, int n) const;
+      inline void dump_impl(const char *str, int n);
 #ifdef VALIDATE_ON
-      void validate();
+      inline void validate_impl();
 #endif
 
     private:
@@ -224,7 +144,7 @@ namespace XMI
   };
 };
 
-inline void XMI::Queue::pushTail (QueueElem * qelem)
+inline void XMI::Queue::pushTail_impl(QueueElem *qelem)
 {
   TRACE_ERR ((stderr, "push tail \n"));
 
@@ -241,7 +161,7 @@ inline void XMI::Queue::pushTail (QueueElem * qelem)
   _size++;
 }
 
-inline void XMI::Queue::pushHead (QueueElem * qelem)
+inline void XMI::Queue::pushHead_impl(QueueElem *qelem)
 {
   qelem->setPrev(NULL);
   qelem->setNext(_head);
@@ -256,7 +176,7 @@ inline void XMI::Queue::pushHead (QueueElem * qelem)
   _size++;
 }
 
-inline XMI::QueueElem * XMI::Queue::popHead()
+inline XMI::QueueElem *XMI::Queue::popHead_impl()
 {
   QueueElem * p = _head;
 
@@ -272,7 +192,7 @@ inline XMI::QueueElem * XMI::Queue::popHead()
   return p;
 }
 
-inline XMI::QueueElem * XMI::Queue::popTail()
+inline XMI::QueueElem * XMI::Queue::popTail_impl()
 {
   QueueElem * p = _tail;
 
@@ -288,7 +208,7 @@ inline XMI::QueueElem * XMI::Queue::popTail()
   return p;
 }
 #ifdef VALIDATE_ON
-inline void XMI::Queue::validate()
+inline void XMI::Queue::validate_impl()
 {
   QueueElem *t = _tail;
   QueueElem *h = _head;
@@ -329,19 +249,24 @@ inline void XMI::Queue::validate()
     }
 }
 #endif
-inline int XMI::Queue::size() const
+inline int XMI::Queue::size_impl()
 {
   return _size;
 }
 
-inline void XMI::Queue::dump(const char * strg, int n) const
+inline void XMI::Queue::dump_impl(const char * strg, int n)
 {
-  int s = size();
+  int s = size_impl();
 
   if (s) printf ("%s %d: %d elements\n", strg, n, s);
 }
 
-inline void XMI::Queue::deleteElem (QueueElem *elem)
+inline XMI::QueueElem *XMI::Queue::nextElem_impl(XMI::QueueElem *elem)
+{
+	return elem->next();
+}
+
+inline void XMI::Queue::deleteElem_impl(QueueElem *elem)
 {
   ///We should check to see if the current element is actually a
   ///member of this queue
@@ -366,11 +291,12 @@ inline void XMI::Queue::deleteElem (QueueElem *elem)
     }
 }
 
-inline void XMI::Queue::insertElem (QueueElem *elem, size_t position)
+inline void XMI::Queue::insertElem_impl(QueueElem *elem, size_t position)
 {
   if (position == 0)
   {
     pushHead (elem);
+    _size++;
     return;
   }
 
