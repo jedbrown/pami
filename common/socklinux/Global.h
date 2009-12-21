@@ -47,7 +47,7 @@ namespace XMI
         {
 	  xmi_coord_t ll, ur;
 	  size_t min, max, num;
-          size_t *ranks; 
+          size_t *ranks;
           const char   * shmemfile = "/unique-xmi-global-shmem-file";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
@@ -99,7 +99,7 @@ namespace XMI
           	_memsize = bytes;
           	TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
 	  }
-          
+
           mapping.init(min, max, num, &ranks);
 	  XMI::Topology::static_init(&mapping);
           new (&topology_global) XMI::Topology(min, max);

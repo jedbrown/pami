@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/udp/GenericSubDeviceList.h
+ * \file common/socklinux/GenericSubDeviceList.h
  * \brief ???
  */
 
-#ifndef __common_udp_GenericSubDeviceList_h__
-#define __common_udp_GenericSubDeviceList_h__
+#ifndef __common_socklinux_GenericSubDeviceList_h__
+#define __common_socklinux_GenericSubDeviceList_h__
 
 // extern XMI::Device::XXX _g_xxx_dev;
 

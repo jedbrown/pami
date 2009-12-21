@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/udp/udpmodel.h
- * \brief Provides the implementation of the PacketModel for the UDP device 
+ * \file components/devices/udp/UdpModel.h
+ * \brief Provides the implementation of the PacketModel for the UDP device
  */
 
-#ifndef __components_devices_udp_udpmodel_h__
-#define __components_devices_udp_udpmodel_h__
+#ifndef __components_devices_udp_UdpModel_h__
+#define __components_devices_udp_UdpModel_h__
 
 #include <sys/uio.h>
 #include "sys/xmi.h"
@@ -40,7 +40,7 @@ namespace XMI
        // PacketInterface implements isPacket* to return these variables
       static const bool   deterministic_packet_model   = false;
       static const bool   reliable_packet_model        = false;
-   
+
       static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
       static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes        = T_Device::payload_size;
@@ -52,7 +52,7 @@ namespace XMI
                               Interface::RecvFunction_t   read_recv_func,
                               void                      * read_recv_func_parm)
         {
-         _usr_dispatch_id = dispatch; 
+         _usr_dispatch_id = dispatch;
          return _device.setDispatchFunc (dispatch, direct_recv_func, direct_recv_func_parm);
         };
 
@@ -66,10 +66,10 @@ namespace XMI
                                    size_t               niov)
         {
           T_Message * msg = (T_Message *) & state[0];
-          new (msg) T_Message (_client, _context, fn, cookie, _device_dispatch_id, 
+          new (msg) T_Message (_client, _context, fn, cookie, _device_dispatch_id,
                                metadata, metasize, iov, niov, false);
           _device.post(target, msg );
-          return false;  
+          return false;
         };
 
       template <unsigned T_Niov>
@@ -81,7 +81,7 @@ namespace XMI
                                    size_t               metasize,
                                    struct iovec         (&iov)[T_Niov])
         {
-            return postPacket(state, fn, cookie, target, metadata, metasize, iov, T_Niov ); 
+            return postPacket(state, fn, cookie, target, metadata, metasize, iov, T_Niov );
         };
 
       template <unsigned T_Niov>
@@ -91,8 +91,8 @@ namespace XMI
                                    struct iovec   (&iov)[T_Niov])
         {
           // Cannot ensure that this will send right away, so just indicate this doesn't work
-          return false; 
- 
+          return false;
+
         }
 
       template <unsigned T_Niov>
@@ -105,24 +105,24 @@ namespace XMI
                                         struct iovec         (&iov)[T_Niov])
         {
          T_Message * msg = (T_Message *) & state[0];
-          new (msg) T_Message (_client, _context, fn, cookie, _device_dispatch_id, metadata, 
+          new (msg) T_Message (_client, _context, fn, cookie, _device_dispatch_id, metadata,
                                metasize, iov, T_Niov, true);
           _device.post(target, msg );
-          return false;  
+          return false;
         }
 
-       inline int read_impl(void * dst, size_t bytes, void * cookie ) 
+       inline int read_impl(void * dst, size_t bytes, void * cookie )
        {
-         return _device.read(dst, bytes, cookie); 
+         return _device.read(dst, bytes, cookie);
        }
- 
+
     protected:
       T_Device                   & _device;
       xmi_client_t                 _client;
       size_t                       _context;
       uint32_t                     _usr_dispatch_id;
       uint32_t                     _device_dispatch_id;
-       
+
     };
   };
   };

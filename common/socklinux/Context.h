@@ -38,8 +38,8 @@ namespace XMI
 {
   //typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
-  typedef Device::UDP::UdpDevice<SysDep> UdpDevice; 
-  typedef Device::UDP::UdpModel<UdpDevice,Device::UDP::UdpSendMessage> UdpModel; 
+  typedef Device::UDP::UdpDevice<SysDep> UdpDevice;
+  typedef Device::UDP::UdpModel<UdpDevice,Device::UDP::UdpSendMessage> UdpModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -390,7 +390,7 @@ namespace XMI
 
       // devices...
       UdpDevice _udp;
-  
+
       void * _dispatch[1024];
       //void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;

@@ -49,15 +49,15 @@ namespace XMI
         Interface::Mapping::Socket<Mapping>()
       {
       };
-      inline ~Mapping () 
+      inline ~Mapping ()
       {
-        free( _tcpConnTable ); 
-        free( _udpConnTable ); 
+        free( _tcpConnTable );
+        free( _udpConnTable );
       };
 
-      inline bool isUdpActive() 
+      inline bool isUdpActive()
       {
-        return  _udpConnInit; 
+        return  _udpConnInit;
       }
 
       inline int activateUdp()
@@ -67,91 +67,91 @@ namespace XMI
         size_t tmp_task;
         std::string tmp_host_in;
         std::string tmp_port;
-        int sockFd; 
-        int rc; 
-        struct addrinfo hints, *servinfo; 
+        int sockFd;
+        int rc;
+        struct addrinfo hints, *servinfo;
         memset(&hints,0,sizeof(hints));
         hints.ai_family = AF_INET;  // AF_UNSPEC for 6 support too
         hints.ai_socktype = SOCK_DGRAM;
         hints.ai_flags |= AI_PASSIVE;
 
-        _udpConnInit = true; 
+        _udpConnInit = true;
         // Allocate space for the connection table
-        _udpConnTable = (udp_conn_t *)malloc(_size * sizeof(udp_conn_t)); 
+        _udpConnTable = (udp_conn_t *)malloc(_size * sizeof(udp_conn_t));
 
-        size_t i; 
+        size_t i;
         for ( i=0; i<_size; i++) {
-          _udpConnTable[i].send_fd = 0; 
-        } 
+          _udpConnTable[i].send_fd = 0;
+        }
 
         udp_config = getenv ("XMI_UDP_CONFIG");
         if (udp_config == NULL ) {
-          std::cout << "Environment variable XMI_UDP_CONFIG must be set" << std::endl; 
+          std::cout << "Environment variable XMI_UDP_CONFIG must be set" << std::endl;
           abort();
         }
         std::cout << "The current UDP configuration file is: " << udp_config << std::endl;
 
-        // Now open the configuration file 
+        // Now open the configuration file
         inFile.open(udp_config);
-        if (!inFile ) 
+        if (!inFile )
         {
-          std::cout << "Unable to open UDP configuration file: " << udp_config << std::endl; 
+          std::cout << "Unable to open UDP configuration file: " << udp_config << std::endl;
           abort();
         }
 
-        // Read in the configuration file: rank host port 
+        // Read in the configuration file: rank host port
         for ( i=0; i<_size; i++ )
-        {  
+        {
 
-          inFile >> tmp_task >> tmp_host_in >> tmp_port; 
-          std::cout << "  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port << std::endl; 
+          inFile >> tmp_task >> tmp_host_in >> tmp_port;
+          std::cout << "  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port << std::endl;
 
-          // Make sure we can locate the host 
-          struct hostent *tmp_host; 
+          // Make sure we can locate the host
+          struct hostent *tmp_host;
           tmp_host = gethostbyname(tmp_host_in.data());
-          if (tmp_host == NULL ) 
+          if (tmp_host == NULL )
           {
-            std::cout << "Unable to get host by name.  Name in config file: " << tmp_host_in << std::endl; 
+            std::cout << "Unable to get host by name.  Name in config file: " << tmp_host_in << std::endl;
             abort();
           }
 
           if ( (rc = getaddrinfo( tmp_host_in.data(), tmp_port.data(), &hints, &servinfo ) ) != 0 )
           {
-            std::cout << "getaddrinfo call failed:" << gai_strerror(rc) << std::endl; 
+            std::cout << "getaddrinfo call failed:" << gai_strerror(rc) << std::endl;
           }
           if ( (sockFd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol ) ) == -1 )
-          { 
-            std::cout << "socket call failed" << std::endl; 
+          {
+            std::cout << "socket call failed" << std::endl;
           }
           //std::cout << "addr " << servinfo->ai_addr << " len  " << servinfo->ai_addrlen << std::endl;
- 
+
           if (_task == tmp_task)
           {
-            char host[128]; 
+            char host[128];
             int str_len=128;
-            int err = gethostname( host, str_len ); 
-            // std::cout << host << std::endl; 
-            if ( strcmp( host, tmp_host->h_name ) != 0 ) 
+            int err = gethostname( host, str_len );
+            // std::cout << host << std::endl;
+            if ( strcmp( host, tmp_host->h_name ) != 0 )
             {
-              std::cout << "Entry for this node" << _task << " is incorrect: " << std::endl; 
-              std::cout << "     " << host << " does not match " << tmp_host->h_name << std::endl; 
+              std::cout << "Entry for this node" << _task << " is incorrect: " << std::endl;
+              std::cout << "     " << host << " does not match " << tmp_host->h_name << std::endl;
             }
-            // Set up to receive 
+            // Set up to receive
             _udpRcvConn = sockFd;
             if ( bind(_udpRcvConn, servinfo->ai_addr, servinfo->ai_addrlen ) == -1)
             {
               close (_udpRcvConn);
               std::cout << "bind call failed" << std::endl;
-              abort(); 
+              abort();
             }
-               
-          } else { 
+
+          } else {
             // Save info for sending
           _udpConnTable[tmp_task].send_fd =  sockFd;
           memcpy( &(_udpConnTable[tmp_task].send_addr), servinfo->ai_addr, servinfo->ai_addrlen );
           _udpConnTable[tmp_task].send_addr_len = servinfo->ai_addrlen;
-          } 
-        } 
+          }
+        }
         inFile.close();
 
         return 0;
@@ -159,40 +159,40 @@ namespace XMI
 
       inline int deactivateUdp()
       {
-        size_t i; 
+        size_t i;
         _udpConnInit = false;
-        close( _udpRcvConn ); 
+        close( _udpRcvConn );
         for (i=0; i<_size; i++ )
         {
-          close( _udpConnTable[i].send_fd ); 
+          close( _udpConnTable[i].send_fd );
         }
         return 0;
       }
 
-      inline bool isTcpActive() 
+      inline bool isTcpActive()
       {
-        return  _tcpConnInit; 
+        return  _tcpConnInit;
       }
 
       inline int activateTcp()
       {
-        _tcpConnInit = true; 
+        _tcpConnInit = true;
         // Allocate space for the connection table
-        _tcpConnTable = (xmi_coord_t *)malloc(_size * sizeof(xmi_coord_t)); 
+        _tcpConnTable = (xmi_coord_t *)malloc(_size * sizeof(xmi_coord_t));
 
         // All are sockets entries
-        size_t i; 
+        size_t i;
         for ( i=0; i<_size; i++) {
           _tcpConnTable[i].network = XMI_SOCKET_NETWORK;
-        } 
-        std::cout << "TCP not supported yet " << std::endl; 
-        abort (); 
+        }
+        std::cout << "TCP not supported yet " << std::endl;
+        abort ();
         return 0;
       }
 
      inline int deactivateTcp()
         {
-          _tcpConnInit = false; 
+          _tcpConnInit = false;
           return 0;
         }
 
@@ -207,14 +207,14 @@ namespace XMI
         {
           int               send_fd;
           sockaddr_storage  send_addr;
-          int               send_addr_len;  
+          int               send_addr_len;
         } udp_conn_t;
 
         xmi_coord_t *     _tcpConnTable;
-        bool              _tcpConnInit; 
+        bool              _tcpConnInit;
         udp_conn_t *      _udpConnTable;
-        int               _udpRcvConn; 
-        bool              _udpConnInit;  
+        int               _udpRcvConn;
+        bool              _udpConnInit;
 
 
 	static int rank_compare(const void *a, const void *b) {
@@ -228,31 +228,31 @@ namespace XMI
       inline xmi_result_t init(size_t &min_rank, size_t &max_rank,
 				size_t &num_local, size_t **local_ranks)
       {
-        char * tmp; 
+        char * tmp;
         tmp = getenv("XMI_SOCK_SIZE");
         if (tmp == NULL ) {
-          std::cout << "Environment variable XMI_SOCK_SIZE must be set" << std::endl; 
+          std::cout << "Environment variable XMI_SOCK_SIZE must be set" << std::endl;
           abort();
         }
         _size = strtoul( tmp, NULL, 0 );
         std::cout << "Size = " << _size << std::endl;
-        tmp = getenv("XMI_SOCK_TASK"); 
+        tmp = getenv("XMI_SOCK_TASK");
         if (tmp == NULL ) {
-          std::cout << "Environment variable XMI_SOCK_TASK must be set" << std::endl; 
+          std::cout << "Environment variable XMI_SOCK_TASK must be set" << std::endl;
           abort();
         }
         _task = strtoul( tmp, NULL, 0 );
         std::cout << "Task = " << _task << std::endl;
-        if ( _task >= _size ) 
-        {  
-          std::cout << "Task " << _task << "is >= size " << _size << std::endl; 
+        if ( _task >= _size )
+        {
+          std::cout << "Task " << _task << "is >= size " << _size << std::endl;
           abort();
         }
 
         // None of the ranks are local
         //*local_ranks = xxxx;
         num_local = 0;
-		
+
 	min_rank = 0;
 	max_rank = _size-1;
 
@@ -271,38 +271,38 @@ namespace XMI
 
       inline xmi_result_t task2network (size_t task, xmi_coord_t *addr, xmi_network type)
       {
-        std::cout << "task2network not supported" << std::endl; 
-        abort(); 
+        std::cout << "task2network not supported" << std::endl;
+        abort();
       }
 
       inline xmi_result_t network2task_impl(const xmi_coord_t *addr,
 						size_t *task,
 						xmi_network *type)
       {
-        std::cout << "network2task not supported" << std::endl; 
+        std::cout << "network2task not supported" << std::endl;
         abort();
       }
 
       inline void udpAddr_impl(int & recvfd) const
       {
-	recvfd = _udpRcvConn;   
+	recvfd = _udpRcvConn;
       }
 
      inline xmi_result_t task2udp_impl( size_t task, int & sendfd, void * sockAddr, int & len )
      {
-       if ( task >= _size ) 
-       { 
-         return XMI_ERROR; 
-       } 
-       sendfd = _udpConnTable[task].send_fd; 
-       len = _udpConnTable[task].send_addr_len; 
-       memcpy( sockAddr, &(_udpConnTable[task].send_addr), len ); 
-       return XMI_SUCCESS; 
+       if ( task >= _size )
+       {
+         return XMI_ERROR;
+       }
+       sendfd = _udpConnTable[task].send_fd;
+       len = _udpConnTable[task].send_addr_len;
+       memcpy( sockAddr, &(_udpConnTable[task].send_addr), len );
+       return XMI_SUCCESS;
      }
 
-     inline xmi_result_t udp2task_impl( int sendfd, void * sockAddr, int len , size_t & task ) 
+     inline xmi_result_t udp2task_impl( int sendfd, void * sockAddr, int len , size_t & task )
      {
-       abort(); 
+       abort();
      }
 
      inline void socketAddr_impl (size_t & recv_fd, size_t & send_fd) { abort(); }
@@ -310,7 +310,7 @@ namespace XMI
      inline xmi_result_t task2socket_impl (size_t task, size_t & recv_fd, size_t & send_fd) { abort(); }
 
      inline xmi_result_t socket2task_impl (size_t recv_fd, size_t send_fd, size_t & task) { abort(); }
-       
+
      // \see XMI::Interface::Mapping::Node::nodePeers()
      inline xmi_result_t nodePeers_impl (size_t & peers)
      {

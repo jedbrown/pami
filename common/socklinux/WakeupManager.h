@@ -1,9 +1,9 @@
 ///
-/// \file common/mpi/WakeupManager.h
+/// \file common/socklinux/WakeupManager.h
 /// \brief XMI wakeup manager implementation.
 ///
-#ifndef __common_mpi_WakeupManager_h__
-#define __common_mpi_WakeupManager_h__
+#ifndef __common_socklinux_WakeupManager_h__
+#define __common_socklinux_WakeupManager_h__
 
 #include "common/WakeupManagerInterface.h"
 

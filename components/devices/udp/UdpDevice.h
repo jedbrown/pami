@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/upd/upddevice.h
+ * \file components/devices/udp/UdpDevice.h
  * \brief ???
  */
 
-#ifndef __components_devices_upd_upddevice_h__
-#define __components_devices_upd_upddevice_h__
+#ifndef __components_devices_udp_UdpDevice_h__
+#define __components_devices_udp_UdpDevice_h__
 
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
@@ -52,7 +52,7 @@ namespace XMI
       // Implement BaseDevice Routines
 
       inline ~UdpDevice () {
-        if ( __global.mapping.isUdpActive() ) 
+        if ( __global.mapping.isUdpActive() )
         {
          __global.mapping.deactivateUdp();
         }
@@ -81,25 +81,25 @@ namespace XMI
       {
         if ( __global.mapping.activateUdp() != XMI_SUCCESS ) abort();
 
-        _sndConnections = (UdpSndConnection**)malloc(__global.mapping.size()*sizeof(UdpSndConnection*)); 
-        // setup the connections 
-        size_t i; 
+        _sndConnections = (UdpSndConnection**)malloc(__global.mapping.size()*sizeof(UdpSndConnection*));
+        // setup the connections
+        size_t i;
         // Advance all the send UDP sockets
         for (i=0; i<__global.mapping.size(); i++ )
         {
-           _sndConnections[i] = new UdpSndConnection( i ); 
+           _sndConnections[i] = new UdpSndConnection( i );
         }
 
-        _rcvConnection = new UdpRcvConnection( ); 
+        _rcvConnection = new UdpRcvConnection( );
 
-        return XMI_SUCCESS; 
+        return XMI_SUCCESS;
       };
 
       inline bool isInit_impl ()
       {
         return __global.mapping.isUdpActive();
       };
- 
+
       inline int advance_impl ()
       {
         static int dbg = 1;
@@ -109,27 +109,27 @@ namespace XMI
           dbg = 0;
         }
 
-        size_t i; 
+        size_t i;
         // Advance all the send UDP sockets
         for (i=0; i<__global.mapping.size(); i++ )
         {
-           _sndConnections[i]->advance(); 
+           _sndConnections[i]->advance();
         }
 
         if ( _rcvConnection->advance() == 0 )
         {
           // Packet received, so dispatch it
-          Interface::RecvFunction_t rcvFun = _dispatch_table[_rcvConnection->getDeviceDispatchId()].direct_recv_func; 
+          Interface::RecvFunction_t rcvFun = _dispatch_table[_rcvConnection->getDeviceDispatchId()].direct_recv_func;
           if ( rcvFun != NULL )   // Ignoring stuff we don't expect, since we are UDP
           {
-             rcvFun( _rcvConnection->_msg.getMetadataAddr(), 
-                     _rcvConnection->_msg.getPayloadAddr(), 
-                     _rcvConnection->_msg.getPayloadSize(), 
+             rcvFun( _rcvConnection->_msg.getMetadataAddr(),
+                     _rcvConnection->_msg.getPayloadAddr(),
+                     _rcvConnection->_msg.getPayloadSize(),
                      _dispatch_table[_rcvConnection->getDeviceDispatchId()].direct_recv_func_parm,
                      NULL );
           }
-        } 
- 
+        }
+
         return XMI_SUCCESS;
 
       };
@@ -141,7 +141,7 @@ namespace XMI
       // Implement Packet Device Routines
       inline int    read_impl(void * dst, size_t bytes, void * cookie)
       {
-        return XMI_UNIMPL;       
+        return XMI_UNIMPL;
       }
 
       inline size_t peers_impl ()
@@ -156,7 +156,7 @@ namespace XMI
       }
       inline void post(size_t task, UdpSendMessage* msg)
       {
-        _sndConnections[task]->enqueueMsg(msg); 
+        _sndConnections[task]->enqueueMsg(msg);
       }
 
       size_t                                    _dispatch_id;

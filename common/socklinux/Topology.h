@@ -27,7 +27,7 @@
 namespace XMI {
 	class Topology : public Interface::Topology<XMI::Topology> {
 		static XMI::Mapping *mapping;
-		
+
 		/// \brief how a topology represents each type
 		union topology_u {
 			xmi_task_t _rank;	///< XMI_SINGLE_TOPOLOGY - the rank
@@ -174,7 +174,7 @@ namespace XMI {
 		///
 		/// \return 'true' means "this" was altered!
 		bool __analyzeCoordsList() {
-			return false;	
+			return false;
 		}
 
 		/// \brief Analyze a Rank List to see if it is a range.
@@ -441,7 +441,7 @@ namespace XMI {
 		/// \return boolean indicating locality of ranks
 		///
 		bool isLocal_impl() {
-                        return false; 
+                        return false;
 		}
 
 		/// \brief does topology consist entirely of ranks local to self

@@ -633,7 +633,7 @@ protected:
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
-//			for (int x = 0; x < NUM_THREADS; ++x) 
+//			for (int x = 0; x < NUM_THREADS; ++x)
 //				//_threads[x].setPolled(true);
 //			}
 		}

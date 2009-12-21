@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __components_devices_udp_udprcvconnection_h__
-#define __components_devices_udp_udprcvconnection_h__
+#ifndef __components_devices_udp_UdpRcvConnection_h__
+#define __components_devices_udp_UdpRcvConnection_h__
 
 #include "components/devices/udp/UdpMessage.h"
 #include "util/ccmi_debug.h"
@@ -34,18 +34,18 @@ namespace XMI
       UdpRcvConnection():
        _msg()
       {
-        __global.mapping.udpAddr( _rcvFd ); 
+        __global.mapping.udpAddr( _rcvFd );
       }
 
       inline int advance()
       {
          struct sockaddr_storage _their_addr;
-         socklen_t               _their_addr_len = sizeof(_their_addr); 
+         socklen_t               _their_addr_len = sizeof(_their_addr);
          int bytes_rcv = recvfrom(_rcvFd, &_msg, sizeof(_msg), MSG_DONTWAIT, (struct sockaddr*)&_their_addr, &_their_addr_len);
-         if ( bytes_rcv == -1 && errno == EWOULDBLOCK ) return -1; 
-         if ( bytes_rcv == -1 ) 
+         if ( bytes_rcv == -1 && errno == EWOULDBLOCK ) return -1;
+         if ( bytes_rcv == -1 )
          {
-           abort(); 
+           abort();
          }
 
          TRACE_COUT( "Packet received.  Bytes = " << bytes_rcv )
@@ -56,14 +56,14 @@ namespace XMI
 
       inline uint32_t getDeviceDispatchId()
       {
-         return _msg.getDeviceDispatchId(); 
+         return _msg.getDeviceDispatchId();
       }
 
       int                     _rcvFd;     // UDP socket for this Connection
 
-      UdpMsg                  _msg; 
+      UdpMsg                  _msg;
     protected:
-    private: 
+    private:
 
      };
     };

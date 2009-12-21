@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/udp/GenericSubDeviceList.cc
+ * \file common/socklinux/GenericSubDeviceList.cc
  * \brief ???
  */
 

@@ -206,7 +206,7 @@ namespace XMI
       private:
 
         xmi_client_t _client;
-        size_t       _clientid; 
+        size_t       _clientid;
         size_t       _references;
         size_t       _ncontexts;
 	XMI::Context *_contexts;

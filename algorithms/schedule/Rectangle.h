@@ -877,7 +877,7 @@ namespace CCMI
         {
         case NODE_SET_AB:
           nsnd += 2;
-          setPhase(PHASE_ONE);  // we could just fall through here, but XL complains 
+          setPhase(PHASE_ONE);  // we could just fall through here, but XL complains
           nsnd += 1;
           nsnd += (_rect->xs[XMI_T_DIM] > 1);
           break;
