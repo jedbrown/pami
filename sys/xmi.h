@@ -3056,6 +3056,9 @@ extern "C"
     size_t               context;	      /**< primary context to operate within */
     void                *request;             /**< space for communication struct(s) */
     xmi_callback_t       cb_done;             /**< User's completion callback */
+    unsigned             connection_id;    /**< A connection is a distinct stream of
+                                              traffic. The connection id identifies the
+                                              connection */
     unsigned             roles;		      /**< bitmap of roles to perform */
     xmi_pipeworkqueue_t *data;		      /**< Data source */
     xmi_topology_t      *data_participants;   /**< Tasks contributing data */
