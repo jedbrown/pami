@@ -5,18 +5,20 @@
 
 extern void build_node_classroute(rect_t *world, rect_t *comm, coord_t *me, classroute_t *cr);
 
+char *dim_names = XMI_DIM_NAMES;
+
 int sprint_links(char *buf, uint32_t link) {
 	char *s = buf;
 	int x;
 	for (x = 0; x < XMI_MAX_DIMS; ++x) {
 		if (link & CR_LINK(x,CR_SIGN_POS)) {
 			if (s != buf) *s++ = ' ';
-			*s++ = XMI_DIM_NAMES[x];
+			*s++ = dim_names[x];
 			*s++ = '+';
 		}
 		if (link & CR_LINK(x,CR_SIGN_NEG)) {
 			if (s != buf) *s++ = ' ';
-			*s++ = XMI_DIM_NAMES[x];
+			*s++ = dim_names[x];
 			*s++ = '-';
 		}
 	}
@@ -133,7 +135,7 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "c:w:")) != EOF) {
+	while ((x = getopt(argc, argv, "c:r:w:")) != EOF) {
 		switch(x) {
 		case 'c':
 			e = parse_rect(optarg, &ep, &comm);
@@ -142,6 +144,9 @@ int main(int argc, char **argv) {
 				exit(1);
 			}
 			++comm_set;
+			break;
+		case 'r':
+			dim_names = optarg;
 			break;
 		case 'w':
 			e = parse_rect(optarg, &ep, &world);
@@ -154,10 +159,13 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (!world_set) {
-		fprintf(stderr, "Usage: %s -w <world-rectangle> [ -c <sub-comm-rect> ]\n"
+		fprintf(stderr, "Usage: %s [-r <dim-names>] -w <world-rectangle> [ -c <sub-comm-rect> ]\n"
+				"Computes and prints classroute for all nodes in <sub-comm>.\n"
 				"Where rectangle syntax is \"(a0,b0,c0,...):(aN,bN,cN,...)\"\n"
 				"and 'a0' (etc) are lower-left corner coords\n"
 				"and 'aN' (etc) are upper-right corner coords\n"
+				"-r renames dimensions, default is \"ABCDEFGH\"\n"
+				"All coordinates must use the same number of dimensions.\n"
 				"sub-comm defaults to world\n", argv[0]);
 		exit(1);
 	}
