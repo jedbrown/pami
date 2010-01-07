@@ -17,8 +17,8 @@
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "SysDep.h"
-#include "components/geometry/lapiunix/lapiunixcollfactory.h"
-#include "components/geometry/lapiunix/lapiunixcollregistration.h"
+#include "common/default/CollFactory.h"
+#include "common/default/CollRegistration.h"
 #include "components/devices/generic/GenericDevice.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
@@ -33,8 +33,8 @@ namespace XMI
     typedef Device::LAPIDevice<SysDep> LAPIDevice;
     typedef Device::LAPIModel<LAPIDevice,LAPIMessage> LAPIModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> LAPIGeometry;
-    typedef CollFactory::LAPI<LAPIDevice, SysDep> LAPICollfactory;
-    typedef CollRegistration::LAPI<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep> LAPICollreg;
+    typedef CollFactory::Default<LAPIDevice, SysDep, LAPIMcastModel> LAPICollfactory;
+    typedef CollRegistration::Default<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep> LAPICollreg;
     typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 

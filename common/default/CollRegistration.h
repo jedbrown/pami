@@ -164,13 +164,13 @@ namespace XMI
       XMI::CollInfo::PGScattervInfo<T_Device>                      _pgscatterv;
       XMI::CollInfo::PGAllreduceInfo<T_Device>                     _pgallreduce;
       XMI::CollInfo::PGBarrierInfo<T_Device>                       _pgbarrier;
-      XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep>       _ccmiambroadcast;
-      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>      _ccmibarrier;
-      XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>    _ccmibinombroadcast;
-      XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>     _ccmiringbroadcast;
-      XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>     _ccmiringallreduce;
-      XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep> _ccmibinomialallreduce;
-      XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>         _ccmialltoallv;
+      XMI::CollInfo::CCMIAmbroadcastInfo<T_Device,T_Sysdep>        _ccmiambroadcast;
+      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device,T_Sysdep>       _ccmibarrier;
+      XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device,T_Sysdep>     _ccmibinombroadcast;
+      XMI::CollInfo::CCMIRingBroadcastInfo<T_Device,T_Sysdep>      _ccmiringbroadcast;
+      XMI::CollInfo::CCMIRingAllreduceInfo<T_Device,T_Sysdep>      _ccmiringallreduce;
+      XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device,T_Sysdep>  _ccmibinomialallreduce;
+      XMI::CollInfo::CCMIAlltoallvInfo<T_Device,T_Sysdep>          _ccmialltoallv;
 
       RegQueue<T_Device>                                           _broadcasts;
       RegQueue<T_Device>                                           _ambroadcasts;
