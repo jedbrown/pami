@@ -97,7 +97,7 @@ namespace XMI
                                     xmi_client_t              client,
                                     size_t                     contextid,
                                     xmi_result_t             & status) :
-              _send_model (device,client, contextid),
+              _send_model (device, client, contextid),
               _fromRank (origin_task),
               _client (client),
               _contextid (contextid),

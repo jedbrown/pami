@@ -75,6 +75,7 @@ namespace XMI
             {
               uint16_t * hdr = (uint16_t *) this->getHeader ();
               hdr[(T_Fifo::packet_header_size>>1)-1] = dispatch;
+		//printf("hdr:%p\n packet_header_size:%d\n", hdr, T_Fifo::packet_header_size);
             };
 
             template <unsigned T_Bytes>
@@ -92,20 +93,18 @@ namespace XMI
             };
 
             ///
-            /// \brief Write metadata and iovec data to the packet
+            /// \brief Write iovec payload data to the packet
             ///
             /// This method allows for template specialization via the T_Niov
             /// template parameter.
             ///
-            /// \param[in] dispatch  Packet dispatch identifier
-            /// \param[in] metadata  Pointer to packet metadata source
             /// \param[in] iov       Array of T_Niov source data iovec elements
             ///
             template <unsigned T_Niov>
             inline void writePayload (struct iovec (&iov)[T_Niov])
             {
               unsigned i, j, n;
-
+//fprintf (stderr, "PacketImpl::writePayload (iov[%zd])\n", T_Niov);
               if (T_Niov == 1)
                 {
                   // Constant-expression template specialization.
@@ -124,13 +123,17 @@ namespace XMI
                   uint32_t * dst = (uint32_t *) this->getPayload ();
                   uint32_t * src = (uint32_t *) iov[0].iov_base;
                   n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
+		  //printf("iov[0] size:%d\n", iov[0].iov_len);
 
+//fprintf (stderr, "PacketImpl::writePayload (iov[%zd]), 1st, n = %zd, dst = %p, src = %p\n", T_Niov, n, dst, src);
                   for (i = 0; i < n; i++) dst[i] = src[i];
 
                   dst = (uint32_t *)((uint8_t *) dst + iov[0].iov_len);
                   src = (uint32_t *) iov[1].iov_base;
                   n = (iov[1].iov_len >> 2) + ((iov[1].iov_len & 0x03) != 0);
+		  //printf("iov[1] size:%d\n", iov[1].iov_len);
 
+//fprintf (stderr, "PacketImpl::writePayload (iov[%zd]), 2nd, n = %zd, dst = %p, src = %p\n", T_Niov, n, dst, src);
                   for (i = 0; i < n; i++) dst[i] = src[i];
 
                   return;
@@ -151,6 +154,28 @@ namespace XMI
                   payload += iov[i].iov_len;
                 }
             };
+
+            ///
+            /// \brief Write a single contiguous payload data buffer to the packet
+            ///
+            /// This method allows for template specialization via the T_Niov
+            /// template parameter.
+            ///
+            /// \param[in] payload       Address of the buffer to write to the packet payload
+            /// \param[in] length        Number of bytes to write
+            ///
+            inline void writePayload (void * payload, size_t bytes)
+            {
+              unsigned i, n;
+
+              n = (bytes >> 2) + ((bytes & 0x03) != 0);
+              uint32_t * dst = (uint32_t *) this->getPayload ();
+              uint32_t * src = (uint32_t *) payload;
+
+              for (i = 0; i < n; i++) dst[i] = src[i];
+
+              return;
+            }
 
             ///
             /// \brief Write iovec data to the packet payload
@@ -307,6 +332,14 @@ namespace XMI
                                                size_t           niov,
                                                size_t         & sequence);
 
+        inline xmi_result_t writeSinglePacket (size_t           fnum,
+                                               uint16_t         dispatch_id,
+                                               void           * metadata,
+                                               size_t           metasize,
+                                               void           * payload,
+                                               size_t           length,
+                                               size_t         & sequence);
+
         inline xmi_result_t writeSinglePacket (size_t        ififo,
                                                ShmemMessage * msg,
                                                size_t       & sequence);
@@ -390,6 +423,7 @@ namespace XMI
     template <class T_Fifo>
     inline bool ShmemDevice<T_Fifo>::isSendQueueEmpty (size_t peer)
     {
+      TRACE_ERR((stderr, "   ShmemDevice<>::isSendQueueEmpty () .. ((__sendQMask >> peer) & 0x01) = %d, __sendQMask = 0x%08x, peer = %zu\n", ((__sendQMask >> peer) & 0x01), __sendQMask, peer));
       return ((__sendQMask >> peer) & 0x01) == 0;
     }
 
@@ -417,17 +451,18 @@ namespace XMI
       unsigned long long t = __global.time.timebase ();
 
       if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
-
 #endif
 
       size_t pktid;
+      TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before nextInjPacket(), fnum = %zu\n", fnum));
       PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
       TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. pkt = %p, pktid = %zd\n", pkt, pktid));
 
       if (pkt != NULL)
         {
-          TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before write()\n"));
+          TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before write(), metadata = %p, metasize = %zd\n", metadata, metasize));
           //if (likely(metadata!=NULL))
+		//printf("metasize:%d T_Niov:%d\n", metasize, T_Niov);
             pkt->writeMetadata ((uint8_t *) metadata, metasize);
           pkt->writeDispatch (dispatch_id);
           pkt->writePayload (iov);
@@ -454,7 +489,7 @@ namespace XMI
       size_t         niov,
       size_t       & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
 
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
@@ -476,11 +511,51 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
 
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+          TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+      return XMI_EAGAIN;
+    };
+
+    template <class T_Fifo>
+    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+      size_t         fnum,
+      uint16_t       dispatch_id,
+      void         * metadata,
+      size_t         metasize,
+      void         * payload,
+      size_t         length,
+      size_t       & sequence)
+    {
+      TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
+
+#ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
+      unsigned long long t = __global.time.timebase ();
+
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+
+#endif
+
+      size_t pktid;
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
+
+      if (pkt != NULL)
+        {
+          //if (likely(metadata!=NULL))
+            pkt->writeMetadata ((uint8_t *) metadata, metasize);
+          pkt->writeDispatch (dispatch_id);
+          pkt->writePayload (payload, length);
+
+          // "produce" the packet into the fifo.
+          _fifo[fnum].producePacket (pktid);
+
+          TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
+          return XMI_SUCCESS;
+        }
+
+      TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %zd, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
       return XMI_EAGAIN;
     };
 
@@ -490,7 +565,7 @@ namespace XMI
       ShmemMessage * msg,
       size_t                 & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
+      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
 
       size_t pktid;
       PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
@@ -507,11 +582,11 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
 
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << XMI_SUCCESS\n", __global.mapping.task(), fnum, msg));
+          TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %p) << XMI_SUCCESS\n", __global.mapping.task(), fnum, msg));
           return XMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::writeSinglePacket (%zd, %p) << XMI_EAGAIN\n", __global.mapping.task(), fnum, msg));
+      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %p) << XMI_EAGAIN\n", __global.mapping.task(), fnum, msg));
       return XMI_EAGAIN;
     };
 
@@ -533,12 +608,13 @@ namespace XMI
       PacketImpl * pkt = NULL;
       uint16_t id;
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->nextRecPacket()\n", __global.mapping.task()));
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before _rfifo->nextRecPacket(), _rfifo = %p\n", __global.mapping.task(), _rfifo));
 
       while ((pkt = (PacketImpl *)_rfifo->nextRecPacket()) != NULL)
         {
           TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_impl()    ... before pkt->getHeader()\n", __global.mapping.task()));
-          mem_sync ();
+          //mem_sync ();
+          mem_isync ();
 
 #ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
           UnexpectedPacket * uepkt = (UnexpectedPacket *) __ndpkt.allocateObject();

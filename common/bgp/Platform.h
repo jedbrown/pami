@@ -15,6 +15,8 @@
 #ifndef __common_bgp_Platform_h__
 #define __common_bgp_Platform_h__
 
+#include "Arch.h"
+
 #define NUM_CORES 4
 #define NUM_SMT 1
 

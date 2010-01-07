@@ -25,21 +25,21 @@ namespace XMI
   {
     namespace Send
     {
-      template <class T_Device, unsigned T_Size = 100>
+      template < class T_Device, unsigned T_Size = 100 >
       class AdaptiveConnection
       {
         private:
-	struct adaptive_connection_t
+          struct adaptive_connection_t
           {
-	    public:
-		    xmi_client_t     client;
+public:
+            xmi_client_t     client;
             size_t          context;
             void           ** array;
           };
 
         public:
           AdaptiveConnection (T_Device & device) :
-            _device (device)
+              _device (device)
           {
           };
 
@@ -54,35 +54,37 @@ namespace XMI
             unsigned first_empty_connection = 0;
             bool found_empty_connection = false;
             bool found_previous_connection = false;
-            for (i=0; i<T_Size; i++)
-            {
-              if (_adaptive_connection[i].array == NULL)
+
+            for (i = 0; i < T_Size; i++)
               {
-                if (!found_empty_connection)
-                {
-                  first_empty_connection = i;
-                  found_empty_connection = true;
-                }
+                if (_adaptive_connection[i].array == NULL)
+                  {
+                    if (!found_empty_connection)
+                      {
+                        first_empty_connection = i;
+                        found_empty_connection = true;
+                      }
+                  }
+                else if (_adaptive_connection[i].client == client && _adaptive_connection[i].context == context)
+                  {
+                    found_previous_connection = true;
+                    connection = _adaptive_connection[i].array;
+                  }
               }
-              else if (_adaptive_connection[i].client == client && _adaptive_connection[i].context == context)
-              {
-                found_previous_connection = true;
-                connection = _adaptive_connection[i].array;
-              }
-            }
 
             if (!found_previous_connection)
-            {
-              if (!found_empty_connection)
               {
-                return NULL;
+                if (!found_empty_connection)
+                  {
+                    return NULL;
+                  }
+
+                _adaptive_connection[first_empty_connection].client = client;
+                _adaptive_connection[first_empty_connection].context = context;
+                _adaptive_connection[first_empty_connection].array =
+                  (void **) calloc (_device.peers(), sizeof(void *));
+                connection = _adaptive_connection[first_empty_connection].array;
               }
-			  _adaptive_connection[first_empty_connection].client = client;
-              _adaptive_connection[first_empty_connection].context = context;
-              _adaptive_connection[first_empty_connection].array =
-                (void **) calloc (_device.peers(), sizeof(void *));
-              connection = _adaptive_connection[first_empty_connection].array;
-            }
 
             return connection;
           }
@@ -94,7 +96,7 @@ namespace XMI
       };
 
       template <class T_Device, unsigned T_Size>
-      struct AdaptiveConnection<T_Device,T_Size>::adaptive_connection_t AdaptiveConnection<T_Device,T_Size>::_adaptive_connection[T_Size];
+      struct AdaptiveConnection<T_Device, T_Size>::adaptive_connection_t AdaptiveConnection<T_Device, T_Size>::_adaptive_connection[T_Size];
     };
   };
 };

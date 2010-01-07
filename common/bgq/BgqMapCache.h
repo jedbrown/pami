@@ -69,6 +69,7 @@ namespace XMI
         size_t       * peer2task;
       } node;
       size_t	size;
+	  size_t	local_size;//hack
     } bgq_mapcache_t;
 
     class BgqMapCache {

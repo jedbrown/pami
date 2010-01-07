@@ -62,7 +62,9 @@ namespace XMI
           /// \brief Read data from a packet device
           ///
           /// \attention All packet device derived classes \b must
-          ///            implement the readData_impl() method.
+          ///            implement the read_impl() method.
+          ///
+          /// \see RecvFunction_t
           ///
           /// \param[in] dst      Destination buffer
           /// \param[in] bytes    Number of bytes to read
@@ -87,8 +89,7 @@ namespace XMI
       /// \param T_Device      Packet device template class
       /// \param T_StateBytes  Transfer state object size in bytes
       ///
-      /// \see Packet::Model
-      /// \see Packet::Device
+      /// \see PacketDevice
       ///
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       class PacketModel
@@ -102,7 +103,7 @@ namespace XMI
           ///
           PacketModel (T_Device & device, xmi_client_t client, size_t context)
           {
-            // This compile time assert verify that the specific packet model
+            // This compile time assert verifies that the specific packet model
             // class, T_Model, has correctly specified the same value for the
             // 'transfer state bytes' template parameter and constant.
             COMPILE_TIME_ASSERT(T_Model::packet_model_state_bytes == T_StateBytes);
@@ -247,15 +248,52 @@ namespace XMI
                              void           * read_recv_func_parm);
 
           ///
-          /// \brief Immediate post of a single packet transfer operation
+          /// \brief Immediate post of a single packet transfer operation.
           ///
           /// The post packet immediate interface allows the packet model
           /// and packet device implementations to optimize for performance by
           /// avoiding the overhead to construct a packet message object. If
           /// the packet device has resources immediately available then the
-          /// packet may be directly posted, otherwise a packet message object
-          /// may be constructed at the location specified to maintain the
-          /// operation state until the completion callback is invoked.
+          /// packet may be directly posted.
+          ///
+          /// The post will return \c true if, and only if, the packet was
+          /// entirely processed by the packet device and the data from \b all
+          /// pointers in the parameter list have been copied or otherwise
+          /// consumed by the packet device. After this method returns it is
+          /// safe to touch the memory pointed to by the metadata and iov
+          /// parameters.
+          ///
+          /// The post will return \c false if the packet device was unable to
+          /// immediately complete the transfer operation. This can be as a
+          /// result of any number of conditions specific to each packet device
+          /// implementation. For example, a "fifo full" condition would result
+          /// in an inability to copy the packet into the fifo. In this case
+          /// the packet device would immediately cease processing the packet
+          /// operation and would return \c false to the caller. The caller
+          /// is expected to handle this condition and perhaps post the packet
+          /// information again using one of the asynchronous packet post
+          /// methods.
+          ///
+          /// It is important to understand the difference between the various
+          /// packet event types for a packet post operation. These events
+          /// include:
+          /// - post begin
+          /// - post complete
+          /// - injection begin
+          /// - injection complete
+          /// - reception
+          ///
+          /// When the post immediate returns \c true this is the same as
+          /// reporting that the "post begin" \b and the "post complete" packet
+          /// events have occured. When the post immediate returns \c false
+          /// this is the same as reporting the \b no packet events have
+          /// occured.
+          ///
+          /// A successful post does not imply that any other events have
+          /// occured. For example, it is \b unknown if:
+          /// - the data has been injected into the network hardware resources
+          /// - the network hardware resources have completed sending the data
+          /// - the destination has received the data
           ///
           /// \note The packet device will only transfer a single packet. The
           ///       payload data will be truncated if more bytes than a single
@@ -265,7 +303,9 @@ namespace XMI
           ///
           /// \note The size of the metadata to be copied into the packet
           ///       is an attribute of the specific packet device associated
-          ///       with this packet model.
+          ///       with this packet model. The metaload data will be truncated
+          ///       if more metadat bytes than a single packet can transfer
+          ///       is specified.
           ///
           /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
           ///
@@ -274,8 +314,8 @@ namespace XMI
           /// \param[in] metasize     Number of metadata bytes
           /// \param[in] iov          Array of iovec elements to transfer
           ///
-          /// \retval true  All data has been immediately sent
-          /// \retval false Resources are not immediately available to complete the transfer
+          /// \retval true  All data has been posted
+          /// \retval false No data has been posted
           ///
           template <unsigned T_Niov>
           inline bool postPacket (size_t         target_rank,
@@ -284,7 +324,42 @@ namespace XMI
                                   struct iovec   (&iov)[T_Niov]);
 
           ///
-          /// \brief Post a single packet transfer operation with completion event notification
+          /// \brief Asynchronous single packet transfer operation with completion event notification
+          ///
+          /// The post packet with notification interfaces are used to
+          /// asynchronously inject a packet to the network resources managed
+          /// by the packet device. The packet device will invoke the
+          /// completion event function when the packet has been completely
+          /// processed.
+          /// 
+          /// The asychronous interfaces allow the packet model and packet
+          /// implementations to optimize for performance by avoiding the
+          /// overhead to construct an internal packet state object if the
+          /// packet device network resources are immediately available.
+          /// In this situation, the completion event function will be
+          /// immediately invoked and the post method will return \c true.
+          ///
+          /// The post will return \c false if the packet device was unable to
+          /// immediately complete the transfer operation. This can be as a
+          /// result of any number of conditions specific to each packet device
+          /// implementation. For example, a "fifo full" condition would result
+          /// in an inability to copy the packet into the fifo, or a "pending post"
+          /// queue may be not empty and the current post packet would need to
+          /// be enqueued. In these cases the packet device would immediately
+          /// cease processing the packet and instead may instantiate a class
+          /// into the \c state array provided as an input parameter. This
+          /// device-specific internal state object may be used to track the
+          /// state of the packet transfer operation until all of the packet
+          /// data has been copied or otherwise processed. When the packet
+          /// transfer is complete the completion event function will be
+          /// invoked.
+          ///
+          /// \attention The metadata pointer, iovec array pointer, and the
+          ///            base address pointers in all of the iovec elements
+          ///            \b must continue to reference valid information until
+          ///            the completion event function is invoked. In other
+          ///            words, do not put metadata structures, iovec arrays
+          ///            or data buffers on the stack.
           ///
           /// \note The packet device will only transfer a single packet. The
           ///       payload data will be truncated if more bytes than a single
@@ -294,24 +369,27 @@ namespace XMI
           ///
           /// \note The size of the metadata to be copied into the packet
           ///       is an attribute of the specific packet device associated
-          ///       with this packet model.
+          ///       with this packet model. The metaload data will be truncated
+          ///       if more metadat bytes than a single packet can transfer
+          ///       is specified.
           ///
           /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
           ///
-          /// \param[in] state        Byte array reference for the packet transfer state
-          /// \param[in] cb           Callback to invoke when the operation completes
+          /// \param[in] state        Byte array for the packet transfer state
+          /// \param[in] fn           Event function to invoke when the operation completes
+          /// \param[in] cookie       Event function cookie
           /// \param[in] target_rank  Global rank of the packet destination process
           /// \param[in] metadata     Virtual address of metadata buffer
           /// \param[in] metasize     Number of metadata bytes
-          /// \param[in] payload      Virtual address of source buffer
-          /// \param[in] bytes        Number of bytes to transfer
+          /// \param[in] iov          Iovec array to specify the data to be copied into the packet payload
+          /// \param[in] niov         Number of iovec array elements
           ///
-          /// \retval true  Packet operation completed and the completion
-          ///               callback was invoked
+          /// \retval true  Packet transfer operation completed and the
+          ///               completion event function was invoked
           ///
-          /// \retval false Packet operation did not complete and the packet
-          ///               device must be advanced until the completion
-          ///               callback is invoked
+          /// \retval false Packet transfer operation did not complete and the
+          ///               packet device must be advanced until the completion
+          ///               event function is invoked
           ///
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
@@ -322,6 +400,9 @@ namespace XMI
                                   struct iovec       * iov,
                                   size_t               niov);
 
+          ///
+          /// \copydoc ???
+          ///
           template <unsigned T_Niov>
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
@@ -332,9 +413,23 @@ namespace XMI
                                   struct iovec         (&iov)[T_Niov]);
 
           ///
+          /// often, only a single contiguous buffer is sent in the packet
+          /// payload.  Create a special-case interface for this which removes
+          /// the iovec management responsibilities...
+          ///
+          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
+                                  xmi_event_function   fn,
+                                  void               * cookie,
+                                  size_t               target_rank,
+                                  void               * metadata,
+                                  size_t               metasize,
+                                  void               * payload,
+                                  size_t               length);
+
+          ///
           /// \brief Post a multiple packet transfer operation
           ///
-          /// Transfer one or more contiguous source buffers to the destination
+          /// Transfer a contiguous source buffer to the destination
           /// task as a stream of individual packets.  The metadata is copied
           /// into each packet header and is unchanged during the duration of
           /// the transfer.
@@ -368,15 +463,14 @@ namespace XMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          template <unsigned T_Niov>
           inline bool postMultiPacket (uint8_t              (&state)[T_StateBytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
                                        size_t               target_rank,
                                        void               * metadata,
                                        size_t               metasize,
-                                       struct iovec         (&iov)[T_Niov]);
-
+                                       void               * payload,
+                                       size_t               length);
       };
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
@@ -468,17 +562,31 @@ namespace XMI
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      template <unsigned T_Niov>
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+                                                                            xmi_event_function   fn,
+                                                                            void               * cookie,
+                                                                            size_t               target_rank,
+                                                                            void               * metadata,
+                                                                            size_t               metasize,
+                                                                            void               * payload,
+                                                                            size_t               length)
+      {
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
+                                                             metadata, metasize, payload, length);
+      }
+
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postMultiPacket (uint8_t              (&state)[T_StateBytes],
                                                                                  xmi_event_function   fn,
                                                                                  void               * cookie,
                                                                                  size_t               target_rank,
                                                                                  void               * metadata,
                                                                                  size_t               metasize,
-                                                                                 struct iovec         (&iov)[T_Niov])
+                                                                                 void               * payload,
+                                                                                 size_t               length)
       {
         return static_cast<T_Model*>(this)->postMultiPacket_impl (state, fn, cookie, target_rank,
-                                                                  metadata, metasize, iov);
+                                                                  metadata, metasize, payload, length);
       }
     };
   };

@@ -38,6 +38,10 @@ namespace XMI
       __global.mapping.nodeAddr (nodeaddr);
       _global_task = nodeaddr.global;
       _local_task  = nodeaddr.local;
+#ifdef __bgq__
+	  unsigned stride = 16/_num_procs; //hack
+	  _local_task = _local_task/stride;//hack
+#endif
 
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 1\n", __global.mapping.task()));
 
@@ -108,7 +112,11 @@ namespace XMI
       size_t peer = 0;
       __global.mapping.node2peer (address, peer);
 
+#ifdef __bgq__
+      return task; //hack
+#else
       return peer;
+#endif
     }
 
     ///

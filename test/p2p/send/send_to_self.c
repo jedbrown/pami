@@ -60,7 +60,8 @@ static void send_done_remote (xmi_context_t   context,
 
 int main (int argc, char ** argv)
 {
-  volatile size_t send_active = 2;
+  //volatile size_t send_active = 2;
+  volatile size_t send_active = 1;
   volatile size_t recv_active = 1;
 
 
@@ -69,19 +70,23 @@ int main (int argc, char ** argv)
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
 
+    fprintf (stderr, "Before Client initialize\n");
   result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
     return 1;
   }
+    fprintf (stderr, "After Client initialize\n");
 
+    fprintf (stderr, "before context createv\n");
 	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
     return 1;
   }
+    fprintf (stderr, "after context createv\n");
 
   xmi_configuration_t configuration;
 
@@ -128,8 +133,10 @@ int main (int argc, char ** argv)
   parameters.send.data.iov_len    = sizeof(size_t);
   parameters.events.cookie    = (void *) &send_active;
   parameters.events.local_fn  = send_done_local;
-  parameters.events.remote_fn = send_done_remote;
-
+  //parameters.events.remote_fn = send_done_remote;
+  parameters.events.remote_fn = NULL;
+#if 1
+  for (int iter=0; iter < 100; iter++)
   {
     fprintf (stderr, "before send ...\n");
     parameters.send.task = task_id;
@@ -147,8 +154,9 @@ int main (int argc, char ** argv)
       }
     }
     fprintf (stderr, "... after send-recv advance loop\n");
+	send_active = recv_active = 1;
   }
-
+#endif
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)
   {

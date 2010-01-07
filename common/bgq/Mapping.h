@@ -78,9 +78,11 @@ namespace XMI
           _coords.reserved =  0;
           _coords.core     = _p;
 
-          coord2node (_t, _a, _b, _c, _d, _e, _p,
-                      _nodeaddr.global, _nodeaddr.local);
+          //coord2node (_t, _a, _b, _c, _d, _e, _p,
+          //            _nodeaddr.global, _nodeaddr.local);
 
+          coord2node (_a, _b, _c, _d, _e, _p,_t,			//fix?
+                      _nodeaddr.global, _nodeaddr.local);
           TRACE_ERR((stderr, "Mapping() .. coords: (%zd %zd %zd %zd %zd %zd), node: (%zd %zd)\n", _a, _b, _c, _d, _e, _t, _p, _nodeaddr.global, _nodeaddr.local));
         };
 
@@ -173,7 +175,8 @@ namespace XMI
         ///
         inline size_t task_impl()
         {
-          return _task;
+          //return _task;  
+		 return _p/(16/_mapcache.local_size); //hack
         }
 
         ///
@@ -182,7 +185,8 @@ namespace XMI
         ///
         inline size_t size_impl()
         {
-          return _mapcache.size;
+          //return _mapcache.size;
+          return _mapcache.local_size; //hack
         }
 
         ///
@@ -392,7 +396,8 @@ namespace XMI
         /// \see XMI::Interface::Mapping::Node::nodePeers()
         inline xmi_result_t nodePeers_impl (size_t & peers)
         {
-          peers = _peers;
+          //peers = _peers;
+		 peers = _mapcache.local_size; //hack
           return XMI_SUCCESS;
         };
 
@@ -421,6 +426,7 @@ namespace XMI
           TRACE_ERR((stderr, "Mapping::task2node_impl(%zd) >>\n", task));
 
           uint32_t coords = _mapcache.torus.task2coords[task].raw;
+          TRACE_ERR((stderr, "Mapping::coords(%x) >>\n", coords));
 
           // global coordinate is just the a,b,c,d,e torus coords.
           address.global = (coords >> 5) & 0x01ffffff;
@@ -541,6 +547,8 @@ xmi_result_t XMI::Mapping::init(bgq_mapcache_t &mapcache,
 	_mapcache.node.local2peer   = mapcache.node.local2peer;
 	_mapcache.node.peer2task    = mapcache.node.peer2task;
 	_mapcache.size    = mapcache.size;
+    _mapcache.local_size    = mapcache.local_size; //hack
+
 
 	return XMI_SUCCESS;
 }

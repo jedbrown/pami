@@ -23,5 +23,8 @@ inline void mem_sync()
   // todo:  implement
 }
 
+#define mem_isync()   mem_sync()
+
+
 
 #endif // __xmi_arch_i386_h__

@@ -120,16 +120,19 @@ namespace XMI
           };
 
 
-		 struct package_t{
-		     header_metadata_t             header;
-		     pkt_t                         pkt;               ///Array of pkt_t to send
-		 };
+          struct package_t
+          {
+            header_metadata_t             header;
+            pkt_t                         pkt;               ///Array of pkt_t to send
+            struct iovec                  iov[2];
+          };
 
 
-		 struct window_t{
-		     send_state_t *               va_send;
-			 package_t                    pkg[WINDOW];               ///Array of pkt_t to send
-		 };
+          struct window_t
+          {
+            send_state_t *               va_send;
+            package_t                    pkg[WINDOW];               ///Array of pkt_t to send
+          };
 
 
           //send_state_class
@@ -143,11 +146,12 @@ namespace XMI
               recv_state_t *       va_recv;         /// Receiver Virtual Address
               size_t               send_bytes;      /// Total bytes to send
               char *               send_buffer;     /// Send Buffer address
-              pkt_t                pkt;          /// packet
+              pkt_t                pkt;             /// packet
               rts_info_t           rts;             /// RTS struct info
+              struct iovec         iov[2];          /// iovec array used to post the rts and data packets
               header_metadata_t    header;          /// header_metadata
               xmi_event_function   cb_data;         /// Callback to execute when data have been sent
-			  xmi_event_function   cb_rts;          /// Callback to execute when rts have been sent
+              xmi_event_function   cb_rts;          /// Callback to execute when rts have been sent
               void   *             pf;              /// Pointer to receiver parameters
               void                 * msginfo;       /// Message info
               xmi_event_function   local_fn;        /// Local Completion callback.
@@ -156,17 +160,8 @@ namespace XMI
 
               AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive;
 
-
               window_t        window[2];               ///Array of pkt_t to send
-
-
           };
-
-
-
-
-
-
 
         public:
 
@@ -190,15 +185,15 @@ namespace XMI
                                  size_t                     contextid,
                                  xmi_result_t             & status) :
               _rts_model (device, client, contextid),
-              _rts_ack_model (device,client, contextid),
-              _rts_data_model (device,client, contextid),
-              _data_model (device,client, contextid),
-              _cts_model (device,client, contextid),
-			  _ack_model (device,client, contextid),
+              _rts_ack_model (device, client, contextid),
+              _rts_data_model (device, client, contextid),
+              _data_model (device, client, contextid),
+              _cts_model (device, client, contextid),
+              _ack_model (device, client, contextid),
               _device (device),
               _fromRank (origin_task),
               _client (client),
-			  _contextid (contextid),
+              _contextid (contextid),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _connection ((void **)NULL),
@@ -270,15 +265,15 @@ namespace XMI
                             TRACE_ERR((stderr, "AdaptiveSimple() [5] status = %d\n", status));
 
 
-							if (status == XMI_SUCCESS)
-                                    {
-                                      status = _ack_model.init (dispatch,
-                                                             dispatch_ack_direct, this,
-                                                              dispatch_ack_read, this);
-                                                   TRACE_ERR((stderr, "AdaptiveSimple() [6] status = %d\n", status));
-                          }
+                            if (status == XMI_SUCCESS)
+                              {
+                                status = _ack_model.init (dispatch,
+                                                          dispatch_ack_direct, this,
+                                                          dispatch_ack_read, this);
+                                TRACE_ERR((stderr, "AdaptiveSimple() [6] status = %d\n", status));
+                              }
 
-						  }
+                          }
                       }
                   }
               }
@@ -287,249 +282,187 @@ namespace XMI
 
 
 
-		  ///
-		  /// Function to PostRTS
-		  ///
+          ///
+          /// Function to PostRTS
+          ///
 
 
-		  static int PostRTS(send_state_t * send){
-
-
-
-                if (send->rts.bytes == 0)
+          static int PostRTS(send_state_t * send)
+          {
+            if (send->rts.bytes == 0)
+              {
+                // This branch should be resolved at compile time and optimized out.
+                if (sizeof(rts_info_t) <= T_Model::packet_model_metadata_bytes)
                   {
-                    // This branch should be resolved at compile time and optimized out.
-                    if (sizeof(rts_info_t) <= T_Model::packet_model_metadata_bytes)
+                    TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata\n"));
+
+                    if (send->rts.mbytes > T_Model::packet_model_payload_bytes)
                       {
-                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata\n"));
-
-                        if (send->rts.mbytes > T_Model::packet_model_payload_bytes)
-                          {
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
 
-                                TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
-                                //send RTS info without message info
-                                struct iovec v[1];
-                                v[0].iov_base = NULL;
-                                v[0].iov_len  = 0;
-                                send->adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
-                                                       NULL,                     ///Callback to execute when done
-                                                       (void *) send,            /// Cookie
-                                                       send->rts.destRank,                     ///Target Rank
-                                                       (void *)&send->rts,       ///rts_info_t struct  metadata
-                                                       sizeof(rts_info_t),       ///sizeof rts_info_t  metadata
-                                                       v);
+                        //send RTS info without message info
+                        send->adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
+                                                               NULL,                     ///Callback to execute when done
+                                                               (void *) send,            /// Cookie
+                                                               send->rts.destRank,                     ///Target Rank
+                                                               (void *)&send->rts,       ///rts_info_t struct  metadata
+                                                               sizeof(rts_info_t),       ///sizeof rts_info_t  metadata
+                                                               (void *) NULL, 0);
 
-                          }
-                        else
-                          {
-
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata fit in a single packet payload\n"));
-                              struct iovec v[1];
-                                v[0].iov_base = (void *)send->msginfo;
-                                v[0].iov_len  = send->rts.mbytes;
-                            //Everything OK                               ///Post rts package
-
-							            if (send->remote_fn == NULL){
-
-												send->adaptive->_rts_model.postPacket (send->pkt,             ///T_Message to send
-																send_complete,                     ///Callback to execute when done
-																(void *) send,             /// Cookie
-																send->rts.destRank,                        ///Target Rank
-															   (void *)&send->rts,          ///rts_info_t struct metadata
-															   sizeof(rts_info_t),          ///sizeof rts_info_t metadata
-															   v);                     ///Number of bytes
-
-										//End Sender side, 0 bytes
-										}else{
-
-												send->adaptive->_rts_model.postPacket (send->pkt,             ///T_Message to send
-																NULL,                     ///Callback to execute when done
-																(void *) send,             /// Cookie
-																send->rts.destRank,                        ///Target Rank
-															   (void *)&send->rts,          ///rts_info_t struct metadata
-															   sizeof(rts_info_t),          ///sizeof rts_info_t metadata
-															   v);                     ///Number of
-
-
-
-							           }
-
-                        }
                       }
-                    else  //sizeof(rts_info_t) > T_Model::packet_model_metadata_bytes
+                    else
                       {
-                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata\n"));
 
-                        if (send->rts.mbytes  > (T_Model::packet_model_payload_bytes - sizeof(rts_info_t)))
-                          {
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t fits in the packet metadata, application metadata fit in a single packet payload\n"));
+                        //Everything OK                               ///Post rts package
+                        xmi_event_function fn = NULL;
+                        if (unlikely(send->remote_fn == NULL))
+                          fn = send_complete;
 
+                        send->adaptive->_rts_model.postPacket (send->pkt,             ///T_Message to send
+                                                               fn,                     ///Callback to execute when done
+                                                               (void *) send,             /// Cookie
+                                                               send->rts.destRank,                        ///Target Rank
+                                                               (void *)&send->rts,          ///rts_info_t struct metadata
+                                                               sizeof(rts_info_t),          ///sizeof rts_info_t metadata
+                                                               (void *)send->msginfo,
+                                                               send->rts.mbytes);                     ///Number of bytes
+                      }
+                  }
+                else  //sizeof(rts_info_t) > T_Model::packet_model_metadata_bytes
+                  {
+                    TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata\n"));
 
-
-                                TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
-
-                                struct iovec v[1];
-                                v[0].iov_base = (void *)&send->rts;
-                                v[0].iov_len  = sizeof(rts_info_t);
-                                send->adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
-                                                       NULL,                     ///Callback to execute when done
-                                                       (void *) send,            /// Cookie
-                                                       send->rts.destRank,                     ///Target Rank
-                                                       (void *)NULL,             ///Metadata
-                                                       0,                        ///Metadata size
-                                                       v);
-
-                          }
-                        else
-                          {
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
-
-                            //OK CASE
-                            struct iovec v[2];
-                            v[0].iov_base = (void *)&send->rts;
-                            v[0].iov_len  = sizeof(rts_info_t);
-                            v[1].iov_base = (void *)send->msginfo;
-                            v[1].iov_len  = send->rts.mbytes;
+                    if (send->rts.mbytes  > (T_Model::packet_model_payload_bytes - sizeof(rts_info_t)))
+                      {
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
 
- 							if (send->remote_fn == NULL){
 
-                                   send->adaptive->_rts_model.postPacket (send->pkt,       ///T_Message to send
-                                                   send_complete,                    ///Callback to execute when done
-                                                   (void *) send,             /// Cookie
-                                                   send->rts.destRank,                        ///Target Rank
-                                                   (void *)NULL,                ///Metadata
-                                                   0,                           ///Metadata size
-                                                   v);
-							}else{
-							    send->adaptive->_rts_model.postPacket (send->pkt,       ///T_Message to send
-                                                   NULL,                    ///Callback to execute when done
-                                                   (void *) send,             /// Cookie
-                                                   send->rts.destRank,                        ///Target Rank
-                                                   (void *)NULL,                ///Metadata
-                                                   0,                           ///Metadata size
-                                                   v);
-							}
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
-                            //End Sender side, 0 bytes
+                        send->adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
+                                                               NULL,                     ///Callback to execute when done
+                                                               (void *) send,            /// Cookie
+                                                               send->rts.destRank,                     ///Target Rank
+                                                               (void *)NULL,             ///Metadata
+                                                               0,                        ///Metadata size
+                                                               (void *) & send->rts,
+                                                               sizeof(rts_info_t));
 
-                          }
+                      }
+                    else
+                      {
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. zero-byte data special case, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
+
+                        //OK CASE
+                        send->iov[0].iov_base = (void *) & send->rts;
+                        send->iov[0].iov_len  = sizeof(rts_info_t);
+                        send->iov[1].iov_base = (void *)send->msginfo;
+                        send->iov[1].iov_len  = send->rts.mbytes;
+
+                        xmi_event_function fn = NULL;
+                        if (unlikely(send->remote_fn == NULL))
+                          fn = send_complete;
+
+                        send->adaptive->_rts_model.postPacket (send->pkt,       ///T_Message to send
+                                                               fn,                    ///Callback to execute when done
+                                                               (void *) send,             /// Cookie
+                                                               send->rts.destRank,                        ///Target Rank
+                                                               (void *)NULL,                ///Metadata
+                                                               0,                           ///Metadata size
+                                                               send->iov);
+                        //End Sender side, 0 bytes
+                      }
+                  }
+              }
+            else
+              {
+                if (sizeof(rts_info_t) <= T_Model::packet_model_metadata_bytes)
+                  {
+                    TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata\n"));
+
+                    if (send->rts.mbytes  > T_Model::packet_model_payload_bytes)
+                      {
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
+
+
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
+
+                        send->adaptive->_rts_model.postPacket (send->pkt,           ///T_Message to send
+                                                               NULL,                       ///Callback to execute when done
+                                                               (void *) send,              /// Cookie
+                                                               send->rts.destRank,                       ///Target Rank
+                                                               (void *)&send->rts,         ///rts_info_t struct metadata
+                                                               sizeof(rts_info_t),         ///sizeof rts_info_t metadata
+                                                               (void *) NULL,
+                                                               0);
+                      }
+                    else
+                      {
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata fit in a single packet payload\n"));
+
+                        send->iov[0].iov_base = (void *) & send->rts;
+                        send->iov[0].iov_len  = sizeof(rts_info_t);
+                        send->iov[1].iov_base = (void *)send->msginfo;
+                        send->iov[1].iov_len  = send->rts.mbytes;
+
+                        //Everything OK
+                        send->adaptive->_rts_model.postPacket (send->pkt,
+                                                               NULL,
+                                                               send->cookie,
+                                                               send->rts.destRank,
+                                                               (void *)&send->rts,
+                                                               sizeof(rts_info_t),
+                                                               send->iov);
                       }
                   }
                 else
                   {
-                    if (sizeof(rts_info_t) <= T_Model::packet_model_metadata_bytes)
+                    TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata\n"));
+
+                    if (send->rts.mbytes > (T_Model::packet_model_payload_bytes - sizeof(rts_info_t)))
                       {
-                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata\n"));
-
-                        if (send->rts.mbytes  > T_Model::packet_model_payload_bytes)
-                          {
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
 
 
-                                TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
 
-                                struct iovec v[1];
-                                v[0].iov_base = NULL;
-                                v[0].iov_len  = 0;
-                                send->adaptive->_rts_model.postPacket (send->pkt,           ///T_Message to send
-                                                       NULL,                       ///Callback to execute when done
-                                                       (void *) send,              /// Cookie
-                                                       send->rts.destRank,                       ///Target Rank
-                                                       (void *)&send->rts,         ///rts_info_t struct metadata
-                                                       sizeof(rts_info_t),         ///sizeof rts_info_t metadata
-                                                       v);
-
-                          }
-                        else
-                          {
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t fits in the packet metadata, application metadata fit in a single packet payload\n"));
-
-
-							struct iovec v[2];
-                            v[0].iov_base = (void *)&send->rts;
-                            v[0].iov_len  = sizeof(rts_info_t);
-                            v[1].iov_base = (void *)send->msginfo;
-                            v[1].iov_len  = send->rts.mbytes;
-
-
-                            //Everything OK
-                            send->adaptive->_rts_model.postPacket (send->pkt,
-                                                   NULL,
-                                                   send->cookie,
-                                                   send->rts.destRank,
-                                                   (void *)&send->rts,
-                                                   sizeof(rts_info_t),
-                                                  v);
-                          }
+                        send->adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
+                                                               NULL,                     ///Callback to execute when done
+                                                               (void *) send,            ///Cookie
+                                                               send->rts.destRank,                     ///Target Rank
+                                                               (void *)NULL,             ///Metadata
+                                                               0,                        ///Metadata size
+                                                               (void *) & send->rts,
+                                                               sizeof(rts_info_t));
                       }
                     else
                       {
-                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata\n"));
 
-                        if (send->rts.mbytes > (T_Model::packet_model_payload_bytes - sizeof(rts_info_t)))
-                          {
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload\n"));
+                        TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
 
+                        send->iov[0].iov_base = (void *) & send->rts;
+                        send->iov[0].iov_len  = sizeof(rts_info_t);
+                        send->iov[1].iov_base = (void *)send->msginfo;
+                        send->iov[1].iov_len  = send->rts.mbytes;
 
-                                TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata does not fit in a single packet payload, xmi_task_t does fit in the message metadata\n"));
-
-                                struct iovec v[1];
-                                v[0].iov_base = (void *)&send->rts;
-                                v[0].iov_len  = sizeof(rts_info_t);
-
-                                send->adaptive->_rts_model.postPacket (send->pkt,         ///T_Message to send
-                                                       NULL,                     ///Callback to execute when done
-                                                       (void *) send,            ///Cookie
-                                                       send->rts.destRank,                     ///Target Rank
-                                                       (void *)NULL,             ///Metadata
-                                                       0,                        ///Metadata size
-                                                       v);
-
-                          }
-                        else
-                          {
-
-                            TRACE_ERR((stderr, "AdaptiveSimple::simple_impl() .. with data, protocol rts_info_t does not fit in the packet metadata, application metadata fits in a single packet payload\n"));
-
-                            struct iovec v[2];
-                            v[0].iov_base = (void *)&send->rts;
-                            v[0].iov_len  = sizeof(rts_info_t);
-                            v[1].iov_base = (void *)send->msginfo;
-                            v[1].iov_len  = send->rts.mbytes;
-
-                            send->adaptive->_rts_model.postPacket (send->pkt,
-                                                   NULL,
-                                                   (void *)send->cookie,
-                                                   send->rts.destRank,
-                                                   (void *)NULL,
-                                                   0,
-                                                   v);
-                          }
+                        send->adaptive->_rts_model.postPacket (send->pkt,
+                                                               NULL,
+                                                               (void *)send->cookie,
+                                                               send->rts.destRank,
+                                                               (void *)NULL,
+                                                               0,
+                                                               send->iov);
                       }
                   }
+              }
 
-				  return 0;
-				  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            return 0;
+          }
 
           ///
           /// \brief Start a new simple send adaptive operation.
@@ -568,10 +501,10 @@ namespace XMI
 
             send->header.offset = 0;                           //initialized RTS offset
             send->header.bsend = 0;                           //initialized RTS bytes
-			send->window[0].va_send = send;
-			send->window[1].va_send = send;
+            send->window[0].va_send = send;
+            send->window[1].va_send = send;
 
-			// Set the acknowledgement information to the virtual address of
+            // Set the acknowledgement information to the virtual address of
             // send state object on the origin task if a local callback of the
             // remote receive completion event is requested. If this is set to
             // NULL no acknowledgement will be received by the origin task.
@@ -593,7 +526,7 @@ namespace XMI
             //Send if queue is empty
             if (_queue[_fromRank].isEmpty())
               {
-			            PostRTS(send);
+                PostRTS(send);
               }
 
             //Save in queue object to send
@@ -662,11 +595,11 @@ namespace XMI
           T_Model         _rts_data_model;
           T_Model         _data_model;
           T_Model         _cts_model;
-		  T_Model         _ack_model;
+          T_Model         _ack_model;
           T_Device      & _device;
           xmi_task_t      _fromRank;
           xmi_client_t   _client;
-		  size_t      _contextid;
+          size_t      _contextid;
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
           void ** _connection;
@@ -676,7 +609,7 @@ namespace XMI
 
           static Queue *    _queue;
 
-           size_t _counter;
+          size_t _counter;
           ///
           /// \brief Direct send rts packet dispatch.
           ///
@@ -737,7 +670,7 @@ namespace XMI
             rcv->msgbuff = (char *) malloc (sizeof (char*) * send->mbytes);  ///Allocate buffer for Metadata
             rcv->msgbytes = 0;                                            ///Initalized received bytes
 
-            rcv->ackinfo=send->ackinfo;
+            rcv->ackinfo = send->ackinfo;
 
 
 
@@ -779,33 +712,31 @@ namespace XMI
                     // state memory which was allocated above.
 
 
-									if (rcv->ackinfo != NULL)
-												  {
-													TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  ACK was sent \n"));
-													struct iovec v[1];
-													v[0].iov_base = (void *) &(rcv->ackinfo);
-													v[0].iov_len  = sizeof (send_state_t *);
+                    if (rcv->ackinfo != NULL)
+                      {
+                        TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  ACK was sent \n"));
 
-													adaptive->_ack_model.postPacket (rcv->pkt,
-																				  receive_complete,
-																				  (void *) rcv,
-																				  rcv->fromRank,
-																				  (void *) NULL,
-																				  0,
-																				  v);
+                        adaptive->_ack_model.postPacket (rcv->pkt,
+                                                         receive_complete,
+                                                         (void *) rcv,
+                                                         rcv->fromRank,
+                                                         (void *) NULL,
+                                                         0,
+                                                         (void *) & (rcv->ackinfo),
+                                                         sizeof (send_state_t *));
 
-								  }
-								else
-								  {
-									// Otherwise, return the receive state object memory to
-									// the memory pool.
-									 receive_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) rcv, XMI_SUCCESS); //Terminate
+                      }
+                    else
+                      {
+                        // Otherwise, return the receive state object memory to
+                        // the memory pool.
+                        receive_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) rcv, XMI_SUCCESS); //Terminate
 
 
-								  }
+                      }
 
 
-					return 0;
+                    return 0;
                   }
 
                 //Post CTS package info
@@ -814,40 +745,32 @@ namespace XMI
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. protocol cts_info_t fits in the packet metadata\n"));
 
 
-                        TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol cts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol cts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                        //Post cts package
-                        struct iovec v[1];
-                        v[0].iov_base = NULL;
-                        v[0].iov_len  = 0;
-                        adaptive->_cts_model.postPacket (rcv->pkt,
-                                                         NULL,
-                                                         rcv->info.cookie,
-                                                         send->fromRank,
-                                                         &rcv->cts,             ///rts_info_t struct
-                                                         sizeof (cts_info_t),   ///rts_info_t size
-                                                         v);
-
+                    //Post cts package
+                    adaptive->_cts_model.postPacket (rcv->pkt,
+                                                     NULL,
+                                                     rcv->info.cookie,
+                                                     send->fromRank,
+                                                     &rcv->cts,             ///rts_info_t struct
+                                                     sizeof (cts_info_t),   ///rts_info_t size
+                                                     (void *) NULL, 0);
                   }
                 else
                   {
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. protocol cts_info_t does not fit in the packet metadata\n"));
 
+                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol cts_info_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                        TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol cts_info_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
-
-                        //Post cts package
-                        struct iovec v[1];
-                        v[0].iov_base = &rcv->cts;
-                        v[0].iov_len  = sizeof (cts_info_t);
-                        adaptive->_cts_model.postPacket (rcv->pkt,
-                                                         NULL,
-                                                         rcv->info.cookie,
-                                                         send->fromRank,
-                                                         NULL,
-                                                         0,
-                                                         v);
-
+                    //Post cts package
+                    adaptive->_cts_model.postPacket (rcv->pkt,
+                                                     NULL,
+                                                     rcv->info.cookie,
+                                                     send->fromRank,
+                                                     NULL,
+                                                     0,
+                                                     (void *) & rcv->cts,
+                                                     sizeof (cts_info_t));
                   }
 
                 return 0;
@@ -866,19 +789,16 @@ namespace XMI
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. header_rts_ack_t fits in the packet metadata\n"));
 
 
-                        TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol header_rts_ack_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol header_rts_ack_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                        //Post rts_ack package
-                        struct iovec v[1];
-                        v[0].iov_base = NULL;
-                        v[0].iov_len  = 0;
-                        adaptive->_rts_ack_model.postPacket (rcv->pkt,
-                                                             NULL,
-                                                             rcv->info.cookie,
-                                                             send->fromRank,
-                                                             (void *)&rcv->header_rts,
-                                                             sizeof (header_rts_ack_t),
-                                                             v);
+                    //Post rts_ack package
+                    adaptive->_rts_ack_model.postPacket (rcv->pkt,
+                                                         NULL,
+                                                         rcv->info.cookie,
+                                                         send->fromRank,
+                                                         (void *)&rcv->header_rts,
+                                                         sizeof (header_rts_ack_t),
+                                                         (void *) NULL, 0);
 
                   }
                 else
@@ -886,20 +806,17 @@ namespace XMI
                     TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() .. protocol header_rts_ack_t does not fit in the packet metadata\n"));
 
 
-                        TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol header_rts_ack_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts() ..  protocol header_rts_ack_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                        //Post rts_ack package
-                        struct iovec v[1];
-                        v[0].iov_base = (void *) &rcv->header_rts;
-                        v[0].iov_len  = sizeof (header_rts_ack_t);
-                        adaptive->_rts_ack_model.postPacket (rcv->pkt,
-                                                             NULL,
-                                                             rcv->info.cookie,
-                                                             send->fromRank,
-                                                             NULL,
-                                                             0,
-                                                             v);
-
+                    //Post rts_ack package
+                    adaptive->_rts_ack_model.postPacket (rcv->pkt,
+                                                         NULL,
+                                                         rcv->info.cookie,
+                                                         send->fromRank,
+                                                         NULL,
+                                                         0,
+                                                         (void *) & rcv->header_rts,
+                                                         sizeof (header_rts_ack_t));
                   }
               }
 
@@ -966,41 +883,37 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() .. protocol header_metadata_t fits in the packet metadata\n"));
 
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                    //Post rts_data package
-                    struct iovec v[1];
-                    v[0].iov_base = (void *)((char *)ack->va_send->msginfo + ack->va_send->header.offset); //Pointer to metadata receiver buffer
-                    v[0].iov_len  = (size_t)ack->va_send->header.bsend; //Send bytes
-                    adaptive->_rts_data_model.postPacket (ack->va_send->pkt,
-                                                          ack->va_send->cb_rts,
-                                                          (void *) ack->va_send,
-                                                          ack->va_send->rts.destRank,
-                                                          (void *) &ack->va_send->header,   //header_metadata
-                                                          sizeof (header_metadata_t),       //bytes
-                                                          v);                                   //Send bytes
-
+                //Post rts_data package
+                adaptive->_rts_data_model.postPacket (ack->va_send->pkt,
+                                                      ack->va_send->cb_rts,
+                                                      (void *) ack->va_send,
+                                                      ack->va_send->rts.destRank,
+                                                      (void *) &ack->va_send->header,   //header_metadata
+                                                      sizeof (header_metadata_t),       //bytes
+                                                      (void *)((char *)ack->va_send->msginfo + ack->va_send->header.offset),//Pointer to metadata receiver buffer
+                                                      (size_t)ack->va_send->header.bsend);                                   //Send bytes
               }
             else
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_ack() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                //Post rts_data package
+                ack->va_send->iov[0].iov_base = (void *) & ack->va_send->header;  //header_metadata
+                ack->va_send->iov[0].iov_len  = sizeof (header_metadata_t);       //bytes
+                ack->va_send->iov[1].iov_base = (void *)((char *)ack->va_send->msginfo + ack->va_send->header.offset); //Pointer to metadata receiver buffer
+                ack->va_send->iov[1].iov_len  = (size_t)ack->va_send->header.bsend; //Send bytes
 
-                    //Post rts_data package
-                    struct iovec v[2];
-                    v[0].iov_base = (void *) & ack->va_send->header;  //header_metadata
-                    v[0].iov_len  = sizeof (header_metadata_t);       //bytes
-                    v[1].iov_base = (void *)((char *)ack->va_send->msginfo + ack->va_send->header.offset); //Pointer to metadata receiver buffer
-                    v[1].iov_len  = (size_t)ack->va_send->header.bsend; //Send bytes
-                    adaptive->_rts_data_model.postPacket (ack->va_send->pkt,
-                                                          ack->va_send->cb_rts,
-                                                          (void *) ack->va_send ,
-                                                          ack->va_send->rts.destRank,      // target rank
-                                                          (void *) NULL,
-                                                          0,
-                                                          v);                                   //Send bytes
+                adaptive->_rts_data_model.postPacket (ack->va_send->pkt,
+                                                      ack->va_send->cb_rts,
+                                                      (void *) ack->va_send ,
+                                                      ack->va_send->rts.destRank,      // target rank
+                                                      (void *) NULL,
+                                                      0,
+                                                      ack->va_send->iov);                                   //Send bytes
 
               }
 
@@ -1097,32 +1010,24 @@ namespace XMI
 
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data().. Done, 0 bytes received\n"));
 
-				if (header->va_recv->ackinfo != NULL)
+                if (header->va_recv->ackinfo != NULL)
                   {
-				    TRACE_ERR((stderr, "   AdaptiveSimple::process_data() ..  ACK was sent \n"));
-                    struct iovec v[1];
-                    v[0].iov_base = (void *) &(header->va_recv->ackinfo);
-                    v[0].iov_len  = sizeof (send_state_t *);
-
+                    TRACE_ERR((stderr, "   AdaptiveSimple::process_data() ..  ACK was sent \n"));
                     adaptive->_ack_model.postPacket (header->va_recv->pkt,
-                                                  receive_complete,
-                                                  (void *) header->va_recv,
-                                                  header->va_recv->fromRank,
-                                                  (void *) NULL,
-                                                  0,
-                                                  v);
-
-				  }
+                                                     receive_complete,
+                                                     (void *) header->va_recv,
+                                                     header->va_recv->fromRank,
+                                                     (void *) NULL,
+                                                     0,
+                                                     (void *) & (header->va_recv->ackinfo),
+                                                     sizeof (send_state_t *));
+                  }
                 else
                   {
                     // Otherwise, return the receive state object memory to
                     // the memory pool.
-					 receive_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) header->va_recv, XMI_SUCCESS); //Terminate
-
-
+                    receive_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) header->va_recv, XMI_SUCCESS); //Terminate
                   }
-
-
 
                 return 0;
               }
@@ -1130,42 +1035,32 @@ namespace XMI
             if (sizeof(cts_info_t) <= T_Model::packet_model_metadata_bytes)
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() .. protocol cts_info_t fits in the packet metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() ..  protocol cts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-
-                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() ..  protocol cts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
-
-                    //Post cts package
-                    struct iovec v[1];
-                    v[0].iov_base = NULL;
-                    v[0].iov_len  = 0;
-                    adaptive->_cts_model.postPacket (header->va_recv->pkt,
-                                                     NULL,
-                                                     header->va_recv->info.cookie,
-                                                     header->va_recv->fromRank,
-                                                     &header->va_recv->cts,               //cts structure
-                                                     sizeof (cts_info_t),
-                                                     v);
+                //Post cts package
+                adaptive->_cts_model.postPacket (header->va_recv->pkt,
+                                                 NULL,
+                                                 header->va_recv->info.cookie,
+                                                 header->va_recv->fromRank,
+                                                 &header->va_recv->cts,               //cts structure
+                                                 sizeof (cts_info_t),
+                                                 (void *) NULL, 0);
 
               }
             else
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() .. protocol cts_info_t does not fit in the packet metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() ..  protocol cts_info_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-
-                    TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data() ..  protocol cts_info_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
-
-                    //Post cts package
-                    struct iovec v[1];
-                    v[0].iov_base = &header->va_recv->cts;
-                    v[0].iov_len  = sizeof (cts_info_t);
-                    adaptive->_cts_model.postPacket (header->va_recv->pkt,
-                                                     NULL,
-                                                     header->va_recv->info.cookie,
-                                                     header->va_recv->fromRank,
-                                                     NULL,
-                                                     0,
-                                                     v);
-
+                //Post cts package
+                adaptive->_cts_model.postPacket (header->va_recv->pkt,
+                                                 NULL,
+                                                 header->va_recv->info.cookie,
+                                                 header->va_recv->fromRank,
+                                                 NULL,
+                                                 0,
+                                                 &header->va_recv->cts,
+                                                 sizeof (cts_info_t));
               }
 
             TRACE_ERR((stderr, ">> AdaptiveSimple::process_rts_data() Done\n"));
@@ -1202,30 +1097,30 @@ namespace XMI
               }
 
 
-			//Define bytes to send
+            //Define bytes to send
             if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
               {
-						//Determine short package
-					if ((rcv->bytes % T_Model::packet_model_payload_bytes) == 0)
-					  rcv->va_send->header.bsend = T_Model::packet_model_payload_bytes;     ///Bytes to send in the package
-					else
-					  rcv->va_send->header.bsend = (rcv->bytes % T_Model::packet_model_payload_bytes);   ///Bytes to send in the package
+                //Determine short package
+                if ((rcv->bytes % T_Model::packet_model_payload_bytes) == 0)
+                  rcv->va_send->header.bsend = T_Model::packet_model_payload_bytes;     ///Bytes to send in the package
+                else
+                  rcv->va_send->header.bsend = (rcv->bytes % T_Model::packet_model_payload_bytes);   ///Bytes to send in the package
 
               }
             else
               {
 
-			       if ((rcv->bytes % (T_Model::packet_model_payload_bytes- sizeof(header_metadata_t))) == 0)
-					  rcv->va_send->header.bsend = T_Model::packet_model_payload_bytes- sizeof(header_metadata_t);     ///Bytes to send in the package
-					else
-					  rcv->va_send->header.bsend = (rcv->bytes % (T_Model::packet_model_payload_bytes- sizeof(header_metadata_t)));   ///Bytes to send in the package
+                if ((rcv->bytes % (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t))) == 0)
+                  rcv->va_send->header.bsend = T_Model::packet_model_payload_bytes - sizeof(header_metadata_t);    ///Bytes to send in the package
+                else
+                  rcv->va_send->header.bsend = (rcv->bytes % (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t)));  ///Bytes to send in the package
               }
 
 
 
 
 
-			//Pointer to protocol
+            //Pointer to protocol
             AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
@@ -1240,30 +1135,25 @@ namespace XMI
               {
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. protocol header_metadata_t fits in the packet metadata\n"));
 
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                //Post First Data package
+                //TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. v[0].iov_base = %p ,v[0].iov_len=%d\n", v[0].iov_base, v[0].iov_len));
 
-                    //Post First Data package
-                    struct iovec v[1];
-                          v[0].iov_base = (void *)(rcv->va_send->send_buffer);
-                          v[0].iov_len  = rcv->va_send->header.bsend;
+                adaptive->_data_model.postPacket   (rcv->va_send->pkt,          ///T_message to send
+                                                    NULL,         ///Callback to execute when done
+                                                    (void *)rcv->va_send,
+                                                    rcv->destRank,                 ///target Rank
+                                                    &rcv->va_send->header,         ///metadata
+                                                    sizeof (header_metadata_t),    ///metadata size
+                                                    (void *)(rcv->va_send->send_buffer),
+                                                    rcv->va_send->header.bsend);
 
-					    TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. v[0].iov_base = %p ,v[0].iov_len=%d\n",v[0].iov_base, v[0].iov_len));
+                cb_data_send(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) &rcv->va_send->window[0], XMI_SUCCESS);  //call function immediatly
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  rcv->va_send->window[0]= %p\n", &rcv->va_send->window[0] ));
 
-
-                       adaptive->_data_model.postPacket   (rcv->va_send->pkt,          ///T_message to send
-                                                         NULL,         ///Callback to execute when done
-                                                         (void *)rcv->va_send,
-                                                         rcv->destRank,                 ///target Rank
-                                                         &rcv->va_send->header,         ///metadata
-                                                         sizeof (header_metadata_t),    ///metadata size
-                                                         v);
-
-							cb_data_send(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) &rcv->va_send->window[0], XMI_SUCCESS);  //call function immediatly
-							TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  rcv->va_send->window[0]= %p\n",&rcv->va_send->window[0] ));
-
-							//cb_data_send(adaptive->_context, (void *) &rcv->va_send->window[1], XMI_SUCCESS);  //call function immediatly
-                            //TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  rcv->va_send->window[1]= %p\n",&rcv->va_send->window[1] ));
+                //cb_data_send(adaptive->_context, (void *) &rcv->va_send->window[1], XMI_SUCCESS);  //call function immediatly
+                //TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  rcv->va_send->window[1]= %p\n",&rcv->va_send->window[1] ));
 
               }
             else
@@ -1271,30 +1161,26 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_cts() ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                    //Post Fisrt data package
-                    struct iovec v[2];
-                    v[0].iov_base = &rcv->va_send->header;         // metadata
-                    v[0].iov_len  = sizeof (header_metadata_t);    // metadata size
+                //Post Fisrt data package
+                rcv->va_send->iov[0].iov_base = &rcv->va_send->header;         // metadata
+                rcv->va_send->iov[0].iov_len  = sizeof (header_metadata_t);    // metadata size
+                rcv->va_send->iov[1].iov_base = (void *)(rcv->va_send->send_buffer );
+                rcv->va_send->iov[1].iov_len  = rcv->va_send->header.bsend;
 
-					v[1].iov_base = (void *)(rcv->va_send->send_buffer );
-                    v[1].iov_len  = rcv->va_send->header.bsend;
+                //call callback
+                adaptive->_data_model.postPacket   ( rcv->va_send->pkt,          ///T_message to send
+                                                     NULL,         ///Callback to execute when done
+                                                     (void *)rcv->va_send,
+                                                     rcv->destRank,                 ///target Rank
+                                                     (void *)NULL,
+                                                     0,
+                                                     rcv->va_send->iov);
 
-
-
-				  					       //call callback
-                            adaptive->_data_model.postPacket   ( rcv->va_send->pkt,          ///T_message to send
-                                                         NULL,         ///Callback to execute when done
-                                                         (void *)rcv->va_send,
-                                                         rcv->destRank,                 ///target Rank
-                                                         (void *)NULL,
-                                                         0,
-                                                         v);
-
-				             //call cb_data send
-				             cb_data_send(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) &rcv->va_send->window[0], XMI_SUCCESS);  //call function immediatly
-							//cb_data_send(adaptive->_context, (void *) &rcv->va_send->window[1], XMI_SUCCESS);  //call function immediatly
+                //call cb_data send
+                cb_data_send(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) &rcv->va_send->window[0], XMI_SUCCESS);  //call function immediatly
+                //cb_data_send(adaptive->_context, (void *) &rcv->va_send->window[1], XMI_SUCCESS);  //call function immediatly
 
 
               }
@@ -1304,24 +1190,24 @@ namespace XMI
 
             //Check queue is not empty
             if (!adaptive->_queue[adaptive->_fromRank].isEmpty())
-               {
+              {
                 //recover next object to send
                 send_state_t * send = (send_state_t *) (adaptive->_queue[adaptive->_fromRank].peekHead());
 
 
-				PostRTS(send);
+                PostRTS(send);
 
-			   }
+              }
 
             TRACE_ERR((stderr, ">> AdaptiveSimple::process_cts()\n"));
 
 
-			//Terminate Sender
-			// if (rcv->va_send->remote_fn == NULL){
+            //Terminate Sender
+            // if (rcv->va_send->remote_fn == NULL){
 
-	         //        send_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) rcv->va_send, XMI_SUCCESS); //Terminate
+            //        send_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) rcv->va_send, XMI_SUCCESS); //Terminate
 
-             //}
+            //}
 
             return 0;
           }
@@ -1349,7 +1235,7 @@ namespace XMI
                 //Pointer to metadata
                 header = (header_metadata_t *) metadata;
 
-				TRACE_ERR((stderr, "   AdaptiveSimple::process_data() .. before memcpy buffer address =%p ,  bytes for receiving =%d, offset = %d, bsend = %d\n", header->va_recv->info.data.simple.addr, header->va_recv->info.data.simple.bytes , header->offset, header->bsend));
+                TRACE_ERR((stderr, "   AdaptiveSimple::process_data() .. before memcpy buffer address =%p ,  bytes for receiving =%d, offset = %d, bsend = %d\n", header->va_recv->info.data.simple.addr, header->va_recv->info.data.simple.bytes , header->offset, header->bsend));
 
 
                 //copy data to buffer
@@ -1363,10 +1249,14 @@ namespace XMI
                 header = (header_metadata_t *) payload;
 
                 //copy data to buffer
+//fprintf (stderr, "dispatch_data_direct() .. header = %p, header+1 = %p, header->bsend = %zd, header->offset = %zd\n", header, header+1, header->bsend, header->offset);
+//fprintf (stderr, "dispatch_data_direct() .. header->va_recv = %p\n", header->va_recv);
+//fprintf (stderr, "dispatch_data_direct() .. header->va_recv->info.data.simple.addr = %p\n", header->va_recv->info.data.simple.addr);
+
                 memcpy ((char *)(header->va_recv->info.data.simple.addr) + header->offset, (header + 1), header->bsend);
               }
 
-			  AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
+            AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) header->va_recv->adaptive;
 
             //Update total of bytes received
@@ -1380,35 +1270,29 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::process_data() ..  all data Received \n"));
 
 
-			   if (header->va_recv->ackinfo != NULL)
+                if (header->va_recv->ackinfo != NULL)
                   {
-				    TRACE_ERR((stderr, "   AdaptiveSimple::process_data() ..  ACK was sent \n"));
-                    struct iovec v[1];
-                    v[0].iov_base = (void *) &(header->va_recv->ackinfo);
-                    v[0].iov_len  = sizeof (send_state_t *);
-
+                    TRACE_ERR((stderr, "   AdaptiveSimple::process_data() ..  ACK was sent \n"));
                     adaptive->_ack_model.postPacket (header->va_recv->pkt,
-                                                  receive_complete,
-                                                  (void *) header->va_recv,
-                                                  header->va_recv->fromRank,
-                                                  (void *) NULL,
-                                                  0,
-                                                  v);
-
-				  }
+                                                     receive_complete,
+                                                     (void *) header->va_recv,
+                                                     header->va_recv->fromRank,
+                                                     (void *) NULL,
+                                                     0,
+                                                     (void *) & (header->va_recv->ackinfo),
+                                                     sizeof (send_state_t *));
+                  }
                 else
                   {
                     // Otherwise, return the receive state object memory to
                     // the memory pool.
-					 receive_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) header->va_recv, XMI_SUCCESS); //Terminate
-
-
+                    receive_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) header->va_recv, XMI_SUCCESS); //Terminate
                   }
 
                 return 0;
               }
 
-            TRACE_ERR((stderr, ">>   AdaptiveSimple::process_data() ..  data package Received\n"));
+            TRACE_ERR((stderr, "<<   AdaptiveSimple::process_data() ..  data package Received\n"));
 
             return 0;
           };
@@ -1457,11 +1341,12 @@ namespace XMI
                     TRACE_ERR((stderr, ">>   AdaptiveSimple::Callback_rts_send() .. Done, 0 bytes to send\n"));
 
 
-				   if (send->remote_fn == NULL){
+                    if (send->remote_fn == NULL)
+                      {
 
-				     send_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) send, XMI_SUCCESS); //Terminate
+                        send_complete(XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), (void *) send, XMI_SUCCESS); //Terminate
 
-                    }
+                      }
 
 
                   }
@@ -1481,19 +1366,17 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send() .. protocol header_metadata_t fits in the packet metadata\n"));
 
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                    //Post rts_data package
-                    struct iovec v[1];
-                    v[0].iov_base = (void *)((char *)send->msginfo + send->header.offset);
-                    v[0].iov_len  = (size_t)send->header.bsend;
-                    adaptive->_rts_data_model.postPacket (send->pkt,
-                                                          send->cb_rts,
-                                                          (void *) send,
-                                                          send->rts.destRank,
-                                                          (void *) &send->header,
-                                                          sizeof (header_metadata_t),
-                                                          v);
+                //Post rts_data package
+                adaptive->_rts_data_model.postPacket (send->pkt,
+                                                      send->cb_rts,
+                                                      (void *) send,
+                                                      send->rts.destRank,
+                                                      (void *) &send->header,
+                                                      sizeof (header_metadata_t),
+                                                      (void *)((char *)send->msginfo + send->header.offset),
+                                                      (size_t)send->header.bsend);
 
               }
             else
@@ -1501,25 +1384,24 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::Callback_rts_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                    //Post rts_data package
-                    struct iovec v[2];
-                    v[0].iov_base = (void *) &send->header;
-                    v[0].iov_len  = sizeof (header_metadata_t);
-                    v[1].iov_base = (void *)((char *)send->msginfo + send->header.offset);
-                    v[1].iov_len  = (size_t)send->header.bsend;
-                    adaptive->_rts_data_model.postPacket (send->pkt,
-                                                          send->cb_rts,
-                                                          (void *) send ,
-                                                          send->rts.destRank,
-                                                          (void *) NULL,
-                                                          0,
-                                                          v);
+                //Post rts_data package
+                send->iov[0].iov_base = (void *) & send->header;
+                send->iov[0].iov_len  = sizeof (header_metadata_t);
+                send->iov[1].iov_base = (void *)((char *)send->msginfo + send->header.offset);
+                send->iov[1].iov_len  = (size_t)send->header.bsend;
+                adaptive->_rts_data_model.postPacket (send->pkt,
+                                                      send->cb_rts,
+                                                      (void *) send ,
+                                                      send->rts.destRank,
+                                                      (void *) NULL,
+                                                      0,
+                                                      send->iov);
 
               }
 
-            TRACE_ERR((stderr, ">>   AdaptiveSimple::Callback_rts_send() .. posted rts_data packet\n"));
+            TRACE_ERR((stderr, "<<   AdaptiveSimple::Callback_rts_send() .. posted rts_data packet\n"));
 
             return;
           }
@@ -1528,187 +1410,204 @@ namespace XMI
 
 
 
-		   ///
+          ///
           /// \brief function to send window
           ///
 
-          static int send_window (window_t * window,  size_t iolen){
+          static int send_window (window_t * window,  size_t iolen)
+          {
 
- 		    struct iovec v1[1];
-            struct iovec v2[2];
-		    size_t i= 0;
-
-
-					for ( i = 0; i< WINDOW -1 ; i++){
-					  //sleep(1);
-
-							   //update data
-	   						   if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
-												  {
-									window->va_send->next_offset += T_Model::packet_model_payload_bytes;                 ///Update next Offset
-									window->va_send->header.bsend = T_Model::packet_model_payload_bytes;                ///Update bytes to window->va_send
-								  }
-								else
-								  {
-									window->va_send->next_offset += (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));               ///Update next Offset
-									window->va_send->header.bsend = (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));              ///Update bytes to window->va_send
-								  }
-
-								//TRACE_ERR((stderr,"   AdaptiveSimple::send_window() .. cookie= %p , window->va_send->cts->va_window->va_send = %p ,window->va_send->cb_data = %p\n" ,cookie,window->va_send->rts.va_window->va_send, window->va_send->cb_data));
-
-								  //Update header
-								  window->va_send->header.offset = window->va_send->next_offset;
-
-								  //update package header
-								  window->pkg[i].header.va_recv= window->va_send->header.va_recv;
-								  window->pkg[i].header.offset= window->va_send->header.offset;
-								  window->pkg[i].header.bsend= window->va_send->header.bsend;
-
-									 //Check if data to send
-														if (window->va_send->sendlen < window->va_send->next_offset)
-														  {
-															TRACE_ERR((stderr, ">>   AdaptiveSimple::send_window() .. all data was sent\n"));
-															if (window->va_send->remote_fn == NULL){
-
-																							 send_complete(XMI_Client_getcontext(window->va_send->adaptive->_client, window->va_send->adaptive->_contextid), (void *) window->va_send, XMI_SUCCESS); //Terminate
-
-																							}
-
-															return 0;
-														  }
+            //struct iovec v1[1];
+            //struct iovec v2[2];
+            size_t i = 0;
 
 
+            for ( i = 0; i < WINDOW - 1 ; i++)
+              {
+                //sleep(1);
 
-					             if(iolen==2){
-										   v2[0].iov_base = (void *) &window->pkg[i].header;
-										   v2[0].iov_len  = sizeof (header_metadata_t);
-										   v2[1].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
-										   v2[1].iov_len  = (size_t)window->pkg[i].header.bsend;
-								  } else{
-										   v1[0].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
-										   v1[0].iov_len  = (size_t)window->pkg[i].header.bsend;
-					               }
+                //update data
+                if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
+                  {
+                    window->va_send->next_offset += T_Model::packet_model_payload_bytes;                 ///Update next Offset
+                    window->va_send->header.bsend = T_Model::packet_model_payload_bytes;                ///Update bytes to window->va_send
+                  }
+                else
+                  {
+                    window->va_send->next_offset += (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));               ///Update next Offset
+                    window->va_send->header.bsend = (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));              ///Update bytes to window->va_send
+                  }
+
+                //TRACE_ERR((stderr,"   AdaptiveSimple::send_window() .. cookie= %p , window->va_send->cts->va_window->va_send = %p ,window->va_send->cb_data = %p\n" ,cookie,window->va_send->rts.va_window->va_send, window->va_send->cb_data));
+
+                //Update header
+                window->va_send->header.offset = window->va_send->next_offset;
+
+                //update package header
+                window->pkg[i].header.va_recv = window->va_send->header.va_recv;
+                window->pkg[i].header.offset = window->va_send->header.offset;
+                window->pkg[i].header.bsend = window->va_send->header.bsend;
+
+                //Check if data to send
+                if (window->va_send->sendlen < window->va_send->next_offset)
+                  {
+                    TRACE_ERR((stderr, "     AdaptiveSimple::send_window() .. all data was sent\n"));
+
+                    if (window->va_send->remote_fn == NULL)
+                      {
+
+                        send_complete(XMI_Client_getcontext(window->va_send->adaptive->_client, window->va_send->adaptive->_contextid), (void *) window->va_send, XMI_SUCCESS); //Terminate
+
+                      }
+
+                    return 0;
+                  }
 
 
 
-								TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window pkt = %p , pktno=%d\n",&window->pkg[i].pkt, i));
+                if (iolen == 2)
+                  {
+                    window->pkg[i].iov[0].iov_base = (void *) & window->pkg[i].header;
+                    window->pkg[i].iov[0].iov_len  = sizeof (header_metadata_t);
+                    window->pkg[i].iov[1].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
+                    window->pkg[i].iov[1].iov_len  = (size_t)window->pkg[i].header.bsend;
+                  }
+                else
+                  {
+                    //v1[0].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
+                    //v1[0].iov_len  = (size_t)window->pkg[i].header.bsend;
+                  }
 
 
 
-								if (iolen==1){
-								  TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. v1[0].iov_base = %p ,v1[0].iov_len=%d\n",v1[0].iov_base, v1[0].iov_len));
-
-								window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
-														  NULL ,
-														  (void *)NULL,
-														  window->va_send->rts.destRank,
-														  (void *) &window->pkg[i].header,
-														  sizeof (header_metadata_t),
-														  v1);
-
-
-								 } else if (iolen==2){
-							       TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. v2[1].iov_base = %p ,v2[1].iov_len=%d\n",v2[1].iov_base, v2[1].iov_len));
-
-								   window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
-															 NULL,
-															 (void *)NULL,
-															 window->va_send->rts.destRank,
-															 (void *)NULL,
-															 0,
-															 v2);
-								}
-
-					             TRACE_ERR((stderr, "   AdaptiveSimple::send_window() pkt(%d).. data total bytes= %d  ,window = %p , window->va_send->next_offset = %d , offset=%d , bsend=%d \n", i, window->va_send->sendlen,  window, window->va_send->next_offset, window->pkg[i].header.offset, window->pkg[i].header.bsend));
-
-					}
-
-				    // update data
-				   if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
-									  {
-							 window->va_send->next_offset += T_Model::packet_model_payload_bytes;                 ///Update next Offset
-							 window->va_send->header.bsend = T_Model::packet_model_payload_bytes;                ///Update bytes to window->va_send
-					  }
-					else
-					  {
-							 window->va_send->next_offset += (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));               ///Update next Offset
-							 window->va_send->header.bsend = (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));              ///Update bytes to window->va_send
-					  }
+                TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window pkt = %p , pktno=%d\n", &window->pkg[i].pkt, i));
 
 
 
+                if (iolen == 1)
+                  {
+                    TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. payload = %p, length=%d\n", (void *)(window->va_send->send_buffer + window->pkg[i].header.offset), (size_t)window->pkg[i].header.bsend));
 
-					 TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. data total bytes= %d  ,window = %p , window->va_send->next_offset = %d , offset=%d , bsend=%d \n", window->va_send->sendlen,  window, window->va_send->next_offset, window->va_send->header.offset, window->va_send->header.bsend));
-					 //TRACE_ERR((stderr,"   AdaptiveSimple::send_window() .. cookie= %p , window->va_send->cts->va_window->va_send = %p ,window->va_send->cb_data = %p\n" ,cookie,window->va_send->rts.va_window->va_send, window->va_send->cb_data));
-
-					  window->va_send->header.offset = window->va_send->next_offset;
-
-					  window->pkg[i].header.va_recv= window->va_send->header.va_recv;
-					  window->pkg[i].header.offset= window->va_send->header.offset;
-					  window->pkg[i].header.bsend= window->va_send->header.bsend;
-
-						 //Check if data to send
-											if (window->va_send->sendlen < window->va_send->next_offset)
-											  {
-												TRACE_ERR((stderr, ">>   AdaptiveSimple::send_window() .. all data was sent\n"));
-													if (window->va_send->remote_fn == NULL){
-
-																				 send_complete(XMI_Client_getcontext(window->va_send->adaptive->_client, window->va_send->adaptive->_contextid), (void *) window->va_send, XMI_SUCCESS); //Terminate
-
-																				}
-												return 0;
-											  }
+                    window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
+                                                                       NULL ,
+                                                                       (void *)NULL,
+                                                                       window->va_send->rts.destRank,
+                                                                       (void *) &window->pkg[i].header,
+                                                                       sizeof (header_metadata_t),
+                                                                       (void *)(window->va_send->send_buffer + window->pkg[i].header.offset),
+                                                                       (size_t)window->pkg[i].header.bsend);
 
 
-					   if(iolen==2){
-							   v2[0].iov_base = (void *) &window->pkg[i].header;
-							   v2[0].iov_len  = sizeof (header_metadata_t);
-							   v2[1].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
-							   v2[1].iov_len  = (size_t)window->pkg[i].header.bsend;
-					  } else{
-							   v1[0].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
-							   v1[0].iov_len  = (size_t)window->pkg[i].header.bsend;
-							   }
+                  }
+                else if (iolen == 2)
+                  {
+                    TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window->pkg[%zd].iov[1].iov_base = %p ,window->pkg[%zd].iov[1].iov_len=%d\n", i, window->pkg[i].iov[1].iov_base, i, window->pkg[i].iov[1].iov_len));
 
+                    window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
+                                                                       NULL,
+                                                                       (void *)NULL,
+                                                                       window->va_send->rts.destRank,
+                                                                       (void *)NULL,
+                                                                       0,
+                                                                       window->pkg[i].iov);
+                  }
 
-				 //TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. after window->va_send->fblock= %s\n", (window->va_send->fblock)?"true":"false"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::send_window() pkt(%d).. data total bytes= %d  ,window = %p , window->va_send->next_offset = %d , offset=%d , bsend=%d \n", i, window->va_send->sendlen,  window, window->va_send->next_offset, window->pkg[i].header.offset, window->pkg[i].header.bsend));
 
+              }
 
-						 TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window pkt = %p , pktno=%d\n",&window->pkg[i].pkt, i));
-						 //pkt_t * dummy = (pkt_t *)malloc(sizeof(pkt_t));
-
-						if (iolen==1){
-									TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. v1[0].iov_base = %p ,v1[0].iov_len=%d\n",v1[0].iov_base, v1[0].iov_len));
-
-									window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
-																 cb_data_send,
-																 (void *)window,
-																 window->va_send->rts.destRank,
-																 (void *) &window->pkg[i].header,
-																 sizeof (header_metadata_t),
-																 v1);
+            // update data
+            if (sizeof(header_metadata_t) <= T_Model::packet_model_metadata_bytes)
+              {
+                window->va_send->next_offset += T_Model::packet_model_payload_bytes;                 ///Update next Offset
+                window->va_send->header.bsend = T_Model::packet_model_payload_bytes;                ///Update bytes to window->va_send
+              }
+            else
+              {
+                window->va_send->next_offset += (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));               ///Update next Offset
+                window->va_send->header.bsend = (T_Model::packet_model_payload_bytes - sizeof(header_metadata_t));              ///Update bytes to window->va_send
+              }
 
 
 
 
-					  } else if (iolen==2){
-								   TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. v2[1].iov_base = %p ,v2[1].iov_len=%d\n",v2[1].iov_base, v2[1].iov_len));
+            TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. data total bytes= %d  ,window = %p , window->va_send->next_offset = %d , offset=%d , bsend=%d \n", window->va_send->sendlen,  window, window->va_send->next_offset, window->va_send->header.offset, window->va_send->header.bsend));
+            //TRACE_ERR((stderr,"   AdaptiveSimple::send_window() .. cookie= %p , window->va_send->cts->va_window->va_send = %p ,window->va_send->cb_data = %p\n" ,cookie,window->va_send->rts.va_window->va_send, window->va_send->cb_data));
 
-								   window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
-															 cb_data_send,
-															 (void *)window,
-															 window->va_send->rts.destRank,
-															 (void *) NULL,
-															 0,
-															 v2);
+            window->va_send->header.offset = window->va_send->next_offset;
 
-					 }
+            window->pkg[i].header.va_recv = window->va_send->header.va_recv;
+            window->pkg[i].header.offset = window->va_send->header.offset;
+            window->pkg[i].header.bsend = window->va_send->header.bsend;
 
-		  return 0;
-		  }
+            //Check if data to send
+            if (window->va_send->sendlen < window->va_send->next_offset)
+              {
+                TRACE_ERR((stderr, "     AdaptiveSimple::send_window() .. all data was sent\n"));
+
+                if (window->va_send->remote_fn == NULL)
+                  {
+
+                    send_complete(XMI_Client_getcontext(window->va_send->adaptive->_client, window->va_send->adaptive->_contextid), (void *) window->va_send, XMI_SUCCESS); //Terminate
+
+                  }
+
+                return 0;
+              }
 
 
-		  ///
+            if (iolen == 2)
+              {
+                window->pkg[i].iov[0].iov_base = (void *) & window->pkg[i].header;
+                window->pkg[i].iov[0].iov_len  = sizeof (header_metadata_t);
+                window->pkg[i].iov[1].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
+                window->pkg[i].iov[1].iov_len  = (size_t)window->pkg[i].header.bsend;
+              }
+            else
+              {
+                //v1[0].iov_base = (void *)(window->va_send->send_buffer + window->pkg[i].header.offset);
+                //v1[0].iov_len  = (size_t)window->pkg[i].header.bsend;
+              }
+
+
+            //TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. after window->va_send->fblock= %s\n", (window->va_send->fblock)?"true":"false"));
+
+
+            TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window pkt = %p , pktno=%d\n", &window->pkg[i].pkt, i));
+            //pkt_t * dummy = (pkt_t *)malloc(sizeof(pkt_t));
+
+            if (iolen == 1)
+              {
+                TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. payload = %p ,length=%d\n", (void *)(window->va_send->send_buffer + window->pkg[i].header.offset), (size_t)window->pkg[i].header.bsend));
+                window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
+                                                                   cb_data_send,
+                                                                   (void *)window,
+                                                                   window->va_send->rts.destRank,
+                                                                   (void *) &window->pkg[i].header,
+                                                                   sizeof (header_metadata_t),
+                                                                   (void *)(window->va_send->send_buffer + window->pkg[i].header.offset),
+                                                                   (size_t)window->pkg[i].header.bsend);
+
+              }
+            else if (iolen == 2)
+              {
+                TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window->pkg[%zd].iov[1].iov_base = %p ,window->pkg[%zd].iov[1].iov_len=%d\n", i, window->pkg[i].iov[1].iov_base, i, window->pkg[i].iov[1].iov_len));
+
+                window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
+                                                                   cb_data_send,
+                                                                   (void *)window,
+                                                                   window->va_send->rts.destRank,
+                                                                   (void *) NULL,
+                                                                   0,
+                                                                   window->pkg[i].iov);
+
+              }
+
+            return 0;
+          }
+
+
+          ///
           /// \brief Callback invoked after send a data_send packet.
           ///
 
@@ -1725,7 +1624,7 @@ namespace XMI
             AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) window->va_send->pf;
 
-			  TRACE_ERR((stderr, ">> AdaptiveSimple::Callback_data_send(%d)\n",++adaptive->_counter));
+            TRACE_ERR((stderr, ">> AdaptiveSimple::Callback_data_send(%d)\n", ++adaptive->_counter));
 
 
 
@@ -1735,10 +1634,10 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send() .. protocol header_metadata_t fits in the packet metadata\n"));
 
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send() ..  protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
 
-						send_window (window, 1);
+                send_window (window, 1);
 
 
 
@@ -1750,18 +1649,18 @@ namespace XMI
                 TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send .. protocol header_metadata_t does not fit in the packet metadata\n"));
 
 
-                    TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
+                TRACE_ERR((stderr, "   AdaptiveSimple::Callback_data_send ..  protocol header_metadata_t does not fit in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-                    //Post data package
+                //Post data package
 
-						send_window (window, 2);
+                send_window (window, 2);
 
 
 
 
               }
 
-            TRACE_ERR((stderr, ">>   AdaptiveSimple::Callback_data_send() .. posted data packet\n"));
+            TRACE_ERR((stderr, "<<   AdaptiveSimple::Callback_data_send() .. posted data packet\n"));
 
             return;
           }
@@ -1770,28 +1669,28 @@ namespace XMI
 
 
 
-		  static int dispatch_ack_direct (void   * metadata,
+          static int dispatch_ack_direct (void   * metadata,
                                           void   * payload,
                                           size_t   bytes,
                                           void   * recv_func_parm,
                                           void   * cookie)
           {
             TRACE_ERR((stderr, ">> AdaptiveSimple::dispatch_ack_direct()\n"));
-             send_state_t * send = *((send_state_t **) payload);
+            send_state_t * send = *((send_state_t **) payload);
 
 
             xmi_event_function   remote_fn = send->remote_fn;
-			xmi_event_function   local_fn = send->local_fn;
+            xmi_event_function   local_fn = send->local_fn;
             void               * fn_cookie = send->cookie;
 
-			TRACE_ERR((stderr, "   AdaptiveSimple::dispatch_ack_direct() .. send = %p, cookie =%p , remote_fn = %p\n", send, fn_cookie, remote_fn));
+            TRACE_ERR((stderr, "   AdaptiveSimple::dispatch_ack_direct() .. send = %p, cookie =%p , remote_fn = %p\n", send, fn_cookie, remote_fn));
 
             AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
 
             adaptive->freeSendState (send);
 
-			if (local_fn != NULL)
+            if (local_fn != NULL)
               {
                 local_fn (XMI_Client_getcontext(adaptive->_client, adaptive->_contextid), fn_cookie, XMI_SUCCESS);
               }
@@ -1804,7 +1703,7 @@ namespace XMI
           }
 
 
-		  ///
+          ///
           /// \brief Local receive completion event callback.
           ///
           /// This callback will invoke the application local receive
@@ -1817,21 +1716,21 @@ namespace XMI
           {
             TRACE_ERR((stderr, "AdaptiveSimple::receive_complete() >> \n"));
 
-			recv_state_t * rcv = (recv_state_t *) cookie;
+            recv_state_t * rcv = (recv_state_t *) cookie;
 
-			 xmi_event_function   local_fn = rcv->info.local_fn;
-             void               * fn_cookie = rcv->info.cookie;
+            xmi_event_function   local_fn = rcv->info.local_fn;
+            void               * fn_cookie = rcv->info.cookie;
 
             AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) rcv->adaptive;
 
 
-			  adaptive->freeRecvState (rcv);
+            adaptive->freeRecvState (rcv);
 
-			  if (local_fn)
-                      local_fn (XMI_Client_getcontext(adaptive->_client, adaptive->_contextid),
-                                          fn_cookie,
-                                           XMI_SUCCESS);
+            if (local_fn)
+              local_fn (XMI_Client_getcontext(adaptive->_client, adaptive->_contextid),
+                        fn_cookie,
+                        XMI_SUCCESS);
 
 
 
@@ -1843,7 +1742,7 @@ namespace XMI
 
 
 
-		  ///
+          ///
           /// \brief Local send completion event callback.
           ///
           /// This callback will invoke the application local completion
@@ -1860,11 +1759,11 @@ namespace XMI
             AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive =
               (AdaptiveSimple<T_Model, T_Device, T_LongHeader> *) send->adaptive;
 
-			xmi_event_function   local_fn = send->local_fn;
+            xmi_event_function   local_fn = send->local_fn;
             void               * fn_cookie = send->cookie;
 
 
-			  adaptive->freeSendState (send);
+            adaptive->freeSendState (send);
 
             if (local_fn != NULL)
               {
@@ -1980,7 +1879,7 @@ namespace XMI
           ///
           /// \brief Read-access  send ack packet callback.
           ///
-		  static int dispatch_ack_read (void   * metadata,
+          static int dispatch_ack_read (void   * metadata,
                                         void   * payload,
                                         size_t   bytes,
                                         void   * recv_func_parm,

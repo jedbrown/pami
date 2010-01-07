@@ -25,6 +25,9 @@
 #undef  mem_sync
 #define mem_sync()      _bgp_msync()
 
+#undef  mem_isync
+#define mem_isync()   mem_sync()
+
 #undef  mem_barrier
 #define mem_barrier()   _bgp_mbar()
 

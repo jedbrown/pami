@@ -17,11 +17,15 @@
 #include "arch/ArchInterface.h"
 
 #include <hwi/include/bqc/A2_inlines.h>
+#include <hwi/include/bqc/A2_core.h>
 
 // Here go things specific to this processor architecture
 
 #undef  mem_sync
 #define mem_sync()    ppc_msync()
+
+#undef  mem_isync
+#define mem_isync()   isync()
 
 #undef  mem_barrier
 #define mem_barrier() __sync_synchronize()

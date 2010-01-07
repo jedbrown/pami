@@ -101,6 +101,7 @@ namespace XMI
 
         inline T_Packet * nextInjPacket_impl (size_t & pktid)
         {
+          TRACE_ERR((stderr, "(%zd) LinearFifo::nextInjPacket_impl() >>\n", __global.mapping.task()));
           pktid = _tail.fetch_and_inc ();
           TRACE_ERR((stderr, "(%zd) LinearFifo::nextInjPacket_impl() .. _tail.fetch_and_inc() => %zd, T_FifoSize = %d\n", __global.mapping.task(), pktid, T_FifoSize));
 
@@ -114,6 +115,9 @@ namespace XMI
 
         inline T_Packet * nextRecPacket_impl ()
         {
+          //mem_barrier ();
+          //mem_sync();
+          TRACE_ERR((stderr, "(%zd) LinearFifo::nextRecPacket_impl() .. this = %p, _packet[%zd].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
           if (_packet[_head].isActive ())
             return (T_Packet *) &_packet[_head];
 
@@ -122,6 +126,9 @@ namespace XMI
 
         inline void consumePacket_impl ()
         {
+          TRACE_ERR((stderr, "(%zd) LinearFifo::consumePacket_impl() .. this = %p, _packet[%zd].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
+                    //mem_barrier ();
+          //mem_sync();
           _packet[_head].setActive (false);
           _last_rec_sequence++;
 
@@ -132,9 +139,12 @@ namespace XMI
           if (_head == T_FifoSize)
             {
               _head = 0;
-              mem_sync ();
+              //mem_sync ();
+          	mem_barrier ();
               _tail.fetch_and_clear ();
             }
+          //mem_barrier ();
+          //mem_sync();
         };
 
         inline void producePacket_impl (size_t pktid)
@@ -153,7 +163,10 @@ namespace XMI
           // receiving process reading the 'active' attribute and then reading
           // stale packet header/payload data.
           mem_barrier ();
+          //mem_sync();
           _packet[pktid].setActive (true);
+          //mem_barrier ();
+          //mem_sync();
 
           TRACE_ERR((stderr, "(%zd) << LinearFifo::producePacket_impl(%zd)\n", __global.mapping.task(), pktid));
         };

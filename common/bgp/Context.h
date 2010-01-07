@@ -34,6 +34,7 @@
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/adaptive/Adaptive.h"
+#include "p2p/protocols/send/datagram/Datagram.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -43,7 +44,7 @@ namespace XMI
 {
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
-  typedef Fifo::FifoPacket <16, 240> ShmemPacket;
+  typedef Fifo::FifoPacket <16, 256> ShmemPacket;
   typedef Fifo::LinearFifo<Counter::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
@@ -370,6 +371,7 @@ namespace XMI
               {
                 _dispatch[id] = _protocol.allocateObject ();
                 new (_dispatch[id])
+//                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
                 (id, fn, cookie, _shmem, __global.mapping.task(),
@@ -381,6 +383,7 @@ namespace XMI
                 new (_dispatch[id])
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
+//                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
                 (id, fn, cookie, _shmem, __global.mapping.task(),
                  _context, _contextid, result);
               }

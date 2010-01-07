@@ -23,6 +23,7 @@
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
 
 #include "components/atomic/gcc/GccBuiltin.h"
+#include "components/atomic/l2/L2Counter.h"
 //#include "components/atomic/pthread/Pthread.h"
 //#include "components/atomic/bgq/BgqAtomic.h"
 
@@ -44,8 +45,10 @@ namespace XMI
 {
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
-  typedef Fifo::FifoPacket <32, 992> ShmemPacket;
-  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
+  //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
+  typedef Fifo::FifoPacket <32, 512> ShmemPacket;
+  typedef Fifo::LinearFifo<Atomic::L2Counter, ShmemPacket, 16> ShmemFifo;
+  //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
@@ -82,7 +85,9 @@ namespace XMI
           _mm (addr, bytes),
           _sysdep (_mm),
 	  _generic(generics[id]),
+#ifdef MU_DEVICE
           _mu (),
+#endif
           _shmem (),
 	  _workAllocator()
       {
@@ -100,8 +105,10 @@ namespace XMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
+#ifdef MU_DEVICE
         _mu.init (&_sysdep);
 	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
+#endif
         _shmem.init (&_sysdep);
 
         _get = (void *) _request.allocateObject ();
@@ -153,8 +160,10 @@ namespace XMI
         for (i = 0; i < maximum && events == 0; i++)
           {
             events += _shmem.advance_impl();
+#ifdef MU_DEVICE
             events += _mu.advance();
-	    events += _generic.advance();
+#endif
+	    //events += _generic.advance();
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -377,8 +386,8 @@ namespace XMI
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
-            //new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, __global.mapping.task(), _context, result);
-            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
+            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, __global.mapping.task(), _context, _contextid, result);
+            //new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
           }
 
         return result;
@@ -444,7 +453,9 @@ namespace XMI
 
       // devices...
       XMI::Device::Generic::Device &_generic;
+#ifdef MU_DEVICE
       Device::MU::MUDevice _mu;
+#endif
       ShmemDevice          _shmem;
 
       void * _dispatch[1024];

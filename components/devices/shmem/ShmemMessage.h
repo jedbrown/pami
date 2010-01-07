@@ -21,6 +21,10 @@
 #include "util/common.h"
 #include "util/queue/Queue.h"
 
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) fprintf x
+#endif
+
 namespace XMI
 {
   namespace Device
@@ -58,15 +62,14 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
-#ifdef ERROR_CHECKS
-          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
-#endif
+          TRACE_ERR((stderr, ">> ShmemMessage(1) .. src = %p, bytes = %zd\n", src, bytes));
           __iov[0].iov_base = src;
           __iov[0].iov_len  = bytes;
 
           XMI_assert_debugf(metasize <= SHMEM_MESSAGE_METADATA_SIZE, "ShmemMessage metadata size too small: %zd ! <= %zd\n", metasize, SHMEM_MESSAGE_METADATA_SIZE);
 
           memcpy(_metadata, metadata, metasize);
+          TRACE_ERR((stderr, "<< ShmemMessage(1) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len));
         };
 
         inline ShmemMessage (xmi_client_t client, size_t        context,
@@ -92,9 +95,7 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
-#ifdef ERROR_CHECKS
-          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
-#endif
+          TRACE_ERR((stderr, ">> ShmemMessage(2) .. src0 = %p, bytes0 = %zd, src1 = %p, bytes1 = %zd\n", src0, bytes0, src1, bytes1));
 
           __iov[0].iov_base = src0;
           __iov[0].iov_len  = bytes0;
@@ -102,6 +103,7 @@ namespace XMI
           __iov[1].iov_len  = bytes1;
 
           memcpy(_metadata, metadata, metasize);
+          TRACE_ERR((stderr, "<< ShmemMessage(2) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len, _iov[1].iov_base, _iov[1].iov_len));
         };
 
         inline ShmemMessage (xmi_client_t client, size_t        context,
@@ -125,10 +127,9 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
-#ifdef ERROR_CHECKS
-          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
-#endif
+          TRACE_ERR((stderr, ">> ShmemMessage(niov) .. iov = %p, niov = %zd\n", iov, niov));
           memcpy(_metadata, metadata, metasize);
+          TRACE_ERR((stderr, "<< ShmemMessage(niov) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd ...\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len, _iov[1].iov_base, _iov[1].iov_len));
         };
 
 
@@ -150,10 +151,9 @@ namespace XMI
             _dispatch_id (dispatch_id),
             _pkt_type(PTP)
         {
-#ifdef ERROR_CHECKS
-          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
-#endif
+          TRACE_ERR((stderr, ">> ShmemMessage()\n"));
           memcpy(_metadata, metadata, metasize);
+          TRACE_ERR((stderr, "<< ShmemMessage() .. _tiov = %zd, _niov = %zd, _nbytes = %zd\n", _tiov, _niov, _nbytes));
         };
 
         inline ShmemMessage (xmi_event_function   fn,
@@ -175,9 +175,6 @@ namespace XMI
             _rma_bytes (bytes),
             _rma_is_put (is_put)
         {
-#ifdef ERROR_CHECKS
-          XMI_abortf("Disabled shmem message due to Eager protocol race condition bug. See Mike Blocksome and make him fix it.\n\t(this abort can be removed by configure --without-error-checks) ");
-#endif
         };
 
         inline int executeCallback (xmi_result_t status = XMI_SUCCESS)
@@ -192,8 +189,8 @@ namespace XMI
 
         inline void * next (size_t & bytes, size_t max)
         {
+          TRACE_ERR((stderr, ">> ShmemMessage::next(), _iov = %p, _niov = %zd, _nbytes = %zd\n", _iov, _niov, _nbytes));
           void * addr = (void *)(((uint8_t *)_iov[_niov].iov_base) + _nbytes);
-
           // Return minimum of the bytes remaining in this iov and the
           // maximum packet payload.
           bytes = MIN((_iov[_niov].iov_len - _nbytes), max);
@@ -205,6 +202,7 @@ namespace XMI
               _niov++;
             }
 
+          TRACE_ERR((stderr, "<< ShmemMessage::next(), addr = %p, bytes = %zd\n", addr, bytes));
           return addr;
         };
 
@@ -286,7 +284,7 @@ namespace XMI
     };
   };
 };
-
+#undef TRACE_ERR
 #endif // __components_devices_shmem_shmembasemessage_h__
 
 //

@@ -50,6 +50,16 @@ namespace XMI
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
           ///
+          /// \brief Protocol metadata structure for immediate sends
+          ///
+          typedef struct __attribute__((__packed__)) protocol_metadata
+          {
+            xmi_task_t     fromRank;  ///< Origin task id
+            uint16_t       databytes; ///< Number of bytes of data
+            uint16_t       metabytes; ///< Number of bytes of metadata
+          } protocol_metadata_t;
+
+          ///
           /// \brief Sender-side state structure for immediate sends.
           ///
           /// If the immediate post to the device fails due to unavailable
@@ -62,19 +72,11 @@ namespace XMI
           {
             uint8_t                    data[T_Model::packet_model_payload_bytes]; ///< Packed data
             pkt_t                      pkt;
+            protocol_metadata_t        metadata;
+//            struct iovec               payload[1];
             EagerImmediate<T_Model,
                            T_Device> * pf;  ///< Eager immediate protocol
           } send_t;
-
-          ///
-          /// \brief Protocol metadata structure for immediate sends
-          ///
-          typedef struct __attribute__((__packed__)) protocol_metadata
-          {
-            xmi_task_t     fromRank;  ///< Origin task id
-            uint16_t       databytes; ///< Number of bytes of data
-            uint16_t       metabytes; ///< Number of bytes of metadata
-          } protocol_metadata_t;
 
         public:
 
@@ -120,7 +122,7 @@ namespace XMI
             // Compile-time assertions
             // ----------------------------------------------------------------
 
-            TRACE_ERR((stderr, "EagerImmediate() [0]\n"));
+            TRACE_ERR((stderr, "EagerImmediate() [0] _fromRank = %d\n", _fromRank));
             status = _send_model.init (dispatch,
                                        dispatch_send_direct, this,
                                        dispatch_send_read, this);
@@ -140,7 +142,7 @@ namespace XMI
             metadata.databytes = parameters->data.iov_len;
             metadata.metabytes = parameters->header.iov_len;
 
-            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zd, parameters->data.iov_len = %zd\n", parameters->header.iov_len, parameters->data.iov_len));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zd, parameters->data.iov_len = %zd dest:%d\n", parameters->header.iov_len, parameters->data.iov_len, parameters->task));
 
             bool posted =
               _send_model.postPacket (parameters->task,
@@ -154,21 +156,39 @@ namespace XMI
               // Allocate memory, pack the user data and metadata, and attempt
               // a regular (non-blocking) post.
               TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. immediate post packet unsuccessful.\n"));
+
+              // Allocate memory for a protocol send state object. A pointer to
+              // this object is used as the "cookie" for the send_complete()
+              // event function.
               send_t * send = (send_t *) _allocator.allocateObject ();
+
+              // Save a pointer to the protocol in order to later free the
+              // protocol send state memory allocated above.
               send->pf = this;
+
+              // Copy the application header and application data into a
+              // temporary buffer in the protocol send state object.
               memcpy (&(send->data[0]), parameters->header.iov_base, metadata.metabytes);
               memcpy (&(send->data[metadata.metabytes]), parameters->data.iov_base, metadata.databytes);
 
-              struct iovec iov[1];
-              iov[0].iov_base = (void *) &(send->data[0]);
-              iov[0].iov_len  = metadata.databytes+metadata.metabytes;
+              // Copy the metadata off the stack because this stack frame will
+              // disappear when this method returns and the model send state
+              // will be left pointing to garbage.
+              send->metadata.fromRank  = metadata.fromRank;
+              send->metadata.databytes = metadata.databytes;
+              send->metadata.metabytes = metadata.metabytes;
+
+              // Do the send!
+              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. post packet after failure, dest:%d \n",parameters->task));
+
               _send_model.postPacket (send->pkt,
                                       send_complete,
                                       send,
                                       parameters->task,
-                                      (void *) &metadata,
+                                      (void *) &(send->metadata),
                                       sizeof (protocol_metadata_t),
-                                      iov);
+                                      (void *) &(send->data[0]),
+                                      metadata.databytes+metadata.metabytes);
             }
             else
             {
@@ -188,10 +208,10 @@ namespace XMI
 
           MemoryAllocator < sizeof(send_t), 16 > _allocator;
 
-          T_Model         _send_model;
-          xmi_task_t      _fromRank;
+          T_Model                    _send_model;
+          xmi_task_t                 _fromRank;
 
-          xmi_client_t              _client;
+          xmi_client_t               _client;
           size_t                     _contextid;
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;

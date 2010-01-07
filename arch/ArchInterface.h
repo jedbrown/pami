@@ -14,6 +14,8 @@
 #ifndef __arch_ArchInterface_h__
 #define __arch_ArchInterface_h__
 
+#include <stdint.h>   // This may not be platform-independent.
+
 ///
 /// \brief Encapuslating class for static methods which allows partial template specialization
 ///

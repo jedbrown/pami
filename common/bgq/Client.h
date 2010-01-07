@@ -227,7 +227,8 @@ namespace XMI
         inline void initializeMemoryManager ()
         {
           char   shmemfile[1024];
-          size_t bytes     = 1024*1024;
+          //size_t bytes     = 1024*1024;
+          size_t bytes     = 32*1024;
           size_t pagesize  = 4096;
 
           snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
@@ -238,6 +239,7 @@ namespace XMI
           int fd, rc;
           size_t n = bytes;
 
+#if 1
           // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
           if ( rc != -1 )
@@ -257,7 +259,7 @@ namespace XMI
 
           // Failed to create shared memory .. fake it using the heap ??
           _mm.init (malloc (n), n);
-
+#endif
           return;
         }
     }; // end class XMI::Client

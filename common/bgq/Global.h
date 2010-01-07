@@ -34,7 +34,7 @@
 #include "Topology.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x)//  fprintf x
 #endif
 
 namespace XMI
@@ -53,7 +53,8 @@ namespace XMI
 	  xmi_coord_t ll, ur;
 	  size_t min, max;
           const char   * shmemfile = "/unique-xmi-global-shmem-file";
-          size_t   bytes     = 1024*1024;
+          //size_t   bytes     = 1024*1024;
+          size_t   bytes     = 32*1024;
           size_t   pagesize  = 4096;
 
           // Round up to the page size
@@ -118,7 +119,7 @@ namespace XMI
 	  } else if (mapping.size() == max - min + 1) {
 		new (&topology_global) XMI::Topology(min, max);
 	  } else {
-		XMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
+		//XMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max); //hack
 	  }
 	  topology_global.subTopologyLocalToMe(&topology_local);
 
@@ -141,6 +142,10 @@ namespace XMI
           return _mapcache.size;
         }
 
+        inline size_t local_size () //hack
+        {
+          return _mapcache.local_size;
+        }
      private:
 
         inline size_t initializeMapCache (BgqPersonality  & personality,
@@ -220,8 +225,8 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   myRank = personality.rank();
 
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant);
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize);
+ fprintf (stderr, "XMI::Global::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant);
+ fprintf (stderr, "XMI::Global::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize);
 
 
   // Calculate the number of potential tasks in this partition.
@@ -400,6 +405,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
           hash = ESTIMATED_TASK(0,0,0,0,0,t,p,1,1,1,1,1,tSize,pSize);
           mapcache->node.local2peer[hash] = peer++;
+		  cacheAnchorsPtr->numActiveRanksLocal++; //hack
         }
       }
 
@@ -476,6 +482,9 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
     }
 
   mapcache->size = cacheAnchorsPtr->numActiveRanksGlobal;
+  mapcache->local_size = cacheAnchorsPtr->numActiveRanksLocal; //hack
+  fprintf(stderr,"local_size:%d\n", mapcache->local_size);
+
 
   size_t mapsize = sizeof(cacheAnchors_t) +
          (sizeof(bgq_coords_t) + sizeof(uint32_t)) * fullSize +

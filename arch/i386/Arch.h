@@ -19,6 +19,7 @@
 // Here go things specific to this processor architecture
 
 #define mem_sync()    __sync_synchronize()
+#define mem_isync()   mem_sync()
 #define mem_barrier() __sync_synchronize()
 
 #endif // __xmi_arch_i386_h__

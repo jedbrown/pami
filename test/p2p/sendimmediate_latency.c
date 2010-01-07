@@ -19,9 +19,10 @@
 #include "sys/xmi.h"
 #include "../util.h"
 
-//#define ITERATIONS 1
+//#define ITERATIONS 10
 //#define ITERATIONS 1000
-#define ITERATIONS 1000
+//#define ITERATIONS 10000
+#define ITERATIONS 100
 
 #define WARMUP
 
@@ -29,6 +30,8 @@
 //#define BUFSIZE 2048
 //#define BUFSIZE 1024*256
 #define BUFSIZE 256
+//#define BUFSIZE 64
+//#define BUFSIZE 2
 //#define BUFSIZE 1024
 #endif
 
@@ -83,7 +86,9 @@ static void test_dispatch (
 
 void send_once (xmi_context_t context, xmi_send_immediate_t * parameters)
 {
+  TRACE_ERR((stderr, "(%zd) before send_immediate()  \n", _my_rank));
   xmi_result_t result = XMI_Send_immediate (context, parameters);
+  TRACE_ERR((stderr, "(%zd) after send_immediate()  \n", _my_rank));
 }
 
 void recv_once (xmi_context_t context)
@@ -115,7 +120,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
   parameters.data.iov_base  = buffer;
   parameters.data.iov_len = sndlen;
 
-  barrier ();
+//  barrier ();
 
   unsigned i;
   unsigned long long t1 = XMI_Wtimebase();
@@ -126,10 +131,9 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
     {
       TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       send_once (context, &parameters);
-      recv_once (context);
-
-      _recv_active = 1;
       _send_active = 1;
+      recv_once (context);
+      _recv_active = 1;
     }
   }
   else if (myrank == 1)
@@ -139,9 +143,8 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
     {
       TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       recv_once (context);
-      send_once (context, &parameters);
-
       _recv_active = 1;
+      send_once (context, &parameters);
       _send_active = 1;
     }
   }
@@ -153,7 +156,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
 int main (int argc, char ** argv)
 {
   TRACE_ERR((stderr, "Start test ...\n"));
-
+//	printf("sizeof size_t:%d\n", sizeof(size_t));
   size_t hdrcnt = argc;
   size_t hdrsize[1024];
   hdrsize[0] = 0;
@@ -178,6 +181,7 @@ int main (int argc, char ** argv)
   barrier_init (client, context, 0);
   TRACE_ERR((stderr, "...  after barrier_init()\n"));
 
+//  printf("size of size_t:%d\n", sizeof(size_t));
 
   /* Register the protocols to test */
   char testcase_str[10240];
@@ -206,7 +210,7 @@ int main (int argc, char ** argv)
 
   configuration.name = XMI_TASK_ID;
   result = XMI_Configuration_query(client, &configuration);
-  size_t _my_rank = configuration.value.intval;
+  _my_rank = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);
@@ -249,13 +253,16 @@ int main (int argc, char ** argv)
 
   barrier ();
 
+  for (unsigned i = 0; i < 10000000;i++){};
+
   unsigned long long cycles;
   double usec;
 
   char str[10240];
-
+//	fprintf(stdout,"starting the test\n") ;
   size_t sndlen;
   for (sndlen = 0; sndlen < BUFSIZE; sndlen = sndlen*3/2+1)
+  //sndlen = 40;
   {
     int index = 0;
     index += sprintf (&str[index], "%10zd ", sndlen);
@@ -268,7 +275,8 @@ int main (int argc, char ** argv)
 #endif
       cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
       usec   = cycles * tick * 1000000.0;
-      index += sprintf (&str[index], "%7lld %7.4f  ", cycles, usec);
+      //index += sprintf (&str[index], "%7lld %7.4f  ", cycles, usec);
+      index += sprintf (&str[index], "%7lld  ", cycles);
     }
 
     if (_my_rank == 0)
