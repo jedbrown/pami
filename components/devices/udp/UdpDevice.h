@@ -22,6 +22,7 @@
 #include <map>
 #include <list>
 #include "util/ccmi_debug.h"
+#include "trace.h"
 
 #define DISPATCH_SET_SIZE 256
 namespace XMI
@@ -60,7 +61,8 @@ namespace XMI
 
       inline xmi_result_t setDispatchFunc (size_t                      dispatch,
                                   Interface::RecvFunction_t   direct_recv_func,
-                                  void                      * direct_recv_func_parm)
+                                  void                      * direct_recv_func_parm,
+                                  size_t & device_dispatch_id )
       {
          unsigned i;
           for (i=0; i<DISPATCH_SET_SIZE; i++)
@@ -68,9 +70,11 @@ namespace XMI
             unsigned id = dispatch * DISPATCH_SET_SIZE + i;
             if (_dispatch_table[id].direct_recv_func == NULL)
             {
+              TRACE_COUT( "dispatch table ["<<id<<"].direct_recv_func being set to " << (void*)direct_recv_func )
               _dispatch_table[id].direct_recv_func=direct_recv_func;
               _dispatch_table[id].direct_recv_func_parm=direct_recv_func_parm;
-             _dispatch_lookup[id] = _dispatch_table[id];
+              _dispatch_lookup[id] = _dispatch_table[id];
+              device_dispatch_id = id; 
               return XMI_SUCCESS;
             }
           }
@@ -122,11 +126,15 @@ namespace XMI
           Interface::RecvFunction_t rcvFun = _dispatch_table[_rcvConnection->getDeviceDispatchId()].direct_recv_func;
           if ( rcvFun != NULL )   // Ignoring stuff we don't expect, since we are UDP
           {
-             rcvFun( _rcvConnection->_msg.getMetadataAddr(),
-                     _rcvConnection->_msg.getPayloadAddr(),
-                     _rcvConnection->_msg.getPayloadSize(),
+             TRACE_COUT( "Dispatching to _dispatch_table["<<_rcvConnection->getDeviceDispatchId()<<"] = "<< (void*)rcvFun )
+            
+             rcvFun( _rcvConnection->_msg.getMetadataAddr(), 
+                     _rcvConnection->_msg.getPayloadAddr(), 
+                     _rcvConnection->_msg.getPayloadSize(), 
                      _dispatch_table[_rcvConnection->getDeviceDispatchId()].direct_recv_func_parm,
                      NULL );
+          } else {
+            TRACE_COUT( "Receive function NULL!  _dispatch_table["<<_rcvConnection->getDeviceDispatchId()<<"]" )
           }
         }
 
@@ -135,7 +143,7 @@ namespace XMI
       };
 
       // Implement MessageDevice Routines
-      static const size_t metadata_size = 128;  // TODO need to tune these
+      static const size_t metadata_size = 10;  // TODO need to tune these   WAS 128  or 16
       static const size_t payload_size  = 224;
 
       // Implement Packet Device Routines

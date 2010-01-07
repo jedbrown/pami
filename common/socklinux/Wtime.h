@@ -7,94 +7,168 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/socklinux/Wtime.h
+/// \file common/mpi/Wtime.h
 /// \brief ???
 ///
-#ifndef __common_socklinux_Wtime_h__
-#define __common_socklinux_Wtime_h__
+#ifndef __common_mpi_Wtime_h__
+#define __common_mpi_Wtime_h__
 
 #include "sys/xmi.h"
-
+#include <sys/time.h>
 #include "common/BaseTimeInterface.h"
+#include <stdio.h>
 
 namespace XMI
 {
+#if defined(__i386) || defined(__amd64__)
+    static inline uint64_t tb()
+    {
+      uint32_t lo, hi;
+      __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+      return (uint64_t)hi << 32 | lo;
+    }
+#elif defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__)
+#define SPRN_TBRU 0x10D
+#define SPRN_TBRL 0x10C
+    static inline uint64_t tb()
+    {
+      unsigned temp;
+      union
+      {
+        struct { unsigned hi, lo; } w;
+        uint64_t d;
+      } result;
+
+      do {
+        asm volatile ("mfspr %0,%1" : "=r" (temp)        : "i" (SPRN_TBRU));
+        asm volatile ("mfspr %0,%1" : "=r" (result.w.lo) : "i" (SPRN_TBRL));
+        asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
+      } while (temp != result.w.hi);
+      return result.d;
+    }
+#else
+    static inline uint64_t tb() { assert(0); return 0;}
+#endif
+
+    static unsigned long timeGetTime( void )
+    {
+      struct timeval tv;
+      gettimeofday( &tv, 0 );
+      return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+    }
+
     class Time : public Interface::BaseTime<Time>
     {
-      public:
+    public:
 
-        inline Time () :
-            Interface::BaseTime<Time> (),
-	    _mhz(0)
-        {};
-
-        ///
-        /// \brief Initialize the time object.
-        ///
-        inline xmi_result_t init_impl (size_t clockMHz)
+      inline Time () :
+        Interface::BaseTime<Time>(),
+        _clockMHz(0)
         {
-	  _mhz = clockMHz;
-          return XMI_SUCCESS;
         };
 
-        ///
-        /// \brief The processor clock in MHz.
-        ///
-        /// \warning This returns \b mega hertz. Do not be confused.
-        ///
-        inline size_t clockMHz ()
+      ///
+      /// \brief Initialize the time object.
+      ///
+      inline xmi_result_t init_impl (size_t dummy)
         {
-          return _mhz;
+          _clockMHz      = clockMHz()/1e9;
+          _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
+          if(_clockMHz == -1ULL)
+            return XMI_ERROR;
+          else
+            return XMI_SUCCESS;
         };
 
-        ///
-        /// \brief Returns the number of "cycles" elapsed on the calling processor.
-        ///
-        inline unsigned long long timebase ()
+      ///
+      /// \brief The processor clock in MHz.
+      ///
+      /// \warning This returns \b mega hertz. Do not be confused.
+      ///
+      size_t clockMHz_impl ()
         {
-#if 0
-          unsigned temp;
-          union
-          {
-            struct { unsigned hi, lo; } w;
-            unsigned long long d;
-          } result;
+          if(_clockMHz == 0.0)
+              {
+                uint64_t sampleTime = 100; //sample time in usec
+                uint64_t timeStart=0, timeStop=0;
+                uint64_t startBase=0, endBase=0;
+                uint64_t overhead=0, tbf=0, tbi=0;
+                uint64_t ticks=0;
+                int      iter=0;
+                do
+                    {
+                      tbi = tb();
+                      tbf = tb();
+                      tbi = tb();
+                      tbf = tb();
 
-          do
-            {
-asm volatile ("mfspr %0,%1" : "=r" (temp)        : "i" (SPRN_TBRU));
-asm volatile ("mfspr %0,%1" : "=r" (result.w.lo) : "i" (SPRN_TBRL));
-asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
-            }
-          while (temp != result.w.hi);
+                      overhead = tbf - tbi;
+                      timeStart = timeGetTime();
+                      while(timeGetTime() == timeStart)
+                        timeStart = timeGetTime();
 
-          return result.d;
-#else
-          return 0;
-#endif
+                      while(1)
+                          {
+                            timeStop = timeGetTime();
+                            if((timeStop - timeStart) > 1)
+                                {
+                                  startBase = tb();
+                                  break;
+                                }
+                          }
+                      timeStart = timeStop;
+
+                      while(1)
+                          {
+                            timeStop = timeGetTime();
+                            if((timeStop - timeStart) > sampleTime)
+                                {
+                                  endBase = tb();
+                                  break;
+                                }
+                          }
+                      ticks = ((endBase - startBase) + (overhead));
+                      iter++;
+                      if(iter==10)
+                          {
+                            fprintf(stderr,"Warning: unable to initialize high resolution timer.\n");
+                            return -1;
+                          }
+                    }
+                while(endBase < startBase);
+
+                return ticks/(sampleTime*1e-6);
+              }
+          else
+            return _clockMHz;
+        }
+      ///
+      /// \brief Returns the number of "cycles" elapsed on the calling processor.
+      ///
+      unsigned long long timebase_impl ()
+        {
+          return tb();
         };
 
-        ///
-        /// \brief Computes the smallest clock resolution theoretically possible
-        ///
-        inline double tick ()
+      ///
+      /// \brief Computes the smallest clock resolution theoretically possible
+      ///
+      double tick_impl ()
         {
-          return XMI::Time::seconds_per_cycle;
+          return _sec_per_cycle;
         };
 
-        ///
-        /// \brief Returns an elapsed time on the calling processor.
-        ///
-        inline double time ()
+      ///
+      /// \brief Returns an elapsed time on the calling processor.
+      ///
+      double time_impl ()
         {
-          return ((double)timebase() * XMI::Time::seconds_per_cycle);
+          return ((double)tb() * _sec_per_cycle);
         };
 
-      protected:
-
-        /// \brief BG/P compute node processors run at 850 MHz
-        static const double seconds_per_cycle = 1.176470588235294033e-09;
-	size_t _mhz;
+    protected:
+      uint64_t _clockMHz;
+      double _sec_per_cycle;
     };	// class Time
 };	// namespace XMI
-#endif // __common_socklinux_Wtime_h__
+#endif // __components_time_time_h__

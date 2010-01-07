@@ -100,15 +100,15 @@ namespace XMI
 		if (n <= 0) { // impossible?
 			return XMI_ERROR;
 		}
-		//int rc = posix_memalign((void **)&_generics, 16, sizeof(*_generics) * n);
-		//XMI_assertf(rc==0, "posix_memalign failed for _generics[%d], errno=%d\n", n, errno);
+		int rc = posix_memalign((void **)&_generics, 16, sizeof(*_generics) * n);
+		XMI_assertf(rc==0, "posix_memalign failed for _generics[%d], errno=%d\n", n, errno);
 
-		int rc = posix_memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
+		rc = posix_memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
 		XMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
 		int x;
-		//for (x = 0; x < n; ++x) {
-		//	new (&_generics[x]) XMI::Device::Generic::Device();
-		//}
+		for (x = 0; x < n; ++x) {
+			new (&_generics[x]) XMI::Device::Generic::Device();
+		}
 		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
 		*ncontexts = n;
@@ -117,7 +117,7 @@ namespace XMI
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&_contexts[x]) XMI::Context(this->getClient(), x); //, n,_generics, base, bytes);
+			new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,_generics, base, bytes);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
 		}
@@ -210,7 +210,7 @@ namespace XMI
         size_t       _references;
         size_t       _ncontexts;
 	XMI::Context *_contexts;
-	// XMI::Device::Generic::Device *_generics;
+	XMI::Device::Generic::Device *_generics;
         char         _name[256];
 
         Memory::MemoryManager _mm;

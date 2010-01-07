@@ -11,7 +11,7 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
-//#include "components/devices/generic/GenericDevice.h"
+#include "components/devices/generic/GenericDevice.h"
 
 #include "components/devices/udp/UdpDevice.h"
 #include "components/devices/udp/UdpModel.h"
@@ -54,13 +54,16 @@ namespace XMI
 	//	context->_workAllocator.returnObject(cookie);
 	//}
     public:
-      inline Context (xmi_client_t client, size_t contextid) :
+      inline Context (xmi_client_t client, size_t clientid, size_t contextid, size_t num, 
+                      XMI::Device::Generic::Device *generics, void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
+          _clientid (clientid), 
           _contextid (contextid),
           _mm (),
           _sysdep (_mm),
+          _generic(generics[clientid]),
           _udp ()   //,
   	  //_workAllocator()
       {
@@ -75,6 +78,7 @@ namespace XMI
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
+        _generic.init(_sysdep, (xmi_context_t)this, clientid, contextid, num, generics);
         _udp.init (&_sysdep);
       }
 
@@ -106,15 +110,17 @@ namespace XMI
         size_t events = 0;
         unsigned i;
 
+        //std::cout << "<" << __global.mapping.task() << ">: advance  max= " << maximum << std::endl; 
         for (i = 0; i < maximum && events == 0; i++)
           {
             //events += _shmem.advance_impl();
             events += _udp.advance();
-	    //events += _generic.advance();
+	    events += _generic.advance();
           }
-
-        //if (events > 0) result = XMI_SUCCESS;
-
+        //std::cout << "<" << __global.mapping.task() << ">: advance  events= " << events << std::endl; 
+ 
+        if (events > 0) result = XMI_SUCCESS;
+     
         return events;
       }
 
@@ -383,17 +389,21 @@ namespace XMI
 
       xmi_client_t  _client;
       xmi_context_t _context;
+      size_t        _clientid;
       size_t        _contextid;
 
       XMI::Memory::MemoryManager _mm;  // TODO why do I have to do this for sys dep?
       SysDep _sysdep;
 
       // devices...
+      XMI::Device::Generic::Device &_generic;
       UdpDevice _udp;
 
       void * _dispatch[1024];
       //void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
+  
+
       //ContextLock _lock;
       //MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
       ProtocolAllocator _protocolAllocator;

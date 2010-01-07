@@ -32,7 +32,7 @@
 #include "Topology.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x)  // fprintf x
 #endif
 
 namespace XMI
@@ -45,6 +45,7 @@ namespace XMI
           _memptr (NULL),
           _memsize (0)
         {
+          Interface::Global<XMI::Global>::time.init(0);
 	  xmi_coord_t ll, ur;
 	  size_t min, max, num;
           size_t *ranks;

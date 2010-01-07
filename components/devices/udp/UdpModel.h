@@ -52,8 +52,7 @@ namespace XMI
                               Interface::RecvFunction_t   read_recv_func,
                               void                      * read_recv_func_parm)
         {
-         _usr_dispatch_id = dispatch;
-         return _device.setDispatchFunc (dispatch, direct_recv_func, direct_recv_func_parm);
+         return _device.setDispatchFunc (dispatch, direct_recv_func, direct_recv_func_parm, _device_dispatch_id);
         };
 
       inline bool postPacket_impl (uint8_t              (&state)[UdpModel::packet_model_state_bytes],

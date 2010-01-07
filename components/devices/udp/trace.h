@@ -21,26 +21,45 @@
 #define TRACE_COUT(x) std::cout << "<" << __global.mapping.task() << ">: " <<  x << std::endl;
 #endif
 
+void printHexLine( char * data, size_t num, size_t pad )
+{
+  size_t i;
+  std::cout << "<" << __global.mapping.task() << ">: " << (void *)data << ": "; 
+  for ( i=0; i<num; i++ )
+  {
+    printf("%02x ", (uint8_t)data[i]); 
+  }
+  for ( i=0; i<pad; i++ ) 
+  {
+    printf("   "); 
+  }
+  printf(" "); 
+  for ( i=0; i<num; i++ )
+  {
+    if ( isgraph((unsigned)data[i]))
+    {
+      printf ("%c", data[i] );
+    } else {
+      printf(".");   
+    }
+  }
+  printf("\n"); 
+}
+
 void dumpHexData( void * bPtr, size_t nb )
 {
+    char * data = (char *)bPtr; 
     size_t i;
     std::cout << "<" << __global.mapping.task() << ">: Hex dump of " << bPtr << " for " << nb << " bytes" << std::endl;
-    std::cout << "<" << __global.mapping.task() << ">: " << std::hex << bPtr << ": ";
-    for ( i=0; i<nb; i+=sizeof(uint32_t) )
+    for ( i=0; i<nb; i+=16 )
     {
-       std::cout << std::hex << std::setfill('0') << std::setw(8) << *((uint32_t*)bPtr) << " ";
-       bPtr = (void*)((uintptr_t)bPtr + sizeof(uint32_t));
-      if ( i%(4*sizeof(uint32_t)) == 3*sizeof(uint32_t) )
+      if ( i+16 <= nb ) 
       {
-         std::cout << std::endl;
-         std::cout << "<" << __global.mapping.task() << ">: " << std::hex << bPtr << ": ";
+        printHexLine( data+i, 16, 0 ); 
+      } else {
+        printHexLine( data+i, nb-i, 16-(nb-i) ); 
       }
-     }
-    if ( i%16 != 0 )
-    {
-      std::cout << std::endl;
     }
-    std::cout << std::dec;
 }
 
 #ifndef DUMP_HEX_DATA

@@ -49,7 +49,7 @@ namespace XMI
          }
 
          TRACE_COUT( "Packet received.  Bytes = " << bytes_rcv )
-         DUMP_HEX_DATA( &_msg, bytes_rcv );
+         _msg.print(); 
          // All of the packet is available
          return 0;
       }
