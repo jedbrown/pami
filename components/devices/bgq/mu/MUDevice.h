@@ -52,7 +52,7 @@ namespace XMI
     {
       typedef   MUSPI_RecvFunction_t  MUDevice_DispatchFn_t;
 
-      class MUDevice : public Interface::BaseDevice<MUDevice,SysDep>, public Interface::PacketDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
+      class MUDevice : public Interface::BaseDevice<MUDevice, SysDep>, public Interface::PacketDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
           //class MUDevice : public BaseDevice, public CDI::Base::Device<MUDevice>, public CDI::Message::Device<MUDevice>//, public CDI::Dma::Device<MUDevice>
       {
 
@@ -432,22 +432,28 @@ int XMI::Device::MU::MUDevice::advance_impl()
 
 #if 1
   static size_t loopcount = 0;
+
   if (loopcount++ > 1000) XMI_abort();
+
 #endif
 
   TRACE((stderr, ">> MUDevice::advance_impl() .. _p2pSendChannelIndex = %d (%d)\n", _p2pSendChannelIndex, NULL_P2P_CHANNEL));
+
   if ( _p2pSendChannelIndex != NULL_P2P_CHANNEL )
     events += _p2pChannel[_p2pSendChannelIndex]->advanceSend();
 
   TRACE((stderr, "   MUDevice::advance_impl() .. _p2pRecvChannelIndex = %d (%d)\n", _p2pRecvChannelIndex, NULL_P2P_CHANNEL));
+
   if ( _p2pRecvChannelIndex != NULL_P2P_CHANNEL )
     events += _p2pChannel[_p2pRecvChannelIndex]->advanceRecv();
 
   TRACE((stderr, "   MUDevice::advance_impl() .. _colSendChannelFlag = %d\n", _colSendChannelFlag));
+
   if ( _colSendChannelFlag )
     events += _colChannel->advanceSend();
 
   TRACE((stderr, "   MUDevice::advance_impl() .. _colRecvChannelFlag = %d\n", _colRecvChannelFlag));
+
   if ( _colRecvChannelFlag )
     events += _colChannel->advanceRecv();
 
@@ -465,3 +471,10 @@ int XMI::Device::MU::MUDevice::read_impl (void * dst, size_t length, void * cook
 #undef TRACE
 
 #endif // __components_devices_bgq_mu_mudevice_h__
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

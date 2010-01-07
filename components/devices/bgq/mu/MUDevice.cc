@@ -24,14 +24,15 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 #define TRACE(x) //fprintf x
 
 XMI::Device::MU::MUDevice::MUDevice () :
-  //BaseDevice (),
-  Interface::BaseDevice<MUDevice,SysDep> (),
-  Interface::PacketDevice<MUDevice> (),
-  sysdep (NULL),
-  _colChannel (NULL),
-  _initialized (false)
+    //BaseDevice (),
+    Interface::BaseDevice<MUDevice, SysDep> (),
+    Interface::PacketDevice<MUDevice> (),
+    sysdep (NULL),
+    _colChannel (NULL),
+    _initialized (false)
 {
   unsigned i;
+
   for ( i = 0; i < MAX_NUM_P2P_CHANNELS; i++ ) _p2pChannel[i] = NULL;
 };
 
@@ -45,6 +46,7 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
 
   bool isChannelMapped[ MAX_NUM_P2P_CHANNELS ];
   unsigned i;
+
   for ( i = 0; i < MAX_NUM_P2P_CHANNELS; i++ ) isChannelMapped[i] = 0;
 
   // find out which channels are mapped for this process
@@ -60,16 +62,16 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
   // There are DISPATCH_SET_COUNT sets of dispatch functions.
   // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
   for ( i = 0; i < DISPATCH_SET_COUNT*DISPATCH_SET_SIZE; i++)
-  {
-    _dispatch[i].f = noop;
-    _dispatch[i].p = (void *) i;
-  }
+    {
+      _dispatch[i].f = noop;
+      _dispatch[i].p = (void *) i;
+    }
 
   for ( i = 0; i < MAX_NUM_P2P_CHANNELS; i++ )
     {
       if ( isChannelMapped[i] )
         {
-          rc = posix_memalign( (void **)&_p2pChannel[i],
+          rc = posix_memalign( (void **) & _p2pChannel[i],
                                L1D_CACHE_LINE_SIZE,
                                sizeof(P2PChannel));
 
@@ -78,6 +80,7 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
           new ( _p2pChannel[i] ) P2PChannel();
           rc = _p2pChannel[i]->init( sysdep, _dispatch );
           XMI_assert( rc == 0 );
+
           if ( rc ) return rc;
         }
     }
@@ -85,7 +88,7 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
 
   // create the collective channel
 #if 0
-  rc = posix_memalign( (void **)&_colChannel,
+  rc = posix_memalign( (void **) & _colChannel,
                        L1D_CACHE_LINE_SIZE,
                        sizeof(ColChannel));
   XMI_assert( rc == 0 );
@@ -125,18 +128,20 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
   if (dispatch >= DISPATCH_SET_COUNT) return false;
 
   unsigned i;
-  for (i=0; i<DISPATCH_SET_SIZE; i++)
-  {
-    id = dispatch * DISPATCH_SET_SIZE + i;
-    if (_dispatch[id].f == noop)
-    {
-      _dispatch[id].f = function;
-      _dispatch[id].p = arg;
 
-      TRACE((stderr, "<< MUDevice::registerPacketHandler(%d, %p, %p, %d), i = %d\n", dispatch, function, arg, id, i));
-      return true;
+  for (i = 0; i < DISPATCH_SET_SIZE; i++)
+    {
+      id = dispatch * DISPATCH_SET_SIZE + i;
+
+      if (_dispatch[id].f == noop)
+        {
+          _dispatch[id].f = function;
+          _dispatch[id].p = arg;
+
+          TRACE((stderr, "<< MUDevice::registerPacketHandler(%d, %p, %p, %d), i = %d\n", dispatch, function, arg, id, i));
+          return true;
+        }
     }
-  }
 
   // release the lock
   TRACE((stderr, "<< MUDevice::registerPacketHandler(%d, %p, %p, %d), result = false\n", dispatch, function, arg, id));
@@ -158,3 +163,10 @@ int XMI::Device::MU::MUDevice::noop (void   * metadata,
 };
 
 #undef TRACE
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//
