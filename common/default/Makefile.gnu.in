@@ -10,6 +10,8 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS		= @TARGET@
+SUBDIRS		=
 NOTBUILT        =
+@LIBNAME@-""-DEFAULT_SOURCES=GeometryTable.cc
+DEVICENAME     = @LIBNAME@-""-DEFAULT
 include @abs_top_builddir@/Build.rules

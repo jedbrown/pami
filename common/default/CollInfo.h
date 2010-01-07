@@ -11,15 +11,10 @@
  * \brief ???
  */
 
-#ifndef __components_geometry_mpi_mpicollinfo_h__
-#define __components_geometry_mpi_mpicollinfo_h__
+#ifndef __common_default_collinfo_h__
+#define __common_default_collinfo_h__
 
 #include <vector>
-#include "components/geometry/CollRegistration.h"
-#include "components/devices/mpi/oldmpimulticastmodel.h"
-#include "components/devices/mpi/oldmpim2mmodel.h"
-#include "components/devices/mpi/mpimessage.h"
-#include "components/devices/mpi/mpidevice.h"
 #include "SysDep.h"
 #include "Mapping.h"
 #include "util/compact_attributes.h"
@@ -28,39 +23,19 @@
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
 #include "algorithms/protocols/tspcoll/NBColl.h"
 
-#include "MPINativeInterface.h"
-
 // CCMI includes
-
-typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep>,
-                                          XMI::Device::MPIMessage> MPIMcastModel;
-typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
-
-typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep>,
-                                    XMI::Device::MPIMessage,
-                                    size_t> MPIM2MModel;
-
-
-#define XMI_COLL_MCAST_CLASS  MPIMcastModel
-#define XMI_COLL_SYSDEP_CLASS XMI::SysDep
+#include "TypeDefs.h"
 
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/protocols/broadcast/multi_color_impl.h"
 #include "algorithms/protocols/broadcast/async_impl.h"
-
 #include "algorithms/connmgr/ColorGeometryConnMgr.h"
 #include "algorithms/protocols/barrier/impl.h"
-
 #include "algorithms/protocols/allreduce/sync_impl.h"
 #include "algorithms/protocols/allreduce/async_impl.h"
-
-#include "algorithms/protocols/alltoall/Alltoall.h"
+#include "algorithms/protocols/alltoall/impl.h"
 
 #define OLD_CCMI_BARRIER  1
-
-typedef CCMI::Adaptor::A2AProtocol <MPIM2MModel, XMI::SysDep, size_t> AlltoallProtocol;
-typedef CCMI::Adaptor::AlltoallFactory <MPIM2MModel, XMI::SysDep, size_t> AlltoallFactory;
-
 
 namespace XMI
 {
@@ -110,7 +85,7 @@ namespace XMI
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "PGAS_Bcast");
         }
-      MPIMcastModel _model;
+      XMI_COLL_MCAST_CLASS _model;
     };
 
     template <class T_Device>
@@ -124,7 +99,7 @@ namespace XMI
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "PGAS_Allgather");
         }
-      MPIMcastModel _model;
+      XMI_COLL_MCAST_CLASS _model;
     };
 
     template <class T_Device>
@@ -138,7 +113,7 @@ namespace XMI
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "PGAS_Allgatherv");
         }
-      MPIMcastModel _model;
+      XMI_COLL_MCAST_CLASS _model;
     };
 
     template <class T_Device>
@@ -154,8 +129,8 @@ namespace XMI
           strcpy(meta->name, "PGAS_Scatter");
         }
 
-      MPIMcastModel _smodel;
-      MPIMcastModel _bmodel;
+      XMI_COLL_MCAST_CLASS _smodel;
+      XMI_COLL_MCAST_CLASS _bmodel;
     };
 
     template <class T_Device>
@@ -172,8 +147,8 @@ namespace XMI
           strcpy(meta->name, "PGAS_Scatterv");
         }
 
-      MPIMcastModel _smodel;
-      MPIMcastModel _bmodel;
+      XMI_COLL_MCAST_CLASS _smodel;
+      XMI_COLL_MCAST_CLASS _bmodel;
     };
 
     template <class T_Device>
@@ -188,7 +163,7 @@ namespace XMI
           strcpy(meta->name, "PGAS_Allreduce");
         }
 
-      MPIMcastModel _model;
+      XMI_COLL_MCAST_CLASS _model;
     };
 
     template <class T_Device>
@@ -203,7 +178,7 @@ namespace XMI
           strcpy(meta->name, "PGAS_Barrier");
         }
 
-      MPIMcastModel _model;
+      XMI_COLL_MCAST_CLASS _model;
     };
 
     template <class T_Device, class T_Sysdep>
@@ -219,7 +194,7 @@ namespace XMI
           strcpy(meta->name, "CCMI_AMBroadcast");
         }
       XMI_Request_t                                   _request;
-      MPIMcastModel                                   _model;
+      XMI_COLL_MCAST_CLASS                                   _model;
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
@@ -244,7 +219,7 @@ namespace XMI
           strcpy(meta->name, "CCMI_BinomBarrier");
         }
       XMI_Request_t                                     _request;
-      MPIMcastModel                                     _model;
+      XMI_COLL_MCAST_CLASS                                     _model;
       CCMI::Adaptor::Barrier::OldBinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                   _barrier_executor;
     };
@@ -300,7 +275,7 @@ namespace XMI
           strcpy(meta->name, "CCMI_BinomBroadcast");
         }
       XMI_Request_t                                           _request;
-      MPIMcastModel                                           _model;
+      XMI_COLL_MCAST_CLASS                                           _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::BinomialBcastFactory          _broadcast_registration;
     };
@@ -324,7 +299,7 @@ namespace XMI
           strcpy(meta->name, "CCMI_RingBroadcast");
         }
       XMI_Request_t                                           _request;
-      MPIMcastModel                                           _model;
+      XMI_COLL_MCAST_CLASS                                           _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::RingBcastFactory              _broadcast_registration;
     };
@@ -349,7 +324,7 @@ namespace XMI
           strcpy(meta->name, "CCMI_RingAllreduce");
         }
       XMI_Request_t                                           _request;
-      MPIMcastModel                                           _model;
+      XMI_COLL_MCAST_CLASS                                           _model;
       CCMI::Adaptor::ConfigFlags                              _cf;
       CCMI::Adaptor::Allreduce::Ring::Factory                 _allreduce_registration;
     };
@@ -373,7 +348,7 @@ namespace XMI
           strcpy(meta->name, "CCMI_BinomAllreduce");
         }
       XMI_Request_t                                           _request;
-      MPIMcastModel                                           _model;
+      XMI_COLL_MCAST_CLASS                                           _model;
       CCMI::Adaptor::ConfigFlags                              _cf;
       CCMI::Adaptor::Allreduce::Binomial::Factory             _allreduce_registration;
     };
@@ -394,14 +369,18 @@ namespace XMI
           strcpy(meta->name, "CCMI_Alltoallv");
         }
       XMI_Request_t     _request;
-      MPIM2MModel       _model;
-      AlltoallFactory   _alltoallv_registration;
+      XMI_COLL_M2M_CLASS       _model;
+      CCMI::Adaptor::Alltoall::AlltoallFactory   _alltoallv_registration;
     };
 
 
   };
 };
-typedef XMI::Device::MPIDevice<XMI::SysDep> MPIDevice;
-typedef std::vector<XMI::CollInfo::CollInfo<MPIDevice> *> RegQueue;
+
+template <class T_Device>
+class RegQueue : public std::vector<XMI::CollInfo::CollInfo<T_Device> *>
+{
+public:
+};
 
 #endif

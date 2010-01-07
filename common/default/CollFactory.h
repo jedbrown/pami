@@ -7,19 +7,16 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/lapiunix/lapiunixcollfactory.h
+ * \file common/default/defaultcollfactory.h
  * \brief ???
  */
 
-#ifndef __components_geometry_lapiunix_lapiunixcollfactory_h__
-#define __components_geometry_lapiunix_lapiunixcollfactory_h__
-
-
-#define XMI_COLLFACTORY_CLASS XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep>, SysDep>
+#ifndef __common_default_collfactory_h__
+#define __common_default_collfactory_h__
 
 #include "sys/xmi.h"
-#include "components/geometry/CollFactory.h"
-#include "components/geometry/lapiunix/lapiunixcollinfo.h"
+#include "algorithms/interfaces/CollFactoryInterface.h"
+#include "common/default/CollInfo.h"
 #include "util/common.h"
 #include "algorithms/ccmi.h"
 
@@ -28,42 +25,44 @@ namespace XMI
   namespace CollFactory
   {
 
-    template <class T_Device, class T_Sysdep>
-    class LAPI : public CollFactory<XMI::CollFactory::LAPI<Device::LAPIDevice<SysDep>, SysDep> >
+    template <class T_Device, class T_Sysdep, class T_McastModel>
+    class Default : public CollFactory<XMI::CollFactory::Default<T_Device,
+                                                                 T_Sysdep,
+                                                                 T_McastModel> >
     {
     public:
-      inline LAPI(T_Sysdep *sd):
-        CollFactory<XMI::CollFactory::LAPI<T_Device, T_Sysdep> >(),
+      inline Default(T_Sysdep *sd):
+        CollFactory<XMI::CollFactory::Default<T_Device, T_Sysdep, T_McastModel> >(),
         _sd(sd)
         {
         }
 
+      
+      // Internal request object class used for allocations
+      // The request field needs to be aligned.
+      // Easiest thing to do is put it first since
+      // we align the whole structure.
       class reqObj
       {
       public:
-        // The request needs to be aligned.  Easiest thing to do is put it first since
-        // we align the whole structure.
         XMI_CollectiveRequest_t  req[1];
-        LAPI                     *factory;
+        Default                 *factory;
         xmi_event_function       user_done_fn;
         void                    *user_cookie;
       };
 
       static void client_done(xmi_context_t context, void *rdata, xmi_result_t res)
         {
-          reqObj * robj = (reqObj*)rdata;
-          LAPI    * lapi  = robj->factory;
+          reqObj  * robj = (reqObj*)rdata;
+          Default * dev  = robj->factory;
           if(robj->user_done_fn)
             robj->user_done_fn(context, robj->user_cookie, res);
-          lapi->_reqAllocator.returnObject(robj);
+          dev->_reqAllocator.returnObject(robj);
         }
 
-
-
-
-      inline RegQueue * getRegQ(xmi_xfer_type_t       collective)
+      inline RegQueue<T_Device> * getRegQ(xmi_xfer_type_t       collective)
         {
-          RegQueue *rq = NULL;
+          RegQueue<T_Device> *rq = NULL;
           switch (collective)
               {
                   case XMI_XFER_BROADCAST:
@@ -127,57 +126,56 @@ namespace XMI
 
       inline xmi_result_t algorithms_num_impl (xmi_xfer_type_t collective,
                                                int *lists_lengths)
-      {
-        RegQueue *rq = getRegQ(collective);
-        if(rq == NULL)
-          return XMI_UNIMPL;
-        lists_lengths[0] = rq->size();
+        {
+          RegQueue<T_Device> *rq = getRegQ(collective);
+          if(rq == NULL)
+            return XMI_UNIMPL;
+          lists_lengths[0] = rq->size();
 
-        /* we return 0 for now for the "sometimes works" list */
-        lists_lengths[1] = 0;
-        return XMI_SUCCESS;
-      }
+          /* we return 0 for now for the "sometimes works" list */
+          lists_lengths[1] = 0;
+          return XMI_SUCCESS;
+        }
 
       inline xmi_result_t algorithms_info_impl(xmi_xfer_type_t collective,
                                                xmi_algorithm_t *alglist,
                                                xmi_metadata_t *mdata,
                                                int algorithm_type,
                                                int num)
-      {
-        int i;
-        RegQueue *rq = (RegQueue *) NULL;
-
-        /* if type is 0, then we want the list of "always works" list */
-        if (algorithm_type == 0)
-          rq = getRegQ(collective);
-        else
         {
-/** \todo  need to implement this later */
-          ; //
-        }
+          int i;
+          RegQueue<T_Device> *rq = (RegQueue<T_Device> *) NULL;
 
-        if(rq == NULL)
-          return XMI_UNIMPL;
+          /* if type is 0, then we want the list of "always works" list */
+          if (algorithm_type == 0)
+            rq = getRegQ(collective);
+          else
+              {
+                  /** \todo  need to implement this later */
+                ; //
+              }
 
-        if (num > rq->size())
-          return XMI_ERROR;
+          if(rq == NULL)
+            return XMI_UNIMPL;
 
-        for(i = 0; i < num; i++)
-          alglist[i] = (size_t) i;
+          if ((size_t)num > (size_t)rq->size())
+            return XMI_ERROR;
 
-        if (mdata)
-        {
           for(i = 0; i < num; i++)
-          {
-            mdata[i].geometry = (*rq)[i]->_metadata.geometry;
-            mdata[i].buffer = (*rq)[i]->_metadata.buffer;
-            mdata[i].misc = (*rq)[i]->_metadata.misc;
-            strcpy(mdata[i].name, (*rq)[i]->_metadata.name);
-          }
-        }
-        return XMI_SUCCESS;
-      }
+            alglist[i] = (size_t) i;
 
+          if (mdata)
+              {
+                for(i = 0; i < num; i++)
+                    {
+                      mdata[i].geometry = (*rq)[i]->_metadata.geometry;
+                      mdata[i].buffer = (*rq)[i]->_metadata.buffer;
+                      mdata[i].misc = (*rq)[i]->_metadata.misc;
+                      strcpy(mdata[i].name, (*rq)[i]->_metadata.name);
+                    }
+              }
+          return XMI_SUCCESS;
+        }
 
       inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g,
                                        XMI_NBCollManager  *mgr,
@@ -186,7 +184,7 @@ namespace XMI
         {
           _geometry = g;
           _dev      = dev;
-	  // Setup PGAS style collectives
+          // Setup PGAS style collectives
           _barrier    = mgr->allocate (g, TSPColl::BarrierTag);
           _allgather  = mgr->allocate (g, TSPColl::AllgatherTag);
           _allgatherv = mgr->allocate (g, TSPColl::AllgathervTag);
@@ -197,20 +195,20 @@ namespace XMI
           _sct        = mgr->allocate (g, TSPColl::ScatterTag);
           _sctv       = mgr->allocate (g, TSPColl::ScattervTag);
 
-	  // Setup CCMI style collectives
-          _ccmi_bar   = default_bar;
-	  CCMI::Executor::Executor *exe = NULL;
+          // Setup CCMI style collectives
+          _ccmi_bar                     = default_bar;
+          CCMI::Executor::Executor *exe = NULL;
           exe = default_bar->_barrier_registration.generate(&_barrier_executors[0],g);
           g->setKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR, (void*)exe);
           exe = default_bar->_barrier_registration.generate(&_barrier_executors[1],g);
           g->setKey(XMI::Geometry::XMI_GKEY_LOCALBARRIEREXECUTOR, (void*)exe);
-	  return XMI_SUCCESS;
+          return XMI_SUCCESS;
         }
 
       inline xmi_result_t  add_collective(xmi_xfer_type_t          collective,
 					  XMI::CollInfo::CollInfo<T_Device>* ci)
         {
-          RegQueue *rq = getRegQ(collective);
+          RegQueue<T_Device> *rq = getRegQ(collective);
           if(rq==NULL)
             return XMI_UNIMPL;
           rq->push_back(ci);
@@ -285,23 +283,23 @@ namespace XMI
         {
           XMI::CollInfo::PGBroadcastInfo<T_Device> *info =
             (XMI::CollInfo::PGBroadcastInfo<T_Device> *)_broadcasts[broadcast->algorithm];
-	  switch(info->_colltype)
+          switch(info->_colltype)
               {
                   case XMI::CollInfo::CI_BROADCAST0:
                   {
                     if (!_bcast->isdone()) _dev->advance();
 
-                    ((TSPColl::BinomBcast<LAPIMcastModel> *)_bcast)->reset (_geometry->virtrankof(broadcast->root),
-                                                                           broadcast->buf,
-                                                                           broadcast->buf,
-                                                                           broadcast->typecount);
+                    ((TSPColl::BinomBcast<T_McastModel> *)_bcast)->reset (_geometry->virtrankof(broadcast->root),
+                                                                          broadcast->buf,
+                                                                          broadcast->buf,
+                                                                          broadcast->typecount);
                     _bcast->setComplete(broadcast->cb_done, broadcast->cookie);
                     _bcast->kick(&info->_model);
                   }
                   break;
                   case XMI::CollInfo::CI_BROADCAST1:
                   {
-                    XMI_Callback_t cb_done;
+                    xmi_callback_t cb_done;
                     XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
@@ -325,7 +323,7 @@ namespace XMI
                   break;
                   case XMI::CollInfo::CI_BROADCAST2:
                   {
-                    XMI_Callback_t cb_done;
+                    xmi_callback_t cb_done;
                     XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
 
@@ -361,7 +359,7 @@ namespace XMI
           XMI::CollInfo::PGAllreduceInfo<T_Device> *info =
             (XMI::CollInfo::PGAllreduceInfo<T_Device> *)_allreduces[allreduce->algorithm];
 
-	  switch(info->_colltype)
+          switch(info->_colltype)
               {
                   case XMI::CollInfo::CI_ALLREDUCE0:
                   {
@@ -372,14 +370,14 @@ namespace XMI
                                                                 allreduce->stypecount,
                                                                 datawidth,
                                                                 cb_allreduce);
-                    if (datawidth * allreduce->stypecount < (unsigned)TSPColl::Allreduce::Short<LAPIMcastModel>::MAXBUF)
+                    if (datawidth * allreduce->stypecount < (unsigned)TSPColl::Allreduce::Short<T_McastModel>::MAXBUF)
                         {
                           if (!_sar->isdone()) _dev->advance();
-                          ((TSPColl::Allreduce::Short<LAPIMcastModel> *)_sar)->reset (allreduce->sndbuf,
-                                                                                     allreduce->rcvbuf,
-                                                                                     allreduce->op,
-                                                                                     allreduce->dt,
-                                                                                     allreduce->stypecount);
+                          ((TSPColl::Allreduce::Short<T_McastModel> *)_sar)->reset (allreduce->sndbuf,
+                                                                                    allreduce->rcvbuf,
+                                                                                    allreduce->op,
+                                                                                    allreduce->dt,
+                                                                                    allreduce->stypecount);
                           _sar->setComplete(allreduce->cb_done, allreduce->cookie);
                           _sar->kick(&info->_model);
                           return XMI_SUCCESS;
@@ -387,11 +385,11 @@ namespace XMI
                     else
                         {
                           if (!_lar->isdone()) _dev->advance();
-                          ((TSPColl::Allreduce::Long<LAPIMcastModel> *)_lar)->reset (allreduce->sndbuf,
-                                                                                    allreduce->rcvbuf,
-                                                                                    allreduce->op,
-                                                                                    allreduce->dt,
-                                                                                    allreduce->stypecount);
+                          ((TSPColl::Allreduce::Long<T_McastModel> *)_lar)->reset (allreduce->sndbuf,
+                                                                                   allreduce->rcvbuf,
+                                                                                   allreduce->op,
+                                                                                   allreduce->dt,
+                                                                                   allreduce->stypecount);
                           _lar->setComplete(allreduce->cb_done, allreduce->cookie);
                           _lar->kick(&info->_model);
                           return XMI_SUCCESS;
@@ -405,7 +403,7 @@ namespace XMI
                     XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>*)info;
 
-                    XMI_Callback_t cb_done;
+                    xmi_callback_t cb_done;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
                     XMI_assertf(robj,"allreduce alg 1:  memory allocation failure\n");
 
@@ -463,7 +461,7 @@ namespace XMI
                     XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep>*)info;
 
-                    XMI_Callback_t cb_done;
+                    xmi_callback_t cb_done;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
                     XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
 
@@ -532,9 +530,9 @@ namespace XMI
           XMI::CollInfo::PGAllgatherInfo<T_Device> *info =
             (XMI::CollInfo::PGAllgatherInfo<T_Device> *)_allgathers[allgather->algorithm];
           if (!_allgather->isdone()) _dev->advance();
-          ((TSPColl::Allgather<LAPIMcastModel> *)_allgather)->reset (allgather->sndbuf,
-                                                                    allgather->rcvbuf,
-                                                                    allgather->stypecount);
+          ((TSPColl::Allgather<T_McastModel> *)_allgather)->reset (allgather->sndbuf,
+                                                                   allgather->rcvbuf,
+                                                                   allgather->stypecount);
           _allgather->setComplete(allgather->cb_done, allgather->cookie);
           _allgather->kick(&info->_model);
           return XMI_SUCCESS;
@@ -546,9 +544,9 @@ namespace XMI
           XMI::CollInfo::PGAllgathervInfo<T_Device> *info =
             (XMI::CollInfo::PGAllgathervInfo<T_Device> *)_allgathervs[allgatherv->algorithm];
           if (!_allgatherv->isdone()) _dev->advance();
-          ((TSPColl::Allgatherv<LAPIMcastModel> *)_allgatherv)->reset (allgatherv->sndbuf,
-                                                                      allgatherv->rcvbuf,
-                                                                      allgatherv->rtypecounts);
+          ((TSPColl::Allgatherv<T_McastModel> *)_allgatherv)->reset (allgatherv->sndbuf,
+                                                                     allgatherv->rcvbuf,
+                                                                     allgatherv->rtypecounts);
           _allgatherv->setComplete(allgatherv->cb_done, allgatherv->cookie);
           _allgatherv->kick(&info->_model);
           return XMI_SUCCESS;
@@ -564,14 +562,14 @@ namespace XMI
           XMI::CollInfo::PGScatterInfo<T_Device> *info =
             (XMI::CollInfo::PGScatterInfo<T_Device> *)_scatters[scatter->algorithm];
           if (!_sct->isdone()) _dev->advance();
-          ((TSPColl::Scatter<LAPIMcastModel> *)_sct)->reset (_geometry->virtrankof(scatter->root),
-                                                            scatter->sndbuf,
-                                                            scatter->rcvbuf,
-                                                            scatter->stypecount);
+          ((TSPColl::Scatter<T_McastModel> *)_sct)->reset (_geometry->virtrankof(scatter->root),
+                                                           scatter->sndbuf,
+                                                           scatter->rcvbuf,
+                                                           scatter->stypecount);
           _sct->setComplete(scatter->cb_done, scatter->cookie);
 
           while(!_barrier->isdone()) _dev->advance();
-          ((TSPColl::Barrier<LAPIMcastModel> *)_barrier)->reset();
+          ((TSPColl::Barrier<T_McastModel> *)_barrier)->reset();
           _barrier->setComplete(NULL, NULL);
           _barrier->kick(&info->_bmodel);
           while(!_barrier->isdone()) _dev->advance();
@@ -585,14 +583,14 @@ namespace XMI
           XMI::CollInfo::PGScattervInfo<T_Device> *info =
             (XMI::CollInfo::PGScattervInfo<T_Device> *)_scattervs[scatterv->algorithm];
           if (!_sctv->isdone()) _dev->advance();
-          ((TSPColl::Scatterv<LAPIMcastModel> *)_sctv)->reset (_geometry->virtrankof(scatterv->root),
-                                                              scatterv->sndbuf,
-                                                              scatterv->rcvbuf,
-                                                              scatterv->stypecounts);
+          ((TSPColl::Scatterv<T_McastModel> *)_sctv)->reset (_geometry->virtrankof(scatterv->root),
+                                                             scatterv->sndbuf,
+                                                             scatterv->rcvbuf,
+                                                             scatterv->stypecounts);
           _sctv->setComplete(scatterv->cb_done, scatterv->cookie);
 
           while(!_barrier->isdone()) _dev->advance();
-          ((TSPColl::Barrier<LAPIMcastModel> *)_barrier)->reset();
+          ((TSPColl::Barrier<T_McastModel> *)_barrier)->reset();
           _barrier->setComplete(NULL, NULL);
           _barrier->kick(&info->_bmodel);
           while(!_barrier->isdone()) _dev->advance();
@@ -608,17 +606,17 @@ namespace XMI
 
       inline xmi_result_t  ibarrier_impl        (xmi_barrier_t        *barrier)
         {
-	  XMI::CollInfo::CollInfo<T_Device> *info =
-	    (XMI::CollInfo::CollInfo<T_Device> *)_barriers[barrier->algorithm];
+          XMI::CollInfo::CollInfo<T_Device> *info =
+            (XMI::CollInfo::CollInfo<T_Device> *)_barriers[barrier->algorithm];
 
-	  switch(info->_colltype)
+          switch(info->_colltype)
               {
                   case XMI::CollInfo::CI_BARRIER0:
                   {
                     XMI::CollInfo::PGBarrierInfo<T_Device> *binfo =
                       (XMI::CollInfo::PGBarrierInfo<T_Device> *)info;
                     while(!_barrier->isdone()) _dev->advance();
-                    ((TSPColl::Barrier<LAPIMcastModel> *)_barrier)->reset();
+                    ((TSPColl::Barrier<T_McastModel> *)_barrier)->reset();
                     _barrier->setComplete(barrier->cb_done, barrier->cookie);
                     _barrier->kick(&binfo->_model);
                   }
@@ -651,16 +649,16 @@ namespace XMI
       inline xmi_result_t  ialltoallv_impl      (xmi_alltoallv_t      *alltoallv)
         {
           XMI::CollInfo::CollInfo<T_Device> *info =
-	    (XMI::CollInfo::CollInfo<T_Device> *)_alltoallvs[alltoallv->algorithm];
+            (XMI::CollInfo::CollInfo<T_Device> *)_alltoallvs[alltoallv->algorithm];
           switch(info->_colltype)
               {
                   case XMI::CollInfo::CI_ALLTOALLV0:
                   {
                     XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep> *cinfo=
-                       (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
+                      (XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>*)info;
 
-                    XMI_Callback_t cb_done;
-		    cb_done.function   = alltoallv->cb_done;
+                    xmi_callback_t cb_done;
+                    cb_done.function   = alltoallv->cb_done;
                     cb_done.clientdata = alltoallv->cookie;
 
                     reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();
@@ -673,7 +671,7 @@ namespace XMI
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
 
-		    cinfo->_alltoallv_registration.generate(&robj->req[0],
+                    cinfo->_alltoallv_registration.generate(&robj->req[0],
                                                             cb_done,
                                                             XMI_MATCH_CONSISTENCY,
                                                             _geometry,
@@ -774,22 +772,22 @@ namespace XMI
       T_Device                        *_dev;
       XMI_GEOMETRY_CLASS              *_geometry;
       T_Sysdep                        *_sd;
-      RegQueue                         _broadcasts;
-      RegQueue                         _ambroadcasts;
-      RegQueue                         _allgathers;
-      RegQueue                         _allgathervs;
-      RegQueue                         _scatters;
-      RegQueue                         _scattervs;
-      RegQueue                         _allreduces;
-      RegQueue                         _barriers;
-      RegQueue                         _alltoallvs;
-      TSPColl::NBColl<LAPIMcastModel>  *_barrier;
-      TSPColl::NBColl<LAPIMcastModel>  *_allgather;
-      TSPColl::NBColl<LAPIMcastModel>  *_allgatherv;
-      TSPColl::NBColl<LAPIMcastModel>  *_bcast, *_bcast2;
-      TSPColl::NBColl<LAPIMcastModel>  *_sar,   *_lar;
-      TSPColl::NBColl<LAPIMcastModel>  *_sct,   *_sctv;
-      CCMI_Executor_t                  _barrier_executors[2];
+      RegQueue<T_Device>              _broadcasts;
+      RegQueue<T_Device>              _ambroadcasts;
+      RegQueue<T_Device>              _allgathers;
+      RegQueue<T_Device>              _allgathervs;
+      RegQueue<T_Device>              _scatters;
+      RegQueue<T_Device>              _scattervs;
+      RegQueue<T_Device>              _allreduces;
+      RegQueue<T_Device>              _barriers;
+      RegQueue<T_Device>              _alltoallvs;
+      TSPColl::NBColl<T_McastModel>  *_barrier;
+      TSPColl::NBColl<T_McastModel>  *_allgather;
+      TSPColl::NBColl<T_McastModel>  *_allgatherv;
+      TSPColl::NBColl<T_McastModel>  *_bcast, *_bcast2;
+      TSPColl::NBColl<T_McastModel>  *_sar,   *_lar;
+      TSPColl::NBColl<T_McastModel>  *_sct,   *_sctv;
+      CCMI_Executor_t                 _barrier_executors[2];
       XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>  *_ccmi_bar;
       XMI::MemoryAllocator<sizeof(reqObj), 16> _reqAllocator;
 

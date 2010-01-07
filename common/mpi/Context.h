@@ -21,8 +21,8 @@
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "SysDep.h"
-#include "components/geometry/mpi/mpicollfactory.h"
-#include "components/geometry/mpi/mpicollregistration.h"
+#include "common/default/CollFactory.h"
+#include "common/default/CollRegistration.h"
 #include "components/devices/generic/GenericDevice.h"
 #include "Mapping.h"
 #include <new>
@@ -56,8 +56,8 @@ namespace XMI
     typedef Device::MPIDevice<SysDep> MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
-    typedef CollFactory::MPI<MPIDevice, SysDep> MPICollfactory;
-    typedef CollRegistration::MPI<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
+    typedef CollFactory::Default<MPIDevice, SysDep, MPIMcastModel> MPICollfactory;
+    typedef CollRegistration::Default<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
 
 

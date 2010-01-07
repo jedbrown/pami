@@ -7,19 +7,18 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/lapiunix/lapiunixcollregistration.h
+ * \file common/default/CollRegistration.h
  * \brief ???
  */
 
-#ifndef __components_geometry_lapiunix_lapiunixcollregistration_h__
-#define __components_geometry_lapiunix_lapiunixcollregistration_h__
+#ifndef __common_default_collregistration_h__
+#define __common_default_collregistration_h__
 
-#define XMI_COLLREGISTRATION_CLASS XMI::CollRegistration::LAPI
-
+#include "algorithms/interfaces/CollRegistrationInterface.h"
 #include <map>
 #include <vector>
-#include "components/geometry/lapiunix/lapiunixcollinfo.h"
-#include "components/geometry/lapiunix/lapiunixcollfactory.h"
+#include "common/default/CollInfo.h"
+#include "common/default/CollFactory.h"
 #include "components/memory/MemoryAllocator.h"
 
 namespace XMI
@@ -28,11 +27,25 @@ namespace XMI
   namespace CollRegistration
   {
     template <class T_Geometry, class T_Collfactory, class T_Device, class T_Sysdep>
-    class LAPI : public CollRegistration<XMI::CollRegistration::LAPI<XMI_GEOMETRY_CLASS, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>
+
+    class Default : public CollRegistration<XMI::CollRegistration::Default<XMI_GEOMETRY_CLASS,
+                                                                   T_Collfactory,
+                                                                   T_Device,
+                                                                   T_Sysdep>,
+                                                                   T_Geometry, T_Collfactory>
     {
     public:
-      inline LAPI(T_Device *dev, T_Sysdep *sd, xmi_client_t client, xmi_context_t context, size_t context_id):
-        CollRegistration<XMI::CollRegistration::LAPI<T_Geometry, T_Collfactory, T_Device, T_Sysdep>, T_Geometry, T_Collfactory>(),
+      inline Default(T_Device     *dev,
+                     T_Sysdep     *sd,
+                     xmi_client_t  client,
+                     xmi_context_t context,
+                     size_t context_id):
+        CollRegistration<XMI::CollRegistration::Default<T_Geometry,
+                                                        T_Collfactory,
+                                                        T_Device,
+                                                        T_Sysdep>,
+                         T_Geometry,
+                         T_Collfactory>(),
 	_dev(dev),
         _sysdep(sd),
 	_client (client),
@@ -110,8 +123,8 @@ namespace XMI
 
       inline T_Collfactory * analyze_impl(T_Geometry *geometry)
       {
-	XMI_COLLFACTORY_CLASS *f=(XMI_COLLFACTORY_CLASS *)_fact_alloc.allocateObject();
-	new(f)XMI_COLLFACTORY_CLASS(_sysdep);
+	T_Collfactory *f=(T_Collfactory *)_fact_alloc.allocateObject();
+	new(f)T_Collfactory(_sysdep);
 	f->setGeometry(geometry, &_nbCollMgr, _dev, &_ccmibarrier);
 	f->add_collective(XMI_XFER_BROADCAST,  &_pgbroadcast);
 	f->add_collective(XMI_XFER_ALLGATHER,  &_pgallgather);
@@ -137,47 +150,37 @@ namespace XMI
         }
 
     public:
-      T_Device                        *_dev;
-      T_Sysdep                        *_sysdep;
-      XMI_NBCollManager                _nbCollMgr;
-      MemoryAllocator<sizeof(XMI_COLLFACTORY_CLASS), 16> _fact_alloc;
-      xmi_client_t                     _client;
-      xmi_context_t                    _context;
-      size_t                           _contextid;
+      T_Device                                                    *_dev;
+      T_Sysdep                                                    *_sysdep;
+      XMI_NBCollManager                                            _nbCollMgr;
+      xmi_client_t                                                 _client;
+      xmi_context_t                                                _context;
+      size_t                                                       _contextid;
+      MemoryAllocator<sizeof(T_Collfactory), 16>                   _fact_alloc;
+      XMI::CollInfo::PGBroadcastInfo<T_Device>                     _pgbroadcast;
+      XMI::CollInfo::PGAllgatherInfo<T_Device>                     _pgallgather;
+      XMI::CollInfo::PGAllgathervInfo<T_Device>                    _pgallgatherv;
+      XMI::CollInfo::PGScatterInfo<T_Device>                       _pgscatter;
+      XMI::CollInfo::PGScattervInfo<T_Device>                      _pgscatterv;
+      XMI::CollInfo::PGAllreduceInfo<T_Device>                     _pgallreduce;
+      XMI::CollInfo::PGBarrierInfo<T_Device>                       _pgbarrier;
+      XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep>       _ccmiambroadcast;
+      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>      _ccmibarrier;
+      XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>    _ccmibinombroadcast;
+      XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>     _ccmiringbroadcast;
+      XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>     _ccmiringallreduce;
+      XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep> _ccmibinomialallreduce;
+      XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>         _ccmialltoallv;
 
-      XMI::CollInfo::PGBroadcastInfo<T_Device>    _pgbroadcast;
-      XMI::CollInfo::PGAllgatherInfo<T_Device>    _pgallgather;
-      XMI::CollInfo::PGAllgathervInfo<T_Device>   _pgallgatherv;
-      XMI::CollInfo::PGScatterInfo<T_Device>      _pgscatter;
-      XMI::CollInfo::PGScattervInfo<T_Device>     _pgscatterv;
-      XMI::CollInfo::PGAllreduceInfo<T_Device>    _pgallreduce;
-      XMI::CollInfo::PGBarrierInfo<T_Device>      _pgbarrier;
-      XMI::CollInfo::CCMIAmbroadcastInfo<T_Device, T_Sysdep>        _ccmiambroadcast;
-      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>       _ccmibarrier;
-      XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>     _ccmibinombroadcast;
-      XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>      _ccmiringbroadcast;
-      XMI::CollInfo::CCMIRingAllreduceInfo<T_Device, T_Sysdep>      _ccmiringallreduce;
-      XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device, T_Sysdep>  _ccmibinomialallreduce;
-      XMI::CollInfo::CCMIAlltoallvInfo<T_Device, T_Sysdep>           _ccmialltoallv;
-
-      RegQueue          _broadcasts;
-      RegQueue          _ambroadcasts;
-      RegQueue          _allgathers;
-      RegQueue          _allgathervs;
-      RegQueue          _alltoallvs;
-      RegQueue          _scatters;
-      RegQueue          _scattervs;
-      RegQueue          _allreduces;
-      RegQueue          _barriers;
-
-#if 0
-      LAPIMcastModel     _ccmi_broadcast;
-      LAPIMcastModel     _ccmi_allreduce;
-      LAPIMcastModel     _ccmi_alltoall;
-      LAPIMcastModel     _ccmi_barrier;
-      LAPIMcastModel     _ccmi_ambroadcast;
-#endif
-
+      RegQueue<T_Device>                                           _broadcasts;
+      RegQueue<T_Device>                                           _ambroadcasts;
+      RegQueue<T_Device>                                           _allgathers;
+      RegQueue<T_Device>                                           _allgathervs;
+      RegQueue<T_Device>                                           _alltoallvs;
+      RegQueue<T_Device>                                           _scatters;
+      RegQueue<T_Device>                                           _scattervs;
+      RegQueue<T_Device>                                           _allreduces;
+      RegQueue<T_Device>                                           _barriers;
     }; // class Collregistration
   };  // namespace Collregistration
 }; // namespace XMI
