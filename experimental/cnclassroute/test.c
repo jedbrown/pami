@@ -3,7 +3,8 @@
 
 #include "cnclassroute.h"
 
-extern void build_node_classroute(rect_t *world, rect_t *comm, coord_t *me, classroute_t *cr);
+extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
+						rect_t *comm, classroute_t *cr);
 
 char *dim_names = XMI_DIM_NAMES;
 
@@ -108,29 +109,43 @@ void print_classroute(coord_t *me, classroute_t *cr) {
 	printf("%s\n", buf);
 }
 
-void recurse_dims(rect_t *world, rect_t *comm, coord_t *me) {
+void recurse_dims(rect_t *world, coord_t *root, rect_t *comm, coord_t *me) {
 	int x;
 	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
 		me->coords[me->dims] = x;
 		++me->dims;
 		if (me->dims == world->ll.dims) {
 			classroute_t cr;
-			build_node_classroute(world, comm, me, &cr);
+			build_node_classroute(world, root, me, comm, &cr);
 			print_classroute(me, &cr);
 		} else {
-			recurse_dims(world, comm, me);
+			recurse_dims(world, root, comm, me);
 		}
 		--me->dims;
 	}
+}
+
+void do_classroute(rect_t *world, coord_t *root, rect_t *comm) {
+	static char buf[1024];
+	coord_t me = { 0 };
+	char *s = buf;
+	s += sprintf(s, "Classroute for comm ");
+	s += sprint_rect(s, comm);
+	s += sprintf(s, " in world ");
+	s += sprint_rect(s, world);
+	s += sprintf(s, " with root ");
+	s += sprint_coord(s, root);
+	printf("%s:\n", buf);
+	recurse_dims(world, root, comm, &me);
 }
 
 int main(int argc, char **argv) {
 	int x, e;
 	rect_t world;
 	rect_t comm;
-	coord_t me;
+	coord_t me, root;
 	char *ep;
-	int world_set = 0, comm_set = 0;
+	int world_set = 0, comm_set = 0, root_set = 0;
 
 	extern int optind;
 	extern char *optarg;
@@ -159,11 +174,12 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (!world_set) {
-		fprintf(stderr, "Usage: %s [-r <dim-names>] -w <world-rectangle> [ -c <sub-comm-rect> ]\n"
+		fprintf(stderr, "Usage: %s [-r <dim-names>] -w <world-rectangle> [ -c <sub-comm-rect> ] [<world-root>...]\n"
 				"Computes and prints classroute for all nodes in <sub-comm>.\n"
 				"Where rectangle syntax is \"(a0,b0,c0,...):(aN,bN,cN,...)\"\n"
 				"and 'a0' (etc) are lower-left corner coords\n"
 				"and 'aN' (etc) are upper-right corner coords\n"
+				"<world-root> is coordinates of root to use in world rect (default: center)\n"
 				"-r renames dimensions, default is \"ABCDEFGH\"\n"
 				"All coordinates must use the same number of dimensions.\n"
 				"sub-comm defaults to world\n", argv[0]);
@@ -176,13 +192,29 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "sub-comm number of dimensions does not match 'world'\n");
 		exit(1);
 	}
-	static char buf[1024];
-	sprint_rect(buf, &world);
-	printf("COMM_WORLD = %s\n", buf);
-	sprint_rect(buf, &comm);
-	printf("my_comm = %s\n", buf);
 
-	me = (coord_t){ 0 };
-	recurse_dims(&world, &comm, &me);
+	for (x = optind; x < argc; ++x) {
+		root_set = 1;
+		e = parse_coord(argv[x], &ep, &root);
+		if (e != 0) {
+			fprintf(stderr, "invalid coord for world root: \"%s\" at \"%s\"\n", argv[x], ep);
+			continue;
+		}
+		if (root.dims != world.ll.dims) {
+			fprintf(stderr, "root number of dimensions does not match 'world'\n");
+			continue;
+		}
+		if (x > optind) printf("\n");
+		do_classroute(&world, &root, &comm);
+	}
+	if (!root_set) {
+		for (x = 0; x < world.ll.dims; ++x) {
+			root.coords[x] = world.ll.coords[x] +
+				(world.ur.coords[x] - world.ll.coords[x] + 1) / 2;
+
+		}
+		root.dims = world.ll.dims;
+		do_classroute(&world, &root, &comm);
+	}
 	exit(0);
 }
