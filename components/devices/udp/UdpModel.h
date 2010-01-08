@@ -120,7 +120,7 @@ namespace XMI
       xmi_client_t                 _client;
       size_t                       _context;
       uint32_t                     _usr_dispatch_id;
-      uint32_t                     _device_dispatch_id;
+      size_t                       _device_dispatch_id;
 
     };
   };

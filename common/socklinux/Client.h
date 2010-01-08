@@ -221,7 +221,11 @@ namespace XMI
           size_t bytes     = 1024*1024;
           size_t pagesize  = 4096;
 
-          snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
+          char * jobstr = getenv ("XMI_JOB_ID");
+          if (jobstr)
+            snprintf (shmemfile, 1023, "/xmi-client-%s-%s", _name, jobstr);
+          else
+            snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
 
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
@@ -231,13 +235,16 @@ namespace XMI
 
           // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+//fprintf (stderr, "initializeMemoryManager() .. shmemfile = \"%s\", rc = %d\n", shmemfile, rc);
           if ( rc != -1 )
           {
             fd = rc;
             rc = ftruncate( fd, n );
+//fprintf (stderr, "initializeMemoryManager() .. rc = %d\n", rc);
             if ( rc != -1 )
             {
               void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+//fprintf (stderr, "initializeMemoryManager() .. ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED);
               if ( ptr != MAP_FAILED )
               {
                 _mm.init (ptr, n);
@@ -245,6 +252,8 @@ namespace XMI
               }
             }
           }
+//perror (NULL);
+//fprintf (stderr, "initializeMemoryManager() .. allocate memory from heap\n");
 
           // Failed to create shared memory .. fake it using the heap ??
           _mm.init (malloc (n), n);

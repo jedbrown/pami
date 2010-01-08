@@ -55,11 +55,6 @@ namespace XMI
           ///
           inline xmi_result_t socket2task (size_t recv_fd, size_t send_fd, size_t & task) const;
 
-          ///
-          /// \brief Get the number of peer tasks on the local node
-          ///
-          inline xmi_result_t nodePeers (size_t & peers);
-
       }; // class Socket
 
       template <class T_Mapping>
@@ -79,13 +74,6 @@ namespace XMI
       {
         return static_cast<T_Mapping*>(this)->socket2task_impl (recv_fd, send_fd, task);
       }
-
-      template <class T_Mapping>
-      inline xmi_result_t Socket<T_Mapping>::nodePeers (size_t & peers)
-      {
-        return static_cast<T_Mapping*>(this)->nodePeers_impl (peers);
-      }
-
     };	// namespace Mapping
   };	// namespace Interface
 };	// namespace XMI

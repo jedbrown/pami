@@ -15,9 +15,11 @@
 #define __common_socklinux_Mapping_h__
 
 #include "Platform.h"
+#include "util/common.h"
 #include "common/BaseMappingInterface.h"
 #include "common/UdpSocketMappingInterface.h"
 #include "common/SocketMappingInterface.h"
+#include "common/NodeMappingInterface.h"
 #include "sys/xmi.h"
 #include <errno.h>
 #include <unistd.h>
@@ -39,14 +41,16 @@ namespace XMI
 {
     class Mapping : public Interface::Mapping::Base<Mapping>,
                        public Interface::Mapping::UdpSocket<Mapping>,
-                       public Interface::Mapping::Socket<Mapping>
+                       public Interface::Mapping::Socket<Mapping>,
+                       public Interface::Mapping::Node<Mapping, 1>
     {
 
     public:
       inline Mapping () :
         Interface::Mapping::Base<Mapping>(),
         Interface::Mapping::UdpSocket<Mapping>(),
-        Interface::Mapping::Socket<Mapping>()
+        Interface::Mapping::Socket<Mapping>(),
+        Interface::Mapping::Node<Mapping, 1>()
       {
       };
       inline ~Mapping ()
@@ -99,6 +103,19 @@ namespace XMI
           abort();
         }
 
+        typedef struct
+        {
+          char     host[128];
+          unsigned peers;
+        } node_table_t;
+        node_table_t * tmpnodetable = (node_table_t *) malloc (_size * sizeof(node_table_t));
+        for (i=0; i<_size; i++)
+        {
+          tmpnodetable[i].host[0] = NULL;
+          tmpnodetable[i].peers   = 0;
+        }
+        size_t num_global_nodes = 0;
+
         // Read in the configuration file: rank host port
         for ( i=0; i<_size; i++ )
         {
@@ -124,6 +141,31 @@ namespace XMI
             std::cout << "socket call failed" << std::endl;
           }
           //std::cout << "addr " << servinfo->ai_addr << " len  " << servinfo->ai_addrlen << std::endl;
+          //std::cout << "ai_canonname " << servinfo->ai_canonname << std::endl;
+
+          unsigned j;
+          for (j=0; j<_size; j++)
+          {
+            if ( strcmp( tmpnodetable[j].host, tmp_host->h_name ) == 0 )
+            {
+              // Found a previous host entry
+              _udpConnTable[tmp_task].node_addr.global = j;
+              _udpConnTable[tmp_task].node_addr.local  = tmpnodetable[j].peers;
+              tmpnodetable[j].peers++;
+              break;
+            }
+          }
+          if (j == _size)
+          {
+            // Did not find a previous host entry
+            _udpConnTable[tmp_task].node_addr.global = num_global_nodes;
+            _udpConnTable[tmp_task].node_addr.local  = 0;
+            tmpnodetable[num_global_nodes].peers = 1;
+            strncpy (tmpnodetable[num_global_nodes].host, tmp_host->h_name, 127);
+            num_global_nodes++;
+          }
+
+
 
           if (_task == tmp_task)
           {
@@ -153,6 +195,17 @@ namespace XMI
           }
         }
         inFile.close();
+
+        std::cout << "num_global_nodes: " << num_global_nodes << std::endl;
+        for (i=0; i<num_global_nodes; i++)
+        {
+          std::cout << "node[" << i << "].host:  " << tmpnodetable[i].host << std::endl;
+          std::cout << "node[" << i << "].peers: " << tmpnodetable[i].peers << std::endl;
+        }
+
+        _peers = tmpnodetable[_udpConnTable[_task].node_addr.global].peers;
+
+        free (tmpnodetable);
 
         return 0;
       }
@@ -205,9 +258,10 @@ namespace XMI
 
         typedef struct
         {
-          int               send_fd;
-          sockaddr_storage  send_addr;
-          int               send_addr_len;
+          int                            send_fd;
+          sockaddr_storage               send_addr;
+          int                            send_addr_len;
+          Interface::Mapping::nodeaddr_t node_addr;
         } udp_conn_t;
 
         xmi_coord_t *     _tcpConnTable;
@@ -311,16 +365,91 @@ namespace XMI
 
      inline xmi_result_t socket2task_impl (size_t recv_fd, size_t send_fd, size_t & task) { abort(); }
 
-     // \see XMI::Interface::Mapping::Node::nodePeers()
+     inline size_t globalDims()
+     {
+          return 1;
+     }
+
+     ///
+     /// \brief Get the number of possible tasks on any node
+     ///
+     inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
+     {
+       XMI_abort();
+       return XMI_ERROR;
+     };
+
+     ///
+     /// \brief Get the number of peer tasks on the local node
+     /// \see XMI::Interface::Mapping::Node::nodePeers()
+     ///
      inline xmi_result_t nodePeers_impl (size_t & peers)
      {
        peers = _peers;
        return XMI_SUCCESS;
      }
 
-     inline size_t globalDims()
+     ///
+     /// \brief Determines if two tasks are located on the same node
+     ///
+     inline bool isPeer_impl (size_t task1, size_t task2)
      {
-          return 1;
+       return (_udpConnTable[task1].node_addr.global == _udpConnTable[task2].node_addr.global);
+     }
+
+     ///
+     /// \brief Node address for the local task
+     ///
+     /// \param[out] address Node address
+     ///
+     inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
+     {
+       address = _udpConnTable[_task].node_addr;
+     }
+
+     ///
+     /// \brief Node address for a specific task
+     ///
+     /// The global task identifier monotonically increases from zero to
+     /// XMI::Mapping::Interface::Base.size() - 1.
+     ///
+     /// \param[in]  task    Global task identifier
+     /// \param[out] address Node address
+     ///
+     inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
+     {
+       address = _udpConnTable[task].node_addr;
+       return XMI_SUCCESS;
+     }
+
+     ///
+     /// \brief Global task identifier associated with a specific node address
+     ///
+     /// The global task identifier monotonically increases from zero to
+     /// XMI::Mapping::Interface::Base.size() - 1.
+     ///
+     /// \param[in]  address Node address
+     /// \param[out] task    Global task identifier
+     ///
+     inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
+     {
+       XMI_abort();
+       return XMI_ERROR;
+     }
+
+     ///
+     /// \brief Peer identifier associated with a specific node address
+     ///
+     /// The local peer identifier monotonically increases from zero to
+     /// XMI::Mapping::Interface::Node.nodePeers() - 1.
+     ///
+     /// \param[in]  address Node address
+     /// \param[out] peer    peer identifier
+     ///
+     inline xmi_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
+     {
+       peer = address.local;
+       return XMI_SUCCESS;
      }
 
    }; // class Mapping

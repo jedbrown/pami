@@ -17,6 +17,11 @@
 #include "components/devices/udp/UdpModel.h"
 #include "components/devices/udp/UdpMessage.h"
 
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemModel.h"
+#include "util/fifo/FifoPacket.h"
+#include "util/fifo/LinearFifo.h"
+
 #include "components/atomic/gcc/GccBuiltin.h"
 //#include "components/atomic/pthread/Pthread.h"
 
@@ -25,9 +30,8 @@
 #include "SysDep.h"
 //#include "Memregion.h"
 
+#include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/datagram/Datagram.h"
-#include "p2p/protocols/send/datagram/DatagramImmediate.h"
-#include "p2p/protocols/send/datagram/DatagramSimple.h"
 
 #include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
@@ -40,6 +44,11 @@ namespace XMI
 
   typedef Device::UDP::UdpDevice<SysDep> UdpDevice;
   typedef Device::UDP::UdpModel<UdpDevice,Device::UDP::UdpSendMessage> UdpModel;
+
+  typedef Fifo::FifoPacket <16, 240> ShmemPacket;
+  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
+  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
+  typedef Device::ShmemModel<ShmemDevice> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -61,10 +70,11 @@ namespace XMI
           _context ((xmi_context_t)this),
           _clientid (clientid), 
           _contextid (contextid),
-          _mm (),
+          _mm (addr, bytes),
           _sysdep (_mm),
           _generic(generics[clientid]),
-          _udp ()   //,
+          _udp (),
+          _shmem ()
   	  //_workAllocator()
       {
         // ----------------------------------------------------------------
@@ -80,6 +90,7 @@ namespace XMI
         // ----------------------------------------------------------------
         _generic.init(_sysdep, (xmi_context_t)this, clientid, contextid, num, generics);
         _udp.init (&_sysdep);
+        _shmem.init (&_sysdep);
       }
 
       inline xmi_client_t getClient_impl ()
@@ -113,7 +124,7 @@ namespace XMI
         //std::cout << "<" << __global.mapping.task() << ">: advance  max= " << maximum << std::endl; 
         for (i = 0; i < maximum && events == 0; i++)
           {
-            //events += _shmem.advance_impl();
+            events += _shmem.advance();
             events += _udp.advance();
 	    events += _generic.advance();
           }
@@ -325,15 +336,28 @@ namespace XMI
                                          xmi_send_hint_t            options)
       {
         xmi_result_t result = XMI_ERROR;
+fprintf (stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result);
 
         if (_dispatch[id] == NULL)
           {
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
-
-            new ((void *)_dispatch[id]) DatagramUdp (id, fn, cookie, _udp, __global.mapping.task(), _context, _contextid, result);
+#if 1
+            new ((void *)_dispatch[id])
+              DatagramUdp
+                (id, fn, cookie, _udp, __global.mapping.task(), _context, _contextid, result);
+#else
+            new ((void *)_dispatch[id])
+              Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
+                (id, fn, cookie, _shmem, __global.mapping.task(), _context, _contextid, result);
+#endif
+            if (result != XMI_SUCCESS)
+              {
+                _protocolAllocator.returnObject (_dispatch[id]);
+                _dispatch[id] = NULL;
+              }
           }
-
+fprintf (stderr, "<< socklinux::dispatch_impl .. result = %d\n", result);
         return result;
       }
 
@@ -397,7 +421,8 @@ namespace XMI
 
       // devices...
       XMI::Device::Generic::Device &_generic;
-      UdpDevice _udp;
+      UdpDevice   _udp;
+      ShmemDevice _shmem;
 
       void * _dispatch[1024];
       //void* _get; //use for now..remove later

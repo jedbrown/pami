@@ -22,6 +22,7 @@
 
 
 #define ITERATIONS 100
+//#define ITERATIONS 1
 
 
 #define BUFSIZE 255
@@ -135,7 +136,7 @@ static void test_dispatch (
 
 void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
- std::cout << __FILE__ << __LINE__ << std::endl;
+ std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   xmi_result_t result = XMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
   while (_send_active) XMI_Context_advance (context, 100);
@@ -151,7 +152,8 @@ void recv_once (xmi_context_t context)
   //print received buffer
   fprintf (stdout, "\n Received Message = %s\n",_recv_buffer);
   printHexLine2( _recv_buffer, 16, 0 ); 
-  fflush (stdout);  _recv_active = 1;
+  fflush (stdout);
+  _recv_active = 1;
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
 }
 
@@ -168,8 +170,11 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   unsigned i;
   xmi_send_t parameters;
   
-  if (myrank == 0)  {
-    fprintf (stdout, "\n Enter the message to send: ");    fflush (stdout);    fgets(buffer,sizeof(buffer),stdin); 
+  if (myrank == 0)
+  {
+    fprintf (stdout, "\n Enter the message to send: ");
+    fflush (stdout);
+    fgets(buffer,sizeof(buffer),stdin); 
     //scanf("%s",buffer);
     sndlen1 =strlen(buffer);
     printHexLine2( buffer, sndlen1, 0 ); 
@@ -283,7 +288,7 @@ int main (int argc, char ** argv)
    else
        val =atoi(argv[1]) ; 
 	   
-	fprintf (stdout, "** The test will run %d times ***", val);
+	fprintf (stdout, "** The test will run %d times ***\n", val);
     fflush(stdout);   
    
   for(i=0;i<val;i++){
@@ -296,6 +301,7 @@ int main (int argc, char ** argv)
 		
 //	  }
   }  
+	fprintf (stdout, "** Test completed. **\n");
 
   XMI_Client_finalize (client);
 
