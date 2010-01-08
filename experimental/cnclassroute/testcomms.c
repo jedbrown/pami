@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 "\t<ll-coords> are lower-left corner coordinates\n"
 "\t<ur-coords> are upper-right corner coordinates\n"
 "All coordinates must use the same number of dimensions.\n"
-"Example: %s -k -w \"(0,0):(3,3)\" \"(0,2)\" \"(3,2)\"\n"
+"Example: %s -w \"(0,0):(3,3)\" \"(0,0):(2,2)\" \"(1,1):(2,2)\" \"(1,1):(3,3)\"\n"
 			, argv[0], argv[0]);
 		exit(1);
 	}
