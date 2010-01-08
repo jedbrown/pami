@@ -19,11 +19,12 @@ int main(int argc, char **argv) {
 	char *ep;
 	int world_set = 0, comm_set = 0, root_set = 0;
 	int chk = 0;
+	int pick = 0;
 
 	extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "c:kr:w:")) != EOF) {
+	while ((x = getopt(argc, argv, "c:kpr:w:")) != EOF) {
 		switch(x) {
 		case 'c':
 			e = parse_rect(optarg, &ep, &comm);
@@ -35,6 +36,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'k':
 			++chk;
+			break;
+		case 'p':
+			++pick;
 			break;
 		case 'r':
 			dim_names = optarg;
@@ -56,6 +60,7 @@ int main(int argc, char **argv) {
 "Where <optionas> are:\n"
 "\t-c <sub-comm-rect> rectangle to use for classroute(s) (default: world-rectangle)\n"
 "\t-k checks each root's classroute for use of same links\n"
+"\t-p pick two non-conflicting roots (system/user commworld)\n"
 "\t-r <dim-names> renames dimensions, default is \"ABCDEFGH\"\n"
 "coordinates (<world-root>) syntax is \"(a,b,c,...)\"\n"
 "rectangle syntax is \"<ll-coords>:<ur-coords>\"\n"
@@ -76,7 +81,70 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	int z = rect_size(&comm);
-	if (optind < argc) {
+	if (pick) {
+		clsrt_entry_t *cra = (clsrt_entry_t *)malloc(2 * sizeof(clsrt_entry_t));
+		if (!cra) {
+			fprintf(stderr, "out of memory allocating classroute array!\n");
+			exit(1);
+		}
+		int min = 99999999;
+		int min_dim = -1;
+		for (x = 0; x < world.ll.dims; ++x) {
+			int size = world.ur.coords[x] - world.ll.coords[x] + 1;
+			root.coords[x] = world.ll.coords[x] + size / 2;
+			if (size > 1 && size <= min) {
+				min = size;
+				min_dim = x;
+			}
+		}
+		root.dims = world.ll.dims;
+
+		root.coords[min_dim] = world.ll.coords[min_dim];
+		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+		if (!cr) {
+			fprintf(stderr, "out of memory allocating classroute array!\n");
+			exit(1);
+		}
+		memset(cr, -1, z * sizeof(classroute_t));
+		make_classroutes(&world, &root, &comm, min_dim, cr);
+		if (!chk) {
+			print_classroutes(&world, &root, &comm, cr);
+		} else {
+			cra[0].cr = cr;
+			cra[0].root = root;
+			cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+			if (!cr) {
+				fprintf(stderr, "out of memory allocating classroute array!\n");
+				exit(1);
+			}
+		}
+
+		root.coords[min_dim] = world.ur.coords[min_dim];
+		memset(cr, -1, z * sizeof(classroute_t));
+		make_classroutes(&world, &root, &comm, min_dim, cr);
+		if (!chk) {
+			printf("\n");
+			print_classroutes(&world, &root, &comm, cr);
+			free(cr);
+		} else {
+			cra[1].cr = cr;
+			cra[1].root = root;
+		}
+		if (chk) {
+			/* flag conflicting classroutes with MSB set to "1" */
+			int r, y;
+			for (r = 0; r < z; ++r) {
+				chk_classroute(&cra[0].cr[r], &cra[1].cr[r]);
+			}
+			/* now print classroutes, with errors flagged */
+			print_classroutes(&world, &cra[0].root, &comm, cra[0].cr);
+			free(cra[0].cr);
+			printf("\n");
+			print_classroutes(&world, &cra[1].root, &comm, cra[1].cr);
+			free(cra[1].cr);
+		}
+
+	} else if (optind < argc) {
 
 		clsrt_entry_t *cra = (clsrt_entry_t *)malloc((argc - optind) * sizeof(clsrt_entry_t));
 		if (!cra) {
@@ -101,7 +169,7 @@ int main(int argc, char **argv) {
 				exit(1);
 			}
 			memset(cr, -1, z * sizeof(classroute_t));
-			make_classroutes(&world, &root, &comm, cr);
+			make_classroutes(&world, &root, &comm, 0, cr);
 
 			if (!chk) {
 				if (x) printf("\n");
@@ -144,7 +212,7 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 		memset(cr, -1, z * sizeof(classroute_t));
-		make_classroutes(&world, &root, &comm, cr);
+		make_classroutes(&world, &root, &comm, 0, cr);
 		print_classroutes(&world, &root, &comm, cr);
 		free(cr);
 	}

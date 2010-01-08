@@ -5,7 +5,7 @@
 char *dim_names = XMI_DIM_NAMES;
 
 extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
-						rect_t *comm, classroute_t *cr);
+						rect_t *comm, int dim0, classroute_t *cr);
 
 int sprint_links(char *buf, uint32_t link) {
 	char *s = buf;
@@ -152,24 +152,25 @@ void print_classroute(coord_t *me, classroute_t *cr) {
 	printf("%s\n", buf);
 }
 
-void recurse_dims(rect_t *world, coord_t *root, rect_t *comm, coord_t *me, classroute_t *cr) {
+void recurse_dims(rect_t *world, coord_t *root, rect_t *comm,
+			coord_t *me, int dim, classroute_t *cr) {
 	int x;
 	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
 		me->coords[me->dims] = x;
 		++me->dims;
 		if (me->dims == world->ll.dims) {
 			int r = coord2rank(comm, me);
-			build_node_classroute(world, root, me, comm, &cr[r]);
+			build_node_classroute(world, root, me, comm, dim, &cr[r]);
 		} else {
-			recurse_dims(world, root, comm, me, cr);
+			recurse_dims(world, root, comm, me, dim, cr);
 		}
 		--me->dims;
 	}
 }
 
-void make_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
+void make_classroutes(rect_t *world, coord_t *root, rect_t *comm, int dim, classroute_t *cr) {
 	coord_t me = { 0 };
-	recurse_dims(world, root, comm, &me, cr);
+	recurse_dims(world, root, comm, &me, dim, cr);
 }
 
 void print_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {

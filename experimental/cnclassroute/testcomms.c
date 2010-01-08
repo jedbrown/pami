@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 				exit(1);
 			}
 			memset(cr, -1, z * sizeof(classroute_t));
-			make_classroutes(&world, &root, &comm, cr);
+			make_classroutes(&world, &root, &comm, 0, cr);
 
 			if (x) printf("\n");
 			print_classroutes(&world, &root, &comm, cr);
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 		memset(cr, -1, z * sizeof(classroute_t));
-		make_classroutes(&world, &root, &comm, cr);
+		make_classroutes(&world, &root, &comm, 0, cr);
 		print_classroutes(&world, &root, &comm, cr);
 		free(cr);
 	}

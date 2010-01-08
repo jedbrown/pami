@@ -7,6 +7,7 @@
  * \param[in] worldroot	Coordinates of root node in COMM_WORLD
  * \param[in] me	Coordinates of my node
  * \param[in] comm	Rectangle to produce classroute for
+ * \param[in] dim0	Starting dimension (iterate circular in + direction)
  * \param[out] cr	Classroute bitmaps
  *
  * Rectangles are defined by the coordinates of the lower-left and upper-right corners.
@@ -37,12 +38,14 @@
  * Where 'R' is the root node, and dimension '0' is horizontal (and '1' is vertical).
  */
 void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
-					rect_t *comm, classroute_t *cr) {
+					rect_t *comm, int dim0, classroute_t *cr) {
 	// assert(ll->dims == ur->dims == me->dims);
-	int d, dims = world->ll.dims;
+	int d, dim, dims = world->ll.dims;
 	classroute_t cr0 = {0};
 
-	for (d = 0; d < dims; ++d) {
+	for (dim = 0; dim < dims; ++dim) {
+		d = dim0 + dim;
+		if (d >= dims) d -= dims;
 		if (me->coords[d] <= worldroot->coords[d]) {
 			if (me->coords[d] > comm->ll.coords[d]) {
 				cr0.dn_tree |= CR_LINK(d,CR_SIGN_NEG);
