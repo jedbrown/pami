@@ -126,13 +126,28 @@ int rect_size(rect_t *rect) {
 	return size;
 }
 
+#define FLAG		0x80000000
+#define CHK(a,b)	(((a & b) & ~FLAG) != 0)
+
+void chk_classroute(classroute_t *cra, classroute_t *crb) {
+	if (CHK(cra->up_tree, crb->up_tree)) {
+		cra->up_tree |= FLAG;
+		crb->up_tree |= FLAG;
+	}
+	if (CHK(cra->dn_tree, crb->dn_tree)) {
+		cra->dn_tree |= FLAG;
+		crb->dn_tree |= FLAG;
+	}
+}
+
 void print_classroute(coord_t *me, classroute_t *cr) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
-	s += sprintf(s, " up: ");
-	s += sprint_links(s, cr->up_tree);
+	s += sprintf(s, " %s%s up: ",	(cr->up_tree & FLAG ? "*" : " "),
+					(cr->dn_tree & FLAG ? "*" : " "));
+	s += sprint_links(s, cr->up_tree & ~FLAG);
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, cr->dn_tree);
+	s += sprint_links(s, cr->dn_tree & ~FLAG);
 	printf("%s\n", buf);
 }
