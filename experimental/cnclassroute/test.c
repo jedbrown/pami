@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "cnclassroute.h"
 
@@ -98,6 +99,35 @@ int sprint_rect(char *buf, rect_t *r) {
 	return s - buf;
 }
 
+int coord2rank(rect_t *world, coord_t *coord) {
+	int rank = 0;
+	int d;
+	for (d = 0; d < world->ll.dims; ++d) {
+		rank *= (world->ur.coords[d] - world->ll.coords[d] + 1);
+		rank += coord->coords[d];
+	}
+	return rank;
+}
+
+void rank2coord(rect_t *world, int rank, coord_t *coord) {
+	int d;
+	for (d = world->ll.dims - 1; d >= 0; --d) {
+		int x = (world->ur.coords[d] - world->ll.coords[d] + 1);
+		coord->coords[d] = rank % x;
+		rank /= x;
+	}
+	coord->dims = world->ll.dims;
+}
+
+int rect_size(rect_t *rect) {
+	int size = 1;
+	int d;
+	for (d = 0; d < rect->ll.dims; ++d) {
+		size *= (rect->ur.coords[d] - rect->ll.coords[d] + 1);
+	}
+	return size;
+}
+
 void print_classroute(coord_t *me, classroute_t *cr) {
 	static char buf[1024];
 	char *s = buf;
@@ -109,26 +139,32 @@ void print_classroute(coord_t *me, classroute_t *cr) {
 	printf("%s\n", buf);
 }
 
-void recurse_dims(rect_t *world, coord_t *root, rect_t *comm, coord_t *me) {
+void recurse_dims(rect_t *world, coord_t *root, rect_t *comm, coord_t *me, classroute_t *cr) {
 	int x;
 	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
 		me->coords[me->dims] = x;
 		++me->dims;
 		if (me->dims == world->ll.dims) {
-			classroute_t cr;
-			build_node_classroute(world, root, me, comm, &cr);
-			print_classroute(me, &cr);
+			int r = coord2rank(comm, me);
+			build_node_classroute(world, root, me, comm, &cr[r]);
 		} else {
-			recurse_dims(world, root, comm, me);
+			recurse_dims(world, root, comm, me, cr);
 		}
 		--me->dims;
 	}
 }
 
-void do_classroute(rect_t *world, coord_t *root, rect_t *comm) {
-	static char buf[1024];
+void make_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
 	coord_t me = { 0 };
+	recurse_dims(world, root, comm, &me, cr);
+}
+
+void print_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
+	static char buf[1024];
+	int z = rect_size(comm);
 	char *s = buf;
+	int r;
+
 	s += sprintf(s, "Classroute for comm ");
 	s += sprint_rect(s, comm);
 	s += sprintf(s, " in world ");
@@ -136,7 +172,11 @@ void do_classroute(rect_t *world, coord_t *root, rect_t *comm) {
 	s += sprintf(s, " with root ");
 	s += sprint_coord(s, root);
 	printf("%s:\n", buf);
-	recurse_dims(world, root, comm, &me);
+	for (r = 0; r < z; ++r) {
+		coord_t c;
+		rank2coord(comm, r, &c);
+		print_classroute(&c, &cr[r]);
+	}
 }
 
 int main(int argc, char **argv) {
@@ -192,6 +232,12 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "sub-comm number of dimensions does not match 'world'\n");
 		exit(1);
 	}
+	int z = rect_size(&comm);
+	classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+	if (!cr) {
+		fprintf(stderr, "out of memory allocating classroute array!\n");
+		exit(1);
+	}
 
 	for (x = optind; x < argc; ++x) {
 		root_set = 1;
@@ -205,7 +251,9 @@ int main(int argc, char **argv) {
 			continue;
 		}
 		if (x > optind) printf("\n");
-		do_classroute(&world, &root, &comm);
+		memset(cr, -1, z * sizeof(classroute_t));
+		make_classroutes(&world, &root, &comm, cr);
+		print_classroutes(&world, &root, &comm, cr);
 	}
 	if (!root_set) {
 		for (x = 0; x < world.ll.dims; ++x) {
@@ -214,7 +262,10 @@ int main(int argc, char **argv) {
 
 		}
 		root.dims = world.ll.dims;
-		do_classroute(&world, &root, &comm);
+		memset(cr, -1, z * sizeof(classroute_t));
+		make_classroutes(&world, &root, &comm, cr);
+		print_classroutes(&world, &root, &comm, cr);
 	}
+	free(cr);
 	exit(0);
 }
