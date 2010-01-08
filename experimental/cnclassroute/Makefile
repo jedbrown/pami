@@ -2,13 +2,14 @@ CFLAGS = -g
 
 HDRS = cnclassroute.h
 OBJS = cnclassroute.o
-BINS = test
+BINS = testroots
 
 all: $(BINS)
 
-test: test.c cnclassroute.o cnclassroute.h
+%: %.c cnclassroute.o $(HDRS)
+	$(CC) $(CFLAGS) -o $@ $< cnclassroute.o
 
-cnclassroute.o: cnclassroute.c $(HDRS)
+cnclassroute.o: cnclassroute.c cnclassroute.h
 
 clean:
 	rm -f $(OBJS)
