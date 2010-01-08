@@ -1,6 +1,6 @@
 CFLAGS = -g
 
-HDRS = cnclassroute.h
+HDRS = cnclassroute.h testlib.h
 OBJS = cnclassroute.o
 BINS = testroots
 
