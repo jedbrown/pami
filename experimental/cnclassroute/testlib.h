@@ -102,7 +102,7 @@ int coord2rank(rect_t *world, coord_t *coord) {
 	int d;
 	for (d = 0; d < world->ll.dims; ++d) {
 		rank *= (world->ur.coords[d] - world->ll.coords[d] + 1);
-		rank += coord->coords[d];
+		rank += (coord->coords[d] - world->ll.coords[d]);
 	}
 	return rank;
 }
@@ -111,7 +111,7 @@ void rank2coord(rect_t *world, int rank, coord_t *coord) {
 	int d;
 	for (d = world->ll.dims - 1; d >= 0; --d) {
 		int x = (world->ur.coords[d] - world->ll.coords[d] + 1);
-		coord->coords[d] = rank % x;
+		coord->coords[d] = world->ll.coords[d] + (rank % x);
 		rank /= x;
 	}
 	coord->dims = world->ll.dims;
@@ -150,4 +150,44 @@ void print_classroute(coord_t *me, classroute_t *cr) {
 	s += sprintf(s, " dn: ");
 	s += sprint_links(s, cr->dn_tree & ~FLAG);
 	printf("%s\n", buf);
+}
+
+void recurse_dims(rect_t *world, coord_t *root, rect_t *comm, coord_t *me, classroute_t *cr) {
+	int x;
+	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
+		me->coords[me->dims] = x;
+		++me->dims;
+		if (me->dims == world->ll.dims) {
+			int r = coord2rank(comm, me);
+			build_node_classroute(world, root, me, comm, &cr[r]);
+		} else {
+			recurse_dims(world, root, comm, me, cr);
+		}
+		--me->dims;
+	}
+}
+
+void make_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
+	coord_t me = { 0 };
+	recurse_dims(world, root, comm, &me, cr);
+}
+
+void print_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
+	static char buf[1024];
+	int z = rect_size(comm);
+	char *s = buf;
+	int r;
+
+	s += sprintf(s, "Classroute for comm ");
+	s += sprint_rect(s, comm);
+	s += sprintf(s, " in world ");
+	s += sprint_rect(s, world);
+	s += sprintf(s, " with root ");
+	s += sprint_coord(s, root);
+	printf("%s:\n", buf);
+	for (r = 0; r < z; ++r) {
+		coord_t c;
+		rank2coord(comm, r, &c);
+		print_classroute(&c, &cr[r]);
+	}
 }

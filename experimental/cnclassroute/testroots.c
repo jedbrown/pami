@@ -11,51 +11,11 @@ typedef struct {
 	classroute_t *cr;
 } clsrt_entry_t;
 
-void recurse_dims(rect_t *world, coord_t *root, rect_t *comm, coord_t *me, classroute_t *cr) {
-	int x;
-	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
-		me->coords[me->dims] = x;
-		++me->dims;
-		if (me->dims == world->ll.dims) {
-			int r = coord2rank(comm, me);
-			build_node_classroute(world, root, me, comm, &cr[r]);
-		} else {
-			recurse_dims(world, root, comm, me, cr);
-		}
-		--me->dims;
-	}
-}
-
-void make_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
-	coord_t me = { 0 };
-	recurse_dims(world, root, comm, &me, cr);
-}
-
-void print_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
-	static char buf[1024];
-	int z = rect_size(comm);
-	char *s = buf;
-	int r;
-
-	s += sprintf(s, "Classroute for comm ");
-	s += sprint_rect(s, comm);
-	s += sprintf(s, " in world ");
-	s += sprint_rect(s, world);
-	s += sprintf(s, " with root ");
-	s += sprint_coord(s, root);
-	printf("%s:\n", buf);
-	for (r = 0; r < z; ++r) {
-		coord_t c;
-		rank2coord(comm, r, &c);
-		print_classroute(&c, &cr[r]);
-	}
-}
-
 int main(int argc, char **argv) {
 	int x, e;
 	rect_t world;
 	rect_t comm;
-	coord_t me, root;
+	coord_t root;
 	char *ep;
 	int world_set = 0, comm_set = 0, root_set = 0;
 	int chk = 0;
@@ -90,15 +50,22 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (!world_set) {
-		fprintf(stderr, "Usage: %s [-r <dim-names>] -w <world-rectangle> [ -c <sub-comm-rect> ] [<world-root>...]\n"
-				"Computes and prints classroute for all nodes in <sub-comm>.\n"
-				"Where rectangle syntax is \"(a0,b0,c0,...):(aN,bN,cN,...)\"\n"
-				"and 'a0' (etc) are lower-left corner coords\n"
-				"and 'aN' (etc) are upper-right corner coords\n"
-				"<world-root> is coordinates of root to use in world rect (default: center)\n"
-				"-r renames dimensions, default is \"ABCDEFGH\"\n"
-				"All coordinates must use the same number of dimensions.\n"
-				"sub-comm defaults to world\n", argv[0]);
+		fprintf(stderr,
+"Usage: %s <options> -w <world-rectangle> [<world-root>...]\n"
+"Computes and prints classroute for all nodes in <sub-comm>.\n"
+"Where <optionas> are:\n"
+"\t-c <sub-comm-rect> rectangle to use for classroute(s) (default: world-rectangle)\n"
+"\t-k checks each root's classroute for use of same links\n"
+"\t-r <dim-names> renames dimensions, default is \"ABCDEFGH\"\n"
+"coordinates (<world-root>) syntax is \"(a,b,c,...)\"\n"
+"rectangle syntax is \"<ll-coords>:<ur-coords>\"\n"
+"\t<ll-coords> are lower-left corner coordinates\n"
+"\t<ur-coords> are upper-right corner coordinates\n"
+"<world-root> is coordinates of root to use in world rect (default: center)\n"
+"All coordinates must use the same number of dimensions.\n"
+"<sub-comm-rect> defaults to <world-rectangle>\n"
+"Example: %s -k -w \"(0,0):(3,3)\" \"(0,2)\" \"(3,2)\"\n"
+			, argv[0], argv[0]);
 		exit(1);
 	}
 	if (!comm_set) {
