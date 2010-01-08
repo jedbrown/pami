@@ -7,6 +7,12 @@ char *dim_names = XMI_DIM_NAMES;
 extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
 						rect_t *comm, int dim0, classroute_t *cr);
 
+typedef struct {
+	rect_t rect;
+	coord_t root;
+	int pri_dim;
+} commworld_t;
+
 int sprint_links(char *buf, uint32_t link) {
 	char *s = buf;
 	int x;
@@ -152,28 +158,27 @@ void print_classroute(coord_t *me, classroute_t *cr) {
 	printf("%s\n", buf);
 }
 
-void recurse_dims(rect_t *world, coord_t *root, rect_t *comm,
-			coord_t *me, int dim, classroute_t *cr) {
+void recurse_dims(commworld_t *cw, rect_t *comm, coord_t *me, classroute_t *cr) {
 	int x;
 	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
 		me->coords[me->dims] = x;
 		++me->dims;
-		if (me->dims == world->ll.dims) {
+		if (me->dims == cw->rect.ll.dims) {
 			int r = coord2rank(comm, me);
-			build_node_classroute(world, root, me, comm, dim, &cr[r]);
+			build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r]);
 		} else {
-			recurse_dims(world, root, comm, me, dim, cr);
+			recurse_dims(cw, comm, me, cr);
 		}
 		--me->dims;
 	}
 }
 
-void make_classroutes(rect_t *world, coord_t *root, rect_t *comm, int dim, classroute_t *cr) {
+void make_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	coord_t me = { 0 };
-	recurse_dims(world, root, comm, &me, dim, cr);
+	recurse_dims(cw, comm, &me, cr);
 }
 
-void print_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t *cr) {
+void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	static char buf[1024];
 	int z = rect_size(comm);
 	char *s = buf;
@@ -181,11 +186,11 @@ void print_classroutes(rect_t *world, coord_t *root, rect_t *comm, classroute_t 
 
 	s += sprintf(s, "Classroute for comm ");
 	s += sprint_rect(s, comm);
-	s += sprintf(s, " in world ");
-	s += sprint_rect(s, world);
-	s += sprintf(s, " with root ");
-	s += sprint_coord(s, root);
-	printf("%s:\n", buf);
+	s += sprintf(s, "\n\tin world ");
+	s += sprint_rect(s, &cw->rect);
+	s += sprintf(s, "\n\twith root ");
+	s += sprint_coord(s, &cw->root);
+	printf("%s\n\tand primary dimension '%c':\n", buf, dim_names[cw->pri_dim]);
 	for (r = 0; r < z; ++r) {
 		coord_t c;
 		rank2coord(comm, r, &c);
