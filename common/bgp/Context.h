@@ -33,8 +33,8 @@
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/Eager.h"
-#include "p2p/protocols/send/adaptive/Adaptive.h"
-#include "p2p/protocols/send/datagram/Datagram.h"
+//#include "p2p/protocols/send/adaptive/Adaptive.h"
+//#include "p2p/protocols/send/datagram/Datagram.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
