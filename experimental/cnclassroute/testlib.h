@@ -139,7 +139,16 @@ int rect_size(rect_t *rect) {
 #define ERR_UPDNCONFLICT	0x10000000	/**< any up/dn links same? */
 #define ERR_OUTBOUNDS		0x08000000	/**< link is outside rectangle */
 #define ERR_UNCONN		0x04000000	/**< link not connected */
-#define ERRS	(ERR_CRCONFLICT|ERR_ONEROOT|ERR_MULTIUPLINK|ERR_UPDNCONFLICT|ERR_OUTBOUNDS|ERR_UNCONN)
+#define ERR_LOOP		0x02000000	/**< loop in connections */
+#define FLAG_VISITED		0x01000000	/**< internal - !orphaned */
+#define ERRS	(ERR_CRCONFLICT		| \
+		 ERR_ONEROOT		| \
+		 ERR_MULTIUPLINK	| \
+		 ERR_UPDNCONFLICT	| \
+		 ERR_OUTBOUNDS		| \
+		 ERR_UNCONN		| \
+		 ERR_LOOP		| \
+		 FLAG_VISITED)
 #define CHK_CRCONFLICT(a,b)	(((a & b) & ~ERRS) != 0)
 
 void chk_classroute(classroute_t *cra, classroute_t *crb) {
@@ -171,10 +180,11 @@ void chk_sanity(classroute_t *cr, int *nroots) {
 	}
 }
 
-void print_classroute(coord_t *me, classroute_t *cr) {
+void print_classroute(coord_t *me, classroute_t *cr, int rank) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
+	//s += sprintf(s, "[%d]", rank);
 	s += sprintf(s, " up: ");
 	s += sprint_links(s, cr->up_tree & ~ERRS);
 	s += sprintf(s, " dn: ");
@@ -182,10 +192,11 @@ void print_classroute(coord_t *me, classroute_t *cr) {
 	printf("%s\n", buf);
 }
 
-void print_classroute_errs(coord_t *me, classroute_t *cr) {
+void print_classroute_errs(coord_t *me, classroute_t *cr, int rank) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
+	//s += sprintf(s, "[%d]", rank);
 	*s++ = ' ';
 	*s++ = '|';
 	*s++ = (cr->up_tree & ERR_CRCONFLICT   ? '*' : ' ');
@@ -198,6 +209,8 @@ void print_classroute_errs(coord_t *me, classroute_t *cr) {
 	*s++ = (cr->dn_tree & ERR_UPDNCONFLICT ? 'C' : ' ');
 	*s++ = (cr->dn_tree & ERR_OUTBOUNDS    ? 'V' : ' ');
 	*s++ = (cr->dn_tree & ERR_UNCONN       ? 'X' : ' ');
+	*s++ = (cr->dn_tree & ERR_LOOP         ? '!' : ' ');
+	*s++ = ((cr->dn_tree & FLAG_VISITED) == 0 ? '?' : ' ');
 	*s++ = '|';
 	s += sprintf(s, " up: ");
 	s += sprint_links(s, cr->up_tree & ~ERRS);
@@ -271,6 +284,58 @@ void chk_conn(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	}
 }
 
+void traverse_down(commworld_t *cw, rect_t *comm, classroute_t *cr, int curr) {
+	uint32_t l, m;
+	int n, s, t;
+	coord_t c0, c1;
+	static int signs[] = {
+		[CR_SIGN_POS] = 1,
+		[CR_SIGN_NEG] = -1,
+	};
+
+	l = cr[curr].dn_tree;
+	if (l & FLAG_VISITED) {
+		cr[curr].dn_tree |= ERR_LOOP;
+		return;
+	}
+	cr[curr].dn_tree |= FLAG_VISITED;
+	if (!(l & ~ERRS)) return;	/* leaf node */
+	rank2coord(comm, curr, &c0);
+	for (n = 0; n < cw->rect.ll.dims; ++n) {
+		for (s = 0; s < 2; ++s) {
+			m = CR_LINK(n, s);
+			if (l & m) {
+				c1 = c0;
+				c1.coords[n] += signs[s];
+				if (c1.coords[n] < comm->ll.coords[n] ||
+				    c1.coords[n] > comm->ur.coords[n]) {
+					/* error - already flagged by chk_conn() */
+					continue;
+				}
+				t = coord2rank(comm, &c1);
+				traverse_down(cw, comm, cr, t);
+			}
+		}
+	}
+}
+
+void chk_visit(commworld_t *cw, rect_t *comm, classroute_t *cr) {
+	int r, z = rect_size(comm);
+	/*
+	 * find root node, traverse all connections and ensure each node is
+	 * visited exactly once. Assumes one root node - only traverses first root.
+	 */
+	for (r = 0; r < z; ++r) {
+		if ((cr[r].up_tree & ~ERRS) == 0) break;
+	}
+	if (r >= z) {
+		/* error: no root node - all nodes show orphaned */
+		return;
+	}
+	traverse_down(cw, comm, cr, r);
+	/* any node without FLAG_VISITED is orphaned... */
+}
+
 void chk_all_sanity(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	int z = rect_size(comm);
 	int r, nroots = 0;
@@ -282,6 +347,7 @@ void chk_all_sanity(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 		cr[0].up_tree |= ERR_ONEROOT;
 	}
 	chk_conn(cw, comm, cr);
+	chk_visit(cw, comm, cr);
 }
 
 void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr, int errs) {
@@ -301,9 +367,9 @@ void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr, int errs
 		coord_t c;
 		rank2coord(comm, r, &c);
 		if (errs) {
-			print_classroute_errs(&c, &cr[r]);
+			print_classroute_errs(&c, &cr[r], r);
 		} else {
-			print_classroute(&c, &cr[r]);
+			print_classroute(&c, &cr[r], r);
 		}
 	}
 }
