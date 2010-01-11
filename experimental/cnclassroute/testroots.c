@@ -11,6 +11,8 @@ typedef struct {
 	classroute_t *cr;
 } clsrt_entry_t;
 
+#define DEBUG
+
 int main(int argc, char **argv) {
 	int x, e;
 	rect_t comm;
@@ -21,11 +23,12 @@ int main(int argc, char **argv) {
 	int pick = 0;
 	int sanity = 0;
 	int force_errs = 0;
+	uint32_t rand_mask = 0;
 
 	extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "c:Ekpr:sw:")) != EOF) {
+	while ((x = getopt(argc, argv, "c:eEkm:pr:sw:")) != EOF) {
 		switch(x) {
 		case 'c':
 			e = parse_rect(optarg, &ep, &comm);
@@ -35,9 +38,17 @@ int main(int argc, char **argv) {
 			}
 			++comm_set;
 			break;
+#ifdef DEBUG
+		case 'e':
+			srand(time(NULL));
+			/* FALLTHROUGH */
 		case 'E':
 			++force_errs;
 			break;
+		case 'm':
+			rand_mask = strtoul(optarg, NULL, 0);
+			break;
+#endif /* DEBUG */
 		case 'k':
 			++chk;
 			break;
@@ -224,20 +235,25 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
+		memset(cr, -1, z * sizeof(classroute_t));
+		make_classroutes(&world, &comm, cr);
+#ifdef DEBUG
 		if (force_errs) {
 			int r, l;
 			for (r = 0; r < z; ++r) {
-				l = (rand() & rand() & rand()); /* try to reduce bits */
-				l &= ((1 << (XMI_MAX_DIMS * 2)) - 1);
-				cr[r].up_tree = l;
-				l = (rand() & rand()); /* try to reduce bits */
-				l &= ((1 << (XMI_MAX_DIMS * 2)) - 1);
-				cr[r].dn_tree = l;
+				if ((rand() & rand_mask) == 0) {
+					l = (rand() & rand() & rand()); /* try to reduce bits */
+					l &= ((1 << (world.rect.ll.dims * 2)) - 1);
+					cr[r].up_tree = l;
+				}
+				if ((rand() & rand_mask) == 0) {
+					l = (rand() & rand()); /* try to reduce bits */
+					l &= ((1 << (world.rect.ll.dims * 2)) - 1);
+					cr[r].dn_tree = l;
+				}
 			}
-		} else {
-			memset(cr, -1, z * sizeof(classroute_t));
-			make_classroutes(&world, &comm, cr);
 		}
+#endif /* DEBUG */
 		if (sanity) chk_all_sanity(&world, &comm, cr);
 		print_classroutes(&world, &comm, cr, sanity);
 		free(cr);
