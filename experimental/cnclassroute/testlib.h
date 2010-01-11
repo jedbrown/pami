@@ -28,6 +28,7 @@ int sprint_links(char *buf, uint32_t link) {
 			*s++ = '-';
 		}
 	}
+	if (s == buf) { *s++ = ' '; *s++ = ' '; }
 	*s = '\0';
 	return s - buf;
 }
