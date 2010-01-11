@@ -12,11 +12,12 @@ int main(int argc, char **argv) {
 	rect_t comm;
 	char *ep;
 	int world_set = 0, comm_set = 0, root_set = 0;
+	int sanity = 0;
 
 	extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "d:r:w:")) != EOF) {
+	while ((x = getopt(argc, argv, "d:r:sw:")) != EOF) {
 		switch(x) {
 		case 'd':
 			dim_names = optarg;
@@ -28,6 +29,9 @@ int main(int argc, char **argv) {
 				continue;
 			}
 			++root_set;
+			break;
+		case 's':
+			++sanity;
 			break;
 		case 'w':
 			e = parse_rect(optarg, &ep, &world.rect);
@@ -45,8 +49,9 @@ int main(int argc, char **argv) {
 "Usage: %s <options> -w <world-rectangle> [<sub-comm-rect>...]\n"
 "Computes and prints classroute for all nodes in each <sub-comm>.\n"
 "Where <optionas> are:\n"
-"\t-r <world-root> is coordinates of root to use in world rect (default: center)\n"
 "\t-d <dim-names> renames dimensions, default is \"ABCDEFGH\"\n"
+"\t-r <world-root> is coordinates of root to use in world rect (default: center)\n"
+"\t-s check classroute for samity\n"
 "<sub-comm-rect> rectangle to use for classroute(s) (default: world-rectangle)\n"
 "coordinates (<world-root>) syntax is \"(a,b,c,...)\"\n"
 "rectangle syntax is \"<ll-coords>:<ur-coords>\"\n"
@@ -89,9 +94,10 @@ int main(int argc, char **argv) {
 			}
 			memset(cr, -1, z * sizeof(classroute_t));
 			make_classroutes(&world, &comm, cr);
+			if (sanity) chk_all_sanity(&world, &comm, cr);
 
 			if (x) printf("\n");
-			print_classroutes(&world, &comm, cr);
+			print_classroutes(&world, &comm, cr, sanity);
 			free(cr);
 		}
 	} else {
@@ -104,7 +110,8 @@ int main(int argc, char **argv) {
 		}
 		memset(cr, -1, z * sizeof(classroute_t));
 		make_classroutes(&world, &comm, cr);
-		print_classroutes(&world, &comm, cr);
+		if (sanity) chk_all_sanity(&world, &comm, cr);
+		print_classroutes(&world, &comm, cr, sanity);
 		free(cr);
 	}
 	exit(0);

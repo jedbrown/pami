@@ -133,17 +133,40 @@ int rect_size(rect_t *rect) {
 	return size;
 }
 
-#define FLAG		0x80000000
-#define CHK(a,b)	(((a & b) & ~FLAG) != 0)
+#define ERR_CRCONFLICT		0x80000000	/**< two classroutes conflict? */
+#define ERR_ONEROOT		0x40000000	/**< not exactly one root? */
+#define ERR_MULTIUPLINK		0x20000000	/**< more than one up link? */
+#define ERR_UPDNCONFLICT	0x10000000	/**< any up/dn links same? */
+#define ERRS	(ERR_CRCONFLICT|ERR_ONEROOT|ERR_MULTIUPLINK|ERR_UPDNCONFLICT)
+#define CHK_CRCONFLICT(a,b)	(((a & b) & ~ERRS) != 0)
 
 void chk_classroute(classroute_t *cra, classroute_t *crb) {
-	if (CHK(cra->up_tree, crb->up_tree)) {
-		cra->up_tree |= FLAG;
-		crb->up_tree |= FLAG;
+	if (CHK_CRCONFLICT(cra->up_tree, crb->up_tree)) {
+		cra->up_tree |= ERR_CRCONFLICT;
+		crb->up_tree |= ERR_CRCONFLICT;
 	}
-	if (CHK(cra->dn_tree, crb->dn_tree)) {
-		cra->dn_tree |= FLAG;
-		crb->dn_tree |= FLAG;
+	if (CHK_CRCONFLICT(cra->dn_tree, crb->dn_tree)) {
+		cra->dn_tree |= ERR_CRCONFLICT;
+		crb->dn_tree |= ERR_CRCONFLICT;
+	}
+}
+
+void chk_sanity(classroute_t *cr, int *nroots) {
+	uint32_t link;
+	/* check up link for zero or one link */
+	link = cr->up_tree & ~ERRS;
+	if (!link) {
+		++(*nroots);
+		if (*nroots > 1) {
+			cr->up_tree |= ERR_ONEROOT;
+		}
+	} else if ((link & (link - 1)) != 0) {
+		cr->up_tree |= ERR_MULTIUPLINK;
+	}
+	link &= (cr->dn_tree & ~ERRS);
+	if (link) {
+		cr->up_tree |= ERR_UPDNCONFLICT;
+		cr->dn_tree |= ERR_UPDNCONFLICT;
 	}
 }
 
@@ -151,11 +174,28 @@ void print_classroute(coord_t *me, classroute_t *cr) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
-	s += sprintf(s, " %s%s up: ",	(cr->up_tree & FLAG ? "*" : " "),
-					(cr->dn_tree & FLAG ? "*" : " "));
-	s += sprint_links(s, cr->up_tree & ~FLAG);
+	s += sprintf(s, " up: ");
+	s += sprint_links(s, cr->up_tree & ~ERRS);
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, cr->dn_tree & ~FLAG);
+	s += sprint_links(s, cr->dn_tree & ~ERRS);
+	printf("%s\n", buf);
+}
+
+void print_classroute_errs(coord_t *me, classroute_t *cr) {
+	static char buf[1024];
+	char *s = buf;
+	s += sprint_coord(s, me);
+	*s++ = ' ';
+	*s++ = (cr->up_tree & ERR_CRCONFLICT   ? '*' : ' ');
+	*s++ = (cr->up_tree & ERR_ONEROOT      ? 'R' : ' ');
+	*s++ = (cr->up_tree & ERR_MULTIUPLINK  ? 'M' : ' ');
+	*s++ = (cr->up_tree & ERR_UPDNCONFLICT ? 'C' : ' ');
+	*s++ = (cr->dn_tree & ERR_CRCONFLICT   ? '*' : ' ');
+	*s++ = (cr->dn_tree & ERR_UPDNCONFLICT ? 'C' : ' ');
+	s += sprintf(s, " up: ");
+	s += sprint_links(s, cr->up_tree & ~ERRS);
+	s += sprintf(s, " dn: ");
+	s += sprint_links(s, cr->dn_tree & ~ERRS);
 	printf("%s\n", buf);
 }
 
@@ -179,7 +219,19 @@ void make_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	recurse_dims(cw, comm, &me, cr);
 }
 
-void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
+void chk_all_sanity(commworld_t *cw, rect_t *comm, classroute_t *cr) {
+	int z = rect_size(comm);
+	int r, nroots = 0;
+
+	for (r = 0; r < z; ++r) {
+		chk_sanity(&cr[r], &nroots);
+	}
+	if (!nroots) {
+		cr[0].up_tree |= ERR_ONEROOT;
+	}
+}
+
+void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr, int errs) {
 	static char buf[1024];
 	int z = rect_size(comm);
 	char *s = buf;
@@ -195,6 +247,10 @@ void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	for (r = 0; r < z; ++r) {
 		coord_t c;
 		rank2coord(comm, r, &c);
-		print_classroute(&c, &cr[r]);
+		if (errs) {
+			print_classroute_errs(&c, &cr[r]);
+		} else {
+			print_classroute(&c, &cr[r]);
+		}
 	}
 }
