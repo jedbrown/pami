@@ -97,6 +97,9 @@ namespace XMI
 
         _empty_advance(0)
         {
+          // dispatch_impl relies on the table being initialized to NULL's.
+          memset(_dispatch, 0x00, sizeof(_dispatch));
+
           MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
           MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
           _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
@@ -117,9 +120,6 @@ namespace XMI
 	  _generic.init (_sysdep, (xmi_context_t)this, clientid, id, num, generics);
           _shmem.init(&_sysdep);
           _lock.init(&_sysdep);
-
-          // dispatch_impl relies on the table being initialized to NULL's.
-          memset(_dispatch, 0x00, sizeof(_dispatch));
 
           // this barrier is here because the shared memory init
           // needs to be synchronized
