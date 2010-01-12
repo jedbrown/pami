@@ -100,12 +100,17 @@ namespace XMI
       _pendingStatus(XMI::Device::Initialized)
       {
         XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
-        XMI_assert(src_topo != NULL);
-        _root = src_topo->index2Rank(0);
+        //XMI_assert(src_topo != NULL);
+        if(src_topo && (src_topo->type()!=XMI_EMPTY_TOPOLOGY)) 
+        {
+          _root = src_topo->index2Rank(0);
 
-        //I've had some bad topo's, so try to detect it here...
-        XMI_assert(src_topo->size() == 1); //techinically only one root...
-        XMI_assert((0 == src_topo->rank2Index(_root)) && src_topo->isRankMember(_root));
+          //I've had some bad topo's, so try to detect it here...
+          XMI_assert(src_topo->size() == 1); //technically only one root...
+          XMI_assert((0 == src_topo->rank2Index(_root)) && src_topo->isRankMember(_root));
+        }
+        else // we must be a dst_participant and we don't particularly care who is the root - just not me.
+          _root = MPI_ANY_SOURCE;
 
         TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg client %p, context %zd, root %zd, iwq %p, rwq %p, bytes %zd\n",(unsigned)this,
                       mcast->client, mcast->context, _root, _iwq, _rwq, _bytes));
@@ -125,7 +130,7 @@ namespace XMI
         }
         else // I must be a dst_participant
         {
-          XMI_assert(_dst->isRankMember(__global.mapping.task()));
+          //XMI_assert(_dst->isRankMember(__global.mapping.task()));
           // no actual data to send, indicate we're done with a pending status (for advance)
           if((_rwq == NULL) && (_bytes == 0))
           {
@@ -269,7 +274,7 @@ namespace XMI
             {
               // how does MPI_Status.count work?
               XMI_assertf((size_t)scount <= _currBytes,
-                          "MPIBcastMsg recv overrun (got %d, kept %ld)\n",
+                          "MPIBcastMsg recv overrun (got %d, kept %zd)\n",
                           scount, _currBytes);
             }
           }
