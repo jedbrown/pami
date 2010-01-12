@@ -107,7 +107,6 @@ namespace XMI
                                    void               * payload,
                                    size_t               length)
         {
-          XMI_assert(T_Niov==1);
           int rc = LAPI_SUCCESS;
           LAPIMessage * msg = (LAPIMessage *)state;
           new(msg)LAPIMessage(this->_context,
