@@ -21,7 +21,7 @@ template <class T_MulticastModel, int T_BufSize>
 class Multicast {
 private:
 	T_MulticastModel _model;
-	char _msgbuf[T_MulticastModel::sizeof_msg];
+	uint8_t _msgbuf[T_MulticastModel::sizeof_msg];
 
 	char _source[T_BufSize];
 	char _result[T_BufSize];
@@ -141,8 +141,8 @@ public:
 		}
 		_done = 0;
         //fprintf(stderr, "... before %s.postMulticast\n", _name);
-        res = _model.postMulticast(mcast);
-        if (!res) {
+        res = _model.postMulticast(_msgbuf, mcast);
+        if (res!=XMI_SUCCESS) {
           fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
           return XMI_ERROR;
         }
@@ -217,7 +217,7 @@ public:
 		_done = 0;
         if (task_id == root) {
           //fprintf(stderr, "... before %s.postMulticast\n", _name);
-          res = _model.postMulticast(mcast);
+          res = _model.postMulticast(_msgbuf,mcast);
           if (!res) {
             fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
 			return XMI_ERROR;

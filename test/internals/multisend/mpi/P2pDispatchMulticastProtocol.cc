@@ -21,7 +21,7 @@ typedef XMI::Device::MPIDevice<XMI::SysDep> MPIDevice;
 typedef XMI::Device::MPIMessage MPIMessage;
 typedef XMI::Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
 typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
-typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2pDispatchMulticastProtocol;
+typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2PMcastProto;
 
 #include "test/internals/multisend/multicast.h"
 
@@ -29,8 +29,8 @@ typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<MPIDevice,EagerMPI,XMI:
 #define TEST_BUF_SIZE	1024
 #endif // TEST_BUF_SIZE
 
-#define GLOBAL_BCAST_NAME	"P2pDispatchMulticastProtocol"
-#define GLOBAL_BCAST_MODEL	P2pDispatchMulticastProtocol
+#define GLOBAL_BCAST_NAME	"P2PMcastProto"
+#define GLOBAL_BCAST_MODEL	P2PMcastProto
 
 XMI::Topology itopo;
 XMI::Topology otopo;

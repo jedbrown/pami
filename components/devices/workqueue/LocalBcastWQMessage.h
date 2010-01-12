@@ -117,14 +117,15 @@ private:
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalBcastWQMessage
 
-class LocalBcastWQModel : public XMI::Device::Interface::MulticastModel<LocalBcastWQModel> {
+class LocalBcastWQModel : public XMI::Device::Interface::MulticastModel<LocalBcastWQModel,sizeof(LocalBcastWQMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(LocalBcastWQMessage);
+        static const size_t mcast_model_state_bytes = sizeof_msg;
 
 	LocalBcastWQModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticastModel<LocalBcastWQModel>(status),
+        XMI::Device::Interface::MulticastModel<LocalBcastWQModel,sizeof(LocalBcastWQMessage)>(status),
 	_shared(_g_l_bcastwq_dev.getSysdep()),
 	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
 	_npeers(__global.topology_local.size())
@@ -145,14 +146,16 @@ public:
 		}
 	}
 
-	inline bool postMulticast_impl(xmi_multicast_t *mcast);
+	inline xmi_result_t postMulticast_impl(uint8_t         (&state)[sizeof(LocalBcastWQMessage)],
+                                               xmi_multicast_t *mcast);
 private:
 	XMI::Device::WorkQueue::SharedWorkQueue _shared;
 	unsigned _peer;
 	unsigned _npeers;
 }; // class LocalBcastWQModel
 
-inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {
+inline xmi_result_t LocalBcastWQModel::postMulticast_impl(uint8_t         (&state)[sizeof(LocalBcastWQMessage)],
+                                                  xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
 	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
@@ -165,7 +168,7 @@ inline bool LocalBcastWQModel::postMulticast_impl(xmi_multicast_t *mcast) {
 		new (mcast->request) LocalBcastWQMessage(_g_l_bcastwq_dev,
 			mcast, _shared, isrootrole);
 	_g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 }; // namespace Device

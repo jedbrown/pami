@@ -172,14 +172,15 @@ protected:
 	size_t _bytes;
 }; //-- WQRingBcastMsg
 
-class WQRingBcastMdl : public XMI::Device::Interface::MulticastModel<WQRingBcastMdl> {
+class WQRingBcastMdl : public XMI::Device::Interface::MulticastModel<WQRingBcastMdl,sizeof(WQRingBcastMsg)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(WQRingBcastMsg);
+        static const size_t mcast_model_state_bytes = sizeof_msg;
 
 	WQRingBcastMdl(xmi_result_t &status) :
-	XMI::Device::Interface::MulticastModel<WQRingBcastMdl>(status)
+        XMI::Device::Interface::MulticastModel<WQRingBcastMdl,sizeof(WQRingBcastMsg)>(status)
 	{
 		XMI::SysDep *sd = _g_wqbcast_dev.getSysdep();
 		_me = __global.mapping.task();
@@ -196,14 +197,16 @@ public:
 		}
 	}
 
-	inline bool postMulticast_impl(xmi_multicast_t *mcast);
+	inline xmi_result_t postMulticast_impl(uint8_t         (&state)[sizeof(WQRingBcastMsg)],
+                                               xmi_multicast_t *mcast);
 
 private:
 	size_t _me;
 	XMI::PipeWorkQueue _wq[XMI_MAX_PROC_PER_NODE];
 }; // class WQRingBcastMdl
 
-inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
+inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t         (&state)[sizeof(WQRingBcastMsg)],
+                                               xmi_multicast_t *mcast) {
 	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
 	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
 	size_t root = src_topo->index2Rank(0); // assert size(0 == 1...
@@ -259,7 +262,7 @@ inline bool WQRingBcastMdl::postMulticast_impl(xmi_multicast_t *mcast) {
 					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst);
 	}
 	_g_wqbcast_dev.__post<WQRingBcastMsg>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 }; //-- Device

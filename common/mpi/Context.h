@@ -62,7 +62,7 @@ namespace XMI
 
 
     // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
-    typedef XMI::Protocol::MPI::P2pDispatchMulticastProtocol<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2pDispatchMulticastProtocol;
+    typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2PMcastProto;
 
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
@@ -479,42 +479,55 @@ namespace XMI
 
       if(_dispatch[id][1] == (void*)2) // see HACK comment above
       {
-        P2pDispatchMulticastProtocol * multicast = (P2pDispatchMulticastProtocol *) _dispatch[id][0];
+        typedef uint8_t mcast_storage_t[P2PMcastProto::mcast_model_state_bytes];
+        P2PMcastProto * multicast = (P2PMcastProto *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
-        multicast->multicast(mcastinfo);
+        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
+        if(mcastinfo->request==NULL)
+        {
+          msgbuf = (mcast_storage_t*)malloc(P2PMcastProto::mcast_model_state_bytes);
+          mcastinfo->request = msgbuf;
+        }
+        multicast->multicast(*(mcast_storage_t*)msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)3) // see HACK comment above
       {
+        typedef uint8_t mcast_storage_t[XMI::Device::WQRingBcastMdl::mcast_model_state_bytes];
         XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
+        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
         if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
         {
-          char *msgbuf = new char[XMI::Device::WQRingBcastMdl::sizeof_msg];
+          msgbuf = (mcast_storage_t*)malloc(XMI::Device::WQRingBcastMdl::sizeof_msg);
           mcastinfo->request = msgbuf;
         }
-        multicast->postMulticast(mcastinfo);
+        multicast->postMulticast(*(mcast_storage_t*)msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)4) // see HACK comment above
       {
+        typedef uint8_t mcast_storage_t[XMI::Device::LocalBcastWQModel::sizeof_msg];
         XMI::Device::LocalBcastWQModel  * multicast = (XMI::Device::LocalBcastWQModel *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided multicast %p\n", multicast));
+        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
         if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
         {
-          char *msgbuf = new char[XMI::Device::LocalBcastWQModel::sizeof_msg];
+          msgbuf = (mcast_storage_t*)malloc(XMI::Device::LocalBcastWQModel::sizeof_msg);
           mcastinfo->request = msgbuf;
         }
-        multicast->postMulticast(mcastinfo);
+        multicast->postMulticast(*(mcast_storage_t*)msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)5) // see HACK comment above
       {
+        typedef uint8_t mcast_storage_t[XMI::Device::MPIBcastMdl::sizeof_msg];
         XMI::Device::MPIBcastMdl  * multicast = (XMI::Device::MPIBcastMdl *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided global multicast %p\n", multicast));
+        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
         if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
         {
-          char *msgbuf = new char[XMI::Device::MPIBcastMdl::sizeof_msg];
+          msgbuf = (mcast_storage_t*)malloc(XMI::Device::MPIBcastMdl::sizeof_msg);
           mcastinfo->request = msgbuf;
         }
-        multicast->postMulticast(mcastinfo);
+        multicast->postMulticast(*(mcast_storage_t*)msgbuf,mcastinfo);
       }
       else
         XMI_abort();
@@ -622,8 +635,8 @@ namespace XMI
         if(options.hint.multicast.one_sided)
         {
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
-          XMI_assertf(_request.objsize >= sizeof(P2pDispatchMulticastProtocol),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2pDispatchMulticastProtocol),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
-          new (_dispatch[(size_t)id][0]) P2pDispatchMulticastProtocol(id, fn.multicast, cookie,
+          XMI_assertf(_request.objsize >= sizeof(P2PMcastProto),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2PMcastProto),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
+          new (_dispatch[(size_t)id][0]) P2PMcastProto(id, fn.multicast, cookie,
                                                                       *_mpi,
                                                                       this->_client,
                                                                       this->_context,
