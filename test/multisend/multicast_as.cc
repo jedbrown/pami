@@ -11,6 +11,8 @@
  * \brief Simple all-sided multicast tests.
  */
 
+#define DEBUG_RANK (unsigned)-1
+
 #include "test/multisend/Buffer.h"
 
 #include "Global.h"
@@ -153,9 +155,17 @@ int main(int argc, char ** argv)
     new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
     if(gRoot == task_id)
       _buffer.reset(true); // isRoot = true
-    else _buffer.reset(false);  // isRoot = false
+    else
+      _buffer.reset(false);  // isRoot = false
 
     status = XMI_Multicast(&mcast);
+
+    if(task_id == DEBUG_RANK)
+    {
+      DBG_FPRINTF((stderr,"sleep\n"));
+      sleep(5);
+    }
+    DBG_FPRINTF((stderr,"Before advance\n"));
 
     while(_doneCountdown)
     {
@@ -196,6 +206,89 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------
+// simple mcast to all except root with null parms
+// ------------------------------------------------------------------------
+  {
+    _doneCountdown = 1;
+    //sleep(5); // instead of syncing
+
+    if(gRoot == task_id)
+    {
+      new (&src_participants) XMI::Topology(gRoot); // global root
+      mcast.src_participants = (xmi_topology_t *)&src_participants;
+
+      new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
+      mcast.dst_participants = (xmi_topology_t *)&dst_participants;
+
+      mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
+      mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+      _buffer.reset(true); // isRoot = true
+    }
+    else
+    {
+      mcast.src_participants = (xmi_topology_t *)NULL;
+      new (&dst_participants) XMI::Topology(task_id); // just me as far as I'm concerned or care
+      mcast.dst_participants = (xmi_topology_t *)&dst_participants;
+
+      mcast.src = (xmi_pipeworkqueue_t *)NULL;
+      mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
+      _buffer.reset(false);  // isRoot = false
+    }
+
+    status = XMI_Multicast(&mcast);
+
+    if(task_id == DEBUG_RANK)
+    {
+      DBG_FPRINTF((stderr,"sleep\n"));
+      sleep(5);
+    }
+    DBG_FPRINTF((stderr,"Before advance\n"));
+
+    while(_doneCountdown)
+    {
+      status = XMI_Context_advance (context, 10);
+    }
+
+    size_t
+    bytesConsumed = 0,
+    bytesProduced = 0;
+
+    if(gRoot == task_id)
+    {
+      _buffer.validate(bytesConsumed,
+                       bytesProduced,
+                       true,   // isRoot = true
+                       false); // isDest = false
+      if((bytesConsumed != TEST_BUF_SIZE) ||
+         (bytesProduced != 0))
+      {
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
+      }
+      else
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
+    }
+    else
+    {
+      _buffer.validate(bytesConsumed,
+                       bytesProduced);
+      if((bytesConsumed != 0) ||
+         (bytesProduced != TEST_BUF_SIZE))
+      {
+        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
+      }
+      else
+        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
+    }
+  }
+// ------------------------------------------------------------------------
+
+  // reset the mcast structure to defaults
+  mcast.src_participants = (xmi_topology_t *)&src_participants;
+  mcast.dst_participants = (xmi_topology_t *)&dst_participants;
+
+  mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
+  mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
+// ------------------------------------------------------------------------
 // simple mcast to all including root
 // ------------------------------------------------------------------------
   {
@@ -213,6 +306,13 @@ int main(int argc, char ** argv)
     else _buffer.reset(false);  // isRoot = false
 
     status = XMI_Multicast(&mcast);
+
+    if(task_id == DEBUG_RANK)
+    {
+      DBG_FPRINTF((stderr,"sleep\n"));
+      sleep(5);
+    }
+    DBG_FPRINTF((stderr,"Before advance\n"));
 
     while(_doneCountdown)
     {
