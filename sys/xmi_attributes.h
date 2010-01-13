@@ -1,4 +1,4 @@
-/*  (C)Copyright IBM Corp.  2007 - 2009  */
+/*  (C)Copyright IBM Corp.  2009, 2010  */
 /**
  * \file sys/xmi_attributes.h
  * \brief ???

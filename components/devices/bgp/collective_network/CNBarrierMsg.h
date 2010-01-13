@@ -3,7 +3,7 @@
 /* Product(s):                                                      */
 /*     5733-BG1                                                     */
 /*                                                                  */
-/* (C)Copyright IBM Corp.  2006, 2006                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /*                                                                  */
 /* The Source code for this program is not published  or otherwise  */
 /* divested of its trade secrets,  irrespective of what has been    */
@@ -82,7 +82,7 @@ namespace DCMF
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
