@@ -35,7 +35,7 @@
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
 
-#define OLD_CCMI_BARRIER  1
+#define OLD_CCMI_BARRIER
 
 namespace XMI
 {
@@ -198,7 +198,7 @@ namespace XMI
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
-#if  OLD_CCMI_BARRIER
+#ifdef  OLD_CCMI_BARRIER
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
@@ -216,7 +216,7 @@ namespace XMI
                               fcn)
         {
           xmi_metadata_t *meta = &(this->_metadata);
-          strcpy(meta->name, "CCMI_BinomBarrier");
+          strcpy(meta->name, "CCMI_OldBinomBarrier");
         }
       XMI_Request_t                                     _request;
       XMI_COLL_MCAST_CLASS                                     _model;
@@ -244,7 +244,7 @@ namespace XMI
 	_contextid (context_id)
         {
           xmi_metadata_t *meta = &(this->_metadata);
-          strcpy(meta->name, "CCMI_BinomBarrier");
+          strcpy(meta->name, "CCMI_NewBinomBarrier");
         }
       XMI_Request_t                                  _request;
       MPINativeInterface<T_Device>                   _minterface;
