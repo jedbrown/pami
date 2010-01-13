@@ -311,7 +311,7 @@ namespace XMI
 
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
-#if OLD_CCMI_BROADCAST
+#ifdef OLD_CCMI_BROADCAST
                     cinfo->_broadcast_registration.generate(&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
                                                             cb_done,
@@ -344,7 +344,7 @@ namespace XMI
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
 
-#if OLD_CCMI_BROADCAST
+#ifdef OLD_CCMI_BROADCAST
                     cinfo->_broadcast_registration.generate(&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
                                                             cb_done,
