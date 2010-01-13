@@ -36,6 +36,6 @@ typedef XMI::Device::LAPIDevice<XMI::SysDep>               LAPIDevice;
 #define XMI_COLL_MCAST_CLASS  LAPIMcastModel
 #define XMI_COLL_M2M_CLASS    LAPIM2MModel
 #define XMI_COLL_SYSDEP_CLASS XMI::SysDep
-#define XMI_NATIVEINTERFACE   LAPINativeInterface;
+#define XMI_NATIVEINTERFACE   LAPINativeInterface
 
 #endif

@@ -18,10 +18,10 @@ extern XMI::Global __global;
 namespace XMI
 {
   template <class T_Device>
-  class lapiNativeInterface : public CCMI::Interfaces::NativeInterface
+  class LAPINativeInterface : public CCMI::Interfaces::NativeInterface
   {
   public:
-    lapiNativeInterface(T_Device      *dev,
+    LAPINativeInterface(T_Device      *dev,
                         xmi_client_t   client,
                         xmi_context_t  context,
                         size_t         context_id):
