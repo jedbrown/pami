@@ -36,6 +36,15 @@
  *   O -> O -> O -> O <- O <- O
  *
  * Where 'R' is the root node, and dimension '0' is horizontal (and '1' is vertical).
+ *
+ * If a non-rectangle communicator is being used, the circumscribing rectangle
+ * must participate in the classroute creation. All nodes in the rectangle are
+ * part of the classroute and only nodes in the communicator have local contribution,
+ * except for leafs/branches with no local contribution which must be pruned from
+ * the resulting classroute. In order for a node to know it must be pruned, or
+ * that it is at a prune point, the node may have to create the entire classroute
+ * (for all nodes) and evaluate it's position in it - or at least may have to
+ * create the classroute down-tree from itself.
  */
 void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
 					rect_t *comm, int dim0, classroute_t *cr) {
