@@ -179,14 +179,14 @@ protected:
 	coremath _func;
 }; //-- WQRingReduceMsg
 //
-class WQRingReduceMdl : public XMI::Device::Interface::MulticombineModel<WQRingReduceMdl> {
+class WQRingReduceMdl : public XMI::Device::Interface::MulticombineModel<WQRingReduceMdl,sizeof(WQRingReduceMsg)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(WQRingReduceMsg);
 
 	WQRingReduceMdl(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl>(status)
+	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl,sizeof(WQRingReduceMsg)>(status)
 	{
 		XMI::SysDep *sd = _g_wqreduce_dev.getSysdep();
 		_me = __global.mapping.task();
@@ -205,14 +205,14 @@ public:
 
 	inline void reset_impl() {}
 
-	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
+	inline xmi_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb);
 
 private:
 	size_t _me;
 	XMI::PipeWorkQueue _wq[XMI_MAX_PROC_PER_NODE];
 }; // class WQRingReduceMdl
 
-inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
+inline xmi_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb) {
 	XMI::Topology *data_topo = (XMI::Topology *)mcomb->data_participants;
 	XMI::Topology *results_topo = (XMI::Topology *)mcomb->results_participants;
 	// data_participants will be all local nodes...
@@ -251,7 +251,7 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 		// I am root - downstream from eveyone.
 		// _input (op) _wq[meix_1] => _output
 		// XMI_assert(roles == ROOT_ROLE);
-		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
 					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (XMI::PipeWorkQueue *)mcomb->results);
 	} else if (results_topo->isRankMember(me_1)) {
 		// I am head of stream.
@@ -259,7 +259,7 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
 					(XMI::PipeWorkQueue *)mcomb->data, NULL, &_wq[meix]);
 	} else {
 		// I am upstream of root, but not head.
@@ -267,11 +267,11 @@ inline bool WQRingReduceMdl::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcomb->request) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
 					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix]);
 	}
 	_g_wqreduce_dev.__post<WQRingReduceMsg>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 }; //-- Device

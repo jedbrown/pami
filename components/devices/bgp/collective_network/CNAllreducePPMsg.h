@@ -164,20 +164,20 @@ protected:
 	unsigned _nThreads;
 }; // class CNAllreducePPMessage
 
-class CNAllreducePPModel : public XMI::Device::Interface::MulticombineModel<CNAllreducePPModel> {
+class CNAllreducePPModel : public XMI::Device::Interface::MulticombineModel<CNAllreducePPModel,sizeof(CNAllreducePPMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNAllreducePPMessage);
 
 	CNAllreducePPModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<CNAllreducePPModel>(status)
+	XMI::Device::Interface::MulticombineModel<CNAllreducePPModel,sizeof(CNAllreducePPMessage)>(status)
 	{
 		_dispatch_id = _g_cnallreducepp_dev.newDispID();
 		_me = __global.mapping.task();
 	}
 
-	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
+	inline xmi_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb);
 
 private:
 	size_t _me;
@@ -192,13 +192,13 @@ inline void CNAllreducePPMessage::__completeThread(CNAllreducePPThread *thr) {
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")
-inline bool CNAllreducePPModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
+inline xmi_result_t CNAllreducePPModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb) {
 	XMI::Device::BGP::CNAllreduceSetup &tas =
 		XMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
 	// assert(tas._pre != NULL);
 	if (!tas._pre || !tas._post) {
 XMI_abort();
-		return false;
+		return XMI_ERROR;
 	}
 	XMI::Topology *result_topo = (XMI::Topology *)mcomb->results_participants;
 	bool doStore = (!result_topo || result_topo->isRankMember(_me));
@@ -208,10 +208,10 @@ XMI_abort();
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNAllreducePPMessage *msg;
-	msg = new (mcomb->request) CNAllreducePPMessage(*_g_cnallreducepp_dev.common(),
+	msg = new (&state) CNAllreducePPMessage(*_g_cnallreducepp_dev.common(),
 			mcomb, bytes, doStore, _dispatch_id, tas);
 	_g_cnallreducepp_dev.__post<CNAllreducePPMessage>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 };	// BGP

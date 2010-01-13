@@ -225,7 +225,6 @@ namespace XMI
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
       static const size_t sizeof_msg = sizeof(MPISyncMsg_t);
-      static const size_t msync_model_state_bytes = sizeof_msg;
       
       MPISyncMdl(xmi_result_t &status) :
       XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>(status)

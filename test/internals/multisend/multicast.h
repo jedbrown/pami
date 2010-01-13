@@ -111,7 +111,6 @@ public:
 	inline xmi_result_t perform_test(size_t task_id, size_t num_tasks,
 					xmi_context_t ctx, xmi_multicast_t *mcast) {
 		xmi_result_t rc;
-		bool res;
 		size_t x, root;
 
 		if (_status != XMI_SUCCESS) {
@@ -127,10 +126,10 @@ public:
 		_opwq.reset();
 
 		// simple allreduce on the local ranks...
-        mcast->dispatch = _dispatch_id;
-        mcast->msgcount = 1;
-        mcast->msginfo = &_msginfo;
-		mcast->request = &_msgbuf;
+		mcast->dispatch = _dispatch_id;
+		mcast->msgcount = 1;
+		mcast->msginfo = &_msginfo;
+		mcast->request = NULL;
 		mcast->cb_done = (xmi_callback_t){_done_cb, (void *)this};
 		mcast->src = (xmi_pipeworkqueue_t *)&_ipwq;
 		mcast->dst = (xmi_pipeworkqueue_t *)&_opwq;
@@ -140,12 +139,12 @@ public:
 			((unsigned *)_result)[x] = -1;
 		}
 		_done = 0;
-        //fprintf(stderr, "... before %s.postMulticast\n", _name);
-        res = _model.postMulticast(_msgbuf, mcast);
-        if (res!=XMI_SUCCESS) {
-          fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
-          return XMI_ERROR;
-        }
+		//fprintf(stderr, "... before %s.postMulticast\n", _name);
+		rc = _model.postMulticast(_msgbuf, mcast);
+		if (rc != XMI_SUCCESS) {
+			fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
+			return XMI_ERROR;
+		}
 		//fprintf(stderr, "... before advance loop for %s.postMulticast\n", _name);
 		while (!_done) {
 			rc = XMI_Context_advance(ctx, 100);
@@ -202,10 +201,10 @@ public:
 		_opwq.reset();
 
 		// simple allreduce on the local ranks...
-        mcast->dispatch = _dispatch_id;
-        mcast->msgcount = 1;
-        mcast->msginfo = &_msginfo;
-		mcast->request = &_msgbuf;
+		mcast->dispatch = _dispatch_id;
+		mcast->msgcount = 1;
+		mcast->msginfo = &_msginfo;
+		mcast->request = NULL;
 		mcast->cb_done = (xmi_callback_t){_done_cb, (void *)this};
 		mcast->src = (xmi_pipeworkqueue_t *)&_ipwq;
 		mcast->dst = (xmi_pipeworkqueue_t *)&_opwq;
@@ -215,14 +214,14 @@ public:
 			((unsigned *)_result)[x] = -1;
 		}
 		_done = 0;
-        if (task_id == root) {
-          //fprintf(stderr, "... before %s.postMulticast\n", _name);
-          res = _model.postMulticast(_msgbuf,mcast);
-          if (!res) {
-            fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
-			return XMI_ERROR;
-          }
-        }
+		if (task_id == root) {
+			//fprintf(stderr, "... before %s.postMulticast\n", _name);
+			rc = _model.postMulticast(_msgbuf,mcast);
+			if (rc != XMI_SUCCESS) {
+				fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
+				return XMI_ERROR;
+			}
+		}
 		//fprintf(stderr, "... before advance loop for %s.postMulticast\n", _name);
 		while (!_done) {
 			rc = XMI_Context_advance(ctx, 100);

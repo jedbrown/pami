@@ -128,14 +128,14 @@ private:
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalAllreduceWQMessage
 
-class LocalAllreduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel> {
+class LocalAllreduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel,sizeof(LocalAllreduceWQMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(LocalAllreduceWQMessage);
 
 	LocalAllreduceWQModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel>(status),
+	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel,sizeof(LocalAllreduceWQMessage)>(status),
 	_shared(_g_l_allreducewq_dev.getSysdep()),
 	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
 	_npeers(__global.topology_local.size())
@@ -156,7 +156,7 @@ public:
 		}
 	}
 
-	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
+	inline xmi_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb);
 
 private:
 	XMI::Device::WorkQueue::SharedWorkQueue _shared;
@@ -164,17 +164,17 @@ private:
 	unsigned _npeers;
 }; // class LocalAllreduceWQModel
 
-inline bool LocalAllreduceWQModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
+inline xmi_result_t LocalAllreduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb) {
 	// assert((data_topo .U. results_topo).size() == _npeers);
 	int dtshift = xmi_dt_shift[mcomb->dtype];
 	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
 
 	LocalAllreduceWQMessage *msg =
-		new (mcomb->request) LocalAllreduceWQMessage(_g_l_allreducewq_dev,
+		new (&state) LocalAllreduceWQMessage(_g_l_allreducewq_dev,
 					mcomb, _shared, _peer, _npeers,
 					func, dtshift);
 	_g_l_allreducewq_dev.__post<LocalAllreduceWQMessage>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 }; // namespace Device

@@ -479,20 +479,20 @@ namespace XMI
 
       if(_dispatch[id][1] == (void*)2) // see HACK comment above
       {
-        typedef uint8_t mcast_storage_t[P2PMcastProto::mcast_model_state_bytes];
+        typedef uint8_t mcast_storage_t[P2PMcastProto::sizeof_msg];
         P2PMcastProto * multicast = (P2PMcastProto *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
         mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
         if(mcastinfo->request==NULL)
         {
-          msgbuf = (mcast_storage_t*)malloc(P2PMcastProto::mcast_model_state_bytes);
+          msgbuf = (mcast_storage_t*)malloc(P2PMcastProto::sizeof_msg);
           mcastinfo->request = msgbuf;
         }
         multicast->multicast(*(mcast_storage_t*)msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)3) // see HACK comment above
       {
-        typedef uint8_t mcast_storage_t[XMI::Device::WQRingBcastMdl::mcast_model_state_bytes];
+        typedef uint8_t mcast_storage_t[XMI::Device::WQRingBcastMdl::sizeof_msg];
         XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
         mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;

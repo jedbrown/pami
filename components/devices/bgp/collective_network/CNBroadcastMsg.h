@@ -187,20 +187,20 @@ protected:
 	unsigned _nThreads;
 }; // class CNBroadcastMessage
 
-class CNBroadcastModel : public XMI::Device::Interface::MulticastModel<CNBroadcastModel> {
+class CNBroadcastModel : public XMI::Device::Interface::MulticastModel<CNBroadcastModel,sizeof(CNBroadcastMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNBroadcastMessage);
 
 	CNBroadcastModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticastModel<CNBroadcastModel>(status)
+	XMI::Device::Interface::MulticastModel<CNBroadcastModel,sizeof(CNBroadcastMessage)>(status)
 	{
 		_dispatch_id = _g_cnbroadcast_dev.newDispID();
 		_me = __global.mapping.task();
 	}
 
-	inline bool postMulticast_impl(xmi_multicast_t *mcast);
+	inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg], xmi_multicast_t *mcast);
 
 private:
 	size_t _me;
@@ -214,7 +214,7 @@ inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
 	}
 }
 
-inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
+inline xmi_result_t CNBroadcastModel::postMulticast_impl(uint8_t (&state)[sizeof_msg], xmi_multicast_t *mcast) {
 	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
 	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
 	bool doData = (!src_topo || src_topo->isRankMember(_me));
@@ -224,10 +224,10 @@ inline bool CNBroadcastModel::postMulticast_impl(xmi_multicast_t *mcast) {
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNBroadcastMessage *msg;
-	msg = new (mcast->request) CNBroadcastMessage(*_g_cnbroadcast_dev.common(),
+	msg = new (&state) CNBroadcastMessage(*_g_cnbroadcast_dev.common(),
 			mcast, mcast->bytes, doStore, doData, _dispatch_id);
 	_g_cnbroadcast_dev.__post<CNBroadcastMessage>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 };	// BGP

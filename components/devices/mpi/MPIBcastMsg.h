@@ -331,7 +331,6 @@ namespace XMI
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
       static const size_t sizeof_msg = sizeof(MPIBcastMsg_t);
-      static const size_t mcast_model_state_bytes = sizeof_msg;
 
       MPIBcastMdl(xmi_result_t &status) :
         XMI::Device::Interface::MulticastModel<MPIBcastMdl, sizeof(MPIBcastMsg_t)>(status)
@@ -339,19 +338,19 @@ namespace XMI
         TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl()\n",(unsigned)this));
       }
 
-      inline xmi_result_t postMulticast_impl(uint8_t         (&state)[sizeof(MPIBcastMsg_t)],
+      inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                              xmi_multicast_t *mcast);
 
     private:
     }; // class MPIBcastMdl
 
-    inline xmi_result_t MPIBcastMdl::postMulticast_impl(uint8_t         (&state)[sizeof(MPIBcastMsg_t)],
+    inline xmi_result_t MPIBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                         xmi_multicast_t *mcast)
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",(unsigned)this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, mcast->request));
       MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
-      new (mcast->request) MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpibcast_dev, mcast);
+      new (&state) MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpibcast_dev, mcast);
       _g_mpibcast_dev.__post<MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
       return XMI_SUCCESS;
     }

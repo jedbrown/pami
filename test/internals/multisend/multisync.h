@@ -52,7 +52,6 @@ public:
 					xmi_context_t ctx, xmi_multisync_t *msync) {
 		unsigned long long t0, t1, t2;
 		xmi_result_t rc;
-		bool res;
 
 		if (_status != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to register multisync \"%s\"\n", _name);
@@ -60,7 +59,7 @@ public:
 		}
 
 		msync->cb_done = (xmi_callback_t){_done_cb, (void *)this};
-		msync->request = &_msgbuf;
+		msync->request = NULL;
 
 		// Do three barriers: first is to synchronize the ranks so that
 		// the timing of the follwing barriers are cleaner. Also, no printfs
@@ -77,8 +76,8 @@ public:
 		// first barrier: get everyone together
 		_done = 0;
 		//fprintf(stderr, "... before %s.postMultisync\n", _name);
-		res = _model.postMultisync(_msgbuf,msync);
-		if (!res) {
+		rc = _model.postMultisync(_msgbuf,msync);
+		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post first multisync \"%s\"\n", _name);
 			return XMI_ERROR;
 		}
@@ -96,8 +95,8 @@ public:
 		++msync->connection_id;
 		_done = 0;
 		t0 = __global.time.timebase();
-		res = _model.postMultisync(_msgbuf,msync);
-		if (!res) {
+		rc = _model.postMultisync(_msgbuf,msync);
+		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post second multisync \"%s\"\n", _name);
 			return XMI_ERROR;
 		}
@@ -136,8 +135,8 @@ public:
 		_done = 0;
 		t0 = __global.time.timebase();
 		while ((t1 = __global.time.timebase()) - t0 < delay);
-		res = _model.postMultisync(_msgbuf,msync);
-		if (!res) {
+		rc = _model.postMultisync(_msgbuf,msync);
+		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post third multisync \"%s\"\n", _name);
 			return XMI_ERROR;
 		}

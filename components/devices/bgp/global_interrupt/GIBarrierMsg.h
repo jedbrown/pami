@@ -126,17 +126,17 @@ private:
 protected:
 }; // class giMessage
 
-class giModel : public XMI::Device::Interface::MultisyncModel<giModel> {
+class giModel : public XMI::Device::Interface::MultisyncModel<giModel,sizeof(giMessage)> {
 public:
 	static const size_t sizeof_msg = sizeof(giMessage);
 
 	giModel(xmi_result_t &status) :
-	XMI::Device::Interface::MultisyncModel<giModel>(status)
+	XMI::Device::Interface::MultisyncModel<giModel,sizeof(giMessage)>(status)
 	{
 		// if we need sysdep, use _g_gibarrier_dev.getSysdep()...
 	}
 
-	inline bool postMultisync_impl(xmi_multisync_t *msync);
+	inline xmi_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg], xmi_multisync_t *msync);
 
 private:
 }; // class giModel
@@ -145,13 +145,13 @@ private:
 }; // namespace Device
 }; // namespace XMI
 
-inline bool XMI::Device::BGP::giModel::postMultisync_impl(xmi_multisync_t *msync) {
+inline xmi_result_t XMI::Device::BGP::giModel::postMultisync_impl(uint8_t (&state)[sizeof_msg], xmi_multisync_t *msync) {
 	// assert(participants == ctor topology)
 	giMessage *msg;
 
-	msg = new (msync->request) giMessage(_g_gibarrier_dev, msync);
+	msg = new (&state) giMessage(_g_gibarrier_dev, msync);
 	_g_gibarrier_dev.__post<giMessage>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 #endif // __components_devices_bgp_gibarriermsg_h__

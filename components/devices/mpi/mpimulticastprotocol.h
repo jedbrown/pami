@@ -43,7 +43,7 @@ namespace XMI
         class T_P2P_PROTOCOL,
         class T_MULTICAST_MODEL>
       class P2PMcastProto:
-        public XMI::Device::Interface::AMMulticastModel<P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>, T_MULTICAST_MODEL::mcast_model_state_bytes+sizeof(XMI::Topology)+sizeof(xmi_callback_t)+sizeof(void*) >
+        public XMI::Device::Interface::AMMulticastModel<P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>, T_MULTICAST_MODEL::sizeof_msg+sizeof(XMI::Topology)+sizeof(xmi_callback_t)+sizeof(void*) >
       {
         ///
         /// Point-to-point dispatch header.
@@ -69,7 +69,6 @@ namespace XMI
         static const int NUM_ROLES = 2;
         static const int REPL_ROLE = 1;
         static const size_t sizeof_msg = sizeof(allocation_t);
-        static const size_t mcast_model_state_bytes = sizeof_msg;
 
         ///
         /// \brief Base class constructor
@@ -155,13 +154,13 @@ namespace XMI
         ///
         /// \param[in] mcast
         ///
-        xmi_result_t multicast(uint8_t         (&state)[sizeof_msg],
+        xmi_result_t multicast(uint8_t (&state)[sizeof_msg],
                                xmi_multicast_t *mcast) // \todo deprecated - remove
           {
             postMulticast_impl(state, mcast);
             return XMI_SUCCESS;
           };
-        xmi_result_t postMulticast_impl(uint8_t         (&state)[sizeof_msg],
+        xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                         xmi_multicast_t *mcast)
           {
             TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::multicast() id %zd, connection_id %d\n",(unsigned)this,mcast->dispatch,mcast->connection_id));

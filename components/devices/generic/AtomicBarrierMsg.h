@@ -120,7 +120,6 @@ class AtomicBarrierMdl : public XMI::Device::Interface::MultisyncModel<AtomicBar
                                                                        sizeof(AtomicBarrierMsg<T_Barrier>) > {
 public:
 	static const size_t sizeof_msg = sizeof(AtomicBarrierMsg<T_Barrier>);
-        static const size_t msync_model_state_bytes = sizeof_msg;
 
 	AtomicBarrierMdl(xmi_result_t &status) :
           XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
@@ -133,7 +132,7 @@ public:
 		_barrier.init(_g_lmbarrier_dev.getSysdep(), peers, (peer0 == me));
 	}
 
-	inline xmi_result_t postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+	inline xmi_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
                                                xmi_multisync_t *msync);
 
 private:
@@ -144,7 +143,7 @@ private:
 }; //-- XMI
 
 template <class T_Barrier>
-inline xmi_result_t XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+inline xmi_result_t XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
                                                                                  xmi_multisync_t *msync) {
 	_barrier.pollInit();
 	// See if we can complete the barrier immediately...
@@ -160,7 +159,7 @@ inline xmi_result_t XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl
 	}
 	// must "continue" current barrier, not start new one!
 	AtomicBarrierMsg<T_Barrier> *msg;
-	msg = new (msync->request) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync);
+	msg = new (&state) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync);
 	_g_lmbarrier_dev.__post<AtomicBarrierMsg<T_Barrier> >(msg);
 	return XMI_SUCCESS;
 }

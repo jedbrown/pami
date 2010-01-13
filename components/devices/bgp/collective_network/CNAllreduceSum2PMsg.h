@@ -271,14 +271,14 @@ private:
 	unsigned _nThreads;
 }; // class CNAllreduce2PMessage
 
-class CNAllreduce2PModel : public XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel> {
+class CNAllreduce2PModel : public XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,sizeof(CNAllreduce2PMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNAllreduce2PMessage);
 
 	CNAllreduce2PModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel>(status),
+	XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,sizeof(CNAllreduce2PMessage)>(status),
 	// we depend on doing consumeBytes(bytesAvailableToConsume()) in order
 	// to "jump" to next "boundary" so we maintain alignment for each cycle.
 	// this requires the WQ behavior based on workunits and worksize that
@@ -305,7 +305,7 @@ public:
 		_xwq.reset();
 	}
 
-	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
+	inline xmi_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb);
 
 private:
 	XMI::Device::WorkQueue::SharedWorkQueue _ewq;
@@ -330,7 +330,7 @@ inline void CNAllreduce2PMessage::__completeThread(CNAllreduce2PThread *thr) {
 	}
 }
 
-inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
+inline xmi_result_t CNAllreduce2PModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb) {
 	// we don't need CNAllreduceSetup since we know this is DOUBLE-SUM
 	XMI::Topology *results_topo = (XMI::Topology *)mcomb->results_participants;
 	bool doStore = (!results_topo || results_topo->isRankMember(_me));
@@ -339,11 +339,11 @@ inline bool CNAllreduce2PModel::postMulticombine_impl(xmi_multicombine_t *mcomb)
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNAllreduce2PMessage *msg;
-	msg = new (mcomb->request) CNAllreduce2PMessage(*_g_cnallreduce2p_dev.common(),
+	msg = new (&state) CNAllreduce2PMessage(*_g_cnallreduce2p_dev.common(),
 			mcomb, _ewq, _mwq, _xwq,
 			bytes, doStore, _dispatch_id_e, _dispatch_id_m);
 	_g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 };	// BGP

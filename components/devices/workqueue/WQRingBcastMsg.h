@@ -177,7 +177,6 @@ public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(WQRingBcastMsg);
-        static const size_t mcast_model_state_bytes = sizeof_msg;
 
 	WQRingBcastMdl(xmi_result_t &status) :
         XMI::Device::Interface::MulticastModel<WQRingBcastMdl,sizeof(WQRingBcastMsg)>(status)
@@ -197,7 +196,7 @@ public:
 		}
 	}
 
-	inline xmi_result_t postMulticast_impl(uint8_t         (&state)[sizeof(WQRingBcastMsg)],
+	inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                xmi_multicast_t *mcast);
 
 private:
@@ -205,7 +204,7 @@ private:
 	XMI::PipeWorkQueue _wq[XMI_MAX_PROC_PER_NODE];
 }; // class WQRingBcastMdl
 
-inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t         (&state)[sizeof(WQRingBcastMsg)],
+inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                xmi_multicast_t *mcast) {
 	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
 	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
@@ -243,13 +242,13 @@ inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t         (&state)[
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev, mcast,
 					(XMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL);
 	} else if (iamlast) {
 		// I am tail of stream - no one is downstream from me.
 		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] ===> results
-		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev, mcast,
 					&_wq[meix], NULL, (XMI::PipeWorkQueue *)mcast->dst);
 	} else {
 		// XMI_assert(roles == NON_ROOT_ROLE);
@@ -258,7 +257,7 @@ inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t         (&state)[
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (mcast->request) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev, mcast,
 					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst);
 	}
 	_g_wqbcast_dev.__post<WQRingBcastMsg>(msg);

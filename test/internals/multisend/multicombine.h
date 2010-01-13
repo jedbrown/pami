@@ -21,7 +21,7 @@ template <class T_MulticombineModel, int T_BufSize>
 class Multicombine {
 private:
 	T_MulticombineModel _model;
-	char _msgbuf[T_MulticombineModel::sizeof_msg];
+	uint8_t _msgbuf[T_MulticombineModel::sizeof_msg];
 
 	char _source[T_BufSize];
 	char _result[T_BufSize];
@@ -53,7 +53,6 @@ public:
 	inline xmi_result_t perform_test(size_t task_id, size_t num_tasks,
 					xmi_context_t ctx, xmi_multicombine_t *mcomb) {
 		xmi_result_t rc;
-		bool res;
 		size_t x;
 
 		if (_status != XMI_SUCCESS) {
@@ -68,7 +67,7 @@ public:
 		_opwq.configure(NULL, _result, sizeof(_result), 0);
 		_opwq.reset();
 
-		mcomb->request = &_msgbuf;
+		mcomb->request = NULL;
 		mcomb->cb_done = (xmi_callback_t){_done_cb, (void *)this};
 		mcomb->data = (xmi_pipeworkqueue_t *)&_ipwq;
 		mcomb->results = (xmi_pipeworkqueue_t *)&_opwq;
@@ -85,8 +84,8 @@ public:
 		}
 		_done = 0;
 		//fprintf(stderr, "... before %s.postMulticombine\n", _name);
-		res = _model.postMulticombine(mcomb);
-		if (!res) {
+		rc = _model.postMulticombine(_msgbuf, mcomb);
+		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post multicombine \"%s\"\n", _name);
 			return XMI_ERROR;
 		}

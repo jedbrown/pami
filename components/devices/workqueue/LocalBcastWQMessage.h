@@ -122,7 +122,6 @@ public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(LocalBcastWQMessage);
-        static const size_t mcast_model_state_bytes = sizeof_msg;
 
 	LocalBcastWQModel(xmi_result_t &status) :
         XMI::Device::Interface::MulticastModel<LocalBcastWQModel,sizeof(LocalBcastWQMessage)>(status),
@@ -146,7 +145,7 @@ public:
 		}
 	}
 
-	inline xmi_result_t postMulticast_impl(uint8_t         (&state)[sizeof(LocalBcastWQMessage)],
+	inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                xmi_multicast_t *mcast);
 private:
 	XMI::Device::WorkQueue::SharedWorkQueue _shared;
@@ -154,7 +153,7 @@ private:
 	unsigned _npeers;
 }; // class LocalBcastWQModel
 
-inline xmi_result_t LocalBcastWQModel::postMulticast_impl(uint8_t         (&state)[sizeof(LocalBcastWQMessage)],
+inline xmi_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                   xmi_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
@@ -165,7 +164,7 @@ inline xmi_result_t LocalBcastWQModel::postMulticast_impl(uint8_t         (&stat
 	if (isrootrole) consumer = 0; // hack!
 	_shared.setConsumers(_npeers - 1, consumer);
 	LocalBcastWQMessage *msg =
-		new (mcast->request) LocalBcastWQMessage(_g_l_bcastwq_dev,
+		new (&state) LocalBcastWQMessage(_g_l_bcastwq_dev,
 			mcast, _shared, isrootrole);
 	_g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
 	return XMI_SUCCESS;

@@ -190,14 +190,14 @@ protected:
 	unsigned _nThreads;
 }; // class CNAllreduceMessage
 
-class CNAllreduceModel : public XMI::Device::Interface::MulticombineModel<CNAllreduceModel> {
+class CNAllreduceModel : public XMI::Device::Interface::MulticombineModel<CNAllreduceModel,sizeof(CNAllreduceMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNAllreduceMessage);
 
 	CNAllreduceModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<CNAllreduceModel>(status)
+	XMI::Device::Interface::MulticombineModel<CNAllreduceModel,sizeof(CNAllreduceMessage)>(status)
 	{
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
 		_me = __global.mapping.task();
@@ -205,7 +205,7 @@ public:
 		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
 	}
 
-	inline bool postMulticombine_impl(xmi_multicombine_t *mcomb);
+	inline xmi_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb);
 
 private:
 	size_t _me;
@@ -220,11 +220,11 @@ inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")
-inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
+inline xmi_result_t CNAllreduceModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb) {
 	XMI::Device::BGP::CNAllreduceSetup &tas = XMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
 	// assert(tas._pre == NULL);
 	if (tas._pre) {
-		return false;
+		return XMI_ERROR;
 	}
 	XMI::Topology *result_topo = (XMI::Topology *)mcomb->results_participants;
 	bool doStore = (!result_topo || result_topo->isRankMember(_me));
@@ -234,10 +234,10 @@ inline bool CNAllreduceModel::postMulticombine_impl(xmi_multicombine_t *mcomb) {
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNAllreduceMessage *msg;
-	msg = new (mcomb->request) CNAllreduceMessage(*_g_cnallreduce_dev.common(),
+	msg = new (&state) CNAllreduceMessage(*_g_cnallreduce_dev.common(),
 			mcomb, bytes, doStore, _dispatch_id, tas);
 	_g_cnallreduce_dev.__post<CNAllreduceMessage>(msg);
-	return true;
+	return XMI_SUCCESS;
 }
 
 

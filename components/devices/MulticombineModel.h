@@ -30,23 +30,29 @@ namespace XMI
             ///
             /// \see Multicombine::Model
             ///
-            template <class T_Model>
+            template <class T_Model, unsigned T_StateBytes>
             class MulticombineModel
             {
             public:
                 /// \param[in] device                Multicombine device reference
-                MulticombineModel (xmi_result_t &status) { status = XMI_SUCCESS; };
+                MulticombineModel (xmi_result_t &status) {
+			COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+			status = XMI_SUCCESS;
+		};
                 ~MulticombineModel () {};
-                inline bool postMulticombine (xmi_multicombine_t *mcomb);
-            };
+                inline xmi_result_t postMulticombine (uint8_t (&state)[T_StateBytes],
+						xmi_multicombine_t *mcomb);
+            }; // class MulticombineModel
 
-            template <class T_Model>
-            bool MulticombineModel<T_Model>::postMulticombine (xmi_multicombine_t *mcomb)
+            template <class T_Model, unsigned T_StateBytes>
+            xmi_result_t MulticombineModel<T_Model, T_StateBytes>::postMulticombine(
+							uint8_t (&state)[T_StateBytes],
+							xmi_multicombine_t *mcomb)
             {
-	      return static_cast<T_Model*>(this)->postMulticombine_impl(mcomb);
+	      return static_cast<T_Model*>(this)->postMulticombine_impl(state, mcomb);
             }
 
-        };
-    };
-};
-#endif // __components_device_packetmodel_h__
+        }; // namespace Interface
+    }; // namespace Device
+}; // namespace XMI
+#endif // __components_devices_MulticombineModel_h__
