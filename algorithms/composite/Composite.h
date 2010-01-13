@@ -22,7 +22,18 @@ namespace CCMI
 {
   namespace Executor
   {
-    class Composite
+    
+    class Composite {
+    public:
+      //Base Composite class
+      Composite() {}
+      
+      virtual ~Composite() {}
+    };
+    
+    
+    template <int NUM_EXECUTORS, class T_Bar, class T_Exec> 
+    class CompositeT : public Composite
     {
     protected:
       ///
@@ -30,17 +41,17 @@ namespace CCMI
       /// before the collective. Asynchronous protocols can leave
       /// this variable as NULL.
       ///
-      Executor     * _barrier;
+      T_Bar        * _barrier;
 
       ///
       /// \brief Executors for data movement
       ///
-      Executor     * _executors [MAX_EXECUTORS];
+      T_Exec       * _executors [NUM_EXECUTORS];
       unsigned       _numExecutors;
 
     public:
 
-      Composite ()
+      CompositeT () : Composite()
       {
         _barrier = NULL;
         for(int count = 0; count < MAX_EXECUTORS; count ++)
@@ -49,11 +60,11 @@ namespace CCMI
       }
 
       /// Default Destructor
-      virtual ~Composite()
+      virtual ~CompositeT()
       {
         for(unsigned count = 0; count < _numExecutors; count ++)
         {
-          _executors[count]->~Executor();
+          _executors[count]->~T_Exec();
           _executors[count] = NULL;
         }
         _numExecutors = 0;
@@ -64,19 +75,19 @@ namespace CCMI
         CCMI_abort();
       }
 
-      void addExecutor (Executor *exec)
+      void addExecutor (T_Exec *exec)
       {
         CCMI_assert (_numExecutors < MAX_EXECUTORS);
         _executors [_numExecutors] = exec;
         _numExecutors ++;
       }
 
-      void addBarrier (Executor *exec)
+      void addBarrier (T_Bar *exec)
       {
         _barrier = exec;
       }
 
-      Executor * getExecutor (int idx)
+      T_Exec * getExecutor (int idx)
       {
         return _executors [idx];
       }
@@ -89,6 +100,9 @@ namespace CCMI
       //virtual void start () = 0;
 
     };  //-- end class Composite
+
+    //The old composite class that depends on Executor::Executor
+    typedef CompositeT<6, Executor::Executor, Executor::Executor> OldComposite;
   };  //-- end namespace Executor
 };  //-- end namespace CCMI
 

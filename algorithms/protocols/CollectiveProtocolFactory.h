@@ -38,6 +38,8 @@ namespace CCMI
       /// \brief All protocols determine if a given geometry is adequate
       virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest) = 0;
 
+      /// \bfief All protocols must construct and return a composite
+      virtual Executor::Composite * generate(xmi_context_t context, xmi_xfer_t *cmd) {CCMI_abort();}
     };
   };
 };

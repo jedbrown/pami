@@ -1,24 +1,14 @@
-/* begin_generated_IBM_copyright_prolog                             */
-/*                                                                  */
-/* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2009                               */
-/* IBM CPL License                                                  */
-/* ---------------------------------------------------------------- */
-/*                                                                  */
-/* end_generated_IBM_copyright_prolog                               */
-/**
- * \file algorithms/executor/Broadcast.h
- * \brief ???
- */
 
-#ifndef __algorithms_executor_Broadcast_h__
-#define __algorithms_executor_Broadcast_h__
+#ifndef __algorithms_executor_BroadcastExec_h__
+#define __algorithms_executor_BroadcastExec_h__
 
 //#define TRACE_FLOW(x)  fprintf x
 
-#include "algorithms/schedule/Schedule.h"
-#include "algorithms/executor/Executor.h"
+#include "algorithms/interfaces/Schedule.h"
+#include "algorithms/interfaces/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
+#include "algorithms/interfaces/NativeInterface.h"
+#include "algorithms/executor/OldBroadcast.h"
 
 #define MAX_PARALLEL 20
 
@@ -26,322 +16,203 @@ namespace CCMI
 {
   namespace Executor
   {
-
     /*
      * Implements a broadcast strategy which uses one network
      * link. With rectangular schedule it will lead to a one color
      * broadcast. Also implements pipelining.
      */
-    template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-    class Broadcast : public Executor
+    template<class T>
+    class BroadcastExec : public Interfaces::Executor
     {
     protected:
-      T_Sysdep            * _sd;
-      Schedule::Schedule  * _comm_schedule;
-      T_Mcast             * _mInterface;
-      xmi_oldmulticast_t    _msend;
+      Interfaces::Schedule           * _comm_schedule;
+      Interfaces::NativeInterface    * _native;
+      xmi_multicast_t                 _msend;
 
       int              _comm;
       unsigned         _root;
-      int              _startphase;
-      int              _nphases;
-      int              _nmessages;  //number of messages to send
-
       int              _buflen;
-      int              _pipelinewidth;
-      int              _curlen;
 
-      const char     * _buf;
-      int              _bytesrecvd;
-      int              _bytessent;
+      XMI::PipeWorkQueue     _pwq;
+      xmi_task_t             _dstranks [MAX_PARALLEL];
+      XMI::Topology          _dsttopology;
+      XMI::Topology          _selftopology;
+      
+      XMI_Request_t          _request __attribute__((__aligned__(16)));   /// send request
 
-      unsigned         _destpes    [MAX_PARALLEL];
-      unsigned         _hints      [MAX_PARALLEL];
-
-      //XMI_Callback_t           _msend_cb;
-      XMI_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
-      XMI_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
-
-      CollHeaderData           _mdata;
-      T_ConnectionManager    * _connmgr;
-      unsigned                  _color;
-      bool                      _postReceives;
+      CollHeaderData                               _mdata;
+      T                                         *  _connmgr;
+      unsigned                                     _color;
+      bool                                         _postReceives;
+      bool                                         _mactive;
 
       //Private method
       void             sendNext ();
-
-      inline void setPhase (int phase)
-      {
-        _startphase = phase;
-        CCMI_assert(_comm_schedule != NULL);
-        _nmessages = 0;
-        for(int count = 0; count < _nphases - phase; count ++)
-        {
-          unsigned ndest = 0;
-          _comm_schedule->getDstPeList (phase+count, _destpes+_nmessages,
-                                        ndest, _hints+_nmessages);
-
-          TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::setPhase() destpe %d phase %d",(int)this, _destpes[_nmessages], count+_startphase));
-
-          CCMI_assert(_nmessages + ndest < MAX_PARALLEL);
-          _nmessages += ndest;
-        }
-      }
-
-
+      
     public:
-
-      static void staticSendDone (xmi_context_t context, void *clientdata, xmi_result_t err)
-      {
-        xmi_quad_t * info = NULL;
-        Broadcast *bcast = (Broadcast *) clientdata;
-        bcast->notifySendDone( *info );
-      }
-
-      inline Broadcast () :
-      Executor (),
+      BroadcastExec () :
+      Interfaces::Executor (),
       _comm_schedule(NULL),
-      _comm(-1),
-      _startphase (-1),
-      _nphases (-1),
-      _curlen(-1)
+      _comm(-1)
       {
       }
 
-      inline Broadcast (T_Sysdep *sd, unsigned comm,
-                        T_ConnectionManager *connmgr,
-                        unsigned color, bool post_recvs = false):
-      Executor(),
+      BroadcastExec (Interfaces::NativeInterface  * mf,
+		     unsigned                       comm,
+		     T                            * connmgr,
+		     unsigned                       color, 
+		     bool                           post_recvs = false):
+      Interfaces::Executor(),
       _comm_schedule (NULL),
+      _native(mf),
       _comm(comm),
       _connmgr(connmgr),
       _color(color),
-      _postReceives (post_recvs)
+      _postReceives (post_recvs),
+      _dsttopology((xmi_task_t *)&_dstranks, MAX_PARALLEL),
+      _selftopology(mf->myrank())     
       {
-        _startphase     =   0;
-        _nphases        =  -1;
-        _clientdata     =   0;
-        _bytesrecvd     =   0;
-        _bytessent      =   0;
-        _buf            =   0;
-        _buflen         =  -1;
-        _root           =  (unsigned)-1;
-        _pipelinewidth  =  -1;
-        _curlen         =   0;
-        _nmessages      =   0;
-        _msend.cb_done.function   =   staticSendDone;
-        _msend.cb_done.clientdata =   this;
-        _sd           =   sd;
-        _msend.request     = &_send_request[0];
-        xmi_quad_t *info   = (_postReceives)?(NULL):(xmi_quad_t*)((void*)&_mdata);
-        _msend.msginfo     = info;
-        _msend.count       = 1;
-        _msend.flags       = 0;  //FLAGS_UNSET
-        _msend.opcodes     = (xmi_subtask_t*)&_hints;
-      }
-
-      inline unsigned bytesrecvd ()
-      {
-        return _bytesrecvd;
+        _clientdata        =  0;
+        _root              =  (unsigned)-1;
+	_buflen            =  0;
+        _msend.request     =  &_request;
+        xmi_quad_t *info   =  (_postReceives)?(NULL):(xmi_quad_t*)((void*)&_mdata);
+        _msend.msginfo     =  info;
+        _msend.msgcount    =  1;
+	_msend.roles       = -1U;
+	_mactive           =  false;
       }
 
       //-----------------------------------------
       // --  Initialization routines
       //------------------------------------------
 
-      inline void setSchedule (Schedule::Schedule *ct)
+      void setSchedule (Interfaces::Schedule *ct)
       {
         _comm_schedule = ct;
-
-        int nph, phase, nmessages;
-        _comm_schedule->init (_root, BROADCAST_OP, phase, nph, nmessages);
-        _nphases = phase + nph;
-
-        setPhase (phase);
+        int nph, phase;
+        _comm_schedule->init (_root, BROADCAST_OP, phase, nph);
+        CCMI_assert(_comm_schedule != NULL);
+	_comm_schedule->getDstUnionTopology (&_dsttopology);	
       }
 
-      inline void setMulticastInterface (T_Mcast *mf)
-      {
-        _mInterface = mf;
-      }
-
-      inline void  setInfo (int root, int pwidth, const char *buf, int len)
+      void  setInfo (int root, char *buf, int len)
       {
         _root           =  root;
-        _pipelinewidth  =  pwidth;
-        _buflen         =  len;
-        _buf            =  buf;
+	unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
+	_msend.connection_id = connid;	
 
-	unsigned connid =
-	  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-	_msend.connection_id = connid;
+	//Setup pipework queue
+	_pwq.configure (NULL, buf, len, 0);
       }
 
-      inline void setPipelineWidth (int pwidth) {
-	_pipelinewidth = pwidth;
-      }
-
-      inline XMI_Request_t * getRecvRequest ()
+      XMI_Request_t * getRequest ()
       {
-        return & _recv_request;
-      }
-      inline XMI_Request_t * getSendRequest ()
-      {
-        return & _send_request;
+        return & _request;
       }
 
       //------------------------------------------
       // -- Executor Virtual Methods
       //------------------------------------------
-
       virtual void   start          ();
-      virtual void   notifySendDone ( const xmi_quad_t &info );
-      virtual void   notifyRecv     (unsigned src,  const xmi_quad_t &info,
-                                     char     *buf, unsigned bytes);
+      virtual void   notifyRecv     (unsigned             src,
+				     const xmi_quad_t   & info,
+				     XMI::PipeWorkQueue ** pwq,
+				     xmi_callback_t      * cb_done);
 
       //-----------------------------------------
       //--  Query functions ---------------------
       //-----------------------------------------
-
-      inline unsigned       getRoot   ()
+      unsigned       getRoot   ()
       {
         return _root;
       }
-      inline unsigned       getComm   ()
+      unsigned       getComm   ()
       {
         return _comm;
       }
-      inline unsigned       getPwidth ()
-      {
-        return _pipelinewidth;
-      }
-      inline T_Sysdep       *getSysdep ()
-      {
-        return _sd;
-      }
-
-      int           startphase() { return _startphase; }
-      int           nphases()    { return _nphases; }
-
-    };  //-- Broadcast
+      
+      void postReceives () {
+	if(_native->myrank() == _root) return;
+	
+	_msend.src_participants   = NULL; //current mechanism to identify a non-root node
+	_msend.dst_participants   = (xmi_topology_t *)&_selftopology;
+	_msend.cb_done.function   = _cb_done;
+	_msend.cb_done.clientdata = _clientdata;
+	_msend.dst    =  (xmi_pipeworkqueue_t *)&_pwq;
+	_msend.src    =  NULL;
+	_msend.bytes  = _buflen;
+	_native->multicast(&_msend);
+      }      
+      
+    };  //-- BroadcastExec
   };   //-- Executor
 };  //-- CCMI
 
 ///
 /// \brief start sending broadcast data. Only active on the root node
 ///
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: start ()
+template <class T>
+inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::start() phase %d, num total phases %d\n",(int)this, _startphase, _nphases));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::start() phase %d, num total phases %d\n",(int)this, _startphase, _nphases));
+
+  _mactive = false;
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
     _cb_done (NULL, _clientdata, XMI_SUCCESS);
-
-  else if(__global.mapping.task() == _root)
+  else if(_native->myrank() == _root)
   {
-    _bytesrecvd = _buflen;
+    _pwq.produceBytes (_buflen);
     sendNext ();
   }
 }
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: sendNext ()
+
+template <class T>
+inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 {
+  CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
+  //_mactive = true;  //not sure if I need this flag??
 
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::sendNext() startphase %d, nphases, nmessages %d\n",(int)this,_startphase, _nphases, _nmessages));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() startphase %d, nphases, nmessages %d\n",(int)this,_startphase, _nphases, _nmessages));
 
-  //Leaf node who does not have to send
-  if(_startphase == _nphases || _nmessages == 0)
-  {
-    if(_bytesrecvd == _buflen && _cb_done)
-      _cb_done (NULL, _clientdata, XMI_SUCCESS);
-    return;
-  }
-
-  //------------------------------------------------------
-  //----  Root or intermediate nodes, who have to send ---
-  //------------------------------------------------------
-
-  //Message send in progress
-  if(_curlen > 0)
-    return;
-
-  //Finished sending call done handler
-  if(_bytessent == _buflen)
-  {
-    if(_cb_done)
-      _cb_done (NULL, _clientdata, XMI_SUCCESS);
-    return;
-  }
-
-  //-------------------------------------------
-  //---- Not received enough yet -------------
-  //-------------------------------------------
-  if((_bytesrecvd < _bytessent + _pipelinewidth) && (_bytesrecvd < _buflen))
-    return;
-
-  //-----------------------------------------------
-  //---  We have something to send ----------------
-  //-----------------------------------------------
-  _curlen = _bytesrecvd - _bytessent;
-
+  //for(int dcount = 0; dcount < _nmessages; dcount++)
+  //TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() send to %d for size %d\n",(int)this, _dstranks[dcount], _curlen));
+    
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
   _mdata._root  = _root;
   _mdata._count = -1; // not used on broadcast
   _mdata._phase = 0;
-
-  for(int dcount = 0; dcount < _nmessages; dcount++)
-    TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::sendNext() send to %d for size %d\n",(int)this, _destpes[dcount], _curlen));
-
-  //Moved to setInfo call
-  //unsigned connid =
-  //_connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-  //_msend.setConnectionId (connid);
-
-  if(_bytessent > 0)
-    _msend.flags = 1; //PERSISTENT_MESSAGE);
-
-  _msend.tasks  = _destpes;
-  _msend.ntasks = _nmessages;
-
-  _msend.src    = _buf + _bytessent;
-  _msend.bytes  = _curlen;
-  _mInterface->send(&_msend);
-
-}
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: notifySendDone ( const xmi_quad_t & info )
-{
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::notifySendDone() nmessages %d\n",(int)this, _nmessages));
-
-  _bytessent += _curlen;
-  _curlen = 0;
-  CCMI_assert (_bytessent <= _buflen);
-
-  sendNext ();
+  _msend.src_participants  = (xmi_topology_t *)&_selftopology;
+  _msend.dst_participants  = (xmi_topology_t *)&_dsttopology;
+  _msend.cb_done.function   = _cb_done;
+  _msend.cb_done.clientdata = _clientdata;
+  _msend.dst   =   NULL;
+  _msend.src    = (xmi_pipeworkqueue_t *)&_pwq;
+  _msend.bytes  = _buflen;
+  _native->multicast(&_msend);
 }
 
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager>::notifyRecv
-(unsigned        src,
- const xmi_quad_t  & info,
- char          * buf,
- unsigned        bytes)
+template <class T>
+inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
+(unsigned             src,
+ const xmi_quad_t   & info,
+ XMI::PipeWorkQueue ** pwq,
+ xmi_callback_t      * cb_done)
 {
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::Broadcast::notifyRecv() bytes %d\n",(int)this, bytes));
-
-  //buffer has changed
-  if(buf != NULL)
-    _buf = buf;
-
-  _bytesrecvd += bytes;
-
-  if(_bytesrecvd > _buflen)
-    _bytesrecvd = _buflen;
-
-  sendNext ();
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::notifyRecv() from %d\n",(int)this, src));
+  
+  *pwq = &_pwq;
+  if (_dsttopology.size() > 0) {
+    cb_done->function = NULL;  //There is a send here that will notify completion
+    sendNext ();
+  }
+  else {
+    cb_done->function   = _cb_done;
+    cb_done->clientdata = _clientdata;
+  }    
 }
 
 

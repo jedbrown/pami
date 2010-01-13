@@ -113,7 +113,7 @@ namespace CCMI
 	else if (_radix == 4)
 	  _logradix = 2;
 
-        _nphases = getMaxPhases(_nranks, &_nphbino);
+        _maxphases = getMaxPhases(_nranks, &_nphbino);
         _hnranks = (1 << (_nphbino * _logradix)); // threshold for special handling
       }
 
@@ -125,7 +125,6 @@ namespace CCMI
       static unsigned getRadix (unsigned nranks) {
 	int nph = 0;
 	int radix = 2;
-	return radix;
 
 	for(unsigned i = nranks; i > 1; i >>= 1) {
 	  nph++;
@@ -175,7 +174,7 @@ namespace CCMI
        */
       MultinomialTreeT () :
       Schedule (),
-      _nphases(0)
+      _maxphases(0)
       {
       }
 
@@ -185,7 +184,7 @@ namespace CCMI
        * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
        */
-      MultinomialTreeT (unsigned myrank, XMI::Topology *topo);
+      MultinomialTreeT (unsigned myrank, XMI::Topology *topo, unsigned c=0);
 
 
       /**
@@ -230,14 +229,12 @@ namespace CCMI
         }
 	CCMI_assert (nsrc <= topology->size());
 
-	if (nsrc > 0) {
-	  for (unsigned count = 0; count < nsrc; count ++) {
-	    srcranks[count] = _map.getGlobalRank(srcranks[count]);
-	  }
-
-	  //Convert to a list topology
-	  new (topology) XMI::Topology (srcranks, nsrc);
+	for (unsigned count = 0; count < nsrc; count ++) {
+	  srcranks[count] = _map.getGlobalRank(srcranks[count]);
 	}
+	
+	//Convert to a list topology
+	new (topology) XMI::Topology (srcranks, nsrc);
       }
 
       /**
@@ -261,33 +258,82 @@ namespace CCMI
           NEXT_NODES(CHILD, phase, dstranks, ndst);
         }
 
-	if (ndst > 0) {
-	  CCMI_assert (ndst <= topology->size());
-	  for (unsigned count = 0; count < ndst; count ++)
-	  {
-	    dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-	    TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
-	  }
-
-	  //Convert to a list topology of the accurate size
-	  new (topology) XMI::Topology (dstranks, ndst);
+	CCMI_assert (ndst <= topology->size());
+	for (unsigned count = 0; count < ndst; count ++)
+	{
+	  dstranks[count]   = _map.getGlobalRank(dstranks[count]);
+	  TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
 	}
+
+	//Convert to a list topology of the accurate size
+	new (topology) XMI::Topology (dstranks, ndst);
       }
 
       /**
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getSrcUnionTopology (XMI::Topology *topology) { CCMI_assert (0); }
+      virtual void getSrcUnionTopology (XMI::Topology *topology) { 
+	unsigned *srcranks;
+	xmi_result_t rc = topology->rankList(&srcranks);
+	CCMI_assert (rc == XMI_SUCCESS);
+	CCMI_assert(srcranks != NULL);
+
+	unsigned ntotal_src = 0;
+	for (unsigned phase = _startphase; phase < _startphase + _nphases; phase++) {
+	  unsigned nsrc = 0;
+	  if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
+						  (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
+						  phase == _recvph)) || phase == _auxrecvph)
+	  {
+	    NEXT_NODES(PARENT, phase, srcranks + ntotal_src, nsrc);
+	    ntotal_src += nsrc;
+	  }
+	  CCMI_assert (ntotal_src <= topology->size());
+	}
+
+	for (unsigned count = 0; count < ntotal_src; count ++) {
+	  srcranks[count] = _map.getGlobalRank(srcranks[count]);
+	}
+	
+	//Convert to a list topology
+	new (topology) XMI::Topology (srcranks, ntotal_src);	
+      }
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getDstUnionTopology (XMI::Topology *topology) { CCMI_assert (0); }
+      virtual void getDstUnionTopology (XMI::Topology *topology) { 
+	unsigned *dstranks;
+	xmi_result_t rc = topology->rankList(&dstranks);
+	CCMI_assert (rc == XMI_SUCCESS);
+	CCMI_assert(dstranks != NULL);
+
+	unsigned ntotal_dst = 0;
+	for (unsigned phase = _startphase; phase < _startphase + _nphases; phase++) {
+	  unsigned ndst = 0;
+	  if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
+						  (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
+						  phase == _sendph)) || phase == _auxsendph)
+	  {
+	    NEXT_NODES(CHILD, phase, dstranks + ntotal_dst, ndst);
+	  }
+	  ntotal_dst += ndst;
+	  CCMI_assert (ntotal_dst <= topology->size());
+	}
+
+	for (unsigned count = 0; count < ntotal_dst; count ++) {
+	  dstranks[count]   = _map.getGlobalRank(dstranks[count]);
+	  TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
+	}
+	
+	//Convert to a list topology of the accurate size
+	new (topology) XMI::Topology (dstranks, ntotal_dst);
+      }
 
     protected:
-      unsigned     _nphases;    /// \brief Number of phases total
+      unsigned     _maxphases;  /// \brief Number of phases total
       unsigned     _nphbino;    /// \brief Num of phases in pow-of-2 sec
       unsigned     _op;         /// \brief Collective op
       unsigned     _radix;      /// \brief Radix of the collective operation (default 2)
@@ -298,6 +344,8 @@ namespace CCMI
       unsigned     _recvph;     /// \brief recving phase for this node
       unsigned     _auxsendph;  /// \brief outside send phase
       unsigned     _auxrecvph;  /// \brief outside recv phase
+      unsigned     _startphase; /// \brief the start phase after init is called
+      unsigned     _nphases;    /// \brief the total number of phases after init is called
 
       XMI::Topology     _topology;  /// \brief goes away when geoemetries store topologies
       M            _map;
@@ -325,7 +373,7 @@ namespace CCMI
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
-MultinomialTreeT(unsigned myrank, XMI::Topology *topology):_map(myrank, topology)
+MultinomialTreeT(unsigned myrank, XMI::Topology *topology, unsigned c):_map(myrank, topology)
 {
   initBinoSched();
 }
@@ -386,7 +434,7 @@ setupContext(unsigned &startph, unsigned &nph)
       st = 0;
       np += 2;
       _auxrecvph = st;
-      _auxsendph = _nphases - 1;
+      _auxsendph = _maxphases - 1;
       break;
     case REDUCE_OP:
       st = 0;
@@ -396,7 +444,7 @@ setupContext(unsigned &startph, unsigned &nph)
     case BROADCAST_OP:
       st = 1;
       np += 1;
-      _auxsendph = _nphases - 1;
+      _auxsendph = _maxphases - 1;
       break;
     }
   }
@@ -411,7 +459,7 @@ setupContext(unsigned &startph, unsigned &nph)
       st = 0;
       np += 2;
       _auxsendph = 0;
-      _auxrecvph = _nphases - 1;
+      _auxrecvph = _maxphases - 1;
       break;
     case REDUCE_OP:
       st = 0;
@@ -419,7 +467,7 @@ setupContext(unsigned &startph, unsigned &nph)
       _auxsendph = 0;
       break;
     case BROADCAST_OP:
-      st = _nphases - 1;
+      st = _maxphases - 1;
       np = 1;
       _auxrecvph = st;
       break;
@@ -501,23 +549,21 @@ template <class M>
 void CCMI::Schedule::MultinomialTreeT<M>::
 init(int root, int comm_op, int &start, int &nph)
 {
-  unsigned st, np;
-
   CCMI_assert(comm_op == BARRIER_OP ||
               comm_op == ALLREDUCE_OP ||
               comm_op == REDUCE_OP ||
               comm_op == BROADCAST_OP);
-
+  
   _op = comm_op;
-
+  
   if (comm_op == REDUCE_OP ||
       comm_op == BROADCAST_OP)
     _map.setRoot (root);
-
-  setupContext(st, np);
-
-  nph = np;
-  start = st;
+  
+  setupContext(_startphase, _nphases);
+  
+  nph   = _nphases;
+  start = _startphase;
 }
 
 

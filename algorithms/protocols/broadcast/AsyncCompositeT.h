@@ -31,10 +31,10 @@ namespace CCMI
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
       template <class T_Schedule, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-      class AsyncCompositeT : public CCMI::Executor::Composite
+      class AsyncCompositeT : public CCMI::Executor::OldComposite
       {
       protected:
-        CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager>    _executor __attribute__((__aligned__(16)));
+        CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager>    _executor __attribute__((__aligned__(16)));
         T_Schedule                            _schedule;
         BcastQueueElem               _bqelem;
         ExecutorPool               * _execpool;
@@ -87,7 +87,7 @@ namespace CCMI
           return &_bqelem;
         }
 
-        CCMI::Executor::Broadcast<T_Sysdep, T_Mcast, T_ConnectionManager> &executor()
+        CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager> &executor()
         {
           return _executor;
         }
@@ -101,7 +101,7 @@ namespace CCMI
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
 
           TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AsyncCompositeT::staticAsyncRecvFn() \n",(int)composite));
-          composite->executor().CCMI::Executor::Broadcast<T_Sysdep, T_Mcast,T_ConnectionManager>::notifyRecv ((unsigned)-1, *info, NULL,
+          composite->executor().CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast,T_ConnectionManager>::notifyRecv ((unsigned)-1, *info, NULL,
                                                                                           composite->executor().getPwidth());
         }
 

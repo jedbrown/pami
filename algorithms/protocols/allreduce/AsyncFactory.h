@@ -217,8 +217,8 @@ namespace CCMI
         CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * getAllreduce(XMI_GEOMETRY_CLASS *geometry,
                                                      unsigned iter)
         {
-          CCMI::Executor::Composite *composite =
-          geometry->getAllreduceComposite(iter);
+          CCMI::Executor::OldComposite *composite =
+	    (CCMI::Executor::OldComposite *)geometry->getAllreduceComposite(iter);
 
           CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *executor = (composite)?
                                                     (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) composite->getExecutor (0):

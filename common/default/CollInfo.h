@@ -256,13 +256,17 @@ namespace XMI
     };
 #endif
 
+#if 0
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
     {
     public:
       CCMIBinomBroadcastInfo(T_Device *dev,
                              T_Sysdep * sd,
-                             xmi_mapidtogeometry_fn fcn):
+                             xmi_mapidtogeometry_fn fcn,
+			     xmi_client_t           client,
+			     xmi_context_t          context,
+			     size_t                 context_id):      
         CollInfo<T_Device>(dev),
         _model(*dev),
         _connmgr(65535),
@@ -275,11 +279,36 @@ namespace XMI
           strcpy(meta->name, "CCMI_BinomBroadcast");
         }
       XMI_Request_t                                           _request;
-      XMI_COLL_MCAST_CLASS                                           _model;
+      XMI_COLL_MCAST_CLASS                                    _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::BinomialBcastFactory          _broadcast_registration;
     };
+#else
+    template <class T_Device, class T_Sysdep>
+    class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIBinomBroadcastInfo(T_Device *dev,
+                             T_Sysdep * sd,
+                             xmi_mapidtogeometry_fn fcn,
+			     xmi_client_t           client,
+			     xmi_context_t          context,
+			     size_t                 context_id):
+        CollInfo<T_Device>(dev),
+	_minterface(dev, client, context, context_id),
+        _connmgr(65535),
+	_broadcast_registration(&_connmgr, &_minterface)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_BinomBroadcast");
+        }
+      MPINativeInterface<T_Device>                             _minterface;
+      CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
+      CCMI::Adaptor::Broadcast::BinomialBcastFactory           _broadcast_registration;
+    };
+#endif
 
+#if 0
     template <class T_Device, class T_Sysdep>
     class CCMIRingBroadcastInfo:public CollInfo<T_Device>
     {
@@ -303,7 +332,30 @@ namespace XMI
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::RingBcastFactory              _broadcast_registration;
     };
-
+#else
+    template <class T_Device, class T_Sysdep>
+    class CCMIRingBroadcastInfo:public CollInfo<T_Device>
+    {
+    public:
+      CCMIRingBroadcastInfo(T_Device *dev,
+                             T_Sysdep * sd,
+                             xmi_mapidtogeometry_fn fcn,
+			     xmi_client_t           client,
+			     xmi_context_t          context,
+			     size_t                 context_id):
+        CollInfo<T_Device>(dev),
+	_minterface(dev, client, context, context_id),
+        _connmgr(65535),
+	_broadcast_registration(&_connmgr, &_minterface)
+        {
+          xmi_metadata_t *meta = &(this->_metadata);
+          strcpy(meta->name, "CCMI_RingBroadcast");
+        }
+      MPINativeInterface<T_Device>                             _minterface;
+      CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
+      CCMI::Adaptor::Broadcast::BinomialBcastFactory           _broadcast_registration;
+    };    
+#endif
 
     template <class T_Device, class T_Sysdep>
     class CCMIRingAllreduceInfo:public CollInfo<T_Device>

@@ -311,6 +311,7 @@ namespace XMI
 
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
+#if 0
                     cinfo->_broadcast_registration.generate(&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
                                                             cb_done,
@@ -319,6 +320,12 @@ namespace XMI
                                                             broadcast->root,
                                                             broadcast->buf,
                                                             broadcast->typecount);
+#else
+		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
+                                                            sizeof(XMI_CollectiveRequest_t),
+							    NULL, //currently pass in null context
+							    broadcast);
+#endif
                   }
                   break;
                   case XMI::CollInfo::CI_BROADCAST2:
@@ -337,6 +344,7 @@ namespace XMI
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
 
+#if 0
                     cinfo->_broadcast_registration.generate(&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
                                                             cb_done,
@@ -345,6 +353,12 @@ namespace XMI
                                                             broadcast->root,
                                                             broadcast->buf,
                                                             broadcast->typecount);
+#else
+		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
+                                                            sizeof(XMI_CollectiveRequest_t),
+							    NULL, //currently pass in null context
+							    broadcast);
+#endif
                   }
                   break;
                   default:

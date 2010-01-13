@@ -60,11 +60,16 @@ namespace XMI
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
 	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id),
-        _ccmibinombroadcast(dev, sd, mapidtogeometry),
-        _ccmiringbroadcast(dev, sd, mapidtogeometry),
+#if 0
+	_ccmibinombroadcast(dev, sd, mapidtogeometry),
+	_ccmiringbroadcast(dev, sd, mapidtogeometry,),
+#else
+	_ccmibinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
+	_ccmiringbroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
+#endif
         _ccmiringallreduce(dev, sd, mapidtogeometry),
         _ccmibinomialallreduce(dev, sd, mapidtogeometry),
-        _ccmialltoallv(dev,sd)
+	_ccmialltoallv(dev,sd)
         {
 	  // Register and link each collective into a queue for analysis
 	  _nbCollMgr.initialize();

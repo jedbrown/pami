@@ -25,7 +25,7 @@ namespace CCMI
   {
     namespace Allreduce
     {
-      class BaseComposite :  public CCMI::Executor::Composite
+      class BaseComposite :  public CCMI::Executor::OldComposite
       {
       protected:
 
@@ -37,7 +37,7 @@ namespace CCMI
 
       public:
 
-        BaseComposite (CollectiveProtocolFactory *factory) : Composite (), _factory (factory)
+        BaseComposite (CollectiveProtocolFactory *factory) : CCMI::Executor::OldComposite (), _factory (factory)
         {
         }
 

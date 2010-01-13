@@ -170,8 +170,8 @@ namespace CCMI
         CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> * getAllreduce(unsigned comm,
                                                unsigned color)
         {
-          CCMI::Executor::Composite *composite =(CCMI::Executor::Composite *)
-          ((XMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
+          CCMI::Executor::OldComposite *composite =(CCMI::Executor::OldComposite *)
+	    ((XMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
           CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *executor = (composite)?
                                               (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor (0):
                                               (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *)NULL;
