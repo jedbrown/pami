@@ -36,5 +36,6 @@ typedef XMI::Device::MPIDevice<XMI::SysDep>               MPIDevice;
 #define XMI_COLL_MCAST_CLASS  MPIMcastModel
 #define XMI_COLL_M2M_CLASS    MPIM2MModel
 #define XMI_COLL_SYSDEP_CLASS XMI::SysDep
+#define XMI_NATIVEINTERFACE   MPINativeInterface;
 
 #endif

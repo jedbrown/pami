@@ -247,7 +247,7 @@ namespace XMI
           strcpy(meta->name, "CCMI_NewBinomBarrier");
         }
       XMI_Request_t                                  _request;
-      MPINativeInterface<T_Device>                   _minterface;
+      XMI_NATIVEINTERFACE<T_Device>                  _minterface;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                _barrier_executor;
       xmi_client_t                                   _client;
