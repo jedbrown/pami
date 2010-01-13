@@ -20,7 +20,7 @@ template <class T_MultisyncModel>
 class Multisync {
 private:
 	T_MultisyncModel _model;
-	char _msgbuf[T_MultisyncModel::sizeof_msg];
+	uint8_t _msgbuf[T_MultisyncModel::sizeof_msg];
 	xmi_result_t _status;
 	int _done;
 	const char *_name;
@@ -77,7 +77,7 @@ public:
 		// first barrier: get everyone together
 		_done = 0;
 		//fprintf(stderr, "... before %s.postMultisync\n", _name);
-		res = _model.postMultisync(msync);
+		res = _model.postMultisync(_msgbuf,msync);
 		if (!res) {
 			fprintf(stderr, "Failed to post first multisync \"%s\"\n", _name);
 			return XMI_ERROR;
@@ -96,7 +96,7 @@ public:
 		++msync->connection_id;
 		_done = 0;
 		t0 = __global.time.timebase();
-		res = _model.postMultisync(msync);
+		res = _model.postMultisync(_msgbuf,msync);
 		if (!res) {
 			fprintf(stderr, "Failed to post second multisync \"%s\"\n", _name);
 			return XMI_ERROR;
@@ -136,7 +136,7 @@ public:
 		_done = 0;
 		t0 = __global.time.timebase();
 		while ((t1 = __global.time.timebase()) - t0 < delay);
-		res = _model.postMultisync(msync);
+		res = _model.postMultisync(_msgbuf,msync);
 		if (!res) {
 			fprintf(stderr, "Failed to post third multisync \"%s\"\n", _name);
 			return XMI_ERROR;

@@ -217,33 +217,38 @@ namespace XMI
       size_t         _root; // first rank in the sync - arbitrary 'root'
     }; //-- MPISyncMsg
 
-    class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl>
+    typedef MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > MPISyncMsg_t;
+    
+    class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
-      static const size_t sizeof_msg = sizeof(MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >);
-
+      static const size_t sizeof_msg = sizeof(MPISyncMsg_t);
+      static const size_t msync_model_state_bytes = sizeof_msg;
+      
       MPISyncMdl(xmi_result_t &status) :
-      XMI::Device::Interface::MultisyncModel<MPISyncMdl>(status)
+      XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>(status)
       {
         TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl()\n",(unsigned)this));
         //XMI::SysDep *sd = _g_mpisync_dev.getSysdep();
       }
 
-      inline bool postMultisync_impl(xmi_multisync_t *msync);
-
+      inline xmi_result_t postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+                                             xmi_multisync_t *msync);
+      
     private:
     }; // class MPISyncMdl
-
-    inline bool MPISyncMdl::postMultisync_impl(xmi_multisync_t *msync)
+    
+    inline xmi_result_t MPISyncMdl::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+                                                       xmi_multisync_t *msync)
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() connection_id %d, request %p\n",(unsigned)this,
                     msync->connection_id, msync->request));
       MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
       new (msync->request) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);
       _g_mpisync_dev.__post<MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
-      return true;
+      return XMI_SUCCESS;
     }
 
   }; //-- Device
