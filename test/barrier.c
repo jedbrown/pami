@@ -96,15 +96,19 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+  xmi_metadata_t *metas=NULL;
   if (num_algorithm[0])
   {
     algorithm = (xmi_algorithm_t*)
                 malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
+    metas = (xmi_metadata_t*)
+      malloc(sizeof(xmi_metadata_t) * num_algorithm[0]);
+
     result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
-                                          XMI_XFER_BROADCAST,
+                                          XMI_XFER_BARRIER,
                                           algorithm,
-                                          (xmi_metadata_t*)NULL,
+                                          metas,
                                           algorithm_type,
                                           num_algorithm[0]);
 
@@ -115,8 +119,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);
       return 1;
     }
-
-
+  
   xmi_barrier_t barrier;
   barrier.xfer_type = XMI_XFER_BARRIER;
   barrier.cb_done   = cb_barrier;
@@ -158,8 +161,8 @@ int main (int argc, char ** argv)
             }
 
         if(!task_id)
-          fprintf(stderr, "Test Barrier Performance %d of %d algorithms\n",
-                  algo+1, num_algorithm[algorithm_type]);
+          fprintf(stderr, "Test Barrier(%s) Performance %d of %d algorithms\n",
+                  metas[algo].name,algo+1, num_algorithm[algorithm_type]);
         int niter=10000;
         _barrier(context, &barrier);
 
@@ -189,5 +192,6 @@ int main (int argc, char ** argv)
       return 1;
     }
 
+  free(metas);
   return 0;
 };
