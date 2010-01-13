@@ -21,8 +21,11 @@ namespace CCMI
       Interfaces::NativeInterface                * _native;
 
     public:
-      CollectiveProtocolFactoryT (C *cmgr, Interfaces::NativeInterface *native): CollectiveProtocolFactory(), _cmgr(cmgr), _native(native)      
+      CollectiveProtocolFactoryT (C *cmgr, Interfaces::NativeInterface *native, xmi_dispatch_multicast_fn cb_head=NULL): CollectiveProtocolFactory(), _cmgr(cmgr), _native(native)
       {
+	xmi_dispatch_callback_fn fn;
+	fn.multicast = (xmi_dispatch_multicast_fn) cb_head;
+	_native->setDispatch(fn, this);
       }
 
       virtual ~CollectiveProtocolFactoryT ()
@@ -36,8 +39,7 @@ namespace CCMI
       }
 
       /// \brief All protocols determine if a given geometry is adequate
-      virtual bool Analyze(XMI_GEOMETRY_CLASS *g) { return afn(g); }
-      
+      virtual bool Analyze(XMI_GEOMETRY_CLASS *g) { return afn(g); }      
 
       virtual Executor::Composite * generate(void                      * request_buf,
 					     size_t                      rsize,

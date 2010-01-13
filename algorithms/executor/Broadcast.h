@@ -2,7 +2,7 @@
 #ifndef __algorithms_executor_BroadcastExec_h__
 #define __algorithms_executor_BroadcastExec_h__
 
-//#define TRACE_FLOW(x)  fprintf x
+#define TRACE_FLOW(x)  //fprintf x
 
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/interfaces/Executor.h"
@@ -135,14 +135,17 @@ namespace CCMI
       void postReceives () {
 	if(_native->myrank() == _root) return;
 	
-	_msend.src_participants   = NULL; //current mechanism to identify a non-root node
-	_msend.dst_participants   = (xmi_topology_t *)&_selftopology;
-	_msend.cb_done.function   = _cb_done;
-	_msend.cb_done.clientdata = _clientdata;
-	_msend.dst    =  (xmi_pipeworkqueue_t *)&_pwq;
-	_msend.src    =  NULL;
-	_msend.bytes  = _buflen;
-	_native->multicast(&_msend);
+	xmi_multicast_t mrecv;
+	memcpy (&mrecv, &_msend, sizeof(xmi_multicast_t));
+
+	mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
+	mrecv.dst_participants   = (xmi_topology_t *)&_selftopology;
+	mrecv.cb_done.function   = _cb_done;
+	mrecv.cb_done.clientdata = _clientdata;
+	mrecv.dst    =  (xmi_pipeworkqueue_t *)&_pwq;
+	mrecv.src    =  NULL;
+	mrecv.bytes  = _buflen;
+	_native->multicast(&mrecv);
       }      
       
     };  //-- BroadcastExec
@@ -155,10 +158,9 @@ namespace CCMI
 template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::start() phase %d, num total phases %d\n",(int)this, _startphase, _nphases));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::start()\n",(int)this));
 
   _mactive = false;
-
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
     _cb_done (NULL, _clientdata, XMI_SUCCESS);
@@ -175,7 +177,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
   //_mactive = true;  //not sure if I need this flag??
 
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() startphase %d, nphases, nmessages %d\n",(int)this,_startphase, _nphases, _nmessages));
+  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext()\n",(int)this));
 
   //for(int dcount = 0; dcount < _nmessages; dcount++)
   //TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() send to %d for size %d\n",(int)this, _dstranks[dcount], _curlen));

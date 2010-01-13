@@ -43,8 +43,7 @@ namespace XMI {
     virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie) {
       static size_t dispatch = DISPATCH_START;
 
-      printf ("In set dispatch, id = %d\n", dispatch);
-
+      //fprintf (stderr, "In set dispatch, id = %d\n", dispatch);
       /*new (&_protocol) P2pDispatchMulticastProtocol(dispatch, fn.multicast, cookie, *_device, _client, _context, _contextid, _status);
       //_protocol.registerMcastRecvFunction (dispatch, fn.multicast, cookie);*/
 
@@ -63,6 +62,14 @@ namespace XMI {
     }
 
     virtual xmi_result_t multicast (xmi_multicast_t *mcast) {
+
+#if 0
+      if (mcast->src_participants == NULL)
+	printf ("%d: Calling xmi_multicast recv\n", myrank());
+      else
+	printf ("%d: Calling xmi_multicast send\n", myrank());
+#endif
+
       mcast->dispatch =  _dispatch;
       mcast->client   =  _client;
       mcast->context  =  _contextid;
