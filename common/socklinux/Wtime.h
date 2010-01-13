@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/mpi/Wtime.h
+/// \file common/socklinux/Wtime.h
 /// \brief ???
 ///
-#ifndef __common_mpi_Wtime_h__
-#define __common_mpi_Wtime_h__
+#ifndef __common_socklinux_Wtime_h__
+#define __common_socklinux_Wtime_h__
 
 #include "sys/xmi.h"
 #include <sys/time.h>

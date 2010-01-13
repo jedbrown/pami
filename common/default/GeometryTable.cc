@@ -1,5 +1,5 @@
 ///
-/// \file components/geometry/mpi/mpigeometrytable.cc
+/// \file common/default/GeometryTable.cc
 /// \brief ???
 ///
 

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/atomic/gcc/L2Counter.h
+ * \file components/atomic/l2/L2Counter.h
  * \brief ???
  */
 
-#ifndef __components_atomic_L2Counter_h__
-#define __components_atomic_L2Counter_h__
+#ifndef __components_atomic_l2_L2Counter_h__
+#define __components_atomic_l2_L2Counter_h__
 
 #include "components/atomic/Counter.h"
 #include "util/common.h"
@@ -84,7 +84,7 @@ namespace XMI
 
       protected:
 
-	volatile __attribute__((aligned(L1D_CACHE_LINE_SIZE))) uint64_t _counter;  
+	volatile __attribute__((aligned(L1D_CACHE_LINE_SIZE))) uint64_t _counter;
 
     };
   };

@@ -41,14 +41,14 @@ namespace XMI
         inline xmi_result_t postMultisync(uint8_t (&state)[T_StateBytes],
                                            xmi_multisync_t *msync);
       }; // class MultisyncModel
-          
+
       template <class T_Model, unsigned T_StateBytes>
       xmi_result_t MultisyncModel<T_Model,T_StateBytes>::postMultisync(uint8_t (&state)[T_StateBytes],
                                                                         xmi_multisync_t *msync)
       {
         return static_cast<T_Model*>(this)->postMultisync_impl(state, msync);
       }
-          
+
     }; // namespace Interface
   }; // namespace Device
 }; // namespace XMI

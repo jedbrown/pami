@@ -74,7 +74,7 @@ namespace XMI
               _dispatch_table[id].direct_recv_func=direct_recv_func;
               _dispatch_table[id].direct_recv_func_parm=direct_recv_func_parm;
               _dispatch_lookup[id] = _dispatch_table[id];
-              device_dispatch_id = id; 
+              device_dispatch_id = id;
               return XMI_SUCCESS;
             }
           }
@@ -127,10 +127,10 @@ namespace XMI
           if ( rcvFun != NULL )   // Ignoring stuff we don't expect, since we are UDP
           {
              TRACE_COUT( "Dispatching to _dispatch_table["<<_rcvConnection->getDeviceDispatchId()<<"] = "<< (void*)rcvFun )
-            
-             rcvFun( _rcvConnection->_msg.getMetadataAddr(), 
-                     _rcvConnection->_msg.getPayloadAddr(), 
-                     _rcvConnection->_msg.getPayloadSize(), 
+
+             rcvFun( _rcvConnection->_msg.getMetadataAddr(),
+                     _rcvConnection->_msg.getPayloadAddr(),
+                     _rcvConnection->_msg.getPayloadSize(),
                      _dispatch_table[_rcvConnection->getDeviceDispatchId()].direct_recv_func_parm,
                      NULL );
           } else {

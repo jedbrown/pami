@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __common_mpi_typedefs_h__
-#define __common_mpi_typedefs_h__
+#ifndef __common_mpi_TypeDefs_h__
+#define __common_mpi_TypeDefs_h__
 
 
 #include "components/devices/mpi/oldmpimulticastmodel.h"

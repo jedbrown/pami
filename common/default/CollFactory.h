@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/default/defaultcollfactory.h
+ * \file common/default/CollFactory.h
  * \brief ???
  */
 
-#ifndef __common_default_collfactory_h__
-#define __common_default_collfactory_h__
+#ifndef __common_default_CollFactory_h__
+#define __common_default_CollFactory_h__
 
 #include "sys/xmi.h"
 #include "algorithms/interfaces/CollFactoryInterface.h"
@@ -37,7 +37,7 @@ namespace XMI
         {
         }
 
-      
+
       // Internal request object class used for allocations
       // The request field needs to be aligned.
       // Easiest thing to do is put it first since

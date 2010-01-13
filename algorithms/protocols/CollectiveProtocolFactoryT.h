@@ -1,4 +1,7 @@
-
+/**
+ * \file algorithms/protocols/CollectiveProtocolFactoryT.h
+ * \brief ???
+ */
 #ifndef __algorithms_protocols_CollectiveProtocolFactoryT_h__
 #define __algorithms_protocols_CollectiveProtocolFactoryT_h__
 
@@ -39,12 +42,12 @@ namespace CCMI
       }
 
       /// \brief All protocols determine if a given geometry is adequate
-      virtual bool Analyze(XMI_GEOMETRY_CLASS *g) { return afn(g); }      
+      virtual bool Analyze(XMI_GEOMETRY_CLASS *g) { return afn(g); }
 
       virtual Executor::Composite * generate(void                      * request_buf,
 					     size_t                      rsize,
-					     xmi_context_t               context, 
-					     void                      * cmd) 
+					     xmi_context_t               context,
+					     void                      * cmd)
 	{
 	  T *t = new (request_buf) T(cmd, _cmgr, _native);
 	  return (Executor::Composite *)t;

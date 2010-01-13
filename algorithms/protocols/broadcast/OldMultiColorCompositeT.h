@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/MultiColorCompositeT.h
+ * \file algorithms/protocols/broadcast/OldMultiColorCompositeT.h
  * \brief ???
  */
 

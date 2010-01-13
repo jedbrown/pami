@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/GeometryInterface.h
+ * \file algorithms/interfaces/GeometryInterface.h
  * \brief ???
  */
 
-#ifndef __common_GeometryInterface_h__
-#define __common_GeometryInterface_h__
+#ifndef __algorithms_interfaces_GeometryInterface_h__
+#define __algorithms_interfaces_GeometryInterface_h__
 
 #include "sys/xmi.h"
 #include "util/compact_attributes.h"

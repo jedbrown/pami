@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/CollRegistration.h
+ * \file algorithms/interfaces/CollRegistrationInterface.h
  * \brief ???
  */
 
-#ifndef __components_geometry_CollRegistration_h__
-#define __components_geometry_CollRegistration_h__
+#ifndef __algorithms_interfaces_CollRegistrationInterface_h__
+#define __algorithms_interfaces_CollRegistrationInterface_h__
 
 #include "sys/xmi.h"
 

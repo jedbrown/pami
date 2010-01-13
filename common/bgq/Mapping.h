@@ -175,7 +175,7 @@ namespace XMI
         ///
         inline size_t task_impl()
         {
-          //return _task;  
+          //return _task;
 		 return _p/(16/_mapcache.local_size); //hack
         }
 

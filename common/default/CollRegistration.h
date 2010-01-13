@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __common_default_collregistration_h__
-#define __common_default_collregistration_h__
+#ifndef __common_default_CollRegistration_h__
+#define __common_default_CollRegistration_h__
 
 #include "algorithms/interfaces/CollRegistrationInterface.h"
 #include <map>

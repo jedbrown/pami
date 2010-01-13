@@ -63,12 +63,12 @@ namespace XMI
 	//	context->_workAllocator.returnObject(cookie);
 	//}
     public:
-      inline Context (xmi_client_t client, size_t clientid, size_t contextid, size_t num, 
+      inline Context (xmi_client_t client, size_t clientid, size_t contextid, size_t num,
                       XMI::Device::Generic::Device *generics, void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, contextid),
           _client (client),
           _context ((xmi_context_t)this),
-          _clientid (clientid), 
+          _clientid (clientid),
           _contextid (contextid),
           _mm (addr, bytes),
           _sysdep (_mm),
@@ -121,17 +121,17 @@ namespace XMI
         size_t events = 0;
         unsigned i;
 
-        //std::cout << "<" << __global.mapping.task() << ">: advance  max= " << maximum << std::endl; 
+        //std::cout << "<" << __global.mapping.task() << ">: advance  max= " << maximum << std::endl;
         for (i = 0; i < maximum && events == 0; i++)
           {
             events += _shmem.advance();
             events += _udp.advance();
 	    events += _generic.advance();
           }
-        //std::cout << "<" << __global.mapping.task() << ">: advance  events= " << events << std::endl; 
- 
+        //std::cout << "<" << __global.mapping.task() << ">: advance  events= " << events << std::endl;
+
         if (events > 0) result = XMI_SUCCESS;
-     
+
         return events;
       }
 
@@ -427,7 +427,7 @@ fprintf (stderr, "<< socklinux::dispatch_impl .. result = %d\n", result);
       void * _dispatch[1024];
       //void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
-  
+
 
       //ContextLock _lock;
       //MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;

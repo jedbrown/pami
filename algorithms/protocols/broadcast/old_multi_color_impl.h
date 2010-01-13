@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/multi_color_impl.h
+ * \file algorithms/protocols/broadcast/old_multi_color_impl.h
  * \brief ???
  */
 

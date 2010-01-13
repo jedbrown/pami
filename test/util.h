@@ -68,7 +68,7 @@ static void barrier_dispatch_function (
 void barrier ()
 {
   TRACE_ERR((stderr, "#### enter barrier(),  ...\n"));
-	
+
   __barrier_active[__barrier_phase] = __barrier_size-1;
   __barrier_phase = __barrier_phase^1;
 
@@ -114,7 +114,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
   __barrier_dispatch = dispatch;
   __barrier_phase = 0;
   //__barrier_active[0].send = __barrier_size-1;
-  __barrier_active[0] = __barrier_size-1; 
+  __barrier_active[0] = __barrier_size-1;
   //__barrier_active[1].send = 0;
   __barrier_active[1] = __barrier_size-1;
 

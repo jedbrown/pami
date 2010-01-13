@@ -218,14 +218,14 @@ namespace XMI
     }; //-- MPISyncMsg
 
     typedef MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > MPISyncMsg_t;
-    
+
     class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
       static const size_t sizeof_msg = sizeof(MPISyncMsg_t);
-      
+
       MPISyncMdl(xmi_result_t &status) :
       XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>(status)
       {
@@ -235,10 +235,10 @@ namespace XMI
 
       inline xmi_result_t postMultisync_impl(uint8_t         (&state)[sizeof_msg],
                                              xmi_multisync_t *msync);
-      
+
     private:
     }; // class MPISyncMdl
-    
+
     inline xmi_result_t MPISyncMdl::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
                                                        xmi_multisync_t *msync)
     {

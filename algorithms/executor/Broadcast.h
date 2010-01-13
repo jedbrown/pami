@@ -1,6 +1,9 @@
-
-#ifndef __algorithms_executor_BroadcastExec_h__
-#define __algorithms_executor_BroadcastExec_h__
+/**
+ * \file algorithms/executor/Broadcast.h
+ * \brief ???
+ */
+#ifndef __algorithms_executor_Broadcast_h__
+#define __algorithms_executor_Broadcast_h__
 
 #define TRACE_FLOW(x)  //fprintf x
 
@@ -37,7 +40,7 @@ namespace CCMI
       xmi_task_t             _dstranks [MAX_PARALLEL];
       XMI::Topology          _dsttopology;
       XMI::Topology          _selftopology;
-      
+
       XMI_Request_t          _request __attribute__((__aligned__(16)));   /// send request
 
       CollHeaderData                               _mdata;
@@ -48,7 +51,7 @@ namespace CCMI
 
       //Private method
       void             sendNext ();
-      
+
     public:
       BroadcastExec () :
       Interfaces::Executor (),
@@ -60,7 +63,7 @@ namespace CCMI
       BroadcastExec (Interfaces::NativeInterface  * mf,
 		     unsigned                       comm,
 		     T                            * connmgr,
-		     unsigned                       color, 
+		     unsigned                       color,
 		     bool                           post_recvs = false):
       Interfaces::Executor(),
       _comm_schedule (NULL),
@@ -70,7 +73,7 @@ namespace CCMI
       _color(color),
       _postReceives (post_recvs),
       _dsttopology((xmi_task_t *)&_dstranks, MAX_PARALLEL),
-      _selftopology(mf->myrank())     
+      _selftopology(mf->myrank())
       {
         _clientdata        =  0;
         _root              =  (unsigned)-1;
@@ -93,14 +96,14 @@ namespace CCMI
         int nph, phase;
         _comm_schedule->init (_root, BROADCAST_OP, phase, nph);
         CCMI_assert(_comm_schedule != NULL);
-	_comm_schedule->getDstUnionTopology (&_dsttopology);	
+	_comm_schedule->getDstUnionTopology (&_dsttopology);
       }
 
       void  setInfo (int root, char *buf, int len)
       {
         _root           =  root;
 	unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-	_msend.connection_id = connid;	
+	_msend.connection_id = connid;
 
 	//Setup pipework queue
 	_pwq.configure (NULL, buf, len, 0);
@@ -131,10 +134,10 @@ namespace CCMI
       {
         return _comm;
       }
-      
+
       void postReceives () {
 	if(_native->myrank() == _root) return;
-	
+
 	xmi_multicast_t mrecv;
 	memcpy (&mrecv, &_msend, sizeof(xmi_multicast_t));
 
@@ -146,8 +149,8 @@ namespace CCMI
 	mrecv.src    =  NULL;
 	mrecv.bytes  = _buflen;
 	_native->multicast(&mrecv);
-      }      
-      
+      }
+
     };  //-- BroadcastExec
   };   //-- Executor
 };  //-- CCMI
@@ -181,7 +184,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 
   //for(int dcount = 0; dcount < _nmessages; dcount++)
   //TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() send to %d for size %d\n",(int)this, _dstranks[dcount], _curlen));
-    
+
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
   _mdata._root  = _root;
@@ -205,7 +208,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
  xmi_callback_t      * cb_done)
 {
   TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::notifyRecv() from %d\n",(int)this, src));
-  
+
   *pwq = &_pwq;
   if (_dsttopology.size() > 0) {
     cb_done->function = NULL;  //There is a send here that will notify completion
@@ -214,7 +217,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
   else {
     cb_done->function   = _cb_done;
     cb_done->clientdata = _clientdata;
-  }    
+  }
 }
 
 

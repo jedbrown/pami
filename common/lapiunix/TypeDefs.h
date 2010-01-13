@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __common_lapiunix_typedefs_h__
-#define __common_lapiunix_typedefs_h__
+#ifndef __common_lapiunix_TypeDefs_h__
+#define __common_lapiunix_TypeDefs_h__
 
 
 #include "components/devices/lapiunix/oldlapiunixmulticastmodel.h"

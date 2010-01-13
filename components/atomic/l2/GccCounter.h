@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-#ifndef __components_atomic_gcc_GccCounter_h__
-#define __components_atomic_gcc_GccCounter_h__
+#ifndef __components_atomic_l2_GccCounter_h__
+#define __components_atomic_l2_GccCounter_h__
 
 /**
- * \file components/atomic/gcc/GccCounter.h
+ * \file components/atomic/l2/GccCounter.h
  * \brief gcc builtin atomics implementation of Node- or Process-scoped Counter
  *
  */

@@ -94,8 +94,8 @@ namespace XMI {
         union vecs_t {
             struct iovec d1[1];
 	    struct iovec d2[2];
-        }; 
-        
+        };
+
 	//receiver status
 	struct recv_state_t {
 	  size_t pkgnum;	/// Number of pkg to receive from the origin rank.
@@ -122,7 +122,7 @@ namespace XMI {
 	  size_t nlost;		///number of lost packages
 	  size_t last_nlost;	/// last number of lost elements
 	  bool fseq;		///Flag used to record minimun wminseq
-	  vecs_t vecs; 
+	  vecs_t vecs;
 	};
 
 	//package structure
@@ -172,7 +172,7 @@ namespace XMI {
 
 	  window_t window[2];	///define 2 windows
 	  vecs_t vecs;
-          
+
 	};
 
  public:
@@ -197,18 +197,18 @@ namespace XMI {
 			       size_t contextid,
 			       xmi_result_t & status) :
            _rts_model(device, client, contextid),
-	   _rts_ack_model(device, client, contextid), 
+	   _rts_ack_model(device, client, contextid),
            _ack_model(device, client, contextid),
-	   _data_model(device, client, contextid), 
+	   _data_model(device, client, contextid),
            _short_data_model(device, client, contextid),
-	   _device(device), 
-           _fromRank(origin_task), 
+	   _device(device),
+           _fromRank(origin_task),
            _client(client),
-	   _contextid(contextid), 
-           _dispatch_fn(dispatch_fn), 
+	   _contextid(contextid),
+           _dispatch_fn(dispatch_fn),
            _cookie(cookie),
-	   _connection((void **)NULL), 
-           _connection_manager(device), 
+	   _connection((void **)NULL),
+           _connection_manager(device),
            _cont(0)
 	{
 	  // ----------------------------------------------------------------
@@ -250,39 +250,39 @@ namespace XMI {
 	  status = _rts_model.init(dispatch,
 				   dispatch_rts_direct, this,
 				   dispatch_rts_read, this);
-          TRACE_ERR((stderr, "DatagramSimple() _rts [1] status = %d\n", status)); 
-	  if (status != XMI_SUCCESS) abort(); 
+          TRACE_ERR((stderr, "DatagramSimple() _rts [1] status = %d\n", status));
+	  if (status != XMI_SUCCESS) abort();
 
 	  status = _rts_ack_model.init(dispatch,
                  		       dispatch_rts_ack_direct, this,
 				       dispatch_rts_ack_read, this);
 	  TRACE_ERR((stderr, "DatagramSimple() _rts_ack [2] status = %d\n", status));
-	  if (status != XMI_SUCCESS) abort(); 
+	  if (status != XMI_SUCCESS) abort();
 
 	  status = _ack_model.init(dispatch,
  				   dispatch_ack_direct, this,
 				   dispatch_ack_read, this);
 	  TRACE_ERR((stderr, "DatagramSimple() _ack [3] status = %d\n", status));
-	  if (status != XMI_SUCCESS) abort(); 
+	  if (status != XMI_SUCCESS) abort();
 
 	  status = _data_model.init(dispatch,
 			            dispatch_data_direct, this,
 				    dispatch_data_read, this);
 	  TRACE_ERR((stderr, "DatagramSimple() _data [4] status = %d\n", status));
-	  if (status != XMI_SUCCESS) abort(); 
+	  if (status != XMI_SUCCESS) abort();
 
 	  status = _short_data_model.init(dispatch,
 					  dispatch_short_data_direct, this,
 					  dispatch_short_data_read, this);
           TRACE_ERR((stderr, "DatagramSimple() _short_data [5] status = %d\n", status));
-          if (status != XMI_SUCCESS) abort(); 
+          if (status != XMI_SUCCESS) abort();
 
       }
 
 
       // \brief Start a new simple send datagram operation.
       // \see XMI::Protocol::Send:simple///
-      inline xmi_result_t simple_impl(xmi_send_t * parameters) 
+      inline xmi_result_t simple_impl(xmi_send_t * parameters)
       {
         TRACE_ERR((stderr,
 	           "*** Datagram_DatagramSimple implemented , msginfo_bytes = %d  , bytes =%d ***\n",
@@ -329,12 +329,12 @@ namespace XMI {
 		     parameters->send.header.iov_base, parameters->send.header.iov_len,
 		     parameters->send.data.iov_len));
 
-          send_packet( send->datagram->_rts_model,                         // Model to send packet on 
+          send_packet( send->datagram->_rts_model,                         // Model to send packet on
                        send->pkt,                          // T_Message to send
-                       NULL,                               // Callback 
-                       (void *)parameters->events.cookie,  // Cookie 
+                       NULL,                               // Callback
+                       (void *)parameters->events.cookie,  // Cookie
                        parameters->send.task,              // Target task
-                       send->vecs, 
+                       send->vecs,
                        (void *)&send->rts,                  // header
                        sizeof(rts_info_t),                 // size of header
                        (void *)send->msginfo,              // payload
@@ -437,15 +437,15 @@ namespace XMI {
 	send_state_t *_lastva_send;	//used in CM
 
 	size_t _cont;
-	
+
       // \brief Send a packet ... pack as needed.
-      // 
+      //
       static inline int send_packet( T_Model &model,
-                              pkt_t &msg, 
-                              xmi_event_function callback,  
-                              void * cookie, 
+                              pkt_t &msg,
+                              xmi_event_function callback,
+                              void * cookie,
                               xmi_task_t targetTask,
-                              vecs_t &vecs, 
+                              vecs_t &vecs,
                               void * part1, size_t numPart1,
                               void * part2, size_t numPart2 )
       {
@@ -455,12 +455,12 @@ namespace XMI {
  //         vecs->d1[0].iov_base = (void *)part2;
  //         vecs->d1[0].iov_len = numPart2;
  //         model.postPacket( msg,           // T_Message to send
- //                           callback,      // Callback to execute when done 
+ //                           callback,      // Callback to execute when done
  //                           cookie,        // Cookie -- if no cb, why do we care?
- //                           targetTask,    // Task to send to 
-//		            part1,	   // Part 1 in metadata 
+ //                           targetTask,    // Task to send to
+//		            part1,	   // Part 1 in metadata
 //		            numPart1,      // Size of Part 1
-//            		    vecs->d1);	           // Message info              
+//            		    vecs->d1);	           // Message info
 //        } else { // part1 will NOT fit in the metadata
           TRACE_ERR((stderr, "DatagramSimple::send_packet() .. part1 does NOT fit in metadata\n"));
           vecs.d2[0].iov_base = (void *)part1;
@@ -468,27 +468,27 @@ namespace XMI {
           vecs.d2[1].iov_base = (void *)part2;
           vecs.d2[1].iov_len = numPart2;
           model.postPacket( msg,           // T_Message to send
-                            callback,      // Callback to execute when done 
+                            callback,      // Callback to execute when done
                             cookie,        // Cookie -- if no cb, why do we care?
-                            targetTask,    // Task to send to 
+                            targetTask,    // Task to send to
                             NULL,	   // No metadata (Part 1 didn't fit)
-                            0,             // 
-                            vecs.d2);	           // Message info              
+                            0,             //
+                            vecs.d2);	           // Message info
   //      }
-        return XMI_SUCCESS; 
+        return XMI_SUCCESS;
       }
-      
+
       // \brief Receive a packet ... unpack as needed.
-      // 
+      //
       static inline int rcv_packet( void * metadata, unsigned int numMeta, void * payload, void *& part1, void *& part2 )
       {
 //        if ( numMeta <= T_Model::packet_model_metadata_bytes )
 //        { // part 1 was in the metadata
-//          part1 = metadata; 
-//          part2 = payload; 
-//        } else { // part1 was NOT in the metadata 
+//          part1 = metadata;
+//          part2 = payload;
+//        } else { // part1 was NOT in the metadata
           part1 = payload;
-          part2 = (void *)((uintptr_t)payload + numMeta ); 
+          part2 = (void *)((uintptr_t)payload + numMeta );
 //        }
         return XMI_SUCCESS;
       }
@@ -523,17 +523,17 @@ namespace XMI {
 	      send->header.bsend = T_Model::packet_model_payload_bytes;
 	    }
 
-	    send_packet( send->datagram->_data_model,        // Model to send packet on 
+	    send_packet( send->datagram->_data_model,        // Model to send packet on
                          send->pkt,                          // T_Message to send
-                         NULL,                               // Callback 
-                         (void *)send,                       // Cookie 
+                         NULL,                               // Callback
+                         (void *)send,                       // Cookie
                          send->rts.destRank,                  // Target task
-                         send->vecs, 
+                         send->vecs,
                          &send->header,                      // header
                          sizeof(header_metadata_t),          // size of header
                          v[1].iov_base,                      // payload
                          v[1].iov_len );                     // size of playload
-                         
+
 	  }
 
 	  TRACE_ERR((stderr,
@@ -553,12 +553,12 @@ namespace XMI {
 	    send->header.bsend = T_Model::packet_model_payload_bytes;
 	  }
 
-	  send_packet( send->datagram->_data_model,        // Model to send packet on 
+	  send_packet( send->datagram->_data_model,        // Model to send packet on
                          send->pkt,                          // T_Message to send
-                         send->cb_data,                      // Callback 
-                         (void *)send,                       // Cookie 
+                         send->cb_data,                      // Callback
+                         (void *)send,                       // Cookie
                          send->rts.destRank,                  // Target task
-                         send->vecs, 
+                         send->vecs,
                          &send->header,                      // header
                          sizeof(header_metadata_t),          // size of header
                          v[1].iov_base,                      // payload
@@ -576,7 +576,7 @@ namespace XMI {
 	  send_state_t *send = (send_state_t *) stimer->va;
 	  size_t i = 0;
           std::cout << "send_data with context = " << (void *)ctx << "   cd = " << cd
-                    << " timer = " << (void *)stimer << " send = " << (void *)send << std::endl;  
+                    << " timer = " << (void *)stimer << " send = " << (void *)send << std::endl;
 	  if (stimer->close) {
 	    TRACE_ERR((stderr,
 		       "   DatagramSimple::Timer send_data() .. Tx Close Timer\n"));
@@ -634,12 +634,12 @@ namespace XMI {
 			     "	DatagramSimple::Timer send_data() .. data seqno=0  package =%d was sent\n",
 			     send->lost_list[i]));
 
-	          send_packet( send->datagram->_short_data_model,    // Model to send packet on 
+	          send_packet( send->datagram->_short_data_model,    // Model to send packet on
                          send->pkt,                          // T_Message to send
-                         send->cb_data,                      // Callback 
-                         (void *)send,                       // Cookie 
+                         send->cb_data,                      // Callback
+                         (void *)send,                       // Cookie
                          send->rts.destRank,                  // Target task
-                         send->vecs, 
+                         send->vecs,
                          &send->header,                      // header
                          sizeof(header_metadata_t),          // size of header
                          &send->send_buffer,                 // payload
@@ -712,12 +712,12 @@ namespace XMI {
 		TRACE_ERR((stderr,
 			   "   DatagramSimple::Timer send_ack() sending ack.  Protocol header_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-	        send_packet( rcv->datagram->_ack_model,    // Model to send packet on 
+	        send_packet( rcv->datagram->_ack_model,    // Model to send packet on
                          rcv->pkt,                          // T_Message to send
-                         NULL,                      // Callback 
-                         rcv->info.cookie,                       // Cookie 
+                         NULL,                      // Callback
+                         rcv->info.cookie,                       // Cookie
                          rcv->fromRank,                  // Target task
-                         rcv->vecs, 
+                         rcv->vecs,
                          &rcv->ack,                      // header
                          sizeof(header_ack_t),          // size of header
                          rcv->lost_list,                 // payload
@@ -735,7 +735,7 @@ namespace XMI {
 	  timer_t *stimer = (timer_t *) cd;
 	  send_state_t *send = (send_state_t *) stimer->va;
           //std::cout << "send_rts   ctx = " << (void*)ctx << " cd = " << cd << "timer = " << (void *)stimer
-          //          << " send = " << (void*)send << std::endl; 
+          //          << " send = " << (void*)send << std::endl;
 	  if (stimer->close) {
 	    TRACE_ERR((stderr,
 		       "   DatagramSimple::Timer send_rts() .. Tx Close Timer\n"));
@@ -746,7 +746,7 @@ namespace XMI {
 	      TRACE_ERR((stderr,
 			 "	DatagramSimple::Timer send_rts().. Tx Starting work at tick %llu, waiting until %llu\n",
 			 stimer->t0, stimer->t0 + stimer->count));
-			 std::cout << " stimer->count = " << stimer->count << std::endl; 
+			 std::cout << " stimer->count = " << stimer->count << std::endl;
 	    }
 
 	    unsigned long long t1 = __global.time.timebase();
@@ -785,12 +785,12 @@ namespace XMI {
 		TRACE_ERR((stderr,
 			   "	DatagramSimple::Timer rts_send() .. Sending RTS, protocol header_info_t fits in the packet metadata, application metadata fits in a single packet payload\n"));
 
-		send_packet( send->datagram->_rts_model,    // Model to send packet on 
+		send_packet( send->datagram->_rts_model,    // Model to send packet on
                          send->pkt,                          // T_Message to send
-                         NULL,                      // Callback 
-                         (void *)send->cookie,                       // Cookie 
+                         NULL,                      // Callback
+                         (void *)send->cookie,                       // Cookie
                          send->rts.destRank,                  // Target task
-                         send->vecs, 
+                         send->vecs,
                          &send->rts,                      // header
                          sizeof(rts_info_t),          // size of header
                          send->msginfo,                 // payload
@@ -848,12 +848,12 @@ namespace XMI {
 		TRACE_ERR((stderr,
 			   "    DatagramSimple::Timer send_rts_ack() ..  Sending rts_ack.  Protocol rts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-	        send_packet(rcv->datagram->_rts_ack_model,    // Model to send packet on 
+	        send_packet(rcv->datagram->_rts_ack_model,    // Model to send packet on
                          rcv->pkt,                              // T_Message to send
-                         NULL,                                  // Callback 
-                         rcv->info.cookie,                      // Cookie 
+                         NULL,                                  // Callback
+                         rcv->info.cookie,                      // Cookie
                          rcv->fromRank,                          // Target task
-                         rcv->vecs, 
+                         rcv->vecs,
                          &rcv->ack,                             // header
                          sizeof(header_ack_t),                  // size of header
                          NULL,                                  // payload
@@ -875,9 +875,9 @@ namespace XMI {
 				unsigned long long rate, send_state_t * va,
 				xmi_result_t(*func) (xmi_context_t, void *),
 				bool sel) {
-         std::cout << "Starting Transmission timer: Initial time = " << t0 << " Max = " << max 
+         std::cout << "Starting Transmission timer: Initial time = " << t0 << " Max = " << max
                      << " rate = " << rate << " va = " << (void *)va << "  func = " << (void *)func
-                    << " which timer = " << sel << std::endl; 
+                    << " which timer = " << sel << std::endl;
 	  XMI_ProgressFunc_t progf;
 
 	  if (sel) {
@@ -928,9 +928,9 @@ namespace XMI {
 				unsigned long long rate, recv_state_t * va,
 				xmi_result_t(*func) (xmi_context_t, void *),
 				bool sel) {
-         std::cout << "Starting Reception timer: Initial time = " << t0 << " Max = " << max 
+         std::cout << "Starting Reception timer: Initial time = " << t0 << " Max = " << max
                      << " rate = " << rate << " va = " << (void *)va << "  func = " << (void *)func
-                    << " which timer = " << sel << std::endl; 
+                    << " which timer = " << sel << std::endl;
 
 	  XMI_ProgressFunc_t progf;
 
@@ -1092,9 +1092,9 @@ namespace XMI {
 
 	  rts_info_t *rts;
 	  void *msginfo;
-	  std::cout<< "debug: " << metadata << " " << payload << " " << rts << " " << msginfo << std::endl; 
-          rcv_packet( metadata, sizeof(rts_info_t), payload, (void *&)rts, msginfo ); 
-	  std::cout<< "debug: " << metadata << " " << payload << " " << rts << " " << msginfo << std::endl; 
+	  std::cout<< "debug: " << metadata << " " << payload << " " << rts << " " << msginfo << std::endl;
+          rcv_packet( metadata, sizeof(rts_info_t), payload, (void *&)rts, msginfo );
+	  std::cout<< "debug: " << metadata << " " << payload << " " << rts << " " << msginfo << std::endl;
 
 	  DatagramSimple < T_Model, T_Device, T_LongHeader > *datagram =
 	      (DatagramSimple < T_Model, T_Device,
@@ -1218,10 +1218,10 @@ namespace XMI {
 	      TRACE_ERR((stderr,
 			 "   DatagramSimple::process_rts() ..  Sending rts_ack.  Protocol rts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-	      send_packet( datagram->_rts_ack_model,    // Model to send packet on 
+	      send_packet( datagram->_rts_ack_model,    // Model to send packet on
                          rcv->pkt,                      // T_Message to send
-                         receive_complete,              // Callback 
-                         (void *)rcv,                   // Cookie 
+                         receive_complete,              // Callback
+                         (void *)rcv,                   // Cookie
                          rts->fromRank,                  // Target task
                          rcv->vecs,
                          &rcv->ack,                     // header
@@ -1238,12 +1238,12 @@ namespace XMI {
 		       "   DatagramSimple::process_rts() ..  Sending rts_ack.  Protocol rts_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
 	    //Post rts_ack package
-           send_packet( datagram->_rts_ack_model,    // Model to send packet on 
+           send_packet( datagram->_rts_ack_model,    // Model to send packet on
                          rcv->pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         rcv->info.cookie,                   // Cookie 
+                         NULL,              // Callback
+                         rcv->info.cookie,                   // Cookie
                          rts->fromRank,                  // Target task
-                         rcv->vecs, 
+                         rcv->vecs,
                          &rcv->ack,                     // header
                          sizeof(header_ack_t),          // size of header
                          NULL,                          // payload
@@ -1276,8 +1276,8 @@ namespace XMI {
 	       T_LongHeader > *)recv_func_parm;
 
 	  header_ack_t *ack;
-	  void * dummy; 
-          rcv_packet( metadata, sizeof(header_ack_t), payload, (void *&)ack, dummy ); 
+	  void * dummy;
+          rcv_packet( metadata, sizeof(header_ack_t), payload, (void *&)ack, dummy );
 
 	  StopTxTimer(ack->va_send, 0);	//stop timer0;
 
@@ -1291,7 +1291,7 @@ namespace XMI {
 	    send_complete(XMI_Client_getcontext
 			  (datagram->_client, datagram->_contextid),
 			  (void *)ack->va_send, XMI_SUCCESS);
-            // TODO what if message in queue? 
+            // TODO what if message in queue?
 	    return 0;
 	  }
 
@@ -1360,12 +1360,12 @@ namespace XMI {
 	  TRACE_ERR((stderr,
 		     "   DatagramSimple::process_rts_ack() ..  Sending data.  Protocol header_metadata_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n"));
 
-	  send_packet( datagram->_short_data_model,    // Model to send packet on 
+	  send_packet( datagram->_short_data_model,    // Model to send packet on
                          ack->va_send->pkt,                      // T_Message to send
-                         ack->va_send->cb_data,              // Callback 
-                         (void *)ack->va_send,                   // Cookie 
+                         ack->va_send->cb_data,              // Callback
+                         (void *)ack->va_send,                   // Cookie
                          ack->va_send->rts.destRank,                  // Target task
-                         ack->va_send->vecs, 
+                         ack->va_send->vecs,
                          &ack->va_send->header,                     // header
                          sizeof(header_metadata_t),          // size of header
                          ack->va_send->send_buffer,                          // payload
@@ -1388,12 +1388,12 @@ namespace XMI {
 	    TRACE_ERR((stderr,
 		       "DatagramSimple::process_ack_rts() .. Sending queue request,  protocol header_info_t fits in the packet metadata, application metadata fits in a single packet payload\n"));
 
-	  send_packet( datagram->_rts_model,    // Model to send packet on 
+	  send_packet( datagram->_rts_model,    // Model to send packet on
                          send->pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         (void *)send->cookie,                   // Cookie 
+                         NULL,              // Callback
+                         (void *)send->cookie,                   // Cookie
                          send->rts.destRank,                  // Target task
-                         send->vecs, 
+                         send->vecs,
                          &send->rts,                     // header
                          sizeof(rts_info_t),          // size of header
                          send->msginfo,                          // payload
@@ -1426,8 +1426,8 @@ namespace XMI {
 	       T_LongHeader > *)recv_func_parm;
 
 	  header_metadata_t *header;
-	  void *msginfo; 
-          rcv_packet( metadata, sizeof(header_metadata_t), payload, (void *&)header, msginfo ); 
+	  void *msginfo;
+          rcv_packet( metadata, sizeof(header_metadata_t), payload, (void *&)header, msginfo );
           memcpy((char *)(header->va_recv->info.data.simple.addr) +
 		   header->seqno, (msginfo), header->va_recv->fbytes);
 
@@ -1458,17 +1458,17 @@ namespace XMI {
 
 	    header->va_recv->ack.wrate = 0;	//window rate to zero = end condition
 
-	  send_packet( datagram->_ack_model,    // Model to send packet on 
+	  send_packet( datagram->_ack_model,    // Model to send packet on
                          header->va_recv->pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         (void *)header->va_recv->info.cookie,                   // Cookie 
+                         NULL,              // Callback
+                         (void *)header->va_recv->info.cookie,                   // Cookie
                          header->va_recv->fromRank,                  // Target task
-                         header->va_recv->vecs, 
+                         header->va_recv->vecs,
                          &header->va_recv->ack,                     // header
                          sizeof(header_ack_t),          // size of header
                          (void*)header->va_recv->lost_list,                          // payload
                          4 * header->va_recv->nlost );                           // size of playload
-					    
+
 
 	    TRACE_ERR((stderr,
 		       "   DatagramSimple::process_short_data() ..  all data Received \n"));
@@ -1535,12 +1535,12 @@ namespace XMI {
 	      header->va_recv->ack.wrate = 0;	//end condition
 
 	      //post ack package
-	      send_packet( header->va_recv->datagram->_ack_model,    // Model to send packet on 
+	      send_packet( header->va_recv->datagram->_ack_model,    // Model to send packet on
                          header->va_recv->pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         header->va_recv->info.cookie,                   // Cookie 
+                         NULL,              // Callback
+                         header->va_recv->info.cookie,                   // Cookie
                          header->va_recv->fromRank,                  // Target task
-                         header->va_recv->vecs, 
+                         header->va_recv->vecs,
                          &header->va_recv->ack,                     // header
                          sizeof(header_ack_t),          // size of header
                          (void *)header->va_recv->lost_list,                          // payload
@@ -1563,12 +1563,12 @@ namespace XMI {
 	    } else {
 
 	      //Post ack package
-	      send_packet( header->va_recv->datagram->_ack_model,    // Model to send packet on 
+	      send_packet( header->va_recv->datagram->_ack_model,    // Model to send packet on
                          header->va_recv->pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         header->va_recv->info.cookie,                   // Cookie 
+                         NULL,              // Callback
+                         header->va_recv->info.cookie,                   // Cookie
                          header->va_recv->fromRank,                  // Target task
-                         header->va_recv->vecs, 
+                         header->va_recv->vecs,
                          &header->va_recv->ack,                     // header
                          sizeof(header_ack_t),          // size of header
                          (void *)header->va_recv->lost_list,                          // payload
@@ -1599,12 +1599,12 @@ namespace XMI {
 
 	  //Pointer to metadata
 	  header_metadata_t *header;
-	  void * msginfo; 
-          rcv_packet( metadata, sizeof(header_metadata_t), payload, (void *&)header, msginfo ); 
+	  void * msginfo;
+          rcv_packet( metadata, sizeof(header_metadata_t), payload, (void *&)header, msginfo );
  	  memcpy((char *)(header->va_recv->info.data.simple.addr) +
 		   ((header->seqno - 1) * header->bsend +
 		    header->va_recv->fbytes), (msginfo), header->bsend);
-         
+
 	  StopRxTimer(header->va_recv, 1);	//stop timer;
 
 	  //Save maximun received seqno
@@ -1648,12 +1648,12 @@ namespace XMI {
 	    header->va_recv->ack.wrate = 0;	//end condition
 
 	    //post ack package
-	      send_packet( datagram->_ack_model,    // Model to send packet on 
+	      send_packet( datagram->_ack_model,    // Model to send packet on
                          header->va_recv->pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         header->va_recv->info.cookie,                   // Cookie 
+                         NULL,              // Callback
+                         header->va_recv->info.cookie,                   // Cookie
                          header->va_recv->fromRank,                  // Target task
-                         header->va_recv->vecs, 
+                         header->va_recv->vecs,
                          &header->va_recv->ack,                     // header
                          sizeof(header_ack_t),          // size of header
                          (void *)header->va_recv->lost_list,                          // payload
@@ -1699,7 +1699,7 @@ namespace XMI {
 	  //ack is inside metadata
 	  header_ack_t *ack;
 	  size_t *lost;
-          rcv_packet( metadata, sizeof(header_ack_t), payload, (void *&)ack, (void *&)lost ); 
+          rcv_packet( metadata, sizeof(header_ack_t), payload, (void *&)ack, (void *&)lost );
 
 	  //Pointer to Protocol object
 	  DatagramSimple < T_Model, T_Device, T_LongHeader > *datagram =
@@ -1827,12 +1827,12 @@ namespace XMI {
 		       &window->pkg[i].pkt, i));
 
 	    //send data
- 	      send_packet( window->va_send->datagram->_data_model,    // Model to send packet on 
+ 	      send_packet( window->va_send->datagram->_data_model,    // Model to send packet on
                          window->pkg[i].pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         (void *)NULL,                   // Cookie 
+                         NULL,              // Callback
+                         (void *)NULL,                   // Cookie
                          window->va_send->rts.destRank,                  // Target task
-                         window->va_send->vecs, 
+                         window->va_send->vecs,
                          (void *)&window->pkg[i].header,                     // header
                          sizeof(header_metadata_t),          // size of header
                          (void *)(window->va_send->send_buffer +
@@ -1840,7 +1840,7 @@ namespace XMI {
 			     1) * T_Model::packet_model_payload_bytes +
 			    window->va_send->fbytes)),                          // payload
                          (size_t) window->pkg[i].header.bsend );                           // size of playload
-                         
+
 	    TRACE_ERR((stderr,
 		       "   AdaptiveSimple::Send_Window() pkt(%d).. data total bytes= %d  ,window = %p , seqno = %d , winodw.seqno=%d , bsend=%d \n",
 		       i, window->va_send->rts.bytes, window,
@@ -1889,12 +1889,12 @@ namespace XMI {
 		     "   AdaptiveSimple::Send_Window() .. window pkt = %p , pktno=%d\n",
 		     &window->pkg[i].pkt, i));
 	  //pkt_t * dummy = (pkt_t *)malloc(sizeof(pkt_t));
-	      send_packet( window->va_send->datagram->_data_model,    // Model to send packet on 
+	      send_packet( window->va_send->datagram->_data_model,    // Model to send packet on
                          window->pkg[i].pkt,                      // T_Message to send
-                         NULL,              // Callback 
-                         (void *)NULL,                   // Cookie 
+                         NULL,              // Callback
+                         (void *)NULL,                   // Cookie
                          window->va_send->rts.destRank,                  // Target task
-                         window->va_send->vecs, 
+                         window->va_send->vecs,
                          (void *)&window->pkg[i].header,                     // header
                          sizeof(header_metadata_t),          // size of header
                          (void *)(window->va_send->send_buffer +
@@ -1986,7 +1986,7 @@ namespace XMI {
 	/// completion is not required, free the send state memory.
 	///
 	static void send_complete(xmi_context_t context,
-				  void *cookie, xmi_result_t result) 
+				  void *cookie, xmi_result_t result)
         {
 	  TRACE_ERR((stderr, "DatagramSimple::send_complete() >> \n"));
 	  send_state_t *send = (send_state_t *) cookie;
@@ -2230,5 +2230,3 @@ namespace XMI {
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-

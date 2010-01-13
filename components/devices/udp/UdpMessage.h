@@ -51,7 +51,7 @@ namespace XMI
        inline void setPayloadSize( size_t payload_size)
         {
           //TRACE_COUT( "Setting payload size to " << payload_size )
-          _payload_size = htonl(payload_size); 
+          _payload_size = htonl(payload_size);
         }
 
         inline uint32_t getDeviceDispatchId()
@@ -62,13 +62,13 @@ namespace XMI
         inline size_t getMetadataSize()
         {
           //TRACE_COUT( "Getting metadata size =  " << ntohl(_metadata_size) )
-          return ntohl(_metadata_size); 
+          return ntohl(_metadata_size);
         }
 
         inline size_t getPayloadSize()
         {
           //TRACE_COUT( "Getting payload size =  " << ntohl(_payload_size) )
-          return ntohl(_payload_size); 
+          return ntohl(_payload_size);
         }
 
         inline void * getMetadataAddr()
@@ -80,13 +80,13 @@ namespace XMI
         inline void * getPayloadAddr()
         {
           //TRACE_COUT( "Getting payload addr = " << (void *)( (uintptr_t)_var_data+getMetadataSize() ) )
-          return (void *)( (uintptr_t)_var_data+getMetadataSize() ); 
+          return (void *)( (uintptr_t)_var_data+getMetadataSize() );
         }
 
        inline void print()
        {
           TRACE_COUT( "Msg: dispatch_id = " << getDeviceDispatchId() <<
-                      " meta size = " << getMetadataSize() << 
+                      " meta size = " << getMetadataSize() <<
                       " pay size = " << getPayloadSize() )
           DUMP_HEX_DATA( getMetadataAddr(), getMetadataSize() );
           DUMP_HEX_DATA( getPayloadAddr(), getPayloadSize() );
@@ -119,8 +119,8 @@ namespace XMI
           _on_idx(0),
           _complete(false)
         {
-          TRACE_COUT( "Creating message" ) 
-          TRACE_COUT( "   dispatch id = " << device_dispatch_id << " metadata len = " << metasize ) 
+          TRACE_COUT( "Creating message" )
+          TRACE_COUT( "   dispatch id = " << device_dispatch_id << " metadata len = " << metasize )
           TRACE_COUT( "   niov = " << niov )
           for ( int kk=0; kk < niov; kk++ )
           {

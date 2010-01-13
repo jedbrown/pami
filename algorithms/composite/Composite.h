@@ -22,17 +22,17 @@ namespace CCMI
 {
   namespace Executor
   {
-    
+
     class Composite {
     public:
       //Base Composite class
       Composite() {}
-      
+
       virtual ~Composite() {}
     };
-    
-    
-    template <int NUM_EXECUTORS, class T_Bar, class T_Exec> 
+
+
+    template <int NUM_EXECUTORS, class T_Bar, class T_Exec>
     class CompositeT : public Composite
     {
     protected:

@@ -232,7 +232,7 @@ namespace CCMI
 	for (unsigned count = 0; count < nsrc; count ++) {
 	  srcranks[count] = _map.getGlobalRank(srcranks[count]);
 	}
-	
+
 	//Convert to a list topology
 	new (topology) XMI::Topology (srcranks, nsrc);
       }
@@ -273,7 +273,7 @@ namespace CCMI
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getSrcUnionTopology (XMI::Topology *topology) { 
+      virtual void getSrcUnionTopology (XMI::Topology *topology) {
 	unsigned *srcranks;
 	xmi_result_t rc = topology->rankList(&srcranks);
 	CCMI_assert (rc == XMI_SUCCESS);
@@ -295,16 +295,16 @@ namespace CCMI
 	for (unsigned count = 0; count < ntotal_src; count ++) {
 	  srcranks[count] = _map.getGlobalRank(srcranks[count]);
 	}
-	
+
 	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, ntotal_src);	
+	new (topology) XMI::Topology (srcranks, ntotal_src);
       }
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getDstUnionTopology (XMI::Topology *topology) { 
+      virtual void getDstUnionTopology (XMI::Topology *topology) {
 	unsigned *dstranks;
 	xmi_result_t rc = topology->rankList(&dstranks);
 	CCMI_assert (rc == XMI_SUCCESS);
@@ -327,7 +327,7 @@ namespace CCMI
 	  dstranks[count]   = _map.getGlobalRank(dstranks[count]);
 	  TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
 	}
-	
+
 	//Convert to a list topology of the accurate size
 	new (topology) XMI::Topology (dstranks, ntotal_dst);
       }
@@ -553,15 +553,15 @@ init(int root, int comm_op, int &start, int &nph)
               comm_op == ALLREDUCE_OP ||
               comm_op == REDUCE_OP ||
               comm_op == BROADCAST_OP);
-  
+
   _op = comm_op;
-  
+
   if (comm_op == REDUCE_OP ||
       comm_op == BROADCAST_OP)
     _map.setRoot (root);
-  
+
   setupContext(_startphase, _nphases);
-  
+
   nph   = _nphases;
   start = _startphase;
 }

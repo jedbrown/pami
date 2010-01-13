@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/mpi/mpicollinfo.h
+ * \file common/default/CollInfo.h
  * \brief ???
  */
 
-#ifndef __common_default_collinfo_h__
-#define __common_default_collinfo_h__
+#ifndef __common_default_CollInfo_h__
+#define __common_default_CollInfo_h__
 
 #include <vector>
 #include "SysDep.h"
@@ -267,7 +267,7 @@ namespace XMI
                              xmi_mapidtogeometry_fn fcn,
                              xmi_client_t           client,
                              xmi_context_t          context,
-                             size_t                 context_id):      
+                             size_t                 context_id):
       CollInfo<T_Device>(dev),
         _model(*dev),
         _connmgr(65535),
@@ -321,7 +321,7 @@ namespace XMI
                             xmi_mapidtogeometry_fn fcn,
                             xmi_client_t           client,
                             xmi_context_t          context,
-                            size_t                 context_id):      
+                            size_t                 context_id):
       CollInfo<T_Device>(dev),
         _model(*dev),
         _connmgr(65535),
@@ -360,7 +360,7 @@ namespace XMI
       MPINativeInterface<T_Device>                             _minterface;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
       CCMI::Adaptor::Broadcast::BinomialBcastFactory           _broadcast_registration;
-    };    
+    };
 #endif
 
 

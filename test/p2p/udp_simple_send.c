@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/send_latency.c
+ * \file test/p2p/udp_simple_send.c
  * \brief ???
  */
 #include <stdio.h>
@@ -55,26 +55,26 @@ size_t _my_rank;
 void printHexLine2( char * data, size_t num, size_t pad )
 {
   size_t i;
-  std::cout << "<x>: " << (void *)data << ": "; 
+  std::cout << "<x>: " << (void *)data << ": ";
   for ( i=0; i<num; i++ )
   {
-    printf("%02x ", (uint8_t)data[i]); 
+    printf("%02x ", (uint8_t)data[i]);
   }
-  for ( i=0; i<pad; i++ ) 
+  for ( i=0; i<pad; i++ )
   {
-    printf("   "); 
+    printf("   ");
   }
-  printf(" "); 
+  printf(" ");
   for ( i=0; i<num; i++ )
   {
     if ( isgraph((unsigned)data[i]))
     {
       printf ("%c", data[i] );
     } else {
-      printf(".");   
+      printf(".");
     }
   }
-  printf("\n"); 
+  printf("\n");
 }
 /* --------------------------------------------------------------- */
 
@@ -84,7 +84,7 @@ static void rcvdecrement (xmi_context_t   context,
 {
   unsigned * value = (unsigned *) cookie;
   TRACE_ERR((stderr, "(%zd) ***** in rcvdecrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
-  std::cout << _recv_buffer << std::endl; 
+  std::cout << _recv_buffer << std::endl;
   --*value;
 }
 
@@ -113,7 +113,7 @@ static void test_dispatch (
   if (pipe_addr != NULL)
   {
     memcpy (_recv_buffer, pipe_addr, pipe_size);
-    std::cout << "Msg = " << _recv_buffer << std::endl; 	   
+    std::cout << "Msg = " << _recv_buffer << std::endl;
     unsigned * value = (unsigned *) cookie;
     TRACE_ERR((stderr, "(%zd) ****** in test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
     --*value;
@@ -140,7 +140,7 @@ void send_once (xmi_context_t context, xmi_send_t * parameters)
   xmi_result_t result = XMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
   while (_send_active) XMI_Context_advance (context, 100);
-  _send_active = 1; 
+  _send_active = 1;
   TRACE_ERR((stderr, "(%zd) send_once()  After advance\n", _my_rank));
 }
 
@@ -151,7 +151,7 @@ void recv_once (xmi_context_t context)
   while (_recv_active) XMI_Context_advance (context, 100);
   //print received buffer
   fprintf (stdout, "\n Received Message = %s\n",_recv_buffer);
-  printHexLine2( _recv_buffer, 16, 0 ); 
+  printHexLine2( _recv_buffer, 16, 0 );
   fflush (stdout);
   _recv_active = 1;
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
@@ -169,22 +169,22 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   size_t sndlen1;
   unsigned i;
   xmi_send_t parameters;
-  
+
   if (myrank == 0)
   {
     fprintf (stdout, "\n Enter the message to send: ");
     fflush (stdout);
-    fgets(buffer,sizeof(buffer),stdin); 
+    fgets(buffer,sizeof(buffer),stdin);
     //scanf("%s",buffer);
     sndlen1 =strlen(buffer);
-    printHexLine2( buffer, sndlen1, 0 ); 
-    
+    printHexLine2( buffer, sndlen1, 0 );
+
     TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen1));
-  
+
     //header_t header;
     //header.sndlen = sndlen1;
 
-  
+
     parameters.send.dispatch        = dispatch;
     parameters.send.header.iov_base = metadata;
     parameters.send.header.iov_len  = hdrsize;
@@ -196,8 +196,8 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
 
     //barrier ();
 
-  
-   
+
+
     parameters.send.task = 1;
     for (i = 0; i < ITERATIONS; i++)
     {
@@ -213,7 +213,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
       recv_once (context);
     }
   }
-  
+
   return 0;
 }
 
@@ -224,7 +224,7 @@ int main (int argc, char ** argv)
 
   size_t hdrcnt = 1;
   size_t hdrsize =0;
- 
+
 
   char clientname[] = "XMI";
   xmi_client_t client;
@@ -269,38 +269,38 @@ int main (int argc, char ** argv)
   configuration.name = XMI_TASK_ID;
   result = XMI_Configuration_query(client, &configuration);
   _my_rank = configuration.value.intval;
-  std::cout << "Rank = " << _my_rank << std::endl; 
+  std::cout << "Rank = " << _my_rank << std::endl;
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);
   size_t num_tasks = configuration.value.intval;
-  std::cout << "Size = " << num_tasks << std::endl; 
+  std::cout << "Size = " << num_tasks << std::endl;
 
   configuration.name = XMI_WTICK;
   result = XMI_Configuration_query(client, &configuration);
   double tick = configuration.value.doubleval;
-   
+
    size_t val = argc;
-   
-    
+
+
    if (argc==1)
        val=1;
    else
-       val =atoi(argv[1]) ; 
-	   
+       val =atoi(argv[1]) ;
+
 	fprintf (stdout, "** The test will run %d times ***\n", val);
-    fflush(stdout);   
-   
+    fflush(stdout);
+
   for(i=0;i<val;i++){
-  
+
 //	  /* Display some test header information */
 //	  if (_my_rank == 0)
 //	  {
-		
+
 		   test (context, _dispatch[0], hdrsize, 0, _my_rank);
-		
+
 //	  }
-  }  
+  }
 	fprintf (stdout, "** Test completed. **\n");
 
   XMI_Client_finalize (client);

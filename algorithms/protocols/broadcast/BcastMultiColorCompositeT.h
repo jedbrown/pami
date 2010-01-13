@@ -1,4 +1,7 @@
-
+/**
+ * \file algorithms/protocols/broadcast/BcastMultiColorCompositeT.h
+ * \brief ???
+ */
 #ifndef __algorithms_protocols_broadcast_BcastMultiColorCompositeT_h__
 #define __algorithms_protocols_broadcast_BcastMultiColorCompositeT_h__
 
@@ -23,26 +26,26 @@ namespace CCMI
 	class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
       {
       public:
-	
-      BcastMultiColorCompositeT(void                                     * cmd, 
+
+      BcastMultiColorCompositeT(void                                     * cmd,
 				T_Conn                                   * cmgr,
 				Interfaces::NativeInterface              * mf):
 	Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
-	  ( ((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry)->comm(), 
-	    (XMI::Topology*)((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry)->getTopology(0), 
-	    cmgr, 
-	    ((xmi_broadcast_t *)cmd)->cb_done, 
-	    ((xmi_broadcast_t *)cmd)->cookie, 
-	    mf,		       	   
+	  ( ((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry)->comm(),
+	    (XMI::Topology*)((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry)->getTopology(0),
+	    cmgr,
+	    ((xmi_broadcast_t *)cmd)->cb_done,
+	    ((xmi_broadcast_t *)cmd)->cookie,
+	    mf,
 	    ((xmi_broadcast_t *)cmd)->root,
 	    ((xmi_broadcast_t *)cmd)->buf,
 	    ((xmi_broadcast_t *)cmd)->typecount )
 	  {
-	    SyncBcastPost();	    
-	
+	    SyncBcastPost();
+
 	    XMI_GEOMETRY_CLASS *geometry = ((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry);
 	    CCMI::Executor::BarrierExec  *barrier =  (CCMI::Executor::BarrierExec *)
-	      geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);	   	    
+	      geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
 	    barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
 	    //barrier->setConsistency (consistency);
 	    barrier->start();
@@ -53,9 +56,9 @@ namespace CCMI
 	  int root = exec->getRoot();
 
 	  if ( Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root) {
-	    int ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;	  	    
+	    int ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;
 	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_nComplete += ncolors;
-	   
+
 	    for(unsigned c = 0; c < ncolors; c++) {
 	      Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(c);
 	      exec->postReceives();

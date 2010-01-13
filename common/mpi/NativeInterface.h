@@ -1,10 +1,10 @@
 /*
- * \file components/geometry/mpi/MPINativeInterface.h
+ * \file common/mpi/NativeInterface.h
  * \brief ???
  */
 
-#ifndef __components_geometry_mpi_MPINativeInterface_h__
-#define __components_geometry_mpi_MPINativeInterface_h__
+#ifndef __common_mpi_NativeInterface_h__
+#define __common_mpi_NativeInterface_h__
 
 #include "common/GlobalInterface.h"
 #include "Global.h"

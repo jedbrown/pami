@@ -101,7 +101,7 @@ namespace XMI
       {
         XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
         //XMI_assert(src_topo != NULL);
-        if(src_topo && (src_topo->type()!=XMI_EMPTY_TOPOLOGY)) 
+        if(src_topo && (src_topo->type()!=XMI_EMPTY_TOPOLOGY))
         {
           _root = src_topo->index2Rank(0);
 

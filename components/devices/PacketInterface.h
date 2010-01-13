@@ -331,7 +331,7 @@ namespace XMI
           /// by the packet device. The packet device will invoke the
           /// completion event function when the packet has been completely
           /// processed.
-          /// 
+          ///
           /// The asychronous interfaces allow the packet model and packet
           /// implementations to optimize for performance by avoiding the
           /// overhead to construct an internal packet state object if the

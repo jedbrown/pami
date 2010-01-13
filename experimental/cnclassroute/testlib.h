@@ -1,3 +1,10 @@
+/**
+ * \file experimental/cnclassroute/testlib.h
+ * \brief ???
+ */
+#ifndef __experimental_cnclassroute_testlib_h__
+#define __experimental_cnclassroute_testlib_h__
+
 #include <stdio.h>
 
 #include "cnclassroute.h"
@@ -373,3 +380,5 @@ void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr, int errs
 		}
 	}
 }
+
+#endif

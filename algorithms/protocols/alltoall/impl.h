@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/alltoall/async_impl.h
+ * \file algorithms/protocols/alltoall/impl.h
  * \brief CCMI composite template implementations
  */
 

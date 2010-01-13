@@ -1,4 +1,3 @@
-
 /**
  * \file algorithms/connmgr/ConnectionManager.h
  * \brief ???

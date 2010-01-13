@@ -1,4 +1,11 @@
+/**
+ * \file experimental/cnclassroute/cnclassroute.h
+ * \brief ???
+ */
 /* this should all be in xmi.h? */
+
+#ifndef __experimental_cnclassroute_cnclassroute_h__
+#define __experimental_cnclassroute_cnclassroute_h__
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -25,3 +32,5 @@ typedef struct {
 #define CR_SIGN_NEG	1
 
 #define CR_LINK(n,s)	(1 << (n * 2 + s))
+
+#endif

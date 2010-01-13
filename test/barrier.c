@@ -119,7 +119,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);
       return 1;
     }
-  
+
   xmi_barrier_t barrier;
   barrier.xfer_type = XMI_XFER_BARRIER;
   barrier.cb_done   = cb_barrier;

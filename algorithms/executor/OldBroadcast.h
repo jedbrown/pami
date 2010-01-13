@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/executor/Broadcast.h
+ * \file algorithms/executor/OldBroadcast.h
  * \brief ???
  */
 

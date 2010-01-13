@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/geometry/CollFactory.h
+ * \file algorithms/interfaces/CollFactoryInterface.h
  * \brief ???
  */
 
-#ifndef __components_geometry_CollFactory_h__
-#define __components_geometry_CollFactory_h__
+#ifndef __algorithms_interfaces_CollFactoryInterface_h__
+#define __algorithms_interfaces_CollFactoryInterface_h__
 
 #include "sys/xmi.h"
 

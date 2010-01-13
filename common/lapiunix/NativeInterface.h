@@ -1,10 +1,10 @@
 /*
- * \file components/geometry/lapiunix/lapiunixnativeinterface.h
+ * \file common/lapiunix/NativeInterface.h
  * \brief ???
  */
 
-#ifndef __components_geometry_lapiunix_lapiunixnativeinterface_h__
-#define __components_geometry_lapiunix_lapiunixnativeinterface_h__
+#ifndef __common_lapiunix_NativeInterface_h__
+#define __common_lapiunix_NativeInterface_h__
 
 #include "common/GlobalInterface.h"
 #include "Global.h"

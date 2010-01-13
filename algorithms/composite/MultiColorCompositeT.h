@@ -1,4 +1,7 @@
-
+/**
+ * \file algorithms/composite/MultiColorCompositeT.h
+ * \brief ???
+ */
 #ifndef __algorithms_composite_MultiColorCompositeT_h__
 #define __algorithms_composite_MultiColorCompositeT_h__
 
@@ -6,14 +9,14 @@
 namespace CCMI
 {
   namespace Executor
-  {    
+  {
     ///
     /// \brief Get optimal colors based on bytes and schedule
     ///
     typedef void      (*GetColorsFn) (XMI::Topology             * t,
 				      unsigned                    bytes,
 				      unsigned                  * colors,
-				      unsigned                  & ncolors);      
+				      unsigned                  & ncolors);
     ///
     ///  \brief Base class for synchronous broadcasts
     ///
@@ -34,7 +37,7 @@ namespace CCMI
         ///
         xmi_event_function                            _cb_done;
 	void                                        * _clientdata;
-	
+
         T_Exec                                        _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
         T_Sched                                       _schedules  [NUMCOLORS];
         char *                                        _srcbufs    [NUMCOLORS];
@@ -53,14 +56,14 @@ namespace CCMI
       static void staticRecvFn(xmi_context_t context, void *executor, xmi_result_t err)
       {
 	xmi_quad_t *info = NULL;
-	
+
 	T_Exec *exe = (T_Exec *) executor;
-	
+
 	TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::MultiColorCompositeT::staticRecvFn() \n",(int)exe));
-	
+
 	exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
       }
-      
+
       ///
       /// \brief The Broadcast Constructor
       ///
@@ -92,28 +95,28 @@ namespace CCMI
 	  }
 	  _bytecounts[_numColors-1]  = bytes -  (aligned_bytes * ( _numColors - 1));
 	}
-	
+
 	for(unsigned c = 0; c < _numColors; c++) {
 	  CCMI_assert (c < NUMCOLORS);
 	  T_Exec *exec  =
 	    new (& _executors[c]) T_Exec (mf,
-					  comm, 
+					  comm,
 					  cmgr,
 					  _colors[c],
 					  true);
-	  
+
 	  exec->setInfo (root, _srcbufs[c], _bytecounts[c]);
 	  exec->setDoneCallback (cb_composite_done, this);
-	  
+
 	  addExecutor (exec);
 	  COMPILE_TIME_ASSERT(sizeof(_schedules[0]) >= sizeof(T_Sched));
 	  new (&_schedules[c]) T_Sched(mf->myrank(), topology, _colors[c]);
 	  exec->setSchedule (&_schedules[c]);
 	}
       }
-      
+
       void setDoneCallback(XMI_Callback_t  cb_done, void * clientdata) { _cb_done = cb_done; _clientdata = clientdata;}
-      
+
       ///
       /// \brief For sync broadcasts, the done call back to be called
       ///        when barrier finishes
@@ -122,12 +125,12 @@ namespace CCMI
       {
 	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
 	CCMI_assert (composite != NULL);
-	
+
 	//printf ("In cb_barrier_done donec=%d\n", composite->_doneCount);
 	for(unsigned i=0; i < composite->_numColors; ++i)
         {
 	  composite->getExecutor(i)->start();
-	}	
+	}
 
 	CCMI_assert (composite->_doneCount <  composite->_nComplete);
 	++composite->_doneCount;
@@ -137,15 +140,15 @@ namespace CCMI
 	  composite->_cb_done(NULL, composite->_clientdata,XMI_SUCCESS);
 	}
       }
-      
+
       static void cb_composite_done(xmi_context_t context, void *me, xmi_result_t err)
       {
 	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
 	CCMI_assert (composite != NULL);
-	
+
 	CCMI_assert (composite->_doneCount <  composite->_nComplete);
 	++composite->_doneCount;
-	
+
 	if(composite->_doneCount == composite->_nComplete) // call users done function
         {
 	  composite->_cb_done(context, composite->_clientdata, XMI_SUCCESS);
@@ -153,7 +156,7 @@ namespace CCMI
 	}
       }
     };  //-- MultiColorCompositeT
-    
+
   };  //- end namespace Adaptor
 };  //- end CCMI
 
