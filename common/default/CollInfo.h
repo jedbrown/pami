@@ -35,8 +35,8 @@
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
 
-#define OLD_CCMI_BARRIER
-#define OLD_CCMI_BROADCAST
+//#define OLD_CCMI_BARRIER
+//#define OLD_CCMI_BROADCAST
 
 namespace XMI
 {
@@ -362,7 +362,6 @@ namespace XMI
       CCMI::Adaptor::Broadcast::BinomialBcastFactory           _broadcast_registration;
     };
 #endif
-
 
     template <class T_Device, class T_Sysdep>
     class CCMIRingAllreduceInfo:public CollInfo<T_Device>
