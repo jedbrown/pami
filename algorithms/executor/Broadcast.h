@@ -47,7 +47,6 @@ namespace CCMI
       T                                         *  _connmgr;
       unsigned                                     _color;
       bool                                         _postReceives;
-      bool                                         _mactive;
 
       //Private method
       void             sendNext ();
@@ -83,7 +82,6 @@ namespace CCMI
         _msend.msginfo     =  info;
         _msend.msgcount    =  1;
 	_msend.roles       = -1U;
-	_mactive           =  false;
       }
 
       //-----------------------------------------
@@ -141,7 +139,7 @@ namespace CCMI
 	xmi_multicast_t mrecv;
 	memcpy (&mrecv, &_msend, sizeof(xmi_multicast_t));
 
-  TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
+	TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
 	mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
 	mrecv.dst_participants   = (xmi_topology_t *)&_selftopology;
 	mrecv.cb_done.function   = _cb_done;
@@ -164,29 +162,32 @@ inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
   TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::start()\n",(int)this));
 
-  _mactive = false;
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
     _cb_done (NULL, _clientdata, XMI_SUCCESS);
   else if(_native->myrank() == _root)
   {
     _pwq.produceBytes (_buflen);
-    sendNext ();
   }
+  sendNext ();
 }
 
 template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 {
-  CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
-  //_mactive = true;  //not sure if I need this flag??
+  //CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
 
-  TRACE_FLOW((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() bytes %d, ndsts %d\n",(int)this, _buflen, _dsttopology.size()));
+  if(_dsttopology.size() == 0) {
+    _cb_done(NULL, _clientdata, XMI_SUCCESS);
+    return;
+  }
+  
+  TRACE_FLOW((stderr, "%d:Executor::BroadcastExec::sendNext() bytes %d, ndsts %d\n",_native->myrank(), _buflen, _dsttopology.size()));
   //for(unsigned i = 0; i < _dsttopology.size(); ++i) TRACE_FLOW((stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i)));
-
+  
   //for(int dcount = 0; dcount < _nmessages; dcount++)
   //TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() send to %d for size %d\n",(int)this, _dstranks[dcount], _curlen));
-
+  
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
   _mdata._root  = _root;
