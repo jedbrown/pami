@@ -43,7 +43,7 @@ namespace XMI {
     virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie) {
       static size_t dispatch = DISPATCH_START;
 
-      //fprintf (stderr, "In set dispatch, id = %d\n", dispatch);
+      //fprintf (stderr, "setDispatch, id = %d, fn = %p\n", dispatch, fn.multicast);
       /*new (&_protocol) P2pDispatchMulticastProtocol(dispatch, fn.multicast, cookie, *_device, _client, _context, _contextid, _status);
       //_protocol.registerMcastRecvFunction (dispatch, fn.multicast, cookie);*/
 
@@ -52,8 +52,13 @@ namespace XMI {
       options.type = XMI_MULTICAST;
       options.config = NULL;
       options.hint.multicast.global = 1;
-      options.hint.multicast.one_sided = 1;
-      options.hint.multicast.active_message = 1;
+      if(fn.multicast == NULL)
+        options.hint.multicast.all_sided = 1;
+      else
+      {  
+        options.hint.multicast.one_sided = 1;
+        options.hint.multicast.active_message = 1;
+      }
       XMI_Dispatch_set_new (_context, dispatch, fn, cookie, options);
 
       CCMI_assert (_status == XMI_SUCCESS);
@@ -69,7 +74,8 @@ namespace XMI {
       else
 	printf ("%d: Calling xmi_multicast send\n", myrank());
 #endif
-
+      //fprintf(stderr,"multicast %zd, src %p/%p dst %p/%p bytes %zd\n",
+      //        _dispatch, mcast->src_participants, mcast->src, mcast->dst_participants, mcast->dst, mcast->bytes);
       mcast->dispatch =  _dispatch;
       mcast->client   =  _client;
       mcast->context  =  _contextid;

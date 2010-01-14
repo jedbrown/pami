@@ -69,11 +69,11 @@ namespace CCMI
       _comm_schedule (NULL),
       _native(mf),
       _comm(comm),
+      _dsttopology((xmi_task_t *)&_dstranks, MAX_PARALLEL),
+      _selftopology(mf->myrank()),
       _connmgr(connmgr),
       _color(color),
-      _postReceives (post_recvs),
-      _dsttopology((xmi_task_t *)&_dstranks, MAX_PARALLEL),
-      _selftopology(mf->myrank())
+      _postReceives (post_recvs)
       {
         _clientdata        =  0;
         _root              =  (unsigned)-1;
@@ -104,7 +104,7 @@ namespace CCMI
         _root           =  root;
 	unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
 	_msend.connection_id = connid;
-
+	_buflen = len;
 	//Setup pipework queue
 	_pwq.configure (NULL, buf, len, 0);
       }
@@ -141,6 +141,7 @@ namespace CCMI
 	xmi_multicast_t mrecv;
 	memcpy (&mrecv, &_msend, sizeof(xmi_multicast_t));
 
+  TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
 	mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
 	mrecv.dst_participants   = (xmi_topology_t *)&_selftopology;
 	mrecv.cb_done.function   = _cb_done;
@@ -180,7 +181,8 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
   //_mactive = true;  //not sure if I need this flag??
 
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext()\n",(int)this));
+  TRACE_FLOW((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() bytes %d, ndsts %d\n",(int)this, _buflen, _dsttopology.size()));
+  //for(unsigned i = 0; i < _dsttopology.size(); ++i) TRACE_FLOW((stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i)));
 
   //for(int dcount = 0; dcount < _nmessages; dcount++)
   //TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() send to %d for size %d\n",(int)this, _dstranks[dcount], _curlen));

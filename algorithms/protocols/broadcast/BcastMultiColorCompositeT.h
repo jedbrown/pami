@@ -53,12 +53,13 @@ namespace CCMI
 
 	void SyncBcastPost () {
 	  Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(0);
-	  int root = exec->getRoot();
+	  unsigned root = exec->getRoot();
 
 	  if ( Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root) {
-	    int ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;
+	    unsigned ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;	  	    
 	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_nComplete += ncolors;
-
+	   
+        //fprintf(stderr,"SyncBcastPost ncolors %d\n",ncolors);
 	    for(unsigned c = 0; c < ncolors; c++) {
 	      Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(c);
 	      exec->postReceives();
@@ -69,6 +70,6 @@ namespace CCMI
       };
     };
   };
-};
+}; 
 
 #endif
