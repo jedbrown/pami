@@ -18,7 +18,7 @@
 #include <iostream>
 
 #ifndef TRACE_COUT
-#define TRACE_COUT(x) std::cout << "<" << __global.mapping.task() << ">: " <<  x << std::endl;
+#define TRACE_COUT(x) //std::cout << "<" << __global.mapping.task() << ">: " <<  x << std::endl;
 #endif
 
 void printHexLine( char * data, size_t num, size_t pad )
