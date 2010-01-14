@@ -102,7 +102,7 @@ namespace CCMI
     };  //-- end class Composite
 
     //The old composite class that depends on Executor::Executor
-    typedef CompositeT<6, Executor::Executor, Executor::Executor> OldComposite;
+    typedef CompositeT<6, Executor, Executor> OldComposite;
   };  //-- end namespace Executor
 };  //-- end namespace CCMI
 

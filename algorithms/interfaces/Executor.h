@@ -9,6 +9,7 @@
 #include "algorithms/ccmi.h"
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
+#include "PipeWorkQueue.h"
 
 namespace CCMI
 {
