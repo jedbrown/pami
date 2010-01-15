@@ -10,8 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-#SUBDIRS		= mu 
-SUBDIRS		=  
+SUBDIRS		= mu 
 NOTBUILT        =
 #@LIBNAME@-""-DEVICE_SOURCES=
 #DEVICENAME     = @LIBNAME@-""-DEVICE

@@ -78,6 +78,15 @@ namespace XMI
             _niov = 1;
           }
 
+          inline void setSourceBuffer (void * addr, size_t length)
+          {
+            __iov[0].iov_base = addr;
+            __iov[0].iov_len  = length;
+
+            _iov  = &__iov[0];
+            _niov = 1;
+          }
+
           inline void setSourceBuffer (struct iovec (&iov)[2])
           {
             __iov[0].iov_base = iov[0].iov_base;

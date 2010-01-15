@@ -64,6 +64,8 @@ namespace XMI
         inline size_t fetch_and_dec_impl ()
         {
           //return __sync_fetch_and_sub (&_atom, 1);
+          XMI_abortf("unimplemented");
+          return 0;
         };
 
         /// \see XMI::Atomic::Interface::Counter::fetch_and_clear
@@ -71,13 +73,17 @@ namespace XMI
         {
           //return __sync_fetch_and_and (&_atom, 0);
 	  //_atom = 0;
+	  size_t value = _counter;
 		_counter = 0;
+	  return value;
         };
 
         /// \see XMI::Atomic::Interface::Counter::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           //return __sync_bool_compare_and_swap (&_atom, compare, swap);
+          XMI_abortf("unimplemented");
+          return 0;
         };
 
 	inline void *returnLock_impl() { return (void *)&_counter; }

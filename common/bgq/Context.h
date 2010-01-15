@@ -40,7 +40,7 @@
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
-
+#define MU_DEVICE
 namespace XMI
 {
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
@@ -386,8 +386,11 @@ namespace XMI
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
+#ifdef MU_DEVICE
+            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
+#else
             new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, __global.mapping.task(), _context, _contextid, result);
-            //new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
+#endif
           }
 
         return result;

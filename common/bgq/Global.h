@@ -483,7 +483,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   mapcache->size = cacheAnchorsPtr->numActiveRanksGlobal;
   mapcache->local_size = cacheAnchorsPtr->numActiveRanksLocal; //hack
-  fprintf(stderr,"local_size:%d\n", mapcache->local_size);
+  fprintf(stderr,"local_size:%zu\n", mapcache->local_size);
 
 
   size_t mapsize = sizeof(cacheAnchors_t) +
