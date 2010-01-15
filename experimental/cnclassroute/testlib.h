@@ -11,9 +11,6 @@
 
 char *dim_names = XMI_DIM_NAMES;
 
-extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
-						rect_t *comm, int dim0, classroute_t *cr);
-
 typedef struct {
 	rect_t rect;
 	coord_t root;
@@ -86,6 +83,36 @@ int parse_rect(char *s, char **e, rect_t *r) {
 	if (x != 0) return x;
 	if (r0.ll.dims != r0.ur.dims) { *e = s; return -1; }
 	*r = r0;
+	return 0;
+}
+
+int parse_sparse(char *s, char **ep, rect_t *r, coord_t **exc, int *nexc) {
+	char *t = NULL, *u;
+	int e, n;
+	coord_t *c;
+	e = parse_rect(s, &t, r);
+	if (e != 0) {
+		*ep = t;
+		return e;
+	}
+	if (!t || *t == '\0') {
+		*ep = t;
+		*nexc = 0;
+		*exc = NULL;
+		return 0;
+	}
+	for (n = 0, u = t; *u; ++u) if (*u == '-') ++n;
+	c = (coord_t *)malloc(n * sizeof(*c));
+	n = 0;
+	while (*t && *t == '-') {
+		++t;
+		e = parse_coord(t, &u, &c[n]);
+		if (e != 0) { *ep = u; return e; }
+		t = u;
+		++n;
+	}
+	*exc = c;
+	*nexc = n;
 	return 0;
 }
 
@@ -245,6 +272,32 @@ void make_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	coord_t me = { 0 };
 	recurse_dims(cw, comm, &me, cr);
 }
+
+#ifdef SUPPORT_SPARSE_RECTANGLE
+
+void recurse_dims_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl,
+				coord_t *me, classroute_t *cr) {
+	int x;
+	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
+		me->coords[me->dims] = x;
+		++me->dims;
+		if (me->dims == cw->rect.ll.dims) {
+			int r = coord2rank(comm, me);
+			build_node_classroute_sparse(&cw->rect, &cw->root, me,
+							comm, excl, nexcl,
+							cw->pri_dim, &cr[r]);
+		} else {
+			recurse_dims_sparse(cw, comm, excl, nexcl, me, cr);
+		}
+		--me->dims;
+	}
+}
+void make_classroutes_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl, classroute_t *cr) {
+	coord_t me = { 0 };
+	recurse_dims_sparse(cw, comm, excl, nexcl, &me, cr);
+}
+
+#endif /* SUPPORT_SPARSE_RECTANGLE */
 
 void chk_conn(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	int z = rect_size(comm);

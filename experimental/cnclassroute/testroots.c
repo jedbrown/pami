@@ -111,20 +111,11 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
-		int min = 99999999;
-		int min_dim = -1;
-		for (x = 0; x < world.rect.ll.dims; ++x) {
-			int size = world.rect.ur.coords[x] - world.rect.ll.coords[x] + 1;
-			world.root.coords[x] = world.rect.ll.coords[x] + size / 2;
-			if (size > 1 && size <= min) {
-				min = size;
-				min_dim = x;
-			}
-		}
-		world.root.dims = world.rect.ll.dims;
-		world.pri_dim = min_dim;
 
-		world.root.coords[min_dim] = world.rect.ll.coords[min_dim];
+		coord_t root1, root2;
+		pick_world_root_pair(&world.rect, &root1, &root2, &world.pri_dim);
+
+		world.root = root1;
 		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 		if (!cr) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
@@ -145,7 +136,7 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		world.root.coords[min_dim] = world.rect.ur.coords[min_dim];
+		world.root = root2;
 		memset(cr, -1, z * sizeof(classroute_t));
 		make_classroutes(&world, &comm, cr);
 		if (sanity) chk_all_sanity(&world, &comm, cr);
