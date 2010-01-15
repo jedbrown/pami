@@ -201,7 +201,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
     parameters.send.task = 1;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, ITERATIONS));
+      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %d\n", myrank, i, ITERATIONS));
       send_once (context, &parameters);
     }
   }
@@ -209,7 +209,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   {
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %zd\n", myrank, i, ITERATIONS));
+      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %d\n", myrank, i, ITERATIONS));
       recv_once (context);
     }
   }
@@ -252,7 +252,7 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
+  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %d\n", &_recv_active, _recv_active));
   xmi_result_t result = XMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
                                           fn,
@@ -288,7 +288,7 @@ int main (int argc, char ** argv)
    else
        val =atoi(argv[1]) ;
 
-	fprintf (stdout, "** The test will run %d times ***\n", val);
+	fprintf (stdout, "** The test will run %zd times ***\n", val);
     fflush(stdout);
 
   for(i=0;i<val;i++){

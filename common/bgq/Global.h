@@ -51,7 +51,7 @@ namespace XMI
           _mapcache ()
         {
 	  xmi_coord_t ll, ur;
-	  size_t min, max;
+	  size_t min=0, max=0;
           const char   * shmemfile = "/unique-xmi-global-shmem-file";
           //size_t   bytes     = 1024*1024;
           size_t   bytes     = 32*1024;
