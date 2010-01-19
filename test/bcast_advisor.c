@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   }
 
   {
-    int _n = 1;
+    size_t _n = 1;
     result = XMI_Context_createv(client, NULL, 0, &context, &_n);
   }
 

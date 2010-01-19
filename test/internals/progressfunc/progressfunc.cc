@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include "sys/xmi.h"
+#include "Client.h"
 #include "components/devices/generic/ProgressFunctionMsg.h"
 #include "Global.h"
 
