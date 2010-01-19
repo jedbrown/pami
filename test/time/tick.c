@@ -9,7 +9,7 @@
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
-  int num=1;
+  size_t num=1;
   xmi_context_t context;
   xmi_configuration_t query = {name:XMI_WTICK};
   double value;

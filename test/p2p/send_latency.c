@@ -66,9 +66,7 @@ static void decrement (xmi_context_t   context,
 /* --------------------------------------------------------------- */
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
-    size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
-    xmi_task_t           task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
@@ -114,7 +112,7 @@ void recv_once (xmi_context_t context)
   TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, size_t myrank)
+unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, xmi_task_t myrank, xmi_endpoint_t origin, xmi_endpoint_t target)
 {
   TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen));
   _recv_active = 1;
@@ -143,7 +141,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   unsigned long long t1 = XMI_Wtimebase();
   if (myrank == 0)
   {
-    parameters.send.task = 1;
+    parameters.send.dest = target;
     for (i = 0; i < ITERATIONS; i++)
     {
       TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
@@ -156,7 +154,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   }
   else if (myrank == 1)
   {
-    parameters.send.task = 0;
+    parameters.send.dest = origin;
     for (i = 0; i < ITERATIONS; i++)
     {
       TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
@@ -193,7 +191,7 @@ int main (int argc, char ** argv)
   TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
   xmi_context_t context;
   TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
-  { int _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
+  { size_t _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
   TRACE_ERR((stderr, "... before barrier_init()\n"));
@@ -274,6 +272,9 @@ int main (int argc, char ** argv)
 
   char str[10240];
 
+  xmi_endpoint_t origin = XMI_Client_endpoint (client, 0, 0);
+  xmi_endpoint_t target = XMI_Client_endpoint (client, 1, 0);
+
   size_t sndlen;
   for (sndlen = 0; sndlen < BUFSIZE; sndlen = sndlen*3/2+1)
   {
@@ -284,9 +285,9 @@ int main (int argc, char ** argv)
     for (i=0; i<hdrcnt; i++)
     {
 #ifdef WARMUP
-      test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
+      test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, origin, target);
 #endif
-      cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank);
+      cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, origin, target);
       usec   = cycles * tick * 1000000.0;
       index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
     }

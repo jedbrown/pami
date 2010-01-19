@@ -25,9 +25,7 @@ static void recv_done (xmi_context_t   context,
 
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
-    size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
-    xmi_task_t           task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
@@ -83,7 +81,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -162,7 +160,7 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
     TRACE((stderr, "before send ...\n"));
-    parameters.send.task = 1;
+    parameters.send.dest = XMI_Client_endpoint (client, 1, 0);
     result = XMI_Send (context, &parameters);
     if (result != XMI_SUCCESS)
     {
@@ -198,7 +196,7 @@ int main (int argc, char ** argv)
     TRACE((stderr, "... after recv advance loop\n"));
 
     TRACE((stderr, "before send ...\n"));
-    parameters.send.task = 0;
+    parameters.send.dest = XMI_Client_endpoint (client, 0, 0);
     result = XMI_Send (context, &parameters);
     if (result != XMI_SUCCESS)
     {
@@ -227,7 +225,7 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
     TRACE((stderr, "before send ...\n"));
-    parameters.send.task = 1;
+    parameters.send.dest = XMI_Client_endpoint (client, 1, 0);
     parameters.send.dispatch = 1;
     result = XMI_Send (context, &parameters);
     if (result != XMI_INVAL)

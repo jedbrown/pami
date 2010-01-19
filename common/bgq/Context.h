@@ -69,10 +69,13 @@ namespace XMI
 
   class Context : public Interface::Context<XMI::Context>
   {
+#warning fix work allocator ...
+#if 0
 	static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
 		XMI::Context *context = (XMI::Context *)ctx;
 		context->_workAllocator.returnObject(cookie);
 	}
+#endif
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				XMI::Device::Generic::Device *generics,
@@ -88,8 +91,8 @@ namespace XMI
 #ifdef MU_DEVICE
           _mu (),
 #endif
-          _shmem (),
-	  _workAllocator()
+          _shmem ()//,
+//	  _workAllocator()
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -106,15 +109,15 @@ namespace XMI
         // ----------------------------------------------------------------
 
 #ifdef MU_DEVICE
-        _mu.init (&_sysdep);
+        _mu.init (&_sysdep, (xmi_context_t)this, id);
 	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
 #endif
-        _shmem.init (&_sysdep);
+        _shmem.init (&_sysdep, (xmi_context_t)this, id);
 
         _get = (void *) _request.allocateObject ();
         xmi_result_t result ;
 
-        new ((void *)_get) GetShmem(_shmem, __global.mapping.task(), _context, _contextid, result);
+        new ((void *)_get) GetShmem(_shmem, result);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -139,6 +142,8 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
       {
+#warning fix progress stuff
+#if 0
         XMI::Device::ProgressFunctionMsg *work =
 		(XMI::Device::ProgressFunctionMsg *)_workAllocator.allocateObject();
 	work->setFunc(work_fn);
@@ -147,6 +152,7 @@ namespace XMI
 	work->setContext(_contextid);
 	work->setClient(_clientid);
 	work->postWorkDirect();
+#endif
 	return XMI_SUCCESS;
       }
 
@@ -284,7 +290,7 @@ namespace XMI
       {
         ((GetShmem*)_get)->getimpl (	parameters->rma.done_fn,
                                 parameters->rma.cookie,
-                                parameters->rma.task,
+                                parameters->rma.dest,
                                 parameters->rget.bytes,
                                 (Memregion*)parameters->rget.local_mr,
                                 (Memregion*)parameters->rget.remote_mr,
@@ -387,9 +393,9 @@ namespace XMI
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
 #ifdef MU_DEVICE
-            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, __global.mapping.task(), _context, _contextid, result);
+            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _mu, result);
 #else
-            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, __global.mapping.task(), _context, _contextid, result);
+            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _shmem, result);
 #endif
           }
 
@@ -465,7 +471,8 @@ namespace XMI
       void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
       ContextLock _lock;
-      MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+#warning fix work allocator
+      //MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
       ProtocolAllocator _protocolAllocator;
   }; // end XMI::Context
 }; // end namespace XMI

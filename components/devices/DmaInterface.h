@@ -40,7 +40,7 @@ namespace XMI
           /// \param[in] device  dma device
           /// \param[in] context Communication context
           ///
-          inline DmaModel (T_Device & device, xmi_client_t client, size_t context) {};
+          inline DmaModel (T_Device & device) {};
           inline ~DmaModel () {};
 
           ///
@@ -54,12 +54,13 @@ namespace XMI
           /// may be constructed to maintain the send state until the callback
           /// is invoked.
           ///
-          /// \attention All CDI dma model derived classes \b must
+          /// \attention All dma model interface derived classes \b must
           ///            implement the postDmaPut_impl() method.
           ///
-          /// \param[in] obj              Location to store the dma transfer object
-          /// \param[in] cb               Callback to invoke when the operation is complete
-          /// \param[in] remote_rank      Global rank of the target
+          /// \param[in] state            Location to store the internal dma transfer state
+          /// \param[in] local_fn         Callback to invoke when the operation is complete
+          /// \param[in] cookie           Completion callback opaque application data
+          /// \param[in] target_task      Global task identifier of the target
           /// \param[in] local_memregion  Local data memory region
           /// \param[in] local_offset     Offset of data buffer in the local memory region
           /// \param[in] remote_memregion Remote data memory region
@@ -76,7 +77,7 @@ namespace XMI
           inline bool postDmaPut (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   local_fn,
                                   void               * cookie,
-                                  size_t               target_rank,
+                                  size_t               target_task,
                                   Memregion          * local_memregion,
                                   size_t               local_offset,
                                   Memregion          * remote_memregion,
@@ -94,12 +95,13 @@ namespace XMI
           /// may be constructed to maintain the send state until the callback
           /// is invoked.
           ///
-          /// \attention All CDI dma model derived classes \b must
+          /// \attention All dma model interface derived classes \b must
           ///            implement the postDmaGet_impl() method.
           ///
-          /// \param[in] obj              Location to store the dma transfer object
-          /// \param[in] cb               Callback to invoke when the operation is complete
-          /// \param[in] remote_rank      Global rank of the target
+          /// \param[in] state            Location to store the internal dma transfer state
+          /// \param[in] local_fn         Callback to invoke when the operation is complete
+          /// \param[in] target_task      Global task identifier of the target
+          /// \param[in] cookie           Completion callback opaque application data
           /// \param[in] local_memregion  Local data memory region
           /// \param[in] local_offset     Offset of data buffer in the local memory region
           /// \param[in] remote_memregion Remote data memory region
@@ -129,7 +131,7 @@ namespace XMI
           uint8_t              (&state)[T_StateBytes],
           xmi_event_function   local_fn,
           void               * cookie,
-          size_t               target_rank,
+          size_t               target_task,
           Memregion          * local_memregion,
           size_t               local_offset,
           Memregion          * remote_memregion,
@@ -139,7 +141,7 @@ namespace XMI
         return static_cast<T_Model*>(this)->postDmaPut_impl (state,
                                                              local_fn,
                                                              cookie,
-                                                             target_rank,
+                                                             target_task,
                                                              local_memregion,
                                                              local_offset,
                                                              remote_memregion,
@@ -153,7 +155,7 @@ namespace XMI
           uint8_t              (&state)[T_StateBytes],
           xmi_event_function   local_fn,
           void               * cookie,
-          size_t               target_rank,
+          size_t               target_task,
           Memregion          * local_memregion,
           size_t               local_offset,
           Memregion          * remote_memregion,
@@ -163,7 +165,7 @@ namespace XMI
         return static_cast<T_Model*>(this)->postDmaGet_impl (state,
                                                              local_fn,
                                                              cookie,
-                                                             target_rank,
+                                                             target_task,
                                                              local_memregion,
                                                              local_offset,
                                                              remote_memregion,

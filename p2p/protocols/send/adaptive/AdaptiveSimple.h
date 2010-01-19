@@ -490,7 +490,12 @@ namespace XMI
             send->rts.fromRank = _fromRank;                 // Origen Rank
             send->rts.bytes = parameters->send.data.iov_len;// Total bytes to send
             send->rts.va_send = send;                       // Virtual Address sender
-            send->rts.destRank = parameters->send.task;     // Target Rank
+
+            xmi_task_t task;
+            size_t offset;
+            XMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
+
+            send->rts.destRank = task;     // Target Rank
             send->rts.mbytes = parameters->send.header.iov_len; // Number of  Quads
             send->msginfo = parameters->send.header.iov_base;  // Message info
 
@@ -520,7 +525,7 @@ namespace XMI
               }
 
 
-            TRACE_ERR((stderr, "\n		Adpative_AdaptiveSimple Info sender  cookie=%p , send =%p ,local_fn =%p , remote_fn =%p,  Sender rank  = %d, msinfo= %p , msgbytes = %d , bytes = %d \n", parameters->events.cookie, send, parameters->events.local_fn , parameters->events.remote_fn, parameters->send.task,   parameters->send.header.iov_base,  parameters->send.header.iov_len, parameters->send.data.iov_len));
+            TRACE_ERR((stderr, "\n		Adpative_AdaptiveSimple Info sender  cookie=%p , send =%p ,local_fn =%p , remote_fn =%p,  Sender rank  = %d, msinfo= %p , msgbytes = %d , bytes = %d \n", parameters->events.cookie, send, parameters->events.local_fn , parameters->events.remote_fn, parameters->send.dest,   parameters->send.header.iov_base,  parameters->send.header.iov_len, parameters->send.data.iov_len));
 
 
             //Send if queue is empty

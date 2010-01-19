@@ -17,6 +17,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include "Global.h"
+
 #ifndef TRACE_COUT
 #define TRACE_COUT(x) //std::cout << "<" << __global.mapping.task() << ">: " <<  x << std::endl;
 #endif

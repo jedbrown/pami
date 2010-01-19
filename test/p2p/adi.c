@@ -59,9 +59,7 @@ static void RecvLongDoneCB(xmi_context_t   context,
 }
 
 static void RecvLongCB(xmi_context_t   context,
-                       size_t          contextid,
                        void          * cookie,
-                       xmi_task_t      remote_task,
                        void          * _msginfo,
                        size_t          msginfo_size,
                        void          * _addr,
@@ -80,14 +78,12 @@ static void RecvLongCB(xmi_context_t   context,
   recv->data.simple.bytes = size;
 
 /** \todo I need each channel to have an id number/index to write a multi-context recv-queue. */
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%d msginfo=%x len=%zu -- context id = %zu\n",
-         rank, context, remote_task, msginfo[0], size, contextid);
+  printf("Rank=%zu Channel=%p <Got  short msg>   msginfo=%x len=%zu -- context id =   \n",
+         rank, context, msginfo[0], size);
 }
 
 static void RecvShortCB(xmi_context_t   context,
-                        size_t          contextid,
                         void          * cookie,
-                        xmi_task_t      remote_task,
                         void          * _msginfo,
                         size_t          msginfo_size,
                         void          * _addr,
@@ -98,7 +94,7 @@ static void RecvShortCB(xmi_context_t   context,
   assert(msginfo_size >= sizeof(unsigned));
   unsigned* msginfo = (unsigned*)_msginfo;
   unsigned* data    = (unsigned*)_addr;
-  printf("Rank=%zu Channel=%p <Got  short msg>   remote=%d msginfo=%x len=%zu data=%x -- context id = %zu\n", rank, context, remote_task, msginfo[0], size, data[0], contextid);
+  printf("Rank=%zu Channel=%p <Got  short msg>   msginfo=%x len=%zu data=%x -- context id =   \n", rank, context, msginfo[0], size, data[0]);
   done.s.r = 1;
 }
 
@@ -184,7 +180,7 @@ static void init()
   XMI_Client_initialize("XMId ADI Example", &client);
 
 /** \todo Do I really have to loop to create all the contexts? */
-    int num = NUM_CONTEXTS;
+    size_t num = NUM_CONTEXTS;
     XMI_Context_createv(client, NULL, 0, contexts, &num);
 
   unsigned i;

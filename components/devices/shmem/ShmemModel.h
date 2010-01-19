@@ -58,12 +58,10 @@ namespace XMI
         ///
         /// \param[in] device  Shared memory device
         ///
-        ShmemModel (T_Device & device, xmi_client_t client, size_t context) :
-            Interface::PacketModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) > (device, client, context),
-            Interface::DmaModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) > (device, client, context),
-            _device (device),
-            _client (client),
-            _context (context)
+        ShmemModel (T_Device & device) :
+            Interface::PacketModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) > (device),
+            Interface::DmaModel < ShmemModel<T_Device>, T_Device, sizeof(ShmemMessage) > (device),
+            _device (device)
         {};
 
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
@@ -89,7 +87,8 @@ namespace XMI
         inline bool postPacket_impl (uint8_t              (&state)[sizeof(ShmemMessage)],
                                      xmi_event_function   fn,
                                      void               * cookie,
-                                     size_t               target_rank,
+                                     xmi_task_t           target_task,
+                                     size_t               target_offset,
                                      void               * metadata,
                                      size_t               metasize,
                                      struct iovec_t     * iov,
@@ -97,10 +96,10 @@ namespace XMI
         {
           size_t peer, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          __global.mapping.task2node (target_rank, addr);
+          __global.mapping.task2node (target_task, addr);
           __global.mapping.node2peer (addr, peer);
 #ifdef __bgq__
-		  peer = target_rank; //hack
+          peer = target_task; //hack
 #endif
           TRACE_ERR((stderr, "<< ShmemModel::postPacket_impl(iov) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
 
@@ -108,13 +107,13 @@ namespace XMI
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
                                          iov, niov, sequence) == XMI_SUCCESS)
             {
-              if (fn) fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
+              if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
 
               return true;
             }
 
           ShmemMessage * obj = (ShmemMessage *) & state[0];
-          new (obj) ShmemMessage (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov, niov, true);
+          new (obj) ShmemMessage (_device.getContext(), fn, cookie, _dispatch_id, metadata, metasize, iov, niov, true);
 
           _device.post (peer, obj);
 
@@ -125,7 +124,8 @@ namespace XMI
         inline bool postPacket_impl (uint8_t              (&state)[sizeof(ShmemMessage)],
                                      xmi_event_function   fn,
                                      void               * cookie,
-                                     size_t               target_rank,
+                                     xmi_task_t           target_task,
+                                     size_t               target_offset,
                                      void               * metadata,
                                      size_t               metasize,
                                      struct iovec         (&iov)[T_Niov])
@@ -140,24 +140,24 @@ namespace XMI
 #endif
           size_t peer=0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          __global.mapping.task2node (target_rank, addr);
+          __global.mapping.task2node (target_task, addr);
           __global.mapping.node2peer (addr, peer);
 #ifdef __bgq__
-		  peer = target_rank; //hack
+          peer = target_task; //hack
 #endif
           TRACE_ERR((stderr, "<< ShmemModel::postPacket_impl(T_Niov) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
           if (_device.isSendQueueEmpty (peer) &&
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
                                          iov, sequence) == XMI_SUCCESS)
             {
-              if (fn) fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
+              if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
 
               return true;
             }
 
           ShmemMessage * obj = (ShmemMessage *) & state[0];
-          new (obj) ShmemMessage (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, iov, T_Niov, true);
-
+          new (obj) ShmemMessage (_device.getContext(), fn, cookie, _dispatch_id, metadata, metasize, iov, T_Niov, true);
+#warning bug! ShmemMessage constructor must have the target_peer and target_offset .. right?
           _device.post (peer, obj);
 
           return false;
@@ -166,7 +166,8 @@ namespace XMI
         inline bool postPacket_impl (uint8_t              (&state)[sizeof(ShmemMessage)],
                                      xmi_event_function   fn,
                                      void               * cookie,
-                                     size_t               target_rank,
+                                     xmi_task_t           target_task,
+                                     size_t               target_offset,
                                      void               * metadata,
                                      size_t               metasize,
                                      void               * payload,
@@ -174,10 +175,10 @@ namespace XMI
         {
           size_t peer, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          __global.mapping.task2node (target_rank, addr);
+          __global.mapping.task2node (target_task, addr);
           __global.mapping.node2peer (addr, peer);
 #ifdef __bgq__
-		  peer = target_rank; //hack
+          peer = target_task; //hack
 #endif
           TRACE_ERR((stderr, "<< ShmemModel::postPacket_impl(contiguous) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
 
@@ -185,13 +186,13 @@ namespace XMI
               _device.writeSinglePacket (peer, _dispatch_id, metadata, metasize,
                                          payload, length, sequence) == XMI_SUCCESS)
             {
-              if (fn) fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
+              if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
 
               return true;
             }
 
           ShmemMessage * obj = (ShmemMessage *) & state[0];
-          new (obj) ShmemMessage (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, payload, length, true);
+          new (obj) ShmemMessage (_device.getContext(), fn, cookie, _dispatch_id, metadata, metasize, payload, length, true);
 
           _device.post (peer, obj);
 
@@ -199,7 +200,8 @@ namespace XMI
         };
 
         template <unsigned T_Niov>
-        inline bool postPacket_impl (size_t         target_rank,
+        inline bool postPacket_impl (xmi_task_t     target_task,
+                                     size_t         target_offset,
                                      void         * metadata,
                                      size_t         metasize,
                                      struct iovec   (&iov)[T_Niov])
@@ -214,12 +216,12 @@ namespace XMI
 #endif
           size_t peer = 0, sequence;
           XMI::Interface::Mapping::nodeaddr_t addr;
-          TRACE_ERR((stderr, ">> ShmemModel::postPacket_impl(immediate) .. target_rank = %zd, iov = %p, T_Niov = %zd\n", target_rank, iov, T_Niov));
-          __global.mapping.task2node (target_rank, addr);
-          TRACE_ERR((stderr, "   ShmemModel::postPacket_impl(immediate) .. target_rank = %zd -> {%zd, %zd}\n", target_rank, addr.global, addr.local));
+          TRACE_ERR((stderr, ">> ShmemModel::postPacket_impl(immediate) .. target_task = %zd, iov = %p, T_Niov = %zd\n", target_task, iov, T_Niov));
+          __global.mapping.task2node (target_task, addr);
+          TRACE_ERR((stderr, "   ShmemModel::postPacket_impl(immediate) .. target_task = %zd -> {%zd, %zd}\n", target_task, addr.global, addr.local));
           __global.mapping.node2peer (addr, peer);
 #ifdef __bgq__
-		  peer = target_rank; //hack
+          peer = target_task; //hack
 #endif
 
           TRACE_ERR((stderr, "<< ShmemModel::postPacket_impl(immediate) .. {%zd, %zd} -> peer = %zd\n", addr.global, addr.local, peer));
@@ -233,29 +235,30 @@ namespace XMI
         inline bool postMultiPacket_impl (uint8_t              (&state)[sizeof(ShmemMessage)],
                                           xmi_event_function   fn,
                                           void               * cookie,
-                                          size_t               target_rank,
+                                          xmi_task_t           target_task,
+                                          size_t               target_offset,
                                           void               * metadata,
                                           size_t               metasize,
                                           void               * payload,
                                           size_t               length)
         {
-          TRACE_ERR((stderr, ">> ShmemModel::postMessage_impl() Multipacket.. target_rank = %zd\n", target_rank));
+          TRACE_ERR((stderr, ">> ShmemModel::postMessage_impl() Multipacket.. target_task = %zd\n", target_task));
           size_t sequence;
 
           XMI::Interface::Mapping::nodeaddr_t address;
-          __global.mapping.task2node (target_rank, address);
-          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl()Multipacket .. target_rank = %zd -> {%zd, %zd}\n", target_rank, address.global, address.local));
+          __global.mapping.task2node (target_task, address);
+          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl()Multipacket .. target_task = %zd -> {%zd, %zd}\n", target_task, address.global, address.local));
 
           size_t peer=0;
           __global.mapping.node2peer (address, peer);
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl()Multipacket .. {%zd, %zd} -> %zd\n", address.global, address.local, peer));
 #ifdef __bgq__
-	  peer = target_rank; //hack
+	  peer = target_task; //hack
 #endif
 
-          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl()Multipacket .. target_rank = %zd, peer = %zd\n", target_rank, peer));
+          TRACE_ERR((stderr, "   ShmemModel::postMessage_impl()Multipacket .. target_task = %zd, peer = %zd\n", target_task, peer));
           ShmemMessage * msg = (ShmemMessage *) & state[0];
-          new (msg) ShmemMessage (_client, _context, fn, cookie, _dispatch_id, metadata, metasize, payload, length, false);
+          new (msg) ShmemMessage (_device.getContext(), fn, cookie, _dispatch_id, metadata, metasize, payload, length, false);
 
           TRACE_ERR((stderr, "   ShmemModel::postMessage_impl()Multipacket .. 0\n"));
 
@@ -288,7 +291,7 @@ namespace XMI
         inline bool postDmaPut_impl (uint8_t              state[sizeof(ShmemMessage)],
                                      xmi_event_function   local_fn,
                                      void               * cookie,
-                                     size_t               target_rank,
+                                     xmi_task_t           target_task,
                                      Memregion          * local_memregion,
                                      size_t               local_offset,
                                      Memregion          * remote_memregion,
@@ -300,7 +303,7 @@ namespace XMI
 
           size_t peer;
           XMI::Interface::Mapping::nodeaddr_t address;
-          __global.mapping.task2node (target_rank, address);
+          __global.mapping.task2node (target_task, address);
           __global.mapping.node2peer (address, peer);
 
           if (_device.isSendQueueEmpty (peer))
@@ -310,7 +313,7 @@ namespace XMI
                                       remote_offset,
                                       bytes);
 
-              if (local_fn) local_fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
+              if (local_fn) local_fn (_device.getContext(), cookie, XMI_SUCCESS);
 
               return XMI_SUCCESS;
 
@@ -329,7 +332,7 @@ namespace XMI
         inline bool postDmaGet_impl (uint8_t              state[sizeof(ShmemMessage)],
                                      xmi_event_function   local_fn,
                                      void               * cookie,
-                                     size_t               target_rank,
+                                     xmi_task_t           target_task,
                                      Memregion          * local_memregion,
                                      size_t               local_offset,
                                      Memregion          * remote_memregion,
@@ -341,7 +344,7 @@ namespace XMI
 
           size_t peer;
           XMI::Interface::Mapping::nodeaddr_t address;
-          __global.mapping.task2node (target_rank, address);
+          __global.mapping.task2node (target_task, address);
           __global.mapping.node2peer (address, peer);
 
           if (_device.isSendQueueEmpty (peer))
@@ -351,7 +354,7 @@ namespace XMI
                                      remote_offset,
                                      bytes);
 
-              if (local_fn) local_fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS);
+              if (local_fn) local_fn (_device.getContext(), cookie, XMI_SUCCESS);
 
               return XMI_SUCCESS;
 
@@ -372,8 +375,6 @@ namespace XMI
 
       protected:
         T_Device      & _device;
-        xmi_client_t   _client;
-        size_t   _context;
         uint16_t        _dispatch_id;
     };
   };

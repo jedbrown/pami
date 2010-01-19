@@ -311,7 +311,8 @@ namespace CCMI
 	CCMI_assert(dstranks != NULL);
 
 	unsigned ntotal_dst = 0;
-	for (unsigned phase = _startphase; phase < _startphase + _nphases; phase++) {
+	unsigned phase;
+	for (phase = _startphase; phase < _startphase + _nphases; phase++) {
 	  unsigned ndst = 0;
 	  if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
 						  (_sendph == NOT_RECV_PHASE && phase != _recvph) ||

@@ -61,7 +61,7 @@ namespace XMI
     } dispatch_t;
 
     template < class T_Fifo >
-    class ShmemDevice : public Interface::BaseDevice<ShmemDevice<T_Fifo>, XMI::SysDep>,
+    class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo> >,
         public Interface::PacketDevice<ShmemDevice<T_Fifo> >
     {
       protected:
@@ -243,8 +243,8 @@ namespace XMI
 
       public:
         inline ShmemDevice () :
-            Interface::BaseDevice<ShmemDevice<T_Fifo>, XMI::SysDep> (),
-            Interface::PacketDevice<ShmemDevice<T_Fifo> > (),
+            Interface::BaseDevice< ShmemDevice<T_Fifo> > (),
+            Interface::PacketDevice< ShmemDevice<T_Fifo> > (),
             _fifo (NULL),
 #ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
             __ndQ (),
@@ -270,6 +270,10 @@ namespace XMI
 
         /// \see XMI::Device::Interface::BaseDevice::task2peer()
         inline size_t task2peer_impl (size_t task);
+
+        inline xmi_context_t getContext_impl ();
+
+        inline size_t getContextOffset_impl ();
 
         // ------------------------------------------
 
@@ -352,7 +356,7 @@ namespace XMI
         ///
         inline bool isSendQueueEmpty (size_t peer);
 
-        inline int init_impl (XMI::SysDep * sysdep);
+        inline int init_impl (XMI::SysDep * sysdep, xmi_context_t context, size_t offset);
 
         inline int advance_impl ();
 
@@ -388,6 +392,8 @@ namespace XMI
         T_Fifo * _rfifo; ///< Pointer to fifo to use as a reception fifo
 
         XMI::SysDep      * _sysdep;
+        xmi_context_t      _context;
+        size_t             _offset;
 
         dispatch_t  _dispatch[DISPATCH_SET_COUNT*DISPATCH_SET_SIZE];
 
@@ -413,6 +419,18 @@ namespace XMI
     inline size_t ShmemDevice<T_Fifo>::getLocalRank()
     {
       return _local_task;
+    }
+
+    template <class T_Fifo>
+    inline xmi_context_t ShmemDevice<T_Fifo>::getContext_impl()
+    {
+      return _context;
+    }
+
+    template <class T_Fifo>
+    inline size_t ShmemDevice<T_Fifo>::getContextOffset_impl()
+    {
+      return _offset;
     }
 
     ///

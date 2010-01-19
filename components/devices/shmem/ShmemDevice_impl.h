@@ -24,11 +24,14 @@ namespace XMI
   namespace Device
   {
     template <class T_Fifo>
-    int ShmemDevice<T_Fifo>::init_impl (XMI::SysDep * sysdep)
+    int ShmemDevice<T_Fifo>::init_impl (XMI::SysDep   * sysdep,
+                                        xmi_context_t   context,
+                                        size_t          offset)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl ()\n", __global.mapping.task()));
-      _sysdep = sysdep;
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () _sysdep = %p\n", __global.mapping.task(), _sysdep));
+      _sysdep  = sysdep;
+      _context = context;
+      _offset  = offset;
 
       unsigned i, j;
       __global.mapping.nodePeers (_num_procs);

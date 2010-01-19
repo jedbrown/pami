@@ -37,14 +37,15 @@ namespace XMI
       void                      *direct_recv_func_parm;
     }udp_dispatch_info_t;
 
+#warning The template parameter T_SysDep is redundant
     template <class T_SysDep>
-    class UdpDevice : public Interface::BaseDevice<UdpDevice<T_SysDep>, T_SysDep>,
+    class UdpDevice : public Interface::BaseDevice<UdpDevice<T_SysDep> >,
                       public Interface::PacketDevice<UdpDevice<T_SysDep> >
     {
     public:
       static const size_t packet_payload_size = 224;
       inline UdpDevice () :
-      Interface::BaseDevice<UdpDevice<T_SysDep>, T_SysDep> (),
+      Interface::BaseDevice<UdpDevice<T_SysDep> > (),
       Interface::PacketDevice<UdpDevice<T_SysDep> >()
       {
         TRACE_ADAPTOR((stderr,"<%#.8X>UdpDevice()\n",(int)this));

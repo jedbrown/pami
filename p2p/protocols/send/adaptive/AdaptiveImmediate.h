@@ -142,9 +142,13 @@ namespace XMI
             metadata.databytes = parameters->data.iov_len;
             metadata.metabytes = parameters->header.iov_len;
 
+            xmi_task_t task;
+            size_t offset;
+            XMI_ENDPOINT_INFO(parameters->dest,task,offset);
+
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
             bool posted =
-              _send_model.postPacket (parameters->task,
+              _send_model.postPacket (task, offset,
                                       (void *) & metadata,
                                       sizeof (protocol_metadata_t),
                                       parameters->iov);
@@ -165,7 +169,7 @@ namespace XMI
                 _send_model.postPacket (send->pkt,
                                         send_complete,
                                         send,
-                                        parameters->task,
+                                        task, offset,
                                         (void *) &metadata,
                                         sizeof (protocol_metadata_t),
                                         v);

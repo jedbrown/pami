@@ -423,7 +423,6 @@ extern "C"
   typedef void (*xmi_dispatch_p2p_fn) (
     xmi_context_t        context,      /**< IN:  communication context which invoked the dispatch function */
     void               * cookie,       /**< IN:  dispatch cookie */
-    xmi_task_t           task,         /**< IN:  source task     */
     void               * header_addr,  /**< IN:  header address  */
     size_t               header_size,  /**< IN:  header size     */
     void               * pipe_addr,    /**< IN:  address of XMI pipe  buffer, valid only if non-NULL        */

@@ -11,6 +11,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "sys/xmi.h"
+#include "util/common.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,20 +81,44 @@ extern "C" xmi_result_t XMI_Client_finalize (xmi_client_t client)
   XMI::Client::destroy ((XMI::Client *) client);
   return XMI_SUCCESS;
 }
-
+#if 0
 extern "C" xmi_context_t XMI_Client_getcontext(xmi_client_t client, size_t context) {
 	XMI::Client *clnt = (XMI::Client *)client;
 	return (xmi_context_t)clnt->getContext(context);
+}
+#endif
+
+extern "C" xmi_endpoint_t XMI_Client_endpoint (xmi_client_t client,
+                                               xmi_task_t   task,
+                                               size_t       offset)
+{
+  return XMI_ENDPOINT_INIT(client,task,offset);
+}
+
+extern "C" xmi_result_t XMI_Client_endpointv (xmi_client_t     client,
+                                              xmi_task_t       task,
+                                              xmi_endpoint_t * endpoints,
+                                              size_t         * count)
+{
+  abort();
+  return XMI_ERROR;
+}
+
+extern "C" void XMI_Client_endpoint_info (xmi_endpoint_t   endpoint,
+                                          xmi_task_t     * task,
+                                          size_t         * offset)
+{
+  XMI_ENDPOINT_INFO(endpoint,*task,*offset);
 }
 
 ///
 /// \copydoc XMI_Context_createv
 ///
-extern "C" xmi_result_t XMI_Context_createv (xmi_client_t           client,
+extern "C" xmi_result_t XMI_Context_createv (xmi_client_t          client,
                                             xmi_configuration_t    configuration[],
                                             size_t                 count,
                                             xmi_context_t        * context,
-					    int			 * ncontexts)
+					    size_t               * ncontexts)
 {
   xmi_result_t result;
   XMI::Client * xmi = (XMI::Client *) client;

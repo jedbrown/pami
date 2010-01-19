@@ -52,7 +52,7 @@ namespace XMI
     {
       typedef   MUSPI_RecvFunction_t  MUDevice_DispatchFn_t;
 
-      class MUDevice : public Interface::BaseDevice<MUDevice, SysDep>, public Interface::PacketDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
+      class MUDevice : public Interface::BaseDevice<MUDevice>, public Interface::PacketDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
           //class MUDevice : public BaseDevice, public CDI::Base::Device<MUDevice>, public CDI::Message::Device<MUDevice>//, public CDI::Dma::Device<MUDevice>
       {
 
@@ -73,7 +73,13 @@ namespace XMI
           // ----------------------------------------------------------------------
 
           /// \copydoc XMI::Device::Interface::BaseDevice::init
-          int init_impl (SysDep * sysdep);
+          int init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid);
+
+          /// \copydoc XMI::Device::Interface::BaseDevice::getContext
+          xmi_context_t getContext_impl ();
+
+          /// \copydoc XMI::Device::Interface::BaseDevice::getContextOffset
+          size_t getContextOffset_impl ();
 
           /// \copydoc XMI::Device::Interface::BaseDevice::isInit
           bool isInit_impl ();
@@ -369,9 +375,11 @@ namespace XMI
           }
 
           SysDep * sysdep;                         /**< sysdep pointer     */
+          xmi_context_t _context;
+          size_t        _contextid;
 
         protected:
-
+#warning Do not use thread local storage .. a device is associated with a context, not a thread.
           static __thread unsigned   _p2pSendChannelIndex;    /**< current P2P send channel */
           static __thread unsigned   _p2pRecvChannelIndex;    /**< current P2P recv channel */
           static __thread bool       _colSendChannelFlag;     /**< coll send channel flag   */

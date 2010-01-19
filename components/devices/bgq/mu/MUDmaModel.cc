@@ -15,12 +15,11 @@
 
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
-XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device, xmi_client_t client, size_t context) :
-    Interface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)> (device, client, context),
+XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
+    Interface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)> (device),
     _device (device),
     _wrapper_model (),
-    _client (client),
-    _context (context)
+    _context (device.getContext())
 {
   // --------------------------------------------------------------------------
   // Initialize (as much as possible) the rget descriptor model.

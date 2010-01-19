@@ -32,6 +32,7 @@ size_t __barrier_phase;
 size_t __barrier_size;
 size_t __barrier_task;
 size_t __barrier_next_task;
+xmi_endpoint_t __barrier_next_endpoint;
 
 size_t         __barrier_dispatch;
 xmi_context_t  __barrier_context;
@@ -42,9 +43,7 @@ xmi_context_t  __barrier_context;
 /* ************************************************************************* */
 static void barrier_dispatch_function (
     xmi_context_t        context,      /**< IN: XMI context */
-    size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
-    xmi_task_t           task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
@@ -78,9 +77,9 @@ void barrier ()
   parameters.header.iov_len  = sizeof (__barrier_phase);
   parameters.data.iov_base   = NULL;
   parameters.data.iov_len    = 0;
-  parameters.task            = __barrier_next_task;
+  parameters.dest            = __barrier_next_endpoint;
 
-  TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %zu, parameters.task = %zu\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.task));
+  TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %zu, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
   xmi_result_t result = XMI_Send_immediate (__barrier_context, &parameters);
 
 
@@ -107,6 +106,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
   __barrier_size = configuration.value.intval;
 
   __barrier_next_task = (__barrier_task + 1) % __barrier_size;
+  __barrier_next_endpoint = XMI_Client_endpoint (client, __barrier_next_task, 0);
 
    TRACE_ERR((stderr,"__barrier_size:%d __barrier_task:%d\n",__barrier_size, __barrier_task));
 

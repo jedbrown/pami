@@ -89,8 +89,8 @@ namespace XMI
         // Compile-time assertions
         // ----------------------------------------------------------------
         _generic.init(_sysdep, (xmi_context_t)this, clientid, contextid, num, generics);
-        _udp.init (&_sysdep);
-        _shmem.init (&_sysdep);
+        _udp.init (&_sysdep, (xmi_context_t)this, contextid);
+        _shmem.init (&_sysdep, (xmi_context_t)this, contextid);
       }
 
       inline xmi_client_t getClient_impl ()
@@ -345,11 +345,11 @@ fprintf (stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %
 #if 1
             new ((void *)_dispatch[id])
               DatagramUdp
-                (id, fn, cookie, _udp, __global.mapping.task(), _context, _contextid, result);
+                (id, fn, cookie, _udp, result);
 #else
             new ((void *)_dispatch[id])
               Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-                (id, fn, cookie, _shmem, __global.mapping.task(), _context, _contextid, result);
+                (id, fn, cookie, _shmem, result);
 #endif
             if (result != XMI_SUCCESS)
               {
