@@ -21,7 +21,7 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 #ifdef TRACE
 #undef TRACE
 #endif
-#define TRACE(x) //fprintf x
+#define TRACE(x) fprintf x
 
 XMI::Device::MU::MUDevice::MUDevice () :
     //BaseDevice (),
@@ -133,7 +133,7 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
                                                        void                      * arg,
                                                        uint16_t                  & id)
 {
-  TRACE((stderr, ">> MUDevice::registerPacketHandler(%d, %p, %p, %d), _dispatch = %p\n", dispatch, function, arg, id, _dispatch));
+  TRACE((stderr, ">> MUDevice::registerPacketHandler(%zd, %p, %p, %d), _dispatch = %p\n", dispatch, function, arg, id, _dispatch));
 
   // There are DISPATCH_SET_COUNT sets of dispatch functions.
   // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
@@ -150,13 +150,13 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
           _dispatch[id].f = function;
           _dispatch[id].p = arg;
 
-          TRACE((stderr, "<< MUDevice::registerPacketHandler(%d, %p, %p, %d), i = %d\n", dispatch, function, arg, id, i));
+          TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d), i = %d\n", dispatch, function, arg, id, i));
           return true;
         }
     }
 
   // release the lock
-  TRACE((stderr, "<< MUDevice::registerPacketHandler(%d, %p, %p, %d), result = false\n", dispatch, function, arg, id));
+  TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d), result = false\n", dispatch, function, arg, id));
 
   return false;
 };

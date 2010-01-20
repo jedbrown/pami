@@ -30,7 +30,7 @@
 #ifdef TRACE
 #undef TRACE
 #endif
-#define TRACE(x) //fprintf x
+#define TRACE(x) fprintf x
 
 
 //#define OPTIMIZE_AGGREGATE_LATENCY

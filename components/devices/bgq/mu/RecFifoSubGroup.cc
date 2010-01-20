@@ -22,7 +22,7 @@
 #include "util/common.h"
 
 #ifndef TRACE
-#define TRACE(x) //printf x
+#define TRACE(x) printf x
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -31,7 +31,7 @@
 #ifdef TRACE
 #undef TRACE
 #endif
-#define TRACE(x) //fprintf x
+#define TRACE(x) fprintf x
 
 #define ENABLE_MAMBO_WORKAROUNDS
 
@@ -228,7 +228,7 @@ namespace XMI
           ///
           void     post( MUBaseMessage &msg, int dstrank, bool lifo = false )
           {
-            //printf("MUDeevice.h post - p2p chindex:%d\n",_p2pSendChannelIndex);
+            printf("MUDeevice.h post - p2p chindex:%d\n",_p2pSendChannelIndex);
             _p2pChannel[_p2pSendChannelIndex]->post( msg, dstrank, lifo );
           }
 

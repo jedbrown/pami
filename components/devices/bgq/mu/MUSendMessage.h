@@ -12,7 +12,7 @@
 #include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
 #include <spi/include/kernel/memory.h>
 
-#define TRACE(x) //printf x
+#define TRACE(x) printf x
 
 namespace DCMF
 {
@@ -240,8 +240,8 @@ namespace DCMF
                                                      &relativeFnum );
             _descWrapper.setFIFONum ( relativeFnum );
 
-            //printf("MUSendMessage.h postDescriptor() subgrpPtr:%llx fnum:%d\n",
-            //   (unsigned long long)injFifoSubGroup,relativeFnum);
+	    printf("MUSendMessage.h postDescriptor() subgrpPtr:%llx fnum:%d\n",
+		   (unsigned long long)injFifoSubGroup,relativeFnum);
 
             int rc  = injFifoSubGroup->push ( _descWrapper );
             return rc;

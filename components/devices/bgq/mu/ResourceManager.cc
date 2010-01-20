@@ -22,7 +22,7 @@
 #include "Global.h"
 
 #ifndef TRACE
-#define TRACE(x) //printf x
+#define TRACE(x) printf x
 #endif
 
 uint8_t XMI::Device::MU::ResourceManager::_funcIDs[MUSPI_MAX_FUNCTION_IDS];
@@ -58,9 +58,9 @@ getInfo()
         XMI_assert ( _injFifoInfo != NULL );
         _injFifoInfo->numSubGroups = MINIMAL_INJ_NUM_SUBGROUPS;
 
-        TRACE(("My Coords are: A=%d, B=%d, C=%d, D=%d, E=%d, T=%d, P=%d, aSize=%d, bSize=%d, cSize=%d, dSize=%d, eSize=%d, tSize=%d, pSize=%d\n",
-               _mapping->a(), _mapping->b(), _mapping->c(), _mapping->d(), _mapping->e(), _mapping->t(), _mapping->p(), _mapping->aSize(), _mapping->bSize(), _mapping->cSize(), _mapping->dSize(), _mapping->eSize(), _mapping->tSize(), _mapping->pSize()))
-        ;
+	//        TRACE(("My Coords are: A=%d, B=%d, C=%d, D=%d, E=%d, T=%d, P=%d, aSize=%d, bSize=%d, cSize=%d, dSize=%d, eSize=%d, tSize=%d, pSize=%d\n",
+	//_mapping->a(), _mapping->b(), _mapping->c(), _mapping->d(), _mapping->e(), _mapping->t(), _mapping->p(), _mapping->aSize(), _mapping->bSize(), _mapping->cSize(), _mapping->dSize(), _mapping->eSize(), _mapping->tSize(), _mapping->pSize()))
+        //;
 
         for (i = 0; i < MINIMAL_INJ_NUM_SUBGROUPS; i++)
           {
