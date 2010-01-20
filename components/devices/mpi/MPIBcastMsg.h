@@ -14,10 +14,8 @@
 #ifndef __components_devices_mpi_MPIBcastMsg_h__
 #define __components_devices_mpi_MPIBcastMsg_h__
 
-#include "components/devices/generic/Device.h"
-#include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "components/devices/generic/SubDevice.h"
+#include "components/devices/generic/SubDeviceSuppt.h"
 #include "sys/xmi.h"
 #include "Global.h"
 #include "PipeWorkQueue.h"

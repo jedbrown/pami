@@ -9,6 +9,8 @@
 #ifndef __components_atomic_Mutex_h__
 #define __components_atomic_Mutex_h__
 
+#include "SysDep.h"
+
 ///
 ///  \file components/atomic/Mutex.h
 ///  \brief Mutex Objects for Hardware and Software Mutexes

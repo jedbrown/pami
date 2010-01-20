@@ -40,9 +40,7 @@
 #define __components_devices_generic_AtomicBarrierMsg_h__
 
 #include "Global.h"
-#include "components/devices/generic/Device.h"
-#include "components/devices/generic/SubDevice.h"
-#include "components/devices/generic/Message.h"
+#include "components/devices/generic/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/atomic/Barrier.h"
