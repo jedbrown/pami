@@ -6,32 +6,32 @@
 #include "cnclassroute.h"
 
 void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
-					rect_t *comm, int dim0, classroute_t *cr) {
+					rect_t *comm, int dim0, ClassRoute_t *cr) {
 	// assert(ll->dims == ur->dims == me->dims);
 	int d, dim, dims = world->ll.dims;
-	classroute_t cr0 = {0};
+	ClassRoute_t cr0 = {0};
 
 	for (dim = 0; dim < dims; ++dim) {
 		d = dim0 + dim;
 		if (d >= dims) d -= dims;
 		if (me->coords[d] <= worldroot->coords[d]) {
 			if (me->coords[d] > comm->ll.coords[d]) {
-				cr0.dn_tree |= CR_LINK(d,CR_SIGN_NEG);
+				cr0.input |= CR_LINK(d,CR_SIGN_NEG);
 			}
 		}
 		if (me->coords[d] >= worldroot->coords[d]) {
 			if (me->coords[d] < comm->ur.coords[d]) {
-				cr0.dn_tree |= CR_LINK(d,CR_SIGN_POS);
+				cr0.input |= CR_LINK(d,CR_SIGN_POS);
 			}
 		}
 		if (me->coords[d] < worldroot->coords[d]) {
 			if (me->coords[d] < comm->ur.coords[d]) {
-				cr0.up_tree |= CR_LINK(d,CR_SIGN_POS);
+				cr0.output |= CR_LINK(d,CR_SIGN_POS);
 				break;
 			}
 		} else if (me->coords[d] > worldroot->coords[d]) {
 			if (me->coords[d] > comm->ll.coords[d]) {
-				cr0.up_tree |= CR_LINK(d,CR_SIGN_NEG);
+				cr0.output |= CR_LINK(d,CR_SIGN_NEG);
 				break;
 			}
 		}
@@ -52,12 +52,12 @@ static int eq_coords(coord_t *c0, coord_t *c1) {
 /* recursive routine */
 static int find_local_contrib(rect_t *world, coord_t *worldroot, coord_t *me,
 			rect_t *comm, coord_t *exlcude, int nexclude,
-			int dim0, classroute_t *cr, int level) {
+			int dim0, ClassRoute_t *cr, int level) {
 #warning Untested code
 	uint32_t l, m;
 	int n, s, t;
 	coord_t c0, c1;
-	classroute_t cr1;
+	ClassRoute_t cr1;
 	static int signs[] = {
 		[CR_SIGN_POS] = 1,
 		[CR_SIGN_NEG] = -1,
@@ -76,7 +76,7 @@ static int find_local_contrib(rect_t *world, coord_t *worldroot, coord_t *me,
 	}
 	build_node_classroute(world, worldroot, me, comm, dim0, &cr1);
 	c0 = *me;
-	l = cr1.dn_tree;
+	l = cr1.input;
 	t = 0;
 	for (n = 0; n < world->ll.dims; ++n) {
 		for (s = 0; s < 2; ++s) {
@@ -88,7 +88,7 @@ static int find_local_contrib(rect_t *world, coord_t *worldroot, coord_t *me,
 				int f = find_local_contrib(world, worldroot, &c1,
 						comm, exlcude, nexclude,
 						dim0, NULL, level + 1);
-				if (!f) cr1.dn_tree &= ~m;
+				if (!f) cr1.input &= ~m;
 				t += f;
 			}
 		}
@@ -99,7 +99,7 @@ static int find_local_contrib(rect_t *world, coord_t *worldroot, coord_t *me,
 
 void build_node_classroute_sparse(rect_t *world, coord_t *worldroot, coord_t *me,
 				rect_t *comm, coord_t *exlcude, int nexclude,
-				int dim0, classroute_t *cr) {
+				int dim0, ClassRoute_t *cr) {
 	/*
 	 * traverse down-tree and determine if any local contributors exist.
 	 * unfortunately, we don't have any classroutes but our own, so we must

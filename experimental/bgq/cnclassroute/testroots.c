@@ -12,7 +12,7 @@ extern char *dim_names;
 
 typedef struct {
 	commworld_t world;
-	classroute_t *cr;
+	ClassRoute_t *cr;
 } clsrt_entry_t;
 
 #define DEBUG
@@ -116,12 +116,12 @@ int main(int argc, char **argv) {
 		pick_world_root_pair(&world.rect, &root1, &root2, &world.pri_dim);
 
 		world.root = root1;
-		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+		ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
 		if (!cr) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
-		memset(cr, -1, z * sizeof(classroute_t));
+		memset(cr, -1, z * sizeof(ClassRoute_t));
 		make_classroutes(&world, &comm, cr);
 		if (sanity) chk_all_sanity(&world, &comm, cr);
 		if (!chk) {
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 		} else {
 			cra[0].cr = cr;
 			cra[0].world = world;
-			cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+			cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
 			if (!cr) {
 				fprintf(stderr, "out of memory allocating classroute array!\n");
 				exit(1);
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 		}
 
 		world.root = root2;
-		memset(cr, -1, z * sizeof(classroute_t));
+		memset(cr, -1, z * sizeof(ClassRoute_t));
 		make_classroutes(&world, &comm, cr);
 		if (sanity) chk_all_sanity(&world, &comm, cr);
 		if (!chk) {
@@ -181,12 +181,12 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
-			classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+			ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
 			if (!cr) {
 				fprintf(stderr, "out of memory allocating classroute array!\n");
 				exit(1);
 			}
-			memset(cr, -1, z * sizeof(classroute_t));
+			memset(cr, -1, z * sizeof(ClassRoute_t));
 			make_classroutes(&world, &comm, cr);
 			if (sanity) chk_all_sanity(&world, &comm, cr);
 
@@ -225,12 +225,12 @@ int main(int argc, char **argv) {
 		}
 		world.root.dims = world.rect.ll.dims;
 
-		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+		ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
 		if (!cr) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
-		memset(cr, -1, z * sizeof(classroute_t));
+		memset(cr, -1, z * sizeof(ClassRoute_t));
 		make_classroutes(&world, &comm, cr);
 #ifdef DEBUG
 		if (force_errs) {
@@ -239,12 +239,12 @@ int main(int argc, char **argv) {
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand() & rand()); /* try to reduce bits */
 					l &= ((1 << (world.rect.ll.dims * 2)) - 1);
-					cr[r].up_tree = l;
+					cr[r].output = l;
 				}
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand()); /* try to reduce bits */
 					l &= ((1 << (world.rect.ll.dims * 2)) - 1);
-					cr[r].dn_tree = l;
+					cr[r].input = l;
 				}
 			}
 		}

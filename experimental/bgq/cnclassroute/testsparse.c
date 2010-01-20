@@ -96,12 +96,12 @@ int main(int argc, char **argv) {
 		}
 
 		z = rect_size(&comm);
-		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
+		ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
 		if (!cr) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
-		memset(cr, -1, z * sizeof(classroute_t));
+		memset(cr, -1, z * sizeof(ClassRoute_t));
 		make_classroutes_sparse(&world, &comm, excl, nexcl, cr);
 		if (sanity) chk_all_sanity(&world, &comm, cr);
 

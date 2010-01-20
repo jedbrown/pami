@@ -1,15 +1,13 @@
+# The following should point to the BGQ work area that contains the hwi/spi include files
+WORK = /home/dougmill/cvs/bgq/work
+SPI = $(WORK)/spi
+HWI = $(WORK)/hwi
 COPTS =
-CFLAGS = -g
+CFLAGS = -g -I$(SPI)/include -I$(HWI)/include -I$(WORK) -DSUPPORT_SPARSE_RECTANGLE
 
 HDRS = cnclassroute.h testlib.h
 OBJS = cnclassroute.o
-BINS = testroots testcomms
-SPARSE_BINS = testsparse
-ifdef SPARSE
-BINS += $(SPARSE_BINS)
-COPTS += -DSUPPORT_SPARSE_RECTANGLE
-# need to force re-compile of cnclassroute.o ...
-endif
+BINS = testroots testcomms testsparse
 
 all: $(BINS)
 
@@ -23,4 +21,4 @@ clean:
 	rm -f $(OBJS)
 
 clobber: clean
-	rm -f $(BINS) $(SPARSE_BINS)
+	rm -f $(BINS)

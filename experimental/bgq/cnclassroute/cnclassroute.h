@@ -10,8 +10,26 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#define XMI_MAX_DIMS 8
-#define XMI_DIM_NAMES	"ABCDEFGH"
+#include "kernel/Collective.h"
+#define XMI_MAX_DIMS 5
+#define XMI_DIM_NAMES	"ABCDE"
+
+#define CR_SIGN_POS	0
+#define CR_SIGN_NEG	1
+
+static uint16_t cr_links[][2] = {
+[0][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_AP,
+[0][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_AM,
+[1][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_BP,
+[1][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_BM,
+[2][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_CP,
+[2][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_CM,
+[3][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_DP,
+[3][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_DM,
+[4][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_EP,
+[4][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_EM,
+};
+#define CR_LINK(n,s)	cr_links[n][s]
 
 typedef struct {
 	size_t dims;
@@ -22,16 +40,6 @@ typedef struct {
 	coord_t ll;
 	coord_t ur;
 } rect_t;
-
-typedef struct {
-	uint32_t dn_tree;
-	uint32_t up_tree;
-} classroute_t;
-
-#define CR_SIGN_POS	0
-#define CR_SIGN_NEG	1
-
-#define CR_LINK(n,s)	(1 << (n * 2 + s))
 
 /**
  * \brief Compute classroute for node "me"
@@ -80,7 +88,7 @@ typedef struct {
  * create the classroute down-tree from itself.
  */
 extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
-				rect_t *comm, int dim0, classroute_t *cr);
+				rect_t *comm, int dim0, ClassRoute_t *cr);
 
 /**
  * \brief Compute classroute for node 'me' when rectangle is sparse
@@ -97,7 +105,7 @@ extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me
 #ifdef SUPPORT_SPARSE_RECTANGLE
 extern void build_node_classroute_sparse(rect_t *world, coord_t *worldroot, coord_t *me,
 				rect_t *comm, coord_t *exlcude, int nexclude,
-				int dim0, classroute_t *cr);
+				int dim0, ClassRoute_t *cr);
 #endif /* SUPPORT_SPARSE_RECTANGLE */
 
 /**

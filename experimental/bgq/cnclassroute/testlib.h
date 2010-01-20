@@ -167,93 +167,102 @@ int rect_size(rect_t *rect) {
 	return size;
 }
 
-#define ERR_CRCONFLICT		0x80000000	/**< two classroutes conflict? */
-#define ERR_ONEROOT		0x40000000	/**< not exactly one root? */
-#define ERR_MULTIUPLINK		0x20000000	/**< more than one up link? */
-#define ERR_UPDNCONFLICT	0x10000000	/**< any up/dn links same? */
-#define ERR_OUTBOUNDS		0x08000000	/**< link is outside rectangle */
-#define ERR_UNCONN		0x04000000	/**< link not connected */
-#define ERR_LOOP		0x02000000	/**< loop in connections */
-#define FLAG_VISITED		0x01000000	/**< internal - !orphaned */
-#define ERRS	(ERR_CRCONFLICT		| \
-		 ERR_ONEROOT		| \
-		 ERR_MULTIUPLINK	| \
-		 ERR_UPDNCONFLICT	| \
-		 ERR_OUTBOUNDS		| \
-		 ERR_UNCONN		| \
-		 ERR_LOOP		| \
-		 FLAG_VISITED)
+#define ERR_O_CRCONFLICT	0x8000	/**< two classroutes conflict? */
+#define ERR_O_ONEROOT		0x4000	/**< not exactly one root? */
+#define ERR_O_MULTIUPLINK	0x2000	/**< more than one up link? */
+#define ERR_O_UNCONN		0x1000	/**< link not connected */
+#define ERR_O_OUTBOUNDS		0x0002	/**< link is outside rectangle */
+/*				0x0001	*/
+
+#define ERR_I_CRCONFLICT	0x8000	/**< two classroutes conflict? */
+#define ERR_I_UPDNCONFLICT	0x4000	/**< any up/dn links same? */
+#define ERR_I_LOOP		0x2000	/**< loop in connections */
+#define ERR_I_UNCONN		0x1000	/**< link not connected */
+#define ERR_I_OUTBOUNDS		0x0002	/**< link is outside rectangle */
+#define FLAG_I_VISITED		0x0001	/**< internal - !orphaned */
+
+#define ERRS	(ERR_O_CRCONFLICT	| \
+		 ERR_O_ONEROOT		| \
+		 ERR_O_MULTIUPLINK	| \
+		 ERR_O_OUTBOUNDS	| \
+		 ERR_O_UNCONN		| \
+		 ERR_I_CRCONFLICT	| \
+		 ERR_I_UPDNCONFLICT	| \
+		 ERR_I_OUTBOUNDS	| \
+		 ERR_I_UNCONN		| \
+		 ERR_I_LOOP		| \
+		 FLAG_I_VISITED)
 #define CHK_CRCONFLICT(a,b)	(((a & b) & ~ERRS) != 0)
 
-void chk_classroute(classroute_t *cra, classroute_t *crb) {
-	if (CHK_CRCONFLICT(cra->up_tree, crb->up_tree)) {
-		cra->up_tree |= ERR_CRCONFLICT;
-		crb->up_tree |= ERR_CRCONFLICT;
+void chk_classroute(ClassRoute_t *cra, ClassRoute_t *crb) {
+	if (CHK_CRCONFLICT(cra->output, crb->output)) {
+		cra->output |= ERR_O_CRCONFLICT;
+		crb->output |= ERR_O_CRCONFLICT;
 	}
-	if (CHK_CRCONFLICT(cra->dn_tree, crb->dn_tree)) {
-		cra->dn_tree |= ERR_CRCONFLICT;
-		crb->dn_tree |= ERR_CRCONFLICT;
+	if (CHK_CRCONFLICT(cra->input, crb->input)) {
+		cra->input |= ERR_I_CRCONFLICT;
+		crb->input |= ERR_I_CRCONFLICT;
 	}
 }
 
-void chk_sanity(classroute_t *cr, int *nroots) {
+void chk_sanity(ClassRoute_t *cr, int *nroots) {
 	uint32_t ul, dl;
 	/* check up link for zero or one link */
-	ul = cr->up_tree & ~ERRS;
+	ul = cr->output & ~ERRS;
 	if (!ul) {
 		++(*nroots);
 		if (*nroots > 1) {
-			cr->up_tree |= ERR_ONEROOT;
+			cr->output |= ERR_O_ONEROOT;
 		}
 	} else if ((ul & (ul - 1)) != 0) {
-		cr->up_tree |= ERR_MULTIUPLINK;
+		cr->output |= ERR_O_MULTIUPLINK;
 	}
-	dl = (cr->dn_tree & ~ERRS);
+	dl = (cr->input & ~ERRS);
 	if ((ul & dl) || !(ul | dl)) {
-		cr->dn_tree |= ERR_UPDNCONFLICT;
+		cr->input |= ERR_I_UPDNCONFLICT;
 	}
 }
 
-void print_classroute(coord_t *me, classroute_t *cr, int rank) {
+void print_classroute(coord_t *me, ClassRoute_t *cr, int rank) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
 	//s += sprintf(s, "[%d]", rank);
 	s += sprintf(s, " up: ");
-	s += sprint_links(s, cr->up_tree & ~ERRS);
+	s += sprint_links(s, cr->output & ~ERRS);
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, cr->dn_tree & ~ERRS);
+	s += sprint_links(s, cr->input & ~ERRS);
 	printf("%s\n", buf);
 }
 
-void print_classroute_errs(coord_t *me, classroute_t *cr, int rank) {
+void print_classroute_errs(coord_t *me, ClassRoute_t *cr, int rank) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
 	//s += sprintf(s, "[%d]", rank);
 	*s++ = ' ';
 	*s++ = '|';
-	*s++ = (cr->up_tree & ERR_CRCONFLICT   ? '*' : ' ');
-	*s++ = (cr->up_tree & ERR_ONEROOT      ? 'R' : ' ');
-	*s++ = (cr->up_tree & ERR_MULTIUPLINK  ? 'M' : ' ');
-	*s++ = (cr->up_tree & ERR_OUTBOUNDS    ? 'V' : ' ');
-	*s++ = (cr->up_tree & ERR_UNCONN       ? 'X' : ' ');
+	*s++ = (cr->output & ERR_O_CRCONFLICT   ? '*' : ' ');
+	*s++ = (cr->output & ERR_O_ONEROOT      ? 'R' : ' ');
+	*s++ = (cr->output & ERR_O_MULTIUPLINK  ? 'M' : ' ');
+	*s++ = (cr->output & ERR_O_OUTBOUNDS    ? 'V' : ' ');
+	*s++ = (cr->output & ERR_O_UNCONN       ? 'X' : ' ');
 	*s++ = '|';
-	*s++ = (cr->dn_tree & ERR_CRCONFLICT   ? '*' : ' ');
-	*s++ = (cr->dn_tree & ERR_UPDNCONFLICT ? 'C' : ' ');
-	*s++ = (cr->dn_tree & ERR_OUTBOUNDS    ? 'V' : ' ');
-	*s++ = (cr->dn_tree & ERR_UNCONN       ? 'X' : ' ');
-	*s++ = (cr->dn_tree & ERR_LOOP         ? '!' : ' ');
-	*s++ = ((cr->dn_tree & FLAG_VISITED) == 0 ? '?' : ' ');
+	*s++ = (cr->input & ERR_I_CRCONFLICT   ? '*' : ' ');
+	*s++ = (cr->input & ERR_I_UPDNCONFLICT ? 'C' : ' ');
+	*s++ = (cr->input & ERR_I_OUTBOUNDS    ? 'V' : ' ');
+	*s++ = (cr->input & ERR_I_UNCONN       ? 'X' : ' ');
+	*s++ = (cr->input & ERR_I_LOOP         ? '!' : ' ');
+	*s++ = ((cr->input & FLAG_I_VISITED) == 0 ? '?' : ' ');
 	*s++ = '|';
 	s += sprintf(s, " up: ");
-	s += sprint_links(s, cr->up_tree & ~ERRS);
+	s += sprint_links(s, cr->output & ~ERRS);
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, cr->dn_tree & ~ERRS);
+	s += sprint_links(s, cr->input & ~ERRS);
 	printf("%s\n", buf);
 }
 
-void recurse_dims(commworld_t *cw, rect_t *comm, coord_t *me, classroute_t *cr) {
+void recurse_dims(commworld_t *cw, rect_t *comm, coord_t *me, ClassRoute_t *cr) {
 	int x;
 	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
 		me->coords[me->dims] = x;
@@ -268,7 +277,7 @@ void recurse_dims(commworld_t *cw, rect_t *comm, coord_t *me, classroute_t *cr) 
 	}
 }
 
-void make_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
+void make_classroutes(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 	coord_t me = { 0 };
 	recurse_dims(cw, comm, &me, cr);
 }
@@ -276,7 +285,7 @@ void make_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 #ifdef SUPPORT_SPARSE_RECTANGLE
 
 void recurse_dims_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl,
-				coord_t *me, classroute_t *cr) {
+				coord_t *me, ClassRoute_t *cr) {
 	int x;
 	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
 		me->coords[me->dims] = x;
@@ -292,14 +301,14 @@ void recurse_dims_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl
 		--me->dims;
 	}
 }
-void make_classroutes_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl, classroute_t *cr) {
+void make_classroutes_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl, ClassRoute_t *cr) {
 	coord_t me = { 0 };
 	recurse_dims_sparse(cw, comm, excl, nexcl, &me, cr);
 }
 
 #endif /* SUPPORT_SPARSE_RECTANGLE */
 
-void chk_conn(commworld_t *cw, rect_t *comm, classroute_t *cr) {
+void chk_conn(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 	int z = rect_size(comm);
 	int r, t, n, s;
 	uint32_t ul, dl, ol, m;
@@ -311,8 +320,8 @@ void chk_conn(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	for (r = 0; r < z; ++r) {
 		coord_t c0, c1;
 		rank2coord(comm, r, &c0);
-		ul = cr[r].up_tree;
-		dl = cr[r].dn_tree;
+		ul = cr[r].output;
+		dl = cr[r].input;
 		for (n = 0; n < XMI_MAX_DIMS; ++n) {
 			for (s = 0; s < 2; ++s) {
 				m = CR_LINK(n, s);
@@ -327,16 +336,16 @@ void chk_conn(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 				}
 				if (ul & m) {
 					if (t == -1) {
-						cr[r].up_tree |= ERR_OUTBOUNDS;
-					} else if ((cr[t].dn_tree & ol) == 0) {
-						cr[r].up_tree |= ERR_UNCONN;
+						cr[r].output |= ERR_O_OUTBOUNDS;
+					} else if ((cr[t].input & ol) == 0) {
+						cr[r].output |= ERR_O_UNCONN;
 					}
 				}
 				if (dl & m) {
 					if (t == -1) {
-						cr[r].dn_tree |= ERR_OUTBOUNDS;
-					} else if ((cr[t].up_tree & ol) == 0) {
-						cr[r].dn_tree |= ERR_UNCONN;
+						cr[r].input |= ERR_I_OUTBOUNDS;
+					} else if ((cr[t].output & ol) == 0) {
+						cr[r].input |= ERR_I_UNCONN;
 					}
 				}
 			}
@@ -344,7 +353,7 @@ void chk_conn(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 	}
 }
 
-void traverse_down(commworld_t *cw, rect_t *comm, classroute_t *cr, int curr) {
+void traverse_down(commworld_t *cw, rect_t *comm, ClassRoute_t *cr, int curr) {
 	uint32_t l, m;
 	int n, s, t;
 	coord_t c0, c1;
@@ -353,12 +362,12 @@ void traverse_down(commworld_t *cw, rect_t *comm, classroute_t *cr, int curr) {
 		[CR_SIGN_NEG] = -1,
 	};
 
-	l = cr[curr].dn_tree;
-	if (l & FLAG_VISITED) {
-		cr[curr].dn_tree |= ERR_LOOP;
+	l = cr[curr].input;
+	if (l & FLAG_I_VISITED) {
+		cr[curr].input |= ERR_I_LOOP;
 		return;
 	}
-	cr[curr].dn_tree |= FLAG_VISITED;
+	cr[curr].input |= FLAG_I_VISITED;
 	if (!(l & ~ERRS)) return;	/* leaf node */
 	rank2coord(comm, curr, &c0);
 	for (n = 0; n < cw->rect.ll.dims; ++n) {
@@ -379,24 +388,24 @@ void traverse_down(commworld_t *cw, rect_t *comm, classroute_t *cr, int curr) {
 	}
 }
 
-void chk_visit(commworld_t *cw, rect_t *comm, classroute_t *cr) {
+void chk_visit(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 	int r, z = rect_size(comm);
 	/*
 	 * find root node, traverse all connections and ensure each node is
 	 * visited exactly once. Assumes one root node - only traverses first root.
 	 */
 	for (r = 0; r < z; ++r) {
-		if ((cr[r].up_tree & ~ERRS) == 0) break;
+		if ((cr[r].output & ~ERRS) == 0) break;
 	}
 	if (r >= z) {
 		/* error: no root node - all nodes show orphaned */
 		return;
 	}
 	traverse_down(cw, comm, cr, r);
-	/* any node without FLAG_VISITED is orphaned... */
+	/* any node without FLAG_I_VISITED is orphaned... */
 }
 
-void chk_all_sanity(commworld_t *cw, rect_t *comm, classroute_t *cr) {
+void chk_all_sanity(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 	int z = rect_size(comm);
 	int r, nroots = 0;
 
@@ -404,13 +413,13 @@ void chk_all_sanity(commworld_t *cw, rect_t *comm, classroute_t *cr) {
 		chk_sanity(&cr[r], &nroots);
 	}
 	if (!nroots) {
-		cr[0].up_tree |= ERR_ONEROOT;
+		cr[0].output |= ERR_O_ONEROOT;
 	}
 	chk_conn(cw, comm, cr);
 	chk_visit(cw, comm, cr);
 }
 
-void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr, int errs) {
+void print_classroutes(commworld_t *cw, rect_t *comm, ClassRoute_t *cr, int errs) {
 	static char buf[1024];
 	int z = rect_size(comm);
 	char *s = buf;
@@ -434,4 +443,4 @@ void print_classroutes(commworld_t *cw, rect_t *comm, classroute_t *cr, int errs
 	}
 }
 
-#endif
+#endif /* __experimental_cnclassroute_testlib_h__ */
