@@ -10,26 +10,58 @@
 #define CR_SIGN_POS	0
 #define CR_SIGN_NEG	1
 
-/// this header must define:
-///
-/// CR_LINK(n,s)	Create bit-mask for n-th link (dim) in 's' direction (CR_SIGN_POS...)
-///
-/// CR_NUM_DIMS		Number of dimensions in network
-/// CR_DIM_NAMES	String of single-char dimension IDs (names) - e.g. "XYZ" or "ABCDE"
-///
-/// CR_COORD_T			datatype for a coordinate (CR_NUM_DIMS)
-/// CR_COORD_DIM(coordp,dim)	accessor for coordp->[dim] (must work for both set/get)
-///
-/// CR_RECT_T		datatype for a rectangle (two coordinates)
-/// CR_RECT_LL(rectp)	accessor for rectp->lower-left-coord (get/put/CR_COORD_DIM())
-/// CR_RECT_UR(rectp)	accessor for rectp->upper-right-coord (get/put/CR_COORD_DIM())
-///
-/// CR_ROUTE_T		datatype for classroute 
-/// CR_ROUTE_UP(crp)	accessor for up-link bits in classroute
-/// CR_ROUTE_DOWN(crp)	accessor for down-link bits in classroute
-/// CR_ROUTE_NETMASK	mask of bits in links that are network connections
-///
+#define CR_AXIS_A       0
+#define CR_AXIS_B       1
+#define CR_AXIS_C       2
+#define CR_AXIS_D       3
+#define CR_AXIS_E       4
+#define CR_NUM_DIMS     5
+#define CR_DIM_NAMES    "ABCDE" 
+
+#include "kernel/Collective.h"
+
+#define CR_ROUTE_NETMASK        \
+        (COLLECTIVE_CLASS_ROUTE_ENABLE_AP|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_AM|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_BP|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_BM|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_CP|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_CM|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_DP|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_DM|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_EP|\
+         COLLECTIVE_CLASS_ROUTE_ENABLE_EM)
+
+/**
+ *  this header must define:
+ * 
+ *  CR_LINK(n,s)	Create bit-mask for n-th link (dim) in 's' direction (CR_SIGN_POS...)
+ * 
+ *  CR_COORD_T			datatype for a coordinate (CR_NUM_DIMS)
+ *  CR_COORD_DIM(coordp,dim)	accessor for coordp->[dim] (must work for both set/get)
+ * 
+ *  CR_RECT_T		datatype for a rectangle (two coordinates)
+ *  CR_RECT_LL(rectp)	accessor for rectp->lower-left-coord (get/put/CR_COORD_DIM())
+ *  CR_RECT_UR(rectp)	accessor for rectp->upper-right-coord (get/put/CR_COORD_DIM())
+ * 
+ *  CR_ROUTE_T		datatype for classroute 
+ *  CR_ROUTE_UP(crp)	accessor for up-link bits in classroute
+ *  CR_ROUTE_DOWN(crp)	accessor for down-link bits in classroute
+ *  CR_ROUTE_ID(crp)	accessor for classroute id (if assigned)
+ *  todo: CR_ROUTE_VC(crp)	accessor for classroute virtual channel
+ */
 #include "xmi/cnclassroute.h" // replace with $(TARGET)/cnclassroute.h ...
+
+/**
+ * structure for managing "peer aware" classroute ID allocation
+ */
+struct cr_allocation {
+	CR_RECT_T rect;
+	CR_ROUTE_T classroute;
+	uint32_t cr_list;	// classroutes in-use for subcomms
+	struct cr_allocation *cr_peer;	// same classroute
+	struct cr_allocation *parent;	// parent classroute
+};
 
 /**
  * \brief Compute classroute for node "me"

@@ -10,16 +10,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#include "kernel/Collective.h"
 #include "sys/xmi.h"
-
-#define CR_AXIS_A       0
-#define CR_AXIS_B       1
-#define CR_AXIS_C       2
-#define CR_AXIS_D       3
-#define CR_AXIS_E       4
-#define CR_NUM_DIMS	5
-#define CR_DIM_NAMES	"ABCDE"
 
 static const uint16_t cr_links[][2] = {
 [CR_AXIS_A][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_AP,
@@ -48,17 +39,6 @@ typedef struct {
 typedef ClassRoute_t CR_ROUTE_T;
 #define CR_ROUTE_UP(cr)		(cr)->output
 #define CR_ROUTE_DOWN(cr)	(cr)->input
-
-#define CR_ROUTE_NETMASK	\
-	(COLLECTIVE_CLASS_ROUTE_ENABLE_AP|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_AM|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_BP|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_BM|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_CP|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_CM|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_DP|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_DM|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_EP|\
-	 COLLECTIVE_CLASS_ROUTE_ENABLE_EM)
+#define CR_ROUTE_ID(cr)		(cr)->id
 
 #endif // __experimental_bgq_cnclassroute_xmi_cnclassroute_h__

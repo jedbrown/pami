@@ -124,3 +124,126 @@ void pick_world_root_pair(CR_RECT_T *world, CR_COORD_T *worldroot1, CR_COORD_T *
 	*worldroot2 = root;
 	CR_COORD_DIM(worldroot2,min_dim) = CR_COORD_DIM(CR_RECT_UR(world),min_dim);
 }
+
+#if 0
+static int do_rect_equal(CR_RECT_T *rect1, CR_RECT_T *rect2) {
+	int d;
+	for (d = 0; d < CR_NUM_DIMS; ++d) {
+		if (CR_COORD_DIM(CR_RECT_LL(rect1),d) != CR_COORD_DIM(CR_RECT_LL(rect2),d) ||
+		    CR_COORD_DIM(CR_RECT_UR(rect1),d) != CR_COORD_DIM(CR_RECT_UR(rect2),d)) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int do_rect_overlap(CR_RECT_T *rect1, CR_RECT_T *rect2) {
+	int d;
+	for (d = 0; d < CR_NUM_DIMS; ++d) {
+		if (CR_COORD_DIM(CR_RECT_LL(rect1),d) <= CR_COORD_DIM(CR_RECT_UR(rect2),d) ||
+		    CR_COORD_DIM(CR_RECT_UR(rect1),d) >= CR_COORD_DIM(CR_RECT_LL(rect2),d)) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static struct cr_allocation *cr_alloc[BGQ_COLLECTIVE_MAX_CLASSROUTES] = { 0 };
+
+int get_classroute_id(int parent, CR_RECT_T *subcomm) {
+	int x;
+	struct cr_allocation *new, *crp;
+
+	// this doesn't work right when these values are 0/1...
+	if (parent == COLLECTIVE_CLASS_ROUTE_INPUT_USER ||
+	    parent == COLLECTIVE_CLASS_ROUTE_INPUT_SYSTEM) {
+		// comm-world... either system or user...
+		int vc = parent;
+		for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
+			if (cr_alloc[x] == NULL) {
+				new = malloc(sizeof(struct cr_allocation));
+				new->cr_list = 0;
+				*new->rect = *subcomm;
+				CR_ROUTE_ID(&new->classroute) = x;
+				CR_ROUTE_UP(&new->classroute) = 0;
+				CR_ROUTE_DOWN(&new->classroute) = 0;
+				// CR_ROUTE_VC(&new->classroute) = vc;
+				new->cr_peer = NULL;
+				new->parent = NULL;
+				cr_alloc[x] = new;
+				return x;
+			}
+		}
+		return -1;
+	}
+	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
+#warning can't refer to actual parent this way - might be linked-list
+		if (!(cr_alloc[parent]->cr_list & (1 << x))) continue;
+		// assert(cr_alloc[x] != NULL);
+		for (crp = cr_alloc[x]; crp; crp = crp->cr_peer) {
+			if (do_rect_overlap(crp->rect, subcomm)) break;
+			if (crp->cr_peer == NULL) {
+				// no overlaps... we can re-use this classroute id...
+				// append to existing cr_alloc[x] list...
+				new = malloc(sizeof(struct cr_allocation));
+				new->cr_list = 0;
+				*new->rect = *subcomm;
+				CR_ROUTE_ID(&new->classroute) = x; 
+				CR_ROUTE_UP(&new->classroute) = 0;
+				CR_ROUTE_DOWN(&new->classroute) = 0;
+				// CR_ROUTE_VC(&new->classroute) = COLLECTIVE_CLASS_ROUTE_INPUT_SUBCOMM;
+				new->cr_peer = NULL;
+				new->parent = crp->parent;
+				crp->cr_peer = new;
+				return x;
+
+			}
+		}
+	}
+	// can't re-using any existing sub-comm's classroute... need new one
+	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
+		if (cr_alloc[x] == NULL) break;
+	}
+	if (x >= BGQ_COLLECTIVE_MAX_CLASSROUTES) return -1;
+	new = malloc(sizeof(struct cr_allocation));
+	new->cr_list = 0;
+	*new->rect = *subcomm;
+	CR_ROUTE_ID(&new->classroute) = x;
+	CR_ROUTE_UP(&new->classroute) = 0;
+	CR_ROUTE_DOWN(&new->classroute) = 0;
+	// CR_ROUTE_VC(&new->classroute) = COLLECTIVE_CLASS_ROUTE_INPUT_SUBCOMM;
+	new->cr_peer = NULL;
+#warning can't refer to actual parent this way - might be linked-list
+	new->parent = cr_alloc[parent];
+	cr_alloc[parent]->cr_list |= (1 << x);
+	cr_alloc[x] = new;
+	return x;
+}
+
+void get_classroute_id(int parent, CR_RECT_T *subcomm) {
+	int x;
+	struct cr_allocation *crp, *crq;
+
+	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
+		if (!(cr_alloc[parent]->cr_list & (1 << x))) continue;
+		crq = NULL;
+		for (crp = cr_alloc[x]; crp; crp = crp->cr_peer) {
+			if (do_rect_equal(crp->rect, subcomm)) {
+				if (crq) {
+					crq->cr_peer = crp->cr_peer;
+					// might need to update our local DCRs...
+					// but caller knows that...
+				} else {
+					cr_alloc[x] = crp->cr_peer;
+					if (cr_alloc[x] == NULL) {
+						cr_alloc[parent]->cr_list &= ~(1 << x);
+					}
+				}
+				free(crp);
+				return;
+			}
+			crq = crp;
+		}
+	}
+}
+#endif
