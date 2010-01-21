@@ -2781,7 +2781,6 @@ extern "C"
   {
     xmi_client_t         client;	   /**< client to operate within */
     size_t               context;	   /**< primary context to operate within */
-    void                *request; 	   /**< space for operation */
     size_t               dispatch;         /**< Dispatch identifier */
     xmi_callback_t       cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
@@ -2971,7 +2970,6 @@ extern "C"
   {
     xmi_client_t         client;	     /**< client to operate within */
     size_t               context;	     /**< primary context to operate within */
-    void                *request; 	     /**< space for operation */
     xmi_callback_t       cb_done;	     /**< User's completion callback */
     unsigned             connection_id;      /**< differentiate data streams */
     unsigned             roles;              /**< bitmap of roles to perform */
@@ -3019,7 +3017,6 @@ extern "C"
   {
     xmi_client_t       client;	        /**< client to operate within */
     size_t             context;	        /**< primary context to operate within */
-    void              *request;	        /**< space for operation */
     xmi_callback_t     cb_done;		/**< User's completion callback */
     unsigned           connection_id;	/**< (remove?) differentiate data streams */
     unsigned           roles;		/**< bitmap of roles to perform */
@@ -3065,7 +3062,6 @@ extern "C"
   {
     xmi_client_t         client;	      /**< client to operate within */
     size_t               context;	      /**< primary context to operate within */
-    void                *request;             /**< space for communication struct(s) */
     xmi_callback_t       cb_done;             /**< User's completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the

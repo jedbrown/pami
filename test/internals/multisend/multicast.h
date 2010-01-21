@@ -129,7 +129,6 @@ public:
 		mcast->dispatch = _dispatch_id;
 		mcast->msgcount = 1;
 		mcast->msginfo = &_msginfo;
-		mcast->request = NULL;
 		mcast->cb_done = (xmi_callback_t){_done_cb, (void *)this};
 		mcast->src = (xmi_pipeworkqueue_t *)&_ipwq;
 		mcast->dst = (xmi_pipeworkqueue_t *)&_opwq;
@@ -204,7 +203,6 @@ public:
 		mcast->dispatch = _dispatch_id;
 		mcast->msgcount = 1;
 		mcast->msginfo = &_msginfo;
-		mcast->request = NULL;
 		mcast->cb_done = (xmi_callback_t){_done_cb, (void *)this};
 		mcast->src = (xmi_pipeworkqueue_t *)&_ipwq;
 		mcast->dst = (xmi_pipeworkqueue_t *)&_opwq;

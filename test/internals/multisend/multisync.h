@@ -59,7 +59,6 @@ public:
 		}
 
 		msync->cb_done = (xmi_callback_t){_done_cb, (void *)this};
-		msync->request = NULL;
 
 		// Do three barriers: first is to synchronize the ranks so that
 		// the timing of the follwing barriers are cleaner. Also, no printfs

@@ -67,7 +67,6 @@ public:
 		_opwq.configure(NULL, _result, sizeof(_result), 0);
 		_opwq.reset();
 
-		mcomb->request = NULL;
 		mcomb->cb_done = (xmi_callback_t){_done_cb, (void *)this};
 		mcomb->data = (xmi_pipeworkqueue_t *)&_ipwq;
 		mcomb->results = (xmi_pipeworkqueue_t *)&_opwq;
