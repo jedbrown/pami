@@ -1,5 +1,5 @@
 /**
- * \file experimental/cnclassroute/testroots.c
+ * \file experimental/bgq/cnclassroute/testroots.c
  * \brief ???
  */
 #include <stdio.h>
@@ -12,14 +12,14 @@ extern char *dim_names;
 
 typedef struct {
 	commworld_t world;
-	ClassRoute_t *cr;
+	classroute_t *cr;
 } clsrt_entry_t;
 
 #define DEBUG
 
 int main(int argc, char **argv) {
 	int x, e;
-	rect_t comm;
+	CR_RECT_T comm;
 	commworld_t world;
 	char *ep;
 	int world_set = 0, comm_set = 0, root_set = 0;
@@ -100,10 +100,6 @@ int main(int argc, char **argv) {
 	if (!comm_set) {
 		comm = world.rect;
 	}
-	if (world.rect.ll.dims != comm.ll.dims) {
-		fprintf(stderr, "sub-comm number of dimensions does not match 'world'\n");
-		exit(1);
-	}
 	int z = rect_size(&comm);
 	if (pick) {
 		clsrt_entry_t *cra = (clsrt_entry_t *)malloc(2 * sizeof(clsrt_entry_t));
@@ -112,16 +108,16 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 
-		coord_t root1, root2;
+		CR_COORD_T root1, root2;
 		pick_world_root_pair(&world.rect, &root1, &root2, &world.pri_dim);
 
 		world.root = root1;
-		ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
+		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 		if (!cr) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
-		memset(cr, -1, z * sizeof(ClassRoute_t));
+		memset(cr, -1, z * sizeof(classroute_t));
 		make_classroutes(&world, &comm, cr);
 		if (sanity) chk_all_sanity(&world, &comm, cr);
 		if (!chk) {
@@ -129,7 +125,7 @@ int main(int argc, char **argv) {
 		} else {
 			cra[0].cr = cr;
 			cra[0].world = world;
-			cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
+			cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 			if (!cr) {
 				fprintf(stderr, "out of memory allocating classroute array!\n");
 				exit(1);
@@ -137,7 +133,7 @@ int main(int argc, char **argv) {
 		}
 
 		world.root = root2;
-		memset(cr, -1, z * sizeof(ClassRoute_t));
+		memset(cr, -1, z * sizeof(classroute_t));
 		make_classroutes(&world, &comm, cr);
 		if (sanity) chk_all_sanity(&world, &comm, cr);
 		if (!chk) {
@@ -176,17 +172,13 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "invalid coord for world root: \"%s\" at \"%s\"\n", argv[optind + x], ep);
 				continue;
 			}
-			if (world.root.dims != world.rect.ll.dims) {
-				fprintf(stderr, "root number of dimensions does not match 'world'\n");
-				continue;
-			}
 
-			ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
+			classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 			if (!cr) {
 				fprintf(stderr, "out of memory allocating classroute array!\n");
 				exit(1);
 			}
-			memset(cr, -1, z * sizeof(ClassRoute_t));
+			memset(cr, -1, z * sizeof(classroute_t));
 			make_classroutes(&world, &comm, cr);
 			if (sanity) chk_all_sanity(&world, &comm, cr);
 
@@ -218,19 +210,18 @@ int main(int argc, char **argv) {
 			}
 		}
 	} else {
-		for (x = 0; x < world.rect.ll.dims; ++x) {
-			world.root.coords[x] = world.rect.ll.coords[x] +
-				(world.rect.ur.coords[x] - world.rect.ll.coords[x] + 1) / 2;
+		for (x = 0; x < CR_NUM_DIMS; ++x) {
+			CR_COORD_DIM(&world.root,x) = CR_COORD_DIM(CR_RECT_LL(&world.rect),x) +
+				(CR_COORD_DIM(CR_RECT_UR(&world.rect),x) - CR_COORD_DIM(CR_RECT_LL(&world.rect),x) + 1) / 2;
 
 		}
-		world.root.dims = world.rect.ll.dims;
 
-		ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
+		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 		if (!cr) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
-		memset(cr, -1, z * sizeof(ClassRoute_t));
+		memset(cr, -1, z * sizeof(classroute_t));
 		make_classroutes(&world, &comm, cr);
 #ifdef DEBUG
 		if (force_errs) {
@@ -238,13 +229,13 @@ int main(int argc, char **argv) {
 			for (r = 0; r < z; ++r) {
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand() & rand()); /* try to reduce bits */
-					l &= ((1 << (world.rect.ll.dims * 2)) - 1);
-					cr[r].output = l;
+					l &= CR_ROUTE_NETMASK;
+					CR_ROUTE_UP(&cr[r].cr) = l;
 				}
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand()); /* try to reduce bits */
-					l &= ((1 << (world.rect.ll.dims * 2)) - 1);
-					cr[r].input = l;
+					l &= CR_ROUTE_NETMASK;
+					CR_ROUTE_DOWN(&cr[r].cr) = l;
 				}
 			}
 		}

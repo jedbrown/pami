@@ -2,25 +2,30 @@
  * \file experimental/cnclassroute/testlib.h
  * \brief ???
  */
-#ifndef __experimental_cnclassroute_testlib_h__
-#define __experimental_cnclassroute_testlib_h__
+#ifndef __experimental_bgq_cnclassroute_testlib_h__
+#define __experimental_bgq_cnclassroute_testlib_h__
 
 #include <stdio.h>
 
 #include "cnclassroute.h"
 
-char *dim_names = XMI_DIM_NAMES;
+char *dim_names = CR_DIM_NAMES;
 
 typedef struct {
-	rect_t rect;
-	coord_t root;
+	CR_RECT_T rect;
+	CR_COORD_T root;
 	int pri_dim;
 } commworld_t;
+
+typedef struct {
+	uint32_t flags;
+	ClassRoute_t cr;
+} classroute_t;
 
 int sprint_links(char *buf, uint32_t link) {
 	char *s = buf;
 	int x;
-	for (x = 0; x < XMI_MAX_DIMS; ++x) {
+	for (x = 0; x < CR_NUM_DIMS; ++x) {
 		if (link & CR_LINK(x,CR_SIGN_POS)) {
 			if (s != buf) *s++ = ' ';
 			*s++ = dim_names[x];
@@ -37,14 +42,14 @@ int sprint_links(char *buf, uint32_t link) {
 	return s - buf;
 }
 
-int parse_coord(char *s, char **e, coord_t *c) {
-	coord_t c0;
+int parse_coord(char *s, char **e, CR_COORD_T *c) {
+	CR_COORD_T c0;
 	char *t;
 
 	/* syntax: "( %d, %d, ... )" */
 	while (*s && *s != '(') ++s;
 	if (*s == '(') ++s;
-	c0.dims = 0;
+	int dims = 0;
 	while (1) {
 		while (*s && isspace(*s)) ++s;
 		if (!*s) {
@@ -52,44 +57,52 @@ int parse_coord(char *s, char **e, coord_t *c) {
 			return -1;
 		}
 		if (*s == ')') {
+			int x;
 			if (e) *e = ++s;
+			while (dims < CR_NUM_DIMS) {
+				CR_COORD_DIM(&c0,dims) = 0;
+				++dims;
+			}
 			*c = c0;
 			return 0;
 		}
-		c0.coords[c0.dims] = strtol(s, &t, 0);
+		if (dims >= CR_NUM_DIMS) {
+			if (e) *e = s;
+			return -1;
+		}
+		CR_COORD_DIM(&c0,dims) = strtol(s, &t, 0);
 		if (s == t) {
 			if (e) *e = s;
 			return -1;
 		}
 		s = t;
 		if (*s == ',') ++s;
-		++c0.dims;
+		++dims;
 	}
 }
 
-int parse_rect(char *s, char **e, rect_t *r) {
+int parse_rect(char *s, char **e, CR_RECT_T *r) {
 	int x;
-	rect_t r0;
+	CR_RECT_T r0;
 	char *t;
 
 	/* syntax: "(%d,%d,...) : (%d,%d,...)" */
-	x = parse_coord(s, e, &r0.ll);
+	x = parse_coord(s, e, CR_RECT_LL(&r0));
 	if (x != 0) return x;
 	t = *e;
 	while (*t && isspace(*t)) ++t;
 	if (*t == ':') ++t;
 	while (*t && isspace(*t)) ++t;
-	x = parse_coord(t, e, &r0.ur);
+	x = parse_coord(t, e, CR_RECT_UR(&r0));
 	if (x != 0) return x;
-	if (r0.ll.dims != r0.ur.dims) { *e = s; return -1; }
 	*r = r0;
 	return 0;
 }
 
-int parse_sparse(char *s, char **ep, rect_t *r, coord_t **exc, int *nexc) {
+int parse_sparse(char *s, char **ep, CR_RECT_T *r, CR_COORD_T **exc, int *nexc) {
 	char *t = NULL, *u;
 	int e, n;
-	coord_t *c;
+	CR_COORD_T *c;
 	e = parse_rect(s, &t, r);
 	if (e != 0) {
 		*ep = t;
@@ -102,7 +115,7 @@ int parse_sparse(char *s, char **ep, rect_t *r, coord_t **exc, int *nexc) {
 		return 0;
 	}
 	for (n = 0, u = t; *u; ++u) if (*u == '-') ++n;
-	c = (coord_t *)malloc(n * sizeof(*c));
+	c = (CR_COORD_T *)malloc(n * sizeof(*c));
 	n = 0;
 	while (*t && *t == '-') {
 		++t;
@@ -116,12 +129,12 @@ int parse_sparse(char *s, char **ep, rect_t *r, coord_t **exc, int *nexc) {
 	return 0;
 }
 
-int sprint_coord(char *buf, coord_t *co) {
+int sprint_coord(char *buf, CR_COORD_T *co) {
 	char *s = buf;
 	char c = '(';
 	int x;
-	for (x = 0; x < co->dims; ++x) {
-		s += sprintf(s, "%c%d", c, co->coords[x]);
+	for (x = 0; x < CR_NUM_DIMS; ++x) {
+		s += sprintf(s, "%c%d", c, CR_COORD_DIM(co,x));
 		c = ',';
 	}
 	*s++ = ')';
@@ -129,186 +142,168 @@ int sprint_coord(char *buf, coord_t *co) {
 	return s - buf;
 }
 
-int sprint_rect(char *buf, rect_t *r) {
+int sprint_rect(char *buf, CR_RECT_T *r) {
 	char *s = buf;
 
-	s += sprint_coord(s, &r->ll);
+	s += sprint_coord(s, CR_RECT_LL(r));
 	*s++ = ':';
-	s += sprint_coord(s, &r->ur);
+	s += sprint_coord(s, CR_RECT_UR(r));
 	return s - buf;
 }
 
-int coord2rank(rect_t *world, coord_t *coord) {
+int coord2rank(CR_RECT_T *world, CR_COORD_T *coord) {
 	int rank = 0;
 	int d;
-	for (d = 0; d < world->ll.dims; ++d) {
-		rank *= (world->ur.coords[d] - world->ll.coords[d] + 1);
-		rank += (coord->coords[d] - world->ll.coords[d]);
+	for (d = 0; d < CR_NUM_DIMS; ++d) {
+		rank *= (CR_COORD_DIM(CR_RECT_UR(world),d) - CR_COORD_DIM(CR_RECT_LL(world),d) + 1);
+		rank += (CR_COORD_DIM(coord,d) - CR_COORD_DIM(CR_RECT_LL(world),d));
 	}
 	return rank;
 }
 
-void rank2coord(rect_t *world, int rank, coord_t *coord) {
+void rank2coord(CR_RECT_T *world, int rank, CR_COORD_T *coord) {
 	int d;
-	for (d = world->ll.dims - 1; d >= 0; --d) {
-		int x = (world->ur.coords[d] - world->ll.coords[d] + 1);
-		coord->coords[d] = world->ll.coords[d] + (rank % x);
+	for (d = CR_NUM_DIMS - 1; d >= 0; --d) {
+		int x = (CR_COORD_DIM(CR_RECT_UR(world),d) - CR_COORD_DIM(CR_RECT_LL(world),d) + 1);
+		CR_COORD_DIM(coord,d) = CR_COORD_DIM(CR_RECT_LL(world),d) + (rank % x);
 		rank /= x;
 	}
-	coord->dims = world->ll.dims;
 }
 
-int rect_size(rect_t *rect) {
+int rect_size(CR_RECT_T *rect) {
 	int size = 1;
 	int d;
-	for (d = 0; d < rect->ll.dims; ++d) {
-		size *= (rect->ur.coords[d] - rect->ll.coords[d] + 1);
+	for (d = 0; d < CR_NUM_DIMS; ++d) {
+		size *= (CR_COORD_DIM(CR_RECT_UR(rect),d) - CR_COORD_DIM(CR_RECT_LL(rect),d) + 1);
 	}
 	return size;
 }
 
-#define ERR_O_CRCONFLICT	0x8000	/**< two classroutes conflict? */
-#define ERR_O_ONEROOT		0x4000	/**< not exactly one root? */
-#define ERR_O_MULTIUPLINK	0x2000	/**< more than one up link? */
-#define ERR_O_UNCONN		0x1000	/**< link not connected */
-#define ERR_O_OUTBOUNDS		0x0002	/**< link is outside rectangle */
-/*				0x0001	*/
+#define ERR_O_CRCONFLICT	0x80000000	/**< two classroutes conflict? */
+#define ERR_O_ONEROOT		0x40000000	/**< not exactly one root? */
+#define ERR_O_MULTIUPLINK	0x20000000	/**< more than one up link? */
+#define ERR_O_UNCONN		0x10000000	/**< link not connected */
+#define ERR_O_OUTBOUNDS		0x08000000	/**< link is outside rectangle */
+/*				0x04000000	*/
 
-#define ERR_I_CRCONFLICT	0x8000	/**< two classroutes conflict? */
-#define ERR_I_UPDNCONFLICT	0x4000	/**< any up/dn links same? */
-#define ERR_I_LOOP		0x2000	/**< loop in connections */
-#define ERR_I_UNCONN		0x1000	/**< link not connected */
-#define ERR_I_OUTBOUNDS		0x0002	/**< link is outside rectangle */
-#define FLAG_I_VISITED		0x0001	/**< internal - !orphaned */
+#define ERR_I_CRCONFLICT	0x00008000	/**< two classroutes conflict? */
+#define ERR_I_UPDNCONFLICT	0x00004000	/**< any up/dn links same? */
+#define ERR_I_LOOP		0x00002000	/**< loop in connections */
+#define ERR_I_UNCONN		0x00001000	/**< link not connected */
+#define ERR_I_OUTBOUNDS		0x00000800	/**< link is outside rectangle */
+#define FLAG_I_VISITED		0x00000400	/**< internal - !orphaned */
 
-#define ERRS	(ERR_O_CRCONFLICT	| \
-		 ERR_O_ONEROOT		| \
-		 ERR_O_MULTIUPLINK	| \
-		 ERR_O_OUTBOUNDS	| \
-		 ERR_O_UNCONN		| \
-		 ERR_I_CRCONFLICT	| \
-		 ERR_I_UPDNCONFLICT	| \
-		 ERR_I_OUTBOUNDS	| \
-		 ERR_I_UNCONN		| \
-		 ERR_I_LOOP		| \
-		 FLAG_I_VISITED)
-#define CHK_CRCONFLICT(a,b)	(((a & b) & ~ERRS) != 0)
+#define CHK_CRCONFLICT(a,b)	((a & b) != 0)
 
-void chk_classroute(ClassRoute_t *cra, ClassRoute_t *crb) {
-	if (CHK_CRCONFLICT(cra->output, crb->output)) {
-		cra->output |= ERR_O_CRCONFLICT;
-		crb->output |= ERR_O_CRCONFLICT;
+void chk_classroute(classroute_t *cra, classroute_t *crb) {
+	if (CHK_CRCONFLICT(CR_ROUTE_UP(&cra->cr), CR_ROUTE_UP(&crb->cr))) {
+		cra->flags |= ERR_O_CRCONFLICT;
+		crb->flags |= ERR_O_CRCONFLICT;
 	}
-	if (CHK_CRCONFLICT(cra->input, crb->input)) {
-		cra->input |= ERR_I_CRCONFLICT;
-		crb->input |= ERR_I_CRCONFLICT;
+	if (CHK_CRCONFLICT(CR_ROUTE_DOWN(&cra->cr), CR_ROUTE_DOWN(&crb->cr))) {
+		cra->flags |= ERR_I_CRCONFLICT;
+		crb->flags |= ERR_I_CRCONFLICT;
 	}
 }
 
-void chk_sanity(ClassRoute_t *cr, int *nroots) {
+void chk_sanity(classroute_t *cr, int *nroots) {
 	uint32_t ul, dl;
 	/* check up link for zero or one link */
-	ul = cr->output & ~ERRS;
+	ul = CR_ROUTE_UP(&cr->cr);
 	if (!ul) {
 		++(*nroots);
 		if (*nroots > 1) {
-			cr->output |= ERR_O_ONEROOT;
+			cr->flags |= ERR_O_ONEROOT;
 		}
 	} else if ((ul & (ul - 1)) != 0) {
-		cr->output |= ERR_O_MULTIUPLINK;
+		cr->flags |= ERR_O_MULTIUPLINK;
 	}
-	dl = (cr->input & ~ERRS);
+	dl = CR_ROUTE_DOWN(&cr->cr);
 	if ((ul & dl) || !(ul | dl)) {
-		cr->input |= ERR_I_UPDNCONFLICT;
+		cr->flags |= ERR_I_UPDNCONFLICT;
 	}
 }
 
-void print_classroute(coord_t *me, ClassRoute_t *cr, int rank) {
+void print_classroute(CR_COORD_T *me, classroute_t *cr, int rank) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
 	//s += sprintf(s, "[%d]", rank);
 	s += sprintf(s, " up: ");
-	s += sprint_links(s, cr->output & ~ERRS);
+	s += sprint_links(s, CR_ROUTE_UP(&cr->cr));
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, cr->input & ~ERRS);
+	s += sprint_links(s, CR_ROUTE_DOWN(&cr->cr));
 	printf("%s\n", buf);
 }
 
-void print_classroute_errs(coord_t *me, ClassRoute_t *cr, int rank) {
+void print_classroute_errs(CR_COORD_T *me, classroute_t *cr, int rank) {
 	static char buf[1024];
 	char *s = buf;
 	s += sprint_coord(s, me);
 	//s += sprintf(s, "[%d]", rank);
 	*s++ = ' ';
 	*s++ = '|';
-	*s++ = (cr->output & ERR_O_CRCONFLICT   ? '*' : ' ');
-	*s++ = (cr->output & ERR_O_ONEROOT      ? 'R' : ' ');
-	*s++ = (cr->output & ERR_O_MULTIUPLINK  ? 'M' : ' ');
-	*s++ = (cr->output & ERR_O_OUTBOUNDS    ? 'V' : ' ');
-	*s++ = (cr->output & ERR_O_UNCONN       ? 'X' : ' ');
+	*s++ = (cr->flags & ERR_O_CRCONFLICT   ? '*' : ' ');
+	*s++ = (cr->flags & ERR_O_ONEROOT      ? 'R' : ' ');
+	*s++ = (cr->flags & ERR_O_MULTIUPLINK  ? 'M' : ' ');
+	*s++ = (cr->flags & ERR_O_OUTBOUNDS    ? 'V' : ' ');
+	*s++ = (cr->flags & ERR_O_UNCONN       ? 'X' : ' ');
 	*s++ = '|';
-	*s++ = (cr->input & ERR_I_CRCONFLICT   ? '*' : ' ');
-	*s++ = (cr->input & ERR_I_UPDNCONFLICT ? 'C' : ' ');
-	*s++ = (cr->input & ERR_I_OUTBOUNDS    ? 'V' : ' ');
-	*s++ = (cr->input & ERR_I_UNCONN       ? 'X' : ' ');
-	*s++ = (cr->input & ERR_I_LOOP         ? '!' : ' ');
-	*s++ = ((cr->input & FLAG_I_VISITED) == 0 ? '?' : ' ');
+	*s++ = (cr->flags & ERR_I_CRCONFLICT   ? '*' : ' ');
+	*s++ = (cr->flags & ERR_I_UPDNCONFLICT ? 'C' : ' ');
+	*s++ = (cr->flags & ERR_I_OUTBOUNDS    ? 'V' : ' ');
+	*s++ = (cr->flags & ERR_I_UNCONN       ? 'X' : ' ');
+	*s++ = (cr->flags & ERR_I_LOOP         ? '!' : ' ');
+	*s++ = ((cr->flags & FLAG_I_VISITED) == 0 ? '?' : ' ');
 	*s++ = '|';
 	s += sprintf(s, " up: ");
-	s += sprint_links(s, cr->output & ~ERRS);
+	s += sprint_links(s, CR_ROUTE_UP(&cr->cr));
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, cr->input & ~ERRS);
+	s += sprint_links(s, CR_ROUTE_DOWN(&cr->cr));
 	printf("%s\n", buf);
 }
 
-void recurse_dims(commworld_t *cw, rect_t *comm, coord_t *me, ClassRoute_t *cr) {
+void recurse_dims(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, int dim, classroute_t *cr) {
 	int x;
-	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
-		me->coords[me->dims] = x;
-		++me->dims;
-		if (me->dims == cw->rect.ll.dims) {
+	for (x = CR_COORD_DIM(CR_RECT_LL(comm),dim); x <= CR_COORD_DIM(CR_RECT_UR(comm),dim); ++x) {
+		CR_COORD_DIM(me,dim) = x;
+		if (dim + 1 == CR_NUM_DIMS) {
 			int r = coord2rank(comm, me);
-			build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r]);
+			cr[r].flags = 0;
+			build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r].cr);
 		} else {
-			recurse_dims(cw, comm, me, cr);
+			recurse_dims(cw, comm, me, dim + 1, cr);
 		}
-		--me->dims;
 	}
 }
 
-void make_classroutes(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
-	coord_t me = { 0 };
-	recurse_dims(cw, comm, &me, cr);
+void make_classroutes(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
+	CR_COORD_T me = { 0 };
+	recurse_dims(cw, comm, &me, 0, cr);
 }
 
-#ifdef SUPPORT_SPARSE_RECTANGLE
-
-void recurse_dims_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl,
-				coord_t *me, ClassRoute_t *cr) {
+void recurse_dims_sparse(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *excl, int nexcl,
+				CR_COORD_T *me, int dim, classroute_t *cr) {
 	int x;
-	for (x = comm->ll.coords[me->dims]; x <= comm->ur.coords[me->dims]; ++x) {
-		me->coords[me->dims] = x;
-		++me->dims;
-		if (me->dims == cw->rect.ll.dims) {
+	for (x = CR_COORD_DIM(CR_RECT_LL(comm),dim); x <= CR_COORD_DIM(CR_RECT_UR(comm),dim); ++x) {
+		CR_COORD_DIM(me,dim) = x;
+		if (dim + 1 == CR_NUM_DIMS) {
 			int r = coord2rank(comm, me);
+			cr[r].flags = 0;
 			build_node_classroute_sparse(&cw->rect, &cw->root, me,
 							comm, excl, nexcl,
-							cw->pri_dim, &cr[r]);
+							cw->pri_dim, &cr[r].cr);
 		} else {
-			recurse_dims_sparse(cw, comm, excl, nexcl, me, cr);
+			recurse_dims_sparse(cw, comm, excl, nexcl, me, dim + 1, cr);
 		}
-		--me->dims;
 	}
 }
-void make_classroutes_sparse(commworld_t *cw, rect_t *comm, coord_t *excl, int nexcl, ClassRoute_t *cr) {
-	coord_t me = { 0 };
-	recurse_dims_sparse(cw, comm, excl, nexcl, &me, cr);
+void make_classroutes_sparse(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *excl, int nexcl, classroute_t *cr) {
+	CR_COORD_T me = { 0 };
+	recurse_dims_sparse(cw, comm, excl, nexcl, &me, 0, cr);
 }
 
-#endif /* SUPPORT_SPARSE_RECTANGLE */
-
-void chk_conn(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
+void chk_conn(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
 	int z = rect_size(comm);
 	int r, t, n, s;
 	uint32_t ul, dl, ol, m;
@@ -318,34 +313,34 @@ void chk_conn(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 	};
 
 	for (r = 0; r < z; ++r) {
-		coord_t c0, c1;
+		CR_COORD_T c0, c1;
 		rank2coord(comm, r, &c0);
-		ul = cr[r].output;
-		dl = cr[r].input;
-		for (n = 0; n < XMI_MAX_DIMS; ++n) {
+		ul = CR_ROUTE_UP(&cr[r].cr);
+		dl = CR_ROUTE_DOWN(&cr[r].cr);
+		for (n = 0; n < CR_NUM_DIMS; ++n) {
 			for (s = 0; s < 2; ++s) {
 				m = CR_LINK(n, s);
 				ol = CR_LINK(n, (1 - s));
 				c1 = c0;
-				c1.coords[n] += signs[s];
-				if (c1.coords[n] < comm->ll.coords[n] ||
-				    c1.coords[n] > comm->ur.coords[n]) {
+				CR_COORD_DIM(&c1,n) += signs[s];
+				if (CR_COORD_DIM(&c1,n) < CR_COORD_DIM(CR_RECT_LL(comm),n) ||
+				    CR_COORD_DIM(&c1,n) > CR_COORD_DIM(CR_RECT_UR(comm),n)) {
 					t = -1;
 				} else {
 					t = coord2rank(comm, &c1);
 				}
 				if (ul & m) {
 					if (t == -1) {
-						cr[r].output |= ERR_O_OUTBOUNDS;
-					} else if ((cr[t].input & ol) == 0) {
-						cr[r].output |= ERR_O_UNCONN;
+						cr[r].flags |= ERR_O_OUTBOUNDS;
+					} else if ((CR_ROUTE_DOWN(&cr[t].cr) & ol) == 0) {
+						cr[r].flags |= ERR_O_UNCONN;
 					}
 				}
 				if (dl & m) {
 					if (t == -1) {
-						cr[r].input |= ERR_I_OUTBOUNDS;
-					} else if ((cr[t].output & ol) == 0) {
-						cr[r].input |= ERR_I_UNCONN;
+						cr[r].flags |= ERR_I_OUTBOUNDS;
+					} else if ((CR_ROUTE_UP(&cr[t].cr) & ol) == 0) {
+						cr[r].flags |= ERR_I_UNCONN;
 					}
 				}
 			}
@@ -353,31 +348,31 @@ void chk_conn(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 	}
 }
 
-void traverse_down(commworld_t *cw, rect_t *comm, ClassRoute_t *cr, int curr) {
+void traverse_down(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr, int curr) {
 	uint32_t l, m;
 	int n, s, t;
-	coord_t c0, c1;
+	CR_COORD_T c0, c1;
 	static int signs[] = {
 		[CR_SIGN_POS] = 1,
 		[CR_SIGN_NEG] = -1,
 	};
 
-	l = cr[curr].input;
-	if (l & FLAG_I_VISITED) {
-		cr[curr].input |= ERR_I_LOOP;
+	l = CR_ROUTE_DOWN(&cr[curr].cr);
+	if (cr[curr].flags & FLAG_I_VISITED) {
+		cr[curr].flags |= ERR_I_LOOP;
 		return;
 	}
-	cr[curr].input |= FLAG_I_VISITED;
-	if (!(l & ~ERRS)) return;	/* leaf node */
+	cr[curr].flags |= FLAG_I_VISITED;
+	if (!l) return;	/* leaf node */
 	rank2coord(comm, curr, &c0);
-	for (n = 0; n < cw->rect.ll.dims; ++n) {
+	for (n = 0; n < CR_NUM_DIMS; ++n) {
 		for (s = 0; s < 2; ++s) {
 			m = CR_LINK(n, s);
 			if (l & m) {
 				c1 = c0;
-				c1.coords[n] += signs[s];
-				if (c1.coords[n] < comm->ll.coords[n] ||
-				    c1.coords[n] > comm->ur.coords[n]) {
+				CR_COORD_DIM(&c1,n) += signs[s];
+				if (CR_COORD_DIM(&c1,n) < CR_COORD_DIM(CR_RECT_LL(comm),n) ||
+				    CR_COORD_DIM(&c1,n) > CR_COORD_DIM(CR_RECT_UR(comm),n)) {
 					/* error - already flagged by chk_conn() */
 					continue;
 				}
@@ -388,14 +383,14 @@ void traverse_down(commworld_t *cw, rect_t *comm, ClassRoute_t *cr, int curr) {
 	}
 }
 
-void chk_visit(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
+void chk_visit(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
 	int r, z = rect_size(comm);
 	/*
 	 * find root node, traverse all connections and ensure each node is
 	 * visited exactly once. Assumes one root node - only traverses first root.
 	 */
 	for (r = 0; r < z; ++r) {
-		if ((cr[r].output & ~ERRS) == 0) break;
+		if (CR_ROUTE_UP(&cr[r].cr) == 0) break;
 	}
 	if (r >= z) {
 		/* error: no root node - all nodes show orphaned */
@@ -405,7 +400,7 @@ void chk_visit(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 	/* any node without FLAG_I_VISITED is orphaned... */
 }
 
-void chk_all_sanity(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
+void chk_all_sanity(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
 	int z = rect_size(comm);
 	int r, nroots = 0;
 
@@ -413,13 +408,13 @@ void chk_all_sanity(commworld_t *cw, rect_t *comm, ClassRoute_t *cr) {
 		chk_sanity(&cr[r], &nroots);
 	}
 	if (!nroots) {
-		cr[0].output |= ERR_O_ONEROOT;
+		cr[0].flags |= ERR_O_ONEROOT;
 	}
 	chk_conn(cw, comm, cr);
 	chk_visit(cw, comm, cr);
 }
 
-void print_classroutes(commworld_t *cw, rect_t *comm, ClassRoute_t *cr, int errs) {
+void print_classroutes(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr, int errs) {
 	static char buf[1024];
 	int z = rect_size(comm);
 	char *s = buf;
@@ -433,7 +428,7 @@ void print_classroutes(commworld_t *cw, rect_t *comm, ClassRoute_t *cr, int errs
 	s += sprint_coord(s, &cw->root);
 	printf("%s\n\tand primary dimension '%c':\n", buf, dim_names[cw->pri_dim]);
 	for (r = 0; r < z; ++r) {
-		coord_t c;
+		CR_COORD_T c;
 		rank2coord(comm, r, &c);
 		if (errs) {
 			print_classroute_errs(&c, &cr[r], r);
@@ -443,4 +438,4 @@ void print_classroutes(commworld_t *cw, rect_t *comm, ClassRoute_t *cr, int errs
 	}
 }
 
-#endif /* __experimental_cnclassroute_testlib_h__ */
+#endif /* __experimental_bgq_cnclassroute_testlib_h__ */

@@ -1,5 +1,5 @@
 /**
- * \file experimental/cnclassroute/testcomms.c
+ * \file experimental/bgq/cnclassroute/testcomms.c
  * \brief ???
  */
 #include <stdio.h>
@@ -13,7 +13,7 @@ extern char *dim_names;
 int main(int argc, char **argv) {
 	int x, z, e;
 	commworld_t world;
-	rect_t comm;
+	CR_RECT_T comm;
 	char *ep;
 	int world_set = 0, comm_set = 0, root_set = 0;
 	int sanity = 0;
@@ -67,16 +67,11 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	if (!root_set) {
-		for (x = 0; x < world.rect.ll.dims; ++x) {
-			world.root.coords[x] = world.rect.ll.coords[x] +
-				(world.rect.ur.coords[x] - world.rect.ll.coords[x] + 1) / 2;
+		for (x = 0; x < CR_NUM_DIMS; ++x) {
+			CR_COORD_DIM(&world.root,x) = CR_COORD_DIM(CR_RECT_LL(&world.rect),x) +
+				(CR_COORD_DIM(CR_RECT_UR(&world.rect),x) - CR_COORD_DIM(CR_RECT_LL(&world.rect),x) + 1) / 2;
 
 		}
-		world.root.dims = world.rect.ll.dims;
-	}
-	if (world.root.dims != world.rect.ll.dims) {
-		fprintf(stderr, "root number of dimensions does not match 'world'\n");
-		exit(1);
 	}
 	if (optind < argc) {
 		for (x = 0; x < argc - optind; ++x) {
@@ -85,18 +80,14 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "invalid rect for sub-comm: \"%s\" at \"%s\"\n", argv[optind + x], ep);
 				exit(1);
 			}
-			if (world.rect.ll.dims != comm.ll.dims) {
-				fprintf(stderr, "sub-comm number of dimensions does not match 'world'\n");
-				exit(1);
-			}
 
 			z = rect_size(&comm);
-			ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
+			classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 			if (!cr) {
 				fprintf(stderr, "out of memory allocating classroute array!\n");
 				exit(1);
 			}
-			memset(cr, -1, z * sizeof(ClassRoute_t));
+			memset(cr, -1, z * sizeof(classroute_t));
 			make_classroutes(&world, &comm, cr);
 			if (sanity) chk_all_sanity(&world, &comm, cr);
 
@@ -107,12 +98,12 @@ int main(int argc, char **argv) {
 	} else {
 		comm = world.rect;
 		z = rect_size(&comm);
-		ClassRoute_t *cr = (ClassRoute_t *)malloc(z * sizeof(ClassRoute_t));
+		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 		if (!cr) {
 			fprintf(stderr, "out of memory allocating classroute array!\n");
 			exit(1);
 		}
-		memset(cr, -1, z * sizeof(ClassRoute_t));
+		memset(cr, -1, z * sizeof(classroute_t));
 		make_classroutes(&world, &comm, cr);
 		if (sanity) chk_all_sanity(&world, &comm, cr);
 		print_classroutes(&world, &comm, cr, sanity);

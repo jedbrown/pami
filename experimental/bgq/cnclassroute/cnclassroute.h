@@ -1,45 +1,35 @@
 /**
- * \file experimental/cnclassroute/cnclassroute.h
+ * \file experimental/bgq/cnclassroute/cnclassroute.h
  * \brief ???
  */
 /* this should all be in xmi.h? */
 
-#ifndef __experimental_cnclassroute_cnclassroute_h__
-#define __experimental_cnclassroute_cnclassroute_h__
-
-#include <sys/types.h>
-#include <stdint.h>
-
-#include "kernel/Collective.h"
-#define XMI_MAX_DIMS 5
-#define XMI_DIM_NAMES	"ABCDE"
+#ifndef __experimental_bgq_cnclassroute_cnclassroute_h__
+#define __experimental_bgq_cnclassroute_cnclassroute_h__
 
 #define CR_SIGN_POS	0
 #define CR_SIGN_NEG	1
 
-static uint16_t cr_links[][2] = {
-[0][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_AP,
-[0][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_AM,
-[1][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_BP,
-[1][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_BM,
-[2][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_CP,
-[2][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_CM,
-[3][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_DP,
-[3][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_DM,
-[4][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_EP,
-[4][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_EM,
-};
-#define CR_LINK(n,s)	cr_links[n][s]
-
-typedef struct {
-	size_t dims;
-	size_t coords[XMI_MAX_DIMS];
-} coord_t;
-
-typedef struct {
-	coord_t ll;
-	coord_t ur;
-} rect_t;
+/// this header must define:
+///
+/// CR_LINK(n,s)	Create bit-mask for n-th link (dim) in 's' direction (CR_SIGN_POS...)
+///
+/// CR_NUM_DIMS		Number of dimensions in network
+/// CR_DIM_NAMES	String of single-char dimension IDs (names) - e.g. "XYZ" or "ABCDE"
+///
+/// CR_COORD_T			datatype for a coordinate (CR_NUM_DIMS)
+/// CR_COORD_DIM(coordp,dim)	accessor for coordp->[dim] (must work for both set/get)
+///
+/// CR_RECT_T		datatype for a rectangle (two coordinates)
+/// CR_RECT_LL(rectp)	accessor for rectp->lower-left-coord (get/put/CR_COORD_DIM())
+/// CR_RECT_UR(rectp)	accessor for rectp->upper-right-coord (get/put/CR_COORD_DIM())
+///
+/// CR_ROUTE_T		datatype for classroute 
+/// CR_ROUTE_UP(crp)	accessor for up-link bits in classroute
+/// CR_ROUTE_DOWN(crp)	accessor for down-link bits in classroute
+/// CR_ROUTE_NETMASK	mask of bits in links that are network connections
+///
+#include "xmi/cnclassroute.h" // replace with $(TARGET)/cnclassroute.h ...
 
 /**
  * \brief Compute classroute for node "me"
@@ -87,8 +77,8 @@ typedef struct {
  * (for all nodes) and evaluate it's position in it - or at least may have to
  * create the classroute down-tree from itself.
  */
-extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
-				rect_t *comm, int dim0, ClassRoute_t *cr);
+extern void build_node_classroute(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
+				CR_RECT_T *comm, int dim0, CR_ROUTE_T *cr);
 
 /**
  * \brief Compute classroute for node 'me' when rectangle is sparse
@@ -102,11 +92,9 @@ extern void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me
  * \param[in] dim0	Starting dimension (iterate circular increasing)
  * \param[out] cr	Classroute bitmaps
  */
-#ifdef SUPPORT_SPARSE_RECTANGLE
-extern void build_node_classroute_sparse(rect_t *world, coord_t *worldroot, coord_t *me,
-				rect_t *comm, coord_t *exlcude, int nexclude,
-				int dim0, ClassRoute_t *cr);
-#endif /* SUPPORT_SPARSE_RECTANGLE */
+extern void build_node_classroute_sparse(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
+				CR_RECT_T *comm, CR_COORD_T *exlcude, int nexclude,
+				int dim0, CR_ROUTE_T *cr);
 
 /**
  * Pick a pair of roots for 'world' rectangle that will not conflict
@@ -118,7 +106,7 @@ extern void build_node_classroute_sparse(rect_t *world, coord_t *worldroot, coor
  * \param[out] worldroot2	Coordinates of 2nd root node in COMM_WORLD
  * \param[out] pri_dim		Primary dimension for building classroute
  */
-extern void pick_world_root_pair(rect_t *world, coord_t *worldroot1, coord_t *worldroot2,
+extern void pick_world_root_pair(CR_RECT_T *world, CR_COORD_T *worldroot1, CR_COORD_T *worldroot2,
 								int *pri_dim);
 
-#endif
+#endif // __experimental_bgq_cnclassroute_cnclassroute_h__

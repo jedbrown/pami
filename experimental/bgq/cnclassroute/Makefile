@@ -3,7 +3,7 @@ WORK = /home/dougmill/cvs/bgq/work
 SPI = $(WORK)/spi
 HWI = $(WORK)/hwi
 COPTS =
-CFLAGS = -g -I$(SPI)/include -I$(HWI)/include -I$(WORK) -DSUPPORT_SPARSE_RECTANGLE
+CFLAGS = -g -I$(SPI)/include -I$(HWI)/include -I$(WORK) -I../../../
 
 HDRS = cnclassroute.h testlib.h
 OBJS = cnclassroute.o

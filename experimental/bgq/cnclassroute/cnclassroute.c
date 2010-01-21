@@ -1,37 +1,36 @@
 /**
- * \file experimental/cnclassroute/cnclassroute.c
+ * \file experimental/bgq/cnclassroute/cnclassroute.c
  * \brief ???
  */
 #include <stdio.h>
 #include "cnclassroute.h"
 
-void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
-					rect_t *comm, int dim0, ClassRoute_t *cr) {
-	// assert(ll->dims == ur->dims == me->dims);
-	int d, dim, dims = world->ll.dims;
-	ClassRoute_t cr0 = {0};
+void build_node_classroute(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
+					CR_RECT_T *comm, int dim0, CR_ROUTE_T *cr) {
+	int d, dim;
+	CR_ROUTE_T cr0 = {0};
 
-	for (dim = 0; dim < dims; ++dim) {
+	for (dim = 0; dim < CR_NUM_DIMS; ++dim) {
 		d = dim0 + dim;
-		if (d >= dims) d -= dims;
-		if (me->coords[d] <= worldroot->coords[d]) {
-			if (me->coords[d] > comm->ll.coords[d]) {
-				cr0.input |= CR_LINK(d,CR_SIGN_NEG);
+		if (d >= CR_NUM_DIMS) d -= CR_NUM_DIMS;
+		if (CR_COORD_DIM(me,d) <= CR_COORD_DIM(worldroot,d)) {
+			if (CR_COORD_DIM(me,d) > CR_COORD_DIM(CR_RECT_LL(comm),d)) {
+				CR_ROUTE_DOWN(&cr0) |= CR_LINK(d,CR_SIGN_NEG);
 			}
 		}
-		if (me->coords[d] >= worldroot->coords[d]) {
-			if (me->coords[d] < comm->ur.coords[d]) {
-				cr0.input |= CR_LINK(d,CR_SIGN_POS);
+		if (CR_COORD_DIM(me,d) >= CR_COORD_DIM(worldroot,d)) {
+			if (CR_COORD_DIM(me,d) < CR_COORD_DIM(CR_RECT_UR(comm),d)) {
+				CR_ROUTE_DOWN(&cr0) |= CR_LINK(d,CR_SIGN_POS);
 			}
 		}
-		if (me->coords[d] < worldroot->coords[d]) {
-			if (me->coords[d] < comm->ur.coords[d]) {
-				cr0.output |= CR_LINK(d,CR_SIGN_POS);
+		if (CR_COORD_DIM(me,d) < CR_COORD_DIM(worldroot,d)) {
+			if (CR_COORD_DIM(me,d) < CR_COORD_DIM(CR_RECT_UR(comm),d)) {
+				CR_ROUTE_UP(&cr0) |= CR_LINK(d,CR_SIGN_POS);
 				break;
 			}
-		} else if (me->coords[d] > worldroot->coords[d]) {
-			if (me->coords[d] > comm->ll.coords[d]) {
-				cr0.output |= CR_LINK(d,CR_SIGN_NEG);
+		} else if (CR_COORD_DIM(me,d) > CR_COORD_DIM(worldroot,d)) {
+			if (CR_COORD_DIM(me,d) > CR_COORD_DIM(CR_RECT_LL(comm),d)) {
+				CR_ROUTE_UP(&cr0) |= CR_LINK(d,CR_SIGN_NEG);
 				break;
 			}
 		}
@@ -39,25 +38,22 @@ void build_node_classroute(rect_t *world, coord_t *worldroot, coord_t *me,
 	*cr = cr0;
 }
 
-#ifdef SUPPORT_SPARSE_RECTANGLE
-
-static int eq_coords(coord_t *c0, coord_t *c1) {
+static int eq_coords(CR_COORD_T *c0, CR_COORD_T *c1) {
 	int d;
-	for (d = 0; d < c0->dims; ++d) {
-		if (c0->coords[d] != c1->coords[d]) return 0;
+	for (d = 0; d < CR_NUM_DIMS; ++d) {
+		if (CR_COORD_DIM(c0,d) != CR_COORD_DIM(c1,d)) return 0;
 	}
 	return 1;
 }
 
 /* recursive routine */
-static int find_local_contrib(rect_t *world, coord_t *worldroot, coord_t *me,
-			rect_t *comm, coord_t *exlcude, int nexclude,
-			int dim0, ClassRoute_t *cr, int level) {
-#warning Untested code
+static int find_local_contrib(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
+			CR_RECT_T *comm, CR_COORD_T *exlcude, int nexclude,
+			int dim0, CR_ROUTE_T *cr, int level) {
 	uint32_t l, m;
 	int n, s, t;
-	coord_t c0, c1;
-	ClassRoute_t cr1;
+	CR_COORD_T c0, c1;
+	CR_ROUTE_T cr1;
 	static int signs[] = {
 		[CR_SIGN_POS] = 1,
 		[CR_SIGN_NEG] = -1,
@@ -76,19 +72,19 @@ static int find_local_contrib(rect_t *world, coord_t *worldroot, coord_t *me,
 	}
 	build_node_classroute(world, worldroot, me, comm, dim0, &cr1);
 	c0 = *me;
-	l = cr1.input;
+	l = CR_ROUTE_DOWN(&cr1);
 	t = 0;
-	for (n = 0; n < world->ll.dims; ++n) {
+	for (n = 0; n < CR_NUM_DIMS; ++n) {
 		for (s = 0; s < 2; ++s) {
 			m = CR_LINK(n, s);
 			if (l & m) {
 				c1 = c0;
-				c1.coords[n] += signs[s];
+				CR_COORD_DIM(&c1,n) += signs[s];
 				/* assume no errors! */
 				int f = find_local_contrib(world, worldroot, &c1,
 						comm, exlcude, nexclude,
 						dim0, NULL, level + 1);
-				if (!f) cr1.input &= ~m;
+				if (!f) CR_ROUTE_DOWN(&cr1) &= ~m;
 				t += f;
 			}
 		}
@@ -97,9 +93,9 @@ static int find_local_contrib(rect_t *world, coord_t *worldroot, coord_t *me,
 	return t;
 }
 
-void build_node_classroute_sparse(rect_t *world, coord_t *worldroot, coord_t *me,
-				rect_t *comm, coord_t *exlcude, int nexclude,
-				int dim0, ClassRoute_t *cr) {
+void build_node_classroute_sparse(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
+				CR_RECT_T *comm, CR_COORD_T *exlcude, int nexclude,
+				int dim0, CR_ROUTE_T *cr) {
 	/*
 	 * traverse down-tree and determine if any local contributors exist.
 	 * unfortunately, we don't have any classroutes but our own, so we must
@@ -108,26 +104,23 @@ void build_node_classroute_sparse(rect_t *world, coord_t *worldroot, coord_t *me
 	find_local_contrib(world, worldroot, me, comm, exlcude, nexclude, dim0, cr, 0);
 }
 
-#endif /* SUPPORT_SPARSE_RECTANGLE */
-
-void pick_world_root_pair(rect_t *world, coord_t *worldroot1, coord_t *worldroot2,
+void pick_world_root_pair(CR_RECT_T *world, CR_COORD_T *worldroot1, CR_COORD_T *worldroot2,
 								int *pri_dim) {
 	int x;
 	int min = 99999999;
 	int min_dim = -1;
-	coord_t root;
-	for (x = 0; x < world->ll.dims; ++x) {
-		int size = world->ur.coords[x] - world->ll.coords[x] + 1;
-		root.coords[x] = world->ll.coords[x] + size / 2;
+	CR_COORD_T root;
+	for (x = 0; x < CR_NUM_DIMS; ++x) {
+		int size = CR_COORD_DIM(CR_RECT_UR(world),x) - CR_COORD_DIM(CR_RECT_LL(world),x) + 1;
+		CR_COORD_DIM(&root,x) = CR_COORD_DIM(CR_RECT_LL(world),x) + size / 2;
 		if (size > 1 && size <= min) {
 			min = size;
 			min_dim = x;
 		}
 	}
-	root.dims = world->ll.dims;
 	*pri_dim = min_dim;
 	*worldroot1 = root;
-	worldroot1->coords[min_dim] = world->ll.coords[min_dim];
+	CR_COORD_DIM(worldroot1,min_dim) = CR_COORD_DIM(CR_RECT_LL(world),min_dim);
 	*worldroot2 = root;
-	worldroot2->coords[min_dim] = world->ur.coords[min_dim];
+	CR_COORD_DIM(worldroot2,min_dim) = CR_COORD_DIM(CR_RECT_UR(world),min_dim);
 }
