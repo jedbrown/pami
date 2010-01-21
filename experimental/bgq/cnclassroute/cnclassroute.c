@@ -125,125 +125,121 @@ void pick_world_root_pair(CR_RECT_T *world, CR_COORD_T *worldroot1, CR_COORD_T *
 	CR_COORD_DIM(worldroot2,min_dim) = CR_COORD_DIM(CR_RECT_UR(world),min_dim);
 }
 
-#if 0
-static int do_rect_equal(CR_RECT_T *rect1, CR_RECT_T *rect2) {
-	int d;
+static int rect_compare(CR_RECT_T *rect1, CR_RECT_T *rect2) {
+	int d, n = 0, o = 0;
+	unsigned r1ll, r2ll, r1ur, r2ur;
 	for (d = 0; d < CR_NUM_DIMS; ++d) {
-		if (CR_COORD_DIM(CR_RECT_LL(rect1),d) != CR_COORD_DIM(CR_RECT_LL(rect2),d) ||
-		    CR_COORD_DIM(CR_RECT_UR(rect1),d) != CR_COORD_DIM(CR_RECT_UR(rect2),d)) {
-			return 0;
+		r1ll = CR_COORD_DIM(CR_RECT_LL(rect1),d);
+		r2ll = CR_COORD_DIM(CR_RECT_LL(rect2),d);
+		r1ur = CR_COORD_DIM(CR_RECT_UR(rect1),d);
+		r2ur = CR_COORD_DIM(CR_RECT_UR(rect2),d);
+		if (r1ll == r2ll && r1ur == r2ur) {
+			++n;	/* identical */
+			++o;	/* also counts as overlapping */
+			continue;
+		}
+		if (r1ur >= r2ll && r1ll <= r2ur) {
+			++o;	/* overlapping */
+			continue;
 		}
 	}
-	return 1;
-}
-
-static int do_rect_overlap(CR_RECT_T *rect1, CR_RECT_T *rect2) {
-	int d;
-	for (d = 0; d < CR_NUM_DIMS; ++d) {
-		if (CR_COORD_DIM(CR_RECT_LL(rect1),d) <= CR_COORD_DIM(CR_RECT_UR(rect2),d) ||
-		    CR_COORD_DIM(CR_RECT_UR(rect1),d) >= CR_COORD_DIM(CR_RECT_LL(rect2),d)) {
-			return 0;
-		}
-	}
-	return 1;
+	if (n == CR_NUM_DIMS) return 0;		/* identical rectangles */
+	if (o == CR_NUM_DIMS) return -1;	/* overlapping */
+	return 1; /* disjoint rectangles */
 }
 
 static struct cr_allocation *cr_alloc[BGQ_COLLECTIVE_MAX_CLASSROUTES] = { 0 };
 
-int get_classroute_id(int parent, CR_RECT_T *subcomm) {
-	int x;
+/**
+ * \brief Allocate a classroute for rectangle
+ *
+ * Will re-use classroute ID for identical rectangles, or where a
+ * classroute has no overlapping rectangles in use at the moment.
+ *
+ * \param[in] subcomm	The rectangle for classroute to be created
+ *
+ * \return 0..N = classroute, -1 = no space
+ */
+int get_classroute_id(CR_RECT_T *subcomm) {
+	int x, z = -1;
 	struct cr_allocation *new, *crp;
 
-	// this doesn't work right when these values are 0/1...
-	if (parent == COLLECTIVE_CLASS_ROUTE_INPUT_USER ||
-	    parent == COLLECTIVE_CLASS_ROUTE_INPUT_SYSTEM) {
-		// comm-world... either system or user...
-		int vc = parent;
-		for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
-			if (cr_alloc[x] == NULL) {
+	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
+		if (cr_alloc[x] == NULL) {
+			if (z == -1) z = x;
+			continue;
+		}
+		for (crp = cr_alloc[x]; crp; crp = crp->cr_peer) {
+			int y = rect_compare(&crp->rect, subcomm);
+			if (y == -1) break; // can't use this classroute...
+			if (y == 0 || crp->cr_peer == NULL) {
 				new = malloc(sizeof(struct cr_allocation));
-				new->cr_list = 0;
-				*new->rect = *subcomm;
+				new->rect = *subcomm;
 				CR_ROUTE_ID(&new->classroute) = x;
 				CR_ROUTE_UP(&new->classroute) = 0;
 				CR_ROUTE_DOWN(&new->classroute) = 0;
 				// CR_ROUTE_VC(&new->classroute) = vc;
-				new->cr_peer = NULL;
-				new->parent = NULL;
-				cr_alloc[x] = new;
-				return x;
-			}
-		}
-		return -1;
-	}
-	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
-#warning can't refer to actual parent this way - might be linked-list
-		if (!(cr_alloc[parent]->cr_list & (1 << x))) continue;
-		// assert(cr_alloc[x] != NULL);
-		for (crp = cr_alloc[x]; crp; crp = crp->cr_peer) {
-			if (do_rect_overlap(crp->rect, subcomm)) break;
-			if (crp->cr_peer == NULL) {
-				// no overlaps... we can re-use this classroute id...
-				// append to existing cr_alloc[x] list...
-				new = malloc(sizeof(struct cr_allocation));
-				new->cr_list = 0;
-				*new->rect = *subcomm;
-				CR_ROUTE_ID(&new->classroute) = x; 
-				CR_ROUTE_UP(&new->classroute) = 0;
-				CR_ROUTE_DOWN(&new->classroute) = 0;
-				// CR_ROUTE_VC(&new->classroute) = COLLECTIVE_CLASS_ROUTE_INPUT_SUBCOMM;
-				new->cr_peer = NULL;
-				new->parent = crp->parent;
+				new->cr_peer = crp->cr_peer;
 				crp->cr_peer = new;
 				return x;
-
 			}
 		}
 	}
-	// can't re-using any existing sub-comm's classroute... need new one
-	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
-		if (cr_alloc[x] == NULL) break;
+	// no matching or disjoint peers found... add new entry...
+	if (z != -1) {
+		new = malloc(sizeof(struct cr_allocation));
+		new->rect = *subcomm;
+		CR_ROUTE_ID(&new->classroute) = z;
+		CR_ROUTE_UP(&new->classroute) = 0;
+		CR_ROUTE_DOWN(&new->classroute) = 0;
+		// CR_ROUTE_VC(&new->classroute) = vc;
+		new->cr_peer = crp->cr_peer;
+		cr_alloc[z] = new;
 	}
-	if (x >= BGQ_COLLECTIVE_MAX_CLASSROUTES) return -1;
-	new = malloc(sizeof(struct cr_allocation));
-	new->cr_list = 0;
-	*new->rect = *subcomm;
-	CR_ROUTE_ID(&new->classroute) = x;
-	CR_ROUTE_UP(&new->classroute) = 0;
-	CR_ROUTE_DOWN(&new->classroute) = 0;
-	// CR_ROUTE_VC(&new->classroute) = COLLECTIVE_CLASS_ROUTE_INPUT_SUBCOMM;
-	new->cr_peer = NULL;
-#warning can't refer to actual parent this way - might be linked-list
-	new->parent = cr_alloc[parent];
-	cr_alloc[parent]->cr_list |= (1 << x);
-	cr_alloc[x] = new;
-	return x;
+	return z;
 }
 
-void get_classroute_id(int parent, CR_RECT_T *subcomm) {
-	int x;
+/**
+ * \brief Release rectangle from use as a classroute
+ *
+ * Assumes that 'subcomm' previously succeeded when passed to get_classroute_id().
+ *
+ * \param[in] subcomm	The rectangle for classroute to be removed
+ *
+ * \return 0 = classroute still in use, 1..N = classroute X - 1, -1 = not found
+ */
+int release_classroute_id(CR_RECT_T *subcomm) {
+	int x, z = -1;
 	struct cr_allocation *crp, *crq;
 
 	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
-		if (!(cr_alloc[parent]->cr_list & (1 << x))) continue;
 		crq = NULL;
 		for (crp = cr_alloc[x]; crp; crp = crp->cr_peer) {
-			if (do_rect_equal(crp->rect, subcomm)) {
-				if (crq) {
-					crq->cr_peer = crp->cr_peer;
-					// might need to update our local DCRs...
-					// but caller knows that...
-				} else {
-					cr_alloc[x] = crp->cr_peer;
-					if (cr_alloc[x] == NULL) {
-						cr_alloc[parent]->cr_list &= ~(1 << x);
+			int y = rect_compare(&crp->rect, subcomm);
+			if (y == 0) {
+				if (z == -1) {
+					z = x;
+					// found it - or one just like it...
+					// every instance must have the same ID or
+					// this doesn't work
+					if (crq == NULL) {
+						cr_alloc[x] = crp->cr_peer;
+					} else {
+						crq->cr_peer = crp->cr_peer;
 					}
+					// keep searching, for duplicates...
+				} else {
+					// second identical rectangle...
+					// classroute still in use...
+					return 0;
 				}
-				free(crp);
-				return;
 			}
 			crq = crp;
 		}
+		if (z != -1) {
+			// found exactly one... DCRs should be cleared...
+			return z + 1; // good indicator???
+		}
 	}
+	return -1; // error - rectangle must have existed...
 }
-#endif

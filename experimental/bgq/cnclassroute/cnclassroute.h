@@ -58,9 +58,7 @@
 struct cr_allocation {
 	CR_RECT_T rect;
 	CR_ROUTE_T classroute;
-	uint32_t cr_list;	// classroutes in-use for subcomms
 	struct cr_allocation *cr_peer;	// same classroute
-	struct cr_allocation *parent;	// parent classroute
 };
 
 /**
