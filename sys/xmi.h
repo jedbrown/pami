@@ -138,7 +138,6 @@ extern "C"
   typedef enum
   {
     XMI_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
-    XMI_TORUS_NETWORK,       /**< DEPRECATED! 3D-Torus / 1D-SMP network type. */
     XMI_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
                               * mapping->torusDims() for torus dim,
                               * mapping->globalDims() for all (torus+SMP) dim.
@@ -161,13 +160,6 @@ extern "C"
     xmi_network network; /**< Network type for the coordinates */
     union
     {
-      struct
-      {
-        size_t x; /**< Torus network x coordinate */
-        size_t y; /**< Torus network y coordinate */
-        size_t z; /**< Torus network z coordinate */
-        size_t t; /**< Torus network t coordinate */
-      } torus;    /**< obsolete: XMI_TORUS_NETWORK coordinates */
       struct
       {
         size_t coords[XMI_MAX_DIMS];

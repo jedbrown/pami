@@ -114,8 +114,8 @@ namespace BGQ {
 				if (ranks[i] >= 0) {
 					_factory.numCore += ncores;
 					++_factory.numProc;
-					__global.mapping.rank2Network((size_t)ranks[i], &coord, XMI_TORUS_NETWORK);
-					_factory.coreXlat[i] = coord.u.torus.t << shift;
+					//__global.mapping.rank2Network((size_t)ranks[i], &coord, XMI_TORUS_NETWORK);
+					//_factory.coreXlat[i] = coord.u.torus.t << shift;
 					if ((size_t)ranks[i] == __global.mapping.rank()) {
 						_factory.myProc = i;
 					}
