@@ -13,6 +13,13 @@
 #include "sys/xmi.h"
 
 
+extern "C" void __libdcmf_dummy     () { abort(); } 
+extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libdcmf_dummy"))); 
+void operator delete(void *p)
+{
+   abort();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from xmi_misc.h                                                  //
 ////////////////////////////////////////////////////////////////////////////////
