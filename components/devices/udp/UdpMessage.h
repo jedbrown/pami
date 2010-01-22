@@ -47,6 +47,18 @@ namespace XMI
        UdpMsg()
        {
        }
+       
+       inline size_t getSendSize()
+       {
+         //size_t tmp = sizeof(UdpMsg);
+         size_t tmp = sizeof(_device_dispatch_id)
+                  + sizeof(_metadata_size)
+                  + sizeof(_payload_size)
+                  + getMetadataSize()
+                  + getPayloadSize() ; 
+         TRACE_COUT( "message send size = " << tmp )
+         return tmp;
+      }
 
        inline void setPayloadSize( size_t payload_size)
         {
@@ -126,19 +138,22 @@ namespace XMI
           {
              TRACE_COUT( "     iov["<<kk<<"].iov_base = " << iov[kk].iov_base <<
                          "     iov["<<kk<<"].iov_len = " << iov[kk].iov_len )
-             }
+          }
           size_t left = 352 - metasize;    // TODO need to make size variable
           void * insert_pt = (void *)((uintptr_t)_msg._var_data+metasize);
           size_t i, amount;
+          TRACE_COUT( "  amount = " << amount << " insert_pt = " << insert_pt << " _msg._var_data = " << (void *)_msg._var_data << "  metasize = " << metasize )
           for ( i=0; i<niov; i++ )
           {
+             TRACE_COUT( "   i = " << i << " left = " << left << " amount = " << amount << " _offset = " << _offset << " _on_idx = " << _on_idx << " insert_pt = " << insert_pt << " iov[i].iov_base = " << iov[i].iov_base << " iov[i].iov_len = " << iov[i].iov_len )
              amount = iov[i].iov_len;
              if (left - amount < 0 ) {
-               // Can't fit the whole thing
+               TRACE_COUT( " Can't fit the whole thing: left = " << left << " and amount = " << amount )
                _offset = left;
                amount = left;
                _on_idx = i;
              }
+                          TRACE_COUT( "   i = " << i << " left = " << left << " amount = " << amount << " _offset = " << _offset << " _on_idx = " << _on_idx << " insert_pt = " << insert_pt << " iov[i].iov_base = " << iov[i].iov_base << " iov[i].iov_len = " << iov[i].iov_len )
              memcpy( insert_pt, iov[i].iov_base, amount );
              insert_pt = (void *)((uintptr_t)insert_pt + amount);
              left -= amount;
@@ -211,9 +226,9 @@ namespace XMI
           return &_msg;
         }
 
-        inline size_t getSize()
+        inline size_t getSendSize()
         {
-          return sizeof(_msg);
+          return _msg.getSendSize();
         }
 
         inline uint32_t getDeviceDispatchId()

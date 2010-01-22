@@ -470,6 +470,8 @@ protected:
 	/// \brief Send an ack message -- utility to ensure consistency
 	static inline void send_ack(recv_state_t * rcv,
 			xmi_event_function callback, void *cookie) {
+			
+		if ( rcv->nlost != 0 ) {
 		send_packet(rcv->datagram->_ack_model, // Model to send packet on 
 				rcv->pkt, // T_Message to send
 				callback, // Callback 
@@ -479,6 +481,20 @@ protected:
 				sizeof(header_ack_t), // size of header
 				(void *) rcv->lost_list, // payload
 				4 * rcv->nlost); // size of playload
+		} else {
+		  // have to always send at least one empty entry in lost list
+		  rcv->lost_list[0]=0; 
+		send_packet(rcv->datagram->_ack_model, // Model to send packet on 
+				rcv->pkt, // T_Message to send
+				callback, // Callback 
+				cookie, // Cookie 
+				rcv->from_task, // Target task
+				rcv->vecs, &rcv->ack, // header
+				sizeof(header_ack_t), // size of header
+				(void *) rcv->lost_list, // payload
+				4 ); // size of playload ... one empty entry
+		  
+		}
 	}
 	;
 

@@ -45,7 +45,7 @@ namespace XMI
         if (_sendQ.empty() == true ) return 0;
         UdpSendMessage* msg = *(_sendQ.begin());
         // Use blocking, since will overwrite the data
-        int numbytes = sendto(_sendFd, &(msg->_msg), msg->getSize(), 0, (struct sockaddr *)&_sendAddr, _sendAddrLen);
+        int numbytes = sendto(_sendFd, &(msg->_msg), msg->getSendSize(), 0, (struct sockaddr *)&_sendAddr, _sendAddrLen);
         TRACE_COUT( "Sent message.  Bytes sent = " << numbytes )
         msg->_msg.print();
         // PRINT THE MESSAGE

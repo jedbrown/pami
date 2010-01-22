@@ -35,6 +35,10 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#ifndef TRACE_COUTMAP
+#define TRACE_COUTMAP(x) // std::cout << x << std::endl
+#endif
+
 #define XMI_MAPPING_CLASS XMI::Mapping
 
 namespace XMI
@@ -93,7 +97,7 @@ namespace XMI
           std::cout << "Environment variable XMI_UDP_CONFIG must be set" << std::endl;
           abort();
         }
-        std::cout << "The current UDP configuration file is: " << udp_config << std::endl;
+        TRACE_COUTMAP("The current UDP configuration file is: " << udp_config);
 
         // Now open the configuration file
         inFile.open(udp_config);
@@ -121,7 +125,7 @@ namespace XMI
         {
 
           inFile >> tmp_task >> tmp_host_in >> tmp_port;
-          std::cout << "  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port << std::endl;
+          TRACE_COUTMAP("  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port);
 
           // Make sure we can locate the host
           struct hostent *tmp_host;
@@ -140,8 +144,8 @@ namespace XMI
           {
             std::cout << "socket call failed" << std::endl;
           }
-          //std::cout << "addr " << servinfo->ai_addr << " len  " << servinfo->ai_addrlen << std::endl;
-          //std::cout << "ai_canonname " << servinfo->ai_canonname << std::endl;
+          //TRACE_COUTMAP( "addr " << servinfo->ai_addr << " len  " << servinfo->ai_addrlen );
+          //TRACE_COUTMAP( "ai_canonname " << servinfo->ai_canonname );
 
           unsigned j;
           for (j=0; j<_size; j++)
@@ -172,7 +176,7 @@ namespace XMI
             char host[128];
             int str_len=128;
             int err = gethostname( host, str_len );
-            // std::cout << host << std::endl;
+            // TRACE_COUTMAP(host);
             if ( strcmp( host, tmp_host->h_name ) != 0 )
             {
               std::cout << "Entry for this node" << _task << " is incorrect: " << std::endl;
@@ -196,11 +200,11 @@ namespace XMI
         }
         inFile.close();
 
-        std::cout << "num_global_nodes: " << num_global_nodes << std::endl;
+        TRACE_COUTMAP("num_global_nodes: " << num_global_nodes);
         for (i=0; i<num_global_nodes; i++)
         {
-          std::cout << "node[" << i << "].host:  " << tmpnodetable[i].host << std::endl;
-          std::cout << "node[" << i << "].peers: " << tmpnodetable[i].peers << std::endl;
+          TRACE_COUTMAP("node[" << i << "].host:  " << tmpnodetable[i].host);
+          TRACE_COUTMAP("node[" << i << "].peers: " << tmpnodetable[i].peers);
         }
 
         _peers = tmpnodetable[_udpConnTable[_task].node_addr.global].peers;
@@ -289,14 +293,14 @@ namespace XMI
           abort();
         }
         _size = strtoul( tmp, NULL, 0 );
-        std::cout << "Size = " << _size << std::endl;
+        TRACE_COUTMAP( "Size = " << _size );
         tmp = getenv("XMI_SOCK_TASK");
         if (tmp == NULL ) {
           std::cout << "Environment variable XMI_SOCK_TASK must be set" << std::endl;
           abort();
         }
         _task = strtoul( tmp, NULL, 0 );
-        std::cout << "Task = " << _task << std::endl;
+        TRACE_COUTMAP( "Task = " << _task );
         if ( _task >= _size )
         {
           std::cout << "Task " << _task << "is >= size " << _size << std::endl;

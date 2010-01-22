@@ -336,7 +336,7 @@ namespace XMI
                                          xmi_send_hint_t            options)
       {
         xmi_result_t result = XMI_ERROR;
-fprintf (stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result);
+TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
 
         if (_dispatch[id] == NULL)
           {
@@ -357,7 +357,7 @@ fprintf (stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %
                 _dispatch[id] = NULL;
               }
           }
-fprintf (stderr, "<< socklinux::dispatch_impl .. result = %d\n", result);
+TRACE_ERR((stderr, "<< socklinux::dispatch_impl .. result = %d\n", result));
         return result;
       }
 

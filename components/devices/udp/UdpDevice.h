@@ -143,7 +143,7 @@ namespace XMI
       };
 
       // Implement MessageDevice Routines
-      static const size_t metadata_size = 10;  // TODO need to tune these   WAS 128  or 16
+      static const size_t metadata_size = 0;  // TODO need to tune these   WAS 128  or 16
       static const size_t payload_size  = 224;
 
       // Implement Packet Device Routines
