@@ -16,6 +16,7 @@
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpipacketmodel.h"
 #include "components/devices/mpi/mpimessage.h"
+
 #include "p2p/protocols/send/adaptive/Adaptive.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
@@ -31,16 +32,11 @@
 #include "components/atomic/gcc/GccCounter.h"
 #include <sched.h>
 
-
 /** \todo shmem device must become sub-device of generic device */
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
-
-
-
-
 #include "components/devices/mpi/mpimulticastprotocol.h"
 
 #ifndef TRACE_ERR
@@ -51,7 +47,6 @@ namespace XMI
 {
     // This won't work with XL
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
-
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice<SysDep> MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
@@ -59,18 +54,14 @@ namespace XMI
     typedef CollFactory::Default<MPIDevice, SysDep, MPIMcastModel> MPICollfactory;
     typedef CollRegistration::Default<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
-
-
+  
     // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
     typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2PMcastProto;
-
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
-
     typedef Fifo::FifoPacket <16, 240> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
     typedef Device::ShmemModel<ShmemDevice> ShmemModel;
-
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
     class Context : public Interface::Context<XMI::Context>
@@ -94,7 +85,7 @@ namespace XMI
 	_generic(generics[id]),
         _shmem(),
         _mpi(&__global.mpi_device),
-
+        _minterface(_mpi,_client,this,_contextid),
         _empty_advance(0)
         {
           // dispatch_impl relies on the table being initialized to NULL's.
@@ -124,7 +115,6 @@ namespace XMI
           // this barrier is here because the shared memory init
           // needs to be synchronized
           // we shoudl find a way to remove this
-
           MPI_Barrier(MPI_COMM_WORLD);
         }
 
@@ -542,8 +532,10 @@ namespace XMI
 
       inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
         {
-          XMI_abort();
-          return XMI_UNIMPL;
+          // Select the native interface
+          // call the multisync for the selected native interface.
+          
+          return _minterface.multisync(msyncinfo);
         }
 
       inline xmi_result_t multicombine_impl(xmi_multicombine_t *mcombineinfo)
@@ -761,6 +753,7 @@ namespace XMI
       MPICollreg               *_collreg;
       MPIGeometry              *_world_geometry;
       MPICollfactory           *_world_collfactory;
+      MPINativeInterface<MPIDevice>  _minterface;
       unsigned                  _empty_advance;
       xmi_geometry_range_t      _world_range;
       int                       _myrank;

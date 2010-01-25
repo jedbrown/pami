@@ -141,6 +141,9 @@ int main (int argc, char ** argv)
       {
         double ti, tf, usec;
         barrier.algorithm = algorithm[algo];
+
+        fprintf(stderr, "Test Barrier(%s) Correctness %d of %d algorithms\n",
+                metas[algo].name,algo+1, num_algorithm[algorithm_type]);
         if(!task_id)
             {
               ti=timer();

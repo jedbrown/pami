@@ -946,7 +946,7 @@ void XMI_Topology_create_task(xmi_topology_t *topo, xmi_task_t rank)
 ///
 void XMI_Topology_create_range(xmi_topology_t *topo, xmi_task_t rank0, xmi_task_t rankn)
 {
-    assert(0);
+  new(topo)XMI::Topology(rank0,rankn);
 }
 
 ///
@@ -954,7 +954,7 @@ void XMI_Topology_create_range(xmi_topology_t *topo, xmi_task_t rank0, xmi_task_
 ///
 void XMI_Topology_create_list(xmi_topology_t *topo, xmi_task_t *ranks, size_t nranks)
 {
-    assert(0);
+  new(topo)XMI::Topology(ranks,nranks);
 }
 
 ///

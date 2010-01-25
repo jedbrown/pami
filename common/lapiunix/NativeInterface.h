@@ -61,7 +61,7 @@ namespace XMI
         mcast->context  =  _contextid;
         return XMI_Multicast (mcast);
       }
-    virtual xmi_result_t multysync    (xmi_multisync_t *msync)
+    virtual xmi_result_t multisync    (xmi_multisync_t *msync)
       {
         return XMI_Multisync (msync);
       }

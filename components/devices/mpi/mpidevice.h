@@ -59,7 +59,8 @@ namespace XMI
       inline MPIDevice () :
       Interface::BaseDevice<MPIDevice<T_SysDep>, T_SysDep> (),
       Interface::PacketDevice<MPIDevice<T_SysDep> >(),
-      _dispatch_id(0)
+      _dispatch_id(0),
+      _curMcastTag(MULTISYNC_TAG)
       {
         // \todo These MPI functions should probably move out of the constructor if we keep this class
         MPI_Comm_dup(MPI_COMM_WORLD,&_communicator);
@@ -232,7 +233,51 @@ namespace XMI
           }
         }
 
+        // Check the msync send Queue
+        std::map<int, MPIMSyncMessage*>::iterator it_msync;
+        for(it_msync=_msyncsendQ.begin();it_msync != _msyncsendQ.end(); it_msync++)
+        {
+          
+          
+          MPIMSyncMessage *m = it_msync->second;
+          if(m->_sendStarted==false)
+              {
+                int mpi_rc = MPI_Isend (&m->_p2p_msg,
+                                        sizeof(m->_p2p_msg),
+                                        MPI_CHAR,
+                                        m->_dests[m->_phase],
+                                        MULTISYNC_TAG,
+                                        _communicator,
+                                        &m->_reqs[m->_phase]);
+                assert(mpi_rc == MPI_SUCCESS);
+                m->_sendStarted = true;
+              }
+          if(m->_sendDone == false)
+              {                
+                MPI_Test(&m->_reqs[m->_phase],&flag,MPI_STATUS_IGNORE);
+                if(flag)
+                    {
+                      m->_sendDone=true;
+                    }
+              }
+          if(m->_sendDone == true && m->_recvDone == true)
+              {
+                m->_sendStarted = false;
+                m->_sendDone    = false;
+                m->_recvDone    = false;
+                m->_phase++;
+                if(m->_phase == m->_numphases)
+                    {
+                      m->_cb_done.function(NULL,m->_cb_done.clientdata, XMI_SUCCESS);
+                      _msyncsendQ.erase(it_msync);
+                      break;
+                    }
+              }
+        }
 
+
+
+        
 
         flag = 0;
         int rc = MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, _communicator, &flag, &sts);
@@ -244,7 +289,7 @@ namespace XMI
           //p2p messages
           switch(sts.MPI_TAG)
           {
-          case 0: // p2p packet
+          case P2P_PACKET_TAG: // p2p packet
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -267,7 +312,7 @@ namespace XMI
               free(msg);
             }
             break;
-          case 1: // p2p packet + data
+          case P2P_PACKET_DATA_TAG: // p2p packet + data
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -290,7 +335,7 @@ namespace XMI
               free(msg);
             }
             break;
-          case 2: // old multicast
+          case OLD_MULTICAST_TAG: // old multicast
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -406,7 +451,7 @@ namespace XMI
               free (msg);
             }
             break;
-          case 3: // old m2m
+          case OLD_M2M_TAG: // old m2m
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
@@ -488,6 +533,28 @@ namespace XMI
               free ( msg );
             }
             break;
+         case MULTISYNC_TAG: // old m2m
+             {
+               unsigned conn_id;
+               int      nbytes;
+               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
+               int rc            = MPI_Recv(&conn_id,
+                                            sizeof(conn_id),
+                                            MPI_BYTE,
+                                            sts.MPI_SOURCE,
+                                            sts.MPI_TAG,
+                                            _communicator,
+                                            &sts);
+               XMI_assert (rc == MPI_SUCCESS);
+               MPIMSyncMessage *m = _msyncsendQ[conn_id];
+               if (m)
+                 m->_recvDone = true;
+               else
+                 _msyncsendQ[conn_id] = (MPIMSyncMessage*)0x1;
+             }
+             break;
+         default:
+           XMI_abort();
           }
         }
         return events;
@@ -516,7 +583,12 @@ namespace XMI
       }
       inline void enqueue(MPIMessage* msg)
       {
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::enqueue message size 0 %zd, size 1 %zd, msize %zd\n",(int)this, (size_t)msg->_p2p_msg._payloadsize0,(size_t)msg->_p2p_msg._payloadsize1,(size_t)msg->_p2p_msg._metadatasize));
+        TRACE_DEVICE((stderr,
+                      "<%#.8X>MPIDevice::enqueue message size 0 %zd, size 1 %zd, msize %zd\n",
+                      (int)this,
+                      (size_t)msg->_p2p_msg._payloadsize0,
+                      (size_t)msg->_p2p_msg._payloadsize1,
+                      (size_t)msg->_p2p_msg._metadatasize));
         _sendQ.push_front(msg);
       }
 
@@ -528,20 +600,37 @@ namespace XMI
 
       inline void enqueue(MPIMcastRecvMessage *msg)
       {
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",(int)this, (size_t)msg->_pwidth, (size_t)msg->_size));
+        TRACE_DEVICE((stderr,
+                      "<%#.8X>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",
+                      (int)this,
+                      (size_t)msg->_pwidth,
+                      (size_t)msg->_size));
         _mcastrecvQ.push_front(msg);
       }
 
       inline void enqueue(MPIM2MRecvMessage<size_t> *msg)
       {
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::enqueue m2m recv message size %zd\n",(int)this, (size_t)msg->_sizes[0]));
+        TRACE_DEVICE((stderr,
+                      "<%#.8X>MPIDevice::enqueue m2m recv message size %zd\n",
+                      (int)this,
+                      (size_t)msg->_sizes[0]));
         _m2mrecvQ.push_front(msg);
       }
 
       inline void enqueue(MPIM2MMessage *msg)
       {
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::enqueue m2m message total size %zd\n",(int)this, (size_t)msg->_totalsize));
+        TRACE_DEVICE((stderr,
+                      "<%#.8X>MPIDevice::enqueue m2m message total size %zd\n",
+                      (int)this,
+                      (size_t)msg->_totalsize));
         _m2msendQ.push_front(msg);
+      }
+
+      inline void enqueue(MPIMSyncMessage *msg)
+      {
+        if(_msyncsendQ[msg->_p2p_msg._connection_id] == (MPIMSyncMessage*)0x1)
+          msg->_recvDone = true;
+        _msyncsendQ[msg->_p2p_msg._connection_id] = msg;
       }
 
       inline void addToNonDeterministicQueue(MPIMessage* msg, unsigned long long random)
@@ -567,9 +656,12 @@ namespace XMI
       std::list<MPIMcastRecvMessage*>           _mcastrecvQ;
       std::list<MPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
       std::list<MPIMessage*>                    _pendingQ;
+      std::map<int,MPIMSyncMessage*>            _msyncsendQ;
       mpi_dispatch_info_t                       _dispatch_table[256*DISPATCH_SET_SIZE];
       mpi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       mpi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
+      int                                       _curMcastTag;
+      
     };
 #undef DISPATCH_SET_SIZE
   };

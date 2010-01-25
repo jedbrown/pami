@@ -33,13 +33,17 @@ namespace XMI
       {
       public:
         /// \param[in] device                Multisync device reference
-        MultisyncModel (xmi_result_t &status) {
-		COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
-		status = XMI_SUCCESS;
-	};
-        ~MultisyncModel () {};
+        MultisyncModel (xmi_result_t &status)
+          {
+            COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+            status = XMI_SUCCESS;
+          };
+        ~MultisyncModel ()
+          {
+
+          };
         inline xmi_result_t postMultisync(uint8_t (&state)[T_StateBytes],
-                                           xmi_multisync_t *msync);
+                                          xmi_multisync_t *msync);
       }; // class MultisyncModel
 
       template <class T_Model, unsigned T_StateBytes>

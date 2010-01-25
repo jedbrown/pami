@@ -31,6 +31,21 @@ namespace XMI
 {
   namespace Device
   {
+#define MAX_MULTISYNCS 1000
+    
+    typedef enum
+    {
+      P2P_PACKET_TAG=0,
+      P2P_PACKET_DATA_TAG,
+      OLD_MULTICAST_TAG,
+      OLD_M2M_TAG,
+      MULTICAST_TAG,
+      MULTISYNC_TAG,
+      LAST_TAG=MULTISYNC_TAG+MAX_MULTISYNCS
+    }MPITag;
+
+
+    
     class MPIMessage
     {
     public:
@@ -142,6 +157,26 @@ namespace XMI
       inline int  totalsize () { return _size + sizeof (MPIM2MHeader); }
     };
 
+
+    class MPIMSyncMessage
+    {
+    public:
+      xmi_callback_t _cb_done;
+      unsigned       _numphases;
+      unsigned       _sendcomplete;
+      unsigned       _phase;
+      bool           _sendStarted;
+      bool           _sendDone;
+      bool           _recvDone;
+      size_t         _dests[64];
+      size_t         _srcs[64];
+      MPI_Request    _reqs[64];
+      struct _p2p_msg
+      {
+        unsigned       _connection_id;
+      }_p2p_msg;      
+    };
+    
 
   };
 };

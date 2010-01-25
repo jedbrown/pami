@@ -25,7 +25,6 @@
 
 // CCMI includes
 #include "TypeDefs.h"
-
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/protocols/broadcast/multi_color_impl.h"
 #include "algorithms/protocols/broadcast/async_impl.h"
@@ -35,7 +34,6 @@
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
 
-#define OLD_CCMI_BARRIER
 #define OLD_CCMI_BROADCAST
 
 namespace XMI
@@ -56,6 +54,7 @@ namespace XMI
       CI_ALLREDUCE2,
       CI_BARRIER0,
       CI_BARRIER1,
+      CI_BARRIER2,
       CI_AMBROADCAST0,
       CI_ALLTOALLV0,
     }collinfo_type_t;
@@ -199,17 +198,16 @@ namespace XMI
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory  _bcast_registration;
     };
 
-#ifdef  OLD_CCMI_BARRIER
     template <class T_Device, class T_Sysdep>
-    class CCMIBinomBarrierInfo:public CollInfo<T_Device>
+    class CCMIOldBinomBarrierInfo:public CollInfo<T_Device>
     {
     public:
-      CCMIBinomBarrierInfo(T_Device *dev,
-                           T_Sysdep * sd,
-                           xmi_mapidtogeometry_fn fcn,
-			   xmi_client_t           client,
-			   xmi_context_t          context,
-			   size_t                 context_id):
+      CCMIOldBinomBarrierInfo(T_Device *dev,
+                              T_Sysdep * sd,
+                              xmi_mapidtogeometry_fn fcn,
+                              xmi_client_t           client,
+                              xmi_context_t          context,
+                              size_t                 context_id):
         CollInfo<T_Device>(dev),
 	_model(*dev),
         _barrier_registration(&_model,
@@ -219,13 +217,17 @@ namespace XMI
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "CCMI_OldBinomBarrier");
         }
+      void reg_geometry(XMI_GEOMETRY_CLASS *geometry)
+        {
+          _barrier_registration.generate(&_barrier_executor,geometry);
+        }
+      
       XMI_Request_t                                     _request;
-      XMI_COLL_MCAST_CLASS                                     _model;
+      XMI_COLL_MCAST_CLASS                              _model;
       CCMI::Adaptor::Barrier::OldBinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                   _barrier_executor;
     };
 
-#else
     template <class T_Device, class T_Sysdep>
     class CCMIBinomBarrierInfo:public CollInfo<T_Device>
     {
@@ -247,6 +249,12 @@ namespace XMI
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "CCMI_NewBinomBarrier");
         }
+      void reg_geometry(XMI_GEOMETRY_CLASS *geometry)
+        {
+          _barrier_registration.generate(&_barrier_executor,geometry);
+        }
+      
+
       XMI_Request_t                                  _request;
       XMI_NATIVEINTERFACE<T_Device>                  _minterface;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
@@ -255,7 +263,6 @@ namespace XMI
       xmi_context_t                                  _context;
       size_t                                         _contextid;
     };
-#endif
 
 #ifdef OLD_CCMI_BROADCAST
     template <class T_Device, class T_Sysdep>
@@ -276,8 +283,6 @@ namespace XMI
                                 &_connmgr,
                                 65535)
 	  {
-	    printf("In binombcast info constructor\n");
-
 	    xmi_metadata_t *meta = &(this->_metadata);
 	    strcpy(meta->name, "CCMI_BinomBroadcast");
 	  }

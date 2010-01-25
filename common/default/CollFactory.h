@@ -180,7 +180,7 @@ namespace XMI
       inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g,
                                        XMI_NBCollManager  *mgr,
                                        T_Device           *dev,
-                                       XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep> *default_bar)
+                                       XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device, T_Sysdep> *default_bar)
         {
           _geometry = g;
           _dev      = dev;
@@ -196,12 +196,10 @@ namespace XMI
           _sctv       = mgr->allocate (g, TSPColl::ScattervTag);
 
           // Setup CCMI style collectives
-          _ccmi_bar                     = default_bar;
-          CCMI::Executor::Executor *exe = NULL;
-          exe = default_bar->_barrier_registration.generate(&_barrier_executors[0],g);
-          g->setKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR, (void*)exe);
-          exe = default_bar->_barrier_registration.generate(&_barrier_executors[1],g);
-          g->setKey(XMI::Geometry::XMI_GKEY_LOCALBARRIEREXECUTOR, (void*)exe);
+          g->setKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR,
+                    (void*)&default_bar->_barrier_executor);
+//          exe = default_bar->_barrier_registration.generate(&default_bar->_barrier_executors[1],g);
+//          g->setKey(XMI::Geometry::XMI_GKEY_LOCALBARRIEREXECUTOR, (void*)exe);
           return XMI_SUCCESS;
         }
 
@@ -636,12 +634,26 @@ namespace XMI
                   }
                   break;
                   case XMI::CollInfo::CI_BARRIER1:
+                    {
+                    xmi_callback_t cb_done_ccmi;
+                    cb_done_ccmi.function   = barrier->cb_done;
+                    cb_done_ccmi.clientdata = barrier->cookie;
+                    XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device,T_Sysdep> *binfo =
+                      (XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device,T_Sysdep> *)info;
+                    CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor*)binfo->_barrier_executor;
+                    _c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
+                    _c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
+                    _c_bar->start();
+                  }
+                  break;
+                  case XMI::CollInfo::CI_BARRIER2:                    
                   {
                     xmi_callback_t cb_done_ccmi;
                     cb_done_ccmi.function   = barrier->cb_done;
                     cb_done_ccmi.clientdata = barrier->cookie;
-                    CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor *)
-                      _geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
+                    XMI::CollInfo::CCMIBinomBarrierInfo<T_Device,T_Sysdep> *binfo =
+                      (XMI::CollInfo::CCMIBinomBarrierInfo<T_Device,T_Sysdep> *)info;
+                    CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor*)binfo->_barrier_executor;
                     _c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
                     _c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
                     _c_bar->start();
@@ -801,8 +813,6 @@ namespace XMI
       TSPColl::NBColl<T_McastModel>  *_bcast, *_bcast2;
       TSPColl::NBColl<T_McastModel>  *_sar,   *_lar;
       TSPColl::NBColl<T_McastModel>  *_sct,   *_sctv;
-      CCMI_Executor_t                 _barrier_executors[2];
-      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>  *_ccmi_bar;
       XMI::MemoryAllocator<sizeof(reqObj), 16> _reqAllocator;
 
     }; // class CollFactory
