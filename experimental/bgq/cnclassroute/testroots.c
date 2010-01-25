@@ -224,12 +224,12 @@ int main(int argc, char **argv) {
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand() & rand()); /* try to reduce bits */
 					l &= CR_ROUTE_NETMASK;
-					CR_ROUTE_UP(&cr[r].cr) = l;
+					cr[r].cr.output = l;
 				}
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand()); /* try to reduce bits */
 					l &= CR_ROUTE_NETMASK;
-					CR_ROUTE_DOWN(&cr[r].cr) = l;
+					cr[r].cr.input = l;
 				}
 			}
 		}

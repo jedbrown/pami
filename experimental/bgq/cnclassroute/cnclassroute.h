@@ -32,6 +32,23 @@
          COLLECTIVE_CLASS_ROUTE_ENABLE_EP|\
          COLLECTIVE_CLASS_ROUTE_ENABLE_EM)
 
+#define GET_CR_ROUTE_VC(crp)	((crp)->output & 0x003)
+#define SET_CR_ROUTE_VC(crp,vc)	((crp)->output = ((crp)->output & ~0x003) | vc)
+
+static const uint16_t cr_links[][2] = {
+[CR_AXIS_A][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_AP,
+[CR_AXIS_A][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_AM,
+[CR_AXIS_B][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_BP,
+[CR_AXIS_B][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_BM,
+[CR_AXIS_C][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_CP,
+[CR_AXIS_C][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_CM,
+[CR_AXIS_D][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_DP,
+[CR_AXIS_D][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_DM,
+[CR_AXIS_E][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_EP,
+[CR_AXIS_E][CR_SIGN_NEG] = COLLECTIVE_CLASS_ROUTE_ENABLE_EM,
+};
+#define CR_LINK(n,s)    cr_links[n][s]
+
 /**
  *  this header must define:
  * 
@@ -43,12 +60,6 @@
  *  CR_RECT_T		datatype for a rectangle (two coordinates)
  *  CR_RECT_LL(rectp)	accessor for rectp->lower-left-coord (get/put/CR_COORD_DIM())
  *  CR_RECT_UR(rectp)	accessor for rectp->upper-right-coord (get/put/CR_COORD_DIM())
- * 
- *  CR_ROUTE_T		datatype for classroute 
- *  CR_ROUTE_UP(crp)	accessor for up-link bits in classroute
- *  CR_ROUTE_DOWN(crp)	accessor for down-link bits in classroute
- *  CR_ROUTE_ID(crp)	accessor for classroute id (if assigned)
- *  CR_ROUTE_VC(crp)	accessor for classroute virtual channel
  */
 #include "xmi/cnclassroute.h" // replace with $(TARGET)/cnclassroute.h ...
 
@@ -57,7 +68,7 @@
  */
 struct cr_allocation {
 	CR_RECT_T rect;
-	CR_ROUTE_T classroute;
+	ClassRoute_t classroute;
 	struct cr_allocation *cr_peer;	// same classroute
 };
 
@@ -108,7 +119,7 @@ struct cr_allocation {
  * create the classroute down-tree from itself.
  */
 extern void build_node_classroute(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
-				CR_RECT_T *comm, int dim0, CR_ROUTE_T *cr);
+				CR_RECT_T *comm, int dim0, ClassRoute_t *cr);
 
 /**
  * \brief Compute classroute for node 'me' when rectangle is sparse
@@ -124,7 +135,7 @@ extern void build_node_classroute(CR_RECT_T *world, CR_COORD_T *worldroot, CR_CO
  */
 extern void build_node_classroute_sparse(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
 				CR_RECT_T *comm, CR_COORD_T *exlcude, int nexclude,
-				int dim0, CR_ROUTE_T *cr);
+				int dim0, ClassRoute_t *cr);
 
 /**
  * Pick a root for 'world' rectangle

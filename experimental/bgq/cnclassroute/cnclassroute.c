@@ -6,31 +6,31 @@
 #include "cnclassroute.h"
 
 void build_node_classroute(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
-					CR_RECT_T *comm, int dim0, CR_ROUTE_T *cr) {
+					CR_RECT_T *comm, int dim0, ClassRoute_t *cr) {
 	int d, dim;
-	CR_ROUTE_T cr0 = {0};
+	ClassRoute_t cr0 = {0};
 
 	for (dim = 0; dim < CR_NUM_DIMS; ++dim) {
 		d = dim0 + dim;
 		if (d >= CR_NUM_DIMS) d -= CR_NUM_DIMS;
 		if (CR_COORD_DIM(me,d) <= CR_COORD_DIM(worldroot,d)) {
 			if (CR_COORD_DIM(me,d) > CR_COORD_DIM(CR_RECT_LL(comm),d)) {
-				CR_ROUTE_DOWN(&cr0) |= CR_LINK(d,CR_SIGN_NEG);
+				cr0.input |= CR_LINK(d,CR_SIGN_NEG);
 			}
 		}
 		if (CR_COORD_DIM(me,d) >= CR_COORD_DIM(worldroot,d)) {
 			if (CR_COORD_DIM(me,d) < CR_COORD_DIM(CR_RECT_UR(comm),d)) {
-				CR_ROUTE_DOWN(&cr0) |= CR_LINK(d,CR_SIGN_POS);
+				cr0.input |= CR_LINK(d,CR_SIGN_POS);
 			}
 		}
 		if (CR_COORD_DIM(me,d) < CR_COORD_DIM(worldroot,d)) {
 			if (CR_COORD_DIM(me,d) < CR_COORD_DIM(CR_RECT_UR(comm),d)) {
-				CR_ROUTE_UP(&cr0) |= CR_LINK(d,CR_SIGN_POS);
+				cr0.output |= CR_LINK(d,CR_SIGN_POS);
 				break;
 			}
 		} else if (CR_COORD_DIM(me,d) > CR_COORD_DIM(worldroot,d)) {
 			if (CR_COORD_DIM(me,d) > CR_COORD_DIM(CR_RECT_LL(comm),d)) {
-				CR_ROUTE_UP(&cr0) |= CR_LINK(d,CR_SIGN_NEG);
+				cr0.output |= CR_LINK(d,CR_SIGN_NEG);
 				break;
 			}
 		}
@@ -76,11 +76,11 @@ static int eq_coords(CR_COORD_T *c0, CR_COORD_T *c1) {
  */
 static int find_local_contrib(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
 			CR_RECT_T *comm, CR_COORD_T *exlcude, int nexclude,
-			int dim0, CR_ROUTE_T *cr, int level) {
+			int dim0, ClassRoute_t *cr, int level) {
 	uint32_t l, m;
 	int n, s, t;
 	CR_COORD_T c0, c1;
-	CR_ROUTE_T cr1;
+	ClassRoute_t cr1;
 	static int signs[] = {
 		[CR_SIGN_POS] = 1,
 		[CR_SIGN_NEG] = -1,
@@ -99,7 +99,7 @@ static int find_local_contrib(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_
 	}
 	build_node_classroute(world, worldroot, me, comm, dim0, &cr1);
 	c0 = *me;
-	l = CR_ROUTE_DOWN(&cr1);
+	l = cr1.input;
 	t = 0;
 	for (n = 0; n < CR_NUM_DIMS; ++n) {
 		for (s = 0; s < 2; ++s) {
@@ -111,7 +111,7 @@ static int find_local_contrib(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_
 				int f = find_local_contrib(world, worldroot, &c1,
 						comm, exlcude, nexclude,
 						dim0, NULL, level + 1);
-				if (!f) CR_ROUTE_DOWN(&cr1) &= ~m;
+				if (!f) cr1.input &= ~m;
 				t += f;
 			}
 		}
@@ -122,7 +122,7 @@ static int find_local_contrib(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_
 
 void build_node_classroute_sparse(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
 				CR_RECT_T *comm, CR_COORD_T *exlcude, int nexclude,
-				int dim0, CR_ROUTE_T *cr) {
+				int dim0, ClassRoute_t *cr) {
 	/*
 	 * traverse down-tree and determine if any local contributors exist.
 	 * unfortunately, we don't have any classroutes but our own, so we must
@@ -222,7 +222,7 @@ uint32_t get_classroute_ids(int vc, CR_RECT_T *subcomm, void **env) {
 		 * no need to check them all, just the first.
 		 */
 		crp = cr_alloc[x];
-		if (CR_ROUTE_VC(&crp->classroute) != vc) {
+		if (GET_CR_ROUTE_VC(&crp->classroute) != vc) {
 			continue;
 		}
 		int y = rect_compare(&crp->rect, subcomm);
@@ -247,10 +247,10 @@ int set_classroute_id(int id, int vc, CR_RECT_T *subcomm, void **env) {
 
 	new = malloc(sizeof(struct cr_allocation));
 	new->rect = *subcomm;
-	CR_ROUTE_ID(&new->classroute) = id;
-	CR_ROUTE_UP(&new->classroute) = 0;
-	CR_ROUTE_DOWN(&new->classroute) = 0;
-	CR_ROUTE_VC(&new->classroute) = vc;
+	new->classroute.id = id;
+	new->classroute.output = 0;
+	new->classroute.input = 0;
+	SET_CR_ROUTE_VC(&new->classroute,vc);
 	crp = cr_alloc[id];
 	/* all are the same, just insert at front */
 	new->cr_peer = crp;

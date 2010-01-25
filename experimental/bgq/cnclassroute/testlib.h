@@ -196,11 +196,11 @@ int rect_size(CR_RECT_T *rect) {
 #define CHK_CRCONFLICT(a,b)	((a & b) != 0)
 
 void chk_classroute(classroute_t *cra, classroute_t *crb) {
-	if (CHK_CRCONFLICT(CR_ROUTE_UP(&cra->cr), CR_ROUTE_UP(&crb->cr))) {
+	if (CHK_CRCONFLICT(cra->cr.output, crb->cr.output)) {
 		cra->flags |= ERR_O_CRCONFLICT;
 		crb->flags |= ERR_O_CRCONFLICT;
 	}
-	if (CHK_CRCONFLICT(CR_ROUTE_DOWN(&cra->cr), CR_ROUTE_DOWN(&crb->cr))) {
+	if (CHK_CRCONFLICT(cra->cr.input, crb->cr.input)) {
 		cra->flags |= ERR_I_CRCONFLICT;
 		crb->flags |= ERR_I_CRCONFLICT;
 	}
@@ -209,7 +209,7 @@ void chk_classroute(classroute_t *cra, classroute_t *crb) {
 void chk_sanity(classroute_t *cr, int *nroots) {
 	uint32_t ul, dl;
 	/* check up link for zero or one link */
-	ul = CR_ROUTE_UP(&cr->cr);
+	ul = cr->cr.output;
 	if (!ul) {
 		++(*nroots);
 		if (*nroots > 1) {
@@ -218,7 +218,7 @@ void chk_sanity(classroute_t *cr, int *nroots) {
 	} else if ((ul & (ul - 1)) != 0) {
 		cr->flags |= ERR_O_MULTIUPLINK;
 	}
-	dl = CR_ROUTE_DOWN(&cr->cr);
+	dl = cr->cr.input;
 	if ((ul & dl) || !(ul | dl)) {
 		cr->flags |= ERR_I_UPDNCONFLICT;
 	}
@@ -230,9 +230,9 @@ void print_classroute(CR_COORD_T *me, classroute_t *cr, int rank) {
 	s += sprint_coord(s, me);
 	//s += sprintf(s, "[%d]", rank);
 	s += sprintf(s, " up: ");
-	s += sprint_links(s, CR_ROUTE_UP(&cr->cr));
+	s += sprint_links(s, cr->cr.output);
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, CR_ROUTE_DOWN(&cr->cr));
+	s += sprint_links(s, cr->cr.input);
 	printf("%s\n", buf);
 }
 
@@ -257,9 +257,9 @@ void print_classroute_errs(CR_COORD_T *me, classroute_t *cr, int rank) {
 	*s++ = ((cr->flags & FLAG_I_VISITED) == 0 ? '?' : ' ');
 	*s++ = '|';
 	s += sprintf(s, " up: ");
-	s += sprint_links(s, CR_ROUTE_UP(&cr->cr));
+	s += sprint_links(s, cr->cr.output);
 	s += sprintf(s, " dn: ");
-	s += sprint_links(s, CR_ROUTE_DOWN(&cr->cr));
+	s += sprint_links(s, cr->cr.input);
 	printf("%s\n", buf);
 }
 
@@ -367,8 +367,8 @@ void chk_conn(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
 	for (r = 0; r < z; ++r) {
 		CR_COORD_T c0, c1;
 		rank2coord(comm, r, &c0);
-		ul = CR_ROUTE_UP(&cr[r].cr);
-		dl = CR_ROUTE_DOWN(&cr[r].cr);
+		ul = cr[r].cr.output;
+		dl = cr[r].cr.input;
 		for (n = 0; n < CR_NUM_DIMS; ++n) {
 			for (s = 0; s < 2; ++s) {
 				m = CR_LINK(n, s);
@@ -384,14 +384,14 @@ void chk_conn(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
 				if (ul & m) {
 					if (t == -1) {
 						cr[r].flags |= ERR_O_OUTBOUNDS;
-					} else if ((CR_ROUTE_DOWN(&cr[t].cr) & ol) == 0) {
+					} else if ((cr[t].cr.input & ol) == 0) {
 						cr[r].flags |= ERR_O_UNCONN;
 					}
 				}
 				if (dl & m) {
 					if (t == -1) {
 						cr[r].flags |= ERR_I_OUTBOUNDS;
-					} else if ((CR_ROUTE_UP(&cr[t].cr) & ol) == 0) {
+					} else if ((cr[t].cr.output & ol) == 0) {
 						cr[r].flags |= ERR_I_UNCONN;
 					}
 				}
@@ -409,7 +409,7 @@ void traverse_down(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr, int curr)
 		[CR_SIGN_NEG] = -1,
 	};
 
-	l = CR_ROUTE_DOWN(&cr[curr].cr);
+	l = cr[curr].cr.input;
 	if (cr[curr].flags & FLAG_I_VISITED) {
 		cr[curr].flags |= ERR_I_LOOP;
 		return;
@@ -442,7 +442,7 @@ void chk_visit(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
 	 * visited exactly once. Assumes one root node - only traverses first root.
 	 */
 	for (r = 0; r < z; ++r) {
-		if (CR_ROUTE_UP(&cr[r].cr) == 0) break;
+		if (cr[r].cr.output == 0) break;
 	}
 	if (r >= z) {
 		/* error: no root node - all nodes show orphaned */
