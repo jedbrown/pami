@@ -46,6 +46,10 @@ public:
 
 	inline int advanceRecv(size_t client, size_t context) { return 0; }
 
+	inline xmi_context_t getContext(size_t client, size_t context) { 
+		return _generics[client][context].getContext();
+	}
+
 protected:
 	friend class ProgressFunctionMdl;
 	friend class ProgressFunctionMsg;
@@ -138,9 +142,7 @@ inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 	// problem is that this "message" has not even been constructed yet,
 	// let alone posted to a generic device queue, so we have no other
 	// way to derive the xmi_context_t (unless it is passed-in).
-//	xmi_context_t ctx = _g_progfunc_dev.getContext();
-#warning fix this context stuff
-	xmi_context_t ctx;
+	xmi_context_t ctx = _g_progfunc_dev.getContext(XMI_GD_ClientId(pf->client), pf->context);
 	int rc = pf->func(ctx, pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {
