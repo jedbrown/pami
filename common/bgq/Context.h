@@ -69,13 +69,10 @@ namespace XMI
 
   class Context : public Interface::Context<XMI::Context>
   {
-#warning fix work allocator ...
-#if 0
 	static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
 		XMI::Context *context = (XMI::Context *)ctx;
 		context->_workAllocator.returnObject(cookie);
 	}
-#endif
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				XMI::Device::Generic::Device *generics,
@@ -91,8 +88,8 @@ namespace XMI
 #ifdef MU_DEVICE
           _mu (),
 #endif
-          _shmem ()//,
-//	  _workAllocator()
+          _shmem (),
+	  _workAllocator()
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -110,8 +107,8 @@ namespace XMI
 
 #ifdef MU_DEVICE
         _mu.init (&_sysdep, (xmi_context_t)this, id);
-	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
 #endif
+	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
         _shmem.init (&_sysdep, (xmi_context_t)this, id);
 
         _get = (void *) _request.allocateObject ();
@@ -142,8 +139,6 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
       {
-#warning fix progress stuff
-#if 0
         XMI::Device::ProgressFunctionMsg *work =
 		(XMI::Device::ProgressFunctionMsg *)_workAllocator.allocateObject();
 	work->setFunc(work_fn);
@@ -152,7 +147,6 @@ namespace XMI
 	work->setContext(_contextid);
 	work->setClient(_clientid);
 	work->postWorkDirect();
-#endif
 	return XMI_SUCCESS;
       }
 
@@ -169,7 +163,7 @@ namespace XMI
 #ifdef MU_DEVICE
             events += _mu.advance();
 #endif
-	    //events += _generic.advance();
+	    events += _generic.advance();
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -471,8 +465,7 @@ namespace XMI
       void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
       ContextLock _lock;
-#warning fix work allocator
-      //MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+      MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
       ProtocolAllocator _protocolAllocator;
   }; // end XMI::Context
 }; // end namespace XMI

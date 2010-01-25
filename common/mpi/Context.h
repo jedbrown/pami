@@ -69,13 +69,10 @@ namespace XMI
 
     class Context : public Interface::Context<XMI::Context>
     {
-#warning fix work function stuff
-#if 0
 	static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
 		XMI::Context *context = (XMI::Context *)ctx;
 		context->_workAllocator.returnObject(cookie);
 	}
-#endif
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				XMI::Device::Generic::Device *generics,
@@ -87,8 +84,7 @@ namespace XMI
         _mm (addr, bytes),
 	_sysdep(_mm),
         _lock (),
-#warning fix work allocator
-//	_workAllocator (),
+	_workAllocator (),
 	_generic(generics[id]),
         _shmem(),
         _mpi(&__global.mpi_device),
@@ -147,8 +143,6 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
         {
-#warning fix context post
-#if 0
           XMI::Device::ProgressFunctionMsg *work =
 		(XMI::Device::ProgressFunctionMsg *)_workAllocator.allocateObject();
 	  work->setFunc(work_fn);
@@ -157,7 +151,6 @@ namespace XMI
 	  work->setContext(_contextid);
 	  work->setClient(_clientid);
 	  work->postWorkDirect();
-#endif
           return XMI_SUCCESS;
         }
 
@@ -752,8 +745,7 @@ namespace XMI
       Memory::MemoryManager     _mm;
       SysDep                    _sysdep;
       ContextLock _lock;
-#warning fix work allocator
-      //MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+      MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
 
       XMI::Device::Generic::Device &_generic;
 #ifdef USE_WAKEUP_VECTORS
