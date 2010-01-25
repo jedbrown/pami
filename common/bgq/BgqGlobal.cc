@@ -18,3 +18,6 @@ XMI::Global __global;
 
 XMI::Mapping *XMI::Topology::mapping = NULL;
 xmi_coord_t XMI::Topology::my_coords;
+extern "C" void __libxmi_dummy     () { abort(); }
+extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libxmi_dummy")));
+
