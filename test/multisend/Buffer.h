@@ -20,7 +20,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 
-#define DBG_FPRINTF(x) //fprintf x
+#define DBG_FPRINTF(x) fprintf x
 #define DBGF_FUNCTIONNAME DBG_FPRINTF((stderr,"%.*s\n",_function_name_len(__PRETTY_FUNCTION__),_function_name(__PRETTY_FUNCTION__)))
 
 namespace XMI
@@ -58,7 +58,7 @@ namespace XMI
       _pSrcPwq(&_srcPwq),
       _pDstPwq(&_dstPwq)
       {
-        DBG_FPRINTF((stderr,"<%#8.8X>%s src %p/%p, dst %p/%p\n",(unsigned)this,__PRETTY_FUNCTION__, &_srcPwq, _source, &_dstPwq, _destination));
+        DBG_FPRINTF((stderr,"<%p>%s src %p/%p, dst %p/%p\n",this,__PRETTY_FUNCTION__, &_srcPwq, _source, &_dstPwq, _destination));
         reset(isRoot);
       }
 
@@ -84,7 +84,7 @@ namespace XMI
                         bool isRoot  = false)
       {
         DBGF_FUNCTIONNAME;
-        DBG_FPRINTF((stderr,"<%#8.8X> src %p, dst %p\n",(unsigned)this,src, dst));
+        DBG_FPRINTF((stderr,"<%p> src %p, dst %p\n",this,src, dst));
         src->configure(NULL, _source, sizeof(_source), sizeof(_source));
         src->reset();
 
@@ -98,7 +98,7 @@ namespace XMI
                       XMI::PipeWorkQueue* dst)
       {
         DBGF_FUNCTIONNAME;
-        DBG_FPRINTF((stderr,"<%#8.8X> src %p, dst %p\n",(unsigned)this,src, dst));
+        DBG_FPRINTF((stderr,"<%p> src %p, dst %p\n",this,src, dst));
         _pSrcPwq = src;
         _pDstPwq = dst;
         return;

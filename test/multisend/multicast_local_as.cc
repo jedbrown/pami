@@ -161,10 +161,10 @@ int main(int argc, char ** argv)
     new (&src_participants) XMI::Topology(lRoot); // local root
     new (&dst_participants) XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
 
-    DBG_FPRINTF((stderr,"lRoot %d, lSize %d\n",lRoot, lSize));
+    DBG_FPRINTF((stderr,"lRoot %d, lSize %zd\n",lRoot, lSize));
     for(size_t j=0;j<lSize;++j)
     {
-      DBG_FPRINTF((stderr,"lRankList[%d] = %d\n",j, lRankList[j]));
+      DBG_FPRINTF((stderr,"lRankList[%zd] = %d\n",j, lRankList[j]));
     }
 
     if(lRoot == task_id)
@@ -222,10 +222,10 @@ int main(int argc, char ** argv)
     new (&src_participants) XMI::Topology(lRoot); // local root
     new (&dst_participants) XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
 
-    DBG_FPRINTF((stderr,"lRoot %d, lSize %d\n",lRoot, lSize));
+    DBG_FPRINTF((stderr,"lRoot %d, lSize %zd\n",lRoot, lSize));
     for(size_t j=0;j<lSize;++j)
     {
-      DBG_FPRINTF((stderr,"lRankList[%d] = %d\n",j, lRankList[j]));
+      DBG_FPRINTF((stderr,"lRankList[%zd] = %d\n",j, lRankList[j]));
     }
 
     if(lRoot == task_id)

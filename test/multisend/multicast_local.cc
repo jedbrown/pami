@@ -37,7 +37,7 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
                            xmi_pipeworkqueue_t **rcvpwq,
                            xmi_callback_t       *cb_done)
 {
-  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %d, sndlen %d, cookie %s\n",
+  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zd, sndlen %zd, cookie %s\n",
                __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   XMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
@@ -49,7 +49,7 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
 
   XMI::PipeWorkQueue * pwq;
   pwq = _buffer.dstPwq();
-  DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %d, %d done out of %d\n",__FILE__,__PRETTY_FUNCTION__,
+  DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zd, %zd done out of %zd\n",__FILE__,__PRETTY_FUNCTION__,
                pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
 
   *rcvlen = sndlen;

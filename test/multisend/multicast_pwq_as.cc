@@ -120,10 +120,10 @@ int main(int argc, char ** argv)
   xmi_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
   size_t  gSize    = topology_global.size();
 
-  DBG_FPRINTF((stderr,"gRoot %d, gSize %d\n",gRoot, gSize));
+  DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
   for(size_t j=0;j<gSize;++j)
   {
-    DBG_FPRINTF((stderr,"gRankList[%d] = %d\n",j, gRankList[j]));
+    DBG_FPRINTF((stderr,"gRankList[%zd] = %d\n",j, gRankList[j]));
   }
 
   xmi_multicast_t mcast;
@@ -155,10 +155,10 @@ int main(int argc, char ** argv)
 
     mcast.src_participants = (xmi_topology_t *)new XMI::Topology(gRoot); // global root (mem leak)
     mcast.dst_participants = (xmi_topology_t *)new XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants (mem leak)
-    DBG_FPRINTF((stderr,"gRoot %d, gSize %d\n",gRoot, gSize));
+    DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
     for(size_t j=0;j<gSize;++j)
     {
-      DBG_FPRINTF((stderr,"gRankList[%d] = %d\n",j, gRankList[j]));
+      DBG_FPRINTF((stderr,"gRankList[%zd] = %d\n",j, gRankList[j]));
     }
 
     mcast.connection_id = 1;
@@ -264,7 +264,7 @@ int main(int argc, char ** argv)
     //sleep(5); // instead of syncing
 
     {
-      DBG_FPRINTF((stderr,"task_id %zu -> 1st ranks\n", gRoot));
+      DBG_FPRINTF((stderr,"task_id %u -> 1st ranks\n", gRoot));
       mcast.src_participants = (xmi_topology_t *)new XMI::Topology(gRoot); // global root (mem leak)
       // This isn't working correctly, so do it the hard way
       //topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale

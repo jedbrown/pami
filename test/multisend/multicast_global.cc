@@ -76,7 +76,7 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 {
   XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
-  DBG_FPRINTF((stderr, "%s:%s done %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
+  DBG_FPRINTF((stderr, "%s:%s doneCountdown %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
   --*doneCountdown;
 }
 
@@ -94,8 +94,8 @@ int main(int argc, char ** argv)
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
-  size_t n = 1;
-  status = XMI_Context_createv(client, NULL, 0, &context, n);
+  int n = 1;
+  status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
@@ -143,7 +143,6 @@ int main(int argc, char ** argv)
   options.config = NULL;
 
   options.hint.multicast.global = 1;
-  options.hint.multicast.one_sided = 1;
   options.hint.multicast.active_message = 1;
 
   status = XMI_Dispatch_set_new(context,
@@ -167,20 +166,23 @@ int main(int argc, char ** argv)
   XMI::Topology src_participants;
   XMI::Topology dst_participants;
 
+  new (&src_participants) XMI::Topology(gRoot); // global root
+  new (&dst_participants) XMI::Topology(gRankList, gSize); // comm_world
+
   xmi_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
   if(gRoot == task_id)
   {
 
     mcast.dispatch = dispatch;
-    mcast.connection_id = task_id; //0xB;
+    mcast.connection_id = 0xB; // arbitrary
     mcast.msginfo = &_msginfo;
     mcast.msgcount = 1;
     mcast.src_participants = (xmi_topology_t *)&src_participants;
     mcast.dst_participants = (xmi_topology_t *)&dst_participants;
 
     mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
-    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+    mcast.dst = (xmi_pipeworkqueue_t *) _buffer.dstPwq();
 
     mcast.client = client;	// client ID
     mcast.context = 0;	// context ID
@@ -189,75 +191,17 @@ int main(int argc, char ** argv)
 
     mcast.cb_done = _cb_done;
   }
+// ------------------------------------------------------------------------
+// simple mcast root to all
+// ------------------------------------------------------------------------
 
-// ------------------------------------------------------------------------
-// simple mcast to all except root
-// ------------------------------------------------------------------------
-  {
     _doneCountdown = 1;
     //sleep(5); // instead of syncing
 
-    new (&src_participants) XMI::Topology(gRoot); // global root
-    new (&dst_participants) XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants
     if(gRoot == task_id)
     {
+      _doneCountdown = 2; /// \todo active message callback on root? semantics?
       _buffer.reset(true); // isRoot = true
-      status = XMI_Multicast(&mcast);
-    }
-
-    while(_doneCountdown)
-    {
-      status = XMI_Context_advance (context, 10);
-    }
-    size_t
-    bytesConsumed = 0,
-    bytesProduced = 0;
-
-    if(gRoot == task_id)
-    {
-      _buffer.validate(bytesConsumed,
-                       bytesProduced,
-                       true,   // isRoot = true
-                       false); // isDest = false
-      if((bytesConsumed != TEST_BUF_SIZE) ||
-         (bytesProduced != 0))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
-    }
-    else
-    {
-      _buffer.validate(bytesConsumed,
-                       bytesProduced);
-      if((bytesConsumed != 0) ||
-         (bytesProduced != TEST_BUF_SIZE))
-      {
-        fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
-      }
-      else
-        fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
-    }
-  }
-// ------------------------------------------------------------------------
-
-
-// ------------------------------------------------------------------------
-// simple mcast to all including root
-// ------------------------------------------------------------------------
-  {
-    _doneCountdown = 1;
-    //sleep(5); // instead of syncing
-
-    new (&src_participants) XMI::Topology(gRoot); // global root
-    new (&dst_participants) XMI::Topology(gRankList, gSize); // include root in dst_participants
-    if(gRoot == task_id)
-    {
-      _buffer.reset(true); // isRoot = true
-      // Need a non-null dst pwq since I'm now including myself as a dst
-      mcast.dst = (xmi_pipeworkqueue_t *)_buffer.dstPwq();
-
       status = XMI_Multicast(&mcast);
     }
 
@@ -296,50 +240,26 @@ int main(int argc, char ** argv)
       else
         fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
     }
-  }
+  
+// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
+// simple mcast metadata only
 // ------------------------------------------------------------------------
 
-// ------------------------------------------------------------------------
-// simple mcast to all except root, metadata only
-// ------------------------------------------------------------------------
+ 
+    _doneCountdown = 1;
 
-  int idx = 0;
-  xmi_task_t *ranks = (xmi_task_t *) malloc (gSize * sizeof(xmi_task_t));
-  for(size_t count = 0; count < gSize; count++)
-    if(count != task_id)
-      ranks[idx++] = count;
-
-  new (&src_participants) XMI::Topology(task_id); // global root
-  new (&dst_participants) XMI::Topology(ranks, (gSize-1)); // everyone except root in dst_participants
-
-  //for (int iter = 0; iter < 10; iter++)
-  {
-    _doneCountdown = gSize;
-    //sleep(5); // instead of syncing
-
-    mcast.dispatch = dispatch;
-//    mcast.connection_id = task_id; //0xB;
-    mcast.msginfo = &_msginfo;
-    mcast.msgcount = 1;
-    mcast.src_participants = (xmi_topology_t *)&src_participants;
-    mcast.dst_participants = (xmi_topology_t *)&dst_participants;
-
-
-    mcast.client = client;	// client ID
-    mcast.context = 0;	// context ID
-    mcast.roles = -1;
-
-    mcast.cb_done = _cb_done;
-
-    mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
-
-    mcast.src = (xmi_pipeworkqueue_t *)NULL;
-    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
-
-    mcast.bytes = 0;
-
-    //if(gRoot == task_id)
+    if(gRoot == task_id)
     {
+      _doneCountdown = 2; /// \todo active message callback on root? semantics?
+
+      mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
+
+      mcast.src = (xmi_pipeworkqueue_t *)NULL;
+      mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+
+      mcast.bytes = 0;
+
       status = XMI_Multicast(&mcast);
     }
 
@@ -347,31 +267,9 @@ int main(int argc, char ** argv)
     {
       status = XMI_Context_advance (context, 10);
     }
-    if(_countNoData != (int)(gSize -1))
-      fprintf(stderr,"FAIL didn't receive %zu expected metadata - received %d\n",gSize-1, _countNoData);
+    if(_countNoData != 1)
+      fprintf(stderr,"FAIL didn't receive expected metadata - received %d\n", _countNoData);
     else fprintf(stderr,"PASS received %d expected metadata\n",_countNoData);
-    XMI::Topology *srcT = (XMI::Topology*) &src_participants;
-    XMI::Topology *dstT = (XMI::Topology*) &dst_participants;
-    if((srcT->size() != 1) ||
-       (!srcT->isRankMember(task_id)) ||
-       (dstT->size() != (gSize-1)))
-      fprintf(stderr,"FAIL topo sanity\n");
-    else fprintf(stderr,"PASS topo sanity\n");
-    xmi_task_t *dranks = (xmi_task_t*) malloc(gSize * sizeof(xmi_task_t));
-    dstT->rankList(&dranks);
-    bool fail = false;
-    for(size_t count = 0; count < gSize-1; count++)
-      if(ranks[count] != dranks[count])
-      {
-        fprintf(stderr,"FAIL %zu\n", count);
-        fail = true;
-        break;
-      }
-    if(!fail) fprintf(stderr,"PASS dst topo ranks\n");
-  }
-// ------------------------------------------------------------------------
-
-  //sleep(5);
 
 // ------------------------------------------------------------------------
   DBG_FPRINTF((stderr, "XMI_Context_destroy(context);\n"));

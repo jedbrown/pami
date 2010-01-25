@@ -99,7 +99,7 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep, xmi_context_t context
   rc = _colChannel->init( sd );
   XMI_assert( rc == 0 );
 #endif
-  _colChannel = NULL;
+  _colChannel = _p2pChannel[0]; /// \todo temporarily use the p2p channel until resmgr is fixed
 #if 0
   TRACE(("MUDEvice ctor p2pChan:%llx resMgr:%llx subgrpPtr:%llx MUsubgrpPtr:%llx\n",
          (unsigned long long)(_p2pChannel[0]),

@@ -12,7 +12,7 @@
 #include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
 #include <spi/include/kernel/memory.h>
 
-#define TRACE(x) printf x
+#define TRACE(x) fprintf x
 
 namespace DCMF
 {
@@ -240,8 +240,8 @@ namespace DCMF
                                                      &relativeFnum );
             _descWrapper.setFIFONum ( relativeFnum );
 
-	    printf("MUSendMessage.h postDescriptor() subgrpPtr:%llx fnum:%d\n",
-		   (unsigned long long)injFifoSubGroup,relativeFnum);
+	    TRACE((stderr,"MUSendMessage.h postDescriptor() subgrpPtr:%llx fnum:%d\n",
+		   (unsigned long long)injFifoSubGroup,relativeFnum));
 
             int rc  = injFifoSubGroup->push ( _descWrapper );
             return rc;
@@ -410,7 +410,7 @@ inline bool DCMF::MU::MUSendMessage::Recv::processPacket (char *payload, int asi
   char * dst_addr = _rcvbuf + _bytes;
 
 
-  TRACE(("MUSendMessage.h processPacket rcvlen:%d bytes:%d to_copy:%d asize:%d\n",
+  TRACE((stderr,"MUSendMessage.h processPacket rcvlen:%d bytes:%d to_copy:%d asize:%d\n",
          _rcvlen, _bytes, to_copy, asize));
 
   // All packets are full except for possibly the last packet.

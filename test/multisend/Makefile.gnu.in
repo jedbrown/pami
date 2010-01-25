@@ -13,6 +13,7 @@ VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
 APPS            =  multicast.${EXTENSION} multicast_as.${EXTENSION}
+APPS            += multicast_global.${EXTENSION}
 APPS            += multicast_local.${EXTENSION} multicast_local_as.${EXTENSION} 
 APPS            += multicast_pwq.${EXTENSION} multicast_pwq_as.${EXTENSION}
 APPS            += #multicombine.${EXTENSION}
@@ -42,3 +43,34 @@ else
 endif
 
 default: ${APPS}
+
+
+runmesa:
+	BG_SHAREDMEMSIZE=1 @BGFLOOR@/scripts/runfctest.sh \
+	--ttype cnk \
+	--parmstest ${VPATH}/test.parms \
+	--program multicast_global.cnk \
+	--svchost ${VPATH}/pers.svchost \
+	--numcores 1 \
+	$(parms)
+
+runmambo:
+	BG_SHAREDMEMSIZE=1 @BGFLOOR@/scripts/runfctest.sh \
+	--ttype cnk \
+	--parmstest ${VPATH}/test.parms \
+	--program multicast_global.cnk \
+	--svchost ${VPATH}/pers.svchost \
+	--script runMambo \
+	$(parms)
+
+runfpga:
+	BG_SHAREDMEMSIZE=1 @BGFLOOR@/scripts/runfctest.sh \
+	--ttype cnk \
+	--parmstest ${VPATH}/test.parms \
+	--program multicast_global.cnk \
+	--svchost ${VPATH}/pers.svchost \
+	--script runFpga \
+	--fctestdir /bgq/data/usr/sameerk/fpga/ \
+	--maxtime 10000000000 \
+	--numcores 1 \
+	$(parms)

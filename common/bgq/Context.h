@@ -38,11 +38,26 @@
 
 #include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) fprintf x
 #endif
-#define MU_DEVICE
+
+#define MU_COLL_DEVICE
+//#define MU_DEVICE
+
+#ifdef MU_COLL_DEVICE
+#include "components/devices/bgq/mu/MUCollDevice.h"
+#include "components/devices/bgq/mu/MUMulticastModel.h"
+#endif
+
 namespace XMI
 {
+#ifdef MU_COLL_DEVICE
+  typedef Device::MU::MUCollDevice MUDevice;
+  #define MU_DEVICE
+#elif defined(MU_DEVICE)
+  typedef Device::MU::MUDevice MUDevice;
+#endif
+
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
   //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
@@ -58,8 +73,7 @@ namespace XMI
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
   typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
-  typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel,
-  XMI::Device::MU::MUDevice > EagerMu;
+  typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel,MUDevice > EagerMu;
   // << Point-to-point protocol typedefs and dispatch registration.
   //
 
@@ -107,7 +121,7 @@ namespace XMI
 
 #ifdef MU_DEVICE
         _mu.init (&_sysdep, (xmi_context_t)this, id);
-#endif
+	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
 	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
         _shmem.init (&_sysdep, (xmi_context_t)this, id);
 
@@ -409,7 +423,20 @@ namespace XMI
                               cookie,
                               options.hint.send);
       }
-        return result;
+#ifdef MU_COLL_DEVICE
+      if (_dispatch[id] == NULL)
+      {
+        TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
+        XMI_assertf(_protocolAllocator.objsize >= sizeof(XMI::Device::MU::MUMulticastModel),"%zd >= %zd\n",_protocolAllocator.objsize,sizeof(XMI::Device::MU::MUMulticastModel));
+        // Allocate memory for the protocol object.
+        _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
+
+        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, _mu, _client, _contextid);
+        model->registerMcastRecvFunction(id, fn.multicast, cookie);
+
+      }
+#endif
+      return result;
     }
 
       inline xmi_result_t multisend_getroles(size_t          dispatch,
@@ -421,7 +448,16 @@ namespace XMI
 
       inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
       {
-        return XMI_UNIMPL;
+        typedef uint8_t mcast_storage_t[XMI::Device::MU::MUMulticastModel::sizeof_msg];
+        TRACE_ERR((stderr, ">> multicast_impl multicast %zd, %p\n", mcastinfo->dispatch, mcastinfo));
+        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
+        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+        {
+          msgbuf = (mcast_storage_t*)malloc(XMI::Device::MU::MUMulticastModel::sizeof_msg);
+          mcastinfo->request = msgbuf;
+        }
+        XMI::Device::MU::MUMulticastModel * model = (XMI::Device::MU::MUMulticastModel *) _dispatch[mcastinfo->dispatch];
+        return model->postMulticast(*msgbuf, mcastinfo);
       };
 
 
@@ -457,7 +493,8 @@ namespace XMI
       // devices...
       XMI::Device::Generic::Device &_generic;
 #ifdef MU_DEVICE
-      Device::MU::MUDevice _mu;
+      MUDevice _mu;
+      XMI::Device::MU::MUMulticastModel *_mu_model;
 #endif
       ShmemDevice          _shmem;
 

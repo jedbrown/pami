@@ -228,7 +228,7 @@ namespace XMI
           ///
           void     post( MUBaseMessage &msg, int dstrank, bool lifo = false )
           {
-            printf("MUDeevice.h post - p2p chindex:%d\n",_p2pSendChannelIndex);
+            TRACE((stderr,"MUDeevice.h post - p2p chindex:%d\n",_p2pSendChannelIndex));
             _p2pChannel[_p2pSendChannelIndex]->post( msg, dstrank, lifo );
           }
 
@@ -391,7 +391,8 @@ namespace XMI
           unsigned        _firstP2PChannelIndex;
           unsigned        _numP2PChannels;                     /**< # of p2p channels  */
 
-          ColChannel        * _colChannel;                     /**< Collective channel */
+//          ColChannel        * _colChannel;                     /**< Collective channel */
+          P2PChannel        * _colChannel;                     /**< Collective channel \todo temp share p2p channel */
           bool                _initialized;                    /**< true when init() invoked successfully */
 
           dispatch_t      _dispatch[DISPATCH_SET_COUNT * DISPATCH_SET_SIZE];
