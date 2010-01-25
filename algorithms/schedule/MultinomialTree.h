@@ -9,6 +9,10 @@
 #include "algorithms/interfaces/Schedule.h"
 #include "MultinomialMap.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x)
+
 namespace CCMI
 {
   namespace Schedule
