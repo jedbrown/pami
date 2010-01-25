@@ -145,7 +145,6 @@ int main(int argc, char **argv) {
 			cra[1].world = world;
 		}
 		if (chk) {
-			/* flag conflicting classroutes with MSB set to "1" */
 			int r, y;
 			for (r = 0; r < z; ++r) {
 				chk_classroute(&cra[0].cr[r], &cra[1].cr[r]);
@@ -192,7 +191,6 @@ int main(int argc, char **argv) {
 			}
 		}
 		if (chk) {
-			/* flag conflicting classroutes with MSB set to "1" */
 			int r, y;
 			for (r = 0; r < z; ++r) {
 				for (x = 0; x < argc - optind; ++x) {
@@ -210,11 +208,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	} else {
-		for (x = 0; x < CR_NUM_DIMS; ++x) {
-			CR_COORD_DIM(&world.root,x) = CR_COORD_DIM(CR_RECT_LL(&world.rect),x) +
-				(CR_COORD_DIM(CR_RECT_UR(&world.rect),x) - CR_COORD_DIM(CR_RECT_LL(&world.rect),x) + 1) / 2;
-
-		}
+		pick_world_root(&world.rect, &world.root, &world.pri_dim);
 
 		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 		if (!cr) {

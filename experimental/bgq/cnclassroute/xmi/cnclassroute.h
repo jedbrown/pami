@@ -40,5 +40,6 @@ typedef ClassRoute_t CR_ROUTE_T;
 #define CR_ROUTE_UP(cr)		(cr)->output
 #define CR_ROUTE_DOWN(cr)	(cr)->input
 #define CR_ROUTE_ID(cr)		(cr)->id
+#define CR_ROUTE_VC(cr)		(cr)->output
 
 #endif // __experimental_bgq_cnclassroute_xmi_cnclassroute_h__

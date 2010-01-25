@@ -7,7 +7,7 @@ CFLAGS = -g -I$(SPI)/include -I$(HWI)/include -I$(WORK) -I../../../
 
 HDRS = cnclassroute.h testlib.h
 OBJS = cnclassroute.o
-BINS = testroots testcomms testsparse
+BINS = testroots testcomms testsparse testalloc
 
 all: $(BINS)
 

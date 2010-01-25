@@ -263,44 +263,96 @@ void print_classroute_errs(CR_COORD_T *me, classroute_t *cr, int rank) {
 	printf("%s\n", buf);
 }
 
-void recurse_dims(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, int dim, classroute_t *cr) {
+typedef void (*recurse_func_t)(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v);
+
+void recurse_dims(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, int dim, recurse_func_t func, void *param) {
 	int x;
 	for (x = CR_COORD_DIM(CR_RECT_LL(comm),dim); x <= CR_COORD_DIM(CR_RECT_UR(comm),dim); ++x) {
 		CR_COORD_DIM(me,dim) = x;
 		if (dim + 1 == CR_NUM_DIMS) {
-			int r = coord2rank(comm, me);
-			cr[r].flags = 0;
-			build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r].cr);
+			func(cw, comm, me, param);
 		} else {
-			recurse_dims(cw, comm, me, dim + 1, cr);
+			recurse_dims(cw, comm, me, dim + 1, func, param);
 		}
 	}
+}
+
+void recurse_build_cr(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v) {
+	classroute_t *cr = (classroute_t *)v;
+
+	int r = coord2rank(comm, me);
+	cr[r].flags = 0;
+	build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r].cr);
 }
 
 void make_classroutes(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
 	CR_COORD_T me = { 0 };
-	recurse_dims(cw, comm, &me, 0, cr);
+	recurse_dims(cw, comm, &me, 0, recurse_build_cr, cr);
 }
 
-void recurse_dims_sparse(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *excl, int nexcl,
-				CR_COORD_T *me, int dim, classroute_t *cr) {
-	int x;
-	for (x = CR_COORD_DIM(CR_RECT_LL(comm),dim); x <= CR_COORD_DIM(CR_RECT_UR(comm),dim); ++x) {
-		CR_COORD_DIM(me,dim) = x;
-		if (dim + 1 == CR_NUM_DIMS) {
-			int r = coord2rank(comm, me);
-			cr[r].flags = 0;
-			build_node_classroute_sparse(&cw->rect, &cw->root, me,
-							comm, excl, nexcl,
-							cw->pri_dim, &cr[r].cr);
-		} else {
-			recurse_dims_sparse(cw, comm, excl, nexcl, me, dim + 1, cr);
-		}
-	}
+struct recurse_build_cr_sparse_s {
+	classroute_t *cr;
+	CR_COORD_T *excl;
+	int nexcl;
+};
+void recurse_build_cr_sparse(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v) {
+	struct recurse_build_cr_sparse_s *st = (struct recurse_build_cr_sparse_s *)v;
+	classroute_t *cr = st->cr;
+
+	int r = coord2rank(comm, me);
+	cr[r].flags = 0;
+	build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r].cr);
+	build_node_classroute_sparse(&cw->rect, &cw->root, me, comm,
+				st->excl, st->nexcl, cw->pri_dim, &cr[r].cr);
 }
+
 void make_classroutes_sparse(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *excl, int nexcl, classroute_t *cr) {
+	struct recurse_build_cr_sparse_s st;
+	st.cr = cr;
+	st.excl = excl;
+	st.nexcl = nexcl;
 	CR_COORD_T me = { 0 };
-	recurse_dims_sparse(cw, comm, excl, nexcl, &me, 0, cr);
+	recurse_dims(cw, comm, &me, 0, recurse_build_cr_sparse, &st);
+}
+
+struct recurse_alloc_cr_s {
+	int vc;
+	uint32_t bitmap;
+	int id;
+	void **env;
+};
+void recurse_alloc_cr(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v) {
+	uint32_t m;
+	struct recurse_alloc_cr_s *st = (struct recurse_alloc_cr_s *)v;
+
+	int r = coord2rank(&cw->rect, me);
+	m = get_classroute_ids(st->vc, comm, &st->env[r]); // must use per-node tables...
+	/*
+	 * this simulates an allreduce for bit-wise AND...
+	 */
+	st->bitmap &= m;
+}
+void recurse_set_cr(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v) {
+	uint32_t m;
+	struct recurse_alloc_cr_s *st = (struct recurse_alloc_cr_s *)v;
+
+	int r = coord2rank(&cw->rect, me);
+	m = set_classroute_id(st->id, st->vc, comm, &st->env[r]); // must use per-node tables...
+}
+
+int alloc_classroutes(commworld_t *cw, CR_RECT_T *comm, int vc, void **env) {
+	CR_COORD_T me = { 0 };
+	struct recurse_alloc_cr_s st;
+	st.env = env;
+	st.vc = vc;
+	st.bitmap = (uint32_t)-1;
+	recurse_dims(cw, comm, &me, 0, recurse_alloc_cr, &st);
+	int x = ffs(st.bitmap);
+	if (!x) return -1;
+	--x;
+	st.id = x;
+	recurse_dims(cw, comm, &me, 0, recurse_set_cr, &st);
+	return x;
 }
 
 void chk_conn(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {

@@ -67,11 +67,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	if (!root_set) {
-		for (x = 0; x < CR_NUM_DIMS; ++x) {
-			CR_COORD_DIM(&world.root,x) = CR_COORD_DIM(CR_RECT_LL(&world.rect),x) +
-				(CR_COORD_DIM(CR_RECT_UR(&world.rect),x) - CR_COORD_DIM(CR_RECT_LL(&world.rect),x) + 1) / 2;
-
-		}
+		pick_world_root(&world.rect, &world.root, &world.pri_dim);
 	}
 	if (optind < argc) {
 		for (x = 0; x < argc - optind; ++x) {

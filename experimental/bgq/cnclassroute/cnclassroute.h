@@ -48,7 +48,7 @@
  *  CR_ROUTE_UP(crp)	accessor for up-link bits in classroute
  *  CR_ROUTE_DOWN(crp)	accessor for down-link bits in classroute
  *  CR_ROUTE_ID(crp)	accessor for classroute id (if assigned)
- *  todo: CR_ROUTE_VC(crp)	accessor for classroute virtual channel
+ *  CR_ROUTE_VC(crp)	accessor for classroute virtual channel
  */
 #include "xmi/cnclassroute.h" // replace with $(TARGET)/cnclassroute.h ...
 
@@ -127,9 +127,20 @@ extern void build_node_classroute_sparse(CR_RECT_T *world, CR_COORD_T *worldroot
 				int dim0, CR_ROUTE_T *cr);
 
 /**
+ * Pick a root for 'world' rectangle
+ *
+ * Used for sub-comms on exclusive virtual channel.
+ *
+ * \param[in] world		Entire partition rectangle (COMM_WORLD)
+ * \param[out] worldroot	Coordinates of root node in COMM_WORLD
+ * \param[out] pri_dim		Primary dimension for building classroute
+ */
+extern void pick_world_root(CR_RECT_T *world, CR_COORD_T *worldroot, int *pri_dim);
+
+/**
  * Pick a pair of roots for 'world' rectangle that will not conflict
  *
- *
+ * Used for comm-world with shared virtual channel (system and user comm-world)
  *
  * \param[in] world		Entire partition rectangle (COMM_WORLD)
  * \param[out] worldroot1	Coordinates of 1st root node in COMM_WORLD
@@ -138,5 +149,44 @@ extern void build_node_classroute_sparse(CR_RECT_T *world, CR_COORD_T *worldroot
  */
 extern void pick_world_root_pair(CR_RECT_T *world, CR_COORD_T *worldroot1, CR_COORD_T *worldroot2,
 								int *pri_dim);
+
+/**
+ * \brief Find all possible classroutes for given rectangle
+ *
+ * Will re-use classroute ID for identical rectangles, if found.
+ * Typically, this bitmap is ANDed with all other participants,
+ * and the least-significant "1" bit indicates the first classroute
+ * that all agree upon.
+ *
+ * \param[in] vc        Virtual channel to be used by classroute
+ * \param[in] subcomm   The rectangle for classroute to be created 
+ * \return      bitmap of possible classroutes
+ */
+uint32_t get_classroute_ids(int vc, CR_RECT_T *subcomm, void **env);
+
+/**
+ * \brief Allocate a classroute for rectangle
+ *
+ * Will re-use classroute ID for identical rectangles, or where a
+ * classroute has no overlapping rectangles in use at the moment.
+ *
+ * \param[in] id        Classroute ID
+ * \param[in] vc        Virtual channel used by classroute
+ * \param[in] subcomm   The rectangle for classroute to be created
+ * \return      0 = re-using existing classroute, 1 = classroute DCRs must be set
+ */
+int set_classroute_id(int id, int vc, CR_RECT_T *subcomm, void **env);
+
+/**
+ * \brief Release rectangle from use as a classroute
+ *
+ * Assumes that 'subcomm' previously succeeded when passed to get_classroute_id().
+ *
+ * \param[in] id        Classroute ID
+ * \param[in] vc        Virtual channel used by classroute
+ * \param[in] subcomm   The rectangle for classroute to be removed
+ * \return 0 = classroute still in use, 1 = classroute free (DCRs must be cleared)
+ */
+int release_classroute_id(int id, int vc, CR_RECT_T *subcomm, void **env);
 
 #endif // __experimental_bgq_cnclassroute_cnclassroute_h__
