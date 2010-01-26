@@ -21,6 +21,7 @@
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
+#include "p2p/protocols/send/eager/ConnectionArray.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -42,10 +43,10 @@ namespace XMI
       /// \see XMI::Device::Interface::PacketModel
       /// \see XMI::Device::Interface::PacketDevice
       ///
-      template < class T_Model, class T_Device, bool T_LongHeader = true >
+      template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Connection = ConnectionArray<T_Device> >
       class Eager : public XMI::Protocol::Send::Send,
           public EagerImmediate<T_Model, T_Device>,
-          public EagerSimple<T_Model, T_Device, T_LongHeader>
+          public EagerSimple<T_Model, T_Device, T_LongHeader, T_Connection>
       {
         public:
 
@@ -76,11 +77,12 @@ namespace XMI
                                                  cookie,
                                                  device,
                                                  status),
-              EagerSimple<T_Model, T_Device, T_LongHeader> (dispatch,
-                                                            dispatch_fn,
-                                                            cookie,
-                                                            device,
-                                                            status)
+              EagerSimple<T_Model, T_Device,
+                          T_LongHeader, T_Connection> (dispatch,
+                                                       dispatch_fn,
+                                                       cookie,
+                                                       device,
+                                                       status)
           {
           };
 

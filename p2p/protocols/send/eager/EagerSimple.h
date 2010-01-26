@@ -20,13 +20,9 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#include "p2p/protocols/send/eager/EagerConnection.h"
-
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 #endif
-
-#warning TODO: eager connection table must be endpoint-enabled
 
 namespace XMI
 {
@@ -44,13 +40,17 @@ namespace XMI
       /// \see XMI::Device::Interface::PacketModel
       /// \see XMI::Device::Interface::PacketDevice
       ///
-      template <class T_Model, class T_Device, bool T_LongHeader>
+      template <class T_Model, class T_Device, bool T_LongHeader, class T_Connection>
       class EagerSimple
       {
         protected:
 
+          typedef EagerSimple<T_Model,T_Device,T_LongHeader,T_Connection> EagerSimpleProtocol;
+
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
+          // This match information may be simplified by pre-computing the
+          // connection hash id on the origin side.
           typedef struct __attribute__((__packed__)) protocol_match
           {
             size_t             offset;
@@ -74,9 +74,7 @@ namespace XMI
             xmi_event_function      remote_fn; ///< Application remote receive acknowledgement callback
             void                  * cookie;    ///< Application callback cookie
             struct iovec            v[2];      ///< Iovec array used for transfers
-            EagerSimple < T_Model,
-            T_Device,
-            T_LongHeader > * eager;    ///< Eager protocol object
+            EagerSimpleProtocol   * eager;    ///< Eager protocol object
           } send_state_t;
 
           typedef struct recv_state
@@ -87,13 +85,11 @@ namespace XMI
             struct
             {
               uint8_t             * addr;     ///< Address of the long header recv buffer
-              size_t                bytes;
+              size_t                bytes;    
               size_t                offset;
             } longheader;
             protcol_metadata_t      metadata; ///< Original eager protocol envelope metadata
-            EagerSimple < T_Model,
-            T_Device,
-            T_LongHeader > * eager;   ///< Eager protocol object
+            EagerSimpleProtocol   * eager;   ///< Eager protocol object
           } recv_state_t;
 
         public:
@@ -120,8 +116,7 @@ namespace XMI
               _context (device.getContext()),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
-              _connection ((void **)NULL),
-              _connection_manager (device)
+              _connection (device)
           {
             // ----------------------------------------------------------------
             // Compile-time assertions
@@ -150,9 +145,6 @@ namespace XMI
 
             _origin.task   = __global.mapping.task();
             _origin.offset = device.getContextOffset();
-
-#warning fix this
-            //_connection = _connection_manager.getConnectionArray (client, contextid);
 
             TRACE_ERR((stderr, "EagerSimple() [0]\n"));
             status = _envelope_model.init (dispatch,
@@ -515,8 +507,7 @@ namespace XMI
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
 
-          void **                   _connection;
-          EagerConnection<T_Device> _connection_manager;
+          T_Connection              _connection;
 
           inline send_state_t * allocateSendState ()
           {
@@ -537,11 +528,12 @@ namespace XMI
           {
             _recv_allocator.returnObject ((void *) object);
           }
-
+#if 0
           inline void setConnection (xmi_task_t task, void * arg)
           {
             size_t peer = _device.task2peer (task);
-            TRACE_ERR((stderr, ">> EagerSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", (size_t)task, arg, peer, _connection[peer]));
+            TRACE_ERR((stderr, ">> EagerSimple::setConnection(%zd, %p) .. _connection      = %p\n", (size_t)task, arg, _connection));
+            TRACE_ERR((stderr, "   EagerSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", (size_t)task, arg, peer, _connection[peer]));
             XMI_assert_debug(_connection[peer] == NULL);
             _connection[peer] = arg;
             TRACE_ERR((stderr, "<< EagerSimple::setConnection(%zd, %p)\n", (size_t)task, arg));
@@ -563,7 +555,7 @@ namespace XMI
             _connection[peer] = NULL;
             TRACE_ERR((stderr, "<< EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
           }
-
+#endif
           inline void process_envelope (protcol_metadata_t * metadata,
                                         uint8_t            * header,
                                         recv_state_t       * state)
@@ -611,7 +603,7 @@ namespace XMI
                   }
                 else
                   {
-                    clearConnection (metadata->match.task);
+                    _connection.clear (metadata->match.task, metadata->match.offset);
                     freeRecvState (state);
                   }
               }
@@ -633,8 +625,7 @@ namespace XMI
             void               * fn_cookie = state->cookie;
             TRACE_ERR((stderr, "   EagerSimple::dispatch_ack_direct() .. state = %p, remote_fn = %p\n", state, remote_fn));
 
-            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             eager->freeSendState (state);
 
@@ -652,8 +643,7 @@ namespace XMI
           {
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_read()\n"));
 
-            EagerSimple<T_Model, T_Device, T_LongHeader> * pf =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
+            EagerSimpleProtocol * pf = (EagerSimpleProtocol *) recv_func_parm;
 
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
@@ -710,8 +700,7 @@ namespace XMI
 
             TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->match.task = %d, m->match.offset = %d, m->bytes = %zd, m->va_send = %p\n", m->match.task, m->match.offset, m->bytes, m->va_send));
 
-            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
@@ -724,7 +713,7 @@ namespace XMI
             state->metadata.match.offset = m->match.offset;
 
             // Set the eager connection.
-            eager->setConnection (m->match.task, (void *)state);
+            eager->_connection.set (m->match.task, m->match.offset, (void *)state);
 
             // The compiler will optimize out this constant expression
             // conditional and include this code block only when the long
@@ -788,8 +777,7 @@ namespace XMI
           {
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_envelope_read()\n"));
 
-            EagerSimple<T_Model, T_Device, T_LongHeader> * pf =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
+            EagerSimpleProtocol * pf = (EagerSimpleProtocol *) recv_func_parm;
 
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
@@ -816,14 +804,12 @@ namespace XMI
             // by the compiler when long header support is enabled.
             XMI_assertf(T_LongHeader == true, "'long header' support is not enabled.");
 
-            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             protocol_match_t * match = (protocol_match_t *) metadata;
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), match->task = %d, match->offset = %d, bytes = %zd\n", match->task, match->offset, bytes));
 
-            recv_state_t * state = (recv_state_t *) eager->getConnection (match->task);
-            XMI_assert_debug(state != NULL);
+            recv_state_t * state = (recv_state_t *) eager->_connection.get (match->task, match->offset);
 
             size_t n = MIN(bytes, state->longheader.bytes - state->longheader.offset);
 
@@ -867,14 +853,12 @@ namespace XMI
                                               void   * recv_func_parm,
                                               void   * cookie)
           {
-            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             protocol_match_t * match = (protocol_match_t *) metadata;
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), match->task = %d, match->offset = %d, bytes = %zd\n", match->task, match->offset, bytes));
 
-            recv_state_t * state = (recv_state_t *) eager->getConnection (match->task);
-            XMI_assert_debug(state != NULL);
+            recv_state_t * state = (recv_state_t *) eager->_connection.get (match->task, match->offset);
 
             // Number of bytes received so far.
             size_t nbyte = state->received;
@@ -911,7 +895,7 @@ namespace XMI
               {
                 // No more data packets will be received on this connection.
                 // Clear the connection data and prepare for the next message.
-                eager->clearConnection (match->task);
+                eager->_connection.clear (match->task, match->offset);
 
                 // No more data is to be written to the receive buffer.
                 // Invoke the receive done callback.
@@ -961,8 +945,7 @@ namespace XMI
             TRACE_ERR((stderr, "EagerSimple::send_complete() >> \n"));
             send_state_t * state = (send_state_t *) cookie;
 
-            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) state->eager;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
 
             if (state->local_fn != NULL)
               {
@@ -991,10 +974,9 @@ namespace XMI
           {
             TRACE_ERR((stderr, "EagerSimple::receive_complete() >> \n"));
             recv_state_t * state = (recv_state_t *) cookie;
-            EagerSimple<T_Model, T_Device, T_LongHeader> * eager =
-              (EagerSimple<T_Model, T_Device, T_LongHeader> *) state->eager;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
 
-            eager->clearConnection(state->metadata.match.task);
+            eager->_connection.clear (state->metadata.match.task, state->metadata.match.offset);
             eager->freeRecvState (state);
 
             TRACE_ERR((stderr, "EagerSimple::receive_complete() << \n"));
