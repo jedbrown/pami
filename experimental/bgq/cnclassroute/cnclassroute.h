@@ -32,8 +32,9 @@
          COLLECTIVE_CLASS_ROUTE_ENABLE_EP|\
          COLLECTIVE_CLASS_ROUTE_ENABLE_EM)
 
-#define GET_CR_ROUTE_VC(crp)	((crp)->output & 0x003)
-#define SET_CR_ROUTE_VC(crp,vc)	((crp)->output = ((crp)->output & ~0x003) | vc)
+#define CR_ROUTE_VCMASK		(0x3 << 12)
+#define GET_CR_ROUTE_VC(crp)	((crp)->output & CR_ROUTE_VCMASK)
+#define SET_CR_ROUTE_VC(crp,vc)	((crp)->output = ((crp)->output & ~CR_ROUTE_VCMASK) | vc)
 
 static const uint16_t cr_links[][2] = {
 [CR_AXIS_A][CR_SIGN_POS] = COLLECTIVE_CLASS_ROUTE_ENABLE_AP,
