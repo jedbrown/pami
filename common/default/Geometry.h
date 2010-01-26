@@ -17,6 +17,9 @@
 //#include "config.h"
 
 //#include "components/mapping/mpi/mpimapping.h"
+#include "Topology.h"
+#include "Mapping.h"
+
 #define XMI_GEOMETRY_CLASS XMI::Geometry::Common<XMI_MAPPING_CLASS>
 #define GEOMETRY_STORAGE XMI_REQUEST_NQUADS*4
 

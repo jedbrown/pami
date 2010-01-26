@@ -132,8 +132,7 @@ namespace XMI
             fn.p2p = dispatch_p2p;
             new (&_p2p_protocol) T_P2P_PROTOCOL(_dispatch_id, fn, (void*)this,
                                                 __global.mpi_device,
-                                                __global.mapping.task(),
-                                                NULL, 0, status);
+                                                status);
             XMI_assertf(status == XMI_SUCCESS,"<%p>P2PMcastProto::register status=%d\n",this,status);
             return status;
           }
