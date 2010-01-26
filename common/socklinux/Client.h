@@ -13,11 +13,11 @@
 
 namespace XMI
 {
-    class Client : public Interface::Client<XMI::Client,XMI::Context>
+    class Client : public Interface::Client<XMI::Client>
     {
       public:
         inline Client (const char * name, xmi_result_t &result) :
-          Interface::Client<XMI::Client,XMI::Context>(name, result),
+          Interface::Client<XMI::Client>(name, result),
           _client ((xmi_client_t) this),
           _references (1),
           _ncontexts (0),
