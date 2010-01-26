@@ -48,7 +48,7 @@ void printTopo(XMI::Topology topo)
 
 int main(int argc, char ** argv)
 {
-  int n = 1;
+  size_t n = 1;
   unsigned x;
   xmi_client_t client;
   xmi_context_t context;
