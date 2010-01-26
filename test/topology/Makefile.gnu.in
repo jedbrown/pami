@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = topology.${EXTENSION} topology-axial.${EXTENSION} 
+APPS            = topology.${EXTENSION} 
 include @abs_top_builddir@/Build.rules
 
 ifeq (@BUILDENV@,ade)
