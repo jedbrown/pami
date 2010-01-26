@@ -47,7 +47,7 @@ namespace XMI
 
           /// \see XMI::Device::Interface::PacketModel::PacketModel
           /// \see XMI::Device::Interface::MessageModel::MessageModel
-          MUPacketModel (MUDevice & device, xmi_client_t client, size_t context);
+          MUPacketModel (MUDevice & device);
 
           /// \see XMI::Device::Interface::PacketModel::~PacketModel
           /// \see XMI::Device::Interface::MessageModel::~MessageModel
@@ -71,7 +71,8 @@ namespace XMI
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
-                                       size_t               target_rank,
+                                       xmi_task_t           target_task,
+                                       size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
                                        struct iovec       * iov,
@@ -82,7 +83,8 @@ namespace XMI
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
-                                       size_t               target_rank,
+                                       xmi_task_t           target_task,
+                                       size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
                                        struct iovec         (&iov)[T_Niov]);
@@ -91,7 +93,8 @@ namespace XMI
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
-                                       size_t               target_rank,
+                                       xmi_task_t           target_task,
+                                       size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
                                        void               * payload,
@@ -99,7 +102,8 @@ namespace XMI
 
           /// \see XMI::Device::Interface::PacketModel::postPacket
           template <unsigned T_Niov>
-          inline bool postPacket_impl (size_t         target_rank,
+          inline bool postPacket_impl (xmi_task_t     target_task,
+                                       size_t         target_offset,
                                        void         * metadata,
                                        size_t         metasize,
                                        struct iovec   (&iov)[T_Niov]);
@@ -108,7 +112,8 @@ namespace XMI
           inline bool postMultiPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                             xmi_event_function   fn,
                                             void               * cookie,
-                                            size_t               target_rank,
+                                            xmi_task_t           target_task,
+                                            size_t               target_offset,
                                             void               * metadata,
                                             size_t               metasize,
                                             void               * payload,
@@ -117,32 +122,34 @@ namespace XMI
         protected:
 
           inline void initializeDescriptor (MUSPI_DescriptorBase * desc,
-                                            size_t                 target_rank,
+                                            xmi_task_t             target_task,
+                                            size_t                 target_offset,
                                             uint64_t               payloadPa,
                                             size_t                 bytes);
         private:
           MUDevice                        & _device;
           MUDescriptorWrapper               _wrapper_model;
           MUSPI_Pt2PtMemoryFIFODescriptor   _desc_model;
-          xmi_client_t                     _client;
-          size_t                     _context;
+//          xmi_client_t                     _client;
+          xmi_context_t                     _context;
       };
 
       void MUPacketModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
-                                                size_t                 target_rank,
+                                                xmi_task_t             target_task,
+                                                size_t                 target_offset,
                                                 uint64_t               payloadPa,
                                                 size_t                 bytes)
       {
-        TRACE((stderr, ">> initializeDescriptor(%p, %zd, %p, %zd)\n", desc, target_rank, (void *)payloadPa, bytes));
+        TRACE((stderr, ">> initializeDescriptor(%p, %zu, %zu, %p, %zd)\n", desc, target_task, target_offset, (void *)payloadPa, bytes));
         // Clone the model descriptor.
         _desc_model.clone (*desc);
-
+#warning set reception fifo based on the target context id (target_offset)
         // --------------------------------------------------------------------
         // Set the destination torus address and reception fifo.
         // This is terribly inefficient.
         MUHWI_Destination dst;
         size_t addr[BGQ_TDIMS + BGQ_LDIMS];
-        __global.mapping.task2global ((xmi_task_t)target_rank, addr);
+        __global.mapping.task2global ((xmi_task_t)target_task, addr);
         dst.Destination.A_Destination = addr[0];
         dst.Destination.B_Destination = addr[1];
         dst.Destination.C_Destination = addr[2];
@@ -182,7 +189,8 @@ namespace XMI
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
-                                           size_t               target_rank,
+                                           xmi_task_t           target_task,
+                                           size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
                                            struct iovec       * iov,
@@ -196,7 +204,8 @@ namespace XMI
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
-                                           size_t               target_rank,
+                                           xmi_task_t           target_task,
+                                           size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
                                            struct iovec         (&iov)[T_Niov])
@@ -222,7 +231,7 @@ namespace XMI
 #endif
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before nextInjectionDescriptor()\n", T_Niov));
-        if (_device.nextInjectionDescriptor (target_rank,
+        if (_device.nextInjectionDescriptor (target_task,
                                              &injfifo,
                                              &hwi_desc,
                                              &payloadVa,
@@ -232,7 +241,7 @@ namespace XMI
             MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
 
             // Initialize the descriptor directly in the injection fifo.
-            initializeDescriptor (desc, target_rank, (uint64_t) payloadPa, tbytes);
+            initializeDescriptor (desc, target_task, target_offset, (uint64_t) payloadPa, tbytes);
 
             // Enable the "single packet message" bit.
             desc->setSoftwareBit (1);
@@ -263,7 +272,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
               }
           }
         else
@@ -271,7 +280,7 @@ namespace XMI
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. after nextInjectionDescriptor(), no space in fifo\n", T_Niov));
             // Construct a message and post to the device to be processed later.
             MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _client, _context);
+            new (obj) MUInjFifoMessage (fn, cookie, _context);
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before setSourceBuffer\n", T_Niov));
             obj->setSourceBuffer (iov);
 
@@ -279,7 +288,7 @@ namespace XMI
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before getDescriptor\n", T_Niov));
             MUSPI_DescriptorBase * desc = obj->getDescriptor ();
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before initializeDescriptor\n", T_Niov));
-            initializeDescriptor (desc, target_rank, 0, 0);
+            initializeDescriptor (desc, target_task, target_offset, 0, 0);
 
             // Copy the metadata into the network header in the descriptor.
             if (metasize > 0)
@@ -295,7 +304,8 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
-            _device.addToSendQ (target_rank, (QueueElem *) obj);
+#warning send queue must be based on task+offset
+            _device.addToSendQ (target_task, (QueueElem *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(%d) << \n", T_Niov));
@@ -305,7 +315,8 @@ namespace XMI
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            xmi_event_function   fn,
                                            void               * cookie,
-                                           size_t               target_rank,
+                                           xmi_task_t           target_task,
+                                           size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
                                            void               * payload,
@@ -328,7 +339,7 @@ namespace XMI
 #endif
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before nextInjectionDescriptor()\n"));
-        if (_device.nextInjectionDescriptor (target_rank,
+        if (_device.nextInjectionDescriptor (target_task,
                                              &injfifo,
                                              &hwi_desc,
                                              &payloadVa,
@@ -338,7 +349,7 @@ namespace XMI
             MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
 
             // Initialize the descriptor directly in the injection fifo.
-            initializeDescriptor (desc, target_rank, (uint64_t) payloadPa, length);
+            initializeDescriptor (desc, target_task, target_offset, (uint64_t) payloadPa, length);
 
             // Enable the "single packet message" bit.
             desc->setSoftwareBit (1);
@@ -364,7 +375,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
               }
           }
         else
@@ -372,7 +383,7 @@ namespace XMI
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. after nextInjectionDescriptor(), no space in fifo\n"));
             // Construct a message and post to the device to be processed later.
             MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _client, _context);
+            new (obj) MUInjFifoMessage (fn, cookie, _context);
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before setSourceBuffer\n"));
             obj->setSourceBuffer (payload, length);
 
@@ -380,7 +391,7 @@ namespace XMI
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before getDescriptor\n"));
             MUSPI_DescriptorBase * desc = obj->getDescriptor ();
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before initializeDescriptor\n"));
-            initializeDescriptor (desc, target_rank, 0, 0);
+            initializeDescriptor (desc, target_task, target_offset, 0, 0);
 
             // Copy the metadata into the network header in the descriptor.
             if (metasize > 0)
@@ -396,7 +407,7 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
-            _device.addToSendQ (target_rank, (QueueElem *) obj);
+            _device.addToSendQ (target_task, (QueueElem *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(single) << \n"));
@@ -404,7 +415,8 @@ namespace XMI
       };
 
       template <unsigned T_Niov>
-      bool MUPacketModel::postPacket_impl (size_t         target_rank,
+      bool MUPacketModel::postPacket_impl (xmi_task_t     target_task,
+                                           size_t         target_offset,
                                            void         * metadata,
                                            size_t         metasize,
                                            struct iovec   (&iov)[T_Niov])
@@ -429,7 +441,7 @@ namespace XMI
             }
 #endif
 
-        if (_device.nextInjectionDescriptor (target_rank,
+        if (_device.nextInjectionDescriptor (target_task,
                                              &injfifo,
                                              &hwi_desc,
                                              &payloadVa,
@@ -439,7 +451,7 @@ namespace XMI
           MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
 
           // Initialize the descriptor directly in the injection fifo.
-          initializeDescriptor (desc, target_rank, (uint64_t) payloadPa, tbytes);
+          initializeDescriptor (desc, target_task, target_offset, (uint64_t) payloadPa, tbytes);
 
           // Enable the "single packet message" bit.
           desc->setSoftwareBit (1);
@@ -476,7 +488,8 @@ namespace XMI
       bool MUPacketModel::postMultiPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                                 xmi_event_function   fn,
                                                 void               * cookie,
-                                                size_t               target_rank,
+                                                xmi_task_t           target_task,
+                                                size_t               target_offset,
                                                 void               * metadata,
                                                 size_t               metasize,
                                                 void               * payload,
@@ -512,7 +525,7 @@ namespace XMI
         void               * payloadVa;
         void               * payloadPa;
 
-        if (_device.nextInjectionDescriptor (target_rank,
+        if (_device.nextInjectionDescriptor (target_task,
                                              &injfifo,
                                              &hwi_desc,
                                              &payloadVa,
@@ -522,7 +535,7 @@ namespace XMI
             MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
 
             // Initialize the descriptor directly in the injection fifo.
-            initializeDescriptor (desc, target_rank, paddr, length);
+            initializeDescriptor (desc, target_task, target_offset, paddr, length);
 
             // Copy the metadata into the network header in the descriptor.
             if (metasize > 0)
@@ -551,7 +564,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                    fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif
@@ -562,10 +575,10 @@ namespace XMI
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-                    new (obj) MUInjFifoMessage (fn, cookie, _client, _context, sequenceNum);
+                    new (obj) MUInjFifoMessage (fn, cookie, _context, sequenceNum);
 
                     // Queue it.
-                    _device.addToDoneQ (target_rank, obj->getWrapper());
+                    _device.addToDoneQ (target_task, obj->getWrapper());
                   }
               }
           }
@@ -573,12 +586,12 @@ namespace XMI
           {
             // Construct a message and post to the device to be processed later.
             MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _client, _context);
+            new (obj) MUInjFifoMessage (fn, cookie, _context);
             obj->setSourceBuffer (payload, length);
 
             // Initialize the descriptor directly in the injection fifo.
             MUSPI_DescriptorBase * desc = obj->getDescriptor ();
-            initializeDescriptor (desc, target_rank, paddr, length);
+            initializeDescriptor (desc, target_task, target_offset, paddr, length);
 
             // Copy the metadata into the network header in the descriptor.
             if (metasize > 0)
@@ -591,7 +604,7 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
-            _device.addToSendQ (target_rank, (QueueElem *) obj);
+            _device.addToSendQ (target_task, (QueueElem *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postMultiPacket_impl() << \n"));

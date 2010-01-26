@@ -52,38 +52,34 @@ namespace XMI
           ///
           /// \brief Eager send protocol constructor.
           ///
-          /// \param[in]  dispatch     Dispatch identifier
-          /// \param[in]  dispatch_fn  Dispatch callback function
-          /// \param[in]  cookie       Opaque application dispatch data
-          /// \param[in]  device       Device that implements the message interface
-          /// \param[in]  origin_task  Origin task identifier
-          /// \param[in]  context      Communication context
-          /// \param[out] status       Constructor status
+          /// \note The {task, offset] pair may be replaced by a single origin
+          ///       endpoint parameter if doing so would result in fewer
+          ///       conversions.
+          ///
+          /// \param[in]  dispatch    Dispatch identifier
+          /// \param[in]  dispatch_fn Dispatch callback function
+          /// \param[in]  cookie      Opaque application dispatch data
+          /// \param[in]  device      Device that implements the message interface
+          /// \param[in]  context     Communication context
+          /// \param[in]  task        Origin task identifier
+          /// \param[in]  offset      Origin context offset identifier
+          /// \param[out] status      Constructor status
           ///
           inline Eager (size_t                     dispatch,
                         xmi_dispatch_callback_fn   dispatch_fn,
                         void                     * cookie,
                         T_Device                 & device,
-                        size_t                     origin_task,
-                        xmi_context_t              context,
-                        size_t                     contextid,
                         xmi_result_t             & status) :
               XMI::Protocol::Send::Send (),
               EagerImmediate<T_Model, T_Device> (dispatch,
                                                  dispatch_fn,
                                                  cookie,
                                                  device,
-                                                 origin_task,
-                                                 context,
-                                                 contextid,
                                                  status),
               EagerSimple<T_Model, T_Device, T_LongHeader> (dispatch,
                                                             dispatch_fn,
                                                             cookie,
                                                             device,
-                                                            origin_task,
-                                                            context,
-                                                            contextid,
                                                             status)
           {
           };

@@ -25,7 +25,7 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 
 XMI::Device::MU::MUDevice::MUDevice () :
     //BaseDevice (),
-    Interface::BaseDevice<MUDevice, SysDep> (),
+    Interface::BaseDevice<MUDevice> (),
     Interface::PacketDevice<MUDevice> (),
     sysdep (NULL),
     _colChannel (NULL),
@@ -38,11 +38,13 @@ XMI::Device::MU::MUDevice::MUDevice () :
 
 XMI::Device::MU::MUDevice::~MUDevice() {};
 
-int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
+int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid)
 {
   int rc = 0;
 
   this->sysdep  = sysdep;
+  _context   = context;
+  _contextid = contextid;
 
   bool isChannelMapped[ MAX_NUM_P2P_CHANNELS ];
   unsigned i;
@@ -109,6 +111,16 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep)
 
   return rc;
 };
+
+xmi_context_t XMI::Device::MU::MUDevice::getContext_impl ()
+{
+  return _context;
+}
+
+size_t XMI::Device::MU::MUDevice::getContextOffset_impl ()
+{
+  return _contextid;
+}
 
 bool XMI::Device::MU::MUDevice::isInit_impl()
 {

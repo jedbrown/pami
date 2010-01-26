@@ -28,7 +28,7 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 
-	{ int _n = 1; status = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+	{ size_t _n = 1; status = XMI_Context_createv(client, NULL, 0, &context, &_n); }
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
 		return 1;

@@ -18,9 +18,7 @@ static void recv_done (xmi_context_t   context,
 
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
-    size_t               contextid,    /**< IN: context identifier */
     void               * cookie,       /**< IN: dispatch cookie */
-    xmi_task_t           task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
@@ -80,7 +78,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "After Client initialize\n");
 
     fprintf (stderr, "before context createv\n");
-	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -139,7 +137,7 @@ int main (int argc, char ** argv)
   for (int iter=0; iter < 100; iter++)
   {
     fprintf (stderr, "before send ...\n");
-    parameters.send.task = task_id;
+    parameters.send.dest = XMI_Client_endpoint (client, task_id, 0);
     result = XMI_Send (context, &parameters);
     fprintf (stderr, "... after send.\n");
 

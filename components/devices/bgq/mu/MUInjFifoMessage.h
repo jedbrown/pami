@@ -43,14 +43,13 @@ namespace XMI
 
           inline MUInjFifoMessage (xmi_event_function function,
                                    void *             cookie,
-                                   xmi_client_t      client,
-                                   size_t      context,
+                                   xmi_context_t      context,
                                    uint64_t           sequenceNum = 0) :
               QueueElem (),
               _desc (),
               _wrapper (&_desc)
           {
-            _wrapper.setCallback (function, cookie, client, context);
+            _wrapper.setCallback (function, cookie, context);
             _wrapper.setSequenceNumber (sequenceNum);
           }
 

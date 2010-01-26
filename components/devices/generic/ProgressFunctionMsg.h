@@ -14,6 +14,9 @@
 #ifndef __components_devices_generic_ProgressFunctionMsg_h__
 #define __components_devices_generic_ProgressFunctionMsg_h__
 
+#include "Client.h"
+
+#include "components/devices/generic/Device.h"
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "sys/xmi.h"
@@ -135,7 +138,9 @@ inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 	// problem is that this "message" has not even been constructed yet,
 	// let alone posted to a generic device queue, so we have no other
 	// way to derive the xmi_context_t (unless it is passed-in).
-	xmi_context_t ctx = XMI_Client_getcontext(pf->client, pf->context);
+//	xmi_context_t ctx = _g_progfunc_dev.getContext();
+#warning fix this context stuff
+	xmi_context_t ctx;
 	int rc = pf->func(ctx, pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {

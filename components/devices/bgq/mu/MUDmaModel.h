@@ -45,29 +45,29 @@ namespace XMI
       {
         public:
 
-          MUDmaModel (MUDevice & device, xmi_client_t client, size_t context);
+          MUDmaModel (MUDevice & device);
 
           ~MUDmaModel ();
 
           inline bool init_impl (size_t origin_rank);
 
-          inline bool postDmaPut_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
-                                       xmi_callback_t     & cb,
-                                       size_t               target_rank,
-                                       Memregion * local_memregion,
-                                       size_t               local_offset,
-                                       Memregion * remote_memregion,
-                                       size_t               remote_offset,
-                                       size_t               bytes);
+          inline bool postDmaPut_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
+                                       xmi_callback_t & cb,
+                                       xmi_task_t       target_task,
+                                       Memregion      * local_memregion,
+                                       size_t           local_offset,
+                                       Memregion      * remote_memregion,
+                                       size_t           remote_offset,
+                                       size_t           bytes);
 
-          inline bool postDmaGet_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
-                                       xmi_callback_t     & cb,
-                                       size_t               target_rank,
-                                       Memregion * local_memregion,
-                                       size_t               local_offset,
-                                       Memregion * remote_memregion,
-                                       size_t               remote_offset,
-                                       size_t               bytes);
+          inline bool postDmaGet_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
+                                       xmi_callback_t & cb,
+                                       xmi_task_t       target_task,
+                                       Memregion      * local_memregion,
+                                       size_t           local_offset,
+                                       Memregion      * remote_memregion,
+                                       size_t           remote_offset,
+                                       size_t           bytes);
 
           static int dispatch_notify (void   * metadata,
                                       void   * payload,
@@ -90,18 +90,17 @@ namespace XMI
           MUSPI_Pt2PtDirectPutDescriptor    _rput_desc_model;
           MUSPI_Pt2PtMemoryFIFODescriptor   _rmem_desc_model;
 
-          xmi_client_t                     _client;
-          size_t                     _context;
+          xmi_context_t                     _context;
       };
 
-      bool MUDmaModel::postDmaPut_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
-                                        xmi_callback_t       & cb,
-                                        size_t                 target_rank,
-                                        Memregion * local_memregion,
-                                        size_t                 local_offset,
-                                        Memregion * remote_memregion,
-                                        size_t                 remote_offset,
-                                        size_t                 bytes)
+      bool MUDmaModel::postDmaPut_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
+                                        xmi_callback_t & cb,
+                                        xmi_task_t       target_task,
+                                        Memregion      * local_memregion,
+                                        size_t           local_offset,
+                                        Memregion      * remote_memregion,
+                                        size_t           remote_offset,
+                                        size_t           bytes)
       {
         TRACE((stderr, "MUDmaModel::postDmaPut_impl() >> \n"));
 
@@ -109,7 +108,7 @@ namespace XMI
           {
             // A zero-byte put is defined to be complete after a dma pingpong. This
             // is accomplished via a zero-byte get operation.
-            return postDmaGet_impl (obj, cb, target_rank,
+            return postDmaGet_impl (obj, cb, target_task,
                                     local_memregion, local_offset,
                                     remote_memregion, remote_offset,
                                     0);
@@ -120,7 +119,7 @@ namespace XMI
         void               * payloadVa;
         void               * payloadPa;
 
-        if (_device.nextInjectionDescriptor (target_rank,
+        if (_device.nextInjectionDescriptor (target_task,
                                              &injfifo,
                                              &hwi_desc,
                                              &payloadVa,
@@ -150,7 +149,7 @@ namespace XMI
             // This is terribly inefficient.
             MUHWI_Destination dst;
             size_t addr[BGQ_TDIMS];
-            __global.mapping.task2torus (target_rank, addr);
+            __global.mapping.task2torus (target_task, addr);
             dst.Destination.A_Destination = addr[0];
             dst.Destination.B_Destination = addr[1];
             dst.Destination.C_Destination = addr[2];
@@ -177,7 +176,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    cb.function (XMI_Client_getcontext(_client, _context), cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
+                    cb.function (_context, cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif
@@ -187,10 +186,10 @@ namespace XMI
                     // later and the callback will be invoked when the descriptor is
                     // complete.
                     MUInjFifoMessage * msg = (MUInjFifoMessage *) obj;
-                    new (msg) MUInjFifoMessage (cb.function, cb.clientdata, _client, _context, sequenceNum);
+                    new (msg) MUInjFifoMessage (cb.function, cb.clientdata, _context, sequenceNum);
 
                     // Queue it.
-                    _device.addToDoneQ (target_rank, msg->getWrapper());
+                    _device.addToDoneQ (target_task, msg->getWrapper());
                   }
               }
           }
@@ -202,14 +201,14 @@ namespace XMI
         return true;
       };
 
-      bool MUDmaModel::postDmaGet_impl (uint8_t              (&obj)[sizeof(MUInjFifoMessage)],
-                                        xmi_callback_t       & cb,
-                                        size_t                 target_rank,
-                                        Memregion * local_memregion,
-                                        size_t                 local_offset,
-                                        Memregion * remote_memregion,
-                                        size_t                 remote_offset,
-                                        size_t                 bytes)
+      bool MUDmaModel::postDmaGet_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
+                                        xmi_callback_t & cb,
+                                        xmi_task_t       target_task,
+                                        Memregion      * local_memregion,
+                                        size_t           local_offset,
+                                        Memregion      * remote_memregion,
+                                        size_t           remote_offset,
+                                        size_t           bytes)
       {
         TRACE((stderr, "MUDmaModel::postDmaGet_impl() >> \n"));
 
@@ -218,7 +217,7 @@ namespace XMI
         void               * payloadVa;
         void               * payloadPa;
 
-        if (_device.nextInjectionDescriptor (target_rank,
+        if (_device.nextInjectionDescriptor (target_task,
                                              &injfifo,
                                              &hwi_desc,
                                              &payloadVa,
@@ -277,7 +276,7 @@ namespace XMI
             // This is terribly inefficient.
             MUHWI_Destination dst;
             size_t addr[BGQ_TDIMS];
-            __global.mapping.task2torus (target_rank, addr);
+            __global.mapping.task2torus (target_task, addr);
             dst.Destination.A_Destination = addr[0];
             dst.Destination.B_Destination = addr[1];
             dst.Destination.C_Destination = addr[2];
@@ -286,7 +285,7 @@ namespace XMI
             desc->setDestination (dst);
 
             // Set the appropriate rget inj fifo id based on the channel and rank.
-            uint16_t id = _device.getRgetInjFifoId (target_rank);
+            uint16_t id = _device.getRgetInjFifoId (target_task);
             TRACE((stderr, "MUDmaModel::postDmaGet_impl() .. after _device.getRgetInjFifoId(%zd), id = %d\n", target_rank, id));
             desc->setRemoteGetInjFIFOId (id);
 

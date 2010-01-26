@@ -32,6 +32,9 @@
 #include "components/atomic/gcc/GccCounter.h"
 #include <sched.h>
 
+#include "components/devices/workqueue/WQRingBcastMsg.h"
+#include "components/devices/workqueue/LocalBcastWQMessage.h"
+
 /** \todo shmem device must become sub-device of generic device */
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemModel.h"
@@ -66,10 +69,13 @@ namespace XMI
 
     class Context : public Interface::Context<XMI::Context>
     {
+#warning fix work function stuff
+#if 0
 	static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
 		XMI::Context *context = (XMI::Context *)ctx;
 		context->_workAllocator.returnObject(cookie);
 	}
+#endif
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				XMI::Device::Generic::Device *generics,
@@ -81,7 +87,8 @@ namespace XMI
         _mm (addr, bytes),
 	_sysdep(_mm),
         _lock (),
-	_workAllocator (),
+#warning fix work allocator
+//	_workAllocator (),
 	_generic(generics[id]),
         _shmem(),
         _mpi(&__global.mpi_device),
@@ -109,7 +116,8 @@ namespace XMI
 #endif // USE_WAKEUP_VECTORS
 /** \todo need client-id to handle multiple clients in generic device */
 	  _generic.init (_sysdep, (xmi_context_t)this, clientid, id, num, generics);
-          _shmem.init(&_sysdep);
+          _shmem.init(&_sysdep, (xmi_context_t)this, id);
+          _mpi->init(&_sysdep, (xmi_context_t)this, id);
           _lock.init(&_sysdep);
 
           // this barrier is here because the shared memory init
@@ -139,6 +147,8 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
         {
+#warning fix context post
+#if 0
           XMI::Device::ProgressFunctionMsg *work =
 		(XMI::Device::ProgressFunctionMsg *)_workAllocator.allocateObject();
 	  work->setFunc(work_fn);
@@ -147,6 +157,7 @@ namespace XMI
 	  work->setContext(_contextid);
 	  work->setClient(_clientid);
 	  work->postWorkDirect();
+#endif
           return XMI_SUCCESS;
         }
 
@@ -219,8 +230,13 @@ namespace XMI
         {
           size_t id = (size_t)(parameters->send.dispatch);
           int local;
+
+          xmi_task_t task;
+          size_t offset;
+          XMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
+
 //          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
-          if(__global.topology_local.isRankMember(parameters->send.task))
+          if(__global.topology_local.isRankMember(task))
             local=1;
           else
             local=0;
@@ -236,9 +252,13 @@ namespace XMI
           size_t id = (size_t)(parameters->dispatch);
           XMI_assert_debug (_dispatch[id][0] != NULL);
 
+          xmi_task_t task;
+          size_t offset;
+          XMI_ENDPOINT_INFO(parameters->dest,task,offset);
+
           int local;
 //          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
-          if(__global.topology_local.isRankMember(parameters->task))
+          if(__global.topology_local.isRankMember(task))
             local=1;
           else
             local=0;
@@ -555,9 +575,7 @@ namespace XMI
           _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
           xmi_result_t result        = XMI_ERROR;
           XMI_assert(_request.objsize >= sizeof(EagerMPI));
-          new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi,
-                                                __global.mapping.task(),
-                                                _context, _contextid, result);
+          new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi, result);
           if(result!=XMI_SUCCESS)
           {
              XMI_abort();
@@ -577,16 +595,14 @@ namespace XMI
                       _dispatch[id][1] = _protocol.allocateObject ();
                       new (_dispatch[id][1])
                         Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-                        (id, fn, cookie, _shmem, __global.mapping.task(),
-                         _context, _contextid, result);
+                        (id, fn, cookie, _shmem, result);
                     }
                 else
                     {
                       _dispatch[id][1] = _protocol.allocateObject ();
                       new (_dispatch[id][1])
                         Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-                        (id, fn, cookie, _shmem, __global.mapping.task(),
-                         _context, _contextid, result);
+                        (id, fn, cookie, _shmem, result);
                     }
 
                 TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
@@ -675,9 +691,7 @@ namespace XMI
       else if(options.type == XMI_P2P_SEND)
       {
         XMI_assert(_request.objsize >= sizeof(EagerMPI));
-        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi,
-                                                 __global.mapping.task(),
-                                                 _context, _contextid, result);
+        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi, result);
         if(result!=XMI_SUCCESS)
         {
           XMI_abort();
@@ -697,16 +711,14 @@ namespace XMI
             _dispatch[id][1] = _protocol.allocateObject ();
             new (_dispatch[id][1])
             Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-            (id, fn, cookie, _shmem, __global.mapping.task(),
-             _context, _contextid, result);
+            (id, fn, cookie, _shmem, result);
           }
           else
           {
             _dispatch[id][1] = _protocol.allocateObject ();
             new (_dispatch[id][1])
             Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-            (id, fn, cookie, _shmem, __global.mapping.task(),
-             _context, _contextid, result);
+            (id, fn, cookie, _shmem, result);
           }
 
           TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
@@ -740,8 +752,8 @@ namespace XMI
       Memory::MemoryManager     _mm;
       SysDep                    _sysdep;
       ContextLock _lock;
-
-      MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+#warning fix work allocator
+      //MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
 
       XMI::Device::Generic::Device &_generic;
 #ifdef USE_WAKEUP_VECTORS

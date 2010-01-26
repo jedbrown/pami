@@ -81,7 +81,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  { int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+  { size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
   {
     fprintf(stderr,

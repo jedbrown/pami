@@ -49,14 +49,10 @@ namespace XMI
 
         public:
           inline Get( T_Device                 & device,
-                      xmi_task_t                 origin_task,
-                      xmi_client_t              client,
-                      size_t                     contextid,
                       xmi_result_t             & status) :
-              _get_model (device, client, contextid),
+              _get_model (device),
               _device (device),
-              _client (client),
-              _contextid (contextid)
+              _context (device.getContext())
           {
             status = XMI_SUCCESS;
           }
@@ -68,12 +64,12 @@ namespace XMI
           ///
           inline xmi_result_t getimpl ( xmi_event_function   local_fn,
                                         void               * cookie,
-                                        size_t             target_rank,
-                                        size_t             bytes,
-                                        Memregion* 		src_memregion,
-                                        Memregion* 		dst_memregion,
-                                        size_t             src_offset,
-                                        size_t             dst_offset)
+                                        xmi_endpoint_t       dest,
+                                        size_t               bytes,
+                                        Memregion          * src_memregion,
+                                        Memregion          * dst_memregion,
+                                        size_t               src_offset,
+                                        size_t               dst_offset)
           {
 
             // Allocate memory to maintain the state of the send.
@@ -81,12 +77,16 @@ namespace XMI
 
             state->cookie   = cookie;
             state->local_fn = local_fn;
-            state->get    = this;
+            state->get      = this;
+
+            xmi_task_t task;
+            size_t offset;
+            XMI_ENDPOINT_INFO(dest,task,offset);
 
             _get_model.postDmaGet (state->msg,
                                    get_complete,
                                    (void*)state,
-                                   target_rank,
+                                   task,
                                    dst_memregion,
                                    dst_offset,
                                    src_memregion,
@@ -102,8 +102,7 @@ namespace XMI
 
           T_Model                    _get_model;
           T_Device                 & _device;
-          xmi_client_t              _client;
-          size_t                     _contextid;
+          xmi_context_t              _context;
 
           inline get_state_t * allocateGetState ()
           {
@@ -133,7 +132,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (XMI_Client_getcontext(get->_client, get->_contextid), state->cookie, XMI_SUCCESS);
+                state->local_fn (get->_context, state->cookie, XMI_SUCCESS);
               }
 
             get->freeGetState(state);

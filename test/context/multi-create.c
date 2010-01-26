@@ -23,7 +23,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  int num = 2;
+  size_t num = 2;
   result = XMI_Context_createv (client, configuration, 0, &context[0], &num);
   if (result != XMI_SUCCESS || num != 2)
   {

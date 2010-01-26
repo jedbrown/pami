@@ -28,9 +28,7 @@ static void recv_done (xmi_context_t   context,
 
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
-    size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
-    xmi_task_t           task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
@@ -141,7 +139,7 @@ unsigned do_test (xmi_context_t context)
   if (task_id == 0)
   {
     TRACE((stderr, "before send ...\n"));
-    parameters.send.task = 1;
+    parameters.send.dest = XMI_Client_endpoint (g_client, 1, 0);
     result = XMI_Send (context, &parameters);
     TRACE((stderr, "... after send.\n"));
 
@@ -172,7 +170,7 @@ unsigned do_test (xmi_context_t context)
     TRACE((stderr, "... after recv advance loop\n"));
 
     TRACE((stderr, "before send ...\n"));
-    parameters.send.task = 0;
+    parameters.send.dest = XMI_Client_endpoint (g_client, 0, 0);
     result = XMI_Send (context, &parameters);
     TRACE((stderr, "... after send.\n"));
 
@@ -215,7 +213,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  int num = 2;
+  size_t num = 2;
   result = XMI_Context_createv (g_client, NULL, 0, &context[0], &num);
   if (result != XMI_SUCCESS || num != 2)
   {

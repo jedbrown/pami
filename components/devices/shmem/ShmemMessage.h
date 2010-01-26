@@ -41,7 +41,7 @@ namespace XMI
 
         static const size_t SHMEM_MESSAGE_METADATA_SIZE = 128;
 
-        inline ShmemMessage (xmi_client_t client, size_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -51,7 +51,6 @@ namespace XMI
                              size_t               bytes,
                              bool                 packed) :
             QueueElem (),
-            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -72,7 +71,7 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage(1) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len));
         };
 
-        inline ShmemMessage (xmi_client_t client, size_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -84,7 +83,6 @@ namespace XMI
                              size_t               bytes1,
                              bool                 packed) :
             QueueElem (),
-            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -106,7 +104,7 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage(2) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len, _iov[1].iov_base, _iov[1].iov_len));
         };
 
-        inline ShmemMessage (xmi_client_t client, size_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -116,7 +114,6 @@ namespace XMI
                              size_t               niov,
                              bool                 packed) :
             QueueElem (),
-            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -133,14 +130,13 @@ namespace XMI
         };
 
 
-        inline ShmemMessage (xmi_client_t client, size_t        context,
+        inline ShmemMessage (xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
                              void               * metadata,
                              size_t               metasize) :
             QueueElem (),
-            _client (client),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -181,7 +177,7 @@ namespace XMI
         {
           if (_fn)
             {
-              _fn (XMI_Client_getcontext(_client, _context), _cookie, status);
+              _fn (_context, _cookie, status);
             }
 
           return 0;
@@ -254,10 +250,9 @@ namespace XMI
 
 
       protected:
-        xmi_client_t        _client;
-        size_t        _context;
 
         // Client callback information.
+        xmi_context_t       _context;
         xmi_event_function   _fn;
         void               * _cookie;
 

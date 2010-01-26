@@ -54,7 +54,6 @@ namespace XMI
           ///
           typedef struct __attribute__((__packed__)) protocol_metadata
           {
-            xmi_task_t     fromRank;  ///< Origin task id
             uint16_t       databytes; ///< Number of bytes of data
             uint16_t       metabytes; ///< Number of bytes of metadata
           } protocol_metadata_t;
@@ -73,7 +72,6 @@ namespace XMI
             uint8_t                    data[T_Model::packet_model_payload_bytes]; ///< Packed data
             pkt_t                      pkt;
             protocol_metadata_t        metadata;
-//            struct iovec               payload[1];
             EagerImmediate<T_Model,
                            T_Device> * pf;  ///< Eager immediate protocol
           } send_t;
@@ -87,23 +85,16 @@ namespace XMI
           /// \param[in]  dispatch_fn  Dispatch callback function
           /// \param[in]  cookie       Opaque application dispatch data
           /// \param[in]  device       Device that implements the message interface
-          /// \param[in]  origin_task  Origin task identifier
-          /// \param[in]  client      Communication client
-          /// \param[in]  contextid      Communication context
+          /// \param[in]  context      Origin communcation context
           /// \param[out] status       Constructor status
           ///
           inline EagerImmediate (size_t                     dispatch,
                                  xmi_dispatch_callback_fn   dispatch_fn,
                                  void                     * cookie,
                                  T_Device                 & device,
-                                 xmi_task_t                 origin_task,
-                                 xmi_client_t              client,
-                                 size_t                     contextid,
                                  xmi_result_t             & status) :
-              _send_model (device, client, contextid),
-              _fromRank (origin_task),
-              _client (client),
-              _contextid (contextid),
+              _send_model (device),
+              _context (device.getContext()),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _device (device)
@@ -122,7 +113,7 @@ namespace XMI
             // Compile-time assertions
             // ----------------------------------------------------------------
 
-            TRACE_ERR((stderr, "EagerImmediate() [0] _fromRank = %d\n", _fromRank));
+            TRACE_ERR((stderr, "EagerImmediate() [0]\n"));
             status = _send_model.init (dispatch,
                                        dispatch_send_direct, this,
                                        dispatch_send_read, this);
@@ -138,14 +129,17 @@ namespace XMI
             // into the network by the device and, therefore, can be placed
             // on the stack.
             protocol_metadata_t metadata;
-            metadata.fromRank  = _fromRank;
             metadata.databytes = parameters->data.iov_len;
             metadata.metabytes = parameters->header.iov_len;
 
-            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zd, parameters->data.iov_len = %zd dest:%d\n", parameters->header.iov_len, parameters->data.iov_len, parameters->task));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zd, parameters->data.iov_len = %zd dest:%x\n", parameters->header.iov_len, parameters->data.iov_len, parameters->dest));
+
+            xmi_task_t task;
+            size_t offset;
+            XMI_ENDPOINT_INFO(parameters->dest,task,offset);
 
             bool posted =
-              _send_model.postPacket (parameters->task,
+              _send_model.postPacket (task, offset,
                                       (void *) &metadata,
                                       sizeof (protocol_metadata_t),
                                       parameters->iov);
@@ -174,7 +168,6 @@ namespace XMI
               // Copy the metadata off the stack because this stack frame will
               // disappear when this method returns and the model send state
               // will be left pointing to garbage.
-              send->metadata.fromRank  = metadata.fromRank;
               send->metadata.databytes = metadata.databytes;
               send->metadata.metabytes = metadata.metabytes;
 
@@ -184,7 +177,8 @@ namespace XMI
               _send_model.postPacket (send->pkt,
                                       send_complete,
                                       send,
-                                      parameters->task,
+                                      task,
+                                      offset,
                                       (void *) &(send->metadata),
                                       sizeof (protocol_metadata_t),
                                       (void *) &(send->data[0]),
@@ -209,10 +203,8 @@ namespace XMI
           MemoryAllocator < sizeof(send_t), 16 > _allocator;
 
           T_Model                    _send_model;
-          xmi_task_t                 _fromRank;
 
-          xmi_client_t               _client;
-          size_t                     _contextid;
+          xmi_context_t              _context;
           xmi_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
           T_Device                 & _device;
@@ -251,10 +243,8 @@ namespace XMI
             xmi_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
 
             // Invoke the registered dispatch function.
-            send->_dispatch_fn.p2p (send->_client,   // Communication client handle
-                                    send->_contextid, // Communication context id
+            send->_dispatch_fn.p2p (send->_context,   // Communication context
                                     send->_cookie,    // Dispatch cookie
-                                    m->fromRank,      // Origin (sender) rank
                                     (void *) data,    // Application metadata
                                     m->metabytes,     // Metadata bytes
                                     (void *) (data + m->metabytes),  // payload data

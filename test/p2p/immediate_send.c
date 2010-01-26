@@ -8,9 +8,7 @@
 
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
-    size_t               contextid,
     void               * cookie,       /**< IN: dispatch cookie */
-    xmi_task_t           task,         /**< IN: source task */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
@@ -18,7 +16,7 @@ static void test_dispatch (
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called dispatch function.  cookie = %p (active: %zu -> %zu), task = %d, header_size = %zu, pipe_size = %zu\n", cookie, *active, *active-1, task, header_size, pipe_size);
+  fprintf (stderr, "Called dispatch function.  cookie = %p (active: %zu -> %zu), header_size = %zu, pipe_size = %zu\n", cookie, *active, *active-1, header_size, pipe_size);
   (*active)--;
   fprintf (stderr, ">>> [%zu] %s\n", header_size, (char *) header_addr);
   fprintf (stderr, ">>> [%zu] %s\n", pipe_size, (char *) pipe_addr);
@@ -47,7 +45,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-	{ int _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
@@ -112,7 +110,7 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
     fprintf (stderr, "before send immediate ...\n");
-    parameters.task = 1;
+    parameters.dest = XMI_Client_endpoint (client, 1, 0);
     result = XMI_Send_immediate (context, &parameters);
     fprintf (stderr, "... after send immediate.\n");
 
@@ -143,7 +141,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "... after recv advance loop\n");
 
     fprintf (stderr, "before send ...\n");
-    parameters.task = 0;
+    parameters.dest = XMI_Client_endpoint (client, 0, 0);
     result = XMI_Send_immediate (context, &parameters);
     fprintf (stderr, "... after send.\n");
 

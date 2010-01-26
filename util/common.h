@@ -26,6 +26,11 @@
 #include "Compiler.h"
 #include "Arch.h"
 
+/** \todo set the client information in the endpoint opaque type */
+#define XMI_ENDPOINT_INIT(client,task,offset) ((offset << 23) | task)
+#define XMI_ENDPOINT_INFO(endpoint,task,offset) { task = endpoint & 0x007fffff; offset = (endpoint >> 23) & 0x03f; }
+
+
 #ifndef MIN
 #define MIN(a,b)  (((a)<(b))?(a):(b))
 #endif

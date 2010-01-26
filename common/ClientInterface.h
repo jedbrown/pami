@@ -12,6 +12,9 @@
 
 #include "util/queue/Queue.h"
 
+
+#warning The T_Context template parameter is not needed and should be removed from the client interface
+
 namespace XMI
 {
   namespace Interface
@@ -42,8 +45,8 @@ namespace XMI
 	///
         inline xmi_result_t createContext (xmi_configuration_t   configuration[],
                                            size_t                count,
-                                           xmi_context_t *context,
-					   int *ncontexts);
+                                           xmi_context_t       * context,
+					   size_t              * ncontexts);
 
         inline xmi_result_t destroyContext (xmi_context_t context);
 
@@ -70,10 +73,10 @@ namespace XMI
     }
 
     template <class T_Client, class T_Context>
-    inline xmi_result_t Client<T_Client,T_Context>::createContext (xmi_configuration_t configuration[],
-                                           size_t                count,
-					   xmi_context_t *context,
-					   int *ncontexts) {
+    inline xmi_result_t Client<T_Client,T_Context>::createContext (xmi_configuration_t   configuration[],
+                                                                   size_t                count,
+                                                                   xmi_context_t       * context,
+                                                                   size_t              * ncontexts) {
 	return static_cast<T_Client*>(this)->createContext_impl(configuration, count, context, ncontexts);
     }
 

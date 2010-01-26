@@ -31,7 +31,7 @@ namespace XMI
       /// \param[in] metadata       Pointer to network header metadata that is
       ///                           not part of the normal packet payload.
       /// \param[in] payload        Pointer to the raw packet payload.
-      /// \param[in] bytes          Number of valid bytes of packet payload.
+      /// \param[in] bytes          Number of bytes of packet payload.
       /// \param[in] recv_func_parm Registered dispatch clientdata
       /// \param[in] cookie         Device cookie
       ///
@@ -99,9 +99,8 @@ namespace XMI
           /// \brief Packet model interface constructor
           ///
           /// \param[in] device  Packet device reference
-          /// \param[in] context Communication context
           ///
-          PacketModel (T_Device & device, xmi_client_t client, size_t context)
+          PacketModel (T_Device & device)
           {
             // This compile time assert verifies that the specific packet model
             // class, T_Model, has correctly specified the same value for the
@@ -309,16 +308,18 @@ namespace XMI
           ///
           /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
           ///
-          /// \param[in] target_rank  Global rank of the packet destination process
-          /// \param[in] metadata     Virtual address of metadata buffer
-          /// \param[in] metasize     Number of metadata bytes
-          /// \param[in] iov          Array of iovec elements to transfer
+          /// \param[in] target_task     Global identifier of the packet destination task
+          /// \param[in] target_offset  Identifier of the packet destination context
+          /// \param[in] metadata        Virtual address of metadata buffer
+          /// \param[in] metasize        Number of metadata bytes
+          /// \param[in] iov             Array of iovec elements to transfer
           ///
           /// \retval true  All data has been posted
           /// \retval false No data has been posted
           ///
           template <unsigned T_Niov>
-          inline bool postPacket (size_t         target_rank,
+          inline bool postPacket (xmi_task_t     target_task,
+                                  size_t         target_offset,
                                   void         * metadata,
                                   size_t         metasize,
                                   struct iovec   (&iov)[T_Niov]);
@@ -375,14 +376,15 @@ namespace XMI
           ///
           /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
           ///
-          /// \param[in] state        Byte array for the packet transfer state
-          /// \param[in] fn           Event function to invoke when the operation completes
-          /// \param[in] cookie       Event function cookie
-          /// \param[in] target_rank  Global rank of the packet destination process
-          /// \param[in] metadata     Virtual address of metadata buffer
-          /// \param[in] metasize     Number of metadata bytes
-          /// \param[in] iov          Iovec array to specify the data to be copied into the packet payload
-          /// \param[in] niov         Number of iovec array elements
+          /// \param[in] state           Byte array for the packet transfer state
+          /// \param[in] fn              Event function to invoke when the operation completes
+          /// \param[in] cookie          Event function cookie
+          /// \param[in] target_task     Global identifier of the packet destination task
+          /// \param[in] target_offset  Identifier of the packet destination context
+          /// \param[in] metadata        Virtual address of metadata buffer
+          /// \param[in] metasize        Number of metadata bytes
+          /// \param[in] iov             Iovec array to specify the data to be copied into the packet payload
+          /// \param[in] niov            Number of iovec array elements
           ///
           /// \retval true  Packet transfer operation completed and the
           ///               completion event function was invoked
@@ -394,7 +396,8 @@ namespace XMI
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
-                                  size_t               target_rank,
+                                  xmi_task_t           target_task,
+                                  size_t               target_offset,
                                   void               * metadata,
                                   size_t               metasize,
                                   struct iovec       * iov,
@@ -407,7 +410,8 @@ namespace XMI
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
-                                  size_t               target_rank,
+                                  xmi_task_t           target_task,
+                                  size_t               target_offset,
                                   void               * metadata,
                                   size_t               metasize,
                                   struct iovec         (&iov)[T_Niov]);
@@ -420,7 +424,8 @@ namespace XMI
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
                                   xmi_event_function   fn,
                                   void               * cookie,
-                                  size_t               target_rank,
+                                  xmi_task_t           target_task,
+                                  size_t               target_offset,
                                   void               * metadata,
                                   size_t               metasize,
                                   void               * payload,
@@ -448,13 +453,14 @@ namespace XMI
           ///
           /// \see XMI::Device::Interface::PacketDevice::getMultiPacketMetadataSize()
           ///
-          /// \param[in] state        Location to store the transfer object
-          /// \param[in] fn           Event function to invoke when the operation completes
-          /// \param[in] cookie       Opaque data to provide as the cookie parameter of the event function.
-          /// \param[in] target_rank  Global rank of the destination process
-          /// \param[in] metadata     Virtual address of metadata buffer
-          /// \param[in] metasize     Number of metadata bytes
-          /// \param[in] iov          Array of iovec elements to transfer
+          /// \param[in] state           Location to store the transfer object
+          /// \param[in] fn              Event function to invoke when the operation completes
+          /// \param[in] cookie          Opaque data to provide as the cookie parameter of the event function.
+          /// \param[in] target_task     Global identifier of the packet destination task
+          /// \param[in] target_offset   Identifier of the packet destination context
+          /// \param[in] metadata        Virtual address of metadata buffer
+          /// \param[in] metasize        Number of metadata bytes
+          /// \param[in] iov             Array of iovec elements to transfer
           ///
           /// \retval true  Transfer operation completed and the completion
           ///               callback was invoked
@@ -466,7 +472,8 @@ namespace XMI
           inline bool postMultiPacket (uint8_t              (&state)[T_StateBytes],
                                        xmi_event_function   fn,
                                        void               * cookie,
-                                       size_t               target_rank,
+                                       xmi_task_t           target_task,
+                                       size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
                                        void               * payload,
@@ -525,26 +532,30 @@ namespace XMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       template <unsigned T_Niov>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (size_t         target_rank,
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (xmi_task_t     target_task,
+                                                                            size_t         target_offset,
                                                                             void         * metadata,
                                                                             size_t         metasize,
                                                                             struct iovec   (&iov)[T_Niov])
       {
-        return static_cast<T_Model*>(this)->postPacket_impl (target_rank, metadata, metasize, iov);
+        return static_cast<T_Model*>(this)->postPacket_impl (target_task, target_offset, metadata, metasize, iov);
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
                                                                             xmi_event_function   fn,
                                                                             void               * cookie,
-                                                                            size_t               target_rank,
+                                                                            xmi_task_t           target_task,
+                                                                            size_t               target_offset,
                                                                             void               * metadata,
                                                                             size_t               metasize,
                                                                             struct iovec       * iov,
                                                                             size_t               niov)
       {
-        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
-                                                             metadata, metasize, iov, niov);
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie,
+                                                             target_task, target_offset,
+                                                             metadata, metasize,
+                                                             iov, niov);
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
@@ -552,12 +563,14 @@ namespace XMI
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
                                                                             xmi_event_function   fn,
                                                                             void               * cookie,
-                                                                            size_t               target_rank,
+                                                                            xmi_task_t           target_task,
+                                                                            size_t               target_offset,
                                                                             void               * metadata,
                                                                             size_t               metasize,
                                                                             struct iovec         (&iov)[T_Niov])
       {
-        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie,
+                                                             target_task, target_offset,
                                                              metadata, metasize, iov);
       }
 
@@ -565,28 +578,34 @@ namespace XMI
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
                                                                             xmi_event_function   fn,
                                                                             void               * cookie,
-                                                                            size_t               target_rank,
+                                                                            xmi_task_t           target_task,
+                                                                            size_t               target_offset,
                                                                             void               * metadata,
                                                                             size_t               metasize,
                                                                             void               * payload,
                                                                             size_t               length)
       {
-        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie, target_rank,
-                                                             metadata, metasize, payload, length);
+        return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie,
+                                                             target_task, target_offset,
+                                                             metadata, metasize,
+                                                             payload, length);
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postMultiPacket (uint8_t              (&state)[T_StateBytes],
                                                                                  xmi_event_function   fn,
                                                                                  void               * cookie,
-                                                                                 size_t               target_rank,
+                                                                                 xmi_task_t           target_task,
+                                                                                 size_t               target_offset,
                                                                                  void               * metadata,
                                                                                  size_t               metasize,
                                                                                  void               * payload,
                                                                                  size_t               length)
       {
-        return static_cast<T_Model*>(this)->postMultiPacket_impl (state, fn, cookie, target_rank,
-                                                                  metadata, metasize, payload, length);
+        return static_cast<T_Model*>(this)->postMultiPacket_impl (state, fn, cookie,
+                                                                  target_task, target_offset,
+                                                                  metadata, metasize,
+                                                                  payload, length);
       }
     };
   };

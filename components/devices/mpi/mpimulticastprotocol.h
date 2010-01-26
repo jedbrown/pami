@@ -114,9 +114,7 @@ namespace XMI
             xmi_dispatch_callback_fn fn;
             fn.p2p = dispatch_p2p;
             new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn, (void*)this,
-                                                p2p_device,
-                                                __global.mapping.task(),
-                                                context, contextid, status);
+                                                p2p_device, status);
             TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto status %d\n",(unsigned)this,status));
           }
 
@@ -186,7 +184,11 @@ namespace XMI
             for(unsigned i = 0; i< size; ++i)
                 {
                   if(rankList[i]==_task_id) continue; // don't dispatch myself
-                  sendi.task = rankList[i];
+
+#warning xmi_client_t should be passed in on the constructor or retrieved from the device
+                  xmi_client_t client;
+                  sendi.dest = XMI_ENDPOINT_INIT(client, rankList[i],0);
+
                   // Dispatch over p2p
                   TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::multicast() send dispatch task_id[%d] %zd\n",
                                 (unsigned)this, i, rankList[i]));
@@ -266,9 +268,7 @@ namespace XMI
         /// \brief Received a p2p dispatch from another src (static function).  Call the member function on the protocol.
         ///
         static void dispatch_p2p(xmi_context_t        context_hdl,  /**< IN:  communication context handle */
-                                 size_t               context_idx,  /**< IN:  communication context index  */
                                  void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
-                                 xmi_task_t           task,         /**< IN:  source task     */
                                  void               * header,       /**< IN:  header address  */
                                  size_t               header_size,  /**< IN:  header size     */
                                  void               * data,         /**< IN:  address of XMI pipe  buffer, valid only if non-NULL        */
@@ -278,8 +278,6 @@ namespace XMI
             TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::dispatch_p2p header size %zd, data size %zd\n",(unsigned)cookie, header_size, data_size));
             P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *p = (P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *)cookie;
             p->dispatch(context_hdl,
-                        context_idx,
-                        task,
                         header,
                         header_size,
                         data,
@@ -291,8 +289,6 @@ namespace XMI
         /// Call user's dispatch, allocate some storage and start all-sided multicast.
         ///
         void dispatch(xmi_context_t        context_hdl,  /**< IN:  communication context handle */
-                      size_t               context_idx,  /**< IN:  communication context index  */
-                      xmi_task_t           task,         /**< IN:  source task     */
                       void               * header,       /**< IN:  header address  */
                       size_t               header_size,  /**< IN:  header size     */
                       void               * data,         /**< IN:  address of XMI pipe  buffer, valid only if non-NULL        */
@@ -305,8 +301,9 @@ namespace XMI
             xmi_multicast_t mcast;
             mcast.connection_id = ((p2p_hdr_t*)header)->connection_id;
             mcast.bytes         = ((p2p_hdr_t*)header)->bytes;
-
-            _dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)task, mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
+#warning the p2p dispatch does not provide the origin task
+            //_dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)task, mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
+            _dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)0, mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
 
             // No data? We're done.
             if(mcast.bytes == 0)
@@ -329,8 +326,9 @@ namespace XMI
                           (unsigned)this, allocation, mcast.cb_done.function, mcast.cb_done.clientdata));
 
             mcast.request  = (void *)&allocation->request;
-
-            new (&allocation->topology) XMI::Topology(task); // all-sided model expects a src/root topology
+#warning p2p dispatch does not deliver the origin task anymore .. need to resolve
+            //new (&allocation->topology) XMI::Topology(task); // all-sided model expects a src/root topology
+            new (&allocation->topology) XMI::Topology(0); // all-sided model expects a src/root topology
             mcast.src_participants = (xmi_topology_t *) &allocation->topology;
 
             // Save the caller's cb_done and set our own so we can free the allocation

@@ -49,7 +49,7 @@ int main(int argc, char ** argv)
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
-  int n = 1;
+  size_t n = 1;
   status = XMI_Context_createv(client, NULL, 0, &context, &n);
   if(status != XMI_SUCCESS)
   {

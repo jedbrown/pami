@@ -74,7 +74,7 @@ namespace XMI
       inline xmi_result_t createContext_impl (xmi_configuration_t configuration[],
                                                size_t              count,
 						xmi_context_t *context,
-						int *ncontexts)
+						size_t *ncontexts)
         {
 		//_context_list->lock ();
 		int n = *ncontexts;
