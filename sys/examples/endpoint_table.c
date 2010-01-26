@@ -19,7 +19,7 @@ int main ()
 
   XMI_Client_initialize ("name", &client, &num_global_tasks);
 
-  XMI_Context_createv (client, context, 4, &num_global_endpoints);
+  XMI_Context_createv (client, context, 4, num_global_endpoints);
 
   _endpoint = (xmi_endpoint_t *) malloc (sizeof(xmi_endpoint_t) * num_global_endpoints);
 

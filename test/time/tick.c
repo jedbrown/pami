@@ -15,7 +15,7 @@ int main (int argc, char ** argv)
   double value;
 
   XMI_Client_initialize("XMI Example", &client);
-  XMI_Context_createv(client, NULL, 0, &context, &num);
+  XMI_Context_createv(client, NULL, 0, &context, num);
 
   fprintf (stdout, "Before XMI_Wtick()\n");
 

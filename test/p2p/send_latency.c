@@ -191,7 +191,7 @@ int main (int argc, char ** argv)
   TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
   xmi_context_t context;
   TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
-  { size_t _n = 1; XMI_Context_createv (client, NULL, 0, &context, &_n); }
+  { size_t _n = 1; XMI_Context_createv (client, NULL, 0, &context, _n); }
   TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
 
   TRACE_ERR((stderr, "... before barrier_init()\n"));

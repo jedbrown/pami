@@ -3608,13 +3608,13 @@ extern "C"
    * \param[in]  configuration List of configurable attributes and values
    * \param[in]  count         Number of configurations, may be zero
    * \param[out] context       Array of communication contexts to initialize
-   * \param[in,out] ncontexts  num contexts requested (in), created (out)
+   * \param[in]  ncontexts     num contexts requested (in), created (out)
    */
   xmi_result_t XMI_Context_createv (xmi_client_t          client,
                                     xmi_configuration_t   configuration[],
                                     size_t                count,
                                     xmi_context_t       * context,
-                                    size_t              * ncontexts);
+                                    size_t                ncontexts);
 
 
   /**

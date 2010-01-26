@@ -183,7 +183,7 @@ int main (int argc, char ** argv)
   _endpoint[0].recv = 1;
   {
   size_t num = 2;
-  result = XMI_Context_createv (client, configuration, 0, &context[0], &num);
+  result = XMI_Context_createv (client, configuration, 0, &context[0], num);
   if (result != XMI_SUCCESS || num != 2)
   {
     fprintf (stderr, "Error. Unable to create first xmi context. result = %d\n", result);

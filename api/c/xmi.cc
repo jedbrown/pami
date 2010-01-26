@@ -119,7 +119,7 @@ extern "C" xmi_result_t XMI_Context_createv (xmi_client_t          client,
                                             xmi_configuration_t    configuration[],
                                             size_t                 count,
                                             xmi_context_t        * context,
-					    size_t               * ncontexts)
+					    size_t                 ncontexts)
 {
   xmi_result_t result;
   XMI::Client * xmi = (XMI::Client *) client;

@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "After Client initialize\n");
 
     fprintf (stderr, "before context createv\n");
-	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, &_n); }
+	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, _n); }
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);

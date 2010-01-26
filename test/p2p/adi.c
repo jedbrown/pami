@@ -309,7 +309,7 @@ static void init()
   assert(query.value.intval);
 
   query.value.intval = 1;
-  XMI_Context_createv(client, &query, 1, contexts, &num_contexts);
+  XMI_Context_createv(client, &query, 1, contexts, num_contexts);
 
   xmi_dispatch_callback_fn RecvShortFN;
   RecvShortFN.p2p = RecvShortCB;
