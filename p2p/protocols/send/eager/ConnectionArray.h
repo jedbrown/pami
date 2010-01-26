@@ -57,6 +57,11 @@ namespace XMI
               _c[i].array = (void **) malloc (sizeof(void *) * _maximum_context_count * _peers);
               _c[i].device_va = &device;
               _connection = _c[i].array;
+
+              unsigned j;
+              for (j=0; j<(_maximum_context_count * _peers); j++)
+                _connection = NULL;
+
               return;
             }
           }
