@@ -51,7 +51,7 @@ namespace XMI
     // This won't work with XL
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Device::MPIMessage MPIMessage;
-    typedef Device::MPIDevice<SysDep> MPIDevice;
+    typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
     typedef CollFactory::Default<MPIDevice, SysDep, MPIMcastModel> MPICollfactory;

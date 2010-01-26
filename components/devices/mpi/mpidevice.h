@@ -49,16 +49,14 @@ namespace XMI
       void                          *async_arg;
     }mpi_m2m_dispatch_info_t;
 
-#warning the T_SysDep template parameter is redundant
-    template <class T_SysDep>
-    class MPIDevice : public Interface::BaseDevice<MPIDevice<T_SysDep> >,
-                      public Interface::PacketDevice<MPIDevice<T_SysDep> >
+    class MPIDevice : public Interface::BaseDevice<MPIDevice>,
+                      public Interface::PacketDevice<MPIDevice>
     {
     public:
       static const size_t packet_payload_size = 224;
       inline MPIDevice () :
-      Interface::BaseDevice<MPIDevice<T_SysDep> > (),
-      Interface::PacketDevice<MPIDevice<T_SysDep> >(),
+      Interface::BaseDevice<MPIDevice> (),
+      Interface::PacketDevice<MPIDevice>(),
       _dispatch_id(0),
       _curMcastTag(MULTISYNC_TAG)
       {
@@ -115,7 +113,7 @@ namespace XMI
       }
 
       void registerM2MRecvFunction (int                           dispatch_id,
-                                    xmi_olddispatch_multicast_fn  recv_func,
+                                    xmi_olddispatch_manytomany_fn  recv_func,
                                     void                         *async_arg)
       {
         _m2m_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -124,7 +122,7 @@ namespace XMI
         TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::registerM2MRecvFunction %d\n",(int)this,_dispatch_id));
       }
 
-      inline xmi_result_t init_impl (T_SysDep * sysdep, xmi_context_t context, size_t offset)
+      inline xmi_result_t init_impl (SysDep * sysdep, xmi_context_t context, size_t offset)
       {
         _context = context;
         _contextid = offset;

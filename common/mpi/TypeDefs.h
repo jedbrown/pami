@@ -22,15 +22,15 @@
 #include "common/mpi/NativeInterface.h"
 
 
-typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice<XMI::SysDep>,
+typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice,
                                           XMI::Device::MPIMessage> MPIMcastModel;
 typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 
-typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice<XMI::SysDep>,
+typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice,
                                     XMI::Device::MPIMessage,
                                     size_t> MPIM2MModel;
 
-typedef XMI::Device::MPIDevice<XMI::SysDep>               MPIDevice;
+typedef XMI::Device::MPIDevice               MPIDevice;
 
 
 #define XMI_COLL_MCAST_CLASS  MPIMcastModel

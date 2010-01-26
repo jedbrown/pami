@@ -88,7 +88,7 @@ namespace XMI
       public:
 	MPI        		    mpi; // First data member to initialize MPI first.
 	XMI::Mapping		mapping;
-    XMI::Device::MPIDevice<SysDep> mpi_device;
+    XMI::Device::MPIDevice mpi_device;
 
   };   // class Global
 };     // namespace XMI

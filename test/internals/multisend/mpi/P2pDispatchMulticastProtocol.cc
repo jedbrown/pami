@@ -17,7 +17,7 @@
 #include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "SysDep.h"
 
-typedef XMI::Device::MPIDevice<XMI::SysDep> MPIDevice;
+typedef XMI::Device::MPIDevice MPIDevice;
 typedef XMI::Device::MPIMessage MPIMessage;
 typedef XMI::Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
 typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
