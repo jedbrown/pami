@@ -330,10 +330,10 @@ namespace XMI
 		size_t r;
 		for (r = 0; r < _size && _mapcache[r] != x; ++r);
 		if (r < _size) {
+			*type = XMI_N_TORUS_NETWORK;
 			*task = r;
 			return XMI_SUCCESS;
 		}
-		*type = XMI_N_TORUS_NETWORK;
 		// never happens?
 		return XMI_ERROR;
 	}
