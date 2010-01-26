@@ -249,8 +249,8 @@ namespace XMI
         std::map<int, MPIMSyncMessage*>::iterator it_msync;
         for(it_msync=_msyncsendQ.begin();it_msync != _msyncsendQ.end(); it_msync++)
         {
-          
-          
+
+
           MPIMSyncMessage *m = it_msync->second;
           if(m->_sendStarted==false)
               {
@@ -265,7 +265,7 @@ namespace XMI
                 m->_sendStarted = true;
               }
           if(m->_sendDone == false)
-              {                
+              {
                 MPI_Test(&m->_reqs[m->_phase],&flag,MPI_STATUS_IGNORE);
                 if(flag)
                     {
@@ -289,7 +289,7 @@ namespace XMI
 
 
 
-        
+
 
         flag = 0;
         int rc = MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, _communicator, &flag, &sts);

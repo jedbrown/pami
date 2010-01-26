@@ -32,7 +32,7 @@ namespace XMI
   namespace Device
   {
 #define MAX_MULTISYNCS 1000
-    
+
     typedef enum
     {
       P2P_PACKET_TAG=0,
@@ -45,7 +45,7 @@ namespace XMI
     }MPITag;
 
 
-    
+
     class MPIMessage
     {
     public:
@@ -174,9 +174,9 @@ namespace XMI
       struct _p2p_msg
       {
         unsigned       _connection_id;
-      }_p2p_msg;      
+      }_p2p_msg;
     };
-    
+
 
   };
 };

@@ -76,15 +76,15 @@ namespace XMI {
         xmi_task_t _last;	///< last rank in range
       } _rankrange;
       xmi_task_t *_ranklist; ///< XMI_LIST_TOPOLOGY - the rank array
- 
+
       rectseg _rectseg; ///< XMI_COORD_TOPOLOGY
-      
+
       struct
       {
         rectseg _rect; ///< the rectangle segment containing the axial
         unsigned char _dir[XMI_MAX_DIMS]; ///< direction of each axis(0:-,1:+)
         xmi_coord_t _ref_task; ///< the task where axises cross
-      } _axial;                  
+      } _axial;
     };
     /// \brief these defines simplify access to above union, and
     ///        also isolate the code below from changes above.
@@ -540,7 +540,7 @@ namespace XMI {
       {
         int i;
         __size = 1;
-      
+
         __type = XMI_AXIAL_TOPOLOGY;
         __topo._axial._ref_task = *ref;
         __topo._axial._rect._llcorner = *ll;
@@ -548,7 +548,7 @@ namespace XMI {
 
         __topo._axial._rect._llcorner.network =
           __topo._axial._rect._urcorner.network = XMI_N_TORUS_NETWORK;
-        
+
         if (tl) {
           memcpy(__topo._axial._rect._istorus, tl, mapping->globalDims());
         } else {
@@ -561,7 +561,7 @@ namespace XMI {
                      __topo._axial._rect._llcorner.net_coord(i));
           __topo._axial._dir[i] = dir[i]; // 0: +, 1: - direction
         }
-      }    
+      }
     /// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
     ///
     /// \param[in] rank	The rank
@@ -572,7 +572,7 @@ namespace XMI {
       __topo._rank = rank;
     }
 
-    
+
 
     /// \brief rank range constructor (XMI_RANGE_TOPOLOGY)
     ///
@@ -627,7 +627,7 @@ namespace XMI {
       xmi_coord_t c0;
       xmi_result_t rc;
       unsigned x;
-      
+
       if (ix < __size) switch (__type) {
       case XMI_SINGLE_TOPOLOGY:
         return topo_rank;
@@ -638,26 +638,26 @@ namespace XMI {
       case XMI_LIST_TOPOLOGY:
         return topo_list(ix);
         break;
-          
+
       case XMI_AXIAL_TOPOLOGY:
 
         c0 = topo_axial_center;
-        
+
 
         for (x = 0; x < mapping->globalDims() && ix > 0; x++)
         {
           unsigned ll = topo_lldim(x);
           unsigned ur = topo_urdim(x);
           unsigned nn = ur - topo_axial_center.net_coord(x);
-            
-          if (ix <= nn) 
+
+          if (ix <= nn)
           {
             c0.net_coord(x) = topo_axial_center.net_coord(x) + ix;
             break;
           }
           else
             ix -= nn;
-            
+
           nn = topo_axial_center.net_coord(x) - ll;
           if (ix <= nn)
           {
@@ -667,11 +667,11 @@ namespace XMI {
           else
             ix -= nn;
         }
-        
+
         rc = COORDS2RANK(&c0, &rank);
         return rank;
         break;
-          
+
       case XMI_COORD_TOPOLOGY:
         // probably not used?
         // assume last dim is least-significant
@@ -725,11 +725,11 @@ namespace XMI {
           }
         }
         break;
-        
+
       case XMI_AXIAL_TOPOLOGY:
         rc = RANK2COORDS(rank, &c0);
         ix = 0;
-        nn = 0;        
+        nn = 0;
         for (x = 0; x < mapping->globalDims(); x++)
         {
           unsigned ll = topo_lldim(x);
@@ -748,7 +748,7 @@ namespace XMI {
         }
         return 0; // return index of center, which is always 0
         break;
-        
+
       case XMI_COORD_TOPOLOGY:
         // probably not used?
         // assume last dim is least-significant
@@ -859,7 +859,7 @@ namespace XMI {
     ///
     xmi_result_t getAxialDirs_impl(unsigned char *dirs)
       {
-        if (__type != XMI_AXIAL_TOPOLOGY) 
+        if (__type != XMI_AXIAL_TOPOLOGY)
           return XMI_UNIMPL;
 
         memcpy(dirs, topo_axial._dir, mapping->globalDims());
@@ -876,7 +876,7 @@ namespace XMI {
     ///
     xmi_result_t getAxialOrientation_impl(unsigned char *tl)
       {
-        if (__type != XMI_AXIAL_TOPOLOGY) 
+        if (__type != XMI_AXIAL_TOPOLOGY)
           return XMI_UNIMPL;
 
          memcpy(tl, topo_istorus, mapping->globalDims());
@@ -897,15 +897,15 @@ namespace XMI {
                                                xmi_coord_t *high,
                                                int axis)
       {
-        if (__type != XMI_AXIAL_TOPOLOGY) 
+        if (__type != XMI_AXIAL_TOPOLOGY)
           return XMI_UNIMPL;
-        
+
         int i;
         xmi_coord_t ll, ur, center;
         ll = topo_axial._rect._llcorner;
         ur = topo_axial._rect._urcorner;
         center = topo_axial_center;
-        
+
         for (i = 0; i < XMI_MAX_DIMS; i++)
         {
           if (axis == i)
@@ -921,7 +921,7 @@ namespace XMI {
         }
         return XMI_SUCCESS;
       }
-            
+
     /// \brief does topology consist entirely of ranks local to eachother
     ///
     /// \return boolean indicating locality of ranks

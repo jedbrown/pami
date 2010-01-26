@@ -84,13 +84,13 @@ int main (int argc, char ** argv)
           }
       size_t          sz    = configuration.value.intval;
 
-  
+
       xmi_topology_t    topo;
-      xmi_task_t       *tasklist = (xmi_task_t*)malloc(sz*sizeof(xmi_task_t)); 
+      xmi_task_t       *tasklist = (xmi_task_t*)malloc(sz*sizeof(xmi_task_t));
       for(size_t i=0; i<sz; i++)tasklist[i]=i;
       //XMI_Topology_create_range(&topo,0,sz-1);
       XMI_Topology_create_list(&topo,tasklist,sz);
-  
+
       xmi_multisync_t multisync;
       multisync.client             = client;
       multisync.context            = (size_t)0;

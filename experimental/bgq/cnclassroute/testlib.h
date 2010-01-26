@@ -1,5 +1,5 @@
 /**
- * \file experimental/cnclassroute/testlib.h
+ * \file experimental/bgq/cnclassroute/testlib.h
  * \brief ???
  */
 #ifndef __experimental_bgq_cnclassroute_testlib_h__

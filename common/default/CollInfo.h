@@ -221,7 +221,7 @@ namespace XMI
         {
           _barrier_registration.generate(&_barrier_executor,geometry);
         }
-      
+
       XMI_Request_t                                     _request;
       XMI_COLL_MCAST_CLASS                              _model;
       CCMI::Adaptor::Barrier::OldBinomialBarrierFactory _barrier_registration;
@@ -253,7 +253,7 @@ namespace XMI
         {
           _barrier_registration.generate(&_barrier_executor,geometry);
         }
-      
+
 
       XMI_Request_t                                  _request;
       XMI_NATIVEINTERFACE<T_Device>                  _minterface;

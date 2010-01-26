@@ -16,7 +16,7 @@
 #define CR_AXIS_D       3
 #define CR_AXIS_E       4
 #define CR_NUM_DIMS     5
-#define CR_DIM_NAMES    "ABCDE" 
+#define CR_DIM_NAMES    "ABCDE"
 
 #include "kernel/Collective.h"
 
@@ -51,12 +51,12 @@ static const uint16_t cr_links[][2] = {
 
 /**
  *  this header must define:
- * 
+ *
  *  CR_LINK(n,s)	Create bit-mask for n-th link (dim) in 's' direction (CR_SIGN_POS...)
- * 
+ *
  *  CR_COORD_T			datatype for a coordinate (CR_NUM_DIMS)
  *  CR_COORD_DIM(coordp,dim)	accessor for coordp->[dim] (must work for both set/get)
- * 
+ *
  *  CR_RECT_T		datatype for a rectangle (two coordinates)
  *  CR_RECT_LL(rectp)	accessor for rectp->lower-left-coord (get/put/CR_COORD_DIM())
  *  CR_RECT_UR(rectp)	accessor for rectp->upper-right-coord (get/put/CR_COORD_DIM())
@@ -170,7 +170,7 @@ extern void pick_world_root_pair(CR_RECT_T *world, CR_COORD_T *worldroot1, CR_CO
  * that all agree upon.
  *
  * \param[in] vc        Virtual channel to be used by classroute
- * \param[in] subcomm   The rectangle for classroute to be created 
+ * \param[in] subcomm   The rectangle for classroute to be created
  * \return      bitmap of possible classroutes
  */
 uint32_t get_classroute_ids(int vc, CR_RECT_T *subcomm, void **env);

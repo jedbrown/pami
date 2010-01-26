@@ -63,7 +63,7 @@ namespace XMI
       if(fn.multicast == NULL)
         options.hint.multicast.all_sided = 1;
       else
-          {  
+          {
             options.hint.multicast.one_sided = 1;
             options.hint.multicast.active_message = 1;
           }
@@ -102,7 +102,7 @@ namespace XMI
         MPINativeInterface *_ni;
         xmi_callback_t      _user_callback;
       };
-    
+
     static void msync_client_done(xmi_context_t  context,
                                   void          *rdata,
                                   xmi_result_t   res)
@@ -115,7 +115,7 @@ namespace XMI
                                         res);
         ni->_msyncAlloc.returnObject(mobj);
       }
-    
+
     virtual xmi_result_t multisync    (xmi_multisync_t *msync)
       {
         msyncObj *req          = (msyncObj *)_msyncAlloc.allocateObject();
@@ -129,7 +129,7 @@ namespace XMI
         _msync.postMultisync(req->_state, &m);
         return XMI_SUCCESS;
       }
-    
+
     virtual xmi_result_t multicombine (xmi_multicombine_t *mcombine)
       {
         return XMI_Multicombine (mcombine);
@@ -138,7 +138,7 @@ namespace XMI
   private:
     // Allocators
     XMI::MemoryAllocator<sizeof(msyncObj),16> _msyncAlloc;
-    
+
     T_Device          *_device;
     MPIMultisyncModel  _msync;
     xmi_result_t       _msync_status;
@@ -151,7 +151,7 @@ namespace XMI
 
 
 
-    
+
   };
 };
 

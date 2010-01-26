@@ -44,7 +44,7 @@ public:
 
 	inline int advanceRecv(size_t client, size_t context) { return 0; }
 
-	inline xmi_context_t getContext(size_t client, size_t context) { 
+	inline xmi_context_t getContext(size_t client, size_t context) {
 		return _generics[client][context].getContext();
 	}
 

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/topology/topology.cc
+ * \file test/topology/topology-axial.cc
  * \brief Simple topology interface tests
  */
 

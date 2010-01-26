@@ -57,7 +57,7 @@ namespace XMI
     typedef CollFactory::Default<MPIDevice, SysDep, MPIMcastModel> MPICollfactory;
     typedef CollRegistration::Default<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
-  
+
     // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
     typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2PMcastProto;
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
@@ -547,7 +547,7 @@ namespace XMI
         {
           // Select the native interface
           // call the multisync for the selected native interface.
-          
+
           return _minterface.multisync(msyncinfo);
         }
 

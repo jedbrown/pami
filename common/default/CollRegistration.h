@@ -110,7 +110,7 @@ namespace XMI
 
           _ccmibarrier._colltype=XMI::CollInfo::CI_BARRIER2;
           _barriers.push_back(&_ccmibarrier);
-          
+
           _ccmiambroadcast._colltype=XMI::CollInfo::CI_AMBROADCAST0;
 	  _ambroadcasts.push_back(&_ccmiambroadcast);
 
@@ -147,7 +147,7 @@ namespace XMI
 
         f->add_collective(XMI_XFER_BARRIER,    &_ccmibarrier);
         _ccmibarrier.reg_geometry(geometry);
-        
+
         f->add_collective(XMI_XFER_AMBROADCAST,&_ccmiambroadcast);
         f->add_collective(XMI_XFER_BROADCAST,  &_ccmiringbroadcast);
         f->add_collective(XMI_XFER_BROADCAST,  &_ccmibinombroadcast);

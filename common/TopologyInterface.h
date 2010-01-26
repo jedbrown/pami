@@ -48,7 +48,7 @@ namespace XMI
                       xmi_coord_t *ref,
                       unsigned char *dir,
                       unsigned char *tl = NULL) {}
-            
+
       /// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
       ///
       /// \param[in] rank	The rank
@@ -110,7 +110,7 @@ namespace XMI
       /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
       ///
       xmi_result_t getAxialOrientation(unsigned char *tl);
-      
+
       /// \brief return the direction on each axis of the axial topology.
       ///
       /// This method copies data to callers buffers. It is safer
@@ -119,7 +119,7 @@ namespace XMI
       /// \param[out] dirs array of size XMI_MAX_DIM.
       /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
       inline xmi_result_t getAxialDirs(unsigned char *);
-      
+
       /// \brief Nth rank in topology
       ///
       /// \param[in] ix	Which rank to select
@@ -342,20 +342,20 @@ namespace XMI
       xmi_result_t Topology<T_Topology>::getAxialDirs(unsigned char *dirs)
     {
       return static_cast<T_Topology*>(this)->getAxialDirs_impl(dirs);
-    }    
+    }
 
     template <class T_Topology>
       xmi_result_t Topology<T_Topology>::getAxialOrientation(unsigned char *tl)
     {
       return static_cast<T_Topology*>(this)->getAxialOrientation_impl(tl);
-    }      
+    }
 
     template <class T_Topology>
       xmi_result_t Topology<T_Topology>::getAxialEndCoords(xmi_coord_t *low, xmi_coord_t *high, int axis)
     {
       return static_cast<T_Topology*>(this)->getAxialEndCoords_impl(low, high, axis);
     }
-    
+
    template <class T_Topology>
       xmi_task_t Topology<T_Topology>::index2Rank(size_t ix)
     {

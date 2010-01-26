@@ -1,3 +1,7 @@
+/**
+ * \file sys/examples/endpoint_table.c
+ * \brief ???
+ */
 xmi_endpoint_t * _endpoint;
 
 xmi_result_t send_id (xmi_context_t context, size_t target, xmi_send_t * parameters)

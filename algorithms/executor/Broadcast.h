@@ -178,13 +178,13 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
     _cb_done(NULL, _clientdata, XMI_SUCCESS);
     return;
   }
-  
+
   TRACE_FLOW((stderr, "%d:Executor::BroadcastExec::sendNext() bytes %d, ndsts %d\n",_native->myrank(), _buflen, _dsttopology.size()));
   //for(unsigned i = 0; i < _dsttopology.size(); ++i) TRACE_FLOW((stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i)));
-  
+
   //for(int dcount = 0; dcount < _nmessages; dcount++)
   //TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() send to %d for size %d\n",(int)this, _dstranks[dcount], _curlen));
-  
+
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
   _mdata._root  = _root;

@@ -34,7 +34,7 @@
  * initialize an array of context opaque objects and will set the
  * "global endpoints" output parameter.  The "global endpoints" is the number
  * of destination endpoints for all tasks in a client.
- * 
+ *
  * XMI_Context_createv() is a
  * synchronizing operation. Each task may create a different number of local
  * endpoints. However, the special attribute BLAH can be used to assert that

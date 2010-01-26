@@ -47,7 +47,7 @@ namespace XMI
        UdpMsg()
        {
        }
-       
+
        inline size_t getSendSize()
        {
          //size_t tmp = sizeof(UdpMsg);
@@ -55,7 +55,7 @@ namespace XMI
                   + sizeof(_metadata_size)
                   + sizeof(_payload_size)
                   + getMetadataSize()
-                  + getPayloadSize() ; 
+                  + getPayloadSize() ;
          TRACE_COUT( "message send size = " << tmp )
          return tmp;
       }

@@ -1,5 +1,5 @@
 /**
- * \file experimental/cnclassroute/testcomms.c
+ * \file experimental/bgq/cnclassroute/testsparse.c
  * \brief ???
  */
 #include <stdio.h>

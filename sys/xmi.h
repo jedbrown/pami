@@ -2368,7 +2368,7 @@ extern "C"
                                  xmi_coord_t *ref,
                                  unsigned char *dir,
                                  unsigned char *tl);
-  
+
   /**
    * \brief single task constructor (XMI_SINGLE_TOPOLOGY)
    *

@@ -646,7 +646,7 @@ namespace XMI
                     _c_bar->start();
                   }
                   break;
-                  case XMI::CollInfo::CI_BARRIER2:                    
+                  case XMI::CollInfo::CI_BARRIER2:
                   {
                     xmi_callback_t cb_done_ccmi;
                     cb_done_ccmi.function   = barrier->cb_done;

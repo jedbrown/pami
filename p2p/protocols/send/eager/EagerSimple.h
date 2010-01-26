@@ -87,7 +87,7 @@ namespace XMI
             struct
             {
               uint8_t             * addr;     ///< Address of the long header recv buffer
-              size_t                bytes;    
+              size_t                bytes;
               size_t                offset;
             } longheader;
             protcol_metadata_t      metadata; ///< Original eager protocol envelope metadata

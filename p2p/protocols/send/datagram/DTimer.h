@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -11,7 +11,7 @@
 /// \brief Datagram timer
 ///
 /// The DTimer class defined in this file defines a timer which works
-/// with the Generic device progress function 
+/// with the Generic device progress function
 ///
 #ifndef __p2p_protocols_send_datagram_DTimer_h__
 #define __p2p_protocols_send_datagram_DTimer_h__
@@ -49,7 +49,7 @@ public:
 		_max_cb = max_cb;
 		_max_cookie = max_cookie;
 		_running = true;
-		_closed = false; 
+		_closed = false;
 
 		progf.request = &pmsgbuf;
 		progf.clientdata = this;
@@ -72,24 +72,24 @@ public:
 
 	xmi_result_t advance_timer(xmi_context_t context) {
 		if (_running) {
-			// If initial time not set, set it 
+			// If initial time not set, set it
 			if (_start_time == 0) {
 				_start_time = (unsigned long long)__global.time.time();TRACE_ERR((stderr,
 								"	DTimer(%p) advance_timer().. Starting Timer at tick %llu, waiting until %llu\n",
 								this, _start_time, _start_time + _interval));
 			}
 
-			// See if timed out 
+			// See if timed out
 			unsigned long long t1 = (unsigned long long)__global.time.time();
 			if (t1 - _start_time >= _interval) {
-				// Timed out 
+				// Timed out
 				TRACE_ERR((stderr,
 								"	DTimer(%p) advance_timer().. Timeout at tick %llu (%ld calls)\n",
 								this, t1, _max_timeouts));
 				_start_time = 0; //reset timer
-				--_max_timeouts; //decrement number of timeouts left 
+				--_max_timeouts; //decrement number of timeouts left
 				if (_max_timeouts == 0) {
-					// out of timeouts 
+					// out of timeouts
 					TRACE_ERR((stderr, "   DTimer(%p) advance_timer() ...  Maxed Out\n", this));
 					if (_max_cb) {
 						_max_cb(context, _max_cookie, XMI_ERROR);
@@ -105,12 +105,12 @@ public:
 			}
 			return XMI_EAGAIN;
 		}
-		if (_closed) return XMI_SUCCESS;  // Remove from advance 
-		return XMI_EAGAIN; // Keep advancing, but don't do anything 
+		if (_closed) return XMI_SUCCESS;  // Remove from advance
+		return XMI_EAGAIN; // Keep advancing, but don't do anything
 	}
 
 	void reset() {
-		if (_closed) abort(); // can't reset 
+		if (_closed) abort(); // can't reset
 		_start_time = 0;
 		_max_timeouts_left = _max_timeouts;
 		_running = true;
@@ -119,9 +119,9 @@ public:
 	void stop() {
 		_running = false;
 	}
-	
+
 	void close() {
-		_closed = true; 
+		_closed = true;
 	}
 
 protected:
