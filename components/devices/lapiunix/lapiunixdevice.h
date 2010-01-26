@@ -48,12 +48,12 @@ namespace XMI
 
 
     template <class T_SysDep>
-    class LAPIDevice : public Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep>,
+    class LAPIDevice : public Interface::BaseDevice<LAPIDevice<T_SysDep> >,
                        public Interface::PacketDevice<LAPIDevice<T_SysDep> >
     {
     public:
       inline LAPIDevice () :
-        Interface::BaseDevice<LAPIDevice<T_SysDep>, T_SysDep> (),
+        Interface::BaseDevice<LAPIDevice<T_SysDep> > (),
         Interface::PacketDevice<LAPIDevice<T_SysDep> >(),
         _dispatch_id(0)
         {
@@ -135,7 +135,9 @@ namespace XMI
           _m2m_dispatch_lookup[dispatch_id]=_m2m_dispatch_table[dispatch_id];
         }
 
-      inline xmi_result_t init_impl (T_SysDep * sysdep)
+      inline xmi_result_t init_impl (T_SysDep      * sysdep,
+                                     xmi_context_t   context,
+                                     size_t          offset)
         {
           _sysdep = sysdep;
 	  return XMI_SUCCESS;
@@ -462,6 +464,21 @@ namespace XMI
           _dev->unlock();
           return r;
         }
+
+      inline xmi_context_t getContext_impl ()
+        {
+          //  \todo Implement this
+          return NULL;
+        }
+
+      inline size_t getContextOffset_impl ()
+        {
+
+          //  \todo Implement this
+          return 0;
+        }
+
+
 
       lapi_handle_t                              _lapi_handle;
       lapi_thread_func_t                         _tf;

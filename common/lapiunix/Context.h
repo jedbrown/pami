@@ -11,11 +11,9 @@
 #include "common/ContextInterface.h"
 #include "Geometry.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
-#include "components/devices/lapiunix/lapiunixmodel.h"
+#include "components/devices/lapiunix/lapiunixpacketmodel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "p2p/protocols/send/eager/Eager.h"
-#include "p2p/protocols/send/eager/EagerSimple.h"
-#include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "SysDep.h"
 #include "common/default/CollFactory.h"
 #include "common/default/CollRegistration.h"
@@ -31,11 +29,11 @@ namespace XMI
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Device::LAPIMessage LAPIMessage;
     typedef Device::LAPIDevice<SysDep> LAPIDevice;
-    typedef Device::LAPIModel<LAPIDevice,LAPIMessage> LAPIModel;
+    typedef Device::LAPIPacketModel<LAPIDevice,LAPIMessage> LAPIPacketModel;
     typedef Geometry::Common<XMI_MAPPING_CLASS> LAPIGeometry;
     typedef CollFactory::Default<LAPIDevice, SysDep, LAPIMcastModel> LAPICollfactory;
     typedef CollRegistration::Default<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep> LAPICollreg;
-    typedef XMI::Protocol::Send::Eager <LAPIModel,LAPIDevice> EagerLAPI;
+    typedef XMI::Protocol::Send::Eager <LAPIPacketModel,LAPIDevice> EagerLAPI;
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
     class Context : public Interface::Context<XMI::Context>
@@ -127,7 +125,7 @@ namespace XMI
                                        (int *)&_mysize)));
           free(lapi_info);
 
-          _lapi_device.init(&_sysdep);
+          _lapi_device.init(&_sysdep, _context, _contextid);
           _lapi_device.setLapiHandle(_lapi_handle);
           __global.mapping.init(_myrank, _mysize);
 
@@ -471,12 +469,16 @@ namespace XMI
                                          void                     * cookie,
                                          xmi_send_hint_t            options)
         {
+          xmi_result_t result        = XMI_ERROR;
+#if 1
           if (_dispatch[(size_t)id] != NULL) return XMI_ERROR;
           _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
-          xmi_result_t result        = XMI_ERROR;
-          new (_dispatch[(size_t)id]) EagerLAPI (id, fn, cookie, _lapi_device,
-                                                 __global.mapping.task(), _context,
-                                                 _contextid, result);
+          new (_dispatch[(size_t)id]) EagerLAPI (id,
+                                                 fn,
+                                                 cookie,
+                                                 _lapi_device,
+                                                 result);
+#endif
           return result;
         }
 
