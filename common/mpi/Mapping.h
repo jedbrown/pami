@@ -324,6 +324,7 @@ namespace XMI
 		if (addr->network != XMI_N_TORUS_NETWORK) {
 			return XMI_ERROR;
 		}
+
 		uint32_t x = (addr->u.n_torus.coords[0] << 16) | addr->u.n_torus.coords[1];
 		// since we expect this to be small, searching is probably the easiest way
 		size_t r;

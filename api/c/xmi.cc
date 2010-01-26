@@ -934,6 +934,19 @@ void XMI_Topology_create_rect(xmi_topology_t *topo,
 }
 
 ///
+/// \copydoc XMI_Topology_create_axial
+///
+void XMI_Topology_create_axial(xmi_topology_t *topo,
+                               xmi_coord_t *ll,
+                               xmi_coord_t *ur,
+                               xmi_coord_t *ref,
+                               unsigned char *dir,
+                               unsigned char *tl)
+{
+  assert(0);
+}
+
+///
 /// \copydoc XMI_Topology_create_task
 ///
 void XMI_Topology_create_task(xmi_topology_t *topo, xmi_task_t rank)

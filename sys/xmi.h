@@ -2325,6 +2325,7 @@ extern "C"
     XMI_LIST_TOPOLOGY,      /**< topology is an unordered list of tasks */
     XMI_COORD_TOPOLOGY,     /**< topology is a rectangular segment
                                represented by coordinates           */
+    XMI_AXIAL_TOPOLOGY,
     XMI_TOPOLOGY_COUNT
   } xmi_topology_type_t;
 
@@ -2350,6 +2351,25 @@ extern "C"
   void XMI_Topology_create_rect(xmi_topology_t *topo,
                                 xmi_coord_t *ll, xmi_coord_t *ur, unsigned char *tl);
 
+  /**
+   * \brief Axial topology (XMI_AXIAL_TOPOLOGY)
+   *
+   * Assumes no torus links if 'tl' param = NULL.
+   *
+   * \param[out] topo	Opaque memory for topology
+   * \param[in] ll	lower-left coordinate
+   * \param[in] ur	upper-right coordinate
+   * \param[in] ref	coordinates of the reference task where axises cross.
+   * \param[in] dir     axis direction flag (+ or -)
+   * \param[in] tl	optional, torus links flags
+   */
+  void XMI_Topology_create_axial(xmi_topology_t *topo,
+                                 xmi_coord_t *ll,
+                                 xmi_coord_t *ur,
+                                 xmi_coord_t *ref,
+                                 unsigned char *dir,
+                                 unsigned char *tl);
+  
   /**
    * \brief single task constructor (XMI_SINGLE_TOPOLOGY)
    *

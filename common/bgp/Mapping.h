@@ -187,8 +187,9 @@ namespace XMI
 			return XMI_INVAL;
 		}
 
-		size_t estimated_task = ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize);
 
+		size_t estimated_task = ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize);
+                
 		// convert to 'unlikely_if'
 		if (_rankcache [estimated_task] == (unsigned)-1) {
 			return XMI_ERROR;
