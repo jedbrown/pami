@@ -48,11 +48,12 @@ namespace XMI
         ///
         /// Point-to-point dispatch header.
         ///
-        typedef struct _p2p_header_
-        {
+        typedef struct _dispatch_header_
+        { 
+          xmi_task_t root;        /// multicast root
           unsigned connection_id; /// multicast connection id
           size_t   bytes;         /// total bytes being multicast
-        } p2p_hdr_t;
+        } dispatch_hdr_t;
 
         ///
         /// Allocation for multicast. Passed on cb_done client data so it can be processed and freed
@@ -163,7 +164,8 @@ namespace XMI
             TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::multicast() id %zd, connection_id %d\n",(unsigned)this,mcast->dispatch,mcast->connection_id));
 
             // First, send (p2p) the header/msgdata to dispatch destinations.  They will start all-sided multicasts when dispatched.
-            p2p_hdr_t header;
+            dispatch_hdr_t header;
+            header.root  = _task_id;
             header.bytes = mcast->bytes;
             header.connection_id = mcast->connection_id;
 
@@ -184,9 +186,7 @@ namespace XMI
                 {
                   if(rankList[i]==_task_id) continue; // don't dispatch myself
 
-#warning xmi_client_t should be passed in on the constructor or retrieved from the device
-                  xmi_client_t client;
-                  sendi.dest = XMI_ENDPOINT_INIT(client, rankList[i],0);
+                  sendi.dest = XMI_ENDPOINT_INIT(_client, rankList[i],0);
 
                   // Dispatch over p2p
                   TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::multicast() send dispatch task_id[%d] %zd\n",
@@ -298,11 +298,9 @@ namespace XMI
 
             // Call user's dispatch to get receive pwq and cb_done.
             xmi_multicast_t mcast;
-            mcast.connection_id = ((p2p_hdr_t*)header)->connection_id;
-            mcast.bytes         = ((p2p_hdr_t*)header)->bytes;
-#warning the p2p dispatch does not provide the origin task
-            //_dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)task, mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
-            _dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)0, mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
+            mcast.connection_id = ((dispatch_hdr_t*)header)->connection_id;
+            mcast.bytes         = ((dispatch_hdr_t*)header)->bytes;
+            _dispatch_fn((xmi_quad_t*)data, (unsigned)data_size/sizeof(xmi_quad_t), mcast.connection_id, (size_t)(((dispatch_hdr_t*)header)->root), mcast.bytes, _cookie, &mcast.bytes, &mcast.dst, &mcast.cb_done);
 
             // No data? We're done.
             if(mcast.bytes == 0)
