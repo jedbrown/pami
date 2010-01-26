@@ -176,7 +176,6 @@ namespace XMI
 			addr->network != XMI_N_TORUS_NETWORK) {
 			return XMI_INVAL;
 		}
-		*type = XMI_N_TORUS_NETWORK;
 		size_t x = addr->u.n_torus.coords[0];
 		size_t y = addr->u.n_torus.coords[1];
 		size_t z = addr->u.n_torus.coords[2];
@@ -195,6 +194,7 @@ namespace XMI
 			return XMI_ERROR;
 		}
 
+		*type = XMI_N_TORUS_NETWORK;
 		*task = _rankcache [estimated_task];
 		return XMI_SUCCESS;
         }
