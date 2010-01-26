@@ -60,7 +60,7 @@ namespace XMI
 
               unsigned j;
               for (j=0; j<(_maximum_context_count * _peers); j++)
-                _connection = NULL;
+                _connection[j] = NULL;
 
               return;
             }
