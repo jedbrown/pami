@@ -18,7 +18,7 @@
 #define CR_NUM_DIMS     5
 #define CR_DIM_NAMES    "ABCDE"
 
-#include "kernel/Collective.h"
+#include "kernel/collective.h"
 
 #define CR_ROUTE_NETMASK        \
         (COLLECTIVE_CLASS_ROUTE_ENABLE_AP|\
