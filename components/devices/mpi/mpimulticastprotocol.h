@@ -325,10 +325,7 @@ namespace XMI
                           (unsigned)this, allocation, mcast.cb_done.function, mcast.cb_done.clientdata));
 
             mcast.request  = (void *)&allocation->request;
-#warning p2p dispatch does not deliver the origin task anymore .. need to resolve
-            //new (&allocation->topology) XMI::Topology(task); // all-sided model expects a src/root topology
-            new (&allocation->topology) XMI::Topology(0); // all-sided model expects a src/root topology
-            mcast.src_participants = (xmi_topology_t *) &allocation->topology;
+            mcast.src_participants = NULL; // I'm a dst so all-sided mcast src can be null
 
             // Save the caller's cb_done and set our own so we can free the allocation
             allocation->cb_done = mcast.cb_done;
