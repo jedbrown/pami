@@ -3,6 +3,7 @@
  * \brief ???
  */
 #include <stdio.h>
+#include <string.h>
 #include "cnclassroute.h"
 
 void build_node_classroute(CR_RECT_T *world, CR_COORD_T *worldroot, CR_COORD_T *me,
