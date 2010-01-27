@@ -10,7 +10,11 @@
 #include "Global.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "util/ccmi_util.h"
-#include "p2p/protocols/send/eager/Eager.h"
+
+#include "components/devices/lapiunix/lapiunixmessage.h"
+#include "components/devices/lapiunix/lapiunixmultisyncmodel.h"
+
+
 extern XMI::Global __global;
 
 #define DISPATCH_START 3
@@ -20,6 +24,10 @@ namespace XMI
   template <class T_Device>
   class LAPINativeInterface : public CCMI::Interfaces::NativeInterface
   {
+    typedef Device::LAPIMSyncMessage LAPIMSyncMessage;
+    typedef Device::LAPIMultisyncModel<T_Device,LAPIMSyncMessage> LAPIMultisyncModel;
+    typedef XMI::Device::LAPIMessage LAPIMessage;
+
   public:
     LAPINativeInterface(T_Device      *dev,
                         xmi_client_t   client,
@@ -27,7 +35,9 @@ namespace XMI
                         size_t         context_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
+      _msyncAlloc(),
       _device(dev),
+      _msync(*_device, _msync_status),
       _dispatch(0),
       _client(client),
       _context(context),
@@ -61,17 +71,60 @@ namespace XMI
         mcast->context  =  _contextid;
         return XMI_Multicast (mcast);
       }
+
+
+
+    // Multisync Code
+    // Including memory allocation/free
+
+
+    class msyncObj
+    {
+    public:
+      uint8_t             _state[sizeof(LAPIMSyncMessage)];
+      LAPINativeInterface *_ni;
+      xmi_callback_t      _user_callback;
+    };
+
+    static void msync_client_done(xmi_context_t  context,
+                                  void          *rdata,
+                                  xmi_result_t   res)
+      {
+        msyncObj           *mobj = (msyncObj*)rdata;
+        LAPINativeInterface *ni   = mobj->_ni;
+        if(mobj->_user_callback.function)
+          mobj->_user_callback.function(context,
+                                        mobj->_user_callback.clientdata,
+                                        res);
+        ni->_msyncAlloc.returnObject(mobj);
+      }
+
+
     virtual xmi_result_t multisync    (xmi_multisync_t *msync)
       {
-        return XMI_Multisync (msync);
+        msyncObj *req          = (msyncObj *)_msyncAlloc.allocateObject();
+        req->_ni               = this;
+        req->_user_callback    = msync->cb_done;
+        //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
+        //          interface so we don't need to copy
+        xmi_multisync_t  m     = *msync;
+        m.cb_done.function     =  msync_client_done;
+        m.cb_done.clientdata   =  req;
+        _msync.postMultisync(req->_state, &m);
+        return XMI_SUCCESS;
       }
     virtual xmi_result_t multicombine (xmi_multicombine_t *mcombine)
       {
         return XMI_Multicombine (mcombine);
       }
   private:
+    // Allocators
+    XMI::MemoryAllocator<sizeof(msyncObj),16> _msyncAlloc;
+
     T_Device                 *_device;
+    LAPIMultisyncModel        _msync;
     xmi_result_t              _status;
+    xmi_result_t              _msync_status;
     unsigned                  _dispatch;
     xmi_client_t              _client;
     xmi_context_t             _context;

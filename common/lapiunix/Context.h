@@ -55,6 +55,7 @@ namespace XMI
         _lock (),
         _empty_advance(0),
 	_workAllocator (),
+        _minterface(&_lapi_device,_client,this,_contextid),
 	_generic(generics[id])
         {
           lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
@@ -455,8 +456,10 @@ namespace XMI
 
       inline xmi_result_t multisync_impl(xmi_multisync_t *msyncinfo)
         {
-          assert(0);
-          return XMI_UNIMPL;
+          // Select the native interface
+          // call the multisync for the selected native interface.
+
+          return _minterface.multisync(msyncinfo);
         }
 
       inline xmi_result_t multicombine_impl(xmi_multicombine_t *mcombineinfo)
@@ -517,6 +520,7 @@ namespace XMI
       LAPICollreg                          *_collreg;
       LAPIGeometry                         *_world_geometry;
       LAPICollfactory                      *_world_collfactory;
+      LAPINativeInterface<LAPIDevice>       _minterface;
       xmi_geometry_range_t                  _world_range;
       unsigned                              _empty_advance;
       int                                   _myrank;

@@ -106,33 +106,37 @@ int main (int argc, char ** argv)
 
       double ti, tf, usec;
       if(!task_id)
-        fprintf(stderr, "Test Multisync Correctness\n");
+        fprintf(stderr, "Test Multisync Correctness (sleeping 5 seconds, tolerance .5 sec)\n");
       if(!task_id)
           {
             ti=timer();
+            multisync.connection_id++;
             _multisync(context, &multisync);
             tf=timer();
             usec = tf - ti;
-            if(usec < 1800000.0 || usec > 2200000.0)
+            if(usec < 4500000.0 || usec > 5500000.0)
               fprintf(stderr, "Multisync error: usec=%f want between %f and %f!\n",
-                      usec, 1800000.0, 2200000.0);
+                      usec, 4500000.0, 5500000.0);
             else
               fprintf(stderr, "Multisync correct!\n");
           }
       else
           {
-            sleep(2);
+            sleep(5);
+            multisync.connection_id++;
             _multisync(context, &multisync);
           }
 
       if(!task_id)
         fprintf(stderr, "Test Multisync Performance\n");
       int niter=10000;
+      multisync.connection_id++;
       _multisync(context, &multisync);
 
       ti=timer();
       int i;
       for(i=0; i<niter; i++)
+        multisync.connection_id++;
         _multisync(context, &multisync);
 
       tf=timer();

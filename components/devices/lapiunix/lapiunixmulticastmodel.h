@@ -16,7 +16,6 @@
 
 #include "sys/xmi.h"
 #include "components/devices/MulticastModel.h"
-#include "components/devices/MessageModel.h"
 
 namespace XMI
 {

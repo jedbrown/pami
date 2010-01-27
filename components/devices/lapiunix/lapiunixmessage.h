@@ -157,6 +157,17 @@ namespace XMI
     };
 
 
+    class LAPIMSyncMessage
+    {
+    public:
+      xmi_callback_t _cb_done;
+      size_t         _r_flag;
+      size_t         _total;
+      struct _p2p_msg
+      {
+        unsigned       _connection_id;
+      }_p2p_msg;
+    };
 
   };
 };

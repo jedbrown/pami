@@ -43,9 +43,7 @@ namespace XMI
       void                          *async_arg;
     }lapi_m2m_dispatch_info_t;
 
-
     extern std::map<lapi_handle_t,void*> _g_context_to_device_table;
-
 
     template <class T_SysDep>
     class LAPIDevice : public Interface::BaseDevice<LAPIDevice<T_SysDep> >,
@@ -60,13 +58,9 @@ namespace XMI
         };
 
       // Implement BaseDevice Routines
-
       inline ~LAPIDevice ()
         {
-
-
         };
-
 
       inline void setLapiHandle(lapi_handle_t handle)
         {
@@ -83,7 +77,11 @@ namespace XMI
           CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
                                             (void *)__xmi_lapi_m2m_fn,
                                             2)));
-}
+
+          CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
+                                            (void *)__xmi_lapi_msync_fn,
+                                            3)));
+        }
 
       void lock()
         {
@@ -209,6 +207,27 @@ namespace XMI
           _m2msendQ.push_front(msg);
         }
 
+      inline void enqueue(LAPIMSyncMessage *msg)
+        {
+          // Check for UE Message
+          // If message is there, mark this phase complete
+          if(_msyncsendQ[msg->_p2p_msg._connection_id])
+              {
+                msg->_r_flag = _msyncsendQ[msg->_p2p_msg._connection_id]->_r_flag;
+                free(_msyncsendQ[msg->_p2p_msg._connection_id]);
+              }
+          _msyncsendQ[msg->_p2p_msg._connection_id] = msg;
+
+          if(msg->_r_flag == msg->_total)
+              {
+                if(msg->_cb_done.function)
+                  msg->_cb_done.function(NULL,
+                                       msg->_cb_done.clientdata,
+                                       XMI_SUCCESS);
+                _msyncsendQ.erase(msg->_p2p_msg._connection_id);
+              }
+        }
+
       static void __xmi_lapi_m2m_done_fn(lapi_handle_t* handle, void *clientdata)
         {
           LAPIM2MRecvMessage<size_t> *m2m = (LAPIM2MRecvMessage<size_t> *)clientdata;
@@ -307,7 +326,7 @@ namespace XMI
                     }
                 r             = NULL;
                 *comp_h       = NULL;
-                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ret_flags = LAPI_LOCAL_STATE;
                 ri->ctl_flags = LAPI_BURY_MSG;
               }
           else
@@ -317,6 +336,54 @@ namespace XMI
                 *uinfo        = m2m;
                 ri->ret_flags = LAPI_SEND_REPLY;
               }
+          return r;
+        }
+
+
+
+      static    void * __xmi_lapi_msync_fn (lapi_handle_t   * hndl,
+                                            void            * uhdr,
+                                            uint            * uhdr_len,
+                                            ulong           * retinfo,
+                                            compl_hndlr_t  ** comp_h,
+                                            void           ** uinfo)
+        {
+          void               *r   = NULL;
+          lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
+          LAPIM2MHeader      *hdr = (LAPIM2MHeader*) uhdr;
+          LAPIDevice         *dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
+          unsigned        conn_id = *((unsigned*)uhdr);
+          LAPIMSyncMessage     *m = dev->_msyncsendQ[conn_id];
+
+          if(m==NULL)
+              {
+                m = (LAPIMSyncMessage*)malloc(sizeof(*m));
+                m->_r_flag=1;
+                m->_total=2147483647;
+                dev->_msyncsendQ[conn_id] = m;
+              }
+          else
+              {
+                m->_r_flag++;
+              }
+#if 0
+          fprintf(stderr, "conn_id=%d m->_r_flag=%d, m->_total=%d\n",
+                  conn_id,
+                  m->_r_flag,
+                  m->_total);
+#endif
+          if(m->_r_flag == m->_total)
+              {
+                if(m->_cb_done.function)
+                  m->_cb_done.function(NULL,
+                                       m->_cb_done.clientdata,
+                                       XMI_SUCCESS);
+                dev->_msyncsendQ.erase(m->_p2p_msg._connection_id);
+              }
+          r             = NULL;
+          *comp_h       = NULL;
+          ri->ret_flags = LAPI_LOCAL_STATE;
+          ri->ctl_flags = LAPI_BURY_MSG;
           return r;
         }
 
@@ -410,14 +477,11 @@ namespace XMI
 
                 r             = NULL;
                 *comp_h       = NULL;
-                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ret_flags = LAPI_LOCAL_STATE;
                 ri->ctl_flags = LAPI_BURY_MSG;
                 _dev->unlock();
                 return NULL;
               }
-
-
-
           if (ri->udata_one_pkt_ptr)
               {
                 int remain_bytes   = mcast->_size - mcast->_counter;
@@ -440,7 +504,7 @@ namespace XMI
                     }
                 r             = NULL;
                 *comp_h       = NULL;
-                ri->ret_flags = LAPI_SEND_REPLY;
+                ri->ret_flags = LAPI_LOCAL_STATE;
                 ri->ctl_flags = LAPI_BURY_MSG;
               }
           else
@@ -457,7 +521,7 @@ namespace XMI
                 r                       = (void*)((size_t)mcast->_buf + mcast->_counter);
                 *comp_h                 = __xmi_lapi_mcast_done_fn;
                 *uinfo                  = (void*)req;
-                ri->ret_flags           = LAPI_SEND_REPLY;
+                ri->ret_flags           = LAPI_LOCAL_STATE;
                 assert(r != NULL);
                 if (!r) ri->ctl_flags   = LAPI_BURY_MSG;
               }
@@ -495,6 +559,7 @@ namespace XMI
       std::list<LAPIM2MMessage*>                 _m2msendQ;
       std::list<LAPIMcastRecvMessage*>           _mcastrecvQ;
       std::list<LAPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
+      std::map<int,LAPIMSyncMessage*>            _msyncsendQ;
       lapi_dispatch_info_t                       _dispatch_table[256];
       lapi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       lapi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
