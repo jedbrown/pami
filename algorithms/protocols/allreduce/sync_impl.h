@@ -111,7 +111,7 @@ namespace CCMI
       namespace Ring
       {
         typedef CompositeT
-        <CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS>,
+        <CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>,
          CCMI::Executor::PipelinedAllreduce<XMI_COLL_MCAST_CLASS,XMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS> >,
          XMI_SYSDEP_CLASS,
          XMI_COLL_MCAST_CLASS,
@@ -136,7 +136,7 @@ namespace CCMI
       template<> inline bool Ring::Composite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
       template<> inline void Ring::Composite::create_schedule(XMI_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
 
       // class RingReduce::Composite and RingReduce::Factory
@@ -148,7 +148,7 @@ namespace CCMI
       namespace RingReduce
       {
         typedef CompositeT
-        <CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS>,
+        <CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>,
          CCMI::Executor::Allreduce<XMI_COLL_MCAST_CLASS,XMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS> >,
          XMI_SYSDEP_CLASS,
          XMI_COLL_MCAST_CLASS,
@@ -171,7 +171,7 @@ namespace CCMI
       template<> inline bool RingReduce::Composite::analyze(XMI_GEOMETRY_CLASS *geometry){ return true;};
       template<> inline void RingReduce::Composite::create_schedule(XMI_SYSDEP_CLASS * map,XMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
     };
   };

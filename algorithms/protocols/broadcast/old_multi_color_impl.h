@@ -71,18 +71,18 @@ namespace CCMI
       //get_rcolors<CCMI::Schedule::OneColorRectangle> > RectangleBcastComposite;
 
       typedef OldMultiColorCompositeT <1,
-	                              CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS>,
+	                              CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>,
 	                              old_get_colors,
 	                              XMI_SYSDEP_CLASS,
 	                              XMI_COLL_MCAST_CLASS,
 	                              CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> >
-                                      RingBcastComposite;
-      template<> void RingBcastComposite::create_schedule ( void                      * buf,
+                                      OldRingBcastComposite;
+      template<> void OldRingBcastComposite::create_schedule ( void                      * buf,
                                                             unsigned                    size,
                                                             XMI_GEOMETRY_CLASS        * g,
                                                             CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::RingSchedule<XMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
       }
 
 
@@ -92,11 +92,11 @@ namespace CCMI
                                            XMI_COLL_MCAST_CLASS,
                                            CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > OldBinomialBcastFactory;
       //typedef MultiColorBroadcastFactoryT <RectangleBcastComposite, rectangle_analyze> RectBcastFactory;
-      typedef OldMultiColorBroadcastFactoryT <RingBcastComposite,
-                                           true_analyze,
-                                           XMI_SYSDEP_CLASS,
+      typedef OldMultiColorBroadcastFactoryT <OldRingBcastComposite,
+	                                   true_analyze,
+	                                   XMI_SYSDEP_CLASS,
                                            XMI_COLL_MCAST_CLASS,
-                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > RingBcastFactory;
+                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > OldRingBcastFactory;
     };
   };
 };

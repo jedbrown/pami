@@ -39,7 +39,7 @@ typedef size_t axii_t[NUM_AXIS];
 
 #include "Schedule.h"
 #include "algorithms/schedule/BinomialTree.h"
-#include "algorithms/schedule/RingSchedule.h"
+#include "algorithms/schedule/OldRingSchedule.h"
 
 namespace CCMI
 {
@@ -1288,9 +1288,9 @@ namespace CCMI
     protected:
       Subschedule _subScheduleType;
 #define MAX_SUB_SCHEDULE_SIZE sizeof(CCMI::Schedule::BinomialTreeSchedule<T_Sysdep>) > \
-                              sizeof(CCMI::Schedule::RingSchedule<T_Sysdep>)?          \
+                              sizeof(CCMI::Schedule::OldRingSchedule<T_Sysdep>)?          \
                               sizeof(CCMI::Schedule::BinomialTreeSchedule<T_Sysdep>) : \
-                              sizeof(CCMI::Schedule::RingSchedule<T_Sysdep>)
+                              sizeof(CCMI::Schedule::OldRingSchedule<T_Sysdep>)
 
       /**
        * \brief Create a sub schedule based on the desired type
@@ -1309,9 +1309,9 @@ namespace CCMI
         }
         else
         {
-          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(RingSchedule<T_Sysdep>));
+          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(OldRingSchedule<T_Sysdep>));
           _subschedule[axis] = new (&_subschedule_storage[axis])
-            RingSchedule<T_Sysdep>(_me._my[axis], _me._mn[axis], _me._mx[axis]);
+            OldRingSchedule<T_Sysdep>(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
 
       }
@@ -1331,7 +1331,7 @@ namespace CCMI
         }
         else
         {
-          return RingSchedule<T_Sysdep>::getMaxPhases(mapping, nranks);
+          return OldRingSchedule<T_Sysdep>::getMaxPhases(mapping, nranks);
         }
       }
 

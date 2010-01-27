@@ -33,6 +33,14 @@ namespace CCMI
 	get_colors> BinomialBcastComposite;
 
       typedef CollectiveProtocolFactoryT<BinomialBcastComposite, true_analyze, CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > BinomialBcastFactory;
+
+      typedef BcastMultiColorCompositeT <1,
+	CCMI::Schedule::RingSchedule,
+	CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS>,
+	get_colors> RingBcastComposite;
+
+      typedef CollectiveProtocolFactoryT <RingBcastComposite, true_analyze, CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > RingBcastFactory;
+
     };
   };
 };

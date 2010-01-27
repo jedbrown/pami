@@ -341,7 +341,7 @@ namespace XMI
       XMI_Request_t                                           _request;
       XMI_COLL_MCAST_CLASS                                           _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
-      CCMI::Adaptor::Broadcast::RingBcastFactory              _broadcast_registration;
+      CCMI::Adaptor::Broadcast::OldRingBcastFactory           _broadcast_registration;
     };
 #else
     template <class T_Device, class T_Sysdep>
@@ -364,7 +364,7 @@ namespace XMI
 	  }
       MPINativeInterface<T_Device>                             _minterface;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
-      CCMI::Adaptor::Broadcast::BinomialBcastFactory           _broadcast_registration;
+      CCMI::Adaptor::Broadcast::RingBcastFactory               _broadcast_registration;
     };
 #endif
 

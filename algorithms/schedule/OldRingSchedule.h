@@ -11,11 +11,11 @@
  * \brief ???
  */
 
-#ifndef __algorithms_schedule_RingSchedule_h__
-#define __algorithms_schedule_RingSchedule_h__
+#ifndef __algorithms_schedule_OldRingSchedule_h__
+#define __algorithms_schedule_OldRingSchedule_h__
 
-#include "algorithms/interfaces/Schedule.h"
-#include "algorithms/schedule/OldRingSchedule.h"
+#include "algorithms/schedule/Schedule.h"
+
 
 /////////////////////////////////////////////////////////////////////
 ///
@@ -33,38 +33,41 @@ namespace CCMI
 {
   namespace Schedule
   {
-    class RingSchedule : public Interfaces::Schedule
+    template <class T_Sysdep>
+    class OldRingSchedule : public Schedule
     {
+
     public:
       /**
        * \brief Constructor
        */
-      RingSchedule () : Schedule ()
+      OldRingSchedule () : Schedule ()
       {
       }
 
-      RingSchedule (unsigned myrank, XMI::Topology *topology, unsigned c=0);
-
-      void configure (unsigned myrank, unsigned nranks, unsigned *ranks);
-      void configure (unsigned x, unsigned x0, unsigned xN);
+      OldRingSchedule (T_Sysdep *map, unsigned nranks, unsigned *ranks);
+      OldRingSchedule (unsigned x, unsigned x0, unsigned xN);
+      //OldRingSchedule (Rectangle  *rect, T_Sysdep *map);
 
       //Ring broadcast: Send to next and recv from prev
       void getBroadcastSources (unsigned  phase, unsigned *srcpes,
-                                unsigned  &nsrc)
+                                unsigned  &nsrc, unsigned *tasks)
       {
         nsrc = 0;
         if(!_isHead && phase == _bcastStart)
         {
           nsrc    = 1;
           *srcpes = (!_dir) ? _prev : _next;
+          *tasks  = XMI_PT_TO_PT_SUBTASK;
         }
       }
 
 
       //Ring broadcast: Send to next and recv from prev
       void getBroadcastDestinations (unsigned phase, unsigned *dstpes,
-                                     unsigned &ndest)
+                                     unsigned &ndest, unsigned *subtasks)
       {
+
         unsigned sendphase = _bcastStart + ((_isHead) ? 0 : 1);
 
         ndest = 0;
@@ -72,8 +75,9 @@ namespace CCMI
         {
           ndest     = 1;
           *dstpes   = (!_dir) ? _next : _prev;
+          *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::getBroadcastDestinations() %d\n",(int)this, *dstpes));
+          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::getBroadcastDestinations() %d\n",(int)this, *dstpes));
         }
       }
 
@@ -81,22 +85,23 @@ namespace CCMI
       ///\brief Reduce methods
       ///Recv from next and send to prev
       void getReduceSources (unsigned  phase, unsigned *srcpes,
-                             unsigned  &nsrc)
-
+                             unsigned  &nsrc, unsigned *tasks)
       {
         nsrc = 0;
         if(!_isTail && phase == _startPhase)
         {
           nsrc    = 1;
           *srcpes = (!_dir) ? _next : _prev;
+          *tasks  = XMI_COMBINE_SUBTASK;
         }
       }
 
 
       ///Recv from next and send to prev
       void getReduceDestinations (unsigned phase, unsigned *dstpes,
-                                  unsigned &ndest)
+                                  unsigned &ndest, unsigned *subtasks)
       {
+
         unsigned sendphase = _startPhase + ((_isTail) ? 0 : 1);
 
         ndest = 0;
@@ -104,8 +109,9 @@ namespace CCMI
         {
           ndest     = 1;
           *dstpes   = (!_dir) ? _prev : _next;
+          *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::getReduceDestinations() %d\n",(int)this, *dstpes));
+          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::getReduceDestinations() %d\n",(int)this, *dstpes));
         }
       }
 
@@ -120,9 +126,9 @@ namespace CCMI
         if(_ranks != NULL)
         {
           for(idx = 0; idx < _nranks; idx++)
-            if(_myrank == _ranks[idx])
+            if(__global.mapping.task() == _ranks[idx])
               return idx;
-	  
+
           return(unsigned)-1;
         }
 
@@ -165,7 +171,7 @@ namespace CCMI
       }
 
       void local_init (int root, int op, int &startphase,
-                       int &nphases)
+                       int &nphases, int &maxranks)
       {
         if(root >= 0)
           _root = root;
@@ -175,6 +181,7 @@ namespace CCMI
         unsigned head_idx=0, tail_idx = 0, my_idx=0;
 
         my_idx = myIdx ();
+
         head_idx = headIdx ();
 
         // compute tail
@@ -212,7 +219,7 @@ namespace CCMI
           {
             // The tail node does one send and no recv. Others receive
             // on one phase and send in the next phase
-            _nphases = (_isTail || _isHead) ? 1 : 2;
+            nphases = (_isTail || _isHead) ? 1 : 2;
           }
 
           if(op == ALLREDUCE_OP)
@@ -222,17 +229,17 @@ namespace CCMI
               _bcastStart = _startPhase + 1; //on the head start
               //phase is the reduce
               //phase
-              _nphases = 2; //1 reduce phase and 1 bcast phase
+              nphases = 2; //1 reduce phase and 1 bcast phase
             }
             else if(_isTail)
             {
               _bcastStart = _startPhase + 2 * (_nranks - 2 - _startPhase);
-              _nphases = _bcastStart + 1;
+              nphases = _bcastStart + 1;
             }
             else //everyone else
             {
               _bcastStart = _startPhase + 2 * (_nranks - 2 - _startPhase);
-              _nphases = _bcastStart + 2 - _startPhase;
+              nphases = _bcastStart + 2 - _startPhase;
             }
           }
         }
@@ -249,15 +256,14 @@ namespace CCMI
 
           // The tail node does one send and no recv. Others receive
           // on one phase and send in the next phase
-          _nphases = (_isTail || _isHead) ? 1 : 2;
+          nphases = (_isTail || _isHead) ? 1 : 2;
         }
         else
           XMI_abort();
 
         startphase = _startPhase;
-	nphases    = _nphases;
 
-        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::local_init schedule %d, %d, %d, "
+        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::local_init schedule %d, %d, %d, "
                      "idxes = (%d, %d, %d) \n", (int)this,
                      _prev, _next, _startPhase,
                      my_idx, head_idx, tail_idx));
@@ -267,66 +273,61 @@ namespace CCMI
        * \brief Get the upstream processors. Source processors
        * that send messages to me in this collective operation
        * \param [in] phase  : phase of the collective
+       * \param [out] srcpes : List of source processors
+       * \param [out] nsrc  :  number of source processors
+       * \param [out] subtasks : Hits for the receives
        */
 
-      virtual void getSrcTopology (unsigned phase, XMI::Topology *topology)
+      virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
+                                 unsigned  &nsrc, unsigned *subtasks)
       {
-	unsigned *srcranks;
-        xmi_result_t rc = topology->rankList(&srcranks);
-        CCMI_assert (rc == XMI_SUCCESS);
-        CCMI_assert(srcranks != NULL);
-       
-        unsigned nranks = 0;
+        nsrc = 0;
         switch(_op)
         {
         case REDUCE_OP:
-          getReduceSources (phase, srcranks, nranks);
+          getReduceSources (phase, srcpes, nsrc, subtasks);
           break;
         case BROADCAST_OP:
-          getBroadcastSources (phase, srcranks, nranks);
+          getBroadcastSources (phase, srcpes, nsrc, subtasks);
           break;
         case ALLREDUCE_OP:
           if(phase < _bcastStart)
-            getReduceSources (phase, srcranks, nranks);
+            getReduceSources (phase, srcpes, nsrc, subtasks);
           else
-            getBroadcastSources (phase, srcranks, nranks);
+            getBroadcastSources (phase, srcpes, nsrc, subtasks);
           break;
 
         case BARRIER_OP:
         default:
           CCMI_abort();
         }
-
-	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, nranks);
       }
 
       /**
        * \brief Get the downstream processors to send data to.
        * \param phase : phase of the collective
+       * \param dstpes : List of source processors
+       * \param ndst :  number of source processors
+       * \param subtasks : what operations to perform? pt-to-pt, line bcast
        */
-      virtual void getDstTopology(unsigned phase, XMI::Topology *topology)
+      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                 unsigned  &ndst, unsigned *subtasks)
       {
-        unsigned *dstranks;
-        xmi_result_t rc = topology->rankList(&dstranks);
-        CCMI_assert (rc == XMI_SUCCESS);
-        CCMI_assert(dstranks != NULL);
-	
-        unsigned ndst = 0;
+        ndst = 0;
 
         switch(_op)
         {
         case REDUCE_OP:
-          getReduceDestinations (phase, dstranks, ndst);
+          getReduceDestinations (phase, dstpes, ndst, subtasks);
           break;
         case BROADCAST_OP:
-          getBroadcastDestinations (phase, dstranks, ndst);
+          getBroadcastDestinations (phase, dstpes, ndst, subtasks);
           break;
         case ALLREDUCE_OP:
           if(phase < _bcastStart)
-            getReduceDestinations (phase, dstranks, ndst);
+            getReduceDestinations (phase, dstpes, ndst, subtasks);
           else
-            getBroadcastDestinations (phase, dstranks, ndst);
+            getBroadcastDestinations (phase, dstpes, ndst, subtasks);
           break;
 
         case BARRIER_OP:
@@ -334,92 +335,7 @@ namespace CCMI
           CCMI_abort();
         }
 
-	//Convert to a list topology
-	new (topology) XMI::Topology (dstranks, ndst);	
         return;
-      }
-
-      /**
-       * \brief Get the union of all sources across all phases
-       * \param[INOUT] topology : the union of all sources
-       */
-      virtual void getSrcUnionTopology (XMI::Topology *topology) {
-	unsigned *srcranks;
-        xmi_result_t rc = topology->rankList(&srcranks);
-	unsigned nsrcranks = topology->size();
-        CCMI_assert (rc == XMI_SUCCESS);
-        CCMI_assert(srcranks != NULL);
-
-	unsigned nranks = 0, ntotal_ranks = 0;
-	for (unsigned p = _startPhase; p < _startPhase + _nphases; p++) {
-	  switch(_op)
-	    {
-	    case REDUCE_OP:
-	      getReduceSources (p, srcranks + ntotal_ranks, nranks);
-	      break;
-	    case BROADCAST_OP:
-	      getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
-	      break;
-	    case ALLREDUCE_OP:
-	      if(p < _bcastStart)
-		getReduceSources (p, srcranks + ntotal_ranks, nranks);
-	      else
-		getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
-	      break;
-	      
-	    case BARRIER_OP:
-	    default:
-	      CCMI_abort();
-	    }
-	  ntotal_ranks += nranks;
-	  nranks = 0;
-	  CCMI_assert (ntotal_ranks <= nsrcranks);
-	}
-
-	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, ntotal_ranks);
-      }
-
-
-      /**
-       * \brief Get the union of all sources across all phases
-       * \param[INOUT] topology : the union of all sources
-       */
-      virtual void getDstUnionTopology (XMI::Topology *topology) {
-	unsigned *dstranks;
-	xmi_result_t rc = topology->rankList(&dstranks);
-	unsigned ndstranks = topology->size();
-	CCMI_assert (rc == XMI_SUCCESS);
-	CCMI_assert(dstranks != NULL);
-	
-	unsigned nranks = 0, ntotal_ranks = 0;
-	for (unsigned p = _startPhase; p < _startPhase + _nphases; p++) {
-	  switch(_op)
-	    {
-	    case REDUCE_OP:
-	      getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
-	      break;
-	    case BROADCAST_OP:
-	      getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
-	      break;
-	    case ALLREDUCE_OP:
-	      if(p < _bcastStart)
-		getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
-	      else
-		getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
-	      break;
-	      
-	    case BARRIER_OP:
-	    default:
-	      CCMI_abort();
-	    }
-	  ntotal_ranks += nranks;
-	  CCMI_assert (ntotal_ranks <= ndstranks);
-	  nranks = 0;
-	}
-
-	//Convert to a list topology
-	new (topology) XMI::Topology (dstranks, ntotal_ranks);
       }
 
 
@@ -428,12 +344,17 @@ namespace CCMI
        * \param root : the root of the collective
        * \param startphase : The phase where I become active
        * \param nphases : number of phases
+       * \param maxranks : total number of processors to communicate
+       *  with. Mainly needed in the executor to allocate queues
+       *  and other resources
        */
 
-      virtual void init (int root, int op, int &startphase, int &nphases)
+      virtual void init (int root, int op, int &startphase, int &nphases,
+                         int &maxranks)
       {
         startphase = 0;
         nphases = 0;
+        maxranks = 2;
 
         CCMI_assert (op != BARRIER_OP);
 
@@ -447,72 +368,56 @@ namespace CCMI
         _next       = ((unsigned) -1);
         _dir        = 0;
 
-        local_init (root, op, startphase, nphases);
-        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::init() _prev = %d, _next = %d\n", (int)this,_prev, _next));
+        local_init (root, op, startphase, nphases, maxranks);
+
+        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::init() _prev = %d, _next = %d\n", (int)this,_prev, _next));
       }
 
-      static unsigned getMaxPhases (unsigned nranks)
+      static unsigned getMaxPhases (T_Sysdep *map, unsigned nranks)
       {
         return nranks - 1;
       }
 
 
     protected:
+      T_Sysdep              * _sysdep;
       unsigned   short       _op;
       unsigned               _root;
       unsigned               _startPhase;
-      unsigned               _nphases;
       unsigned               _bcastStart;
       bool                   _isHead, _isTail;
 
       //for the ring reduce
       unsigned           _next;
       unsigned           _prev;
+
       unsigned         * _ranks;
       unsigned           _nranks;
-      unsigned           _myrank;
+
       unsigned           _x0, _my_x;
       unsigned           _dir;
+
+      //Rectangle        * _rectangle;
     };
   };
 };
 
-inline CCMI::Schedule::RingSchedule::RingSchedule 
-(unsigned myrank, XMI::Topology *topology, unsigned c) 
-{
-  xmi_topology_type_t t = topology->type();
-
-  if (t == XMI_LIST_TOPOLOGY) {
-    unsigned *ranks;
-    xmi_result_t rc = topology->rankList(&ranks);
-    CCMI_assert (rc == XMI_SUCCESS);
-    CCMI_assert(ranks != NULL);
-    configure (myrank, topology->size(), ranks);
-  }
-  else   if (t == XMI_RANGE_TOPOLOGY) {
-    xmi_task_t first, last;
-    xmi_result_t rc = topology->rankRange(&first, &last);
-    configure (myrank, first, last);
-  }
-}
-
-
-inline void CCMI::Schedule::RingSchedule::configure
-(unsigned        myrank,
+template <class T_Sysdep>
+inline CCMI::Schedule::OldRingSchedule<T_Sysdep>::OldRingSchedule
+(T_Sysdep       * map,
  unsigned        nranks,
- unsigned      * ranks) 
+ unsigned      * ranks) :
+_sysdep (map),
+_isHead (false), _isTail (false),
+_ranks(ranks), _nranks(nranks),
+_x0((unsigned) -1), _my_x ((unsigned) -1)
 {
-  _myrank  = myrank;
-  _isHead  = false;
-  _isTail  = false;
-  _ranks   = ranks; 
-  _nranks  = nranks;
-  _x0      = -1;
-  _my_x    = ((unsigned) -1);
+  CCMI_assert (map != NULL);
 
   _startPhase = ((unsigned) -1);
   _root = ((unsigned)-1);
   _dir = 0;
+  //_rectangle = NULL;
 }
 
 ///
@@ -523,19 +428,34 @@ inline void CCMI::Schedule::RingSchedule::configure
 /// \param x0   the first rank
 /// \param xN   the last rank
 ///
-inline void CCMI::Schedule::RingSchedule::configure
+template <class T_Sysdep>
+inline CCMI::Schedule::OldRingSchedule<T_Sysdep>::OldRingSchedule
 (unsigned        x,
  unsigned        x0,
- unsigned        xN) {
-  _isHead  = false;
-  _isTail  = false;
-  _ranks   = NULL; 
-  _nranks  = (xN - x0 + 1);
-  _x0      = x0; 
-  _my_x    = x;
+ unsigned        xN) :
+_sysdep (NULL),_isHead (false), _isTail (false),
+_ranks(NULL), _nranks(xN - x0 + 1),
+_x0 (x0), _my_x (x)
+{
   _startPhase = ((unsigned) -1);
   _root = ((unsigned)-1);
   _dir = 0;
+  //_rectangle = NULL;
 }
+
+#if 0
+inline CCMI::Schedule::OldRingSchedule::OldRingSchedule
+(Rectangle  *rect, T_Sysdep *map) :
+_sysdep (map), _isHead (false), _isTail (false), _ranks(NULL),
+_nranks((unsigned)-1), _x0((unsigned) -1), _my_x ((unsigned) -1)
+{
+  _startPhase = ((unsigned) -1);
+  _root       = ((unsigned) -1);
+  _dir        = 0;
+  //  _rectangle  = rect;
+
+  _nranks = rect->xs * rect->ys * rect->zs * rect->ts;
+}
+#endif
 
 #endif
