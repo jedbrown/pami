@@ -109,8 +109,7 @@ namespace XMI
     class UdpSendMessage
     {
       public:
-        inline UdpSendMessage ( xmi_client_t         client,
-                            size_t               context,
+        inline UdpSendMessage (xmi_context_t               context,
                             xmi_event_function   fn,
                             void               * cookie,
                             uint32_t             device_dispatch_id,
@@ -121,7 +120,6 @@ namespace XMI
                             bool                 single_pkt) :
           _msg( device_dispatch_id, metadata, metasize ),
           _context (context),
-          _client (client),
           _done_fn (fn),
           _cookie (cookie),
           _iov(iov),
@@ -212,7 +210,7 @@ namespace XMI
         {
            if (_done_fn != NULL )
            {
-              _done_fn((void*)_context,_cookie,XMI_SUCCESS);
+              _done_fn(_context,_cookie,XMI_SUCCESS);
            }
         }
 
@@ -247,8 +245,7 @@ namespace XMI
         }
 
         UdpMsg              _msg;
-        size_t              _context;
-        xmi_client_t        _client;
+        xmi_context_t       _context;
         xmi_event_function  _done_fn;
         void              * _cookie;
         void              * _metadata;

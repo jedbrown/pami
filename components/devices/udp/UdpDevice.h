@@ -82,9 +82,14 @@ namespace XMI
           return XMI_NERROR;
       }
 
-      inline int init_impl (T_SysDep * sysdep)
+      inline int init_impl (SysDep        * sysdep,
+                            xmi_context_t   context,
+                            size_t          offset)
       {
         if ( __global.mapping.activateUdp() != XMI_SUCCESS ) abort();
+
+        _context   = context;
+        _contextid = offset;
 
         _sndConnections = (UdpSndConnection**)malloc(__global.mapping.size()*sizeof(UdpSndConnection*));
         // setup the connections
@@ -98,6 +103,16 @@ namespace XMI
         _rcvConnection = new UdpRcvConnection( );
 
         return XMI_SUCCESS;
+      };
+
+      inline xmi_context_t getContext_impl ()
+      {
+        return _context;
+      };
+
+      inline size_t getContextOffset ()
+      {
+        return _contextid;
       };
 
       inline bool isInit_impl ()
@@ -165,6 +180,7 @@ namespace XMI
       }
       inline void post(size_t task, UdpSendMessage* msg)
       {
+#warning need to enable for endpoints -> task+contextid
         _sndConnections[task]->enqueueMsg(msg);
       }
 
@@ -173,6 +189,8 @@ namespace XMI
       UdpRcvConnection			      * _rcvConnection;
       std::map<int, udp_dispatch_info_t>        _dispatch_lookup;
       udp_dispatch_info_t                       _dispatch_table[256*DISPATCH_SET_SIZE];
+      xmi_context_t _context;
+      size_t _contextid;
 
     };
   };

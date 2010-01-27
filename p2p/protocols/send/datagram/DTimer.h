@@ -33,8 +33,7 @@ public:
 				_running(false), _closed(false) {
 	}
 
-	xmi_result_t start(xmi_client_t client, size_t contextid,
-			XMI::Device::ProgressFunctionMdl progfmodel,
+	xmi_result_t start(XMI::Device::ProgressFunctionMdl progfmodel,
 			unsigned long long interval, xmi_event_function timeout_cb, void * timeout_cookie,
 			unsigned long max_timeouts, xmi_event_function max_cb, void * max_cookie) {
 		TRACE_ERR((stderr,"DTimer(%p) start() ... Starting timer with interval = %llu \n", this, interval));
@@ -53,8 +52,9 @@ public:
 
 		progf.request = &pmsgbuf;
 		progf.clientdata = this;
-		progf.client = client;
-		progf.context = contextid;
+#warning fix this progress fnction stuff
+		//progf.client = client;
+		//progf.context = contextid;
 		progf.func = advance_timer_cb;  // xmi_work_function
 		progf.cb_done = (xmi_callback_t) {NULL};
 		bool rc = progfmodel.postWork(&progf);

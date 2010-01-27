@@ -30,11 +30,10 @@ namespace XMI
     class UdpModel : public Interface::PacketModel<UdpModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
     {
     public:
-       UdpModel (T_Device & device, xmi_client_t client, size_t context) :
-            Interface::PacketModel < UdpModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, client, context),
+       UdpModel (T_Device & device) :
+            Interface::PacketModel < UdpModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device),
             _device (device),
-            _client (client),
-            _context (context)
+            _context (device.getContext())
         {};
 
        // PacketInterface implements isPacket* to return these variables
@@ -58,14 +57,15 @@ namespace XMI
       inline bool postPacket_impl (uint8_t              (&state)[UdpModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
-                                   size_t               target,
+                                   xmi_task_t           target,
+                                   size_t               contextid,
                                    void               * metadata,
                                    size_t               metasize,
                                    struct iovec       * iov,
                                    size_t               niov)
         {
           T_Message * msg = (T_Message *) & state[0];
-          new (msg) T_Message (_client, _context, fn, cookie, _device_dispatch_id,
+          new (msg) T_Message (_context, fn, cookie, _device_dispatch_id,
                                metadata, metasize, iov, niov, false);
           _device.post(target, msg );
           return false;
@@ -75,16 +75,18 @@ namespace XMI
       inline bool postPacket_impl (uint8_t              (&state)[UdpModel::packet_model_state_bytes],
                                    xmi_event_function   fn,
                                    void               * cookie,
-                                   size_t               target,
+                                   xmi_task_t           target,
+                                   size_t               contextid,
                                    void               * metadata,
                                    size_t               metasize,
                                    struct iovec         (&iov)[T_Niov])
         {
-            return postPacket(state, fn, cookie, target, metadata, metasize, iov, T_Niov );
+            return postPacket(state, fn, cookie, target, contextid, metadata, metasize, iov, T_Niov );
         };
 
       template <unsigned T_Niov>
-      inline bool postPacket_impl (size_t         target,
+      inline bool postPacket_impl (xmi_task_t     target,
+                                   size_t         contextid,
                                    void         * metadata,
                                    size_t         metasize,
                                    struct iovec   (&iov)[T_Niov])
@@ -98,13 +100,14 @@ namespace XMI
       inline bool postMultiPacket_impl (uint8_t              (&state)[UdpModel::packet_model_state_bytes],
                                         xmi_event_function   fn,
                                         void               * cookie,
-                                        size_t               target,
+                                        xmi_task_t           target,
+                                        size_t               contextid,
                                         void               * metadata,
                                         size_t               metasize,
                                         struct iovec         (&iov)[T_Niov])
         {
          T_Message * msg = (T_Message *) & state[0];
-          new (msg) T_Message (_client, _context, fn, cookie, _device_dispatch_id, metadata,
+          new (msg) T_Message (_context, fn, cookie, _device_dispatch_id, metadata,
                                metasize, iov, T_Niov, true);
           _device.post(target, msg );
           return false;
@@ -117,8 +120,7 @@ namespace XMI
 
     protected:
       T_Device                   & _device;
-      xmi_client_t                 _client;
-      size_t                       _context;
+      xmi_context_t                _context;
       uint32_t                     _usr_dispatch_id;
       size_t                       _device_dispatch_id;
 

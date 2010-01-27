@@ -19,7 +19,7 @@
 #define __p2p_protocols_send_datagram_Datagram_h__
 
 #include "p2p/protocols/Send.h"
-#include "p2p/protocols/send/datagram/DatagramConnection.h"
+#include "p2p/protocols/send/eager/ConnectionArray.h"
 #include "p2p/protocols/send/datagram/DTimer.h"
 
 #ifndef TRACE_ERR
@@ -43,9 +43,11 @@ namespace Send {
 /// \see XMI::Device::Interface::PacketModel
 /// \see XMI::Device::Interface::PacketDevice
 ///
-template < class T_Model, class T_Device, bool T_LongHeader = true> class Datagram :
+template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Connection = ConnectionArray<T_Device> > class Datagram :
 	public XMI::Protocol::Send::Send {
 public:
+	typedef Datagram < T_Model, T_Device, T_LongHeader, T_Connection> DatagramProtocol;
+
 	// ----------------------------------------------------------------------
 	// STRUCTURES
 	// ----------------------------------------------------------------------
@@ -75,8 +77,10 @@ public:
 	struct rts_info_t {
 		send_state_t *va_send; ///virtual address sender
 		uint32_t msg_id; ///message identifier
-		xmi_task_t from_task; ///task originating message
-		xmi_task_t dest_task; ///task receiving message
+		xmi_task_t from_taskid; ///task originating message
+		xmi_task_t dest_taskid; ///task receiving message
+		size_t from_contextid; ///context id on task originating message
+		size_t dest_contextid; ///context id on task receiving message
 		size_t wsize; ///window size fo ack
 		size_t wrate; ///ack rate
 		size_t bytes; ///total bytes to send
@@ -113,10 +117,11 @@ public:
 		size_t pkgnum; /// Number of pkg to receive from the origin task.
 		header_ack_t ack; /// ack info
 		pkt_t pkt; /// Message Object
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram; /// Pointer to protocol
+		DatagramProtocol *datagram; /// Pointer to protocol
 		xmi_recv_t info; /// Application receive information.
 		size_t mbytes; /// Message info bytes
-		xmi_task_t from_task; ///origin task
+		xmi_task_t from_taskid; ///origin task
+		size_t from_contextid; ///origin context id
 		//char *             msgbuff;                                     /// RTS data buffer
 		size_t rpkg; /// received packages
 
@@ -180,7 +185,7 @@ public:
 		char pmsgbuf[2][XMI::Device::ProgressFunctionMdl::sizeof_msg]; /// timers' buffer
 		DTimer timer1; ///timer 1
 		DTimer timer0; ///timer 2
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram; ///pointer to protocol
+		DatagramProtocol *datagram; ///pointer to protocol
 
 		window_t window[2]; ///define 2 windows
 		vecs_t vecs;
@@ -202,17 +207,21 @@ public:
 	/// \param[out] status       Constructor status
 	///
 	Datagram(size_t dispatch, xmi_dispatch_callback_fn dispatch_fn,
-			void *cookie, T_Device & device, size_t origin_task,
-			xmi_client_t client, size_t contextid, xmi_result_t & status) :
-		XMI::Protocol::Send::Send(), _rts_model(device, client, contextid),
-				_rts_ack_model(device, client, contextid), _ack_model(device,
-						client, contextid), _data_model(device, client,
-						contextid),
-				_short_data_model(device, client, contextid), _device(device),
-				_from_task(origin_task), _client(client),
-				_contextid(contextid), _dispatch_fn(dispatch_fn),
-				_cookie(cookie), _connection((void **) NULL),
-				_connection_manager(device), _cont(0) {
+			void *cookie, T_Device & device, xmi_result_t & status) :
+		                XMI::Protocol::Send::Send(),
+		                _rts_model(device),
+				_rts_ack_model(device),
+				_ack_model(device),
+				_data_model(device),
+				_short_data_model(device),
+				_device(device),
+				_from_taskid(__global.mapping.task()),
+				_from_contextid(device.getContextOffset()),
+				_context(device.getContext()),
+				_dispatch_fn(dispatch_fn),
+				_cookie(cookie),
+				_connection(device),
+				_cont(0) {
 		// ----------------------------------------------------------------
 		// Compile-time assertions
 		// ----------------------------------------------------------------
@@ -223,7 +232,6 @@ public:
 		COMPILE_TIME_ASSERT(sizeof(void *)
 				<= T_Model::packet_model_payload_bytes);
 
-		_connection = _connection_manager.getConnectionArray(client, contextid);
 		//allocate memory
 		_queue = (Queue *) malloc(sizeof(Queue) * _device.peers());
 
@@ -295,7 +303,7 @@ public:
 		simple_parm.send.header.iov_len = parameters->header.iov_len;
 		simple_parm.send.data.iov_base = msg_copy->data;
 		simple_parm.send.data.iov_len = parameters->data.iov_len;
-		simple_parm.send.task = parameters->task;
+		simple_parm.send.dest = parameters->dest;
 
 		// Call the impl directly to avoid the 2nd virtual call
 		result = Datagram::simple_impl(&simple_parm);TRACE_ERR((stderr, "<< Datagram::immediate()  returned = %d \n",
@@ -353,7 +361,7 @@ protected:
 	inline void freeRecvState(recv_state_t * object) {
 		_recv_allocator.returnObject((void *) object);
 	}
-
+#if 0
 	inline void setConnection(xmi_task_t task, void *arg) {
 		size_t peer = _device.task2peer(task);
 		TRACE_ERR((stderr,
@@ -384,11 +392,11 @@ protected:
 						"<< Datagram::clearConnection(%zd) .. _connection[%zd] = %p\n",
 						task, peer, _connection[peer]));
 	}
-
+#endif
 	// \brief Send a packet ... pack as needed.
 	//
 	static inline int send_packet(T_Model & model, pkt_t & msg,
-			xmi_event_function callback, void *cookie, xmi_task_t targetTask,
+			xmi_event_function callback, void *cookie, xmi_task_t targetTask, size_t targetContextId,
 			vecs_t & vecs, void *part1, size_t numPart1, void *part2,
 			size_t numPart2) {
 		if (numPart1 <= T_Model::packet_model_metadata_bytes) { // part 1 will fit in the metadata
@@ -400,6 +408,7 @@ protected:
 					callback, // Callback to execute when done
 					cookie, // Cookie -- if no cb, why do we care?
 					targetTask, // Task to send to
+					targetContextId, // Context id to send to
 					part1, // Part 1 in metadata
 					numPart1, // Size of Part 1
 					vecs.d1); // Message info
@@ -414,6 +423,7 @@ protected:
 					callback, // Callback to execute when done
 					cookie, // Cookie -- if no cb, why do we care?
 					targetTask, // Task to send to
+					targetContextId, // Context id to send to
 					NULL, // No metadata (Part 1 didn't fit)
 					0, //
 					vecs.d2); // Message info
@@ -444,7 +454,8 @@ protected:
 				send->pkt, // T_Message to send
 				NULL, // Callback
 				NULL, // Cookie
-				send->rts.dest_task, // Target task
+				send->rts.dest_taskid, // Target task
+				send->rts.dest_contextid,
 				send->vecs, (void *) &send->rts, // header
 				sizeof(rts_info_t), // size of header
 				(void *) send->msginfo, // payload
@@ -459,7 +470,8 @@ protected:
 				rcv->pkt, // T_Message to send
 				callback, // Callback
 				cookie, // Cookie
-				rcv->from_task, // Target task
+				rcv->from_taskid, // Target task
+				rcv->from_contextid,
 				rcv->vecs, &rcv->ack, // header
 				sizeof(header_ack_t), // size of header
 				NULL, // payload
@@ -476,7 +488,8 @@ protected:
 				rcv->pkt, // T_Message to send
 				callback, // Callback
 				cookie, // Cookie
-				rcv->from_task, // Target task
+				rcv->from_taskid, // Target task
+				rcv->from_contextid, // Target context
 				rcv->vecs, &rcv->ack, // header
 				sizeof(header_ack_t), // size of header
 				(void *) rcv->lost_list, // payload
@@ -488,7 +501,8 @@ protected:
 				rcv->pkt, // T_Message to send
 				callback, // Callback
 				cookie, // Cookie
-				rcv->from_task, // Target task
+				rcv->from_taskid, // Target task
+				rcv->from_contextid, // Target context
 				rcv->vecs, &rcv->ack, // header
 				sizeof(header_ack_t), // size of header
 				(void *) rcv->lost_list, // payload
@@ -499,24 +513,26 @@ protected:
 	;
 
 	static inline void process_next_send(
-			Datagram < T_Model, T_Device, T_LongHeader> *datagram) {
+			DatagramProtocol *datagram) {
+#warning this queue needs to  be endpoint enabled
 		//Remove Head from queue
-		datagram->_queue[datagram->_from_task].popHead();
+		datagram->_queue[datagram->_from_taskid].popHead();
 
 		//Check queue is not empty
-		if (!datagram->_queue[datagram->_from_task].isEmpty()) {
+		if (!datagram->_queue[datagram->_from_taskid].isEmpty()) {
 
 			//recover next object to send
 			send_state_t
 					*send =
-							(send_state_t *) (datagram->_queue[datagram->_from_task].peekHead());
+							(send_state_t *) (datagram->_queue[datagram->_from_taskid].peekHead());
 
 			TRACE_ERR((stderr,
 							"Datagram::process_next_send() .. Sending queue request\n"));
 			send_rts(send);
 
 			//reset timer
-			send->timer0.start(datagram->_client, datagram->_contextid, datagram->_progfmodel, STD_RATE_SEND,
+#warning fix prog func timer
+			send->timer0.start(datagram->_progfmodel, STD_RATE_SEND,
 					resend_rts, send, 10, send_complete, send);
 		}
 	}
@@ -536,15 +552,12 @@ private:
 	T_Model _data_model;
 	T_Model _short_data_model;
 	T_Device & _device;
-	xmi_task_t _from_task;
-	xmi_client_t _client;
-	size_t _contextid;
+	xmi_task_t _from_taskid;
+	size_t     _from_contextid;
+	xmi_context_t _context;
 	xmi_dispatch_callback_fn _dispatch_fn;
 	void *_cookie;
-	void **_connection;
-	// Support up to 100 unique contexts.
-	//static datagram_connection_t _datagram_connection[];
-	DatagramConnection < T_Device> _connection_manager;
+	T_Connection _connection;
 
 	static Queue *_queue; ///queue send requests
 	//static Queue *_recvqueue;   ///not used
@@ -585,10 +598,14 @@ private:
 
 		send->send_buffer = (char *) parameters->send.data.iov_base; // Sender buffer address
 
-		send->rts.from_task = _from_task; // Origin Task
+		send->rts.from_taskid = _from_taskid; // Origin Task
+		send->rts.from_contextid = _from_contextid; // Origin Context
 		send->rts.bytes = parameters->send.data.iov_len; // Total bytes to send
 		send->rts.va_send = send; // Virtual Address sender
-		send->rts.dest_task = parameters->send.task; // Target Task
+		
+		// Target task and context identifier (offset)
+		XMI_ENDPOINT_INFO(parameters->send.dest,send->rts.dest_taskid,send->rts.dest_contextid);
+		
 		send->rts.mbytes = parameters->send.header.iov_len; // Metadata Number of  bytes
 		send->rts.wrate = STD_RATE_SEND; // Initial value for window rate
 		send->rts.wsize = 2; // Window size
@@ -605,8 +622,8 @@ private:
 		new (&send->timer1) DTimer();
 
 		// Want to put the check of queue and insertion as close to each other as possible
-		bool q_was_empty = _queue[_from_task].isEmpty();
-		_queue[_from_task].pushTail(send);
+		bool q_was_empty = _queue[_from_taskid].isEmpty();
+		_queue[_from_taskid].pushTail(send);
 
 		TRACE_ERR((stderr,
 						"Datagram::simple_impl(): Info sender  cookie=%p , send =%p , Sender task  = %d, msinfo= %p , msgbytes = %d , bytes = %d \n",
@@ -621,7 +638,7 @@ private:
 			TRACE_ERR((stderr,"Datagram::simple_impl(): Sending RTS\n"));
 
 			send_rts(send);
-			send->timer0.start(_client, _contextid, _progfmodel, STD_RATE_SEND,
+			send->timer0.start(_progfmodel, STD_RATE_SEND,
 					resend_rts, send, 10, send_complete, send);
 
 		}
@@ -676,17 +693,15 @@ private:
 		xmi_event_function local_fn = rcv->info.local_fn;
 		void *fn_cookie = rcv->info.cookie;
 
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device,
-				T_LongHeader> *)rcv->datagram;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)rcv->datagram;
 
 		//free memory
 		datagram->freeRecvState(rcv);
 
 		//invoke local_fn
 		if (local_fn)
-			local_fn(XMI_Client_getcontext(datagram->_client,
-					datagram->_contextid), fn_cookie, result);
+			local_fn(datagram->_context, fn_cookie, result);
 
 		TRACE_ERR((stderr, "Datagram::receive_complete() << \n"));
 		return;
@@ -705,9 +720,8 @@ private:
 		TRACE_ERR((stderr, "Datagram::send_complete() >> \n"));
 		send_state_t *send = (send_state_t *) cookie;
 
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device,
-				T_LongHeader> *)send->datagram;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)send->datagram;
 
 		xmi_event_function local_fn = send->local_fn;
 		xmi_event_function remote_fn = send->remote_fn;
@@ -718,13 +732,11 @@ private:
 
 		//invoke local_fn
 		if (local_fn != NULL) {
-			local_fn(XMI_Client_getcontext(datagram->_client,
-					datagram->_contextid), fn_cookie, result);
+			local_fn(datagram->_context, fn_cookie, result);
 		}
 		//invoke remote_fn
 		if (remote_fn != NULL) {
-			remote_fn(XMI_Client_getcontext(datagram->_client,
-					datagram->_contextid), fn_cookie, result);
+			remote_fn(datagram->_context, fn_cookie, result);
 		}
 
 		process_next_send(datagram);
@@ -749,9 +761,8 @@ private:
 		void *msginfo;
 		rcv_packet(metadata, sizeof(rts_info_t), payload, (void *&) rts,
 				msginfo);
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device,
-				T_LongHeader> *)recv_func_parm;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)recv_func_parm;
 
 		TRACE_ERR((stderr,
 						">> Datagram::dispatch_rts_direct() rts(%d) received , rts->va_send = %p  datagram->_lastva_send=%p \n",
@@ -782,7 +793,8 @@ private:
 			rcv->ack.wrate = rts->wrate; ///Save window rate
 
 			rcv->bytes = rts->bytes; ///Total Bytes to send
-			rcv->from_task = rts->from_task; ///Origin Task
+			rcv->from_taskid = rts->from_taskid; ///Origin Task
+			rcv->from_contextid = rts->from_contextid; ///Origin Context Id
 			rcv->mbytes = rts->mbytes; ///Metadata application bytes
 			rcv->rpkg = 0; ///Metadata application bytes
 
@@ -849,10 +861,8 @@ private:
 							(void *) (rcv->info.data.simple.addr)));
 
 			// Invoke the registered dispatch function.
-			datagram->_dispatch_fn.p2p(datagram->_client, // Communication context
-					datagram->_contextid, //context id
+			datagram->_dispatch_fn.p2p(datagram->_context, // Communication context
 					datagram->_cookie, // Dispatch cookie
-					rts->from_task, // Origin (sender) task
 					msginfo, // Application metadata
 					rts->mbytes, // Metadata bytes
 					NULL, // No payload data
@@ -883,7 +893,8 @@ private:
 			send_rts_ack(rcv, NULL, NULL);
 
 			//Start timer (initial value = 0, max number of cycles = 5, rate = 10000 , receiver, function send_rts_ack, timer0)
-			rcv->timer0.start(rcv->datagram->_client, rcv->datagram->_contextid, rcv->datagram->_progfmodel, STD_RATE_RECV,
+#warning fix timer stuff
+			rcv->timer0.start(rcv->datagram->_progfmodel, STD_RATE_RECV,
 					resend_rts_ack, rcv, 5, receive_complete, rcv);
 
 			TRACE_ERR((stderr,
@@ -903,9 +914,8 @@ private:
 		TRACE_ERR((stderr, ">> Datagram::dispatch_rts_ack()\n"));
 
 		//Pointer to Protocol object
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device,
-				T_LongHeader> *)recv_func_parm;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)recv_func_parm;
 
 		header_ack_t *ack;
 		void *dummy;
@@ -922,8 +932,7 @@ private:
 			ack->va_send->timer0.close();
 
 			//call terminate function
-			send_complete(XMI_Client_getcontext(datagram->_client,
-					datagram->_contextid), (void *) ack->va_send, XMI_SUCCESS);
+			send_complete(datagram->_context, (void *) ack->va_send, XMI_SUCCESS);
 
 			return 0;
 		}
@@ -987,14 +996,16 @@ private:
 				ack->va_send->pkt, // T_Message to send
 				ack->va_send->cb_data, // Callback -- initialized to cb_data_send
 				(void *) ack->va_send, // Cookie
-				ack->va_send->rts.dest_task, // Target task
+				ack->va_send->rts.dest_taskid, // Target task
+				ack->va_send->rts.dest_contextid, // Target task
 				ack->va_send->vecs, &ack->va_send->header, // header
 				sizeof(header_metadata_t), // size of header
 				ack->va_send->send_buffer, // payload
 				ack->va_send->header.bsend); // size of playload
 
 		//Start timer (initial value = 0, max number of cycles = 10, rate = 1200 , sender, function send_data, timer1)
-		ack->va_send->timer1.start(datagram->_client, datagram->_contextid, datagram->_progfmodel,
+#warning fix prog func timer stuff
+		ack->va_send->timer1.start(datagram->_progfmodel,
 				STD_RATE_SEND, resend_data, ack->va_send, 10, send_complete,
 				ack->va_send);
         return 0;
@@ -1016,8 +1027,8 @@ private:
 		send_state_t *send = (send_state_t *) cookie;
 
 		//Pointer to Protocol
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device, T_LongHeader> *)send->pf;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)send->pf;
 
 		TRACE_ERR((stderr,
 						"   Datagram::cb_data_send() .. data total bytes= %d  , send->pkgnum = %d ,  send->rts.window = %d, pkgsend = %d , offset=%d , bsend=%d \n",
@@ -1096,7 +1107,8 @@ private:
 					window->pkg[i].pkt, // T_Message to send
 					NULL, // Callback
 					(void *) NULL, // Cookie
-					window->va_send->rts.dest_task, // Target task
+					window->va_send->rts.dest_taskid, // Target task
+					window->va_send->rts.dest_contextid, // Target context
 					window->va_send->vecs, (void *) &window->pkg[i].header, // header
 					sizeof(header_metadata_t), // size of header
 					(void *) (window->va_send->send_buffer
@@ -1157,7 +1169,8 @@ private:
 				window->pkg[i].pkt, // T_Message to send
 				NULL, // Callback
 				(void *) NULL, // Cookie
-				window->va_send->rts.dest_task, // Target task
+				window->va_send->rts.dest_taskid, // Target task
+				window->va_send->rts.dest_contextid, // Target context
 				window->va_send->vecs, (void *) &window->pkg[i].header, // header
 				sizeof(header_metadata_t), // size of header
 				(void *) (window->va_send->send_buffer
@@ -1188,7 +1201,8 @@ private:
 					send->pkt, // T_Message to send
 					send->cb_data, // Callback
 					(void *) send, // Cookie
-					send->rts.dest_task, // Target task
+					send->rts.dest_taskid, // Target task
+					send->rts.dest_contextid, // Target context
 					send->vecs, &send->header, // header
 					sizeof(header_metadata_t), // size of header
 					&send->send_buffer, // payload
@@ -1246,7 +1260,8 @@ private:
 					send->pkt, // T_Message to send
 					NULL, // Callback
 					(void *) send, // Cookie
-					send->rts.dest_task, // Target task
+					send->rts.dest_taskid, // Target task
+					send->rts.dest_contextid, // Target context
 					send->vecs, &send->header, // header
 					sizeof(header_metadata_t), // size of header
 					v[1].iov_base, // payload
@@ -1273,7 +1288,8 @@ private:
 				send->pkt, // T_Message to send
 				send->cb_data, // Callback
 				(void *) send, // Cookie
-				send->rts.dest_task, // Target task
+				send->rts.dest_taskid, // Target task
+				send->rts.dest_contextid, // Target context
 				send->vecs, &send->header, // header
 				sizeof(header_metadata_t), // size of header
 				v[1].iov_base, // payload
@@ -1291,9 +1307,8 @@ private:
 	static int dispatch_short_data_direct(void *metadata, void *payload,
 			size_t bytes, void *recv_func_parm, void *cookie) {
 		TRACE_ERR((stderr, ">> Datagram::dispatch_short_data()\n"));
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device,
-				T_LongHeader> *)recv_func_parm;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)recv_func_parm;
 
 		header_metadata_t *header;
 		void *msginfo;
@@ -1318,7 +1333,8 @@ private:
 		++header->va_recv->rpkg;
 
 		//Start timer (initial value = 0, max number of cycles = 20, rate = 1200 , receiver, function send_ack, timer1)
-		header->va_recv->timer1.start(datagram->_client, datagram->_contextid, datagram->_progfmodel,
+#warning fix prog func timer
+		header->va_recv->timer1.start(datagram->_progfmodel,
 				STD_RATE_RECV, resend_ack, header->va_recv, 20,
 				receive_complete, header->va_recv);
 
@@ -1353,9 +1369,8 @@ private:
 			size_t bytes, void *recv_func_parm, void *cookie) {
 		TRACE_ERR((stderr, ">> Datagram::dispatch_data_direct()\n"));
 
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device,
-				T_LongHeader> *)recv_func_parm;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)recv_func_parm;
 
 		//Pointer to metadata
 		header_metadata_t *header;
@@ -1421,8 +1436,7 @@ private:
 			header->va_recv->datagram->_lastva_send = NULL;
 
 			//call terminate function
-			receive_complete(XMI_Client_getcontext(datagram->_client,
-					datagram->_contextid), (void *) header->va_recv,
+			receive_complete(datagram->_context, (void *) header->va_recv,
 					XMI_SUCCESS);
 
 			return 0;
@@ -1496,9 +1510,7 @@ private:
 				header->va_recv->datagram->_lastva_send = NULL;
 
 				//call terminate function
-				receive_complete(XMI_Client_getcontext(
-						header->va_recv->datagram->_client,
-						header->va_recv->datagram->_contextid),
+				receive_complete(header->va_recv->datagram->_context,
 						(void *) header->va_recv, XMI_SUCCESS);
 
 			} else {
@@ -1530,9 +1542,8 @@ private:
 				(void *&) lost);
 
 		//Pointer to Protocol object
-		Datagram < T_Model, T_Device, T_LongHeader> *datagram =
-				(Datagram < T_Model, T_Device,
-				T_LongHeader> *)recv_func_parm;
+		DatagramProtocol *datagram =
+				(DatagramProtocol *)recv_func_parm;
 
 		ack->va_send->timer1.stop();
 
@@ -1560,8 +1571,7 @@ private:
 				TRACE_ERR((stderr,
 								">>   Datagram::dispatch_ack_direct() wrate==0 .. all data was sent\n"));
 
-				send_complete(XMI_Client_getcontext(datagram->_client,
-						datagram->_contextid), (void *) ack->va_send,
+				send_complete(datagram->_context, (void *) ack->va_send,
 						XMI_SUCCESS);
 
 				return 0;
@@ -1572,8 +1582,7 @@ private:
 
 				if (ack->va_send->pkgnum - 1> ack->va_send->header.seqno) {
 					ack->va_send->pkgsend = 0;
-					cb_data_send(XMI_Client_getcontext(datagram->_client,
-							datagram->_contextid), (void *) ack->va_send,
+					cb_data_send(datagram->_context, (void *) ack->va_send,
 							XMI_SUCCESS);
 				}
 
@@ -1792,7 +1801,7 @@ private:
 	};
 	}; // XMI::Protocol::Send::Datagram class
 	// Initialize queue
-	template < class T_Model, class T_Device, bool T_LongHeader> Queue* Datagram < T_Model, T_Device, T_LongHeader>::_queue = NULL;
+	template < class T_Model, class T_Device, bool T_LongHeader, class T_Connection> Queue* Datagram < T_Model, T_Device, T_LongHeader, T_Connection>::_queue = NULL;
 
 }
 ; // XMI::Protocol::Send namespace
