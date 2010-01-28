@@ -58,6 +58,21 @@ namespace XMI
 
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
+  class PlatformDeviceList {
+  public:
+    PlatformDeviceList() { }
+
+    init(size_t num_ctx) {
+	// these calls create (allocate and construct) as well as init each (?)
+        _generics = XMI::Device::Generic::Device::create(num_ctx);
+        _shmem = ShmemDevice::create(_generics, num_ctx);
+    }
+
+    XMI::Device::Generic::Device *_generics; // need better name...
+    ShmemDevice *_shmem;
+    
+  }; // class PlatformDeviceList
+
 
   class Context : public Interface::Context<XMI::Context>
   {
@@ -67,7 +82,7 @@ namespace XMI
       }
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
-				XMI::Device::Generic::Device *generics,
+      				PlatformDeviceList *devices,
 				void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, id),
           _client (client),
@@ -76,8 +91,7 @@ namespace XMI
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-          _generic(generics[id]),
-          _shmem (),
+          _devices(devices),
           _lock (),
 	  _workAllocator ()
       {
@@ -94,9 +108,6 @@ namespace XMI
         // ----------------------------------------------------------------
 
         _lock.init(&_sysdep);
-
-        _generic.init (_sysdep, (xmi_context_t)this, clientid, id, num, generics);
-        _shmem.init (&_sysdep, _context, _contextid);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -140,8 +151,8 @@ namespace XMI
 
         for (i = 0; i < maximum && events == 0; i++)
           {
-            events += _shmem.advance();
-            events += _generic.advance();
+            events += _devices->_shmem[_contextid].advance();
+            events += _devices->_generics[_contextid].advance();
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -374,7 +385,7 @@ namespace XMI
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-                (id, fn, cookie, _shmem, result);
+                (id, fn, cookie, _devices->_shmem, result);
               }
             else
               {
@@ -383,7 +394,7 @@ namespace XMI
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
-                (id, fn, cookie, _shmem, result);
+                (id, fn, cookie, _devices->_shmem, result);
               }
 
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
@@ -459,13 +470,12 @@ namespace XMI
       SysDep _sysdep;
 
       // devices...
-      XMI::Device::Generic::Device &_generic;
-      ShmemDevice _shmem;
       ContextLock _lock;
 
       void * _dispatch[1024];
       ProtocolAllocator _protocol;
       MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+      PlatformDeviceList *_devices;
 
   }; // end XMI::Context
 }; // end namespace XMI
