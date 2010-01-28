@@ -51,26 +51,26 @@ int main(int argc, char **argv) {
 			, argv[0], argv[0]);
 		exit(1);
 	}
-	static CR_RECT_T *cr_alloc[BGQ_COLLECTIVE_MAX_CLASSROUTES][BGQ_COLLECTIVE_MAX_CLASSROUTES];
+	static CR_RECT_T *cr_alloc[BGQ_COLL_CLASS_MAX_CLASSROUTES][BGQ_COLL_CLASS_MAX_CLASSROUTES];
 	memset(cr_alloc, 0, sizeof(cr_alloc));
 	uint32_t m;
 	z = rect_size(&world.rect);
 	void **env = malloc(z * sizeof(void *));
 
-	x = alloc_classroutes(&world, &world.rect, COLLECTIVE_CLASS_ROUTE_INPUT_SYSTEM, env);
+	x = alloc_classroutes(&world, &world.rect, BGQ_COLL_CLASS_INPUT_VC_SYSTEM, env);
 	if (x == -1) {
 		fprintf(stderr, "No space for system comm-world classroute!\n");
 		exit(1);
 	}
-	for (z = 0; z < BGQ_COLLECTIVE_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
+	for (z = 0; z < BGQ_COLL_CLASS_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
 	cr_alloc[x][z] = &world.rect;
 
-	x = alloc_classroutes(&world, &world.rect, COLLECTIVE_CLASS_ROUTE_INPUT_USER, env);
+	x = alloc_classroutes(&world, &world.rect, BGQ_COLL_CLASS_INPUT_VC_USER, env);
 	if (x == -1) {
 		fprintf(stderr, "No space for user comm-world classroute!\n");
 		exit(1);
 	}
-	for (z = 0; z < BGQ_COLLECTIVE_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
+	for (z = 0; z < BGQ_COLL_CLASS_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
 	cr_alloc[x][z] = &world.rect;
 
 	if (optind < argc) {
@@ -82,32 +82,32 @@ int main(int argc, char **argv) {
 				exit(1);
 			}
 
-			x = alloc_classroutes(&world, comm, COLLECTIVE_CLASS_ROUTE_INPUT_SUBCOMM, env);
+			x = alloc_classroutes(&world, comm, BGQ_COLL_CLASS_INPUT_VC_SUBCOMM, env);
 			if (x == -1) {
 				fprintf(stderr, "No space for sub-comm classroute!\n");
 				continue;
 			}
-			for (z = 0; z < BGQ_COLLECTIVE_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
+			for (z = 0; z < BGQ_COLL_CLASS_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
 			cr_alloc[x][z] = comm;
 		}
 	} else {
 		comm = malloc(sizeof(*comm));
 		*comm = world.rect;
-		x = alloc_classroutes(&world, comm, COLLECTIVE_CLASS_ROUTE_INPUT_SUBCOMM, env);
+		x = alloc_classroutes(&world, comm, BGQ_COLL_CLASS_INPUT_VC_SUBCOMM, env);
 		if (x == -1) {
 			fprintf(stderr, "No space for sub-comm classroute!\n");
 		} else {
 			--x;
-			for (z = 0; z < BGQ_COLLECTIVE_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
+			for (z = 0; z < BGQ_COLL_CLASS_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z);
 			cr_alloc[x][z] = comm;
 		}
 	}
-	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
+	for (x = 0; x < BGQ_COLL_CLASS_MAX_CLASSROUTES; ++x) {
 		static char buf[1024];
 		char *s = buf;
 		comm = cr_alloc[x][0];
 		if (comm) {
-			for (z = 0; z < BGQ_COLLECTIVE_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z) {
+			for (z = 0; z < BGQ_COLL_CLASS_MAX_CLASSROUTES && cr_alloc[x][z] != NULL; ++z) {
 				*s++ = ' ';
 				s += sprint_rect(s, cr_alloc[x][z]);
 			}

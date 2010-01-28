@@ -223,12 +223,12 @@ int main(int argc, char **argv) {
 			for (r = 0; r < z; ++r) {
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand() & rand()); /* try to reduce bits */
-					l &= CR_ROUTE_NETMASK;
+					l &= BGQ_COLL_CLASS_LINK_MASK;
 					cr[r].cr.output = l;
 				}
 				if ((rand() & rand_mask) == 0) {
 					l = (rand() & rand()); /* try to reduce bits */
-					l &= CR_ROUTE_NETMASK;
+					l &= BGQ_COLL_CLASS_LINK_MASK;
 					cr[r].cr.input = l;
 				}
 			}

@@ -202,8 +202,8 @@ uint32_t get_classroute_ids(int vc, CR_RECT_T *subcomm, void **env) {
 	struct cr_allocation **cr_alloc = *env;
 
 	if (!cr_alloc) {
-		cr_alloc = malloc(BGQ_COLLECTIVE_MAX_CLASSROUTES * sizeof(struct cr_allocation *));
-		memset(cr_alloc, 0, BGQ_COLLECTIVE_MAX_CLASSROUTES * sizeof(struct cr_allocation *));
+		cr_alloc = malloc(BGQ_COLL_CLASS_MAX_CLASSROUTES * sizeof(struct cr_allocation *));
+		memset(cr_alloc, 0, BGQ_COLL_CLASS_MAX_CLASSROUTES * sizeof(struct cr_allocation *));
 		*env = cr_alloc;
 	}
 	/*
@@ -213,7 +213,7 @@ uint32_t get_classroute_ids(int vc, CR_RECT_T *subcomm, void **env) {
 	 *
 	 * \todo Consider virtual channel in search
 	 */
-	for (x = 0; x < BGQ_COLLECTIVE_MAX_CLASSROUTES; ++x) {
+	for (x = 0; x < BGQ_COLL_CLASS_MAX_CLASSROUTES; ++x) {
 		if (cr_alloc[x] == NULL) {
 			free |= (1 << x);
 			continue;
