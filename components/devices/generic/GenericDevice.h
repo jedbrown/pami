@@ -184,7 +184,7 @@ namespace Generic {
 		size_t x;
 		Device *gds;
 		int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
-		XMI_assertf(rc == 0, "posix_memalign failed for generics[%d], errno=%d\n", num_ctx, errno);
+		XMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
 		for (x = 0; x < num_ctx; ++x) {
 			new (&gds[x]) XMI::Device::Generic::Device();
 		}

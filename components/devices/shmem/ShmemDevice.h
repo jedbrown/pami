@@ -358,11 +358,11 @@ namespace XMI
 
         inline int init_impl (XMI::SysDep * sysdep, xmi_context_t context, size_t offset);
 
-	static ShmemDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
+	static inline ShmemDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
 		size_t x;
 		ShmemDevice *devs;
 		int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-		XMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%d], errno=%d\n", num_ctx, errno);
+		XMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%zd], errno=%d\n", num_ctx, errno);
 		for (x = 0; x < num_ctx; ++x) {
 			new (&devs[x]) ShmemDevice();
 		}

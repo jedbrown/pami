@@ -75,6 +75,23 @@ namespace XMI
           /// \copydoc XMI::Device::Interface::BaseDevice::init
           int init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid);
 
+#warning Clean these up
+      static inline MUDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
+	size_t x;
+	MUDevice *devs;
+	int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+	XMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zd], errno=%d\n", num_ctx, errno);
+	for (x = 0; x < num_ctx; ++x) {
+		new (&devs[x]) MUDevice();
+	}
+	return devs;
+      }
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		MUDevice *dev = &this[contextid];
+		dev->init_impl(sd, context, contextid);
+	}
+
           /// \copydoc XMI::Device::Interface::BaseDevice::getContext
           xmi_context_t getContext_impl ();
 
@@ -91,6 +108,7 @@ namespace XMI
           inline size_t task2peer_impl (size_t task);
 
           /// \copydoc XMI::Device::Interface::BaseDevice::advance
+	  inline size_t advance(size_t clientid, size_t contextid);
           inline int advance_impl ();
 
           // ----------------------------------------------------------------------
@@ -433,6 +451,12 @@ size_t XMI::Device::MU::MUDevice::peers_impl ()
 size_t XMI::Device::MU::MUDevice::task2peer_impl (size_t task)
 {
   return task;
+}
+
+#warning This poly-morphic advance needs to be cleaned up
+inline size_t XMI::Device::MU::MUDevice::advance(size_t clientid, size_t contextid) {
+	XMI::Device::MU::MUDevice *dev = &this[contextid];
+	return dev->advance_impl();
 }
 
 int XMI::Device::MU::MUDevice::advance_impl()
