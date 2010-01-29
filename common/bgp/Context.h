@@ -62,10 +62,21 @@ namespace XMI
   public:
     PlatformDeviceList() { }
 
-    init(size_t num_ctx) {
+    inline xmi_result_t init(size_t clientid, size_t num_ctx) {
 	// these calls create (allocate and construct) as well as init each (?)
-        _generics = XMI::Device::Generic::Device::create(num_ctx);
-        _shmem = ShmemDevice::create(_generics, num_ctx);
+        _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
+        _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
+    }
+
+    inline size_t advance(size_t clientid, size_t contextid) {
+
+	size_t events = 0;
+        events += _generics[contextid].advance();
+	// or...
+        // events += _generics->advance(clientid, contextid);
+	// etc...
+        events += _shmem[contextid].advance();
+	return events;
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
@@ -151,8 +162,7 @@ namespace XMI
 
         for (i = 0; i < maximum && events == 0; i++)
           {
-            events += _devices->_shmem[_contextid].advance();
-            events += _devices->_generics[_contextid].advance();
+            events += _devices->advance(_clientid, _contextid);
           }
 
         //if (events > 0) result = XMI_SUCCESS;
