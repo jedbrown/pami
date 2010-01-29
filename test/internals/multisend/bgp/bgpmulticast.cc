@@ -70,7 +70,7 @@ int main(int argc, char ** argv) {
 	xmi_multicast_t mcast;
 
 	// simple allreduce on the tree... SMP mode (todo: check and error)
-	mcast.client = client;
+	mcast.client = 0;
 	mcast.context = 0;
 	mcast.roles = (unsigned)-1;
 	mcast.src_participants = (xmi_topology_t *)&itopo;

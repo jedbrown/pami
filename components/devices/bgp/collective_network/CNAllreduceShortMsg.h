@@ -69,7 +69,7 @@ public
 			bool doStore,
 			unsigned dispatch_id,
 			XMI::Device::BGP::CNAllreduceSetup &tas) :
-	BaseGenericCNMessage(qs, XMI_GD_ClientId(mcomb->client), mcomb->context,
+	BaseGenericCNMessage(qs, mcomb->client, mcomb->context,
 				(XMI::PipeWorkQueue *)mcomb->data,
 				(XMI::PipeWorkQueue *)mcomb->results,
 				bytes, doStore, mcomb->roles, mcomb->cb_done,

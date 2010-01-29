@@ -65,7 +65,7 @@ public:
 		XMI::PipeWorkQueue *swq,
 		XMI::PipeWorkQueue *rwq) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, mcomb->cb_done,
-				XMI_GD_ClientId(mcomb->client), mcomb->context),
+				mcomb->client, mcomb->context),
 	_iwq(iwq),
 	_swq(swq), // might be NULL
 	_rwq(rwq),

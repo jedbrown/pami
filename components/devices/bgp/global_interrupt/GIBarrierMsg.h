@@ -79,7 +79,7 @@ protected:
 	//////////////////////////////////////////////////////////////////
 	giMessage(Generic::GenericSubDevice &GI_QS, xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
-				XMI_GD_ClientId(msync->client), msync->context)
+				msync->client, msync->context)
 	{
 	}
 

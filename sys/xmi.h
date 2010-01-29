@@ -2779,7 +2779,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_client_t         client;	   /**< client to operate within */
+    size_t               client;	   /**< client to operate within */
     size_t               context;	   /**< primary context to operate within */
     size_t               dispatch;         /**< Dispatch identifier */
     xmi_callback_t       cb_done;          /**< Completion callback */
@@ -2968,7 +2968,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_client_t         client;	     /**< client to operate within */
+    size_t               client;	     /**< client to operate within */
     size_t               context;	     /**< primary context to operate within */
     xmi_callback_t       cb_done;	     /**< User's completion callback */
     unsigned             connection_id;      /**< differentiate data streams */
@@ -3015,7 +3015,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_client_t       client;	        /**< client to operate within */
+    size_t             client;	        /**< client to operate within */
     size_t             context;	        /**< primary context to operate within */
     xmi_callback_t     cb_done;		/**< User's completion callback */
     unsigned           connection_id;	/**< (remove?) differentiate data streams */
@@ -3060,7 +3060,7 @@ extern "C"
 
   typedef struct
   {
-    xmi_client_t         client;	      /**< client to operate within */
+    size_t               client;	      /**< client to operate within */
     size_t               context;	      /**< primary context to operate within */
     xmi_callback_t       cb_done;             /**< User's completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of

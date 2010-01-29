@@ -41,9 +41,6 @@
 #define XMI_MAX_NUM_CLIENTS	4
 #endif // !XMI_MAX_NUM_CLIENTS
 
-extern size_t XMI_GD_ClientId(xmi_client_t client);
-// #define XMI_GD_ClientId(client)	(client)
-
 #include "GenericDevicePlatform.h"
 
 ////////////////////////////////////////////////////////////////////////

@@ -62,7 +62,7 @@ int main(int argc, char ** argv) {
 	xmi_multisync_t msync;
 
 	// simple barrier on the GI network... SMP mode
-	msync.client = client;
+	msync.client = 0;
 	msync.context = 0;
 	msync.roles = (unsigned)-1;
 	msync.participants = (xmi_topology_t *)&__global.topology_global;

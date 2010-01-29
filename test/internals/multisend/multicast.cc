@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
     memset(&mcast, 0x00, sizeof(mcast));
 
 	// simple allreduce on the local ranks...
-	mcast.client = client;
+	mcast.client = 0;
 	mcast.context = 0;
 	mcast.roles = (unsigned)-1;
 	mcast.src_participants = (xmi_topology_t *)&itopo;

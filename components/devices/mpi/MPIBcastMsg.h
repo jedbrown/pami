@@ -84,7 +84,7 @@ namespace XMI
       MPIBcastMsg(T_Device &Generic_QS, //Generic::BaseGenericDevice &Generic_QS,
                   xmi_multicast_t *mcast) :
       XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
-                                           XMI_GD_ClientId(mcast->client), mcast->context),
+                                           mcast->client, mcast->context),
       _device(&Generic_QS),
       _dst((XMI::Topology *)mcast->dst_participants),
       _iwq((XMI::PipeWorkQueue *)mcast->src),

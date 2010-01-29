@@ -146,7 +146,7 @@ public:
 		bool doStore,
 		unsigned dispatch_id_e,
 		unsigned dispatch_id_m) :
-	BaseGenericCN2PMessage(qs, XMI_GD_ClientId(mcomb->client), mcomb->context,
+	BaseGenericCN2PMessage(qs, mcomb->client, mcomb->context,
 				ewq, mwq, xwq,
 				(XMI::PipeWorkQueue *)mcomb->data,
 				(XMI::PipeWorkQueue *)mcomb->results,

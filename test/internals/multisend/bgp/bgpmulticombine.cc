@@ -68,7 +68,7 @@ int main(int argc, char ** argv) {
 	xmi_multicombine_t mcomb;
 
 	// simple allreduce on the tree... SMP mode (todo: check and error)
-	mcomb.client = client;
+	mcomb.client = 0;
 	mcomb.context = 0;
 	mcomb.roles = (unsigned)-1;
 	mcomb.data_participants = NULL;

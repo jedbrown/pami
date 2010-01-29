@@ -66,7 +66,7 @@ public:
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole) :
             XMI::Device::Generic::GenericMessage (device, mcast->cb_done,
-					XMI_GD_ClientId(mcast->client), mcast->context),
+					mcast->client, mcast->context),
             _isrootrole (isrootrole),
             _sbuffer (*(XMI::PipeWorkQueue *)mcast->src),
             _rbuffer (*(XMI::PipeWorkQueue *)mcast->dst),

@@ -137,7 +137,7 @@ int main(int argc, char ** argv)
   mcast.dst_participants = (xmi_topology_t *)NULL;
 
 
-  mcast.client = client;
+  mcast.client = 0;
   mcast.context = 0;
   mcast.roles = -1;
   mcast.bytes = (TEST_BUF_SIZE/4)*4;

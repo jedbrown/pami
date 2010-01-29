@@ -78,7 +78,7 @@ int main(int argc, char ** argv) {
 	xmi_multicombine_t mcomb;
 
 	// simple allreduce on the local ranks...
-	mcomb.client = client;
+	mcomb.client = 0;
 	mcomb.context = 0;
 	mcomb.roles = (unsigned)-1;
 	mcomb.data_participants = (xmi_topology_t *)&__global.topology_local;
