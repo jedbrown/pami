@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 		work.count = 300000ULL;	// the printf takes time, ensure we don't
 	}				// finish too soon.
 
-	pf.client = client;
+	pf.client = 0;
 	pf.context = 0;
 	pf.request = &msgbuf[0];
 	pf.func = my_func;

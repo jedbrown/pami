@@ -73,6 +73,17 @@ namespace XMI
 
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
+/**
+ * \brief Class containing all devices used on this platform.
+ *
+ * This container object governs creation (allocation of device objects),
+ * initialization of device objects, and advance of work. Note, typically
+ * the devices advance routine is very short - or empty - since it only
+ * is checking for received messages (if the device even has reception).
+ *
+ * The generic device is present in all platforms. This is how context_post
+ * works as well as how many (most/all) devices enqueue work.
+ */
   class PlatformDeviceList {
   public:
     PlatformDeviceList() { }
@@ -91,8 +102,8 @@ namespace XMI
      * \param[in] contextid	Context ID (index)
      */
     inline xmi_result_t init(size_t clientid, size_t num_ctx) {
-	// these calls create (allocate and construct) as well as init each (?).
-	// We don't know how these relate to conetxts, they are semi-opaque.
+	// these calls create (allocate and construct) each element.
+	// We don't know how these relate to contexts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
         _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
 	_progfunc = XMI::Device::ProgressFunctionDev::create(clientid, num_ctx, _generics);
@@ -114,7 +125,12 @@ namespace XMI
     /**
      * \brief initialize devices for specific context
      *
-     * Called once per context, after context object is initialized
+     * Called once per context, after context object is initialized.
+     * Devices must handle having init() called multiple times, using
+     * clientid and contextid to ensure initialization happens to the correct
+     * instance and minimizing redundant initialization. When each is called,
+     * the 'this' pointer actually points to the array - each device knows whether
+     * that is truly an array and how many elements it contains.
      *
      * \param[in] sd		SysDep object
      * \param[in] clientid	Client ID (index)
@@ -244,14 +260,10 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
       {
-        XMI::Device::ProgressFunctionMsg *work =
-        	(XMI::Device::ProgressFunctionMsg *)_workAllocator.allocateObject();
-	work->setFunc(work_fn);
-	work->setCookie(cookie);
-	work->setDone((xmi_callback_t){__work_done, (void *)work});
-	work->setContext(_contextid);
-	work->setClient(_clientid);	// need client ID here, too
-        work->postWorkDirect();
+        XMI::Device::Generic::GenericThread *work =
+        	(XMI::Device::Generic::GenericThread *)_workAllocator.allocateObject();
+	new (work) XMI::Device::Generic::GenericThread(work_fn, cookie, (xmi_callback_t){__work_done, (void *)work});
+	_devices->_generics[_contextid].postThread(work);
         return XMI_SUCCESS;
       }
 
@@ -588,7 +600,7 @@ namespace XMI
 
       void * _dispatch[1024];
       ProtocolAllocator _protocol;
-      MemoryAllocator<XMI::Device::ProgressFunctionMdl::sizeof_msg, 16> _workAllocator;
+      MemoryAllocator<sizeof(XMI::Device::Generic::GenericThread), 16> _workAllocator;
       PlatformDeviceList *_devices;
 
   }; // end XMI::Context

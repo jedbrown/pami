@@ -53,7 +53,7 @@ public:
 		progf.request = &pmsgbuf;
 		progf.clientdata = this;
 #warning fix this progress fnction stuff
-		//progf.client = client;
+		//progf.client = clientid;
 		//progf.context = contextid;
 		progf.func = advance_timer_cb;  // xmi_work_function
 		progf.cb_done = (xmi_callback_t) {NULL};

@@ -43,6 +43,24 @@ public:
 	{
 	}
 
+	GenericThread(xmi_work_function func, void *cookie) :
+	GenericDeviceWorkQueueElem(),
+	_func(func),
+	_cookie(cookie),
+	_cb_done((xmi_callback_t){NULL,NULL}),
+	_status(New)
+	{
+	}
+
+	GenericThread(xmi_work_function func, void *cookie, xmi_callback_t cb_done) :
+	GenericDeviceWorkQueueElem(),
+	_func(func),
+	_cookie(cookie),
+	_cb_done(cb_done),
+	_status(New)
+	{
+	}
+
 	inline xmi_result_t executeThread(xmi_context_t context) {
 		return _func(context, _cookie);
 	}

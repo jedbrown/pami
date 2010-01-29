@@ -20,7 +20,7 @@
 #include "sys/xmi.h"
 
 typedef struct {
-	xmi_client_t client;
+	size_t client;
 	size_t context;
 	void *request;
 	xmi_work_function func;
@@ -78,14 +78,19 @@ public:
 protected:
 	friend class ProgressFunctionMdl;
 
-	ProgressFunctionMsg(XMI_ProgressFunc_t *pf) :
-	XMI::Device::Generic::GenericThread()
+	ProgressFunctionMsg(xmi_work_function func, void *cookie, xmi_callback_t cb_done, size_t client, size_t context) :
+	XMI::Device::Generic::GenericThread(func, cookie, cb_done)
 	{
-		_func = pf->func;
-		_cookie = pf->clientdata;
-		_cb_done = pf->cb_done;
+		_contextId = context;
+		_clientId = client;
+		setStatus(XMI::Device::Ready);
+	}
+
+	ProgressFunctionMsg(XMI_ProgressFunc_t *pf) :
+	XMI::Device::Generic::GenericThread(pf->func, pf->clientdata, pf->cb_done)
+	{
 		_contextId = pf->context;
-		_clientId = XMI_GD_ClientId(pf->client);
+		_clientId = pf->client;
 		setStatus(XMI::Device::Ready);
 	}
 
@@ -124,7 +129,6 @@ public:
 
 	inline void reset_impl() {}
 
-	inline bool postWork(void *msg, xmi_work_function func, void *cookie, xmi_callback_t done, size_t ctx);
 	inline bool postWork(XMI_ProgressFunc_t *pf);
 
 private:
@@ -145,7 +149,7 @@ inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 	// problem is that this "message" has not even been constructed yet,
 	// let alone posted to a generic device queue, so we have no other
 	// way to derive the xmi_context_t (unless it is passed-in).
-	xmi_context_t ctx = _g_progfunc_dev.getContext(XMI_GD_ClientId(pf->client), pf->context);
+	xmi_context_t ctx = _g_progfunc_dev.getContext(pf->client, pf->context);
 	int rc = pf->func(ctx, pf->clientdata);
 	if (rc == 0) {
 		if (pf->cb_done.function) {
@@ -160,18 +164,6 @@ inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 	}
 	new (msg) ProgressFunctionMsg(pf);
 	_g_progfunc_dev.__post(msg);
-	return true;
-}
-
-inline bool XMI::Device::ProgressFunctionMdl::postWork(void *msg, xmi_work_function func, void *cookie, xmi_callback_t done, size_t ctx) {
-	ProgressFunctionMsg *work = (ProgressFunctionMsg *)msg;
-	// can we get away without 'new'ing this?
-	work->setFunc(func);
-	work->setCookie(cookie);
-	work->setDone(done);
-	work->setContext(ctx);	// this tells generic device which slice to use,
-				// but does not tell which client.
-	work->postWorkDirect();
 	return true;
 }
 

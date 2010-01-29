@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 		work[x].t0 = 0;
 		work[x].count = count;
 		work[x].u = x + 1;
-		pf.client = client;
+		pf.client = 0;
 		pf.context = 0;
 		pf.request = &msgbuf[x];
 		pf.func = my_func;
