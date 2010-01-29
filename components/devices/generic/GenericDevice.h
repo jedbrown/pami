@@ -87,12 +87,12 @@ namespace Generic {
 	///
 	/// \ingroup gendev_public_api
 	///
-	inline void Device::init(xmi_context_t ctx,
-				size_t client, size_t context, size_t num_contexts) {
-		__context = ctx;
-		__clientId = client;
-		__contextId = context;
-		__nContexts = num_contexts;
+	inline void Device::init(xmi_context_t ctx, size_t client, size_t context, size_t num_contexts) {
+		Device *dev = &this[context];
+		dev->__context = ctx;
+		dev->__clientId = client;
+		dev->__contextId = context;
+		dev->__nContexts = num_contexts;
 	}
 
 	/// \brief Quick check whether full advance is needed.

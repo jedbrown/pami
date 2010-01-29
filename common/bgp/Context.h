@@ -77,6 +77,19 @@ namespace XMI
   public:
     PlatformDeviceList() { }
 
+    /**
+     * \brief initialize this platform device list
+     *
+     * This creates arrays (at least 1 element) for each device used in this platform.
+     * Note, in some cases there may be only one device instance for the entire
+     * process (all clients), but any handling of that (mutexing, etc) is hidden.
+     *
+     * Device arrays are semi-opaque (we don't know how many
+     * elements each has).
+     *
+     * \param[in] clientid	Client ID (index)
+     * \param[in] contextid	Context ID (index)
+     */
     inline xmi_result_t init(size_t clientid, size_t num_ctx) {
 	// these calls create (allocate and construct) as well as init each (?).
 	// We don't know how these relate to conetxts, they are semi-opaque.
@@ -98,8 +111,45 @@ namespace XMI
 	return XMI_SUCCESS;
     }
 
-    inline size_t advance(size_t clientid, size_t contextid) {
+    /**
+     * \brief initialize devices for specific context
+     *
+     * Called once per context, after context object is initialized
+     *
+     * \param[in] sd		SysDep object
+     * \param[in] clientid	Client ID (index)
+     * \param[in] num_ctx	Number of contexts in this client
+     * \param[in] ctx		Context opaque entity
+     * \param[in] contextid	Context ID (index)
+     */
+    inline xmi_result_t dev_init(XMI::SysDep *sd, size_t clientid, size_t num_ctx, xmi_context_t ctx, size_t contextid) {
+	_generics->init(ctx, clientid, contextid, num_ctx);
+	// _shmem->init(sd, clientid, num_ctx, ctx, contextid);
+	_progfunc->init(sd, clientid, num_ctx, ctx, contextid);
+	_atombarr->init(sd, clientid, num_ctx, ctx, contextid);
+	_wqringreduce->init(sd, clientid, num_ctx, ctx, contextid);
+	_wqringbcast->init(sd, clientid, num_ctx, ctx, contextid);
+	_localallreduce->init(sd, clientid, num_ctx, ctx, contextid);
+	_localbcast->init(sd, clientid, num_ctx, ctx, contextid);
+	_localreduce->init(sd, clientid, num_ctx, ctx, contextid);
+	_gibarr->init(sd, clientid, num_ctx, ctx, contextid);
+	_cnallred->init(sd, clientid, num_ctx, ctx, contextid);
+	_cnppallred->init(sd, clientid, num_ctx, ctx, contextid);
+	_cn2pallred->init(sd, clientid, num_ctx, ctx, contextid);
+	_cnbcast->init(sd, clientid, num_ctx, ctx, contextid);
+	return XMI_SUCCESS;
+    }
 
+    /**
+     * \brief advance all devices
+     *
+     * since device arrays are semi-opaque (we don't know how many
+     * elements each has) we call a more-general interface here.
+     *
+     * \param[in] clientid	Client ID (index)
+     * \param[in] contextid	Context ID (index)
+     */
+    inline size_t advance(size_t clientid, size_t contextid) {
 	size_t events = 0;
         events += _generics->advance(clientid, contextid);
         events += _shmem->advance(clientid, contextid);
@@ -171,7 +221,7 @@ namespace XMI
         // ----------------------------------------------------------------
 
         _lock.init(&_sysdep);
-	_devices->_generics[clientid].init(_context, _clientid, _contextid, num);
+	_devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));

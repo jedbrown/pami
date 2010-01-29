@@ -36,7 +36,7 @@ class ProgressFunctionMsg;
 
 class ProgressFunctionDev {
 public:
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
+	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
 	}
 
 	inline size_t advance(size_t client, size_t context) { return 0; }

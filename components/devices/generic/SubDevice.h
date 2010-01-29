@@ -263,9 +263,9 @@ protected:
 	/// \param[in] context	Context ID for which init is being done
 	/// \ingroup gendev_private_api
 	///
-	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
+	inline void ___init(XMI::SysDep *sd, size_t client, size_t contextId) {
 		if (client == 0) {
-			_sd = &sd;
+			_sd = sd;
 		}
 	}
 

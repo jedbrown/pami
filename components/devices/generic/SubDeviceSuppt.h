@@ -84,10 +84,10 @@ protected:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
+	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
 		if (client == 0) {
 			for (int x = 0; x < N_Queues; ++x) {
-				_sendQs[x].___init(sd, devices, client, contextId);
+				_sendQs[x].___init(sd, client, contextId);
 			}
 		}
 	}
@@ -167,9 +167,6 @@ public:
 	///
 	inline int advance(size_t client, size_t context) { return 0; }
 
-protected:
-	friend class XMI::Device::Generic::Device;
-
 	/// \brief Initialization for the subdevice
 	///
 	/// \param[in] sd		SysDep object (not used?)
@@ -177,8 +174,8 @@ protected:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
-		___init(sd, NULL, client, contextId);
+	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t ctxId) {
+		___init(sd, client, ctxId);
 	}
 
 private:
@@ -254,7 +251,7 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	virtual void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) = 0;
+	virtual void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -265,13 +262,13 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	inline void __init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
+	inline void __init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
 		if (client == 0) {
-			_doneThreads.init(&sd);
+			_doneThreads.init(sd);
 			_doneThreads.fetch_and_clear();
 			_init = 1;
 		}
-		___init(sd, devices, client, contextId);
+		___init(sd, client, contextId);
 	}
 
 	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
@@ -398,17 +395,14 @@ public:
 
 	inline int advance(size_t client, size_t context) { return 0; }
 
-protected:
-	friend class XMI::Device::Generic::Device;
-
-	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
+	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
 //			for (int x = 0; x < NUM_THREADS; ++x)
 //				//_threads[x].setPolled(true);
 //			}
 		}
-		_common->init(sd, devices, client, contextId);
+		_common->init(sd, client, nctx, ctx, contextId);
 	}
 
 private:
