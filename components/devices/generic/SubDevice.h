@@ -242,6 +242,10 @@ public:
 	}
 
 protected:
+	inline void ___create(size_t client, size_t num_ctx,
+				XMI::Device::Generic::Device *generics) {
+		_generics[client] = generics;
+	}
 	/// \brief internal initialization routine for GenericSubDevice sub-class
 	///
 	/// \param[in] sd	SysDep for device/context/client... not used?
@@ -250,13 +254,9 @@ protected:
 	/// \param[in] context	Context ID for which init is being done
 	/// \ingroup gendev_private_api
 	///
-	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *generics,
-						size_t client, size_t context) {
+	inline void ___init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
 		if (client == 0) {
 			_sd = &sd;
-		}
-		if (context == 0) {
-			_generics[client] = generics;
 		}
 	}
 

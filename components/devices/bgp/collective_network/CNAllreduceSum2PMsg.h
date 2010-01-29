@@ -98,17 +98,30 @@ namespace BGP {
 class CNAllreduce2PModel;
 class CNAllreduce2PMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduce2PThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2> CNAllreduce2PDevice;
+class CNAllreduce2PDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2> {
+public:
+	CNAllreduce2PDevice(CNDevice *common) :
+	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2>(common)
+	{}
+
+	static inline CNAllreduce2PDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class CNAllreduce2PDevice
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev;
+extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
+static XMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
 
 namespace XMI {
 namespace Device {
 namespace BGP {
+
+inline CNAllreduce2PDevice *CNAllreduce2PDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_cnallreduce2p_dev.__create(client, num_ctx, devices);
+	return &_g_cnallreduce2p_dev;
+}
 
 /**
  * \brief collective Network Allreduce DOUBLE-SUM 2-Pass Send

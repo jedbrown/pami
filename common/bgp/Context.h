@@ -13,6 +13,20 @@
 
 #include "components/devices/generic/GenericDevice.h"
 #include "components/devices/generic/ProgressFunctionMsg.h"
+#include "components/devices/generic/AtomicBarrierMsg.h"
+#include "components/devices/workqueue/WQRingReduceMsg.h"
+#include "components/devices/workqueue/WQRingBcastMsg.h"
+#include "components/devices/workqueue/LocalAllreduceWQMessage.h"
+#include "components/devices/workqueue/LocalReduceWQMessage.h"
+#include "components/devices/workqueue/LocalBcastWQMessage.h"
+
+// BGP-specific devices...
+#include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
+#include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
+//#include "components/devices/bgp/collective_network/CNAllreduceShortMsg.h"
+#include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
+#include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
+#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 
 #warning shmem device must become sub-device of generic device
 #include "components/devices/shmem/ShmemDevice.h"
@@ -69,6 +83,18 @@ namespace XMI
         _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
         _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
 	_progfunc = XMI::Device::ProgressFunctionDev::create(clientid, num_ctx, _generics);
+	_atombarr = XMI::Device::AtomicBarrierDev::create(clientid, num_ctx, _generics);
+	_wqringreduce = XMI::Device::WQRingReduceDev::create(clientid, num_ctx, _generics);
+	_wqringbcast = XMI::Device::WQRingBcastDev::create(clientid, num_ctx, _generics);
+	_localallreduce = XMI::Device::LocalAllreduceWQDevice::create(clientid, num_ctx, _generics);
+	_localbcast = XMI::Device::LocalBcastWQDevice::create(clientid, num_ctx, _generics);
+	_localreduce = XMI::Device::LocalReduceWQDevice::create(clientid, num_ctx, _generics);
+	// BGP-specific devices...
+	_gibarr = XMI::Device::BGP::giDevice::create(clientid, num_ctx, _generics);
+	_cnallred = XMI::Device::BGP::CNAllreduceDevice::create(clientid, num_ctx, _generics);
+	_cnppallred = XMI::Device::BGP::CNAllreducePPDevice::create(clientid, num_ctx, _generics);
+	_cn2pallred = XMI::Device::BGP::CNAllreduce2PDevice::create(clientid, num_ctx, _generics);
+	_cnbcast = XMI::Device::BGP::CNBroadcastDevice::create(clientid, num_ctx, _generics);
 	return XMI_SUCCESS;
     }
 
@@ -78,13 +104,36 @@ namespace XMI
         events += _generics->advance(clientid, contextid);
         events += _shmem->advance(clientid, contextid);
         events += _progfunc->advance(clientid, contextid);
+	events += _atombarr->advance(clientid, contextid);
+	events += _wqringreduce->advance(clientid, contextid);
+	events += _wqringbcast->advance(clientid, contextid);
+	events += _localallreduce->advance(clientid, contextid);
+	events += _localbcast->advance(clientid, contextid);
+	events += _localreduce->advance(clientid, contextid);
+	// BGP-specific devices...
+	events += _gibarr->advance(clientid, contextid);
+	events += _cnallred->advance(clientid, contextid);
+	events += _cnppallred->advance(clientid, contextid);
+	events += _cn2pallred->advance(clientid, contextid);
+	events += _cnbcast->advance(clientid, contextid);
 	return events;
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
     ShmemDevice *_shmem;
     XMI::Device::ProgressFunctionDev *_progfunc;
-    
+    XMI::Device::AtomicBarrierDev *_atombarr;
+    XMI::Device::WQRingReduceDev *_wqringreduce;
+    XMI::Device::WQRingBcastDev *_wqringbcast;;
+    XMI::Device::LocalAllreduceWQDevice *_localallreduce;
+    XMI::Device::LocalBcastWQDevice *_localbcast;
+    XMI::Device::LocalReduceWQDevice *_localreduce;
+    // BGP-specific devices...
+    XMI::Device::BGP::giDevice *_gibarr;
+    XMI::Device::BGP::CNAllreduceDevice *_cnallred;
+    XMI::Device::BGP::CNAllreducePPDevice *_cnppallred;
+    XMI::Device::BGP::CNAllreduce2PDevice *_cn2pallred;
+    XMI::Device::BGP::CNBroadcastDevice *_cnbcast;
   }; // class PlatformDeviceList
 
 

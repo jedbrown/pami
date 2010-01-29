@@ -57,17 +57,30 @@ namespace BGP {
 class CNAllreduceModel;
 class CNAllreduceMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduceThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> CNAllreduceDevice;
+class CNAllreduceDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> {
+public:
+	CNAllreduceDevice(CNDevice *common) :
+	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2>(common)
+	{}
+
+	static inline CNAllreduceDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class CNAllreduceDevice
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev;
+extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
+static XMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev(&_g_cncommon_dev);
 
 namespace XMI {
 namespace Device {
 namespace BGP {
+
+inline CNAllreduceDevice *CNAllreduceDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_cnallreduce_dev.__create(client, num_ctx, devices);
+	return &_g_cnallreduce_dev;
+}
 
 class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	enum roles {

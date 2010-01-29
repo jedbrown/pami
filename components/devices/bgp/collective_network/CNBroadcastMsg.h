@@ -40,17 +40,30 @@ namespace BGP {
 class CNBroadcastModel;
 class CNBroadcastMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNBroadcastThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> CNBroadcastDevice;
+class CNBroadcastDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> {
+public:
+	CNBroadcastDevice(CNDevice *common) :
+	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>(common)
+	{}
+
+	static inline CNBroadcastDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class CNBroadcastDevice
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev;
+extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
+static XMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
 
 namespace XMI {
 namespace Device {
 namespace BGP {
+
+inline CNBroadcastDevice *CNBroadcastDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_cnbroadcast_dev.__create(client, num_ctx, devices);
+	return &_g_cnbroadcast_dev;
+}
 
 /**
  * \brief Collective Network Broadcast Send

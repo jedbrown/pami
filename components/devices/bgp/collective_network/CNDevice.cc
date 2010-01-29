@@ -17,6 +17,8 @@
 #include "components/atomic/bgp/LockBoxBarrier.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
 
+XMI::Device::BGP::CNDevice _g_cncommon_dev;
+
 size_t _g_num_active_nodes;
 size_t _g_min_peers;
 size_t _g_max_peers;

@@ -28,15 +28,24 @@ namespace Device {
 class WQRingReduceMdl;
 class WQRingReduceMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingReduceThr;
-typedef XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr> WQRingReduceDev;
+class WQRingReduceDev : public XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr> {
+public:
+	static inline WQRingReduceDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class WQRingReduceDev
 
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::WQRingReduceDev _g_wqreduce_dev;
+static XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 
 namespace XMI {
 namespace Device {
+
+inline WQRingReduceDev *WQRingReduceDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_wqreduce_dev.__create(client, num_ctx, devices);
+	return &_g_wqreduce_dev;
+}
+
 ///
 /// \brief A local barrier message that takes advantage of the
 /// Load Linked and Store Conditional instructions

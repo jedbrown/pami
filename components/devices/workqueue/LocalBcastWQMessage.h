@@ -28,15 +28,23 @@ namespace Device {
 class LocalBcastWQModel;
 class LocalBcastWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
-typedef XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread> LocalBcastWQDevice;
+class LocalBcastWQDevice : public XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread> {
+public:
+	static inline LocalBcastWQDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class LocalBcastWQDevice
 
 }; // namespace Device
 }; // namespace XMI
 
-extern XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
+static XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 
 namespace XMI {
 namespace Device {
+
+inline LocalBcastWQDevice *LocalBcastWQDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_l_bcastwq_dev.__create(client, num_ctx, devices);
+	return &_g_l_bcastwq_dev;
+}
 
 class LocalBcastWQMessage : public XMI::Device::Generic::GenericMessage {
 public:

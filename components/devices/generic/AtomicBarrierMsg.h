@@ -52,15 +52,24 @@ namespace Device {
 template <class T_Barrier> class AtomicBarrierMsg;
 template <class T_Barrier> class AtomicBarrierMdl;
 typedef XMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
-typedef XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr> AtomicBarrierDev;
+class AtomicBarrierDev : public XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr> {
+public:
+	static inline AtomicBarrierDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class AtomicBarrierDev
 
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
+static XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 
 namespace XMI {
 namespace Device {
+
+inline AtomicBarrierDev *AtomicBarrierDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_lmbarrier_dev.__create(client, num_ctx, devices);
+	return &_g_lmbarrier_dev;
+}
+
 ///
 /// \brief A local barrier message that takes advantage of the
 /// Load Linked and Store Conditional instructions

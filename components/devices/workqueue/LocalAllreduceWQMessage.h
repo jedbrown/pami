@@ -28,15 +28,23 @@ namespace Device {
 class LocalAllreduceWQModel;
 class LocalAllreduceWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalAllreduceWQThread;
-typedef XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread> LocalAllreduceWQDevice;
+class LocalAllreduceWQDevice : public XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread> {
+public:
+	static inline LocalAllreduceWQDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class LocalAllreduceWQDevice
 
 }; // namespace Device
 }; // namespace XMI
 
-extern XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
+static XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 
 namespace XMI {
 namespace Device {
+
+inline LocalAllreduceWQDevice *LocalAllreduceWQDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_l_allreducewq_dev.__create(client, num_ctx, devices);
+	return &_g_l_allreducewq_dev;
+}
 
 class LocalAllreduceWQMessage : public XMI::Device::Generic::GenericMessage {
 private:

@@ -28,15 +28,23 @@ namespace Device {
 class WQRingBcastMdl;
 class WQRingBcastMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingBcastThr;
-typedef XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr> WQRingBcastDev;
+class WQRingBcastDev : public XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr> {
+public:
+	static inline WQRingBcastDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class WQRingBcastDev
 
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::WQRingBcastDev _g_wqbcast_dev;
+static XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 
 namespace XMI {
 namespace Device {
+
+inline WQRingBcastDev *WQRingBcastDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_wqbcast_dev.__create(client, num_ctx, devices);
+	return &_g_wqbcast_dev;
+}
 
 ///
 /// \brief A local bcast message that takes advantage of the

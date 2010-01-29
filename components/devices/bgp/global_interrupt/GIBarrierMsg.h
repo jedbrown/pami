@@ -43,17 +43,25 @@ namespace BGP {
 class giModel;
 class giMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread giThread;
-typedef XMI::Device::Generic::SimpleSubDevice<giThread> giDevice;
+class giDevice : public XMI::Device::Generic::SimpleSubDevice<giThread> {
+public:
+	static inline giDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+}; // class giDevice
 
 }; // namespace BGP
 }; // namespace Device
 }; // namespace XMI
 
-extern XMI::Device::BGP::giDevice _g_gibarrier_dev;
+static XMI::Device::BGP::giDevice _g_gibarrier_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
+
+inline giDevice *giDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_gibarrier_dev.__create(client, num_ctx, devices);
+	return &_g_gibarrier_dev;
+}
 
 //////////////////////////////////////////////////////////////////////
 ///  \brief Global interrupt message class

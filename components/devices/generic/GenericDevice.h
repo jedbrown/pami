@@ -20,7 +20,8 @@
 ///
 
 #include "components/devices/generic/Device.h"
-#include "GenericSubDeviceList.h"
+
+#include "components/devices/generic/SubDeviceSuppt.h"
 
 // All sub-devices are instantiated in generic/Device.cc, but are
 // used here. There must be a call to the init() for each sub-device,
@@ -35,19 +36,20 @@
 // Typically, an association is made during init().
 // [ Not used yet - This may require changes in order to make it work ]
 //
-#include "components/devices/generic/AtomicBarrierMsg.h"
+#if 0
+#include "GenericSubDeviceList.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/WQRingBcastMsg.h"
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
-extern XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 extern XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 extern XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 extern XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 extern XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 extern XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
+#endif
 
 #if defined(__bgp__) and !defined(__bgq__)
 
@@ -139,7 +141,7 @@ namespace Generic {
 		// so we leave it up to the sub-device to decide when
 		// init is needed. It can use client and context IDs to
 		// determine first calls (ID == 0).
-		_g_lmbarrier_dev.init(sd, __generics, __clientId, __contextId);
+#if 0
 		_g_wqreduce_dev.init(sd, __generics, __clientId, __contextId);
 		_g_wqbcast_dev.init(sd, __generics, __clientId, __contextId);
 		_g_l_allreducewq_dev.init(sd, __generics, __clientId, __contextId);
@@ -151,6 +153,7 @@ namespace Generic {
 		// for details. They may use "first_global" and "first_client"
 		// to avoid repeat inits, or may use internal mechanisms.
 		__platform_generic_init(sd);
+#endif
 	}
 
 	/// \brief Quick check whether full advance is needed.
@@ -190,7 +193,7 @@ namespace Generic {
 		int events = 0;
 		// not all devices actually have "unexpected" messages, but we call anyway.
 		// Presumably, empty functions will be optimized away by the compiler.
-		events += _g_lmbarrier_dev.advanceRecv(__clientId, __contextId);
+#if 0
 		events += _g_wqreduce_dev.advanceRecv(__clientId, __contextId);
 		events += _g_wqbcast_dev.advanceRecv(__clientId, __contextId);
 		events += _g_l_allreducewq_dev.advanceRecv(__clientId, __contextId);
@@ -198,6 +201,7 @@ namespace Generic {
 		events += _g_l_bcastwq_dev.advanceRecv(__clientId, __contextId);
 
 		events += __platform_generic_advanceRecv();
+#endif
 		return events;
 	}
 

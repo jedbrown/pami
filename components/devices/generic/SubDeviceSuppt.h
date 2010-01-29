@@ -154,6 +154,19 @@ public:
 		*n = NUM_THREADS;
 	}
 
+	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		___create(client, num_ctx, devices);
+	}
+
+	/// \brief Actual advance routine for unexpected(received) messages
+	///
+	/// These devices do not have any unexpected messages, so routine is nil.
+	///
+	/// \param[in] context	Id of context which is being advanced
+	/// \ingroup gendev_internal_api
+	///
+	inline int advance(size_t client, size_t context) { return 0; }
+
 protected:
 	friend class XMI::Device::Generic::Device;
 
@@ -165,17 +178,8 @@ protected:
 	/// \ingroup gendev_subdev_api
 	///
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
-		___init(sd, devices, client, contextId);
+		___init(sd, NULL, client, contextId);
 	}
-
-	/// \brief Actual advance routine for unexpected(received) messages
-	///
-	/// These devices do not have any unexpected messages, so routine is nil.
-	///
-	/// \param[in] context	Id of context which is being advanced
-	/// \ingroup gendev_internal_api
-	///
-	inline int advanceRecv(size_t client, size_t context) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.
@@ -268,6 +272,10 @@ public:
 			_init = 1;
 		}
 		___init(sd, devices, client, contextId);
+	}
+
+	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		___create(client, num_ctx, devices);
 	}
 
 	/// \brief Reset for threads prior to being re-used.
@@ -384,6 +392,12 @@ public:
 		_common->postToGeneric(msg, t, l, n);
 	}
 
+	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		_common->__create(client, num_ctx, devices);
+	}
+
+	inline int advance(size_t client, size_t context) { return 0; }
+
 protected:
 	friend class XMI::Device::Generic::Device;
 
@@ -396,8 +410,6 @@ protected:
 		}
 		_common->init(sd, devices, client, contextId);
 	}
-
-	inline int advanceRecv(size_t client, size_t context) { return 0; }
 
 private:
 	// For some reason, we can't declare friends like this.
