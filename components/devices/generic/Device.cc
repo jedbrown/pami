@@ -21,22 +21,11 @@
 #include "util/common.h"
 #include "components/devices/generic/GenericDevice.h"
 
-#if 0
-#include "GenericSubDeviceList.cc"
-
-// All sub-devices must be instantiated here, but are otherwise unused in
-// this particular source file (see GenericDevice.h).
-//
-XMI::Device::WQRingReduceDev _g_wqreduce_dev;
-XMI::Device::WQRingBcastDev _g_wqbcast_dev;
-XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
-XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
-XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
-#endif
-
 namespace XMI {
 namespace Device {
 namespace Generic {
+
+#warning No longer needed?
 
 }; /* namespace Generic */
 }; /* namespace Device */

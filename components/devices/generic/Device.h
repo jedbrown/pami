@@ -77,18 +77,6 @@ namespace Generic {
 //////////////////////////////////////////////////////////////////////
 class Device {
 
-	/// \brief Initialize platform-specific sub-devices
-	/// \param[in] first_global	Flag indicating if this is the first call, globally
-	/// \param[in] first_client	Flag indicating if this is the first call on client
-	/// \param[in] sd		SysDep object
-	/// \ingroup gendev_private_api
-	inline void __platform_generic_init(XMI::SysDep &sd);
-
-	/// \brief advance unexpected(received) messages for platform devices
-	/// \return	Number of "events"
-	/// \ingroup gendev_private_api
-	inline int __platform_generic_advanceRecv();
-
 public:
 	/// \brief  A generic device (wrapper for sub-devices)
 	///
@@ -104,7 +92,7 @@ public:
 	/// \param[in] generics		Array of generic device slices
 	/// \ingroup gendev_public_api
 	///
-	inline void init(XMI::SysDep &sd, xmi_context_t ctx, size_t client, size_t context, size_t num_contexts, Device *generics);
+	inline void init(xmi_context_t ctx, size_t client, size_t context, size_t num_contexts);
 
 	/// \brief     Advance routine for the generic device.
 	///
@@ -127,63 +115,19 @@ public:
 	/// Not normally used. ProgressFuncionDev uses this to post a thread
 	/// without an associated message.
 	///
-	/// \param[in] thr	Thread object to post
+	/// \param[in] thr	Thread object to post for advance work
 	/// \ingroup gendev_internal_api
 	///
 	inline void postThread(GenericThread *thr) {
 		__Threads.pushTail(thr);
 	}
+
 	/// \brief Post a message to the generic-device queuing system
 	///
-	/// Only threads that are !Complete are enqueued. The message is
-	/// not checked for Done, assuming that was previously checked
-	/// if needed. In some cases, a message is intentionally posted
-	/// even though it is done. This is to avoid recursion within
-	/// a callback that is posting the next message from the sub-device.
+	/// \param[in] msg	Message to be queued/completed.
 	///
-	/// This method does not reference 'this' (the actual object)
-	/// because 'msg' tells us which actual generic device object(s)
-	/// should be used. It is important that this method never depend
-	/// on any particular value for 'this'.
-	///
-	/// \param[in] msg	Message to be queued/advanced.
-	/// \param[in] thr	Array of thread objects to post
-	/// \param[in] len	sizeof each thread
-	/// \param[in] num	number of threads to post
-	///
-	/// \ingroup gendev_internal_api
-	///
-	inline void post(GenericMessage *msg, GenericAdvanceThread *thr,
-							size_t len, int num) {
-		// early advance was done by the "real" device post()
-
-		// get access to client-global contexts array,
-		// in order to stage work on separate contexts.
-		// the context specified in the msg is used only for
-		// completion, even the first thread of work is posted
-		// to a different context.
-
-		size_t t = msg->getContextId();
-		size_t n = __nContexts;
-		Generic::Device *g0 = __generics;
-		g0[t].__GenericQueue.pushTail(msg);
-
-		// round-robin threads to available "channels"...
-		// does this need to be made thread-safe?
-		// we expect to make enqueue routines atomic, lockless.
-		// note: might be called from a completion callback.
-
-		// t = msg->getClient()->__lastThreadUsed;
-		for (int x = 0; x < num; ++x) {
-			if (thr->getStatus() != Complete) {
-				if (++t >= n) {
-					t = 0;
-				}
-				g0[t].__Threads.pushTail(thr);
-			}
-			thr = (GenericAdvanceThread *)((char *)thr + len);
-		}
-		// msg->getClient()->__lastThreadUsed = t;
+	inline void postMsg(GenericMessage *msg) {
+		__GenericQueue.pushTail(msg);
 	}
 
 	/// \brief accessor for the context-id associated with generic device slice
@@ -202,15 +146,6 @@ public:
 	inline xmi_context_t getContext() { return __context; }
 
 private:
-	/// \brief Advance a reception channel
-	///
-	/// Check a channel for received messages (or within the context of a channel)
-	///
-	/// \return	Number of work units performed (typically, 0 or 1)
-	/// \ingroup gendev_private_api
-	///
-	inline int __advanceRecv();
-
 	/// \brief Storage for the queue for message completion
 	///
 	/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
@@ -225,13 +160,6 @@ private:
 	size_t __clientId;		///< client ID for context
 	size_t __contextId;		///< context ID
 	size_t __nContexts;		///< number of contexts in client
-
-	/// \brief the array of generic devices assigned to client (__clientId).
-	///
-	/// The array has __nContexts elements. This array is per-client.
-	/// This particular context's generic device ('this') is __generics[__contextId].
-	Generic::Device *__generics;
-
 }; /* class Device */
 
 }; /* namespace Generic */

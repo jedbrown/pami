@@ -229,7 +229,16 @@ public:
 	///
 	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
 		size_t c = msg->getClientId();
-		_generics[c]->post(msg, t, l, n);
+		size_t x = msg->getContextId();
+		size_t numctx = _generics[c]->nContexts();
+		_generics[c][x].postMsg(msg);
+#warning This should be pushed up to devices (model, message, ...)
+		while (n > 0) {
+			if (++x >= numctx) x = 0;
+			_generics[c][x].postThread(t);
+			t = (GenericAdvanceThread *)((char *)t + l);
+			--n;
+		}
 	}
 
 	/// \brief accessor for specific generic device for context-id
