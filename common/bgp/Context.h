@@ -12,6 +12,7 @@
 #include "common/ContextInterface.h"
 
 #include "components/devices/generic/GenericDevice.h"
+#include "components/devices/generic/ProgressFunctionMsg.h"
 
 #warning shmem device must become sub-device of generic device
 #include "components/devices/shmem/ShmemDevice.h"
@@ -63,24 +64,26 @@ namespace XMI
     PlatformDeviceList() { }
 
     inline xmi_result_t init(size_t clientid, size_t num_ctx) {
-	// these calls create (allocate and construct) as well as init each (?)
+	// these calls create (allocate and construct) as well as init each (?).
+	// We don't know how these relate to conetxts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
         _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
+	_progfunc = XMI::Device::ProgressFunctionDev::create(clientid, num_ctx, _generics);
+	return XMI_SUCCESS;
     }
 
     inline size_t advance(size_t clientid, size_t contextid) {
 
 	size_t events = 0;
-        events += _generics[contextid].advance();
-	// or...
-        // events += _generics->advance(clientid, contextid);
-	// etc...
-        events += _shmem[contextid].advance();
+        events += _generics->advance(clientid, contextid);
+        events += _shmem->advance(clientid, contextid);
+        events += _progfunc->advance(clientid, contextid);
 	return events;
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
     ShmemDevice *_shmem;
+    XMI::Device::ProgressFunctionDev *_progfunc;
     
   }; // class PlatformDeviceList
 
@@ -102,9 +105,9 @@ namespace XMI
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-          _devices(devices),
           _lock (),
-	  _workAllocator ()
+	  _workAllocator (),
+          _devices(devices)
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -394,8 +397,9 @@ namespace XMI
                 new (_dispatch[id])
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
+#warning Eager/ShmemModel needs to change to accept array of devices (two places here)
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-                (id, fn, cookie, _devices->_shmem, result);
+                (id, fn, cookie, _devices->_shmem[_contextid], result);
               }
             else
               {
@@ -404,7 +408,7 @@ namespace XMI
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
-                (id, fn, cookie, _devices->_shmem, result);
+                (id, fn, cookie, _devices->_shmem[_contextid], result);
               }
 
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));

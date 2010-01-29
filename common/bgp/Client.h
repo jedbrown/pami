@@ -114,17 +114,11 @@ namespace XMI
             return XMI_ERROR;
           }
 
-        int rc = posix_memalign((void **) & _generics, 16, sizeof(*_generics) * n);
-        XMI_assertf(rc == 0, "posix_memalign failed for _generics[%d], errno=%d\n", n, errno);
-
-        rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
+        int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
         XMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
 
-        for (x = 0; x < n; ++x)
-          {
-            new (&_generics[x]) XMI::Device::Generic::Device();
-          }
+	_platdevs.init(_clientid, n);
 
         // This memset has been removed due to the amount of cycles it takes
         // on simulators.  Lower level initializers should be setting the
@@ -140,7 +134,7 @@ namespace XMI
             _mm.memalign((void **)&base, 16, bytes);
             XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
             new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
-                                             _generics, base, bytes);
+                                             &_platdevs, base, bytes);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -249,7 +243,7 @@ namespace XMI
       size_t       _references;
       size_t       _ncontexts;
       XMI::Context *_contexts;
-      XMI::Device::Generic::Device *_generics;
+      XMI::PlatformDeviceList _platdevs;
 
       char         _name[256];
 

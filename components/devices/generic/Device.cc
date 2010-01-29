@@ -26,7 +26,6 @@
 // All sub-devices must be instantiated here, but are otherwise unused in
 // this particular source file (see GenericDevice.h).
 //
-XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 XMI::Device::WQRingBcastDev _g_wqbcast_dev;

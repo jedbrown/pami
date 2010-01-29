@@ -37,16 +37,15 @@ class ProgressFunctionMsg;
 class ProgressFunctionDev {
 public:
 	inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t client, size_t contextId) {
-		if (contextId == 0) {
-			_generics[client] = devices;
-		}
 	}
 
-	inline int advanceRecv(size_t client, size_t context) { return 0; }
+	inline size_t advance(size_t client, size_t context) { return 0; }
 
 	inline xmi_context_t getContext(size_t client, size_t context) {
 		return _generics[client][context].getContext();
 	}
+
+	static inline ProgressFunctionDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
 
 protected:
 	friend class ProgressFunctionMdl;
@@ -59,10 +58,16 @@ private:
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
+static XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
 namespace XMI {
 namespace Device {
+
+inline ProgressFunctionDev *ProgressFunctionDev::create(size_t client,
+			size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_progfunc_dev._generics[client] = devices;
+	return &_g_progfunc_dev;
+}
 
 ///
 /// \brief A local function-call message

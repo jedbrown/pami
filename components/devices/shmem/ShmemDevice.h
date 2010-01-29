@@ -358,6 +358,17 @@ namespace XMI
 
         inline int init_impl (XMI::SysDep * sysdep, xmi_context_t context, size_t offset);
 
+	static ShmemDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
+		size_t x;
+		ShmemDevice *devs;
+		int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+		XMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%d], errno=%d\n", num_ctx, errno);
+		for (x = 0; x < num_ctx; ++x) {
+			new (&devs[x]) ShmemDevice();
+		}
+		return devs;
+	}
+	inline size_t advance(size_t clientid, size_t contextid);
         inline int advance_impl ();
 
         inline void pushSendQueueTail (size_t peer, QueueElem * element);
@@ -607,6 +618,13 @@ namespace XMI
       TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %p) << XMI_EAGAIN\n", __global.mapping.task(), fnum, msg));
       return XMI_EAGAIN;
     };
+
+#warning This poly-morphic advance needs to be cleaned up
+template <class T_Fifo>
+inline size_t ShmemDevice<T_Fifo>::advance(size_t clientid, size_t contextid) {
+	ShmemDevice<T_Fifo> *dev = &this[contextid];
+	return dev->advance_impl();
+}
 
     template <class T_Fifo>
     int ShmemDevice<T_Fifo>::advance_impl ()

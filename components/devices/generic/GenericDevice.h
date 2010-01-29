@@ -35,7 +35,6 @@
 // Typically, an association is made during init().
 // [ Not used yet - This may require changes in order to make it work ]
 //
-#include "components/devices/generic/ProgressFunctionMsg.h"
 #include "components/devices/generic/AtomicBarrierMsg.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/WQRingBcastMsg.h"
@@ -43,7 +42,6 @@
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
-extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 extern XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 extern XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 extern XMI::Device::WQRingBcastDev _g_wqbcast_dev;
@@ -141,7 +139,6 @@ namespace Generic {
 		// so we leave it up to the sub-device to decide when
 		// init is needed. It can use client and context IDs to
 		// determine first calls (ID == 0).
-		_g_progfunc_dev.init(sd, __generics, __clientId, __contextId);
 		_g_lmbarrier_dev.init(sd, __generics, __clientId, __contextId);
 		_g_wqreduce_dev.init(sd, __generics, __clientId, __contextId);
 		_g_wqbcast_dev.init(sd, __generics, __clientId, __contextId);
@@ -193,7 +190,6 @@ namespace Generic {
 		int events = 0;
 		// not all devices actually have "unexpected" messages, but we call anyway.
 		// Presumably, empty functions will be optimized away by the compiler.
-		// Has no concept of recv at all: _g_progfunc_dev
 		events += _g_lmbarrier_dev.advanceRecv(__clientId, __contextId);
 		events += _g_wqreduce_dev.advanceRecv(__clientId, __contextId);
 		events += _g_wqbcast_dev.advanceRecv(__clientId, __contextId);
@@ -215,6 +211,13 @@ namespace Generic {
 	///
 	/// \ingroup gendev_public_api
 	///
+	inline int Device::advance(size_t clientid, size_t contextid) {
+		// This device has one instance per context per client.
+		// assert(clientid == __clientId);
+		Device *gd = &this[contextid];
+		return gd->advance();
+	}
+
 	inline int Device::advance() {
 		int events = 0;
 		//+ Need to ensure only one of these runs per core
@@ -265,6 +268,18 @@ namespace Generic {
 			}
 		}
 		return events;
+	}
+
+	// This is called before contexts are created... Device init must wait.
+	inline Device *Device::create(size_t clientid, size_t num_ctx) {
+		size_t x;
+		Device *gds;
+		int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
+		XMI_assertf(rc == 0, "posix_memalign failed for generics[%d], errno=%d\n", num_ctx, errno);
+		for (x = 0; x < num_ctx; ++x) {
+			new (&gds[x]) XMI::Device::Generic::Device();
+		}
+		return gds;
 	}
 
 }; /* namespace Generic */

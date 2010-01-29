@@ -94,6 +94,8 @@ public:
 	///
 	inline Device();
 
+	static Device *create(size_t clientid, size_t num_ctx);
+
 	/// \brief Initialize a generic device slice
 	/// \param[in] sd	SysDep object
 	/// \param[in] ctx	Context object associated with slice
@@ -117,6 +119,7 @@ public:
 	/// \return	number of events processed
 	/// \ingroup gendev_public_api
 	///
+	inline int advance(size_t clientid, size_t contextid);
 	inline int advance();
 
 	/// \brief     Post a thread object on a generic device slice's queue
