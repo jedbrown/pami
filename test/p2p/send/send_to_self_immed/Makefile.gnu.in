@@ -2,7 +2,7 @@
 #                                                                  #
 #  --------------------------------------------------------------- #
 #                                                                  #
-# (C) Copyright IBM Corp.  2009, 2010                              #
+# (C) Copyright IBM Corp.  2009, 2009                              #
 # IBM CPL License                                                  #
 #                                                                  #
 #  --------------------------------------------------------------- #
@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = send_to_self_perf send_to_self_immed 
+SUBDIRS         = 
 NOTBUILT        = 
-APPS            = send_to_self.${EXTENSION} long-header.${EXTENSION} default-send-1.${EXTENSION} 
+APPS            = send_to_self_immed.${EXTENSION} 
 
 include @abs_top_builddir@/Build.rules
 
@@ -44,7 +44,7 @@ runmesa:
 	BG_SHAREDMEMSIZE=1 @BGFLOOR@/scripts/runfctest.sh \
 	--ttype cnk \
 	--parmstest ${VPATH}/test.parms \
-	--program send_to_self.cnk \
+	--program send_to_self_immed.cnk \
 	--svchost ${VPATH}/pers.svchost \
 	--numcores 1 \
 	$(parms)
@@ -53,7 +53,7 @@ runmambo:
 	BG_SHAREDMEMSIZE=1 @BGFLOOR@/scripts/runfctest.sh \
 	--ttype cnk \
 	--parmstest ${VPATH}/test.parms \
-	--program send_to_self.cnk \
+	--program send_to_self_immed.cnk \
 	--svchost ${VPATH}/pers.svchost \
 	--script runMambo \
 	$(parms)
@@ -62,7 +62,7 @@ runfpga:
 	BG_SHAREDMEMSIZE=1 @BGFLOOR@/scripts/runfctest.sh \
 	--ttype cnk \
 	--parmstest ${VPATH}/test.parms \
-	--program send_to_self.cnk \
+	--program send_to_self_immed.cnk \
 	--svchost ${VPATH}/pers.svchost \
 	--script runFpga \
 	--fctestdir /bgq/data/usr/sameerk/fpga/ \
