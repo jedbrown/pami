@@ -18,7 +18,8 @@
 #define CR_NUM_DIMS     5
 #define CR_DIM_NAMES    "ABCDE"
 
-#include "kernel/collective.h"
+#include "kernel_impl.h"
+#include "bqc/classroute.h"
 
 #define GET_CR_ROUTE_VC(crp)	((crp)->input & BGQ_COLL_CLASS_INPUT_VC_MASK)
 #define SET_CR_ROUTE_VC(crp,vc)	((crp)->input = ((crp)->input & ~BGQ_COLL_CLASS_INPUT_VC_MASK) | vc)
