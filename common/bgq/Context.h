@@ -48,6 +48,7 @@
 #include "components/devices/bgq/mu/MUCollDevice.h"
 #include "components/devices/bgq/mu/MUMulticastModel.h"
 #include "components/devices/bgq/mu/MUMultisyncModel.h"
+#include "components/devices/bgq/mu/MUMulticombineModel.h"
 #endif
 
 namespace XMI
@@ -126,6 +127,7 @@ namespace XMI
         xmi_result_t status;
         /// \todo allocator
         _mu_msync_model = new XMI::Device::MU::MUMultisyncModel(status, _mu, _client, _contextid);
+        _mu_mcombine_model = new XMI::Device::MU::MUMulticombineModel(status, _mu, _client, _contextid);
 #endif
         _generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
         _shmem.init (&_sysdep, (xmi_context_t)this, id);
@@ -492,7 +494,17 @@ namespace XMI
 
       inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
       {
-        return XMI_UNIMPL;
+#ifdef MU_COLL_DEVICE
+          typedef uint8_t storage_t[XMI::Device::MU::MUMulticombineModel::sizeof_msg];
+          TRACE_ERR((stderr, ">> multicombine_impl multicombine %p\n", mcombineinfo));
+          storage_t * msgbuf = (storage_t*)mcombineinfo->request;
+          if(mcombineinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+          {
+            msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticombineModel::sizeof_msg);
+            mcombineinfo->request = msgbuf;
+          }
+          return _mu_mcombine_model->postMulticombine(*msgbuf, mcombineinfo);
+#endif
       };
 
 
@@ -512,6 +524,7 @@ namespace XMI
 #ifdef MU_DEVICE
       MUDevice _mu;
       XMI::Device::MU::MUMultisyncModel *_mu_msync_model;
+      XMI::Device::MU::MUMulticombineModel *_mu_mcombine_model;
 #endif
       ShmemDevice          _shmem;
 

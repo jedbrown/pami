@@ -17,11 +17,20 @@
 #include <sys/uio.h>
 
 #include "sys/xmi.h"
+#include "util/common.h"
 
 namespace XMI
 {
     namespace Device
+  {
+    class MulticombineUnspecifiedDevice
     {
+    private:
+      MulticombineUnspecifiedDevice() {
+      };
+      ~MulticombineUnspecifiedDevice(){
+      };
+    };
         namespace Interface
         {
             ///
@@ -30,7 +39,7 @@ namespace XMI
             ///
             /// \see Multicombine::Model
             ///
-            template <class T_Model, unsigned T_StateBytes>
+      template <class T_Model,unsigned T_StateBytes, class T_Device=XMI::Device::MulticombineUnspecifiedDevice>
             class MulticombineModel
             {
             public:
@@ -40,12 +49,17 @@ namespace XMI
 			status = XMI_SUCCESS;
 		};
                 ~MulticombineModel () {};
+        MulticombineModel (xmi_result_t &status, T_Device &device)
+          {
+            COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+            status = XMI_SUCCESS;
+          };
                 inline xmi_result_t postMulticombine (uint8_t (&state)[T_StateBytes],
 						xmi_multicombine_t *mcomb);
             }; // class MulticombineModel
 
-            template <class T_Model, unsigned T_StateBytes>
-            xmi_result_t MulticombineModel<T_Model, T_StateBytes>::postMulticombine(
+      template <class T_Model, unsigned T_StateBytes, class T_Device>
+            xmi_result_t MulticombineModel<T_Model, T_StateBytes, T_Device>::postMulticombine(
 							uint8_t (&state)[T_StateBytes],
 							xmi_multicombine_t *mcomb)
             {
