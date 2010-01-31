@@ -17,7 +17,7 @@ APPS            += multicast_global.${EXTENSION}
 APPS            += multicast_local.${EXTENSION} multicast_local_as.${EXTENSION} 
 APPS            += multicast_pwq.${EXTENSION} multicast_pwq_as.${EXTENSION}
 APPS            += #multicombine.${EXTENSION}
-APPS            += #multisync.${EXTENSION} 
+APPS            += multisync_global.${EXTENSION} 
 
 include @abs_top_builddir@/Build.rules
 

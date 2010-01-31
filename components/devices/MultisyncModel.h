@@ -15,11 +15,20 @@
 #define __components_devices_MultisyncModel_h__
 
 #include "sys/xmi.h"
+#include "util/common.h"
 
 namespace XMI
 {
   namespace Device
   {
+    class MultisyncUnspecifiedDevice
+    {
+    private:
+      MultisyncUnspecifiedDevice() {
+      };
+      ~MultisyncUnspecifiedDevice(){
+      };
+    };
     namespace Interface
     {
       ///
@@ -28,12 +37,17 @@ namespace XMI
       ///
       /// \see Multisync::Model
       ///
-      template <class T_Model,unsigned T_StateBytes>
+      template <class T_Model,unsigned T_StateBytes, class T_Device=XMI::Device::MultisyncUnspecifiedDevice>
       class MultisyncModel
       {
       public:
         /// \param[in] device                Multisync device reference
         MultisyncModel (xmi_result_t &status)
+          {
+            COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+            status = XMI_SUCCESS;
+          };
+        MultisyncModel (xmi_result_t &status, T_Device &device)
           {
             COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
             status = XMI_SUCCESS;
@@ -46,8 +60,8 @@ namespace XMI
                                           xmi_multisync_t *msync);
       }; // class MultisyncModel
 
-      template <class T_Model, unsigned T_StateBytes>
-      xmi_result_t MultisyncModel<T_Model,T_StateBytes>::postMultisync(uint8_t (&state)[T_StateBytes],
+      template <class T_Model, unsigned T_StateBytes, class T_Device>
+      xmi_result_t MultisyncModel<T_Model,T_StateBytes,T_Device>::postMultisync(uint8_t (&state)[T_StateBytes],
                                                                         xmi_multisync_t *msync)
       {
         return static_cast<T_Model*>(this)->postMultisync_impl(state, msync);

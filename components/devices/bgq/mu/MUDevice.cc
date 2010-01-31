@@ -133,30 +133,34 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
                                                        void                      * arg,
                                                        uint16_t                  & id)
 {
-  TRACE((stderr, ">> MUDevice::registerPacketHandler(%zd, %p, %p, %d), _dispatch = %p\n", dispatch, function, arg, id, _dispatch));
+  TRACE((stderr, ">> MUDevice::registerPacketHandler(%zd, %p, %p), _dispatch = %p\n", dispatch, function, arg, _dispatch));
 
   // There are DISPATCH_SET_COUNT sets of dispatch functions.
   // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
-  if (dispatch >= DISPATCH_SET_COUNT) return false;
+  if (dispatch >= DISPATCH_SET_COUNT) return false;  /// \todo if it's a dispatch_set should be < DISPATCH_SET_SIZE
 
-  unsigned i;
+  /// \todo is 'dispatch' a dispatch id or dispatch_set?  Assuming a dispatch id (based on todo above) so calc the dispatch set
+  unsigned dispatch_set = dispatch/DISPATCH_SET_SIZE;
 
-  for (i = 0; i < DISPATCH_SET_SIZE; i++)
+  unsigned i = dispatch - dispatch_set*DISPATCH_SET_SIZE;
+
+  for (; i < DISPATCH_SET_COUNT; i++) /// \todo keep looking until the end of the table, not just the set?
     {
-      id = dispatch * DISPATCH_SET_SIZE + i;
+      id = dispatch_set * DISPATCH_SET_SIZE + i;
+      TRACE((stderr, "<< MUDevice::registerPacketHandler id = %d/%X\n", id, id));
 
       if (_dispatch[id].f == noop)
         {
           _dispatch[id].f = function;
           _dispatch[id].p = arg;
 
-          TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d), i = %d\n", dispatch, function, arg, id, i));
+          TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d/%X), i = %d\n", dispatch, function, arg, id, id, i));
           return true;
         }
     }
 
   // release the lock
-  TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d), result = false\n", dispatch, function, arg, id));
+  TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d/%X), result = false\n", dispatch, function, arg, id, id));
 
   return false;
 };

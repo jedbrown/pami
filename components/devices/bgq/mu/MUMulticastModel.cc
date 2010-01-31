@@ -120,7 +120,8 @@ xmi_result_t XMI::Device::MU::MUMulticastModel::registerMcastRecvFunction_impl(i
                                  hdr->dev.dispatch_id);
 
   TRACE((stderr, "<%p>:MUMulticastModel::registerMcastRecvFunction_impl dispatch_id = %d, success = %d\n", this, hdr->dev.dispatch_id, (unsigned)success));
-  return XMI_SUCCESS;
+  //XMI_assert(success);
+  return success?XMI_SUCCESS:XMI_ERROR;
 };
 
 void XMI::Device::MU::dumpDescriptor(const char* string, MUHWI_Descriptor_t *desc)

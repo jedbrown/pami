@@ -47,6 +47,7 @@
 #ifdef MU_COLL_DEVICE
 #include "components/devices/bgq/mu/MUCollDevice.h"
 #include "components/devices/bgq/mu/MUMulticastModel.h"
+#include "components/devices/bgq/mu/MUMultisyncModel.h"
 #endif
 
 namespace XMI
@@ -121,8 +122,12 @@ namespace XMI
 
 #ifdef MU_DEVICE
         _mu.init (&_sysdep, (xmi_context_t)this, id);
-	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
-	_generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
+#ifdef MU_COLL_DEVICE
+        xmi_result_t status;
+        /// \todo allocator
+        _mu_msync_model = new XMI::Device::MU::MUMultisyncModel(status, _mu, _client, _contextid);
+#endif
+        _generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
         _shmem.init (&_sysdep, (xmi_context_t)this, id);
 
         _get = (void *) _request.allocateObject ();
@@ -448,16 +453,18 @@ namespace XMI
 
       inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
       {
-        typedef uint8_t mcast_storage_t[XMI::Device::MU::MUMulticastModel::sizeof_msg];
-        TRACE_ERR((stderr, ">> multicast_impl multicast %zd, %p\n", mcastinfo->dispatch, mcastinfo));
-        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
-        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-        {
-          msgbuf = (mcast_storage_t*)malloc(XMI::Device::MU::MUMulticastModel::sizeof_msg);
-          mcastinfo->request = msgbuf;
-        }
-        XMI::Device::MU::MUMulticastModel * model = (XMI::Device::MU::MUMulticastModel *) _dispatch[mcastinfo->dispatch];
-        return model->postMulticast(*msgbuf, mcastinfo);
+#ifdef MU_COLL_DEVICE
+          typedef uint8_t storage_t[XMI::Device::MU::MUMulticastModel::sizeof_msg];
+          TRACE_ERR((stderr, ">> multicast_impl multicast %zd, %p\n", mcastinfo->dispatch, mcastinfo));
+          storage_t * msgbuf = (storage_t*)mcastinfo->request;
+          if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+          {
+            msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticastModel::sizeof_msg);
+            mcastinfo->request = msgbuf;
+          }
+          XMI::Device::MU::MUMulticastModel * model = (XMI::Device::MU::MUMulticastModel *) _dispatch[mcastinfo->dispatch];
+          return model->postMulticast(*msgbuf, mcastinfo);
+#endif
       };
 
 
@@ -469,7 +476,17 @@ namespace XMI
 
       inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
       {
-        return XMI_UNIMPL;
+#ifdef MU_COLL_DEVICE
+          typedef uint8_t storage_t[XMI::Device::MU::MUMultisyncModel::sizeof_msg];
+          TRACE_ERR((stderr, ">> multisync_impl multisync %p\n", msyncinfo));
+          storage_t * msgbuf = (storage_t*)msyncinfo->request;
+          if(msyncinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
+          {
+            msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMultisyncModel::sizeof_msg);
+            msyncinfo->request = msgbuf;
+          }
+          return _mu_msync_model->postMultisync(*msgbuf, msyncinfo);
+#endif
       };
 
 
@@ -494,7 +511,7 @@ namespace XMI
       XMI::Device::Generic::Device &_generic;
 #ifdef MU_DEVICE
       MUDevice _mu;
-      XMI::Device::MU::MUMulticastModel *_mu_model;
+      XMI::Device::MU::MUMultisyncModel *_mu_msync_model;
 #endif
       ShmemDevice          _shmem;
 
