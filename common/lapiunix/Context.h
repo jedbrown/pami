@@ -160,7 +160,7 @@ namespace XMI
 	}
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
-				XMI::Device::Generic::Device *generics,
+				PlatformDeviceList *devices,
 				void * addr, size_t bytes) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
