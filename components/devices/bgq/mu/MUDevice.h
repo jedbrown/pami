@@ -31,7 +31,7 @@
 #ifdef TRACE
 #undef TRACE
 #endif
-#define TRACE(x) fprintf x
+#define TRACE(x) //fprintf x
 
 #define ENABLE_MAMBO_WORKAROUNDS
 

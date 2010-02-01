@@ -21,7 +21,7 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 #ifdef TRACE
 #undef TRACE
 #endif
-#define TRACE(x) fprintf x
+#define TRACE(x) //fprintf x
 
 XMI::Device::MU::MUDevice::MUDevice () :
     //BaseDevice (),
@@ -137,17 +137,13 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
 
   // There are DISPATCH_SET_COUNT sets of dispatch functions.
   // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
-  if (dispatch >= DISPATCH_SET_COUNT) return false;  /// \todo if it's a dispatch_set should be < DISPATCH_SET_SIZE
+  if (dispatch >= DISPATCH_SET_COUNT) return false;
 
-  /// \todo is 'dispatch' a dispatch id or dispatch_set?  Assuming a dispatch id (based on todo above) so calc the dispatch set
-  unsigned dispatch_set = dispatch/DISPATCH_SET_SIZE;
+  unsigned i;
 
-  unsigned i = dispatch - dispatch_set*DISPATCH_SET_SIZE;
-
-  for (; i < DISPATCH_SET_COUNT; i++) /// \todo keep looking until the end of the table, not just the set?
+  for (i = 0; i < DISPATCH_SET_SIZE; i++)
     {
-      id = dispatch_set * DISPATCH_SET_SIZE + i;
-      TRACE((stderr, "<< MUDevice::registerPacketHandler id = %d/%X\n", id, id));
+      id = dispatch * DISPATCH_SET_SIZE + i;
 
       if (_dispatch[id].f == noop)
         {

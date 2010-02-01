@@ -4,7 +4,7 @@
 ///
 
 #include <stdio.h>
-#include <string.h>
+
 #include "sys/xmi.h"
 
 static void recv_done (xmi_context_t   context,
@@ -15,7 +15,7 @@ static void recv_done (xmi_context_t   context,
   fprintf (stderr, "Called recv_done function.  active: %zu -> %zu\n", *active, *active-1);
   (*active)--;
 }
-char rbuffer[1026];
+
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
     void               * cookie,       /**< IN: dispatch cookie */
@@ -27,12 +27,12 @@ static void test_dispatch (
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, pipe_addr = %p\n", cookie, *active, header_addr, pipe_addr);
-  memset(rbuffer,0x01,1026);
+
   recv->local_fn = recv_done;
   recv->cookie   = cookie;
   recv->kind = XMI_AM_KIND_SIMPLE;
-  recv->data.simple.addr  = &rbuffer[1];
-  recv->data.simple.bytes = 1024;
+  recv->data.simple.addr  = NULL;
+  recv->data.simple.bytes = 0;
   fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
 
   return;
@@ -122,21 +122,19 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
     return 1;
   }
-  char buffer[1024];
-  memset(buffer,0xFE,1024);
 
   xmi_send_t parameters;
   parameters.send.dispatch        = dispatch;
   parameters.send.header.iov_base = (void *)&dispatch; // send *something*
   parameters.send.header.iov_len  = sizeof(size_t);
-  parameters.send.data.iov_base   = (void *)buffer; // send *something*
-  parameters.send.data.iov_len    = 1024;
+  parameters.send.data.iov_base   = (void *)&dispatch; // send *something*
+  parameters.send.data.iov_len    = sizeof(size_t);
   parameters.events.cookie    = (void *) &send_active;
   parameters.events.local_fn  = send_done_local;
   //parameters.events.remote_fn = send_done_remote;
   parameters.events.remote_fn = NULL;
 #if 1
-  //  for (int iter=0; iter < 100; iter++)
+  for (int iter=0; iter < 100; iter++)
   {
     fprintf (stderr, "before send ...\n");
     parameters.send.dest = XMI_Client_endpoint (client, task_id, 0);
@@ -156,11 +154,6 @@ int main (int argc, char ** argv)
     fprintf (stderr, "... after send-recv advance loop\n");
 	send_active = recv_active = 1;
   }
-  fprintf(stderr,"rbuffer[%d]=%X rbuffer[%d]=%X rbuffer[%d]=%X rbuffer[%d]=%X\n",
-         0,rbuffer[0],
-         1,rbuffer[1],
-         1024,rbuffer[1024],
-         1025,rbuffer[1025]);
 #endif
   result = XMI_Context_destroy (context);
   if (result != XMI_SUCCESS)

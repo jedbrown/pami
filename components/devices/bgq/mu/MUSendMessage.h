@@ -12,7 +12,7 @@
 #include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
 #include <spi/include/kernel/memory.h>
 
-#define TRACE(x) fprintf x
+#define TRACE(x) //printf x
 
 namespace DCMF
 {

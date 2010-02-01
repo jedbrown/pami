@@ -15,8 +15,11 @@
 #ifdef TRACE
   #undef TRACE
 #endif
-#define TRACE(x) fprintf x
-#define DUMP_DESCRIPTOR(x,d) dumpDescriptor(x,d)
+#define TRACE(x) //fprintf x
+#ifdef DUMP_DESCRIPTOR
+  #undef DUMP_DESCRIPTOR
+#endif
+#define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
 /// \see MUMultisyncModel
 XMI::Device::MU::MUMultisyncModel::MUMultisyncModel (xmi_result_t &status, MUCollDevice & device, xmi_client_t client, size_t context) :

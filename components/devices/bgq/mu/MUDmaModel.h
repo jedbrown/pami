@@ -32,7 +32,7 @@
 #ifdef TRACE
 #error TRACE already defined!
 #else
-#define TRACE(x) fprintf x
+#define TRACE(x) //fprintf x
 #endif
 
 namespace XMI

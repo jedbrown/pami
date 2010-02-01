@@ -16,13 +16,12 @@
 
 #include "components/devices/bgq/mu/MUDevice.h"
 #include <hwi/include/bqc/classroute.h>
-#define	_KERNEL_CNK_COLLECTIVE_IMPL_H_
 #include <spi/include/kernel/collective.h>
 
 #ifdef TRACE
   #undef TRACE
 #endif
-#define TRACE(x) fprintf x
+#define TRACE(x) //fprintf x
 
 #define ENABLE_MAMBO_WORKAROUNDS
 

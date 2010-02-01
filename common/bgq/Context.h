@@ -38,7 +38,7 @@
 
 #include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 #define MU_COLL_DEVICE
@@ -123,6 +123,7 @@ namespace XMI
 
 #ifdef MU_DEVICE
         _mu.init (&_sysdep, (xmi_context_t)this, id);
+#endif
 #ifdef MU_COLL_DEVICE
         xmi_result_t status;
         /// \todo allocator
@@ -466,6 +467,8 @@ namespace XMI
           }
           XMI::Device::MU::MUMulticastModel * model = (XMI::Device::MU::MUMulticastModel *) _dispatch[mcastinfo->dispatch];
           return model->postMulticast(*msgbuf, mcastinfo);
+#else
+          return XMI_UNIMPL;
 #endif
       };
 
@@ -488,6 +491,8 @@ namespace XMI
             msyncinfo->request = msgbuf;
           }
           return _mu_msync_model->postMultisync(*msgbuf, msyncinfo);
+#else
+          return XMI_UNIMPL;
 #endif
       };
 
@@ -504,6 +509,8 @@ namespace XMI
             mcombineinfo->request = msgbuf;
           }
           return _mu_mcombine_model->postMulticombine(*msgbuf, mcombineinfo);
+#else
+          return XMI_UNIMPL;
 #endif
       };
 
@@ -523,6 +530,8 @@ namespace XMI
       XMI::Device::Generic::Device &_generic;
 #ifdef MU_DEVICE
       MUDevice _mu;
+#endif
+#ifdef MU_COLL_DEVICE
       XMI::Device::MU::MUMultisyncModel *_mu_msync_model;
       XMI::Device::MU::MUMulticombineModel *_mu_mcombine_model;
 #endif
