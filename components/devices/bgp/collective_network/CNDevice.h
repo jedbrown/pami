@@ -16,7 +16,7 @@
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
 #include "components/devices/bgp/collective_network/CNPacket.h"
-#include "components/devices/generic/SubDeviceSuppt.h"
+#include "components/devices/util/SubDeviceSuppt.h"
 
 /**
  * \page env_vars Environment Variables

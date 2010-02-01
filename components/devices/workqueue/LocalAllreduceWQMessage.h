@@ -19,7 +19,7 @@
 #include "components/devices/workqueue/MemoryWorkQueue.h"
 #include "math/math_coremath.h"
 #include "Global.h"
-#include "components/devices/generic/SubDeviceSuppt.h"
+#include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 
 namespace XMI {

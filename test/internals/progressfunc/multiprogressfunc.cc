@@ -15,7 +15,7 @@
 #include "sys/xmi.h"
 //#include "Client.h"
 #include "Global.h"
-#include "components/devices/generic/ProgressFunctionMsg.h"
+#include "components/devices/misc/ProgressFunctionMsg.h"
 
 #ifndef NUM_MULTI
 #define NUM_MULTI	10

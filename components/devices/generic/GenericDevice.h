@@ -21,7 +21,7 @@
 
 #include "components/devices/generic/Device.h"
 
-#include "components/devices/generic/SubDeviceSuppt.h"
+#include "components/devices/util/SubDeviceSuppt.h"
 
 #if defined(__bgp__) and !defined(__bgq__)
 

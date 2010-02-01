@@ -15,7 +15,7 @@
 #define __components_devices_workqueue_WQRingBcastMsg_h__
 
 #include "components/devices/generic/AdvanceThread.h"
-#include "components/devices/generic/SubDeviceSuppt.h"
+#include "components/devices/util/SubDeviceSuppt.h"
 #include "sys/xmi.h"
 #include "Global.h"
 #include "PipeWorkQueue.h"

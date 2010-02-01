@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "sys/xmi.h"
 
-#include "components/devices/generic/AtomicBarrierMsg.h"
+#include "components/devices/misc/AtomicBarrierMsg.h"
 #include "test/internals/multisend/multisync.h"
 
 #define BARRIER_NAME	"XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter>"

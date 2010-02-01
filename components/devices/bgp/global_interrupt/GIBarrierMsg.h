@@ -12,7 +12,7 @@
 #include "SysDep.h"
 #include "util/common.h"
 #include "components/devices/MultisyncModel.h"
-#include "components/devices/generic/SubDeviceSuppt.h"
+#include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "spi/bgp_SPI.h"
 

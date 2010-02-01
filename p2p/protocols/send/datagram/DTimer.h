@@ -16,7 +16,7 @@
 #ifndef __p2p_protocols_send_datagram_DTimer_h__
 #define __p2p_protocols_send_datagram_DTimer_h__
 
-#include "components/devices/generic/ProgressFunctionMsg.h"
+#include "components/devices/misc/ProgressFunctionMsg.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x

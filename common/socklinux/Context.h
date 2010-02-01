@@ -12,8 +12,8 @@
 #include "common/ContextInterface.h"
 
 #include "components/devices/generic/GenericDevice.h"
-#include "components/devices/generic/ProgressFunctionMsg.h"
-#include "components/devices/generic/AtomicBarrierMsg.h"
+#include "components/devices/misc/ProgressFunctionMsg.h"
+#include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/WQRingBcastMsg.h"
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
