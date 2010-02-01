@@ -83,6 +83,8 @@ namespace XMI
       }
 
       inline int init_impl (SysDep        * sysdep,
+			    size_t clientid,
+			    size_t num_ctx,
                             xmi_context_t   context,
                             size_t          offset)
       {
@@ -105,6 +107,17 @@ namespace XMI
         return XMI_SUCCESS;
       };
 
+	static UdpDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
+		size_t x;
+		UdpDevice *devs;
+		int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+		XMI_assertf(rc == 0, "posix_memalign failed for UdpDevice[%d], errno=%d\n", num_ctx, errno);
+		for (x = 0; x < num_ctx; ++x) {
+			new (&devs[x]) UdpDevice();
+		}
+		return devs;
+	}
+
       inline xmi_context_t getContext_impl ()
       {
         return _context;
@@ -119,6 +132,12 @@ namespace XMI
       {
         return __global.mapping.isUdpActive();
       };
+
+#warning This poly-morphic advance needs to be cleaned up
+inline size_t advance(size_t clientid, size_t contextid) {
+	UdpDevice *dev = &this[contextid];
+	return dev->advance_impl();
+}
 
       inline int advance_impl ()
       {
