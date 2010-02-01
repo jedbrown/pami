@@ -61,7 +61,7 @@ namespace XMI
       public:
 
         /// \see XMI::Device::Interface::MulticombineModel::MulticombineModel
-        MUMulticombineModel (xmi_result_t &status, MUCollDevice & device, xmi_client_t client, size_t context);
+        MUMulticombineModel (xmi_result_t &status, MUCollDevice & device);
 
         /// \see XMI::Device::Interface::MulticombineModel::~MulticombineModel
         ~MUMulticombineModel ();
@@ -144,8 +144,6 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        xmi_client_t                          _client;
-        size_t                                _context;
         recv_state_t                          _receive_state;
 
       }; // XMI::Device::MU::MUMulticombineModel class
@@ -281,7 +279,7 @@ namespace XMI
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postShortPayload().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage (NULL, NULL, _client, _context);
+          new (&message) MUInjFifoMessage (NULL, NULL, _device.getContext());
 
           // Initialize the descriptor directly in the injection fifo.
           MUSPI_DescriptorBase * desc = message.getDescriptor ();
@@ -371,7 +369,7 @@ namespace XMI
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postPayload().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage (NULL, NULL, _client, _context);
+          new (&message) MUInjFifoMessage (NULL, NULL, _device.getContext());
           //message.setSourceBuffer (payload, payload_length);
 
           // Initialize the descriptor directly in the injection fifo.
@@ -447,7 +445,7 @@ namespace XMI
 
             // Invoke the receive done callback.
             if(_receive_state.cb_done.function)
-              _receive_state.cb_done.function (XMI_Client_getcontext(_client, _context),
+              _receive_state.cb_done.function (_device.getContext(),
                                                _receive_state.cb_done.clientdata,
                                                XMI_SUCCESS);
           }

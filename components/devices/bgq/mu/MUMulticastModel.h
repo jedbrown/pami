@@ -70,7 +70,7 @@ namespace XMI
       public:
 
         /// \see XMI::Device::Interface::MulticastModel::MulticastModel
-        MUMulticastModel (xmi_result_t &status, MUCollDevice & device, xmi_client_t client, size_t context);
+        MUMulticastModel (xmi_result_t &status, MUCollDevice & device);
 
         /// \see XMI::Device::Interface::MulticastModel::~MulticastModel
         ~MUMulticastModel ();
@@ -146,8 +146,6 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        xmi_client_t                          _client;
-        size_t                                _context;
         xmi_dispatch_multicast_fn             _dispatch_function;
         void                                * _dispatch_arg;
         recv_state_t                          _receive_state;
@@ -306,7 +304,7 @@ namespace XMI
 
             if(rc == 1)
             {
-              fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS); // Descriptor is done...notify.
+              fn (_device.getContext(), cookie, XMI_SUCCESS); // Descriptor is done...notify.
             }
             else
 #endif
@@ -316,7 +314,7 @@ namespace XMI
               // information so that the progress of the decriptor can be checked
               // later and the callback will be invoked when the descriptor is
               // complete.
-              new (&message) MUInjFifoMessage (fn, cookie, _client, _context, sequenceNum);
+              new (&message) MUInjFifoMessage (fn, cookie, _device.getContext(), sequenceNum);
 
               // Queue it.
               _device.addToDoneQ (message.getWrapper());
@@ -327,7 +325,7 @@ namespace XMI
         {
           TRACE((stderr, "<%p>:MUMulticastModel::postMsginfo().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage (fn, cookie, _client, _context);
+          new (&message) MUInjFifoMessage (fn, cookie, _device.getContext());
 
           // Initialize the descriptor directly in the injection fifo.
           MUSPI_DescriptorBase * desc = message.getDescriptor ();
@@ -447,7 +445,7 @@ namespace XMI
 
             if(rc == 1)
             {
-              fn (XMI_Client_getcontext(_client, _context), cookie, XMI_SUCCESS); // Descriptor is done...notify.
+              fn (_device.getContext(), cookie, XMI_SUCCESS); // Descriptor is done...notify.
             }
             else
 #endif
@@ -457,7 +455,7 @@ namespace XMI
               // information so that the progress of the decriptor can be checked
               // later and the callback will be invoked when the descriptor is
               // complete.
-              new (&message) MUInjFifoMessage (fn, cookie, _client, _context, sequenceNum);
+              new (&message) MUInjFifoMessage (fn, cookie, _device.getContext(), sequenceNum);
 
               // Queue it.
               _device.addToDoneQ (message.getWrapper());
@@ -468,7 +466,7 @@ namespace XMI
         {
           TRACE((stderr, "<%p>:MUMulticastModel::postPayload().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage (fn, cookie, _client, _context);
+          new (&message) MUInjFifoMessage (fn, cookie, _device.getContext());
           //message.setSourceBuffer (payload, payload_length);
 
           // Initialize the descriptor directly in the injection fifo.
@@ -535,7 +533,7 @@ namespace XMI
 
         // Done? Invoke the receive done callback. \todo semantics? no data and cb_done?
         if(!_receive_state.expected_length && _receive_state.cb_done.function)
-          _receive_state.cb_done.function (XMI_Client_getcontext(_client, _context),
+          _receive_state.cb_done.function (_device.getContext(),
                                            _receive_state.cb_done.clientdata,
                                            XMI_SUCCESS);
 
@@ -608,7 +606,7 @@ namespace XMI
 
             // Invoke the receive done callback.
             if(_receive_state.cb_done.function)
-              _receive_state.cb_done.function (XMI_Client_getcontext(_client, _context),
+              _receive_state.cb_done.function (_device.getContext(),
                                                _receive_state.cb_done.clientdata,
                                                XMI_SUCCESS);
           }

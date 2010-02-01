@@ -127,8 +127,8 @@ namespace XMI
 #ifdef MU_COLL_DEVICE
         xmi_result_t status;
         /// \todo allocator
-        _mu_msync_model = new XMI::Device::MU::MUMultisyncModel(status, _mu, _client, _contextid);
-        _mu_mcombine_model = new XMI::Device::MU::MUMulticombineModel(status, _mu, _client, _contextid);
+        _mu_msync_model = new XMI::Device::MU::MUMultisyncModel(status, _mu);
+        _mu_mcombine_model = new XMI::Device::MU::MUMulticombineModel(status, _mu);
 #endif
         _generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
         _shmem.init (&_sysdep, (xmi_context_t)this, id);
@@ -439,7 +439,7 @@ namespace XMI
         // Allocate memory for the protocol object.
         _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
-        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, _mu, _client, _contextid);
+        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, _mu);
         model->registerMcastRecvFunction(id, fn.multicast, cookie);
 
       }

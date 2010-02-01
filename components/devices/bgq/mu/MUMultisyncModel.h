@@ -61,7 +61,7 @@ namespace XMI
       public:
 
         /// \see XMI::Device::Interface::MultisyncModel::MultisyncModel
-        MUMultisyncModel (xmi_result_t &status, MUCollDevice & device, xmi_client_t client, size_t context);
+        MUMultisyncModel (xmi_result_t &status, MUCollDevice & device);
 
         /// \see XMI::Device::Interface::MultisyncModel::~MultisyncModel
         ~MUMultisyncModel ();
@@ -94,8 +94,6 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        xmi_client_t                          _client;
-        size_t                                _context;
         xmi_callback_t                        _cb_done;	
 
       }; // XMI::Device::MU::MUMultisyncModel class
@@ -168,7 +166,7 @@ namespace XMI
         {
           TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&state_data->message) MUInjFifoMessage (NULL, NULL, _client, _context);
+          new (&state_data->message) MUInjFifoMessage (NULL, NULL, _device.getContext());
 
           // Initialize the descriptor directly in the injection fifo.
           MUSPI_DescriptorBase * desc = state_data->message.getDescriptor ();
@@ -199,7 +197,7 @@ namespace XMI
         TRACE((stderr, "<%p>:MUMultisyncModel::processHeader() connection_id = %d\n", this,metadata->connection_id));
 
         if(_cb_done.function)
-          _cb_done.function (XMI_Client_getcontext(_client, _context),
+          _cb_done.function (_device.getContext(),
                                            _cb_done.clientdata,
                                            XMI_SUCCESS);
         else 

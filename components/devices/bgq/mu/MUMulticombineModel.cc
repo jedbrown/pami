@@ -53,12 +53,10 @@ const bool   XMI::Device::MU::MUMulticombineModel::multicombine_model_op_support
 }
 
 /// \see MUMulticombineModel
-XMI::Device::MU::MUMulticombineModel::MUMulticombineModel (xmi_result_t &status, MUCollDevice & device, xmi_client_t client, size_t context) :
+XMI::Device::MU::MUMulticombineModel::MUMulticombineModel (xmi_result_t &status, MUCollDevice & device) :
 Interface::MulticombineModel < MUMulticombineModel, sizeof(mu_multicombine_statedata_t) > (status),
 _device (device),
-_wrapper_model (&_desc_model),
-_client (client),
-_context (context)
+_wrapper_model (&_desc_model)
 {
   COMPILE_TIME_ASSERT(MUCollDevice::message_metadata_size >= sizeof(MUMulticombineModel::metadata_t));
   TRACE((stderr, "<%p>:MUMulticombineModel::ctor\n", this));

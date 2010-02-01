@@ -15,8 +15,11 @@
 #define __components_devices_bgq_mu_mucolldevice_h__
 
 #include "components/devices/bgq/mu/MUDevice.h"
-#include <hwi/include/bqc/classroute.h>
-#include <spi/include/kernel/collective.h>
+#ifdef	_KERNEL_CNK_COLLECTIVE_IMPL_H_ /* Prevent multiple inclusion */
+  #warning NO CNK support for classroute collectives and it doesnt link
+  #include <hwi/include/bqc/classroute.h>
+  #include <spi/include/kernel/collective.h>
+#endif
 
 #ifdef TRACE
   #undef TRACE
@@ -55,10 +58,12 @@ namespace XMI
         };
 
         // Uggh.  I want to hook into MUDevice's init_impl (through BaseDevices's init()).  So hide init() with my own init().
-        int init(SysDep* sysdep)
+        inline int init (SysDep        * sysdep,
+                         xmi_context_t   context,
+                         size_t          offset)
         {
           TRACE((stderr,"<%p>MUCollDevice::init() \n",this));
-          return MUCollDevice::init_impl(sysdep);
+          return MUCollDevice::init_impl(sysdep,context,offset);
         };
 //////////////////////////////////////////////////////
 //  Uggh alternative to above Uggh.  
@@ -132,10 +137,10 @@ namespace XMI
           return _colChannel->getRgetInjFifoId (target_rank);
         }
 
-        int init_impl (SysDep * sysdep)
+        int init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid)
         {
           TRACE((stderr,"<%p>MUCollDevice::init_impl() \n",this));
-          int rc = MUDevice::init_impl(sysdep);
+          int rc = MUDevice::init_impl(sysdep,context,contextid);
 
           XMI_assert(_initialized);
 
@@ -144,20 +149,22 @@ namespace XMI
                                          &_injFifoSubGroup,
                                          &_relativeFnum);
 
+          /// \todo Implement when CNK supports class routes
+#ifdef	_KERNEL_CNK_COLLECTIVE_IMPL_H_ /* Prevent multiple inclusion */
+#warning NO CNK support for classroute
          // Set up class route to have a local contribution from this node with no output.
           ClassRoute_t classRouteInfo;
           memset(&classRouteInfo, 0x00, sizeof(classRouteInfo));
           classRouteInfo.id    = 2;  /// \todo global class route always 2 (arbitrary)?
-          classRouteInfo.input = COLLECTIVE_CLASS_ROUTE_ENABLE_LOCAL |
-                          COLLECTIVE_CLASS_ROUTE_INPUT_USER;
+          classRouteInfo.input = BGQ_COLL_CLASS_INPUT_LINK_LOCAL | BGQ_COLL_CLASS_INPUT_VC_USER;
           classRouteInfo.output = 0;
-	  //          rc = Kernel_AllocateClassRoute ( &classRouteInfo );
+	        rc = Kernel_AllocateClassRoute ( &classRouteInfo );
 
-	  //          if ( rc )
-	  //          {
-	  //            XMI_abortf("AllocateClassRoute failed with rc %d\n", rc);
-	  //          }
-
+          if ( rc )
+          {
+	          XMI_abortf("AllocateClassRoute failed with rc %d\n", rc);
+          }
+#endif
           return rc;
         }
 

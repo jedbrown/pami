@@ -22,12 +22,10 @@
 #define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
 /// \see MUMulticastModel
-XMI::Device::MU::MUMulticastModel::MUMulticastModel (xmi_result_t &status, MUCollDevice & device, xmi_client_t client, size_t context) :
+XMI::Device::MU::MUMulticastModel::MUMulticastModel (xmi_result_t &status, MUCollDevice & device) :
 Interface::AMMulticastModel < MUMulticastModel, sizeof(mu_multicast_statedata_t) > (status),
 _device (device),
-_wrapper_model (&_desc_model),
-_client (client),
-_context (context)
+_wrapper_model (&_desc_model)
 {
   COMPILE_TIME_ASSERT(MUCollDevice::message_metadata_size >= sizeof(MUMulticastModel::metadata_t));
   TRACE((stderr, "<%p>:MUMulticastModel::ctor\n", this));
