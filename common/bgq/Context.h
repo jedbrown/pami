@@ -160,7 +160,7 @@ namespace XMI
      */
     inline xmi_result_t dev_init(XMI::SysDep *sd, size_t clientid, size_t num_ctx, xmi_context_t ctx, size_t contextid) {
        _generics->init(ctx, clientid, contextid, num_ctx);
-       // _shmem->init(sd, clientid, num_ctx, ctx, contextid);
+       _shmem->init(sd, clientid, num_ctx, ctx, contextid);
        _progfunc->init(sd, clientid, num_ctx, ctx, contextid);
        _atombarr->init(sd, clientid, num_ctx, ctx, contextid);
        _wqringreduce->init(sd, clientid, num_ctx, ctx, contextid);
