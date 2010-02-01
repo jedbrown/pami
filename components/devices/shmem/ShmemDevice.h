@@ -356,7 +356,7 @@ namespace XMI
         ///
         inline bool isSendQueueEmpty (size_t peer);
 
-        inline int init_impl (XMI::SysDep * sysdep, xmi_context_t context, size_t offset);
+        inline int init_impl (XMI::SysDep * sysdep, size_t clientid, size_t num_ctx, xmi_context_t context, size_t offset);
 
 	static inline ShmemDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
 		size_t x;

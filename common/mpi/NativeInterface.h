@@ -37,7 +37,8 @@ namespace XMI
     MPINativeInterface(T_Device      *dev,
                        xmi_client_t   client,
                        xmi_context_t  context,
-                       size_t         context_id):
+                       size_t         context_id,
+                       size_t         client_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
       _msyncAlloc(),
@@ -46,7 +47,8 @@ namespace XMI
       _dispatch(0),
       _client(client),
       _context(context),
-      _contextid(context_id)
+      _contextid(context_id),
+      _clientid(client_id)
       {
       }
 
@@ -83,7 +85,7 @@ namespace XMI
           printf ("%d: Calling xmi_multicast send\n", myrank());
 #endif
         mcast->dispatch =  _dispatch;
-        mcast->client   =  _client;
+        mcast->client   =  _clientid;
         mcast->context  =  _contextid;
         return XMI_Multicast (mcast);
       }
@@ -148,6 +150,7 @@ namespace XMI
     xmi_client_t       _client;
     xmi_context_t      _context;
     size_t             _contextid;
+    size_t             _clientid;
 
 
 

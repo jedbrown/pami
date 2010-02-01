@@ -121,7 +121,7 @@ namespace XMI
         TRACE_DEVICE((stderr,"<%p>MPIDevice::registerM2MRecvFunction %d\n",this,_dispatch_id));
       }
 
-      inline xmi_result_t init_impl (SysDep * sysdep, xmi_context_t context, size_t offset)
+      inline xmi_result_t init_impl (SysDep * sysdep, size_t clientid, size_t num_ctx, xmi_context_t context, size_t offset)
       {
         _context = context;
         _contextid = offset;

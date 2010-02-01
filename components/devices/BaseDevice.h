@@ -51,9 +51,11 @@ namespace XMI
           ///
           /// \return  Return code of the device init status
           ///
-          inline int init (SysDep        * sd,
+          inline int init (SysDep        *sd,
+			   size_t        clientid,
+			   size_t        num_ctx,
                            xmi_context_t   context,
-                           size_t          offset);
+                           size_t          contextid);
 
           inline xmi_context_t getContext ();
 
@@ -100,10 +102,12 @@ namespace XMI
 
       template <class T_Device>
       inline int BaseDevice<T_Device>::init (SysDep        * sd,
-                                             xmi_context_t   context,
-                                             size_t          offset)
+			   size_t        clientid,
+			   size_t        num_ctx,
+                           xmi_context_t   context,
+                           size_t          contextid)
       {
-        return static_cast<T_Device*>(this)->init_impl(sd, context, offset);
+        return static_cast<T_Device*>(this)->init_impl(sd, clientid, num_ctx, context, contextid);
       }
 
       template <class T_Device>

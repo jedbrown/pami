@@ -25,6 +25,8 @@ namespace XMI
   {
     template <class T_Fifo>
     int ShmemDevice<T_Fifo>::init_impl (XMI::SysDep   * sysdep,
+					size_t clientid,
+					size_t num_ctx,
                                         xmi_context_t   context,
                                         size_t          offset)
     {

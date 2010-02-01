@@ -39,7 +39,7 @@ namespace XMI
                      T_Sysdep     *sd,
                      xmi_client_t  client,
                      xmi_context_t context,
-                     size_t        context_id):
+                     size_t        context_id, size_t client_id):
         CollRegistration<XMI::CollRegistration::Default<T_Geometry,
                                                         T_Collfactory,
                                                         T_Device,
@@ -51,6 +51,7 @@ namespace XMI
 	_client (client),
 	_context (context),
 	_contextid (context_id),
+	_clientid (client_id),
 	_pgbroadcast(dev),
 	_pgallgather(dev),
 	_pgallgatherv(dev),
@@ -59,6 +60,7 @@ namespace XMI
 	_pgallreduce(dev),
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
+	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id, client_id),
         _ccmioldbarrier(dev, sd, mapidtogeometry, _client, context, context_id),
 	_ccmioldbinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
 	_ccmioldringbroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
@@ -175,6 +177,7 @@ namespace XMI
       xmi_client_t                                                 _client;
       xmi_context_t                                                _context;
       size_t                                                       _contextid;
+      size_t                                                       _clientid;
       MemoryAllocator<sizeof(T_Collfactory), 16>                   _fact_alloc;
       XMI::CollInfo::PGBroadcastInfo<T_Device>                     _pgbroadcast;
       XMI::CollInfo::PGAllgatherInfo<T_Device>                     _pgallgather;

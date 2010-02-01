@@ -33,16 +33,18 @@ namespace XMI
 
     class MPIBcastMdl;
 
-    template< class T_Thread>
-    class MPIBcastDev : public XMI::Device::Generic::SimpleSubDevice<T_Thread>
+    class MPIBcastDev : public XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>
     {
     public:
       MPI_Comm _mcast_communicator;
       MPIBcastDev() :
-      XMI::Device::Generic::SimpleSubDevice<T_Thread>(),
+      XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>(),
       _mcast_communicator(MPI_COMM_NULL)
       {
       };
+
+      static inline MPIBcastDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+
       /// \brief Initialization for the subdevice
       ///
       /// \param[in] sd		SysDep object (not used?)
@@ -50,22 +52,27 @@ namespace XMI
       /// \param[in] contextId	Id of current context (index into devices[])
       /// \ingroup gendev_subdev_api
       ///
-      inline void init(XMI::SysDep &sd, XMI::Device::Generic::Device *devices, size_t clientId, size_t contextId)
+      inline void init(XMI::SysDep *sd, size_t clientId, size_t num_ctx, xmi_context_t ctx,  size_t contextId)
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_mcast_communicator);
-        Generic::SimpleSubDevice<T_Thread>::init(sd, devices, clientId, contextId);
+        Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>::init(sd, clientId, num_ctx, ctx, contextId);
       }
 
     };
   }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> _g_mpibcast_dev;
+static XMI::Device::MPIBcastDev _g_mpibcast_dev;
 
 namespace XMI
 {
   namespace Device
   {
+
+inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	_g_mpibcast_dev.__create(client, num_ctx, devices);
+	return &_g_mpibcast_dev;
+}
 
 ///
 /// \brief
@@ -323,7 +330,7 @@ namespace XMI
       MessageStatus _pendingStatus;
     }; //-- MPIBcastMsg
 
-    typedef MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > MPIBcastMsg_t;
+    typedef MPIBcastMsg<XMI::Device::MPIBcastDev> MPIBcastMsg_t;
 
     class MPIBcastMdl : public XMI::Device::Interface::MulticastModel<MPIBcastMdl,sizeof(MPIBcastMsg_t)>
     {
@@ -349,9 +356,9 @@ namespace XMI
     {
       TRACE_DEVICE((stderr,"<%p>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, &state));
-      MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
-      new (&state) MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpibcast_dev, mcast);
-      _g_mpibcast_dev.__post<MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
+      MPIBcastMsg<XMI::Device::MPIBcastDev> *msg =
+      new (&state) MPIBcastMsg<XMI::Device::MPIBcastDev>(_g_mpibcast_dev, mcast);
+      _g_mpibcast_dev.__post<MPIBcastMsg<XMI::Device::MPIBcastDev> >(msg);
       return XMI_SUCCESS;
     }
 

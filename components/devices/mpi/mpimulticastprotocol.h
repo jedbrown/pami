@@ -83,6 +83,7 @@ namespace XMI
           _client(NULL),
           _context(NULL),
           _contextid(0),
+          _clientid(0),
           _task_id((size_t)__global.mapping.task()),
           _cookie(NULL),
           _multicast_model(status)
@@ -97,6 +98,7 @@ namespace XMI
                              xmi_client_t               client,
                              xmi_context_t              context,
                              size_t                     contextid,
+                             size_t                     clientid,
                              xmi_result_t             & status) :
           XMI::Device::Interface::AMMulticastModel<P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>,sizeof(allocation_t) >(status),
           _dst_participants(__global.mapping.task()), // default dst is this task when dispatched from another src
@@ -106,6 +108,7 @@ namespace XMI
           _client(client),
           _context(context),
           _contextid(contextid),
+          _clientid(clientid),
           _task_id((size_t)__global.mapping.task()),
           _cookie(cookie),
           _multicast_model(status)
@@ -313,7 +316,7 @@ namespace XMI
                 }
 
             // Allocate storage and call all-sided multicast.
-            mcast.client = _client;
+            mcast.client = _clientid;
             mcast.context  = _contextid;
 
             allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
@@ -350,6 +353,7 @@ namespace XMI
         xmi_client_t                  _client;
         xmi_context_t                 _context;
         size_t                        _contextid;
+        size_t                        _clientid;
         size_t                        _task_id;
         void                         *_cookie;
         char                          _p2p_protocol[sizeof(T_P2P_PROTOCOL)]; // p2p send protocol
