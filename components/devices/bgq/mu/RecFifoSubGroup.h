@@ -157,7 +157,8 @@ namespace XMI
                     if (!hdr->dev.issingle)
                       metadata = (void *) hdr->dev.multipkt.metadata;
 
-                    uint8_t id = hdr->dev.dispatch_id;
+                    uint16_t id = hdr->dev.dispatch_id;
+                    XMI_assert(sizeof(id) == sizeof(hdr->dev.dispatch_id));
                     TRACE((stderr, "recFifoPoll(wrap)    packet = %p, id = %d, cur_bytes = %d\n", hdr, id, cur_bytes));
                     _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
                     packets++;
@@ -182,7 +183,8 @@ namespace XMI
                         if (!hdr->dev.issingle)
                           metadata = (void *) hdr->dev.multipkt.metadata;
 
-                        uint8_t id = hdr->dev.dispatch_id;
+                        uint16_t id = hdr->dev.dispatch_id;
+                        XMI_assert(sizeof(id) == sizeof(hdr->dev.dispatch_id));
 
                         TRACE((stderr, "recFifoPoll(no-wrap) packet = %p, id = %d, cur_bytes = %d\n", hdr, id, cur_bytes));
 
