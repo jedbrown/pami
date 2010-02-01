@@ -137,9 +137,6 @@ public:
 	/// \ingroup gendev_subdev_api
 	inline XMI::SysDep *getSysdep() { return _sd; }
 
-	/// \brief advance routine for unexpected (received) messages
-	inline int advanceRecv(size_t client, size_t context);
-
 	// wrappers for GenericSubDevSendq...
 
 	/// \brief Add a message to the (end of the) queue
@@ -211,33 +208,6 @@ public:
 			// that is too complicated so we just let the generic
 			// device do the completion when it finds it on the queue.
 			// (recursion possibility is one complication)
-		}
-	}
-
-	/// \brief Post message and threads to generic device for processing
-	///
-	/// Only posts threads which are not yet "Done". Simple pass-through
-	/// to generic device post(), which does not care which object the
-	/// method is actually called on - uses 'msg' to determine where to
-	/// actually post/enqueue the objects.
-	///
-	/// \param[in] msg	Message object to enqueue
-	/// \param[in] t	array of threads to enqueue
-	/// \param[in] l	size of each thread in array
-	/// \param[in] n	number of threads to enqueue
-	/// \ingroup gendev_subdev_api
-	///
-	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
-		size_t c = msg->getClientId();
-		size_t x = msg->getContextId();
-		size_t numctx = _generics[c]->nContexts();
-		_generics[c][x].postMsg(msg);
-#warning This should be pushed up to devices (model, message, ...)
-		while (n > 0) {
-			if (++x >= numctx) x = 0;
-			_generics[c][x].postThread(t);
-			t = (GenericAdvanceThread *)((char *)t + l);
-			--n;
 		}
 	}
 

@@ -26,7 +26,7 @@ namespace Generic {
 ///
 /// in this case, threads come from sub-device...
 /// (others might have threads in the message, or ???)
-/// postToGeneric() will only post threads that are not Done...
+/// will only post threads that are not Done...
 ///
 /// \param[in] T_Device		Sub-device class
 /// \param[in] T_Thread		Sub-device thread class
@@ -43,7 +43,18 @@ namespace Generic {
 		if (!devPosted && getStatus() == XMI::Device::Done) {	\
 			return true;					\
 		}							\
-		(I_Device)->postToGeneric(this, t, sizeof(*t), n);	\
+		size_t c = getClientId();				\
+		size_t x = getContextId();				\
+		size_t numctx = (I_Device)->getGeneric(c,x)->nContexts();\
+		(I_Device)->getGeneric(c,x)->postMsg(this);		\
+		while (n > 0) {						\
+			if (t->getStatus() != Complete) {		\
+				if (++x >= numctx) x = 0;		\
+				(I_Device)->getGeneric(c,x)->postThread(t);\
+			}						\
+			++t;						\
+			--n;						\
+		}							\
 		return false;						\
 	}								\
 	bool postNext(bool devPosted) { return __postNext(devPosted); }
@@ -90,27 +101,6 @@ protected:
 				_sendQs[x].___init(sd, client, contextId);
 			}
 		}
-	}
-
-	/// \brief Actual advance routine for unexpected(received) messages
-	///
-	/// This would process messages which have arrived on the device's
-	/// receive queue(s). If the device is instantiated per-context,
-	/// then the 'context' param is probably ignored. But a device
-	/// that is instantiated once per client would use this to narrow
-	/// the scope of the advance. Devices that are instnatiated once
-	/// globally might also need to use the client Id to uniquely
-	/// identify reception queues.
-	///
-	/// \todo Add client ID
-	///
-	/// \param[in] context	Id of context which is being advanced
-	/// \ingroup gendev_internal_api
-	///
-	inline int advanceRecv(size_t client, size_t context) {
-		// determine if any messages have arrived on this context,
-		// and process them...
-		return 0;
 	}
 
 private:
@@ -372,21 +362,8 @@ public:
 		*n = NUM_THREADS;
 	}
 
-	/// \brief Post message and threads to generic device for processing
-	///
-	/// Only posts threads which are not yet "Done". Simple pass-through
-	/// to generic device post(), which does not care which object the
-	/// method is actually call on - uses 'msg' to determine where to
-	/// actually post/enqueue the objects.
-	///
-	/// \param[in] msg	Message object to enqueue
-	/// \param[in] t	array of threads to enqueue
-	/// \param[in] l	size of each thread in array
-	/// \param[in] n	number of threads to enqueue
-	/// \ingroup gendev_subdev_internal_api
-	///
-	inline void postToGeneric(GenericMessage *msg, GenericAdvanceThread *t, size_t l, int n) {
-		_common->postToGeneric(msg, t, l, n);
+	inline XMI::Device::Generic::Device *getGeneric(size_t client, size_t ctx) {
+		return _common->getGeneric(client, ctx);
 	}
 
 	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {

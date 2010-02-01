@@ -30,9 +30,7 @@ namespace Generic {
 		//////////////////////////////////////////////////////////////////////
 		///  \brief Constructor
 		//////////////////////////////////////////////////////////////////////
-		BaseGenericDevice() :
-                    _device_id((unsigned)-1)
-                    {}
+		BaseGenericDevice() {}
 
 		//////////////////////////////////////////////////////////////////
 		/// \brief Destructor
@@ -43,21 +41,7 @@ namespace Generic {
 		/// NOTE: This is required to make "C" programs link successfully with virtual destructors
 		inline void operator delete(void *p) { }
 
-		//////////////////////////////////////////////////////////////////////
-		///  \brief Used by the protocol to get _device_id.
-		//////////////////////////////////////////////////////////////////////
-		inline  unsigned getDeviceID() const { return _device_id; };
-		virtual unsigned advance_channel(unsigned channel) { XMI_abort(); return 0; };
 	protected:
-		//////////////////////////////////////////////////////////////////////
-		///  \brief The multichannel work required each device to have an ID
-		///
-		/// This is used as a table index to get information
-		/// on the number and types of channels hosted by that
-		/// device
-		//////////////////////////////////////////////////////////////////////
-		unsigned _device_id;
-
 	}; // class BaseGenericDevice
 }; // namespace Generic
 }; // namespace Device
