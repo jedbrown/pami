@@ -54,7 +54,7 @@ namespace XMI
       {
         MUInjFifoMessage  message;
       } mu_multicombine_statedata_t;
-      class MUMulticombineModel : public Interface::MulticombineModel < MUMulticombineModel, sizeof(mu_multicombine_statedata_t), MUCollDevice >
+      class MUMulticombineModel : public Interface::MulticombineModel < MUMulticombineModel, sizeof(mu_multicombine_statedata_t) >
       {
       protected:
 

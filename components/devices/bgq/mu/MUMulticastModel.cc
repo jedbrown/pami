@@ -23,7 +23,7 @@
 
 /// \see MUMulticastModel
 XMI::Device::MU::MUMulticastModel::MUMulticastModel (xmi_result_t &status, MUCollDevice & device, xmi_client_t client, size_t context) :
-Interface::AMMulticastModel < MUMulticastModel, sizeof(mu_multicast_statedata_t), MUCollDevice > (status,device),
+Interface::AMMulticastModel < MUMulticastModel, sizeof(mu_multicast_statedata_t) > (status),
 _device (device),
 _wrapper_model (&_desc_model),
 _client (client),

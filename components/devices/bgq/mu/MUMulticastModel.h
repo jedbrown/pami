@@ -63,7 +63,7 @@ namespace XMI
         uint8_t           msghead[sizeof(mu_multicast_msgdata_t().msgcount) + sizeof(mu_multicast_msgdata_t().msgpad)];
         MUInjFifoMessage  message[2];
       } mu_multicast_statedata_t;
-      class MUMulticastModel : public Interface::AMMulticastModel < MUMulticastModel, sizeof(mu_multicast_statedata_t), MUCollDevice >
+      class MUMulticastModel : public Interface::AMMulticastModel < MUMulticastModel, sizeof(mu_multicast_statedata_t) >
       {
       protected:
 

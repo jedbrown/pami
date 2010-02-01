@@ -54,7 +54,7 @@ namespace XMI
       {
         MUInjFifoMessage  message;
       } mu_multisync_statedata_t;
-      class MUMultisyncModel : public Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t), MUCollDevice >
+      class MUMultisyncModel : public Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) >
       {
       protected:
 
