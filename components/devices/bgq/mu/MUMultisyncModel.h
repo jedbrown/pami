@@ -33,11 +33,11 @@
 #include "Topology.h"
 
 #ifdef TRACE
-  #undef TRACE
+#undef TRACE
 #endif
 #define TRACE(x) //fprintf x
 #ifdef DUMP_DESCRIPTOR
-  #undef DUMP_DESCRIPTOR
+#undef DUMP_DESCRIPTOR
 #endif
 #define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
@@ -45,204 +45,210 @@
 //#define OPTIMIZE_AGGREGATE_LATENCY
 
 namespace XMI
-{
-  namespace Device
   {
-    namespace MU
-    {
-      typedef struct __mu_multisync_statedata
+
+    namespace Device
       {
-        MUInjFifoMessage  message;
-      } mu_multisync_statedata_t;
-      class MUMultisyncModel : public Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) >
-      {
-      protected:
 
-      public:
+        namespace MU
+          {
 
-        /// \see XMI::Device::Interface::MultisyncModel::MultisyncModel
-        MUMultisyncModel (xmi_result_t &status, MUCollDevice & device);
+            typedef struct __mu_multisync_statedata
+              {
+                MUInjFifoMessage  message;
+              } mu_multisync_statedata_t;
 
-        /// \see XMI::Device::Interface::MultisyncModel::~MultisyncModel
-        ~MUMultisyncModel ();
+            class MUMultisyncModel : public Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) >
+              {
 
-        static const size_t sizeof_msg                              = sizeof(mu_multisync_statedata_t);
-        static const size_t multisync_model_connection_id_max       = (uint32_t) -1; // metadata_t::connection_id \todo 64 bit?
+                protected:
 
-        /// \see XMI::Device::Interface::MultisyncModel::postMultisync
-        xmi_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
-                                        xmi_multisync_t *multisync);
+                public:
 
-      protected:
+                  /// \see XMI::Device::Interface::MultisyncModel::MultisyncModel
+                  MUMultisyncModel (xmi_result_t &status, MUCollDevice & device);
 
-        typedef struct __attribute__((__packed__)) _metadata
-        {
-          uint32_t              connection_id;  ///< Collective connection id \todo expand to 64 bit?
-        } metadata_t;
+                  /// \see XMI::Device::Interface::MultisyncModel::~MultisyncModel
+                  ~MUMultisyncModel ();
 
-        inline static int dispatch (void   * metadata,
-                                    void   * payload,
-                                    size_t   bytes,
-                                    void   * arg,
-                                    void   * cookie);
-        inline void processHeader (metadata_t * metadata);
-        inline void initializeDescriptor (MUSPI_DescriptorBase * desc,
-                                          uint64_t               payloadPa,
-                                          size_t                 bytes);
+                  static const size_t sizeof_msg                              = sizeof(mu_multisync_statedata_t);
+                  static const size_t multisync_model_connection_id_max       = (uint32_t) - 1; // metadata_t::connection_id \todo 64 bit?
 
-      private:
-        MUCollDevice                        & _device;
-        MUDescriptorWrapper                   _wrapper_model;
-        MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        xmi_callback_t                        _cb_done;	
+                  /// \see XMI::Device::Interface::MultisyncModel::postMultisync
+                  xmi_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
+                                                  xmi_multisync_t *multisync);
 
-      }; // XMI::Device::MU::MUMultisyncModel class
+                protected:
 
-      inline void MUMultisyncModel::initializeDescriptor (MUSPI_DescriptorBase* desc,
-                                                          uint64_t payloadPa,
-                                                          size_t bytes)
-      {
-        TRACE((stderr, "<%p>:MUMultisyncModel::initializeDescriptor(%p, %p, %zd)\n", this, desc, (void *)payloadPa, bytes));
-        // Clone the model descriptor.
-        DUMP_DESCRIPTOR("initializeDescriptor() ..model before clone",&_desc_model);
-        _desc_model.clone (*desc);
-        DUMP_DESCRIPTOR("initializeDescriptor() ..desc after clone",desc);
+                  typedef struct __attribute__((__packed__)) _metadata
+                    {
+                      uint32_t              connection_id;  ///< Collective connection id \todo expand to 64 bit?
+                    } metadata_t;
 
-        DUMP_DESCRIPTOR("initializeDescriptor() ..before setPayload",desc);
-        desc->setPayload (payloadPa, bytes);
+                  inline static int dispatch (void   * metadata,
+                                              void   * payload,
+                                              size_t   bytes,
+                                              void   * arg,
+                                              void   * cookie);
+                  inline void processHeader (metadata_t * metadata);
+                  inline void initializeDescriptor (MUSPI_DescriptorBase * desc,
+                                                    uint64_t               payloadPa,
+                                                    size_t                 bytes);
 
-        DUMP_DESCRIPTOR("initializeDescriptor() ..done",desc);
+                private:
+                  MUCollDevice                        & _device;
+                  MUDescriptorWrapper                   _wrapper_model;
+                  MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
+                  xmi_callback_t                        _cb_done;
 
-      }; // XMI::Device::MU::MUMultisyncModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
+              }; // XMI::Device::MU::MUMultisyncModel class
 
-      inline xmi_result_t MUMultisyncModel::postMultisync_impl(uint8_t (&state)[MUMultisyncModel::sizeof_msg],
-                                                               xmi_multisync_t *multisync)
-      {
-        XMI_assertf(_cb_done.function == NULL && _cb_done.clientdata == NULL,"Only one global msync at a time");
-        _cb_done = multisync->cb_done;
+            inline void MUMultisyncModel::initializeDescriptor (MUSPI_DescriptorBase* desc,
+                                                                uint64_t payloadPa,
+                                                                size_t bytes)
+            {
+              TRACE((stderr, "<%p>:MUMultisyncModel::initializeDescriptor(%p, %p, %zd)\n", this, desc, (void *)payloadPa, bytes));
+              // Clone the model descriptor.
+              DUMP_DESCRIPTOR("initializeDescriptor() ..model before clone", &_desc_model);
+              _desc_model.clone (*desc);
+              DUMP_DESCRIPTOR("initializeDescriptor() ..desc after clone", desc);
 
-        mu_multisync_statedata_t *state_data = (mu_multisync_statedata_t*)&state;
+              DUMP_DESCRIPTOR("initializeDescriptor() ..before setPayload", desc);
+              desc->setPayload (payloadPa, bytes);
 
-        TRACE((stderr, "<%p>:MUMultisyncModel::postMultisync_impl() connection_id %#X\n", 
-               this, multisync->connection_id));
+              DUMP_DESCRIPTOR("initializeDescriptor() ..done", desc);
 
-        // Post the multisync to the device
+            }; // XMI::Device::MU::MUMultisyncModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
 
-        MUSPI_InjFifo_t    * injfifo;
-        MUHWI_Descriptor_t * hwi_desc;
-        void               * payloadVa;
-        void               * payloadPa;
+            inline xmi_result_t MUMultisyncModel::postMultisync_impl(uint8_t (&state)[MUMultisyncModel::sizeof_msg],
+                                                                     xmi_multisync_t *multisync)
+            {
+              XMI_assertf(_cb_done.function == NULL && _cb_done.clientdata == NULL, "Only one global msync at a time");
+              _cb_done = multisync->cb_done;
 
-        if(_device.nextInjectionDescriptor (&injfifo,
-                                            &hwi_desc,
-                                            &payloadVa,
-                                            &payloadPa))
-        {
-          TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payloadVa = %p, payloadPa = %p\n", this, injfifo, hwi_desc, payloadVa, payloadPa));
-          MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
+              mu_multisync_statedata_t *state_data = (mu_multisync_statedata_t*) & state;
 
-          // Initialize the descriptor directly in the injection fifo.
-          // (we don't really care what the data is at payloadPa for the allreduce)
-          initializeDescriptor (desc, (uint64_t) payloadPa, 4);
+              TRACE((stderr, "<%p>:MUMultisyncModel::postMultisync_impl() connection_id %#X\n",
+                     this, multisync->connection_id));
 
-          // Put the metadata into the network header in the descriptor.
-          MemoryFifoPacketHeader_t * hdr =
-          (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
+              // Post the multisync to the device
 
-          metadata_t *metadata = (metadata_t*) &hdr->dev.multipkt.metadata;
-          DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before metadata connection_id    ",desc);
-          metadata->connection_id = multisync->connection_id;
+              MUSPI_InjFifo_t    * injfifo;
+              MUHWI_Descriptor_t * hwi_desc;
+              void               * payloadVa;
+              void               * payloadPa;
 
-          // Advance the injection fifo descriptor tail which actually enables
-          // the MU hardware to process the descriptor and send the packet
-          // on the torus.
-          DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before MUSPI_InjFifoAdvanceDesc()",desc);
-          uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
+              if (_device.nextInjectionDescriptor (&injfifo,
+                                                   &hwi_desc,
+                                                   &payloadVa,
+                                                   &payloadPa))
+                {
+                  TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payloadVa = %p, payloadPa = %p\n", this, injfifo, hwi_desc, payloadVa, payloadPa));
+                  MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
 
-          TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", this, sequenceNum));
+                  // Initialize the descriptor directly in the injection fifo.
+                  // (we don't really care what the data is at payloadPa for the allreduce)
+                  initializeDescriptor (desc, (uint64_t) payloadPa, 4);
 
-        }
-        else
-        {
-          TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. nextInjectionDescriptor failed\n", this));
-          // Construct a message and post to the device to be processed later.
-          new (&state_data->message) MUInjFifoMessage (NULL, NULL, _device.getContext());
+                  // Put the metadata into the network header in the descriptor.
+                  MemoryFifoPacketHeader_t * hdr =
+                    (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
 
-          // Initialize the descriptor directly in the injection fifo.
-          MUSPI_DescriptorBase * desc = state_data->message.getDescriptor ();
-          initializeDescriptor (desc, 0, 0);
+                  metadata_t *metadata = (metadata_t*) & hdr->dev.multipkt.metadata;
+                  DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before metadata connection_id    ", desc);
+                  metadata->connection_id = multisync->connection_id;
 
-          // Put the metadata into the network header in the descriptor. (I don't use the extra singlepkt meta bytes).
-          MemoryFifoPacketHeader_t * hdr =
-          (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
+                  // Advance the injection fifo descriptor tail which actually enables
+                  // the MU hardware to process the descriptor and send the packet
+                  // on the torus.
+                  DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before MUSPI_InjFifoAdvanceDesc()", desc);
+                  uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
-          metadata_t *metadata = (metadata_t*) &hdr->dev.multipkt.metadata;
-          DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before metadata connection_id    ",desc);
-          metadata->connection_id = multisync->connection_id;
+                  TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", this, sequenceNum));
 
-          // Point the payload to the connection_id
-          state_data->message.setSourceBuffer (&metadata->connection_id, 4);
+                }
+              else
+                {
+                  TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. nextInjectionDescriptor failed\n", this));
+                  // Construct a message and post to the device to be processed later.
+                  new (&state_data->message) MUInjFifoMessage (NULL, NULL, _device.getContext());
 
-          DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before addToSendQ                ",desc);
-          // Add this message to the send queue to be processed when there is
-          // space available in the injection fifo.
-          _device.addToSendQ ((QueueElem *) &state_data->message);
-        }
+                  // Initialize the descriptor directly in the injection fifo.
+                  MUSPI_DescriptorBase * desc = state_data->message.getDescriptor ();
+                  initializeDescriptor (desc, 0, 0);
 
-        return XMI_SUCCESS;
+                  // Put the metadata into the network header in the descriptor. (I don't use the extra singlepkt meta bytes).
+                  MemoryFifoPacketHeader_t * hdr =
+                    (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
 
-      }; // XMI::Device::MU::MUMultisyncModel::postMsginfo
-      inline void MUMultisyncModel::processHeader (metadata_t * metadata)
-      {
-        TRACE((stderr, "<%p>:MUMultisyncModel::processHeader() connection_id = %d\n", this,metadata->connection_id));
+                  metadata_t *metadata = (metadata_t*) & hdr->dev.multipkt.metadata;
+                  DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before metadata connection_id    ", desc);
+                  metadata->connection_id = multisync->connection_id;
 
-        if(_cb_done.function)
-          _cb_done.function (_device.getContext(),
-                                           _cb_done.clientdata,
-                                           XMI_SUCCESS);
-        else 
-          TRACE((stderr,"<%p>:MUMultisyncModel::processHeader() WHY BOTHER?  connection_id = %d\n", this,metadata->connection_id));
+                  // Point the payload to the connection_id
+                  state_data->message.setSourceBuffer (&metadata->connection_id, 4);
 
-        return;
-      }; // XMI::Device::MU::MUMultisyncModel::processHeader
+                  DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before addToSendQ                ", desc);
+                  // Add this message to the send queue to be processed when there is
+                  // space available in the injection fifo.
+                  _device.addToSendQ ((QueueElem *) &state_data->message);
+                }
 
-      ///
-      /// \brief Direct multi-packet send envelope packet dispatch.
-      ///
-      /// The eager simple send protocol will register this dispatch
-      /// function if and only if the device \b does provide direct access
-      /// to data which has already been read from the network by the
-      /// device.
-      ///
-      /// The envelope dispatch function is invoked by the message device
-      /// to process the first packet of a multi-packet message. The eager
-      /// simple send protocol transfers protocol metadata and application
-      /// metadata in a single packet. Application data will arrive in
-      /// subsequent eager simple send data packets and will be processed
-      /// by the data dispatch function.
-      ///
-      /// \see XMI::Device::Interface::RecvFunction_t
-      ///
-      inline
-      int MUMultisyncModel::dispatch (void   * metadata,
-                                      void   * payload,
-                                      size_t   bytes,
-                                      void   * arg,
-                                      void   * cookie)
-      {
-        metadata_t * m = (metadata_t*)metadata;
+              return XMI_SUCCESS;
 
-        TRACE ((stderr, "<%p>:MUMultisyncModel::dispatch(), bytes = %zd, connection id %#X\n",arg, bytes, m->connection_id));
+            }; // XMI::Device::MU::MUMultisyncModel::postMsginfo
 
-        MUMultisyncModel * model = (MUMultisyncModel *) arg;
-        model->processHeader(m);
-        return 0;
-      }; // XMI::Device::MU::MUMultisyncModel::dispatch
+            inline void MUMultisyncModel::processHeader (metadata_t * metadata)
+            {
+              TRACE((stderr, "<%p>:MUMultisyncModel::processHeader() connection_id = %d\n", this, metadata->connection_id));
+
+              if (_cb_done.function)
+                _cb_done.function (_device.getContext(),
+                                   _cb_done.clientdata,
+                                   XMI_SUCCESS);
+              else
+                TRACE((stderr, "<%p>:MUMultisyncModel::processHeader() WHY BOTHER?  connection_id = %d\n", this, metadata->connection_id));
+
+              return;
+            }; // XMI::Device::MU::MUMultisyncModel::processHeader
+
+            ///
+            /// \brief Direct multi-packet send envelope packet dispatch.
+            ///
+            /// The eager simple send protocol will register this dispatch
+            /// function if and only if the device \b does provide direct access
+            /// to data which has already been read from the network by the
+            /// device.
+            ///
+            /// The envelope dispatch function is invoked by the message device
+            /// to process the first packet of a multi-packet message. The eager
+            /// simple send protocol transfers protocol metadata and application
+            /// metadata in a single packet. Application data will arrive in
+            /// subsequent eager simple send data packets and will be processed
+            /// by the data dispatch function.
+            ///
+            /// \see XMI::Device::Interface::RecvFunction_t
+            ///
+            inline
+            int MUMultisyncModel::dispatch (void   * metadata,
+                                            void   * payload,
+                                            size_t   bytes,
+                                            void   * arg,
+                                            void   * cookie)
+            {
+              metadata_t * m = (metadata_t*)metadata;
+
+              TRACE ((stderr, "<%p>:MUMultisyncModel::dispatch(), bytes = %zd, connection id %#X\n", arg, bytes, m->connection_id));
+
+              MUMultisyncModel * model = (MUMultisyncModel *) arg;
+              model->processHeader(m);
+              return 0;
+            }; // XMI::Device::MU::MUMultisyncModel::dispatch
 
 
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+          };   // XMI::Device::MU namespace
+      };     // XMI::Device namespace
+  };       // XMI namespace
 
 #undef TRACE
 #undef DUMP_DESCRIPTOR

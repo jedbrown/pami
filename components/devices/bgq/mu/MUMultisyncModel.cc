@@ -13,64 +13,93 @@
 #include "components/devices/bgq/mu/MUMultisyncModel.h"
 
 #ifdef TRACE
-  #undef TRACE
+#undef TRACE
 #endif
 #define TRACE(x) //fprintf x
 #ifdef DUMP_DESCRIPTOR
-  #undef DUMP_DESCRIPTOR
+#undef DUMP_DESCRIPTOR
 #endif
 #define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
 /// \see MUMultisyncModel
 XMI::Device::MU::MUMultisyncModel::MUMultisyncModel (xmi_result_t &status, MUCollDevice & device) :
-Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) > (status),
-_device (device),
-_wrapper_model (&_desc_model)
+    Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) > (status),
+    _device (device),
+    _wrapper_model (&_desc_model)
 {
   COMPILE_TIME_ASSERT(MUCollDevice::message_metadata_size >= sizeof(MUMultisyncModel::metadata_t));
   TRACE((stderr, "<%p>:MUMultisyncModel::ctor\n", this));
 /// \see MUSPI_BaseDescriptorInfoFields_t
   MUSPI_BaseDescriptorInfoFields_t base =
   {
-    Pre_Fetch_Only   : MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO,
-    Payload_Address  : 0,
-    Message_Length   : 0,
-    Torus_FIFO_Map   : MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CUSER,
-    Dest :
+
+Pre_Fetch_Only   :
+    MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO,
+
+Payload_Address  :
+    0,
+
+Message_Length   :
+    0,
+
+Torus_FIFO_Map   :
+    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CUSER,
+
+Dest :
     {
-      Destination :
-      { Destination : 0}
+
+Destination :
+
+{ Destination :
+        0}
     }
   };
 
 /// \see MUSPI_CollectiveDescriptorInfoFields_t
   MUSPI_CollectiveDescriptorInfoFields_t coll =
   {
-    Op_Code :    MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD,
-    Word_Length: 4,    
-    Class_Route: 0,    
-    Misc: 
-    MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD | 
+
+Op_Code :
+    MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD,
+
+Word_Length:
+    4,
+
+Class_Route:
+    0,
+
+Misc:
+    MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD |
     MUHWI_COLLECTIVE_TYPE_ALLREDUCE,
-    Skip       : 0
+
+Skip       :
+    0
   };
 
 /// \see MUSPI_MemoryFIFODescriptorInfoFields_t
   MUSPI_MemoryFIFODescriptorInfoFields_t memfifo =
   {
-    Rec_FIFO_Id    : 0,
-    Rec_Put_Offset : 0,
-    Interrupt      :
+
+Rec_FIFO_Id    :
+    0,
+
+Rec_Put_Offset :
+    0,
+
+Interrupt      :
     MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL,
-    SoftwareBit    : 1,
-    SoftwareBytes  :
+
+SoftwareBit    :
+    1,
+
+SoftwareBytes  :
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
   };
 
   _desc_model.setBaseFields (&base);
   _desc_model.setCollectiveFields(&coll);
   _desc_model.setMemoryFIFOFields (&memfifo);
-  DUMP_DESCRIPTOR("MUMultisyncModel::ctor",&_desc_model);
+  DUMP_DESCRIPTOR("MUMultisyncModel::ctor", &_desc_model);
 
   // Use our rank/addr to set our master reception fifo
   xmi_task_t target_rank = __global.mapping.task();
@@ -86,15 +115,15 @@ _wrapper_model (&_desc_model)
 
   MemoryFifoPacketHeader * hdr = (MemoryFifoPacketHeader *) & _desc_model.PacketHeader;
 
-  DUMP_DESCRIPTOR("MUMultisyncModel::ctor ..before dispatch",&_desc_model);
+  DUMP_DESCRIPTOR("MUMultisyncModel::ctor ..before dispatch", &_desc_model);
   // Register the dispatch function.
   bool success =
-  _device.registerPacketHandler (0x00BC,
-                                 dispatch,
-                                 this,
-                                 hdr->dev.dispatch_id);
+    _device.registerPacketHandler (0x00BC,
+                                   dispatch,
+                                   this,
+                                   hdr->dev.dispatch_id);
   TRACE((stderr, "<%p>:MUMulticastModel::registerMcastRecvFunction_impl dispatch_id = %#X, success = %d\n", this, hdr->dev.dispatch_id, (unsigned)success));
-  DUMP_DESCRIPTOR("MUMultisyncModel::ctor",&_desc_model);
+  DUMP_DESCRIPTOR("MUMultisyncModel::ctor", &_desc_model);
 
   XMI_assert(success);
 
