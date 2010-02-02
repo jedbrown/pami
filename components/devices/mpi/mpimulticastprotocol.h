@@ -212,7 +212,6 @@ namespace XMI
 
             // work with a local copy of mcast and override cb_done and (maybe) src topology since all-sided requires it.
             xmi_multicast_t l_mcast = *mcast;
-            l_mcast.request  = (void *)&allocation->request;
             if(l_mcast.src_participants == NULL) // all-sided model expects a src/root topology
                 {
                   new (&allocation->topology) XMI::Topology(_task_id);
@@ -322,7 +321,6 @@ namespace XMI
             TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::dispatch_p2p() allocated %p, cb_done %p, client data %p\n",
                           (unsigned)this, allocation, mcast.cb_done.function, mcast.cb_done.clientdata));
 
-            mcast.request  = (void *)&allocation->request;
             mcast.src_participants = NULL; // I'm a dst so all-sided mcast src can be null
 
             // Save the caller's cb_done and set our own so we can free the allocation

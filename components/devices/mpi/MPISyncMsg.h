@@ -241,9 +241,9 @@ namespace XMI
                                                        xmi_multisync_t *msync)
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() connection_id %d, request %p\n",(unsigned)this,
-                    msync->connection_id, msync->request));
+                    msync->connection_id, &state));
       MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
-      new (msync->request) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);
+      new (&state) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);
       _g_mpisync_dev.__post<MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);
       return XMI_SUCCESS;
     }

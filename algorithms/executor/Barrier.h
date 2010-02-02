@@ -120,7 +120,7 @@ namespace CCMI
 	_minfo.bytes         = 0;
 
 	_request = (char *) malloc (16384); //Large buffer for request.
-	_minfo.request       = (void *)&_request;
+//	_minfo.request       = (void *)&_request;
         //_minfo.connection_id = _connid;
         _minfo.roles         = -1U;
         _minfo.dst_participants  = NULL;

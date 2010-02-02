@@ -346,7 +346,7 @@ namespace XMI
                                                         xmi_multicast_t *mcast)
     {
       TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",(unsigned)this,
-                    mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, mcast->request));
+                    mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, &state));
       MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
       new (&state) MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpibcast_dev, mcast);
       _g_mpibcast_dev.__post<MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > >(msg);

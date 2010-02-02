@@ -485,52 +485,32 @@ namespace XMI
         typedef uint8_t mcast_storage_t[P2PMcastProto::sizeof_msg];
         P2PMcastProto * multicast = (P2PMcastProto *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
-        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
-        if(mcastinfo->request==NULL)
-        {
-          msgbuf = (mcast_storage_t*)malloc(P2PMcastProto::sizeof_msg);
-          mcastinfo->request = msgbuf;
-        }
-        multicast->multicast(*(mcast_storage_t*)msgbuf,mcastinfo);
+        mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(P2PMcastProto::sizeof_msg);/// \todo memleak
+        multicast->multicast(*msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)3) // see HACK comment above
       {
         typedef uint8_t mcast_storage_t[XMI::Device::WQRingBcastMdl::sizeof_msg];
         XMI::Device::WQRingBcastMdl * multicast = (XMI::Device::WQRingBcastMdl*) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided ring multicast %p\n", multicast));
-        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
-        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-        {
-          msgbuf = (mcast_storage_t*)malloc(XMI::Device::WQRingBcastMdl::sizeof_msg);
-          mcastinfo->request = msgbuf;
-        }
-        multicast->postMulticast(*(mcast_storage_t*)msgbuf,mcastinfo);
+        mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(XMI::Device::WQRingBcastMdl::sizeof_msg);/// \todo memleak
+        multicast->postMulticast(*msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)4) // see HACK comment above
       {
         typedef uint8_t mcast_storage_t[XMI::Device::LocalBcastWQModel::sizeof_msg];
         XMI::Device::LocalBcastWQModel  * multicast = (XMI::Device::LocalBcastWQModel *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided multicast %p\n", multicast));
-        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
-        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-        {
-          msgbuf = (mcast_storage_t*)malloc(XMI::Device::LocalBcastWQModel::sizeof_msg);
-          mcastinfo->request = msgbuf;
-        }
-        multicast->postMulticast(*(mcast_storage_t*)msgbuf,mcastinfo);
+        mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(XMI::Device::LocalBcastWQModel::sizeof_msg);/// \todo memleak
+        multicast->postMulticast(*msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)5) // see HACK comment above
       {
         typedef uint8_t mcast_storage_t[XMI::Device::MPIBcastMdl::sizeof_msg];
         XMI::Device::MPIBcastMdl  * multicast = (XMI::Device::MPIBcastMdl *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided global multicast %p\n", multicast));
-        mcast_storage_t * msgbuf = (mcast_storage_t*)mcastinfo->request;
-        if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-        {
-          msgbuf = (mcast_storage_t*)malloc(XMI::Device::MPIBcastMdl::sizeof_msg);
-          mcastinfo->request = msgbuf;
-        }
-        multicast->postMulticast(*(mcast_storage_t*)msgbuf,mcastinfo);
+        mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(XMI::Device::MPIBcastMdl::sizeof_msg);/// \todo memleak
+        multicast->postMulticast(*msgbuf,mcastinfo);
       }
       else
         XMI_abort();

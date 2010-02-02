@@ -459,12 +459,7 @@ namespace XMI
 #ifdef MU_COLL_DEVICE
           typedef uint8_t storage_t[XMI::Device::MU::MUMulticastModel::sizeof_msg];
           TRACE_ERR((stderr, ">> multicast_impl multicast %zd, %p\n", mcastinfo->dispatch, mcastinfo));
-          storage_t * msgbuf = (storage_t*)mcastinfo->request;
-          if(mcastinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-          {
-            msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticastModel::sizeof_msg);
-            mcastinfo->request = msgbuf;
-          }
+          storage_t * msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticastModel::sizeof_msg);
           XMI::Device::MU::MUMulticastModel * model = (XMI::Device::MU::MUMulticastModel *) _dispatch[mcastinfo->dispatch];
           return model->postMulticast(*msgbuf, mcastinfo);
 #else
@@ -484,12 +479,7 @@ namespace XMI
 #ifdef MU_COLL_DEVICE
           typedef uint8_t storage_t[XMI::Device::MU::MUMultisyncModel::sizeof_msg];
           TRACE_ERR((stderr, ">> multisync_impl multisync %p\n", msyncinfo));
-          storage_t * msgbuf = (storage_t*)msyncinfo->request;
-          if(msyncinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-          {
-            msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMultisyncModel::sizeof_msg);
-            msyncinfo->request = msgbuf;
-          }
+            storage_t * msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMultisyncModel::sizeof_msg);
           return _mu_msync_model->postMultisync(*msgbuf, msyncinfo);
 #else
           return XMI_UNIMPL;
@@ -502,12 +492,7 @@ namespace XMI
 #ifdef MU_COLL_DEVICE
           typedef uint8_t storage_t[XMI::Device::MU::MUMulticombineModel::sizeof_msg];
           TRACE_ERR((stderr, ">> multicombine_impl multicombine %p\n", mcombineinfo));
-          storage_t * msgbuf = (storage_t*)mcombineinfo->request;
-          if(mcombineinfo->request==NULL) // some tests have removed this field so malloc it (\todo memory leak)
-          {
-            msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticombineModel::sizeof_msg);
-            mcombineinfo->request = msgbuf;
-          }
+          storage_t * msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticombineModel::sizeof_msg);
           return _mu_mcombine_model->postMulticombine(*msgbuf, mcombineinfo);
 #else
           return XMI_UNIMPL;
