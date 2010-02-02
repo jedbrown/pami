@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/lapi/lapipacketmodel.h
+ * \file components/devices/lapiunix/lapiunixpacketmodel.h
  * \brief ???
  */
 
-#ifndef __components_devices_lapi_lapipacketmodel_h__
-#define __components_devices_lapi_lapipacketmodel_h__
+#ifndef __components_devices_lapiunix_lapiunixpacketmodel_h__
+#define __components_devices_lapiunix_lapiunixpacketmodel_h__
 
 #define USE_GCC_ICE_WORKAROUND
 

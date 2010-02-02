@@ -122,7 +122,7 @@ namespace CCMI
           for(idx = 0; idx < _nranks; idx++)
             if(_myrank == _ranks[idx])
               return idx;
-	  
+
           return(unsigned)-1;
         }
 
@@ -275,7 +275,7 @@ namespace CCMI
         xmi_result_t rc = topology->rankList(&srcranks);
         CCMI_assert (rc == XMI_SUCCESS);
         CCMI_assert(srcranks != NULL);
-       
+
         unsigned nranks = 0;
         switch(_op)
         {
@@ -311,7 +311,7 @@ namespace CCMI
         xmi_result_t rc = topology->rankList(&dstranks);
         CCMI_assert (rc == XMI_SUCCESS);
         CCMI_assert(dstranks != NULL);
-	
+
         unsigned ndst = 0;
 
         switch(_op)
@@ -335,7 +335,7 @@ namespace CCMI
         }
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (dstranks, ndst);	
+	new (topology) XMI::Topology (dstranks, ndst);
         return;
       }
 
@@ -366,7 +366,7 @@ namespace CCMI
 	      else
 		getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
 	      break;
-	      
+
 	    case BARRIER_OP:
 	    default:
 	      CCMI_abort();
@@ -391,7 +391,7 @@ namespace CCMI
 	unsigned ndstranks = topology->size();
 	CCMI_assert (rc == XMI_SUCCESS);
 	CCMI_assert(dstranks != NULL);
-	
+
 	unsigned nranks = 0, ntotal_ranks = 0;
 	for (unsigned p = _startPhase; p < _startPhase + _nphases; p++) {
 	  switch(_op)
@@ -408,7 +408,7 @@ namespace CCMI
 	      else
 		getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
 	      break;
-	      
+
 	    case BARRIER_OP:
 	    default:
 	      CCMI_abort();
@@ -477,8 +477,8 @@ namespace CCMI
   };
 };
 
-inline CCMI::Schedule::RingSchedule::RingSchedule 
-(unsigned myrank, XMI::Topology *topology, unsigned c) 
+inline CCMI::Schedule::RingSchedule::RingSchedule
+(unsigned myrank, XMI::Topology *topology, unsigned c)
 {
   xmi_topology_type_t t = topology->type();
 
@@ -500,12 +500,12 @@ inline CCMI::Schedule::RingSchedule::RingSchedule
 inline void CCMI::Schedule::RingSchedule::configure
 (unsigned        myrank,
  unsigned        nranks,
- unsigned      * ranks) 
+ unsigned      * ranks)
 {
   _myrank  = myrank;
   _isHead  = false;
   _isTail  = false;
-  _ranks   = ranks; 
+  _ranks   = ranks;
   _nranks  = nranks;
   _x0      = -1;
   _my_x    = ((unsigned) -1);
@@ -529,9 +529,9 @@ inline void CCMI::Schedule::RingSchedule::configure
  unsigned        xN) {
   _isHead  = false;
   _isTail  = false;
-  _ranks   = NULL; 
+  _ranks   = NULL;
   _nranks  = (xN - x0 + 1);
-  _x0      = x0; 
+  _x0      = x0;
   _my_x    = x;
   _startPhase = ((unsigned) -1);
   _root = ((unsigned)-1);

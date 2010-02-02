@@ -1,16 +1,16 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file tests/dcmf/send/send_to_self_perf.c
+ * \file test/p2p/send/send_to_self_perf/send_to_self_perf.c
  * \brief Test XMI_Send(), sending via loopback to ourself.
  *
- * The test starts with message size 0, and increases it up to the 
+ * The test starts with message size 0, and increases it up to the
  * BUFSIZE, printing out cycles and microseconds.
  */
 #include <stdio.h>
@@ -180,7 +180,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
     result = XMI_Send (context, &parameters);
     TRACE_ERR((stderr,"test():  Back from XMI_Send\n"));
 
-    while (_send_active || _recv_active) 
+    while (_send_active || _recv_active)
       {
 	TRACE_ERR((stderr,"test():  Calling Advance\n"));
 	result = XMI_Context_advance (context, 100);
@@ -251,7 +251,7 @@ int main ()
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
     return 1;
   }
-  
+
   double clockMHz = 1600.0;
 
 /*   /\* Register the protocols to test *\/ */
@@ -332,7 +332,7 @@ int main ()
     fprintf (stdout, "%s\n", hdrstr[0]);
     fprintf (stdout, "%s\n", hdrstr[1]);
     fflush (stdout);
-  
+
     unsigned long long cycles;
     double usec;
 

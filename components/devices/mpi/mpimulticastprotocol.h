@@ -49,7 +49,7 @@ namespace XMI
         /// Point-to-point dispatch header.
         ///
         typedef struct _dispatch_header_
-        { 
+        {
           xmi_task_t root;        /// multicast root
           unsigned connection_id; /// multicast connection id
           size_t   bytes;         /// total bytes being multicast

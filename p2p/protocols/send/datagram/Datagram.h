@@ -602,10 +602,10 @@ private:
 		send->rts.from_contextid = _from_contextid; // Origin Context
 		send->rts.bytes = parameters->send.data.iov_len; // Total bytes to send
 		send->rts.va_send = send; // Virtual Address sender
-		
+
 		// Target task and context identifier (offset)
 		XMI_ENDPOINT_INFO(parameters->send.dest,send->rts.dest_taskid,send->rts.dest_contextid);
-		
+
 		send->rts.mbytes = parameters->send.header.iov_len; // Metadata Number of  bytes
 		send->rts.wrate = STD_RATE_SEND; // Initial value for window rate
 		send->rts.wsize = 2; // Window size

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/schedule/RingSchedule.h
+ * \file algorithms/schedule/OldRingSchedule.h
  * \brief ???
  */
 

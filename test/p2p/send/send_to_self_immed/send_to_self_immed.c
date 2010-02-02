@@ -1,16 +1,16 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file tests/dcmf/send/send_to_self_immed.c
+ * \file test/p2p/send/send_to_self_immed/send_to_self_immed.c
  * \brief Test XMI_SendImmediate(), sending via loopback to ourself.
  *
- * The test starts with message size 0, and increases it up to the 
+ * The test starts with message size 0, and increases it up to the
  * IMMEDIATE_SEND_LIMIT, printing out cycles and microseconds.
  */
 #include <stdio.h>
@@ -103,7 +103,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
     result = XMI_Send_immediate (context, &parameters);
     TRACE_ERR((stderr,"test():  Back from XMI_Send_immediate\n"));
 
-    while (_recv_active) 
+    while (_recv_active)
       {
 	TRACE_ERR((stderr,"test():  Calling Advance\n"));
 	result = XMI_Context_advance (context, 100);
@@ -173,7 +173,7 @@ int main ()
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
     return 1;
   }
-  
+
   double clockMHz = 1600.0;
 
 /*   /\* Register the protocols to test *\/ */
@@ -254,7 +254,7 @@ int main ()
     fprintf (stdout, "%s\n", hdrstr[0]);
     fprintf (stdout, "%s\n", hdrstr[1]);
     fflush (stdout);
-  
+
     unsigned long long cycles;
     double usec;
 
@@ -267,11 +267,11 @@ int main ()
 	_sbuf[j]=j*5+3;
       }
 
-    // Limit the sndlen to <= IMMEDIATE_SEND_LIMIT bytes, 
+    // Limit the sndlen to <= IMMEDIATE_SEND_LIMIT bytes,
     // which is the range for send_immediate.
     size_t sndlen;
-    for (sndlen = 0; 
-	 sndlen < BUFSIZE, sndlen<=IMMEDIATE_SEND_LIMIT; 
+    for (sndlen = 0;
+	 sndlen < BUFSIZE, sndlen<=IMMEDIATE_SEND_LIMIT;
 	 sndlen = sndlen*3/2+1)
     {
       int index = 0;
