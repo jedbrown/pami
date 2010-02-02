@@ -200,7 +200,6 @@ int main(int argc, char ** argv)
 
     if(gRoot == task_id)
     {
-      _doneCountdown = 2; /// \todo active message callback on root? semantics?
       _buffer.reset(true); // isRoot = true
       status = XMI_Multicast(&mcast);
     }
@@ -251,8 +250,6 @@ int main(int argc, char ** argv)
 
     if(gRoot == task_id)
     {
-      _doneCountdown = 2; /// \todo active message callback on root? semantics?
-
       mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
 
       mcast.src = (xmi_pipeworkqueue_t *)NULL;

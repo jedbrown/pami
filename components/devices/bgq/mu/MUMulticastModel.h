@@ -215,12 +215,21 @@ namespace XMI
         // Post the multicast to the device
         if(total < MUCollDevice::payload_size) // pack msginfo and payload into one packet
         {
-          postMsginfo(state_data, state_data->message[0], mcast->connection_id, total, msgdata, mcast->msgcount, payload, length, mcast->cb_done.function, mcast->cb_done.clientdata);
+          postMsginfo(state_data, state_data->message[0], mcast->connection_id, 
+                      total, msgdata, mcast->msgcount, payload, length, 
+                      NULL,NULL);//mcast->cb_done.function, mcast->cb_done.clientdata);
+          // \todo look at dst_participants to decide when to call cb_done? send or receive? semantic question
         }
         else // two messages - the msginfo packet and the payload (multi-)packet
         {
-          postMsginfo(state_data, state_data->message[0], mcast->connection_id, msgsize, msgdata, mcast->msgcount, NULL, 0, NULL,NULL);
-          postPayload(state_data->message[1], mcast->connection_id,  payload, length, mcast->cb_done.function, mcast->cb_done.clientdata);
+          postMsginfo(state_data, state_data->message[0], mcast->connection_id, 
+                      msgsize, msgdata, mcast->msgcount, NULL, 0, 
+                      NULL,NULL);
+          // \todo look at dst_participants to decide when to call cb_done? send or receive? semantic question
+          postPayload(state_data->message[1], mcast->connection_id,  
+                      payload, length, 
+                      NULL,NULL);//mcast->cb_done.function, mcast->cb_done.clientdata);
+          // \todo look at dst_participants to decide when to call cb_done? send or receive? semantic question
         }
 
 
