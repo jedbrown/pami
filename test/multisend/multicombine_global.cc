@@ -91,7 +91,7 @@ int main(int argc, char ** argv)
   multicombine.connection_id = 0xB0BC; // arbitrary
   multicombine.data_participants = (xmi_topology_t *)&topology_global;
   multicombine.results_participants = (xmi_topology_t *)&topology_global;
-  multicombine.count = 1;
+  multicombine.count = TEST_BUF_SIZE/sizeof(unsigned);
   multicombine.data = (xmi_pipeworkqueue_t*) _buffer.srcPwq();
   multicombine.dtype = XMI_UNSIGNED_INT;
   multicombine.optor = XMI_MIN;
@@ -102,8 +102,10 @@ int main(int argc, char ** argv)
 
   multicombine.cb_done = _cb_done;
 // ------------------------------------------------------------------------
-// simple multicombine root to all
+// simple multicombine 
 // ------------------------------------------------------------------------
+  _buffer.reset(true); // isRoot = true
+
   
   _doneCountdown = 1;
   //sleep(5); // instead of combineing
@@ -114,6 +116,60 @@ int main(int argc, char ** argv)
   {
     status = XMI_Context_advance (context, 10);
   }
+
+  size_t
+  bytesConsumed = 0,
+  bytesProduced = 0;
+
+  _buffer.validate(bytesConsumed,
+                   bytesProduced,
+                   true,   // isRoot = true
+                   true);  // isDest = true
+  if((bytesConsumed != TEST_BUF_SIZE) ||
+     (bytesProduced != TEST_BUF_SIZE))
+  {
+    fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
+  }
+  else
+    fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
+
+// ------------------------------------------------------------------------
+// simple multicombine root to all with one contributing '0' to the MIN allreduce
+// ------------------------------------------------------------------------
+  if(task_id == topology_global.index2Rank(0))
+  {
+    _buffer.resetMIN0(true); // isRoot = true so set to 0's
+  }
+  else
+  {
+    _buffer.resetMIN0(); 
+  }
+
+  
+  _doneCountdown = 1;
+  
+  status = XMI_Multicombine(&multicombine);
+
+  while(_doneCountdown)
+  {
+    status = XMI_Context_advance (context, 10);
+  }
+
+  size_t
+  bytesConsumed = 0,
+  bytesProduced = 0;
+
+  _buffer.validateMIN0(bytesConsumed,
+                   bytesProduced,
+                   true,   // isRoot = true
+                   true);  // isDest = true
+  if((bytesConsumed != TEST_BUF_SIZE) ||
+     (bytesProduced != TEST_BUF_SIZE))
+  {
+    fprintf(stderr, "FAIL bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
+  }
+  else
+    fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
 
 // ------------------------------------------------------------------------
   DBG_FPRINTF((stderr, "XMI_Context_destroy(context);\n"));
