@@ -155,7 +155,6 @@ int main(int argc, char ** argv)
     status = XMI_Context_advance (context, 10);
   }
 
-  size_t
   bytesConsumed = 0,
   bytesProduced = 0;
 
