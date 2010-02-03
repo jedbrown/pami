@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	if (!root_set) {
-		pick_world_root(&world.rect, &world.root, &world.pri_dim);
+		MUSPI_PickWorldRoot(&world.rect, &world.root, &world.pri_dim);
 	}
 	if (optind < argc) {
 		for (x = 0; x < argc - optind; ++x) {

@@ -7,7 +7,8 @@
 
 #include <stdio.h>
 
-#include "cnclassroute.h"
+#define __INLINE__	static inline
+#include "spi/include/mu/Classroute_inlines.h"
 
 char *dim_names = CR_DIM_NAMES;
 
@@ -282,7 +283,7 @@ void recurse_build_cr(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v)
 
 	int r = coord2rank(comm, me);
 	cr[r].flags = 0;
-	build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r].cr);
+	MUSPI_BuildNodeClassroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r].cr);
 }
 
 void make_classroutes(commworld_t *cw, CR_RECT_T *comm, classroute_t *cr) {
@@ -301,8 +302,7 @@ void recurse_build_cr_sparse(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, v
 
 	int r = coord2rank(comm, me);
 	cr[r].flags = 0;
-	build_node_classroute(&cw->rect, &cw->root, me, comm, cw->pri_dim, &cr[r].cr);
-	build_node_classroute_sparse(&cw->rect, &cw->root, me, comm,
+	MUSPI_BuildNodeClassrouteSparse(&cw->rect, &cw->root, me, comm,
 				st->excl, st->nexcl, cw->pri_dim, &cr[r].cr);
 }
 
@@ -326,7 +326,7 @@ void recurse_alloc_cr(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v)
 	struct recurse_alloc_cr_s *st = (struct recurse_alloc_cr_s *)v;
 
 	int r = coord2rank(&cw->rect, me);
-	m = get_classroute_ids(st->vc, comm, &st->env[r]); // must use per-node tables...
+	m = MUSPI_GetClassrouteIds(st->vc, comm, &st->env[r]); // must use per-node tables...
 	/*
 	 * this simulates an allreduce for bit-wise AND...
 	 */
@@ -337,7 +337,7 @@ void recurse_set_cr(commworld_t *cw, CR_RECT_T *comm, CR_COORD_T *me, void *v) {
 	struct recurse_alloc_cr_s *st = (struct recurse_alloc_cr_s *)v;
 
 	int r = coord2rank(&cw->rect, me);
-	m = set_classroute_id(st->id, st->vc, comm, &st->env[r]); // must use per-node tables...
+	m = MUSPI_SetClassrouteId(st->id, st->vc, comm, &st->env[r]); // must use per-node tables...
 }
 
 int alloc_classroutes(commworld_t *cw, CR_RECT_T *comm, int vc, void **env) {

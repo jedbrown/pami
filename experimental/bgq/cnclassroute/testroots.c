@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 		}
 
 		CR_COORD_T root1, root2;
-		pick_world_root_pair(&world.rect, &root1, &root2, &world.pri_dim);
+		MUSPI_PickWorldRootPair(&world.rect, &root1, &root2, &world.pri_dim);
 
 		world.root = root1;
 		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	} else {
-		pick_world_root(&world.rect, &world.root, &world.pri_dim);
+		MUSPI_PickWorldRoot(&world.rect, &world.root, &world.pri_dim);
 
 		classroute_t *cr = (classroute_t *)malloc(z * sizeof(classroute_t));
 		if (!cr) {

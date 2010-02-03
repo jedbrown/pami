@@ -3,16 +3,16 @@ WORK = /home/dougmill/cvs/bgq/work
 SPI = $(WORK)/spi
 HWI = $(WORK)/hwi
 COPTS =
-CFLAGS = -g -I$(SPI)/include -I$(HWI)/include -I$(WORK) -I../../../ -I$(SPI)/include/kernel/cnk
+CFLAGS = -g -I$(WORK) -I../../../ -I$(SPI)/include/kernel/cnk -I$(SPI)/include/mu/xmi
 
-HDRS = cnclassroute.h testlib.h
-OBJS = cnclassroute.o
+HDRS = testlib.h
+OBJS =
 BINS = testroots testcomms testsparse testalloc
 
 all: $(BINS)
 
-%: %.c cnclassroute.o $(HDRS)
-	$(CC) $(CFLAGS) -o $@ $< cnclassroute.o $(COPTS)
+%: %.c $(OBJS) $(HDRS)
+	$(CC) $(CFLAGS) -o $@ $< $(OBJS) $(COPTS)
 
 cnclassroute.o: cnclassroute.c cnclassroute.h
 	$(CC) $(CFLAGS) -c -o $@ $< $(COPTS)
