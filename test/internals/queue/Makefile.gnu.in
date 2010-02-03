@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = multisend progressfunc topology queue
+SUBDIRS         = $(TARGET)
 NOTBUILT        = 
-APPS            = 
+APPS            = queue.$(EXTENSION)
 
 include @abs_top_builddir@/Build.rules
 

@@ -86,7 +86,7 @@ int main(int argc, char ** argv)
   multisync.connection_id = 0xB; // arbitrary
   multisync.participants = (xmi_topology_t *)&topology_global;
 
-  multisync.client = client;	// client ID
+  multisync.client = (size_t) client;	// client ID
   multisync.context = 0;	// context ID
   multisync.roles = -1;
 

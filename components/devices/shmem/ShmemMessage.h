@@ -29,7 +29,7 @@ namespace XMI
 {
   namespace Device
   {
-    class ShmemMessage : public QueueElem
+    class ShmemMessage : public XMI::Queue::Element
     {
       public:
 
@@ -50,7 +50,7 @@ namespace XMI
                              void               * src,
                              size_t               bytes,
                              bool                 packed) :
-            QueueElem (),
+            XMI::Queue::Element (),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -82,7 +82,7 @@ namespace XMI
                              void               * src1,
                              size_t               bytes1,
                              bool                 packed) :
-            QueueElem (),
+            XMI::Queue::Element (),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -113,7 +113,7 @@ namespace XMI
                              struct iovec       * iov,
                              size_t               niov,
                              bool                 packed) :
-            QueueElem (),
+            XMI::Queue::Element (),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -136,7 +136,7 @@ namespace XMI
                              uint16_t             dispatch_id,
                              void               * metadata,
                              size_t               metasize) :
-            QueueElem (),
+            XMI::Queue::Element (),
             _context (context),
             _fn (fn),
             _cookie (cookie),
@@ -160,7 +160,7 @@ namespace XMI
                              size_t               remote_offset,
                              size_t               bytes,
                              bool                 is_put) :
-            QueueElem (),
+            XMI::Queue::Element (),
             _fn (fn),
             _cookie (cookie),
             _pkt_type(RMA),

@@ -20,14 +20,14 @@
 
 namespace XMI
 {
-  class MatchQueueElem  : public QueueElem
+  class MatchQueueElem  : public Queue::Element
   {
     protected:
       unsigned               _key;       ///The key to insert and search elements
 
     public:
       ///Constructor
-      MatchQueueElem (unsigned key) : QueueElem (), _key(key)
+      MatchQueueElem (unsigned key) : Queue::Element (), _key(key)
       {
       }
 

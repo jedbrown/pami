@@ -72,6 +72,44 @@ namespace XMI
                     return MUCollDevice::init_impl(sysdep, context, offset);
                   };
 
+//////////////////////////////////////////////////////
+//  Uggh alternative to above Uggh.
+//  One way to hook into init_impl is multi-inheritence but then I have to hide these BaseDevice functions and explicitly call the parent that I want.
+//      int init(SysDep* sysdep)
+//      {
+//        return XMI::Device::Interface::BaseDevice<MUCollDevice, SysDep>::init(sysdep);
+//      };
+//      int advance()
+//      {
+//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::advance();
+//      }
+//      size_t peers()
+//      {
+//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::peers();
+//      }
+//      size_t task2peer(size_t task)
+//      {
+//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::task2peer(task);
+//      }
+//////////////////////////////////////////////////////
+
+#warning Clean these up
+      static inline MUCollDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
+	size_t x;
+	MUCollDevice *devs;
+	int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+	XMI_assertf(rc == 0, "posix_memalign failed for MUCollDevice[%zd], errno=%d\n", num_ctx, errno);
+	for (x = 0; x < num_ctx; ++x) {
+		new (&devs[x]) MUCollDevice();
+	}
+	return devs;
+      }
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		MUDevice *dev = &this[contextid];
+		dev->init_impl(sd, context, contextid);
+	}
+
                   ///
                   /// \see advanceInjectionFifoDescriptorTail
                   ///
@@ -95,7 +133,7 @@ namespace XMI
                     _injFifoSubGroup->addToDoneQ(_relativeFnum, wrapper);
                   }
 
-                  inline void addToSendQ (QueueElem * msg)
+                  inline void addToSendQ (XMI::Queue::Element * msg)
                   {
                     TRACE((stderr, "<%p>MUCollDevice::addToSendQ() \n", this));
                     _injFifoSubGroup->addToSendQ(_relativeFnum, msg);

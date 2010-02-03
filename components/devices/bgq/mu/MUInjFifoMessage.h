@@ -30,11 +30,11 @@ namespace XMI
   {
     namespace MU
     {
-      class MUInjFifoMessage : public QueueElem
+      class MUInjFifoMessage : public XMI::Queue::Element
       {
         public:
           inline MUInjFifoMessage (uint64_t sequenceNum = 0) :
-              QueueElem (),
+              XMI::Queue::Element (),
               _desc (),
               _wrapper (&_desc)
           {
@@ -45,7 +45,7 @@ namespace XMI
                                    void *             cookie,
                                    xmi_context_t      context,
                                    uint64_t           sequenceNum = 0) :
-              QueueElem (),
+              XMI::Queue::Element (),
               _desc (),
               _wrapper (&_desc)
           {

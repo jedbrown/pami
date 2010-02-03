@@ -169,7 +169,7 @@ namespace XMI
     template <class T_Fifo>
     xmi_result_t ShmemDevice<T_Fifo>::post (size_t fnum, ShmemMessage * msg)
     {
-      pushSendQueueTail (fnum, (QueueElem *) msg);
+      pushSendQueueTail (fnum, (XMI::Queue::Element *) msg);
       return XMI_SUCCESS;
     };
 

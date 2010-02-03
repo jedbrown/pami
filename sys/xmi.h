@@ -2776,6 +2776,8 @@ extern "C"
    *
    * The XMI_Multicast_t object is re-useable immediately, but objects referred to
    * (src, etc) cannot be re-used until cb_done.
+   *
+   * \todo Change client and context types to be xmi_client_t and xmi_context_t ?
    */
   typedef struct
   {

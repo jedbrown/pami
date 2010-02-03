@@ -82,6 +82,59 @@ namespace XMI
 
         _BGP_Atomic _atom;
     };
+
+
+    class BgpMutex : public Interface::Mutex <BgpMutex>
+    {
+      public:
+
+        inline BgpMutex () :
+          Interface::Mutex <BgpMutex> (),
+          _atomic (0)
+        {};
+
+        ~BgpMutex () {};
+
+        /// \see XMI::Atomic::Interface::Mutex::acquire
+        inline void acquire_impl ()
+        {
+          while (!_bgp_test_and_set((_BGP_Atomic *)&_atomic, 1));
+        };
+
+        /// \see XMI::Atomic::Interface::Mutex::release
+        inline void release_impl ()
+        {
+          _atomic = 0;
+        };
+
+        /// \see XMI::Atomic::Interface::Mutex::tryAcquire
+        inline bool tryAcquire_impl ()
+        {
+          return (_bgp_test_and_set((_BGP_Atomic *)&_atomic, 1) != 0);
+        };
+
+        /// \see XMI::Atomic::Interface::Mutex::isLocked
+        inline bool isLocked_impl ()
+        {
+          return (_atomic != 0);
+        };
+
+        /// \see XMI::Atomic::Interface::Mutex::init
+        inline void init_impl (XMI::SysDep *sd)
+        {
+          // Noop
+        };
+
+        /// \see XMI::Atomic::Interface::Mutex::returnLock
+        inline void * returnLock_impl ()
+        {
+          return (void *) & _atomic;
+        };
+
+      private:
+
+        volatile uint32_t _atomic __attribute__ ((aligned(8)));
+    };
   };
 };
 

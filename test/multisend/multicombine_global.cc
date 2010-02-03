@@ -96,7 +96,7 @@ int main(int argc, char ** argv)
   multicombine.dtype = XMI_UNSIGNED_INT;
   multicombine.optor = XMI_MIN;
   multicombine.results = (xmi_pipeworkqueue_t*) _buffer.dstPwq();
-  multicombine.client = client;	// client ID
+  multicombine.client = (size_t) client;	// client ID
   multicombine.context = 0;	// context ID
   multicombine.roles = -1;
 

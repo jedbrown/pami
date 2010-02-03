@@ -25,6 +25,9 @@
 #define __util_queue_Queue_h__
 
 #include <stdio.h>
+
+#include "SysDep.h"
+
 #include "util/common.h"
 #include "util/queue/QueueInterface.h"
 
@@ -35,283 +38,466 @@
 namespace XMI
 {
 
-  //////////////////////////////////////////////////////////////////////
-  ///  \brief Base Class for Queue
-  //////////////////////////////////////////////////////////////////////
-  class QueueElem : public XMI::Interface::QueueElem<QueueElem>
+  //
+  // template specialization of queue element
+  //
+  class Queue;
+
+  namespace Interface
+  {
+    template <>
+    class QueueElement<Queue>
+    {
+      public:
+        inline QueueElement ()
+        {
+          TRACE_ERR((stderr, "template specialization\n"));
+        };
+
+        inline void set (QueueElement * previous, QueueElement * next)
+        {
+          _prev = previous;
+          _next = next;
+        }
+
+        inline void setPrev (QueueElement * element)
+        {
+          _prev = element;
+        }
+
+        inline void setNext (QueueElement * element)
+        {
+          _next = element;
+        }
+
+        inline QueueElement * prev ()
+        {
+          return _prev;
+        }
+
+        inline QueueElement * next ()
+        {
+          return _next;
+        }
+
+      protected:
+
+        QueueElement * _prev;
+        QueueElement * _next;
+    };
+  };
+
+
+  class Queue : public XMI::Interface::DequeInterface<Queue>,
+      public XMI::Interface::QueueInfoInterface<Queue>
   {
     public:
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Queue Element constructor.  Initializes the next
-      ///         and previous pointers to NULL
-      //////////////////////////////////////////////////////////////////
-      QueueElem()
+
+      typedef Interface::QueueElement<Queue> Element;
+
+      inline Queue() :
+          XMI::Interface::DequeInterface<Queue> (),
+          XMI::Interface::QueueInfoInterface<Queue> (),
+          _head (NULL),
+          _tail (NULL),
+          _size (0)
       {
-        _prev = _next = NULL;
-      }
+      };
 
-      QueueElem *prev_impl(int n)
+      /// \copydoc XMI::Interface::QueueInterface::enqueue
+      inline void enqueue_impl (Queue::Element * element)
       {
-        return _prev;
-      }
+        TRACE_ERR ((stderr, "enqueue(%p)\n", element));
 
-      QueueElem *next_impl(int n)
+        element->set (_tail, NULL);
+
+        if (!_tail) _head = _tail = element;
+        else
+          {
+            _tail->setNext (element);
+            _tail = element;
+          }
+
+        _size++;
+      };
+
+      /// \copydoc XMI::Interface::QueueInterface::dequeue
+      inline Queue::Element * dequeue_impl ()
       {
-        return _next;
-      }
+        Queue::Element * element = _head;
 
-      void setPrev_impl(QueueElem *qelem, int n)
+        if (!element) return NULL;
+
+        _head = element->next();
+
+        if (_head == NULL) _tail = NULL;
+        else _head->setPrev (NULL);
+
+        // Clear the next/prev pointers in the dequeue'd element
+        element->setNext (NULL);
+
+        _size--;
+
+        TRACE_ERR ((stderr, "dequeue() => %p\n", element));
+        return element;
+      };
+
+      /// \copydoc XMI::Interface::QueueInterface::push
+      inline void push_impl (Element * element)
       {
-        _prev = qelem;
-      }
+        TRACE_ERR ((stderr, "push(%p)\n", element));
 
-      void setNext_impl(QueueElem *qelem, int n)
-      {
-        _next = qelem;
-      }
+        element->set (NULL, _head);
 
-      void set_impl(QueueElem *prev, QueueElem *next, int n)
-      {
-        _prev = prev;
-        _next = next;
-      }
+        if (!_head) _tail = _head = element;
+        else
+          {
+            _head->setPrev (element);
+            _head = element;
+          }
 
-    protected:
-      /// \brief  Previous pointer
-      QueueElem *_prev;
+        _size++;
+      };
 
-      /// \brief  Next pointer
-      QueueElem *_next;
-  }; // class QueueElem
-
-  class Queue : public XMI::Interface::Queue<Queue,QueueElem>
-  {
-    public:
-      Queue() : XMI::Interface::Queue<Queue,QueueElem>()
-      {
-        _head = _tail = NULL;
-        _size = 0;
-      }
-
-      inline void pushTail_impl(QueueElem * qelem);
-
-      inline void pushHead_impl(QueueElem * qelem);
-
-      inline QueueElem *popHead_impl();
-
-      inline QueueElem *popTail_impl();
-
-      inline QueueElem *peekHead_impl()
+      /// \copydoc XMI::Interface::QueueInterface::peek
+      inline Element * peek_impl ()
       {
         return _head;
-      }
+      };
 
-      inline QueueElem *peekTail_impl()
+      /// \copydoc XMI::Interface::QueueInterface::isEmpty
+      inline bool isEmpty_impl ()
+      {
+        return (_head == NULL);
+      };
+
+      /// \copydoc XMI::Interface::QueueInterface::next
+      inline Element * next_impl (Element * reference)
+      {
+        return reference->next();
+      };
+
+#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
+      /// \copydoc XMI::Interface::QueueInterface::popTail
+      inline Element * popTail_impl ()
+      {
+        Element * element = _tail;
+
+        if (!element) return NULL;
+
+        _tail = element->prev();
+
+        if (_tail == NULL) _head = NULL;
+        else _tail->setNext (NULL);
+
+        element->setPrev (NULL);
+
+        _size--;
+
+        return element;
+      };
+
+      /// \copydoc XMI::Interface::QueueInterface::peekTail
+      inline Element * peekTail_impl ()
       {
         return _tail;
-      }
+      };
+#endif
 
-      inline bool isEmpty_impl()
+      /// \copydoc XMI::Interface::DequeInterface::tail
+      inline Queue::Element * tail_impl ()
       {
-        return _head == NULL;
-      }
+        return _tail;
+      };
 
-      inline int size_impl();
-      inline QueueElem *nextElem_impl(QueueElem *elem);
-      inline void deleteElem_impl(QueueElem *elem);
-      inline void insertElem_impl(QueueElem *elem, size_t position);
+      /// \copydoc XMI::Interface::DequeInterface::before
+      inline Queue::Element * before_impl (Queue::Element * reference)
+      {
+        return reference->prev();
+      };
 
-      inline void dump_impl(const char *str, int n);
+      /// \copydoc XMI::Interface::DequeInterface::insert
+      inline void insert_impl (Queue::Element * reference,
+                               Queue::Element * element)
+      {
+        Queue::Element * rprev = reference->prev ();
+        element->set (rprev, reference);
+        rprev->setNext (element);
+        reference->setPrev (element);
+        _size++;
+      };
+
+      /// \copydoc XMI::Interface::DequeInterface::append
+      inline void append_impl (Queue::Element * reference,
+                               Queue::Element * element)
+      {
+        Queue::Element * rnext = reference->next ();
+        element->set (reference, rnext);
+        reference->setNext (element);
+        rnext->setPrev (element);
+        _size++;
+      };
+
+      /// \copydoc XMI::Interface::DequeInterface::remove
+      inline void remove_impl (Queue::Element * element)
+      {
+        Element * prev = element->prev ();
+        Element * next = element->next ();
+
+        if (prev != NULL)
+          prev->setNext (next);
+        else
+          _head = next;
+
+        if (next != NULL)
+          next->setPrev (prev);
+        else
+          _tail = prev;
+
+        _size--;
+
+        return;
+      };
+
+      /// \copydoc XMI::Interface::QueueInfoInterface::size
+      inline size_t size_impl ()
+      {
+        return _size;
+      };
+
+      /// \copydoc XMI::Interface::QueueInfoInterface::dump
+      inline void dump_impl (const char * str, int n)
+      {
+        XMI_abort();
+      };
+
 #ifdef VALIDATE_ON
-      inline void validate_impl();
+      /// \copydoc XMI::Interface::QueueInfoInterface::validate
+      inline void validate_impl ()
+      {
+        XMI_abort();
+      };
+#endif
+
+#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
+      /// \copydoc XMI::Interface::QueueInfoInterface::insertElem
+      inline void insertElem_impl (Queue::Element * element, size_t position)
+      {
+        if (position == 0)
+          {
+            push (element);
+            _size++;
+            return;
+          }
+
+        size_t i;
+        Queue::Element * insert = _head;
+
+        for (i = 1; i < position; i++)
+          {
+            insert = insert->next ();
+          }
+
+        element->set (insert, insert->next ());
+        insert->setNext (element);
+        _size++;
+
+        return;
+      };
 #endif
 
     private:
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Head Pointer
-      //////////////////////////////////////////////////////////////////
-      QueueElem * _head;
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Tail Pointer
-      //////////////////////////////////////////////////////////////////
-      QueueElem * _tail;
+      Queue::Element * _head;
+      Queue::Element * _tail;
+      size_t           _size;
 
-      //////////////////////////////////////////////////////////////////
-      /// \brief  Queue Size
-      //////////////////////////////////////////////////////////////////
-      int _size;
-  };
-};
+  }; // class XMI::Queue
 
-inline void XMI::Queue::pushTail_impl(QueueElem *qelem)
-{
-  TRACE_ERR ((stderr, "push tail \n"));
+  template <class T_Mutex>
+  class AtomicQueue : public Queue
+  {
+    public:
 
-  qelem->setNext(NULL);
-  qelem->setPrev(_tail);
+      typedef Queue::Element Element;
 
-  if (!_tail) _head = _tail = qelem;
-  else
-    {
-      _tail->setNext(qelem);
-      _tail = qelem;
-    }
+      inline AtomicQueue () :
+          Queue (),
+          _mutex ()
+      {};
 
-  _size++;
-}
+      inline void init (SysDep * sysdep)
+      {
+        _mutex.init (sysdep);
+      };
 
-inline void XMI::Queue::pushHead_impl(QueueElem *qelem)
-{
-  qelem->setPrev(NULL);
-  qelem->setNext(_head);
+      inline void enqueue (Element * element)
+      {
+        _mutex.acquire ();
+        Queue::enqueue (element);
+        _mutex.release ();
+      };
 
-  if (!_head) _tail = _head = qelem;
-  else
-    {
-      _head->setPrev(qelem);
-      _head = qelem;
-    }
+      inline Element * dequeue ()
+      {
+        _mutex.acquire ();
+        Element * element = Queue::dequeue ();
+        _mutex.release ();
+        return element;
+      };
 
-  _size++;
-}
+      inline void push (Element * element)
+      {
+        _mutex.acquire ();
+        Queue::push (element);
+        _mutex.release ();
+      };
 
-inline XMI::QueueElem *XMI::Queue::popHead_impl()
-{
-  QueueElem * p = _head;
+      inline Element * pop () { return dequeue (); };
 
-  if (!p) return NULL;
+      inline Element * next (Element * reference)
+      {
+        _mutex.acquire ();
+        Element * element = Queue::next (reference);
+        _mutex.release ();
+        return element;
+      };
 
-  _head = p->next();
+#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
+      inline void pushTail (Element * element)
+      {
+        _mutex.acquire ();
+        Queue::pushTail (element);
+        _mutex.release ();
+      };
 
-  if (_head == NULL) _tail = NULL;
-  else _head->setPrev(NULL);
+      inline void pushHead (Element * element)
+      {
+        _mutex.acquire ();
+        Queue::pushHead (element);
+        _mutex.release ();
+      };
 
-  p->setNext(NULL);
-  _size--;
-  return p;
-}
+      inline Element * popHead ()
+      {
+        _mutex.acquire ();
+        Element * element = Queue::popHead ();
+        _mutex.release ();
+        return element;
+      };
 
-inline XMI::QueueElem * XMI::Queue::popTail_impl()
-{
-  QueueElem * p = _tail;
+      inline Element * popTail ()
+      {
+        _mutex.acquire ();
+        Element * element = Queue::popTail ();
+        _mutex.release ();
+        return element;
+      };
 
-  if (!p) return NULL;
+      inline Element * peekTail ()
+      {
+        _mutex.acquire ();
+        Element * element = Queue::peekTail ();
+        _mutex.release ();
+        return element;
+      };
 
-  _tail = p->prev();
-
-  if (_tail == NULL) _head = NULL;
-  else _tail->setNext(NULL);
-
-  p->setPrev(NULL);
-  _size--;
-  return p;
-}
-#ifdef VALIDATE_ON
-inline void XMI::Queue::validate_impl()
-{
-  QueueElem *t = _tail;
-  QueueElem *h = _head;
-  int a = 0, b = 0;
-
-  while ((t || h) && a < 100 && b < 100)
-    {
-      if (t)
-        {
-          ++b;
-          t = t->prev();
-        }
-
-      if (h)
-        {
-          ++a;
-          h = h->next();
-        }
-    }
-
-  if (a != _size || b != _size)
-    {
-      static char buf[4096];
-      char *s = buf;
-
-      if (a != _size) s += sprintf(s, "size != count(_head): %d %d\n", _size, a);
-
-      if (b != _size) s += sprintf(s, "size != count(_tail): %d %d\n", _size, b);
-
-      s += sprintf(s, "Head: %p -> %p "
-                   "Tail: %p -> %p\n",
-                   _head,
-                   (_head ? _head->next() : 0UL),
-                   _tail,
-                   (_tail ? _tail->prev() : 0UL));
-      fprintf(stderr, buf);
-      XMI_assert(a == _size && b == _size);
-    }
-}
+      inline Element * nextElem (Element * element)
+      {
+        _mutex.acquire ();
+        Element * tmp = Queue::nextElem (element);
+        _mutex.release ();
+        return tmp;
+      };
 #endif
-inline int XMI::Queue::size_impl()
-{
-  return _size;
-}
 
-inline void XMI::Queue::dump_impl(const char * strg, int n)
-{
-  int s = size_impl();
+      inline Element * before (Element * reference)
+      {
+        _mutex.acquire ();
+        Element * element = Queue::before (reference);
+        _mutex.release ();
+        return element;
+      };
 
-  if (s) printf ("%s %d: %d elements\n", strg, n, s);
-}
+      inline Element * after (Element * reference)
+      {
+        _mutex.acquire ();
+        Element * element = Queue::next (reference);
+        _mutex.release ();
+        return element;
+      };
 
-inline XMI::QueueElem *XMI::Queue::nextElem_impl(XMI::QueueElem *elem)
-{
-	return elem->next();
-}
+      inline void insert (Element * reference,
+                          Element * element)
+      {
+        _mutex.acquire ();
+        Queue::insert (reference, element);
+        _mutex.release ();
+      };
 
-inline void XMI::Queue::deleteElem_impl(QueueElem *elem)
-{
-  ///We should check to see if the current element is actually a
-  ///member of this queue
+      inline void append (Element * reference,
+                          Element * element)
+      {
+        _mutex.acquire ();
+        Queue::append (reference, element);
+        _mutex.release ();
+      };
 
-  TRACE_ERR ((stderr, "Delete Element \n"));
+      inline void remove (Element * element)
+      {
+        _mutex.acquire ();
+        Queue::remove (element);
+        _mutex.release ();
+      };
 
-  XMI_assert (_size > 0);
+#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
+      inline void deleteElem (Element * element)
+      {
+        _mutex.acquire ();
+        Queue::remove (element);
+        _mutex.release ();
+      };
+#endif
 
-  if (elem == _head)
-    popHead ();
-  else if (elem == _tail)
-    popTail ();
-  else
-    {
-      XMI_assert (elem->prev() != NULL);
-      XMI_assert (elem->next() != NULL);
+      /// \copydoc XMI::Interface::QueueInfoInterface::dump
+      inline void dump (const char * str, int n)
+      {
+        XMI_abort();
+      };
 
-      elem->prev()->setNext (elem->next());
-      elem->next()->setPrev (elem->prev());
+#ifdef VALIDATE_ON
+      /// \copydoc XMI::Interface::QueueInfoInterface::validate
+      inline void validate ()
+      {
+        XMI_abort();
+      };
+#endif
 
-      _size --;
-    }
-}
+#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
+      /// \copydoc XMI::Interface::QueueInfoInterface::insertElem
+      inline void insertElem (Queue::Element * element, size_t position)
+      {
+        _mutex.acquire ();
+        Queue::insertElem (element, position);
+        _mutex.release ();
 
-inline void XMI::Queue::insertElem_impl(QueueElem *elem, size_t position)
-{
-  if (position == 0)
-  {
-    pushHead (elem);
-    _size++;
-    return;
-  }
+        return;
+      };
+#endif
 
-  size_t i;
-  QueueElem * insert = _head;
-  for (i=1; i<position; i++)
-  {
-    insert = insert->next();
-  }
-  elem->setPrev (insert);
-  elem->setNext (insert->next());
-  insert->setNext (elem);
-  _size++;
+    protected:
 
-  return;
-}
+      T_Mutex _mutex;
+
+  }; // class XMI::AtomicQueue
+}; // namespace XMI
 
 #endif // __util_queue_queue_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

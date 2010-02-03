@@ -352,8 +352,8 @@ namespace XMI
             _waitForDoneMask |= _BN( subgroupFifoNumber );
           }
 
-          inline void addToSendQ (int         subgroupFifoNumber,
-                                  QueueElem * msg)
+          inline void addToSendQ (int              subgroupFifoNumber,
+                                  Queue::Element * msg)
           {
             _waitToSendQ[subgroupFifoNumber].pushTail (msg);
             _waitToSendMask |= _BN( subgroupFifoNumber );

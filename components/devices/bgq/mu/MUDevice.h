@@ -213,8 +213,8 @@ namespace XMI
             injFifoSubGroup->addToDoneQ(relativeFnum, wrapper);
           }
 
-          inline void addToSendQ (size_t      target_rank,
-                                  QueueElem * msg)
+          inline void addToSendQ (size_t                target_rank,
+                                  XMI::Queue::Element * msg)
           {
             InjFifoSubGroup * injFifoSubGroup = NULL;
             uint32_t          relativeFnum = 0;

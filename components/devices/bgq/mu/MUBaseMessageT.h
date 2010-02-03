@@ -21,14 +21,14 @@ namespace XMI
     {
 
       template <class T>
-      class MUBaseMessageT : public QueueElem
+      class MUBaseMessageT : public XMI::Queue::Element
       {
         public:
           ///
           /// \brief Default and only constructor. This class is a bare
           /// bones base class template to optimize overheads
           ///
-          MUBaseMessageT () : QueueElem() { }
+          MUBaseMessageT () : XMI::Queue::Element() { }
 
           //////////////////////////////////////////////////////////////////////
           ///  \brief posts a message and begins the send

@@ -14,15 +14,16 @@
 #ifndef __components_atomic_noop_Noop_h__
 #define __components_atomic_noop_Noop_h__
 
-#include "components/atomic/Counter.h"
 #include "SysDep.h"
+#include "components/atomic/Counter.h"
+#include "components/atomic/Mutex.h"
 
 namespace XMI
 {
   namespace Atomic
   {
     ///
-    /// \brief CRTP interface for "noop" atomic objects.
+    /// \brief CRTP interface for a "noop" atomic counter.
     ///
     class Noop : public Interface::Counter <Noop>
     {
@@ -68,6 +69,38 @@ namespace XMI
         {
           return true;
         }
+    };
+
+
+    ///
+    /// \brief CRTP interface for a "noop" atomic mutex.
+    ///
+    class NoopMutex : public Interface::Mutex <NoopMutex>
+    {
+      public:
+        NoopMutex () :
+          Interface::Mutex <NoopMutex> ()
+        {};
+
+        ~NoopMutex () {};
+
+        /// \see XMI::Atomic::Interface::Mutex::acquire
+        inline void acquire_impl () {};
+
+        /// \see XMI::Atomic::Interface::Mutex::release
+        inline void release_impl () {};
+
+        /// \see XMI::Atomic::Interface::Mutex::tryAcquire
+        inline bool tryAcquire_impl () { return true; };
+
+        /// \see XMI::Atomic::Interface::Mutex::isLocked
+        inline bool isLocked_impl () { return false; };
+
+        /// \see XMI::Atomic::Interface::Mutex::init
+        inline void init_impl (XMI::SysDep *sd) {};
+
+        /// \see XMI::Atomic::Interface::Mutex::returnLock
+        inline void * returnLock_impl () { return NULL; };
     };
   };
 };

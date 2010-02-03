@@ -371,9 +371,9 @@ namespace XMI
 	inline size_t advance(size_t clientid, size_t contextid);
         inline int advance_impl ();
 
-        inline void pushSendQueueTail (size_t peer, QueueElem * element);
+        inline void pushSendQueueTail (size_t peer, XMI::Queue::Element * element);
 
-        inline QueueElem * popSendQueueHead (size_t peer);
+        inline XMI::Queue::Element * popSendQueueHead (size_t peer);
 
         ///
         /// \brief Advance the send queues and process any pending messages.
@@ -720,7 +720,7 @@ inline size_t ShmemDevice<T_Fifo>::advance(size_t clientid, size_t contextid) {
     /// \param[in] peer  \b Local rank
     ///
     template <class T_Fifo>
-    inline void ShmemDevice<T_Fifo>::pushSendQueueTail (size_t peer, QueueElem * element)
+    inline void ShmemDevice<T_Fifo>::pushSendQueueTail (size_t peer, XMI::Queue::Element * element)
     {
       TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", __global.mapping.task(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
       __sendQ[peer].pushTail (element);
@@ -733,10 +733,10 @@ inline size_t ShmemDevice<T_Fifo>::advance(size_t clientid, size_t contextid) {
     /// \param[in] peer  \b Local rank
     ///
     template <class T_Fifo>
-    inline QueueElem * ShmemDevice<T_Fifo>::popSendQueueHead (size_t peer)
+    inline XMI::Queue::Element * ShmemDevice<T_Fifo>::popSendQueueHead (size_t peer)
     {
       TRACE_ERR((stderr, "popping out from the sendQ\n"));
-      QueueElem * tmp = __sendQ[peer].popHead();
+      XMI::Queue::Element * tmp = __sendQ[peer].popHead();
       __sendQMask = __sendQMask & ~(__sendQ[peer].isEmpty() << peer);
       return tmp;
     }

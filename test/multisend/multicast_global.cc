@@ -184,7 +184,7 @@ int main(int argc, char ** argv)
     mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
     mcast.dst = (xmi_pipeworkqueue_t *) _buffer.dstPwq();
 
-    mcast.client = client;	// client ID
+    mcast.client = (size_t) client;	// client ID
     mcast.context = 0;	// context ID
     mcast.roles = -1;
     mcast.bytes = TEST_BUF_SIZE;

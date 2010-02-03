@@ -137,7 +137,7 @@ namespace XMI
 
           //send_state_class
 
-          class send_state_t: public QueueElem
+          class send_state_t: public XMI::Queue::Element
           {
             public:
 

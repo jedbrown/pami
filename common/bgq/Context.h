@@ -137,7 +137,7 @@ namespace XMI
        _localbcast = XMI::Device::LocalBcastWQDevice::create(clientid, num_ctx, _generics);
        _localreduce = XMI::Device::LocalReduceWQDevice::create(clientid, num_ctx, _generics);
 #ifdef MU_DEVICE
-       _mu = XMI::Device::MU::MUDevice::create(clientid, num_ctx, _generics);
+       _mu = MUDevice::create(clientid, num_ctx, _generics);
 #endif
        return XMI_SUCCESS;
     }
@@ -210,7 +210,7 @@ namespace XMI
     XMI::Device::LocalBcastWQDevice *_localbcast;
     XMI::Device::LocalReduceWQDevice *_localreduce;
 #ifdef MU_DEVICE
-    Device::MU::MUDevice *_mu;
+    MUDevice *_mu;
 #endif
   }; // class PlatformDeviceList
 
@@ -251,6 +251,10 @@ namespace XMI
 #ifdef MU_COLL_DEVICE
         // Can't construct NI until device is init()'d.  Ctor into member storage.
         _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(_mu, _client, _context, _contextid);
+        xmi_result_t status;
+        /// \todo allocator
+        _mu_msync_model = new XMI::Device::MU::MUMultisyncModel(status, _devices->_mu[_contextid]);
+        _mu_mcombine_model = new XMI::Device::MU::MUMulticombineModel(status, _devices->_mu[_contextid]);
 #endif
 	_devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
 
@@ -554,6 +558,14 @@ namespace XMI
       {
         _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
         return _global_mu_ni->setDispatch(fn, cookie);
+        TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
+        XMI_assertf(_protocolAllocator.objsize >= sizeof(XMI::Device::MU::MUMulticastModel),"%zd >= %zd\n",_protocolAllocator.objsize,sizeof(XMI::Device::MU::MUMulticastModel));
+        // Allocate memory for the protocol object.
+        _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
+
+        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, _devices->_mu[_contextid]);
+        model->registerMcastRecvFunction(id, fn.multicast, cookie);
+
       }
 #endif
       return result;

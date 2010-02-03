@@ -305,7 +305,7 @@ namespace XMI
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
 #warning send queue must be based on task+offset
-            _device.addToSendQ (target_task, (QueueElem *) obj);
+            _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(%d) << \n", T_Niov));
@@ -407,7 +407,7 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
-            _device.addToSendQ (target_task, (QueueElem *) obj);
+            _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(single) << \n"));
@@ -604,7 +604,7 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
-            _device.addToSendQ (target_task, (QueueElem *) obj);
+            _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postMultiPacket_impl() << \n"));

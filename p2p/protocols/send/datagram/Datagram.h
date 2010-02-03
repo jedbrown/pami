@@ -155,7 +155,7 @@ public:
 	};
 
 	//send_state_class
-	class send_state_t : public QueueElem {
+	class send_state_t : public Queue::Element {
 public:
 
 		size_t pkgnum; /// Number of pkg to send from the origin task.

@@ -18,11 +18,11 @@ namespace XMI
   namespace Interface
   {
     template <class T_Client>
-    class Client : public XMI::QueueElem
+    class Client : public XMI::Queue::Element
     {
       public:
         inline Client (const char * name, xmi_result_t & result) :
-            XMI::QueueElem ()
+            XMI::Queue::Element ()
         {
           result = XMI_UNIMPL;
         }
