@@ -61,7 +61,7 @@ namespace XMI
     // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
     typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2PMcastProto;
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
-    typedef Fifo::FifoPacket <16, 240> ShmemPacket;
+    typedef Fifo::FifoPacket <32, 240> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
     typedef Device::ShmemModel<ShmemDevice> ShmemModel;
