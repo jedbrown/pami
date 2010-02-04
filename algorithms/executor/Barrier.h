@@ -43,8 +43,6 @@ namespace CCMI
       ///\brief A cache of the barrier schedule
       ScheduleCache         _cache;
 
-      char                  *_request;  //A 1024 byte request
-
       XMI::Topology         _srctopology;
 
       ///
@@ -117,10 +115,6 @@ namespace CCMI
 	_minfo.src           = NULL;
 	_minfo.dst           = NULL;
 	_minfo.bytes         = 0;
-
-	_request = (char *) malloc (16384); //Large buffer for request.
-//	_minfo.request       = (void *)&_request;
-        //_minfo.connection_id = _connid;
         _minfo.roles         = -1U;
         _minfo.dst_participants  = NULL;
 	_minfo.src_participants  = (xmi_topology_t *)&_srctopology;

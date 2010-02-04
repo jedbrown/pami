@@ -110,10 +110,14 @@ namespace CCMI
         /// \retval     executor     Pointer to barrier executor
         ///
         CCMI::Executor::Composite *generate
-        (CCMI_Executor_t           * request,
-         XMI_GEOMETRY_CLASS                  * geometry)
+        (void                                * request,
+	 unsigned                              rsize,	 
+	 xmi_context_t                         context,
+         xmi_geometry_t                        g,
+	 void                                * cmd)
         {
-          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
+          CCMI_assert(rsize >= sizeof(T));
+	  XMI_GEOMETRY_CLASS  *geometry = (XMI_GEOMETRY_CLASS *)g;	  
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);
         }
 

@@ -41,9 +41,6 @@ namespace CCMI
       XMI::Topology          _dsttopology;
       XMI::Topology          _selftopology;
 
-      XMI_Request_t          _sendrequest __attribute__((__aligned__(16)));   /// send request
-      XMI_Request_t          _recvrequest __attribute__((__aligned__(16)));   /// send request
-
       CollHeaderData                               _mdata;
       T                                         *  _connmgr;
       unsigned                                     _color;
@@ -78,7 +75,6 @@ namespace CCMI
         _clientdata        =  0;
         _root              =  (unsigned)-1;
 	_buflen            =  0;
-//        _msend.request     =  &_sendrequest;
         xmi_quad_t *info   =  (_postReceives)?(NULL):(xmi_quad_t*)((void*)&_mdata);
         _msend.msginfo     =  info;
         _msend.msgcount    =  1;
@@ -136,7 +132,6 @@ namespace CCMI
 	memcpy (&mrecv, &_msend, sizeof(xmi_multicast_t));
 
 	TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
-//	mrecv.request = &;
 	mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
 	mrecv.dst_participants   = (xmi_topology_t *)&_selftopology;
 	mrecv.cb_done.function   = _cb_done;

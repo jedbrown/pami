@@ -210,6 +210,7 @@ namespace XMI
                               size_t                 context_id):
         CollInfo<T_Device>(dev),
 	_model(*dev),
+	_context(context),
         _barrier_registration(&_model,
                               sd,
                               fcn)
@@ -219,11 +220,13 @@ namespace XMI
         }
       void reg_geometry(XMI_GEOMETRY_CLASS *geometry)
         {
-          _barrier_registration.generate(&_barrier_composite,geometry);
+	  _barrier_registration.generate(&_barrier_composite, sizeof(CCMI_Executor_t), _context, 
+					 (xmi_geometry_t)geometry, NULL); //Barrier is cached
         }
 
       XMI_Request_t                                     _request;
       XMI_COLL_MCAST_CLASS                              _model;
+      xmi_context_t                                     _context;
       CCMI::Adaptor::Barrier::OldBinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                   _barrier_composite;
     };

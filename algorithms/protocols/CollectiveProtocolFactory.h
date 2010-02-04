@@ -48,6 +48,16 @@ namespace CCMI
       /// \brief All protocols determine if a given geometry is adequate
       virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest) = 0;
 
+      virtual Executor::Composite * generate(void                      * request_buf,
+					     size_t                      rsize,
+					     xmi_context_t               context,
+					     xmi_geometry_t              geometry,
+					     void                      * cmd) 
+	{
+	  //The main all protocol generate function
+	  CCMI_abort();
+	}
+
     protected:
       xmi_mapidtogeometry_fn     _cb_geometry;
     };
