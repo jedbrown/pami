@@ -172,7 +172,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   size_t            bytes    = _memsize;
   bgq_mapcache_t  * mapcache = &_mapcache;
 
-  //fprintf (stderr, "XMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, bytes, mapcache);
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, bytes, mapcache));
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this
   // constructor, but exists there only for the duration of this
@@ -213,7 +213,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   size_t pSize  = personality.pSize ();
   size_t tSize  = personality.tSize ();
 
-  //fprintf (stderr, "XMI::Global::initializeMapCache() .. p=%zd t=%zd {%zd %zd %zd %zd %zd}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize);
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. p=%zd t=%zd {%zd %zd %zd %zd %zd}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize));
 
   // Notify all other tasks on the node that this task has entered the
   // map cache initialization function.  If the value returned is zero
@@ -225,8 +225,8 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   myRank = personality.rank();
 
- fprintf (stderr, "XMI::Global::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant);
- fprintf (stderr, "XMI::Global::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize);
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant));
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize));
 
 
   // Calculate the number of potential tasks in this partition.
@@ -235,24 +235,24 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   // Calculate the number of potential tasks on a node in this partition.
   size_t peerSize = pSize * tSize;
 
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize);
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p\n", mapcache->torus.task2coords);
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p\n", mapcache->torus.task2coords));
 
   mapcache->torus.task2coords = (bgq_coords_t *) (cacheAnchorsPtr + 1);
 
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task);
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
 
   mapcache->torus.coords2task = (uint32_t *) (mapcache->torus.task2coords + fullSize);
 
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task);
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
 
   mapcache->node.local2peer   = (size_t *) (mapcache->torus.coords2task + peerSize);
 
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task);
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
   mapcache->node.peer2task    = (size_t *) (mapcache->node.local2peer + peerSize);
 
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task);
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
   size_t max_rank = 0, min_rank = (size_t) - 1;
   xmi_coord_t _ll, _ur;
@@ -315,7 +315,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
          * 4. Number of active ranks on each compute node.
          */
         size_t i;
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. fullSize = %zd\n", fullSize);
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. fullSize = %zd\n", fullSize));
 
 	_ll.network = _ur.network = XMI_N_TORUS_NETWORK;
 	_ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
@@ -339,7 +339,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
                 p = mapcache->torus.task2coords[i].core;
                 t = mapcache->torus.task2coords[i].thread;
 
- //fprintf (stderr, "XMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a,b,c,d,e,p,t);
+ TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a,b,c,d,e,p,t));
 
                 // Set the bit corresponding to the physical node of this rank,
 		// indicating that we have found a rank on that node.
@@ -483,14 +483,14 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   mapcache->size = cacheAnchorsPtr->numActiveRanksGlobal;
   mapcache->local_size = cacheAnchorsPtr->numActiveRanksLocal; //hack
-  fprintf(stderr,"local_size:%zu\n", mapcache->local_size);
+  TRACE_ERR( (stderr,"local_size:%zu\n", mapcache->local_size));
 
 
   size_t mapsize = sizeof(cacheAnchors_t) +
          (sizeof(bgq_coords_t) + sizeof(uint32_t)) * fullSize +
          (sizeof(size_t)*2) * peerSize;
 
-  //fprintf (stderr, "XMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize);
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
 
   return mapsize;
 };

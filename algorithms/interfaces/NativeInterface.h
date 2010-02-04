@@ -22,7 +22,7 @@ namespace CCMI {
       unsigned numranks() { return _numranks; }
 
       /// \brief this call is called when the native interface is initialized
-      virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie) = 0;
+      virtual xmi_result_t setDispatch  (xmi_dispatch_callback_fn fn, void *cookie) = 0;
       virtual xmi_result_t multicast    (xmi_multicast_t *mcast) = 0;
       virtual xmi_result_t multisync    (xmi_multisync_t *msync) = 0;
       virtual xmi_result_t multicombine (xmi_multicombine_t *mcombine) = 0;

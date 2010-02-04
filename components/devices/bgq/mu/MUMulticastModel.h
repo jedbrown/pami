@@ -539,7 +539,6 @@ namespace XMI
               // Only one active (receive) connection id at a time
               XMI_assertf(!_receive_state.active, "connection_id %#X/%#X\n", _receive_state.connection_id, metadata->connection_id);
 
-              _receive_state.active = true;
               _receive_state.connection_id = metadata->connection_id;
               _receive_state.received_length = 0; // no bytes received yet
 
@@ -563,23 +562,29 @@ namespace XMI
 
               TRACE((stderr, "<%p>:MUMulticastModel::processHeader() after dispatch expected_length %zd, pwq %p\n", this, _receive_state.expected_length, _receive_state.rcvpwq));
 
-              // Done? Invoke the receive done callback. \todo semantics? no data and cb_done?
+              // No data expected? Then we're done so invoke the receive done callback.
+              if (!_receive_state.expected_length)
+              {
+                  if(_receive_state.cb_done.function)
+                      _receive_state.cb_done.function (_device.getContext(),
+                                                       _receive_state.cb_done.clientdata,
+                                                       XMI_SUCCESS);
+                  return;
+              }
 
-              if (!_receive_state.expected_length && _receive_state.cb_done.function)
-                _receive_state.cb_done.function (_device.getContext(),
-                                                 _receive_state.cb_done.clientdata,
-                                                 XMI_SUCCESS);
+              // Must be expecting data to receive is 'active' now.
+              _receive_state.active = true;
 
-              // multicast_model_available_buffers_only semantics: If you're receiving data (expected_length > 0) then the pwq must be available
+              // multicast_model_available_buffers_only semantics: If you're receiving data then the pwq must be available
               XMI_assert(multicast_model_available_buffers_only &&
-                         ((_receive_state.expected_length && _receive_state.rcvpwq && _receive_state.rcvpwq->bytesAvailableToProduce() == _receive_state.expected_length) ||
-                          (_receive_state.expected_length == 0)));
+                         (_receive_state.rcvpwq && _receive_state.rcvpwq->bytesAvailableToProduce() == _receive_state.expected_length)
+                          );
 
               XMI_assert(_receive_state.expected_length == metadata->sndlen); /// \todo allow partial receives and toss unwanted data
 
-              _receive_state.buffer = _receive_state.expected_length ? (uint8_t*)_receive_state.rcvpwq->bufferToProduce() : NULL;
+              _receive_state.buffer = (uint8_t*)_receive_state.rcvpwq->bufferToProduce();
 
-              // Is there payload beyond the msgdata?  process it
+              // Is there payload beyond the msgdata in this packet?  process it now
               unsigned msgsize = sizeof(msgdata->msgcount) + sizeof(msgdata->msgpad) + (msgdata->msgcount * sizeof(msgdata->msginfo));
 
               if (bytes > msgsize)
@@ -611,7 +616,8 @@ namespace XMI
                                                          uint8_t * payload,
                                                          size_t    bytes)
             {
-              TRACE((stderr, "<%p>:MUMulticastModel::processData()\n", this));
+              TRACE((stderr, "<%p>:MUMulticastModel::processData() metadata %p, payload %p, bytes %zd, nleft %zd\n", 
+                     this, metadata, payload, bytes, (_receive_state.expected_length - _receive_state.received_length)));
 
 
               XMI_assertf(_receive_state.active, "connection_id %#X/%#X\n", _receive_state.connection_id, metadata->connection_id);
@@ -648,7 +654,7 @@ namespace XMI
                                                          XMI_SUCCESS);
                     }
                 }
-              else XMI_abort();  /// \todo toss unwanted data?
+              else XMI_abortf("Unwanted data?\n");  /// \todo toss unwanted data?
 
               return ;
             }; // XMI::Device::MU::MUMulticastModel::processData
