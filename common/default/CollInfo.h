@@ -314,7 +314,7 @@ namespace XMI
 	    xmi_metadata_t *meta = &(this->_metadata);
 	    strcpy(meta->name, "CCMI_BinomBroadcast");
 	  }
-      MPINativeInterface<T_Device>                             _minterface;
+      XMI_NATIVEINTERFACE<T_Device>                            _minterface;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
       CCMI::Adaptor::Broadcast::BinomialBcastFactory           _broadcast_registration;
     };
@@ -366,7 +366,7 @@ namespace XMI
 	    xmi_metadata_t *meta = &(this->_metadata);
 	    strcpy(meta->name, "CCMI_RingBroadcast");
 	  }
-      MPINativeInterface<T_Device>                             _minterface;
+      XMI_NATIVEINTERFACE<T_Device>                            _minterface;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
       CCMI::Adaptor::Broadcast::RingBcastFactory               _broadcast_registration;
     };
