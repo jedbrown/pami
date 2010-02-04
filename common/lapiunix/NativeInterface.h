@@ -46,7 +46,7 @@ namespace XMI
       }
 
     /// \brief this call is called when the native interface is initialized
-    virtual void setDispatch (xmi_dispatch_callback_fn fn, void *cookie)
+    virtual xmi_result_t setDispatch (xmi_dispatch_callback_fn fn, void *cookie)
       {
         static size_t dispatch = DISPATCH_START;
 
@@ -62,6 +62,7 @@ namespace XMI
         CCMI_assert (_status == XMI_SUCCESS);
         _dispatch = dispatch;
         dispatch ++;
+	return XMI_SUCCESS;
       }
 
     virtual xmi_result_t multicast (xmi_multicast_t *mcast)
