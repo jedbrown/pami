@@ -18,6 +18,7 @@
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "BarrierT.h"
+#include "MultiSyncComposite.h"
 
 namespace CCMI
 {
@@ -28,6 +29,12 @@ namespace CCMI
       extern inline bool binomial_analyze(XMI_GEOMETRY_CLASS *geometry)
       {
         return true;
+      }
+
+      extern inline bool global_analyze (XMI_GEOMETRY_CLASS *geometry) 
+      {
+	//return geometry->isGlobalContext();
+	return true;
       }
 
       typedef BarrierT <CCMI::Schedule::ListMultinomial,
@@ -41,6 +48,8 @@ namespace CCMI
       typedef OldBarrierFactoryT <OldBinomialBarrier,
 	                          XMI_SYSDEP_CLASS,
 	                          XMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
+
+      typedef CollectiveProtocolFactoryT<MultiSyncComposite, global_analyze, ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > MultiSyncFactory;
     };
   };
 };

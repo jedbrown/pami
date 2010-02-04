@@ -7,7 +7,7 @@
 #define __algorithms_executor_Barrier_h__
 
 #include "algorithms/interfaces/Schedule.h"
-#include "algorithms/executor/Executor.h"
+#include "algorithms/interfaces/Executor.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "algorithms/executor/OldBarrier.h"
 
@@ -21,7 +21,7 @@ namespace CCMI
 {
   namespace Executor
   {
-    class BarrierExec : public Executor
+    class BarrierExec : public Interfaces::Executor
     {
     public:
       /// pointer to the multicast interface to send messages
@@ -77,17 +77,16 @@ namespace CCMI
       /// Static function to be passed into the done of multisend
       static void staticNotifySendDone(xmi_context_t context, void *cd, xmi_result_t err)
       {
-        xmi_quad_t * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::BarrierExec::staticNotifySendDone\n",(int)cd));
 
         BarrierExec *barrier = (BarrierExec *) cd;
-        barrier->internalNotifySendDone( *info );
+        barrier->internalNotifySendDone();
       }
 
     public:
 
       /// Default Constructor
-      BarrierExec() : Executor()
+    BarrierExec() : Interfaces::Executor()
       {
         _start    = 0;
         _phase    = 0;
@@ -98,7 +97,7 @@ namespace CCMI
       BarrierExec(unsigned nranks, unsigned *ranks,unsigned comm,
               unsigned connid,
               Interfaces::NativeInterface *ninterface):
-      Executor(),
+      Interfaces::Executor(),
       _native(ninterface),
       _connid(connid),
       _srctopology(ninterface->myrank())
@@ -145,16 +144,19 @@ namespace CCMI
         }
       }
 
-      /// Entry function to notify message has arrived
-      virtual void notifyRecv(unsigned src, const xmi_quad_t &info, char *buf, unsigned len);
+      /**
+       * \brief notify when a message has been recived
+       * \param src : source of the message
+       * \param buf : address of the pipeworkqueue to produce incoming message
+       * \param cb_done: completion callback
+       */
+      virtual void   notifyRecv     (unsigned             src,
+                                     const xmi_quad_t   & info,
+                                     XMI::PipeWorkQueue ** pwq,
+                                     xmi_callback_t      * cb_done);
 
-      /// Entry function to declare that Message has been sent
-      virtual void notifySendDone( const xmi_quad_t & info )
-      {
-        internalNotifySendDone(info);
-      }
 
-      void internalNotifySendDone( const xmi_quad_t & info );
+      void internalNotifySendDone();
 
       /// Start sending barrier operation
       virtual void start();
@@ -220,9 +222,8 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   }
   else
   {
-    xmi_quad_t * info = NULL;
     //nothing to do, skip this phase
-    notifySendDone( *info );
+    internalNotifySendDone();
   }
 }
 
@@ -235,13 +236,16 @@ inline void  CCMI::Executor::BarrierExec::start()
 }
 
 
-///
-/// \brief grab the info of the message
-///
-inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
-						const xmi_quad_t  & info,
-						char            * buf,
-						unsigned          size)
+/**
+ * \brief notify when a message has been recived
+ * \param src : source of the message
+ * \param buf : address of the pipeworkqueue to produce incoming message
+ * \param cb_done: completion callback
+ */
+inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
+						       const xmi_quad_t   & info,
+						       XMI::PipeWorkQueue ** pwq,
+						       xmi_callback_t      * cb_done) 
 {
   CollHeaderData *hdr = (CollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);
@@ -271,7 +275,7 @@ inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
 ///
 /// \brief Entry function to indicate the send has finished
 ///
-inline void CCMI::Executor::BarrierExec::internalNotifySendDone( const xmi_quad_t & info )
+inline void CCMI::Executor::BarrierExec::internalNotifySendDone( )
 {
   TRACE_ERR((stderr,"<%X>Executor::BarrierExec::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
 
