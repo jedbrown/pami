@@ -130,7 +130,6 @@ SoftwareBytes  :
   _desc_model.setBaseFields (&base);
   _desc_model.setCollectiveFields(&coll);
   _desc_model.setMemoryFIFOFields (&memfifo);
-  DUMP_DESCRIPTOR("MUMulticombineModel::ctor", &_desc_model);
 
   // Use our rank/addr to set our master reception fifo
   xmi_task_t target_rank = __global.mapping.task();
@@ -146,7 +145,6 @@ SoftwareBytes  :
 
   MemoryFifoPacketHeader * hdr = (MemoryFifoPacketHeader *) & _desc_model.PacketHeader;
 
-  DUMP_DESCRIPTOR("MUMultisyncModel::ctor ..before dispatch", &_desc_model);
   // Register the dispatch function.
   bool success =
     _device.registerPacketHandler (0x00AA,

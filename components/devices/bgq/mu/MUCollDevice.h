@@ -38,7 +38,8 @@ namespace XMI
         namespace MU
           {
 
-            void dumpDescriptor(const char * pstring, MUHWI_Descriptor_t *desc);
+            void dumpDescriptor(const char * pstring, const MUHWI_Descriptor_t *desc);
+            void dumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
 
 
             class MUCollDevice : public MUDevice//, public Interface::BaseDevice<MUCollDevice, SysDep>
@@ -59,7 +60,10 @@ namespace XMI
                     TRACE((stderr, "<%p>MUCollDevice::dtor \n", this));
                   };
 
-                  // Uggh.  I want to hook into MUDevice's init_impl (through BaseDevices's init()).  So hide init() with my own init().
+                  ///
+                  /// \see init
+                  ///
+                  /// Uggh.  I want to hook into MUDevice's init_impl (through BaseDevices's init()).  So hide init() with my own init().
                   inline int init (SysDep        * sysdep,
                                    xmi_context_t   context,
                                    size_t          offset)
@@ -67,27 +71,6 @@ namespace XMI
                     TRACE((stderr, "<%p>MUCollDevice::init() \n", this));
                     return MUCollDevice::init_impl(sysdep, context, offset);
                   };
-
-//////////////////////////////////////////////////////
-//  Uggh alternative to above Uggh.
-//  One way to hook into init_impl is multi-inheritence but then I have to hide these BaseDevice functions and explicitly call the parent that I want.
-//      int init(SysDep* sysdep)
-//      {
-//        return XMI::Device::Interface::BaseDevice<MUCollDevice, SysDep>::init(sysdep);
-//      };
-//      int advance()
-//      {
-//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::advance();
-//      }
-//      size_t peers()
-//      {
-//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::peers();
-//      }
-//      size_t task2peer(size_t task)
-//      {
-//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::task2peer(task);
-//      }
-//////////////////////////////////////////////////////
 
                   ///
                   /// \see advanceInjectionFifoDescriptorTail
@@ -154,7 +137,7 @@ namespace XMI
                                                    &_relativeFnum);
 
                     /// \todo Implement when CNK supports class routes
-#ifdef	_KERNEL_CNK_COLLECTIVE_IMPL_H_ /* Prevent multiple inclusion */
+#ifdef _KERNEL_CNK_COLLECTIVE_IMPL_H_ /* Prevent multiple inclusion */
 #warning NO CNK support for classroute
                     // Set up class route to have a local contribution from this node with no output.
                     ClassRoute_t classRouteInfo;

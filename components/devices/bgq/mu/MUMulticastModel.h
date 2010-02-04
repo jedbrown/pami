@@ -124,7 +124,7 @@ namespace XMI
         } metadata_t;
 
         // Receive state (after receiving a header/metadata
-        typedef struct recv_state
+        typedef struct mcast_recv_state
         {
           bool                                 active;
           size_t                               received_length;
@@ -133,7 +133,7 @@ namespace XMI
           uint8_t                            * buffer;
           xmi_callback_t                       cb_done;
           unsigned                             connection_id;
-        } recv_state_t;
+        } mcast_recv_state_t;
 
         /// \brief MU dispatch function
         inline static int dispatch (void   * metadata,
@@ -179,7 +179,7 @@ namespace XMI
         xmi_dispatch_multicast_fn             _dispatch_function;
         void                                * _dispatch_arg;
         // We only need one receive state because we only support one active collective at a time
-        recv_state_t                          _receive_state; 
+        mcast_recv_state_t                          _receive_state; 
 
       }; // XMI::Device::MU::MUMulticastModel class
 
@@ -248,7 +248,6 @@ namespace XMI
 
         // Clone the model descriptor.
         _desc_model.clone (*desc);
-        DUMP_DESCRIPTOR("initializeDescriptor() ..desc after clone", desc);
 
         desc->setPayload (payloadPa, bytes);
         DUMP_DESCRIPTOR("initializeDescriptor() ..done", desc);
@@ -330,7 +329,7 @@ namespace XMI
           MUSPI_DescriptorBase * desc = message.getDescriptor ();
           initializeDescriptor (desc, 0, 0);
 
-          // Enable the "single packet message" bit so that it uses my iov src buffer \todo why?
+          // Enable the "single packet message" bit so that it uses my iov src buffer 
           desc->setSoftwareBit (1);
 
           // Set the payload to my 3 part iov: msghead, msginfo, (optional) payload
@@ -356,11 +355,11 @@ namespace XMI
 
           message.setSourceBuffer (state->iov, state->niov);
 
-          // Put the metadata into the network header in the descriptor. (I don't use the extra singlepkt meta bytes).
+          // Put the metadata into the network header in the descriptor. 
           MemoryFifoPacketHeader_t * hdr =
           (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
 
-          metadata_t *metadata = (metadata_t*) & hdr->dev.multipkt.metadata;
+          metadata_t *metadata = (metadata_t*) & hdr->dev.singlepkt.metadata;
           metadata->connection_id = connection_id;
           metadata->root          = __global.mapping.task();
           metadata->sndlen        = payload_length;
