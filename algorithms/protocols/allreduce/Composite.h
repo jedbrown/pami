@@ -93,8 +93,8 @@ namespace CCMI
         }
 
         Composite ( ConfigFlags                       flags,
-                    CCMI::Executor::Executor      * barrier,
-                    CollectiveProtocolFactory                 * factory,
+                    CCMI::Executor::Composite      * barrier,
+                    CollectiveProtocolFactory      * factory,
                     XMI_Callback_t                   cb_done):
 
         BaseComposite (factory),
@@ -107,7 +107,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::ctor() flags(%#X) barrier(%#X) factory(%#X)\n",(int)this,
                          *(unsigned*)&flags, (int) barrier, (int) factory));
           if(barrier)
-            initializeBarrier ((CCMI::Executor::OldBarrier<T_Mcast> *) barrier);
+            initializeBarrier (barrier);
         }
 
         /// Default Destructor
@@ -122,7 +122,7 @@ namespace CCMI
           CCMI_abort();
         }
 
-        void initializeBarrier (CCMI::Executor::OldBarrier<T_Mcast> *barrier)
+        void initializeBarrier (CCMI::Executor::Composite *barrier)
         {
           TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Composite::initializeBarrier barrier(%#X,%#X)\n",(int)this,(int)barrier,(int)this));
           addBarrier (barrier);
@@ -333,7 +333,7 @@ namespace CCMI
           // countdown
           _doneCountdown++;
 
-          _barrier->setConsistency (consistency);
+          //_barrier->setConsistency (consistency);
           _barrier->start();
         }
 

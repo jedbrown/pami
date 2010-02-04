@@ -51,16 +51,15 @@ namespace CCMI
 
       void init(Interfaces::Schedule *schedule)
       {
-	int start, nph, nmessages = 0;
+	int start, nph;
 	schedule->init (-1, BARRIER_OP, start, nph);
 	_start = start;
 	_nphases = nph;
 
-	TRACE_ERR((stderr,"<%X>Executor::Barrier::ScheduleCache::init _start %d, nph %d, nmessages %d\n",
-		   (int) this,_start, _nphases, nmessages));
+	TRACE_ERR((stderr,"<%X>Executor::Barrier::ScheduleCache::init _start %d, nph %d\n",
+		   (int) this,_start, _nphases));
 
 	CCMI_assert(_start + _nphases  <=  SC_MAXPHASES);
-	CCMI_assert(nmessages <=  (int)SC_MAXRANKS);
 
 	unsigned ntotal_src = 0, ntotal_dst = 0, count = 0;
 	for(count = _start; count < (_start + _nphases); count ++)
@@ -110,6 +109,9 @@ namespace CCMI
 
       XMI::Topology  *getSrcTopology (unsigned phase)
       {
+	if ((phase < _start) || (phase >= _start + _nphases))
+	  fprintf(stderr, "<%X>phase not in range %d, %d, %d\n", (int)this, phase, _start, _start+_nphases);
+
 	CCMI_assert ((phase >= _start) && (phase < _start + _nphases));
 	return _srctopologies[phase];
       }

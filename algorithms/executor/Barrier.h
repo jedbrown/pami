@@ -13,7 +13,7 @@
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
-#define TRACE_ERR(x)
+//#define TRACE_ERR(x)
 
 #include "algorithms/executor/ScheduleCache.h"
 
@@ -247,10 +247,11 @@ inline void CCMI::Executor::BarrierExec::notifyRecv(unsigned          src,
   CCMI_assert (hdr->_iteration <= 1);
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] ++;
-
-  TRACE_ERR((stderr,"<%X>Executor::BarrierExec::notifyRecv phase %d, vec %d\n",(int)this,
-             hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration]));
-
+  
+  TRACE_ERR((stderr,"%d: <%X>Executor::BarrierExec::notifyRecv phase %d, vec %d expected vec\n",_native->myrank(), 
+	     (int)this,
+             hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
+  
   //Start has not been called, just record recv and return
   if(_phase == _start + _nphases)
     return;

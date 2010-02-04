@@ -173,11 +173,11 @@ namespace CCMI
                                                                       rcvcounters);
 
         // Lets do the barrier to sync
-        CCMI::Executor::Executor *barrier =(CCMI::Executor::Executor *)
-          geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
+        CCMI::Executor::Composite *barrier =(CCMI::Executor::Composite *)
+          geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
         CCMI_assert(barrier != NULL);
         barrier->setDoneCallback (cb_barrier_done, request);
-        barrier->setConsistency (consistency);
+        //barrier->setConsistency (consistency);
         barrier->start();
 
         return 0;

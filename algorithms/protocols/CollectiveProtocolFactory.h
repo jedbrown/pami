@@ -23,6 +23,16 @@ namespace CCMI
     public:
       CollectiveProtocolFactory ()
       {
+	_cb_geometry = NULL;
+      }
+
+      void setMapIdToGeometry(xmi_mapidtogeometry_fn     cb_geometry) {
+	_cb_geometry = cb_geometry;
+      }
+
+      xmi_geometry_t getGeometry(unsigned id) {
+	CCMI_assert (_cb_geometry != NULL);
+	return _cb_geometry (id);
       }
 
       virtual ~CollectiveProtocolFactory ()
@@ -38,8 +48,8 @@ namespace CCMI
       /// \brief All protocols determine if a given geometry is adequate
       virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest) = 0;
 
-      /// \bfief All protocols must construct and return a composite
-      virtual Executor::Composite * generate(xmi_context_t context, xmi_xfer_t *cmd) {CCMI_abort();}
+    protected:
+      xmi_mapidtogeometry_fn     _cb_geometry;
     };
   };
 };

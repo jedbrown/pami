@@ -23,14 +23,15 @@ namespace CCMI
       ///  \brief Base class for synchronous broadcasts
       ///
       template <int NUMCOLORS, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn>
-	class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
+	class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
       {
       public:
 
-      BcastMultiColorCompositeT(void                                     * cmd,
+      BcastMultiColorCompositeT(Interfaces::NativeInterface              * mf,	
 				T_Conn                                   * cmgr,
-				Interfaces::NativeInterface              * mf):
-	Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
+				xmi_geometry_t                             g,
+				void                                     * cmd):
+	Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
 	  ( ((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry)->comm(),
 	    (XMI::Topology*)((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry)->getTopology(0),
 	    cmgr,
@@ -44,24 +45,24 @@ namespace CCMI
 	    SyncBcastPost();
 
 	    XMI_GEOMETRY_CLASS *geometry = ((XMI_GEOMETRY_CLASS *)((xmi_broadcast_t *)cmd)->geometry);
-	    CCMI::Executor::BarrierExec  *barrier =  (CCMI::Executor::BarrierExec *)
-	      geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
-	    barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
+	    CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
+	      geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+	    barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
 	    //barrier->setConsistency (consistency);
 	    barrier->start();
 	  }
 
 	void SyncBcastPost () {
-	  Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(0);
+	  Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(0);
 	  unsigned root = exec->getRoot();
 
-	  if ( Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root) {
-	    unsigned ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;
-	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_nComplete += ncolors;
+	  if ( Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root) {
+	    unsigned ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;
+	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_nComplete += ncolors;
 
         //fprintf(stderr,"SyncBcastPost ncolors %d\n",ncolors);
 	    for(unsigned c = 0; c < ncolors; c++) {
-	      Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::BarrierExec, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(c);
+	      Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(c);
 	      exec->postReceives();
 	    }
 	  }

@@ -180,7 +180,8 @@ namespace XMI
       inline xmi_result_t  setGeometry(XMI_GEOMETRY_CLASS *g,
                                        XMI_NBCollManager  *mgr,
                                        T_Device           *dev,
-                                       XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device, T_Sysdep> *default_bar)
+                                       XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device, T_Sysdep> *bar0,
+				       XMI::CollInfo::CCMIBinomBarrierInfo<T_Device, T_Sysdep>    *bar1)
         {
           _geometry = g;
           _dev      = dev;
@@ -196,10 +197,12 @@ namespace XMI
           _sctv       = mgr->allocate (g, TSPColl::ScattervTag);
 
           // Setup CCMI style collectives
-          g->setKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR,
-                    (void*)&default_bar->_barrier_executor);
-//          exe = default_bar->_barrier_registration.generate(&default_bar->_barrier_executors[1],g);
-//          g->setKey(XMI::Geometry::XMI_GKEY_LOCALBARRIEREXECUTOR, (void*)exe);
+          g->setKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0,
+                    (void*)&bar0->_barrier_composite);
+
+          g->setKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1,
+                    (void*)&bar1->_barrier_composite);
+
           return XMI_SUCCESS;
         }
 
@@ -322,6 +325,7 @@ namespace XMI
 		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
 							    NULL, //currently pass in null context
+							    _geometry, 
 							    broadcast);
 #endif
                   }
@@ -355,6 +359,7 @@ namespace XMI
 		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
 							    NULL, //currently pass in null context
+							    _geometry, 
 							    broadcast);
 #endif
                   }
@@ -640,9 +645,9 @@ namespace XMI
                     cb_done_ccmi.clientdata = barrier->cookie;
                     XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device,T_Sysdep> *binfo =
                       (XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device,T_Sysdep> *)info;
-                    CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor*)binfo->_barrier_executor;
+                    CCMI::Executor::Composite *_c_bar = (CCMI::Executor::Composite *)binfo->_barrier_composite;
                     _c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
-                    _c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
+                    //_c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
                     _c_bar->start();
                   }
                   break;
@@ -653,9 +658,9 @@ namespace XMI
                     cb_done_ccmi.clientdata = barrier->cookie;
                     XMI::CollInfo::CCMIBinomBarrierInfo<T_Device,T_Sysdep> *binfo =
                       (XMI::CollInfo::CCMIBinomBarrierInfo<T_Device,T_Sysdep> *)info;
-                    CCMI::Executor::Executor *_c_bar = (CCMI::Executor::Executor*)binfo->_barrier_executor;
+                    CCMI::Executor::Composite *_c_bar = (CCMI::Executor::Composite*)binfo->_barrier_composite;
                     _c_bar->setDoneCallback(barrier->cb_done,barrier->cookie);
-                    _c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
+                    //_c_bar->setConsistency (XMI_MATCH_CONSISTENCY);
                     _c_bar->start();
                   }
                   break;

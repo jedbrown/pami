@@ -34,7 +34,7 @@
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
 
-#define OLD_CCMI_BROADCAST
+//#define OLD_CCMI_BROADCAST
 
 namespace XMI
 {
@@ -219,13 +219,13 @@ namespace XMI
         }
       void reg_geometry(XMI_GEOMETRY_CLASS *geometry)
         {
-          _barrier_registration.generate(&_barrier_executor,geometry);
+          _barrier_registration.generate(&_barrier_composite,geometry);
         }
 
       XMI_Request_t                                     _request;
       XMI_COLL_MCAST_CLASS                              _model;
       CCMI::Adaptor::Barrier::OldBinomialBarrierFactory _barrier_registration;
-      CCMI_Executor_t                                   _barrier_executor;
+      CCMI_Executor_t                                   _barrier_composite;
     };
 
     template <class T_Device, class T_Sysdep>
@@ -238,27 +238,28 @@ namespace XMI
 			   xmi_client_t           client,
 			   xmi_context_t          context,
 			   size_t                 context_id):
-        CollInfo<T_Device>(dev),
+      CollInfo<T_Device>(dev),
 	_minterface(dev, client, context, context_id),
-        _barrier_registration(&_minterface,
-                              fcn),
-        _client(client),
-        _context(context),
+	_barrier_registration(NULL, &_minterface, (xmi_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
+	_client(client),
+	_context(context),
 	_contextid (context_id)
         {
           xmi_metadata_t *meta = &(this->_metadata);
           strcpy(meta->name, "CCMI_NewBinomBarrier");
+	  _barrier_registration.setMapIdToGeometry(fcn);
         }
       void reg_geometry(XMI_GEOMETRY_CLASS *geometry)
         {
-          _barrier_registration.generate(&_barrier_executor,geometry);
+          _barrier_registration.generate(&_barrier_composite, sizeof(CCMI_Executor_t), _context, 
+					 (xmi_geometry_t)geometry, NULL); //Barrier is cached
         }
 
 
       XMI_Request_t                                  _request;
       XMI_NATIVEINTERFACE<T_Device>                  _minterface;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
-      CCMI_Executor_t                                _barrier_executor;
+      CCMI_Executor_t                                _barrier_composite;
       xmi_client_t                                   _client;
       xmi_context_t                                  _context;
       size_t                                         _contextid;

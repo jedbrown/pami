@@ -47,9 +47,11 @@ namespace CCMI
       virtual Executor::Composite * generate(void                      * request_buf,
 					     size_t                      rsize,
 					     xmi_context_t               context,
+					     xmi_geometry_t              geometry,
 					     void                      * cmd)
 	{
-	  T *t = new (request_buf) T(cmd, _cmgr, _native);
+	  CCMI_assert(rsize >= sizeof(T));
+	  T *t = new (request_buf) T(_native, _cmgr, geometry, cmd);
 	  return (Executor::Composite *)t;
 	}
 

@@ -1,15 +1,3 @@
-/* begin_generated_IBM_copyright_prolog                             */
-/*                                                                  */
-/* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2010                               */
-/* IBM CPL License                                                  */
-/* ---------------------------------------------------------------- */
-/*                                                                  */
-/* end_generated_IBM_copyright_prolog                               */
-/**
- * \file algorithms/protocols/barrier/BarrierFactory.h
- * \brief ???
- */
 
 #ifndef __algorithms_protocols_barrier_BarrierFactory_h__
 #define __algorithms_protocols_barrier_BarrierFactory_h__
@@ -23,109 +11,67 @@ namespace CCMI
   {
     namespace Barrier
     {
+      // Old, deprecated interfaces for transition from OldMulticast to Multisync
       ///
-      /// \brief Virtual Barrier Factory Base class.
+      /// \brief Binomial barrier
       ///
-      class BaseBarrierFactory : private CollectiveProtocolFactory
-      {
-      public:
-        ///
-        /// \brief Generate a non-blocking barrier message.
-        ///
-        /// \param[in]  request      Opaque memory to maintain internal
-        ///                          message state.
-        /// \param[in]  geometry     Geometry for the barrier operation
-        ///
-        /// \retval     executor     Pointer to barrier executor
-        ///
-        virtual CCMI::Executor::Executor *generate
-        (CCMI_Executor_t           * request,
-         XMI_GEOMETRY_CLASS                  * geometry) = 0;
-
-      };  //- BarrierFactory
-
-      ///
-      /// \brief Barrier Factory Base class.
-      ///
-      class BarrierFactory : private BaseBarrierFactory
+      template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Mcast>
+      class OldBarrierT : public CCMI::Executor::Composite
       {
       protected:
-	Interfaces::NativeInterface   * _msyncInterface;
-	xmi_mapidtogeometry_fn          _cb_geometry;
+        ///
+        /// \brief The schedule for binomial barrier protocol
+        ///
+	CCMI::Executor::OldBarrier<T_Mcast>    _myexecutor;
+        T_Schedule                             _myschedule;
 
-        public:
-	/// NOTE: This is required to make "C" programs link successfully with virtual destructors
-	void operator delete(void * p)
-	{
-            CCMI_abort();
+      public:
+        ///
+        /// \brief Constructor for non-blocking barrier protocols.
+        ///
+        /// \param[in] mapping     Pointer to mapping class
+        /// \param[in] mInterface  The multicast Interface
+        /// \param[in] geometry    Geometry object
+        ///
+        OldBarrierT  (T_Sysdep            * mapping,
+                      T_Mcast             * mInterface,
+                      XMI_GEOMETRY_CLASS  * geometry) :
+	Composite(),
+	  _myexecutor (geometry->nranks(),
+		       geometry->ranks(),
+		       geometry->comm(),
+		       0U,
+		       mInterface),
+          _myschedule (mapping, geometry->nranks(), geometry->ranks())
+        {
+          TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
+		      (int)this, geometry->comm()));
+          _myexecutor.setCommSchedule (&_myschedule);
+        }
+
+        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
+        {
+          return((AnalyzeFn) afn)(geometry);
+        }
+
+	virtual void start() { 
+	  _myexecutor.setDoneCallback (_cb_done, _clientdata);
+	  _myexecutor.start(); 
 	}
 
-	///
-	/// \brief Constructor for barrier factory implementations.
-	///
-	BarrierFactory (Interfaces::NativeInterface   * minterface,
-			xmi_mapidtogeometry_fn    cb_geometry) :
-	_msyncInterface (minterface),
-	  _cb_geometry (cb_geometry)
-	  {
-            TRACE_INIT((stderr,"<%#.8X>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
-			(int)this,(int)cb_geometry));
-	    xmi_dispatch_callback_fn fn;
-	    fn.multicast = (xmi_dispatch_multicast_fn) cb_head;
-            _msyncInterface->setDispatch (fn, this);
-          }
+	Executor::OldBarrier<T_Mcast> * getExecutor() { return &_myexecutor; }
+      }; //- OldBarrierT
 
-	static void *   cb_head   (const xmi_quad_t    * info,
-				   unsigned              count,
-				   unsigned              conn_id,
-				   unsigned              peer,
-				   unsigned              sndlen,
-				   void                * arg,
-				   size_t              * rcvlen,
-				   xmi_pipeworkqueue_t **recvpwq,
-				   XMI_Callback_t  * cb_done)
-	{
-	  CollHeaderData  *cdata = (CollHeaderData *) info;
-	  BarrierFactory *factory = (BarrierFactory *) arg;
-
-	  XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *) XMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
-	  if(geometry == NULL)
-	  {
-	    geometry = (XMI_GEOMETRY_CLASS *) factory->_cb_geometry (cdata->_comm);
-	    XMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
-	  }
-	  assert(geometry != NULL);
-	  CCMI::Executor::BarrierExec *executor = (CCMI::Executor::BarrierExec*)
-	    geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
-	  CCMI_assert (executor != NULL);
-	  TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
-		      (int)factory,cdata->_comm,(int)executor));
-
-	  //Override poly morphism
-	  executor->CCMI::Executor::BarrierExec::notifyRecv (peer, *info, NULL, 0);
-
-	  *rcvlen    = 0;
-	  *recvpwq   = 0;
-	  cb_done->function    = NULL;
-	  cb_done->clientdata = NULL;
-
-	  return NULL;
-	}
-
-      };  //- BarrierFactory
-
-// Old, deprecated, interfaces for transition from OldMulticast to Multisync
 
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template<class T_Sysdep, class T_Mcast>
-      class OldBarrierFactory : private BaseBarrierFactory
+      template <class T, class T_Sysdep, class T_Mcast>
+      class OldBarrierFactoryT : private CollectiveProtocolFactory
       {
       protected:
         T_Mcast                * _mcastInterface;
         T_Sysdep               * _mapping;
-        xmi_mapidtogeometry_fn     _cb_geometry;
 
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -137,47 +83,68 @@ namespace CCMI
         ///
         /// \brief Constructor for barrier factory implementations.
         ///
-        OldBarrierFactory (T_Mcast      * minterface,
-                           T_Sysdep     * map,
-                           xmi_mapidtogeometry_fn                       cb_geometry) :
+        OldBarrierFactoryT (T_Mcast                *minterface,
+                            T_Sysdep               *map,
+                            xmi_mapidtogeometry_fn  cb_geometry) :
         _mcastInterface (minterface),
-        _mapping (map),
-        _cb_geometry (cb_geometry)
+	_mapping (map)
         {
           TRACE_INIT((stderr,"<%#.8X>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
                      (int)this,(int)cb_geometry));
           minterface->setCallback (cb_head, this);
+	  setMapIdToGeometry (cb_geometry);
+        }
+
+        bool Analyze(XMI_GEOMETRY_CLASS *geometry)
+        {
+          return T::analyze (geometry);
+        }
+
+        ///
+        /// \brief Generate a non-blocking barrier message.
+        ///
+        /// \param[in]  request      Opaque memory to maintain internal
+        ///                          message state.
+        /// \param[in]  geometry     Geometry for the barrier operation
+        ///
+        /// \retval     executor     Pointer to barrier executor
+        ///
+        CCMI::Executor::Composite *generate
+        (CCMI_Executor_t           * request,
+         XMI_GEOMETRY_CLASS                  * geometry)
+        {
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
+          return new (request) T (this->_mapping, this->_mcastInterface, geometry);
         }
 
         static xmi_quad_t *   cb_head   (const xmi_quad_t    * info,
-                                             unsigned          count,
-                                             unsigned          peer,
-                                             unsigned          sndlen,
-                                             unsigned          conn_id,
-                                             void            * arg,
-                                             unsigned        * rcvlen,
-                                             char           ** rcvbuf,
-                                             unsigned        * pipewidth,
-                                             XMI_Callback_t * cb_done)
+					 unsigned          count,
+					 unsigned          peer,
+					 unsigned          sndlen,
+					 unsigned          conn_id,
+					 void            * arg,
+					 unsigned        * rcvlen,
+					 char           ** rcvbuf,
+					 unsigned        * pipewidth,
+					 XMI_Callback_t * cb_done)
         {
           CollHeaderData  *cdata = (CollHeaderData *) info;
-          OldBarrierFactory *factory = (OldBarrierFactory *) arg;
+          OldBarrierFactoryT *factory = (OldBarrierFactoryT *) arg;
 
           XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *) XMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
           if(geometry == NULL)
           {
-            geometry = (XMI_GEOMETRY_CLASS *) factory->_cb_geometry (cdata->_comm);
+            geometry = (XMI_GEOMETRY_CLASS *) factory->getGeometry(cdata->_comm);
             XMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
           }
           assert(geometry != NULL);
-          CCMI::Executor::OldBarrier<T_Mcast> *executor = (CCMI::Executor::OldBarrier<T_Mcast>*)
-	    geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
-          CCMI_assert (executor != NULL);
+          T *composite = (T*) geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+          CCMI_assert (composite != NULL);
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
-                     (int)factory,cdata->_comm,(int)executor));
+		      (int)factory,cdata->_comm,(int)executor));
 
           //Override poly morphism
-          executor->CCMI::Executor::OldBarrier<T_Mcast>::notifyRecv (peer, *info, NULL, 0);
+          composite->getExecutor()->notifyRecv (peer, *info, NULL, 0);
 
           *rcvlen    = 0;
           //*rcvbuf    = NULL;
@@ -187,7 +154,7 @@ namespace CCMI
 
           return NULL;
         }
-      };  //- OldBarrierFactory
+      };  //- OldBarrierFactoryT
 ////////////////////////////////////////////////////////////////////////////
     };
   };

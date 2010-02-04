@@ -16,6 +16,7 @@
 
 #include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/schedule/BinomialTree.h"
+#include "algorithms/connmgr/SimpleConnMgr.h"
 #include "BarrierT.h"
 
 namespace CCMI
@@ -31,7 +32,7 @@ namespace CCMI
 
       typedef BarrierT <CCMI::Schedule::ListMultinomial,
 	binomial_analyze> BinomialBarrier;
-      typedef BarrierFactoryT <BinomialBarrier> BinomialBarrierFactory;
+      typedef CollectiveProtocolFactoryT <BinomialBarrier, binomial_analyze, ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > BinomialBarrierFactory;
 
       typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
                            binomial_analyze,

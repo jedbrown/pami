@@ -134,7 +134,7 @@ namespace XMI
       {
 	T_Collfactory *f=(T_Collfactory *)_fact_alloc.allocateObject();
 	new(f)T_Collfactory(_sysdep);
-	f->setGeometry(geometry, &_nbCollMgr, _dev, &_ccmioldbarrier);
+	f->setGeometry(geometry, &_nbCollMgr, _dev, &_ccmioldbarrier, &_ccmibarrier);
 	f->add_collective(XMI_XFER_BROADCAST,  &_pgbroadcast);
 	f->add_collective(XMI_XFER_ALLGATHER,  &_pgallgather);
 	f->add_collective(XMI_XFER_ALLGATHERV, &_pgallgatherv);

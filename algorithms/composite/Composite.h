@@ -28,7 +28,28 @@ namespace CCMI
       //Base Composite class
       Composite() {}
 
+      ///
+      /// \brief Destructor
+      ///
       virtual ~Composite() {}
+
+      void setDoneCallback (xmi_event_function cb_done, void *cd)
+      {
+        _cb_done    =   cb_done;
+        _clientdata =   cd;
+      }
+
+      virtual void start() {
+	//Currently not all composites implement this method
+	CCMI_abort();
+      }
+
+    protected:
+      ///
+      ///  \brief Callback to call when the barrier has finished
+      ///
+      xmi_event_function    _cb_done;
+      void                * _clientdata;
     };
 
 
@@ -102,7 +123,7 @@ namespace CCMI
     };  //-- end class Composite
 
     //The old composite class that depends on Executor::Executor
-    typedef CompositeT<6, Executor, Executor> OldComposite;
+    typedef CompositeT<6, Composite, Executor> OldComposite;
   };  //-- end namespace Executor
 };  //-- end namespace CCMI
 

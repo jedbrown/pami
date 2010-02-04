@@ -14,6 +14,7 @@
 #ifndef __algorithms_protocols_barrier_BarrierT_h__
 #define __algorithms_protocols_barrier_BarrierT_h__
 
+#include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/protocols/barrier/BarrierFactory.h"
 #include "algorithms/executor/Barrier.h"
@@ -30,10 +31,14 @@ namespace CCMI
       /// \brief Binomial barrier
       ///
       template <class T_Schedule, AnalyzeFn afn>
-      class BarrierT : public CCMI::Executor::BarrierExec
+      class BarrierT : public CCMI::Executor::Composite
       {
+	///
+	/// \brief The executor for barrier protocol
+	///
+	CCMI::Executor::BarrierExec         _myexecutor;
         ///
-        /// \brief The schedule for binomial barrier protocol
+        /// \brief The schedule for barrier protocol
         ///
         T_Schedule                          _myschedule;
 
@@ -44,18 +49,20 @@ namespace CCMI
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-        BarrierT  (Interfaces::NativeInterface  * mInterface,
-                   XMI_GEOMETRY_CLASS           * geometry) :
-	CCMI::Executor::BarrierExec (geometry->nranks(),
-				     geometry->ranks(),
-				     geometry->comm(),
-				     0,
-				     mInterface),
-	  _myschedule (__global.mapping.task(), (XMI::Topology *)geometry->getTopology(0))
+        BarrierT  (Interfaces::NativeInterface          * mInterface,
+		   ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS>     * cmgr,		   
+                   xmi_geometry_t                         geometry,
+		   void                                 * cmd) :	
+	_myexecutor(((XMI_GEOMETRY_CLASS *)geometry)->nranks(),
+		    ((XMI_GEOMETRY_CLASS *)geometry)->ranks(),
+		    ((XMI_GEOMETRY_CLASS *)geometry)->comm(),
+		    0,
+		    mInterface),
+	  _myschedule (__global.mapping.task(), (XMI::Topology *)((XMI_GEOMETRY_CLASS *)geometry)->getTopology(0))
 	{
           TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
                      (int)this, geometry->comm()));
-          setCommSchedule (&_myschedule);
+          _myexecutor.setCommSchedule (&_myschedule);
         }
 
         static bool analyze (XMI_GEOMETRY_CLASS *geometry)
@@ -63,145 +70,48 @@ namespace CCMI
           return((AnalyzeFn) afn)(geometry);
         }
 
+	virtual void start() { 
+	  _myexecutor.setDoneCallback (_cb_done, _clientdata);
+	  _myexecutor.start(); 
+	} 
+
+	static void *   cb_head   (const xmi_quad_t    * info,
+				   unsigned              count,
+				   unsigned              conn_id,
+				   unsigned              peer,
+				   unsigned              sndlen,
+				   void                * arg,
+				   size_t              * rcvlen,
+				   xmi_pipeworkqueue_t **recvpwq,
+				   XMI_Callback_t  * cb_done)
+	{
+	  CollHeaderData  *cdata = (CollHeaderData *) info;
+	  CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
+
+	  XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *) XMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
+	  if(geometry == NULL)
+	  {
+	    geometry = (XMI_GEOMETRY_CLASS *) factory->getGeometry (cdata->_comm);
+	    XMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
+	  }
+	  assert(geometry != NULL);
+	  BarrierT *composite = (BarrierT*) geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1);
+	  CCMI_assert (composite != NULL);
+	  TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
+		      (int)factory,cdata->_comm,(int)executor));
+
+	  //Override poly morphism
+	  composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
+
+	  *rcvlen    = 0;
+	  *recvpwq   = 0;
+	  cb_done->function    = NULL;
+	  cb_done->clientdata = NULL;
+
+	  return NULL;
+	}
       }; //-BarrierT
 
-      ///
-      /// \brief Barrier Factory Base class.
-      ///
-      template<class T>
-      class BarrierFactoryT : private BarrierFactory
-      {
-      public:
-        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-        void operator delete(void * p)
-        {
-          CCMI_abort();
-        }
-
-        ///
-        /// \brief Constructor for barrier factory implementations.
-        ///
-        BarrierFactoryT (Interfaces::NativeInterface  * mInterface,
-                         xmi_mapidtogeometry_fn         cb_geometry) :
-	BarrierFactory (mInterface, cb_geometry)
-        {
-        }
-
-        bool Analyze(XMI_GEOMETRY_CLASS *geometry)
-        {
-          return T::analyze (geometry);
-        }
-
-        ///
-        /// \brief Generate a non-blocking barrier message.
-        ///
-        /// \param[in]  request      Opaque memory to maintain internal
-        ///                          message state.
-        /// \param[in]  geometry     Geometry for the barrier operation
-        ///
-        /// \retval     executor     Pointer to barrier executor
-        ///
-        CCMI::Executor::Executor *generate
-        (CCMI_Executor_t           * request,
-         XMI_GEOMETRY_CLASS        * geometry)
-        {
-          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
-          return (CCMI::Executor::Executor *) (new (request) T (this->_msyncInterface, geometry));
-        }
-
-      };  //- BarrierFactoryT
-
-// Old, deprecated interfaces for transition from OldMulticast to Multisync
-
-      ///
-      /// \brief Binomial barrier
-      ///
-      template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Mcast>
-      class OldBarrierT : public CCMI::Executor::OldBarrier<T_Mcast>
-      {
-        ///
-        /// \brief The schedule for binomial barrier protocol
-        ///
-        T_Schedule                             _myschedule;
-
-      public:
-        ///
-        /// \brief Constructor for non-blocking barrier protocols.
-        ///
-        /// \param[in] mapping     Pointer to mapping class
-        /// \param[in] mInterface  The multicast Interface
-        /// \param[in] geometry    Geometry object
-        ///
-
-        OldBarrierT  (T_Sysdep            * mapping,
-                      T_Mcast             * mInterface,
-                      XMI_GEOMETRY_CLASS  * geometry) :
-          CCMI::Executor::OldBarrier<T_Mcast> (geometry->nranks(),
-                                               geometry->ranks(),
-                                               geometry->comm(),
-                                               0U,
-                                               mInterface),
-          _myschedule (mapping, geometry->nranks(), geometry->ranks())
-        {
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
-                     (int)this, geometry->comm()));
-          setCommSchedule (&_myschedule);
-        }
-
-        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
-        {
-          return((AnalyzeFn) afn)(geometry);
-        }
-
-      }; //- OldBarrierT
-
-
-      ///
-      /// \brief Barrier Factory Base class.
-      ///
-      template <class T, class T_Sysdep, class T_Mcast>
-      class OldBarrierFactoryT : private OldBarrierFactory<T_Sysdep, T_Mcast>
-      {
-      public:
-        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-        void operator delete(void * p)
-        {
-          CCMI_abort();
-        }
-
-        ///
-        /// \brief Constructor for barrier factory implementations.
-        ///
-        OldBarrierFactoryT (T_Mcast                *minterface,
-                            T_Sysdep               *map,
-                            xmi_mapidtogeometry_fn  cb_geometry) :
-          OldBarrierFactory<T_Sysdep, T_Mcast> (minterface, map, cb_geometry)
-        {
-        }
-
-        bool Analyze(XMI_GEOMETRY_CLASS *geometry)
-        {
-          return T::analyze (geometry);
-        }
-
-        ///
-        /// \brief Generate a non-blocking barrier message.
-        ///
-        /// \param[in]  request      Opaque memory to maintain internal
-        ///                          message state.
-        /// \param[in]  geometry     Geometry for the barrier operation
-        ///
-        /// \retval     executor     Pointer to barrier executor
-        ///
-        CCMI::Executor::Executor *generate
-        (CCMI_Executor_t           * request,
-         XMI_GEOMETRY_CLASS                  * geometry)
-        {
-          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
-          return new (request) T (this->_mapping, this->_mcastInterface, geometry);
-        }
-
-      };  //- OldBarrierFactoryT
 //////////////////////////////////////////////////////////////////////////////
     };
   };

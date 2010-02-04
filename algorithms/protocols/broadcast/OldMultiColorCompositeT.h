@@ -292,12 +292,11 @@ namespace CCMI
              bytes);
           XMI_assert(composite);
           composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
-          CCMI::Executor::OldBarrier<T_Mcast> *barrier = (CCMI::Executor::OldBarrier<T_Mcast>*)
-            geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIEREXECUTOR);
+          CCMI::Executor::Composite *barrier = (CCMI::Executor::Composite*)
+            geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
           CCMI_assert(barrier != NULL);
 
           barrier->setDoneCallback (B::cb_barrier_done, composite);
-          barrier->setConsistency (consistency);
           barrier->start();
 
           return (CCMI::Executor::Composite *) composite;
