@@ -12,6 +12,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		=
 NOTBUILT        =
-@LIBNAME@-""-MAPPING_SOURCES= Global.cc
+@LIBNAME@-""-MAPPING_SOURCES= Global.cc lapifunc.cc lapierror.cc
 DEVICENAME     = @LIBNAME@-""-MAPPING
 include @abs_top_builddir@/Build.rules

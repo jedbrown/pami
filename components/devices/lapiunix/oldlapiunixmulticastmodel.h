@@ -17,7 +17,7 @@
 #include "sys/xmi.h"
 #include "components/devices/OldMulticastModel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
-#include <lapi.h>
+#include "common/lapiunix/lapifunc.h"
 #include "util/common.h"
 namespace XMI
 {
@@ -114,7 +114,7 @@ namespace XMI
                       xfer_struct.Am.uhdr_len  = sizeof(LAPIMcastMessage);
                       xfer_struct.Am.udata     = (void *) buf;
                       xfer_struct.Am.udata_len = size;
-                      CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
+                      CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
                     }
                 if (sreq->_user_done.function)
                   sreq->_user_done.function(NULL,sreq->_user_done.clientdata, XMI_SUCCESS);
@@ -145,7 +145,7 @@ namespace XMI
                       xfer_struct.Am.org_cntr  = NULL;
                       xfer_struct.Am.cmpl_cntr = NULL;
                       xfer_struct.Am.tgt_cntr  = NULL;
-                      CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
+                      CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
                     }
               }
           _device.unlock();

@@ -68,19 +68,19 @@ namespace XMI
           _g_context_to_device_table[handle]=(void*) this;
 
           _tf.Util_type = LAPI_GET_THREAD_FUNC;
-          CALL_AND_CHECK_RC((LAPI_Util(_lapi_handle, (lapi_util_t *)&_tf)));
+          CheckLapiRC(lapi_util(_lapi_handle, (lapi_util_t *)&_tf));
 
-          CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
+          CheckLapiRC(lapi_addr_set (_lapi_handle,
                                             (void *)__xmi_lapi_mcast_fn,
-                                            1)));
+                                            1));
 
-          CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
+          CheckLapiRC(lapi_addr_set (_lapi_handle,
                                             (void *)__xmi_lapi_m2m_fn,
-                                            2)));
+                                            2));
 
-          CALL_AND_CHECK_RC((LAPI_Addr_set (_lapi_handle,
+          CheckLapiRC(lapi_addr_set (_lapi_handle,
                                             (void *)__xmi_lapi_msync_fn,
-                                            3)));
+                                            3));
         }
 
       void lock()
@@ -155,7 +155,7 @@ namespace XMI
         {
           lapi_msg_info_t info;
           lock();
-          LAPI_Msgpoll (_lapi_handle, 5, &info);
+          lapi_msgpoll (_lapi_handle, 5, &info);
           unlock();
           return 0;
         };
@@ -510,7 +510,7 @@ namespace XMI
           else
               {
                 LAPIMcastRecvReq *req;
-                CHECK_NULL(req, (LAPIMcastRecvReq*)malloc(sizeof(LAPIMcastRecvReq)));
+                CheckNULL(req, (LAPIMcastRecvReq*)malloc(sizeof(LAPIMcastRecvReq)));
                 req->_mcastrecvQ        = &_dev->_mcastrecvQ;
                 req->_mcast             = *mcast;
                 req->_found             = found;

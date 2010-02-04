@@ -4,7 +4,7 @@
 ///
 
 #include <map>
-#include "util/lapi/lapi_util.h"
+#include "common/lapiunix/lapifunc.h"
 
 namespace XMI
 {

@@ -67,11 +67,8 @@ namespace XMI
           for(size_t i=0;i<size;i++)
               {
                 xfer_struct.Am.tgt       = ranks[i];
-                CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
+                CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
               }
-
-
-
           return rc;
         }
 

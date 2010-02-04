@@ -7,7 +7,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "util/lapi/lapi_util.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include "common/lapiunix/lapifunc.h"
 #include "common/ContextInterface.h"
 #include "Geometry.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
@@ -75,7 +78,7 @@ namespace XMI
           /*       allocate and initialize lapi_info                      */
           /* ------------------------------------------------------------ */
 
-          CHECK_NULL(lapi_info,(lapi_info_t *)malloc(sizeof(lapi_info_t)));
+          CheckNULL(lapi_info,(lapi_info_t *)malloc(sizeof(lapi_info_t)));
           memset(lapi_info, 0, sizeof(lapi_info_t));
 
           /* ------------------------------------------------------------ */
@@ -91,7 +94,7 @@ namespace XMI
                   abort();
                 }
                 fscanf(fp, "%u", &num_tasks);
-                CHECK_NULL(udp_info,(lapi_udp_t *) malloc(num_tasks*sizeof(lapi_udp_t)));
+                CheckNULL(udp_info,(lapi_udp_t *) malloc(num_tasks*sizeof(lapi_udp_t)));
                 for (i = 0; i < num_tasks; i++)
                     {
                       char ip[256];
@@ -103,7 +106,7 @@ namespace XMI
                 /* ------------------------------------------------------------ */
                 /*        link up udp_info, extend_info and lapi_info           */
                 /* ------------------------------------------------------------ */
-                CHECK_NULL(extend_info,(lapi_extend_t *)malloc(sizeof(lapi_extend_t)));
+                CheckNULL(extend_info,(lapi_extend_t *)malloc(sizeof(lapi_extend_t)));
                 memset(extend_info, 0, sizeof(lapi_extend_t));
                 extend_info->add_udp_addrs = udp_info;
                 extend_info->num_udp_addr  = num_tasks;
@@ -118,12 +121,13 @@ namespace XMI
           /*                call LAPI_Init                                */
           /* ------------------------------------------------------------ */
           int intval = 0;
-          CALL_AND_CHECK_RC((LAPI_Init(&_lapi_handle, lapi_info)));
-          CALL_AND_CHECK_RC((LAPI_Senv(_lapi_handle,INTERRUPT_SET, intval)));
-          CALL_AND_CHECK_RC((LAPI_Qenv(_lapi_handle,TASK_ID,
-                                       (int *)&_myrank)));
-          CALL_AND_CHECK_RC((LAPI_Qenv(_lapi_handle,NUM_TASKS,
-                                       (int *)&_mysize)));
+          lapi_info->protocol_name = "xmi";
+          CheckLapiRC(lapi_init(&_lapi_handle, lapi_info));
+          CheckLapiRC(lapi_senv(_lapi_handle,INTERRUPT_SET, intval));
+          CheckLapiRC(lapi_qenv(_lapi_handle,TASK_ID,
+                                       (int *)&_myrank));
+          CheckLapiRC(lapi_qenv(_lapi_handle,NUM_TASKS,
+                                (int *)&_mysize));
           free(lapi_info);
 
           _lapi_device.init(&_sysdep, _context, _contextid);
@@ -141,7 +145,7 @@ namespace XMI
           _world_collfactory=_collreg->analyze(_world_geometry);
           _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
 
-          CALL_AND_CHECK_RC((LAPI_Gfence (_lapi_handle)));
+          CheckLapiRC(lapi_gfence (_lapi_handle));
 
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -164,7 +168,7 @@ namespace XMI
       inline xmi_result_t destroy_impl ()
         {
           LAPI_Gfence (_lapi_handle);
-          CALL_AND_CHECK_RC((LAPI_Term(_lapi_handle)));
+          CheckLapiRC(lapi_term(_lapi_handle));
           return XMI_SUCCESS;
         }
 

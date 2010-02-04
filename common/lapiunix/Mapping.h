@@ -19,7 +19,7 @@
 #include "common/BaseMappingInterface.h"
 #include "common/TorusMappingInterface.h"
 #include "common/NodeMappingInterface.h"
-#include <lapi.h>
+#include "lapifunc.h"
 
 #define XMI_MAPPING_CLASS XMI::Mapping
 

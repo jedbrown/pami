@@ -119,7 +119,7 @@ namespace XMI
                       xfer_struct.Am.uhdr_len  = sizeof(LAPIM2MHeader);
                       xfer_struct.Am.udata     = (void *) ((char*)buf+offsets[index]);
                       xfer_struct.Am.udata_len = sizes[index];
-                      CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
+                      CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
                       __xmi_lapi_m2m_senddone_fn(&_device._lapi_handle, m2m, NULL);
                     }
                 else
@@ -137,7 +137,7 @@ namespace XMI
                       xfer_struct.Am.org_cntr  = NULL;
                       xfer_struct.Am.cmpl_cntr = NULL;
                       xfer_struct.Am.tgt_cntr  = NULL;
-                      CALL_AND_CHECK_RC((LAPI_Xfer(_device._lapi_handle, &xfer_struct)));
+                      CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
                     }
                 hdr++;
               }
