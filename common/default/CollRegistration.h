@@ -59,15 +59,12 @@ namespace XMI
 	_pgallreduce(dev),
 	_pgbarrier(dev),
         _ccmiambroadcast(dev, sd),
-	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id),
         _ccmioldbarrier(dev, sd, mapidtogeometry, _client, context, context_id),
-#if 0
-	_ccmibinombroadcast(dev, sd, mapidtogeometry),
-	_ccmiringbroadcast(dev, sd, mapidtogeometry,),
-#else
-	_ccmibinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
-	_ccmiringbroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
-#endif
+	_ccmioldbinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
+	_ccmioldringbroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
+        _ccmibinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
+	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id),
+	_ccmiringbroadcast(dev, sd, mapidtogeometry,_client, context, context_id),
         _ccmiringallreduce(dev, sd, mapidtogeometry),
         _ccmibinomialallreduce(dev, sd, mapidtogeometry),
 	_ccmialltoallv(dev,sd)
@@ -114,10 +111,16 @@ namespace XMI
           _ccmiambroadcast._colltype=XMI::CollInfo::CI_AMBROADCAST0;
 	  _ambroadcasts.push_back(&_ccmiambroadcast);
 
-          _ccmibinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST1;
+          _ccmioldbinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST1;
+          _broadcasts.push_back(&_ccmioldbinombroadcast);
+
+          _ccmioldringbroadcast._colltype=XMI::CollInfo::CI_BROADCAST2;
+          _broadcasts.push_back(&_ccmioldringbroadcast);
+          
+          _ccmibinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST3;
           _broadcasts.push_back(&_ccmibinombroadcast);
 
-          _ccmiringbroadcast._colltype=XMI::CollInfo::CI_BROADCAST2;
+          _ccmiringbroadcast._colltype=XMI::CollInfo::CI_BROADCAST4;
           _broadcasts.push_back(&_ccmiringbroadcast);
 
           _ccmiringallreduce._colltype=XMI::CollInfo::CI_ALLREDUCE1;
@@ -149,6 +152,8 @@ namespace XMI
         _ccmibarrier.reg_geometry(geometry);
 
         f->add_collective(XMI_XFER_AMBROADCAST,&_ccmiambroadcast);
+        f->add_collective(XMI_XFER_BROADCAST,  &_ccmioldringbroadcast);
+        f->add_collective(XMI_XFER_BROADCAST,  &_ccmioldbinombroadcast);
         f->add_collective(XMI_XFER_BROADCAST,  &_ccmiringbroadcast);
         f->add_collective(XMI_XFER_BROADCAST,  &_ccmibinombroadcast);
         f->add_collective(XMI_XFER_ALLREDUCE,  &_ccmiringallreduce);
@@ -179,10 +184,12 @@ namespace XMI
       XMI::CollInfo::PGAllreduceInfo<T_Device>                     _pgallreduce;
       XMI::CollInfo::PGBarrierInfo<T_Device>                       _pgbarrier;
       XMI::CollInfo::CCMIAmbroadcastInfo<T_Device,T_Sysdep>        _ccmiambroadcast;
-      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device,T_Sysdep>       _ccmibarrier;
       XMI::CollInfo::CCMIOldBinomBarrierInfo<T_Device,T_Sysdep>    _ccmioldbarrier;
-      XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device,T_Sysdep>     _ccmibinombroadcast;
+      XMI::CollInfo::CCMIOldBinomBroadcastInfo<T_Device,T_Sysdep>  _ccmioldbinombroadcast;
+      XMI::CollInfo::CCMIOldRingBroadcastInfo<T_Device,T_Sysdep>   _ccmioldringbroadcast;
+      XMI::CollInfo::CCMIBinomBarrierInfo<T_Device,T_Sysdep>       _ccmibarrier;
       XMI::CollInfo::CCMIRingBroadcastInfo<T_Device,T_Sysdep>      _ccmiringbroadcast;
+      XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device,T_Sysdep>     _ccmibinombroadcast;
       XMI::CollInfo::CCMIRingAllreduceInfo<T_Device,T_Sysdep>      _ccmiringallreduce;
       XMI::CollInfo::CCMIBinomialAllreduceInfo<T_Device,T_Sysdep>  _ccmibinomialallreduce;
       XMI::CollInfo::CCMIAlltoallvInfo<T_Device,T_Sysdep>          _ccmialltoallv;

@@ -301,6 +301,57 @@ namespace XMI
                   case XMI::CollInfo::CI_BROADCAST1:
                   {
                     xmi_callback_t cb_done;
+                    XMI::CollInfo::CCMIOldBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
+                      (XMI::CollInfo::CCMIOldBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    XMI_assertf(robj,"bcast alg 1:  memory allocation failure\n");
+
+                    robj->factory      = this;
+                    robj->user_done_fn = broadcast->cb_done;
+                    robj->user_cookie  = broadcast->cookie;
+
+                    cb_done.function   = client_done;
+                    cb_done.clientdata = robj;
+                    cinfo->_broadcast_registration.generate(&robj->req[0],
+                                                            sizeof(XMI_CollectiveRequest_t),
+                                                            cb_done,
+                                                            XMI_MATCH_CONSISTENCY,
+                                                            _geometry,
+                                                            broadcast->root,
+                                                            broadcast->buf,
+                                                            broadcast->typecount);
+                  }
+                  break;
+                  case XMI::CollInfo::CI_BROADCAST2:
+                  {
+                    xmi_callback_t cb_done;
+                    XMI::CollInfo::CCMIOldRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
+                      (XMI::CollInfo::CCMIOldRingBroadcastInfo<T_Device, T_Sysdep>*)info;
+
+                    reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    XMI_assertf(robj,"bcast alg 2:  memory allocation failure\n");
+
+                    robj->factory      = this;
+                    robj->user_done_fn = broadcast->cb_done;
+                    robj->user_cookie  = broadcast->cookie;
+
+                    cb_done.function   = client_done;
+                    cb_done.clientdata = robj;
+
+                    cinfo->_broadcast_registration.generate(&robj->req[0],
+                                                            sizeof(XMI_CollectiveRequest_t),
+                                                            cb_done,
+                                                            XMI_MATCH_CONSISTENCY,
+                                                            _geometry,
+                                                            broadcast->root,
+                                                            broadcast->buf,
+                                                            broadcast->typecount);
+                  }
+                  break;
+
+                  case XMI::CollInfo::CI_BROADCAST3:
+                  {
+                    xmi_callback_t cb_done;
                     XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
@@ -312,25 +363,14 @@ namespace XMI
 
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
-#ifdef OLD_CCMI_BROADCAST
-                    cinfo->_broadcast_registration.generate(&robj->req[0],
-                                                            sizeof(XMI_CollectiveRequest_t),
-                                                            cb_done,
-                                                            XMI_MATCH_CONSISTENCY,
-                                                            _geometry,
-                                                            broadcast->root,
-                                                            broadcast->buf,
-                                                            broadcast->typecount);
-#else
 		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
 							    NULL, //currently pass in null context
 							    _geometry, 
 							    broadcast);
-#endif
                   }
                   break;
-                  case XMI::CollInfo::CI_BROADCAST2:
+                  case XMI::CollInfo::CI_BROADCAST4:
                   {
                     xmi_callback_t cb_done;
                     XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
@@ -346,22 +386,11 @@ namespace XMI
                     cb_done.function   = client_done;
                     cb_done.clientdata = robj;
 
-#ifdef OLD_CCMI_BROADCAST
-                    cinfo->_broadcast_registration.generate(&robj->req[0],
-                                                            sizeof(XMI_CollectiveRequest_t),
-                                                            cb_done,
-                                                            XMI_MATCH_CONSISTENCY,
-                                                            _geometry,
-                                                            broadcast->root,
-                                                            broadcast->buf,
-                                                            broadcast->typecount);
-#else
 		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
 							    NULL, //currently pass in null context
 							    _geometry, 
 							    broadcast);
-#endif
                   }
                   break;
                   default:

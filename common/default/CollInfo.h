@@ -34,7 +34,6 @@
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
 
-//#define OLD_CCMI_BROADCAST
 
 namespace XMI
 {
@@ -45,6 +44,8 @@ namespace XMI
       CI_BROADCAST0=0,
       CI_BROADCAST1,
       CI_BROADCAST2,
+      CI_BROADCAST3,
+      CI_BROADCAST4,
       CI_ALLGATHER0,
       CI_ALLGATHERV0,
       CI_SCATTER0,
@@ -268,12 +269,11 @@ namespace XMI
       size_t                                         _contextid;
     };
 
-#ifdef OLD_CCMI_BROADCAST
     template <class T_Device, class T_Sysdep>
-      class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
+      class CCMIOldBinomBroadcastInfo:public CollInfo<T_Device>
     {
     public:
-      CCMIBinomBroadcastInfo(T_Device *dev,
+      CCMIOldBinomBroadcastInfo(T_Device *dev,
                              T_Sysdep * sd,
                              xmi_mapidtogeometry_fn fcn,
                              xmi_client_t           client,
@@ -288,14 +288,14 @@ namespace XMI
                                 65535)
 	  {
 	    xmi_metadata_t *meta = &(this->_metadata);
-	    strcpy(meta->name, "CCMI_BinomBroadcast");
+	    strcpy(meta->name, "CCMI_OldBinomBroadcast");
 	  }
       XMI_Request_t                                           _request;
       XMI_COLL_MCAST_CLASS                                    _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::OldBinomialBcastFactory       _broadcast_registration;
     };
-#else
+
     template <class T_Device, class T_Sysdep>
       class CCMIBinomBroadcastInfo:public CollInfo<T_Device>
     {
@@ -318,14 +318,13 @@ namespace XMI
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
       CCMI::Adaptor::Broadcast::BinomialBcastFactory           _broadcast_registration;
     };
-#endif
 
-#ifdef OLD_CCMI_BROADCAST
+
     template <class T_Device, class T_Sysdep>
-      class CCMIRingBroadcastInfo:public CollInfo<T_Device>
+      class CCMIOldRingBroadcastInfo:public CollInfo<T_Device>
     {
     public:
-      CCMIRingBroadcastInfo(T_Device *dev,
+      CCMIOldRingBroadcastInfo(T_Device *dev,
 			    T_Sysdep * sd,
                             xmi_mapidtogeometry_fn fcn,
                             xmi_client_t           client,
@@ -340,14 +339,14 @@ namespace XMI
                                 65535)
 	  {
 	    xmi_metadata_t *meta = &(this->_metadata);
-	    strcpy(meta->name, "CCMI_RingBroadcast");
+	    strcpy(meta->name, "CCMI_OldRingBroadcast");
 	  }
       XMI_Request_t                                           _request;
-      XMI_COLL_MCAST_CLASS                                           _model;
+      XMI_COLL_MCAST_CLASS                                    _model;
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _connmgr;
       CCMI::Adaptor::Broadcast::OldRingBcastFactory           _broadcast_registration;
     };
-#else
+
     template <class T_Device, class T_Sysdep>
       class CCMIRingBroadcastInfo:public CollInfo<T_Device>
     {
@@ -370,7 +369,7 @@ namespace XMI
       CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep>  _connmgr;
       CCMI::Adaptor::Broadcast::RingBcastFactory               _broadcast_registration;
     };
-#endif
+
 
     template <class T_Device, class T_Sysdep>
     class CCMIRingAllreduceInfo:public CollInfo<T_Device>
