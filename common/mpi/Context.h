@@ -267,6 +267,7 @@ namespace XMI
           XMI::Device::Generic::GenericThread *work =
 		(XMI::Device::Generic::GenericThread *)_workAllocator.allocateObject();
 	  new (work) XMI::Device::Generic::GenericThread(work_fn, cookie, (xmi_callback_t){__work_done, (void *)work});
+	  work->setStatus(XMI::Device::Ready);
 	  _devices->_generics[_contextid].postThread(work);
           return XMI_SUCCESS;
         }
