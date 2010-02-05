@@ -46,5 +46,8 @@ XMI::Device::WQRingBcastRealDev _g_wqbcast_dev;
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 XMI::Device::WQRingReduceRealDev _g_wqreduce_dev;
 
+#include "components/devices/misc/ProgressFunctionMsg.h"
+XMI::Device::ProgressFunctionDev _g_progfunc_dev;
+
 extern "C" void __libxmi_dummy     () { abort(); }
 extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libxmi_dummy")));

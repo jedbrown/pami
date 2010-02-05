@@ -58,7 +58,7 @@ private:
 }; //-- Device
 }; //-- XMI
 
-static XMI::Device::ProgressFunctionDev _g_progfunc_dev;
+extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
 namespace XMI {
 namespace Device {
