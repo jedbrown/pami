@@ -131,12 +131,8 @@ namespace XMI
         _mu.init (&_sysdep, (xmi_context_t)this, id);
 #endif
 #ifdef MU_COLL_DEVICE
-          _global_mu_ni = new MUGlobalNI(_mu, _client, _context, _contextid);
-
-        xmi_result_t status;
-        /// \todo allocator
-        _mu_msync_model = new XMI::Device::MU::MUMultisyncModel(status, _mu);
-        _mu_mcombine_model = new XMI::Device::MU::MUMulticombineModel(status, _mu);
+        // Can't construct NI until device is init()'d.  Ctor into member storage. 
+        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(_mu, _client, _context, _contextid);
 #endif
         _generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
         _shmem.init (&_sysdep, (xmi_context_t)this, id);
@@ -446,16 +442,8 @@ namespace XMI
       TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
       if (_dispatch[id] == NULL)
       {
-        _dispatch[id] = (void *)_global_mu_ni;
+        _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
         return _global_mu_ni->setDispatch(fn, cookie);
-
-//      XMI_assertf(_protocolAllocator.objsize >= sizeof(XMI::Device::MU::MUMulticastModel),"%zd >= %zd\n",_protocolAllocator.objsize,sizeof(XMI::Device::MU::MUMulticastModel));
-//      // Allocate memory for the protocol object.
-//      _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
-//
-//      XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, _mu);
-//      model->registerMcastRecvFunction(id, fn.multicast, cookie);
-        
       }
 #endif
       return result;
@@ -471,16 +459,9 @@ namespace XMI
       inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
       {
 #ifdef MU_COLL_DEVICE
-
-//        typedef uint8_t storage_t[XMI::Device::MU::MUMulticastModel::sizeof_msg];
-//        storage_t * msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticastModel::sizeof_msg);
-//        XMI::Device::MU::MUMulticastModel * model = (XMI::Device::MU::MUMulticastModel *) _dispatch[mcastinfo->dispatch];
-//        return model->postMulticast(*msgbuf, mcastinfo);
-
         TRACE_ERR((stderr, ">> multicast_impl multicast %zd, %p\n", mcastinfo->dispatch, mcastinfo));
         CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
         return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
-
 #else
           return XMI_UNIMPL;
 #endif
@@ -496,12 +477,8 @@ namespace XMI
       inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
       {
 #ifdef MU_COLL_DEVICE
-//        typedef uint8_t storage_t[XMI::Device::MU::MUMultisyncModel::sizeof_msg];
-//          storage_t * msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMultisyncModel::sizeof_msg);
-//        return _mu_msync_model->postMultisync(*msgbuf, msyncinfo);
-
         TRACE_ERR((stderr, ">> multisync_impl multisync %p\n", msyncinfo));
-        return _global_mu_ni->multisync(msyncinfo);// this version of ni allocates/frees our request storage for us.
+        return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
 
 #else
           return XMI_UNIMPL;
@@ -512,11 +489,8 @@ namespace XMI
       inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
       {
 #ifdef MU_COLL_DEVICE
-          typedef uint8_t storage_t[XMI::Device::MU::MUMulticombineModel::sizeof_msg];
-          TRACE_ERR((stderr, ">> multicombine_impl multicombine %p\n", mcombineinfo));
-          storage_t * msgbuf = (storage_t*)malloc(XMI::Device::MU::MUMulticombineModel::sizeof_msg);
-          return _mu_mcombine_model->postMulticombine(*msgbuf, mcombineinfo);
-        return _global_mu_ni->multicombine(mcombineinfo);// this version of ni allocates/frees our request storage for us.
+        TRACE_ERR((stderr, ">> multicombine_impl multicombine %p\n", mcombineinfo));
+        return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
 #else
           return XMI_UNIMPL;
 #endif
@@ -540,9 +514,8 @@ namespace XMI
       MUDevice _mu;
 #endif
 #ifdef MU_COLL_DEVICE
-      MUGlobalNI *_global_mu_ni;
-      XMI::Device::MU::MUMultisyncModel *_mu_msync_model;
-      XMI::Device::MU::MUMulticombineModel *_mu_mcombine_model;
+      MUGlobalNI * _global_mu_ni;
+      uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)]; 
 #endif
       ShmemDevice          _shmem;
 
