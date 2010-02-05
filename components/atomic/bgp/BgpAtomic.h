@@ -15,6 +15,7 @@
 #define __components_atomic_bgp_BgpAtomic_h__
 
 #include "components/atomic/Counter.h"
+#include "components/atomic/Mutex.h"
 
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
