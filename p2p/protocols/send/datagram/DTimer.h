@@ -94,7 +94,7 @@ public:
 					if (_max_cb) {
 						_max_cb(context, _max_cookie, XMI_ERROR);
 					}
-					return XMI_NERROR;
+					return XMI_ERROR;
 				} else {
 					// normal timeout processing
 					TRACE_ERR((stderr, "   DTimer(%p) advance_timer() ...  Normal timeout processing\n", this));

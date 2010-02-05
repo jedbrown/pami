@@ -146,11 +146,10 @@ namespace Generic {
 			if (thr->getStatus() == XMI::Device::Ready) {
 				++events;
 				xmi_result_t rc = thr->executeThread(__context);
-				// should this just check != XMI_EAGAIN ?
-				if (rc <= 0) {
+				if (rc != XMI_EAGAIN) {
 					// thr->setStatus(XMI::Device::Complete);
 					__Threads.deleteElem(thr);
-					thr->executeCallback(__context);
+					thr->executeCallback(__context, rc);
 					continue;
 				}
 			}

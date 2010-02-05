@@ -60,8 +60,8 @@ extern "C"
    * \param[in] context   XMI communication context running function
    * \param[in] cookie    application argument
    * \return	(0) XMI_SUCCESS causes function to dequeue (stop running)
-   * 		-(xmi_result_t) causes function to dequeue and (optionally) report error
-   * 		>0 causes function to remain queued and is called on next advance.
+   *		XMI_EAGAIN causes function to remain queued and is called on next advance
+   * 		(any other value) causes function to dequeue and (optionally) report error
    */
   typedef xmi_result_t (*xmi_work_function)(xmi_context_t context, void *cookie);
 
