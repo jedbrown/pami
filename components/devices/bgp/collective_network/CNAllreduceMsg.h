@@ -57,30 +57,37 @@ namespace BGP {
 class CNAllreduceModel;
 class CNAllreduceMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduceThread;
-class CNAllreduceDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> {
-public:
-	CNAllreduceDevice(CNDevice *common) :
-	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2>(common)
-	{}
-
-	static inline CNAllreduceDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
-}; // class CNAllreduceDevice
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> CNAllreduceRealDevice;
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
-static XMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev(&_g_cncommon_dev);
+extern XMI::Device::BGP::CNAllreduceRealDevice _g_cnallreduce_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-inline CNAllreduceDevice *CNAllreduceDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_cnallreduce_dev.__create(client, num_ctx, devices);
-	return &_g_cnallreduce_dev;
-}
+class CNAllreduceDevice : public XMI::Device::Generic::SimplePseudoDevice<CNAllreduceDevice,CNAllreduceRealDevice> {
+public:
+	static inline CNAllreduceDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		return __create(client, num_ctx, devices, &_g_cnallreduce_dev);
+	}
+
+	inline CNAllreduceDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	XMI::Device::Generic::SimplePseudoDevice<CNAllreduceDevice,CNAllreduceRealDevice>(client, num_ctx, devices, ctx)
+	{
+	}
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		__init(sd, client, num_ctx, context, contextid, &_g_cnallreduce_dev);
+	}
+
+	inline size_t advance_impl() {
+		return _g_cnallreduce_dev.advance(_clientid, _contextid);
+	}
+}; // class CNAllreduceDevice
 
 class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	enum roles {

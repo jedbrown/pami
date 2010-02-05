@@ -37,30 +37,37 @@ namespace BGP {
 class CNAllreducePPModel;
 class CNAllreducePPMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreducePPThread;
-class CNAllreducePPDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2> {
-public:
-	CNAllreducePPDevice(CNDevice *common) :
-	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2>(common)
-	{}
-
-	static inline CNAllreducePPDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
-}; // class CNAllreducePPDevice
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2> CNAllreducePPRealDevice;
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
-static XMI::Device::BGP::CNAllreducePPDevice _g_cnallreducepp_dev(&_g_cncommon_dev);
+extern XMI::Device::BGP::CNAllreducePPRealDevice _g_cnallreducepp_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-inline CNAllreducePPDevice *CNAllreducePPDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_cnallreducepp_dev.__create(client, num_ctx, devices);
-	return &_g_cnallreducepp_dev;
-}
+class CNAllreducePPDevice : public XMI::Device::Generic::SimplePseudoDevice<CNAllreducePPDevice,CNAllreducePPRealDevice> {
+public:
+	static inline CNAllreducePPDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		return __create(client, num_ctx, devices, &_g_cnallreducepp_dev);
+	}
+
+	inline CNAllreducePPDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	XMI::Device::Generic::SimplePseudoDevice<CNAllreducePPDevice,CNAllreducePPRealDevice>(client, num_ctx, devices, ctx)
+	{
+	}
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		__init(sd, client, num_ctx, context, contextid, &_g_cnallreducepp_dev);
+	}
+
+	inline size_t advance_impl() {
+		return _g_cnallreducepp_dev.advance(_clientid, _contextid);
+	}
+}; // class CNAllreducePPDevice
 
 class CNAllreducePPMessage : public XMI::Device::BGP::BaseGenericCNPPMessage {
 	enum roles {

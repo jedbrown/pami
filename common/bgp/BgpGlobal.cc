@@ -49,5 +49,16 @@ XMI::Device::WQRingReduceRealDev _g_wqreduce_dev;
 #include "components/devices/misc/ProgressFunctionMsg.h"
 XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
+#include "components/devices/bgp/collective_network/CNDevice.h"
+extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
+#include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
+XMI::Device::BGP::CNAllreduceRealDevice _g_cnallreduce_dev(&_g_cncommon_dev);
+#include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
+XMI::Device::BGP::CNAllreducePPRealDevice _g_cnallreducepp_dev(&_g_cncommon_dev);
+#include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
+XMI::Device::BGP::CNAllreduce2PRealDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
+#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
+XMI::Device::BGP::CNBroadcastRealDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
+
 extern "C" void __libxmi_dummy     () { abort(); }
 extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libxmi_dummy")));

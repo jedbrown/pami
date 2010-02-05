@@ -40,30 +40,37 @@ namespace BGP {
 class CNBroadcastModel;
 class CNBroadcastMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNBroadcastThread;
-class CNBroadcastDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> {
-public:
-	CNBroadcastDevice(CNDevice *common) :
-	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>(common)
-	{}
-
-	static inline CNBroadcastDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
-}; // class CNBroadcastDevice
+typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> CNBroadcastRealDevice;
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
-static XMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
+extern XMI::Device::BGP::CNBroadcastRealDevice _g_cnbroadcast_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-inline CNBroadcastDevice *CNBroadcastDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_cnbroadcast_dev.__create(client, num_ctx, devices);
-	return &_g_cnbroadcast_dev;
-}
+class CNBroadcastDevice : public XMI::Device::Generic::SimplePseudoDevice<CNBroadcastDevice,CNBroadcastRealDevice> {
+public:
+	static inline CNBroadcastDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		return __create(client, num_ctx, devices, &_g_cnbroadcast_dev);
+	}
+
+	inline CNBroadcastDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	XMI::Device::Generic::SimplePseudoDevice<CNBroadcastDevice,CNBroadcastRealDevice>(client, num_ctx, devices, ctx)
+	{
+	}
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		__init(sd, client, num_ctx, context, contextid, &_g_cnbroadcast_dev);
+	}
+
+	inline size_t advance_impl() {
+		return _g_cnbroadcast_dev.advance(_clientid, _contextid);
+	}
+}; // class CNBroadcastDevice
 
 /**
  * \brief Collective Network Broadcast Send
