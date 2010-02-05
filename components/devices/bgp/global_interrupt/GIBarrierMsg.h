@@ -43,25 +43,44 @@ namespace BGP {
 class giModel;
 class giMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread giThread;
-class giDevice : public XMI::Device::Generic::SimpleSubDevice<giThread> {
-public:
-	static inline giDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
-}; // class giDevice
+typedef XMI::Device::Generic::SimpleSubDevice<giThread> giRealDevice;
 
 }; // namespace BGP
 }; // namespace Device
 }; // namespace XMI
 
-static XMI::Device::BGP::giDevice _g_gibarrier_dev;
+extern XMI::Device::BGP::giRealDevice _g_gibarrier_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-inline giDevice *giDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_gibarrier_dev.__create(client, num_ctx, devices);
-	return &_g_gibarrier_dev;
-}
+// If C++ allowed a template parameter to be "_g_gibarrier_dev" (like a macro)
+// then we could eliminate these stubs for create() and init()... and maybe
+// even advance().
+class giDevice : public XMI::Device::Generic::SimplePseudoDevice<giDevice,giRealDevice> {
+public:
+	static inline giDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		return __create(client, num_ctx, devices, &_g_gibarrier_dev);
+	}
+
+	inline giDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	XMI::Device::Generic::SimplePseudoDevice<giDevice,giRealDevice>(client, num_ctx, devices, ctx)
+	{
+	}
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		__init(sd, client, num_ctx, context, contextid, &_g_gibarrier_dev);
+	}
+
+	inline size_t advance_impl() {
+		/// \todo should only one context advance this device?
+		/// or does the device handle that by mutexing?
+		/// could do a tryLock here and relieve the real device of mutexing.
+		return _g_gibarrier_dev.advance(_clientid, _contextid);
+	}
+protected:
+}; // class giDevice
 
 //////////////////////////////////////////////////////////////////////
 ///  \brief Global interrupt message class

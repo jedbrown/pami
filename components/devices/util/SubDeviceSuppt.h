@@ -22,6 +22,52 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
+// This base class is for devices that have a single, global, instance
+// and each context has a pseudo-device object that keeps context-specific
+// info but otherwise uses the global instance to do work.
+template <class T_Device, class T_RealDevice>
+class SimplePseudoDevice {
+public:
+	static inline T_Device *__create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, T_RealDevice *realdev) {
+		size_t x;
+		T_Device *devs;
+		int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+		XMI_assertf(rc == 0, "posix_memalign failed for PseudoDevice[%zd], errno=%d\n", num_ctx, errno);
+		realdev->__create(client, num_ctx, devices);
+		for (x = 0; x < num_ctx; ++x) {
+			new (&devs[x]) T_Device(client, num_ctx, devices, x);
+		}
+		return devs;
+	}
+
+	inline SimplePseudoDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	_clientid(client),
+	_contextid(ctx),
+	_ncontext(num_ctx),
+	_generics(devices)
+	{
+	}
+
+	inline void __init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid, T_RealDevice *realdev) {
+		_context = context;
+		if (client == 0 && contextid == 0) {
+			realdev->init(sd, client, num_ctx, context, contextid);
+		}
+	}
+
+	inline size_t advance(size_t client, size_t ctx) {
+		SimplePseudoDevice *dev = &this[ctx];
+		return static_cast<T_Device *>(dev)->advance_impl();
+	}
+protected:
+	// do we need to save all this?
+	size_t _clientid;
+	size_t _contextid;
+	size_t _ncontext;
+	xmi_context_t _context;
+	XMI::Device::Generic::Device *_generics;
+}; // class SimplePseudoDevice
+
 /// \brief standard routine for posting message
 ///
 /// in this case, threads come from sub-device...
