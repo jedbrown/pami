@@ -52,23 +52,35 @@ namespace Device {
 template <class T_Barrier> class AtomicBarrierMsg;
 template <class T_Barrier> class AtomicBarrierMdl;
 typedef XMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
-class AtomicBarrierDev : public XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr> {
-public:
-	static inline AtomicBarrierDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
-}; // class AtomicBarrierDev
+typedef XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr> AtomicBarrierRealDev;
 
 }; //-- Device
 }; //-- XMI
 
-static XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
+extern XMI::Device::AtomicBarrierRealDev _g_lmbarrier_dev;
 
 namespace XMI {
 namespace Device {
 
-inline AtomicBarrierDev *AtomicBarrierDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_lmbarrier_dev.__create(client, num_ctx, devices);
-	return &_g_lmbarrier_dev;
-}
+class AtomicBarrierDev : public XMI::Device::Generic::SimplePseudoDevice<AtomicBarrierDev,AtomicBarrierRealDev> {
+public:
+	static inline AtomicBarrierDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		return __create(client, num_ctx, devices, &_g_lmbarrier_dev);
+	}
+
+	inline AtomicBarrierDev(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	XMI::Device::Generic::SimplePseudoDevice<AtomicBarrierDev,AtomicBarrierRealDev>(client, num_ctx, devices, ctx)
+	{
+	}
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		__init(sd, client, num_ctx, context, contextid, &_g_lmbarrier_dev);
+	}
+
+	inline size_t advance_impl() {
+		return _g_lmbarrier_dev.advance(_clientid, _contextid);
+	}
+}; // class AtomicBarrierDev
 
 ///
 /// \brief A local barrier message that takes advantage of the

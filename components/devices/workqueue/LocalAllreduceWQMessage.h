@@ -28,23 +28,35 @@ namespace Device {
 class LocalAllreduceWQModel;
 class LocalAllreduceWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalAllreduceWQThread;
-class LocalAllreduceWQDevice : public XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread> {
-public:
-	static inline LocalAllreduceWQDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
-}; // class LocalAllreduceWQDevice
+typedef XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread> LocalAllreduceWQRealDevice;
 
 }; // namespace Device
 }; // namespace XMI
 
-static XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
+extern XMI::Device::LocalAllreduceWQRealDevice _g_l_allreducewq_dev;
 
 namespace XMI {
 namespace Device {
 
-inline LocalAllreduceWQDevice *LocalAllreduceWQDevice::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_l_allreducewq_dev.__create(client, num_ctx, devices);
-	return &_g_l_allreducewq_dev;
-}
+class LocalAllreduceWQDevice : public XMI::Device::Generic::SimplePseudoDevice<LocalAllreduceWQDevice,LocalAllreduceWQRealDevice> {
+public:
+	static inline LocalAllreduceWQDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		return __create(client, num_ctx, devices, &_g_l_allreducewq_dev);
+	}
+
+	inline LocalAllreduceWQDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	XMI::Device::Generic::SimplePseudoDevice<LocalAllreduceWQDevice,LocalAllreduceWQRealDevice>(client, num_ctx, devices, ctx)
+	{
+	}
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		__init(sd, client, num_ctx, context, contextid, &_g_l_allreducewq_dev);
+	}
+
+	inline size_t advance_impl() {
+		return _g_l_allreducewq_dev.advance(_clientid, _contextid);
+	}
+}; // class LocalAllreduceWQDevice
 
 class LocalAllreduceWQMessage : public XMI::Device::Generic::GenericMessage {
 private:

@@ -28,23 +28,35 @@ namespace Device {
 class WQRingReduceMdl;
 class WQRingReduceMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingReduceThr;
-class WQRingReduceDev : public XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr> {
-public:
-	static inline WQRingReduceDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
-}; // class WQRingReduceDev
+typedef XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr> WQRingReduceRealDev;
 
 }; //-- Device
 }; //-- XMI
 
-static XMI::Device::WQRingReduceDev _g_wqreduce_dev;
+extern XMI::Device::WQRingReduceRealDev _g_wqreduce_dev;
 
 namespace XMI {
 namespace Device {
 
-inline WQRingReduceDev *WQRingReduceDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_wqreduce_dev.__create(client, num_ctx, devices);
-	return &_g_wqreduce_dev;
-}
+class WQRingReduceDev : public XMI::Device::Generic::SimplePseudoDevice<WQRingReduceDev,WQRingReduceRealDev> {
+public:
+	static inline WQRingReduceDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		return __create(client, num_ctx, devices, &_g_wqreduce_dev);
+	}
+
+	inline WQRingReduceDev(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
+	XMI::Device::Generic::SimplePseudoDevice<WQRingReduceDev,WQRingReduceRealDev>(client, num_ctx, devices, ctx)
+	{
+	}
+
+	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
+		__init(sd, client, num_ctx, context, contextid, &_g_wqreduce_dev);
+	}
+
+	inline size_t advance_impl() {
+		return _g_wqreduce_dev.advance(_clientid, _contextid);
+	}
+}; // class WQRingReduceDev
 
 ///
 /// \brief A local barrier message that takes advantage of the
