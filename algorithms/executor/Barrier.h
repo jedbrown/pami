@@ -239,17 +239,17 @@ inline void  CCMI::Executor::BarrierExec::start()
 inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
 						       const xmi_quad_t   & info,
 						       XMI::PipeWorkQueue ** pwq,
-						       xmi_callback_t      * cb_done) 
+						       xmi_callback_t      * cb_done)
 {
   CollHeaderData *hdr = (CollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] ++;
-  
-  TRACE_ERR((stderr,"%d: <%X>Executor::BarrierExec::notifyRecv phase %d, vec %d expected vec\n",_native->myrank(), 
+
+  TRACE_ERR((stderr,"%d: <%X>Executor::BarrierExec::notifyRecv phase %d, vec %d expected vec\n",_native->myrank(),
 	     (int)this,
              hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
-  
+
   //Start has not been called, just record recv and return
   if(_phase == _start + _nphases)
     return;

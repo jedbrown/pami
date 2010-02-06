@@ -1,3 +1,7 @@
+///
+/// \file common/lapiunix/lapierror.cc
+/// \brief Error Handling Classes for LAPI routines.
+///
 /****************************************************************************
  Classes: LapiError
 
@@ -32,4 +36,3 @@ LapiError::LapiError(int rc, string file, int line, string func)
 LapiError::~LapiError()
 {
 }
-

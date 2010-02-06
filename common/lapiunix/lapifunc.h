@@ -1,3 +1,7 @@
+/**
+ * \file common/lapiunix/lapifunc.h
+ * \brief Encapsulation for LAPI function pointers.
+ */
 /****************************************************************************
  Description: Encapsulation for LAPI function pointers.
 
@@ -9,8 +13,8 @@
    07/14/09 nieyy     Initial code
 ****************************************************************************/
 
-#ifndef _LAPIFUNC_H_
-#define _LAPIFUNC_H_
+#ifndef __common_lapiunix_lapifunc_h__
+#define __common_lapiunix_lapifunc_h__
 
 #include <stdlib.h>
 #include <lapi.h>
@@ -191,4 +195,3 @@ class LapiFunc
 #define lapi_setcntr_wstatus LapiFunc::getInstance()->Setcntr_wstatus
 
 #endif
-

@@ -11,8 +11,8 @@
  * \brief Collective subclass of the MU device
  */
 
-#ifndef __components_devices_bgq_mu_mucolldevice_h__
-#define __components_devices_bgq_mu_mucolldevice_h__
+#ifndef __components_devices_bgq_mu_MUCollDevice_h__
+#define __components_devices_bgq_mu_MUCollDevice_h__
 
 #include "components/devices/bgq/mu/MUDevice.h"
 #ifdef	_KERNEL_CNK_COLLECTIVE_IMPL_H_ /* Prevent multiple inclusion */

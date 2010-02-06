@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast.cc
+ * \file test/multisend/multicast_global.cc
  * \brief Simple multicast tests.
  */
 
@@ -239,13 +239,13 @@ int main(int argc, char ** argv)
       else
         fprintf(stderr, "PASS bytesConsumed = %zu, bytesProduced = %zu\n", bytesConsumed, bytesProduced);
     }
-  
+
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
 // simple mcast metadata only
 // ------------------------------------------------------------------------
 
- 
+
     _doneCountdown = 1;
 
     if(gRoot == task_id)

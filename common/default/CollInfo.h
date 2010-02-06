@@ -221,7 +221,7 @@ namespace XMI
         }
       void reg_geometry(XMI_GEOMETRY_CLASS *geometry)
         {
-	  _barrier_registration.generate(&_barrier_composite, sizeof(CCMI_Executor_t), _context, 
+	  _barrier_registration.generate(&_barrier_composite, sizeof(CCMI_Executor_t), _context,
 					 (xmi_geometry_t)geometry, NULL); //Barrier is cached
         }
 
@@ -255,7 +255,7 @@ namespace XMI
         }
       void reg_geometry(XMI_GEOMETRY_CLASS *geometry)
         {
-          _barrier_registration.generate(&_barrier_composite, sizeof(CCMI_Executor_t), _context, 
+          _barrier_registration.generate(&_barrier_composite, sizeof(CCMI_Executor_t), _context,
 					 (xmi_geometry_t)geometry, NULL); //Barrier is cached
         }
 

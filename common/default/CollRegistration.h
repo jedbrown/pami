@@ -116,7 +116,7 @@ namespace XMI
 
           _ccmioldringbroadcast._colltype=XMI::CollInfo::CI_BROADCAST2;
           _broadcasts.push_back(&_ccmioldringbroadcast);
-          
+
           _ccmibinombroadcast._colltype=XMI::CollInfo::CI_BROADCAST3;
           _broadcasts.push_back(&_ccmibinombroadcast);
 

@@ -87,7 +87,7 @@ namespace CCMI
         _cb_done    =   cb_done;
         _clientdata =   cd;
       }
-      
+
       void setConsistency  (xmi_consistency_t consistency)
       {
 	_consistency = consistency;

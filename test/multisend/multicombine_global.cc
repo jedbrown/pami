@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicombine.cc
+ * \file test/multisend/multicombine_global.cc
  * \brief Simple multicombine tests.
  */
 
@@ -84,7 +84,7 @@ int main(int argc, char ** argv)
   _cb_done.clientdata = &_doneCountdown;
 
   XMI::Topology topology_global = __global.topology_global;
-  
+
   xmi_multicombine_t multicombine;
   memset(&multicombine, 0x00, sizeof(multicombine));
 
@@ -102,11 +102,11 @@ int main(int argc, char ** argv)
 
   multicombine.cb_done = _cb_done;
 // ------------------------------------------------------------------------
-// simple multicombine 
+// simple multicombine
 // ------------------------------------------------------------------------
   _buffer.reset(true); // isRoot = true
 
-  
+
   _doneCountdown = 1;
   //sleep(5); // instead of combineing
 
@@ -142,12 +142,12 @@ int main(int argc, char ** argv)
   }
   else
   {
-    _buffer.resetMIN0(); 
+    _buffer.resetMIN0();
   }
 
-  
+
   _doneCountdown = 1;
-  
+
   status = XMI_Multicombine(&multicombine);
 
   while(_doneCountdown)

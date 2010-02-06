@@ -47,5 +47,3 @@ runmambo:
 	--svchost ${VPATH}/pers.svchost \
 	--script runMambo \
 	$(parms)
-
-

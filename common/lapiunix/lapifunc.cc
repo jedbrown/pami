@@ -1,3 +1,7 @@
+///
+/// \file common/lapiunix/lapifunc.cc
+/// \brief Encapsulation for LAPI function pointers.
+///
 /****************************************************************************
  Classes: LapiFunc
 
@@ -420,4 +424,3 @@ void * LapiFunc::import(const char * funcname)
 
     return handle;
 }
-

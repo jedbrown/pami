@@ -52,7 +52,7 @@ namespace CCMI
 					     size_t                      rsize,
 					     xmi_context_t               context,
 					     xmi_geometry_t              geometry,
-					     void                      * cmd) 
+					     void                      * cmd)
 	{
 	  //The main all protocol generate function
 	  CCMI_abort();

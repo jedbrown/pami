@@ -1,4 +1,7 @@
-
+/**
+ * \file algorithms/protocols/barrier/BarrierFactory.h
+ * \brief ???
+ */
 #ifndef __algorithms_protocols_barrier_BarrierFactory_h__
 #define __algorithms_protocols_barrier_BarrierFactory_h__
 
@@ -54,9 +57,9 @@ namespace CCMI
           return((AnalyzeFn) afn)(geometry);
         }
 
-	virtual void start() { 
+	virtual void start() {
 	  _myexecutor.setDoneCallback (_cb_done, _clientdata);
-	  _myexecutor.start(); 
+	  _myexecutor.start();
 	}
 
 	Executor::OldBarrier<T_Mcast> * getExecutor() { return &_myexecutor; }
@@ -111,13 +114,13 @@ namespace CCMI
         ///
         CCMI::Executor::Composite *generate
         (void                                * request,
-	 unsigned                              rsize,	 
+	 unsigned                              rsize,
 	 xmi_context_t                         context,
          xmi_geometry_t                        g,
 	 void                                * cmd)
         {
           CCMI_assert(rsize >= sizeof(T));
-	  XMI_GEOMETRY_CLASS  *geometry = (XMI_GEOMETRY_CLASS *)g;	  
+	  XMI_GEOMETRY_CLASS  *geometry = (XMI_GEOMETRY_CLASS *)g;
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);
         }
 

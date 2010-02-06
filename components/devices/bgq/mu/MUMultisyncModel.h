@@ -62,7 +62,7 @@ namespace XMI
       ///////////////////////////////////////////////////////////////////////////////
       // Some structures that needed to be defined outside the class
       ///////////////////////////////////////////////////////////////////////////////
-      // Receive state 
+      // Receive state
       typedef struct msync_recv_state
       {
         xmi_callback_t                       cb_done;
@@ -77,12 +77,12 @@ namespace XMI
 
       ///////////////////////////////////////////////////////////////////////////////
       // \class MUMultisyncModel
-      // \brief MU collective device Multisync interface 
+      // \brief MU collective device Multisync interface
       // \details
-      //   - all sided 
+      //   - all sided
       //   - uses MU memfifo
       //   - global (uses global class route)
-      //   - one destination task per node 
+      //   - one destination task per node
       ///////////////////////////////////////////////////////////////////////////////
       class MUMultisyncModel : public Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) >
       {
@@ -126,7 +126,7 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        std::map<unsigned,msync_recv_state_t*>      _recvQ;            // _recvQ[connection_id] 
+        std::map<unsigned,msync_recv_state_t*>      _recvQ;            // _recvQ[connection_id]
 
       }; // XMI::Device::MU::MUMultisyncModel class
 
@@ -196,7 +196,7 @@ namespace XMI
           MUSPI_DescriptorBase * desc = state_data->message.getDescriptor ();
           initializeDescriptor (desc, 0, 0);
 
-          // Put the metadata into the network header in the descriptor. 
+          // Put the metadata into the network header in the descriptor.
           MemoryFifoPacketHeader_t * hdr =
           (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
 
@@ -259,9 +259,9 @@ namespace XMI
                                       void   * cookie)
       {
         metadata_t * m = (metadata_t*)metadata;
-        
+
         TRACE ((stderr, "<%p>:MUMultisyncModel::dispatch(), bytes = %zd, connection id %#X\n", arg, bytes, m->connection_id));
-        DUMP_HEXDATA("MUMultisyncModel::dispatch()",(uint32_t*)metadata, 3); 
+        DUMP_HEXDATA("MUMultisyncModel::dispatch()",(uint32_t*)metadata, 3);
 
         MUMultisyncModel * model = (MUMultisyncModel *) arg;
         model->processHeader(m);
@@ -285,9 +285,3 @@ namespace XMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-
-
-
-
-

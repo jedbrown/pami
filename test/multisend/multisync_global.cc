@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multisync.cc
+ * \file test/multisend/multisync_global.cc
  * \brief Simple multisync tests.
  */
 
@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
   _cb_done.clientdata = &_doneCountdown;
 
   XMI::Topology topology_global = __global.topology_global;
-  
+
   xmi_multisync_t multisync;
   memset(&multisync, 0x00, sizeof(multisync));
 
@@ -94,7 +94,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 // simple multisync root to all
 // ------------------------------------------------------------------------
-  
+
   _doneCountdown = 1;
   //sleep(5); // instead of syncing
 

@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/Buffer.h
+ * \file test/internals/multisend/bgq/Buffer.h
  * \brief Multicast test buffer support class
  */
-#ifndef __test_multisend_Buffer_h__
-#define __test_multisend_Buffer_h__
+#ifndef __test_internals_multisend_bgq_Buffer_h__
+#define __test_internals_multisend_bgq_Buffer_h__
 
 #include <stdio.h>
 
@@ -235,8 +235,8 @@ namespace XMI
         return XMI_SUCCESS;
       }
       //====================================================================
-      // Following MIN0 functions assume an unsigned/MIN [all]reduce. A designated "root" will set 
-      // the buffers to 0 so that should be the MIN result.  
+      // Following MIN0 functions assume an unsigned/MIN [all]reduce. A designated "root" will set
+      // the buffers to 0 so that should be the MIN result.
       //====================================================================
       inline void resetMIN0(bool isRoot  = false)
       {
@@ -367,7 +367,7 @@ namespace XMI
           }
         }
 
-        if(errors) 
+        if(errors)
         {
           fprintf(stderr, "<%3.3d>FAIL validation %d\n",__LINE__,errors);
           return XMI_ERROR;

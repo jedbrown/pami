@@ -27,7 +27,7 @@ namespace CCMI
       {
       public:
 
-      BcastMultiColorCompositeT(Interfaces::NativeInterface              * mf,	
+      BcastMultiColorCompositeT(Interfaces::NativeInterface              * mf,
 				T_Conn                                   * cmgr,
 				xmi_geometry_t                             g,
 				void                                     * cmd):

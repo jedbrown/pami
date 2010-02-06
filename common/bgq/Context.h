@@ -131,7 +131,7 @@ namespace XMI
         _mu.init (&_sysdep, (xmi_context_t)this, id);
 #endif
 #ifdef MU_COLL_DEVICE
-        // Can't construct NI until device is init()'d.  Ctor into member storage. 
+        // Can't construct NI until device is init()'d.  Ctor into member storage.
         _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(_mu, _client, _context, _contextid);
 #endif
         _generic.init(_sysdep, (xmi_context_t)this, clientid, id, num, generics);
@@ -515,7 +515,7 @@ namespace XMI
 #endif
 #ifdef MU_COLL_DEVICE
       MUGlobalNI * _global_mu_ni;
-      uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)]; 
+      uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)];
 #endif
       ShmemDevice          _shmem;
 

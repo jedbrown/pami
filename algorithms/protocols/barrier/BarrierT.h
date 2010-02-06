@@ -50,9 +50,9 @@ namespace CCMI
         /// \param[in] geometry    Geometry object
         ///
         BarrierT  (Interfaces::NativeInterface          * mInterface,
-		   ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS>     * cmgr,		   
+		   ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS>     * cmgr,
                    xmi_geometry_t                         geometry,
-		   void                                 * cmd) :	
+		   void                                 * cmd) :
 	_myexecutor(((XMI_GEOMETRY_CLASS *)geometry)->nranks(),
 		    ((XMI_GEOMETRY_CLASS *)geometry)->ranks(),
 		    ((XMI_GEOMETRY_CLASS *)geometry)->comm(),
@@ -70,10 +70,10 @@ namespace CCMI
           return((AnalyzeFn) afn)(geometry);
         }
 
-	virtual void start() { 
+	virtual void start() {
 	  _myexecutor.setDoneCallback (_cb_done, _clientdata);
-	  _myexecutor.start(); 
-	} 
+	  _myexecutor.start();
+	}
 
 	static void *   cb_head   (const xmi_quad_t    * info,
 				   unsigned              count,

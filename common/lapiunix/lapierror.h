@@ -1,3 +1,7 @@
+/**
+ * \file common/lapiunix/lapierror.h
+ * \brief Error Handling Classes for LAPI routines.
+ */
 /****************************************************************************
  Classes: LapiError
 
@@ -12,8 +16,8 @@
 
 ****************************************************************************/
 
-#ifndef _LAPIERROR_H_
-#define _LAPIERROR_H_
+#ifndef __common_lapiunix_lapierror_h__
+#define __common_lapiunix_lapierror_h__
 
 #include <iostream>
 #include <string>
@@ -62,4 +66,3 @@ if ((val = (func_and_args)) == NULL) {                            \
 
 
 #endif
-

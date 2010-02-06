@@ -235,8 +235,8 @@ namespace XMI
         return XMI_SUCCESS;
       }
       //====================================================================
-      // Following MIN0 functions assume an unsigned/MIN [all]reduce. A designated "root" will set 
-      // the buffers to 0 so that should be the MIN result.  
+      // Following MIN0 functions assume an unsigned/MIN [all]reduce. A designated "root" will set
+      // the buffers to 0 so that should be the MIN result.
       //====================================================================
       inline void resetMIN0(bool isRoot  = false)
       {
@@ -367,7 +367,7 @@ namespace XMI
           }
         }
 
-        if(errors) 
+        if(errors)
         {
           fprintf(stderr, "FAIL validation %d\n",errors);
           return XMI_ERROR;

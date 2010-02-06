@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast.cc
+ * \file test/internals/multisend/bgq/NativeInterface.cc
  * \brief Simple multicast tests.
  */
 
@@ -33,7 +33,7 @@ static int           _doneCountdown, _countNoData=0;
 xmi_callback_t       _cb_done;
 const xmi_quad_t     _msginfo = {0,1,2,3};
 
-static int          _failed = 0; 
+static int          _failed = 0;
 
 void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
                            unsigned              msgcount,
@@ -143,7 +143,7 @@ int main(int argc, char ** argv)
   new (&dst_participants) XMI::Topology(gRankList, gSize); // comm_world
 
 // ------------------------------------------------------------------------
-// Test multicombine 
+// Test multicombine
 // ------------------------------------------------------------------------
 
   xmi_multicast_t mcast;
@@ -337,7 +337,7 @@ int main(int argc, char ** argv)
 
 
 // ------------------------------------------------------------------------
-// Test multisync 
+// Test multisync
 // ------------------------------------------------------------------------
   xmi_multisync_t multisync;
   memset(&multisync, 0x00, sizeof(multisync));
@@ -369,7 +369,7 @@ int main(int argc, char ** argv)
   /// \todo Validate the msync test passed?
 
 // ------------------------------------------------------------------------
-// Test multicombine 
+// Test multicombine
 // ------------------------------------------------------------------------
 
   xmi_multicombine_t multicombine;
@@ -390,7 +390,7 @@ int main(int argc, char ** argv)
   multicombine.cb_done = _cb_done;
 
 // ------------------------------------------------------------------------
-// simple multicombine 
+// simple multicombine
 // ------------------------------------------------------------------------
 
   uint8_t mcomb_state[XMI::Device::MU::MUMulticombineModel::sizeof_msg];
@@ -433,7 +433,7 @@ int main(int argc, char ** argv)
   }
   else
   {
-    _buffer.resetMIN0(); 
+    _buffer.resetMIN0();
   }
 
 

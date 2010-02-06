@@ -366,7 +366,7 @@ namespace XMI
 		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
 							    NULL, //currently pass in null context
-							    _geometry, 
+							    _geometry,
 							    broadcast);
                   }
                   break;
@@ -389,7 +389,7 @@ namespace XMI
 		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
 							    NULL, //currently pass in null context
-							    _geometry, 
+							    _geometry,
 							    broadcast);
                   }
                   break;

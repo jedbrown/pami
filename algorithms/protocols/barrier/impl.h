@@ -31,7 +31,7 @@ namespace CCMI
         return true;
       }
 
-      extern inline bool global_analyze (XMI_GEOMETRY_CLASS *geometry) 
+      extern inline bool global_analyze (XMI_GEOMETRY_CLASS *geometry)
       {
 	//return geometry->isGlobalContext();
 	return true;

@@ -74,12 +74,12 @@ namespace XMI
 
       ///////////////////////////////////////////////////////////////////////////////
       // \class MUMulticastModel
-      // \brief MU collective device Multicast interface 
+      // \brief MU collective device Multicast interface
       // \details
       //   - active message model
       //   - uses MU memfifo
       //   - global (uses global class route)
-      //   - one destination task per node 
+      //   - one destination task per node
       //   - does not fully support PipeWorkQueue (multicast_model_available_buffers_only)
       //   - all data must be received (\todo ease this limitation - see expected_length processing)
       ///////////////////////////////////////////////////////////////////////////////
@@ -179,7 +179,7 @@ namespace XMI
         xmi_dispatch_multicast_fn             _dispatch_function;
         void                                * _dispatch_arg;
         // We only need one receive state because we only support one active collective at a time
-        mcast_recv_state_t                          _receive_state; 
+        mcast_recv_state_t                          _receive_state;
 
       }; // XMI::Device::MU::MUMulticastModel class
 
@@ -329,7 +329,7 @@ namespace XMI
           MUSPI_DescriptorBase * desc = message.getDescriptor ();
           initializeDescriptor (desc, 0, 0);
 
-          // Enable the "single packet message" bit so that it uses my iov src buffer 
+          // Enable the "single packet message" bit so that it uses my iov src buffer
           desc->setSoftwareBit (1);
 
           // Set the payload to my 3 part iov: msghead, msginfo, (optional) payload
@@ -355,7 +355,7 @@ namespace XMI
 
           message.setSourceBuffer (state->iov, state->niov);
 
-          // Put the metadata into the network header in the descriptor. 
+          // Put the metadata into the network header in the descriptor.
           MemoryFifoPacketHeader_t * hdr =
           (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
 
@@ -532,7 +532,7 @@ namespace XMI
                                                    uint8_t * payload,
                                                    size_t    bytes)
       {
-        TRACE((stderr, "<%p>:MUMulticastModel::processData() metadata %p, payload %p, bytes %zd, nleft %zd\n", 
+        TRACE((stderr, "<%p>:MUMulticastModel::processData() metadata %p, payload %p, bytes %zd, nleft %zd\n",
                this, metadata, payload, bytes, (_receive_state.expected_length - _receive_state.received_length)));
 
 
@@ -619,9 +619,3 @@ namespace XMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-
-
-
-
-

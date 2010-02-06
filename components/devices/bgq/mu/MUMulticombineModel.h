@@ -58,7 +58,7 @@ namespace XMI
       ///////////////////////////////////////////////////////////////////////////////
       // Some structures that needed to be defined outside the class
       ///////////////////////////////////////////////////////////////////////////////
-      // Receive state 
+      // Receive state
       typedef struct mcombine_recv_state
       {
         size_t                               received_length;
@@ -83,12 +83,12 @@ namespace XMI
 
       ///////////////////////////////////////////////////////////////////////////////
       // \class MUMulticombineModel
-      // \brief MU collective device Multicombine interface 
+      // \brief MU collective device Multicombine interface
       // \details
-      //   - all sided 
+      //   - all sided
       //   - uses MU memfifo
       //   - global (uses global class route)
-      //   - one destination task per node 
+      //   - one destination task per node
       //   - does not fully support PipeWorkQueue (multicast_model_available_buffers_only)
       //   - all data must be received (\todo ease this limitation - see expected_length processing)
       ///////////////////////////////////////////////////////////////////////////////
@@ -151,7 +151,7 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        std::map<unsigned,mcombine_recv_state_t*>      _recvQ;            // _recvQ[connection_id] 
+        std::map<unsigned,mcombine_recv_state_t*>      _recvQ;            // _recvQ[connection_id]
         mcombine_recv_state_t                        * _receive_state;    // current state, only valid during postMulticombine call.
 
       }; // XMI::Device::MU::MUMulticombineModel class
@@ -303,12 +303,12 @@ namespace XMI
           MUSPI_DescriptorBase * desc = message.getDescriptor ();
           initializeDescriptor (desc, 0, 0);
 
-          // Enable the "single packet message" bit so that it uses my iov src buffer 
+          // Enable the "single packet message" bit so that it uses my iov src buffer
           desc->setSoftwareBit (1);
 
           message.setSourceBuffer (payload, payload_length);
 
-          // Put the metadata into the network header in the descriptor. 
+          // Put the metadata into the network header in the descriptor.
           MemoryFifoPacketHeader_t * hdr =
           (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
 
@@ -512,9 +512,3 @@ namespace XMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-
-
-
-
-

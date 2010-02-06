@@ -6,10 +6,10 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-/**
- * \file components/devices/bgq/mu/MUMulticastModel.cc
- * \brief ???
- */
+///
+/// \file components/devices/bgq/mu/MUMulticastModel.cc
+/// \brief ???
+///
 #include "components/devices/bgq/mu/MUMulticastModel.h"
 
 #ifdef TRACE
@@ -223,4 +223,3 @@ void XMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
