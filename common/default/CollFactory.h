@@ -354,7 +354,6 @@ namespace XMI
 
                   case XMI::CollInfo::CI_BROADCAST3:
                   {
-                    xmi_callback_t cb_done;
                     XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
@@ -365,18 +364,19 @@ namespace XMI
                     robj->user_done_fn = broadcast->cb_done;
                     robj->user_cookie  = broadcast->cookie;
 
-                    cb_done.function   = client_done;
-                    cb_done.clientdata = robj;
-		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
+                    broadcast->cb_done = client_done;
+                    broadcast->cookie  = robj;
+                    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
-							    NULL, //currently pass in null context
-							    _geometry,
-							    broadcast);
+                                                            NULL, //currently pass in null context
+                                                            _geometry,
+                                                            broadcast);
+                    broadcast->cb_done = robj->user_done_fn;
+                    broadcast->cookie  = robj->user_cookie ;
                   }
                   break;
                   case XMI::CollInfo::CI_BROADCAST4:
                   {
-                    xmi_callback_t cb_done;
                     XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
@@ -387,14 +387,16 @@ namespace XMI
                     robj->user_done_fn = broadcast->cb_done;
                     robj->user_cookie  = broadcast->cookie;
 
-                    cb_done.function   = client_done;
-                    cb_done.clientdata = robj;
+                    broadcast->cb_done = client_done;
+                    broadcast->cookie  = robj;
 
 		    cinfo->_broadcast_registration.generate((void *)&robj->req[0],
                                                             sizeof(XMI_CollectiveRequest_t),
 							    NULL, //currently pass in null context
 							    _geometry,
 							    broadcast);
+                    broadcast->cb_done = robj->user_done_fn;
+                    broadcast->cookie  = robj->user_cookie ;
                   }
                   break;
                   default:
