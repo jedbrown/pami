@@ -110,7 +110,7 @@ namespace CCMI
       XMI::Topology  *getSrcTopology (unsigned phase)
       {
 	if ((phase < _start) || (phase >= _start + _nphases))
-	  fprintf(stderr, "<%X>phase not in range %p, %d, %d\n", this, phase, _start, _start+_nphases);
+	  fprintf(stderr, "<%p>phase not in range %d, %d, %d\n", this, phase, _start, _start+_nphases);
 
 	CCMI_assert ((phase >= _start) && (phase < _start + _nphases));
 	return _srctopologies[phase];

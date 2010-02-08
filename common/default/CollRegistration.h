@@ -62,9 +62,9 @@ namespace XMI
         _ccmioldbarrier(dev, sd, mapidtogeometry, _client, context, context_id),
 	_ccmioldbinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
 	_ccmioldringbroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
-        _ccmibinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
 	_ccmibarrier(dev, sd, mapidtogeometry, _client, context, context_id),
 	_ccmiringbroadcast(dev, sd, mapidtogeometry,_client, context, context_id),
+        _ccmibinombroadcast(dev, sd, mapidtogeometry, _client, context, context_id),
         _ccmiringallreduce(dev, sd, mapidtogeometry),
         _ccmibinomialallreduce(dev, sd, mapidtogeometry),
 	_ccmialltoallv(dev,sd)
