@@ -82,7 +82,7 @@ namespace XMI
           COMPILE_TIME_ASSERT(sizeof(T_Message) <= 512);
 #endif // USE_GCC_ICE_WORKAROUND
           _dispatch_id = _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm);
-         TRACE_DEVICE((stderr,"<%#.8X>MPIModel::init_impl %d \n",(int)this, _dispatch_id));
+         TRACE_DEVICE((stderr,"<%p>MPIModel::init_impl %d \n",this, _dispatch_id));
          return XMI_SUCCESS;
         };
 
@@ -126,7 +126,7 @@ namespace XMI
         {
           int rc;
           MPIMessage * msg = (MPIMessage *)state;
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket_impl %d \n",(int)this, this->_dispatch_id));
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
@@ -141,7 +141,7 @@ namespace XMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",(int)this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_task;
@@ -171,7 +171,7 @@ namespace XMI
         {
           int rc;
 //          void       * obj = malloc(sizeof(MPIMessage));
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket %d \n",(int)this, this->_dispatch_id));
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
@@ -188,7 +188,7 @@ namespace XMI
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
           memcpy(&msg->_p2p_msg._payload[iov[0].iov_len], iov[1].iov_base, iov[1].iov_len);
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket MPI_Isend %zd to %zd\n",(int)this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket MPI_Isend %zd to %zd\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_task;
@@ -219,7 +219,7 @@ namespace XMI
         {
           int rc;
           MPIMessage * msg = (MPIMessage *)state;
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket_impl %d \n",(int)this, this->_dispatch_id));
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
@@ -234,7 +234,7 @@ namespace XMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload, length);
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",(int)this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_task;
@@ -266,7 +266,7 @@ namespace XMI
 
           int rc;
           void       * obj = malloc(sizeof(MPIMessage));
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket_impl %d \n",(int)this, this->_dispatch_id));
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
@@ -288,7 +288,7 @@ namespace XMI
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
           if (T_Niov)
             memcpy(&msg->_p2p_msg._payload[iov[0].iov_len], iov[1].iov_base, iov[1].iov_len);
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",(int)this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_task;
@@ -319,7 +319,7 @@ namespace XMI
                                         size_t               length)
         {
           int rc;
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postMultiPacket_impl %d \n",(int)this, this->_dispatch_id));
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postMultiPacket_impl %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
@@ -335,7 +335,7 @@ namespace XMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy((char*)(&msg->_p2p_msg._metadata[0])+metasize, payload, length);
-          TRACE_DEVICE((stderr,"<%#.8X>MPIPacketModel::postMultiPacket_impl MPI_Isend %zd+%zd+%zd-128-244 to %zd\n",(int)this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postMultiPacket_impl MPI_Isend %zd+%zd+%zd-128-244 to %zd\n",this,
                          sizeof(msg->_p2p_msg),metasize,(sizeof(msg->_p2p_msg)+metasize+length-128-224),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (xmi_task_t) target_task;

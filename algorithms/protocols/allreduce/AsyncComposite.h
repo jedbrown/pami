@@ -84,19 +84,19 @@ namespace CCMI
 
         inline void setDone()
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setDone()\n",(int)this));_asyncState = _isDone;
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::setDone()\n",this));_asyncState = _isDone;
         }
         inline void setIdle()
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setIdle()\n",(int)this));_asyncState = _isIdle;
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::setIdle()\n",this));_asyncState = _isIdle;
         }
         inline void setStarted()
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setStarted()\n",(int)this));_asyncState = _isStarted;
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::setStarted()\n",this));_asyncState = _isStarted;
         }
         inline void setQueueing()
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::setQueueing()\n",(int)this));_asyncState = _isQueueing;
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::setQueueing()\n",this));_asyncState = _isQueueing;
         }
         inline bool isDone()
         {
@@ -134,16 +134,16 @@ namespace CCMI
         _myClientFunction (cb_done.function),
         _myClientData (cb_done.clientdata)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::ctor() ALERT:\n",(int)this));
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::ctor() flags(%#X) factory(%#X)\n",(int)this,
+          TRACE_ALERT((stderr,"<%p>Allreduce::AsyncComposite::ctor() ALERT:\n",this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::ctor() flags(%#X) factory(%#X)\n",this,
                          *(unsigned*)&flags, (int) factory));
         }
 
         /// Default Destructor
         virtual ~AsyncComposite()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::dtor() ALERT:\n",(int)this));
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::dtor()\n",(int)this));
+          TRACE_ALERT((stderr,"<%p>Allreduce::AsyncComposite::dtor() ALERT:\n",this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::dtor()\n",this));
         }
 
         void operator delete (void *p)
@@ -168,7 +168,7 @@ namespace CCMI
                           void                            * cd = NULL
                         )
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::initialize()\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::initialize()\n",this));
           allreduce->setSendState(request);
           allreduce->setRoot( root );
           allreduce->setDataInfo(srcbuf, dstbuf);
@@ -212,7 +212,7 @@ namespace CCMI
 
         unsigned computePipelineWidth (unsigned count, unsigned sizeOfType, unsigned min_pwidth)
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::computePipelineWidth() count %#X, size %#X, min %#X\n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::computePipelineWidth() count %#X, size %#X, min %#X\n",this,
                          count, sizeOfType, min_pwidth));
           unsigned pwidth = min_pwidth;
 
@@ -225,7 +225,7 @@ namespace CCMI
           else if(count * sizeOfType > 16 * pwidth)
             pwidth *= 4;
 
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::computePipelineWidth() pwidth %#X\n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::computePipelineWidth() pwidth %#X\n",this,
                          pwidth));
           return pwidth;
         }
@@ -244,7 +244,7 @@ namespace CCMI
                                      xmi_op                      op,
                                      size_t                      root = (size_t)-1)
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::restart()\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::restart()\n",this));
           _myClientFunction = cb_done.function;
           _myClientData     = cb_done.clientdata;
 
@@ -292,8 +292,8 @@ namespace CCMI
                                         xmi_op                      op,
                                         int                         root=-1)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncComposite::restartAsync() ALERT:\n",(int)this));
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::restartAsync()\n",(int)this));
+          TRACE_ALERT((stderr,"<%p>Allreduce::AsyncComposite::restartAsync() ALERT:\n",this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::restartAsync()\n",this));
 
           initialize (allreduce,(XMI_CollectiveRequest_t  *) NULL, NULL, NULL,
                       count, dtype, op, root);
@@ -312,7 +312,7 @@ namespace CCMI
         virtual void start()
         {
           CCMI_assert(_asyncState != _isStarted);
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::start()\n",(int)this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::start()\n",this));
           setStarted();
           getExecutor(0)->start();
         }
@@ -320,8 +320,8 @@ namespace CCMI
         void done()
         {
           _doneCountdown --;
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::done() "
-                         "_doneCountdown:%#X %#X/%#X \n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::done() "
+                         "_doneCountdown:%#X %#X/%#X \n",this,
                          _doneCountdown,(int)_myClientFunction,
                          (int)_myClientData));
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
@@ -329,8 +329,8 @@ namespace CCMI
             setDone();
             if(_myClientFunction) (*_myClientFunction) (_myClientData, NULL);
             ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncComposite::DONE() \n",
-                           (int)this));
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::DONE() \n",
+                           this));
           }
         }
 
@@ -343,12 +343,12 @@ namespace CCMI
         static void cb_compositeDone(void *me, xmi_result_t *err)
         {
           TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::AsyncComposite::cb_compositeDone()\n",
+                         "<%p>Allreduce::AsyncComposite::cb_compositeDone()\n",
                          (int)me));
           AsyncComposite *composite = (AsyncComposite *) me;
           composite->done();
           TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::AsyncComposite::cb_compositeDone() 2\n",
+                         "<%p>Allreduce::AsyncComposite::cb_compositeDone() 2\n",
                          (int)me));
         }
 

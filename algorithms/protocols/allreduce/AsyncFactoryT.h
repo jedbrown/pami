@@ -62,7 +62,7 @@ namespace CCMI
       public:
         virtual ~AsyncFactoryT()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~AsyncFactoryT() ALERT\n",(int)this,T_Composite::name));
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::~AsyncFactoryT() ALERT\n",this,T_Composite::name));
         }
         ///
         /// \brief Constructor for allreduce factory implementations.
@@ -74,8 +74,8 @@ namespace CCMI
           CCMI::Adaptor::Allreduce::AsyncFactory<T_Sysdep, T_Mcast, T_ConnectionManager>(mapping, mf, cb_geometry, flags),
         _sconnmgr(mapping)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT() ALERT:\n",(int)this, T_Composite::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT() mf<%#X>\n",(int)this, T_Composite::name,
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncFactoryT() ALERT:\n",this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::AsyncFactoryT() mf<%#X>\n",this, T_Composite::name,
                           (int) mf));
           setConnectionManager(&_sconnmgr);
         }
@@ -101,8 +101,8 @@ namespace CCMI
          xmi_op                    op,
          int                        root = -1 )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",(int)this, T_Composite::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, T_Composite::name,
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::AsyncFactoryT::generate() %#X, geometry %#X comm %#X\n",this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
           //CCMI_assert(geometry->getAsyncAllreduceMode());
@@ -137,9 +137,9 @@ namespace CCMI
          unsigned                   iteration,
          int                        root = -1 )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::generateAsync() ALERT:\n",(int)this, T_Composite::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::AsyncFactoryT::generateAsync() %#X,"
-                          " geometry %#X comm %#X iteration %#X\n",(int)this, T_Composite::name,
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncFactoryT::generateAsync() ALERT:\n",this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::AsyncFactoryT::generateAsync() %#X,"
+                          " geometry %#X comm %#X iteration %#X\n",this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm(), iteration));
 
           XMI_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
@@ -171,12 +171,12 @@ namespace CCMI
         // Template implementation should specialize this function if they want a color
         CCMI::Schedule::Color getOneColor(XMI_GEOMETRY_CLASS * geometry)
         {
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::getOneColor() NO_COLOR\n",(int)this, T_Composite::name));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::%s::AsyncFactoryT::getOneColor() NO_COLOR\n",this, T_Composite::name));
           return CCMI::Schedule::NO_COLOR;
         }
         bool Analyze( XMI_GEOMETRY_CLASS * geometry )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncFactoryT::Analyze() ALERT: %s\n",(int)this, T_Composite::name,
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncFactoryT::Analyze() ALERT: %s\n",this, T_Composite::name,
                        T_Composite::analyze(geometry)? "true":"false"));
           return T_Composite::analyze(geometry);
         }

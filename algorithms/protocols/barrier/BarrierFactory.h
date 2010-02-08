@@ -47,8 +47,8 @@ namespace CCMI
 		       mInterface),
           _myschedule (mapping, geometry->nranks(), geometry->ranks())
         {
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
-		      (int)this, geometry->comm()));
+          TRACE_INIT((stderr,"<%p>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
+		      this, geometry->comm()));
           _myexecutor.setCommSchedule (&_myschedule);
         }
 
@@ -92,8 +92,8 @@ namespace CCMI
         _mcastInterface (minterface),
 	_mapping (map)
         {
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
-                     (int)this,(int)cb_geometry));
+          TRACE_INIT((stderr,"<%p>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
+                     this,(int)cb_geometry));
           minterface->setCallback (cb_head, this);
 	  setMapIdToGeometry (cb_geometry);
         }
@@ -147,8 +147,8 @@ namespace CCMI
           assert(geometry != NULL);
           T *composite = (T*) geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
           CCMI_assert (composite != NULL);
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
-		      (int)factory,cdata->_comm,(int)executor));
+          TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
+		      factory,cdata->_comm,composite));
 
           //Override poly morphism
           composite->getExecutor()->notifyRecv (peer, *info, NULL, 0);

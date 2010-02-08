@@ -59,7 +59,7 @@ namespace CCMI
 
 	T_Exec *exe = (T_Exec *) executor;
 
-	TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::MultiColorCompositeT::staticRecvFn() \n",(int)exe));
+	TRACE_ADAPTOR ((stderr, "<%p>Broadcast::MultiColorCompositeT::staticRecvFn() \n",(int)exe));
 
 	exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
       }

@@ -5,7 +5,6 @@
 #ifndef __algorithms_executor_Broadcast_h__
 #define __algorithms_executor_Broadcast_h__
 
-#define TRACE_FLOW(x)  //fprintf x
 
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/interfaces/Executor.h"
@@ -96,13 +95,16 @@ namespace CCMI
 
       void  setInfo (int root, char *buf, int len)
       {
+        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() root %d, buf %p, len %d, _pwq %p\n",this, root, buf, len, &_pwq));
         _root           =  root;
 	unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
 	_msend.connection_id = connid;
 	_buflen = len;
 	//Setup pipework queue
 	_pwq.configure (NULL, buf, len, 0);
-	_pwq.reset();
+  _pwq.reset();
+        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zd/%zd\n",this,&_pwq,
+                     _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
       }
 
       //------------------------------------------
@@ -153,7 +155,7 @@ namespace CCMI
 template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::start()\n",(int)this));
+  TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::start()\n",this));
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
@@ -179,7 +181,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   //for(unsigned i = 0; i < _dsttopology.size(); ++i) TRACE_FLOW((stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i)));
 
   //for(int dcount = 0; dcount < _nmessages; dcount++)
-  //TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::sendNext() send to %d for size %d\n",(int)this, _dstranks[dcount], _curlen));
+  //TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::sendNext() send to %d for size %d\n",this, _dstranks[dcount], _curlen));
 
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
@@ -203,7 +205,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
  XMI::PipeWorkQueue ** pwq,
  xmi_callback_t      * cb_done)
 {
-  TRACE_FLOW ((stderr, "<%#.8X>Executor::BroadcastExec::notifyRecv() from %d\n",(int)this, src));
+  TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d\n",this, src));
 
   *pwq = &_pwq;
   if (_dsttopology.size() > 0) {

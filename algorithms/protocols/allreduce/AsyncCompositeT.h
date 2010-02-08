@@ -41,7 +41,7 @@ namespace CCMI
         /// Default Destructor
         virtual ~AsyncCompositeT()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~AsyncCompositeT() ALERT\n",(int)this,name));
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::~AsyncCompositeT() ALERT\n",this,name));
         }
         ///
         /// \brief Constructor
@@ -68,7 +68,7 @@ namespace CCMI
         _executor(map, cmgr, consistency, geometry->comm(), iteration)
         {
           create_schedule(map, geometry, color);
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::AsyncCompositeT() ALERT\n",(int)this,name));
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncCompositeT() ALERT\n",this,name));
           addExecutor (&_executor);
           initialize (&_executor, req, srcbuf, dstbuf, count,
                       dtype, op, root);

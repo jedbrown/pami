@@ -13,9 +13,6 @@
 
 #ifndef __components_devices_mpi_mpidevice_h__
 #define __components_devices_mpi_mpidevice_h__
-#ifndef TRACE_DEVICE
-#define TRACE_DEVICE(x) //fprintf x
-#endif
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
@@ -24,7 +21,9 @@
 #include "util/ccmi_debug.h"
 #include "SysDep.h"
 
-
+#ifndef TRACE_DEVICE
+  #define TRACE_DEVICE(x) //fprintf x
+#endif
 
 namespace XMI
 {
@@ -63,7 +62,7 @@ namespace XMI
         // \todo These MPI functions should probably move out of the constructor if we keep this class
         MPI_Comm_dup(MPI_COMM_WORLD,&_communicator);
         MPI_Comm_size(_communicator, (int*)&_peers);
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice()\n",(int)this));
+        TRACE_DEVICE((stderr,"<%p>MPIDevice()\n",this));
       };
 
       // Implement BaseDevice Routines
@@ -76,7 +75,7 @@ namespace XMI
                                 void                      *recv_func_parm)
         {
           unsigned i;
-          TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::registerRecvFunction dispatch %zd/%zd\n",(int)this,dispatch,dispatch * DISPATCH_SET_SIZE));
+          TRACE_DEVICE((stderr,"<%p>MPIDevice::registerRecvFunction dispatch %zd/%zd\n",this,dispatch,dispatch * DISPATCH_SET_SIZE));
           for (i=0; i<DISPATCH_SET_SIZE; i++)
           {
             unsigned id = dispatch * DISPATCH_SET_SIZE + i;
@@ -109,7 +108,7 @@ namespace XMI
         _mcast_dispatch_table[dispatch_id].recv_func=recv_func;
         _mcast_dispatch_table[dispatch_id].async_arg=async_arg;
         _mcast_dispatch_lookup[dispatch_id]=_mcast_dispatch_table[dispatch_id];
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::registerMcastRecvFunction %d\n",(int)this,_dispatch_id));
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::registerMcastRecvFunction %d\n",this,_dispatch_id));
       }
 
       void registerM2MRecvFunction (int                           dispatch_id,
@@ -119,7 +118,7 @@ namespace XMI
         _m2m_dispatch_table[dispatch_id].recv_func=recv_func;
         _m2m_dispatch_table[dispatch_id].async_arg=async_arg;
         _m2m_dispatch_lookup[dispatch_id]=_m2m_dispatch_table[dispatch_id];
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::registerM2MRecvFunction %d\n",(int)this,_dispatch_id));
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::registerM2MRecvFunction %d\n",this,_dispatch_id));
       }
 
       inline xmi_result_t init_impl (SysDep * sysdep, xmi_context_t context, size_t offset)
@@ -158,7 +157,7 @@ namespace XMI
         int events=0;
 
         if(dbg) {
-          TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl\n",(int)this));
+          TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl\n",this));
           dbg = 0;
         }
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
@@ -186,7 +185,7 @@ namespace XMI
           if(flag)
           {
             events++;
-            TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl() p2p\n",(int)this)); dbg = 1;
+            TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl() p2p\n",this)); dbg = 1;
             xmi_event_function  done_fn = (*it_p2p)->_done_fn;
             void               *cookie  = (*it_p2p)->_cookie;
             xmi_client_t       client = (*it_p2p)->_client;
@@ -211,7 +210,7 @@ namespace XMI
           if(flag)
           {
             events++;
-            TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl mc\n",(int)this)); dbg = 1;
+            TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl mc\n",this)); dbg = 1;
             if((*it_mcast)->_cb_done.function )
               (*(*it_mcast)->_cb_done.function)(NULL,//XMI_Client_getcontext((*it_mcast)->_client,(*it_mcast)->_context),   \todo fix this
                                                 (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
@@ -231,7 +230,7 @@ namespace XMI
           if(flag)
           {
             events++;
-            TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl m2m\n",(int)this)); dbg = 1;
+            TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl m2m\n",this)); dbg = 1;
             if((*it)->_done_fn )
               ((*it)->_done_fn)(NULL, (*it)->_cookie, XMI_SUCCESS);
 
@@ -295,7 +294,7 @@ namespace XMI
         if(flag)
         {
           events++;
-          TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Iprobe %d\n",(int)this,sts.MPI_TAG)); dbg = 1;
+          TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Iprobe %d\n",this,sts.MPI_TAG)); dbg = 1;
           //p2p messages
           switch(sts.MPI_TAG)
           {
@@ -309,8 +308,8 @@ namespace XMI
                                 _communicator,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
-              TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
-                             (int)this, nbytes,dispatch_id));
+              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+                             this, nbytes,dispatch_id));
               _currentBuf = msg->_p2p_msg._payload;
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
               if(mdi.recv_func)
@@ -332,8 +331,8 @@ namespace XMI
                                 _communicator,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
-              TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
-                             (int)this, nbytes,dispatch_id));
+              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+                             this, nbytes,dispatch_id));
               _currentBuf = (char*)msg->_p2p_msg._metadata+msg->_p2p_msg._metadatasize;
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
               if(mdi.recv_func)
@@ -358,8 +357,8 @@ namespace XMI
               unsigned         pwidth;
               xmi_callback_t   cb_done;
               size_t dispatch_id      = msg->_dispatch_id;
-              TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
-                             (int)this, nbytes,dispatch_id));
+              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+                             this, nbytes,dispatch_id));
               mpi_mcast_dispatch_info_t mdi = _mcast_dispatch_lookup[dispatch_id];
 
               MPIMcastRecvMessage *mcast;
@@ -443,8 +442,8 @@ namespace XMI
 
               for(; bytes > 0; bytes -= mcast->_pwidth)
               {
-                TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::calling done counter %zd, pwidth %zd, bytes %zd, size %zd\n",
-                               (int)this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
+                TRACE_DEVICE((stderr,"<%p>MPIDevice::calling done counter %zd, pwidth %zd, bytes %zd, size %zd\n",
+                               this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
                 mcast->_counter += mcast->_pwidth;
                 if(mcast->_done_fn)
                   mcast->_done_fn(NULL,//XMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
@@ -468,8 +467,8 @@ namespace XMI
               MPIM2MHeader *msg = (MPIM2MHeader *) malloc (nbytes);
               int rc            = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, _communicator,&sts);
               XMI_assert (rc == MPI_SUCCESS);
-              TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::advance_impl MPI_Recv nbytes %d\n",
-                             (int)this, nbytes));
+              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d\n",
+                             this, nbytes));
 
               std::list<MPIM2MRecvMessage<size_t>*>::iterator it;
               for(it=_m2mrecvQ.begin();it != _m2mrecvQ.end(); it++)
@@ -594,8 +593,8 @@ namespace XMI
       inline void enqueue(MPIMessage* msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%#.8X>MPIDevice::enqueue message size 0 %zd, size 1 %zd, msize %zd\n",
-                      (int)this,
+                      "<%p>MPIDevice::enqueue message size 0 %zd, size 1 %zd, msize %zd\n",
+                      this,
                       (size_t)msg->_p2p_msg._payloadsize0,
                       (size_t)msg->_p2p_msg._payloadsize1,
                       (size_t)msg->_p2p_msg._metadatasize));
@@ -604,15 +603,15 @@ namespace XMI
 
       inline void enqueue(MPIMcastMessage* msg)
       {
-        TRACE_DEVICE((stderr,"<%#.8X>MPIDevice::enqueue mcast message size %zd\n",(int)this, (size_t)msg->_size));
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zd\n",this, (size_t)msg->_size));
         _mcastsendQ.push_front(msg);
       }
 
       inline void enqueue(MPIMcastRecvMessage *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%#.8X>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",
-                      (int)this,
+                      "<%p>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",
+                      this,
                       (size_t)msg->_pwidth,
                       (size_t)msg->_size));
         _mcastrecvQ.push_front(msg);
@@ -621,8 +620,8 @@ namespace XMI
       inline void enqueue(MPIM2MRecvMessage<size_t> *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%#.8X>MPIDevice::enqueue m2m recv message size %zd\n",
-                      (int)this,
+                      "<%p>MPIDevice::enqueue m2m recv message size %zd\n",
+                      this,
                       (size_t)msg->_sizes[0]));
         _m2mrecvQ.push_front(msg);
       }
@@ -630,8 +629,8 @@ namespace XMI
       inline void enqueue(MPIM2MMessage *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%#.8X>MPIDevice::enqueue m2m message total size %zd\n",
-                      (int)this,
+                      "<%p>MPIDevice::enqueue m2m message total size %zd\n",
+                      this,
                       (size_t)msg->_totalsize));
         _m2msendQ.push_front(msg);
       }

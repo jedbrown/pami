@@ -43,7 +43,7 @@ namespace CCMI
           /// Default Destructor
           virtual ~CompositeT()
           {
-            TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~CompositeT() ALERT\n",(int)this,name));
+            TRACE_ALERT((stderr,"<%p>Allreduce::%s::~CompositeT() ALERT\n",this,name));
           }
           CompositeT(XMI_CollectiveRequest_t                      * req,
                      CCMI::TorusCollectiveMapping                  * map,
@@ -64,7 +64,7 @@ namespace CCMI
           _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration()),
           _schedule(map, geometry->nranks(), geometry->ranks())
           {
-            TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::CompositeT() ALERT\n",(int)this,name));
+            TRACE_ALERT((stderr,"<%p>Allreduce::%s::CompositeT() ALERT\n",this,name));
 
             if(map->GetDimLength(CCMI_T_DIM) > 1)
             {
@@ -90,13 +90,13 @@ namespace CCMI
           void internal_restart (CCMI_Consistency   consistency,
                                  XMI_Callback_t    & cb_done)
           {
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::CompositeT::internal_restart\n", (int)this,name));
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::%s::CompositeT::internal_restart\n", this,name));
             _doneCountdown = 1;
             _executor.postReceives ();
             if(_barrier)
             {
               // reset barrier since it may be been used between calls
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::CompositeT::internal_restart barrier(%#X,%#X)\n",(int)this,name,(int)_barrier,(int)this));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::%s::CompositeT::internal_restart barrier(%p)\n",this,name,_barrier));
               if(_executor.getRoot() != -1)  // Reduce needs a double barrier
                 _barrier->setDoneCallback (Allreduce::Tree::CompositeT<SCHEDULE,EXECUTOR>::cb_barrierDone, this);
               else
@@ -122,18 +122,18 @@ namespace CCMI
           static void cb_reduceCompositeDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::cb_reduceCompositeDone()\n",
+                           "<%p>Allreduce::%s::CompositeT::cb_reduceCompositeDone()\n",
                            (int)me,name));
             ((CCMI::Adaptor::Allreduce::Tree::CompositeT<SCHEDULE,EXECUTOR> *)me)->reduceCompositeDone();
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::cb_reduceCompositeDone() 2\n",
+                           "<%p>Allreduce::%s::CompositeT::cb_reduceCompositeDone() 2\n",
                            (int)me,name));
           }
           void reduceCompositeDone()
           {
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::reduceCompositeDone() _doneCountdown %d\n",
-                           (int)this,name,_doneCountdown));
+                           "<%p>Allreduce::%s::CompositeT::reduceCompositeDone() _doneCountdown %d\n",
+                           this,name,_doneCountdown));
             if(_doneCountdown == 1)
             {
               _barrier->setDoneCallback(Allreduce::Tree::CompositeT<SCHEDULE,EXECUTOR>::cb_endBarrierDone, this);
@@ -151,11 +151,11 @@ namespace CCMI
           static void cb_endBarrierDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::cb_endBarrierDone()\n",
+                           "<%p>Allreduce::%s::CompositeT::cb_endBarrierDone()\n",
                            (int)me,name));
             ((CCMI::Adaptor::Allreduce::Tree::CompositeT<SCHEDULE,EXECUTOR> *)me)->done();
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::cb_endBarrierDone() 2\n",
+                           "<%p>Allreduce::%s::CompositeT::cb_endBarrierDone() 2\n",
                            (int)me,name));
           }
           ///
@@ -167,18 +167,18 @@ namespace CCMI
           static void cb_barrierDone(void *me, XMI_Error_t *err)
           {
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::cb_barrierDone()\n",
+                           "<%p>Allreduce::%s::CompositeT::cb_barrierDone()\n",
                            (int)me,name));
             ((CCMI::Adaptor::Allreduce::Tree::CompositeT<SCHEDULE,EXECUTOR> *)me)->barrierDone();
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::cb_barrierDone() 2\n",
+                           "<%p>Allreduce::%s::CompositeT::cb_barrierDone() 2\n",
                            (int)me,name));
           }
           void barrierDone()
           {
             TRACE_ADAPTOR((stderr,
-                           "<%#.8X>Allreduce::%s::CompositeT::barrierDone() _doneCountdown %d\n",
-                           (int)this,name, _doneCountdown));
+                           "<%p>Allreduce::%s::CompositeT::barrierDone() _doneCountdown %d\n",
+                           this,name, _doneCountdown));
 
             _executor.start();
             if(_doneCountdown == 1)
@@ -199,7 +199,7 @@ namespace CCMI
                                      XMI_Op                     op,
                                      size_t                      root = (size_t)-1)
           {
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::%s::CompositeT::restart _executor %#X\n", (int)this,name,
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::%s::CompositeT::restart _executor %#X\n", this,name,
                            (int)&_executor));
             _myClientFunction = cb_done.function;
             _myClientData     = cb_done.clientdata;
@@ -210,10 +210,10 @@ namespace CCMI
             if(op != _executor.getOp() || dtype != _executor.getDt()
                || count != _executor.getCount())
             {
-              TRACE_ALERT((stderr, "<%#.8X>Allreduce::%s::CompositeT::restart() ALERT: "
-                           "XMI_ERROR op %#X, type %#X, count %#X!\n", (int)this,name, op, dtype, count));
-              TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::%s::CompositeT::restart():"
-                             "XMI_ERROR op %#X, type %#X, count %#X!\n",(int)this,name, op, dtype, count));
+              TRACE_ALERT((stderr, "<%p>Allreduce::%s::CompositeT::restart() ALERT: "
+                           "XMI_ERROR op %#X, type %#X, count %#X!\n", this,name, op, dtype, count));
+              TRACE_ADAPTOR((stderr, "<%p>Allreduce::%s::CompositeT::restart():"
+                             "XMI_ERROR op %#X, type %#X, count %#X!\n",this,name, op, dtype, count));
               _executor.getAllreduceState()->freeAllocations();
               return XMI_ERROR;
             }

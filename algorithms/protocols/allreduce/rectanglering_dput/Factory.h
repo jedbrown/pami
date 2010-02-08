@@ -56,8 +56,8 @@ namespace CCMI
           CCMI::Adaptor::Allreduce::Factory<CCMI::TorusCollectiveMapping>(mapping, mof, NULL, cb_geometry, flags),
           _tconnmgr(mapping), _cconnmgr()
           {
-            TRACE_ALERT((stderr,"<%#.8X>Allreduce::RectangleRingDput::Factory::ctor() ALERT:\n",(int)this));
-            TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::RectangleRingDput::Factory::ctor mf<%#X>\n",(int)this,(int) mf));
+            TRACE_ALERT((stderr,"<%p>Allreduce::RectangleRingDput::Factory::ctor() ALERT:\n",this));
+            TRACE_ADAPTOR ((stderr, "<%p>Allreduce::RectangleRingDput::Factory::ctor mf<%#X>\n",this,(int) mf));
             setConnectionManager(&_tconnmgr);
             mof->setCallback (cb_receiveHead, this);
           }
@@ -83,8 +83,8 @@ namespace CCMI
            XMI_Op                    op,
            int                        root = -1 )
           {
-            TRACE_ALERT((stderr,"<%#.8X>Allreduce::RectangleRingDput::Factory::generate() ALERT:\n",(int)this));
-            TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::RectangleRingDput::Factory::generate() %#X, geometry %#X comm %#X\n",(int)this,
+            TRACE_ALERT((stderr,"<%p>Allreduce::RectangleRingDput::Factory::generate() ALERT:\n",this));
+            TRACE_ADAPTOR ((stderr, "<%p>Allreduce::RectangleRingDput::Factory::generate() %#X, geometry %#X comm %#X\n",this,
                             sizeof(*this),(int) geometry, (int) geometry->comm()));
 
             int ideal, max;
@@ -119,7 +119,7 @@ namespace CCMI
 
           bool Analyze( Geometry * geometry )
           {
-            TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::RectangleRingDput::Factory::analyze()%#X,%#X\n",(int)this,
+            TRACE_ADAPTOR ((stderr, "<%p>Allreduce::RectangleRingDput::Factory::analyze()%#X,%#X\n",this,
                             geometry->isRectangle(),geometry->nranks()));
             return(geometry->isRectangle() && (geometry->nranks() > 2));
           }

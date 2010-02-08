@@ -77,7 +77,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _next : _prev;
           *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::getBroadcastDestinations() %d\n",(int)this, *dstpes));
+          TRACE_SCHEDULE((stderr,"<%p>Schedule::OldRingSchedule::getBroadcastDestinations() %d\n",this, *dstpes));
         }
       }
 
@@ -111,7 +111,7 @@ namespace CCMI
           *dstpes   = (!_dir) ? _prev : _next;
           *subtasks = XMI_PT_TO_PT_SUBTASK;
 
-          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::getReduceDestinations() %d\n",(int)this, *dstpes));
+          TRACE_SCHEDULE((stderr,"<%p>Schedule::OldRingSchedule::getReduceDestinations() %d\n",this, *dstpes));
         }
       }
 
@@ -263,8 +263,8 @@ namespace CCMI
 
         startphase = _startPhase;
 
-        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::local_init schedule %d, %d, %d, "
-                     "idxes = (%d, %d, %d) \n", (int)this,
+        TRACE_SCHEDULE((stderr,"<%p>Schedule::OldRingSchedule::local_init schedule %d, %d, %d, "
+                     "idxes = (%d, %d, %d) \n", this,
                      _prev, _next, _startPhase,
                      my_idx, head_idx, tail_idx));
       }
@@ -370,7 +370,7 @@ namespace CCMI
 
         local_init (root, op, startphase, nphases, maxranks);
 
-        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::OldRingSchedule::init() _prev = %d, _next = %d\n", (int)this,_prev, _next));
+        TRACE_SCHEDULE((stderr,"<%p>Schedule::OldRingSchedule::init() _prev = %d, _next = %d\n", this,_prev, _next));
       }
 
       static unsigned getMaxPhases (T_Sysdep *map, unsigned nranks)

@@ -73,7 +73,7 @@ namespace CCMI
           ndest     = 1;
           *dstpes   = (!_dir) ? _next : _prev;
 
-          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::getBroadcastDestinations() %d\n",(int)this, *dstpes));
+          TRACE_SCHEDULE((stderr,"<%p>Schedule::RingSchedule::getBroadcastDestinations() %d\n",this, *dstpes));
         }
       }
 
@@ -105,7 +105,7 @@ namespace CCMI
           ndest     = 1;
           *dstpes   = (!_dir) ? _prev : _next;
 
-          TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::getReduceDestinations() %d\n",(int)this, *dstpes));
+          TRACE_SCHEDULE((stderr,"<%p>Schedule::RingSchedule::getReduceDestinations() %d\n",this, *dstpes));
         }
       }
 
@@ -257,8 +257,8 @@ namespace CCMI
         startphase = _startPhase;
 	nphases    = _nphases;
 
-        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::local_init schedule %d, %d, %d, "
-                     "idxes = (%d, %d, %d) \n", (int)this,
+        TRACE_SCHEDULE((stderr,"<%p>Schedule::RingSchedule::local_init schedule %d, %d, %d, "
+                     "idxes = (%d, %d, %d) \n", this,
                      _prev, _next, _startPhase,
                      my_idx, head_idx, tail_idx));
       }
@@ -448,7 +448,7 @@ namespace CCMI
         _dir        = 0;
 
         local_init (root, op, startphase, nphases);
-        TRACE_SCHEDULE((stderr,"<%#.8X>Schedule::RingSchedule::init() _prev = %d, _next = %d\n", (int)this,_prev, _next));
+        TRACE_SCHEDULE((stderr,"<%p>Schedule::RingSchedule::init() _prev = %d, _next = %d\n", this,_prev, _next));
       }
 
       static unsigned getMaxPhases (unsigned nranks)

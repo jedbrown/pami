@@ -92,7 +92,7 @@ namespace XMI
       _pendingStatus(XMI::Device::Initialized),
       _root(_participants->index2Rank(0))
       {
-        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg client %p, context %zd\n",(unsigned)this,
+        TRACE_DEVICE((stderr,"<%p>MPISyncMsg client %p, context %zd\n",this,
                       msync->client, msync->context));
         if(_participants->size() == 1)
         {
@@ -109,13 +109,13 @@ namespace XMI
         {
           int rc = MPI_Send(NULL, 0, MPI_BYTE,
                             _root,_tag,_g_mpisync_dev._msync_communicator);
-          TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::ctor send rc = %d, dst %zd, tag %d \n",(unsigned)this,
+          TRACE_DEVICE((stderr,"<%p>MPISyncMsg::ctor send rc = %d, dst %zd, tag %d \n",this,
                         rc, _root, _tag));
         }
         int rc = MPI_Irecv(NULL,0, MPI_BYTE,
                            _participants->index2Rank(_idx),_tag,
                            _g_mpisync_dev._msync_communicator, &_req);
-        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::ctor irecv rc = %d, dst %zd, tag %d \n",(unsigned)this,
+        TRACE_DEVICE((stderr,"<%p>MPISyncMsg::ctor irecv rc = %d, dst %zd, tag %d \n",this,
                       rc, _participants->index2Rank(_idx), _tag));
       }
 
@@ -135,7 +135,7 @@ namespace XMI
         ++nt;
         // assert(nt > 0? && nt < n);
         _nThreads = nt;
-        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__setThreads(%d) _nThreads %d\n",(unsigned)this,
+        TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__setThreads(%d) _nThreads %d\n",this,
                       n,nt));
         return nt;
       }
@@ -154,20 +154,20 @@ namespace XMI
           //  so on the first advance, setDone and return.
           thr->setStatus(XMI::Device::Complete);
           setStatus(XMI::Device::Done);
-          TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() done - no participants\n",(unsigned)this));
+          TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() done - no participants\n",this));
           return XMI_SUCCESS;
         }
         int flag = 0;
         MPI_Status status;
         //static unsigned count = 5; if(count) count--;
-        //if(count)TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() idx %zd/%zd, currBytes %zd, bytesLeft %zd, tag %d %s\n",(unsigned)this,
+        //if(count)TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() idx %zd/%zd, currBytes %zd, bytesLeft %zd, tag %d %s\n",this,
         //              _idx, _dst->size(), _currBytes, thr->_bytesLeft, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
         if(_req != MPI_REQUEST_NULL)
         {
           MPI_Test(&_req, &flag, &status);
           if(flag)
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread test done, dst %zd, tag %d \n",(unsigned)this,
+            TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread test done, dst %zd, tag %d \n",this,
                           _participants->index2Rank(_idx), _tag));
             _req = MPI_REQUEST_NULL; // redundant?
           }
@@ -184,7 +184,7 @@ namespace XMI
             int rc = MPI_Irecv(NULL,0, MPI_BYTE,
                                _participants->index2Rank(_idx),_tag,
                                _g_mpisync_dev._msync_communicator, &_req);
-            TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread irecv rc = %d, dst %zd, tag %d \n",(unsigned)this,
+            TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread irecv rc = %d, dst %zd, tag %d \n",this,
                           rc, _participants->index2Rank(_idx), _tag));
             return XMI_EAGAIN;
           }
@@ -195,7 +195,7 @@ namespace XMI
               int rc = MPI_Send(NULL, 0, MPI_BYTE,
                                 _participants->index2Rank(idx),_tag,
                                 _g_mpisync_dev._msync_communicator);
-              TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMsg::__advanceThread() sending rc = %d, idx %zd, dst %zd, tag %d\n",(unsigned)this,
+              TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() sending rc = %d, idx %zd, dst %zd, tag %d\n",this,
                             rc,idx, _participants->index2Rank(idx), _tag));
             }
           }
@@ -227,7 +227,7 @@ namespace XMI
       MPISyncMdl(xmi_result_t &status) :
       XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>(status)
       {
-        TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl()\n",(unsigned)this));
+        TRACE_DEVICE((stderr,"<%p>MPISyncMdl()\n",this));
         //XMI::SysDep *sd = _g_mpisync_dev.getSysdep();
       }
 
@@ -240,7 +240,7 @@ namespace XMI
     inline xmi_result_t MPISyncMdl::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
                                                        xmi_multisync_t *msync)
     {
-      TRACE_DEVICE((stderr,"<%#8.8X>MPISyncMdl::postMulticast() connection_id %d, request %p\n",(unsigned)this,
+      TRACE_DEVICE((stderr,"<%p>MPISyncMdl::postMulticast() connection_id %d, request %p\n",this,
                     msync->connection_id, &state));
       MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
       new (&state) MPISyncMsg<XMI::Device::MPISyncDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpisync_dev, msync);

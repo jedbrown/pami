@@ -19,7 +19,7 @@
 #include "common/default/CollInfo.h"
 #include "util/common.h"
 #include "algorithms/ccmi.h"
-
+#include "util/ccmi_debug.h"
 namespace XMI
 {
   namespace CollFactory
@@ -57,6 +57,7 @@ namespace XMI
           Default * dev  = robj->factory;
           if(robj->user_done_fn)
             robj->user_done_fn(context, robj->user_cookie, res);
+          TRACE_ALERT((stderr,  "<%p>CollFactory::client_done() ALERT:freeing object %p \n",dev,robj));
           dev->_reqAllocator.returnObject(robj);
         }
 
@@ -304,6 +305,7 @@ namespace XMI
                     XMI::CollInfo::CCMIOldBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIOldBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                     XMI_assertf(robj,"bcast alg 1:  memory allocation failure\n");
 
                     robj->factory      = this;
@@ -329,6 +331,7 @@ namespace XMI
                       (XMI::CollInfo::CCMIOldRingBroadcastInfo<T_Device, T_Sysdep>*)info;
 
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                     XMI_assertf(robj,"bcast alg 2:  memory allocation failure\n");
 
                     robj->factory      = this;
@@ -355,6 +358,7 @@ namespace XMI
                     XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIBinomBroadcastInfo<T_Device, T_Sysdep>*)info;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                     XMI_assertf(robj,"bcast alg 1:  memory allocation failure\n");
 
                     robj->factory      = this;
@@ -375,8 +379,8 @@ namespace XMI
                     xmi_callback_t cb_done;
                     XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep> *cinfo=
                       (XMI::CollInfo::CCMIRingBroadcastInfo<T_Device, T_Sysdep>*)info;
-
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                     XMI_assertf(robj,"bcast alg 2:  memory allocation failure\n");
 
                     robj->factory      = this;
@@ -451,6 +455,7 @@ namespace XMI
 
                     xmi_callback_t cb_done;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                     XMI_assertf(robj,"allreduce alg 1:  memory allocation failure\n");
 
                     robj->factory      = this;
@@ -509,6 +514,7 @@ namespace XMI
 
                     xmi_callback_t cb_done;
                     reqObj * robj = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                     XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
 
                     robj->factory      = this;
@@ -722,6 +728,7 @@ namespace XMI
                     cb_done.clientdata = alltoallv->cookie;
 
                     reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                     XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
 
                     robj->factory      = this;
@@ -785,6 +792,7 @@ namespace XMI
                         {
                           xmi_callback_t cb_done;
                           reqObj * robj      = (reqObj *)_reqAllocator.allocateObject();
+                    TRACE_ALERT((stderr,  "<%p>CollFactory::ibroadcast_impl() ALERT:_colltype=%X allocating object %p\n",this,(unsigned)info->_colltype, robj));
                           XMI_assertf(robj,"allreduce alg 2:  memory allocation failure\n");
 
                           robj->factory      = this;

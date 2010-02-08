@@ -46,7 +46,7 @@ namespace CCMI
                                                          XMI_Callback_t * cb_done)
         {
           TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::Short::%s::AsyncFactoryT::cb_asyncShortReceiveHead peer %d, conn_id %d\n",
+                         "<%p>Allreduce::Short::%s::AsyncFactoryT::cb_asyncShortReceiveHead peer %d, conn_id %d\n",
                          (int)arg, COMPOSITE::name, peer, conn_id));
           CCMI_assert (info && arg);
           CollHeaderData  *cdata = (CollHeaderData *) info;
@@ -57,12 +57,12 @@ namespace CCMI
           (COMPOSITE *) factory->getAllreduceComposite(geometry, cdata->_iteration);
 
           TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::Short::%s::AsyncFactoryT::cb_asyncShortReceiveHead "
+                         "<%p>Allreduce::Short::%s::AsyncFactoryT::cb_asyncShortReceiveHead "
                          "comm %#X, root %#X, count %#X, dt %#X, op %#X, iteration %#X,"
-                         "composite %#.8X, %s\n",
-                         (int)factory, COMPOSITE::name, cdata->_comm, cdata->_root, cdata->_count,
+                         "composite %p, %s\n",
+                         factory, COMPOSITE::name, cdata->_comm, cdata->_root, cdata->_count,
                          cdata->_dt, cdata->_op, cdata->_iteration,
-                         (int)composite,
+                         composite,
                          (composite == NULL?" ":
                           ((composite->isIdle())?"(Idle)":" "))));
 
@@ -101,8 +101,8 @@ namespace CCMI
                                   ConfigFlags flags) :
         CCMI::Adaptor::Allreduce::AsyncFactoryT<CONNMGR, COMPOSITE, MAP>(mapping, mf, cb_geometry, flags)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::Short::%s::FactoryT() ALERT\n",(int)this, COMPOSITE::name));
-          TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::Short::%s::FactoryT()\n",(int)this, COMPOSITE::name));
+          TRACE_ALERT((stderr,"<%p>Allreduce::Short::%s::FactoryT() ALERT\n",this, COMPOSITE::name));
+          TRACE_ADAPTOR((stderr, "<%p>Allreduce::Short::%s::FactoryT()\n",this, COMPOSITE::name));
           mf->setCallback (cb_asyncShortReceiveHead, this);
         }
       };

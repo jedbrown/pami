@@ -23,8 +23,9 @@
 //#define EMULATE_UNRELIABLE_DEVICE
 #define EMULATE_UNRELIABLE_DEVICE_FREQUENCY 10
 
-#ifndef TRACE_ADAPTOR
-#define TRACE_ADAPTOR(x) //fprintf x
+#undef TRACE_DEVICE
+#ifndef TRACE_DEVICE
+  #define TRACE_DEVICE(x) //fprintf x
 #endif
 
 namespace XMI
@@ -58,7 +59,7 @@ namespace XMI
         _done_fn(done_fn),
         _cookie(cookie)
         {
-        TRACE_ADAPTOR((stderr,"%s dispatch_id %d\n",__PRETTY_FUNCTION__, dispatch_id));
+        TRACE_DEVICE((stderr,"%s dispatch_id %d\n",__PRETTY_FUNCTION__, dispatch_id));
           _p2p_msg._dispatch_id=dispatch_id;
         };
       xmi_client_t       _client;
@@ -180,5 +181,6 @@ namespace XMI
 
   };
 };
+#undef TRACE_DEVICE
 
 #endif // __components_devices_mpi_mpimessage_h__

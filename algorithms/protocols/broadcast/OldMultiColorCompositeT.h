@@ -88,7 +88,7 @@ namespace CCMI
             CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *exe =
               (CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *) executor;
 
-            TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::OldMultiColorCompositeT::staticRecvFn() \n",(int)exe));
+            TRACE_ADAPTOR ((stderr, "<%p>Broadcast::OldMultiColorCompositeT::staticRecvFn() \n",exe));
 
             exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
           }

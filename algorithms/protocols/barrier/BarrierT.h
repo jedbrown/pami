@@ -60,8 +60,8 @@ namespace CCMI
 		    mInterface),
 	  _myschedule (__global.mapping.task(), (XMI::Topology *)((XMI_GEOMETRY_CLASS *)geometry)->getTopology(0))
 	{
-          TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
-                     (int)this, geometry->comm()));
+          TRACE_INIT((stderr,"<%p>CCMI::Adaptors::Barrier::BarrierT::ctor()\n",
+                     this));//, geometry->comm()));
           _myexecutor.setCommSchedule (&_myschedule);
         }
 
@@ -97,8 +97,8 @@ namespace CCMI
 	  assert(geometry != NULL);
 	  BarrierT *composite = (BarrierT*) geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1);
 	  CCMI_assert (composite != NULL);
-	  TRACE_INIT((stderr,"<%#.8X>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%x)\n",
-		      (int)factory,cdata->_comm,(int)executor));
+	  TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
+		      factory,cdata->_comm,composite));
 
 	  //Override poly morphism
 	  composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);

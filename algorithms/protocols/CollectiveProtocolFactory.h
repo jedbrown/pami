@@ -56,6 +56,7 @@ namespace CCMI
 	{
 	  //The main all protocol generate function
 	  CCMI_abort();
+    return((Executor::Composite *)NULL);
 	}
 
     protected:

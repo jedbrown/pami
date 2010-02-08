@@ -32,7 +32,7 @@ namespace XMI
 	  _device(device)
 	  {
             _dispatch_id = _device.initMcast();
-          TRACE_ADAPTOR((stderr,"<%#.8X>MPIOldmulticastModel() %d\n",(int)this, _dispatch_id));
+          TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel() %d\n",this, _dispatch_id));
           };
 
 	inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
@@ -86,7 +86,7 @@ namespace XMI
 	    {
 	      XMI_assert (hints[count] == XMI_PT_TO_PT_SUBTASK);
 
-          TRACE_ADAPTOR((stderr,"<%#.8X>MPIOldmulticastModel:send MPI_Isend %zd to %zd\n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:send MPI_Isend %zd to %zd\n",this,
                          hdr->totalsize(),ranks[count]));
 	      rc = MPI_Isend (hdr,
 			      hdr->totalsize(),
@@ -141,7 +141,7 @@ namespace XMI
 //          msg->_hint     = hint;
 //          msg->_op       = op;
 //          msg->_dtype    = dtype;
-          TRACE_ADAPTOR((stderr,"<%#.8X>MPIOldmulticastModel:postRecv pwidth %zd size %zd\n",(int)this,
+          TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:postRecv pwidth %zd size %zd\n",this,
                      msg->_pwidth,msg->_size));
           _device.enqueue(msg);
 	  return 0;

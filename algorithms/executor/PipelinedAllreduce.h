@@ -58,7 +58,7 @@ namespace CCMI
       {
         _donecount ++;
 
-        TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce Calling Done, count = %d \n", (int)this,ThreadID(), _donecount));
+        TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce Calling Done, count = %d \n", this,ThreadID(), _donecount));
 
         if(_donecount == 2 && this->_cb_done)
         {
@@ -161,9 +161,9 @@ namespace CCMI
         else
           _numBcastChunksSent = this->_astate.getLastChunk() + 1;
 
-        TRACE_INIT ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::reset "
+        TRACE_INIT ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::reset "
                      "_numBcastChunksSent:%d, numDstPes:%d\n",
-                     (int)this,ThreadID(), _numBcastChunksSent,this->_astate.getBcastNumDstPes()));
+                     this,ThreadID(), _numBcastChunksSent,this->_astate.getBcastNumDstPes()));
       }
 
       ///Utility functions
@@ -177,9 +177,9 @@ namespace CCMI
           else
             phase --;
         }
-        TRACE_INIT ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::findPrevRecvPhase "
+        TRACE_INIT ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::findPrevRecvPhase "
                      "phase  %d, _startPhase %d\n",
-                     (int)this,ThreadID(), phase, this->_startPhase));
+                     this,ThreadID(), phase, this->_startPhase));
 
         return phase;
       };
@@ -222,17 +222,17 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
       _curSendChunk = this->_astate.getLastChunk() +  1;
   }
 
-  TRACE_INIT((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::start() "
+  TRACE_INIT((stderr,"<%p:%#.1X>Executor::PipelinedAllreduce::start() "
               " this->_startPhase %d,_curSendPhase %d "
-              " _curSendchunk %d, _curRecvchunk %d\n", (int)this,ThreadID(),
+              " _curSendchunk %d, _curRecvchunk %d\n", this,ThreadID(),
               this->_startPhase, _curSendPhase,_curSendChunk, _curRecvChunk));
 
   //Process the notify recvs we got before start
   if(_curRecvChunk <= this->_astate.getLastChunk())
     advanceRecv ();
 
-  TRACE_INIT((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::start() "
-              "_curSendchunk %d, _curRecvchunk %d\n", (int)this,ThreadID(),
+  TRACE_INIT((stderr,"<%p:%#.1X>Executor::PipelinedAllreduce::start() "
+              "_curSendchunk %d, _curRecvchunk %d\n", this,ThreadID(),
               _curSendChunk, _curRecvChunk));
 }
 
@@ -245,9 +245,9 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 {
   CCMI::Executor::RecvCallbackData * cdata = (CCMI::Executor::RecvCallbackData *)(&info);
 
-  TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::notifyRecv "
+  TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::notifyRecv "
               "_initialized %d, bytes %d, srcPeIndex %d, cdata->phase %d,_lastReducePhase %d\n",
-              (int)this,ThreadID(), this->_initialized, bytes, cdata->srcPeIndex,cdata->phase,this->_lastReducePhase));
+              this,ThreadID(), this->_initialized, bytes, cdata->srcPeIndex,cdata->phase,this->_lastReducePhase));
 
   // update state  (we dont support multiple sources per phase yet)
   this->_astate.incrementPhaseChunksRcvd(cdata->phase, 0 /*cdata->srcPeIndex*/);
@@ -273,9 +273,9 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 ( const xmi_quad_t & info)
 {
   // update state
-  TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::notifySendDone "
+  TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::notifySendDone "
               "_numActiveSends %d, _inadvancesend %d, "
-              "_astate.getLastChunk() %d,_curSendChunk %d,_numBcastChunksSent %d\n", (int)this,ThreadID(),
+              "_astate.getLastChunk() %d,_curSendChunk %d,_numBcastChunksSent %d\n", this,ThreadID(),
               _numActiveSends,_inadvancesend,this->_astate.getLastChunk(),_curSendChunk,_numBcastChunksSent));
 
   SendCallbackData * cdata = (SendCallbackData *)(&info);
@@ -322,9 +322,9 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   unsigned cur_nsrc = this->_astate.getPhaseNumSrcPes(_curRecvPhase);
 
-TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
+TRACE_MSG((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
            "cur_nsrc %d, this->_astate.getPhaseChunksRcvd(_curRecvPhase, 0) %d,"
-           "_curRecvPhase%d, _curRecvChunk %d, lastChunk %d\n", (int)this,ThreadID(),
+           "_curRecvPhase%d, _curRecvChunk %d, lastChunk %d\n", this,ThreadID(),
            cur_nsrc,cur_nsrc?this->_astate.getPhaseChunksRcvd(_curRecvPhase, 0):-2,_curRecvPhase, _curRecvChunk, last_chunk));
   while(((cur_nsrc) &&
          (this->_astate.getPhaseChunksRcvd(_curRecvPhase, 0) > _curRecvChunk))
@@ -358,10 +358,10 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
         (void *)(mysrcbuf + bufOffset),
         this->_astate.getPhaseRecvBufs (_curRecvPhase, 0) + bufOffset,
       };
-      TRACE_REDUCEOP((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::advance() OP curphase:%#X curChunk:%#X "
-                      "bufs[0] %#X, bufs[1] %#X, func(%#X), count = %#X\n",(int)this,ThreadID(),
-                      this->_curRecvPhase, this->_curRecvChunk, (int) bufs[0], (int) bufs[1],
-                      (int)this->_reduceFunc,count));
+      TRACE_REDUCEOP((stderr,"<%p:%#.1X>Executor::PipelinedAllreduce::advance() OP curphase:%#X curChunk:%#X "
+                      "bufs[0] %p, bufs[1] %p, func(%p), count = %#X\n",this,ThreadID(),
+                      this->_curRecvPhase, this->_curRecvChunk, bufs[0], bufs[1],
+                      this->_reduceFunc,count));
       TRACE_DATA(("localbuf",(const char*)bufs[0], count*this->_astate.getSizeOfType()));
       TRACE_DATA(("input buf",(const char*)bufs[1], count*this->_astate.getSizeOfType()));
       TRACE_DATA(("reduceBuf", mydstbuf + bufOffset, 1));  // Just to trace the input pointer
@@ -369,8 +369,8 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
                    bufs, 2,
                    count);
       TRACE_DATA(("reduceBuf", mydstbuf + bufOffset, count*this->_astate.getSizeOfType()));
-      TRACE_REDUCEOP((stderr,"<%#.8X:%#.1X>Executor::PipelinedAllreduce::advance() OP reducebuf %#X, "
-                      "reduceBuf[0]:%#X\n",(int)this,ThreadID(),((int)mydstbuf+bufOffset),
+      TRACE_REDUCEOP((stderr,"<%p:%#.1X>Executor::PipelinedAllreduce::advance() OP reducebuf %#X, "
+                      "reduceBuf[0]:%#X\n",this,ThreadID(),((int)mydstbuf+bufOffset),
                       *(unsigned *)((int)mydstbuf+bufOffset)));
 //      Logging::LogMgr::getLogMgr()->startCounter (_log_advancerecv);
     }
@@ -381,9 +381,9 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
       _curRecvChunk ++;
       _curRecvPhase = this->_startPhase;
     }
-//  TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv loop 2"
+//  TRACE_MSG((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceRecv loop 2"
 //             "_curRecvPhase %d, _lastReducePhase %d"
-//             "_curSendChunk %d, _curRecvChunk %d, last_chunk %d\n", (int)this,ThreadID(),
+//             "_curSendChunk %d, _curRecvChunk %d, last_chunk %d\n", this,ThreadID(),
 //             _curRecvPhase, _lastReducePhase,_curSendChunk, _curRecvChunk, last_chunk));
 
 //    Logging::LogMgr::getLogMgr()->stopCounter (_log_advancerecv, 0);
@@ -400,9 +400,9 @@ TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
     }
 
     cur_nsrc = this->_astate.getPhaseNumSrcPes(_curRecvPhase);
-    TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceRecv endloop "
+    TRACE_MSG((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceRecv endloop "
                "cur_nsrc %d, this->_astate.getPhaseChunksRcvd(_curRecvPhase, 0) %d,"
-               "_curRecvPhase%d, _curRecvChunk %d\n", (int)this,ThreadID(),
+               "_curRecvPhase%d, _curRecvChunk %d\n", this,ThreadID(),
                cur_nsrc,cur_nsrc?this->_astate.getPhaseChunksRcvd(_curRecvPhase, 0):-2,_curRecvPhase, _curRecvChunk));
   }
 
@@ -417,8 +417,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   _inadvancesend = true;
 
-  TRACE_MSG((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceSend "
-             "_numActiveSends %d\n", (int)this,ThreadID(),
+  TRACE_MSG((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceSend "
+             "_numActiveSends %d\n", this,ThreadID(),
              _numActiveSends));
 
   CCMI_assert_debug (this->_initialized == true);
@@ -427,10 +427,10 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   while(_numActiveSends > 0)
   {
-    TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceSend "
+    TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceSend "
                 "_curRecvPhase, %d, _curRecvChunk %d, "
                 "_curSendPhase %d, _curSendChunk %d, this->_astate.getPhaseChunksSent (_curSendPhase) %d\n",
-                (int)this,ThreadID(),
+                this,ThreadID(),
                 _curRecvPhase, _curRecvChunk,
                 _curSendPhase, _curSendChunk,
                 this->_astate.getPhaseChunksSent (_curSendPhase)));
@@ -520,8 +520,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   _numActiveSends --;
 
-  TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::sendMessage _curSendChunk %d,_numActiveSends %d, offset %d,bytes %d\n",
-              (int)this,ThreadID(),
+  TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::sendMessage _curSendChunk %d,_numActiveSends %d, offset %d,bytes %d\n",
+              this,ThreadID(),
               _curSendChunk,_numActiveSends, offset, bytes));
 
   int index = XMI_MAX_ACTIVE_SENDS - 1;
@@ -556,10 +556,10 @@ template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
 inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advanceBcast ()
 {
   unsigned bcastRecvPhase = this->_astate.getBcastRecvPhase();
-  TRACE_MSG ((stderr, "<%#.8X:%#.1X>Executor::PipelinedAllreduce::advanceBcast "
+  TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceBcast "
               "bcastRecvPhase%d, _numActiveSends %d,"
               "this->_astate.getPhaseChunksRcvd(bcastRecvPhase, 0) %d,_numBcastChunksSent %d\n",
-              (int)this,ThreadID(),
+              this,ThreadID(),
               bcastRecvPhase, _numActiveSends,
               this->_astate.getPhaseChunksRcvd(bcastRecvPhase, 0),_numBcastChunksSent));
 

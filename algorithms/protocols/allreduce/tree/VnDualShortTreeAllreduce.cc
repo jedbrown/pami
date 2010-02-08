@@ -130,8 +130,8 @@ namespace CCMI
                                        XMI_Op                     op,
                                        size_t                      root)
           {
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce::restart() "
-                           "srcbuf[0]:%d srcbuf:%#.8X\n", (int)this,
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce::restart() "
+                           "srcbuf[0]:%d srcbuf:%#.8X\n", this,
                            ((int*)srcbuf)[0],(int)srcbuf));
 
             _cb_done.function = cb_done.function;
@@ -176,10 +176,10 @@ namespace CCMI
 
               if (_bytes > MaxDataBytes)// || (root != -1)) // short allreduce only
               {
-                TRACE_ALERT((stderr, "<%#.8X>Allreduce::VnDualShortTreeAllreduce::Composite::restart() ALERT: "
-                             "XMI_INVAL op %#X, type %#X, count %#X!\n", (int)this, op, dtype, count));
-                TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::VnDualShortTreeAllreduce::Composite::restart():"
-                               "XMI_INVAL op %#X, type %#X, count %#X!\n",(int)this, op, dtype, count));
+                TRACE_ALERT((stderr, "<%p>Allreduce::VnDualShortTreeAllreduce::Composite::restart() ALERT: "
+                             "XMI_INVAL op %#X, type %#X, count %#X!\n", this, op, dtype, count));
+                TRACE_ADAPTOR((stderr, "<%p>Allreduce::VnDualShortTreeAllreduce::Composite::restart():"
+                               "XMI_INVAL op %#X, type %#X, count %#X!\n",this, op, dtype, count));
                 return XMI_INVAL;
               }
 
@@ -192,21 +192,21 @@ namespace CCMI
               // (busy) wait for the shared src buffer being available
               while ((volatile unsigned)_shared->client[_myPeer - 1].isSrcReady == 1);
 
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce slave1\n", (int)this));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce slave1\n", this));
 
               // copy local contribution into the shared area
               memcpy(_shared->client[_myPeer - 1].src, srcbuf, _bytes);
               asm volatile ("mbar" ::: "memory");
               _shared->client[_myPeer - 1].isSrcReady = 1;
 
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce "
-                             "slave2 srcbuf[0]:%d shared.src[0]:%d tcoord:%d\n", (int)this,
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce "
+                             "slave2 srcbuf[0]:%d shared.src[0]:%d tcoord:%d\n", this,
                              ((int*)srcbuf)[0],((int*)_shared->client[tCoord - 1].src)[0],tCoord ));
 
               // (busy) wait for the result
               while ((volatile unsigned)_shared->client[_myPeer - 1].isDstReady == 0);
 
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce slave3\n", (int)this));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce slave3\n", this));
 
               // reset result ready flag for the next run
               _shared->client[_myPeer - 1].isDstReady = 0;
@@ -238,9 +238,9 @@ namespace CCMI
 	      }
               _mcombArgs.setResultsRanks((XMI_Topology_t *)&_root);
 
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce "
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce "
                              "master1 dst[0]:%d srcs[0,0]:%d srcs[1,0]:%d "
-                             "srcs[2,0]:%d num:%d count:%d bytes:%d\n", (int)this,
+                             "srcs[2,0]:%d num:%d count:%d bytes:%d\n", this,
                              ((int*)_shared->dst)[0],
                              ((int*)_shared->client[0].src)[0],
                              ((int*)_shared->client[1].src)[0],

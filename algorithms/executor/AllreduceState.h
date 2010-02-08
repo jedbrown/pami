@@ -327,8 +327,8 @@ namespace CCMI
         }
       inline xmi_oldmulticast_recv_t  *   getPhaseMcastRecv(unsigned index,unsigned jindex)
         {
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::getPhaseMcastRecv _phaseVec[%#X].recvBufs[%#X]=%#X _phaseVec[%#X].mrecv[%#X].rcvbuf=%#X\n",
-                       (int)this,
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::getPhaseMcastRecv _phaseVec[%#X].recvBufs[%#X]=%#X _phaseVec[%#X].mrecv[%#X].rcvbuf=%#X\n",
+                       this,
                        index,
                        jindex,
                        (int)_phaseVec[index].recvBufs[jindex],
@@ -372,8 +372,8 @@ namespace CCMI
         }
       inline  void              compressPhaseNumDstPes(unsigned index, unsigned jindex)
         {
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::compressPhaseNumDstPes() phase[%#X].numDstPes %#X <- phase[%#X].numDstPes %#X\n",
-                       (int)this, index, _phaseVec[index].numDstPes, jindex, _phaseVec[jindex].numDstPes));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::compressPhaseNumDstPes() phase[%#X].numDstPes %#X <- phase[%#X].numDstPes %#X\n",
+                       this, index, _phaseVec[index].numDstPes, jindex, _phaseVec[jindex].numDstPes));
           _phaseVec[index].numDstPes += _phaseVec[jindex].numDstPes;
           _phaseVec[jindex].numDstPes = 0;
         }
@@ -432,10 +432,10 @@ namespace CCMI
       ///
       inline void setRoot(int root=-1)
         {
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setRoot(%#X) enter\n",(int)this, root));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setRoot(%#X) enter\n",this, root));
           if(_root != root)
               {
-                TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setRoot ALERT: Root change %#X != %#X\n",(int)this, _root, root));
+                TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::setRoot ALERT: Root change %#X != %#X\n",this, _root, root));
                 _isConfigChanged = true; /// \todo not all root changes are significant!
               }
           _root = root;
@@ -446,7 +446,7 @@ namespace CCMI
       /// \param[in]  sched
       inline void setSchedule(Schedule::Schedule *sched)
         {
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setSchedule(%#X) enter\n",(int)this, (int)sched));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setSchedule(%#X) enter\n",this, (int)sched));
           _sched = sched;
         }
       inline Schedule::Schedule * getSchedule()
@@ -484,8 +484,8 @@ namespace CCMI
                 XMI_assert(_phaseVec[_dstPhase].numSrcPes == 1);
                 _phaseVec[_dstPhase].mrecv[0].rcvbuf = *_phaseVec[_dstPhase].recvBufs;
 
-                TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDstBuf(%#X) dstPhase(%#X) _phaseVec[_dstPhase].recvBufs(%#X)\n",
-                             (int)this,
+                TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setDstBuf(%#X) dstPhase(%#X) _phaseVec[_dstPhase].recvBufs(%#X)\n",
+                             this,
                              (int)*pdstbuf,
                              _dstPhase,
                              (int)*_phaseVec[_dstPhase].recvBufs
@@ -510,7 +510,7 @@ namespace CCMI
         {
           if((_scheduleAllocationSize+_receiveAllocationSize) > limit)
               {
-                TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %#X(%#X bytes), %#X(%#X bytes)\n",(int)this,
+                TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %#X(%#X bytes), %#X(%#X bytes)\n",this,
                              limit, (int)_scheduleAllocation, _scheduleAllocationSize, (int)_receiveAllocation, _receiveAllocationSize));
 #ifdef XMI_DEBUG
                 memset(_scheduleAllocation, 0xFB, _scheduleAllocationSize);
@@ -631,15 +631,15 @@ namespace CCMI
         _dt(XMI_UNDEFINED_DT),
         _iteration(iteration)
         {
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::ctor(void) enter\n",(int)this));
-          TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::ctor ALERT: Constructor\n",(int)this));
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::ctor(void) exit\n",(int)this));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::ctor(void) enter\n",this));
+          TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::ctor ALERT: Constructor\n",this));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::ctor(void) exit\n",this));
           _nextActivePhase = 0;
         }
       /// Default Destructor
       virtual ~AllreduceState ()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::dtor ALERT: Destructor\n",(int)this));
+          TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::dtor ALERT: Destructor\n",this));
           freeAllocations();
         }
 
@@ -669,7 +669,7 @@ namespace CCMI
                               xmi_op          op,
                               xmi_dt          dt)
         {
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() enter\n",(int)this));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setDataFunc() enter\n",this));
           XMI_assert(pipelineWidth % sizeOfType == 0);
 
           _op = op;
@@ -699,7 +699,7 @@ namespace CCMI
                 unsigned lastChunk = bytes / _pipelineWidth + (bytes % _pipelineWidth != 0) - 1;
                 if(lastChunk > _lastChunk)
                     {
-                      TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc ALERT: Pipelining grew %#X > %#X\n",(int)this, lastChunk, _lastChunk));
+                      TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::setDataFunc ALERT: Pipelining grew %#X > %#X\n",this, lastChunk, _lastChunk));
                       _isConfigChanged = true;
                     }
                 _lastChunk = lastChunk;
@@ -710,8 +710,8 @@ namespace CCMI
                   _lastChunkCount = (bytes % _pipelineWidth) / sizeOfType;
               }
 
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() bytes:%#X "
-                       "pwidth:%#X lastChunk:%#X fullCount:%#X lastCount:%#X \n",(int)this,
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setDataFunc() bytes:%#X "
+                       "pwidth:%#X lastChunk:%#X fullCount:%#X lastCount:%#X \n",this,
                        bytes,_pipelineWidth,_lastChunk,_fullChunkCount,
                        _lastChunkCount));
 
@@ -720,7 +720,7 @@ namespace CCMI
           // We can reuse our existing buffer allocations if we aren't > the allocated size.
           if(bytes > _sizeOfBuffers)
               {
-                TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc ALERT: Buffers too small %#X < %#X\n",(int)this, _sizeOfBuffers, bytes));
+                TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::setDataFunc ALERT: Buffers too small %#X < %#X\n",this, _sizeOfBuffers, bytes));
                 _isConfigChanged = true;
               }
 
@@ -737,7 +737,7 @@ namespace CCMI
                       }
               }
 
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setDataFunc() exit\n",(int)this));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setDataFunc() exit\n",this));
         }
 
       inline void resetPhaseData()
@@ -750,7 +750,7 @@ namespace CCMI
 
       inline void resetReceives(unsigned infoRequired)
         {
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::resetReceives() enter\n",(int)this));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::resetReceives() enter\n",this));
           //  XMI_assert(_curRcvPhase == XMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
           XMI_assert(_bytes > 0);
           XMI_assert(_sched);
@@ -781,8 +781,8 @@ namespace CCMI
       void constructPhaseData()
         {
 
-          TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reset\n",(int)this));
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() enter\n",(int)this));
+          TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reset\n",this));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() enter\n",this));
 
           _dstPhase = (int) XMI_UNDEFINED_PHASE;
 
@@ -798,8 +798,8 @@ namespace CCMI
                        nphases,
                        maxranks);
 
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() root:%#X "
-                       "startphase:%#X nphases:%#X maxranks:%#X\n",(int)this,
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() root:%#X "
+                       "startphase:%#X nphases:%#X maxranks:%#X\n",this,
                        _root,startphase,nphases,maxranks));
 
           XMI_assert(nphases > 0);
@@ -916,9 +916,9 @@ namespace CCMI
 /// \todo only grows, never shrinks?  runtime vs memory efficiency?
           if(allocationNewSize > _scheduleAllocationSize)
               {
-                TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reallocated (%#X < %#X), endPhase %#X, numSrcPes %#X, numDstPes %#X\n",(int)this,
+                TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reallocated (%#X < %#X), endPhase %#X, numSrcPes %#X, numDstPes %#X\n",this,
                              _scheduleAllocationSize, allocationNewSize, _endPhase, _numSrcPes, _numDstPes));
-                TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() allocate new size<%#.8X> old size<%#.8X>\n",(int)this,
+                TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() allocate new size<%d> old size<%d>\n",this,
                              allocationNewSize, _scheduleAllocationSize));
 
                 if(_scheduleAllocation)
@@ -929,7 +929,7 @@ namespace CCMI
                 memset(_scheduleAllocation, 0xFD, allocationNewSize);
 
                 if(!_scheduleAllocation)
-                  fprintf(stderr,"<%#.8X>CCMI_Alloc failed<%#.8X> free'd %#X, malloc'd %#X\n",(int)this,
+                  fprintf(stderr,"<%p>CCMI_Alloc failed<%p> free'd %#X, malloc'd %#X\n",this,
                           (int)_scheduleAllocation,_scheduleAllocationSize, allocationNewSize);
 #endif
                 XMI_assert(_scheduleAllocation);
@@ -947,15 +947,15 @@ namespace CCMI
           _all_dstHints = (unsigned*)((char*)_all_dstPes   + (_numDstPes * sizeof(unsigned)));
           _all_mrecvs   = (xmi_oldmulticast_recv_t *) ((char*)_all_dstHints   + (_numDstPes * sizeof(unsigned)));
 
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() allocation<%#.8X> _phaseVec<%#.8X> _all_recvBufs<%#.8X> _all_srcPes<%#.8X> _all_srcHints<%#.8X> _all_chunks<%#.8X> _all_dstPes<%#.8X> _all_dstHints<%#.8X>\n",
-                       (int)this,(int)_scheduleAllocation,
-                       (int)_phaseVec,
-                       (int)_all_recvBufs,
-                       (int)_all_srcPes  ,
-                       (int)_all_srcHints,
-                       (int)_all_chunks  ,
-                       (int)_all_dstPes  ,
-                       (int)_all_dstHints));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() allocation<%p> _phaseVec<%p> _all_recvBufs<%p> _all_srcPes<%p> _all_srcHints<%p> _all_chunks<%p> _all_dstPes<%p> _all_dstHints<%p>\n",
+                       this,_scheduleAllocation,
+                       _phaseVec,
+                       _all_recvBufs,
+                       _all_srcPes  ,
+                       _all_srcHints,
+                       _all_chunks  ,
+                       _all_dstPes  ,
+                       _all_dstHints));
 
           // configure per phase state info structures
           /// \todo How about some data layout diagrams?
@@ -1011,13 +1011,13 @@ namespace CCMI
                             _phaseVec[i].srcHints   = NULL;
                             _phaseVec[i].mrecv      = NULL;
                           }
-                      TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() phaseVec[%#X]<%#.8X> srcPes<%#.8X> recvBufs<%#.8X> chunksRcvd<%#.8X> srcHints<%#.8X>\n",
-                                   (int)this,i,
-                                   (int)&_phaseVec[i],
-                                   (int)_phaseVec[i].srcPes,
-                                   (int)_phaseVec[i].recvBufs,
-                                   (int)_phaseVec[i].chunksRcvd,
-                                   (int)_phaseVec[i].srcHints));
+                      TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() phaseVec[%#X]<%p> srcPes<%p> recvBufs<%p> chunksRcvd<%p> srcHints<%p>\n",
+                                   this,i,
+                                   &_phaseVec[i],
+                                   _phaseVec[i].srcPes,
+                                   _phaseVec[i].recvBufs,
+                                   _phaseVec[i].chunksRcvd,
+                                   _phaseVec[i].srcHints));
                     }
                 else // Better be no source/receive processing this phase.
                     {
@@ -1081,11 +1081,11 @@ namespace CCMI
                             _phaseVec[i].dstHints  = NULL;
                           }
 
-                      TRACE_STATE ((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() phaseVec[%#X]<%#.8X>:<%#.8X><%#.8X>, connid = %d\n",
-                                    (int)this, i,
-                                    (int)&_phaseVec[i],
-                                    (int)_phaseVec[i].dstPes,
-                                    (int)_phaseVec[i].dstHints,
+                      TRACE_STATE ((stderr,"<%p>Executor::AllreduceState::constructPhaseData() phaseVec[%#X]<%p>:<%p><%p>, connid = %d\n",
+                                    this, i,
+                                    &_phaseVec[i],
+                                    _phaseVec[i].dstPes,
+                                    _phaseVec[i].dstHints,
                                     (int)_phaseVec[i].sconnId));
                     }
                 else // Better be no destination/send processing this phase.
@@ -1096,8 +1096,8 @@ namespace CCMI
                       _phaseVec[i].dstHints  = NULL;
                     }
 
-                TRACE_SCHEDULE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() i:%#X numsrc:%#X "
-                                "src[0]:%#X srchints:%#X numdst:%#X dst[0]:%#X dsthints:%#X\n",(int)this,
+                TRACE_SCHEDULE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() i:%#X numsrc:%#X "
+                                "src[0]:%#X srchints:%#X numdst:%#X dst[0]:%#X dsthints:%#X\n",this,
                                 i,
                                 _phaseVec[i].numSrcPes ,
                                 _phaseVec[i].numSrcPes ? _phaseVec[i].srcPes[0]:-1,
@@ -1107,11 +1107,11 @@ namespace CCMI
                                 _phaseVec[i].numDstPes ? _phaseVec[i].dstHints[0]:-1));
 #ifdef XMI_DEBUG_SCHEDULE
                 for(unsigned j = 1; j < _phaseVec[i].numSrcPes; ++j)
-                  TRACE_SCHEDULE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() src[%#X]:%#X srchints:%#X\n",(int)this,j,
+                  TRACE_SCHEDULE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() src[%#X]:%#X srchints:%#X\n",this,j,
                                   _phaseVec[i].srcPes[j],_phaseVec[i].srcHints[j]));
 
                 for(unsigned j = 1; j < _phaseVec[i].numDstPes; ++j)
-                  TRACE_SCHEDULE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() dst[%#X]:%#X dsthints:%#X\n",(int)this,j,
+                  TRACE_SCHEDULE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() dst[%#X]:%#X dsthints:%#X\n",this,j,
                                   _phaseVec[i].dstPes[j],_phaseVec[i].dstHints[j]));
 #endif // XMI_DEBUG_SCHEDULE
               } // for(int i = _startPhase; i <= _endPhase; i++)
@@ -1122,8 +1122,8 @@ namespace CCMI
                 // Combine all broadcast sends into one phase
                 for(int i = _bcastSendPhase + 1; i <= _endPhase; i++)
                     {
-                      TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() _lastReducePhase %#X, _bcastRecvPhase %#X,bcastSendPhase %#X, i %#X\n",
-                                   (int)this,_lastReducePhase, _bcastRecvPhase, _bcastSendPhase, i));
+                      TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() _lastReducePhase %#X, _bcastRecvPhase %#X,bcastSendPhase %#X, i %#X\n",
+                                   this,_lastReducePhase, _bcastRecvPhase, _bcastSendPhase, i));
                       compressPhaseNumDstPes (_bcastSendPhase, i);
                     }
               }
@@ -1159,13 +1159,13 @@ namespace CCMI
             }
           }
 
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::constructPhaseData() exit\n",(int)this));
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() exit\n",this));
         }
 
       void  setupReceives(unsigned infoRequired)
         {
 
-          TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setupReceives ALERT: Receive data being reset\n",(int)this));
+          TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::setupReceives ALERT: Receive data being reset\n",this));
 
           // setup/allocate receive request objects and bufs
 
@@ -1188,14 +1188,14 @@ namespace CCMI
             (((_root == -1) | (_root == (int)_myRank))? 0 : alignedBytes);  // We need a temp buffer on non-root nodes
 
 
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setupReceives() _numSrcPes<%#.8X> new size<%#.8X> old size<%#.8X> numRequests<%#.8X> alignedBytes<%#.8X> sizeOfBuffers<%#.8X>\n",(int)this,
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setupReceives() _numSrcPes<%d> new size<%d> old size<%d> numRequests<%d> alignedBytes<%d> sizeOfBuffers<%d>\n",this,
                        _numSrcPes, allocationNewSize, _receiveAllocationSize, numRequests, alignedBytes, _sizeOfBuffers));
           /// \todo only grows, never shrinks?  runtime vs memory efficiency?
           if(allocationNewSize > _receiveAllocationSize)
               {
-                TRACE_ALERT((stderr,"<%#.8X>Executor::AllreduceState::setupReceives ALERT: Receive data being reallocated %#X < %#X, _numSrcPes %#X\n",(int)this,
+                TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::setupReceives ALERT: Receive data being reallocated %#X < %#X, _numSrcPes %#X\n",this,
                              _receiveAllocationSize, allocationNewSize, _numSrcPes));
-                TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setupReceives() allocate new size<%#.8X> old size<%#.8X>\n",(int)this,
+                TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setupReceives() allocate new size<%d> old size<%d>\n",this,
                              allocationNewSize, _receiveAllocationSize));
 
                 if(_receiveAllocation) CCMI_Free(_receiveAllocation);
@@ -1205,7 +1205,7 @@ namespace CCMI
                 memset(_receiveAllocation, 0xFE, allocationNewSize);
 
                 if(!_receiveAllocation)
-                  fprintf(stderr,"<%#.8X>CCMI_Alloc failed<%#.8X> free'd %#X, malloc'd %#X\n",(int)this,
+                  fprintf(stderr,"<%p>CCMI_Alloc failed<%p> free'd %#X, malloc'd %#X\n",this,
                           (int)_receiveAllocation,_receiveAllocationSize, allocationNewSize);
 #endif
                 XMI_assert(_receiveAllocation);
@@ -1248,7 +1248,7 @@ namespace CCMI
           for(int i = 0, offset = 0; i < _numSrcPes; i++, offset += _sizeOfBuffers)
             _all_recvBufs[ i ] = _bufs + offset;
 
-          TRACE_STATE((stderr,"<%#.8X>Executor::AllreduceState::setupReceives() _bufs:%08X all[0]:%08X all[1]:%08X all[2]:%08X all[3]:%08X all[4]:%08X tempbuf:%08X\n",(int)this,
+          TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setupReceives() _bufs:%08X all[0]:%08X all[1]:%08X all[2]:%08X all[3]:%08X all[4]:%08X tempbuf:%08X\n",this,
                        (unsigned)_bufs,(unsigned)_all_recvBufs[0],
                        (unsigned)_all_recvBufs[1],(unsigned)_all_recvBufs[2],
                        (unsigned)_all_recvBufs[3], (unsigned)_all_recvBufs[4],

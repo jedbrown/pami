@@ -110,8 +110,10 @@ namespace XMI
         else // we must be a dst_participant and we don't particularly care who is the root - just not me.
           _root = MPI_ANY_SOURCE;
 
-        TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg client %p, context %zd, root %zd, iwq %p, rwq %p, bytes %zd\n",(unsigned)this,
-                      mcast->client, mcast->context, _root, _iwq, _rwq, _bytes));
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %p, context %zd, root %zd, iwq %p, rwq %p, bytes %zd/%zd/%zd\n",this,
+                      mcast->client, mcast->context, _root, _iwq, _rwq, _bytes, 
+                      _iwq?_iwq->bytesAvailableToConsume():-1, 
+                      _rwq?_rwq->bytesAvailableToProduce():-1));
         bool iamroot = (_root == __global.mapping.task());
         if(iamroot)
         {
@@ -120,7 +122,7 @@ namespace XMI
           // no actual data to send, indicate we're done with a pending status (for advance)
           if((_iwq == NULL) || (_bytes == 0))
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg root has no data\n",(unsigned)this));
+            TRACE_DEVICE((stderr,"<%p>MPIBcastMsg root has no data\n",this));
             // We have to use a local pending status because the sub device is too smart for us and will
             // reset the _status to initialized after __setThreads
             _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
@@ -132,7 +134,7 @@ namespace XMI
           // no actual data to send, indicate we're done with a pending status (for advance)
           if((_rwq == NULL) && (_bytes == 0))
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg dst expects no data\n",(unsigned)this));
+            TRACE_DEVICE((stderr,"<%p>MPIBcastMsg dst expects no data\n",this));
             // We have to use a local pending status because the sub device is too smart for us and will
             // reset the _status to initialized after __setThreads
             _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
@@ -151,7 +153,7 @@ namespace XMI
  Compile with xl but not gcc.
       {
         ((T_Device &)_QS).__complete<MPIBcastMsg>(this);
-        TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::complete() \n",(unsigned)this));
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::complete() \n",this));
         executeCallback(context);
       }
 */
@@ -172,7 +174,7 @@ namespace XMI
         __advanceThread(&t[nt]);
         ++nt;
         // assert(nt > 0? && nt < n);
-        TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zd\n",(unsigned)this,
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zd\n",this,
                       n,nt,t[nt]._bytesLeft));
         return nt;
       }
@@ -191,13 +193,13 @@ namespace XMI
           //  so on the first advance, setDone and return.
           thr->setStatus(XMI::Device::Complete);
           setStatus(XMI::Device::Done);
-          TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() done - no data\n",(unsigned)this));
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() done - no data\n",this));
           return XMI_SUCCESS;
         }
         int flag = 0;
         MPI_Status status;
         //static unsigned count = 5; if(count) count--;
-        //if(count)TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() idx %zd/%zd, currBytes %zd, bytesLeft %zd, tag %d %s\n",(unsigned)this,
+        //if(count)TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() idx %zd/%zd, currBytes %zd, bytesLeft %zd, tag %d %s\n",this,
         //              _idx, _dst->size(), _currBytes, thr->_bytesLeft, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
         if(_req != MPI_REQUEST_NULL)
         {
@@ -236,7 +238,7 @@ namespace XMI
           {
             return XMI_EAGAIN;
           }
-          TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() sending, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",this,
                         _idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           int rc = 0;
           if(_dst->index2Rank(_idx) == __global.mapping.task()) // This src task is also a dst? do a local copy
@@ -250,7 +252,7 @@ namespace XMI
                            _dst->index2Rank(_idx), _tag,
                            _device->_mcast_communicator, &_req);
           }
-          TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",(unsigned)this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",this,
                         rc,_idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           //count = 5;
           // error checking?
@@ -288,7 +290,7 @@ namespace XMI
           }
           _currBytes = _rwq->bytesAvailableToProduce();
           _currBuf = _rwq->bufferToProduce();
-          TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() recving idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",(unsigned)this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() recving idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",this,
                         _idx, _currBytes, thr->_bytesLeft, _root, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           if(_currBytes == 0)
           {
@@ -298,7 +300,7 @@ namespace XMI
           int rc = MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
                              _root, _tag,
                              _device->_mcast_communicator, &_req);
-          TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",(unsigned)this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",this,
                         rc, _idx, _currBytes, thr->_bytesLeft, _root, _tag, _req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           // error checking?
         }
@@ -333,7 +335,7 @@ namespace XMI
       MPIBcastMdl(xmi_result_t &status) :
         XMI::Device::Interface::MulticastModel<MPIBcastMdl, sizeof(MPIBcastMsg_t)>(status)
       {
-        TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl()\n",(unsigned)this));
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMdl()\n",this));
       }
 
       inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
@@ -345,7 +347,7 @@ namespace XMI
     inline xmi_result_t MPIBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                         xmi_multicast_t *mcast)
     {
-      TRACE_DEVICE((stderr,"<%#8.8X>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",(unsigned)this,
+      TRACE_DEVICE((stderr,"<%p>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, &state));
       MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> > *msg =
       new (&state) MPIBcastMsg<XMI::Device::MPIBcastDev<XMI::Device::Generic::SimpleAdvanceThread> >(_g_mpibcast_dev, mcast);

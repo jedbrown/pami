@@ -44,7 +44,7 @@ namespace CCMI
 		XMI::PipeWorkQueue _rwq;
 	    } *req = (struct _req *)request;
             // call tree multisend directly
-            //TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::SmpTreeAllreduce::restart\n", (int)this));
+            //TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::SmpTreeAllreduce::restart\n", this));
 
             if((_dt != dtype) || (_count != count))
             {

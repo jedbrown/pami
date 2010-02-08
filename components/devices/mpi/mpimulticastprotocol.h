@@ -87,7 +87,7 @@ namespace XMI
           _cookie(NULL),
           _multicast_model(status)
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto(status)  allocator size %zd\n",(unsigned)this,_allocator.objsize));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto(status)  allocator size %zd\n",this,_allocator.objsize));
           }
         inline P2PMcastProto(size_t                     dispatch_id,
                              xmi_dispatch_multicast_fn  dispatch,
@@ -110,20 +110,20 @@ namespace XMI
           _cookie(cookie),
           _multicast_model(status)
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto.  allocator size %zd\n",(unsigned)this,_allocator.objsize));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto.  allocator size %zd\n",this,_allocator.objsize));
             // Construct a p2p protocol for dispatching
             xmi_dispatch_callback_fn fn;
             fn.p2p = dispatch_p2p;
             new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn, (void*)this,
                                                 p2p_device, status);
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto status %d\n",(unsigned)this,status));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto status %d\n",this,status));
           }
 
         xmi_result_t registerMcastRecvFunction_impl(int dispatch_id,
                                                     xmi_dispatch_multicast_fn     dispatch,
                                                     void                         *cookie)
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::register id %zd, fn %p, cookie %p\n",(unsigned)this,dispatch_id, dispatch, cookie));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::register id %zd, fn %p, cookie %p\n",this,dispatch_id, dispatch, cookie));
             xmi_result_t status = XMI_SUCCESS;
             _dispatch_id=dispatch_id;
             _dispatch_fn=dispatch;
@@ -161,7 +161,7 @@ namespace XMI
         xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                         xmi_multicast_t *mcast)
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::multicast() id %zd, connection_id %d\n",(unsigned)this,mcast->dispatch,mcast->connection_id));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::multicast() id %zd, connection_id %d\n",this,mcast->dispatch,mcast->connection_id));
 
             // First, send (p2p) the header/msgdata to dispatch destinations.  They will start all-sided multicasts when dispatched.
             dispatch_hdr_t header;
@@ -189,8 +189,8 @@ namespace XMI
                   sendi.dest = XMI_ENDPOINT_INIT(_client, rankList[i],0);
 
                   // Dispatch over p2p
-                  TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::multicast() send dispatch task_id[%d] %zd\n",
-                                (unsigned)this, i, rankList[i]));
+                  TRACE_DEVICE((stderr,"<%p>P2PMcastProto::multicast() send dispatch task_id[%d] %zd\n",
+                                this, i, rankList[i]));
                   ((T_P2P_PROTOCOL*)&_p2p_protocol)->immediate(&sendi);
                 }
 
@@ -207,8 +207,8 @@ namespace XMI
 
             allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
             allocation->protocol = this; // so we can free it later
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::multicast() allocated %p, mcast %p, cb_done %p, client data %p\n",
-                          (unsigned)this, allocation, mcast, mcast->cb_done.function, mcast->cb_done.clientdata));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::multicast() allocated %p, mcast %p, cb_done %p, client data %p\n",
+                          this, allocation, mcast, mcast->cb_done.function, mcast->cb_done.clientdata));
 
             // work with a local copy of mcast and override cb_done and (maybe) src topology since all-sided requires it.
             xmi_multicast_t l_mcast = *mcast;
@@ -246,7 +246,7 @@ namespace XMI
             // Find (this) protocol and it's associated allocator
             P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL>  *protocol = allocation->protocol;
 
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::done() free allocation %p, cb_done %p, client data %p\n",
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::done() free allocation %p, cb_done %p, client data %p\n",
                           (unsigned)protocol, cookie, cb_done.function, cb_done.clientdata));
 
             memset(cookie, 0x00, sizeof(allocation_t)); // cleanup for debug
@@ -273,7 +273,7 @@ namespace XMI
                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                  xmi_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::dispatch_p2p header size %zd, data size %zd\n",(unsigned)cookie, header_size, data_size));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p header size %zd, data size %zd\n",(unsigned)cookie, header_size, data_size));
             P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *p = (P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL> *)cookie;
             p->dispatch(context_hdl,
                         header,
@@ -293,7 +293,7 @@ namespace XMI
                       size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                       xmi_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::dispatch() header size %zd, data size %zd\n",(unsigned)this, header_size, data_size));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch() header size %zd, data size %zd\n",this, header_size, data_size));
 
             // Call user's dispatch to get receive pwq and cb_done.
             xmi_multicast_t mcast;
@@ -318,8 +318,8 @@ namespace XMI
 
             allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
             allocation->protocol = this; // so we can free it later
-            TRACE_DEVICE((stderr,"<%#8.8X>P2PMcastProto::dispatch_p2p() allocated %p, cb_done %p, client data %p\n",
-                          (unsigned)this, allocation, mcast.cb_done.function, mcast.cb_done.clientdata));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p() allocated %p, cb_done %p, client data %p\n",
+                          this, allocation, mcast.cb_done.function, mcast.cb_done.clientdata));
 
             mcast.src_participants = NULL; // I'm a dst so all-sided mcast src can be null
 

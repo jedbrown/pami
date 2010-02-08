@@ -38,7 +38,7 @@ namespace CCMI
           static const unsigned short_thresh=512;
           virtual ~FactoryT()
           {
-            TRACE_ALERT((stderr,"<%#.8X>Allreduce::Tree::%s::~FactoryT() ALERT\n",(int)this,COMPOSITE::name));
+            TRACE_ALERT((stderr,"<%p>Allreduce::Tree::%s::~FactoryT() ALERT\n",this,COMPOSITE::name));
           }
 
           FactoryT(CCMI::TorusCollectiveMapping                           * mapping,
@@ -49,8 +49,8 @@ namespace CCMI
           CCMI::Adaptor::Allreduce::Factory<CCMI::TorusCollectiveMapping>(mapping, mof, mf, cb_geometry, flags),
           _sconnmgr(mapping)
           {
-            TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::Tree::%s::FactoryT() \n",
-                            (int)this, COMPOSITE::name));
+            TRACE_ADAPTOR ((stderr, "<%p>Allreduce::Tree::%s::FactoryT() \n",
+                            this, COMPOSITE::name));
 
             setConnectionManager(&_sconnmgr);
             if(mapping->GetDimLength(CCMI_T_DIM) > 1) // dual/vnm
@@ -79,16 +79,16 @@ namespace CCMI
                                                        XMI_Op                    op,
                                                        int                        root = -1 )
           {
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate(), comm %d\n",
-                            (int)this, COMPOSITE::name,geometry->comm()));
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::%s::FactoryT::generate(), comm %d\n",
+                            this, COMPOSITE::name,geometry->comm()));
 
             int rc = -1;
             rc = CCMI::Adaptor::Allreduce::Tree::checkOp(dtype,op);
 
             if(rc == -1)
             {
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate():unsupported op %d, type %d!\n",
-                             (int)this, COMPOSITE::name, op, dtype));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::%s::FactoryT::generate():unsupported op %d, type %d!\n",
+                             this, COMPOSITE::name, op, dtype));
               return NULL;
             }
 
@@ -96,7 +96,7 @@ namespace CCMI
 
             if((_mapping)->GetDimLength(CCMI_T_DIM) == 1) // smp mode
             {
-              TRACE_ALERT((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate() SmpTreeAllreduce ALERT:\n",(int)this, COMPOSITE::name));
+              TRACE_ALERT((stderr,"<%p>Allreduce::Tree::%s::FactoryT::generate() SmpTreeAllreduce ALERT:\n",this, COMPOSITE::name));
               COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce));
               CCMI::Adaptor::Allreduce::BaseComposite *allreduce = new (arequest)
               CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce ( _minterface, this,  _mapping->rank() );
@@ -112,7 +112,7 @@ namespace CCMI
             }
             else if(count <= short_thresh)// && (root == -1)) // short allreduce only
             {
-              TRACE_ALERT((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate() VnDualShortTreeAllreduce ALERT:\n",(int)this, COMPOSITE::name));
+              TRACE_ALERT((stderr,"<%p>Allreduce::Tree::%s::FactoryT::generate() VnDualShortTreeAllreduce ALERT:\n",this, COMPOSITE::name));
               COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(CCMI::Adaptor::Allreduce::Tree::VnDualShortTreeAllreduce));
               CCMI::Adaptor::Allreduce::Tree::VnDualShortTreeAllreduce *allreduce = new (arequest)
                                                           CCMI::Adaptor::Allreduce::Tree::VnDualShortTreeAllreduce ( _minterface, this, _mapping );
@@ -134,7 +134,7 @@ namespace CCMI
               }
               else; // Short protocol failed, fall through and try COMPOSITE
             }
-            TRACE_ALERT((stderr,"<%#.8X>Allreduce::Tree::%s::FactoryT::generate() ALERT:\n",(int)this, COMPOSITE::name));
+            TRACE_ALERT((stderr,"<%p>Allreduce::Tree::%s::FactoryT::generate() ALERT:\n",this, COMPOSITE::name));
             COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(COMPOSITE));
             COMPOSITE *allreduce = new (arequest)
               COMPOSITE(request,

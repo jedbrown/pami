@@ -83,7 +83,7 @@ namespace CCMI
                                                XMI_Callback_t * cb_done)
       {
         TRACE_ADAPTOR((stderr,
-                       "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead peer %d, conn_id %d\n",
+                       "<%p>Allreduce::AsyncFactory::cb_receiveHead peer %d, conn_id %d\n",
                        (int)arg, peer, conn_id));
         CCMI_assert (info && arg);
         CollHeaderData  *cdata = (CollHeaderData *) info;
@@ -97,7 +97,7 @@ namespace CCMI
         factory->getAllreduce(geometry, cdata->_iteration);
 
         TRACE_ADAPTOR((stderr,
-                       "<%#.8X>Allreduce::AsyncFactory::cb_receiveHead "
+                       "<%p>Allreduce::AsyncFactory::cb_receiveHead "
                        "comm %#X, root %#X, count %#X, dt %#X, op %#X, iteration %#X,"
                        "composite %#.8X, executor %#.8X %s\n",
                        (int)factory, cdata->_comm, cdata->_root, cdata->_count,
@@ -120,7 +120,7 @@ namespace CCMI
                                   cdata->_root);
         }
 
-        TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
+        TRACE_ADAPTOR((stderr, "<%p>Allreduce::AsyncFactory::"
                        "cb_receiveHead(%#X,%#.8X)\n",
                        (int)factory,cdata->_comm,(int)allreduce));
 
@@ -154,10 +154,10 @@ namespace CCMI
         _mapping    (mapping),
         _flags      (flags)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::AsyncFactory::ctor() ALERT:\n",(int)this));
-          TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::AsyncFactory::ctor(%#X) "
+          TRACE_ALERT((stderr,"<%p>Allreduce::AsyncFactory::ctor() ALERT:\n",this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncFactory::ctor(%#X) "
                          "flags %#X\n",
-                         (int)this, sizeof(*this),*(unsigned*)&_flags));
+                         this, sizeof(*this),*(unsigned*)&_flags));
           _minterface->setCallback(cb_receiveHead, this);
         }
 
@@ -224,10 +224,10 @@ namespace CCMI
                                                     (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) composite->getExecutor (0):
                                                     (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *)NULL;
 
-          TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
+          TRACE_ADAPTOR((stderr, "<%p>Allreduce::AsyncFactory::"
                          "getAllreduce(comm id X, color %#X)"
                          " callback %#X, composite %#.8X  executor %#.8X\n",
-                         (int)this,// comm,
+                         this,// comm,
                          iter,
                          (int) _cb_geometry,
                          (int) composite,
@@ -245,10 +245,10 @@ namespace CCMI
           CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *)
                                                                 geometry->getAllreduceComposite(iteration);
 
-          TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::AsyncFactory::"
+          TRACE_ADAPTOR((stderr, "<%p>Allreduce::AsyncFactory::"
                          "getAllreduceComposite(comm id X, iteration %#X)"
                          " callback %#X, composite's factory %#.8X  composite %#.8X\n",
-                         (int)this, //comm,
+                         this, //comm,
                          iteration,
                          (int) _cb_geometry,
                          (int) (composite? composite->getFactory(): NULL),

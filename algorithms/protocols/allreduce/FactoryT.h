@@ -37,7 +37,7 @@ namespace CCMI
       public:
         virtual ~FactoryT()
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::~FactoryT() ALERT\n",(int)this,T_Composite::name));
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::~FactoryT() ALERT\n",this,T_Composite::name));
         }
         ///
         /// \brief Constructor for allreduce factory implementations.
@@ -54,8 +54,8 @@ namespace CCMI
                                                                                     flags),
           _sconnmgr(mapping)
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT() ALERT:\n",(int)this, T_Composite::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT() mf<%#X>\n",(int)this, T_Composite::name,
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::FactoryT() ALERT:\n",this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::FactoryT() mf<%#X>\n",this, T_Composite::name,
                           (int) mof));
           setConnectionManager(&_sconnmgr);
         }
@@ -81,8 +81,8 @@ namespace CCMI
          xmi_op                    op,
          int                        root = -1 )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::generate() ALERT:\n",(int)this, T_Composite::name));
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",(int)this, T_Composite::name,
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::FactoryT::generate() ALERT:\n",this, T_Composite::name));
+          TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
           CCMI_Executor_t *c_request = (CCMI_Executor_t *)geometry->getAllreduceCompositeStorage();
@@ -110,7 +110,7 @@ namespace CCMI
         }
         bool Analyze( XMI_GEOMETRY_CLASS * geometry )
         {
-          TRACE_ALERT((stderr,"<%#.8X>Allreduce::%s::FactoryT::Analyze() ALERT: %s\n",(int)this, T_Composite::name,
+          TRACE_ALERT((stderr,"<%p>Allreduce::%s::FactoryT::Analyze() ALERT: %s\n",this, T_Composite::name,
                       T_Composite::analyze(geometry)? "true":"false"));
           return T_Composite::analyze(geometry);
         }

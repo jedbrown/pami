@@ -102,8 +102,8 @@ namespace CCMI
           void done()
           {
 
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::Tree::VnDualShortTreeAllreduce::done "
-                           "dst[0]: %d\n", (int)this,
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce::done "
+                           "dst[0]: %d\n",this,
                            ((int*)_shared->dst)[0]));
 
             // copy result into user dstbuf ...

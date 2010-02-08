@@ -66,9 +66,9 @@ namespace CCMI
 
               CCMI_Free (_executor_buf);
 
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::dtor() ALERT, %X\n",
-                         (int)this, (unsigned)_executor_buf));
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::dtor()\n",(int)this));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::RectangleRingDput::Composite::dtor() ALERT, %X\n",
+                         this, (unsigned)_executor_buf));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::RectangleRingDput::Composite::dtor()\n",this));
 
               _executor_buf = NULL;
               _numExecutors = 0;   //Reset all executors to be NULL
@@ -108,9 +108,9 @@ namespace CCMI
 
             _executor_buf = (CCMI_Executor_t *) CCMI_Alloc (sizeof (CCMI_Executor_t) * _ideal);
 
-            TRACE_ALERT ((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::ctor() ALERT, %X\n",
-                          (int)this, (unsigned)_executor_buf));
-            TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::ctor ideal colors %#X\n",(int)this,ideal));
+            TRACE_ALERT ((stderr,"<%p>Allreduce::RectangleRingDput::Composite::ctor() ALERT, %X\n",
+                          this, (unsigned)_executor_buf));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::ctor ideal colors %#X\n",this,ideal));
 
             unsigned idx = 0;
             for(idx = 0; idx < _ideal; idx ++)
@@ -140,7 +140,7 @@ namespace CCMI
             if(_barrier)
             {
               // set the barrier done callback to the multiclor done
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::ctor initialize barrier(%#X,%#X)\n",(int)this,(int)_barrier,(int)this));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::RectangleRingDput::Composite::ctor initialize barrier(%p)\n",this,(int)_barrier));
               _barrier->setDoneCallback (cb_mc_barrierDone, this);
             }
           }
@@ -175,39 +175,39 @@ namespace CCMI
             unsigned idx = 0;
             if(_ncolors > 1)
             {
-              TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::internal_restart rvec[%#X] %#X,nexts[%#X] %#X,byteCnt[xx] xx,nextd[%#X] %#X\n",(int)this,
+              TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::internal_restart rvec[%#X] %p,nexts[%#X] %p,byteCnt[xx] xx,nextd[%#X] %p\n",this,
                              0,
-                             (int)rvec[0],
+                             rvec[0],
                              0,
-                             (int)nexts[0],
+                             nexts[0],
                              //idx-1,
                              //byteCnt[idx-1],
                              0,
-                             (int)nextd[0]));
+                             nextd[0]));
               for(idx = 1; idx < _ncolors; ++idx)
               {
                 rvec[idx] = rvec[idx-1] + sizeof(CCMI::Executor::AllreduceBase::SendState) * XMI_MAX_ACTIVE_SENDS;
                 nexts[idx] = (char *)(((unsigned)nexts[idx-1] + (bytes/_ncolors)) & 0xFFFFFFF0);
                 byteCnt[idx-1] = (unsigned)(nexts[idx] - nexts[idx-1]);
                 nextd[idx] = nextd[idx-1] + byteCnt[idx-1];
-                TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::internal_restart rvec[%#X] %#X,nexts[%#X] %#X,byteCnt[%#X] %#X,nextd[%#X] %#X\n",(int)this,
+                TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::internal_restart rvec[%#X] %p,nexts[%#X] %p,byteCnt[%#X] %#X,nextd[%#X] %p\n",this,
                                idx,
-                               (int)rvec[idx],
+                               rvec[idx],
                                idx,
-                               (int)nexts[idx],
+                               nexts[idx],
                                idx-1,
                                byteCnt[idx-1],
                                idx,
-                               (int)nextd[idx]));
+                               nextd[idx]));
               }
               byteCnt[_ncolors-1] = (srcbuf + bytes) - nexts[_ncolors-1];
-              TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::internal_restart byteCnt[%#X] %#X\n",(int)this,_ncolors-1,byteCnt[_ncolors-1]));
+              TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::internal_restart byteCnt[%#X] %#X\n",this,_ncolors-1,byteCnt[_ncolors-1]));
             }
 
             for(idx = 0; idx < _ncolors; idx ++)
             {
               pwidth = compute_pwidth(bytes / _ncolors, _colors[idx]);
-              TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::internal_restart bytes %#X, _ncolors %#X, _colors[%#X] %#X, pwidth %#X, byteCnt[%#X] %#X\n",(int)this,
+              TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::internal_restart bytes %#X, _ncolors %#X, _colors[%#X] %#X, pwidth %#X, byteCnt[%#X] %#X\n",this,
                              bytes,
                              _ncolors,
                              idx,
@@ -237,7 +237,7 @@ namespace CCMI
                                        XMI_Op                     op,
                                        int                         root=-1)
           {
-            TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::restart()\n",(int)this));
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::RectangleRingDput::Composite::restart()\n",this));
             _myClientFunction = cb_done.function;
             _myClientData     = cb_done.clientdata;
 
@@ -246,7 +246,7 @@ namespace CCMI
             if(_barrier)
             {
               // reset barrier since it may be been used between calls
-              TRACE_ADAPTOR((stderr,"<%#.8X>Allreduce::RectangleRingDput::Composite::restart barrier(%#X,%#X)\n",(int)this,(int)_barrier,(int)this));
+              TRACE_ADAPTOR((stderr,"<%p>Allreduce::RectangleRingDput::Composite::restart barrier(%p)\n",this,(int)_barrier));
               _barrier->setDoneCallback (cb_mc_barrierDone, this);
               startBarrier (consistency);
             }
@@ -257,7 +257,7 @@ namespace CCMI
           void mc_done()
           {
             _doneCountdown --;
-            TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::mc_done _doneCountdown %#X\n",(int)this,_doneCountdown));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::mc_done _doneCountdown %#X\n",this,_doneCountdown));
 
             if(!_doneCountdown)  //allreduce done and (maybe) barrier done
             {
@@ -298,7 +298,7 @@ namespace CCMI
           {
             Composite *composite = (Composite *) me;
 
-            TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::cb_mc_barrierDone\n",(int)me));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::cb_mc_barrierDone\n",(int)me));
             for(unsigned idx =0; idx < composite->_ncolors; idx ++)
             {
               CCMI::Executor::AllreduceBase *allreduce =
@@ -340,7 +340,7 @@ namespace CCMI
             if (pwidth >  128 * min_pipeline_width)
               pwidth = 128 * min_pipeline_width;
 
-            TRACE_ADAPTOR((stderr, "<%#.8X>Allreduce::RectangleRingDput::Composite::compute_pwidth bytes %#X, color %#X, hops %#X, pwidth %#X\n",(int)this,
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::RectangleRingDput::Composite::compute_pwidth bytes %#X, color %#X, hops %#X, pwidth %#X\n",this,
                            bytes, color, hops, pwidth));
             return pwidth;
           }

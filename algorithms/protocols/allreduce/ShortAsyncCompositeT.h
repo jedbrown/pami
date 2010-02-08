@@ -90,8 +90,8 @@ namespace CCMI
           unsigned coord = _my_coord [phase];
           unsigned rstart = _rect_start[phase];
           TRACE_ADAPTOR((stderr,
-                         "<%#.8X>Allreduce::Short::%s::AsyncCompositeT::getSrcPeIndex phase%d, connid %d\n",
-                         (int)this, CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR>::name, phase, connid));
+                         "<%p>Allreduce::Short::%s::AsyncCompositeT::getSrcPeIndex phase%d, connid %d\n",
+                         this, CCMI::Adaptor::Allreduce::AsyncCompositeT<SCHEDULE,EXECUTOR>::name, phase, connid));
           CCMI_assert (connid != coord); //A node cant receive a message from itself
           return(connid < coord) ? (connid - rstart) : (connid - rstart - 1);
         }
