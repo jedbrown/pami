@@ -102,6 +102,7 @@ namespace CCMI
 	_buflen = len;
 	//Setup pipework queue
 	_pwq.configure (NULL, buf, len, 0);
+	_pwq.reset();
       }
 
       //------------------------------------------
