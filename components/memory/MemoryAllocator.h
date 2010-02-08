@@ -62,7 +62,7 @@ namespace XMI
           unsigned i;
 #ifdef USE_MEMALIGN
           int rc = posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
-          XMI_assertf(rc==0, "posix_memalign failed for context, errno=%d\n", errno);
+          XMI_assertf(rc==0, "posix_memalign failed for context, errno=%d, %s\n", errno, strerror(errno));
 #else
           object = (memory_object_t*)malloc(sizeof(memory_object_t)*10);
           XMI_assertf((((unsigned long)object) & (T_ObjAlign-1))== 0, "object (%p) not aligned on %#X bytes.\n", object, T_ObjAlign);
