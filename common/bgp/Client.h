@@ -187,9 +187,22 @@ namespace XMI
               configuration->value.doubleval = __global.time.tick();
               result = XMI_SUCCESS;
               break;
-            case XMI_MEM_SIZE:
             case XMI_PROCESSOR_NAME:
+              {
+                int rc;
+                char* pn = __global.processor_name;
+                rc = snprintf(pn, 128, "Task %u of %u", __global.mapping.task(), __global.mapping.size());
+                pn[128-1] = 0;
+                configuration->value.chararray = pn;
+                if (rc>0)
+                  result = XMI_SUCCESS;
+              }
+              break;
             case XMI_PROCESSOR_NAME_SIZE:
+              configuration->value.intval = 128;
+              result = XMI_SUCCESS;
+              break;
+            case XMI_MEM_SIZE:
             default:
               break;
           }

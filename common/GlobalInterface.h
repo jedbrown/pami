@@ -49,6 +49,9 @@ namespace Interface
 	XMI::Topology	topology_global;
 	XMI::Topology	topology_local;
 
+        /// Global location for the processor name
+        char processor_name[128];
+
   };   // class Global
 };     // namespace Interface
 };     // namespace XMI
