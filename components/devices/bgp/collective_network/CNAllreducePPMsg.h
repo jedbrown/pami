@@ -76,7 +76,7 @@ class CNAllreducePPMessage : public XMI::Device::BGP::BaseGenericCNPPMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreducePPMessage(Generic::GenericSubDevice &qs,
+	CNAllreducePPMessage(Generic::GenericSubDevice *qs,
 			xmi_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,
@@ -91,16 +91,16 @@ public:
 	{
 	}
 
-	STD_POSTNEXT(CNAllreducePPDevice,CNAllreducePPThread,&_g_cnallreducepp_dev)
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_cnallreducepp_dev.common()->__postNext<CNAllreducePPMessage,CNAllreducePPThread>(this, devPosted);
+	}
 
-protected:
-	//friend class CNAllreducePPDevice;
-	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreducePPThread,2>;
-
-	ADVANCE_ROUTINE(advanceInj,CNAllreducePPMessage,CNAllreducePPThread);
-	ADVANCE_ROUTINE(advanceRcp,CNAllreducePPMessage,CNAllreducePPThread);
 	// _bytesLeft == bytes on network!
-	inline int __setThreads(CNAllreducePPThread *t, int n) {
+	inline int setThreads(CNAllreducePPThread **th) {
+		CNAllreducePPThread *t;
+		int n;
+		_g_cnallreducepp_dev.__getThreads(&t, &n);
 		int nt = 0;
 		_g_cnallreducepp_dev.common()->__resetThreads();
 		int maxnt = _g_cnallreducepp_dev.common()->getMaxThreads();
@@ -126,11 +126,15 @@ protected:
 			++nt;
 		}
 		// assert(nt > 0? && nt < n);
+		*th = t;
 		return nt;
 	}
 
+protected:
 	inline void __completeThread(CNAllreducePPThread *thr);
 
+	ADVANCE_ROUTINE(advanceInj,CNAllreducePPMessage,CNAllreducePPThread);
+	ADVANCE_ROUTINE(advanceRcp,CNAllreducePPMessage,CNAllreducePPThread);
 	inline xmi_result_t __advanceInj(CNAllreducePPThread *thr) {
 		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
@@ -228,7 +232,7 @@ XMI_abort();
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNAllreducePPMessage *msg;
-	msg = new (&state) CNAllreducePPMessage(*_g_cnallreducepp_dev.common(),
+	msg = new (&state) CNAllreducePPMessage(_g_cnallreducepp_dev.common(),
 			mcomb, bytes, doStore, _dispatch_id, tas);
 	_g_cnallreducepp_dev.__post<CNAllreducePPMessage>(msg);
 	return XMI_SUCCESS;

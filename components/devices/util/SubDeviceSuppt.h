@@ -68,43 +68,6 @@ protected:
 	XMI::Device::Generic::Device *_generics;
 }; // class SimplePseudoDevice
 
-/// \brief standard routine for posting message
-///
-/// in this case, threads come from sub-device...
-/// (others might have threads in the message, or ???)
-/// will only post threads that are not Done...
-///
-/// \param[in] T_Device		Sub-device class
-/// \param[in] T_Thread		Sub-device thread class
-/// \param[in] I_Device		Sub-device instance pointer
-/// \ingroup gendev_subdev_api
-///
-#define STD_POSTNEXT(T_Device,T_Thread,I_Device)			\
-	inline bool __postNext(bool devPosted) {			\
-		T_Thread *t;						\
-		int N, n;						\
-		setStatus(XMI::Device::Initialized);			\
-		(I_Device)->getThreads(&t, &N);				\
-		n = __setThreads(t, N);					\
-		if (!devPosted && getStatus() == XMI::Device::Done) {	\
-			return true;					\
-		}							\
-		size_t c = getClientId();				\
-		size_t x = getContextId();				\
-		size_t numctx = (I_Device)->getGeneric(c,x)->nContexts();\
-		(I_Device)->getGeneric(c,x)->postMsg(this);		\
-		while (n > 0) {						\
-			if (t->getStatus() != Complete) {		\
-				if (++x >= numctx) x = 0;		\
-				(I_Device)->getGeneric(c,x)->postThread(t);\
-			}						\
-			++t;						\
-			--n;						\
-		}							\
-		return false;						\
-	}								\
-	bool postNext(bool devPosted) { return __postNext(devPosted); }
-
 /// \brief Example sub-device for using multiple send queues
 ///
 /// This is typically what 'local' point-to-point devices do, to enforce
@@ -120,19 +83,33 @@ protected:
 /// the simple sendQ). It would still need to ensure that the Message
 /// contained a reference to that GenericSubDevice object in it's 'QS'.
 ///
-template <int N_Queues>
+template <class T_Thread,int N_Queues,int N_Threads,bool Use_Queue>
 class MultiSendQSubDevice {
+	static const int NUM_THREADS = N_Threads;
 public:
 	MultiSendQSubDevice() {
+		// There must be at least one queue, since every message
+		// requires a valid _QS from which to operate.
+		// However, a device/message may not actually queue
+		// anything to this _QS.
+		COMPILE_TIME_ASSERT(N_Queues > 0);
 		for (int x = 0; x < N_Queues; ++x) {
 			new (&_sendQs[x]) GenericSubDevice();
+			for (int y = 0; y < N_Threads; ++y) {
+				new (&_threads[x][y]) T_Thread();
+			}
 		}
 	}
 
-	GenericSubDevice &getSendQDev(int index) { return _sendQs[index]; }
+	inline void __create(size_t client, size_t num_ctx,
+				XMI::Device::Generic::Device *devices) {
+		for (int x = 0; x < N_Queues; ++x) {
+			_sendQs[x].___create(client, num_ctx, devices);
+		}
+	}
 
-protected:
-	friend class XMI::Device::Generic::Device;
+	// may be overridden by child class... Context calls using child class.
+	inline int advance(size_t client, size_t context) { return 0; }
 
 	/// \brief Initialization for the subdevice
 	///
@@ -149,101 +126,87 @@ protected:
 		}
 	}
 
-private:
-	GenericSubDevice _sendQs[N_Queues];
-}; // class MultiSendQSubDevice
+	inline XMI::SysDep *getSysdep(int sendq = 0) {
+		return _sendQs[sendq].getSysdep();
+	}
 
-/// \brief Simple Sub-Device where no threading is used.
-///
-/// A single-thread basic sub-device - standard boilerplate
-/// One thread, no roles, no "receive" polling.
-/// Thread object is 'empty', used only to queue work to Generic::Device.
-///
-/// Supports only one active message at a time.
-///
-/// Some users of this class simply typedef to it. But others may wish
-/// to inherit from it. In that case, the new class should have it's
-/// own init() method, which (among other things) calls
-/// Generic::SimpleSubDevice::init().
-///
-template <class T_Thread>
-class SimpleSubDevice : public GenericSubDevice {
-	static const int NUM_THREADS = 1;
+	inline XMI::Device::Generic::Device *getGenerics(size_t client, int sendq = 0) {
+		return _sendQs[sendq].getGenerics(client);
+	}
+
+	inline XMI::Device::Generic::GenericSubDevice *getQS(int sendq = 0) {
+		return &_sendQs[sendq];
+	}
+
+// protected:
+//	friend class T_Message
 public:
-	SimpleSubDevice() :
-	GenericSubDevice()
-	{
-		// do this now so we don't have to every time we post
-//		for (int x = 0; x < NUM_THREADS; ++x) {
-//			//_threads[x].setPolled(true);
-//		}
+	inline void __getThreads(T_Thread **t, int *n, int sendq = 0) {
+		if (N_Threads > 0) {
+			*t = &_threads[sendq][0];
+			*n = N_Threads;
+		} else {
+			*t = NULL;
+			*n = 0;
+		}
 	}
 
-	/// \brief Inform caller of where the threads array is
-	///
-	/// \param[out] t	Pointer to threads array
-	/// \param[out] n	Pointer to number of threads in array
-	/// \ingroup gendev_subdev_api
-	///
-	inline void getThreads(T_Thread **t, int *n) {
-		*t = _threads;
-		*n = NUM_THREADS;
+// protected:
+//	friend class T_Model
+public:
+	template <class T_Message>
+	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
+		XMI::Device::Generic::Device *g;
+		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		g = qs->getGenerics(msg->getClientId());
+		T_Thread *t;
+		int n;
+		msg->setStatus(XMI::Device::Initialized);
+		// setThreads() might complete some/all threads...
+		n = static_cast<T_Message *>(msg)->setThreads(&t);
+		size_t x = msg->getContextId();
+		if (!devPosted && msg->getStatus() == XMI::Device::Done) {
+			// assert(g[x].getContext() != NULL);
+			return g[x].getContext();
+		}
+		size_t numctx = g[x].nContexts();
+		g[x].postMsg(msg);
+		while (n > 0) {
+			if (t->getStatus() != XMI::Device::Complete) {
+				if (++x >= numctx) x = 0;
+				g[x].postThread(t);
+			}
+			++t;
+			--n;
+		}
+		return NULL;
 	}
 
-	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		___create(client, num_ctx, devices);
-	}
-
-	/// \brief Actual advance routine for unexpected(received) messages
-	///
-	/// These devices do not have any unexpected messages, so routine is nil.
-	///
-	/// \param[in] context	Id of context which is being advanced
-	/// \ingroup gendev_internal_api
-	///
-	inline int advance(size_t client, size_t context) { return 0; }
-
-	/// \brief Initialization for the subdevice
-	///
-	/// \param[in] sd		SysDep object (not used?)
-	/// \param[in] devices		Array of Generic::Device objects for client
-	/// \param[in] contextId	Id of current context (index into devices[])
-	/// \ingroup gendev_subdev_api
-	///
-	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t ctxId) {
-		___init(sd, client, ctxId);
-	}
-
-private:
-	// For some reason, we can't declare friends like this.
-	//friend class T_Model;
-	// So, we need to make this public until we figure it out.
-public: // temporary
-
-	/// \brief Internal posting of message to sub-device
-	///
-	/// Since postNext() will try to advance the message, it may
-	/// also complete it. This is tested and appropriate action taken.
-	///
-	/// \param[in] msg	Message to start and/or enqueue
-	/// \ingroup gendev_subdev_internal_api
-	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
-		// assert(isLocked(msg->getContext()));
-		bool first = (getCurrent() == NULL);
+		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		bool first = (!Use_Queue || qs->getCurrent() == NULL);
+		// If !Use_Queue, there must never be a message queued...
+		// assert(Use_Queue || qs->getCurrent() == NULL);
 		if (first) {
-			if (static_cast<T_Message*>(msg)->__postNext(false)) {
-				msg->executeCallback(getGeneric(msg->getClientId(), msg->getContextId())->getContext());
+			xmi_context_t ctx = __postNext<T_Message>(msg, false);
+			if (ctx) {
+				msg->executeCallback(ctx);
 				return;
 			}
+			// If this device does not use the queue, avoid
+			// enqueueing the unfinished message... assume that the
+			// __postNext() call setup everything on the generic
+			// device and we no longer care about it...
+			// Also avoid the getCurrent() check above.
 		}
-		XMI::Device::Generic::GenericSubDevice::post(msg);
+		if (Use_Queue) qs->post(msg);
 	}
 
 protected:
-	T_Thread _threads[NUM_THREADS];
-}; // class SimpleSubDevice
+	GenericSubDevice _sendQs[N_Queues];
+	T_Thread _threads[N_Queues][N_Threads];
+}; // class MultiSendQSubDevice
 
 ///
 /// Implements a shared-queue for use by multiple different Thr/Msg/Dev/Mdl sets
@@ -331,6 +294,37 @@ public:
 		return _doneThreads.fetch_and_inc() + 1;
 	}
 
+// protected:
+//	friend class T_Model
+public:
+	template <class T_Message, class T_Thread>
+	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
+		XMI::Device::Generic::Device *g;
+		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		g = qs->getGenerics(msg->getClientId());
+		T_Thread *t;
+		int n;
+		msg->setStatus(XMI::Device::Initialized);
+		// setThreads() might complete some/all threads...
+		n = static_cast<T_Message *>(msg)->setThreads(&t);
+		size_t x = msg->getContextId();
+		if (!devPosted && msg->getStatus() == XMI::Device::Done) {
+			// assert(g[x].getContext() != NULL);
+			return g[x].getContext();
+		}
+		size_t numctx = g[x].nContexts();
+		g[x].postMsg(msg);
+		while (n > 0) {
+			if (t->getStatus() != XMI::Device::Complete) {
+				if (++x >= numctx) x = 0;
+				g[x].postThread(t);
+			}
+			++t;
+			--n;
+		}
+		return NULL;
+	}
+
 	/// \brief Internal posting of message to sub-device
 	///
 	/// Since postNext() will try to advance the message, it may
@@ -339,17 +333,18 @@ public:
 	/// \param[in] msg	Message to start and/or enqueue
 	/// \ingroup gendev_subdev_internal_api
 	///
-	template <class T_Message>
+	template <class T_Message, class T_Thread>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
-		// assert(isLocked(msg->getContext()));
-		bool first = (getCurrent() == NULL);
+		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		bool first = (qs->getCurrent() == NULL);
 		if (first) {
-			if (static_cast<T_Message*>(msg)->__postNext(false)) {
-				msg->executeCallback(getGeneric(msg->getClientId(), msg->getContextId())->getContext());
+			xmi_context_t ctx = __postNext<T_Message,T_Thread>(msg, false);
+			if (ctx) {
+				msg->executeCallback(ctx);
 				return;
 			}
 		}
-		XMI::Device::Generic::GenericSubDevice::post(msg);
+		qs->post(msg);
 	}
 
 private:
@@ -408,8 +403,8 @@ public:
 		*n = NUM_THREADS;
 	}
 
-	inline XMI::Device::Generic::Device *getGeneric(size_t client, size_t ctx) {
-		return _common->getGeneric(client, ctx);
+	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
+		return _common->getGenerics(client);
 	}
 
 	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
@@ -426,6 +421,11 @@ public:
 //			}
 		}
 		_common->init(sd, client, nctx, ctx, contextId);
+	}
+
+	inline void __getThreads(T_Thread **t, int *n, int sendq = 0) {
+		*t = &_threads[sendq];
+		*n = N_Threads;
 	}
 
 private:
@@ -445,7 +445,7 @@ public:	// temporary?
 	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
-		_common->__post<T_Message>(msg);
+		_common->__post<T_Message,T_Thread>(msg);
 	}
 
 	/// \brief SharedQueueSubDevice portion of completion for a thread

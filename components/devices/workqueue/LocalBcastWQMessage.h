@@ -28,7 +28,7 @@ namespace Device {
 class LocalBcastWQModel;
 class LocalBcastWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
-typedef XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread> LocalBcastWQRealDevice;
+typedef XMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,1,true> LocalBcastWQRealDevice;
 
 }; // namespace Device
 }; // namespace XMI
@@ -73,7 +73,7 @@ public:
           /// \param[in] consumers    Number of consumers that will recieve the
           ///                         broadcast buffer
           ///
-          inline LocalBcastWQMessage(Generic::GenericSubDevice &device,
+          inline LocalBcastWQMessage(Generic::GenericSubDevice *device,
                                       xmi_multicast_t *mcast,
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole) :
@@ -86,14 +86,8 @@ public:
           {
           }
 
-	STD_POSTNEXT(LocalBcastWQDevice,LocalBcastWQThread,&_g_l_bcastwq_dev)
-
-private:
-	//friend class LocalBcastWQDevice;
-	friend class XMI::Device::Generic::SimpleSubDevice<LocalBcastWQThread>;
-
+protected:
 	ADVANCE_ROUTINE(advanceThread,LocalBcastWQMessage,LocalBcastWQThread);
-	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(LocalBcastWQThread *thr) {
 		// This works around a bug with "g++ -fPIC -O3"...
 		coremath1 func = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
@@ -120,11 +114,21 @@ private:
 		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
-	inline int __setThreads(LocalBcastWQThread *t, int n) {
+public:
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_l_bcastwq_dev.__postNext<LocalBcastWQMessage>(this, devPosted);
+	}
+
+	inline int setThreads(LocalBcastWQThread **th) {
+		LocalBcastWQThread *t;
+		int n;
+		_g_l_bcastwq_dev.__getThreads(&t, &n);
 		t[0].setMsg(this);
 		t[0].setAdv(advanceThread);
 		t[0].setStatus(XMI::Device::Ready);
 		__advanceThread(t);
+		*th = t;
 		return 1;
 	}
 
@@ -182,7 +186,7 @@ inline xmi_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeo
 	if (isrootrole) consumer = 0; // hack!
 	_shared.setConsumers(_npeers - 1, consumer);
 	LocalBcastWQMessage *msg =
-		new (&state) LocalBcastWQMessage(_g_l_bcastwq_dev,
+		new (&state) LocalBcastWQMessage(_g_l_bcastwq_dev.getQS(),
 			mcast, _shared, isrootrole);
 	_g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
 	return XMI_SUCCESS;

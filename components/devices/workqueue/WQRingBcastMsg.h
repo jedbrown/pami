@@ -28,7 +28,7 @@ namespace Device {
 class WQRingBcastMdl;
 class WQRingBcastMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingBcastThr;
-typedef XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr> WQRingBcastRealDev;
+typedef XMI::Device::Generic::MultiSendQSubDevice<WQRingBcastThr,1,1,true> WQRingBcastRealDev;
 
 }; //-- Device
 }; //-- XMI
@@ -70,7 +70,7 @@ private:
 		NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
 	};
 public:
-	WQRingBcastMsg(Generic::GenericSubDevice &Generic_QS,
+	WQRingBcastMsg(Generic::GenericSubDevice *Generic_QS,
 		xmi_multicast_t *mcast,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
@@ -84,14 +84,15 @@ public:
 	{
 	}
 
-	STD_POSTNEXT(WQRingBcastDev,WQRingBcastThr,&_g_wqbcast_dev)
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_wqbcast_dev.__postNext<WQRingBcastMsg>(this, devPosted);
+	}
 
-protected:
-	//friend class WQRingBcastDev; // Until C++ catches up with real programming languages:
-	friend class XMI::Device::Generic::SimpleSubDevice<WQRingBcastThr>;
-
-	ADVANCE_ROUTINE(advanceThread,WQRingBcastMsg,WQRingBcastThr);
-	inline int __setThreads(WQRingBcastThr *t, int n) {
+	inline int setThreads(WQRingBcastThr **th) {
+		WQRingBcastThr *t;
+		int n;
+		_g_wqbcast_dev.__getThreads(&t, &n);
 		int nt = 0;
 		// assert(nt < n);
 		_nThreads = 1; // must predict total number of threads
@@ -106,10 +107,12 @@ protected:
 		__advanceThread(&t[nt]);
 		++nt;
 		// assert(nt > 0? && nt < n);
+		*th = t;
 		return nt;
 	}
 
-	friend class XMI::Device::Generic::GenericMessage;
+protected:
+	ADVANCE_ROUTINE(advanceThread,WQRingBcastMsg,WQRingBcastThr);
 	inline xmi_result_t __advanceThread(WQRingBcastThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _iwq->bytesAvailableToConsume();
@@ -260,13 +263,13 @@ inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_m
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
 					(XMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL);
 	} else if (iamlast) {
 		// I am tail of stream - no one is downstream from me.
 		// XMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] ===> results
-		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
 					&_wq[meix], NULL, (XMI::PipeWorkQueue *)mcast->dst);
 	} else {
 		// XMI_assert(roles == NON_ROOT_ROLE);
@@ -275,7 +278,7 @@ inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_m
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev, mcast,
+		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
 					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst);
 	}
 	_g_wqbcast_dev.__post<WQRingBcastMsg>(msg);

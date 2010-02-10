@@ -196,31 +196,22 @@ public:
 	/// \param[in] msg	The message that is completed
 	/// \ingroup gendev_subdev_api
 	///
-	inline void __complete(XMI::Device::Generic::GenericMessage *msg) {
+	inline XMI::Device::Generic::GenericMessage *__complete(XMI::Device::Generic::GenericMessage *msg) {
 		/* assert msg == dequeue(); */
 		dequeue();
 		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
-		if (nxt) {
-			// skips posting to sub-device... that was already done.
-			// must setup threads and post threads+message to generic device.
-			(void)nxt->postNext(true);
-			// Note: message might have completed here, but handling
-			// that is too complicated so we just let the generic
-			// device do the completion when it finds it on the queue.
-			// (recursion possibility is one complication)
-		}
+		return nxt;
 	}
 
 	/// \brief accessor for specific generic device for context-id
-	/// \param[in] contextId	Context ID to get generic device slice
-	/// \return	Pointer to specific generic device object
+	/// \param[in] clientid		Client ID to get generic device slice
+	/// \return	Pointer to specific array of generic device objects
 	/// \ingroup gendev_subdev_api
 	///
-	inline XMI::Device::Generic::Device *getGeneric(size_t client, size_t contextId) {
-		return &_generics[client][contextId];
+	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
+		return _generics[client];
 	}
 
-protected:
 	inline void ___create(size_t client, size_t num_ctx,
 				XMI::Device::Generic::Device *generics) {
 		_generics[client] = generics;
@@ -239,6 +230,7 @@ protected:
 		}
 	}
 
+protected:
 	GenericSubDevSendq _queue;
 	XMI::SysDep *_sd;
 	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];

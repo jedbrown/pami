@@ -69,7 +69,7 @@ public:
 	// on BG/P we only use one classroute, the global one.
 	static const unsigned classroute = 3;
 
-	BaseGenericCNMessage(Generic::BaseGenericDevice &qs,
+	BaseGenericCNMessage(Generic::BaseGenericDevice *qs,
 			size_t client,
 			size_t context,
 			XMI::PipeWorkQueue *swq,
@@ -335,7 +335,7 @@ protected:
 /// Collective Network Message with Pre/Post-processing of packets
 class BaseGenericCNPPMessage : public BaseGenericCNMessage {
 public:
-	BaseGenericCNPPMessage(Generic::BaseGenericDevice &qs,
+	BaseGenericCNPPMessage(Generic::BaseGenericDevice *qs,
 			size_t client,
 			size_t context,
 			XMI::PipeWorkQueue *swq,
@@ -457,7 +457,7 @@ protected:
 
 class BaseGenericCN2PMessage : public BaseGenericCNMessage {
 public:
-	BaseGenericCN2PMessage(Generic::BaseGenericDevice &qs,
+	BaseGenericCN2PMessage(Generic::BaseGenericDevice *qs,
 			size_t client,
 			size_t context,
 			XMI::Device::WorkQueue::WorkQueue &ewq,

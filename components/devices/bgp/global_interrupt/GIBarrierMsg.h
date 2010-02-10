@@ -43,7 +43,7 @@ namespace BGP {
 class giModel;
 class giMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread giThread;
-typedef XMI::Device::Generic::SimpleSubDevice<giThread> giRealDevice;
+typedef XMI::Device::Generic::MultiSendQSubDevice<giThread,1,1,true> giRealDevice;
 
 }; // namespace BGP
 }; // namespace Device
@@ -96,22 +96,16 @@ protected:
 	/// \brief  GI Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	giMessage(Generic::GenericSubDevice &GI_QS, xmi_multisync_t *msync) :
+	giMessage(Generic::GenericSubDevice *GI_QS, xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
 				msync->client, msync->context)
 	{
 	}
 
-	STD_POSTNEXT(giDevice,giThread,&_g_gibarrier_dev)
-
-private:
-	//friend class giDevice;
-	friend class XMI::Device::Generic::SimpleSubDevice<giThread>;
-
+protected:
 	static const int GI_CHANNEL = 0;
 
 	ADVANCE_ROUTINE(advanceThread,giMessage,giThread);
-	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(giThread *thr) {
 		XMI::Device::MessageStatus stat = getStatus();
 
@@ -139,12 +133,23 @@ private:
 		return stat == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
-	inline int __setThreads(giThread *t, int n) {
-		// assert(n == 1);
+public:
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_gibarrier_dev.__postNext<giMessage>(this, devPosted);
+	}
+
+	inline int setThreads(giThread **th) {
+		// This is only called if we are the top of the queue.
+		// We get our threads object(s) from our device.
+		giThread *t;
+		int n;
+		_g_gibarrier_dev.__getThreads(&t, &n);
 		t->setMsg(this);
 		t->setAdv(advanceThread);
 		t->setStatus(XMI::Device::Ready);
 		__advanceThread(t);
+		*th = t;
 		return 1;
 	}
 
@@ -174,7 +179,7 @@ inline xmi_result_t XMI::Device::BGP::giModel::postMultisync_impl(uint8_t (&stat
 	// assert(participants == ctor topology)
 	giMessage *msg;
 
-	msg = new (&state) giMessage(_g_gibarrier_dev, msync);
+	msg = new (&state) giMessage(_g_gibarrier_dev.getQS(), msync);
 	_g_gibarrier_dev.__post<giMessage>(msg);
 	return XMI_SUCCESS;
 }

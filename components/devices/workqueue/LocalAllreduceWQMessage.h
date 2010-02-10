@@ -28,7 +28,7 @@ namespace Device {
 class LocalAllreduceWQModel;
 class LocalAllreduceWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalAllreduceWQThread;
-typedef XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread> LocalAllreduceWQRealDevice;
+typedef XMI::Device::Generic::MultiSendQSubDevice<LocalAllreduceWQThread,1,1,true> LocalAllreduceWQRealDevice;
 
 }; // namespace Device
 }; // namespace XMI
@@ -81,7 +81,7 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalAllreduceWQMessage (Generic::GenericSubDevice      & device,
+          inline LocalAllreduceWQMessage (Generic::GenericSubDevice      * device,
 					  xmi_multicombine_t *mcomb,
                                           XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
@@ -99,14 +99,8 @@ public:
           {
           }
 
-	STD_POSTNEXT(LocalAllreduceWQDevice,LocalAllreduceWQThread,&_g_l_allreducewq_dev)
-
 protected:
-	//friend class LocalAllreduceWQDevice;
-	friend class XMI::Device::Generic::SimpleSubDevice<LocalAllreduceWQThread>;
-
 	ADVANCE_ROUTINE(advanceThread,LocalAllreduceWQMessage,LocalAllreduceWQThread);
-	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(LocalAllreduceWQThread *thr) {
 		if (_peer == 0) {
 			_shared.Q2Q (*_source, (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy, 0);
@@ -128,11 +122,21 @@ protected:
 		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
-	inline int __setThreads(LocalAllreduceWQThread *t, int n) {
+public:
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_l_allreducewq_dev.__postNext<LocalAllreduceWQMessage>(this, devPosted);
+	}
+
+	inline int setThreads(LocalAllreduceWQThread **th) {
+		LocalAllreduceWQThread *t;
+		int n;
+		_g_l_allreducewq_dev.__getThreads(&t, &n);
 		t->setMsg(this);
 		t->setAdv(advanceThread);
 		t->setStatus(XMI::Device::Ready);
 		__advanceThread(t);
+		*th = t;
 		return 1;
 	}
 
@@ -188,7 +192,7 @@ inline xmi_result_t LocalAllreduceWQModel::postMulticombine_impl(uint8_t (&state
 	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
 
 	LocalAllreduceWQMessage *msg =
-		new (&state) LocalAllreduceWQMessage(_g_l_allreducewq_dev,
+		new (&state) LocalAllreduceWQMessage(_g_l_allreducewq_dev.getQS(),
 					mcomb, _shared, _peer, _npeers,
 					func, dtshift);
 	_g_l_allreducewq_dev.__post<LocalAllreduceWQMessage>(msg);

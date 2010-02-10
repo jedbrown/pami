@@ -144,7 +144,7 @@ class CNAllreduce2PMessage : public XMI::Device::BGP::BaseGenericCN2PMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduce2PMessage(Generic::GenericSubDevice &qs,
+	CNAllreduce2PMessage(Generic::GenericSubDevice *qs,
 		xmi_multicombine_t *mcomb,
 		XMI::Device::WorkQueue::WorkQueue &ewq,
 		XMI::Device::WorkQueue::WorkQueue &mwq,
@@ -164,15 +164,15 @@ public:
 	{
 	}
 
-	STD_POSTNEXT(CNAllreduce2PDevice,CNAllreduce2PThread,&_g_cnallreduce2p_dev)
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_cnallreduce2p_dev.common()->__postNext<CNAllreduce2PMessage,CNAllreduce2PThread>(this, devPosted);
+	}
 
-protected:
-	//friend class CNAllreduce2PDevice;
-	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2>;
-
-	ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
-	ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
-	inline int __setThreads(CNAllreduce2PThread *t, int n) {
+	inline int setThreads(CNAllreduce2PThread **th) {
+		CNAllreduce2PThread *t;
+		int n;
+		_g_cnallreduce2p_dev.__getThreads(&t, &n);
 		int nt = 0;
 		_g_cnallreduce2p_dev.common()->__resetThreads();
 		int maxnt = _g_cnallreduce2p_dev.common()->getMaxThreads();
@@ -198,9 +198,13 @@ protected:
 			++nt;
 		}
 		// assert(nt > 0? && nt < n);
+		*th = t;
 		return nt;
 	}
 
+protected:
+	ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
+	ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
 	inline xmi_result_t __advanceInj(CNAllreduce2PThread *thr) {
 		xmi_result_t rc = XMI_EAGAIN;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
@@ -359,7 +363,7 @@ inline xmi_result_t CNAllreduce2PModel::postMulticombine_impl(uint8_t (&state)[s
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNAllreduce2PMessage *msg;
-	msg = new (&state) CNAllreduce2PMessage(*_g_cnallreduce2p_dev.common(),
+	msg = new (&state) CNAllreduce2PMessage(_g_cnallreduce2p_dev.common(),
 			mcomb, _ewq, _mwq, _xwq,
 			bytes, doStore, _dispatch_id_e, _dispatch_id_m);
 	_g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);

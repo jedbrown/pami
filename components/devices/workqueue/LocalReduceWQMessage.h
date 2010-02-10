@@ -28,7 +28,7 @@ namespace Device {
 class LocalReduceWQModel;
 class LocalReduceWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalReduceWQThread;
-typedef XMI::Device::Generic::SimpleSubDevice<LocalReduceWQThread> LocalReduceWQRealDevice;
+typedef XMI::Device::Generic::MultiSendQSubDevice<LocalReduceWQThread,1,1,true> LocalReduceWQRealDevice;
 
 }; // namespace Device
 }; // namespace XMI
@@ -78,7 +78,7 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalReduceWQMessage (Generic::GenericSubDevice &device,
+          inline LocalReduceWQMessage (Generic::GenericSubDevice *device,
                                        xmi_multicombine_t *mcomb,
                                        XMI::Device::WorkQueue::SharedWorkQueue &workqueue,
                                        unsigned          peer,
@@ -108,14 +108,8 @@ public:
             _shared.setConsumers (1, 0);
           }
 
-	STD_POSTNEXT(LocalReduceWQDevice,LocalReduceWQThread,&_g_l_reducewq_dev)
-
-private:
-	// friend class LocalReduceWQDevice;
-	friend class XMI::Device::Generic::SimpleSubDevice<LocalReduceWQThread>;
-
+protected:
 	ADVANCE_ROUTINE(advanceThread,LocalReduceWQMessage,LocalReduceWQThread);
-	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(LocalReduceWQThread *thr) {
 		// workaround for GNU compiler -fPIC -O3 bug
 		volatile coremath1 shmcpy = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
@@ -151,11 +145,21 @@ private:
 		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
 	}
 
-	inline int __setThreads(LocalReduceWQThread *t, int n) {
+public:
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_l_reducewq_dev.__postNext<LocalReduceWQMessage>(this, devPosted);
+	}
+
+	inline int setThreads(LocalReduceWQThread **th) {
+		LocalReduceWQThread *t;
+		int n;
+		_g_l_reducewq_dev.__getThreads(&t, &n);
 		t[0].setMsg(this);
 		t[0].setAdv(advanceThread);
 		t[0].setStatus(XMI::Device::Ready);
 		__advanceThread(t);
+		*th = t;
 		return 1;
 	}
 
@@ -215,7 +219,7 @@ inline xmi_result_t LocalReduceWQModel::postMulticombine_impl(uint8_t (&state)[s
 	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
 	unsigned rootpeer = __global.topology_local.rank2Index(results_topo->index2Rank(0));
 	LocalReduceWQMessage *msg =
-		new (&state) LocalReduceWQMessage(_g_l_reducewq_dev,
+		new (&state) LocalReduceWQMessage(_g_l_reducewq_dev.getQS(),
 				mcomb, _shared, _peer, _npeers, rootpeer,
 				func, dtshift);
 	_g_l_reducewq_dev.__post<LocalReduceWQMessage>(msg);

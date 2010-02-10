@@ -87,11 +87,11 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
         NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
       };
     public:
-      MPISyncMsg(T_Device &Generic_QS,
+      MPISyncMsg(T_Device *Generic_QS,
                  xmi_multisync_t *msync) :
       XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
                                            msync->client, msync->context),
-      _device(&Generic_QS),
+      _device(Generic_QS),
       _participants((XMI::Topology *)msync->participants),
       _tag(msync->connection_id),
       _idx(0),

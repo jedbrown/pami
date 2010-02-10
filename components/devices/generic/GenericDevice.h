@@ -165,13 +165,14 @@ namespace Generic {
 		//+ core_mutex.release();
 
 		// Now check everything on the completion queue...
-		GenericMessage *msg, *nxtmsg;
+		GenericMessage *msg, *nxtmsg, *nxt;
 		for (msg = (GenericMessage *)__GenericQueue.peekHead(); msg; msg = nxtmsg) {
 			nxtmsg = (GenericMessage *)__GenericQueue.nextElem(msg);
 			if (msg->getStatus() == Done) {
 				++events;
 				__GenericQueue.deleteElem(msg);
-				static_cast<GenericSubDevice &>(msg->getQS()).__complete(msg);
+				nxt = static_cast<GenericSubDevice *>(msg->getQS())->__complete(msg);
+				if (nxt) nxt->postNext(true); // virtual function
 				msg->executeCallback(__context);
 			}
 		}

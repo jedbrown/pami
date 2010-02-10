@@ -65,7 +65,7 @@ public:
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
-	MultiQueueMessage(Device::Generic::BaseGenericDevice &QS, xmi_callback_t cb,
+	MultiQueueMessage(Device::Generic::BaseGenericDevice *QS, xmi_callback_t cb,
 						size_t client, size_t context) :
 	GenericDeviceMessageQueueElem(),
 	_status(Uninitialized),
@@ -130,7 +130,7 @@ public:
 	/// \return	Reference to sub-device
 	/// \ingroup gendev_subdev_api
 	///
-	inline Device::Generic::BaseGenericDevice &getQS() { return _QS; }
+	inline Device::Generic::BaseGenericDevice *getQS() { return _QS; }
 
 	/// \brief virtual method used to activate a message that was enqueued earlier
 	///
@@ -159,11 +159,11 @@ public:
 	/// \return	bool whether message is complete
 	/// \ingroup gendev_subdev_api
 	///
-	virtual bool postNext(bool devPosted) = 0;
+	virtual xmi_context_t postNext(bool devPosted) = 0;
 
 protected:
 	MessageStatus _status;
-	Device::Generic::BaseGenericDevice &_QS;
+	Device::Generic::BaseGenericDevice *_QS;
 	size_t _client;
 	size_t _context;
 	xmi_callback_t _cb;
@@ -216,7 +216,7 @@ public:
 	/// \param[in] client		The client handle
 	/// \param[in] context		The (posting) context ID
 	///
-	GenericMessage(BaseGenericDevice &Generic_QS, xmi_callback_t cb,
+	GenericMessage(BaseGenericDevice *Generic_QS, xmi_callback_t cb,
 			size_t client, size_t context) :
 	MultiQueueMessage(Generic_QS, cb, client, context)
 	{

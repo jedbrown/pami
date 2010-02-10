@@ -28,7 +28,7 @@ namespace Device {
 class WQRingReduceMdl;
 class WQRingReduceMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingReduceThr;
-typedef XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr> WQRingReduceRealDev;
+typedef XMI::Device::Generic::MultiSendQSubDevice<WQRingReduceThr,1,1,true> WQRingReduceRealDev;
 
 }; //-- Device
 }; //-- XMI
@@ -71,7 +71,7 @@ private:
 	};
 
 public:
-	WQRingReduceMsg(Generic::GenericSubDevice &Generic_QS,
+	WQRingReduceMsg(Generic::GenericSubDevice *Generic_QS,
 		xmi_multicombine_t *mcomb,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,
@@ -93,14 +93,15 @@ public:
 		}
 	}
 
-	STD_POSTNEXT(WQRingReduceDev,WQRingReduceThr,&_g_wqreduce_dev)
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_wqreduce_dev.__postNext<WQRingReduceMsg>(this, devPosted);
+	}
 
-protected:
-	//friend class WQRingReduceDev;
-	friend class XMI::Device::Generic::SimpleSubDevice<WQRingReduceThr>;
-
-	ADVANCE_ROUTINE(advanceThread,WQRingReduceMsg,WQRingReduceThr);
-	inline int __setThreads(WQRingReduceThr *t, int n) {
+	inline int setThreads(WQRingReduceThr **th) {
+		WQRingReduceThr *t;
+		int n;
+		_g_wqreduce_dev.__getThreads(&t, &n);
 		int nt = 0;
 		// assert(nt < n);
 		_nThreads = 1; // must predict total number of threads
@@ -114,11 +115,13 @@ protected:
 #endif // USE_WAKEUP_VECTORS
 		__advanceThread(&t[nt]);
 		++nt;
+		*th = t;
 		// assert(nt > 0? && nt < n);
 		return nt;
 	}
 
-	friend class XMI::Device::Generic::GenericMessage;
+protected:
+	ADVANCE_ROUTINE(advanceThread,WQRingReduceMsg,WQRingReduceThr);
 	inline xmi_result_t __advanceThread(WQRingReduceThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _rwq->bytesAvailableToProduce();
@@ -270,7 +273,7 @@ inline xmi_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[size
 		// I am root - downstream from eveyone.
 		// _input (op) _wq[meix_1] => _output
 		// XMI_assert(roles == ROOT_ROLE);
-		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev.getQS(), mcomb,
 					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (XMI::PipeWorkQueue *)mcomb->results);
 	} else if (results_topo->isRankMember(me_1)) {
 		// I am head of stream.
@@ -278,7 +281,7 @@ inline xmi_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[size
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev.getQS(), mcomb,
 					(XMI::PipeWorkQueue *)mcomb->data, NULL, &_wq[meix]);
 	} else {
 		// I am upstream of root, but not head.
@@ -286,7 +289,7 @@ inline xmi_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[size
 #ifdef USE_FLAT_BUFFER
 		_wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev, mcomb,
+		msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev.getQS(), mcomb,
 					(XMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix]);
 	}
 	_g_wqreduce_dev.__post<WQRingReduceMsg>(msg);

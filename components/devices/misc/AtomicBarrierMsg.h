@@ -52,7 +52,7 @@ namespace Device {
 template <class T_Barrier> class AtomicBarrierMsg;
 template <class T_Barrier> class AtomicBarrierMdl;
 typedef XMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
-typedef XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr> AtomicBarrierRealDev;
+typedef XMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,1,true> AtomicBarrierRealDev;
 
 }; //-- Device
 }; //-- XMI
@@ -93,7 +93,7 @@ public:
 protected:
 	friend class AtomicBarrierMdl<T_Barrier>;
 
-	AtomicBarrierMsg(Generic::GenericSubDevice &Generic_QS,
+	AtomicBarrierMsg(Generic::GenericSubDevice *Generic_QS,
 		T_Barrier *barrier,
 		xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
@@ -103,14 +103,9 @@ protected:
 		// assert(role == DEFAULT_ROLE);
 	}
 
-	STD_POSTNEXT(AtomicBarrierDev,AtomicBarrierThr,&_g_lmbarrier_dev)
-
-private:
-	//friend class AtomicBarrierDev;
-	friend class XMI::Device::Generic::SimpleSubDevice<AtomicBarrierThr>;
+protected:
 
 	ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
-	friend class XMI::Device::Generic::GenericMessage;
 	inline xmi_result_t __advanceThread(AtomicBarrierThr *thr) {
 		for (int x = 0; x < 32; ++x) {
 			if (_barrier->poll() == XMI::Atomic::Interface::Done) {
@@ -122,11 +117,21 @@ private:
 		return XMI_EAGAIN;
 	}
 
-	inline int __setThreads(AtomicBarrierThr *t, int n) {
+public:
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_lmbarrier_dev.__postNext<AtomicBarrierMsg>(this, devPosted);
+	}
+
+	inline int setThreads(AtomicBarrierThr **th) {
+		AtomicBarrierThr *t;
+		int n;
+		_g_lmbarrier_dev.__getThreads(&t, &n);
 		t->setMsg(this);
 		t->setAdv(advanceThread);
 		t->setStatus(XMI::Device::Ready);
 		__advanceThread(t);
+		*th = t;
 		return 1;
 	}
 
@@ -169,8 +174,7 @@ inline xmi_result_t XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl
 	for (int x = 0; x < 32; ++x) {
 		if (_barrier.poll() == XMI::Atomic::Interface::Done) {
 			if (msync->cb_done.function) {
-                          xmi_context_t ctx = _g_lmbarrier_dev.getGeneric(msync->client,
-                                                                          msync->context)->getContext();
+				xmi_context_t ctx = _g_lmbarrier_dev.getGenerics(msync->client)[msync->context].getContext();
 				msync->cb_done.function(ctx, msync->cb_done.clientdata, XMI_SUCCESS);
 			}
 			return XMI_SUCCESS;
@@ -178,7 +182,7 @@ inline xmi_result_t XMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl
 	}
 	// must "continue" current barrier, not start new one!
 	AtomicBarrierMsg<T_Barrier> *msg;
-	msg = new (&state) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev, &_barrier, msync);
+	msg = new (&state) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev.getQS(), &_barrier, msync);
 	_g_lmbarrier_dev.__post<AtomicBarrierMsg<T_Barrier> >(msg);
 	return XMI_SUCCESS;
 }

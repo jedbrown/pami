@@ -84,7 +84,7 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNBroadcastMessage(Generic::GenericSubDevice &qs,
+	CNBroadcastMessage(Generic::GenericSubDevice *qs,
 			xmi_multicast_t *mcast,
 			size_t bytes,
 			bool doStore,
@@ -99,15 +99,15 @@ public:
 	{
 	}
 
-	STD_POSTNEXT(CNBroadcastDevice,CNBroadcastThread,&_g_cnbroadcast_dev)
+	// virtual function
+	xmi_context_t postNext(bool devPosted) {
+		return _g_cnbroadcast_dev.common()->__postNext<CNBroadcastMessage,CNBroadcastThread>(this, devPosted);
+	}
 
-protected:
-	//friend class CNBroadcastDevice;
-	friend class XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>;
-
-	ADVANCE_ROUTINE(advanceInj,CNBroadcastMessage,CNBroadcastThread);
-	ADVANCE_ROUTINE(advanceRcp,CNBroadcastMessage,CNBroadcastThread);
-	inline int __setThreads(CNBroadcastThread *t, int n) {
+	inline int setThreads(CNBroadcastThread **th) {
+		CNBroadcastThread *t;
+		int n;
+		_g_cnbroadcast_dev.__getThreads(&t, &n);
 		int nt = 0;
 		_g_cnbroadcast_dev.common()->__resetThreads();
 		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
@@ -132,11 +132,15 @@ protected:
 			++nt;
 		}
 		// assert(nt > 0? && nt < n);
+		*th = t;
 		return nt;
 	}
 
+protected:
 	inline void __completeThread(CNBroadcastThread *thr);
 
+	ADVANCE_ROUTINE(advanceInj,CNBroadcastMessage,CNBroadcastThread);
+	ADVANCE_ROUTINE(advanceRcp,CNBroadcastMessage,CNBroadcastThread);
 	inline xmi_result_t __advanceInj(CNBroadcastThread *thr) {
 		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
@@ -244,7 +248,7 @@ inline xmi_result_t CNBroadcastModel::postMulticast_impl(uint8_t (&state)[sizeof
 	// is too dependent on having message and thread structures to get/keep context.
 	// __post() will still try early advance... (after construction)
 	CNBroadcastMessage *msg;
-	msg = new (&state) CNBroadcastMessage(*_g_cnbroadcast_dev.common(),
+	msg = new (&state) CNBroadcastMessage(_g_cnbroadcast_dev.common(),
 			mcast, mcast->bytes, doStore, doData, _dispatch_id);
 	_g_cnbroadcast_dev.__post<CNBroadcastMessage>(msg);
 	return XMI_SUCCESS;
