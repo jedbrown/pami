@@ -152,8 +152,8 @@ public:
 protected:
 	inline void __completeThread(CNAllreduceThread *thr);
 
-	ADVANCE_ROUTINE(advanceInj,CNAllreduceMessage,CNAllreduceThread);
-	ADVANCE_ROUTINE(advanceRcp,CNAllreduceMessage,CNAllreduceThread);
+	DECL_ADVANCE_ROUTINE(advanceInj,CNAllreduceMessage,CNAllreduceThread);
+	DECL_ADVANCE_ROUTINE(advanceRcp,CNAllreduceMessage,CNAllreduceThread);
 	inline xmi_result_t __advanceInj(CNAllreduceThread *thr) {
 		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;

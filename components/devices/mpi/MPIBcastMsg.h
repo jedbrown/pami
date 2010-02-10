@@ -167,7 +167,7 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
       //friend class MPIBcastDev; // Until C++ catches up with real programming languages:
       friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>;
 
-      ADVANCE_ROUTINE(advanceThread,MPIBcastMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
+      DECL_ADVANCE_ROUTINE(advanceThread,MPIBcastMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
       inline int __setThreads(XMI::Device::Generic::SimpleAdvanceThread *t, int n)
       {
         int nt = 0;

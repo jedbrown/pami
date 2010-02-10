@@ -203,8 +203,8 @@ public:
 	}
 
 protected:
-	ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
-	ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
+	DECL_ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
+	DECL_ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
 	inline xmi_result_t __advanceInj(CNAllreduce2PThread *thr) {
 		xmi_result_t rc = XMI_EAGAIN;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;

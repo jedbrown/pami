@@ -131,7 +131,7 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
       friend class MPISyncDev;
       friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>; // this makes no sense
 
-      ADVANCE_ROUTINE(advanceThread,MPISyncMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
+      DECL_ADVANCE_ROUTINE(advanceThread,MPISyncMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
       inline int __setThreads(XMI::Device::Generic::SimpleAdvanceThread *t, int n)
       {
         int nt = 0;

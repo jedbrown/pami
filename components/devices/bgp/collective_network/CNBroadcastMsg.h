@@ -139,8 +139,8 @@ public:
 protected:
 	inline void __completeThread(CNBroadcastThread *thr);
 
-	ADVANCE_ROUTINE(advanceInj,CNBroadcastMessage,CNBroadcastThread);
-	ADVANCE_ROUTINE(advanceRcp,CNBroadcastMessage,CNBroadcastThread);
+	DECL_ADVANCE_ROUTINE(advanceInj,CNBroadcastMessage,CNBroadcastThread);
+	DECL_ADVANCE_ROUTINE(advanceRcp,CNBroadcastMessage,CNBroadcastThread);
 	inline xmi_result_t __advanceInj(CNBroadcastThread *thr) {
 		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;

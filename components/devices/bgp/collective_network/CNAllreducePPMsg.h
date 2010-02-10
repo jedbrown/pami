@@ -133,8 +133,8 @@ public:
 protected:
 	inline void __completeThread(CNAllreducePPThread *thr);
 
-	ADVANCE_ROUTINE(advanceInj,CNAllreducePPMessage,CNAllreducePPThread);
-	ADVANCE_ROUTINE(advanceRcp,CNAllreducePPMessage,CNAllreducePPThread);
+	DECL_ADVANCE_ROUTINE(advanceInj,CNAllreducePPMessage,CNAllreducePPThread);
+	DECL_ADVANCE_ROUTINE(advanceRcp,CNAllreducePPMessage,CNAllreducePPThread);
 	inline xmi_result_t __advanceInj(CNAllreducePPThread *thr) {
 		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;

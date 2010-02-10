@@ -105,7 +105,7 @@ protected:
 protected:
 	static const int GI_CHANNEL = 0;
 
-	ADVANCE_ROUTINE(advanceThread,giMessage,giThread);
+	DECL_ADVANCE_ROUTINE(advanceThread,giMessage,giThread);
 	inline xmi_result_t __advanceThread(giThread *thr) {
 		XMI::Device::MessageStatus stat = getStatus();
 

@@ -87,7 +87,7 @@ public:
           }
 
 protected:
-	ADVANCE_ROUTINE(advanceThread,LocalBcastWQMessage,LocalBcastWQThread);
+	DECL_ADVANCE_ROUTINE(advanceThread,LocalBcastWQMessage,LocalBcastWQThread);
 	inline xmi_result_t __advanceThread(LocalBcastWQThread *thr) {
 		// This works around a bug with "g++ -fPIC -O3"...
 		coremath1 func = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;

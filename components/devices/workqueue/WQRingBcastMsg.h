@@ -112,7 +112,7 @@ public:
 	}
 
 protected:
-	ADVANCE_ROUTINE(advanceThread,WQRingBcastMsg,WQRingBcastThr);
+	DECL_ADVANCE_ROUTINE(advanceThread,WQRingBcastMsg,WQRingBcastThr);
 	inline xmi_result_t __advanceThread(WQRingBcastThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _iwq->bytesAvailableToConsume();

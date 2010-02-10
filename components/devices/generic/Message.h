@@ -184,7 +184,7 @@ namespace Generic {
 /// \param[in] message	Class of message
 /// \param[in] thread	Class of thread
 ///
-#define ADVANCE_ROUTINE(method,message,thread)			\
+#define DECL_ADVANCE_ROUTINE(method,message,thread)			\
 static xmi_result_t method(xmi_context_t context, void *t) {	\
 	thread *thr = (thread *)t;				\
 	message *msg = (message *)thr->getMsg();		\

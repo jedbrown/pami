@@ -105,7 +105,7 @@ protected:
 
 protected:
 
-	ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
+	DECL_ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
 	inline xmi_result_t __advanceThread(AtomicBarrierThr *thr) {
 		for (int x = 0; x < 32; ++x) {
 			if (_barrier->poll() == XMI::Atomic::Interface::Done) {

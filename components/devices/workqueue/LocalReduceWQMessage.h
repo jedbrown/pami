@@ -109,7 +109,7 @@ public:
           }
 
 protected:
-	ADVANCE_ROUTINE(advanceThread,LocalReduceWQMessage,LocalReduceWQThread);
+	DECL_ADVANCE_ROUTINE(advanceThread,LocalReduceWQMessage,LocalReduceWQThread);
 	inline xmi_result_t __advanceThread(LocalReduceWQThread *thr) {
 		// workaround for GNU compiler -fPIC -O3 bug
 		volatile coremath1 shmcpy = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;

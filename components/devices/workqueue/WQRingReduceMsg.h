@@ -121,7 +121,7 @@ public:
 	}
 
 protected:
-	ADVANCE_ROUTINE(advanceThread,WQRingReduceMsg,WQRingReduceThr);
+	DECL_ADVANCE_ROUTINE(advanceThread,WQRingReduceMsg,WQRingReduceThr);
 	inline xmi_result_t __advanceThread(WQRingReduceThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _rwq->bytesAvailableToProduce();

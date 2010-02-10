@@ -100,7 +100,7 @@ public:
           }
 
 protected:
-	ADVANCE_ROUTINE(advanceThread,LocalAllreduceWQMessage,LocalAllreduceWQThread);
+	DECL_ADVANCE_ROUTINE(advanceThread,LocalAllreduceWQMessage,LocalAllreduceWQThread);
 	inline xmi_result_t __advanceThread(LocalAllreduceWQThread *thr) {
 		if (_peer == 0) {
 			_shared.Q2Q (*_source, (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy, 0);
