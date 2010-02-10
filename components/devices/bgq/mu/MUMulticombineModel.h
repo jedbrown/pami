@@ -32,8 +32,6 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 
-#include <map>
-
 #ifdef TRACE
   #undef TRACE
 #endif
@@ -59,8 +57,15 @@ namespace XMI
       // Some structures that needed to be defined outside the class
       ///////////////////////////////////////////////////////////////////////////////
       // Receive state
-      typedef struct mcombine_recv_state
+      //typedef struct mcombine_recv_state
+      class mcombine_recv_state_t : public QueueElem
       {
+      public:
+        inline mcombine_recv_state_t() :
+        QueueElem ()
+        {
+        };
+
         size_t                               received_length;
         size_t                               expected_length;
         XMI::PipeWorkQueue                 * rcvpwq;
@@ -72,7 +77,7 @@ namespace XMI
         bool                                 mu_reset;
         uint8_t                              mu_dtype_optor;
         uint16_t                             mu_word_length;
-      } mcombine_recv_state_t;
+      } ;
 
       // State (request) implementation.  Caller should use uint8_t[MUMulticombine::sizeof_msg]
       typedef struct __mu_multicombine_statedata
@@ -106,8 +111,8 @@ namespace XMI
         ~MUMulticombineModel ();
 
         static const bool   multicombine_model_allreduce_only          = true;
-//        static const bool   multicombine_model_reduce_only             = false;
-        static const size_t sizeof_msg                              = sizeof(mu_multicombine_statedata_t);
+//      static const bool   multicombine_model_reduce_only             = false;
+        static const size_t sizeof_msg                                 = sizeof(mu_multicombine_statedata_t);
         static const size_t multicombine_model_bytes_max               = (uint32_t) - 1; // metadata_t::sndlen
         static const size_t multicombine_model_connection_id_max       = (uint32_t) - 1; // metadata_t::connection_id \todo 64 bit?
         static const bool   multicombine_model_available_buffers_only  = true;
@@ -151,8 +156,9 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        std::map<unsigned,mcombine_recv_state_t*>      _recvQ;            // _recvQ[connection_id]
-        mcombine_recv_state_t                        * _receive_state;    // current state, only valid during postMulticombine call.
+        Queue                                 _recvQ;
+        //std::map<unsigned,mcombine_recv_state_t*, std::less<unsigned>, __gnu_cxx::malloc_allocator<std::pair<const unsigned,mcombine_recv_state_t*> > >      _recvQ;            // _recvQ[connection_id]
+        mcombine_recv_state_t               * _receive_state;    // current state, only valid during postMulticombine call.
 
       }; // XMI::Device::MU::MUMulticombineModel class
 
@@ -202,7 +208,8 @@ namespace XMI
           pwq->consumeBytes(length);
         }
 
-        _recvQ[multicombine->connection_id] = _receive_state = &state_data->receive_state;
+        _receive_state = &state_data->receive_state;
+        _recvQ.pushTail(_receive_state);
 
         _receive_state->cb_done = multicombine->cb_done;
         _receive_state->connection_id = multicombine->connection_id;
@@ -429,8 +436,12 @@ namespace XMI
       {
         TRACE((stderr, "<%p>:MUMulticombineModel::processData()\n", this));
 
-        mcombine_recv_state_t* receive_state = _recvQ[metadata->connection_id];
-
+        mcombine_recv_state_t* receive_state = (mcombine_recv_state_t*)_recvQ.peekHead();
+        // probably the head, but (unlikely) search if it isn't
+        while(receive_state && receive_state->connection_id != metadata->connection_id)
+          receive_state = (mcombine_recv_state_t*)_recvQ.nextElem(receive_state);
+        XMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
+        
         // Number of bytes left to copy into the destination buffer
         size_t nleft = receive_state->expected_length - receive_state->received_length;
 
@@ -456,7 +467,7 @@ namespace XMI
               receive_state->cb_done.function (_device.getContext(),
                                                receive_state->cb_done.clientdata,
                                                XMI_SUCCESS);
-             _recvQ.erase(metadata->connection_id);
+            _recvQ.deleteElem(receive_state);
           }
         }
         else XMI_abort();  /// \todo toss unwanted data?

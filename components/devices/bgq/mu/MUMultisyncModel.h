@@ -32,8 +32,6 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 
-#include <map>
-
 #ifdef TRACE
   #undef TRACE
 #endif
@@ -63,15 +61,22 @@ namespace XMI
       // Some structures that needed to be defined outside the class
       ///////////////////////////////////////////////////////////////////////////////
       // Receive state
-      typedef struct msync_recv_state
+      //typedef struct msync_recv_state
+      class msync_recv_state_t : public QueueElem
       {
+      public:
+        inline msync_recv_state_t() :
+        QueueElem ()
+        {
+        };
+        unsigned                             connection_id;
         xmi_callback_t                       cb_done;
-      } msync_recv_state_t;
+      };
 
       // State (request) implementation.  Caller should use uint8_t[MUMultisync::sizeof_msg]
       typedef struct __mu_multisync_statedata
       {
-        MUInjFifoMessage  message;
+        MUInjFifoMessage        message;
         msync_recv_state_t      receive_state;
       } mu_multisync_statedata_t;
 
@@ -126,7 +131,8 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        std::map<unsigned,msync_recv_state_t*>      _recvQ;            // _recvQ[connection_id]
+        Queue                                 _recvQ;
+        //std::map<unsigned,msync_recv_state_t*, std::less<unsigned>, __gnu_cxx::malloc_allocator<std::pair<const unsigned,msync_recv_state_t*> > >      _recvQ;            // _recvQ[connection_id]
 
       }; // XMI::Device::MU::MUMultisyncModel class
 
@@ -148,8 +154,9 @@ namespace XMI
       {
         mu_multisync_statedata_t *state_data = (mu_multisync_statedata_t*) & state;
 
-        state_data->receive_state.cb_done = multisync->cb_done;
-        _recvQ[multisync->connection_id] = & state_data->receive_state;
+        state_data->receive_state.cb_done       = multisync->cb_done;
+        state_data->receive_state.connection_id = multisync->connection_id;
+        _recvQ.pushTail(& state_data->receive_state);
 
         TRACE((stderr, "<%p>:MUMultisyncModel::postMultisync_impl() connection_id %#X\n",
                this, multisync->connection_id));
@@ -220,7 +227,11 @@ namespace XMI
       {
         TRACE((stderr, "<%p>:MUMultisyncModel::processHeader() connection_id = %d\n", this, metadata->connection_id));
 
-        msync_recv_state_t* receive_state = _recvQ[metadata->connection_id];
+        msync_recv_state_t* receive_state = (msync_recv_state_t*)_recvQ.peekHead();
+        // probably the head, but (unlikely) search if it isn't
+        while(receive_state && receive_state->connection_id != metadata->connection_id)
+          receive_state = (msync_recv_state_t*)_recvQ.nextElem(receive_state);
+        XMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
 
         if (receive_state->cb_done.function)
           receive_state->cb_done.function (_device.getContext(),
@@ -229,7 +240,7 @@ namespace XMI
         else
           TRACE((stderr, "<%p>:MUMultisyncModel::processHeader() WHY BOTHER?  connection_id = %d\n", this, metadata->connection_id));
 
-        _recvQ.erase(metadata->connection_id);
+        _recvQ.deleteElem(receive_state);
 
         return;
       }; // XMI::Device::MU::MUMultisyncModel::processHeader
