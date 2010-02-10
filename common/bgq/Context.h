@@ -250,11 +250,8 @@ namespace XMI
 
 #ifdef MU_COLL_DEVICE
         // Can't construct NI until device is init()'d.  Ctor into member storage.
-        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(_mu, _client, _context, _contextid);
+        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(_devices->_mu[_contextid], _client, _clientid, _context, _contextid);
         xmi_result_t status;
-        /// \todo allocator
-        _mu_msync_model = new XMI::Device::MU::MUMultisyncModel(status, _devices->_mu[_contextid]);
-        _mu_mcombine_model = new XMI::Device::MU::MUMulticombineModel(status, _devices->_mu[_contextid]);
 #endif
 	_devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
 
@@ -269,7 +266,7 @@ namespace XMI
       }
 #ifdef MU_COLL_DEVICE
       // \brief For testing NativeInterface.
-      inline MUDevice* getMu(){return &_mu;}
+      inline MUDevice* getMu(){return &_devices->_mu[_contextid];}
 #endif
       inline xmi_client_t getClient_impl ()
       {

@@ -30,7 +30,7 @@ namespace XMI
   class BGQNativeInterface : public CCMI::Interfaces::NativeInterface
   {
   public:
-    inline BGQNativeInterface(T_Device &device, xmi_client_t client, xmi_context_t context, size_t context_id);
+    inline BGQNativeInterface(T_Device &device, xmi_client_t client, size_t clientid, xmi_context_t context, size_t context_id);
 
     /// \brief this call is called when the native interface is
     /// initialized to set the mcast dispatch
@@ -83,6 +83,7 @@ namespace XMI
     unsigned                  _dispatch;
     xmi_client_t              _client;
     xmi_context_t             _context;
+    size_t                    _clientid;
     size_t                    _contextid;
   }; // class BGQNativeInterface
 
@@ -92,6 +93,7 @@ namespace XMI
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   BGQNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::BGQNativeInterface(T_Device      &device,
                                                                            xmi_client_t   client,
+                                                                           size_t         client_id,
                                                                            xmi_context_t  context,
                                                                            size_t         context_id):
   CCMI::Interfaces::NativeInterface(__global.mapping.task(),
@@ -109,6 +111,7 @@ namespace XMI
   _dispatch(0),
   _client(client),
   _context(context),
+  _clientid(client_id),
   _contextid(context_id)
   {
     TRACE_ERR((stderr, "<%p>%s %d %d %d\n", this, __PRETTY_FUNCTION__,
@@ -168,7 +171,7 @@ namespace XMI
     xmi_multicast_t  m     = *mcast;
 
     m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  _client;   // \todo ? Why doesn't caller set this?
+    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
     m.context  =  _contextid;// \todo ? Why doesn't caller set this?
 
     m.cb_done.function     =  ni_client_done;
@@ -191,7 +194,7 @@ namespace XMI
 
     xmi_multisync_t  m     = *msync;
 
-    m.client   =  _client;
+    m.client   =  _clientid;
     m.context  =  _contextid;
 
     m.cb_done.function     =  ni_client_done;
@@ -212,7 +215,7 @@ namespace XMI
 
     xmi_multicombine_t  m     = *mcomb;
 
-    m.client   =  _client;
+    m.client   =  _clientid;
     m.context  =  _contextid;
 
     m.cb_done.function     =  ni_client_done;

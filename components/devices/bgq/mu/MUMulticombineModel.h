@@ -326,7 +326,7 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMulticombineModel::postShortPayload().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((QueueElem *) &message);
+          _device.addToSendQ ((XMI::Queue::Element *) &message);
         }
 
         return true;
@@ -407,7 +407,7 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMulticombineModel::postPayload().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((QueueElem *) &message);
+          _device.addToSendQ ((XMI::Queue::Element *) &message);
         }
 
         return true;

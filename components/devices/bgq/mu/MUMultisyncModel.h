@@ -216,7 +216,7 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((QueueElem *) &state_data->message);
+          _device.addToSendQ ((XMI::Queue::Element *) &state_data->message);
         }
 
         return XMI_SUCCESS;

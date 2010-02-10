@@ -91,6 +91,7 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
   --*doneCountdown;
 }
 
+#warning Major hack: no call to client init or context create or official advance
 int main(int argc, char ** argv)
 {
   xmi_client_t client = NULL;
@@ -114,7 +115,7 @@ int main(int argc, char ** argv)
   XMI::BGQNativeInterface<XMI::Device::MU::MUCollDevice,
                           XMI::Device::MU::MUMulticastModel,
                           XMI::Device::MU::MUMultisyncModel,
-                          XMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, client, context, 0);
+                          XMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, client, 0, context, 0);
 
   uint8_t mcast_state[XMI::Device::MU::MUMulticastModel::sizeof_msg];
 
@@ -161,7 +162,7 @@ int main(int argc, char ** argv)
     mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
     mcast.dst = (xmi_pipeworkqueue_t *) _buffer.dstPwq();
 
-    mcast.client = client;  // client ID
+    mcast.client = 0;  // client ID
     mcast.context = 0;  // context ID
     mcast.roles = -1;
     mcast.bytes = TEST_BUF_SIZE;
@@ -184,7 +185,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance();
+    mu.advance_impl();
 
   }
 
@@ -237,7 +238,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance();
+    mu.advance_impl();
   }
 
 
@@ -295,7 +296,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance();
+    mu.advance_impl();
   }
   if (_countNoData != 1)
   {
@@ -326,7 +327,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance();
+    mu.advance_impl();
   }
   if (_countNoData != 1)
   {
@@ -347,7 +348,7 @@ int main(int argc, char ** argv)
   multisync.connection_id = 0xB; // arbitrary
   multisync.participants = (xmi_topology_t *)&topology_global;
 
-  multisync.client = client;	// client ID
+  multisync.client = 0;	// client ID
   multisync.context = 0;	// context ID
   multisync.roles = -1;
 
@@ -363,7 +364,7 @@ int main(int argc, char ** argv)
 
   while(_doneCountdown)
   {
-    mu.advance();
+    mu.advance_impl();
   }
 
   /// \todo Validate the msync test passed?
@@ -383,7 +384,7 @@ int main(int argc, char ** argv)
   multicombine.dtype = XMI_UNSIGNED_INT;
   multicombine.optor = XMI_MIN;
   multicombine.results = (xmi_pipeworkqueue_t*) _buffer.dstPwq();
-  multicombine.client = client;	// client ID
+  multicombine.client = 0;	// client ID
   multicombine.context = 0;	// context ID
   multicombine.roles = -1;
 
@@ -405,7 +406,7 @@ int main(int argc, char ** argv)
 
   while(_doneCountdown)
   {
-    mu.advance();
+    mu.advance_impl();
   }
 
   bytesConsumed = 0,
@@ -443,7 +444,7 @@ int main(int argc, char ** argv)
 
   while(_doneCountdown)
   {
-    mu.advance();
+    mu.advance_impl();
   }
 
   bytesConsumed = 0,
