@@ -77,12 +77,12 @@ namespace CCMI
               _dim_sizes[_ndims++] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
 
         } 
-        void init(xmi_task_t root, int op, int &start, int &nphases);
+        void init(int root, int op, int &start, int &nphases);
         
         virtual xmi_result_t getSrcUnionTopology(XMI::Topology *topo);
         virtual xmi_result_t getDstUnionTopology(XMI::Topology *topology);
-        virtual void getSrcTopology(int phase, XMI::Topology *topology);
-        virtual void getDstTopology(int phase, XMI::Topology *topology);
+        virtual void getSrcTopology(unsigned phase, XMI::Topology *topology);
+        virtual void getDstTopology(unsigned phase, XMI::Topology *topology);
 
         unsigned color()
         {
@@ -173,12 +173,12 @@ namespace CCMI
    *  and other resources
    */
   inline void
-  CCMI::Schedule::TorusRect::init(xmi_task_t root,
+  CCMI::Schedule::TorusRect::init(int root,
                                   int op,
                                   int &start,
                                   int &nphases)
   {
-    CCMI_assert (op == BROADCAST_OP);
+    CCMI_assert (op == CCMI::Interfaces::BROADCAST_OP);
     size_t peers;
     
     _root = root;
@@ -240,7 +240,7 @@ namespace CCMI
     return XMI_SUCCESS;
   }
   inline void
-  CCMI::Schedule::TorusRect::getSrcTopology(int phase,
+  CCMI::Schedule::TorusRect::getSrcTopology(unsigned phase,
                                             XMI::Topology *topo)
   {
     printf("no need to implement\n");
@@ -257,7 +257,7 @@ namespace CCMI
    */
 
   inline void
-  CCMI::Schedule::TorusRect::getDstTopology(int phase,
+  CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
                                             XMI::Topology *topo)
   {
     CCMI_assert (phase >= _start_phase);

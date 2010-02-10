@@ -17,6 +17,9 @@
 
 namespace CCMI
 {
+  namespace Interfaces
+  {
+
     /**
      * \brief The different collective operations supported
      */
@@ -28,8 +31,6 @@ namespace CCMI
       REDUCE_OP     =      8
     } CollectiveOperation;
 
-  namespace Interfaces
-  {
 
     /**
      * \brief Abstract reference class to define the schedule of a collective
@@ -65,7 +66,7 @@ namespace CCMI
        * \param nphases : number of phases
        */
       virtual void
-      init(xmi_task_t root, int op, int &startphase, int &nphases) = 0;
+      init(int root, int op, int &startphase, int &nphases) = 0;
 
       /**
        * \brief Get the upstream processors. Source processors
@@ -74,7 +75,7 @@ namespace CCMI
        * \param[INOUT] topology : the topolgy that sends messages to me in this phase
        */
       virtual void
-      getSrcTopology (int phase, XMI::Topology *topology) = 0;
+      getSrcTopology (unsigned phase, XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the downstream processors to send data to.
@@ -82,7 +83,7 @@ namespace CCMI
        * \param[INOUT] topology : The topology to send messages to in this phase
        */
       virtual void
-      getDstTopology (int phase, XMI::Topology *topology) = 0;
+      getDstTopology (unsigned phase, XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the union of all sources across all phases

@@ -343,7 +343,7 @@ namespace CCMI
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getSrcUnionTopology (XMI::Topology *topology) {
+      virtual xmi_result_t getSrcUnionTopology (XMI::Topology *topology) {
 	unsigned *srcranks;
         xmi_result_t rc = topology->rankList(&srcranks);
 	unsigned nsrcranks = topology->size();
@@ -378,6 +378,7 @@ namespace CCMI
 
 	//Convert to a list topology
 	new (topology) XMI::Topology (srcranks, ntotal_ranks);
+        return XMI_SUCCESS;
       }
 
 
@@ -385,7 +386,7 @@ namespace CCMI
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getDstUnionTopology (XMI::Topology *topology) {
+      virtual xmi_result_t getDstUnionTopology (XMI::Topology *topology) {
 	unsigned *dstranks;
 	xmi_result_t rc = topology->rankList(&dstranks);
 	unsigned ndstranks = topology->size();
@@ -420,6 +421,7 @@ namespace CCMI
 
 	//Convert to a list topology
 	new (topology) XMI::Topology (dstranks, ntotal_ranks);
+        return XMI_SUCCESS;
       }
 
 
