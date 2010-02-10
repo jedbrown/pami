@@ -906,6 +906,25 @@ namespace XMI {
         ur = topo_axial._rect._urcorner;
         center = topo_axial_center;
 
+        *low = ll;
+        *high = ur;
+        
+        if (axis != -1)
+        {
+          *low = center;
+          *high = center;
+          (*low).net_coord(axis) = MIN(ll.net_coord(axis),
+                                       center.net_coord(axis));
+          (*high).net_coord(axis) = MAX(ur.net_coord(axis),
+                                        center.net_coord(axis));
+        }
+#if 0
+        int i;
+        xmi_coord_t ll, ur, center;
+        ll = topo_axial._rect._llcorner;
+        ur = topo_axial._rect._urcorner;
+        center = topo_axial_center;
+
         for (i = 0; i < XMI_MAX_DIMS; i++)
         {
           if (axis == i)
@@ -919,6 +938,7 @@ namespace XMI {
             (*high).net_coord(i) = MAX(ur.net_coord(i), center.net_coord(i));
           }
         }
+#endif
         return XMI_SUCCESS;
       }
 

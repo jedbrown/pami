@@ -12,6 +12,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
 NOTBUILT        =                  
-@LIBNAME@-""-CCMIBINOMIALTREE_SOURCES=BinomialTree.cc
+@LIBNAME@-""-CCMIBINOMIALTREE_SOURCES=BinomialTree.cc TorusRect.cc
 DEVICENAME     = @LIBNAME@-""-CCMIBINOMIALTREE
 include @abs_top_builddir@/Build.rules

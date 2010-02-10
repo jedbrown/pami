@@ -17,8 +17,6 @@
 
 namespace CCMI
 {
-  namespace Interfaces
-  {
     /**
      * \brief The different collective operations supported
      */
@@ -29,6 +27,9 @@ namespace CCMI
       ALLREDUCE_OP  =      4,
       REDUCE_OP     =      8
     } CollectiveOperation;
+
+  namespace Interfaces
+  {
 
     /**
      * \brief Abstract reference class to define the schedule of a collective
@@ -63,7 +64,8 @@ namespace CCMI
        * \param startphase : The phase where I become active
        * \param nphases : number of phases
        */
-      virtual void init (int root, int op, int &startphase, int &nphases) = 0;
+      virtual void
+      init(xmi_task_t root, int op, int &startphase, int &nphases) = 0;
 
       /**
        * \brief Get the upstream processors. Source processors
@@ -71,26 +73,30 @@ namespace CCMI
        * \param[IN] phase : phase of the collective
        * \param[INOUT] topology : the topolgy that sends messages to me in this phase
        */
-      virtual void getSrcTopology (unsigned  phase, XMI::Topology *topology) = 0;
+      virtual void
+      getSrcTopology (int phase, XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the downstream processors to send data to.
        * \param phase : phase of the collective
        * \param[INOUT] topology : The topology to send messages to in this phase
        */
-      virtual void getDstTopology (unsigned  phase, XMI::Topology *topology) = 0;
+      virtual void
+      getDstTopology (int phase, XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getSrcUnionTopology (XMI::Topology *topology) = 0;
+      virtual xmi_result_t
+      getSrcUnionTopology (XMI::Topology *topology) = 0;
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual void getDstUnionTopology (XMI::Topology *topology) = 0;
+      virtual xmi_result_t
+      getDstUnionTopology (XMI::Topology *topology) = 0;
 
     };  //-- Schedule
   };  //-- Schedule

@@ -11,6 +11,6 @@
 
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
-SOURCES		= BinomialTree.cc
+SOURCES		= BinomialTree.cc TorusRect.cc
 DEVICENAME	= 
 include @abs_top_builddir@/Build.rules
