@@ -58,56 +58,6 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
-/// \brief Queue object used for messages on sub-devices
-///
-/// Instantiates queue[0] of a two-queue system. Queue[0] by convention
-/// is the queue used for attaching messages to a sub-device queue.
-/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
-///
-class GenericSubDevSendq : public GenericDeviceMessageQueue {
-public:
-
-	/// \brief Add a message to the (end of the) queue
-	///
-	/// Does not perform any actions on the message, the caller has
-	/// already attempted early advance.
-	///
-	/// \param[in] msg	New message to be posted
-	/// \ingroup gendev_subdev_api
-	///
-	inline void post(GenericMessage *msg) {
-		pushTail(msg);
-	}
-
-	/// \brief peek at "next" message on queue
-	///
-	/// \return	Top message on queue
-	/// \ingroup gendev_subdev_api
-	///
-	inline GenericMessage *getCurrent() {
-		return (GenericMessage *)peekHead();
-	}
-
-	/// \brief pop "next" message off queue and return it
-	///
-	/// \return	Former top message on queue
-	/// \ingroup gendev_subdev_api
-	///
-	inline GenericMessage *dequeue() {
-		return (GenericMessage *)popHead();
-	}
-
-	/// \brief number of messages on the queue
-	///
-	/// \return	number of messages on the queue
-	/// \ingroup gendev_subdev_api
-	///
-	inline int queueSize() {
-		return size();
-	}
-protected:
-}; // class GenericSubDevSendq
-
 /// \brief Base class from which all sub-devices should inherit
 ///
 /// This class works for single-instantiation for multiple-clients,
@@ -123,65 +73,16 @@ protected:
 /// NOTE: one-per-context sub-devices are not capable of using
 /// multiple contexts in a single communication (e.g. for parallelism).
 ///
-class GenericSubDevice : public BaseGenericDevice {
+class GenericSubDevice : public GenericDeviceMessageQueue, public BaseGenericDevice {
 private:
 public:
 	GenericSubDevice() :
+	GenericDeviceMessageQueue(),
 	BaseGenericDevice()
 	{
 	}
 
 	virtual ~GenericSubDevice() { }
-
-	// wrappers for GenericSubDevSendq...
-
-	/// \brief Add a message to the (end of the) queue
-	///
-	/// Does not perform any actions on the message, the caller has
-	/// already attempted early advance.
-	///
-	/// \param[in] msg	New message to be posted
-	/// \ingroup gendev_subdev_api
-	///
-	inline void post(GenericMessage *msg) {
-		_queue.pushTail(msg);
-	}
-
-	/// \brief peek at "next" message on queue
-	///
-	/// \return	Top message on queue
-	/// \ingroup gendev_subdev_api
-	///
-	inline GenericMessage *getCurrent() {
-		return (GenericMessage *)_queue.peekHead();
-	}
-
-	/// \brief pop "next" message off queue and return it
-	///
-	/// \return	Former top message on queue
-	/// \ingroup gendev_subdev_api
-	///
-	inline GenericMessage *dequeue() {
-		return (GenericMessage *)_queue.popHead();
-	}
-
-	/// \brief Remove a message from the middle of the queue
-	///
-	/// \param[in] msg	New message to be removed
-	/// \ingroup gendev_subdev_api
-	///
-	inline void deleteElem(GenericMessage *msg) {
-		_queue.deleteElem(msg);
-	}
-
-	/// \brief number of messages on the queue
-	///
-	/// \return	number of messages on the queue
-	/// \ingroup gendev_subdev_api
-	///
-	inline int queueSize() {
-		return _queue.size();
-	}
 
 	/// \brief Perform sub-device completion of a message
 	///
@@ -195,7 +96,8 @@ public:
 	inline XMI::Device::Generic::GenericMessage *__complete(XMI::Device::Generic::GenericMessage *msg) {
 		/* assert msg == dequeue(); */
 		dequeue();
-		XMI::Device::Generic::GenericMessage *nxt = getCurrent();
+		XMI::Device::Generic::GenericMessage *nxt =
+			(XMI::Device::Generic::GenericMessage *)peek();
 		return nxt;
 	}
 
@@ -214,7 +116,6 @@ public:
 	}
 
 protected:
-	GenericSubDevSendq _queue;
 }; /* class GenericSubDevice */
 
 }; /* namespace Generic */

@@ -187,9 +187,9 @@ public:
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
-		bool first = (!Use_Queue || qs->getCurrent() == NULL);
+		bool first = (!Use_Queue || qs->peek() == NULL);
 		// If !Use_Queue, there must never be a message queued...
-		// assert(Use_Queue || qs->getCurrent() == NULL);
+		// assert(Use_Queue || qs->peek() == NULL);
 		if (first) {
 			xmi_context_t ctx = __postNext<T_Message>(msg, false);
 			if (ctx) {
@@ -200,9 +200,9 @@ public:
 			// enqueueing the unfinished message... assume that the
 			// __postNext() call setup everything on the generic
 			// device and we no longer care about it...
-			// Also avoid the getCurrent() check above.
+			// Also avoid the peek() check above.
 		}
-		if (Use_Queue) qs->post(msg);
+		if (Use_Queue) qs->enqueue(msg);
 	}
 
 protected:
@@ -348,7 +348,7 @@ public:
 	template <class T_Message, class T_Thread>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
-		bool first = (qs->getCurrent() == NULL);
+		bool first = (qs->peek() == NULL);
 		if (first) {
 			xmi_context_t ctx = __postNext<T_Message,T_Thread>(msg, false);
 			if (ctx) {
@@ -356,7 +356,7 @@ public:
 				return;
 			}
 		}
-		qs->post(msg);
+		qs->enqueue(msg);
 	}
 
 private:
