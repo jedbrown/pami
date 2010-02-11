@@ -133,10 +133,6 @@ public:
 
 	virtual ~GenericSubDevice() { }
 
-	/// \brief accessor for sysdep object associated with sub-device
-	/// \ingroup gendev_subdev_api
-	inline XMI::SysDep *getSysdep() { return _sd; }
-
 	// wrappers for GenericSubDevSendq...
 
 	/// \brief Add a message to the (end of the) queue
@@ -203,18 +199,8 @@ public:
 		return nxt;
 	}
 
-	/// \brief accessor for specific generic device for context-id
-	/// \param[in] clientid		Client ID to get generic device slice
-	/// \return	Pointer to specific array of generic device objects
-	/// \ingroup gendev_subdev_api
-	///
-	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
-		return _generics[client];
-	}
-
 	inline void ___create(size_t client, size_t num_ctx,
 				XMI::Device::Generic::Device *generics) {
-		_generics[client] = generics;
 	}
 	/// \brief internal initialization routine for GenericSubDevice sub-class
 	///
@@ -225,15 +211,10 @@ public:
 	/// \ingroup gendev_private_api
 	///
 	inline void ___init(XMI::SysDep *sd, size_t client, size_t contextId) {
-		if (client == 0) {
-			_sd = sd;
-		}
 	}
 
 protected:
 	GenericSubDevSendq _queue;
-	XMI::SysDep *_sd;
-	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
 }; /* class GenericSubDevice */
 
 }; /* namespace Generic */

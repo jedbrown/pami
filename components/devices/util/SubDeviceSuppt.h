@@ -106,6 +106,7 @@ public:
 		for (int x = 0; x < N_Queues; ++x) {
 			_sendQs[x].___create(client, num_ctx, devices);
 		}
+		_generics[client] = devices;
 	}
 
 	// may be overridden by child class... Context calls using child class.
@@ -120,18 +121,19 @@ public:
 	///
 	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
 		if (client == 0) {
+			_sd = sd;
 			for (int x = 0; x < N_Queues; ++x) {
 				_sendQs[x].___init(sd, client, contextId);
 			}
 		}
 	}
 
-	inline XMI::SysDep *getSysdep(int sendq = 0) {
-		return _sendQs[sendq].getSysdep();
+	inline XMI::SysDep *getSysdep() {
+		return _sd;
 	}
 
-	inline XMI::Device::Generic::Device *getGenerics(size_t client, int sendq = 0) {
-		return _sendQs[sendq].getGenerics(client);
+	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
+		return _generics[client];
 	}
 
 	inline XMI::Device::Generic::GenericSubDevice *getQS(int sendq = 0) {
@@ -158,7 +160,7 @@ public:
 	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
 		XMI::Device::Generic::Device *g;
 		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
-		g = qs->getGenerics(msg->getClientId());
+		g = getGenerics(msg->getClientId());
 		T_Thread *t;
 		int n;
 		msg->setStatus(XMI::Device::Initialized);
@@ -206,6 +208,8 @@ public:
 protected:
 	GenericSubDevice _sendQs[N_Queues];
 	T_Thread _threads[N_Queues][N_Threads];
+	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
+	XMI::SysDep *_sd;
 }; // class MultiSendQSubDevice
 
 ///
@@ -263,6 +267,7 @@ public:
 	///
 	inline void __init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
 		if (client == 0) {
+			_sd = sd;
 			_doneThreads.init(sd);
 			_doneThreads.fetch_and_clear();
 			_init = 1;
@@ -271,6 +276,7 @@ public:
 	}
 
 	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+		_generics[client] = devices;
 		___create(client, num_ctx, devices);
 	}
 
@@ -294,6 +300,12 @@ public:
 		return _doneThreads.fetch_and_inc() + 1;
 	}
 
+	inline XMI::SysDep *getSysdep() { return _sd; }
+
+	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
+		return _generics[client];
+	}
+
 // protected:
 //	friend class T_Model
 public:
@@ -301,7 +313,7 @@ public:
 	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
 		XMI::Device::Generic::Device *g;
 		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
-		g = qs->getGenerics(msg->getClientId());
+		g = getGenerics(msg->getClientId());
 		T_Thread *t;
 		int n;
 		msg->setStatus(XMI::Device::Initialized);
@@ -351,6 +363,8 @@ private:
 	int _init;
 	GenericDeviceCounter _doneThreads;
 	unsigned _dispatch_id;
+	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
+	XMI::SysDep *_sd;
 }; // class CommonQueueSubDevice
 
 /// \brief class for a Model/Device/Message/Thread tuple that shares hardware with others
