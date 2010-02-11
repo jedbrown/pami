@@ -159,7 +159,6 @@ public:
 	template <class T_Message>
 	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
 		XMI::Device::Generic::Device *g;
-		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
 		g = getGenerics(msg->getClientId());
 		T_Thread *t;
 		int n;
@@ -312,7 +311,6 @@ public:
 	template <class T_Message, class T_Thread>
 	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
 		XMI::Device::Generic::Device *g;
-		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
 		g = getGenerics(msg->getClientId());
 		T_Thread *t;
 		int n;
