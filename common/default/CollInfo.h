@@ -206,7 +206,6 @@ namespace XMI
       CCMIOldBinomBarrierInfo(T_Device *dev,
                               T_Sysdep * sd,
                               xmi_mapidtogeometry_fn fcn,
-                              xmi_client_t           client,
                               xmi_context_t          context,
                               size_t                 context_id):
         CollInfo<T_Device>(dev),
@@ -239,14 +238,12 @@ namespace XMI
       CCMIBinomBarrierInfo(T_Device *dev,
                            T_Sysdep * sd,
                            xmi_mapidtogeometry_fn fcn,
-			   xmi_client_t           client,
 			   xmi_context_t          context,
 			   size_t                 context_id,
 			   size_t client_id):
       CollInfo<T_Device>(dev),
-	_minterface(dev, client, context, context_id, client_id),
+	_minterface(dev, context, context_id, client_id),
 	_barrier_registration(NULL, &_minterface, (xmi_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
-	_client(client),
 	_context(context),
 	_contextid (context_id)
         {
@@ -265,7 +262,6 @@ namespace XMI
       XMI_NATIVEINTERFACE<T_Device>                  _minterface;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory _barrier_registration;
       CCMI_Executor_t                                _barrier_composite;
-      xmi_client_t                                   _client;
       xmi_context_t                                  _context;
       size_t                                         _contextid;
     };
@@ -277,7 +273,6 @@ namespace XMI
       CCMIOldBinomBroadcastInfo(T_Device *dev,
                              T_Sysdep * sd,
                              xmi_mapidtogeometry_fn fcn,
-                             xmi_client_t           client,
                              xmi_context_t          context,
                              size_t                 context_id):
       CollInfo<T_Device>(dev),
@@ -304,12 +299,11 @@ namespace XMI
       CCMIBinomBroadcastInfo(T_Device *dev,
                              T_Sysdep * sd,
                              xmi_mapidtogeometry_fn fcn,
-                             xmi_client_t           client,
                              xmi_context_t          context,
                              size_t                 context_id,
                              size_t                 client_id):
       CollInfo<T_Device>(dev),
-        _minterface(dev, client, context, context_id, client_id),
+        _minterface(dev, context, context_id, client_id),
         _connmgr(65535),
         _broadcast_registration(&_connmgr, &_minterface)
 	  {
@@ -329,7 +323,6 @@ namespace XMI
       CCMIOldRingBroadcastInfo(T_Device *dev,
 			    T_Sysdep * sd,
                             xmi_mapidtogeometry_fn fcn,
-                            xmi_client_t           client,
                             xmi_context_t          context,
                             size_t                 context_id):
       CollInfo<T_Device>(dev),
@@ -356,12 +349,11 @@ namespace XMI
       CCMIRingBroadcastInfo(T_Device *dev,
 			    T_Sysdep * sd,
 			    xmi_mapidtogeometry_fn fcn,
-			    xmi_client_t           client,
 			    xmi_context_t          context,
 			    size_t                 context_id,
 			    size_t client_id):
       CollInfo<T_Device>(dev),
-        _minterface(dev, client, context, context_id, client_id),
+        _minterface(dev, context, context_id, client_id),
         _connmgr(65535),
         _broadcast_registration(&_connmgr, &_minterface)
 	  {

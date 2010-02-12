@@ -30,7 +30,7 @@ namespace XMI
   class BGQNativeInterface : public CCMI::Interfaces::NativeInterface
   {
   public:
-    inline BGQNativeInterface(T_Device &device, xmi_client_t client, size_t clientid, xmi_context_t context, size_t context_id);
+    inline BGQNativeInterface(T_Device &device, size_t clientid, xmi_context_t context, size_t context_id);
 
     /// \brief this call is called when the native interface is
     /// initialized to set the mcast dispatch
@@ -81,7 +81,6 @@ namespace XMI
     T_Mcomb                   _mcomb;
 
     unsigned                  _dispatch;
-    xmi_client_t              _client;
     xmi_context_t             _context;
     size_t                    _clientid;
     size_t                    _contextid;
@@ -92,7 +91,6 @@ namespace XMI
   ///////////////////////////////////////////////////////////////////////////////
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   BGQNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::BGQNativeInterface(T_Device      &device,
-                                                                           xmi_client_t   client,
                                                                            size_t         client_id,
                                                                            xmi_context_t  context,
                                                                            size_t         context_id):
@@ -109,7 +107,6 @@ namespace XMI
   _mcomb(_mcomb_status,device),
 
   _dispatch(0),
-  _client(client),
   _context(context),
   _clientid(client_id),
   _contextid(context_id)

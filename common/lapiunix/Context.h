@@ -171,7 +171,7 @@ namespace XMI
         _lock (),
         _empty_advance(0),
 	_workAllocator (),
-        _minterface(&_lapi_device,_client,this,_contextid,clientid),
+        _minterface(&_lapi_device,this,_contextid,clientid),
 	_devices(devices)
         {
           lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */

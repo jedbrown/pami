@@ -30,17 +30,17 @@ namespace XMI
 
   public:
     LAPINativeInterface(T_Device      *dev,
-                        xmi_client_t   client,
                         xmi_context_t  context,
-                        size_t         context_id):
+                        size_t         context_id,
+                        size_t         client_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
       _msyncAlloc(),
       _device(dev),
       _msync(*_device, _msync_status),
       _dispatch(0),
-      _client(client),
       _context(context),
+      _clientid(client_id)
       _contextid(context_id)
       {
       }
@@ -68,7 +68,7 @@ namespace XMI
     virtual xmi_result_t multicast (xmi_multicast_t *mcast)
       {
         mcast->dispatch =  _dispatch;
-        mcast->client   =  _client;
+        mcast->client   =  _clientid;
         mcast->context  =  _contextid;
         return XMI_Multicast (mcast);
       }
@@ -127,8 +127,8 @@ namespace XMI
     xmi_result_t              _status;
     xmi_result_t              _msync_status;
     unsigned                  _dispatch;
-    xmi_client_t              _client;
     xmi_context_t             _context;
+    size_t                    _clientid;
     size_t                    _contextid;
   };
 };

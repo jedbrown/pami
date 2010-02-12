@@ -210,7 +210,7 @@ namespace XMI
 	_workAllocator (),
 #warning This needs to be done elsewhere - not per-context if in __global!
         _mpi(&__global.mpi_device),
-        _minterface(_mpi, _client, this, _contextid, clientid),
+        _minterface(_mpi, this, _contextid, clientid),
         _empty_advance(0),
 	_devices(devices)
         {

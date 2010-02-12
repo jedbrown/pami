@@ -35,7 +35,6 @@ namespace XMI
 
   public:
     MPINativeInterface(T_Device      *dev,
-                       xmi_client_t   client,
                        xmi_context_t  context,
                        size_t         context_id,
                        size_t         client_id):
@@ -45,7 +44,6 @@ namespace XMI
       _device(dev), /*_protocol(_status),*/
       _msync(*_device, _msync_status),
       _dispatch(0),
-      _client(client),
       _context(context),
       _contextid(context_id),
       _clientid(client_id)
@@ -91,7 +89,6 @@ namespace XMI
       }
 
     // Multisync Implementation
-    // xmi_client_t       client;	        /**< client to operate within */
     // size_t             context;	        /**< primary context to operate within */
     // void              *request;	        /**< space for operation */
     // xmi_callback_t     cb_done;		/**< User's completion callback */
@@ -147,7 +144,6 @@ namespace XMI
     xmi_result_t       _msync_status;
     xmi_result_t       _status;
     unsigned           _dispatch;
-    xmi_client_t       _client;
     xmi_context_t      _context;
     size_t             _contextid;
     size_t             _clientid;
