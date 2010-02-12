@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
     union_topo.getAxialEndCoords(&low, &high, -1);
 
     if (res == XMI_SUCCESS)
-    printf("%2d start:%d nphases: %d ll: <%d,%d,%d,%d> ur:<%d,%d,%d,%d> dir: <%d,%d,%d>"
+    printf("%zd start:%d nphases: %d ll: <%zd,%zd,%zd,%zd> ur:<%zd,%zd,%zd,%zd> dir: <%d,%d,%d>"
            " tl <%d,%d,%d>\n", task_id, start,nphases,low.net_coord(0), low.net_coord(1),
            low.net_coord(2),low.net_coord(3),high.net_coord(0),
            high.net_coord(1),high.net_coord(2),high.net_coord(3),

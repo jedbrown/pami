@@ -54,7 +54,6 @@ namespace XMI
           XMI_assert_debug(_base != NULL);
           XMI_assert((alignment & (alignment - 1)) == 0);
 
-          void * addr = NULL;
           size_t pad = 0;
           if (alignment > 0)
           {

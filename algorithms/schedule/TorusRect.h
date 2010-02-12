@@ -143,7 +143,7 @@ namespace CCMI
         xmi_coord_t       _self_coord;
         xmi_coord_t       _ll;
         xmi_coord_t       _ur;
-        int               _start_phase;
+        unsigned          _start_phase;
         unsigned int      _nphases;
         unsigned char     _torus_link[XMI_MAX_DIMS];
         size_t            _dim_sizes[XMI_MAX_DIMS];
@@ -185,7 +185,7 @@ namespace CCMI
     _map->task2network(root, &_root_coord, XMI_N_TORUS_NETWORK);
 
   
-    if (MY_TASK == root)
+    if (MY_TASK == (unsigned) root)
       _start_phase = 0;
     else
     {
@@ -223,7 +223,7 @@ namespace CCMI
         }
       }
       // this means I am a ghost node
-      if (_start_phase == -1) _start_phase = _ndims;
+      if (_start_phase == (unsigned)-1) _start_phase = _ndims;
     }
   
     start = _start_phase;    
@@ -277,16 +277,16 @@ namespace CCMI
       {
         // setup the destination processors to foreward the data along
         // the next dimension in the torus
-        if (phase < (int) _ndims)
+        if (phase < _ndims)
           setupBroadcast(phase, topo);
         
         ///Process ghost nodes
-        else if (phase == (int) _ndims)
+        else if (phase == _ndims)
           setupGhost(topo);
       }
       
       ///Process local broadcasts
-      if (phase == ((int) _ndims + 1) && peers > 1)
+      if (phase == ( _ndims + 1) && peers > 1)
         setupLocal(topo);        
     }
   }
@@ -306,7 +306,7 @@ namespace CCMI
     {
       xmi_coord_t low, high;
       unsigned char dir[XMI_MAX_DIMS] = {0};
-      size_t torus_dims = _map->torusDims();
+      //size_t torus_dims = _map->torusDims();
   
       //Find the axis to do the line broadcast on  
       int axis = (phase + _color) % _ndims;
@@ -336,11 +336,10 @@ namespace CCMI
     inline void
     CCMI::Schedule::TorusRect::setupGhost(XMI::Topology *topo)
     {
-      int i;
       xmi_coord_t ref, dst;
       unsigned char dir[XMI_MAX_DIMS] = {0};
   
-      size_t torus_dims = _map->torusDims();
+      //size_t torus_dims = _map->torusDims();
       size_t axis = _color % _ndims;
   
       CCMI_assert(_dim_sizes[axis] > 1);
@@ -371,8 +370,8 @@ namespace CCMI
       //just before them have to send data to them
       if(_self_coord.net_coord(axis) == ref.net_coord(axis))
       {
-        xmi_network *type;
-        xmi_task_t dst_task;
+        xmi_network *type=NULL;
+        xmi_task_t dst_task=0;
         xmi_coord_t low, high;
         
         dst = _self_coord;

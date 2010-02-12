@@ -28,7 +28,6 @@ static void test_dispatch (
 
 int main (int argc, char ** argv)
 {
-  volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
 
 

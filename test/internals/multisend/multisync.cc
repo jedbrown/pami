@@ -26,7 +26,6 @@ typedef XMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
 #endif // __bgp__
 
 int main(int argc, char ** argv) {
-	unsigned x;
 	xmi_client_t client;
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;

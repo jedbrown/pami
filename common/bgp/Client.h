@@ -259,12 +259,12 @@ namespace XMI
       {
         char   shmemfile[1024];
         size_t bytes     = 1024 * 1024;
-        size_t pagesize  = 4096;
+        //size_t pagesize  = 4096;
 
         snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
 
         // Round up to the page size
-        size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+        //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
         int fd, rc;
         size_t n = bytes;

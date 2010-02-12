@@ -47,6 +47,7 @@ static void send_done_local (xmi_context_t   context,
   (*active)--;
 }
 
+#if 0
 static void send_done_remote (xmi_context_t   context,
                               void          * cookie,
                               xmi_result_t    result)
@@ -55,7 +56,7 @@ static void send_done_remote (xmi_context_t   context,
   fprintf (stderr, "Called send_done_remote function.  active: %zu -> %zu\n", *active, *active-1);
   (*active)--;
 }
-
+#endif
 int main (int argc, char ** argv)
 {
   //volatile size_t send_active = 2;
@@ -105,7 +106,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
-  size_t num_tasks = configuration.value.intval;
+  //size_t num_tasks = configuration.value.intval;
 
   size_t dispatch = 0;
   xmi_dispatch_callback_fn fn;

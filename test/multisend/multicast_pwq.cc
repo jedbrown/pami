@@ -78,7 +78,6 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 
 int main(int argc, char ** argv)
 {
-  unsigned x;
   xmi_client_t client;
   xmi_context_t context;
   xmi_result_t status = XMI_ERROR;
@@ -269,7 +268,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     // local topology variables
-    xmi_task_t  lRoot    = topology_local.index2Rank(0);
+    //xmi_task_t  lRoot    = topology_local.index2Rank(0);
     xmi_task_t *lRankList=NULL; topology_local.rankList(&lRankList);
     size_t  lSize   =  topology_local.size();
 

@@ -131,7 +131,6 @@ namespace XMI
 
         size_t count_of_unsigneds = count/sizeof(unsigned);
         unsigned value = 0;
-        xmi_result_t rc;
         size_t x;
 
         for(x = 0; x < count_of_unsigneds; ++x)
@@ -281,7 +280,6 @@ namespace XMI
                      src, source, dst, destination));
 
         size_t count_of_unsigneds = count/sizeof(unsigned);
-        xmi_result_t rc;
         size_t x;
         unsigned value = 0;
 

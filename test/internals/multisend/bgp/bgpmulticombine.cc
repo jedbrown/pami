@@ -16,7 +16,6 @@
 #endif // TEST_BUF_SIZE
 
 int main(int argc, char ** argv) {
-	unsigned x;
 	xmi_client_t client;
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;
@@ -63,7 +62,6 @@ int main(int argc, char ** argv) {
 
 	// Register some multicombines, C++ style
 	xmi_result_t rc;
-	size_t root = 0;
 
 	xmi_multicombine_t mcomb;
 

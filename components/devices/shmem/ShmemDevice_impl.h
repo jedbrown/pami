@@ -33,7 +33,7 @@ namespace XMI
       _context = context;
       _offset  = offset;
 
-      unsigned i, j;
+      unsigned i;
       __global.mapping.nodePeers (_num_procs);
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 0 _num_procs = %zd\n", __global.mapping.task(), _num_procs));
 

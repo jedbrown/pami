@@ -135,7 +135,8 @@ static void test_dispatch (
 void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-  xmi_result_t result = XMI_Send (context, parameters);
+  //xmi_result_t result = 
+    XMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
   while (_send_active) XMI_Context_advance (context, 100);
   _send_active = 1;
@@ -220,7 +221,6 @@ int main (int argc, char ** argv)
  std::cout << __FILE__ << __LINE__ << std::endl;
   TRACE_ERR((stderr, "Start test ...\n"));
 
-  size_t hdrcnt = 1;
   size_t hdrsize =0;
 
 
@@ -240,13 +240,11 @@ int main (int argc, char ** argv)
 
 
   /* Register the protocols to test */
-  char testcase_str[10240];
-  unsigned i, j, k = 0;
+  unsigned i = 0;
   _dispatch_count = 0;
 
   _dispatch[_dispatch_count] = _dispatch_count + 1;
 
-  size_t dispatch = 1;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
@@ -276,7 +274,7 @@ int main (int argc, char ** argv)
 
   configuration.name = XMI_WTICK;
   result = XMI_Configuration_query(client, &configuration);
-  double tick = configuration.value.doubleval;
+  //double tick = configuration.value.doubleval;
 
    size_t val = argc;
 

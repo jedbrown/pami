@@ -140,7 +140,7 @@ namespace XMI
                                                 uint64_t               payloadPa,
                                                 size_t                 bytes)
       {
-        TRACE((stderr, ">> initializeDescriptor(%p, %zu, %zu, %p, %zd)\n", desc, target_task, target_offset, (void *)payloadPa, bytes));
+        TRACE((stderr, ">> initializeDescriptor(%p, %u, %zu, %p, %zd)\n", desc, target_task, target_offset, (void *)payloadPa, bytes));
         // Clone the model descriptor.
         _desc_model.clone (*desc);
 #warning set reception fifo based on the target context id (target_offset)
@@ -183,7 +183,7 @@ namespace XMI
         TRACE((stderr, "   initializeDescriptor(),  after desc->setPayload()\n"));
         //desc->dump();
 
-        TRACE((stderr, "<< initializeDescriptor(%p, %zd, %p, %zd)\n", desc, target_rank, (void *)payloadPa, bytes));
+        TRACE((stderr, "<< initializeDescriptor(%p, %d, %p, %zd)\n", desc, target_task, (void *)payloadPa, bytes));
       }
 
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
@@ -269,6 +269,7 @@ namespace XMI
             uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", T_Niov, sequenceNum));
+            sequenceNum = 0; // just to stop warnings
 
             if (fn != NULL)
               {
@@ -372,6 +373,7 @@ namespace XMI
             uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", sequenceNum));
+            sequenceNum = 0; // just to stop warnings
 
             if (fn != NULL)
               {
@@ -479,6 +481,7 @@ namespace XMI
           uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
           TRACE((stderr, "MUPacketModel::postPacketImmediate_impl(%d) .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", T_Niov, sequenceNum));
+          sequenceNum = 0; // just to stop warnings
 
           return true;
         }

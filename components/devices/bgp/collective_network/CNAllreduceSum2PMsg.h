@@ -155,7 +155,7 @@ protected:
 	inline int __setThreads(CNAllreduce2PThread *t, int n) {
 		int nt = 0;
 		_g_cnallreduce2p_dev.common()->__resetThreads();
-		int maxnt = _g_cnallreduce2p_dev.common()->getMaxThreads();
+		//int maxnt = _g_cnallreduce2p_dev.common()->getMaxThreads();
 		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);

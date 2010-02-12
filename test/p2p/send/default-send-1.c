@@ -35,8 +35,7 @@ static void test_dispatch (
     size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
-  volatile size_t * active = (volatile size_t *) cookie;
-  TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zu\n", cookie, *active));
+  TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zu\n", cookie, *((volatile size_t *) cookie)));
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;

@@ -56,7 +56,7 @@ typedef struct
 } header_t;
 
 /* --------------------------------------------------------------- */
-
+#if 0
 static void decrement (xmi_context_t   context,
                        void          * cookie,
                        xmi_result_t    result)
@@ -65,7 +65,7 @@ static void decrement (xmi_context_t   context,
   TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
   --*value;
 }
-
+#endif
 /* --------------------------------------------------------------- */
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
@@ -85,7 +85,8 @@ static void test_dispatch (
 void send_once (xmi_context_t context, xmi_send_immediate_t * parameters)
 {
   TRACE_ERR((stderr, "(%zd) before send_immediate()  \n", _my_rank));
-  xmi_result_t result = XMI_Send_immediate (context, parameters);
+  //xmi_result_t result = 
+    XMI_Send_immediate (context, parameters);
   TRACE_ERR((stderr, "(%zd) after send_immediate()  \n", _my_rank));
 }
 
@@ -182,13 +183,10 @@ int main (int argc, char ** argv)
 //  printf("size of size_t:%d\n", sizeof(size_t));
 
   /* Register the protocols to test */
-  char testcase_str[10240];
-  unsigned i, j, k = 0;
   _dispatch_count = 0;
 
   _dispatch[_dispatch_count] = _dispatch_count + 1;
 
-  size_t dispatch = 1;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
@@ -212,7 +210,6 @@ int main (int argc, char ** argv)
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);
-  size_t num_tasks = configuration.value.intval;
 
   configuration.name = XMI_WTICK;
   result = XMI_Configuration_query(client, &configuration);
@@ -268,8 +265,7 @@ int main (int argc, char ** argv)
     int index = 0;
     index += sprintf (&str[index], "%10zd ", sndlen);
 
-    unsigned i;
-    for (i=0; i<hdrcnt; i++)
+    for (unsigned i=0; i<hdrcnt; i++)
     {
 #ifdef WARMUP
       test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, origin, target);

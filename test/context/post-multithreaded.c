@@ -43,7 +43,7 @@ xmi_result_t do_work (xmi_context_t   context,
 
   /* copy the data to a local buffer. */
   uint8_t local_buffer[1024];
-  size_t i, n = work->bytes<1024?work->bytes:1024;
+  size_t  n = work->bytes<1024?work->bytes:1024;
   size_t to = work->to;
   TRACE((stderr, "   do_work (), work->bytes = %zu, work->addr = %p, to = %zu, n = %zu\n", work->bytes, work->addr, to, n));
   memcpy ((void *) local_buffer, work->addr, n);

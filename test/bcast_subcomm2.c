@@ -84,7 +84,6 @@ int main(int argc, char*argv[])
   xmi_result_t  result = XMI_ERROR;
   double        tf,ti,usec;
   char          buf[BUFSIZE];
-  char          rbuf[BUFSIZE];
   char          cl_string[] = "TEST";
   result = XMI_Client_initialize (cl_string, &client);
   if (result != XMI_SUCCESS)
