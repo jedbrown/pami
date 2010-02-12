@@ -244,7 +244,6 @@ namespace XMI
 			   size_t                 context_id,
 			   size_t client_id):
       CollInfo<T_Device>(dev),
-	sminterface(dev, client, context, context_id),
 	_minterface(dev, client, context, context_id, client_id),
 	_barrier_registration(NULL, &_minterface, (xmi_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
 	_client(client),

@@ -33,12 +33,12 @@ namespace XMI
 
     class MPIBcastMdl;
 
-    class MPIBcastDev : public XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>
+    class MPIBcastDev : public XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>
     {
     public:
       MPI_Comm _mcast_communicator;
       MPIBcastDev() :
-      XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>(),
+      XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>(),
       _mcast_communicator(MPI_COMM_NULL)
       {
       };
@@ -55,7 +55,7 @@ namespace XMI
       inline void init(XMI::SysDep *sd, size_t clientId, size_t num_ctx, xmi_context_t ctx,  size_t contextId)
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_mcast_communicator);
-        Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>::init(sd, clientId, num_ctx, ctx, contextId);
+	XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>::init(sd, clientId, num_ctx, ctx, contextId);
       }
 
     };
@@ -77,7 +77,6 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
 ///
 /// \brief
 ///
-    template < class T_Device >
     class MPIBcastMsg : public XMI::Device::Generic::GenericMessage
     {
     private:
@@ -88,11 +87,10 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
         NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
       };
     public:
-      MPIBcastMsg(T_Device *Generic_QS, //Generic::BaseGenericDevice &Generic_QS,
+      MPIBcastMsg(Generic::BaseGenericDevice *Generic_QS,
                   xmi_multicast_t *mcast) :
       XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
                                            mcast->client, mcast->context),
-      _device(Generic_QS),
       _dst((XMI::Topology *)mcast->dst_participants),
       _iwq((XMI::PipeWorkQueue *)mcast->src),
       _rwq((XMI::PipeWorkQueue *)mcast->dst),
@@ -151,27 +149,17 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
         //XMI_assertf(_rwq || _iwq, "MPIBcastMsg has neither input or output data\n");
       }
 
-      STD_POSTNEXT(T_Device,XMI::Device::Generic::SimpleAdvanceThread,_device)
-    protected:
-      //	STD_POSTNEXT(MPIBcastDev,XMI::Device::Generic::SimpleAdvanceThread,&_g_mpibcast_dev)
-/*      // This is a virtual function, but declaring inline here avoids linker
-      // complaints about multiple definitions.
-      inline void complete(xmi_context_t context);
- Compile with xl but not gcc.
-      {
-        ((T_Device *)_QS)->__complete<MPIBcastMsg>(this);
-        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::complete() \n",this));
-        executeCallback(context);
+      // virtual function
+      xmi_context_t postNext(bool devPosted) {
+	return _g_mpibcast_dev.__postNext<MPIBcastMsg>(this, devPosted);
       }
-*/
-      //friend class MPIBcastDev; // Until C++ catches up with real programming languages:
-      friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>;
 
-      DECL_ADVANCE_ROUTINE(advanceThread,MPIBcastMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
-      inline int __setThreads(XMI::Device::Generic::SimpleAdvanceThread *t, int n)
+      inline int setThreads(XMI::Device::Generic::SimpleAdvanceThread **th)
       {
+	XMI::Device::Generic::SimpleAdvanceThread *t;
+	int n;
+	_g_mpibcast_dev.__getThreads(&t, &n);
         int nt = 0;
-        // assert(nt < n);
         _nThreads = 1;  // must predict total number of threads now,
         // so early advance(s) work
         t[nt].setMsg(this);
@@ -183,10 +171,12 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
         // assert(nt > 0? && nt < n);
         TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zd\n",this,
                       n,nt,t[nt]._bytesLeft));
+	*th = t;
         return nt;
       }
 
-      friend class XMI::Device::Generic::GenericMessage;
+    protected:
+      DECL_ADVANCE_ROUTINE(advanceThread,MPIBcastMsg,XMI::Device::Generic::SimpleAdvanceThread);
       inline xmi_result_t __advanceThread(XMI::Device::Generic::SimpleAdvanceThread *thr)
       {
         if(getStatus() == XMI::Device::Done)
@@ -257,7 +247,7 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
           {
             rc = MPI_Isend(_currBuf, _currBytes, MPI_BYTE,
                            _dst->index2Rank(_idx), _tag,
-                           _device->_mcast_communicator, &_req);
+                           _g_mpibcast_dev._mcast_communicator, &_req);
           }
           TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",this,
                         rc,_idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
@@ -306,7 +296,7 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
           //count = 5;
           int rc = MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
                              _root, _tag,
-                             _device->_mcast_communicator, &_req);
+                             _g_mpibcast_dev._mcast_communicator, &_req);
           TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",this,
                         rc, _idx, _currBytes, thr->_bytesLeft, _root, _tag, _req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           // error checking?
@@ -316,7 +306,6 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
       }
 
       unsigned _nThreads;
-      T_Device *_device;
       XMI::Topology *_dst;
       XMI::PipeWorkQueue *_iwq;
       XMI::PipeWorkQueue *_rwq;
@@ -330,17 +319,15 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
       MessageStatus _pendingStatus;
     }; //-- MPIBcastMsg
 
-    typedef MPIBcastMsg<XMI::Device::MPIBcastDev> MPIBcastMsg_t;
-
-    class MPIBcastMdl : public XMI::Device::Interface::MulticastModel<MPIBcastMdl,sizeof(MPIBcastMsg_t)>
+    class MPIBcastMdl : public XMI::Device::Interface::MulticastModel<MPIBcastMdl,sizeof(MPIBcastMsg)>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
-      static const size_t sizeof_msg = sizeof(MPIBcastMsg_t);
+      static const size_t sizeof_msg = sizeof(MPIBcastMsg);
 
       MPIBcastMdl(xmi_result_t &status) :
-        XMI::Device::Interface::MulticastModel<MPIBcastMdl, sizeof(MPIBcastMsg_t)>(status)
+        XMI::Device::Interface::MulticastModel<MPIBcastMdl, sizeof(MPIBcastMsg)>(status)
       {
         TRACE_DEVICE((stderr,"<%p>MPIBcastMdl()\n",this));
       }
@@ -356,9 +343,9 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
     {
       TRACE_DEVICE((stderr,"<%p>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, &state));
-      MPIBcastMsg<XMI::Device::MPIBcastDev> *msg =
-      new (&state) MPIBcastMsg<XMI::Device::MPIBcastDev>(_g_mpibcast_dev, mcast);
-      _g_mpibcast_dev.__post<MPIBcastMsg<XMI::Device::MPIBcastDev> >(msg);
+      MPIBcastMsg *msg =
+      new (&state) MPIBcastMsg(_g_mpibcast_dev.getQS(), mcast);
+      _g_mpibcast_dev.__post<MPIBcastMsg>(msg);
       return XMI_SUCCESS;
     }
 

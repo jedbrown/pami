@@ -33,12 +33,12 @@ namespace XMI
 
     class MPISyncMdl;
 
-    class MPISyncDev : public XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>
+    class MPISyncDev : public XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>
     {
     public:
       MPI_Comm _msync_communicator;
       MPISyncDev() :
-      XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>(),
+      XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>(),
       _msync_communicator(MPI_COMM_NULL)
       {
       }
@@ -55,7 +55,7 @@ namespace XMI
       inline void init(XMI::SysDep *sd, size_t clientId, size_t num_ctx, xmi_context_t ctx, size_t contextId)
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_msync_communicator);
-        Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>::init(sd, clientId, num_ctx, ctx, contextId);
+	XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>::init(sd, clientId, num_ctx, ctx, contextId);
       }
     };
   }; //-- Device
@@ -76,7 +76,6 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
 ///
 /// \brief
 ///
-    template < class T_Device >
     class MPISyncMsg : public XMI::Device::Generic::GenericMessage
     {
     private:
@@ -87,11 +86,10 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
         NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
       };
     public:
-      MPISyncMsg(T_Device *Generic_QS,
+      MPISyncMsg(Generic::BaseGenericDevice *Generic_QS,
                  xmi_multisync_t *msync) :
       XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
                                            msync->client, msync->context),
-      _device(Generic_QS),
       _participants((XMI::Topology *)msync->participants),
       _tag(msync->connection_id),
       _idx(0),
@@ -126,14 +124,16 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
                       rc, _participants->index2Rank(_idx), _tag));
       }
 
-      STD_POSTNEXT(T_Device,XMI::Device::Generic::SimpleAdvanceThread,_device)
-    protected:
-      friend class MPISyncDev;
-      friend class XMI::Device::Generic::SimpleSubDevice<XMI::Device::Generic::SimpleAdvanceThread>; // this makes no sense
+      // virtual function
+      xmi_context_t postNext(bool devPosted) {
+	return _g_mpisync_dev.__postNext<MPISyncMsg>(this, devPosted);
+      }
 
-      DECL_ADVANCE_ROUTINE(advanceThread,MPISyncMsg<T_Device>,XMI::Device::Generic::SimpleAdvanceThread);
-      inline int __setThreads(XMI::Device::Generic::SimpleAdvanceThread *t, int n)
+      inline int setThreads(XMI::Device::Generic::SimpleAdvanceThread **th)
       {
+	XMI::Device::Generic::SimpleAdvanceThread *t;
+	int n;
+	_g_mpisync_dev.__getThreads(&t, &n);
         int nt = 0;
         // assert(nt < n);
         t[nt].setMsg(this);
@@ -144,10 +144,12 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
         _nThreads = nt;
         TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__setThreads(%d) _nThreads %d\n",this,
                       n,nt));
+	*th = t;
         return nt;
       }
 
-      friend class XMI::Device::Generic::GenericMessage;
+protected:
+      DECL_ADVANCE_ROUTINE(advanceThread,MPISyncMsg,XMI::Device::Generic::SimpleAdvanceThread);
       inline xmi_result_t __advanceThread(XMI::Device::Generic::SimpleAdvanceThread *thr)
       {
         if(getStatus() == XMI::Device::Done)
@@ -213,7 +215,6 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
       }
 
       unsigned _nThreads;
-      T_Device *_device;
       XMI::Topology *_participants;
       int            _tag;
       size_t         _idx;
@@ -222,17 +223,15 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
       size_t         _root; // first rank in the sync - arbitrary 'root'
     }; //-- MPISyncMsg
 
-    typedef MPISyncMsg<XMI::Device::MPISyncDev> MPISyncMsg_t;
-
-    class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>
+    class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg)>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
-      static const size_t sizeof_msg = sizeof(MPISyncMsg_t);
+      static const size_t sizeof_msg = sizeof(MPISyncMsg);
 
       MPISyncMdl(xmi_result_t &status) :
-      XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg_t)>(status)
+      XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg)>(status)
       {
         TRACE_DEVICE((stderr,"<%p>MPISyncMdl()\n",this));
         //XMI::SysDep *sd = _g_mpisync_dev.getSysdep();
@@ -249,9 +248,9 @@ inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device
     {
       TRACE_DEVICE((stderr,"<%p>MPISyncMdl::postMulticast() connection_id %d, request %p\n",this,
                     msync->connection_id, &state));
-      MPISyncMsg<XMI::Device::MPISyncDev> *msg =
-      new (&state) MPISyncMsg<XMI::Device::MPISyncDev>(_g_mpisync_dev, msync);
-      _g_mpisync_dev.__post<MPISyncMsg<XMI::Device::MPISyncDev> >(msg);
+      MPISyncMsg *msg =
+      new (&state) MPISyncMsg(_g_mpisync_dev.getQS(), msync);
+      _g_mpisync_dev.__post<MPISyncMsg>(msg);
       return XMI_SUCCESS;
     }
 
