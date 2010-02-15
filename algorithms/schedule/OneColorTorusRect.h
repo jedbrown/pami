@@ -53,7 +53,7 @@ namespace CCMI
 #define MY_TASK _map->task()
 #define POSITIVE 0
 #define NEGATIVE 1
-    
+
     class OneColorTorusRect : public Schedule
     {
       protected:
@@ -90,21 +90,21 @@ namespace CCMI
           _rect->rectSeg(&_ll, &_ur, &_torus_link);
           for (i = 0; i < _map->torusDims(); i++)
             _dim_sizes[i] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
-          
-          
+
+
           virtual void init(xmi_task_t root, int op, int &start, int &nphases);
           virtual void getSrcTopology(XMI::Topology *topo);
           {
             return;
           }
-          
+
           virtual void getDstTopology(unsigned phase, XMI::Topology *topology);
 
           unsigned color()
           {
             return _color;
           }
-          
+
           void setColor(unsigned c)
           {
             _color  = c;
@@ -133,16 +133,16 @@ namespace CCMI
             for(i = 0; i < torus_dims; i++)
               if (sizes[i] > 1)
                 colors[ideal++] = (Color)_MK_COLOR(i, P_DIR);
-            
+
             max = ideal;
-            
+
             for(i = 0; i < torus_dims; i++)
               if (sizes[i] > 1 && torus_link[i])
                 colors[max++] = (Color)_MK_COLOR(i, N_DIR);
-            
+
             if (max == 2 * ideal)
               ideal = max;
-            
+
             if (ideal == 0)
             {
               ideal = max = 1;
@@ -150,11 +150,11 @@ namespace CCMI
             }
           }
 #endif
-          
+
         };  //-- OneColorTorusRect
     };  //-- Schedule
   }; //-- CCMI
-  
+
 
   //-------------------------------------------------------------------
   //------  OneColorTorusRect Schedule Functions ----------------------
@@ -180,38 +180,38 @@ namespace CCMI
 
     _root = root;
     _map->task2network(root, &_root_coord, XMI_N_TORUS_NETWORK);
-  
+
     size_t torus_dims = _map->torusDims();
-  
+
     if (MY_TASK == root)
       _startphase = 0;
     else
     {
       int i, axis;
       unsigned color = _color;
-    
+
       size_t axes[XMI_MAX_DIMS];
-    
+
       for (axis = 0; axis < torus_dims; axis++)
         axes[i] = color++ % torus_dims;
-    
+
       for (axis = 0; axis < torus_dims; axis++)
       {
-        // other nodes that send to ghost 
+        // other nodes that send to ghost
         if (axis + 1 == torus_dims &&
           _self_coord.net_coord(axes[0]) != root.net_coord(axes[0])
         {
           _startphase = axis;
           break;
         }
-      
+
         for (success = 1, i = axis + 1; i < torus_dims; i++)
           if (_self_coord.net_coord(axes[i]) != _root.net_coord(axes[i]))
           {
             success = 0;
             break;
           }
-      
+
         if (success &&
             // excludes ghost nodes
             _self_coord.net_coord(axes[0]) != root.net_coord(axes[0]))
@@ -223,13 +223,13 @@ namespace CCMI
       // this means I am a ghost node
       if (_startphase == -1) _startphase = torus_dims;
     }
-  
-    start = _startphase;    
+
+    start = _startphase;
     nphases = torus_dims + 2 - start; // 2: 1 for local comm if any, 1 for ghost
 
     TRACE_ERR((stderr,
                "%d: Calling Init with color %d, root %d startphase %d\n",
-                MY_TASK, _color, root, _startphase));  
+                MY_TASK, _color, root, _startphase));
   }
 
   /**
@@ -252,7 +252,7 @@ namespace CCMI
 
     torus_dims = _map->torusDims();
     _map->nodePeers(&peers);
-  
+
     core_dim = torus_dims;
     if (_self_coord.net_coord(core_dim) == _root.net_coord(core_dim))
     {
@@ -265,15 +265,15 @@ namespace CCMI
         // the next dimension in the torus
         if (phase < torus_dims)
           setupBroadcast(phase, topo);
-        
+
         ///Process ghost nodes
         else if (phase == torus_dims)
           setupGhost(topo);
       }
-      
+
       ///Process local broadcasts
       if (phase == (torus_dims + 1) && peers > 1)
-        setupLocal(topo);        
+        setupLocal(topo);
     }
   }
 
@@ -293,8 +293,8 @@ namespace CCMI
       xmi_coord_t low, high;
       unsigned char dir[XMI_MAX_DIMS] = {0};
       size_t torus_dims = _map->torusDims();
-  
-      //Find the axis to do the line broadcast on  
+
+      //Find the axis to do the line broadcast on
       int axis = (phase + _color) % torus_dims;
       dir[axis] = NEGATIVE;
       if (_color >= torus_dims)
@@ -306,10 +306,10 @@ namespace CCMI
                                 _self_coord.net_coord(axis));
       high.net_coord(axis) = MAX(_ur.net_coord(axis),
                                  _self_coord.net_coord(axis));
-  
+
       new (topo) XMI::Topology(&low, &high, &_self_coord, &dir, &_torus_link);
     }
- 
+
     /**
      * \brief Get Destinations for the phases to process ghost nodes
      *
@@ -324,10 +324,10 @@ namespace CCMI
       int i;
       xmi_coord_t ref, dst;
       unsigned char dir[XMI_MAX_DIMS] = {0};
-  
+
       size_t torus_dims = _map->torusDims();
       size_t axis = _color % torus_dims;
-  
+
       CCMI_assert(_dim_sizes[axis] > 1);
 
       dir[axis] = NEGATIVE;
@@ -350,7 +350,7 @@ namespace CCMI
             dir[axis] = NEGATIVE;
           }
       }
-      
+
       //The nodes that are different from the root in one dimension (not
       //the leading dimension of the color) are the ghosts. The nodes
       //just before them have to send data to them
@@ -359,10 +359,10 @@ namespace CCMI
         xmi_network *type;
         xmi_task_t dst_task;
         dst.network = XMI_N_TORUS_NETWORK;
-        
+
         dst.net_coord(axis) = _root_coord.net_coord(axis);
         _map->network2Task(dst, &dst_task, &type);
-        
+
         if(dst_task != _root)
         {
           low = _self_coord;
@@ -371,7 +371,7 @@ namespace CCMI
                                     _self_coord.net_coord(axis));
           high.net_coord(axis) = MAX(dst.net_coord(axis),
                                      _self_coord.net_coord(axis));
-          
+
           new (topo) XMI::Topology(&low, &high, &_self_coord, &dir,
                                    &_torus_link);
         }
@@ -397,14 +397,14 @@ namespace CCMI
         // the cores dim is the first one after the physical torus dims
         core_dim = _map->torusDims();
 
-          
+
         if (_self_coord.net_coord(core_dim) == _root.net_coord(core_dim))
         {
           xmi_coord_t low, high;
           low = _self_coord;
           high = _self_coord;
           low.net_coord(core_dim) = 0;
-          high.net_coord(core_dim) = peers - 1;    
+          high.net_coord(core_dim) = peers - 1;
         }
         new (topo) XMI::Topology(&low, &high, &_self_coord, &dir, &_torus_link);
       }

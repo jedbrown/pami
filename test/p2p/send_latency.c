@@ -97,7 +97,7 @@ static void test_dispatch (
 
 void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
-  //xmi_result_t result = 
+  //xmi_result_t result =
     XMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_rank));
   while (_send_active) XMI_Context_advance (context, 100);

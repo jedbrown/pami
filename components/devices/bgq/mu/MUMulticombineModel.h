@@ -441,7 +441,7 @@ namespace XMI
         while(receive_state && receive_state->connection_id != metadata->connection_id)
           receive_state = (mcombine_recv_state_t*)_recvQ.nextElem(receive_state);
         XMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
-        
+
         // Number of bytes left to copy into the destination buffer
         size_t nleft = receive_state->expected_length - receive_state->received_length;
 

@@ -80,7 +80,7 @@ void barrier ()
   parameters.dest            = __barrier_next_endpoint;
 
   TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %zu, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
-  //xmi_result_t result = 
+  //xmi_result_t result =
     XMI_Send_immediate (__barrier_context, &parameters);
 
 

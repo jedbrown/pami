@@ -907,7 +907,7 @@ namespace XMI {
 
         *low = ll;
         *high = ur;
-        
+
         if (axis != -1)
         {
           *low = center;

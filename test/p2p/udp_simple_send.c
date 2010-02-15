@@ -135,7 +135,7 @@ static void test_dispatch (
 void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-  //xmi_result_t result = 
+  //xmi_result_t result =
     XMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
   while (_send_active) XMI_Context_advance (context, 100);

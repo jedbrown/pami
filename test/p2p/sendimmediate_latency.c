@@ -85,7 +85,7 @@ static void test_dispatch (
 void send_once (xmi_context_t context, xmi_send_immediate_t * parameters)
 {
   TRACE_ERR((stderr, "(%zd) before send_immediate()  \n", _my_rank));
-  //xmi_result_t result = 
+  //xmi_result_t result =
     XMI_Send_immediate (context, parameters);
   TRACE_ERR((stderr, "(%zd) after send_immediate()  \n", _my_rank));
 }
