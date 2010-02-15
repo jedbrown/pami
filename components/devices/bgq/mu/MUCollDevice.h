@@ -48,9 +48,9 @@ namespace XMI
                 public:
                   MUCollDevice() : MUDevice (),
                       //Interface::BaseDevice<MUCollDevice, SysDep> (),
-                      _fnum(0),
-                      _injFifoSubGroup(NULL),
-                      _relativeFnum(0)
+                    _injFifoSubGroup(NULL),
+                    _fnum(0),
+                    _relativeFnum(0)
                   {
                     TRACE((stderr, "<%p>MUCollDevice::ctor \n", this));
                   };
@@ -63,7 +63,7 @@ namespace XMI
                   ///
                   /// \see init
                   ///
-                  /// Uggh.  I want to hook into MUDevice's init_impl (through BaseDevices's init()).  So hide init() with my own init().
+                  /// I want to hook into MUDevice's init_impl (through BaseDevices's init()).  So hide init() with my own init().
                   inline int init (SysDep        * sysdep,
                                    xmi_context_t   context,
                                    size_t          offset)
@@ -112,17 +112,17 @@ namespace XMI
                   ///
                   //////////////////////////////////////////////////////////////////////////
 
-                  uint32_t getRecFifoIdForDescriptor ( int p )
+                  uint32_t getCollRecFifoIdForDescriptor ( int p )
                   {
-                    TRACE((stderr, "<%p>MUCollDevice::getRecFifoIdForDescriptor() \n", this));
+                    TRACE((stderr, "<%p>MUCollDevice::getCollRecFifoIdForDescriptor() \n", this));
                     return _colChannel->getRecFifoIdForDescriptor ( p );
                   }
 
-                  uint16_t getRgetInjFifoId (size_t target_rank)
-                  {
-                    TRACE((stderr, "<%p>MUCollDevice::getRgetInjFifoId() \n", this));
-                    return _colChannel->getRgetInjFifoId (target_rank);
-                  }
+//                uint16_t getCollRgetInjFifoId (size_t target_rank)
+//                {
+//                  TRACE((stderr, "<%p>MUCollDevice::getCollRgetInjFifoId() \n", this));
+//                  return _colChannel->getRgetInjFifoId (target_rank);
+//                }
 
                   int init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid)
                   {
@@ -157,8 +157,8 @@ namespace XMI
                   }
 
                 protected:
-                  uint32_t          _fnum;
                   InjFifoSubGroup * _injFifoSubGroup;
+                  uint32_t          _fnum;
                   uint32_t          _relativeFnum;
 
                 private:

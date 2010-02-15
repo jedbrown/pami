@@ -138,7 +138,7 @@ SoftwareBytes  :
   __global.mapping.task2global ((xmi_task_t)target_rank, addr);
   TRACE((stderr, "<%p>:MUMulticombineModel::ctor .. %p->getRecFifoIdForDescriptor(%zd) target_rank %zd\n", this, &_device, addr[5], (size_t)target_rank));
   /// \todo Assuming p is the recv grp id?
-  uint32_t recFifoId = _device.getRecFifoIdForDescriptor(addr[5]);;
+  uint32_t recFifoId = _device.getCollRecFifoIdForDescriptor(addr[5]);;
 
   TRACE((stderr, "<%p>:MUMulticombineModel::ctor .. recFifoId %d\n", this, recFifoId));
   _desc_model.setRecFIFOId (recFifoId);
