@@ -122,7 +122,6 @@ public:
 		_g_cnallreduce_dev.__getThreads(&t, &n);
 		int nt = 0;
 		_g_cnallreduce_dev.common()->__resetThreads();
-		int maxnt = _g_cnallreduce_dev.common()->getMaxThreads();
 		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
@@ -141,6 +140,7 @@ public:
 			t[nt]._wq = _rwq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE;
+			// maybe not inject reception here?
 			__advanceRcp(&t[nt]);
 			++nt;
 		}
@@ -182,7 +182,7 @@ protected:
 
 
 	inline xmi_result_t __advanceRcp(CNAllreduceThread *thr) {
-		if (thr->_bytesLeft == 0) XMI_SUCCESS;
+		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
 		unsigned hcount = 0, dcount = 0;
 		unsigned toCopy = thr->_bytesLeft >= BGPCN_PKT_SIZE ? BGPCN_PKT_SIZE : thr->_bytesLeft;
 		size_t avail = thr->_wq->bytesAvailableToProduce();
