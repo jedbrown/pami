@@ -1,14 +1,14 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file test/p2p/send/eager_concurrency.cc
+ * \file test/p2p/send/eager_concurrency.c
  *
  * \brief Multpiple processes send and recveive to/from all the rest.
  */
@@ -68,7 +68,7 @@ usage:
 			break;
 		}
 	}
-	
+
 	optind -= 1;
 	argc -= optind;
 	if (argc < 1) goto usage;

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/default/CollRegistration.h
+ * \file algorithms/geometry/OldCCMICollRegistration.h
  * \brief ???
  */
 
-#ifndef __common_oldccmi_CollRegistration_h__
-#define __common_oldccmi_CollRegistration_h__
+#ifndef __algorithms_geometry_OldCCMICollRegistration_h__
+#define __algorithms_geometry_OldCCMICollRegistration_h__
 
 #include <map>
 #include <vector>

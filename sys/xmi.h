@@ -2046,8 +2046,8 @@ extern "C"
   /** \} */ /* end of "datatype" group */
 
 #include "xmi_ext.h"
-  
-  
+
+
   typedef union
   {
     xmi_dispatch_p2p_fn         p2p;

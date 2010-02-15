@@ -21,7 +21,7 @@ unsigned validate (void * addr, size_t bytes)
       status = 0;
     }
   }
-  
+
   return status;
 }
 
@@ -40,7 +40,7 @@ static void test_dispatch (
   (*active)--;
   fprintf (stderr, ">>> [%zu] %s\n", header_size, (char *) header_addr);
   fprintf (stderr, ">>> [%zu] %s\n", pipe_size, (char *) pipe_addr);
-  
+
   if (validate (header_addr, header_size))
     fprintf (stderr, ">>> header validated.\n");
   else
@@ -139,19 +139,19 @@ int main (int argc, char ** argv)
 
   char header_string[1024];
   char data_string[1024];
-  
+
   for (i=0; i<1024; i++)
   {
     header_string[i] = (char)i;
     data_string[i]   = (char)i;
   }
-  
+
   size_t h, hsize = 0;
   size_t header_bytes[16];
   header_bytes[hsize++] = 0;
   header_bytes[hsize++] = 16;
   header_bytes[hsize++] = 32;
-  
+
   size_t p, psize = 0;
   size_t data_bytes[16];
   data_bytes[psize++] = 0;
@@ -174,14 +174,14 @@ int main (int argc, char ** argv)
     fprintf (stdout, "\n");
     parameters.dest = XMI_Client_endpoint (client, 1, 0);
 #endif
-    
+
     for (h=0; h<hsize; h++)
     {
       parameters.header.iov_len = header_bytes[h];
       for (p=0; p<psize; p++)
       {
         parameters.data.iov_len = data_bytes[p];
-      
+
         fprintf (stderr, "before send immediate, {%zu, %zu}, endpoint destination: 0x%08x ...\n", h, p, parameters.dest);
         result = XMI_Send_immediate (context[0], &parameters);
         fprintf (stderr, "... after send immediate.\n");

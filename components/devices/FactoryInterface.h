@@ -94,4 +94,3 @@ T_Device & XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progres
 
 
 #endif
-

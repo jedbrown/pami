@@ -1189,7 +1189,7 @@ typedef enum {
 
 
 #define XMI_DISPATCH_EXTEND         xmi_dispatch_multicast_fn   multicast;  \
-                                    xmi_dispatch_manytomany_fn  manytomany; 
+                                    xmi_dispatch_manytomany_fn  manytomany;
 
 
 #define XMI_DISPATCH_TYPE_EXTEND     XMI_MULTICAST,    /**< Multicast                   */ \

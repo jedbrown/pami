@@ -135,7 +135,7 @@ namespace XMI
         _atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
         _wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
         _wqringbcast = XMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
-        _localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, 
+        _localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx,
 mm);
         _localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
         _localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);

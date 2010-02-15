@@ -233,7 +233,7 @@ namespace XMI
         _lock.init(&_sysdep);
 	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 	_local_generic_device = & XMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
-					     
+
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));

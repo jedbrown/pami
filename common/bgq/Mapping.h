@@ -574,12 +574,12 @@ xmi_result_t XMI::Mapping::init(bgq_mapcache_t &mapcache,
   _mapcache.node.local2peer   = mapcache.node.local2peer;
   _mapcache.node.peer2task    = mapcache.node.peer2task;
   _mapcache.size              = mapcache.size;
-  _mapcache.local_size        = mapcache.local_size; 
+  _mapcache.local_size        = mapcache.local_size;
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  if (_pers._is_mambo) 
+  if (_pers._is_mambo)
   {
-    size_t 
+    size_t
     asize =_pers.aSize(),
            bsize =_pers.bSize(),
                   csize =_pers.cSize(),

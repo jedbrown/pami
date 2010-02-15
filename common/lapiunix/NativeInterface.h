@@ -1,10 +1,10 @@
 /*
- * \file common/lapi/NativeInterface.h
+ * \file common/lapiunix/NativeInterface.h
  * \brief ???
  */
 
-#ifndef __common_lapi_NativeInterface_h__
-#define __common_lapi_NativeInterface_h__
+#ifndef __common_lapiunix_NativeInterface_h__
+#define __common_lapiunix_NativeInterface_h__
 
 #include "Global.h"
 #include "algorithms/interfaces/NativeInterface.h"

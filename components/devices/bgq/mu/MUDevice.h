@@ -86,7 +86,7 @@ namespace XMI
           static const unsigned NULL_P2P_CHANNEL = MAX_NUM_P2P_CHANNELS;
 
         public:
-          
+
         // Inner factory class
         class Factory : public Interface::FactoryInterface<Factory, MUDevice, XMI::Device::Generic::Device>
         {

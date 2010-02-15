@@ -223,7 +223,7 @@ namespace XMI
                     classRouteInfo.output = 0;
 		    /// \todo global class route always 2 (arbitrary)?
                     rc = Kernel_AllocateCollectiveClassRoute ( 2 );
-		    rc = Kernel_SetCollectiveClassRoute ( 2, &classRouteInfo ); 
+		    rc = Kernel_SetCollectiveClassRoute ( 2, &classRouteInfo );
 
                     if ( rc )
                       {

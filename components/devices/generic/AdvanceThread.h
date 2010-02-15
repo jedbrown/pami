@@ -69,7 +69,7 @@ public:
 
 	/// \brief Work constructor for thread
 	///
-	/// Constructs a thread object that is ready to run, 
+	/// Constructs a thread object that is ready to run,
 	/// complete with work function.
 	///
 	/// \param[in] func	Work function to call

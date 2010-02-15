@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -10,6 +10,9 @@
  * \file test/p2p/send/send_general.h
  * \brief some generally-useful setups for send tests
  */
+
+#ifndef __test_p2p_send_send_general_h__
+#define __test_p2p_send_send_general_h__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,7 +62,7 @@ int setup_localpeers(xmi_task_t *ranks, size_t nranks, xmi_task_t *mine) {
 	size_t me = DCMF_Messager_rank();
 	size_t t, r;
 	*mine = -1;
-	
+
 	XMI_Coord_t addr;
 	XMI_Network network;
 	DCMF_Messager_rank2network(me, XMI_TORUS_NETWORK, &addr);
@@ -320,4 +323,6 @@ int test(xmi_context_t context, size_t dispatch_id, xmi_task_t rank,
 	}
 	return 0;
 }
+#endif
+
 #endif

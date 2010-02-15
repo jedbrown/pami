@@ -1,5 +1,5 @@
 /**
- * \file test/xmihello.c
+ * \file test/xmihello.cc
  * \brief ???
  */
 

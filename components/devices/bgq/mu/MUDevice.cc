@@ -272,12 +272,12 @@ void XMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_
     fprintf(stderr,"hdr->Injection_Info.Skip                   %#X\n", chdr->Injection_Info.Skip                  );
     if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_FIFO)
     {
-      fprintf(stderr,  "FIFO Packet_Type\n"); 
+      fprintf(stderr,  "FIFO Packet_Type\n");
       MemoryFifoPacketHeader_t * hdr = (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
       fprintf(stderr,"hdr->dev.issingle                          %#X\n", hdr->dev.issingle   );
       //  fprintf(stderr,"hdr->dev.multipkt                          %#X\n", hdr->dev.multipkt   );
       fprintf(stderr,"hdr->dev.singleonly                        %#X\n", hdr->dev.singleonly );
-      fprintf(stderr,"hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n", 
+      fprintf(stderr,"hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n",
               hdr->dev.singlepkt.metadata[0], hdr->dev.singlepkt.metadata[1], hdr->dev.singlepkt.metadata[2], hdr->dev.singlepkt.metadata[3],
               hdr->dev.singlepkt.metadata[4], hdr->dev.singlepkt.metadata[5], hdr->dev.singlepkt.metadata[6], hdr->dev.singlepkt.metadata[7],
               hdr->dev.singlepkt.metadata[8], hdr->dev.singlepkt.metadata[9], hdr->dev.singlepkt.metadata[10], hdr->dev.singlepkt.metadata[11],
@@ -316,12 +316,12 @@ void XMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_
     fprintf(stderr,"hdr->Injection_Info.Skip                   %#X\n", phdr->Injection_Info.Skip                      );
     if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_FIFO)
     {
-      fprintf(stderr,  "FIFO Packet_Type\n"); 
+      fprintf(stderr,  "FIFO Packet_Type\n");
       MemoryFifoPacketHeader_t * hdr = (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
       fprintf(stderr,"hdr->dev.issingle                          %#X\n", hdr->dev.issingle   );
       //  fprintf(stderr,"hdr->dev.multipkt                          %#X\n", hdr->dev.multipkt   );
       fprintf(stderr,"hdr->dev.singleonly                        %#X\n", hdr->dev.singleonly );
-      fprintf(stderr,"hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n", 
+      fprintf(stderr,"hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n",
               hdr->dev.singlepkt.metadata[0], hdr->dev.singlepkt.metadata[1], hdr->dev.singlepkt.metadata[2], hdr->dev.singlepkt.metadata[3],
               hdr->dev.singlepkt.metadata[4], hdr->dev.singlepkt.metadata[5], hdr->dev.singlepkt.metadata[6], hdr->dev.singlepkt.metadata[7],
               hdr->dev.singlepkt.metadata[8], hdr->dev.singlepkt.metadata[9], hdr->dev.singlepkt.metadata[10], hdr->dev.singlepkt.metadata[11],

@@ -1,5 +1,5 @@
 ///
-/// \file common/default/GeometryTable.cc
+/// \file algorithms/geometry/GeometryTable.cc
 /// \brief ???
 ///
 

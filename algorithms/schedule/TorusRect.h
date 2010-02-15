@@ -193,7 +193,7 @@ namespace CCMI
 
     size_t peers, axes[XMI_MAX_DIMS] = {0};
     unsigned int i, myphase, axis, color = _color;
-      
+
     for (axis = 0; axis < _ndims; axis++)
       axes[axis] = color++ % _ndims;
 
@@ -374,7 +374,7 @@ namespace CCMI
                                      _self_coord.net_coord(axis));
           /// \todo why build an axial topoology for one ghost?   You can't
           /// multicast/deposit to it?  Why not leave it as a single rank topology.
-          new (topo) XMI::Topology(&low, &high, &_self_coord, 
+          new (topo) XMI::Topology(&low, &high, &_self_coord,
                                    &_torus_link[0]);
         }
       }
@@ -461,4 +461,3 @@ namespace CCMI
       }
 #endif // __xmi_target_socklinux__
 #endif
-

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/default/CollRegistration.h
+ * \file algorithms/geometry/PGASCollRegistration.h
  * \brief ???
  */
 
-#ifndef __common_pgas_CollRegistration_h__
-#define __common_pgas_CollRegistration_h__
+#ifndef __algorithms_geometry_PGASCollRegistration_h__
+#define __algorithms_geometry_PGASCollRegistration_h__
 
 #include <map>
 #include <vector>

@@ -137,7 +137,7 @@ namespace XMI
   };
 };
 #undef TRACE_ERR
-#endif // __components_devices_shmem_ShmemMessage_h__ 
+#endif // __components_devices_shmem_ShmemMessage_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

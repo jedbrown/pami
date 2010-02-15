@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/udp_simple_send.c
+ * \file test/p2p/udp_simple_send.cc
  * \brief ???
  */
 #include <stdio.h>

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/default/PGASWrapper.h
+ * \file algorithms/geometry/PGASWrapper.h
  * \brief ???
  */
 
-#ifndef __common_pgas_wrapper_h__
-#define __common_pgas_wrapper_h__
+#ifndef __algorithms_geometry_PGASWrapper_h__
+#define __algorithms_geometry_PGASWrapper_h__
 
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"

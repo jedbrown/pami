@@ -342,8 +342,8 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
                 //bgq_coords_t mapCacheElement = *((bgq_coords_t*) & _mapcache[i]);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  if (personality._is_mambo) 
-  {  
+  if (personality._is_mambo)
+  {
                 a = mapcache->torus.task2coords[i].a = (i/peerSize)%aSize;
                 b = mapcache->torus.task2coords[i].b = (i/(peerSize*aSize))%bSize;
                 c = mapcache->torus.task2coords[i].c = (i/(peerSize*aSize*bSize))%cSize;

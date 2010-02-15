@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -10,6 +10,9 @@
  * \file test/p2p/send/send_concurrency.h
  * \brief Common routines and items for concurrency tests
  */
+
+#ifndef __test_p2p_send_send_concurrency_h__
+#define __test_p2p_send_send_concurrency_h__
 
 #include "send_general.h"
 
@@ -152,3 +155,5 @@ int con_test(size_t dispatch_id, xmi_client_t client, xmi_context_t context,
 	}
 	return 0;
 }
+
+#endif

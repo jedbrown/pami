@@ -227,7 +227,7 @@ int main(int argc, char ** argv)
   {
     mu.advance();
     if (dst_subtopology.isRankMember(task_id)) ;
-    else --_doneCountdown; 
+    else --_doneCountdown;
   }
 
   bytesConsumed = 0,

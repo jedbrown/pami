@@ -1,3 +1,19 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/internals/multisend/memorymanager.h
+ * \brief Common routines and items for concurrency tests
+ */
+
+#ifndef __test_internals_multisend_memorymanager_h__
+#define __test_internals_multisend_memorymanager_h__
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,3 +55,5 @@ static inline xmi_result_t initializeMemoryManager(const char *name, size_t byte
 
 	return XMI_SUCCESS;
 }
+
+#endif

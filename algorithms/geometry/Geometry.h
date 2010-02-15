@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file common/default/Geometry.h
+ * \file algorithms/geometry/Geometry.h
  * \brief ???
  */
 
-#ifndef __common_default_Geometry_h__
-#define __common_default_Geometry_h__
+#ifndef __algorithms_geometry_Geometry_h__
+#define __algorithms_geometry_Geometry_h__
 
 #include "Topology.h"
 #include "Mapping.h"

@@ -11,8 +11,8 @@
  * \brief Add a general function to the progress engine loop/queue
  */
 
-#ifndef __components_devices_generic_ProgressFunctionMsg_h__
-#define __components_devices_generic_ProgressFunctionMsg_h__
+#ifndef __components_devices_misc_ProgressFunctionMsg_h__
+#define __components_devices_misc_ProgressFunctionMsg_h__
 
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/AdvanceThread.h"

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/multisend/bgq/NativeInterface.cc
+ * \file test/internals/bgq/personality.cc
  * \brief Simple multicast tests.
  */
 
@@ -33,13 +33,13 @@ int main(int argc, char ** argv)
   fprintf(stderr,"NODE_COORD C = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr));
   fprintf(stderr,"NODE_COORD D = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr));
   fprintf(stderr,"NODE_COORD E = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr));
-  
+
   fprintf(stderr,"MAX_COORD A = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr));
   fprintf(stderr,"MAX_COORD B = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr));
   fprintf(stderr,"MAX_COORD C = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr));
   fprintf(stderr,"MAX_COORD D = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr));
   fprintf(stderr,"MAX_COORD E = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr));
-  
+
 
   var = getenv("LAMRANK");
   fprintf(stderr,"LAMRANK %s\n",var? var: "NULL");

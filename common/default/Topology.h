@@ -867,7 +867,7 @@ namespace XMI {
     /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
     ///
     xmi_result_t rectSeg_impl(xmi_coord_t **ll, xmi_coord_t **ur,
-                              unsigned char **tl = NULL) 
+                              unsigned char **tl = NULL)
     {
       if (__type != XMI_COORD_TOPOLOGY) {
         return XMI_UNIMPL;

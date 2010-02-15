@@ -36,11 +36,11 @@ namespace XMI
 
       /// \brief axial neighborhood constructor(XMI_AXIAL_TOPOLOGY)
       ///
-      /// Define a set of axes from a reference task and the 
+      /// Define a set of axes from a reference task and the
       /// enclosing rectangular seqment.  The neighborhood is all
-      /// ranks on those axes.  Optionally, define each dimension 
+      /// ranks on those axes.  Optionally, define each dimension
       /// as being a torus (and a direction) or not (default).
-      /// 
+      ///
       /// Assumes no torus links if no 'tl' param.
       ///
       /// \param[in] ll	lower-left coordinate

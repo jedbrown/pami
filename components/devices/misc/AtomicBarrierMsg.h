@@ -36,8 +36,8 @@
 /// _barrier.postMultisync(&_msync);
 ///
 
-#ifndef __components_devices_generic_AtomicBarrierMsg_h__
-#define __components_devices_generic_AtomicBarrierMsg_h__
+#ifndef __components_devices_misc_AtomicBarrierMsg_h__
+#define __components_devices_misc_AtomicBarrierMsg_h__
 
 #include "Global.h"
 #include "components/devices/util/SubDeviceSuppt.h"

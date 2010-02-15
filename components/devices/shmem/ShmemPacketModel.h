@@ -275,12 +275,12 @@ namespace XMI
 
                     TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
                     _device.post (fnum, msg);
-                    
+
                     TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
                     return false;
                   }
                 }
-                
+
                 TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), after writing all full packets, src = %p, bytes_to_write = %zu\n", src, bytes_to_write));
                 // write the "tail" packet
                 if (bytes_to_write > 0)
@@ -307,7 +307,7 @@ namespace XMI
 
                     TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
                     _device.post (fnum, msg);
-                    
+
                     TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
                     return false;
                   }

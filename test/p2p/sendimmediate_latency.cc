@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/sendimmediate_latency.c
+ * \file test/p2p/sendimmediate_latency.cc
  * \brief ???
  */
 #include <stdio.h>

@@ -261,7 +261,7 @@ namespace XMI
         bool   _torusE;
 #ifdef ENABLE_MAMBO_WORKAROUNDS
     public:
-        bool   _is_mambo; // Indicates whether mambo is being used 
+        bool   _is_mambo; // Indicates whether mambo is being used
     protected:
 #endif
 

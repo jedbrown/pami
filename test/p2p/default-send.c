@@ -26,7 +26,7 @@ unsigned validate (void * addr, size_t bytes)
       status = 0;
     }
   }
-  
+
   return status;
 }
 
@@ -189,7 +189,7 @@ int main (int argc, char ** argv)
   header_bytes[hsize++] = 0;
   header_bytes[hsize++] = 16;
   header_bytes[hsize++] = 32;
-  
+
   size_t p, psize = 0;
   size_t data_bytes[16];
   //data_bytes[psize++] = 0;
@@ -215,14 +215,14 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
     parameters.send.dest = XMI_Client_endpoint (client, 1, 0);
-    
+
     for (h=0; h<hsize; h++)
     {
       parameters.send.header.iov_len = header_bytes[h];
       for (p=0; p<psize; p++)
       {
         parameters.send.data.iov_len = data_bytes[p];
-      
+
         fprintf (stderr, "################################### %zu %zu\n", header_bytes[h], data_bytes[p]);
         fprintf (stderr, "before send ...\n");
         result = XMI_Send (context, &parameters);
@@ -250,14 +250,14 @@ int main (int argc, char ** argv)
   else
   {
     parameters.send.dest = XMI_Client_endpoint (client, 0, 0);
-    
+
     for (h=0; h<hsize; h++)
     {
       parameters.send.header.iov_len = header_bytes[h];
       for (p=0; p<psize; p++)
       {
         parameters.send.data.iov_len = data_bytes[p];
-      
+
         fprintf (stderr, "################################### %zu %zu\n", header_bytes[h], data_bytes[p]);
         fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
         while (recv_active != 0)
