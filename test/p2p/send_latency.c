@@ -82,7 +82,7 @@ static void test_dispatch (
   }
   else
   {
-    header_t * header = (header_t *) header_addr;
+    //header_t * header = (header_t *) header_addr;
     TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_rank, cookie, pipe_size));
 
     recv->local_fn = decrement;
@@ -97,7 +97,8 @@ static void test_dispatch (
 
 void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
-  xmi_result_t result = XMI_Send (context, parameters);
+  //xmi_result_t result =
+    XMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_rank));
   while (_send_active) XMI_Context_advance (context, 100);
   TRACE_ERR((stderr, "(%zu) send_once()  After advance\n", _my_rank));
@@ -200,13 +201,10 @@ int main (int argc, char ** argv)
 
 
   /* Register the protocols to test */
-  char testcase_str[10240];
-  unsigned i, j, k = 0;
   _dispatch_count = 0;
 
   _dispatch[_dispatch_count] = _dispatch_count + 1;
 
-  size_t dispatch = 1;
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
@@ -230,7 +228,7 @@ int main (int argc, char ** argv)
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);
-  size_t num_tasks = configuration.value.intval;
+  //size_t num_tasks = configuration.value.intval;
 
   configuration.name = XMI_WTICK;
   result = XMI_Configuration_query(client, &configuration);

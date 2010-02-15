@@ -55,7 +55,6 @@ xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
 xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
                                    xmi_xfer_type_t xfer_type)
 {
-  int i, j;
   int alg_list[2] = {0};
   int algorithm_type = 0; // always works list
   xmi_result_t result;
@@ -92,7 +91,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
 #if 0
     coll_repos[xfer_type] = (xmi_alg_repo *)
                             malloc(sizeof(xmi_alg_repo) * alg_list[0]);
-    for (i = 0, j = 0; i < alg_list[0]; i++)
+    for (int i = 0, j = 0; i < alg_list[0]; i++)
     {
       result = XMI_Geometry_algorithm_info(context,
                                            world_geometry,

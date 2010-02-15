@@ -86,7 +86,7 @@ xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (size_t                  
                                    hdr->dev.dispatch_id);
 
   TRACE((stderr, "<< MUPacketModel::init_impl() .. hdr->dev.dispatch_id = %d\n", hdr->dev.dispatch_id));
-  return XMI_SUCCESS;
+  return success?XMI_SUCCESS:XMI_ERROR;
 };
 #undef TRACE
 //

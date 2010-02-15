@@ -115,8 +115,7 @@ static void test_dispatch (
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
   T_DISPATCH = XMI_Wtimebase();
-  volatile size_t * active = (volatile size_t *) cookie;
-  TRACE_ERR((stderr, "Called dispatch function.  cookie = %p, active: %zd, header_addr = %p, pipe_addr = %p\n", cookie, *active, header_addr, pipe_addr));
+  TRACE_ERR((stderr, "Called dispatch function.  cookie = %p, active: %zd, header_addr = %p, pipe_addr = %p\n", cookie,  *((volatile size_t *) cookie), header_addr, pipe_addr));
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;

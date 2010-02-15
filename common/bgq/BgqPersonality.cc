@@ -37,7 +37,7 @@ XMI::BgqPersonality::BgqPersonality ()
   Network_Config.Ecoord = 0;
 #endif
 
-  size_t num_local_processes = Kernel_ProcessCount();
+  //size_t num_local_processes = Kernel_ProcessCount();
 
   // Set the core id of this process [0..16]
   _core = Kernel_PhysicalProcessorID();

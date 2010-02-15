@@ -169,12 +169,12 @@ namespace XMI
           ///
           static inline void shmemcpy (void * dst, void * src, size_t n)
           {
-            bool isaligned = (((((unsigned long) dst) | ((unsigned long) src)) & 0x0f) == 0);
+            //bool isaligned = (((((unsigned long) dst) | ((unsigned long) src)) & 0x0f) == 0);
             //fprintf (stderr, "SharedWorkQueue::shmemcpy() dst = %p, src = %p, n = %d, aligned = %d\n", dst, src, n, isaligned);
             //if ((((((unsigned) dst) | ((unsigned) src)) & 0x0f) == 0) && (n == _worksize))
-            bool ismultiple256 = !(n & 0x000000ff);
 
 #ifdef NOT_WORKING
+            bool ismultiple256 = !(n & 0x000000ff);
 #error this overruns buffers because copy<256> is the wrong expression for Type<size_t>
             typedef uint8_t uint2048_t[256];
             uint2048_t * d = (uint2048_t *) dst;

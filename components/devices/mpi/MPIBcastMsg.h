@@ -116,8 +116,8 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
           _root = MPI_ANY_SOURCE;
 
         TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %p, context %zd, root %zd, iwq %p, rwq %p, bytes %zd/%zd/%zd\n",this,
-                      mcast->client, mcast->context, _root, _iwq, _rwq, _bytes, 
-                      _iwq?_iwq->bytesAvailableToConsume():-1, 
+                      mcast->client, mcast->context, _root, _iwq, _rwq, _bytes,
+                      _iwq?_iwq->bytesAvailableToConsume():-1,
                       _rwq?_rwq->bytesAvailableToProduce():-1));
         bool iamroot = (_root == __global.mapping.task());
         if(iamroot)

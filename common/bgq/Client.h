@@ -186,7 +186,7 @@ namespace XMI
                 /// snprintf() should be run at init only.  This is
                 /// the BGP DCMF version:
                 /// "Rank 0 of 128 (0,0,0,0)  R00-M0-N10-J01"
-                rc = snprintf(pn, 128, "Task %u of %u", __global.mapping.task(), __global.mapping.size());
+                rc = snprintf(pn, 128, "Task %zu of %zu", __global.mapping.task(), __global.mapping.size());
                 pn[128-1] = 0;
                 configuration->value.chararray = pn;
                 if (rc>0)
@@ -254,12 +254,12 @@ namespace XMI
         char   shmemfile[1024];
         //size_t bytes     = 1024*1024;
         size_t bytes     = 32 * 1024;
-        size_t pagesize  = 4096;
+        //size_t pagesize  = 4096;
 
         snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
 
         // Round up to the page size
-        size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+        //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
         int fd, rc;
         size_t n = bytes;

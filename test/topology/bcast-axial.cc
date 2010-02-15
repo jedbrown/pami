@@ -1,5 +1,5 @@
 ///
-/// \file test/bcast.c
+/// \file test/topology/bcast-axial.cc
 /// \brief Simple Bcast test
 ///
 
@@ -24,13 +24,13 @@ int main (int argc, char ** argv)
   xmi_configuration_t configuration;
   configuration.name = XMI_TASK_ID;
   result = XMI_Configuration_query(client, &configuration);
-  
+
   size_t task_id = configuration.value.intval;
-  
+
   xmi_geometry_t  world_geometry;
-  
+
   result = XMI_Geometry_world (context, &world_geometry);
-  
+
   __global.topology_global.convertTopology(XMI_COORD_TOPOLOGY);
 
   unsigned char tl[4] = {0};
@@ -41,14 +41,14 @@ int main (int argc, char ** argv)
   ll.net_coord(1) = 0;
   ll.net_coord(2) = 0;
   ll.net_coord(3) = 0;
-  
+
   ur.net_coord(0) = 3;
   ur.net_coord(1) = 3;
   ur.net_coord(2) = 0;
   ur.net_coord(3) = 0;
 
   __global.mapping.task2network(task_id, &myself, XMI_N_TORUS_NETWORK);
-    
+
 
   if (myself.net_coord(2) == 0 && myself.net_coord(3) == 0)
   {
@@ -59,7 +59,7 @@ int main (int argc, char ** argv)
 
     XMI::Topology rect(&ll, &ur, &tl[0]);
     XMI::Topology union_topo = rect;
-    
+
     CCMI::Schedule::TorusRect tr(&__global.mapping, &rect, myself, 0);
     tr.init(0, 1, start, nphases);
 
@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
     union_topo.getAxialEndCoords(&low, &high, -1);
 
     if (res == XMI_SUCCESS)
-    printf("%2d start:%d nphases: %d ll: <%d,%d,%d,%d> ur:<%d,%d,%d,%d> dir: <%d,%d,%d>"
+    printf("%zd start:%d nphases: %d ll: <%zd,%zd,%zd,%zd> ur:<%zd,%zd,%zd,%zd> dir: <%d,%d,%d>"
            " tl <%d,%d,%d>\n", task_id, start,nphases,low.net_coord(0), low.net_coord(1),
            low.net_coord(2),low.net_coord(3),high.net_coord(0),
            high.net_coord(1),high.net_coord(2),high.net_coord(3),

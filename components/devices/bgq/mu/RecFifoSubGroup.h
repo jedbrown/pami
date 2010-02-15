@@ -174,10 +174,7 @@ namespace XMI
                         TRACE((stderr, "recFifoPoll(no-wrap) .. before MUSPI_getNextPacketOptimized() .. va_start = %p, va_head = %p, va_tail = %p, va_end = %p\n", rfifo->_fifo.va_start, rfifo->_fifo.va_head, rfifo->_fifo.va_tail, rfifo->_fifo.va_end));
                         hdr = (MemoryFifoPacketHeader_t *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
                         TRACE((stderr, "recFifoPoll(no-wrap) ..  after MUSPI_getNextPacketOptimized() .. va_start = %p, va_head = %p, va_tail = %p, va_end = %p\n", rfifo->_fifo.va_start, rfifo->_fifo.va_head, rfifo->_fifo.va_tail, rfifo->_fifo.va_end));
-#ifdef TRACE
-                        uint32_t * p = (uint32_t *) hdr;
-                        TRACE((stderr, "recFifoPoll(no-wrap) ..  after MUSPI_getNextPacketOptimized() .. packet = %p, cur_bytes = %d, dump header: 0x%08x 0x%08x 0x%08x 0x%08x  0x%08x 0x%08x 0x%08x 0x%08x\n", hdr, cur_bytes, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]));
-#endif
+                        TRACE((stderr, "recFifoPoll(no-wrap) ..  after MUSPI_getNextPacketOptimized() .. packet = %p, cur_bytes = %d, dump header: 0x%08x 0x%08x 0x%08x 0x%08x  0x%08x 0x%08x 0x%08x 0x%08x\n", hdr, cur_bytes, ((uint32_t*)hdr)[0], ((uint32_t*)hdr)[1], ((uint32_t*)hdr)[2], ((uint32_t*)hdr)[3], ((uint32_t*)hdr)[4], ((uint32_t*)hdr)[5], ((uint32_t*)hdr)[6], ((uint32_t*)hdr)[7]));
                         void * metadata = hdr->dev.singlepkt.metadata;
 
                         if (!hdr->dev.issingle)

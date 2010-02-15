@@ -74,8 +74,6 @@ int main(int argc, char **argv) {
 
 // END standard setup
 // ------------------------------------------------------------------------
-	bool flag;
-	size_t num;
 	xmi_task_t *ranks = (xmi_task_t *)malloc(num_tasks * sizeof(*ranks));
 
 	dump(&__global.topology_global, "world");

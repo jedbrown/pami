@@ -8,7 +8,6 @@
 #include "Global.h"
 
 int main(int argc, char ** argv) {
-	unsigned x;
 	xmi_client_t client;
 	xmi_context_t context;
 	xmi_result_t status = XMI_ERROR;

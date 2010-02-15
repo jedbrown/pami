@@ -271,7 +271,7 @@ int main ()
     // which is the range for send_immediate.
     size_t sndlen;
     for (sndlen = 0;
-	 sndlen < BUFSIZE, sndlen<=IMMEDIATE_SEND_LIMIT;
+	 sndlen < BUFSIZE && sndlen<=IMMEDIATE_SEND_LIMIT;
 	 sndlen = sndlen*3/2+1)
     {
       int index = 0;

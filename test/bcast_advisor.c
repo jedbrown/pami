@@ -190,7 +190,6 @@ int main (int argc, char ** argv)
   }
   double ti, tf, usec;
   char buf[BUFSIZE];
-  char rbuf[BUFSIZE];
   xmi_barrier_t barrier;
   barrier.xfer_type = XMI_XFER_BARRIER;
   barrier.cb_done   = cb_barrier;

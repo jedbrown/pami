@@ -235,7 +235,7 @@ void _allreduce (xmi_context_t context, xmi_allreduce_t *allreduce)
 
 unsigned ** alloc2DContig(int nrows, int ncols)
 {
-  int i, j;
+  int i;
   unsigned **array;
 
   array        = (unsigned**)malloc(nrows*sizeof(unsigned*));

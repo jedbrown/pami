@@ -900,7 +900,6 @@ namespace XMI {
         if (__type != XMI_AXIAL_TOPOLOGY)
           return XMI_UNIMPL;
 
-        int i;
         xmi_coord_t ll, ur, center;
         ll = topo_axial._rect._llcorner;
         ur = topo_axial._rect._urcorner;
@@ -908,7 +907,7 @@ namespace XMI {
 
         *low = ll;
         *high = ur;
-        
+
         if (axis != -1)
         {
           *low = center;

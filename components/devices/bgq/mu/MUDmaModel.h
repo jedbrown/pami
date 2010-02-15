@@ -313,7 +313,7 @@ namespace XMI
             // Advance the injection fifo descriptor tail which actually enables
             // the MU hardware to process the descriptor and send the packet
             // on the torus.
-            uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
+            MUSPI_InjFifoAdvanceDesc (injfifo);
           }
         else
           {

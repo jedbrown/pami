@@ -105,7 +105,7 @@ namespace XMI
           	memset (_memptr, 0, bytes);
           	_memsize = bytes;
           	TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
-          	size_t bytes_used = initializeMapCache (personality, ll, ur, min, max);
+          	//size_t bytes_used = initializeMapCache (personality, ll, ur, min, max);
 	  }
 
 	  mapping.init(_mapcache, personality);
@@ -169,10 +169,10 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 				xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max)
 {
   void            * ptr      = _memptr;
-  size_t            bytes    = _memsize;
+  //size_t            bytes    = _memsize;
   bgq_mapcache_t  * mapcache = &_mapcache;
 
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, bytes, mapcache));
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, _memsize, mapcache));
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this
   // constructor, but exists there only for the duration of this
@@ -199,8 +199,6 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   size_t myRank;
 
-  size_t tt, num_t = 0, rank, size;
-  int err;
 
   size_t pCoord = personality.pCoord ();
   size_t tCoord = personality.tCoord ();
