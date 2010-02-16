@@ -94,9 +94,8 @@
 /* XXX replace with cntlz instruction*/
 /* ***********************************/
 
-#ifdef __bgq__
-#warning This function signature collides with an A2 inline function
-#else
+#ifndef __bgq__
+/* This function signature collides with an A2 inline function (bgq) */
 static inline uint64_t
 cntlz64 (uint64_t u)
 {
@@ -111,9 +110,8 @@ cntlz64 (uint64_t u)
 /* ***********************************/
 /* Returns 32 if u==0.               */
 /* ***********************************/
-#ifdef __bgq__
-#warning This function signature collides with an A2 inline function
-#else
+#ifndef __bgq__
+/* This function signature collides with an A2 inline function (bgq) */
 static inline uint32_t
 cntlz32 (uint32_t x)
 {

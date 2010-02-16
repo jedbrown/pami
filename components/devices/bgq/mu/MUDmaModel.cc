@@ -47,8 +47,8 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   _rget_desc_model.setPt2PtFields (&pt2pt);
   _rget_desc_model.setRemoteGetFields( &rget );
 
-#if 1   // These are requried in order to work around mambo bugs
-#warning using mambo work around - remove later
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  // These are requried in order to work around mambo bugs
 
   // TODO - Calculate the best torusInjectionFifoMap.
   // For now, hard code to A-minus direction.
@@ -106,8 +106,8 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   // Use the shared reception counter.
   _rput_desc_model.setRecCounterBaseAddressInfo (1, 0);
 
-#if 1   // These are requried in order to work around mambo bugs
-#warning using mambo work around - remove later
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  // These are requried in order to work around mambo bugs
 
   // TODO - Calculate the best torusInjectionFifoMap.
   // For now, hard code to A-minus direction.
@@ -152,8 +152,8 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   // The destination of the remote memfifo send is this (local) rank.
   _rmem_desc_model.setDestination (dst);
 
-#if 1   // These are requried in order to work around mambo bugs
-#warning using mambo work around - remove later
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  // These are requried in order to work around mambo bugs
 
   // TODO - Calculate the best torusInjectionFifoMap.
   // For now, hard code to A-minus direction.
@@ -189,8 +189,8 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   // Use the shared reception counter.
   _dput_desc_model.setRecCounterBaseAddressInfo (1, 0);
 
-#if 1   // These are requried in order to work around mambo bugs
-#warning using mambo work around - remove later
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  // These are requried in order to work around mambo bugs
 
   // TODO - Calculate the best torusInjectionFifoMap.
   // For now, hard code to A-minus direction.
@@ -204,8 +204,6 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
                               MUHWI_PACKET_HINT_D_NONE,
                               MUHWI_PACKET_HINT_E_NONE );
 #endif
-
-
 };
 
 XMI::Device::MU::MUDmaModel::~MUDmaModel () {};

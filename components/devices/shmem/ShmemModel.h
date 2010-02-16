@@ -157,7 +157,7 @@ namespace XMI
 
           ShmemMessage * obj = (ShmemMessage *) & state[0];
           new (obj) ShmemMessage (_device.getContext(), fn, cookie, _dispatch_id, metadata, metasize, iov, T_Niov, true);
-#warning bug! ShmemMessage constructor must have the target_peer and target_offset .. right?
+
           _device.post (peer, obj);
 
           return false;

@@ -143,7 +143,19 @@ namespace XMI
         TRACE((stderr, ">> initializeDescriptor(%p, %u, %zu, %p, %zd)\n", desc, target_task, target_offset, (void *)payloadPa, bytes));
         // Clone the model descriptor.
         _desc_model.clone (*desc);
-#warning set reception fifo based on the target context id (target_offset)
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// #warning set reception fifo based on the target context id (target_offset)
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
         // --------------------------------------------------------------------
         // Set the destination torus address and reception fifo.
         // This is terribly inefficient.
@@ -222,12 +234,12 @@ namespace XMI
         for (i=0; i<T_Niov; i++) tbytes += iov[i].iov_len;
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-#warning    Mambo can not handle zero-byte payloads.
-            if (tbytes == 0)
-            {
-              iov[0].iov_base = metadata;
-              iov[0].iov_len  = 1;
-            }
+        // Mambo can not handle zero-byte payloads.
+        if (tbytes == 0)
+        {
+          iov[0].iov_base = metadata;
+          iov[0].iov_len  = 1;
+        }
 #endif
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before nextInjectionDescriptor()\n", T_Niov));
@@ -305,8 +317,18 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
-#warning send queue must be based on task+offset
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+            // #warning send queue must be based on task+offset
             _device.addToSendQ (target_task, (QueueElem *) obj);
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
           }
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(%d) << \n", T_Niov));
@@ -331,12 +353,12 @@ namespace XMI
         void               * payloadPa;
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-#warning    Mambo can not handle zero-byte payloads.
-            if (length == 0)
-            {
-              payload = metadata;
-              length  = 1;
-            }
+        // Mambo can not handle zero-byte payloads.
+        if (length == 0)
+        {
+          payload = metadata;
+          length  = 1;
+        }
 #endif
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before nextInjectionDescriptor()\n"));
@@ -435,12 +457,12 @@ namespace XMI
         for (i=0; i<T_Niov; i++) tbytes += iov[i].iov_len;
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-#warning    Mambo can not handle zero-byte payloads.
-            if (tbytes == 0)
-            {
-              iov[0].iov_base = metadata;
-              iov[0].iov_len  = 1;
-            }
+        // Mambo can not handle zero-byte payloads.
+        if (tbytes == 0)
+        {
+          iov[0].iov_base = metadata;
+          iov[0].iov_len  = 1;
+        }
 #endif
 
         if (_device.nextInjectionDescriptor (target_task,
@@ -501,12 +523,12 @@ namespace XMI
         TRACE((stderr, "MUPacketModel::postMultiPacket_impl() >> \n"));
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-#warning    Mambo can not handle zero-byte payloads.
-            if (length == 0)
-            {
-              payload = metadata;
-              length = 1;
-            }
+        // Mambo can not handle zero-byte payloads.
+        if (length == 0)
+        {
+          payload = metadata;
+          length = 1;
+        }
 #endif
 
         // Determine the physical address of the source buffer.

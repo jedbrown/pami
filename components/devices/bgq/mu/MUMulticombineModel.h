@@ -175,7 +175,7 @@ namespace XMI
           _desc_model.setWordLength(_receive_state->mu_word_length);
         }
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-#warning    Mambo can not handle zero-byte payloads.
+        // Mambo can not handle zero-byte payloads.
         if (bytes == 0)
         {
           payloadPa = (uint64_t) &desc->PacketHeader;

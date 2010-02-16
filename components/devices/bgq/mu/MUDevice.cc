@@ -13,10 +13,13 @@
 
 #include "components/devices/bgq/mu/MUDevice.h"
 
+#if 0
+// #warning Do not use thread local storage .. a device is associated with a context, not a thread.
 __thread unsigned   XMI::Device::MU::MUDevice::_p2pSendChannelIndex;
 __thread unsigned   XMI::Device::MU::MUDevice::_p2pRecvChannelIndex;
 __thread bool       XMI::Device::MU::MUDevice::_colSendChannelFlag;
 __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
+#endif
 
 #ifdef TRACE
 #undef TRACE

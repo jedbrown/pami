@@ -26,7 +26,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
-#define ENABLE_MAMBO_WORKAROUNDS
+//#define ENABLE_MAMBO_WORKAROUNDS
 
 
 namespace XMI
