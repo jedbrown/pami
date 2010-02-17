@@ -27,6 +27,7 @@ namespace Device {
 		New = 0,	///< Thread has only been constructed
 		Idle,		///< Thread has no work (do not call)
 		Ready,		///< Thread has work, make call to func
+		OneShot,	///< Thread is run only once then dequeued
 		Complete	///< Thread  should be dequeued
 	};
 

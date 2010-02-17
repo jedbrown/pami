@@ -152,6 +152,12 @@ namespace Generic {
 					thr->executeCallback(__context, rc);
 					continue;
 				}
+			} else if (thr->getStatus() == XMI::Device::OneShot) {
+				++events;
+				// thread is like completion callback, dequeue first.
+				__Threads.deleteElem(thr);
+				xmi_result_t rc = thr->executeThread(__context);
+				continue;
 			}
 			// This allows a thread to be "completed" by something else...
 			if (thr->getStatus() == XMI::Device::Complete) {
