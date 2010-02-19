@@ -49,7 +49,7 @@
 
 #include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -577,5 +577,5 @@ TRACE_ERR((stderr, "<< socklinux::dispatch_impl .. result = %d\n", result));
 
   }; // end XMI::Context
 }; // end namespace XMI
-
+#undef TRACE_ERR
 #endif // __common_socklinux_Context_h__

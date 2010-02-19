@@ -109,6 +109,9 @@ namespace XMI
 	  topology_global.subTopologyLocalToMe(&topology_local);
           TRACE_ERR((stderr, "<< Global::Global()\n"));
 
+
+//          mapping.activateUdp();
+
           return;
         };
 

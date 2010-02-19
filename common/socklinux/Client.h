@@ -10,6 +10,9 @@
 #include "common/ClientInterface.h"
 
 #include "Context.h"
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) // fprintf x
+#endif
 
 namespace XMI
 {
@@ -322,5 +325,5 @@ namespace XMI
     }; // end class XMI::Client
 }; // end namespace XMI
 
-
+#undef TRACE_ERR
 #endif // __common_socklinux_Client_h__

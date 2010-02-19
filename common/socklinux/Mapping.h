@@ -35,8 +35,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#undef TRACE_COUTMAP
 #ifndef TRACE_COUTMAP
-#define TRACE_COUTMAP(x) // std::cout << x << std::endl
+#define TRACE_COUTMAP(x)//  std::cout << x << std::endl
 #endif
 
 #define XMI_MAPPING_CLASS XMI::Mapping
@@ -48,6 +49,14 @@ namespace XMI
                        public Interface::Mapping::Socket<Mapping>,
                        public Interface::Mapping::Node<Mapping, 1>
     {
+    protected:
+        typedef struct
+        {
+          char     host[128];
+          unsigned peers;
+          unsigned udpport;
+          Interface::Mapping::nodeaddr_t addr;
+        } node_table_t;
 
     public:
       inline Mapping () :
@@ -63,6 +72,130 @@ namespace XMI
         free( _udpConnTable );
       };
 
+      inline bool loadMapFile()
+      {
+        char * udp_config;
+        std::ifstream inFile;
+
+        size_t i;
+        size_t tmp_task;
+        std::string tmp_host_in;
+        //std::string tmp_port;
+        size_t tmp_port;
+//        int sockFd;
+        int rc;
+        struct addrinfo hints, *servinfo;
+        memset(&hints,0,sizeof(hints));
+        hints.ai_family = AF_INET;  // AF_UNSPEC for 6 support too
+        hints.ai_socktype = SOCK_DGRAM;
+        hints.ai_flags |= AI_PASSIVE;
+
+
+
+        udp_config = getenv ("XMI_UDP_CONFIG");
+        if (udp_config == NULL ) {
+          std::cout << "Environment variable XMI_UDP_CONFIG must be set" << std::endl;
+          abort();
+        }
+        TRACE_COUTMAP("The current UDP configuration file is: " << udp_config);
+
+        // Now open the configuration file
+        inFile.open(udp_config);
+        if (!inFile )
+        {
+          std::cout << "Unable to open UDP configuration file: " << udp_config << std::endl;
+          abort();
+        }
+
+        // Allocate the node table - this contains the information from the map file
+        _nodetable = (node_table_t *) malloc (_size * sizeof(node_table_t));
+        for (i=0; i<_size; i++)
+        {
+          _nodetable[i].host[0] = 0; // NULL
+          _nodetable[i].peers   = 0;
+        }
+        size_t num_global_nodes = 0;
+
+        // Read in the configuration file: rank host port
+        for ( i=0; i<_size; i++ )
+        {
+
+          inFile >> tmp_task >> tmp_host_in >> tmp_port;
+          TRACE_COUTMAP("  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port);
+          char tmp_port_str[128];
+          snprintf(tmp_port_str, 127, "%zu", tmp_port);
+
+          // Make sure we can locate the host
+          struct hostent *tmp_host;
+          tmp_host = gethostbyname(tmp_host_in.data());
+          if (tmp_host == NULL )
+          {
+            std::cout << "Unable to get host by name.  Name in config file: " << tmp_host_in << std::endl;
+            abort();
+          }
+
+          //if ( (rc = getaddrinfo( tmp_host_in.data(), tmp_port.data(), &hints, &servinfo ) ) != 0 )
+          if ( (rc = getaddrinfo( tmp_host_in.data(), tmp_port_str, &hints, &servinfo ) ) != 0 )
+          {
+            std::cout << "getaddrinfo call failed:" << gai_strerror(rc) << std::endl;
+          }
+//          if ( (sockFd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol ) ) == -1 )
+//          {
+//            std::cout << "socket call failed" << std::endl;
+//          }
+          //TRACE_COUTMAP( "addr " << servinfo->ai_addr << " len  " << servinfo->ai_addrlen );
+          //TRACE_COUTMAP( "ai_canonname " << servinfo->ai_canonname );
+
+          unsigned j;
+          bool found_previous = false;
+          for (j=0; j<_size; j++)
+          {
+            if ( (j!=tmp_task) && strcmp( _nodetable[j].host, tmp_host->h_name ) == 0 )
+            {
+              // Found a previous host entry
+              _nodetable[j].peers++;
+              _nodetable[tmp_task].addr.global = _nodetable[j].addr.global;
+              _nodetable[tmp_task].addr.local  = _nodetable[j].addr.local + 1;
+              //_nodetable[tmp_task].udpport = tmp_port.data();
+              _nodetable[tmp_task].udpport = tmp_port;
+              _nodetable[tmp_task].peers = _nodetable[j].peers;
+              strncpy (_nodetable[tmp_task].host, _nodetable[j].host, 127);
+              found_previous = true;
+            }
+          }
+          if (! found_previous)
+          {
+            // Did not find a previous host entry
+            //num_global_nodes++;
+            _nodetable[tmp_task].addr.global = num_global_nodes;
+            _nodetable[tmp_task].addr.local  = 0;
+            _nodetable[tmp_task].peers = 1;
+            //_nodetable[tmp_task].udpport = tmp_port.data();
+            _nodetable[tmp_task].udpport = tmp_port;
+            strncpy (_nodetable[tmp_task].host, tmp_host->h_name, 127);
+            num_global_nodes++;
+          }
+        }
+        inFile.close();
+
+        TRACE_COUTMAP("num_global_nodes: " << num_global_nodes);
+        for (i=0; i<_size; i++)
+        {
+          TRACE_COUTMAP("node[" << i << "].host:    " << _nodetable[i].host);
+          TRACE_COUTMAP("node[" << i << "].peers:   " << _nodetable[i].peers);
+          TRACE_COUTMAP("node[" << i << "].udpport: " << _nodetable[i].udpport);
+          TRACE_COUTMAP("node[" << i << "].addr:    {" << _nodetable[i].addr.global << ", " << _nodetable[i].addr.local << "}");
+
+        }
+
+        // Cache the number of peers for this task.
+        _peers = _nodetable[_task].peers;
+
+        return true;
+      };
+
+
+
       inline bool isUdpActive()
       {
         return  _udpConnInit;
@@ -70,8 +203,8 @@ namespace XMI
 
       inline int activateUdp()
       {
-        char * udp_config;
-        std::ifstream inFile;
+//        char * udp_config;
+//        std::ifstream inFile;
         size_t tmp_task;
         std::string tmp_host_in;
         std::string tmp_port;
@@ -91,7 +224,7 @@ namespace XMI
         for ( i=0; i<_size; i++) {
           _udpConnTable[i].send_fd = 0;
         }
-
+#if 0
         udp_config = getenv ("XMI_UDP_CONFIG");
         if (udp_config == NULL ) {
           std::cout << "Environment variable XMI_UDP_CONFIG must be set" << std::endl;
@@ -106,8 +239,6 @@ namespace XMI
           std::cout << "Unable to open UDP configuration file: " << udp_config << std::endl;
           abort();
         }
-
-        typedef struct
         {
           char     host[128];
           unsigned peers;
@@ -119,24 +250,27 @@ namespace XMI
           tmpnodetable[i].peers   = 0;
         }
         size_t num_global_nodes = 0;
-
+#endif
         // Read in the configuration file: rank host port
         for ( i=0; i<_size; i++ )
         {
-
-          inFile >> tmp_task >> tmp_host_in >> tmp_port;
-          TRACE_COUTMAP("  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port);
+          
+        //  inFile >> tmp_task >> tmp_host_in >> tmp_port;
+          //TRACE_COUTMAP("  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port);
 
           // Make sure we can locate the host
           struct hostent *tmp_host;
-          tmp_host = gethostbyname(tmp_host_in.data());
+          tmp_host = gethostbyname(_nodetable[i].host);
           if (tmp_host == NULL )
           {
-            std::cout << "Unable to get host by name.  Name in config file: " << tmp_host_in << std::endl;
+            std::cout << "Unable to get host by name.  Name in config file: " << _nodetable[i].host << std::endl;
             abort();
           }
 
-          if ( (rc = getaddrinfo( tmp_host_in.data(), tmp_port.data(), &hints, &servinfo ) ) != 0 )
+          char tmp_port_str[128];
+          snprintf(tmp_port_str, 127, "%zu", _nodetable[i].udpport);
+
+          if ( (rc = getaddrinfo( _nodetable[i].host, tmp_port_str, &hints, &servinfo ) ) != 0 )
           {
             std::cout << "getaddrinfo call failed:" << gai_strerror(rc) << std::endl;
           }
@@ -146,7 +280,7 @@ namespace XMI
           }
           //TRACE_COUTMAP( "addr " << servinfo->ai_addr << " len  " << servinfo->ai_addrlen );
           //TRACE_COUTMAP( "ai_canonname " << servinfo->ai_canonname );
-
+#if 0
           unsigned j;
           for (j=0; j<_size; j++)
           {
@@ -168,10 +302,10 @@ namespace XMI
             strncpy (tmpnodetable[num_global_nodes].host, tmp_host->h_name, 127);
             num_global_nodes++;
           }
+#endif
 
 
-
-          if (_task == tmp_task)
+          if (_task == i)
           {
             char host[128];
             int str_len=128;
@@ -186,6 +320,7 @@ namespace XMI
             _udpRcvConn = sockFd;
             if ( bind(_udpRcvConn, servinfo->ai_addr, servinfo->ai_addrlen ) == -1)
             {
+              perror("bind");
               close (_udpRcvConn);
               std::cout << "bind call failed" << std::endl;
               abort();
@@ -193,13 +328,13 @@ namespace XMI
 
           } else {
             // Save info for sending
-          _udpConnTable[tmp_task].send_fd =  sockFd;
-          memcpy( &(_udpConnTable[tmp_task].send_addr), servinfo->ai_addr, servinfo->ai_addrlen );
-          _udpConnTable[tmp_task].send_addr_len = servinfo->ai_addrlen;
+          _udpConnTable[i].send_fd =  sockFd;
+          memcpy( &(_udpConnTable[i].send_addr), servinfo->ai_addr, servinfo->ai_addrlen );
+          _udpConnTable[i].send_addr_len = servinfo->ai_addrlen;
           }
         }
-        inFile.close();
-
+      //  inFile.close();
+#if 0
         TRACE_COUTMAP("num_global_nodes: " << num_global_nodes);
         for (i=0; i<num_global_nodes; i++)
         {
@@ -210,7 +345,7 @@ namespace XMI
         _peers = tmpnodetable[_udpConnTable[_task].node_addr.global].peers;
 
         free (tmpnodetable);
-
+#endif
         return 0;
       }
 
@@ -259,6 +394,7 @@ namespace XMI
         size_t            _peers;
         // static const int  __pmiNameLen = 128;
         // char              __pmiName[__pmiNameLen];
+        node_table_t * _nodetable;
 
         typedef struct
         {
@@ -313,6 +449,8 @@ namespace XMI
 
 	min_rank = 0;
 	max_rank = _size-1;
+
+        loadMapFile ();
 
 	return XMI_SUCCESS;
       }
@@ -389,6 +527,7 @@ namespace XMI
      ///
      inline xmi_result_t nodePeers_impl (size_t & peers)
      {
+       TRACE_COUTMAP("Mapping::nodePeers_impl(), peers = " << _peers);
        peers = _peers;
        return XMI_SUCCESS;
      }
@@ -398,7 +537,7 @@ namespace XMI
      ///
      inline bool isPeer_impl (size_t task1, size_t task2)
      {
-       return (_udpConnTable[task1].node_addr.global == _udpConnTable[task2].node_addr.global);
+       return (_nodetable[task1].addr.global == _nodetable[task2].addr.global);
      }
 
      ///
@@ -408,7 +547,8 @@ namespace XMI
      ///
      inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
      {
-       address = _udpConnTable[_task].node_addr;
+       TRACE_COUTMAP("Mapping::nodeAddr_impl(), _task = " << _task << " _nodetable = " << _nodetable);
+       address = _nodetable[_task].addr;
      }
 
      ///
@@ -422,7 +562,7 @@ namespace XMI
      ///
      inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
      {
-       address = _udpConnTable[task].node_addr;
+       address = _nodetable[task].addr;
        return XMI_SUCCESS;
      }
 
