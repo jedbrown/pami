@@ -142,10 +142,11 @@ namespace XMI
                     // Set up class route to have a local contribution from this node with no output.
                     ClassRoute_t classRouteInfo;
                     memset(&classRouteInfo, 0x00, sizeof(classRouteInfo));
-                    classRouteInfo.id    = 2;  /// \todo global class route always 2 (arbitrary)?
-                    classRouteInfo.input = BGQ_COLL_CLASS_INPUT_LINK_LOCAL | BGQ_COLL_CLASS_INPUT_VC_USER;
+                    classRouteInfo.input = BGQ_CLASS_INPUT_LINK_LOCAL | BGQ_CLASS_INPUT_VC_USER;
                     classRouteInfo.output = 0;
-                    rc = Kernel_AllocateClassRoute ( &classRouteInfo );
+		    /// \todo global class route always 2 (arbitrary)?
+                    rc = Kernel_AllocateCollectiveClassRoute ( 2 );
+		    rc = Kernel_SetCollectiveClassRoute ( 2, &classRouteInfo ); 
 
                     if ( rc )
                       {
