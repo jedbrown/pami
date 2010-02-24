@@ -197,7 +197,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   volatile cacheAnchors_t * cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
 
-  size_t myRank;
+  //size_t myRank;
 
 
   size_t pCoord = personality.pCoord ();
@@ -221,7 +221,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   uint64_t participant =
     Fetch_and_Add ((uint64_t *) & (cacheAnchorsPtr->atomic.enter), 1);
 
-  myRank = personality.rank();
+  //myRank = personality.rank();
 
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant));
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize));
