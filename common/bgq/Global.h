@@ -344,7 +344,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
                 c = mapcache->torus.task2coords[i].c;
                 d = mapcache->torus.task2coords[i].d;
                 e = mapcache->torus.task2coords[i].e;
-                p = mapcache->torus.task2coords[i].core;
+                p = mapcache->torus.task2coords[i].core = 16/fullSize * i;
                 t = mapcache->torus.task2coords[i].thread;
 
  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a,b,c,d,e,p,t));
