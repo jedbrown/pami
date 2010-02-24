@@ -98,6 +98,7 @@ int main(int argc, char ** argv)
   xmi_result_t status = XMI_ERROR;
 
   size_t task_id = __global.mapping.task();
+  fprintf(stderr,"HELLO from task %zd\n",task_id);
 
   size_t                     dispatch = 2;
 

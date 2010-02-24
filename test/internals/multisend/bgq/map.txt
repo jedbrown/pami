@@ -1,0 +1,7 @@
+#first line corresponds to the max coordinates followed by the 
+#listing of the coordinates and no empty lines in between
+#max coordinates for each dimension
+2 2 0 0 0
+#node coordinates for each dimension
+1 1 0 0 0 
+2 2 0 0 0 
