@@ -252,9 +252,7 @@ namespace XMI
         }
       inline void torusAddr_impl (size_t (&addr)[MPI_TDIMS])
         {
-		uint32_t x = _mapcache[_task];
-		addr[0] = x >> 16;
-		addr[1] = x & 0x0000ffff;
+	  task2torus_impl(_task, addr);
         }
       inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[MPI_TDIMS])
         {
