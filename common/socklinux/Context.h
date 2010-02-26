@@ -175,10 +175,6 @@ namespace XMI
 
   class Context : public Interface::Context<XMI::Context>
   {
-	static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
-		XMI::Context *context = (XMI::Context *)ctx;
-		context->_workAllocator.returnObject(cookie);
-	}
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t contextid, size_t num,
                       PlatformDeviceList *devices, void * addr, size_t bytes) :
@@ -189,7 +185,6 @@ namespace XMI
           _contextid (contextid),
           _mm (addr, bytes),
           _sysdep (_mm),
-  	  _workAllocator(),
 	  _devices(devices)
       {
         // ----------------------------------------------------------------
@@ -542,7 +537,6 @@ TRACE_ERR((stderr, "<< socklinux::dispatch_impl .. result = %d\n", result));
 
 
       //ContextLock _lock;
-      MemoryAllocator<sizeof(XMI::Device::Generic::GenericThread), 16> _workAllocator;
       ProtocolAllocator _protocolAllocator;
       PlatformDeviceList *_devices;
 

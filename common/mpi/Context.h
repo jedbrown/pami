@@ -192,10 +192,6 @@ namespace XMI
 
     class Context : public Interface::Context<XMI::Context>
     {
-	static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
-		XMI::Context *context = (XMI::Context *)ctx;
-		context->_workAllocator.returnObject(cookie);
-	}
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				PlatformDeviceList *devices,
@@ -207,7 +203,6 @@ namespace XMI
         _mm (addr, bytes),
 	_sysdep(_mm),
         _lock (),
-	_workAllocator (),
 #warning This needs to be done elsewhere - not per-context if in __global!
         _mpi(&__global.mpi_device),
         _minterface(_mpi, this, _contextid, clientid),
@@ -844,7 +839,6 @@ namespace XMI
       Memory::MemoryManager     _mm;
       SysDep                    _sysdep;
       ContextLock _lock;
-      MemoryAllocator<sizeof(XMI::Device::Generic::GenericThread), 16> _workAllocator;
 
 #ifdef USE_WAKEUP_VECTORS
       XMI::WakeupManager _wakeupManager;

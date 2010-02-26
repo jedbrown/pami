@@ -216,10 +216,6 @@ namespace XMI
 
   class Context : public Interface::Context<XMI::Context>
   {
-	static void __work_done(xmi_context_t ctx, void *cookie, xmi_result_t result) {
-		XMI::Context *context = (XMI::Context *)ctx;
-		context->_workAllocator.returnObject(cookie);
-	}
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				PlatformDeviceList *devices,
@@ -231,7 +227,6 @@ namespace XMI
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-	  _workAllocator(),
 	  _devices(devices)
       {
         // ----------------------------------------------------------------
@@ -638,7 +633,6 @@ namespace XMI
       void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
       ContextLock _lock;
-      MemoryAllocator<sizeof(XMI::Device::Generic::GenericThread), 16> _workAllocator;
       ProtocolAllocator _protocolAllocator;
       PlatformDeviceList *_devices;
   }; // end XMI::Context
