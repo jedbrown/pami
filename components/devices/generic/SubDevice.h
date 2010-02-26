@@ -101,8 +101,7 @@ public:
 		return nxt;
 	}
 
-	inline void ___create(size_t client, size_t num_ctx,
-				XMI::Device::Generic::Device *generics) {
+	inline void ___create(size_t client, size_t num_ctx) {
 	}
 	/// \brief internal initialization routine for GenericSubDevice sub-class
 	///

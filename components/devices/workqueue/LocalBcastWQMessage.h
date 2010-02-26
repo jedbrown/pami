@@ -21,6 +21,7 @@
 #include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MulticastModel.h"
+#include "components/devices/FactoryInterface.h"
 
 namespace XMI {
 namespace Device {
@@ -28,35 +29,36 @@ namespace Device {
 class LocalBcastWQModel;
 class LocalBcastWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
-typedef XMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,1,true> LocalBcastWQRealDevice;
+class LocalBcastWQDevice : public XMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,1,true> {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,LocalBcastWQDevice,Generic::Device> {
+	public:
+		static inline LocalBcastWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
+	}; // class Factory
+}; // class LocalBcastWQDevice
 
 }; // namespace Device
 }; // namespace XMI
 
-extern XMI::Device::LocalBcastWQRealDevice _g_l_bcastwq_dev;
+extern XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 
 namespace XMI {
 namespace Device {
 
-class LocalBcastWQDevice : public XMI::Device::Generic::SimplePseudoDevice<LocalBcastWQDevice,LocalBcastWQRealDevice> {
-public:
-	static inline LocalBcastWQDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		return __create(client, num_ctx, devices, &_g_l_bcastwq_dev);
-	}
+inline LocalBcastWQDevice *LocalBcastWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+	_g_l_bcastwq_dev.__create(client, num_ctx);
+	return &_g_l_bcastwq_dev;
+}
 
-	inline LocalBcastWQDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	XMI::Device::Generic::SimplePseudoDevice<LocalBcastWQDevice,LocalBcastWQRealDevice>(client, num_ctx, devices, ctx)
-	{
-	}
+inline xmi_result_t LocalBcastWQDevice::Factory::init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_l_bcastwq_dev.__init(client, contextId, clt, ctx, sd, devices);
+}
 
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		__init(sd, client, num_ctx, context, contextid, &_g_l_bcastwq_dev);
-	}
-
-	inline size_t advance_impl() {
-		return _g_l_bcastwq_dev.advance(_clientid, _contextid);
-	}
-}; // class LocalBcastWQDevice
+inline size_t LocalBcastWQDevice::Factory::advance_impl(LocalBcastWQDevice *devs, size_t client, size_t contextid) {
+	return 0;
+}
 
 class LocalBcastWQMessage : public XMI::Device::Generic::GenericMessage {
 public:

@@ -33,6 +33,7 @@
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
+#include "components/devices/FactoryInterface.h"
 #include "components/atomic/Mutex.h"
 #include "sys/xmi.h"
 
@@ -75,21 +76,34 @@ namespace Generic {
 class Device {
 
 public:
+	class Factory : public Interface::FactoryInterface<Factory,Device,Device> {
+	public:
+		static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
+			size_t x;
+			Device *gds;
+			int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
+			XMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
+			for (x = 0; x < num_ctx; ++x) {
+				new (&gds[x]) XMI::Device::Generic::Device(client, x, num_ctx);
+			}
+			return gds;
+		}
+		static inline xmi_result_t init_impl(Device *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+			return devs[contextId].init(ctx, client, contextId);
+		}
+		static inline size_t advance_impl(Device *devs, size_t client, size_t context) {
+			return devs[context].advance();
+		}
+	}; // class Factory
+
 	/// \brief  A generic device (wrapper for sub-devices)
 	///
-	inline Device();
-
-	static Device *create(size_t clientid, size_t num_ctx);
-
-	/// \brief Initialize a generic device slice
-	/// \param[in] sd	SysDep object
-	/// \param[in] ctx	Context object associated with slice
-	/// \param[in] context	Context ID associated with slice
-	/// \param[in] num_contexts	Number of contexts/slices
-	/// \param[in] generics		Array of generic device slices
-	/// \ingroup gendev_public_api
-	///
-	inline void init(xmi_context_t ctx, size_t client, size_t context, size_t num_contexts);
+	inline Device(size_t client, size_t contextId, size_t num_ctx);
+	inline xmi_result_t init(xmi_context_t ctx, size_t client, size_t context) {
+		__context = ctx;
+		return XMI_SUCCESS;
+	}
+	inline size_t advance();
 
 	/// \brief     Advance routine for the generic device.
 	///
@@ -99,13 +113,6 @@ public:
 	/// \ingroup gendev_public_api
 	///
 	inline bool isAdvanceNeeded();
-
-	/// \brief     Advance routine for the generic device.
-	/// \return	number of events processed
-	/// \ingroup gendev_public_api
-	///
-	inline int advance(size_t clientid, size_t contextid);
-	inline int advance();
 
 	/// \brief     Post a thread object on a generic device slice's queue
 	///

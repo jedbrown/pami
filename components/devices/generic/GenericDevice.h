@@ -68,31 +68,13 @@ namespace Generic {
 
 	/// \brief The first generic device of a client
 	///
-	inline Device::Device() :
+	inline Device::Device(size_t client, size_t contextId, size_t num_ctx) :
 	__GenericQueue(),
 	__Threads(),
-	__clientId((size_t)-1),
-	__contextId((size_t)-1)
+	__clientId(client),
+	__contextId(contextId),
+	__nContexts(num_ctx)
 	{
-	}
-
-	/// \brief Initialize the Generic Device and all subdevices.
-	///
-	/// When a new subdevice is added, a call to its init routine is
-	/// added here.
-	///
-	/// \param[in] sd		The SysDep object
-	/// \param[in] context		The specific context being initialized
-	/// \param[in] num_contexts	Total number of contexts in current client
-	///
-	/// \ingroup gendev_public_api
-	///
-	inline void Device::init(xmi_context_t ctx, size_t client, size_t context, size_t num_contexts) {
-		Device *dev = &this[context];
-		dev->__context = ctx;
-		dev->__clientId = client;
-		dev->__contextId = context;
-		dev->__nContexts = num_contexts;
 	}
 
 	/// \brief Quick check whether full advance is needed.
@@ -122,14 +104,7 @@ namespace Generic {
 	///
 	/// \ingroup gendev_public_api
 	///
-	inline int Device::advance(size_t clientid, size_t contextid) {
-		// This device has one instance per context per client.
-		// assert(clientid == __clientId);
-		Device *gd = &this[contextid];
-		return gd->advance();
-	}
-
-	inline int Device::advance() {
+	inline size_t Device::advance() {
 		int events = 0;
 		//+ Need to ensure only one of these runs per core
 		//+ (even if multi-threads per core)
@@ -183,18 +158,6 @@ namespace Generic {
 			}
 		}
 		return events;
-	}
-
-	// This is called before contexts are created... Device init must wait.
-	inline Device *Device::create(size_t clientid, size_t num_ctx) {
-		size_t x;
-		Device *gds;
-		int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
-		XMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
-		for (x = 0; x < num_ctx; ++x) {
-			new (&gds[x]) XMI::Device::Generic::Device();
-		}
-		return gds;
 	}
 
 }; /* namespace Generic */

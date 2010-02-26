@@ -18,6 +18,7 @@
 #include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "sys/xmi.h"
+#include "components/devices/FactoryInterface.h"
 
 typedef struct {
 	size_t client;
@@ -33,70 +34,50 @@ namespace Device {
 
 class ProgressFunctionMdl;
 
-class ProgressFunctionRealDev {
+class ProgressFunctionDev {
 public:
-	inline ProgressFunctionRealDev() {}
+	class Factory : public Interface::FactoryInterface<Factory,ProgressFunctionDev,Generic::Device>  {
+	public:
+		static inline ProgressFunctionDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(ProgressFunctionDev *devs, size_t client, size_t context);
+	}; // class ProgressFunctionDev::Factory
+	inline ProgressFunctionDev() {}
 
-	inline void init(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+	inline xmi_result_t init(size_t client, size_t ctx, XMI::Device::Generic::Device *devices) {
 		_generics[client] = devices;
+		return XMI_SUCCESS;
 	}
 
 	inline XMI::Device::Generic::Device *getGeneric(size_t client, size_t contextId) {
 		return &_generics[client][contextId];
 	}
+
+	inline xmi_context_t getContext(size_t client, size_t contextId) {
+		return getGeneric(client, contextId)->getContext();
+	}
 protected:
 	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
-}; // class ProgressFunctionRealDev
+}; // class ProgressFunctionDev
 
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::ProgressFunctionRealDev _g_progfunc_dev;
+extern XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
 namespace XMI {
 namespace Device {
 
-class ProgressFunctionDev {
-public:
-	static inline ProgressFunctionDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		size_t x;
-		ProgressFunctionDev *devs;
-		int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-		XMI_assertf(rc == 0, "posix_memalign failed for ProgressFunctionDev[%zd], errno=%d\n", num_ctx, errno);
-		for (x = 0; x < num_ctx; ++x) {
-			new (&devs[x]) ProgressFunctionDev(client, num_ctx, devices, x);
-		}
-		_g_progfunc_dev.init(client, num_ctx, devices);
-		return devs;
-	}
+inline ProgressFunctionDev *ProgressFunctionDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
+	return &_g_progfunc_dev;
+}
 
-	inline ProgressFunctionDev(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	_clientid(client),
-	_contextid(ctx),
-	_ncontext(num_ctx),
-	_generics(devices)
-	{
-	}
+inline xmi_result_t ProgressFunctionDev::Factory::init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_progfunc_dev.init(client, contextId, devices);
+}
 
-	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
-		_context = ctx;
-	}
+inline size_t ProgressFunctionDev::Factory::advance_impl(ProgressFunctionDev *devs, size_t client, size_t context) { return 0; }
 
-	inline size_t advance(size_t client, size_t context) { return 0; }
-
-	inline xmi_context_t getContext(size_t client, size_t context) {
-		return _context;
-	}
-
-protected:
-	friend class ProgressFunctionMdl;
-private:
-	size_t _clientid;
-	size_t _contextid;
-	size_t _ncontext;
-	xmi_context_t _context;
-	XMI::Device::Generic::Device *_generics;
-}; // class ProgressFunctionDev
 
 /// If this ever expands into multiple types, need to make this a subclass
 class ProgressFunctionMdl {

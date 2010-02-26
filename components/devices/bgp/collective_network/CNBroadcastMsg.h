@@ -22,6 +22,7 @@
 #include "components/devices/generic/Message.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MulticastModel.h"
+#include "components/devices/FactoryInterface.h"
 
 /**
  * \page cn_bcast Collective Network Broadcast
@@ -40,37 +41,38 @@ namespace BGP {
 class CNBroadcastModel;
 class CNBroadcastMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNBroadcastThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> CNBroadcastRealDevice;
+class CNBroadcastDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,CNBroadcastDevice,Generic::Device> {
+	public:
+		static inline CNBroadcastDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(CNBroadcastDevice *devs, size_t client, size_t context);
+	}; // class Factory
+}; // class CNBroadcastDevice
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNBroadcastRealDevice _g_cnbroadcast_dev;
+extern XMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-class CNBroadcastDevice : public XMI::Device::Generic::SimplePseudoDevice<CNBroadcastDevice,CNBroadcastRealDevice> {
-public:
-	static inline CNBroadcastDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		return __create(client, num_ctx, devices, &_g_cnbroadcast_dev);
-	}
+inline CNBroadcastDevice *CNBroadcastDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+	_g_cnbroadcast_dev.__create(client, num_ctx);
+	return &_g_cnbroadcast_dev;
+}
 
-	inline CNBroadcastDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	XMI::Device::Generic::SimplePseudoDevice<CNBroadcastDevice,CNBroadcastRealDevice>(client, num_ctx, devices, ctx)
-	{
-	}
+inline xmi_result_t CNBroadcastDevice::Factory::init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_cnbroadcast_dev.__init(client, contextId, clt, ctx, sd, devices);
+}
 
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		__init(sd, client, num_ctx, context, contextid, &_g_cnbroadcast_dev);
-	}
-
-	inline size_t advance_impl() {
-		return _g_cnbroadcast_dev.advance(_clientid, _contextid);
-	}
-}; // class CNBroadcastDevice
+inline size_t CNBroadcastDevice::Factory::advance_impl(CNBroadcastDevice *devs, size_t client, size_t contextId) {
+	return 0;
+}
 
 /**
  * \brief Collective Network Broadcast Send

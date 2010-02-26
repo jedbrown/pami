@@ -26,6 +26,7 @@
 #include "components/devices/generic/AdvanceThread.h"
 #include "math/math_coremath.h"
 #include "math/bgp/collective_network/DblUtils.h"
+#include "components/devices/FactoryInterface.h"
 
 /**
  * \page twopass_dblsum The 2-Pass DOUBLE-SUM algorithm
@@ -98,37 +99,38 @@ namespace BGP {
 class CNAllreduce2PModel;
 class CNAllreduce2PMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduce2PThread;
-typedef XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2> CNAllreduce2PRealDevice;
+class CNAllreduce2PDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2> {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,CNAllreduce2PDevice,Generic::Device> {
+	public:
+		static inline CNAllreduce2PDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(CNAllreduce2PDevice *devs, size_t client, size_t context);
+	}; // class Factory
+}; // class CNAllreduce2PDevice
 
 };	// BGP
 };	// Device
 };	// XMI
 
-extern XMI::Device::BGP::CNAllreduce2PRealDevice _g_cnallreduce2p_dev;
+extern XMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-class CNAllreduce2PDevice : public XMI::Device::Generic::SimplePseudoDevice<CNAllreduce2PDevice,CNAllreduce2PRealDevice> {
-public:
-	static inline CNAllreduce2PDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		return __create(client, num_ctx, devices, &_g_cnallreduce2p_dev);
-	}
+inline CNAllreduce2PDevice *CNAllreduce2PDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+	_g_cnallreduce2p_dev.__create(client, num_ctx);
+	return &_g_cnallreduce2p_dev;
+}
 
-	inline CNAllreduce2PDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	XMI::Device::Generic::SimplePseudoDevice<CNAllreduce2PDevice,CNAllreduce2PRealDevice>(client, num_ctx, devices, ctx)
-	{
-	}
+inline xmi_result_t CNAllreduce2PDevice::Factory::init_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_cnallreduce2p_dev.__init(client, contextId, clt, ctx, sd, devices);
+}
 
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		__init(sd, client, num_ctx, context, contextid, &_g_cnallreduce2p_dev);
-	}
-
-	inline size_t advance_impl() {
-		return _g_cnallreduce2p_dev.advance(_clientid, _contextid);
-	}
-}; // class CNAllreduce2PDevice
+inline size_t CNAllreduce2PDevice::Factory::advance_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId) {
+	return 0;
+}
 
 /**
  * \brief collective Network Allreduce DOUBLE-SUM 2-Pass Send

@@ -21,6 +21,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "components/devices/MulticastModel.h"
+#include "components/devices/FactoryInterface.h"
 
 namespace XMI {
 namespace Device {
@@ -28,35 +29,36 @@ namespace Device {
 class WQRingBcastMdl;
 class WQRingBcastMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingBcastThr;
-typedef XMI::Device::Generic::MultiSendQSubDevice<WQRingBcastThr,1,1,true> WQRingBcastRealDev;
+class WQRingBcastDev : public XMI::Device::Generic::MultiSendQSubDevice<WQRingBcastThr,1,1,true> {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,WQRingBcastDev,Generic::Device> {
+	public:
+		static inline WQRingBcastDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(WQRingBcastDev *devs, size_t client, size_t context);
+	}; // class Factory
+}; // class WQRingBcastDev
 
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::WQRingBcastRealDev _g_wqbcast_dev;
+extern XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 
 namespace XMI {
 namespace Device {
 
-class WQRingBcastDev : public XMI::Device::Generic::SimplePseudoDevice<WQRingBcastDev,WQRingBcastRealDev> {
-public:
-	static inline WQRingBcastDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		return __create(client, num_ctx, devices, &_g_wqbcast_dev);
-	}
+inline WQRingBcastDev *WQRingBcastDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+	_g_wqbcast_dev.__create(client, num_ctx);
+	return &_g_wqbcast_dev;
+}
 
-	inline WQRingBcastDev(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	XMI::Device::Generic::SimplePseudoDevice<WQRingBcastDev,WQRingBcastRealDev>(client, num_ctx, devices, ctx)
-	{
-	}
+inline xmi_result_t WQRingBcastDev::Factory::init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_wqbcast_dev.__init(client, contextId, clt, ctx, sd, devices);
+}
 
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		__init(sd, client, num_ctx, context, contextid, &_g_wqbcast_dev);
-	}
-
-	inline size_t advance_impl() {
-		return _g_wqbcast_dev.advance(_clientid, _contextid);
-	}
-}; // class WQRingBcastDev
+inline size_t WQRingBcastDev::Factory::advance_impl(WQRingBcastDev *devs, size_t client, size_t contextId) {
+	return 0;
+}
 
 ///
 /// \brief A local bcast message that takes advantage of the

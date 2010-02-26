@@ -22,52 +22,6 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
-// This base class is for devices that have a single, global, instance
-// and each context has a pseudo-device object that keeps context-specific
-// info but otherwise uses the global instance to do work.
-template <class T_Device, class T_RealDevice>
-class SimplePseudoDevice {
-public:
-	static inline T_Device *__create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, T_RealDevice *realdev) {
-		size_t x;
-		T_Device *devs;
-		int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-		XMI_assertf(rc == 0, "posix_memalign failed for PseudoDevice[%zd], errno=%d\n", num_ctx, errno);
-		realdev->__create(client, num_ctx, devices);
-		for (x = 0; x < num_ctx; ++x) {
-			new (&devs[x]) T_Device(client, num_ctx, devices, x);
-		}
-		return devs;
-	}
-
-	inline SimplePseudoDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	_clientid(client),
-	_contextid(ctx),
-	_ncontext(num_ctx),
-	_generics(devices)
-	{
-	}
-
-	inline void __init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid, T_RealDevice *realdev) {
-		_context = context;
-		if (client == 0 && contextid == 0) {
-			realdev->init(sd, client, num_ctx, context, contextid);
-		}
-	}
-
-	inline size_t advance(size_t client, size_t ctx) {
-		SimplePseudoDevice *dev = &this[ctx];
-		return static_cast<T_Device *>(dev)->advance_impl();
-	}
-protected:
-	// do we need to save all this?
-	size_t _clientid;
-	size_t _contextid;
-	size_t _ncontext;
-	xmi_context_t _context;
-	XMI::Device::Generic::Device *_generics;
-}; // class SimplePseudoDevice
-
 /// \brief Example sub-device for using multiple send queues
 ///
 /// This is typically what 'local' point-to-point devices do, to enforce
@@ -101,12 +55,10 @@ public:
 		}
 	}
 
-	inline void __create(size_t client, size_t num_ctx,
-				XMI::Device::Generic::Device *devices) {
+	inline void __create(size_t client, size_t num_ctx) {
 		for (int x = 0; x < N_Queues; ++x) {
-			_sendQs[x].___create(client, num_ctx, devices);
+			_sendQs[x].___create(client, num_ctx);
 		}
-		_generics[client] = devices;
 	}
 
 	// may be overridden by child class... Context calls using child class.
@@ -119,12 +71,15 @@ public:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
+	inline void __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			_sd = sd;
 			for (int x = 0; x < N_Queues; ++x) {
 				_sendQs[x].___init(sd, client, contextId);
 			}
+		}
+		if (contextId == 0) {
+			_generics[client] = devices;
 		}
 	}
 
@@ -253,7 +208,7 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	virtual void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) = 0;
+	virtual void init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -264,19 +219,21 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	inline void __init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
+	inline void __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			_sd = sd;
 			_doneThreads.init(sd);
 			_doneThreads.fetch_and_clear();
 			_init = 1;
 		}
+		if (contextId == 0) {
+			_generics[client] = devices;
+		}
 		___init(sd, client, contextId);
 	}
 
-	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		_generics[client] = devices;
-		___create(client, num_ctx, devices);
+	inline void __create(size_t client, size_t num_ctx) {
+		___create(client, num_ctx);
 	}
 
 	/// \brief Reset for threads prior to being re-used.
@@ -419,20 +376,21 @@ public:
 		return _common->getGenerics(client);
 	}
 
-	inline void __create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		_common->__create(client, num_ctx, devices);
+	inline void __create(size_t client, size_t num_ctx) {
+		_common->__create(client, num_ctx);
 	}
 
 	inline int advance(size_t client, size_t context) { return 0; }
 
-	inline void init(XMI::SysDep *sd, size_t client, size_t nctx, xmi_context_t ctx, size_t contextId) {
+	inline void __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
 //			for (int x = 0; x < NUM_THREADS; ++x)
 //				//_threads[x].setPolled(true);
 //			}
 		}
-		_common->init(sd, client, nctx, ctx, contextId);
+		_common->__init(client, contextId, clt, ctx, sd, devices);
+		_common->init(sd, client, contextId, ctx);
 	}
 
 	inline void __getThreads(T_Thread **t, int *n, int sendq = 0) {

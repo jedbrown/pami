@@ -101,24 +101,24 @@ namespace XMI
      * \param[in] clientid	Client ID (index)
      * \param[in] contextid	Context ID (index)
      */
-    inline xmi_result_t init(size_t clientid, size_t num_ctx) {
+    inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
 	// these calls create (allocate and construct) each element.
 	// We don't know how these relate to contexts, they are semi-opaque.
-        _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
-        _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
-	_progfunc = XMI::Device::ProgressFunctionDev::create(clientid, num_ctx, _generics);
-	_atombarr = XMI::Device::AtomicBarrierDev::create(clientid, num_ctx, _generics);
-	_wqringreduce = XMI::Device::WQRingReduceDev::create(clientid, num_ctx, _generics);
-	_wqringbcast = XMI::Device::WQRingBcastDev::create(clientid, num_ctx, _generics);
-	_localallreduce = XMI::Device::LocalAllreduceWQDevice::create(clientid, num_ctx, _generics);
-	_localbcast = XMI::Device::LocalBcastWQDevice::create(clientid, num_ctx, _generics);
-	_localreduce = XMI::Device::LocalReduceWQDevice::create(clientid, num_ctx, _generics);
+        _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
+	_progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+	_atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringbcast = XMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+	_localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
 	// BGP-specific devices...
-	_gibarr = XMI::Device::BGP::giDevice::create(clientid, num_ctx, _generics);
-	_cnallred = XMI::Device::BGP::CNAllreduceDevice::create(clientid, num_ctx, _generics);
-	_cnppallred = XMI::Device::BGP::CNAllreducePPDevice::create(clientid, num_ctx, _generics);
-	_cn2pallred = XMI::Device::BGP::CNAllreduce2PDevice::create(clientid, num_ctx, _generics);
-	_cnbcast = XMI::Device::BGP::CNBroadcastDevice::create(clientid, num_ctx, _generics);
+	_gibarr = XMI::Device::BGP::giDevice::Factory::generate(clientid, num_ctx, mm);
+	_cnallred = XMI::Device::BGP::CNAllreduceDevice::Factory::generate(clientid, num_ctx, mm);
+	_cnppallred = XMI::Device::BGP::CNAllreducePPDevice::Factory::generate(clientid, num_ctx, mm);
+	_cn2pallred = XMI::Device::BGP::CNAllreduce2PDevice::Factory::generate(clientid, num_ctx, mm);
+	_cnbcast = XMI::Device::BGP::CNBroadcastDevice::Factory::generate(clientid, num_ctx, mm);
 	return XMI_SUCCESS;
     }
 
@@ -138,21 +138,21 @@ namespace XMI
      * \param[in] ctx		Context opaque entity
      * \param[in] contextid	Context ID (index)
      */
-    inline xmi_result_t dev_init(XMI::SysDep *sd, size_t clientid, size_t num_ctx, xmi_context_t ctx, size_t contextid) {
-	_generics->init(ctx, clientid, contextid, num_ctx);
-	_shmem->init(sd, clientid, num_ctx, ctx, contextid);
-	_progfunc->init(sd, clientid, num_ctx, ctx, contextid);
-	_atombarr->init(sd, clientid, num_ctx, ctx, contextid);
-	_wqringreduce->init(sd, clientid, num_ctx, ctx, contextid);
-	_wqringbcast->init(sd, clientid, num_ctx, ctx, contextid);
-	_localallreduce->init(sd, clientid, num_ctx, ctx, contextid);
-	_localbcast->init(sd, clientid, num_ctx, ctx, contextid);
-	_localreduce->init(sd, clientid, num_ctx, ctx, contextid);
-	_gibarr->init(sd, clientid, num_ctx, ctx, contextid);
-	_cnallred->init(sd, clientid, num_ctx, ctx, contextid);
-	_cnppallred->init(sd, clientid, num_ctx, ctx, contextid);
-	_cn2pallred->init(sd, clientid, num_ctx, ctx, contextid);
-	_cnbcast->init(sd, clientid, num_ctx, ctx, contextid);
+    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
+	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);
+	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::BGP::giDevice::Factory::init(_gibarr, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::BGP::CNAllreduceDevice::Factory::init(_cnallred, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::BGP::CNAllreducePPDevice::Factory::init(_cnppallred, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::BGP::CNAllreduce2PDevice::Factory::init(_cn2pallred, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::BGP::CNBroadcastDevice::Factory::init(_cnbcast, clientid, contextid, clt, ctx, sd, _generics);
 	return XMI_SUCCESS;
     }
 
@@ -167,21 +167,21 @@ namespace XMI
      */
     inline size_t advance(size_t clientid, size_t contextid) {
 	size_t events = 0;
-        events += _generics->advance(clientid, contextid);
-        events += _shmem->advance(clientid, contextid);
-        events += _progfunc->advance(clientid, contextid);
-	events += _atombarr->advance(clientid, contextid);
-	events += _wqringreduce->advance(clientid, contextid);
-	events += _wqringbcast->advance(clientid, contextid);
-	events += _localallreduce->advance(clientid, contextid);
-	events += _localbcast->advance(clientid, contextid);
-	events += _localreduce->advance(clientid, contextid);
+        events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+        events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+        events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
+	events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
+	events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+	events += XMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
+	events += XMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+	events += XMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+	events += XMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
 	// BGP-specific devices...
-	events += _gibarr->advance(clientid, contextid);
-	events += _cnallred->advance(clientid, contextid);
-	events += _cnppallred->advance(clientid, contextid);
-	events += _cn2pallred->advance(clientid, contextid);
-	events += _cnbcast->advance(clientid, contextid);
+	events += XMI::Device::BGP::giDevice::Factory::advance(_gibarr, clientid, contextid);
+	events += XMI::Device::BGP::CNAllreduceDevice::Factory::advance(_cnallred, clientid, contextid);
+	events += XMI::Device::BGP::CNAllreducePPDevice::Factory::advance(_cnppallred, clientid, contextid);
+	events += XMI::Device::BGP::CNAllreduce2PDevice::Factory::advance(_cn2pallred, clientid, contextid);
+	events += XMI::Device::BGP::CNBroadcastDevice::Factory::advance(_cnbcast, clientid, contextid);
 	return events;
     }
 
@@ -232,7 +232,7 @@ namespace XMI
         // ----------------------------------------------------------------
 
         _lock.init(&_sysdep);
-	_devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
+	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));

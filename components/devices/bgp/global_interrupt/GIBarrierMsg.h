@@ -12,6 +12,7 @@
 #include "SysDep.h"
 #include "util/common.h"
 #include "components/devices/MultisyncModel.h"
+#include "components/devices/FactoryInterface.h"
 #include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "spi/bgp_SPI.h"
@@ -43,44 +44,38 @@ namespace BGP {
 class giModel;
 class giMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread giThread;
-typedef XMI::Device::Generic::MultiSendQSubDevice<giThread,1,1,true> giRealDevice;
+class giDevice : public XMI::Device::Generic::MultiSendQSubDevice<giThread,1,1,true> {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,giDevice,Generic::Device> {
+	public:
+		static inline giDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm);
+		static inline xmi_result_t init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(giDevice *devs, size_t client, size_t contextId);
+	}; // class Factory
+}; // class giDevice
 
 }; // namespace BGP
 }; // namespace Device
 }; // namespace XMI
 
-extern XMI::Device::BGP::giRealDevice _g_gibarrier_dev;
+extern XMI::Device::BGP::giDevice _g_gibarrier_dev;
 
 namespace XMI {
 namespace Device {
 namespace BGP {
 
-// If C++ allowed a template parameter to be "_g_gibarrier_dev" (like a macro)
-// then we could eliminate these stubs for create() and init()... and maybe
-// even advance().
-class giDevice : public XMI::Device::Generic::SimplePseudoDevice<giDevice,giRealDevice> {
-public:
-	static inline giDevice *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		return __create(client, num_ctx, devices, &_g_gibarrier_dev);
-	}
+inline giDevice *giDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+	_g_gibarrier_dev.__create(client, num_ctx);
+	return &_g_gibarrier_dev;
+}
 
-	inline giDevice(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	XMI::Device::Generic::SimplePseudoDevice<giDevice,giRealDevice>(client, num_ctx, devices, ctx)
-	{
-	}
+inline xmi_result_t giDevice::Factory::init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_gibarrier_dev.__init(client, contextId, clt, ctx, sd, devices);
+}
 
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		__init(sd, client, num_ctx, context, contextid, &_g_gibarrier_dev);
-	}
-
-	inline size_t advance_impl() {
-		/// \todo should only one context advance this device?
-		/// or does the device handle that by mutexing?
-		/// could do a tryLock here and relieve the real device of mutexing.
-		return _g_gibarrier_dev.advance(_clientid, _contextid);
-	}
-protected:
-}; // class giDevice
+inline size_t giDevice::Factory::advance_impl(giDevice *devs, size_t client, size_t contextId) {
+	return 0;
+}
 
 //////////////////////////////////////////////////////////////////////
 ///  \brief Global interrupt message class

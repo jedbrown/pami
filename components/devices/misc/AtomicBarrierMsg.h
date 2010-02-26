@@ -43,6 +43,7 @@
 #include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MultisyncModel.h"
+#include "components/devices/FactoryInterface.h"
 #include "components/atomic/Barrier.h"
 #include "sys/xmi.h"
 
@@ -52,35 +53,36 @@ namespace Device {
 template <class T_Barrier> class AtomicBarrierMsg;
 template <class T_Barrier> class AtomicBarrierMdl;
 typedef XMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
-typedef XMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,1,true> AtomicBarrierRealDev;
+class AtomicBarrierDev : public XMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,1,true> {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,AtomicBarrierDev,Generic::Device> {
+	public:
+		static inline AtomicBarrierDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(AtomicBarrierDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(AtomicBarrierDev *devs, size_t client, size_t context);
+	}; // class Factory
+}; // class AtomicBarrierDev
 
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::AtomicBarrierRealDev _g_lmbarrier_dev;
+extern XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 
 namespace XMI {
 namespace Device {
 
-class AtomicBarrierDev : public XMI::Device::Generic::SimplePseudoDevice<AtomicBarrierDev,AtomicBarrierRealDev> {
-public:
-	static inline AtomicBarrierDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		return __create(client, num_ctx, devices, &_g_lmbarrier_dev);
-	}
+inline AtomicBarrierDev *AtomicBarrierDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+	_g_lmbarrier_dev.__create(client, num_ctx);
+	return &_g_lmbarrier_dev;
+}
 
-	inline AtomicBarrierDev(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	XMI::Device::Generic::SimplePseudoDevice<AtomicBarrierDev,AtomicBarrierRealDev>(client, num_ctx, devices, ctx)
-	{
-	}
+inline xmi_result_t AtomicBarrierDev::Factory::init_impl(AtomicBarrierDev *devs, size_t client, size_t contextid, xmi_client_t clt, xmi_context_t context, SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_lmbarrier_dev.__init(client, contextid, clt, context, sd, devices);
+}
 
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		__init(sd, client, num_ctx, context, contextid, &_g_lmbarrier_dev);
-	}
-
-	inline size_t advance_impl() {
-		return _g_lmbarrier_dev.advance(_clientid, _contextid);
-	}
-}; // class AtomicBarrierDev
+inline size_t AtomicBarrierDev::Factory::advance_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {
+	return 0;
+}
 
 ///
 /// \brief A local barrier message that takes advantage of the

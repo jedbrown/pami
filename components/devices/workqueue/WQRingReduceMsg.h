@@ -17,6 +17,7 @@
 #include "PipeWorkQueue.h"
 #include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
+#include "components/devices/FactoryInterface.h"
 #include "sys/xmi.h"
 #include "components/devices/MulticombineModel.h"
 #include "math/math_coremath.h"
@@ -28,35 +29,36 @@ namespace Device {
 class WQRingReduceMdl;
 class WQRingReduceMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingReduceThr;
-typedef XMI::Device::Generic::MultiSendQSubDevice<WQRingReduceThr,1,1,true> WQRingReduceRealDev;
+class WQRingReduceDev : public XMI::Device::Generic::MultiSendQSubDevice<WQRingReduceThr,1,1,true> {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,WQRingReduceDev,Generic::Device> {
+	public:
+		static inline WQRingReduceDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(WQRingReduceDev *devs, size_t client, size_t context);
+	}; // class Factory
+}; // class WQRingReduceDev
 
 }; //-- Device
 }; //-- XMI
 
-extern XMI::Device::WQRingReduceRealDev _g_wqreduce_dev;
+extern XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 
 namespace XMI {
 namespace Device {
 
-class WQRingReduceDev : public XMI::Device::Generic::SimplePseudoDevice<WQRingReduceDev,WQRingReduceRealDev> {
-public:
-	static inline WQRingReduceDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-		return __create(client, num_ctx, devices, &_g_wqreduce_dev);
-	}
+inline WQRingReduceDev *WQRingReduceDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+	_g_wqreduce_dev.__create(client, num_ctx);
+	return &_g_wqreduce_dev;
+}
 
-	inline WQRingReduceDev(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices, size_t ctx) :
-	XMI::Device::Generic::SimplePseudoDevice<WQRingReduceDev,WQRingReduceRealDev>(client, num_ctx, devices, ctx)
-	{
-	}
+inline xmi_result_t WQRingReduceDev::Factory::init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return _g_wqreduce_dev.__init(client, contextId, clt, ctx, sd, devices);
+}
 
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		__init(sd, client, num_ctx, context, contextid, &_g_wqreduce_dev);
-	}
-
-	inline size_t advance_impl() {
-		return _g_wqreduce_dev.advance(_clientid, _contextid);
-	}
-}; // class WQRingReduceDev
+inline size_t WQRingReduceDev::Factory::advance_impl(WQRingReduceDev *devs, size_t client, size_t contextId) {
+	return 0;
+}
 
 ///
 /// \brief A local barrier message that takes advantage of the
