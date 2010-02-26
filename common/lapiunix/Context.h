@@ -285,11 +285,11 @@ namespace XMI
           return XMI_SUCCESS;
         }
 
-      inline xmi_result_t post_impl (xmi_work_function work_fn, void * cookie)
+      inline xmi_result_t post_impl (xmi_work_t *state, xmi_work_function work_fn, void * cookie)
         {
-          XMI::Device::Generic::GenericThread *work =
-		(XMI::Device::Generic::GenericThread *)_workAllocator.allocateObject();
-	  new (work) XMI::Device::Generic::GenericThread(work_fn, cookie, (xmi_callback_t){__work_done, (void *)work});
+          XMI::Device::Generic::GenericThread *work;
+	  COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
+	  work = new (work) XMI::Device::Generic::GenericThread(work_fn, cookie);
 	  work->setStatus(XMI::Device::OneShot);
 	  _devices->_generics[_contextid].postThread(work);
           return XMI_SUCCESS;

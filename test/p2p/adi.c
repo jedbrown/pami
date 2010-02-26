@@ -203,7 +203,8 @@ static void *SendLong(void *c)
   xmi_task_t remote_task = 1-task;
   size_t local_context = (remote_task+LONG_DISPATCH)&(num_contexts-1);
 
-  XMI_Context_post(contexts[local_context], SendLongHandoff, quad);
+  xmi_work_t state;
+  XMI_Context_post(contexts[local_context], &state, SendLongHandoff, quad);
   while (!done.slong.send)
     XMI_Context_multiadvance(contexts, num_contexts, 1);
   return NULL;
@@ -250,7 +251,8 @@ static void *SendShort(void *c)
   xmi_task_t remote_task = 1-task;
   size_t local_context = (remote_task+SHORT_DISPATCH)&(num_contexts-1);
 
-  XMI_Context_post(contexts[local_context], SendShortHandoff, NULL);
+  xmi_work_t state;
+  XMI_Context_post(contexts[local_context], &state, SendShortHandoff, NULL);
   while (!done.sshort.send)
     XMI_Context_multiadvance(contexts, num_contexts, 1);
   return NULL;

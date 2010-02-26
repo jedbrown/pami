@@ -26,7 +26,7 @@ namespace XMI
 
         inline xmi_result_t destroy ();
 
-        inline xmi_result_t post (xmi_work_function work_fn, void * cookie);
+        inline xmi_result_t post (xmi_work_t *state, xmi_work_function work_fn, void * cookie);
 
         inline size_t advance (size_t maximum, xmi_result_t & result);
 
@@ -154,9 +154,9 @@ namespace XMI
     }
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::post (xmi_work_function work_fn, void * cookie)
+    xmi_result_t Context<T_Context>::post (xmi_work_t *state, xmi_work_function work_fn, void * cookie)
     {
-      return static_cast<T_Context*>(this)->post_impl(work_fn, cookie);
+      return static_cast<T_Context*>(this)->post_impl(state, work_fn, cookie);
     }
 
     template <class T_Context>

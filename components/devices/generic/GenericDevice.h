@@ -156,7 +156,7 @@ namespace Generic {
 				++events;
 				// thread is like completion callback, dequeue first.
 				__Threads.deleteElem(thr);
-				xmi_result_t rc = thr->executeThread(__context);
+				thr->executeThread(__context);
 				continue;
 			}
 			// This allows a thread to be "completed" by something else...

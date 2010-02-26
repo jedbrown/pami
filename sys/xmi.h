@@ -65,6 +65,8 @@ extern "C"
    */
   typedef xmi_result_t (*xmi_work_function)(xmi_context_t context, void *cookie);
 
+  typedef uint32_t xmi_work_t[8]; /**< 32 bytes for now ... */
+
   typedef struct
   {
     xmi_event_function  function;
@@ -3658,7 +3660,8 @@ extern "C"
    * \param[in] cookie  Opaque data pointer to pass to the event function
    */
   xmi_result_t XMI_Context_post (xmi_context_t        context,
-                                 xmi_work_function    work_fn,
+                                 xmi_work_t         * work,
+                                 xmi_work_function    fn,
                                  void               * cookie);
 
 

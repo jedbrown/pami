@@ -84,6 +84,7 @@ void * endpoint (void * arg)
   if (id == 0)
   {
     /* send a message to endpoint 10 */
+    xmi_work_t state;
     work_t work;
     work.addr = (void *) send;
     work.bytes = 1024;
@@ -91,7 +92,7 @@ void * endpoint (void * arg)
     work.from = 0;
     work.to   = 1;
 
-    result = XMI_Context_post (_endpoint[1].context, do_work, (void *)&work);
+    result = XMI_Context_post (_endpoint[1].context, &state, do_work, (void *)&work);
     if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to post work to the xmi context. result = %d\n", result);
@@ -132,6 +133,7 @@ void * endpoint (void * arg)
     TRACE((stderr, "   endpoint(%zu),  after blocking advance for recv, _endpoint[1].recv = %zu\n", id, _endpoint[1].recv));
 
     /* send a message to endpoint 1 */
+    xmi_work_t state;
     work_t work;
     work.addr = (void *) send;
     work.bytes = 1024;
@@ -139,7 +141,7 @@ void * endpoint (void * arg)
     work.from = 1;
     work.to   = 0;
 
-    result = XMI_Context_post (_endpoint[0].context, do_work, (void *)&work);
+    result = XMI_Context_post (_endpoint[0].context, &state, do_work, (void *)&work);
     if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to post work to the xmi context. result = %d\n", result);

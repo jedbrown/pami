@@ -6,7 +6,13 @@
 #include "sys/xmi.h"
 #include <stdio.h>
 
-volatile unsigned _value[2];
+typedef struct post_info
+{
+  xmi_work_t        state;
+  volatile unsigned value;
+} post_info_t;
+
+post_info_t _info[2];
 
 xmi_result_t do_work (xmi_context_t   context,
               void          * cookie)
@@ -39,8 +45,8 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  _value[0] = 1;
-  _value[1] = 1;
+  _info[0].value = 1;
+  _info[1].value = 1;
 
 
 
@@ -61,13 +67,13 @@ int main (int argc, char ** argv)
 
 
   /* Post some work to the contexts */
-  result = XMI_Context_post (context[0], do_work, (void *)&_value[0]);
+  result = XMI_Context_post (context[0], &_info[0].state, do_work, (void *)&_info[0]);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to post work to the first xmi context. result = %d\n", result);
     return 1;
   }
-  result = XMI_Context_post (context[1], do_work, (void *)&_value[1]);
+  result = XMI_Context_post (context[1], &_info[1].state, do_work, (void *)&_info[1]);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to post work to the second xmi context. result = %d\n", result);
@@ -75,7 +81,7 @@ int main (int argc, char ** argv)
   }
 
 
-  while (_value[0] || _value[1])
+  while (_info[0].value || _info[1].value)
   {
     result = XMI_Context_advance (context[0], 1);
     if (result != XMI_SUCCESS)
