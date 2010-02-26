@@ -3305,6 +3305,11 @@ extern "C"
    * This is a local, non-collective operation. There is no communication
    * between tasks.
    *
+   * \note The maximum allowed dispatch id attribute, \c XMI_DISPATCH_ID_MAX,
+   *       can be queried with the configuration interface
+   *
+   * \see XMI_Configuration_query
+   *
    * \param[in] context    XMI communication context
    * \param[in] dispatch   Dispatch identifier to initialize
    * \param[in] fn         Dispatch receive function
@@ -3362,7 +3367,8 @@ extern "C"
     XMI_SEND_IMMEDIATE_MAX, /**< Q : size_t           : Maximum number of bytes that can be transfered with the XMI_Send_immediate() function. */
     XMI_RECV_IMMEDIATE_MAX, /**< Q : size_t           : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
     XMI_PROCESSOR_NAME,  /**<  Q  : char[]            : A unique name string for the calling node. */
-    XMI_PROCESSOR_NAME_SIZE/**<Q  : size_t            : The size of the unique name string     */
+    XMI_PROCESSOR_NAME_SIZE,/**<Q : size_t            : The size of the unique name string     */
+    XMI_DISPATCH_ID_MAX, /**<  Q  : size_t            : Maximum allowed dispatch id, see XMI_Dispatch_set() */
   } xmi_attribute_name_t;
 
   typedef union
