@@ -234,7 +234,7 @@ extern "C"
   typedef struct
   {
     uint32_t consistency       : 1; /**< Force match ordering semantics                          */
-    uint32_t sync_send         : 1; /**< Assert that all sends will be synchronously received    */
+    uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
     uint32_t buffer_registered : 1; /**< ???                                                     */
     uint32_t use_rdma          : 1; /**< Assert/enable rdma operations                           */
     uint32_t no_rdma           : 1; /**< Disable rdma operations                                 */
@@ -298,6 +298,18 @@ extern "C"
   /**
    * \brief Non-blocking active message send for contiguous data
    *
+   * A low-latency send operation may be enhanced by using a dispatch id which
+   * was set with the \c recv_immediate hint bit enabled. This hint asserts
+   * that all receives with the dispatch id will not exceed a certain limit.
+   *
+   * The implementation configuration attribute \c XMI_RECV_IMMEDIATE_MAX
+   * defines the maximum size of data buffers that can be completely received
+   * with a single dispatch callback. Typically this limit is associated with
+   * a network resource attribute, such as a packet size.
+   *
+   * \see xmi_send_hint_t
+   * \see XMI_Configuration_query
+   *
    * \param[in] context    XMI communication context
    * \param[in] parameters Send simple parameter structure
    */
@@ -308,10 +320,10 @@ extern "C"
    * \brief Immediate active message send for small contiguous data
    *
    * The blocking send is only valid for small data buffers. The implementation
-   * configuration attribute \c IMMEDIATE_SEND_LIMIT defines the upper
+   * configuration attribute \c XMI_SEND_IMMEDIATE_MAX defines the upper
    * bounds for the size of data buffers, including header data, that can be
    * sent with this function. This function will return an error if a data
-   * buffer larger than the \c IMMEDIATE_SEND_LIMIT is attempted.
+   * buffer larger than the \c XMI_SEND_IMMEDIATE_MAX is attempted.
    *
    * This function provides a low-latency send that can be optimized by the
    * specific xmi implementation. If network resources are immediately
@@ -321,14 +333,17 @@ extern "C"
    * to complete the transfer. In either case the send will immediately return,
    * no doce callback is invoked, and is considered complete.
    *
-   * The low-latency send operation may be further enhanced by using a
-   * specially configured dispatch id which asserts that all dispatch receive
-   * callbacks will not exceed a certain limit. The implementation
-   * configuration attribute \c SYNC_SEND_LIMIT defines the upper bounds for
-   * the size of data buffers that can be completely received with a single
-   * dispatch callback. Typically this limit is associated with a network
-   * resource attribute, such as a packet size.
+   * The low-latency send operation may be further enhanced by using a dispatch
+   * id which was set with the \c recv_immediate hint bit enabled. This hint
+   * asserts that all receives with the dispatch id will not exceed a certain
+   * limit.
    *
+   * The implementation configuration attribute \c XMI_RECV_IMMEDIATE_MAX
+   * defines the maximum size of data buffers that can be completely received
+   * with a single dispatch callback. Typically this limit is associated with
+   * a network resource attribute, such as a packet size.
+   *
+   * \see xmi_send_hint_t
    * \see XMI_Configuration_query
    *
    * \todo Better define send parameter structure so done callback is not required
@@ -410,6 +425,29 @@ extern "C"
   /**
    * \brief Dispatch callback
    *
+   * This single dispatch function type supports two kinds of receives:
+   * "immediate" and "asynchronous".
+   *
+   * An immediate receive occurs when the dispatch function is invoked and all
+   * of the data sent is \em immediately available in the buffer. In this case
+   * \c pipe_addr will point to a valid memory location - even when the number
+   * of bytes sent is zero, and the \c recv output structure will be \c NULL.
+   *
+   * An asynchronous receive occurs when the dispatch function is invoked and
+   * all of the data sent is \b not immediately available. In this case the
+   * application must provide information to direct how the receive will
+   * complete. The \c recv output structure will point to a valid memory
+   * location for this purpose, and the \c pipe_addr pointer will be \c NULL.
+   * The \c data_size parameter will contain the number of bytes that are being
+   * sent from the remote endpoint.
+   *
+   * \note A zero-byte send will \b always result in an immediate receive.
+   *
+   * \note The maximum number of bytes that may be immediately received can be
+   *       queried with the \c XMI_RECV_IMMEDIATE configuration attribute.
+   *
+   * \see XMI_Configuration_query
+   *
    * "pipe" has nothing to do with "PipeWorkQueue"s
    */
   typedef void (*xmi_dispatch_p2p_fn) (
@@ -418,7 +456,7 @@ extern "C"
     void               * header_addr,  /**< IN:  header address  */
     size_t               header_size,  /**< IN:  header size     */
     void               * pipe_addr,    /**< IN:  address of XMI pipe  buffer, valid only if non-NULL        */
-    size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+    size_t               data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
     xmi_recv_t         * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /** \} */ /* end of "active message" group */
@@ -3321,6 +3359,8 @@ extern "C"
     XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
     XMI_WTICK,           /**<  Q  : double            : This has the same definition as MPI_Wtick(). */
     XMI_MEM_SIZE,        /**<  Q  : size_t            : Size of the core main memory, in units of 1024^2 Bytes    */
+    XMI_SEND_IMMEDIATE_MAX, /**< Q : size_t           : Maximum number of bytes that can be transfered with the XMI_Send_immediate() function. */
+    XMI_RECV_IMMEDIATE_MAX, /**< Q : size_t           : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
     XMI_PROCESSOR_NAME,  /**<  Q  : char[]            : A unique name string for the calling node. */
     XMI_PROCESSOR_NAME_SIZE/**<Q  : size_t            : The size of the unique name string     */
   } xmi_attribute_name_t;
