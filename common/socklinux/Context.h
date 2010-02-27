@@ -11,7 +11,7 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
-#include "components/devices/generic/GenericDevice.h"
+#include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
@@ -25,7 +25,6 @@
 #include "components/devices/udp/UdpMessage.h"
 
 #include "components/devices/shmem/ShmemDevice.h"
-#include "components/devices/shmem/ShmemModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 

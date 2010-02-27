@@ -33,6 +33,7 @@
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
+#include "components/devices/generic/SubDevice.h"
 #include "components/devices/FactoryInterface.h"
 #include "components/atomic/Mutex.h"
 #include "sys/xmi.h"
@@ -98,12 +99,87 @@ public:
 
 	/// \brief  A generic device (wrapper for sub-devices)
 	///
-	inline Device(size_t client, size_t contextId, size_t num_ctx);
+	/// The first generic device of a client
+	///
+	inline Device(size_t client, size_t contextId, size_t num_ctx) :
+	__GenericQueue(),
+	__Threads(),
+	__clientId(client),
+	__contextId(contextId),
+	__nContexts(num_ctx)
+	{
+	}
+
 	inline xmi_result_t init(xmi_context_t ctx, size_t client, size_t context) {
 		__context = ctx;
 		return XMI_SUCCESS;
 	}
-	inline size_t advance();
+
+	/// \brief Advance routine for (one channel of) the generic device.
+	///
+	/// This advances all units of work on this context's queue, and
+	/// checks the message queue for completions. It also calls the
+	/// advanceRecv routine for all devices.
+	///
+	/// \return	number of events processed
+	///
+	/// \ingroup gendev_public_api
+	///
+	inline size_t advance() {
+		int events = 0;
+		//+ Need to ensure only one of these runs per core
+		//+ (even if multi-threads per core)
+		//+ if (core_mutex.tryAcquire()) {
+
+		// could check the queues here and return if empty, but it
+		// probably takes just as much as the for loops would, and
+		// just further delay the advance of real work when present.
+
+		//if (!__Threads.mutex()->tryAcquire()) continue;
+		GenericThread *thr, *nxtthr;
+		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
+			nxtthr = (GenericThread *)__Threads.nextElem(thr);
+			if (thr->getStatus() == XMI::Device::Ready) {
+				++events;
+				xmi_result_t rc = thr->executeThread(__context);
+				if (rc != XMI_EAGAIN) {
+					// thr->setStatus(XMI::Device::Complete);
+					__Threads.deleteElem(thr);
+					thr->executeCallback(__context, rc);
+					continue;
+				}
+			} else if (thr->getStatus() == XMI::Device::OneShot) {
+				++events;
+				// thread is like completion callback, dequeue first.
+				__Threads.deleteElem(thr);
+				thr->executeThread(__context);
+				continue;
+			}
+			// This allows a thread to be "completed" by something else...
+			if (thr->getStatus() == XMI::Device::Complete) {
+				__Threads.deleteElem(thr);
+				thr->executeCallback(__context);
+				continue;
+			}
+		}
+		//__Threads.mutex()->release();
+
+		//+ core_mutex.release();
+
+		// Now check everything on the completion queue...
+		GenericMessage *msg, *nxtmsg, *nxt;
+		for (msg = (GenericMessage *)__GenericQueue.peekHead(); msg; msg = nxtmsg) {
+			nxtmsg = (GenericMessage *)__GenericQueue.nextElem(msg);
+			if (msg->getStatus() == Done) {
+				++events;
+				__GenericQueue.deleteElem(msg);
+				nxt = static_cast<GenericSubDevice *>(msg->getQS())->__complete(msg);
+				if (nxt) nxt->postNext(true); // virtual function
+				msg->executeCallback(__context);
+			}
+		}
+		return events;
+	}
 
 	/// \brief     Advance routine for the generic device.
 	///

@@ -14,9 +14,10 @@
 
 #include "Global.h"
 #include "SysDep.h"
+#include "Progress.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) //  fprintf x
 #endif
 
 namespace XMI
@@ -24,20 +25,19 @@ namespace XMI
   namespace Device
   {
     template <class T_Fifo>
-    int ShmemDevice<T_Fifo>::init_impl (XMI::SysDep   * sysdep,
-					size_t clientid,
-					size_t num_ctx,
-                                        xmi_context_t   context,
-                                        size_t          offset)
+    xmi_result_t ShmemDevice<T_Fifo>::init (xmi_client_t     client,
+                                            xmi_context_t    context,
+                                            SysDep         * sysdep,
+                                            ProgressDevice * progress)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl ()\n", __global.mapping.task()));
-      _sysdep  = sysdep;
-      _context = context;
-      _offset  = offset;
+      TRACE_ERR((stderr, "(%zd) ShmemDevice::init ()\n", __global.mapping.task()));
+      _client   = client;
+      _context  = context;
+      _sysdep   = sysdep;
+      _progress = progress;
 
       unsigned i;
       __global.mapping.nodePeers (_num_procs);
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 0 _num_procs = %zd\n", __global.mapping.task(), _num_procs));
 
       XMI::Interface::Mapping::nodeaddr_t nodeaddr;
       __global.mapping.nodeAddr (nodeaddr);
@@ -48,37 +48,23 @@ namespace XMI
 	  _local_task = _local_task/stride;//hack
 #endif
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 1\n", __global.mapping.task()));
-
-      // Allocate a shared memory segment for the fifos
-      size_t size = ((sizeof(T_Fifo) + 15) & 0xfff0) * _num_procs;
-      _sysdep->mm.memalign ((void **)&_fifo, 16, size);
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 2\n", __global.mapping.task()));
-
-      // Initialize the fifo acting as the reception fifo for this local task
-      _rfifo = &_fifo[_local_task];
       new (_rfifo) T_Fifo ();
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 3, _local_task = %zd, _fifo = %p, _rfifo = %p\n", __global.mapping.task(), _local_task, _fifo, _rfifo));
       _rfifo->init (*sysdep);
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 4\n", __global.mapping.task()));
 
       // barrier ?
 
       // Allocate memory for and construct the queue objects,
-      // one for each local rank.
-      __sendQ = (Queue *) malloc ((sizeof (Queue) * _num_procs));
+      // one for each context on the local node
+      __sendQ = (MessageQueue *) malloc ((sizeof (MessageQueue) * _total_fifos));
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 5\n", __global.mapping.task()));
-
-      for (i = 0; i < _num_procs; i++)
+      for (i = 0; i < _total_fifos; i++)
         {
-          new (&__sendQ[i]) Queue ();
+          new (&__sendQ[i]) MessageQueue (_progress);
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 6\n", __global.mapping.task()));
 
       // Initialize the send queue mask to zero (empty).
-      __sendQMask = 0;
+//      __sendQMask = 0;
 
       // Initialize the registered receive function array to noop().
       // The array is limited to 256 dispatch ids because of the size of the
@@ -89,9 +75,8 @@ namespace XMI
           _dispatch[i].clientdata = NULL;
         }
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init_impl () .. 7\n", __global.mapping.task()));
 
-      return 0;
+      return XMI_SUCCESS;
     }
 
     template <class T_Fifo>
@@ -112,10 +97,13 @@ namespace XMI
     size_t ShmemDevice<T_Fifo>::task2peer_impl (size_t task)
     {
       XMI::Interface::Mapping::nodeaddr_t address;
+      TRACE_ERR((stderr,">> ShmemDevice::task2peer_impl(%zu)\n",task));
       __global.mapping.task2node (task, address);
+      TRACE_ERR((stderr,"   ShmemDevice::task2peer_impl(%zu), address = {%zu, %zu}\n",task, address.global, address.local));
 
       size_t peer = 0;
       __global.mapping.node2peer (address, peer);
+      TRACE_ERR((stderr,"<< ShmemDevice::task2peer_impl(%zu), peer = %zu\n",task, peer));
 
 #ifdef __bgq__
       return task; //hack
@@ -169,7 +157,8 @@ namespace XMI
     template <class T_Fifo>
     xmi_result_t ShmemDevice<T_Fifo>::post (size_t fnum, ShmemMessage * msg)
     {
-      pushSendQueueTail (fnum, (XMI::Queue::Element *) msg);
+      __sendQ[fnum].post (msg);
+//      pushSendQueueTail (fnum, (XMI::Queue::Element *) msg);
       return XMI_SUCCESS;
     };
 
@@ -186,9 +175,9 @@ namespace XMI
       return 0;
     }
 
-
-    template <class T_Fifo>
-    int ShmemDevice<T_Fifo>::advance_sendQ ()
+#if 0
+    template <class T_Fifo, class T_Progress>
+    int ShmemDevice<T_Fifo,T_Progress>::advance_sendQ ()
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ () >> _num_procs = %zd\n", __global.mapping.task(), _num_procs));
       unsigned peer;
@@ -202,8 +191,8 @@ namespace XMI
       return events;
     }
 
-    template <class T_Fifo>
-    int ShmemDevice<T_Fifo>::advance_sendQ (size_t peer)
+    template <class T_Fifo, class T_Progress>
+    int ShmemDevice<T_Fifo,T_Progress>::advance_sendQ (size_t peer)
     {
       ShmemMessage * msg;
       size_t sequence;
@@ -286,6 +275,7 @@ namespace XMI
 
       return events;
     };
+#endif
   };
 };
 #undef TRACE_ERR

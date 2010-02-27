@@ -20,7 +20,7 @@
 #include "SysDep.h"
 #include "common/default/CollFactory.h"
 #include "common/default/CollRegistration.h"
-#include "components/devices/generic/GenericDevice.h"
+#include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"

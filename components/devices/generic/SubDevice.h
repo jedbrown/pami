@@ -12,7 +12,6 @@
 #include "GenericDevicePlatform.h"
 #include "components/devices/generic/BaseGenericDevice.h"
 #include "components/devices/generic/Message.h"
-#include "components/devices/generic/Device.h"
 #include "sys/xmi.h"
 
 /// \defgroup gendev_subdev_api Internal API for Generic::Device sub-devices
@@ -111,7 +110,8 @@ public:
 	/// \param[in] context	Context ID for which init is being done
 	/// \ingroup gendev_private_api
 	///
-	inline void ___init(XMI::SysDep *sd, size_t client, size_t contextId) {
+	inline xmi_result_t ___init(XMI::SysDep *sd, size_t client, size_t contextId) {
+		return XMI_SUCCESS;
 	}
 
 protected:

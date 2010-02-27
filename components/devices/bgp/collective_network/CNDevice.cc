@@ -66,9 +66,9 @@ namespace BGP {
 
 	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier CNDeviceInitBarrier;
 
-	void CNDevice::init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) {
+	xmi_result_t CNDevice::init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) {
 		if (client != 0 || contextId != 0) {
-			return;
+			return XMI_SUCCESS;
 		}
 		char *s;
 		/*
@@ -226,6 +226,7 @@ namespace BGP {
 		default:
 			XMI_abort();
 		}
+		return XMI_SUCCESS;
 	}
 
 }; // namespace BGP

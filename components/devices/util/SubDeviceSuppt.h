@@ -10,6 +10,7 @@
 #define __components_devices_generic_SubDeviceSuppt_h__
 
 #include "components/devices/generic/SubDevice.h"
+#include "components/devices/generic/Device.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/SubDeviceSuppt.h
@@ -71,7 +72,7 @@ public:
 	/// \param[in] contextId	Id of current context (index into devices[])
 	/// \ingroup gendev_subdev_api
 	///
-	inline void __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			_sd = sd;
 			for (int x = 0; x < N_Queues; ++x) {
@@ -81,6 +82,7 @@ public:
 		if (contextId == 0) {
 			_generics[client] = devices;
 		}
+		return XMI_SUCCESS;
 	}
 
 	inline XMI::SysDep *getSysdep() {
@@ -208,7 +210,7 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	virtual void init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) = 0;
+	virtual xmi_result_t init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -219,7 +221,7 @@ public:
 	/// \param[in] device	Generic::Device to be used.
 	/// \ingroup gendev_subdev_api
 	///
-	inline void __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			_sd = sd;
 			_doneThreads.init(sd);
@@ -229,7 +231,7 @@ public:
 		if (contextId == 0) {
 			_generics[client] = devices;
 		}
-		___init(sd, client, contextId);
+		return ___init(sd, client, contextId);
 	}
 
 	inline void __create(size_t client, size_t num_ctx) {
@@ -382,7 +384,7 @@ public:
 
 	inline int advance(size_t client, size_t context) { return 0; }
 
-	inline void __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
 //			for (int x = 0; x < NUM_THREADS; ++x)
@@ -390,7 +392,7 @@ public:
 //			}
 		}
 		_common->__init(client, contextId, clt, ctx, sd, devices);
-		_common->init(sd, client, contextId, ctx);
+		return _common->init(sd, client, contextId, ctx);
 	}
 
 	inline void __getThreads(T_Thread **t, int *n, int sendq = 0) {

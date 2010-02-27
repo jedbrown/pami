@@ -14,15 +14,13 @@
 
 #include <sys/uio.h>
 
-#include "Memregion.h"
-
 #include "sys/xmi.h"
 
 #include "util/common.h"
 #include "util/queue/Queue.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -33,6 +31,24 @@ namespace XMI
     {
       public:
 
+        inline ShmemMessage (xmi_event_function   fn,
+                             void               * cookie) :
+            XMI::Queue::Element (),
+            _fn (fn),
+            _cookie (cookie)
+        {
+        };
+
+        virtual ~ShmemMessage () {};
+
+        inline void invokeCompletionFunction (xmi_context_t context)
+        {
+          TRACE_ERR((stderr,"ShmemMessage::invokeCompletionFunction(), _fn = %p, _cookie = %p\n",_fn,_cookie));
+          if (_fn) _fn (context, _cookie, XMI_SUCCESS);
+        };
+
+        virtual bool advance (xmi_context_t context) = 0;
+#if 0
         enum shmem_pkt_t
         {
           PTP,
@@ -247,15 +263,15 @@ namespace XMI
           return _rma_is_put;
         }
 
-
+#endif
 
       protected:
 
         // Client callback information.
-        xmi_context_t       _context;
         xmi_event_function   _fn;
         void               * _cookie;
-
+        //xmi_context_t        _context;
+#if 0
         struct iovec    * _iov;
         size_t            _tiov;
         size_t            _niov;
@@ -276,11 +292,12 @@ namespace XMI
       private:
         struct iovec      __iov[2];
         uint8_t _metadata[SHMEM_MESSAGE_METADATA_SIZE] __attribute__ ((aligned (16)));
+#endif
     };
   };
 };
 #undef TRACE_ERR
-#endif // __components_devices_shmem_shmembasemessage_h__
+#endif // __components_devices_shmem_ShmemMessage_h__ 
 
 //
 // astyle info    http://astyle.sourceforge.net

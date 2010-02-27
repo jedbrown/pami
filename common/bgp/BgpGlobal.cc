@@ -26,39 +26,39 @@ xmi_coord_t XMI::Topology::my_coords;
 // code that is specific to the device, not by general code.
 //
 #include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
-XMI::Device::BGP::giRealDevice _g_gibarrier_dev;
+XMI::Device::BGP::giDevice _g_gibarrier_dev;
 
 #include "components/devices/misc/AtomicBarrierMsg.h"
-XMI::Device::AtomicBarrierRealDev _g_lmbarrier_dev;
+XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-XMI::Device::LocalAllreduceWQRealDevice _g_l_allreducewq_dev;
+XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
-XMI::Device::LocalAllreduceWQRealDevice _g_l_bcastwq_dev;
+XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
-XMI::Device::LocalAllreduceWQRealDevice _g_l_reducewq_dev;
+XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 
 #include "components/devices/workqueue/WQRingBcastMsg.h"
-XMI::Device::WQRingBcastRealDev _g_wqbcast_dev;
+XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 
 #include "components/devices/workqueue/WQRingReduceMsg.h"
-XMI::Device::WQRingReduceRealDev _g_wqreduce_dev;
+XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 
 #include "components/devices/misc/ProgressFunctionMsg.h"
-XMI::Device::ProgressFunctionRealDev _g_progfunc_dev;
+XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
 #include "components/devices/bgp/collective_network/CNDevice.h"
 extern XMI::Device::BGP::CNDevice _g_cncommon_dev;
 #include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
-XMI::Device::BGP::CNAllreduceRealDevice _g_cnallreduce_dev(&_g_cncommon_dev);
+XMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev(&_g_cncommon_dev);
 #include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
-XMI::Device::BGP::CNAllreducePPRealDevice _g_cnallreducepp_dev(&_g_cncommon_dev);
+XMI::Device::BGP::CNAllreducePPDevice _g_cnallreducepp_dev(&_g_cncommon_dev);
 #include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
-XMI::Device::BGP::CNAllreduce2PRealDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
+XMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
-XMI::Device::BGP::CNBroadcastRealDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
+XMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
 
 extern "C" void __libxmi_dummy     () { abort(); }
 extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libxmi_dummy")));

@@ -19,7 +19,7 @@
 #include "config.h"
 #include "sys/xmi.h"
 #include "util/common.h"
-#include "components/devices/generic/GenericDevice.h"
+#include "components/devices/generic/Device.h"
 
 namespace XMI {
 namespace Device {

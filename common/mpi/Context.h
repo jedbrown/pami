@@ -24,7 +24,7 @@
 #include "SysDep.h"
 #include "common/default/CollFactory.h"
 #include "common/default/CollRegistration.h"
-#include "components/devices/generic/GenericDevice.h"
+#include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
@@ -46,7 +46,6 @@
 
 /** \todo shmem device must become sub-device of generic device */
 #include "components/devices/shmem/ShmemDevice.h"
-#include "components/devices/shmem/ShmemModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 #include "components/devices/mpi/mpimulticastprotocol.h"

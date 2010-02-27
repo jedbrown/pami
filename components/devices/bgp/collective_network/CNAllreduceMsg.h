@@ -60,6 +60,9 @@ class CNAllreduceMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduceThread;
 class CNAllreduceDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> {
 public:
+	inline CNAllreduceDevice(CNDevice *common) :
+	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2>(common) {
+	}
 	class Factory : public Interface::FactoryInterface<Factory,CNAllreduceDevice,Generic::Device> {
 	public:
 		static inline CNAllreduceDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);

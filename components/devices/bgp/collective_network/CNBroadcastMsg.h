@@ -43,6 +43,10 @@ class CNBroadcastMessage;
 typedef XMI::Device::BGP::BaseGenericCNThread CNBroadcastThread;
 class CNBroadcastDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> {
 public:
+	inline CNBroadcastDevice(CNDevice *common) :
+	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>(common) {
+	}
+
 	class Factory : public Interface::FactoryInterface<Factory,CNBroadcastDevice,Generic::Device> {
 	public:
 		static inline CNBroadcastDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
