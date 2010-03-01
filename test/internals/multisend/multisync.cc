@@ -15,6 +15,7 @@
 typedef XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter> Barrier_Type;
 
 typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
+typedef XMI::Device::AtomicBarrierDev Barrier_Device;
 
 #ifdef __bgp__
 
@@ -22,14 +23,18 @@ typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 #include "components/atomic/bgp/LockBoxBarrier.h"
 typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier Barrier_Type2;
 typedef XMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
+typedef XMI::Device::AtomicBarrierDev Barrier_Device2;
 
 #endif // __bgp__
 
 int main(int argc, char ** argv) {
-	xmi_client_t client;
 	xmi_context_t context;
-	xmi_result_t status = XMI_ERROR;
+	size_t task_id;
+	size_t num_tasks;
 
+#if 0
+	xmi_client_t client;
+	xmi_result_t status = XMI_ERROR;
 	status = XMI_Client_initialize("multisync test", &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
@@ -50,7 +55,7 @@ int main(int argc, char ** argv) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
-	size_t task_id = configuration.value.intval;
+	task_id = configuration.value.intval;
 	//fprintf(stderr, "My task id = %zu\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
@@ -59,7 +64,12 @@ int main(int argc, char ** argv) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
-	size_t num_tasks = configuration.value.intval;
+	num_tasks = configuration.value.intval;
+#else
+	task_id = __global.mapping.task();
+	num_tasks = __global.mapping.size();
+	context = NULL;
+#endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 	if (__global.topology_local.size() < 2) {
@@ -83,7 +93,7 @@ int main(int argc, char ** argv) {
 
 	const char *test = BARRIER_NAME;
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multisync<Barrier_Model> test1(test);
+	XMI::Test::Multisend::Multisync<Barrier_Model,Barrier_Device> test1(test);
 	rc = test1.perform_test(task_id, num_tasks, context, &msync);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
@@ -99,7 +109,7 @@ int main(int argc, char ** argv) {
 
 	test = BARRIER_NAME2;
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multisync<Barrier_Model2> test2(test);
+	XMI::Test::Multisend::Multisync<Barrier_Model2,Barrier_Device2> test2(test);
 	rc = test2.perform_test(task_id, num_tasks, context, &msync);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
@@ -114,11 +124,13 @@ int main(int argc, char ** argv) {
 #endif // __bgp__
 
 // ------------------------------------------------------------------------
+#if 0
 	status = XMI_Client_finalize(client);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
 		return 1;
 	}
+#endif
 
 	return 0;
 }

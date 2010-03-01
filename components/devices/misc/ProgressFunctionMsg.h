@@ -41,6 +41,7 @@ public:
 		static inline ProgressFunctionDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(ProgressFunctionDev *devs, size_t client, size_t context);
+		static inline ProgressFunctionDev & getDevice_impl(ProgressFunctionDev *devs, size_t client, size_t context);
 	}; // class ProgressFunctionDev::Factory
 	inline ProgressFunctionDev() {}
 
@@ -77,6 +78,8 @@ inline xmi_result_t ProgressFunctionDev::Factory::init_impl(ProgressFunctionDev 
 }
 
 inline size_t ProgressFunctionDev::Factory::advance_impl(ProgressFunctionDev *devs, size_t client, size_t context) { return 0; }
+
+inline ProgressFunctionDev & ProgressFunctionDev::Factory::getDevice_impl(ProgressFunctionDev *devs, size_t client, size_t context) { return _g_progfunc_dev; }
 
 
 /// If this ever expands into multiple types, need to make this a subclass

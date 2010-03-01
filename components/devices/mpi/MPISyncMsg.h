@@ -223,15 +223,15 @@ protected:
       size_t         _root; // first rank in the sync - arbitrary 'root'
     }; //-- MPISyncMsg
 
-    class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg)>
+    class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
       static const size_t sizeof_msg = sizeof(MPISyncMsg);
 
-      MPISyncMdl(xmi_result_t &status) :
-      XMI::Device::Interface::MultisyncModel<MPISyncMdl,sizeof(MPISyncMsg)>(status)
+      MPISyncMdl(MPISyncDev *devs, xmi_result_t &status) :
+      XMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>(devs[0], status)
       {
         TRACE_DEVICE((stderr,"<%p>MPISyncMdl()\n",this));
         //XMI::SysDep *sd = _g_mpisync_dev.getSysdep();

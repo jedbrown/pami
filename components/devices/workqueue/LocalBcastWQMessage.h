@@ -36,6 +36,7 @@ public:
 		static inline LocalBcastWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
+		static inline LocalBcastWQDevice & getDevice_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class LocalBcastWQDevice
 
@@ -58,6 +59,10 @@ inline xmi_result_t LocalBcastWQDevice::Factory::init_impl(LocalBcastWQDevice *d
 
 inline size_t LocalBcastWQDevice::Factory::advance_impl(LocalBcastWQDevice *devs, size_t client, size_t contextid) {
 	return 0;
+}
+
+inline LocalBcastWQDevice & LocalBcastWQDevice::Factory::getDevice_impl(LocalBcastWQDevice *devs, size_t client, size_t contextid) {
+	return _g_l_bcastwq_dev;
 }
 
 class LocalBcastWQMessage : public XMI::Device::Generic::GenericMessage {
@@ -141,18 +146,19 @@ private:
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalBcastWQMessage
 
-class LocalBcastWQModel : public XMI::Device::Interface::MulticastModel<LocalBcastWQModel,sizeof(LocalBcastWQMessage)> {
+class LocalBcastWQModel : public XMI::Device::Interface::MulticastModel<LocalBcastWQModel,LocalBcastWQDevice,sizeof(LocalBcastWQMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(LocalBcastWQMessage);
 
-	LocalBcastWQModel(xmi_result_t &status) :
-        XMI::Device::Interface::MulticastModel<LocalBcastWQModel,sizeof(LocalBcastWQMessage)>(status),
+	LocalBcastWQModel(LocalBcastWQDevice &device, xmi_result_t &status) :
+        XMI::Device::Interface::MulticastModel<LocalBcastWQModel,LocalBcastWQDevice,sizeof(LocalBcastWQMessage)>(device, status),
 	_shared(_g_l_bcastwq_dev.getSysdep()),
 	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
 	_npeers(__global.topology_local.size())
 	{
+		// assert(device == _g_l_bcastwq_dev);
 		if (!_shared.available()) {
 			status = XMI_ERROR;
 			return;

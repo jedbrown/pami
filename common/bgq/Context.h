@@ -20,9 +20,11 @@
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
+#ifdef SHMEM_READY
 #include "components/devices/shmem/ShmemDevice.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
+#endif // SHMEM_READY
 
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUPacketModel.h"
@@ -47,8 +49,8 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#define MU_COLL_DEVICE
-//#define MU_DEVICE
+#undef MU_COLL_DEVICE
+#undef MU_DEVICE
 
 #ifdef MU_COLL_DEVICE
 #include "components/devices/bgq/mu/MUCollDevice.h"
@@ -74,6 +76,7 @@ namespace XMI
 
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
+#ifdef SHMEM_READY
   //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
   typedef Fifo::FifoPacket <32, 512> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::L2Counter, ShmemPacket, 16> ShmemFifo;
@@ -87,11 +90,14 @@ namespace XMI
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
   typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
+
+  typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
+#endif // SHMEM_READY
+#ifdef MU_DEVICE
   typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel,MUDevice > EagerMu;
   // << Point-to-point protocol typedefs and dispatch registration.
   //
-
-  typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
+#endif
 
   typedef MemoryAllocator<1152, 16> ProtocolAllocator;
 
@@ -123,20 +129,23 @@ namespace XMI
      * \param[in] clientid     Client ID (index)
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t init(size_t clientid, size_t num_ctx) {
+    inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
        // these calls create (allocate and construct) each element.
        // We don't know how these relate to contexts, they are semi-opaque.
-       _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
-       _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
-       _progfunc = XMI::Device::ProgressFunctionDev::create(clientid, num_ctx, _generics);
-       _atombarr = XMI::Device::AtomicBarrierDev::create(clientid, num_ctx, _generics);
-       _wqringreduce = XMI::Device::WQRingReduceDev::create(clientid, num_ctx, _generics);
-       _wqringbcast = XMI::Device::WQRingBcastDev::create(clientid, num_ctx, _generics);
-       _localallreduce = XMI::Device::LocalAllreduceWQDevice::create(clientid, num_ctx, _generics);
-       _localbcast = XMI::Device::LocalBcastWQDevice::create(clientid, num_ctx, _generics);
-       _localreduce = XMI::Device::LocalReduceWQDevice::create(clientid, num_ctx, _generics);
+        _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+#ifdef SHMEM_READY
+        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
+#endif // SHMEM_READY
+        _progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+        _atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringbcast = XMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+        _localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, 
+mm);
+        _localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
 #ifdef MU_DEVICE
-       _mu = MUDevice::create(clientid, num_ctx, _generics);
+       _mu = MUDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
        return XMI_SUCCESS;
     }
@@ -157,18 +166,21 @@ namespace XMI
      * \param[in] ctx          Context opaque entity
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t dev_init(XMI::SysDep *sd, size_t clientid, size_t num_ctx, xmi_context_t ctx, size_t contextid) {
-       _generics->init(ctx, clientid, contextid, num_ctx);
-       _shmem->init(sd, clientid, num_ctx, ctx, contextid);
-       _progfunc->init(sd, clientid, num_ctx, ctx, contextid);
-       _atombarr->init(sd, clientid, num_ctx, ctx, contextid);
-       _wqringreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       _wqringbcast->init(sd, clientid, num_ctx, ctx, contextid);
-       _localallreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       _localbcast->init(sd, clientid, num_ctx, ctx, contextid);
-       _localreduce->init(sd, clientid, num_ctx, ctx, contextid);
+    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
+        XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);
+#ifdef SHMEM_READY
+        ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, sd, _generics);
+#endif // SHMEM_READY
+        XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, sd , _generics);
+        XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, sd, _generics);
+        XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, sd , _generics);
+        XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, sd, _generics);
+        XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, sd, _generics);
+        XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, sd, _generics);
+        XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, sd, _generics);
+
 #ifdef MU_DEVICE
-       _mu->init(sd, clientid, num_ctx, ctx, contextid);
+       MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, sd, _generics);
 #endif
        return XMI_SUCCESS;
     }
@@ -184,23 +196,28 @@ namespace XMI
      */
     inline size_t advance(size_t clientid, size_t contextid) {
        size_t events = 0;
-       events += _generics->advance(clientid, contextid);
-       events += _shmem->advance(clientid, contextid);
-       events += _progfunc->advance(clientid, contextid);
-       events += _atombarr->advance(clientid, contextid);
-       events += _wqringreduce->advance(clientid, contextid);
-       events += _wqringbcast->advance(clientid, contextid);
-       events += _localallreduce->advance(clientid, contextid);
-       events += _localbcast->advance(clientid, contextid);
-       events += _localreduce->advance(clientid, contextid);
+        events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+#ifdef SHMEM_READY
+        events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+#endif // SHMEM_READY
+        events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
+        events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
+        events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+        events += XMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
+        events += XMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+        events += XMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+        events += XMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+
 #ifdef MU_DEVICE
-       events += _mu->advance(clientid, contextid);
+       events += MUDevice::Factory::advance(_mu, clientid, contextid);
 #endif
        return events;
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
+#ifdef SHMEM_READY
     ShmemDevice *_shmem;
+#endif // SHMEM_READY
     XMI::Device::ProgressFunctionDev *_progfunc;
     XMI::Device::AtomicBarrierDev *_atombarr;
     XMI::Device::WQRingReduceDev *_wqringreduce;
@@ -232,11 +249,15 @@ namespace XMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
+#ifdef SHMEM_READY
         // Make sure the memory allocator is large enough for all
         // protocol classes.
         COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
-        COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
         COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
+#endif // SHMEM_READY
+#ifdef MU_DEVICE
+        COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
+#endif
 
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -244,23 +265,25 @@ namespace XMI
 
 #ifdef MU_COLL_DEVICE
         // Can't construct NI until device is init()'d.  Ctor into member storage.
-        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(_devices->_mu[_contextid], _client, _clientid, _context, _contextid);
+        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(getMu(), _contextid);
         xmi_result_t status;
 #endif
-	_devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
+	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 
-        xmi_result_t result ;
 #warning This should not be here?
+#ifdef SHMEM_READY
+        xmi_result_t result ;
 	_get = (void *) _request.allocateObject ();
-	new ((void *)_get) GetShmem(_devices->_shmem[_contextid], result);
+	new ((void *)_get) GetShmem(_devices->_shmem, _contextid, result);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
+#endif // SHMEM_READY
 
       }
 #ifdef MU_COLL_DEVICE
       // \brief For testing NativeInterface.
-      inline MUDevice* getMu(){return &_devices->_mu[_contextid];}
+      inline MUDevice* getMu(){ return MUDevice::Factory::getDevice(_devices->_mu, _client, _clientid); }
 #endif
       inline xmi_client_t getClient_impl ()
       {
@@ -416,6 +439,7 @@ namespace XMI
 
       inline xmi_result_t rget (xmi_rget_simple_t * parameters)
       {
+#ifdef SHMEM_READY
         ((GetShmem*)_get)->getimpl (	parameters->rma.done_fn,
                                 parameters->rma.cookie,
                                 parameters->rma.dest,
@@ -424,6 +448,7 @@ namespace XMI
                                 (Memregion*)parameters->rget.remote_mr,
                                 parameters->rget.local_offset,
                                 parameters->rget.remote_offset);
+#endif // SHMEM_READY
         return XMI_SUCCESS;
       }
 
@@ -520,11 +545,12 @@ namespace XMI
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
-#warning Eager/ShmemModel needs to change to accept array of devices
 #ifdef MU_DEVICE
-            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, _devices->_mu[_contextid], result);
+            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, getMu(), result);
 #else
-            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, _devices->_shmem[_contextid], result);
+#ifdef SHMEM_READY
+            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
+#endif // SHMEM_READY
 #endif
           }
 
@@ -555,7 +581,7 @@ namespace XMI
         // Allocate memory for the protocol object.
         _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
-        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, _devices->_mu[_contextid]);
+        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, getMu());
         model->registerMcastRecvFunction(id, fn.multicast, cookie);
 
       }
@@ -626,7 +652,9 @@ namespace XMI
       MUGlobalNI * _global_mu_ni;
       uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)];
 #endif
+#ifdef SHMEM_READY
       ShmemDevice          _shmem;
+#endif // SHMEM_READY
 
       void * _dispatch[1024];
       void* _get; //use for now..remove later

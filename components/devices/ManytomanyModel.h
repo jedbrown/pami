@@ -27,7 +27,9 @@ namespace XMI
       {
       public:
         /// \param[in] device                Manytomany device reference
-        ManytomanyModel (T_Device & device) {};
+        ManytomanyModel (T_Device & device, xmi_result_t &status) {
+		status = XMI_SUCCESS;
+	};
         ~ManytomanyModel () {};
 
         inline void setCallback (xmi_dispatch_manytomany_fn cb_recv, void *arg);

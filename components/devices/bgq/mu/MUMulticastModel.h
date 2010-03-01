@@ -83,7 +83,7 @@ namespace XMI
       //   - does not fully support PipeWorkQueue (multicast_model_available_buffers_only)
       //   - all data must be received (\todo ease this limitation - see expected_length processing)
       ///////////////////////////////////////////////////////////////////////////////
-      class MUMulticastModel : public Interface::AMMulticastModel < MUMulticastModel, sizeof(mu_multicast_statedata_t) >
+      class MUMulticastModel : public Interface::AMMulticastModel < MUMulticastModel, MUCollDevice, sizeof(mu_multicast_statedata_t) >
       {
 
       protected:
@@ -91,7 +91,7 @@ namespace XMI
       public:
 
         /// \see XMI::Device::Interface::MulticastModel::MulticastModel
-        MUMulticastModel (xmi_result_t &status, MUCollDevice & device);
+        MUMulticastModel (MUCollDevice & device, xmi_result_t &status);
 
         /// \see XMI::Device::Interface::MulticastModel::~MulticastModel
         ~MUMulticastModel ();

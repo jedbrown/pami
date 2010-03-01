@@ -22,8 +22,8 @@
 #define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
 /// \see MUMulticastModel
-XMI::Device::MU::MUMulticastModel::MUMulticastModel (xmi_result_t &status, MUCollDevice & device) :
-Interface::AMMulticastModel < MUMulticastModel, sizeof(mu_multicast_statedata_t) > (status),
+XMI::Device::MU::MUMulticastModel::MUMulticastModel (MUCollDevice & device, xmi_result_t &status) :
+Interface::AMMulticastModel < MUMulticastModel, MUCollDevice, sizeof(mu_multicast_statedata_t) > (device, status),
 _device (device),
 _wrapper_model (&_desc_model)
 {

@@ -17,16 +17,21 @@
 
 #define LOCAL_REDUCE_NAME	"XMI::Device::LocalReduceWQModel"
 #define LOCAL_REDUCE_MODEL	XMI::Device::LocalReduceWQModel
+#define LOCAL_REDUCE_DEVICE	XMI::Device::LocalReduceWQDevice
 #define LOCAL_REDUCE_NAME2	"XMI::Device::WQRingReduceMdl"
 #define LOCAL_REDUCE_MODEL2	XMI::Device::WQRingReduceMdl
+#define LOCAL_REDUCE_DEVICE2	XMI::Device::WQRingReduceDev
 
 XMI::Topology otopo;
 
 int main(int argc, char ** argv) {
-	xmi_client_t client;
 	xmi_context_t context;
-	xmi_result_t status = XMI_ERROR;
+	size_t task_id;
+	size_t num_tasks;
 
+#if 0
+	xmi_client_t client;
+	xmi_result_t status = XMI_ERROR;
 	status = XMI_Client_initialize("multicombine test", &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
@@ -47,7 +52,7 @@ int main(int argc, char ** argv) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
-	size_t task_id = configuration.value.intval;
+	task_id = configuration.value.intval;
 	//fprintf(stderr, "My task id = %zu\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
@@ -56,7 +61,12 @@ int main(int argc, char ** argv) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
-	size_t num_tasks = configuration.value.intval;
+	num_tasks = configuration.value.intval;
+#else
+	task_id = __global.mapping.task();
+	num_tasks = __global.mapping.size();
+	context = NULL;
+#endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 	if (__global.topology_local.size() < 2) {
 		fprintf(stderr, "requires at least 2 ranks to be local\n");
@@ -88,7 +98,7 @@ int main(int argc, char ** argv) {
 
 	const char *test = LOCAL_REDUCE_NAME;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,TEST_BUF_SIZE> test1(test);
+	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,LOCAL_REDUCE_DEVICE,TEST_BUF_SIZE> test1(test);
 
 	rc = test1.perform_test(task_id, num_tasks, context, &mcomb);
 
@@ -100,7 +110,7 @@ int main(int argc, char ** argv) {
 
 	test = LOCAL_REDUCE_NAME2;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,TEST_BUF_SIZE> test2(test);
+	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,LOCAL_REDUCE_DEVICE2,TEST_BUF_SIZE> test2(test);
 
 	rc = test2.perform_test(task_id, num_tasks, context, &mcomb);
 
@@ -111,11 +121,13 @@ int main(int argc, char ** argv) {
 	fprintf(stderr, "PASS %s\n", test);
 
 // ------------------------------------------------------------------------
+#if 0
 	status = XMI_Client_finalize(client);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
 		return 1;
 	}
+#endif
 
 	return 0;
 }

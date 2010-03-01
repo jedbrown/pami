@@ -16,17 +16,21 @@ namespace XMI {
 namespace Test {
 namespace Multisend {
 
-template <class T_MultisyncModel>
+template <class T_MultisyncModel, class T_MultisyncDevice>
 class Multisync {
 private:
-	T_MultisyncModel _model;
+	uint8_t _mdlbuf[sizeof(T_MultisyncModel)];
+	T_MultisyncModel *_model;
 	uint8_t _msgbuf[T_MultisyncModel::sizeof_msg];
+	XMI::Device::Generic::Device *_generics;
+	T_MultisyncDevice *_dev;
+	Memory::MemoryManager _mm;
 	xmi_result_t _status;
 	int _done;
 	const char *_name;
 
 	static void _done_cb(xmi_context_t context, void *cookie, xmi_result_t result) {
-		XMI::Test::Multisend::Multisync<T_MultisyncModel> *thus = (XMI::Test::Multisend::Multisync<T_MultisyncModel> *)cookie;
+		XMI::Test::Multisend::Multisync<T_MultisyncModel,T_MultisyncDevice> *thus = (XMI::Test::Multisend::Multisync<T_MultisyncModel,T_MultisyncDevice> *)cookie;
 		// printf skews timing too much...
 		//fprintf(stderr, "... completion callback for %s, done %d++\n", thus->_name, thus->_done);
 		++thus->_done;
@@ -39,9 +43,14 @@ public:
 	unsigned long long barrier_time;
 
 	Multisync(const char *test) :
-	_model(_status),
 	_name(test)
 	{
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
+		_dev = T_MultisyncDevice::Factory::generate(0, 1, _mm);
+
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
+		T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		_model = new (_mdlbuf) T_MultisyncModel(T_MultisyncDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
 	~Multisync() {}
@@ -75,7 +84,7 @@ public:
 		// first barrier: get everyone together
 		_done = 0;
 		//fprintf(stderr, "... before %s.postMultisync\n", _name);
-		rc = _model.postMultisync(_msgbuf,msync);
+		rc = _model->postMultisync(_msgbuf,msync);
 		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post first multisync \"%s\"\n", _name);
 			return XMI_ERROR;
@@ -83,28 +92,22 @@ public:
 		// printf skews timing too much...
 		//fprintf(stderr, "... before advance loop for %s.postMultisync\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(ctx, 100);
-			if (rc != XMI_SUCCESS) {
-				fprintf (stderr, "Failed advance first \"%s\"\n", _name);
-				return rc;
-			}
+			XMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
+			T_MultisyncDevice::Factory::advance(_dev, 0, 0);
 		}
 
 		// second barrier: get an accurate time
 		++msync->connection_id;
 		_done = 0;
 		t0 = __global.time.timebase();
-		rc = _model.postMultisync(_msgbuf,msync);
+		rc = _model->postMultisync(_msgbuf,msync);
 		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post second multisync \"%s\"\n", _name);
 			return XMI_ERROR;
 		}
 		while (!_done) {
-			rc = XMI_Context_advance(ctx, 100);
-			if (rc != XMI_SUCCESS) {
-				fprintf (stderr, "Failed advance second \"%s\"\n", _name);
-				return rc;
-			}
+			XMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
+			T_MultisyncDevice::Factory::advance(_dev, 0, 0);
 		}
 		raw_time = __global.time.timebase() - t0;
 		delay = raw_time * task_id;
@@ -134,7 +137,7 @@ public:
 		_done = 0;
 		t0 = __global.time.timebase();
 		while ((t1 = __global.time.timebase()) - t0 < delay);
-		rc = _model.postMultisync(_msgbuf,msync);
+		rc = _model->postMultisync(_msgbuf,msync);
 		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post third multisync \"%s\"\n", _name);
 			return XMI_ERROR;
@@ -143,11 +146,8 @@ public:
 		// printf skews timing too much...
 		//fprintf(stderr, "... before advance loop for %s.postMultisync\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(ctx, 100);
-			if (rc != XMI_SUCCESS) {
-				fprintf (stderr, "Failed advance last \"%s\"\n", _name);
-				return rc;
-			}
+			XMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
+			T_MultisyncDevice::Factory::advance(_dev, 0, 0);
 		}
 		t2 = __global.time.timebase();
 		total_time = t2 - t0;

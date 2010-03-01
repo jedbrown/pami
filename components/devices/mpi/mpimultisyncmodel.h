@@ -24,13 +24,13 @@ namespace XMI
   {
     template <class T_Device, class T_Message>
     class MPIMultisyncModel :
-      public Interface::MultisyncModel<MPIMultisyncModel<T_Device, T_Message>,sizeof(T_Message)>
+      public Interface::MultisyncModel<MPIMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
     {
     public:
       static const size_t msync_model_state_bytes = sizeof(T_Message);
       static const size_t sizeof_msg              = sizeof(T_Message);
       MPIMultisyncModel (T_Device &device, xmi_result_t &status) :
-        Interface::MultisyncModel<MPIMultisyncModel<T_Device, T_Message>,sizeof(T_Message)>(status),
+        Interface::MultisyncModel<MPIMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>(device, status),
         _device(device)
         {
           status = XMI_SUCCESS;

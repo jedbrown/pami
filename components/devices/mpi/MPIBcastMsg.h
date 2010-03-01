@@ -319,15 +319,15 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
       MessageStatus _pendingStatus;
     }; //-- MPIBcastMsg
 
-    class MPIBcastMdl : public XMI::Device::Interface::MulticastModel<MPIBcastMdl,sizeof(MPIBcastMsg)>
+    class MPIBcastMdl : public XMI::Device::Interface::MulticastModel<MPIBcastMdl,MPIBcastDev,sizeof(MPIBcastMsg)>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
       static const size_t sizeof_msg = sizeof(MPIBcastMsg);
 
-      MPIBcastMdl(xmi_result_t &status) :
-        XMI::Device::Interface::MulticastModel<MPIBcastMdl, sizeof(MPIBcastMsg)>(status)
+      MPIBcastMdl(MPIBcastDev *devs, xmi_result_t &status) :
+        XMI::Device::Interface::MulticastModel<MPIBcastMdl,MPIBcastDev, sizeof(MPIBcastMsg)>(devs[0], status)
       {
         TRACE_DEVICE((stderr,"<%p>MPIBcastMdl()\n",this));
       }

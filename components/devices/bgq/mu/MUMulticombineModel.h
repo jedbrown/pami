@@ -58,11 +58,11 @@ namespace XMI
       ///////////////////////////////////////////////////////////////////////////////
       // Receive state
       //typedef struct mcombine_recv_state
-      class mcombine_recv_state_t : public QueueElem
+      class mcombine_recv_state_t : public Queue::Element
       {
       public:
         inline mcombine_recv_state_t() :
-        QueueElem ()
+        Queue::Element ()
         {
         };
 
@@ -97,7 +97,7 @@ namespace XMI
       //   - does not fully support PipeWorkQueue (multicast_model_available_buffers_only)
       //   - all data must be received (\todo ease this limitation - see expected_length processing)
       ///////////////////////////////////////////////////////////////////////////////
-      class MUMulticombineModel : public Interface::MulticombineModel < MUMulticombineModel, sizeof(mu_multicombine_statedata_t) >
+      class MUMulticombineModel : public Interface::MulticombineModel < MUMulticombineModel,MUCollDevice, sizeof(mu_multicombine_statedata_t) >
       {
 
       protected:
@@ -105,7 +105,7 @@ namespace XMI
       public:
 
         /// \see XMI::Device::Interface::MulticombineModel::MulticombineModel
-        MUMulticombineModel (xmi_result_t &status, MUCollDevice & device);
+        MUMulticombineModel (MUCollDevice *devices, size_t client_id, size_t context_id, xmi_result_t &status);
 
         /// \see XMI::Device::Interface::MulticombineModel::~MulticombineModel
         ~MUMulticombineModel ();

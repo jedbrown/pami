@@ -90,10 +90,13 @@ public:
 			return gds;
 		}
 		static inline xmi_result_t init_impl(Device *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
-			return devs[contextId].init(ctx, client, contextId);
+			return getDevice_impl(devs, client, contextId).init(ctx, client, contextId);
 		}
 		static inline size_t advance_impl(Device *devs, size_t client, size_t context) {
-			return devs[context].advance();
+			return getDevice_impl(devs, client, context).advance();
+		}
+		static inline Device & getDevice_impl(Device *devs, size_t client, size_t context) {
+			return devs[context];
 		}
 	}; // class Factory
 

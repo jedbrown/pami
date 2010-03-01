@@ -51,6 +51,7 @@ public:
 		static inline giDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm);
 		static inline xmi_result_t init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(giDevice *devs, size_t client, size_t contextId);
+		static inline giDevice & getDevice_impl(giDevice *devs, size_t client, size_t contextId);
 	}; // class Factory
 }; // class giDevice
 
@@ -75,6 +76,10 @@ inline xmi_result_t giDevice::Factory::init_impl(giDevice *devs, size_t client, 
 
 inline size_t giDevice::Factory::advance_impl(giDevice *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline giDevice & giDevice::Factory::getDevice_impl(giDevice *devs, size_t client, size_t contextId) {
+	return _g_gibarrier_dev;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -151,13 +156,14 @@ public:
 protected:
 }; // class giMessage
 
-class giModel : public XMI::Device::Interface::MultisyncModel<giModel,sizeof(giMessage)> {
+class giModel : public XMI::Device::Interface::MultisyncModel<giModel,giDevice,sizeof(giMessage)> {
 public:
 	static const size_t sizeof_msg = sizeof(giMessage);
 
-	giModel(xmi_result_t &status) :
-	XMI::Device::Interface::MultisyncModel<giModel,sizeof(giMessage)>(status)
+	giModel(giDevice &device, xmi_result_t &status) :
+	XMI::Device::Interface::MultisyncModel<giModel,giDevice,sizeof(giMessage)>(device,status)
 	{
+		// assert(device == _g_gibarrier_dev);
 		// if we need sysdep, use _g_gibarrier_dev.getSysdep()...
 	}
 

@@ -17,10 +17,14 @@ namespace XMI {
 namespace Test {
 namespace Multisend {
 
-template <class T_MulticombineModel, int T_BufSize>
+template <class T_MulticombineModel, class T_MulticombineDevice, int T_BufSize>
 class Multicombine {
 private:
-	T_MulticombineModel _model;
+	uint8_t _mdlbuf[sizeof(T_MulticombineModel)];
+	T_MulticombineModel *_model;
+	XMI::Device::Generic::Device *_generics;
+	T_MulticombineDevice *_dev;
+	Memory::MemoryManager _mm;
 	uint8_t _msgbuf[T_MulticombineModel::sizeof_msg];
 
 	char _source[T_BufSize];
@@ -34,8 +38,8 @@ private:
 	const char *_name;
 
 	static void _done_cb(xmi_context_t context, void *cookie, xmi_result_t result) {
-		XMI::Test::Multisend::Multicombine<T_MulticombineModel,T_BufSize> *thus =
-			(XMI::Test::Multisend::Multicombine<T_MulticombineModel,T_BufSize> *)cookie;
+		XMI::Test::Multisend::Multicombine<T_MulticombineModel,T_MulticombineDevice,T_BufSize> *thus =
+			(XMI::Test::Multisend::Multicombine<T_MulticombineModel,T_MulticombineDevice,T_BufSize> *)cookie;
 		//fprintf(stderr, "... completion callback for %s, done %d ++\n", thus->_name, thus->_done);
 		++thus->_done;
 	}
@@ -43,9 +47,14 @@ private:
 public:
 
 	Multicombine(const char *test) :
-	_model(_status),
 	_name(test)
 	{
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
+		_dev = T_MulticombineDevice::Factory::generate(0, 1, _mm);
+
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
+		T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		_model = new (_mdlbuf) T_MulticombineModel(T_MulticombineDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
 	~Multicombine() { }
@@ -83,7 +92,7 @@ public:
 		}
 		_done = 0;
 		//fprintf(stderr, "... before %s.postMulticombine\n", _name);
-		rc = _model.postMulticombine(_msgbuf, mcomb);
+		rc = _model->postMulticombine(_msgbuf, mcomb);
 		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post multicombine \"%s\"\n", _name);
 			return XMI_ERROR;
@@ -91,11 +100,8 @@ public:
 
 		//fprintf(stderr, "... before advance loop for %s.postMulticombine\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(ctx, 100);
-			if (rc != XMI_SUCCESS) {
-				fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", rc);
-				return XMI_ERROR;
-			}
+			XMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
+			T_MulticombineDevice::Factory::advance(_dev, 0, 0);
 		}
 		for (x = 0; x < mcomb->count; ++x) {
 			if (((unsigned *)_source)[x] != 1) {

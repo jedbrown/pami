@@ -425,20 +425,28 @@ namespace XMI
             };
 
             static inline xmi_result_t init_impl (ShmemDevice    * devices,
-                                                  size_t           id,
+                                                  size_t           clientid,
+                                                  size_t           contextid,
                                                   xmi_client_t     client,
                                                   xmi_context_t    context,
                                                   SysDep         * sysdep,
                                                   ProgressDevice * progress)
             {
-              return devices[id].init (client, context, sysdep, progress);
+              return getDevice_impl(devices, clientid, contextid).init (client, context, sysdep, progress);
             };
 
             static inline size_t advance_impl (ShmemDevice * devices,
-                                               size_t        contextid,
-                                               size_t        clientid)
+                                               size_t        clientid,
+                                               size_t        contextid)
             {
-              return devices[contextid].advance ();
+              return getDevice_impl(devices, clientid, contextid).advance ();
+            };
+
+            static inline ShmemDevice & getDevice_impl (ShmemDevice * devices,
+                                               size_t        clientid,
+                                               size_t        contextid)
+            {
+              return devices[contextid];
             };
         };
 

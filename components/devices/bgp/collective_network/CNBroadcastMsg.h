@@ -52,6 +52,7 @@ public:
 		static inline CNBroadcastDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(CNBroadcastDevice *devs, size_t client, size_t context);
+		static inline CNBroadcastDevice & getDevice_impl(CNBroadcastDevice *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class CNBroadcastDevice
 
@@ -76,6 +77,10 @@ inline xmi_result_t CNBroadcastDevice::Factory::init_impl(CNBroadcastDevice *dev
 
 inline size_t CNBroadcastDevice::Factory::advance_impl(CNBroadcastDevice *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline CNBroadcastDevice & CNBroadcastDevice::Factory::getDevice_impl(CNBroadcastDevice *devs, size_t client, size_t contextId) {
+	return _g_cnbroadcast_dev;
 }
 
 /**
@@ -217,15 +222,16 @@ protected:
 	unsigned _nThreads;
 }; // class CNBroadcastMessage
 
-class CNBroadcastModel : public XMI::Device::Interface::MulticastModel<CNBroadcastModel,sizeof(CNBroadcastMessage)> {
+class CNBroadcastModel : public XMI::Device::Interface::MulticastModel<CNBroadcastModel,CNBroadcastDevice,sizeof(CNBroadcastMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNBroadcastMessage);
 
-	CNBroadcastModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticastModel<CNBroadcastModel,sizeof(CNBroadcastMessage)>(status)
+	CNBroadcastModel(CNBroadcastDevice &device, xmi_result_t &status) :
+	XMI::Device::Interface::MulticastModel<CNBroadcastModel,CNBroadcastDevice,sizeof(CNBroadcastMessage)>(device,status)
 	{
+		// assert(device == _g_cnbroadcast_dev);
 		_dispatch_id = _g_cnbroadcast_dev.newDispID();
 		_me = __global.mapping.task();
 	}

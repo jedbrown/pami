@@ -22,8 +22,8 @@
 #define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
 /// \see MUMultisyncModel
-XMI::Device::MU::MUMultisyncModel::MUMultisyncModel (xmi_result_t &status, MUCollDevice & device) :
-    Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) > (status),
+XMI::Device::MU::MUMultisyncModel::MUMultisyncModel (MUCollDevice & device, xmi_result_t &status) :
+    Interface::MultisyncModel < MUMultisyncModel, MUCollDevice, sizeof(mu_multisync_statedata_t) > (device, status),
     _device (device),
     _wrapper_model (&_desc_model)
 {

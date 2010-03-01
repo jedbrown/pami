@@ -62,11 +62,11 @@ namespace XMI
       ///////////////////////////////////////////////////////////////////////////////
       // Receive state
       //typedef struct msync_recv_state
-      class msync_recv_state_t : public QueueElem
+      class msync_recv_state_t : public Queue::Element
       {
       public:
         inline msync_recv_state_t() :
-        QueueElem ()
+        Queue::Element ()
         {
         };
         unsigned                             connection_id;
@@ -89,7 +89,7 @@ namespace XMI
       //   - global (uses global class route)
       //   - one destination task per node
       ///////////////////////////////////////////////////////////////////////////////
-      class MUMultisyncModel : public Interface::MultisyncModel < MUMultisyncModel, sizeof(mu_multisync_statedata_t) >
+      class MUMultisyncModel : public Interface::MultisyncModel < MUMultisyncModel, MUCollDevice, sizeof(mu_multisync_statedata_t) >
       {
 
       protected:
@@ -97,7 +97,7 @@ namespace XMI
       public:
 
         /// \see XMI::Device::Interface::MultisyncModel::MultisyncModel
-        MUMultisyncModel (xmi_result_t &status, MUCollDevice & device);
+        MUMultisyncModel (MUCollDevice & device, xmi_result_t &status);
 
         /// \see XMI::Device::Interface::MultisyncModel::~MultisyncModel
         ~MUMultisyncModel ();

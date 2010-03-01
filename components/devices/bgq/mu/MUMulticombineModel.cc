@@ -53,9 +53,9 @@ const bool   XMI::Device::MU::MUMulticombineModel::multicombine_model_op_support
 }
 
 /// \see MUMulticombineModel
-XMI::Device::MU::MUMulticombineModel::MUMulticombineModel (xmi_result_t &status, MUCollDevice & device) :
-    Interface::MulticombineModel < MUMulticombineModel, sizeof(mu_multicombine_statedata_t) > (status),
-    _device (device),
+XMI::Device::MU::MUMulticombineModel::MUMulticombineModel (MUCollDevice *devices, size_t client_id, size_t context_id, xmi_result_t &status) :
+    Interface::MulticombineModel < MUMulticombineModel,MUCollDevice, sizeof(mu_multicombine_statedata_t) > (devices[context_id], status),
+    _device (devices[context_id]),
     _wrapper_model (&_desc_model)
 {
   COMPILE_TIME_ASSERT(MUCollDevice::message_metadata_size >= sizeof(MUMulticombineModel::metadata_t));

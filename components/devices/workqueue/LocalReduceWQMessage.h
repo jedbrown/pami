@@ -36,6 +36,7 @@ public:
 		static inline LocalReduceWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
+		static inline LocalReduceWQDevice & getDevice_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class LocalReduceWQDevice
 
@@ -58,6 +59,10 @@ inline xmi_result_t LocalReduceWQDevice::Factory::init_impl(LocalReduceWQDevice 
 
 inline size_t LocalReduceWQDevice::Factory::advance_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline LocalReduceWQDevice & LocalReduceWQDevice::Factory::getDevice_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId) {
+	return _g_l_reducewq_dev;
 }
 
 class LocalReduceWQMessage : public XMI::Device::Generic::GenericMessage {
@@ -176,18 +181,19 @@ protected:
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalReduceWQMessage
 
-class LocalReduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalReduceWQModel,sizeof(LocalReduceWQMessage)> {
+class LocalReduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalReduceWQModel,LocalReduceWQDevice,sizeof(LocalReduceWQMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(LocalReduceWQMessage);
 
-	LocalReduceWQModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<LocalReduceWQModel,sizeof(LocalReduceWQMessage)>(status),
+	LocalReduceWQModel(LocalReduceWQDevice &device, xmi_result_t &status) :
+	XMI::Device::Interface::MulticombineModel<LocalReduceWQModel,LocalReduceWQDevice,sizeof(LocalReduceWQMessage)>(device, status),
 	_shared(_g_l_reducewq_dev.getSysdep()),
 	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
 	_npeers(__global.topology_local.size())
 	{
+		// assert(device == _g_l_reducewq_dev);
 		if (!_shared.available()) {
 			status = XMI_ERROR;
 			return;

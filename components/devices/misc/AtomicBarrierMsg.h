@@ -60,6 +60,7 @@ public:
 		static inline AtomicBarrierDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(AtomicBarrierDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(AtomicBarrierDev *devs, size_t client, size_t context);
+		static inline AtomicBarrierDev & getDevice_impl(AtomicBarrierDev *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class AtomicBarrierDev
 
@@ -82,6 +83,10 @@ inline xmi_result_t AtomicBarrierDev::Factory::init_impl(AtomicBarrierDev *devs,
 
 inline size_t AtomicBarrierDev::Factory::advance_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {
 	return 0;
+}
+
+inline AtomicBarrierDev & AtomicBarrierDev::Factory::getDevice_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {
+	return _g_lmbarrier_dev;
 }
 
 ///
@@ -143,14 +148,15 @@ protected:
 
 template <class T_Barrier>
 class AtomicBarrierMdl : public XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
-                                                                       sizeof(AtomicBarrierMsg<T_Barrier>) > {
+                                            AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) > {
 public:
 	static const size_t sizeof_msg = sizeof(AtomicBarrierMsg<T_Barrier>);
 
-	AtomicBarrierMdl(xmi_result_t &status) :
+	AtomicBarrierMdl(AtomicBarrierDev &device, xmi_result_t &status) :
           XMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
-                                                 sizeof(AtomicBarrierMsg<T_Barrier>) >(status)
+                        AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status)
 	{
+		// assert(device == _g_lmbarrier_dev);
 		// "default" barrier: all local processes...
 		size_t peers = __global.topology_local.size();
 		size_t peer0 = __global.topology_local.index2Rank(0);

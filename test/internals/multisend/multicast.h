@@ -17,11 +17,15 @@ namespace XMI {
 namespace Test {
 namespace Multisend {
 
-template <class T_MulticastModel, int T_BufSize>
+template <class T_MulticastModel, class T_MulticastDevice, int T_BufSize>
 class Multicast {
 private:
-	T_MulticastModel _model;
+	uint8_t _mdlbuf[sizeof(T_MulticastModel)];
+	T_MulticastModel *_model;
 	uint8_t _msgbuf[T_MulticastModel::sizeof_msg];
+		XMI::Device::Generic::Device *_generics;
+		T_MulticastDevice *_dev;
+		Memory::MemoryManager _mm;
 
 	char _source[T_BufSize];
 	char _result[T_BufSize];
@@ -36,8 +40,8 @@ private:
     size_t _dispatch_id;
 
 	static void _done_cb(xmi_context_t context, void *cookie, xmi_result_t result) {
-		XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *thus =
-			(XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *)cookie;
+		XMI::Test::Multisend::Multicast<T_MulticastModel,T_MulticastDevice,T_BufSize> *thus =
+			(XMI::Test::Multisend::Multicast<T_MulticastModel,T_MulticastDevice,T_BufSize> *)cookie;
         //fprintf(stderr, "... completion callback for %s, done %d ++\n", thus->_name, thus->_done);
 		++thus->_done;
 	}
@@ -54,8 +58,8 @@ private:
         {
           //fprintf(stderr,"%s:%s msgcount %d, connection_id %d, root %d, sndlen %d, cookie %s\n",
           //        __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata);
-          XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *test =
-            (XMI::Test::Multisend::Multicast<T_MulticastModel,T_BufSize> *) clientdata;
+          XMI::Test::Multisend::Multicast<T_MulticastModel,T_MulticastDevice,T_BufSize> *test =
+            (XMI::Test::Multisend::Multicast<T_MulticastModel,T_MulticastDevice,T_BufSize> *) clientdata;
           XMI_assertf(sndlen <= T_BufSize,"sndlen %zu\n",sndlen);
           XMI_assertf(msgcount == 1,"msgcount %d",msgcount);
           XMI_assertf(msginfo->w0 == test->_msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
@@ -88,21 +92,33 @@ private:
 public:
 
 	Multicast(const char *test) :
-	_model(_status),
 	_name(test)
 	{
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
+		_dev = T_MulticastDevice::Factory::generate(0, 1, _mm);
+
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
+		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
 	Multicast(const char *test, size_t dispatch_id) :
-	_model(_status),
 	_name(test),
     _dispatch_id(dispatch_id)
 	{
+
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
+		_dev = T_MulticastModel::Factory::generate(0, 1, _mm);
+
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
+		T_MulticastModel::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
+
       _msginfo.w0 = 0;
       _msginfo.w1 = 1;
       _msginfo.w2 = 2;
       _msginfo.w3 = 3;
-      _model.registerMcastRecvFunction (dispatch_id,&dispatch_multicast_fn, (void*)this);
+      _model->registerMcastRecvFunction (dispatch_id,&dispatch_multicast_fn, (void*)this);
 	}
 
 
@@ -139,18 +155,15 @@ public:
 		}
 		_done = 0;
 		//fprintf(stderr, "... before %s.postMulticast\n", _name);
-		rc = _model.postMulticast(_msgbuf, mcast);
+		rc = _model->postMulticast(_msgbuf, mcast);
 		if (rc != XMI_SUCCESS) {
 			fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
 			return XMI_ERROR;
 		}
 		//fprintf(stderr, "... before advance loop for %s.postMulticast\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(ctx, 100);
-			if (rc != XMI_SUCCESS) {
-				fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", rc);
-				return rc;
-			}
+			XMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
+			T_MulticastDevice::Factory::advance(_dev, 0, 0);
 		}
 		if (task_id == root) {
 			for (x = 0; x < count; ++x) {
@@ -214,7 +227,7 @@ public:
 		_done = 0;
 		if (task_id == root) {
 			//fprintf(stderr, "... before %s.postMulticast\n", _name);
-			rc = _model.postMulticast(_msgbuf,mcast);
+			rc = _model->postMulticast(_msgbuf,mcast);
 			if (rc != XMI_SUCCESS) {
 				fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
 				return XMI_ERROR;
@@ -222,11 +235,8 @@ public:
 		}
 		//fprintf(stderr, "... before advance loop for %s.postMulticast\n", _name);
 		while (!_done) {
-			rc = XMI_Context_advance(ctx, 100);
-			if (rc != XMI_SUCCESS) {
-				fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", rc);
-				return rc;
-			}
+			XMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
+			T_MulticastDevice::Factory::advance(_dev, 0, 0);
 		}
 		if (task_id == root) {
 			for (x = 0; x < count; ++x) {

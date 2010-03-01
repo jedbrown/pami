@@ -30,11 +30,11 @@ namespace XMI
       ///
       /// \see Multicast::Model
       ///
-      template <class T_Model,unsigned T_StateBytes>
+      template <class T_Model,class T_Device,unsigned T_StateBytes>
       class MulticastModel
       {
       public:
-        MulticastModel (xmi_result_t &status)
+        MulticastModel (T_Device &device, xmi_result_t &status)
           {
             COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
             status = XMI_SUCCESS;
@@ -46,8 +46,8 @@ namespace XMI
                                            xmi_multicast_t *mcast);
       }; // class MulticastModel
 
-      template <class T_Model,unsigned T_StateBytes>
-      xmi_result_t MulticastModel<T_Model, T_StateBytes>::postMulticast(uint8_t (&state)[T_StateBytes],
+      template <class T_Model,class T_Device,unsigned T_StateBytes>
+      xmi_result_t MulticastModel<T_Model,T_Device, T_StateBytes>::postMulticast(uint8_t (&state)[T_StateBytes],
                                                                          xmi_multicast_t *mcast)
       {
         return static_cast<T_Model*>(this)->postMulticast_impl(state, mcast);
@@ -63,12 +63,12 @@ namespace XMI
       /// \see Multicast::Model
       ///
       /** \todo We probably need client and context passed to the model */
-      template <class T_Model,unsigned T_StateBytes>
-      class AMMulticastModel : public MulticastModel<T_Model,T_StateBytes>
+      template <class T_Model,class T_Device,unsigned T_StateBytes>
+      class AMMulticastModel : public MulticastModel<T_Model,T_Device,T_StateBytes>
       {
       public:
-        AMMulticastModel (xmi_result_t &status) :
-          MulticastModel<T_Model,T_StateBytes> (status)
+        AMMulticastModel (T_Device &device, xmi_result_t &status) :
+          MulticastModel<T_Model,T_Device,T_StateBytes> (device, status)
           {
           };
         ~AMMulticastModel ()
@@ -78,8 +78,8 @@ namespace XMI
                                                        xmi_dispatch_multicast_fn  recv_func,
                                                        void                      *async_arg);
       }; // class AMMulticastModel
-      template <class T_Model,unsigned T_StateBytes>
-      xmi_result_t AMMulticastModel<T_Model,
+      template <class T_Model,class T_Device,unsigned T_StateBytes>
+      xmi_result_t AMMulticastModel<T_Model,T_Device,
                                     T_StateBytes>::registerMcastRecvFunction (int                        dispatch_id,
                                                                                                xmi_dispatch_multicast_fn  recv_func,
                                                                                                void                      *async_arg)

@@ -110,6 +110,7 @@ public:
 		static inline CNAllreduce2PDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(CNAllreduce2PDevice *devs, size_t client, size_t context);
+		static inline CNAllreduce2PDevice & getDevice_impl(CNAllreduce2PDevice *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class CNAllreduce2PDevice
 
@@ -134,6 +135,10 @@ inline xmi_result_t CNAllreduce2PDevice::Factory::init_impl(CNAllreduce2PDevice 
 
 inline size_t CNAllreduce2PDevice::Factory::advance_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline CNAllreduce2PDevice & CNAllreduce2PDevice::Factory::getDevice_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId) {
+	return _g_cnallreduce2p_dev;
 }
 
 /**
@@ -300,14 +305,14 @@ private:
 	unsigned _nThreads;
 }; // class CNAllreduce2PMessage
 
-class CNAllreduce2PModel : public XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,sizeof(CNAllreduce2PMessage)> {
+class CNAllreduce2PModel : public XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,CNAllreduce2PDevice,sizeof(CNAllreduce2PMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNAllreduce2PMessage);
 
-	CNAllreduce2PModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,sizeof(CNAllreduce2PMessage)>(status),
+	CNAllreduce2PModel(CNAllreduce2PDevice &device, xmi_result_t &status) :
+	XMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,CNAllreduce2PDevice,sizeof(CNAllreduce2PMessage)>(device,status),
 	// we depend on doing consumeBytes(bytesAvailableToConsume()) in order
 	// to "jump" to next "boundary" so we maintain alignment for each cycle.
 	// this requires the WQ behavior based on workunits and worksize that
@@ -318,6 +323,7 @@ public:
 	_dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
 	_dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
 	{
+		// assert(device == _g_cnallreduce2p_dev);
 		_me = __global.mapping.task();
 		_ewq.setConsumers(1, 0);
 		_ewq.setProducers(1, 0);

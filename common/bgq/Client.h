@@ -115,7 +115,7 @@ namespace XMI
         XMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
 
-	_platdevs.init(_clientid, n);
+	_platdevs.generate(_clientid, n, _mm);
 
         // This memset has been removed due to the amount of cycles it takes
         // on simulators.  Lower level initializers should be setting the

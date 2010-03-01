@@ -48,6 +48,11 @@ namespace XMI
           static inline size_t advance (T_Device * devices,
                                         size_t     clientid,
                                         size_t     contextid);
+
+	  static inline T_Device & getDevice(T_Device * devices,
+					     size_t clientid,
+					     size_t contextid);
+
       };  // XMI::Device::Interface::FactoryInterface class
     };    // XMI::Device::Interface namespace
   };      // XMI::Device namespace
@@ -77,6 +82,14 @@ size_t XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::
                                                                                          size_t     clientid)
 {
    return T_Factory::advance_impl (devices, contextid, clientid);
+};
+
+template <class T_Factory, class T_Device, class T_Progress>
+T_Device & XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::getDevice (T_Device * devices,
+                                                                                         size_t     contextid,
+                                                                                         size_t     clientid)
+{
+   return T_Factory::getDevice_impl (devices, contextid, clientid);
 };
 
 

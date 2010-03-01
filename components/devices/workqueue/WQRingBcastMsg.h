@@ -36,6 +36,7 @@ public:
 		static inline WQRingBcastDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(WQRingBcastDev *devs, size_t client, size_t context);
+		static inline WQRingBcastDev & getDevice_impl(WQRingBcastDev *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class WQRingBcastDev
 
@@ -58,6 +59,10 @@ inline xmi_result_t WQRingBcastDev::Factory::init_impl(WQRingBcastDev *devs, siz
 
 inline size_t WQRingBcastDev::Factory::advance_impl(WQRingBcastDev *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline WQRingBcastDev & WQRingBcastDev::Factory::getDevice_impl(WQRingBcastDev *devs, size_t client, size_t contextId) {
+	return _g_wqbcast_dev;
 }
 
 ///
@@ -195,15 +200,16 @@ protected:
 	size_t _bytes;
 }; //-- WQRingBcastMsg
 
-class WQRingBcastMdl : public XMI::Device::Interface::MulticastModel<WQRingBcastMdl,sizeof(WQRingBcastMsg)> {
+class WQRingBcastMdl : public XMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(WQRingBcastMsg);
 
-	WQRingBcastMdl(xmi_result_t &status) :
-        XMI::Device::Interface::MulticastModel<WQRingBcastMdl,sizeof(WQRingBcastMsg)>(status)
+	WQRingBcastMdl(WQRingBcastDev &device, xmi_result_t &status) :
+        XMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)>(device, status)
 	{
+		// assert(device == _g_wqbcast_dev);
 		XMI::SysDep *sd = _g_wqbcast_dev.getSysdep();
 		_me = __global.mapping.task();
 		size_t t0 = __global.topology_local.index2Rank(0);

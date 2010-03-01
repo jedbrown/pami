@@ -36,6 +36,7 @@ public:
 		static inline WQRingReduceDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(WQRingReduceDev *devs, size_t client, size_t context);
+		static inline WQRingReduceDev & getDevice_impl(WQRingReduceDev *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class WQRingReduceDev
 
@@ -58,6 +59,10 @@ inline xmi_result_t WQRingReduceDev::Factory::init_impl(WQRingReduceDev *devs, s
 
 inline size_t WQRingReduceDev::Factory::advance_impl(WQRingReduceDev *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline WQRingReduceDev & WQRingReduceDev::Factory::getDevice_impl(WQRingReduceDev *devs, size_t client, size_t contextId) {
+	return _g_wqreduce_dev;
 }
 
 ///
@@ -203,15 +208,16 @@ protected:
 	coremath _func;
 }; //-- WQRingReduceMsg
 //
-class WQRingReduceMdl : public XMI::Device::Interface::MulticombineModel<WQRingReduceMdl,sizeof(WQRingReduceMsg)> {
+class WQRingReduceMdl : public XMI::Device::Interface::MulticombineModel<WQRingReduceMdl,WQRingReduceDev,sizeof(WQRingReduceMsg)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(WQRingReduceMsg);
 
-	WQRingReduceMdl(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl,sizeof(WQRingReduceMsg)>(status)
+	WQRingReduceMdl(WQRingReduceDev &device, xmi_result_t &status) :
+	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl,WQRingReduceDev,sizeof(WQRingReduceMsg)>(device, status)
 	{
+		// assert(device == _g_wqreduce_dev);
 		XMI::SysDep *sd = _g_wqreduce_dev.getSysdep();
 		_me = __global.mapping.task();
 		size_t t0 = __global.topology_local.index2Rank(0);

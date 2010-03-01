@@ -519,7 +519,7 @@ namespace XMI
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
 #warning Eager/ShmemModel needs to change to accept array of devices (two places here)
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-                (id, fn, cookie, _devices->_shmem[_contextid], result);
+                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
               }
             else
               {
@@ -528,7 +528,7 @@ namespace XMI
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
-                (id, fn, cookie, _devices->_shmem[_contextid], result);
+                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
               }
 #endif // SHMEM_READY
 

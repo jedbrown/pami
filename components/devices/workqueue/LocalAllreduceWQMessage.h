@@ -36,6 +36,7 @@ public:
 		static inline LocalAllreduceWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(LocalAllreduceWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(LocalAllreduceWQDevice *devs, size_t client, size_t context);
+		static inline LocalAllreduceWQDevice & getDevice_impl(LocalAllreduceWQDevice *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class LocalAllreduceWQDevice
 
@@ -58,6 +59,10 @@ inline xmi_result_t LocalAllreduceWQDevice::Factory::init_impl(LocalAllreduceWQD
 
 inline size_t LocalAllreduceWQDevice::Factory::advance_impl(LocalAllreduceWQDevice *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline LocalAllreduceWQDevice & LocalAllreduceWQDevice::Factory::getDevice_impl(LocalAllreduceWQDevice *devs, size_t client, size_t contextId) {
+	return _g_l_allreducewq_dev;
 }
 
 class LocalAllreduceWQMessage : public XMI::Device::Generic::GenericMessage {
@@ -152,18 +157,19 @@ private:
           XMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalAllreduceWQMessage
 
-class LocalAllreduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel,sizeof(LocalAllreduceWQMessage)> {
+class LocalAllreduceWQModel : public XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel,LocalAllreduceWQDevice,sizeof(LocalAllreduceWQMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(LocalAllreduceWQMessage);
 
-	LocalAllreduceWQModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel,sizeof(LocalAllreduceWQMessage)>(status),
+	LocalAllreduceWQModel(LocalAllreduceWQDevice &device, xmi_result_t &status) :
+	XMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel,LocalAllreduceWQDevice,sizeof(LocalAllreduceWQMessage)>(device, status),
 	_shared(_g_l_allreducewq_dev.getSysdep()),
 	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
 	_npeers(__global.topology_local.size())
 	{
+		// assert(device == _g_l_allreducewq_dev);
 		if (!_shared.available()) {
 			status = XMI_ERROR;
 			return;

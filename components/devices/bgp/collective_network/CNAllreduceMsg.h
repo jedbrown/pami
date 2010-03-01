@@ -68,6 +68,7 @@ public:
 		static inline CNAllreduceDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
 		static inline xmi_result_t init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(CNAllreduceDevice *devs, size_t client, size_t context);
+		static CNAllreduceDevice &getDevice_impl(CNAllreduceDevice *devs, size_t client, size_t context);
 	}; // class Factory
 }; // class CNAllreduceDevice
 
@@ -92,6 +93,10 @@ inline xmi_result_t CNAllreduceDevice::Factory::init_impl(CNAllreduceDevice *dev
 
 inline size_t CNAllreduceDevice::Factory::advance_impl(CNAllreduceDevice *devs, size_t client, size_t contextId) {
 	return 0;
+}
+
+inline CNAllreduceDevice & CNAllreduceDevice::Factory::getDevice_impl(CNAllreduceDevice *devs, size_t client, size_t contextId) {
+	return _g_cnallreduce_dev;
 }
 
 class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
@@ -219,15 +224,16 @@ protected:
 	unsigned _nThreads;
 }; // class CNAllreduceMessage
 
-class CNAllreduceModel : public XMI::Device::Interface::MulticombineModel<CNAllreduceModel,sizeof(CNAllreduceMessage)> {
+class CNAllreduceModel : public XMI::Device::Interface::MulticombineModel<CNAllreduceModel,CNAllreduceDevice,sizeof(CNAllreduceMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNAllreduceMessage);
 
-	CNAllreduceModel(xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<CNAllreduceModel,sizeof(CNAllreduceMessage)>(status)
+	CNAllreduceModel(CNAllreduceDevice &device,xmi_result_t &status) :
+	XMI::Device::Interface::MulticombineModel<CNAllreduceModel,CNAllreduceDevice,sizeof(CNAllreduceMessage)>(device,status)
 	{
+		// assert(device == _g_cnallreduce_dev);
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
 		_me = __global.mapping.task();
 		// at least one must do this

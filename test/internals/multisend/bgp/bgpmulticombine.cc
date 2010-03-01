@@ -16,10 +16,13 @@
 #endif // TEST_BUF_SIZE
 
 int main(int argc, char ** argv) {
-	xmi_client_t client;
 	xmi_context_t context;
-	xmi_result_t status = XMI_ERROR;
+	size_t task_id;
+	size_t num_tasks;
 
+#if 0
+	xmi_client_t client;
+	xmi_result_t status = XMI_ERROR;
 	status = XMI_Client_initialize("multicombine test", &client);
 	if (status != XMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
@@ -40,7 +43,7 @@ int main(int argc, char ** argv) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
-	size_t task_id = configuration.value.intval;
+	task_id = configuration.value.intval;
 	//fprintf(stderr, "My task id = %zu\n", task_id);
 
 	configuration.name = XMI_NUM_TASKS;
@@ -49,7 +52,12 @@ int main(int argc, char ** argv) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
-	size_t num_tasks = configuration.value.intval;
+	num_tasks = configuration.value.intval;
+#else
+	task_id = __global.mapping.task();
+	num_tasks = __global.mapping.size();
+	context = NULL;
+#endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 	if (__global.mapping.tSize() != 1) {
@@ -77,7 +85,7 @@ int main(int argc, char ** argv) {
 
 	const char *test = "XMI::Device::BGP::CNAllreduceModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicombine<XMI::Device::BGP::CNAllreduceModel,TEST_BUF_SIZE> test1(test);
+	XMI::Test::Multisend::Multicombine<XMI::Device::BGP::CNAllreduceModel,XMI::Device::BGP::CNAllreduceDevice,TEST_BUF_SIZE> test1(test);
 	rc = test1.perform_test(task_id, num_tasks, context, &mcomb);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);
@@ -86,11 +94,13 @@ int main(int argc, char ** argv) {
 	fprintf(stderr, "PASS %s\n", test);
 
 // ------------------------------------------------------------------------
+#if 0
 	status = XMI_Client_finalize(client);
 	if (status != XMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
 		return 1;
 	}
+#endif
 
 	return 0;
 }
