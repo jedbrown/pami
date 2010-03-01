@@ -210,19 +210,15 @@ namespace XMI
           T_Device                 & _device;
 
           ///
-          /// \brief Direct multi-packet send envelope packet dispatch.
+          /// \brief Direct single-packet send dispatch.
           ///
-          /// The eager simple send protocol will register this dispatch
+          /// The eager immediate send protocol will register this dispatch
           /// function if and only if the device \b does provide direct access
           /// to data which has already been read from the network by the
           /// device.
           ///
-          /// The envelope dispatch function is invoked by the message device
-          /// to process the first packet of a multi-packet message. The eager
-          /// simple send protocol transfers protocol metadata and application
-          /// metadata in a single packet. Application data will arrive in
-          /// subsequent eager simple send data packets and will be processed
-          /// by the data dispatch function.
+          /// Protocol metadata, application metadata, and application data
+          /// are all delivered as a single contiguous buffer.
           ///
           /// \see XMI::Device::Interface::RecvFunction_t
           ///
@@ -234,13 +230,12 @@ namespace XMI
           {
             protocol_metadata_t * m = (protocol_metadata_t *) metadata;
 
-            TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->fromRank = %d, m->databytes = %d, m->metabytes = %d\n", m->fromRank, m->databytes, m->metabytes));
+            TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->databytes = %d, m->metabytes = %d\n", m->databytes, m->metabytes));
 
             EagerImmediate<T_Model, T_Device> * send =
               (EagerImmediate<T_Model, T_Device> *) recv_func_parm;
 
             uint8_t * data = (uint8_t *)payload;
-            xmi_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
 
             // Invoke the registered dispatch function.
             send->_dispatch_fn.p2p (send->_context,   // Communication context
@@ -249,7 +244,7 @@ namespace XMI
                                     m->metabytes,     // Metadata bytes
                                     (void *) (data + m->metabytes),  // payload data
                                     m->databytes,     // Total number of bytes
-                                    (xmi_recv_t *) &recv);
+                                    (xmi_recv_t *) NULL);
 
             TRACE_ERR ((stderr, "<< EagerImmediate::dispatch_send_direct()\n"));
             return 0;
