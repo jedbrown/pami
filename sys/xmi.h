@@ -251,18 +251,11 @@ extern "C"
    */
   typedef struct
   {
+    struct iovec      header;   /**< Header buffer address and size in bytes */
+    struct iovec      data;     /**< Data buffer address and size in bytes */
     size_t            dispatch; /**< Dispatch identifier */
     xmi_send_hint_t   hints;    /**< Hints for sending the message */
     xmi_endpoint_t    dest;     /**< Destination endpoint */
-    union
-    {
-      struct iovec    iov[2];   /**< Raw transfer iovecs */
-      struct
-      {
-        struct iovec  header;   /**< Header buffer address and size in bytes */
-        struct iovec  data;     /**< Data buffer address and size in bytes */
-      };
-    };
   } xmi_send_immediate_t;
 
   typedef struct

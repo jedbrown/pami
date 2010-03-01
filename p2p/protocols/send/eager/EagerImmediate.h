@@ -59,6 +59,18 @@ namespace XMI
           } protocol_metadata_t;
 
           ///
+          /// \brief Shadow the \c xmi_send_immediate_t parameter structure
+          ///
+          /// This allows the header+data iovec elements to be treated as a
+          /// two-element array of iovec structures, and therefore allows the
+          /// packet model to implement template specialization.
+          ///
+          typedef struct
+          {
+            struct iovec iov[2];
+          } parameters_iov_t;
+
+          ///
           /// \brief Sender-side state structure for immediate sends.
           ///
           /// If the immediate post to the device fails due to unavailable
@@ -138,11 +150,14 @@ namespace XMI
             size_t offset;
             XMI_ENDPOINT_INFO(parameters->dest,task,offset);
 
+            // This shadow pointer allows template specialization on the iovecs
+            parameters_iov_t * const p = (parameters_iov_t *) parameters;
+
             bool posted =
               _send_model.postPacket (task, offset,
                                       (void *) &metadata,
                                       sizeof (protocol_metadata_t),
-                                      parameters->iov);
+                                      p->iov);
 
             if (unlikely(!posted))
             {
@@ -228,11 +243,11 @@ namespace XMI
                                            void   * recv_func_parm,
                                            void   * cookie)
           {
-            protocol_metadata_t * m = (protocol_metadata_t *) metadata;
+            protocol_metadata_t * const m = (protocol_metadata_t *) metadata;
 
             TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->databytes = %d, m->metabytes = %d\n", m->databytes, m->metabytes));
 
-            EagerImmediate<T_Model, T_Device> * send =
+            EagerImmediate<T_Model, T_Device> * const send =
               (EagerImmediate<T_Model, T_Device> *) recv_func_parm;
 
             uint8_t * data = (uint8_t *)payload;
