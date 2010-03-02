@@ -52,8 +52,8 @@ int main (int argc, char ** argv)
 
   if (myself.net_coord(2) == 0 && myself.net_coord(3) == 0)
   {
-    xmi_coord_t low, high;
-    unsigned char udir[4]={0}, utl[4]={0};
+    xmi_coord_t low, high, ref;
+    unsigned char utl[4]={0};
     int start = -1, nphases = 0;
 
 
@@ -65,16 +65,14 @@ int main (int argc, char ** argv)
 
 
     xmi_result_t res = tr.getDstUnionTopology(&union_topo);
-    union_topo.getAxialOrientation(&utl[0]);
-    union_topo.getAxialDirs(&udir[0]);
-    union_topo.getAxialEndCoords(&low, &high, -1);
+    union_topo.axial(&low, &high, &ref, &utl[0]);
 
     if (res == XMI_SUCCESS)
-    printf("%zd start:%d nphases: %d ll: <%zd,%zd,%zd,%zd> ur:<%zd,%zd,%zd,%zd> dir: <%d,%d,%d>"
+    printf("%zd start:%d nphases: %d ll: <%zd,%zd,%zd,%zd> ur:<%zd,%zd,%zd,%zd> "
            " tl <%d,%d,%d>\n", task_id, start,nphases,low.net_coord(0), low.net_coord(1),
            low.net_coord(2),low.net_coord(3),high.net_coord(0),
            high.net_coord(1),high.net_coord(2),high.net_coord(3),
-           udir[0], udir[1],udir[2], utl[0], utl[1], utl[2]);
+           utl[0], utl[1], utl[2]);
   }
   return 0;
 };

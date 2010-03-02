@@ -18,8 +18,9 @@
 /*     Basic utility classes collectives           */
 /*-------------------------------------------------*/
 
-#include "../interfaces/Schedule.h"
-
+#include "algorithms/interfaces/Schedule.h"
+#include "common/TorusMappingInterface.h"
+#include "Global.h"
 //#define TRACE_ERR(x)  fprintf x
 //#define RECTBCAST_DEBUG   1
 #define TRACE_ERR(x)
@@ -51,8 +52,8 @@ namespace CCMI
   {
 
 #define MY_TASK _map->task()
-#define POSITIVE 0
-#define NEGATIVE 1
+#define POSITIVE XMI::Interface::Mapping::TorusPositive
+#define NEGATIVE XMI::Interface::Mapping::TorusNegative
 
     class TorusRect: public CCMI::Interfaces::Schedule
     {
@@ -61,17 +62,23 @@ namespace CCMI
         TorusRect(XMI_MAPPING_CLASS *map,
                   XMI::Topology *rect,
                   xmi_coord_t self,
-                  unsigned color)
+                  unsigned color):
+        _ndims(0),
+        _color(color),
+//      _root(?),
+//      _root_coord(?),
+        _self_coord(self),
+        _start_phase((unsigned)-1),
+//      _nphases(?),
+        _rect(rect),
+        _map(map)
         {
           TRACE_ERR((stderr, "In One Color Torus Rect Bcast Constructor\n"));
           unsigned int i;
-          _ndims = 0;
-          _map = map;
-          _rect = rect;
-          _color = color;
-          _self_coord = self;
-          _start_phase = (unsigned) -1;
+
+          XMI_assert(_rect->type() == XMI_COORD_TOPOLOGY);
           _rect->rectSeg(&_ll, &_ur, &_torus_link[0]);
+
           for (i = 0; i < _map->torusDims(); i++)
             if (_ur.net_coord(i))
               _dim_sizes[_ndims++] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
@@ -179,51 +186,33 @@ namespace CCMI
                                   int &nphases)
   {
     CCMI_assert (op == CCMI::Interfaces::BROADCAST_OP);
-    size_t peers;
 
     _root = root;
     _map->task2network(root, &_root_coord, XMI_N_TORUS_NETWORK);
 
+    size_t peers, axes[XMI_MAX_DIMS] = {0};
+    unsigned int i, myphase, axis, color = _color;
+      
+    for (axis = 0; axis < _ndims; axis++)
+      axes[axis] = color++ % _ndims;
 
     if (MY_TASK == (unsigned) root)
       _start_phase = 0;
+    // ghost nodes
+    else if (_self_coord.net_coord(axes[0]) == _root_coord.net_coord(axes[0]))
+      _start_phase = _ndims;
     else
     {
-      unsigned int i, axis, success;
-      unsigned color = _color;
-
-      size_t axes[XMI_MAX_DIMS] = {0};
-
-      for (axis = 0; axis < _ndims; axis++)
-        axes[axis] = color++ % _ndims;
-
       for (axis = 0; axis < _ndims; axis++)
       {
-        // other nodes that send to ghost
-        if (axis + 1 == _ndims &&
-            _self_coord.net_coord(axes[0]) != _root_coord.net_coord(axes[0]))
-        {
-          _start_phase = axis;
-          break;
-        }
-
-        for (success = 1, i = axis + 1; i < _ndims; i++)
+        for (myphase = 1, i = axis + 1; i < _ndims && myphase; i++)
           if (_self_coord.net_coord(axes[i]) != _root_coord.net_coord(axes[i]))
-          {
-            success = 0;
-            break;
-          }
+            myphase = 0;
 
-        if (success &&
-            // excludes ghost nodes
-            _self_coord.net_coord(axes[0]) != _root_coord.net_coord(axes[0]))
-        {
-          _start_phase = axis;
+        if (myphase)
           break;
-        }
       }
-      // this means I am a ghost node
-      if (_start_phase == (unsigned)-1) _start_phase = _ndims;
+      _start_phase = axis;
     }
 
     start = _start_phase;
@@ -232,6 +221,7 @@ namespace CCMI
     if (peers == 1)
       _nphases = --nphases;
   }
+
 
   inline xmi_result_t
   CCMI::Schedule::TorusRect::getSrcUnionTopology(XMI::Topology *topo)
@@ -305,14 +295,15 @@ namespace CCMI
                                               XMI::Topology *topo)
     {
       xmi_coord_t low, high;
-      unsigned char dir[XMI_MAX_DIMS] = {0};
-      //size_t torus_dims = _map->torusDims();
 
       //Find the axis to do the line broadcast on
       int axis = (phase + _color) % _ndims;
-      dir[axis] = POSITIVE;
-      if (_color >= _ndims)
-        dir[axis] = NEGATIVE;
+      if(_torus_link[0])
+      {
+        _torus_link[axis] = POSITIVE;
+        if (_color >= _ndims)
+          _torus_link[axis] = NEGATIVE;
+      }
 
       low = _self_coord;
       high = _self_coord;
@@ -321,7 +312,7 @@ namespace CCMI
       high.net_coord(axis) = MAX(_ur.net_coord(axis),
                                  _self_coord.net_coord(axis));
 
-      new (topo) XMI::Topology(&low, &high, &_self_coord, &dir[0],
+      new (topo) XMI::Topology(&low, &high, &_self_coord,
                                &_torus_link[0]);
     }
 
@@ -337,31 +328,24 @@ namespace CCMI
     CCMI::Schedule::TorusRect::setupGhost(XMI::Topology *topo)
     {
       xmi_coord_t ref, dst;
-      unsigned char dir[XMI_MAX_DIMS] = {0};
 
       //size_t torus_dims = _map->torusDims();
       size_t axis = _color % _ndims;
 
       CCMI_assert(_dim_sizes[axis] > 1);
 
-      dir[axis] = POSITIVE;
-      if (_color >= _ndims)
-        dir[axis] = NEGATIVE;
-
       ref = _self_coord;
 
       if (_torus_link[axis]) // if this dim or axis is a torus
       {
-        ref.net_coord(axis) = (_root_coord.net_coord(axis) + 1) % _ndims;
+        ref.net_coord(axis) = (_root_coord.net_coord(axis) + 1) % _dim_sizes[axis];
       }
       else
       {
-        dir[axis] = POSITIVE;
         ref.net_coord(axis) = _root_coord.net_coord(axis) + 1;
         if (ref.net_coord(axis) >= _dim_sizes[axis] + _ll.net_coord(axis))
           {
             ref.net_coord(axis) = _root_coord.net_coord(axis) - 1;
-            dir[axis] = NEGATIVE;
           }
       }
 
@@ -387,8 +371,9 @@ namespace CCMI
                                     _self_coord.net_coord(axis));
           high.net_coord(axis) = MAX(dst.net_coord(axis),
                                      _self_coord.net_coord(axis));
-
-          new (topo) XMI::Topology(&low, &high, &_self_coord, &dir[0],
+          /// \todo why build an axial topoology for one ghost?   You can't
+          /// multicast/deposit to it?  Why not leave it as a single rank topology.
+          new (topo) XMI::Topology(&low, &high, &_self_coord, 
                                    &_torus_link[0]);
         }
       }
@@ -406,72 +391,56 @@ namespace CCMI
       inline void
       CCMI::Schedule::TorusRect::setupLocal(XMI::Topology *topo)
       {
-        unsigned char dir[XMI_MAX_DIMS] = {0};
-        size_t peers, core_dim;
-        _map->nodePeers(peers);
-
-        // the cores dim is the first one after the physical torus dims
-        core_dim = _map->torusDims();
-
-
-        if (_self_coord.net_coord(core_dim) == _root_coord.net_coord(core_dim))
-        {
-          xmi_coord_t low, high;
-          low = _self_coord;
-          high = _self_coord;
-          low.net_coord(core_dim) = 0;
-          high.net_coord(core_dim) = peers - 1;
-          new (topo) XMI::Topology(&low, &high, &_self_coord, &dir[0],
-                                   &_torus_link[0]);
-        }
+        *topo = __global.topology_local;
+        /// \todo why build an axial topoology on the local cores?   You can't
+        /// multicast/deposit to them?  Why not leave it as the local topo type.
+        topo->convertTopology(XMI_AXIAL_TOPOLOGY);
       }
 
       inline xmi_result_t
       CCMI::Schedule::TorusRect::getDstUnionTopology(XMI::Topology *topology)
       {
         int i, j;
-        unsigned char dir[XMI_MAX_DIMS] = {0};
         unsigned char torus_link[XMI_MAX_DIMS] = {0};
-        unsigned char tmp_dir[XMI_MAX_DIMS] = {0};
         unsigned char tmp_torus_link[XMI_MAX_DIMS] = {0};
 
         XMI::Topology tmp;
-        xmi_coord_t tmp_low, tmp_high;
+        xmi_coord_t tmp_low, tmp_high, tmp_ref;
         xmi_coord_t low, high;
 
-	CCMI_assert(topology->size() != 0);
+        ///? we're creating topology? CCMI_assert(topology->size() != 0);
         low = _self_coord;
         high = _self_coord;
 
-	for (i = _start_phase; i < (int) (_start_phase + _nphases); i++)
+        for (i = _start_phase; i < (int) (_start_phase + _nphases); i++)
         {
           getDstTopology(i, &tmp);
 
           if (tmp.size())
           {
-            tmp.getAxialOrientation(&tmp_torus_link[0]);
-            tmp.getAxialDirs(&tmp_dir[0]);
+            // Get the axial members
+            xmi_result_t result = tmp.axial(&tmp_low, &tmp_high,
+                                             &tmp_ref,
+                                             tmp_torus_link);
 
-            // now get the low and high coords of this axial, -1 means I dont
-            // care about which axis
-            tmp.getAxialEndCoords(&tmp_low, &tmp_high, -1);
+            XMI_assert(result == XMI_SUCCESS);
 
             // now add this topology to the union
             for (j = 0; j < (int) _ndims; j++)
             {
-              dir[j] |= tmp_dir[j];
               torus_link[j] |= tmp_torus_link[j];
               low.net_coord(j) = MIN(low.net_coord(j), tmp_low.net_coord(j));
               high.net_coord(j) = MAX(high.net_coord(j), tmp_high.net_coord(j));
             }
 
             // make an axial topology
-            new (topology) XMI::Topology(&low, &high, &_self_coord, &dir[0],
+            new (topology) XMI::Topology(&low, &high, &_self_coord,
                                          &torus_link[0]);
 
             return XMI_SUCCESS;
           }
-	}
+        }
         return XMI_ERROR;
       }
 #endif
+
