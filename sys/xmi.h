@@ -3348,27 +3348,27 @@ extern "C"
    * This enum contains ALL possible attributes for all hardware
    */
   typedef enum {
-    /* Attribute            Init / Query / Update                                              */
-    XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task (AKA "rank")           */
-    XMI_NUM_TASKS,       /**<  Q  : size_t            : Total number of tasks                  */
-    XMI_NUM_CONTEXTS,    /**<  Q  : size_t            : The maximum number of contexts allowed on this process */
-    XMI_CONST_CONTEXTS,  /**<  Q  : size_t            : All processes will return the same XMI_NUM_CONTEXTS */
-    XMI_CLOCK_MHZ,       /**<  Q  : size_t            : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
-    XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
-    XMI_WTICK,           /**<  Q  : double            : This has the same definition as MPI_Wtick(). */
-    XMI_MEM_SIZE,        /**<  Q  : size_t            : Size of the core main memory, in units of 1024^2 Bytes    */
-    XMI_SEND_IMMEDIATE_MAX, /**< Q : size_t           : Maximum number of bytes that can be transfered with the XMI_Send_immediate() function. */
-    XMI_RECV_IMMEDIATE_MAX, /**< Q : size_t           : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
-    XMI_PROCESSOR_NAME,  /**<  Q  : char[]            : A unique name string for the calling node. */
-    XMI_PROCESSOR_NAME_SIZE,/**<Q : size_t            : The size of the unique name string     */
-    XMI_DISPATCH_ID_MAX, /**<  Q  : size_t            : Maximum allowed dispatch id, see XMI_Dispatch_set() */
+    /* Attribute            Query / Update                                 */
+    XMI_TASK_ID,            /**< Q : size_t : ID of this task (AKA "rank") */
+    XMI_NUM_TASKS,          /**< Q : size_t : Total number of tasks        */
+    XMI_NUM_CONTEXTS,       /**< Q : size_t : The maximum number of contexts allowed on this process */
+    XMI_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same XMI_NUM_CONTEXTS */
+    XMI_CLOCK_MHZ,          /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
+    XMI_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
+    XMI_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
+    XMI_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
+    XMI_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the XMI_Send_immediate() function. */
+    XMI_RECV_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
+    XMI_PROCESSOR_NAME,     /**< Q : char[] : A unique name string for the calling process, and should be suitable for use by
+                                              MPI_Get_processor_name(). The storage should *not* be freed by the caller. */
+    XMI_DISPATCH_ID_MAX,    /**< Q : size_t : Maximum allowed dispatch id, see XMI_Dispatch_set() */
   } xmi_attribute_name_t;
 
   typedef union
   {
-    size_t   intval;
-    double   doubleval;
-    char   * chararray;
+    size_t      intval;
+    double      doubleval;
+    const char* chararray;
   } xmi_attribute_value_t;
 
 #define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */

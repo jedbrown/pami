@@ -199,10 +199,6 @@ namespace XMI
                   result = XMI_SUCCESS;
               }
               break;
-            case XMI_PROCESSOR_NAME_SIZE:
-              configuration->value.intval = 128;
-              result = XMI_SUCCESS;
-              break;
             case XMI_MEM_SIZE:
             default:
               break;
