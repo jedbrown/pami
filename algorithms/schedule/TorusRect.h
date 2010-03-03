@@ -391,11 +391,27 @@ namespace CCMI
       inline void
       CCMI::Schedule::TorusRect::setupLocal(XMI::Topology *topo)
       {
-        *topo = __global.topology_local;
-        /// \todo why build an axial topoology on the local cores?   You can't
-        /// multicast/deposit to them?  Why not leave it as the local topo type.
-        topo->convertTopology(XMI_AXIAL_TOPOLOGY);
+        size_t peers;
+        _map->nodePeers(peers);
+
+        // the cores dim is the first one after the physical torus dims
+        size_t core_dim = _map->torusDims();
+        bool match = true; // matches the root local dims?
+        for(size_t i = core_dim; i < _map->globalDims(); ++i)
+        {
+          if (_self_coord.net_coord(i) != _root_coord.net_coord(i))
+            match = false;
+        }
+        if(match)
+        {
+          *topo = __global.topology_local;
+          /// \todo why build an axial topoology on the local cores?   You can't
+          /// multicast/deposit to them?  Why not leave it as the local topo type.
+          /// topo->convertTopology(XMI_AXIAL_TOPOLOGY);
+        }
       }
+
+
 
       inline xmi_result_t
       CCMI::Schedule::TorusRect::getDstUnionTopology(XMI::Topology *topology)
