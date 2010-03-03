@@ -83,7 +83,6 @@ namespace Device {
 namespace BGP {
 
 inline CNAllreduceDevice *CNAllreduceDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_cnallreduce_dev.__create(client, num_ctx);
 	return &_g_cnallreduce_dev;
 }
 
@@ -106,7 +105,7 @@ class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduceMessage(Generic::GenericSubDevice *qs,
+	CNAllreduceMessage(GenericDeviceMessageQueue *qs,
 			xmi_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,
@@ -217,8 +216,6 @@ protected:
 		}
 		return XMI_EAGAIN;
 	}
-
-	friend class XMI::Device::Generic::GenericMessage;
 
 	unsigned _roles;
 	unsigned _nThreads;

@@ -36,7 +36,7 @@ namespace XMI
     class ShmemPacketMessage : public ShmemMessage
     {
       public:
-        inline ShmemPacketMessage (Generic::GenericSubDevice *QS,
+        inline ShmemPacketMessage (GenericDeviceMessageQueue *QS,
 				   xmi_event_function   fn,
                                    void               * cookie,
                                    T_Device           * device,
@@ -136,7 +136,7 @@ namespace XMI
     class ShmemMultiPacketMessage : public ShmemPacketMessage<T_Device>
     {
       public:
-        inline ShmemMultiPacketMessage (Generic::GenericSubDevice *QS,
+        inline ShmemMultiPacketMessage (GenericDeviceMessageQueue *QS,
 					xmi_event_function   fn,
                                         void               * cookie,
                                         T_Device           * device,

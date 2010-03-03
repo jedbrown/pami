@@ -66,7 +66,6 @@ namespace Device {
 namespace BGP {
 
 inline giDevice *giDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_gibarrier_dev.__create(client, num_ctx);
 	return &_g_gibarrier_dev;
 }
 
@@ -96,7 +95,7 @@ protected:
 	/// \brief  GI Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	giMessage(Generic::GenericSubDevice *GI_QS, xmi_multisync_t *msync) :
+	giMessage(GenericDeviceMessageQueue *GI_QS, xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
 				msync->client, msync->context)
 	{

@@ -33,7 +33,6 @@
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
-#include "components/devices/generic/SubDevice.h"
 #include "components/devices/FactoryInterface.h"
 #include "components/atomic/Mutex.h"
 #include "sys/xmi.h"
@@ -176,7 +175,9 @@ public:
 			if (msg->getStatus() == Done) {
 				++events;
 				__GenericQueue.deleteElem(msg);
-				nxt = static_cast<GenericSubDevice *>(msg->getQS())->__complete(msg);
+				GenericDeviceMessageQueue *qs = msg->getQS();
+				qs->dequeue(); // assert return == msg
+				nxt = (XMI::Device::Generic::GenericMessage *)qs->peek();
 				if (nxt) nxt->postNext(true); // virtual function
 				msg->executeCallback(__context);
 			}

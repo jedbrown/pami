@@ -63,7 +63,7 @@ class CNAllreduceShortMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		LOCAL_ROLE = (1 << 2), // local-only work
 	};
 public
-	CNAllreduceShortMessage(Generic::GenericSubDevice &qs,
+	CNAllreduceShortMessage(GenericDeviceMessageQueue &qs,
 			xmi_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,

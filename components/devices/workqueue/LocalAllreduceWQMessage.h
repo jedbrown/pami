@@ -49,7 +49,6 @@ namespace XMI {
 namespace Device {
 
 inline LocalAllreduceWQDevice *LocalAllreduceWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_l_allreducewq_dev.__create(client, num_ctx);
 	return &_g_l_allreducewq_dev;
 }
 
@@ -88,7 +87,7 @@ public:
           /// \param[in] func         Math function to invoke to perform the reduction
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
-          inline LocalAllreduceWQMessage (Generic::GenericSubDevice      * device,
+          inline LocalAllreduceWQMessage (GenericDeviceMessageQueue      * device,
 					  xmi_multicombine_t *mcomb,
                                           XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,

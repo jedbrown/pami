@@ -99,6 +99,8 @@ public:
 	{
 	}
 
+	virtual ~CNDevice() {}
+
 	/**
 	 * \brief Tree Device Initialization
 	 *

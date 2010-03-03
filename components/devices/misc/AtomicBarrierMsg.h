@@ -73,7 +73,6 @@ namespace XMI {
 namespace Device {
 
 inline AtomicBarrierDev *AtomicBarrierDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_lmbarrier_dev.__create(client, num_ctx);
 	return &_g_lmbarrier_dev;
 }
 
@@ -100,7 +99,7 @@ public:
 protected:
 	friend class AtomicBarrierMdl<T_Barrier>;
 
-	AtomicBarrierMsg(Generic::GenericSubDevice *Generic_QS,
+	AtomicBarrierMsg(GenericDeviceMessageQueue *Generic_QS,
 		T_Barrier *barrier,
 		xmi_multisync_t *msync) :
 	XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,

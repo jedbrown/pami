@@ -22,27 +22,9 @@
 namespace XMI {
 namespace Device {
 namespace Generic {
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Base Class for Devices
-	//////////////////////////////////////////////////////////////////////
-	class BaseGenericDevice {
-	public:
-		//////////////////////////////////////////////////////////////////////
-		///  \brief Constructor
-		//////////////////////////////////////////////////////////////////////
-		BaseGenericDevice() {}
 
-		//////////////////////////////////////////////////////////////////
-		/// \brief Destructor
-		/// \todo fixme ... old destructor doesn't work with virtual classes.
-		//////////////////////////////////////////////////////////////////
-		virtual ~BaseGenericDevice() { }
+#warning remove components/devices/generic/BaseGenericDevice.h ?
 
-		/// NOTE: This is required to make "C" programs link successfully with virtual destructors
-		inline void operator delete(void *p) { }
-
-	protected:
-	}; // class BaseGenericDevice
 }; // namespace Generic
 }; // namespace Device
 }; // namespace XMI

@@ -49,7 +49,6 @@ namespace XMI {
 namespace Device {
 
 inline LocalBcastWQDevice *LocalBcastWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_l_bcastwq_dev.__create(client, num_ctx);
 	return &_g_l_bcastwq_dev;
 }
 
@@ -80,7 +79,7 @@ public:
           /// \param[in] consumers    Number of consumers that will recieve the
           ///                         broadcast buffer
           ///
-          inline LocalBcastWQMessage(Generic::GenericSubDevice *device,
+          inline LocalBcastWQMessage(GenericDeviceMessageQueue *device,
                                       xmi_multicast_t *mcast,
                                       XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole) :

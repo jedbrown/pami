@@ -9,7 +9,6 @@
 #ifndef __components_devices_generic_SubDeviceSuppt_h__
 #define __components_devices_generic_SubDeviceSuppt_h__
 
-#include "components/devices/generic/SubDevice.h"
 #include "components/devices/generic/Device.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -34,16 +33,16 @@ namespace Generic {
 /// the generic device can run the __complete() method on it.
 ///
 /// An alternative is that the actual device might simply add a
-/// GenericSubDevice element to each of it's FIFO objects (instead of
+/// GenericDeviceMessageQueue element to each of it's FIFO objects (instead of
 /// the simple sendQ). It would still need to ensure that the Message
-/// contained a reference to that GenericSubDevice object in it's 'QS'.
+/// contained a reference to that GenericDeviceMessageQueue object in it's 'QS'.
 ///
 template <class T_Thread,int N_Threads,bool Use_Queue>
-class MultiSendQSubDevice : public GenericSubDevice {
+class MultiSendQSubDevice : public GenericDeviceMessageQueue {
 	static const int NUM_THREADS = N_Threads;
 public:
 	MultiSendQSubDevice() :
-	GenericSubDevice() {
+	GenericDeviceMessageQueue() {
 		// There must be at least one queue, since every message
 		// requires a valid _QS from which to operate.
 		// However, a device/message may not actually queue
@@ -51,9 +50,6 @@ public:
 		for (int y = 0; y < N_Threads; ++y) {
 			new (&_threads[y]) T_Thread();
 		}
-	}
-
-	inline void __create(size_t client, size_t num_ctx) {
 	}
 
 	// may be overridden by child class... Context calls using child class.
@@ -84,7 +80,7 @@ public:
 		return _generics[client];
 	}
 
-	inline XMI::Device::Generic::GenericSubDevice *getQS() {
+	inline GenericDeviceMessageQueue *getQS() {
 		return this;
 	}
 
@@ -133,7 +129,7 @@ public:
 
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
-		// GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		// GenericDeviceMessageQueue *qs = (GenericDeviceMessageQueue *)msg->getQS();
 		// the above would allow an implementation to vary where the queue is...
 
 		// assert(qs == this);
@@ -169,16 +165,18 @@ protected:
 ///
 /// Supports only one active message at a time.
 ///
-class CommonQueueSubDevice : public GenericSubDevice {
+class CommonQueueSubDevice : public GenericDeviceMessageQueue {
 	#define ATOMIC_BUF_SIZE	16
 
 public:
 
 	CommonQueueSubDevice() :
-	GenericSubDevice(),
+	GenericDeviceMessageQueue(),
 	_dispatch_id(0)
 	{
 	}
+
+	virtual ~CommonQueueSubDevice() {}
 
 	/// \brief returns a unique ID relative to this common sub-device
 	///
@@ -224,11 +222,7 @@ public:
 		if (contextId == 0) {
 			_generics[client] = devices;
 		}
-		return ___init(sd, client, contextId);
-	}
-
-	inline void __create(size_t client, size_t num_ctx) {
-		___create(client, num_ctx);
+		return XMI_SUCCESS;
 	}
 
 	/// \brief Reset for threads prior to being re-used.
@@ -297,7 +291,7 @@ public:
 	///
 	template <class T_Message, class T_Thread>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
-		// GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		// GenericDeviceMessageQueue *qs = (GenericDeviceMessageQueue *)msg->getQS();
 		// assert(qs == this);
 
 		bool first = (peek() == NULL);
@@ -331,13 +325,12 @@ private:
 /// and so we must have the _threads[] array here, where we know the exact Thread type.
 ///
 template <class T_CommonDevice, class T_Thread, int N_Threads>
-class SharedQueueSubDevice : public BaseGenericDevice {
+class SharedQueueSubDevice {
 	static const int NUM_THREADS = N_Threads;
 public:
 	// Note, 'common' must have been constructed but otherwised untouched.
 	// The first SharedQueueSubDevice to encounter it will initialize it.
 	SharedQueueSubDevice(T_CommonDevice *common) :
-	BaseGenericDevice(),
 	_common(common)
 	{
 	}
@@ -371,10 +364,6 @@ public:
 
 	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
 		return _common->getGenerics(client);
-	}
-
-	inline void __create(size_t client, size_t num_ctx) {
-		_common->__create(client, num_ctx);
 	}
 
 	inline int advance(size_t client, size_t context) { return 0; }

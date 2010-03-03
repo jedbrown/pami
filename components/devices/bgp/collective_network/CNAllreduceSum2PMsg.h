@@ -125,7 +125,6 @@ namespace Device {
 namespace BGP {
 
 inline CNAllreduce2PDevice *CNAllreduce2PDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_cnallreduce2p_dev.__create(client, num_ctx);
 	return &_g_cnallreduce2p_dev;
 }
 
@@ -155,7 +154,7 @@ class CNAllreduce2PMessage : public XMI::Device::BGP::BaseGenericCN2PMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNAllreduce2PMessage(Generic::GenericSubDevice *qs,
+	CNAllreduce2PMessage(GenericDeviceMessageQueue *qs,
 		xmi_multicombine_t *mcomb,
 		XMI::Device::WorkQueue::WorkQueue &ewq,
 		XMI::Device::WorkQueue::WorkQueue &mwq,
@@ -298,7 +297,6 @@ CollectiveRawReceivePacketNoHdrNoStore(VIRTUAL_CHANNEL);
 
 	inline void __completeThread(CNAllreduce2PThread *thr);
 
-	friend class XMI::Device::Generic::GenericMessage;
 private:
 	unsigned _roles;
 	unsigned _offx;

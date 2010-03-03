@@ -11,6 +11,4 @@
 
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
-@LIBNAME@-""-GENERICDEVICE_SOURCES = Device.cc
-DEVICENAME	= @LIBNAME@-""-GENERICDEVICE
 include @abs_top_builddir@/Build.rules

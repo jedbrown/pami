@@ -49,7 +49,6 @@ namespace XMI {
 namespace Device {
 
 inline WQRingBcastDev *WQRingBcastDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_wqbcast_dev.__create(client, num_ctx);
 	return &_g_wqbcast_dev;
 }
 
@@ -77,7 +76,7 @@ private:
 		NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
 	};
 public:
-	WQRingBcastMsg(Generic::GenericSubDevice *Generic_QS,
+	WQRingBcastMsg(GenericDeviceMessageQueue *Generic_QS,
 		xmi_multicast_t *mcast,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,

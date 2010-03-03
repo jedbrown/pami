@@ -11,7 +11,6 @@
 #define __components_devices_generic_Message_h__
 
 #include "sys/xmi.h"
-#include "components/devices/generic/BaseGenericDevice.h"
 #include "GenericDevicePlatform.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -53,6 +52,34 @@ enum MessageStatus {
 	Done			///< status for completed message
 };
 
+namespace Generic {
+
+// This is a bit klunky, but until templates allow methods as parameters...
+
+/// \brief Macro for declaring a routine as an advance routine for a thread
+///
+/// Creates a static function named 'method' that may be used for a
+/// thread's advance routine (thr->setAdv('method')). Assumes there is
+/// also an inlined function named __'method' which contains the actual
+/// advance code for the thread(s).
+///
+/// \param[in] method	Basename of method used to advance thread(s)
+/// \param[in] message	Class of message
+/// \param[in] thread	Class of thread
+///
+#define DECL_ADVANCE_ROUTINE(method,message,thread)			\
+static xmi_result_t method(xmi_context_t context, void *t) {	\
+	thread *thr = (thread *)t;				\
+	message *msg = (message *)thr->getMsg();		\
+	return msg->__##method(thr);				\
+}
+#define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
+static xmi_result_t method(xmi_context_t context, void *t) {	\
+	thread *thr = (thread *)t;				\
+	message *msg = (message *)thr->getMsg();		\
+	return msg->__##method(context, thr);			\
+}
+
 /// \brief Base Class for Messages
 ///
 /// Messages must be able to exist on two queues at the same time.
@@ -60,12 +87,12 @@ enum MessageStatus {
 /// In fact, this class is templatized by number of queue elements and thus
 /// is general for any number of queues.
 ///
-class MultiQueueMessage : public GenericDeviceMessageQueueElem {
+class GenericMessage : public GenericDeviceMessageQueueElem {
 public:
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
-	MultiQueueMessage(Device::Generic::BaseGenericDevice *QS, xmi_callback_t cb,
+	GenericMessage(GenericDeviceMessageQueue *QS, xmi_callback_t cb,
 						size_t client, size_t context) :
 	GenericDeviceMessageQueueElem(),
 	_status(Uninitialized),
@@ -76,7 +103,7 @@ public:
 	{
 	}
 
-	virtual ~MultiQueueMessage() {}
+	virtual ~GenericMessage() {}
 
 	/// \brief get client associated with message
 	/// \return	client for message posting/completion
@@ -130,7 +157,7 @@ public:
 	/// \return	Reference to sub-device
 	/// \ingroup gendev_subdev_api
 	///
-	inline Device::Generic::BaseGenericDevice *getQS() { return _QS; }
+	inline GenericDeviceMessageQueue *getQS() { return _QS; }
 
 	/// \brief virtual method used to activate a message that was enqueued earlier
 	///
@@ -163,72 +190,10 @@ public:
 
 protected:
 	MessageStatus _status;
-	Device::Generic::BaseGenericDevice *_QS;
+	GenericDeviceMessageQueue *_QS;
 	size_t _client;
 	size_t _context;
 	xmi_callback_t _cb;
-}; /* class MultiQueueMessage */
-
-// still in namespace XMI::Device...
-namespace Generic {
-
-// This is a bit klunky, but until templates allow methods as parameters...
-/// \brief Macro for declaring a routine as an advance routine for a thread
-///
-/// Creates a static function named 'method' that may be used for a
-/// thread's advance routine (thr->setAdv('method')). Assumes there is
-/// also an inlined function named __'method' which contains the actual
-/// advance code for the thread(s).
-///
-/// \param[in] method	Basename of method used to advance thread(s)
-/// \param[in] message	Class of message
-/// \param[in] thread	Class of thread
-///
-#define DECL_ADVANCE_ROUTINE(method,message,thread)			\
-static xmi_result_t method(xmi_context_t context, void *t) {	\
-	thread *thr = (thread *)t;				\
-	message *msg = (message *)thr->getMsg();		\
-	return msg->__##method(thr);				\
-}
-#define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
-static xmi_result_t method(xmi_context_t context, void *t) {	\
-	thread *thr = (thread *)t;				\
-	message *msg = (message *)thr->getMsg();		\
-	return msg->__##method(context, thr);			\
-}
-
-/// \brief Message class used by the Generic Device
-///
-/// Generic Device allows messages to exist on two queues at the same time.
-/// One queue (1) is used by the generic device, the other (0) may be used as
-/// needed by the sub-device. Usage of queue 1 is in code in GenericDevice.h/Device.h
-///
-class GenericMessage : public MultiQueueMessage {
-
-public:
-	/// \brief  Generic Message constructor
-	///
-	/// Note: Generic_QS must be (inherit from) GenericSubDevice.
-	/// This is because Generic::Device will use the QS in order
-	/// to invoke the __complete() method when the message is Done,
-	/// and that is used to start any subsequent message(s) that
-	/// were waiting. This method is inlined for efficiency (especially
-	/// when the sub-device has no sendq or the queue is empty).
-	/// This means that it cannot be overridden and the object ('this')
-	/// must actually be the class that Generic::Device expects.
-	///
-	/// \param[in] Generic_QS	The subdevice containing the sendqueue(s)
-	/// \param[in] cb		Completion callback
-	/// \param[in] client		The client handle
-	/// \param[in] context		The (posting) context ID
-	///
-	GenericMessage(BaseGenericDevice *Generic_QS, xmi_callback_t cb,
-			size_t client, size_t context) :
-	MultiQueueMessage(Generic_QS, cb, client, context)
-	{
-	}
-
-protected:
 }; /* class GenericMessage */
 
 }; /* namespace Generic */

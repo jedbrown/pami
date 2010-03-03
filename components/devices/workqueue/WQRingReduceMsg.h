@@ -49,7 +49,6 @@ namespace XMI {
 namespace Device {
 
 inline WQRingReduceDev *WQRingReduceDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_wqreduce_dev.__create(client, num_ctx);
 	return &_g_wqreduce_dev;
 }
 
@@ -78,7 +77,7 @@ private:
 	};
 
 public:
-	WQRingReduceMsg(Generic::GenericSubDevice *Generic_QS,
+	WQRingReduceMsg(GenericDeviceMessageQueue *Generic_QS,
 		xmi_multicombine_t *mcomb,
 		XMI::PipeWorkQueue *iwq,
 		XMI::PipeWorkQueue *swq,

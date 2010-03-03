@@ -37,7 +37,7 @@ namespace XMI
     class ShmemDmaMessage : public ShmemMessage
     {
       public:
-        inline ShmemDmaMessage (Generic::GenericSubDevice *QS,
+        inline ShmemDmaMessage (GenericDeviceMessageQueue *QS,
 				xmi_event_function   fn,
                                 void               * cookie,
                                 T_Device           * device,

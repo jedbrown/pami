@@ -67,7 +67,6 @@ namespace Device {
 namespace BGP {
 
 inline CNBroadcastDevice *CNBroadcastDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	_g_cnbroadcast_dev.__create(client, num_ctx);
 	return &_g_cnbroadcast_dev;
 }
 
@@ -95,7 +94,7 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
 	};
 public:
-	CNBroadcastMessage(Generic::GenericSubDevice *qs,
+	CNBroadcastMessage(GenericDeviceMessageQueue *qs,
 			xmi_multicast_t *mcast,
 			size_t bytes,
 			bool doStore,
@@ -214,8 +213,6 @@ protected:
 		}
 		return XMI_EAGAIN;
 	}
-
-	friend class XMI::Device::Generic::GenericMessage;
 
 	bool _doData;
 	unsigned _roles;

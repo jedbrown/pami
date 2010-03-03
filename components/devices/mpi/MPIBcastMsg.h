@@ -70,7 +70,6 @@ namespace XMI
   {
 
 inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
-	_g_mpibcast_dev.__create(client, num_ctx, devices);
 	return &_g_mpibcast_dev;
 }
 
@@ -87,7 +86,7 @@ inline MPIBcastDev *MPIBcastDev::create(size_t client, size_t num_ctx, XMI::Devi
         NON_ROOT_ROLE = (1 << 1), // last role must be non-root(s)
       };
     public:
-      MPIBcastMsg(Generic::BaseGenericDevice *Generic_QS,
+      MPIBcastMsg(GenericDeviceMessageQueue *Generic_QS,
                   xmi_multicast_t *mcast) :
       XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
                                            mcast->client, mcast->context),

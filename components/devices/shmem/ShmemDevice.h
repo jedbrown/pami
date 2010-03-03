@@ -490,7 +490,7 @@ namespace XMI
         ///
         ///
         inline bool isSendQueueEmpty (size_t fnum);
-        inline XMI::Device::Generic::GenericSubDevice *getQS (size_t fnum);
+        inline GenericDeviceMessageQueue *getQS (size_t fnum);
 
         inline xmi_result_t init (size_t clientid, size_t contextid, xmi_client_t client, xmi_context_t context, SysDep * sysdep, XMI::Device::Generic::Device * progress);
 
@@ -578,7 +578,7 @@ namespace XMI
       return (__sendQ[fnum].size() == 0);
     }
     template <class T_Fifo>
-    inline XMI::Device::Generic::GenericSubDevice * ShmemDevice<T_Fifo>::getQS (size_t fnum)
+    inline GenericDeviceMessageQueue * ShmemDevice<T_Fifo>::getQS (size_t fnum)
     {
       return __sendQ[fnum].getQS();
     }

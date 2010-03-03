@@ -39,7 +39,7 @@ namespace XMI
     {
       public:
 
-        inline ShmemMessage (Generic::GenericSubDevice *QS,
+        inline ShmemMessage (GenericDeviceMessageQueue *QS,
 			     xmi_event_function   fn,
                              void               * cookie,
 			     size_t               contextid) :
@@ -63,7 +63,7 @@ namespace XMI
 
         static const size_t SHMEM_MESSAGE_METADATA_SIZE = 128;
 
-        inline ShmemMessage (Generic::GenericSubDevice *QS,
+        inline ShmemMessage (GenericDeviceMessageQueue *QS,
 			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
@@ -92,7 +92,7 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage(1) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len));
         };
 
-        inline ShmemMessage (Generic::GenericSubDevice *QS,
+        inline ShmemMessage (GenericDeviceMessageQueue *QS,
 			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
@@ -124,7 +124,7 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage(2) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len, _iov[1].iov_base, _iov[1].iov_len));
         };
 
-        inline ShmemMessage (Generic::GenericSubDevice *QS,
+        inline ShmemMessage (GenericDeviceMessageQueue *QS,
 			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
@@ -149,7 +149,7 @@ namespace XMI
         };
 
 
-        inline ShmemMessage (Generic::GenericSubDevice *QS,
+        inline ShmemMessage (GenericDeviceMessageQueue *QS,
 			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
@@ -170,7 +170,7 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage() .. _tiov = %zd, _niov = %zd, _nbytes = %zd\n", _tiov, _niov, _nbytes));
         };
 
-        inline ShmemMessage (Generic::GenericSubDevice *QS,
+        inline ShmemMessage (GenericDeviceMessageQueue *QS,
 			     xmi_event_function   fn,
                              void               * cookie,
                              Memregion          * local_memregion,
