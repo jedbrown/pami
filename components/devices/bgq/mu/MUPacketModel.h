@@ -208,7 +208,7 @@ namespace XMI
                                            struct iovec       * iov,
                                            size_t               niov)
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
       };
 
 

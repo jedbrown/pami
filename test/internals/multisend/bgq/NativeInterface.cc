@@ -20,6 +20,8 @@
 #include "components/devices/bgq/mu/MUMulticombineModel.h"
 #include "common/bgq/NativeInterface.h"
 
+#include <hwi/include/bqc/nd_500_dcr.h>
+
 #include <unistd.h>
 #ifndef TEST_BUF_SIZE
   #define TEST_BUF_SIZE	32
@@ -34,6 +36,30 @@ xmi_callback_t       _cb_done;
 const xmi_quad_t     _msginfo = {0,1,2,3};
 
 static int          _failed = 0;
+
+XMI::Topology dst_subtopology;
+
+size_t task_id;
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+#define mamboSleep(x) _mamboSleep(x, __LINE__)
+unsigned _mamboSleep(unsigned seconds, unsigned from)
+{
+  double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
+  if (__global.personality._is_mambo)
+  {
+    double start = XMI_Wtime (), d=0;
+    while (XMI_Wtime() < (start+dseconds))
+    {
+      for (int i=0; i<200000; ++i) ++d;
+      DBGv_FPRINTF((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,XMI_Wtime(),start+dseconds));
+    }
+  }
+  else
+    sleep(5);
+  return 0;
+}
+#endif
 
 void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
                            unsigned              msgcount,
@@ -54,6 +80,7 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
   XMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
   XMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
   XMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
+  XMI_assertf(dst_subtopology.isRankMember(task_id),"!isRankMember(%zd)\n",task_id);
 
   if (connection_id == 1) // no data being sent
   {
@@ -64,8 +91,8 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
       fprintf(stderr, "<%3.3d>PASS: msgdata received with no data\n",__LINE__);
     else
     {
-        fprintf(stderr, "<%3.3d>FAIL: no data expected\n",__LINE__);
-        _failed = 1;
+      fprintf(stderr, "<%3.3d>FAIL: no data expected\n",__LINE__);
+      _failed = 1;
     }
   }
   else
@@ -96,10 +123,8 @@ int main(int argc, char ** argv)
   xmi_client_t client = NULL;
   xmi_context_t context = NULL;
   xmi_result_t status = XMI_ERROR;
-
-  size_t task_id = __global.mapping.task();
-  fprintf(stderr,"HELLO from task %zd\n",task_id);
-
+  task_id = __global.mapping.task();
+  DBG_FPRINTF((stderr, "%s:%s: task %zd starting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
   size_t                     dispatch = 2;
 
   size_t  bytesConsumed = 0,  bytesProduced = 0;
@@ -113,9 +138,9 @@ int main(int argc, char ** argv)
            context, 0);
 
   XMI::BGQNativeInterface<XMI::Device::MU::MUCollDevice,
-                          XMI::Device::MU::MUMulticastModel,
-                          XMI::Device::MU::MUMultisyncModel,
-                          XMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, client, context, 0);
+  XMI::Device::MU::MUMulticastModel,
+  XMI::Device::MU::MUMultisyncModel,
+  XMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, client, context, 0);
 
   uint8_t mcast_state[XMI::Device::MU::MUMulticastModel::sizeof_msg];
 
@@ -126,26 +151,46 @@ int main(int argc, char ** argv)
   _cb_done.clientdata = &_doneCountdown;
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  XMI::Topology topology_global = __global.topology_global;
-  topology_global.convertTopology(XMI_LIST_TOPOLOGY);
+  XMI::Topology topology_global_list = __global.topology_global;
+  topology_global_list.convertTopology(XMI_LIST_TOPOLOGY);
+
+  XMI::Topology topology_global_coord = __global.topology_global;
+  topology_global_coord.convertTopology(XMI_COORD_TOPOLOGY);
+
+  topology_global_coord.subTopologyNthGlobal(&dst_subtopology, 0); //0th rank on each node
+
+  if (task_id == 0)
+    DBG_FPRINTF((stderr, "%s: topology_global_list type %d and size %zd\n",__PRETTY_FUNCTION__, topology_global_list.type(), topology_global_list.size()));
+    for (size_t i=0;i<topology_global_list.size();++i)
+    {
+      DBG_FPRINTF((stderr, "%s: topology_global_list index %zd is task %d\n",__PRETTY_FUNCTION__, i, topology_global_list.index2Rank(i)));
+    }
+    DBG_FPRINTF((stderr, "%s: topology_global_coord type %d and size %zd\n",__PRETTY_FUNCTION__, topology_global_coord.type(), topology_global_coord.size()));
+    for (size_t i=0;i<topology_global_coord.size();++i)
+    {
+      DBG_FPRINTF((stderr, "%s: topology_global_coord index %zd is task %d\n",__PRETTY_FUNCTION__, i, topology_global_coord.index2Rank(i)));
+    }
+    DBG_FPRINTF((stderr, "%s: dst subtopology type %d and size %zd\n",__PRETTY_FUNCTION__, dst_subtopology.type(), dst_subtopology.size()));
+    for (size_t i=0;i<dst_subtopology.size();++i)
+    {
+      DBG_FPRINTF((stderr, "%s: dst subtopology index %zd is task %d\n",__PRETTY_FUNCTION__, i, dst_subtopology.index2Rank(i)));
+    }
+  if (dst_subtopology.isRankMember(task_id))
+    DBG_FPRINTF((stderr, "%s: task %zd is dst member\n",__PRETTY_FUNCTION__, task_id));
+  else
+    DBG_FPRINTF((stderr, "%s: task %zd is not dst member\n",__PRETTY_FUNCTION__, task_id));
+
 
   XMI::Topology topology_local  = __global.topology_local;
   topology_local.convertTopology(XMI_LIST_TOPOLOGY);
 
   // global topology variables
-  xmi_task_t  gRoot    = topology_global.index2Rank(0);
-  xmi_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
-  size_t  gSize    = topology_global.size();
+  xmi_task_t  gRoot    = topology_global_list.index2Rank(0);
+  xmi_task_t *gRankList=NULL; topology_global_list.rankList(&gRankList);
 
   XMI::Topology src_participants;
-  XMI::Topology dst_participants;
 
   new (&src_participants) XMI::Topology(gRoot); // global root
-  new (&dst_participants) XMI::Topology(gRankList, gSize); // comm_world
-
-// ------------------------------------------------------------------------
-// Test multicombine
-// ------------------------------------------------------------------------
 
   xmi_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
@@ -157,7 +202,7 @@ int main(int argc, char ** argv)
     mcast.msginfo = &_msginfo;
     mcast.msgcount = 1;
     mcast.src_participants = (xmi_topology_t *)&src_participants;
-    mcast.dst_participants = (xmi_topology_t *)&dst_participants;
+    mcast.dst_participants = (xmi_topology_t *)&dst_subtopology; // 0th rank on each node
 
     mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
     mcast.dst = (xmi_pipeworkqueue_t *) _buffer.dstPwq();
@@ -173,20 +218,38 @@ int main(int argc, char ** argv)
 // simple mcast root to all
 // ------------------------------------------------------------------------
 
-  _doneCountdown = 1;
+  if (dst_subtopology.isRankMember(task_id))
+    _doneCountdown = 1;  // advance until we receive the mcast
+  else
+    _doneCountdown = 10; // advances an arbitray N times - not participating
+
   //sleep(5); // instead of syncing
 
   if (gRoot == task_id)
   {
     _buffer.reset(true); // isRoot = true
 
+    DBG_FPRINTF((stderr, "%s:%s root mcast\n",__FILE__,__PRETTY_FUNCTION__));
     status = nativeInterface.multicast(&mcast); // this version of ni allocates/frees our request storage for us.
   }
 
+  if (dst_subtopology.isRankMember(task_id)) ;
+  else
+  {
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+    mamboSleep(10);
+#else
+    sleep(1);
+#endif
+
+  }
+
+  DBG_FPRINTF((stderr,"%s:before advance\n",__PRETTY_FUNCTION__));
   while (_doneCountdown)
   {
     mu.advance();
-
+    if (dst_subtopology.isRankMember(task_id)) ;
+    else --_doneCountdown; 
   }
 
   bytesConsumed = 0,
@@ -207,7 +270,7 @@ int main(int argc, char ** argv)
     else
       fprintf(stderr, "<%3.3d>PASS bytesConsumed = %zu, bytesProduced = %zu\n",__LINE__, bytesConsumed, bytesProduced);
   }
-  else
+  else if (dst_subtopology.isRankMember(task_id))
   {
     _buffer.validate(bytesConsumed,
                      bytesProduced);
@@ -221,7 +284,13 @@ int main(int argc, char ** argv)
       fprintf(stderr, "<%3.3d>PASS bytesConsumed = %zu, bytesProduced = %zu\n",__LINE__, bytesConsumed, bytesProduced);
   }
 
-// ------------------------------------------------------------------------
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  mamboSleep(5);
+#else
+  sleep(5);
+#endif
+  DBG_FPRINTF((stderr, "%s:%s: task %zd exiting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
+  return 0;
 // ------------------------------------------------------------------------
 // simple mcast root to all
 // ------------------------------------------------------------------------
@@ -300,8 +369,8 @@ int main(int argc, char ** argv)
   }
   if (_countNoData != 1)
   {
-      fprintf(stderr,"<%3.3d>FAIL didn't receive expected metadata - received %d\n",__LINE__, _countNoData);
-      _failed = 1;
+    fprintf(stderr,"<%3.3d>FAIL didn't receive expected metadata - received %d\n",__LINE__, _countNoData);
+    _failed = 1;
   }
   else fprintf(stderr,"<%3.3d>PASS received %d expected metadata\n",__LINE__,_countNoData);
 
@@ -331,8 +400,8 @@ int main(int argc, char ** argv)
   }
   if (_countNoData != 1)
   {
-      fprintf(stderr,"<%3.3d>FAIL didn't receive expected metadata - received %d\n",__LINE__, _countNoData);
-      _failed = 1;
+    fprintf(stderr,"<%3.3d>FAIL didn't receive expected metadata - received %d\n",__LINE__, _countNoData);
+    _failed = 1;
   }
   else fprintf(stderr,"<%3.3d>PASS received %d expected metadata\n",__LINE__,_countNoData);
 
@@ -346,10 +415,10 @@ int main(int argc, char ** argv)
   uint8_t msync_state[XMI::Device::MU::MUMultisyncModel::sizeof_msg];
 
   multisync.connection_id = 0xB; // arbitrary
-  multisync.participants = (xmi_topology_t *)&topology_global;
+  multisync.participants = (xmi_topology_t *)&topology_global_list;
 
-  multisync.client = client;	// client ID
-  multisync.context = 0;	// context ID
+  multisync.client = client;  // client ID
+  multisync.context = 0;  // context ID
   multisync.roles = -1;
 
   multisync.cb_done = _cb_done;
@@ -362,7 +431,7 @@ int main(int argc, char ** argv)
 
   status = nativeInterface.multisync(msync_state, &multisync); // this version uses our request storage directly.
 
-  while(_doneCountdown)
+  while (_doneCountdown)
   {
     mu.advance();
   }
@@ -377,15 +446,15 @@ int main(int argc, char ** argv)
   memset(&multicombine, 0x00, sizeof(multicombine));
 
   multicombine.connection_id = 0xB0BC; // arbitrary
-  multicombine.data_participants = (xmi_topology_t *)&topology_global;
-  multicombine.results_participants = (xmi_topology_t *)&topology_global;
+  multicombine.data_participants = (xmi_topology_t *)&topology_global_list;
+  multicombine.results_participants = (xmi_topology_t *)&topology_global_list;
   multicombine.count = TEST_BUF_SIZE/sizeof(unsigned);
   multicombine.data = (xmi_pipeworkqueue_t*) _buffer.srcPwq();
   multicombine.dtype = XMI_UNSIGNED_INT;
   multicombine.optor = XMI_MIN;
   multicombine.results = (xmi_pipeworkqueue_t*) _buffer.dstPwq();
-  multicombine.client = client;	// client ID
-  multicombine.context = 0;	// context ID
+  multicombine.client = client; // client ID
+  multicombine.context = 0; // context ID
   multicombine.roles = -1;
 
   multicombine.cb_done = _cb_done;
@@ -404,7 +473,7 @@ int main(int argc, char ** argv)
 
   status = nativeInterface.multicombine(mcomb_state, &multicombine); // this version uses our request storage directly.
 
-  while(_doneCountdown)
+  while (_doneCountdown)
   {
     mu.advance();
   }
@@ -416,8 +485,8 @@ int main(int argc, char ** argv)
                    bytesProduced,
                    true,   // isRoot = true
                    true);  // isDest = true
-  if((bytesConsumed != TEST_BUF_SIZE) ||
-     (bytesProduced != TEST_BUF_SIZE))
+  if ((bytesConsumed != TEST_BUF_SIZE) ||
+      (bytesProduced != TEST_BUF_SIZE))
   {
     fprintf(stderr, "<%3.3d>FAIL bytesConsumed = %zu, bytesProduced = %zu\n",__LINE__, bytesConsumed, bytesProduced);
     _failed = 1;
@@ -428,7 +497,7 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 // simple multicombine root to all with one contributing '0' to the MIN allreduce
 // ------------------------------------------------------------------------
-  if(task_id == topology_global.index2Rank(0))
+  if (task_id == topology_global_list.index2Rank(0))
   {
     _buffer.resetMIN0(true); // isRoot = true so set to 0's
   }
@@ -442,7 +511,7 @@ int main(int argc, char ** argv)
 
   status = nativeInterface.multicombine(mcomb_state, &multicombine); // this version uses our request storage directly.
 
-  while(_doneCountdown)
+  while (_doneCountdown)
   {
     mu.advance();
   }
@@ -451,11 +520,11 @@ int main(int argc, char ** argv)
   bytesProduced = 0;
 
   _buffer.validateMIN0(bytesConsumed,
-                   bytesProduced,
-                   true,   // isRoot = true
-                   true);  // isDest = true
-  if((bytesConsumed != TEST_BUF_SIZE) ||
-     (bytesProduced != TEST_BUF_SIZE))
+                       bytesProduced,
+                       true,   // isRoot = true
+                       true);  // isDest = true
+  if ((bytesConsumed != TEST_BUF_SIZE) ||
+      (bytesProduced != TEST_BUF_SIZE))
   {
     fprintf(stderr, "<%3.3d>FAIL bytesConsumed = %zu, bytesProduced = %zu\n",__LINE__, bytesConsumed, bytesProduced);
     _failed = 1;
@@ -463,9 +532,9 @@ int main(int argc, char ** argv)
   else
     fprintf(stderr, "<%3.3d>PASS bytesConsumed = %zu, bytesProduced = %zu\n",__LINE__, bytesConsumed, bytesProduced);
 
-  if(_failed)
+  if (_failed)
     fprintf(stderr,"FAIL\n");
   else fprintf(stderr,"PASS\n");
   return _failed;
-;
+  ;
 }

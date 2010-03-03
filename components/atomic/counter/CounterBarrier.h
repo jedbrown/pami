@@ -100,8 +100,8 @@ namespace XMI
 		_status = XMI::Atomic::Interface::Initialized;
 		return XMI::Atomic::Interface::Done;
 	}
-        inline void * returnBarrier_impl() { XMI_abort(); }
-        inline void dump_impl(char *string) { XMI_abort(); }
+        inline void * returnBarrier_impl() { XMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
+        inline void dump_impl(char *string) { XMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
 
       protected:
 

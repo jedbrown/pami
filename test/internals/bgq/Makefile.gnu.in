@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = NativeInterface.${EXTENSION}
+APPS            = personality.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
@@ -43,7 +43,7 @@ runmambo:
 	BG_SHAREDMEMSIZE=1 BG_PROCESSESPERNODE=4 @BGFLOOR@/scripts/runfctest.sh \
 	--ttype cnk \
 	--parmstest ${VPATH}/test.parms \
-	--program NativeInterface.cnk \
+	--program personality.cnk \
 	--svchost ${VPATH}/pers.svchost \
 	--numcores 16 \
 	--script runMambo \
@@ -51,7 +51,7 @@ runmambo:
 
 #hack to run multi-mambo.  First runmambo and runmulti-mambo will find/cp the elf and pers files
 runmulti-mambo:
-	find ./ -name "NativeInterface.cnk.t1.pers"  -exec cp {} ./NativeInterface.cnk.pers \;
+	find ./ -name "personality.cnk.t1.pers"  -exec cp {} ./personality.cnk.pers \;
 	find ./ -name "bgq_firmware.elf" -exec cp {} ./firmware.elf \;
 	cp $(VPATH)/mmambo.tcl .
-	mpirun -np 4 -x MAMBO_BGQ_MAPFILE=$(VPATH)/map.txt /bgsys/bgq/drivers/x86_64.multi-mambo/bin/systemsim-bgq -n -f mmambo.tcl
+	mpirun -np 2 -x MAMBO_BGQ_MAPFILE=$(VPATH)/map.txt /bgsys/bgq/drivers/x86_64.multi-mambo/bin/systemsim-bgq -n -f mmambo.tcl

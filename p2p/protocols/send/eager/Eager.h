@@ -91,7 +91,7 @@ namespace XMI
           /// \note This is required to make "C" programs link successfully with virtual destructors
           inline void operator delete(void * p)
           {
-            XMI_abort();
+            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
           }
 
           ///

@@ -36,7 +36,7 @@
 #include <kernel/process.h>
 
 
-#define FAKE_PERSONALITY
+//#define FAKE_PERSONALITY
 
 namespace XMI
 {
@@ -259,6 +259,11 @@ namespace XMI
         bool   _torusC;
         bool   _torusD;
         bool   _torusE;
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+    public:
+        bool   _is_mambo; // Indicates whether mambo is being used 
+    protected:
+#endif
 
         size_t _cores;
         size_t _hwthreads;

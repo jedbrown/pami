@@ -299,7 +299,7 @@ namespace XMI
                                      size_t               bytes)
         {
           if (! Memregion::shared_address_write_supported)
-            XMI_abort();
+            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
 
           size_t peer;
           XMI::Interface::Mapping::nodeaddr_t address;
@@ -340,7 +340,7 @@ namespace XMI
                                      size_t               bytes)
         {
           if (! Memregion::shared_address_read_supported)
-            XMI_abort();
+            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
 
           size_t peer;
           XMI::Interface::Mapping::nodeaddr_t address;

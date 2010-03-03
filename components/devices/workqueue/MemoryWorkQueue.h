@@ -134,7 +134,7 @@ namespace XMI
 
           inline size_t bytesAvailableToProduce (unsigned producer)
           {
-            XMI_abort();
+            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
             return 0;
           }
 

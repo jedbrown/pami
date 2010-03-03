@@ -20,7 +20,8 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 
-#define DBG_FPRINTF(x) //fprintf x
+#define DBG_FPRINTF(x) fprintf x
+#define DBGv_FPRINTF(x) //fprintf x // verbose fprintf
 #define DBGF_FUNCTIONNAME DBG_FPRINTF((stderr,"%.*s\n",_function_name_len(__PRETTY_FUNCTION__),_function_name(__PRETTY_FUNCTION__)))
 
 namespace XMI

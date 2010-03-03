@@ -6,8 +6,8 @@
 # use mambo floor 
 set my_mambo_dir /bgsys/bgq/drivers/x86_64.multi-mambo/
 #set my_app_floor 
-set my_app       NativeInterface.cnk
-set my_pers      NativeInterface.cnk.pers
+set my_app       personality.cnk
+set my_pers      personality.cnk.pers
 set my_ttype     cnk
 set my_num_cores 16
 set my_firmware  firmware.elf

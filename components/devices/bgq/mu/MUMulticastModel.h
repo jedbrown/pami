@@ -236,6 +236,9 @@ namespace XMI
                    payload, length);
         }
 
+        TRACE((stderr, "<%p>:MUMulticastModel::postMulticast_impl() dispatch %zd, connection_id %#X exit\n",
+               this, mcast->dispatch, mcast->connection_id));
+
         return XMI_SUCCESS;
 
       }; // XMI::Device::MU::MUMulticastModel::postMulticast_impl
@@ -369,6 +372,8 @@ namespace XMI
           // space available in the injection fifo.
           _device.addToSendQ ((QueueElem *) &message);
         }
+
+        TRACE((stderr, "<%p>:MUMulticastModel::postHeader() exit\n", this));
 
         return true;
 

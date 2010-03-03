@@ -470,7 +470,7 @@ namespace XMI
             _recvQ.deleteElem(receive_state);
           }
         }
-        else XMI_abort();  /// \todo toss unwanted data?
+        else XMI_abortf("%s<%d>\n",__FILE__,__LINE__);  /// \todo toss unwanted data?
 
         return ;
       }; // XMI::Device::MU::MUMulticombineModel::processData
