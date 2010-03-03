@@ -43,20 +43,14 @@ namespace XMI
       {
       }
 
-	static inline MPISyncDev *create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices);
+	class Factory : public Interface::FactoryInterface<Factory,MPISyncDev,Generic::Device> {
+	public:
+		static inline MPISyncDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+		static inline xmi_result_t init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline size_t advance_impl(MPISyncDev *devs, size_t client, size_t context);
+		static MPISyncDev &getDevice_impl(MPISyncDev *devs, size_t client, size_t context);
+	}; // class Factory
 
-      /// \brief Initialization for the subdevice
-      ///
-      /// \param[in] sd		SysDep object (not used?)
-      /// \param[in] devices		Array of Generic::Device objects for client
-      /// \param[in] contextId	Id of current context (index into devices[])
-      /// \ingroup gendev_subdev_api
-      ///
-      inline void init(XMI::SysDep *sd, size_t clientId, size_t num_ctx, xmi_context_t ctx, size_t contextId)
-      {
-        MPI_Comm_dup(MPI_COMM_WORLD,&_msync_communicator);
-	XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,true>::init(sd, clientId, num_ctx, ctx, contextId);
-      }
     };
   }; //-- Device
 }; //-- XMI
@@ -68,8 +62,21 @@ namespace XMI
   namespace Device
   {
 
-inline MPISyncDev *MPISyncDev::create(size_t client, size_t num_ctx, XMI::Device::Generic::Device *devices) {
+inline MPISyncDev *MPISyncDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
 	return &_g_mpisync_dev;
+}
+
+inline xmi_result_t MPISyncDev::Factory::init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpisync_dev._msync_communicator);
+	return _g_mpisync_dev.__init(client, contextId, clt, ctx, sd, devices);
+}
+
+inline size_t MPISyncDev::Factory::advance_impl(MPISyncDev *devs, size_t client, size_t contextId) {
+	return 0;
+}
+
+inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t client, size_t contextId) {
+	return _g_mpisync_dev;
 }
 
 ///
@@ -229,8 +236,8 @@ protected:
       static const int REPL_ROLE = 1;
       static const size_t sizeof_msg = sizeof(MPISyncMsg);
 
-      MPISyncMdl(MPISyncDev *devs, xmi_result_t &status) :
-      XMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>(devs[0], status)
+      MPISyncMdl(MPISyncDev dev, xmi_result_t &status) :
+      XMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>(dev, status)
       {
         TRACE_DEVICE((stderr,"<%p>MPISyncMdl()\n",this));
         //XMI::SysDep *sd = _g_mpisync_dev.getSysdep();

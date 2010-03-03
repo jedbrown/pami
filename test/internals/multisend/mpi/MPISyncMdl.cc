@@ -9,13 +9,16 @@
 #include "components/devices/mpi/MPISyncMsg.h"
 #include "test/internals/multisend/multisync.h"
 
-
 int main(int argc, char ** argv)
 {
+  xmi_context_t context;
+  size_t task_id;
+  size_t num_tasks;
+  xmi_result_t status = XMI_ERROR;
+
+#if 0
   unsigned x;
   xmi_client_t client;
-  xmi_context_t context;
-  xmi_result_t status = XMI_ERROR;
 
   status = XMI_Client_initialize("multisync test", &client);
   if(status != XMI_SUCCESS)
@@ -51,6 +54,13 @@ int main(int argc, char ** argv)
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
+#else
+	task_id = __global.mapping.task();
+	num_tasks = __global.mapping.size();
+	context = NULL;
+	XMI::Memory::MemoryManager mm;
+	initializeMemoryManager("bgp multicast test", 1024*1024, mm);
+#endif
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 
@@ -71,7 +81,7 @@ int main(int argc, char ** argv)
 
   const char *test = "XMI::Device::MPISyncMsg";
   if(task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-  XMI::Test::Multisend::Multisync<XMI::Device::MPISyncMdl> test1(test);
+  XMI::Test::Multisend::Multisync<XMI::Device::MPISyncMdl,XMI::Device::MPISyncDev> test1(test, mm);
   rc = test1.perform_test(task_id, num_tasks, context, &multisync);
   if(rc != XMI_SUCCESS)
   {
@@ -81,12 +91,14 @@ int main(int argc, char ** argv)
   fprintf(stderr, "PASS? %5lld (%5lld) [delay: %lld, time: %lld]\n", test1.total_time, test1.barrier_time, test1.delay, test1.raw_time);
 
 // ------------------------------------------------------------------------
+#if 0
   status = XMI_Client_finalize(client);
   if(status != XMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
     return 1;
   }
+#endif
 
   return 0;
 }

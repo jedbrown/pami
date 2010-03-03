@@ -105,16 +105,17 @@ public:
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
-	Multicast(const char *test, size_t dispatch_id) :
+	Multicast(const char *test, size_t dispatch_id, XMI::Memory::MemoryManager &mm) :
+	_sd(mm),
 	_name(test),
     _dispatch_id(dispatch_id)
 	{
 
 		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
-		_dev = T_MulticastModel::Factory::generate(0, 1, _sd.mm);
+		_dev = T_MulticastDevice::Factory::generate(0, 1, _sd.mm);
 
 		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
-		T_MulticastModel::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
+		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 
       _msginfo.w0 = 0;

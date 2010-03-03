@@ -1,7 +1,11 @@
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include "components/memory/MemoryManager.h"
 
-inline xmi_result_t initializeMemoryManager(const char *name, size_t bytes,
+static inline xmi_result_t initializeMemoryManager(const char *name, size_t bytes,
 					XMI::Memory::MemoryManager &mm) {
 	char shmemfile[1024];
 

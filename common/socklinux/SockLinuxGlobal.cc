@@ -20,22 +20,22 @@ XMI::Mapping *XMI::Topology::mapping = NULL;
 //xmi_coord_t XMI::Topology::my_coords;
 
 #include "components/devices/misc/AtomicBarrierMsg.h"
-XMI::Device::AtomicBarrierRealDev _g_lmbarrier_dev;
+XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-XMI::Device::LocalAllreduceWQRealDevice _g_l_allreducewq_dev;
+XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
-XMI::Device::LocalAllreduceWQRealDevice _g_l_bcastwq_dev;
+XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
-XMI::Device::LocalAllreduceWQRealDevice _g_l_reducewq_dev;
+XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 
 #include "components/devices/workqueue/WQRingBcastMsg.h"
-XMI::Device::WQRingBcastRealDev _g_wqbcast_dev;
+XMI::Device::WQRingBcastDev _g_wqbcast_dev;
 
 #include "components/devices/workqueue/WQRingReduceMsg.h"
-XMI::Device::WQRingReduceRealDev _g_wqreduce_dev;
+XMI::Device::WQRingReduceDev _g_wqreduce_dev;
 
 #include "components/devices/misc/ProgressFunctionMsg.h"
-XMI::Device::ProgressFunctionRealDev _g_progfunc_dev;
+XMI::Device::ProgressFunctionDev _g_progfunc_dev;

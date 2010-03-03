@@ -32,6 +32,8 @@
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
+#include "components/devices/workqueue/WQRingBcastMsg.h"
+#include "components/devices/workqueue/LocalBcastWQMessage.h"
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "components/devices/mpi/MPISyncMsg.h"
 #include "Mapping.h"
@@ -41,11 +43,9 @@
 #include "components/atomic/gcc/GccCounter.h"
 #include <sched.h>
 
-#include "components/devices/workqueue/WQRingBcastMsg.h"
-#include "components/devices/workqueue/LocalBcastWQMessage.h"
-
 /** \todo shmem device must become sub-device of generic device */
 #include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemPacketModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 #include "components/devices/mpi/mpimulticastprotocol.h"
@@ -67,12 +67,12 @@ namespace XMI
     typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
 
     // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
-    typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl> P2PMcastProto;
+    typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl,XMI::Device::MPIBcastDev> P2PMcastProto;
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Fifo::FifoPacket <32, 240> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-    typedef Device::ShmemModel<ShmemDevice> ShmemModel;
+    typedef Device::ShmemPacketModel<ShmemDevice> ShmemModel;
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
 /**
@@ -103,21 +103,21 @@ namespace XMI
      * \param[in] clientid     Client ID (index)
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t init(size_t clientid, size_t num_ctx) {
-       // these calls create (allocate and construct) each element.
-       // We don't know how these relate to contexts, they are semi-opaque.
-       _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
-       _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
-       _progfunc = XMI::Device::ProgressFunctionDev::create(clientid, num_ctx, _generics);
-       _atombarr = XMI::Device::AtomicBarrierDev::create(clientid, num_ctx, _generics);
-       _wqringreduce = XMI::Device::WQRingReduceDev::create(clientid, num_ctx, _generics);
-       _wqringbcast = XMI::Device::WQRingBcastDev::create(clientid, num_ctx, _generics);
-       _localallreduce = XMI::Device::LocalAllreduceWQDevice::create(clientid, num_ctx, _generics);
-       _localbcast = XMI::Device::LocalBcastWQDevice::create(clientid, num_ctx, _generics);
-       _localreduce = XMI::Device::LocalReduceWQDevice::create(clientid, num_ctx, _generics);
-       _mpimsync = XMI::Device::MPISyncDev::create(clientid, num_ctx, _generics);
-       _mpimcast = XMI::Device::MPIBcastDev::create(clientid, num_ctx, _generics);
-       return XMI_SUCCESS;
+    inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
+	// these calls create (allocate and construct) each element.
+	// We don't know how these relate to contexts, they are semi-opaque.
+	_generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+	_shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
+	_progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+	_atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringbcast = XMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+	_localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_mpimsync = XMI::Device::MPISyncDev::Factory::generate(clientid, num_ctx, mm);
+	_mpimcast = XMI::Device::MPIBcastDev::Factory::generate(clientid, num_ctx, mm);
+	return XMI_SUCCESS;
     }
 
     /**
@@ -136,19 +136,20 @@ namespace XMI
      * \param[in] ctx          Context opaque entity
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t dev_init(XMI::SysDep *sd, size_t clientid, size_t num_ctx, xmi_context_t ctx, size_t contextid) {
-       _generics->init(ctx, clientid, contextid, num_ctx);
-       _shmem->init(sd, clientid, num_ctx, ctx, contextid);
-       _progfunc->init(sd, clientid, num_ctx, ctx, contextid);
-       _atombarr->init(sd, clientid, num_ctx, ctx, contextid);
-       _wqringreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       _wqringbcast->init(sd, clientid, num_ctx, ctx, contextid);
-       _localallreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       _localbcast->init(sd, clientid, num_ctx, ctx, contextid);
-       _localreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       _mpimsync->init(sd, clientid, num_ctx, ctx, contextid);
-       _mpimcast->init(sd, clientid, num_ctx, ctx, contextid);
-       return XMI_SUCCESS;
+    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
+	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);
+	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, sd, _generics);
+
+	XMI::Device::MPISyncDev::Factory::init(_mpimsync, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::MPIBcastDev::Factory::init(_mpimcast, clientid, contextid, clt, ctx, sd, _generics);
+	return XMI_SUCCESS;
     }
 
     /**
@@ -161,19 +162,19 @@ namespace XMI
      * \param[in] contextid    Context ID (index)
      */
     inline size_t advance(size_t clientid, size_t contextid) {
-       size_t events = 0;
-       events += _generics->advance(clientid, contextid);
-       events += _shmem->advance(clientid, contextid);
-       events += _progfunc->advance(clientid, contextid);
-       events += _atombarr->advance(clientid, contextid);
-       events += _wqringreduce->advance(clientid, contextid);
-       events += _wqringbcast->advance(clientid, contextid);
-       events += _localallreduce->advance(clientid, contextid);
-       events += _localbcast->advance(clientid, contextid);
-       events += _localreduce->advance(clientid, contextid);
-       events += _mpimsync->advance(clientid, contextid);
-       events += _mpimcast->advance(clientid, contextid);
-       return events;
+	size_t events = 0;
+	events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+	events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+	events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
+	events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
+	events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+	events += XMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
+	events += XMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+	events += XMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+	events += XMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+	events += XMI::Device::MPISyncDev::Factory::advance(_mpimsync, clientid, contextid);
+	events += XMI::Device::MPIBcastDev::Factory::advance(_mpimcast, clientid, contextid);
+	return events;
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
@@ -181,7 +182,7 @@ namespace XMI
     XMI::Device::ProgressFunctionDev *_progfunc;
     XMI::Device::AtomicBarrierDev *_atombarr;
     XMI::Device::WQRingReduceDev *_wqringreduce;
-    XMI::Device::WQRingBcastDev *_wqringbcast;;
+    XMI::Device::WQRingBcastDev *_wqringbcast;
     XMI::Device::LocalAllreduceWQDevice *_localallreduce;
     XMI::Device::LocalBcastWQDevice *_localbcast;
     XMI::Device::LocalReduceWQDevice *_localreduce;
@@ -227,7 +228,7 @@ namespace XMI
 #ifdef USE_WAKEUP_VECTORS
 	  _wakeupManager.init(1, 0x57550000 | id); // check errors?
 #endif // USE_WAKEUP_VECTORS
-	  _devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
+	  _devices->init(_clientid, _contextid, _client, _context, &_sysdep);
           _mpi->init(&_sysdep, _clientid, num, (xmi_context_t)this, id);
           _lock.init(&_sysdep);
 
@@ -260,7 +261,7 @@ namespace XMI
         {
           XMI::Device::Generic::GenericThread *work;
 	  COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-	  work = new (work) XMI::Device::Generic::GenericThread(work_fn, cookie);
+	  work = new (state) XMI::Device::Generic::GenericThread(work_fn, cookie);
 	  work->setStatus(XMI::Device::OneShot);
 	  _devices->_generics[_contextid].postThread(work);
           return XMI_SUCCESS;
@@ -672,20 +673,19 @@ namespace XMI
 //          if (_dispatch[index][1] == NULL)
               {
                 TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
-#warning Eager/ShmemModel needs to change to accept array of devices (two places here)
                 if (options.no_long_header == 1)
                     {
                       _dispatch[id][1] = _protocol.allocateObject ();
                       new (_dispatch[id][1])
                         Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-                        (id, fn, cookie, _devices->_shmem[_contextid], result);
+                        (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
                     }
                 else
                     {
                       _dispatch[id][1] = _protocol.allocateObject ();
                       new (_dispatch[id][1])
                         Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-                        (id, fn, cookie, _devices->_shmem[_contextid], result);
+                        (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
                     }
 
                 TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
@@ -723,13 +723,13 @@ namespace XMI
         // sample:
         //  _dispatch[(size_t)id][1] = (void*) ARBITRARY_ID;
 
-#warning P2PMcast Model needs to change to accept array of devices (or remove it?)
         if(options.hint.multicast.one_sided)
         {
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(P2PMcastProto),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2PMcastProto),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) P2PMcastProto(id, fn.multicast, cookie,
                                                                       *_mpi,
+XMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _contextid),
                                                                       this->_client,
                                                                       this->_context,
                                                                       this->_contextid,
@@ -743,14 +743,14 @@ namespace XMI
           {
             _dispatch[(size_t)id][1] = (void*) 3; // see HACK comments above
             XMI_assertf(_request.objsize >= sizeof(XMI::Device::WQRingBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::WQRingBcastMdl));
-            new (_dispatch[(size_t)id][0]) XMI::Device::WQRingBcastMdl(result);
+            new (_dispatch[(size_t)id][0]) XMI::Device::WQRingBcastMdl(XMI::Device::WQRingBcastDev::Factory::getDevice(_devices->_wqringbcast, _clientid, _contextid), result);
             TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided ring _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           }
         else
         {
             _dispatch[(size_t)id][1] = (void*) 4; // see HACK comments above
             XMI_assertf(_request.objsize >= sizeof(XMI::Device::LocalBcastWQModel),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::LocalBcastWQModel));
-            new (_dispatch[(size_t)id][0]) XMI::Device::LocalBcastWQModel(result);
+            new (_dispatch[(size_t)id][0]) XMI::Device::LocalBcastWQModel(XMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid), result);
             TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
           }
         }
@@ -758,7 +758,7 @@ namespace XMI
         {
           _dispatch[(size_t)id][1] = (void*) 5; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(XMI::Device::MPIBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(XMI::Device::MPIBcastMdl));
-          new (_dispatch[(size_t)id][0]) XMI::Device::MPIBcastMdl(result);
+          new (_dispatch[(size_t)id][0]) XMI::Device::MPIBcastMdl(XMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _contextid), result);
           TRACE_ERR((stderr, "<< dispatch_impl(), mcast global allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
         }
         else // !experimental collective and !local allsided shmem and !global allsided
@@ -782,7 +782,6 @@ namespace XMI
           XMI_abort();
           goto result_error;
         }
-#warning Eager/ShmemModel needs to change to accept array of devices (two places here)
         // Shared Memory Registration
         // This is for communication on node
         TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
@@ -797,14 +796,14 @@ namespace XMI
             _dispatch[id][1] = _protocol.allocateObject ();
             new (_dispatch[id][1])
             Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-            (id, fn, cookie, _devices->_shmem[_contextid], result);
+            (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
           }
           else
           {
             _dispatch[id][1] = _protocol.allocateObject ();
             new (_dispatch[id][1])
             Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-            (id, fn, cookie, _devices->_shmem[_contextid], result);
+            (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
           }
 
           TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));

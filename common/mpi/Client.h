@@ -95,7 +95,7 @@ namespace XMI
                 _contexts = (XMI::Context*)malloc(sizeof(XMI::Context)*n);
 		XMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
 #endif
-		_platdevs.init(_clientid, n);
+		_platdevs.generate(_clientid, n, _mm);
 
 		// This memset has been removed due to the amount of cycles it takes
 		// on simulators.  Lower level initializers should be setting the

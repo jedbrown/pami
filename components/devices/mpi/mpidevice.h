@@ -16,6 +16,7 @@
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
+#include "components/devices/generic/Device.h"
 #include <map>
 #include <list>
 #include "util/ccmi_debug.h"
@@ -64,6 +65,34 @@ namespace XMI
         MPI_Comm_size(_communicator, (int*)&_peers);
         TRACE_DEVICE((stderr,"<%p>MPIDevice()\n",this));
       };
+
+	class Factory : public Interface::FactoryInterface<Factory,MPIDevice,Generic::Device> {
+	public:
+
+static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::MemoryManager & mm) {
+	size_t x;
+	MPIDevice *devs;
+	int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+	XMI_assertf(rc == 0, "posix_memalign failed for MPIDevice[%zd], errno=%d\n", num_ctx, errno);
+	for (x = 0; x < num_ctx; ++x) {
+		new (&devs[x]) MPIDevice();
+	}
+	return devs;
+}
+
+static inline xmi_result_t init_impl(MPIDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	return getDevice_impl(devs, client, contextId).init_impl(sd, client, 0, ctx, contextId);
+}
+
+static inline size_t advance_impl(MPIDevice *devs, size_t client, size_t contextId) {
+	return getDevice_impl(devs, client, contextId).advance_impl();
+}
+
+static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t contextId) {
+	return devs[contextId];
+}
+	}; // class Factory
+
 
       // Implement BaseDevice Routines
 
