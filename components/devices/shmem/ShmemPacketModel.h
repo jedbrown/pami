@@ -104,10 +104,10 @@ namespace XMI
             }
 
           ShmemPacketMessage<T_Device> * obj = (ShmemPacketMessage<T_Device> *) & state[0];
-          new (obj) ShmemPacketMessage<T_Device> (fn, cookie, &_device, fnum);
+          new (obj) ShmemPacketMessage<T_Device> (_device.getQS(fnum), fn, cookie, &_device, fnum);
           obj->setHeader (_dispatch_id, metadata, metasize);
           obj->setPayload (iov, niov);
-          _device.post (fnum, obj);
+          _device.template post<ShmemPacketMessage<T_Device> > (fnum, obj);
 
           return false;
         };
@@ -145,10 +145,10 @@ namespace XMI
             }
 
           ShmemPacketMessage<T_Device> * obj = (ShmemPacketMessage<T_Device> *) & state[0];
-          new (obj) ShmemPacketMessage<T_Device> (fn, cookie, &_device, fnum);
+          new (obj) ShmemPacketMessage<T_Device> (_device.getQS(fnum), fn, cookie, &_device, fnum);
           obj->setHeader (_dispatch_id, metadata, metasize);
           obj->setPayload (iov);
-          _device.post (fnum, obj);
+          _device.template post<ShmemPacketMessage<T_Device> > (fnum, obj);
 
           return false;
         };
@@ -176,10 +176,10 @@ namespace XMI
             }
 
           ShmemPacketMessage<T_Device> * obj = (ShmemPacketMessage<T_Device> *) & state[0];
-          new (obj) ShmemPacketMessage<T_Device> (fn, cookie, &_device, fnum);
+          new (obj) ShmemPacketMessage<T_Device> (_device.getQS(fnum), fn, cookie, &_device, fnum);
           obj->setHeader (_dispatch_id, metadata, metasize);
           obj->setPayload (payload, length);
-          _device.post (fnum, obj);
+          _device.template post<ShmemPacketMessage<T_Device> > (fnum, obj);
 
           return false;
         };
@@ -224,14 +224,11 @@ namespace XMI
           size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
 
           ShmemMultiPacketMessage<T_Device> * obj = (ShmemMultiPacketMessage<T_Device> *) & state[0];
-          new (obj) ShmemMultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
+          new (obj) ShmemMultiPacketMessage<T_Device> (_device.getQS(fnum), fn, cookie, &_device, fnum);
           obj->setHeader (_dispatch_id, metadata, metasize);
           obj->setPayload (payload, length);
 
-          if (_device.isSendQueueEmpty (fnum) && obj->advance(_context))
-            return true;
-
-          _device.post (fnum, obj);
+          _device.template post<ShmemPacketMessage<T_Device> > (fnum, obj);
           return false;
         };
 

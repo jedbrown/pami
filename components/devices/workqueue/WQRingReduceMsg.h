@@ -29,7 +29,7 @@ namespace Device {
 class WQRingReduceMdl;
 class WQRingReduceMsg;
 typedef XMI::Device::Generic::SimpleAdvanceThread WQRingReduceThr;
-class WQRingReduceDev : public XMI::Device::Generic::MultiSendQSubDevice<WQRingReduceThr,1,1,true> {
+class WQRingReduceDev : public XMI::Device::Generic::MultiSendQSubDevice<WQRingReduceThr,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,WQRingReduceDev,Generic::Device> {
 	public:

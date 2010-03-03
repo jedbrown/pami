@@ -36,14 +36,20 @@ namespace XMI
     class ShmemPacketMessage : public ShmemMessage
     {
       public:
-        inline ShmemPacketMessage (xmi_event_function   fn,
+        inline ShmemPacketMessage (Generic::GenericSubDevice *QS,
+				   xmi_event_function   fn,
                                    void               * cookie,
                                    T_Device           * device,
                                    size_t               fifo) :
-            ShmemMessage (fn, cookie),
+            ShmemMessage (QS, fn, cookie, device->getContextOffset()),
             _device (device),
             _fifo (fifo)
         {};
+
+	inline typename T_Device::MessageQueue *getGQS()
+	{
+		return (typename T_Device::MessageQueue *)_device->getQS(this->_fifo);
+	};
 
         inline void setHeader (uint16_t   dispatch_id,
                                void     * metadata,
@@ -75,7 +81,8 @@ namespace XMI
           _niov = T_Niov;
         };
 
-        virtual bool advance (xmi_context_t context)
+	DECL_ADVANCE_ROUTINE2(advancePacket,ShmemPacketMessage<T_Device>,ShmemThread)
+        inline xmi_result_t __advancePacket (xmi_context_t context, ShmemThread *thr)
         {
           size_t sequence = 0;
 
@@ -83,11 +90,32 @@ namespace XMI
                                           _iov, _niov, sequence) == XMI_SUCCESS)
             {
               invokeCompletionFunction (context);
-              return true;
+              return XMI_SUCCESS;
             }
 
-          return false;
+          return XMI_EAGAIN;
         };
+
+	inline int setThreads(ShmemThread **th)
+	{
+		ShmemThread *t;
+		int n;
+		getGQS()->__getThreads(&t, &n);
+		int nt = 0;
+		// only one thread... for now...
+		t[nt].setMsg(this);
+		t[nt].setAdv(advancePacket);
+		t[nt].setStatus(XMI::Device::Ready);
+		__advancePacket(_device->getContext(), t); // was this done by model?
+		++nt;
+		*th = t;
+		return nt;
+	}
+
+	inline xmi_context_t postNext(bool devPosted)
+	{
+		return getGQS()->template __postNext<ShmemPacketMessage<T_Device> >(this, devPosted);
+	}
 
       protected:
 
@@ -108,11 +136,12 @@ namespace XMI
     class ShmemMultiPacketMessage : public ShmemPacketMessage<T_Device>
     {
       public:
-        inline ShmemMultiPacketMessage (xmi_event_function   fn,
+        inline ShmemMultiPacketMessage (Generic::GenericSubDevice *QS,
+					xmi_event_function   fn,
                                         void               * cookie,
                                         T_Device           * device,
                                         size_t               fifo) :
-            ShmemPacketMessage<T_Device> (fn, cookie, device, fifo)
+            ShmemPacketMessage<T_Device> (QS, fn, cookie, device, fifo)
         {};
 
         inline void setPayload (void * src, size_t bytes)
@@ -121,7 +150,8 @@ namespace XMI
           this->__iov.iov_len  = bytes;
         };
 
-        virtual bool advance (xmi_context_t context)
+        DECL_ADVANCE_ROUTINE2(advanceMultiPacket,ShmemMultiPacketMessage<T_Device>,ShmemThread)
+        inline xmi_result_t __advanceMultiPacket (xmi_context_t context, ShmemThread *thr)
         {
           size_t sequence = 0;
           size_t bytes = MIN(this->__iov.iov_len,T_Device::payload_size);
@@ -137,7 +167,7 @@ namespace XMI
                   TRACE_ERR((stderr, "   ShmemMultiPacketMessage::advance() .. before this->invokeCompletionFunction()\n"));
                   this->invokeCompletionFunction (context);
                   TRACE_ERR((stderr, "<< ShmemMultiPacketMessage::advance() .. return true (== \"done\")\n"));
-                  return true;
+                  return XMI_SUCCESS;
                 }
               uint8_t * tmp = (uint8_t *) this->__iov.iov_base;
               this->__iov.iov_base = (void *)(tmp + this->__iov.iov_len);
@@ -147,8 +177,29 @@ namespace XMI
 
 
           TRACE_ERR((stderr, "<< ShmemMultiPacketMessage::advance() .. return false (== \"not done\")\n"));
-          return false;
+          return XMI_EAGAIN;
         };
+
+	inline int setThreads(ShmemThread **th)
+	{
+		ShmemThread *t;
+		int n;
+		this->getGQS()->__getThreads(&t, &n);
+		int nt = 0;
+		// only one thread... for now...
+		t[nt].setMsg(this);
+		t[nt].setAdv(advanceMultiPacket);
+		t[nt].setStatus(XMI::Device::Ready);
+		__advanceMultiPacket(this->_device->getContext(), t); // was this done by model?
+		++nt;
+		*th = t;
+		return nt;
+	}
+
+	inline xmi_context_t postNext(bool devPosted)
+	{
+		return this->getGQS()->template __postNext<ShmemMultiPacketMessage<T_Device> >(this, devPosted);
+	}
     };  // XMI::Device::ShmemMultiPacketMessage class
   };    // XMI::Device namespace
 };      // XMI namespace

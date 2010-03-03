@@ -28,10 +28,10 @@
 #include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 
+#define SHMEM_READY
 #ifdef SHMEM_READY
-#warning shmem device must become sub-device of generic device
 #include "components/devices/shmem/ShmemDevice.h"
-#include "components/devices/shmem/ShmemMessage.h"
+#include "components/devices/shmem/ShmemPacketModel.h"
 #endif // SHMEM_READY
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
@@ -65,7 +65,7 @@ namespace XMI
   typedef Fifo::LinearFifo<Counter::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-  typedef Device::ShmemModel<ShmemDevice> ShmemModel;
+  typedef Device::ShmemPacketModel<ShmemDevice> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -517,7 +517,6 @@ namespace XMI
                 new (_dispatch[id])
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
-#warning Eager/ShmemModel needs to change to accept array of devices (two places here)
                 Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
                 (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
               }

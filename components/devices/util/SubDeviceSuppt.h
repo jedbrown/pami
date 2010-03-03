@@ -38,28 +38,22 @@ namespace Generic {
 /// the simple sendQ). It would still need to ensure that the Message
 /// contained a reference to that GenericSubDevice object in it's 'QS'.
 ///
-template <class T_Thread,int N_Queues,int N_Threads,bool Use_Queue>
-class MultiSendQSubDevice {
+template <class T_Thread,int N_Threads,bool Use_Queue>
+class MultiSendQSubDevice : public GenericSubDevice {
 	static const int NUM_THREADS = N_Threads;
 public:
-	MultiSendQSubDevice() {
+	MultiSendQSubDevice() :
+	GenericSubDevice() {
 		// There must be at least one queue, since every message
 		// requires a valid _QS from which to operate.
 		// However, a device/message may not actually queue
 		// anything to this _QS.
-		COMPILE_TIME_ASSERT(N_Queues > 0);
-		for (int x = 0; x < N_Queues; ++x) {
-			new (&_sendQs[x]) GenericSubDevice();
-			for (int y = 0; y < N_Threads; ++y) {
-				new (&_threads[x][y]) T_Thread();
-			}
+		for (int y = 0; y < N_Threads; ++y) {
+			new (&_threads[y]) T_Thread();
 		}
 	}
 
 	inline void __create(size_t client, size_t num_ctx) {
-		for (int x = 0; x < N_Queues; ++x) {
-			_sendQs[x].___create(client, num_ctx);
-		}
 	}
 
 	// may be overridden by child class... Context calls using child class.
@@ -75,9 +69,6 @@ public:
 	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			_sd = sd;
-			for (int x = 0; x < N_Queues; ++x) {
-				_sendQs[x].___init(sd, client, contextId);
-			}
 		}
 		if (contextId == 0) {
 			_generics[client] = devices;
@@ -93,16 +84,16 @@ public:
 		return _generics[client];
 	}
 
-	inline XMI::Device::Generic::GenericSubDevice *getQS(int sendq = 0) {
-		return &_sendQs[sendq];
+	inline XMI::Device::Generic::GenericSubDevice *getQS() {
+		return this;
 	}
 
 // protected:
 //	friend class T_Message
 public:
-	inline void __getThreads(T_Thread **t, int *n, int sendq = 0) {
+	inline void __getThreads(T_Thread **t, int *n) {
 		if (N_Threads > 0) {
-			*t = &_threads[sendq][0];
+			*t = &_threads[0];
 			*n = N_Threads;
 		} else {
 			*t = NULL;
@@ -142,10 +133,13 @@ public:
 
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
-		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
-		bool first = (!Use_Queue || qs->peek() == NULL);
+		// GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		// the above would allow an implementation to vary where the queue is...
+
+		// assert(qs == this);
+		bool first = (!Use_Queue || peek() == NULL);
 		// If !Use_Queue, there must never be a message queued...
-		// assert(Use_Queue || qs->peek() == NULL);
+		// assert(Use_Queue || peek() == NULL);
 		if (first) {
 			xmi_context_t ctx = __postNext<T_Message>(msg, false);
 			if (ctx) {
@@ -158,12 +152,11 @@ public:
 			// device and we no longer care about it...
 			// Also avoid the peek() check above.
 		}
-		if (Use_Queue) qs->enqueue(msg);
+		if (Use_Queue) enqueue(msg);
 	}
 
 protected:
-	GenericSubDevice _sendQs[N_Queues];
-	T_Thread _threads[N_Queues][N_Threads];
+	T_Thread _threads[N_Threads];
 	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
 	XMI::SysDep *_sd;
 }; // class MultiSendQSubDevice
@@ -304,8 +297,10 @@ public:
 	///
 	template <class T_Message, class T_Thread>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
-		GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
-		bool first = (qs->peek() == NULL);
+		// GenericSubDevice *qs = (GenericSubDevice *)msg->getQS();
+		// assert(qs == this);
+
+		bool first = (peek() == NULL);
 		if (first) {
 			xmi_context_t ctx = __postNext<T_Message,T_Thread>(msg, false);
 			if (ctx) {
@@ -313,7 +308,7 @@ public:
 				return;
 			}
 		}
-		qs->enqueue(msg);
+		enqueue(msg);
 	}
 
 private:

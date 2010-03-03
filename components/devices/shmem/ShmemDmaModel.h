@@ -102,12 +102,12 @@ namespace XMI
             }
 
           ShmemDmaPutMessage<T_Device> * obj = (ShmemDmaPutMessage<T_Device> *) & state[0];
-          new (obj) ShmemDmaPutMessage<T_Device> (local_fn, cookie, _device, fnum,
+          new (obj) ShmemDmaPutMessage<T_Device> (_device.getQS(fnum), local_fn, cookie, _device, fnum,
                                         local_memregion, local_offset,
                                         remote_memregion, remote_offset,
                                         bytes);
 
-          _device.post (fnum, obj);
+          _device.template post<ShmemDmaPutMessage<T_Device> > (fnum, obj);
           return XMI_SUCCESS;
         };
 
@@ -150,12 +150,12 @@ namespace XMI
             }
 
           ShmemDmaGetMessage<T_Device> * obj = (ShmemDmaGetMessage<T_Device> *) & state[0];
-          new (obj) ShmemDmaGetMessage<T_Device> (local_fn, cookie, &_device, fnum,
+          new (obj) ShmemDmaGetMessage<T_Device> (_device.getQS(fnum), local_fn, cookie, &_device, fnum,
                                                   local_memregion, local_offset,
                                                   remote_memregion, remote_offset,
                                                   bytes);
 
-          _device.post (fnum, obj);
+          _device.template post<ShmemDmaGetMessage<T_Device> > (fnum, obj);
 
           return XMI_SUCCESS;
         };

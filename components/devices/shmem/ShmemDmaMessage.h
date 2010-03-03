@@ -37,7 +37,8 @@ namespace XMI
     class ShmemDmaMessage : public ShmemMessage
     {
       public:
-        inline ShmemDmaMessage (xmi_event_function   fn,
+        inline ShmemDmaMessage (Generic::GenericSubDevice *QS,
+				xmi_event_function   fn,
                                 void               * cookie,
                                 T_Device           * device,
                                 size_t               fifo,
@@ -46,7 +47,7 @@ namespace XMI
                                 Memregion          * remote_memregion,
                                 size_t               remote_offset,
                                 size_t               bytes) :
-            ShmemMessage (fn, cookie),
+            ShmemMessage (QS, fn, cookie, device->getContextId()),
             _device (device),
             _fifo (fifo),
             _local_memregion (local_memregion),
@@ -86,7 +87,8 @@ namespace XMI
                                        remote_memregion, remote_offset, bytes)
         {};
 
-        virtual bool advance (xmi_context_t context)
+	DECL_ADVANCE_ROUTINE2(advancePut,ShmemDmaPutMessage,ShmemThread)
+        inline xmi_result_t __advancePut (xmi_context_t context, ShmemThread *thr)
         {
           // These constant-expression branch instructions will be optimized
           // out by the compiler
@@ -100,7 +102,7 @@ namespace XMI
                 {
                   this->_local_memregion->write (this->_local_offset, this->_remote_memregion, this->_remote_offset, this->_bytes);
                   this->invokeCompletionFunction (context);
-                  return true;
+                  return XMI_SUCCESS;
                 }
             }
           else
@@ -108,8 +110,30 @@ namespace XMI
               XMI_abort();
             }
 
-          return false;
+          return XMI_EAGAIN;
         };
+
+	inline int setThreads(ShmemThread **th)
+	{
+		ShmemThread *t;
+		int n;
+		_device->__getThreads(&t, &n);
+		int nt = 0;
+		// only one thread... for now...
+		t[nt].setMsg(this);
+		t[nt].setAdv(advancePut);
+		t[nt].setStatus(XMI::Device::Ready);
+		__advancePut(_device->getContext(), t); // was this done by model?
+		++nt;
+		*th = t;
+		return nt;
+	}
+
+	xmi_context_t postNext(bool devPosted)
+	{
+		return _device->__postNext<ShmemDmaPutMessage>__postNext(this, devPosted);
+	}
+
     };  // XMI::Device::ShmemDmaPutMessage class
 
     template <class T_Device>
@@ -130,7 +154,8 @@ namespace XMI
                                        remote_memregion, remote_offset, bytes)
         {};
 
-        virtual bool advance (xmi_context_t context)
+	DECL_ADVANCE_ROUTINE2(advanceGet,ShmemDmaPutMessage,ShmemThread)
+        inline xmi_result_t __advanceGet (xmi_context_t context, ShmemThread *thr)
         {
           // These constant-expression branch instructions will be optimized
           // out by the compiler
@@ -147,7 +172,7 @@ namespace XMI
                 {
                   this->_local_memregion->read (this->_local_offset, this->_remote_memregion, this->_remote_offset, this->_bytes);
                   this->invokeCompletionFunction (context);
-                  return true;
+                  return XMI_SUCCESS;
                 }
             }
           else
@@ -155,8 +180,29 @@ namespace XMI
               XMI_abort();
             }
 
-          return false;
+          return XMI_EAGAIN;
         };
+
+	inline int setThreads(ShmemThread **th)
+	{
+		ShmemThread *t;
+		int n;
+		_device->__getThreads(&t, &n);
+		int nt = 0;
+		// only one thread... for now...
+		t[nt].setMsg(this);
+		t[nt].setAdv(advanceGet);
+		t[nt].setStatus(XMI::Device::Ready);
+		__advancePut(_device->getContext(), t); // was this done by model?
+		++nt;
+		*th = t;
+		return nt;
+	}
+
+	xmi_context_t postNext(bool devPosted)
+	{
+		return _device->__postNext<ShmemDmaGetMessage>__postNext(this, devPosted);
+	}
     };  // XMI::Device::ShmemDmaGetMessage class
   };    // XMI::Device namespace
 };      // XMI namespace

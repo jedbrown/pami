@@ -94,7 +94,6 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 #warning Major hack: no call to client init or context create or official advance
 int main(int argc, char ** argv)
 {
-  xmi_client_t client = NULL;
   xmi_context_t context = NULL;
   xmi_result_t status = XMI_ERROR;
 
@@ -115,7 +114,7 @@ int main(int argc, char ** argv)
   XMI::BGQNativeInterface<XMI::Device::MU::MUCollDevice,
                           XMI::Device::MU::MUMulticastModel,
                           XMI::Device::MU::MUMultisyncModel,
-                          XMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, client, 0, context, 0);
+                          XMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, 0, context, 0);
 
   uint8_t mcast_state[XMI::Device::MU::MUMulticastModel::sizeof_msg];
 

@@ -190,6 +190,12 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	message *msg = (message *)thr->getMsg();		\
 	return msg->__##method(thr);				\
 }
+#define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
+static xmi_result_t method(xmi_context_t context, void *t) {	\
+	thread *thr = (thread *)t;				\
+	message *msg = (message *)thr->getMsg();		\
+	return msg->__##method(context, thr);			\
+}
 
 /// \brief Message class used by the Generic Device
 ///

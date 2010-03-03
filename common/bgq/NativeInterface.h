@@ -102,9 +102,9 @@ namespace XMI
   _msync_status(XMI_SUCCESS),
   _mcomb_status(XMI_SUCCESS),
 
-  _mcast(_mcast_status,device),
-  _msync(_msync_status,device),
-  _mcomb(_mcomb_status,device),
+  _mcast(device, _mcast_status),
+  _msync(device, _msync_status),
+  _mcomb(&device, client_id, context_id, _mcomb_status),
 
   _dispatch(0),
   _context(context),

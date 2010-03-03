@@ -18,6 +18,8 @@
 
 #include "util/common.h"
 #include "util/queue/Queue.h"
+#include "components/devices/generic/AdvanceThread.h"
+#include "components/devices/generic/Message.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
@@ -27,15 +29,21 @@ namespace XMI
 {
   namespace Device
   {
-    class ShmemMessage : public XMI::Queue::Element
+    class ShmemThread : public XMI::Device::Generic::GenericAdvanceThread
+    {
+    public:
+        // tbd...
+    }; // class ShmemThread
+
+    class ShmemMessage : public XMI::Device::Generic::GenericMessage
     {
       public:
 
-        inline ShmemMessage (xmi_event_function   fn,
-                             void               * cookie) :
-            XMI::Queue::Element (),
-            _fn (fn),
-            _cookie (cookie)
+        inline ShmemMessage (Generic::GenericSubDevice *QS,
+			     xmi_event_function   fn,
+                             void               * cookie,
+			     size_t               contextid) :
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, contextid)
         {
         };
 
@@ -43,11 +51,9 @@ namespace XMI
 
         inline void invokeCompletionFunction (xmi_context_t context)
         {
-          TRACE_ERR((stderr,"ShmemMessage::invokeCompletionFunction(), _fn = %p, _cookie = %p\n",_fn,_cookie));
-          if (_fn) _fn (context, _cookie, XMI_SUCCESS);
+	  executeCallback(context, XMI_SUCCESS);
         };
 
-        virtual bool advance (xmi_context_t context) = 0;
 #if 0
         enum shmem_pkt_t
         {
@@ -57,7 +63,8 @@ namespace XMI
 
         static const size_t SHMEM_MESSAGE_METADATA_SIZE = 128;
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (Generic::GenericSubDevice *QS,
+			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -66,10 +73,8 @@ namespace XMI
                              void               * src,
                              size_t               bytes,
                              bool                 packed) :
-            XMI::Queue::Element (),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
             _context (context),
-            _fn (fn),
-            _cookie (cookie),
             _iov (&__iov[0]),
             _tiov (1),
             _niov (0),
@@ -87,7 +92,8 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage(1) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len));
         };
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (Generic::GenericSubDevice *QS,
+			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -98,10 +104,8 @@ namespace XMI
                              void               * src1,
                              size_t               bytes1,
                              bool                 packed) :
-            XMI::Queue::Element (),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
             _context (context),
-            _fn (fn),
-            _cookie (cookie),
             _iov (&__iov[0]),
             _tiov (2),
             _niov (0),
@@ -120,7 +124,8 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage(2) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len, _iov[1].iov_base, _iov[1].iov_len));
         };
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (Generic::GenericSubDevice *QS,
+			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
@@ -129,10 +134,8 @@ namespace XMI
                              struct iovec       * iov,
                              size_t               niov,
                              bool                 packed) :
-            XMI::Queue::Element (),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
             _context (context),
-            _fn (fn),
-            _cookie (cookie),
             _iov (iov),
             _tiov (niov),
             _niov (0),
@@ -146,16 +149,15 @@ namespace XMI
         };
 
 
-        inline ShmemMessage (xmi_context_t        context,
+        inline ShmemMessage (Generic::GenericSubDevice *QS,
+			     xmi_context_t        context,
                              xmi_event_function   fn,
                              void               * cookie,
                              uint16_t             dispatch_id,
                              void               * metadata,
                              size_t               metasize) :
-            XMI::Queue::Element (),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
             _context (context),
-            _fn (fn),
-            _cookie (cookie),
             _iov (&__iov[0]),
             _tiov (0),
             _niov (0),
@@ -168,7 +170,8 @@ namespace XMI
           TRACE_ERR((stderr, "<< ShmemMessage() .. _tiov = %zd, _niov = %zd, _nbytes = %zd\n", _tiov, _niov, _nbytes));
         };
 
-        inline ShmemMessage (xmi_event_function   fn,
+        inline ShmemMessage (Generic::GenericSubDevice *QS,
+			     xmi_event_function   fn,
                              void               * cookie,
                              Memregion          * local_memregion,
                              size_t               local_offset,
@@ -176,9 +179,7 @@ namespace XMI
                              size_t               remote_offset,
                              size_t               bytes,
                              bool                 is_put) :
-            XMI::Queue::Element (),
-            _fn (fn),
-            _cookie (cookie),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
             _pkt_type(RMA),
             _rma_local_memregion (local_memregion),
             _rma_remote_memregion (remote_memregion),
@@ -191,11 +192,7 @@ namespace XMI
 
         inline int executeCallback (xmi_result_t status = XMI_SUCCESS)
         {
-          if (_fn)
-            {
-              _fn (_context, _cookie, status);
-            }
-
+	  XMI::Device::Generic::GenericMessage::executeCallback(_context, status);
           return 0;
         };
 
@@ -268,8 +265,6 @@ namespace XMI
       protected:
 
         // Client callback information.
-        xmi_event_function   _fn;
-        void               * _cookie;
         //xmi_context_t        _context;
 #if 0
         struct iovec    * _iov;

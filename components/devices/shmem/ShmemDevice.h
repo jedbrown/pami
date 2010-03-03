@@ -19,13 +19,12 @@
 #include "SysDep.h"
 #include "Arch.h"
 #include "Memregion.h"
-#include "Progress.h"
 
 #include "components/atomic/Counter.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/FactoryInterface.h"
 #include "components/devices/PacketInterface.h"
-#include "components/devices/generic/GenericDevice.h"
+#include "components/devices/generic/Device.h"
 #include "components/devices/shmem/ShmemMessage.h"
 #include "components/memory/MemoryAllocator.h"
 #include "util/fifo/LinearFifo.h"
@@ -246,103 +245,15 @@ namespace XMI
         };
 #endif
 
-        class MessageQueue : public ProgressDevice::Work
-        {
-          public:
-
-            inline MessageQueue (ProgressDevice * device) :
-              ProgressDevice::Work (progress, (void *) this),
-              _msgQ (),
-              _size (0),
-              _progress (device)
-            {
-            };
-
-            static xmi_result_t progress (xmi_context_t context, void * cookie)
-            {
-              TRACE_ERR((stderr, ">> MessageQueue::progress(), \"this\"=%p\n", cookie));
-              MessageQueue * q = (MessageQueue *) cookie;
-              xmi_result_t result = q->advance (context);
-              TRACE_ERR((stderr, "<< MessageQueue::progress(), result = %d\n", result));
-              return result;
-            }
-
-            inline xmi_result_t advance (xmi_context_t context)
-            {
-              TRACE_ERR((stderr, ">> MessageQueue::advance(), _size = %zu, this=%p\n", _size, this));
-              while (_size > 0)
-              {
-                // The msg->advance() method may deallocate the memory for the
-                // message object. To avoid memory corruption, the message
-                // object is removed from the queue before the advance() method
-                // is invoked.
-                ShmemMessage * msg = (ShmemMessage *) _msgQ.pop();
-                TRACE_ERR((stderr, "   MessageQueue::advance(), msg = %p\n", msg));
-                bool done = msg->advance (context);
-                TRACE_ERR((stderr, "   MessageQueue::advance(), msg = %p, done = %d\n", msg, done));
-
-                if (!done)
-                {
-                  TRACE_ERR((stderr, "   MessageQueue::advance(), before _msgQ.push(%p)\n", msg));
-                  // Push the message to the front of the send queue for
-                  // later processing.
-                  _msgQ.push ((Queue::Element *) msg);
-
-                  // Remain on the progress queue
-                  TRACE_ERR((stderr, "<< MessageQueue::advance(), return XMI_EAGAIN, this=%p\n", this));
-                  return XMI_EAGAIN;
-                }
-
-                // Previous message has completed; decrement the queue size.
-                _size--;
-              }
-
-              TRACE_ERR((stderr, "<< MessageQueue::advance(), _size = %zu, return XMI_SUCCESS, this=%p\n", _size, this));
-
-              // Remove send queue processing from the progress queue.
-              return XMI_SUCCESS;
-            };
-
-            inline void post (ShmemMessage * msg)
-            {
-              TRACE_ERR((stderr, ">> MessageQueue::post(%p), this=%p\n", msg, this));
-              _size++;
-              _msgQ.enqueue ((Queue::Element *) msg);
-
-              TRACE_ERR((stderr, "   MessageQueue::post(%p) .. after _msQ.enqueue(), _size = %zu\n", msg, _size));
-
-              // Post this message queue work to the progress queue if the
-              // message queue was previously empty.
-              if (_size == 1)
-              {
-                TRACE_ERR((stderr, "   MessageQueue::post(%p) .. before progress->post(), _progress = %p\n", msg, _progress));
-                _progress->post ((typename ProgressDevice::Work *) this);
-                TRACE_ERR((stderr, "   MessageQueue::post(%p) ..  after progress->post()\n", msg));
-              }
-
-              TRACE_ERR((stderr, "<< MessageQueue::post(%p), this=%p\n", msg, this));
-            };
-
-            inline size_t size ()
-            {
-              return _size;
-            };
-
-          private:
-
-            Queue            _msgQ;
-            size_t           _size;
-            ProgressDevice * _progress;
-        };
-
-
       public:
 
+	typedef XMI::Device::Generic::MultiSendQSubDevice<ShmemThread,1,true> MessageQueue;
+
         // Inner factory class
-        class Factory : public Interface::FactoryInterface<Factory,ShmemDevice,ProgressDevice>
+        class Factory : public Interface::FactoryInterface<Factory,ShmemDevice,XMI::Device::Generic::Device>
         {
           public:
-            static inline ShmemDevice * generate_impl (size_t n, Memory::MemoryManager & mm)
+            static inline ShmemDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
             {
               size_t i;
               TRACE_ERR((stderr, ">> ShmemDevice::Factory::generate_impl() n = %zu\n", n));
@@ -430,9 +341,9 @@ namespace XMI
                                                   xmi_client_t     client,
                                                   xmi_context_t    context,
                                                   SysDep         * sysdep,
-                                                  ProgressDevice * progress)
+                                                  XMI::Device::Generic::Device * progress)
             {
-              return getDevice_impl(devices, clientid, contextid).init (client, context, sysdep, progress);
+              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
             };
 
             static inline size_t advance_impl (ShmemDevice * devices,
@@ -496,6 +407,7 @@ namespace XMI
         inline xmi_context_t getContext_impl ();
 
         inline size_t getContextId_impl ();
+        inline size_t getContextOffset_impl ();
 
         // ------------------------------------------
 
@@ -570,35 +482,23 @@ namespace XMI
                                                ShmemMessage * msg,
                                                size_t       & sequence);
 #endif
-        xmi_result_t post (size_t ififo, ShmemMessage * msg);
+	template <class T_Message>
+        xmi_result_t post (size_t ififo, T_Message * msg);
 
         ///
         /// \brief Check if the send queue to an injection fifo is empty
         ///
         ///
         inline bool isSendQueueEmpty (size_t fnum);
+        inline XMI::Device::Generic::GenericSubDevice *getQS (size_t fnum);
 
-        inline xmi_result_t init (xmi_client_t client, xmi_context_t context, SysDep * sysdep, ProgressDevice * progress);
+        inline xmi_result_t init (size_t clientid, size_t contextid, xmi_client_t client, xmi_context_t context, SysDep * sysdep, XMI::Device::Generic::Device * progress);
 
         inline size_t advance ();
 
 //        inline void pushSendQueueTail (size_t peer, XMI::Queue::Element * element);
 
 //        inline XMI::Queue::Element * popSendQueueHead (size_t peer);
-
-        ///
-        /// \brief Advance the send queues and process any pending messages.
-        ///
-        /// \note This method is intentionally \b not inlined as pending
-        ///       send messages is assumed to be the uncommon case. By
-        ///       moving this method to a function call the performance of
-        ///       the "normal" device advance is improved.
-        ///
-        /// \see advance
-        ///
-        int advance_sendQ ();
-
-        int advance_sendQ (size_t peer);
 
         inline size_t fnum (size_t peer, size_t offset);
 
@@ -630,7 +530,7 @@ namespace XMI
 #endif
 
         MessageQueue   * __sendQ;
-        ProgressDevice * _progress;
+        XMI::Device::Generic::Device * _progress;
 //        unsigned          __sendQMask;
 
         size_t            _num_procs;
@@ -660,6 +560,11 @@ namespace XMI
     {
       return _contextid;
     }
+    template <class T_Fifo>
+    inline size_t ShmemDevice<T_Fifo>::getContextOffset_impl()
+    {
+	return getContextId_impl();
+    }
 
     ///
     /// \brief Check if the send queue to a local rank is empty
@@ -671,6 +576,11 @@ namespace XMI
     inline bool ShmemDevice<T_Fifo>::isSendQueueEmpty (size_t fnum)
     {
       return (__sendQ[fnum].size() == 0);
+    }
+    template <class T_Fifo>
+    inline XMI::Device::Generic::GenericSubDevice * ShmemDevice<T_Fifo>::getQS (size_t fnum)
+    {
+      return __sendQ[fnum].getQS();
     }
 
     /// \see XMI::Device::Interface::PacketDevice::read()
@@ -846,9 +756,6 @@ namespace XMI
 
       size_t events = 0;
       TRACE_ERR((stderr, "(%zd) ShmemDevice::advance() >>\n", __global.mapping.task()));
-
-      // Advance any pending send messages.
-  //    if (__sendQMask != 0) events += advance_sendQ ();
 
       // Advance any pending receive messages.
       PacketImpl * pkt = NULL;

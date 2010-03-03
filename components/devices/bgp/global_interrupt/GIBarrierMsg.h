@@ -44,7 +44,7 @@ namespace BGP {
 class giModel;
 class giMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread giThread;
-class giDevice : public XMI::Device::Generic::MultiSendQSubDevice<giThread,1,1,true> {
+class giDevice : public XMI::Device::Generic::MultiSendQSubDevice<giThread,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,giDevice,Generic::Device> {
 	public:

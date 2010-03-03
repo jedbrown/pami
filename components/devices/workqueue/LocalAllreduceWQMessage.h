@@ -29,7 +29,7 @@ namespace Device {
 class LocalAllreduceWQModel;
 class LocalAllreduceWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalAllreduceWQThread;
-class LocalAllreduceWQDevice : public XMI::Device::Generic::MultiSendQSubDevice<LocalAllreduceWQThread,1,1,true> {
+class LocalAllreduceWQDevice : public XMI::Device::Generic::MultiSendQSubDevice<LocalAllreduceWQThread,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,LocalAllreduceWQDevice,Generic::Device> {
 	public:

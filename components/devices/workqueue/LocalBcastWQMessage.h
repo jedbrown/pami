@@ -29,7 +29,7 @@ namespace Device {
 class LocalBcastWQModel;
 class LocalBcastWQMessage;
 typedef XMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
-class LocalBcastWQDevice : public XMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,1,true> {
+class LocalBcastWQDevice : public XMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,LocalBcastWQDevice,Generic::Device> {
 	public:

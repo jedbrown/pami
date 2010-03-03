@@ -33,12 +33,12 @@ namespace XMI
 
     class MPIBcastMdl;
 
-    class MPIBcastDev : public XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>
+    class MPIBcastDev : public XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,true>
     {
     public:
       MPI_Comm _mcast_communicator;
       MPIBcastDev() :
-      XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>(),
+      XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,true>(),
       _mcast_communicator(MPI_COMM_NULL)
       {
       };
@@ -55,7 +55,7 @@ namespace XMI
       inline void init(XMI::SysDep *sd, size_t clientId, size_t num_ctx, xmi_context_t ctx,  size_t contextId)
       {
         MPI_Comm_dup(MPI_COMM_WORLD,&_mcast_communicator);
-	XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,1,true>::init(sd, clientId, num_ctx, ctx, contextId);
+	XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,true>::init(sd, clientId, num_ctx, ctx, contextId);
       }
 
     };

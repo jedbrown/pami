@@ -14,7 +14,6 @@
 
 #include "Global.h"
 #include "SysDep.h"
-#include "Progress.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //  fprintf x
@@ -25,14 +24,17 @@ namespace XMI
   namespace Device
   {
     template <class T_Fifo>
-    xmi_result_t ShmemDevice<T_Fifo>::init (xmi_client_t     client,
+    xmi_result_t ShmemDevice<T_Fifo>::init (size_t clientid,
+					    size_t contextid,
+					    xmi_client_t     client,
                                             xmi_context_t    context,
                                             SysDep         * sysdep,
-                                            ProgressDevice * progress)
+                                            XMI::Device::Generic::Device * progress)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init ()\n", __global.mapping.task()));
       _client   = client;
       _context  = context;
+      _contextid  = contextid;
       _sysdep   = sysdep;
       _progress = progress;
 
@@ -59,7 +61,7 @@ namespace XMI
 
       for (i = 0; i < _total_fifos; i++)
         {
-          new (&__sendQ[i]) MessageQueue (_progress);
+          new (&__sendQ[i]) MessageQueue ();
         }
 
 
@@ -155,10 +157,10 @@ namespace XMI
     };
 
     template <class T_Fifo>
-    xmi_result_t ShmemDevice<T_Fifo>::post (size_t fnum, ShmemMessage * msg)
+    template <class T_Message>
+    xmi_result_t ShmemDevice<T_Fifo>::post (size_t fnum, T_Message * msg)
     {
-      __sendQ[fnum].post (msg);
-//      pushSendQueueTail (fnum, (XMI::Queue::Element *) msg);
+      __sendQ[fnum].template __post<T_Message> (msg);
       return XMI_SUCCESS;
     };
 

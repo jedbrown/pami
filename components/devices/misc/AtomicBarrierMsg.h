@@ -53,7 +53,7 @@ namespace Device {
 template <class T_Barrier> class AtomicBarrierMsg;
 template <class T_Barrier> class AtomicBarrierMdl;
 typedef XMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
-class AtomicBarrierDev : public XMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,1,true> {
+class AtomicBarrierDev : public XMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,AtomicBarrierDev,Generic::Device> {
 	public:

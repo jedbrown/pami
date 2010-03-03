@@ -20,8 +20,10 @@
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
+#define SHMEM_READY
 #ifdef SHMEM_READY
 #include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemPacketModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 #endif // SHMEM_READY
@@ -78,14 +80,14 @@ namespace XMI
 
 #ifdef SHMEM_READY
   //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
-  typedef Fifo::FifoPacket <32, 512> ShmemPacket;
-  typedef Fifo::LinearFifo<Atomic::L2Counter, ShmemPacket, 16> ShmemFifo;
+  typedef XMI::Fifo::FifoPacket <32, 512> ShmemPacket;
+  typedef XMI::Fifo::LinearFifo<Atomic::L2Counter, ShmemPacket, 16> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
-  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-  typedef Device::ShmemModel<ShmemDevice> ShmemModel;
+  typedef XMI::Device::ShmemDevice<ShmemFifo> ShmemDevice;
+  typedef XMI::Device::ShmemPacketModel<ShmemDevice> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -272,18 +274,20 @@ mm);
 
 #warning This should not be here?
 #ifdef SHMEM_READY
+#if 0 // not working yet? not fully implemented?
         xmi_result_t result ;
 	_get = (void *) _request.allocateObject ();
-	new ((void *)_get) GetShmem(_devices->_shmem, _contextid, result);
+	new ((void *)_get) GetShmem(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
+#endif
 #endif // SHMEM_READY
 
       }
 #ifdef MU_COLL_DEVICE
       // \brief For testing NativeInterface.
-      inline MUDevice* getMu(){ return MUDevice::Factory::getDevice(_devices->_mu, _client, _clientid); }
+      inline MUDevice* getMu(){ return MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid); }
 #endif
       inline xmi_client_t getClient_impl ()
       {
@@ -305,7 +309,7 @@ mm);
       {
         XMI::Device::Generic::GenericThread *work;
 	COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-	work = new (work) XMI::Device::Generic::GenericThread(work_fn, cookie);
+	work = new (state) XMI::Device::Generic::GenericThread(work_fn, cookie);
 	work->setStatus(XMI::Device::OneShot);
 	_devices->_generics[_contextid].postThread(work);
 	return XMI_SUCCESS;
@@ -440,6 +444,7 @@ mm);
       inline xmi_result_t rget (xmi_rget_simple_t * parameters)
       {
 #ifdef SHMEM_READY
+#if 0 // not implemented yet???
         ((GetShmem*)_get)->getimpl (	parameters->rma.done_fn,
                                 parameters->rma.cookie,
                                 parameters->rma.dest,
@@ -448,6 +453,7 @@ mm);
                                 (Memregion*)parameters->rget.remote_mr,
                                 parameters->rget.local_offset,
                                 parameters->rget.remote_offset);
+#endif
 #endif // SHMEM_READY
         return XMI_SUCCESS;
       }
@@ -652,9 +658,6 @@ mm);
       MUGlobalNI * _global_mu_ni;
       uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)];
 #endif
-#ifdef SHMEM_READY
-      ShmemDevice          _shmem;
-#endif // SHMEM_READY
 
       void * _dispatch[1024];
       void* _get; //use for now..remove later
