@@ -13,6 +13,8 @@
 #include "Topology.h"
 #include "Global.h"
 
+#include "memorymanager.h"
+
 namespace XMI {
 namespace Test {
 namespace Multisend {
@@ -22,9 +24,9 @@ class Multicombine {
 private:
 	uint8_t _mdlbuf[sizeof(T_MulticombineModel)];
 	T_MulticombineModel *_model;
+	XMI::SysDep _sd;
 	XMI::Device::Generic::Device *_generics;
 	T_MulticombineDevice *_dev;
-	Memory::MemoryManager _mm;
 	uint8_t _msgbuf[T_MulticombineModel::sizeof_msg];
 
 	char _source[T_BufSize];
@@ -46,14 +48,15 @@ private:
 
 public:
 
-	Multicombine(const char *test) :
+	Multicombine(const char *test, XMI::Memory::MemoryManager &mm) :
+	_sd(mm),
 	_name(test)
 	{
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
-		_dev = T_MulticombineDevice::Factory::generate(0, 1, _mm);
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
+		_dev = T_MulticombineDevice::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
-		T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
+		T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
 		_model = new (_mdlbuf) T_MulticombineModel(T_MulticombineDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 

@@ -66,6 +66,8 @@ int main(int argc, char ** argv) {
 	task_id = __global.mapping.task();
 	num_tasks = __global.mapping.size();
 	context = NULL;
+	XMI::Memory::MemoryManager mm;
+	initializeMemoryManager("multicast test", 1024*1024, mm);
 #endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 	if (__global.topology_local.size() < 2) {
@@ -98,7 +100,7 @@ int main(int argc, char ** argv) {
 
 	const char *test = LOCAL_BCAST_NAME;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, LOCAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test);
+	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, LOCAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test, mm);
 
 	rc = test1.perform_test(task_id, num_tasks, context, &mcast);
 	if (rc != XMI_SUCCESS) {
@@ -109,7 +111,7 @@ int main(int argc, char ** argv) {
 
 	test = LOCAL_BCAST_NAME2;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL2, LOCAL_BCAST_DEVICE2, TEST_BUF_SIZE> test2(test);
+	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL2, LOCAL_BCAST_DEVICE2, TEST_BUF_SIZE> test2(test, mm);
 
 	rc = test2.perform_test(task_id, num_tasks, context, &mcast);
 	if (rc != XMI_SUCCESS) {

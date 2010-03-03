@@ -13,6 +13,8 @@
 #include "Topology.h"
 #include "Global.h"
 
+#include "memorymanager.h"
+
 namespace XMI {
 namespace Test {
 namespace Multisend {
@@ -23,9 +25,9 @@ private:
 	uint8_t _mdlbuf[sizeof(T_MulticastModel)];
 	T_MulticastModel *_model;
 	uint8_t _msgbuf[T_MulticastModel::sizeof_msg];
-		XMI::Device::Generic::Device *_generics;
-		T_MulticastDevice *_dev;
-		Memory::MemoryManager _mm;
+	XMI::SysDep _sd;
+	XMI::Device::Generic::Device *_generics;
+	T_MulticastDevice *_dev;
 
 	char _source[T_BufSize];
 	char _result[T_BufSize];
@@ -91,14 +93,15 @@ private:
 
 public:
 
-	Multicast(const char *test) :
+	Multicast(const char *test, XMI::Memory::MemoryManager &mm) :
+	_sd(mm),
 	_name(test)
 	{
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
-		_dev = T_MulticastDevice::Factory::generate(0, 1, _mm);
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
+		_dev = T_MulticastDevice::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
-		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
+		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
@@ -107,11 +110,11 @@ public:
     _dispatch_id(dispatch_id)
 	{
 
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
-		_dev = T_MulticastModel::Factory::generate(0, 1, _mm);
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
+		_dev = T_MulticastModel::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
-		T_MulticastModel::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
+		T_MulticastModel::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 
       _msginfo.w0 = 0;

@@ -66,6 +66,8 @@ int main(int argc, char ** argv) {
 	task_id = __global.mapping.task();
 	num_tasks = __global.mapping.size();
 	context = NULL;
+	XMI::Memory::MemoryManager mm;
+	initializeMemoryManager("multicombine test", 1024*1024, mm);
 #endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 	if (__global.topology_local.size() < 2) {
@@ -98,7 +100,7 @@ int main(int argc, char ** argv) {
 
 	const char *test = LOCAL_REDUCE_NAME;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,LOCAL_REDUCE_DEVICE,TEST_BUF_SIZE> test1(test);
+	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,LOCAL_REDUCE_DEVICE,TEST_BUF_SIZE> test1(test, mm);
 
 	rc = test1.perform_test(task_id, num_tasks, context, &mcomb);
 
@@ -110,7 +112,7 @@ int main(int argc, char ** argv) {
 
 	test = LOCAL_REDUCE_NAME2;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,LOCAL_REDUCE_DEVICE2,TEST_BUF_SIZE> test2(test);
+	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,LOCAL_REDUCE_DEVICE2,TEST_BUF_SIZE> test2(test, mm);
 
 	rc = test2.perform_test(task_id, num_tasks, context, &mcomb);
 

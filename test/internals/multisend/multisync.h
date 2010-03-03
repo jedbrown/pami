@@ -12,6 +12,8 @@
 #include "Topology.h"
 #include "Global.h"
 
+#include "memorymanager.h"
+
 namespace XMI {
 namespace Test {
 namespace Multisend {
@@ -22,9 +24,9 @@ private:
 	uint8_t _mdlbuf[sizeof(T_MultisyncModel)];
 	T_MultisyncModel *_model;
 	uint8_t _msgbuf[T_MultisyncModel::sizeof_msg];
+	XMI::SysDep _sd;
 	XMI::Device::Generic::Device *_generics;
 	T_MultisyncDevice *_dev;
-	Memory::MemoryManager _mm;
 	xmi_result_t _status;
 	int _done;
 	const char *_name;
@@ -42,14 +44,15 @@ public:
 	unsigned long long total_time;
 	unsigned long long barrier_time;
 
-	Multisync(const char *test) :
+	Multisync(const char *test, XMI::Memory::MemoryManager &mm) :
+	_sd(mm),
 	_name(test)
 	{
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _mm);
-		_dev = T_MultisyncDevice::Factory::generate(0, 1, _mm);
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
+		_dev = T_MultisyncDevice::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, NULL, _generics);
-		T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, NULL, NULL, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
+		T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
 		_model = new (_mdlbuf) T_MultisyncModel(T_MultisyncDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 

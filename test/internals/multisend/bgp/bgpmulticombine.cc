@@ -57,6 +57,8 @@ int main(int argc, char ** argv) {
 	task_id = __global.mapping.task();
 	num_tasks = __global.mapping.size();
 	context = NULL;
+	XMI::Memory::MemoryManager mm;
+	initializeMemoryManager("bgp multicombine test", 1024*1024, mm);
 #endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
@@ -85,7 +87,7 @@ int main(int argc, char ** argv) {
 
 	const char *test = "XMI::Device::BGP::CNAllreduceModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicombine<XMI::Device::BGP::CNAllreduceModel,XMI::Device::BGP::CNAllreduceDevice,TEST_BUF_SIZE> test1(test);
+	XMI::Test::Multisend::Multicombine<XMI::Device::BGP::CNAllreduceModel,XMI::Device::BGP::CNAllreduceDevice,TEST_BUF_SIZE> test1(test, mm);
 	rc = test1.perform_test(task_id, num_tasks, context, &mcomb);
 	if (rc != XMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test\n", test);

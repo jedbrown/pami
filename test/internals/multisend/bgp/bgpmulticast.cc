@@ -58,6 +58,8 @@ int main(int argc, char ** argv) {
 	task_id = __global.mapping.task();
 	num_tasks = __global.mapping.size();
 	context = NULL;
+	XMI::Memory::MemoryManager mm;
+	initializeMemoryManager("bgp multicast test", 1024*1024, mm);
 #endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
@@ -86,7 +88,7 @@ int main(int argc, char ** argv) {
 
 	const char *test = "XMI::Device::BGP::CNBroadcastModel";
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multicast<XMI::Device::BGP::CNBroadcastModel,XMI::Device::BGP::CNBroadcastDevice, TEST_BUF_SIZE> test1(test);
+	XMI::Test::Multisend::Multicast<XMI::Device::BGP::CNBroadcastModel,XMI::Device::BGP::CNBroadcastDevice, TEST_BUF_SIZE> test1(test, mm);
 	rc = test1.perform_test(task_id, num_tasks, context, &mcast);
 
 
