@@ -62,6 +62,7 @@ namespace XMI
       for (i = 0; i < _total_fifos; i++)
         {
           new (&__sendQ[i]) MessageQueue ();
+	  __sendQ[i].__init(clientid, contextid, client, context, sysdep, progress);
         }
 
 

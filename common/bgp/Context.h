@@ -28,11 +28,8 @@
 #include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 
-#define SHMEM_READY
-#ifdef SHMEM_READY
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
-#endif // SHMEM_READY
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
@@ -60,7 +57,6 @@ namespace XMI
 {
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
-#ifdef SHMEM_READY
   typedef Fifo::FifoPacket <16, 256> ShmemPacket;
   typedef Fifo::LinearFifo<Counter::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
@@ -72,7 +68,6 @@ namespace XMI
   //typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
   // << Point-to-point protocol typedefs and dispatch registration.
   //
-#endif // SHMEM_READY
 
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
@@ -108,9 +103,7 @@ namespace XMI
 	// these calls create (allocate and construct) each element.
 	// We don't know how these relate to contexts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
-#ifdef SHMEM_READY
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
-#endif // SHMEM_READY
 	_progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
 	_atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
 	_wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
@@ -145,9 +138,7 @@ namespace XMI
      */
     inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
 	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);
-#ifdef SHMEM_READY
 	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, sd, _generics);
-#endif // SHMEM_READY
 	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, sd, _generics);
 	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, sd, _generics);
 	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, sd, _generics);
@@ -175,9 +166,7 @@ namespace XMI
     inline size_t advance(size_t clientid, size_t contextid) {
 	size_t events = 0;
         events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
-#ifdef SHMEM_READY
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
-#endif // SHMEM_READY
         events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
 	events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
 	events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
@@ -195,9 +184,7 @@ namespace XMI
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
-#ifdef SHMEM_READY
     ShmemDevice *_shmem;
-#endif // SHMEM_READY
     XMI::Device::ProgressFunctionDev *_progfunc;
     XMI::Device::AtomicBarrierDev *_atombarr;
     XMI::Device::WQRingReduceDev *_wqringreduce;
@@ -510,7 +497,6 @@ namespace XMI
           {
             TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
 
-#ifdef SHMEM_READY
             if (options.no_long_header == 1)
               {
                 _dispatch[id] = _protocol.allocateObject ();
@@ -529,7 +515,6 @@ namespace XMI
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
                 (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
               }
-#endif // SHMEM_READY
 
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
 

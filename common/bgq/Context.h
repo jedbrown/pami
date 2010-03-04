@@ -20,13 +20,10 @@
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
-#define SHMEM_READY
-#ifdef SHMEM_READY
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
-#endif // SHMEM_READY
 
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUPacketModel.h"
@@ -78,7 +75,6 @@ namespace XMI
 
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
-#ifdef SHMEM_READY
   //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
   typedef XMI::Fifo::FifoPacket <32, 512> ShmemPacket;
   typedef XMI::Fifo::LinearFifo<Atomic::L2Counter, ShmemPacket, 16> ShmemFifo;
@@ -94,7 +90,6 @@ namespace XMI
   typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
 
   typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
-#endif // SHMEM_READY
 #ifdef MU_DEVICE
   typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel,MUDevice > EagerMu;
   // << Point-to-point protocol typedefs and dispatch registration.
@@ -135,9 +130,7 @@ namespace XMI
        // these calls create (allocate and construct) each element.
        // We don't know how these relate to contexts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
-#ifdef SHMEM_READY
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
-#endif // SHMEM_READY
         _progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
         _atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
         _wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
@@ -170,9 +163,7 @@ mm);
      */
     inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
         XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);
-#ifdef SHMEM_READY
         ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, sd, _generics);
-#endif // SHMEM_READY
         XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, sd , _generics);
         XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, sd, _generics);
         XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, sd , _generics);
@@ -199,9 +190,7 @@ mm);
     inline size_t advance(size_t clientid, size_t contextid) {
        size_t events = 0;
         events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
-#ifdef SHMEM_READY
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
-#endif // SHMEM_READY
         events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
         events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
         events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
@@ -217,9 +206,7 @@ mm);
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
-#ifdef SHMEM_READY
     ShmemDevice *_shmem;
-#endif // SHMEM_READY
     XMI::Device::ProgressFunctionDev *_progfunc;
     XMI::Device::AtomicBarrierDev *_atombarr;
     XMI::Device::WQRingReduceDev *_wqringreduce;
@@ -251,12 +238,10 @@ mm);
         // Compile-time assertions
         // ----------------------------------------------------------------
 
-#ifdef SHMEM_READY
         // Make sure the memory allocator is large enough for all
         // protocol classes.
         COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
         COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
-#endif // SHMEM_READY
 #ifdef MU_DEVICE
         COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
 #endif
@@ -273,7 +258,6 @@ mm);
 	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 
 #warning This should not be here?
-#ifdef SHMEM_READY
 #if 0 // not working yet? not fully implemented?
         xmi_result_t result ;
 	_get = (void *) _request.allocateObject ();
@@ -282,7 +266,6 @@ mm);
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
 #endif
-#endif // SHMEM_READY
 
       }
 #ifdef MU_COLL_DEVICE
@@ -443,7 +426,6 @@ mm);
 
       inline xmi_result_t rget (xmi_rget_simple_t * parameters)
       {
-#ifdef SHMEM_READY
 #if 0 // not implemented yet???
         ((GetShmem*)_get)->getimpl (	parameters->rma.done_fn,
                                 parameters->rma.cookie,
@@ -454,7 +436,6 @@ mm);
                                 parameters->rget.local_offset,
                                 parameters->rget.remote_offset);
 #endif
-#endif // SHMEM_READY
         return XMI_SUCCESS;
       }
 
@@ -554,9 +535,7 @@ mm);
 #ifdef MU_DEVICE
             new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, getMu(), result);
 #else
-#ifdef SHMEM_READY
             new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
-#endif // SHMEM_READY
 #endif
           }
 

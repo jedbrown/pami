@@ -45,6 +45,7 @@ namespace XMI
 			     size_t               contextid) :
             XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, contextid)
         {
+#warning Need clientid (and contextid) for GenericMessage ctor (7 places in this file)
         };
 
         virtual ~ShmemMessage () {};
@@ -73,7 +74,7 @@ namespace XMI
                              void               * src,
                              size_t               bytes,
                              bool                 packed) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
             _context (context),
             _iov (&__iov[0]),
             _tiov (1),
@@ -104,7 +105,7 @@ namespace XMI
                              void               * src1,
                              size_t               bytes1,
                              bool                 packed) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
             _context (context),
             _iov (&__iov[0]),
             _tiov (2),
@@ -134,7 +135,7 @@ namespace XMI
                              struct iovec       * iov,
                              size_t               niov,
                              bool                 packed) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
             _context (context),
             _iov (iov),
             _tiov (niov),
@@ -156,7 +157,7 @@ namespace XMI
                              uint16_t             dispatch_id,
                              void               * metadata,
                              size_t               metasize) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
             _context (context),
             _iov (&__iov[0]),
             _tiov (0),
@@ -179,7 +180,7 @@ namespace XMI
                              size_t               remote_offset,
                              size_t               bytes,
                              bool                 is_put) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}),
+            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
             _pkt_type(RMA),
             _rma_local_memregion (local_memregion),
             _rma_remote_memregion (remote_memregion),
