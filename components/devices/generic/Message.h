@@ -133,25 +133,6 @@ public:
 	///
 	inline GenericDeviceMessageQueue *getQS() { return _QS; }
 
-	/// \brief inline method used to activate a message that was enqueued earlier
-	///
-	/// Performs the setup of a message (and threads) in preparation
-	/// for becoming active (on the generic device queues). Used for
-	/// both first-time messages (not queued anywhere) and for when
-	/// a message reaches the top of the sub-device queue (for devices
-	/// that only perform one message at a time). In the latter case,
-	/// 'devQueued' will be true.
-	///
-	/// If this returns true, then the message is complete and should be
-	/// destroyed/freed (after invoking the callback). This can only return
-	/// true if 'devQueued' is false.
-	///
-	/// \param[in] devQueued	was msg was previously posted to sub-device?
-	/// \return	bool whether message is complete
-	/// \ingroup gendev_subdev_api
-	///
-	bool __postNext(bool devQueued);
-
 	/// \brief virtual wrapper for __postNext() method
 	///
 	/// Used during message complete to post the next message.
