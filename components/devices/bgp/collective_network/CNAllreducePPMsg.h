@@ -102,8 +102,8 @@ public:
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_cnallreducepp_dev.common()->__postNext<CNAllreducePPMessage,CNAllreducePPThread>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_cnallreducepp_dev.common()->__postNext<CNAllreducePPMessage,CNAllreducePPThread>(this, devQueued);
 	}
 
 	// _bytesLeft == bytes on network!

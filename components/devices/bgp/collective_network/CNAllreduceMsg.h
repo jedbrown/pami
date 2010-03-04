@@ -121,8 +121,8 @@ public:
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_cnallreduce_dev.common()->__postNext<CNAllreduceMessage,CNAllreduceThread>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_cnallreduce_dev.common()->__postNext<CNAllreduceMessage,CNAllreduceThread>(this, devQueued);
 	}
 
 	inline int setThreads(CNAllreduceThread **th) {

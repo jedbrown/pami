@@ -91,8 +91,8 @@ public:
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_wqbcast_dev.__postNext<WQRingBcastMsg>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_wqbcast_dev.__postNext<WQRingBcastMsg>(this, devQueued);
 	}
 
 	inline int setThreads(WQRingBcastThr **th) {

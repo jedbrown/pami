@@ -131,8 +131,8 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
       }
 
       // virtual function
-      xmi_context_t postNext(bool devPosted) {
-	return _g_mpisync_dev.__postNext<MPISyncMsg>(this, devPosted);
+      xmi_context_t postNext(bool devQueued) {
+	return _g_mpisync_dev.__postNext<MPISyncMsg>(this, devQueued);
       }
 
       inline int setThreads(XMI::Device::Generic::SimpleAdvanceThread **th)

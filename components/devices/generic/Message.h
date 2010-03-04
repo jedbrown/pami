@@ -166,27 +166,27 @@ public:
 	/// both first-time messages (not queued anywhere) and for when
 	/// a message reaches the top of the sub-device queue (for devices
 	/// that only perform one message at a time). In the latter case,
-	/// 'devPosted' will be true.
+	/// 'devQueued' will be true.
 	///
 	/// If this returns true, then the message is complete and should be
 	/// destroyed/freed (after invoking the callback). This can only return
-	/// true if 'devPosted' is false.
+	/// true if 'devQueued' is false.
 	///
-	/// \param[in] devPosted	was msg was previously posted to sub-device?
+	/// \param[in] devQueued	was msg was previously posted to sub-device?
 	/// \return	bool whether message is complete
 	/// \ingroup gendev_subdev_api
 	///
-	bool __postNext(bool devPosted);
+	bool __postNext(bool devQueued);
 
 	/// \brief virtual wrapper for __postNext() method
 	///
 	/// Used during message complete to post the next message.
 	///
-	/// \param[in] devPosted	was msg was previously posted to sub-device?
+	/// \param[in] devQueued	was msg was previously posted to sub-device?
 	/// \return	bool whether message is complete
 	/// \ingroup gendev_subdev_api
 	///
-	virtual xmi_context_t postNext(bool devPosted) = 0;
+	virtual xmi_context_t postNext(bool devQueued) = 0;
 
 protected:
 	MessageStatus _status;

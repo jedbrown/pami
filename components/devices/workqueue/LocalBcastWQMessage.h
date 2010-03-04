@@ -122,8 +122,8 @@ protected:
 
 public:
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_l_bcastwq_dev.__postNext<LocalBcastWQMessage>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_l_bcastwq_dev.__postNext<LocalBcastWQMessage>(this, devQueued);
 	}
 
 	inline int setThreads(LocalBcastWQThread **th) {

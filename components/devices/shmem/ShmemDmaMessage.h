@@ -129,9 +129,9 @@ namespace XMI
 		return nt;
 	}
 
-	xmi_context_t postNext(bool devPosted)
+	xmi_context_t postNext(bool devQueued)
 	{
-		return _device->__postNext<ShmemDmaPutMessage>__postNext(this, devPosted);
+		return _device->__postNext<ShmemDmaPutMessage>__postNext(this, devQueued);
 	}
 
     };  // XMI::Device::ShmemDmaPutMessage class
@@ -199,9 +199,9 @@ namespace XMI
 		return nt;
 	}
 
-	xmi_context_t postNext(bool devPosted)
+	xmi_context_t postNext(bool devQueued)
 	{
-		return _device->__postNext<ShmemDmaGetMessage>__postNext(this, devPosted);
+		return _device->__postNext<ShmemDmaGetMessage>__postNext(this, devQueued);
 	}
     };  // XMI::Device::ShmemDmaGetMessage class
   };    // XMI::Device namespace

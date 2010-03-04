@@ -110,8 +110,8 @@ public:
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_cnbroadcast_dev.common()->__postNext<CNBroadcastMessage,CNBroadcastThread>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_cnbroadcast_dev.common()->__postNext<CNBroadcastMessage,CNBroadcastThread>(this, devQueued);
 	}
 
 	inline int setThreads(CNBroadcastThread **th) {

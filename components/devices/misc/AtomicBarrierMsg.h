@@ -125,8 +125,8 @@ protected:
 
 public:
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_lmbarrier_dev.__postNext<AtomicBarrierMsg>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_lmbarrier_dev.__postNext<AtomicBarrierMsg>(this, devQueued);
 	}
 
 	inline int setThreads(AtomicBarrierThr **th) {

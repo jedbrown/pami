@@ -112,9 +112,9 @@ namespace XMI
 		return nt;
 	}
 
-	inline xmi_context_t postNext(bool devPosted)
+	inline xmi_context_t postNext(bool devQueued)
 	{
-		return getGQS()->template __postNext<ShmemPacketMessage<T_Device> >(this, devPosted);
+		return getGQS()->template __postNext<ShmemPacketMessage<T_Device> >(this, devQueued);
 	}
 
       protected:
@@ -196,9 +196,9 @@ namespace XMI
 		return nt;
 	}
 
-	inline xmi_context_t postNext(bool devPosted)
+	inline xmi_context_t postNext(bool devQueued)
 	{
-		return this->getGQS()->template __postNext<ShmemMultiPacketMessage<T_Device> >(this, devPosted);
+		return this->getGQS()->template __postNext<ShmemMultiPacketMessage<T_Device> >(this, devQueued);
 	}
     };  // XMI::Device::ShmemMultiPacketMessage class
   };    // XMI::Device namespace

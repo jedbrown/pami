@@ -155,8 +155,8 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
       }
 
       // virtual function
-      xmi_context_t postNext(bool devPosted) {
-	return _g_mpibcast_dev.__postNext<MPIBcastMsg>(this, devPosted);
+      xmi_context_t postNext(bool devQueued) {
+	return _g_mpibcast_dev.__postNext<MPIBcastMsg>(this, devQueued);
       }
 
       inline int setThreads(XMI::Device::Generic::SimpleAdvanceThread **th)

@@ -153,8 +153,8 @@ protected:
 
 public:
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_l_reducewq_dev.__postNext<LocalReduceWQMessage>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_l_reducewq_dev.__postNext<LocalReduceWQMessage>(this, devQueued);
 	}
 
 	inline int setThreads(LocalReduceWQThread **th) {

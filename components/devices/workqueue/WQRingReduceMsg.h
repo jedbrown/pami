@@ -100,8 +100,8 @@ public:
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devPosted) {
-		return _g_wqreduce_dev.__postNext<WQRingReduceMsg>(this, devPosted);
+	xmi_context_t postNext(bool devQueued) {
+		return _g_wqreduce_dev.__postNext<WQRingReduceMsg>(this, devQueued);
 	}
 
 	inline int setThreads(WQRingReduceThr **th) {
