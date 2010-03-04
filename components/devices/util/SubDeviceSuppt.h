@@ -22,6 +22,79 @@ namespace XMI {
 namespace Device {
 namespace Generic {
 
+//////////////////////////////////////////////////////////////////////
+///  \brief A Generic Device implmentation of a thread.
+///  This class implements a base thread object.
+///  Normally, this class is not used directly by a sub-device
+/// as the device's thread, but all actual working threads inherit
+/// from this class.
+//////////////////////////////////////////////////////////////////////
+class GenericAdvanceThread : public GenericThread {
+
+public:
+	GenericAdvanceThread() :
+	GenericThread(),
+	_msg(NULL),
+	_dev_wake(NULL)
+	{
+	}
+
+	inline void setMsg(GenericMessage *msg) { _msg = msg; }
+	inline void setAdv(xmi_work_function advThr) { _func = advThr; _cookie = this; }
+	inline GenericMessage *getMsg() { return _msg; }
+
+	inline void setWakeVec(void *v) { _dev_wake = v; }
+	inline void *getWakeVec() { return _dev_wake; }
+
+protected:
+	GenericMessage *_msg;
+	void *_dev_wake;
+}; /* class GenericAdvanceThread */
+
+//////////////////////////////////////////////////////////////////////
+///  \brief A Generic Device implmentation of a thread.
+///  This class implements a useable, simple, thread object.
+///  Other, more complex, thread classes are implemented in specific
+///  sub-devices.  For example, see bgp/collective_network/CollectiveNetworkLib.h
+///  and class BaseGenericCNThread.
+//////////////////////////////////////////////////////////////////////
+class SimpleAdvanceThread : public GenericAdvanceThread {
+public:
+	SimpleAdvanceThread() :
+	GenericAdvanceThread(),
+	_bytesLeft(0)
+	{
+	}
+public:
+	size_t _bytesLeft;
+}; /* class SimpleAdvanceThread */
+
+// This is a bit klunky, but until templates allow methods as parameters...
+
+/// \brief Macro for declaring a routine as an advance routine for a thread
+///
+/// Creates a static function named 'method' that may be used for a
+/// thread's advance routine (thr->setAdv('method')). Assumes there is
+/// also an inlined function named __'method' which contains the actual
+/// advance code for the thread(s).
+///
+/// \param[in] method	Basename of method used to advance thread(s)
+/// \param[in] message	Class of message
+/// \param[in] thread	Class of thread
+///
+#define DECL_ADVANCE_ROUTINE(method,message,thread)			\
+static xmi_result_t method(xmi_context_t context, void *t) {	\
+	thread *thr = (thread *)t;				\
+	message *msg = (message *)thr->getMsg();		\
+	return msg->__##method(thr);				\
+}
+#define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
+static xmi_result_t method(xmi_context_t context, void *t) {	\
+	thread *thr = (thread *)t;				\
+	message *msg = (message *)thr->getMsg();		\
+	return msg->__##method(context, thr);			\
+}
+
 /// \brief Example sub-device for using multiple send queues
 ///
 /// This is typically what 'local' point-to-point devices do, to enforce

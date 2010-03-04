@@ -17,8 +17,7 @@
 #include "components/devices/workqueue/WorkQueue.h"
 #include "math/bgp/collective_network/DblUtils.h"
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
-#include "components/devices/generic/Message.h"
-#include "components/devices/generic/AdvanceThread.h"
+#include "components/devices/util/SubDeviceSuppt.h"
 
 // collective network hardware...
 #include "spi/bgp_SPI.h"

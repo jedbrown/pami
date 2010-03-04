@@ -54,32 +54,6 @@ enum MessageStatus {
 
 namespace Generic {
 
-// This is a bit klunky, but until templates allow methods as parameters...
-
-/// \brief Macro for declaring a routine as an advance routine for a thread
-///
-/// Creates a static function named 'method' that may be used for a
-/// thread's advance routine (thr->setAdv('method')). Assumes there is
-/// also an inlined function named __'method' which contains the actual
-/// advance code for the thread(s).
-///
-/// \param[in] method	Basename of method used to advance thread(s)
-/// \param[in] message	Class of message
-/// \param[in] thread	Class of thread
-///
-#define DECL_ADVANCE_ROUTINE(method,message,thread)			\
-static xmi_result_t method(xmi_context_t context, void *t) {	\
-	thread *thr = (thread *)t;				\
-	message *msg = (message *)thr->getMsg();		\
-	return msg->__##method(thr);				\
-}
-#define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
-static xmi_result_t method(xmi_context_t context, void *t) {	\
-	thread *thr = (thread *)t;				\
-	message *msg = (message *)thr->getMsg();		\
-	return msg->__##method(context, thr);			\
-}
-
 /// \brief Base Class for Messages
 ///
 /// Messages must be able to exist on two queues at the same time.
@@ -159,7 +133,7 @@ public:
 	///
 	inline GenericDeviceMessageQueue *getQS() { return _QS; }
 
-	/// \brief virtual method used to activate a message that was enqueued earlier
+	/// \brief inline method used to activate a message that was enqueued earlier
 	///
 	/// Performs the setup of a message (and threads) in preparation
 	/// for becoming active (on the generic device queues). Used for
