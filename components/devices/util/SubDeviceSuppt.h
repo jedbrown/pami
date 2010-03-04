@@ -101,7 +101,7 @@ public:
 //	friend class T_Model
 public:
 	template <class T_Message>
-	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
+	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devQueued) {
 		XMI::Device::Generic::Device *g;
 		g = getGenerics(msg->getClientId());
 		T_Thread *t;
@@ -110,7 +110,7 @@ public:
 		// setThreads() might complete some/all threads...
 		n = static_cast<T_Message *>(msg)->setThreads(&t);
 		size_t x = msg->getContextId();
-		if (!devPosted && msg->getStatus() == XMI::Device::Done) {
+		if (!devQueued && msg->getStatus() == XMI::Device::Done) {
 			// assert(g[x].getContext() != NULL);
 			return g[x].getContext();
 		}
@@ -255,7 +255,7 @@ public:
 //	friend class T_Model
 public:
 	template <class T_Message, class T_Thread>
-	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devPosted) {
+	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devQueued) {
 		XMI::Device::Generic::Device *g;
 		g = getGenerics(msg->getClientId());
 		T_Thread *t;
@@ -264,7 +264,7 @@ public:
 		// setThreads() might complete some/all threads...
 		n = static_cast<T_Message *>(msg)->setThreads(&t);
 		size_t x = msg->getContextId();
-		if (!devPosted && msg->getStatus() == XMI::Device::Done) {
+		if (!devQueued && msg->getStatus() == XMI::Device::Done) {
 			// assert(g[x].getContext() != NULL);
 			return g[x].getContext();
 		}

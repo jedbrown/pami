@@ -51,8 +51,8 @@ public:
 		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
 		_dev = T_MultisyncDevice::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
-		T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
+		T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
 		_model = new (_mdlbuf) T_MultisyncModel(T_MultisyncDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 

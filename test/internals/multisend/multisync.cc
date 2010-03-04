@@ -68,7 +68,7 @@ int main(int argc, char ** argv) {
 #else
 	task_id = __global.mapping.task();
 	num_tasks = __global.mapping.size();
-	context = NULL;
+	context = (xmi_context_t)1; // context must not be NULL
 	XMI::Memory::MemoryManager mm;
 	initializeMemoryManager("multisync test", 1024*1024, mm);
 #endif

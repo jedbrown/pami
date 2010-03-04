@@ -55,8 +55,8 @@ public:
 		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
 		_dev = T_MulticombineDevice::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
-		T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
+		T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
 		_model = new (_mdlbuf) T_MulticombineModel(T_MulticombineDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 

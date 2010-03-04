@@ -100,8 +100,8 @@ public:
 		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
 		_dev = T_MulticastDevice::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
-		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
+		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
@@ -114,8 +114,8 @@ public:
 		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
 		_dev = T_MulticastDevice::Factory::generate(0, 1, _sd.mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, NULL, &_sd, _generics);
-		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, NULL, &_sd, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
+		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 
       _msginfo.w0 = 0;
