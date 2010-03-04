@@ -20,22 +20,23 @@
 #include "components/devices/mpi/mpimessage.h"
 #include "components/devices/mpi/mpidevice.h"
 #include "common/mpi/NativeInterface.h"
-
+#include "algorithms/geometry/Geometry.h"
 
 typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice,
                                           XMI::Device::MPIMessage> MPIMcastModel;
-typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
+//typedef TSPColl::NBCollManager<MPIMcastModel> XMI_NBCollManager;
 
 typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice,
                                     XMI::Device::MPIMessage,
-                                    size_t> MPIM2MModel;
+                                    size_t> MPIOldM2MModel;
 
 typedef XMI::Device::MPIDevice               MPIDevice;
 
 
 #define XMI_COLL_MCAST_CLASS  MPIMcastModel
-#define XMI_COLL_M2M_CLASS    MPIM2MModel
+#define XMI_COLL_M2M_CLASS    MPIOldM2MModel
 #define XMI_COLL_SYSDEP_CLASS XMI::SysDep
 #define XMI_NATIVEINTERFACE   MPINativeInterface
+#define XMI_GEOMETRY_CLASS    XMI::Geometry::Common
 
 #endif

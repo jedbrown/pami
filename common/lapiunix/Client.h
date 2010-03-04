@@ -12,7 +12,7 @@
 
 #include "common/ClientInterface.h"
 #include "Context.h"
-#include "Geometry.h"
+#include "algorithms/geometry/Geometry.h"
 
 namespace XMI
 {
@@ -22,8 +22,80 @@ namespace XMI
 
       static void shutdownfunc()
         {
+      }
 
+
+
+    inline initializeLapiHandle(lapi_handle_t *out_lapi,
+                                int           *out_myrank,
+                                int           *out_mysize)
+      {
+        lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
+        lapi_extend_t * extend_info;   /* holds IP addresses and ports */
+        lapi_udp_t    * udp_info;      /* List of ip, port info to pass to LAPI */
+        int             num_tasks;     /* number of tasks (from LAPI_LIST_NAME) */
+        char          * list_name;     /* name of UDP host/port list file */
+        FILE          * fp;
+        int             i;
+
+        /* ------------------------------------------------------------ */
+        /*       allocate and initialize lapi_info                      */
+        /* ------------------------------------------------------------ */
+        CheckNULL(lapi_info,(lapi_info_t *)malloc(sizeof(lapi_info_t)));
+        memset(lapi_info, 0, sizeof(lapi_info_t));
+        /* ------------------------------------------------------------ */
+        /* collect UDP hostnames and ports into udp_info data structure */
+        /* ------------------------------------------------------------ */
+        udp_info = NULL;
+        list_name=getenv("LAPI_LIST_NAME");
+        if (list_name)
+            {
+              if ((fp = fopen (list_name, "r")) == NULL) {
+                printf ("Cannot find LAPI_LIST_NAME\n");
+                abort();
+              }
+              fscanf(fp, "%u", &num_tasks);
+              CheckNULL(udp_info,(lapi_udp_t *) malloc(num_tasks*sizeof(lapi_udp_t)));
+              for (i = 0; i < num_tasks; i++)
+                  {
+                    char ip[256];
+                    unsigned port;
+                    fscanf(fp, "%s %u", ip, &port);
+                    udp_info[i].ip_addr = inet_addr(ip);
+                    udp_info[i].port_no = port;
         }
+              /* ------------------------------------------------------------ */
+              /*        link up udp_info, extend_info and lapi_info           */
+              /* ------------------------------------------------------------ */
+              CheckNULL(extend_info,(lapi_extend_t *)malloc(sizeof(lapi_extend_t)));
+              memset(extend_info, 0, sizeof(lapi_extend_t));
+              extend_info->add_udp_addrs = udp_info;
+              extend_info->num_udp_addr  = num_tasks;
+              extend_info->udp_hndlr     = 0;
+              lapi_info->add_info        = extend_info;
+            }
+        else
+            {
+              lapi_info->add_info        = NULL;
+            }
+        /* ------------------------------------------------------------ */
+        /*                call LAPI_Init                                */
+        /* ------------------------------------------------------------ */
+        int intval = 0;
+        //lapi_info->protocol_name = "xmi";
+        CheckLapiRC(lapi_init(out_lapi, lapi_info));
+        CheckLapiRC(lapi_senv(*out_lapi,INTERRUPT_SET, intval));
+        CheckLapiRC(lapi_qenv(*out_lapi,TASK_ID,
+                              out_myrank));
+        CheckLapiRC(lapi_qenv(*out_lapi,
+                              NUM_TASKS,
+                              out_mysize));
+        free(lapi_info);
+      }
+
+
+
+
       inline Client (const char * name, xmi_result_t & result) :
         Interface::Client<XMI::Client>(name, result),
         _client ((xmi_client_t) this),
@@ -35,12 +107,20 @@ namespace XMI
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
-
 	  _clientid = next_client_id++;
-	  // assert(_clientid < XMI_MAX_NUM_CLIENTS);
-
-          // Get some shared memory for this client
           initializeMemoryManager ();
+
+        initializeLapiHandle(&_main_lapi_handle,
+                             &_myrank,
+                             &_mysize);
+
+
+        __global.mapping.init(_myrank, _mysize);
+        _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));
+        _world_range.lo=0;
+        _world_range.hi=_mysize-1;
+        new(_world_geometry) LAPIGeometry(NULL, &__global.mapping,0, 1,&_world_range);
+        CheckLapiRC(lapi_gfence (_main_lapi_handle));
           result = XMI_SUCCESS;
         }
 
@@ -101,7 +181,8 @@ namespace XMI
 		XMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
 #endif
 		int x;
-		for (x = 0; x < n; ++x) {
+        for (x = 0; x < n; ++x)
+            {
 			new (&_generics[x]) XMI::Device::Generic::Device();
 		}
 
@@ -111,16 +192,40 @@ namespace XMI
 		// needed anyway.
 		//memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
-		for (x = 0; x < n; ++x) {
+        int first_context = 0;
+        for (x = 0; x < n; ++x)
+            {
+              lapi_handle_t lhandle;
+              if(!first_context)
+                  {
+                    lhandle=_main_lapi_handle;
+                    first_context = 1;
+                  }
+              else
+                  {
+                    int mrank, msize;
+                    initializeLapiHandle(&lhandle,
+                                         &mrank,
+                                         &msize);
+                  }
+
 			context[x] = (xmi_context_t)&_contexts[x];
 			void *base = NULL;
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
-							_generics, base, bytes);
-			//_context_list->pushHead((QueueElem *)&context[x]);
-			//_context_list->unlock();
+              new (&_contexts[x]) XMI::Context(this->getClient(),
+                                               _clientid,
+                                               x,
+                                               n,
+                                               _generics,
+                                               base,
+                                               bytes,
+                                               _world_geometry,
+                                               lhandle);
+              _ncontexts++;
 		}
+        CheckLapiRC(lapi_gfence (_main_lapi_handle));
+
 		return XMI_SUCCESS;
         }
 
@@ -188,6 +293,70 @@ namespace XMI
 		return _clientid;
 	}
 
+    inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+      {
+        *world_geometry = _world_geometry;
+        return XMI_SUCCESS;
+      }
+
+    inline xmi_result_t geometry_create_taskrange_impl(xmi_geometry_t       * geometry,
+                                                       xmi_geometry_t         parent,
+                                                       unsigned               id,
+                                                       xmi_geometry_range_t * rank_slices,
+                                                       size_t                 slice_count,
+                                                       xmi_context_t          context,
+                                                       xmi_event_function     fn,
+                                                       void                 * cookie)
+      {
+        LAPIGeometry              *new_geometry;
+
+        if(geometry != NULL)
+            {
+              new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
+              new(new_geometry) LAPIGeometry((XMI::Geometry::Common*)parent,
+                                            &__global.mapping,
+                                            id,
+                                            slice_count,
+                                            rank_slices);
+              for(size_t n=0; n<_ncontexts; n++)
+                  {
+                    _contexts[n]._pgas_collreg->analyze(n,new_geometry);
+                    _contexts[n]._oldccmi_collreg->analyze(n,new_geometry);
+                    _contexts[n]._ccmi_collreg->analyze(n,new_geometry);
+                  }
+              *geometry=(LAPIGeometry*) new_geometry;
+              // todo:  deliver completion to the appropriate context
+            }
+        LAPIGeometry *bargeom = (LAPIGeometry*)parent;
+        XMI::Context *ctxt = (XMI::Context *)context;
+        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        return XMI_SUCCESS;
+      }
+
+    inline xmi_result_t geometry_create_tasklist_impl(xmi_geometry_t       * geometry,
+                                                      xmi_geometry_t         parent,
+                                                      unsigned               id,
+                                                      xmi_task_t           * tasks,
+                                                      size_t                 task_count,
+                                                      xmi_context_t          context,
+                                                      xmi_event_function     fn,
+                                                      void                 * cookie)
+      {
+        // todo:  implement this routine
+        XMI_abort();
+
+        return XMI_SUCCESS;
+      }
+
+
+    inline xmi_result_t geometry_destroy_impl (xmi_geometry_t geometry)
+      {
+        XMI_abort();
+        return XMI_UNIMPL;
+      }
+
+
+
     protected:
 
       inline xmi_client_t getClient () const
@@ -202,10 +371,13 @@ namespace XMI
       size_t       _ncontexts;
 	XMI::Context *_contexts;
 	XMI::Device::Generic::Device *_generics;
-
         char         _name[256];
-
+    int                           _myrank;
+    int                           _mysize;
+    LAPIGeometry                 *_world_geometry;
+    xmi_geometry_range_t          _world_range;
         Memory::MemoryManager _mm;
+    lapi_handle_t                 _main_lapi_handle;
 
         inline void initializeMemoryManager ()
         {

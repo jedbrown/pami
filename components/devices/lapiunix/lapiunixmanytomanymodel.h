@@ -16,18 +16,19 @@
 
 #include "sys/xmi.h"
 #include "components/devices/ManytomanyModel.h"
-#include "components/devices/MessageModel.h"
 
 namespace XMI
 {
   namespace Device
   {
     template <class T_Device, class T_Message>
-    class LAPIManytomanyModel : public Interface::MessageModel<LAPIManytomanyModel<T_Device, T_Message>,T_Device, sizeof(T_Message)>
+    class LAPIManytomanyModel : public Interface::ManytomanyModel<LAPIManytomanyModel<T_Device, T_Message>,T_Device, sizeof(T_Message)>
     {
+      static const size_t manytomany_model_state_bytes = sizeof(T_Message);
+      static const size_t sizeof_msg                   = sizeof(T_Message);
     public:
-      LAPIManytomanyModel (T_Device & device) :
-        Interface::MessageModel < LAPIManytomanyModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device)
+      LAPIManytomanyModel (T_Device & device, xmi_result_t &status) :
+        Interface::MessageModel < LAPIManytomanyModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (status)
         {};
 
       inline void setCallback (xmi_dispatch_manytomany_fn cb_recv, void *arg)

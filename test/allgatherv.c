@@ -30,7 +30,7 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -45,7 +45,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 
 }
 
-void _allgatherv (xmi_context_t context, xmi_allgatherv_t *allgatherv)
+void _allgatherv (xmi_context_t context, xmi_xfer_t *allgatherv)
 {
   _g_allgatherv_active++;
   xmi_result_t result;
@@ -103,7 +103,7 @@ int main (int argc, char ** argv)
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -134,8 +134,10 @@ int main (int argc, char ** argv)
                                           XMI_XFER_BARRIER,
                                           algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -164,8 +166,10 @@ int main (int argc, char ** argv)
                                           XMI_XFER_ALLGATHERV,
                                           allgathervalgorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type = 0,
-                                          allgathervnum_algorithm[0]);
+                                          allgathervnum_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
   }
 
 
@@ -174,11 +178,9 @@ int main (int argc, char ** argv)
   char   *rbuf    = (char*)malloc(BUFSIZE*sz);
   size_t *lengths = (size_t*)malloc(sz*sizeof(size_t));
   size_t *displs  = (size_t*)malloc(sz*sizeof(size_t));
-  xmi_barrier_t barrier;
-  barrier.xfer_type = XMI_XFER_BARRIER;
+  xmi_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
 
@@ -190,19 +192,17 @@ int main (int argc, char ** argv)
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-  xmi_allgatherv_t allgatherv;
-  allgatherv.xfer_type  = XMI_XFER_ALLGATHERV;
+  xmi_xfer_t allgatherv;
   allgatherv.cb_done    = cb_allgatherv;
   allgatherv.cookie     = (void*)&_g_allgatherv_active;
-  allgatherv.geometry   = world_geometry;
   allgatherv.algorithm  = allgathervalgorithm[0];
-  allgatherv.sndbuf     = buf;
-  allgatherv.stype      = XMI_BYTE;
-  allgatherv.stypecount = 0;
-  allgatherv.rcvbuf     = rbuf;
-  allgatherv.rtype      = XMI_BYTE;
-  allgatherv.rtypecounts= lengths;
-  allgatherv.rdispls    = displs;
+  allgatherv.cmd.xfer_allgatherv.sndbuf     = buf;
+  allgatherv.cmd.xfer_allgatherv.stype      = XMI_BYTE;
+  allgatherv.cmd.xfer_allgatherv.stypecount = 0;
+  allgatherv.cmd.xfer_allgatherv.rcvbuf     = rbuf;
+  allgatherv.cmd.xfer_allgatherv.rtype      = XMI_BYTE;
+  allgatherv.cmd.xfer_allgatherv.rtypecounts= lengths;
+  allgatherv.cmd.xfer_allgatherv.rdispls    = displs;
 
 
   unsigned i,j,k;
@@ -212,7 +212,7 @@ int main (int argc, char ** argv)
         unsigned  niter    = 100;
         for(k=0;k<sz;k++)lengths[k] = i;
         for(k=0;k<sz;k++)displs[k]  = 0;
-        allgatherv.stypecount       = i;
+        allgatherv.cmd.xfer_allgatherv.stypecount       = i;
 
         _barrier(context, &barrier);
         ti = timer();

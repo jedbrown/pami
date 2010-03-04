@@ -32,7 +32,7 @@ static double timer()
   return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -47,7 +47,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 
 }
 
-void _broadcast (xmi_context_t context, xmi_broadcast_t *broadcast)
+void _broadcast (xmi_context_t context, xmi_xfer_t *broadcast)
 {
   _g_broadcast_active++;
   xmi_result_t result;
@@ -96,7 +96,7 @@ int main (int argc, char ** argv)
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -127,8 +127,10 @@ int main (int argc, char ** argv)
                                           XMI_XFER_BARRIER,
                                           algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -160,8 +162,10 @@ int main (int argc, char ** argv)
                                           XMI_XFER_BROADCAST,
                                           bcastalgorithm,
                                           metas,
-                                          algorithm_type = 0,
-                                          bcastnum_algorithm[0]);
+                                          bcastnum_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
     if (result != XMI_SUCCESS)
     {
@@ -173,11 +177,9 @@ int main (int argc, char ** argv)
 
   double ti, tf, usec;
   char buf[BUFSIZE];
-  xmi_barrier_t barrier;
-  barrier.xfer_type = XMI_XFER_BARRIER;
+  xmi_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
 
@@ -185,16 +187,14 @@ int main (int argc, char ** argv)
   for(nalg=0; nalg<bcastnum_algorithm[algorithm_type]; nalg++)
   {
     int root = 0;
-    xmi_broadcast_t broadcast;
-    broadcast.xfer_type = XMI_XFER_BROADCAST;
+    xmi_xfer_t broadcast;
     broadcast.cb_done   = cb_broadcast;
     broadcast.cookie    = (void*)&_g_broadcast_active;
-    broadcast.geometry  = world_geometry;
     broadcast.algorithm = bcastalgorithm[nalg];
-    broadcast.root      = root;
-    broadcast.buf       = buf;
-    broadcast.type      = XMI_BYTE;
-    broadcast.typecount = 0;
+    broadcast.cmd.xfer_broadcast.root      = root;
+    broadcast.cmd.xfer_broadcast.buf       = buf;
+    broadcast.cmd.xfer_broadcast.type      = XMI_BYTE;
+    broadcast.cmd.xfer_broadcast.typecount = 0;
 
     if (task_id == (size_t)root)
     {
@@ -213,7 +213,7 @@ int main (int argc, char ** argv)
       ti = timer();
       for (j=0; j<niter; j++)
       {
-        broadcast.typecount = i;
+        broadcast.cmd.xfer_broadcast.typecount = i;
         _broadcast (context, &broadcast);
       }
       tf = timer();

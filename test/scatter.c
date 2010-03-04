@@ -31,7 +31,7 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -46,7 +46,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 
 }
 
-void _scatter (xmi_context_t context, xmi_scatter_t *scatter)
+void _scatter (xmi_context_t context, xmi_xfer_t *scatter)
 {
   _g_scatter_active++;
   xmi_result_t result;
@@ -104,7 +104,7 @@ int main (int argc, char ** argv)
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -135,8 +135,10 @@ int main (int argc, char ** argv)
                                           XMI_XFER_BARRIER,
                                           algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -165,18 +167,18 @@ int main (int argc, char ** argv)
                                           XMI_XFER_SCATTER,
                                           scatteralgorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type = 0,
-                                          scatternum_algorithm[0]);
+                                          scatternum_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
   }
 
   double ti, tf, usec;
   char *buf    = (char*)malloc(BUFSIZE*sz);
   char *rbuf   = (char*)malloc(BUFSIZE*sz);
-  xmi_barrier_t barrier;
-  barrier.xfer_type = XMI_XFER_BARRIER;
+  xmi_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
 
@@ -189,19 +191,17 @@ int main (int argc, char ** argv)
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-  xmi_scatter_t scatter;
-  scatter.xfer_type  = XMI_XFER_SCATTER;
+  xmi_xfer_t scatter;
   scatter.cb_done    = cb_scatter;
   scatter.cookie     = (void*)&_g_scatter_active;
-  scatter.geometry   = world_geometry;
   scatter.algorithm  = scatteralgorithm[0];
-  scatter.root       = root;
-  scatter.sndbuf     = buf;
-  scatter.stype      = XMI_BYTE;
-  scatter.stypecount = 0;
-  scatter.rcvbuf     = rbuf;
-  scatter.rtype      = XMI_BYTE;
-  scatter.rtypecount = 0;
+  scatter.cmd.xfer_scatter.root       = root;
+  scatter.cmd.xfer_scatter.sndbuf     = buf;
+  scatter.cmd.xfer_scatter.stype      = XMI_BYTE;
+  scatter.cmd.xfer_scatter.stypecount = 0;
+  scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
+  scatter.cmd.xfer_scatter.rtype      = XMI_BYTE;
+  scatter.cmd.xfer_scatter.rtypecount = 0;
 
   int i,j;
   for(i=1; i<=BUFSIZE; i*=2)
@@ -212,8 +212,8 @@ int main (int argc, char ** argv)
         ti = timer();
         for (j=0; j<niter; j++)
             {
-              scatter.stypecount = i;
-              scatter.rtypecount = i;
+              scatter.cmd.xfer_scatter.stypecount = i;
+              scatter.cmd.xfer_scatter.rtypecount = i;
               _scatter (context, &scatter);
             }
         tf = timer();

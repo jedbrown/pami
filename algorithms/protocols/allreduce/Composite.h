@@ -44,11 +44,9 @@ namespace CCMI
 
     namespace Allreduce
     {
-#if 0
       // Forward declare prototype
       extern void getReduceFunction(xmi_dt, xmi_op, unsigned,
                                     unsigned&, coremath&) __attribute__((noinline));
-#endif
       //-- Composite
       /// \brief The Composite for the Allreduce (and reduce)
       /// kernel executor.

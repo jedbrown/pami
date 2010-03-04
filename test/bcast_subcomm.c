@@ -32,6 +32,11 @@ static double timer()
     gettimeofday(&tv,NULL);
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
+void cb_geom_init (void *context, void * clientdata, xmi_result_t res)
+{
+  int * active = (int *) clientdata;
+  (*active)--;
+}
 
 void cb_barrier (void *context, void * clientdata, xmi_result_t res)
 {
@@ -46,7 +51,7 @@ void cb_broadcast (void *context, void * clientdata, xmi_result_t res)
 }
 
 void _barrier (xmi_context_t  context,
-               xmi_barrier_t *barrier)
+               xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -61,7 +66,7 @@ void _barrier (xmi_context_t  context,
 }
 
 void _broadcast (xmi_context_t    context,
-                 xmi_broadcast_t *broadcast)
+                 xmi_xfer_t *broadcast)
 {
   _g_broadcast_active++;
   xmi_result_t result;
@@ -121,7 +126,7 @@ int main(int argc, char*argv[])
   size_t          half  = sz/2;
   size_t          set[2];
   xmi_geometry_t  world_geometry;
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -130,7 +135,7 @@ int main(int argc, char*argv[])
 
   int algorithm_type = 0;
   xmi_algorithm_t *world_algorithm=NULL;
-  int num_algorithm[2] = {0};
+  int num_algorithm[2] = {0, 0};
   result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,
                                        XMI_XFER_BARRIER,
@@ -143,6 +148,7 @@ int main(int argc, char*argv[])
     return 1;
   }
 
+  assert(num_algorithm[0] != 0);
   if (num_algorithm[0])
   {
     world_algorithm = (xmi_algorithm_t*)
@@ -152,41 +158,54 @@ int main(int argc, char*argv[])
                                           XMI_XFER_BARRIER,
                                           world_algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
-  xmi_barrier_t world_barrier;
-  world_barrier.xfer_type = XMI_XFER_BARRIER;
+  xmi_xfer_t world_barrier;
   world_barrier.cb_done   = cb_barrier;
   world_barrier.cookie    = (void*)&_g_barrier_active;
-  world_barrier.geometry  = world_geometry;
   world_barrier.algorithm = world_algorithm[0];
   _barrier(context, &world_barrier);
 
-
   xmi_geometry_t           bottom_geometry;
   xmi_geometry_range_t     bottom_range;
-  xmi_algorithm_t          *bottom_algorithm=NULL;
-  xmi_barrier_t            bottom_barrier;
-  xmi_broadcast_t          bottom_broadcast;
+  xmi_algorithm_t      *bottom_bar_algorithm=NULL;
+  xmi_algorithm_t      *bottom_bcast_algorithm=NULL;
+  xmi_xfer_t            bottom_barrier;
+  xmi_xfer_t            bottom_broadcast;
 
   xmi_geometry_t           top_geometry;
   xmi_geometry_range_t     top_range;
-  xmi_algorithm_t          *top_algorithm=NULL;
-  xmi_barrier_t            top_barrier;
-  xmi_broadcast_t          top_broadcast;
+  xmi_algorithm_t      *top_bar_algorithm=NULL;
+  xmi_algorithm_t      *top_bcast_algorithm=NULL;
+  xmi_xfer_t            top_barrier;
+  xmi_xfer_t            top_broadcast;
+  int                   geom_init = 1;
+
+
   if(rank>=0 && rank<=half-1)
       {
         fprintf(stderr, "%d:  Creating Bottom Geometry\n", (int)rank);
         bottom_range.lo =0;
         bottom_range.hi =half-1;
-        result = XMI_Geometry_initialize (context,
+        result = XMI_Geometry_create_taskrange (client,
                                           &bottom_geometry,
+                                                world_geometry,
                                           1,
                                           &bottom_range,
-                                          1);
+                                                1,
+                                                context,
+                                                cb_geom_init,
+                                                &geom_init);
+        while (geom_init == 1)
+          result = XMI_Context_advance (context, 1);
+
+
+
         result = XMI_Geometry_algorithms_num(context,
                                              bottom_geometry,
                                              XMI_XFER_BARRIER,
@@ -198,54 +217,53 @@ int main(int argc, char*argv[])
                    result);
           return 1;
         }
-
+        assert(num_algorithm[0] != 0);
         if (num_algorithm[0])
         {
-          bottom_algorithm = (xmi_algorithm_t*)
+          bottom_bar_algorithm = (xmi_algorithm_t*)
             malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
           result = XMI_Geometry_algorithms_info(context,
                                                 bottom_geometry,
                                                 XMI_XFER_BARRIER,
-                                                bottom_algorithm,
+                                                bottom_bar_algorithm,
                                                 (xmi_metadata_t*)NULL,
-                                                algorithm_type,
-                                                num_algorithm[0]);
-
+                                                num_algorithm[0],
+                                                NULL,
+                                                NULL,
+                                                0);
         }
-
-        _barrier (context, &world_barrier);
-        bottom_barrier.xfer_type = XMI_XFER_BARRIER;
         bottom_barrier.cb_done   = cb_barrier;
         bottom_barrier.cookie    = (void*)&_g_barrier_active;
-        bottom_barrier.geometry  = bottom_geometry;
-        bottom_barrier.algorithm = bottom_algorithm[0];
-
+        bottom_barrier.algorithm = bottom_bar_algorithm[0];
 
         result = XMI_Geometry_algorithms_num(context,
                                              bottom_geometry,
                                              XMI_XFER_BROADCAST,
                                              num_algorithm);
+        assert(num_algorithm[0] != 0);
         if (num_algorithm[0])
         {
+          bottom_bcast_algorithm = (xmi_algorithm_t*)
+            malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
+
           result = XMI_Geometry_algorithms_info(context,
                                                 bottom_geometry,
                                                 XMI_XFER_BROADCAST,
-                                                bottom_algorithm,
+                                                bottom_bcast_algorithm,
                                                 (xmi_metadata_t*)NULL,
-                                                algorithm_type,
-                                                num_algorithm[0]);
+                                                num_algorithm[0],
+                                                NULL,
+                                                NULL,
+                                                0);
 
         }
-
-        bottom_broadcast.xfer_type = XMI_XFER_BROADCAST;
         bottom_broadcast.cb_done   = cb_broadcast;
         bottom_broadcast.cookie    = (void*)&_g_broadcast_active;
-        bottom_broadcast.geometry  = bottom_geometry;
-        bottom_broadcast.algorithm = bottom_algorithm[0];
-        bottom_broadcast.root      = 0;
-        bottom_broadcast.buf       = NULL;
-        bottom_broadcast.type      = XMI_BYTE;
-        bottom_broadcast.typecount = 0;
+        bottom_broadcast.algorithm = bottom_bcast_algorithm[0];
+        bottom_broadcast.cmd.xfer_broadcast.root      = 0;
+        bottom_broadcast.cmd.xfer_broadcast.buf       = NULL;
+        bottom_broadcast.cmd.xfer_broadcast.type      = XMI_BYTE;
+        bottom_broadcast.cmd.xfer_broadcast.typecount = 0;
 
 
         set[0]=1;
@@ -256,12 +274,18 @@ int main(int argc, char*argv[])
         fprintf(stderr, "%d:  Creating Top Geometry\n", (int)rank);
         top_range.lo =half;
         top_range.hi =sz-1;
-        result = XMI_Geometry_initialize (context,
+        result = XMI_Geometry_create_taskrange (client,
                                           &top_geometry,
+                                                world_geometry,
                                           2,
                                           &top_range,
-                                          1);
-        _barrier (context, &world_barrier);
+                                                1,
+                                                context,
+                                                cb_geom_init,
+                                                &geom_init);
+
+        while (geom_init == 1)
+          result = XMI_Context_advance (context, 1);
 
         result = XMI_Geometry_algorithms_num(context,
                                              top_geometry,
@@ -275,51 +299,55 @@ int main(int argc, char*argv[])
           return 1;
         }
 
+        assert(num_algorithm[0] != 0);
         if (num_algorithm[0])
         {
-          top_algorithm = (xmi_algorithm_t*)
+          top_bar_algorithm = (xmi_algorithm_t*)
             malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
           result = XMI_Geometry_algorithms_info(context,
                                                 top_geometry,
                                                 XMI_XFER_BARRIER,
-                                                top_algorithm,
+                                                top_bar_algorithm,
                                                 (xmi_metadata_t*)NULL,
-                                                algorithm_type,
-                                                num_algorithm[0]);
+                                                num_algorithm[0],
+                                                NULL,
+                                                NULL,
+                                                0);
 
         }
 
-        top_barrier.xfer_type = XMI_XFER_BARRIER;
         top_barrier.cb_done   = cb_barrier;
         top_barrier.cookie    = (void*)&_g_barrier_active;
-        top_barrier.geometry  = top_geometry;
-        top_barrier.algorithm = top_algorithm[0];
+        top_barrier.algorithm = top_bar_algorithm[0];
 
         result = XMI_Geometry_algorithms_num(context,
                                              top_geometry,
                                              XMI_XFER_BROADCAST,
                                              num_algorithm);
+        assert(num_algorithm[0] != 0);
         if (num_algorithm[0])
         {
+          top_bcast_algorithm = (xmi_algorithm_t*)
+            malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
           result = XMI_Geometry_algorithms_info(context,
                                                 top_geometry,
                                                 XMI_XFER_BROADCAST,
-                                                top_algorithm,
+                                                top_bcast_algorithm,
                                                 (xmi_metadata_t*)NULL,
-                                                algorithm_type,
-                                                num_algorithm[0]);
+                                                num_algorithm[0],
+                                                NULL,
+                                                NULL,
+                                                0);
 
         }
 
-        top_broadcast.xfer_type = XMI_XFER_BROADCAST;
         top_broadcast.cb_done   = cb_broadcast;
         top_broadcast.cookie    = (void*)&_g_broadcast_active;
-        top_broadcast.geometry  = top_geometry;
-        top_broadcast.algorithm = top_algorithm[0];
-        top_broadcast.root      = 0;
-        top_broadcast.buf       = NULL;
-        top_broadcast.type      = XMI_BYTE;
-        top_broadcast.typecount = 0;
+        top_broadcast.algorithm = top_bcast_algorithm[0];
+        top_broadcast.cmd.xfer_broadcast.root      = 0;
+        top_broadcast.cmd.xfer_broadcast.buf       = NULL;
+        top_broadcast.cmd.xfer_broadcast.type      = XMI_BYTE;
+        top_broadcast.cmd.xfer_broadcast.typecount = 0;
 
 
         set[0]=0;
@@ -327,8 +355,8 @@ int main(int argc, char*argv[])
       }
 
 
-  xmi_barrier_t   *barriers   [] = {&bottom_barrier, &top_barrier};
-  xmi_broadcast_t *broadcasts [] = {&bottom_broadcast, &top_broadcast};
+  xmi_xfer_t   *barriers   [] = {&bottom_barrier, &top_barrier};
+  xmi_xfer_t   *broadcasts [] = {&bottom_broadcast, &top_broadcast};
   size_t           roots[]        = {0, half};
   int             i,j,k;
   for(k=1; k>=0; k--)
@@ -352,9 +380,9 @@ int main(int argc, char*argv[])
                     ti = timer();
                     for (j=0; j<niter; j++)
                         {
-                          broadcasts[k]->root      = roots[k];
-                          broadcasts[k]->buf       = buf;
-                          broadcasts[k]->typecount = i;
+                          broadcasts[k]->cmd.xfer_broadcast.root      = roots[k];
+                          broadcasts[k]->cmd.xfer_broadcast.buf       = buf;
+                          broadcasts[k]->cmd.xfer_broadcast.typecount = i;
                           _broadcast(context, broadcasts[k]);
                         }
                     tf = timer();

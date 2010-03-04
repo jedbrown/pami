@@ -36,9 +36,15 @@ namespace XMI
       void                      *recv_func_parm;
     }mpi_dispatch_info_t;
 
-    typedef struct mpi_mcast_dispatch_info_t
+    typedef struct mpi_oldmcast_dispatch_info_t
     {
       xmi_olddispatch_multicast_fn  recv_func;
+      void                         *async_arg;
+    }mpi_oldmcast_dispatch_info_t;
+
+    typedef struct mpi_mcast_dispatch_info_t
+    {
+      xmi_dispatch_multicast_fn  recv_func;
       void                         *async_arg;
     }mpi_mcast_dispatch_info_t;
 
@@ -91,6 +97,11 @@ namespace XMI
           return -1;
         }
 
+      int initOldMcast()
+      {
+        return _oldmcast_dispatch_id++;
+      }
+
       int initMcast()
       {
         return _mcast_dispatch_id++;
@@ -101,8 +112,18 @@ namespace XMI
         return _m2m_dispatch_id++;
       }
 
-      void registerMcastRecvFunction (int                           dispatch_id,
+      void registerOldMcastRecvFunction (int                           dispatch_id,
                                       xmi_olddispatch_multicast_fn  recv_func,
+                                      void                         *async_arg)
+      {
+        _oldmcast_dispatch_table[dispatch_id].recv_func=recv_func;
+        _oldmcast_dispatch_table[dispatch_id].async_arg=async_arg;
+        _oldmcast_dispatch_lookup[dispatch_id]=_oldmcast_dispatch_table[dispatch_id];
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::registerMcastRecvFunction %d\n",this,_dispatch_id));
+      }
+
+      void registerMcastRecvFunction (int                           dispatch_id,
+                                      xmi_dispatch_multicast_fn     recv_func,
                                       void                         *async_arg)
       {
         _mcast_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -201,8 +222,8 @@ namespace XMI
           }
         }
         // Check the Multicast send queue
-        std::list<MPIMcastMessage*>::iterator it_mcast;
-        for(it_mcast=_mcastsendQ.begin();it_mcast != _mcastsendQ.end(); it_mcast++)
+        std::list<OldMPIMcastMessage*>::iterator it_mcast;
+        for(it_mcast=_oldmcastsendQ.begin();it_mcast != _oldmcastsendQ.end(); it_mcast++)
         {
           int numStatuses = (*it_mcast)->_num;
           flag            = 0;
@@ -216,7 +237,7 @@ namespace XMI
                                                 (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
             free ((*it_mcast)->_req);
             free (*it_mcast);
-            _mcastsendQ.remove((*it_mcast));
+            _oldmcastsendQ.remove((*it_mcast));
             break;
           }
         }
@@ -243,12 +264,12 @@ namespace XMI
         }
 
         // Check the msync send Queue
-        std::map<int, MPIMSyncMessage*>::iterator it_msync;
+        std::map<int, MPIMsyncMessage*>::iterator it_msync;
         for(it_msync=_msyncsendQ.begin();it_msync != _msyncsendQ.end(); it_msync++)
         {
 
 
-          MPIMSyncMessage *m = it_msync->second;
+          MPIMsyncMessage *m = it_msync->second;
           if(m->_sendStarted==false)
               {
                 int mpi_rc = MPI_Isend (&m->_p2p_msg,
@@ -348,7 +369,7 @@ namespace XMI
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
-              MPIMcastMessage *msg = (MPIMcastMessage *) malloc (nbytes);
+              OldMPIMcastMessage *msg = (OldMPIMcastMessage *) malloc (nbytes);
               assert(msg != NULL);
               int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, _communicator,&sts);
               XMI_assert (rc == MPI_SUCCESS);
@@ -359,12 +380,12 @@ namespace XMI
               size_t dispatch_id      = msg->_dispatch_id;
               TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
                              this, nbytes,dispatch_id));
-              mpi_mcast_dispatch_info_t mdi = _mcast_dispatch_lookup[dispatch_id];
+              mpi_oldmcast_dispatch_info_t mdi = _oldmcast_dispatch_lookup[dispatch_id];
 
-              MPIMcastRecvMessage *mcast;
-              std::list<MPIMcastRecvMessage*>::iterator it;
+              OldMPIMcastRecvMessage *mcast;
+              std::list<OldMPIMcastRecvMessage*>::iterator it;
               int found=0;
-              for(it=_mcastrecvQ.begin();it != _mcastrecvQ.end(); it++)
+              for(it=_oldmcastrecvQ.begin();it != _oldmcastrecvQ.end(); it++)
               {
                 if( (*it)->_conn == msg->_conn &&
                     (*it)->_dispatch_id == msg->_dispatch_id)
@@ -373,7 +394,7 @@ namespace XMI
                   break;
                 }
               }
-              MPIMcastRecvMessage _m_store;
+              OldMPIMcastRecvMessage _m_store;
               if( !found )
               {
                 XMI_assert (mdi.recv_func != NULL);
@@ -389,7 +410,7 @@ namespace XMI
                                &pwidth,
                                &cb_done);
                 assert(rcvlen <= (size_t)msg->_size);
-//                          mcast = (MPIMcastRecvMessage*)malloc(sizeof(*mcast));
+//                          mcast = (OldMPIMcastRecvMessage*)malloc(sizeof(*mcast));
                 mcast = &_m_store;
                 assert(mcast != NULL);
                 mcast->_conn     = msg->_conn;
@@ -416,7 +437,7 @@ namespace XMI
                   mcast->_done_fn (NULL,//XMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
                                    mcast->_cookie, XMI_SUCCESS);
 
-                _mcastrecvQ.remove(mcast);
+                _oldmcastrecvQ.remove(mcast);
                 free (msg);
                 if(found)
                   free (mcast);
@@ -452,7 +473,7 @@ namespace XMI
 
               if(mcast->_counter >= mcast->_size)
               {
-                _mcastrecvQ.remove(mcast);
+                _oldmcastrecvQ.remove(mcast);
                 if(found)
                   free (mcast);
               }
@@ -555,11 +576,11 @@ namespace XMI
                                             _communicator,
                                             &sts);
                XMI_assert (rc == MPI_SUCCESS);
-               MPIMSyncMessage *m = _msyncsendQ[conn_id];
+               MPIMsyncMessage *m = _msyncsendQ[conn_id];
                if (m)
                  m->_recvDone = true;
                else
-                 _msyncsendQ[conn_id] = (MPIMSyncMessage*)0x1;
+                 _msyncsendQ[conn_id] = (MPIMsyncMessage*)0x1;
              }
              break;
          default:
@@ -601,6 +622,22 @@ namespace XMI
         _sendQ.push_front(msg);
       }
 
+      inline void enqueue(OldMPIMcastMessage* msg)
+      {
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zd\n",this, (size_t)msg->_size));
+        _oldmcastsendQ.push_front(msg);
+      }
+
+      inline void enqueue(OldMPIMcastRecvMessage *msg)
+      {
+        TRACE_DEVICE((stderr,
+                      "<%p>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",
+                      this,
+                      (size_t)msg->_pwidth,
+                      (size_t)msg->_size));
+        _oldmcastrecvQ.push_front(msg);
+      }
+
       inline void enqueue(MPIMcastMessage* msg)
       {
         TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zd\n",this, (size_t)msg->_size));
@@ -616,6 +653,9 @@ namespace XMI
                       (size_t)msg->_size));
         _mcastrecvQ.push_front(msg);
       }
+
+
+
 
       inline void enqueue(MPIM2MRecvMessage<size_t> *msg)
       {
@@ -635,9 +675,9 @@ namespace XMI
         _m2msendQ.push_front(msg);
       }
 
-      inline void enqueue(MPIMSyncMessage *msg)
+      inline void enqueue(MPIMsyncMessage *msg)
       {
-        if(_msyncsendQ[msg->_p2p_msg._connection_id] == (MPIMSyncMessage*)0x1)
+        if(_msyncsendQ[msg->_p2p_msg._connection_id] == (MPIMsyncMessage*)0x1)
           msg->_recvDone = true;
         _msyncsendQ[msg->_p2p_msg._connection_id] = msg;
       }
@@ -654,20 +694,25 @@ namespace XMI
       char                                     *_currentBuf;
       size_t                                    _peers;
       size_t                                    _dispatch_id;
+      size_t                                    _oldmcast_dispatch_id;
       size_t                                    _mcast_dispatch_id;
       size_t                                    _m2m_dispatch_id;
       std::map<int, mpi_dispatch_info_t>        _dispatch_lookup;
+      std::map<int, mpi_oldmcast_dispatch_info_t> _oldmcast_dispatch_lookup;
       std::map<int, mpi_mcast_dispatch_info_t>  _mcast_dispatch_lookup;
       std::map<int, mpi_m2m_dispatch_info_t>    _m2m_dispatch_lookup;
       std::list<MPIMessage*>                    _sendQ;
+      std::list<OldMPIMcastMessage*>            _oldmcastsendQ;
       std::list<MPIMcastMessage*>               _mcastsendQ;
       std::list<MPIM2MMessage*>                 _m2msendQ;
+      std::list<OldMPIMcastRecvMessage*>        _oldmcastrecvQ;
       std::list<MPIMcastRecvMessage*>           _mcastrecvQ;
       std::list<MPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
       std::list<MPIMessage*>                    _pendingQ;
-      std::map<int,MPIMSyncMessage*>            _msyncsendQ;
+      std::map<int,MPIMsyncMessage*>            _msyncsendQ;
       mpi_dispatch_info_t                       _dispatch_table[256*DISPATCH_SET_SIZE];
       mpi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
+      mpi_oldmcast_dispatch_info_t              _oldmcast_dispatch_table[256];
       mpi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
       int                                       _curMcastTag;
       xmi_context_t                             _context;

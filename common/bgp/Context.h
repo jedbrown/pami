@@ -335,23 +335,33 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline
-      xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
-                                                  xmi_xfer_type_t colltype,
-                                                  xmi_algorithm_t *algs,
-                                                  xmi_metadata_t *mdata,
-                                                  int algorithm_type,
-                                                  int num)
-        {
-          return XMI_UNIMPL;
-
-        }
+      inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
+                                                           xmi_xfer_type_t colltype,
+                                                       xmi_algorithm_t  *algs0,
+                                                       xmi_metadata_t   *mdata0,
+                                                       int               num0,
+                                                       xmi_algorithm_t  *algs1,
+                                                       xmi_metadata_t   *mdata1,
+                                                       int               num1)
+      {
+	XMI_abort();
+	return XMI_SUCCESS;
+      }
 
       inline xmi_result_t collective (xmi_xfer_t * parameters)
       {
         return XMI_UNIMPL;
       }
 
+    inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
+                                                    size_t                     dispatch,
+                                                    xmi_dispatch_callback_fn   fn,
+                                                    void                     * cookie,
+                                                    xmi_collective_hint_t      options)
+      {
+	XMI_abort();
+	return XMI_SUCCESS;
+      }
 
 
       inline xmi_result_t dispatch_impl (size_t                     id,

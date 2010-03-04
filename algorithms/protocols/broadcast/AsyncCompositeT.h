@@ -26,7 +26,7 @@ namespace CCMI
   {
     namespace Broadcast
     {
-
+      typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
@@ -110,7 +110,7 @@ namespace CCMI
       ///
       /// \brief Base factory class for broadcast factory implementations.
       ///
-      template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Mcast>
+      template <class T_Schedule, MetaDataFn get_metadata, class T_Sysdep, class T_Mcast>
       class AsyncCompositeFactoryT : public BroadcastFactory<T_Sysdep, T_Mcast, CCMI::ConnectionManager::RankBasedConnMgr<T_Sysdep> >
       {
       protected:
@@ -137,10 +137,60 @@ namespace CCMI
         }
 
         ///Works on all sub-communicators
-        virtual bool Analyze(XMI_GEOMETRY_CLASS *geometry)
+        virtual void metadata(xmi_metadata_t *m)
         {
-          return afn (geometry);
+          get_metadata(m);
         }
+
+                class collObj
+         {
+        public:
+          collObj(xmi_xfer_t *xfer):
+            _xfer(*xfer),
+            _rsize(sizeof(_req)),
+            _user_done_fn(xfer->cb_done),
+            _user_cookie(xfer->cookie)
+            {
+              _xfer.cb_done = alloc_done_fn;
+              _xfer.cookie  = this;
+            }
+          XMI_Request_t                _req[5];
+          xmi_xfer_t                   _xfer;
+          int                          _rsize;
+          xmi_event_function           _user_done_fn;
+          void                       * _user_cookie;
+        };
+
+        static void alloc_done_fn( xmi_context_t   context,
+                                   void          * cookie,
+                                   xmi_result_t    result )
+        {
+            collObj *cObj = (collObj*)cookie;
+            cObj->_user_done_fn(context,cObj->_user_cookie,result);
+            free(cObj);
+        }
+
+        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+                                               void                      * cmd)
+
+          {
+            collObj *obj = (collObj*)malloc(sizeof(*obj));
+            new(obj) collObj((xmi_xfer_t*)cmd);
+            XMI_Callback_t cb_done;
+            cb_done.function   = obj->_xfer.cb_done;
+            cb_done.clientdata = obj->_xfer.cookie;
+            return this->generate(&obj->_req[0],
+                                  obj->_rsize,
+                                  cb_done,
+                                  XMI_MATCH_CONSISTENCY,
+                                  (XMI_GEOMETRY_CLASS *)geometry,
+                                  __global.mapping.task(),
+                                  (char*)obj->_xfer.cmd.xfer_ambroadcast.sndbuf,
+                                  obj->_xfer.cmd.xfer_ambroadcast.stypecount);
+          }
+
+
+
 
         ///
         /// \brief Generate a non-blocking broadcast message.
@@ -171,7 +221,6 @@ namespace CCMI
          char                      * src,
          unsigned                    bytes)
         {
-          //fprintf (stderr, "Async Broadcast Generate %d, %d\n", sizeof(T_Schedule), sizeof(CCMI_Executor_t));
           T_Schedule* a_bcast = NULL;
 
           XMI_assert(rsize > sizeof(T_Schedule));
@@ -183,6 +232,7 @@ namespace CCMI
                           cb_done, consistency, this->_minterface,
                           geometry, root, src, bytes, &this->_execpool );
             a_bcast->executor().start();
+            return NULL;
           }
           else if(this->_isBuffered)
           {

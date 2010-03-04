@@ -14,6 +14,8 @@
 #ifndef __algorithms_protocols_alltoall_Alltoall_h__
 #define __algorithms_protocols_alltoall_Alltoall_h__
 
+#include "algorithms/composite/Composite.h"
+
 namespace CCMI
 {
   namespace Adaptor
@@ -128,6 +130,16 @@ namespace CCMI
       }
     };
 
+
+
+    class SimpleExecutor:public CCMI::Executor::Composite
+    {
+    public:
+      virtual void start() {};
+    };
+
+
+
     template <class T_Manytomany, class T_Sysdep, class T_Counter>
     class AlltoallFactory : public CCMI::Adaptor::CollectiveProtocolFactory
     {
@@ -150,6 +162,66 @@ namespace CCMI
       {
         return(geometry->isTorus());
       }
+
+
+      class collObj
+      {
+      public:
+        collObj(xmi_xfer_t *xfer):
+          _rsize(sizeof(_req)),
+          _xfer(*xfer),
+          _user_done_fn(xfer->cb_done),
+          _user_cookie(xfer->cookie)
+          {
+            _xfer.cb_done = alloc_done_fn;
+            _xfer.cookie  = this;
+          }
+        XMI_CollectiveRequest_t      _req[1];
+        int                          _rsize;
+        xmi_xfer_t                   _xfer;
+        xmi_event_function           _user_done_fn;
+        void                       * _user_cookie;
+        SimpleExecutor               _simpleExec;
+      };
+
+      static void alloc_done_fn( xmi_context_t   context,
+                                 void          * cookie,
+                                 xmi_result_t    result )
+        {
+          collObj *cObj = (collObj*)cookie;
+          cObj->_user_done_fn(context,cObj->_user_cookie,result);
+          free(cObj);
+        }
+
+
+
+      virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+                                             void                      * cmd)
+
+        {
+          collObj *obj = (collObj*)malloc(sizeof(*obj));
+          new(obj) collObj((xmi_xfer_t*)cmd);
+          XMI_Callback_t cb_done;
+          cb_done.function   = obj->_xfer.cb_done;
+          cb_done.clientdata = obj->_xfer.cookie;
+          this->generate(&obj->_req[0],
+                         cb_done,
+                         XMI_MATCH_CONSISTENCY,
+                         (XMI_GEOMETRY_CLASS *)geometry,
+                         obj->_xfer.cmd.xfer_alltoallv.sndbuf,
+                         obj->_xfer.cmd.xfer_alltoallv.stypecounts,
+                         obj->_xfer.cmd.xfer_alltoallv.sdispls,
+                         obj->_xfer.cmd.xfer_alltoallv.rcvbuf,
+                         obj->_xfer.cmd.xfer_alltoallv.rtypecounts,
+                         obj->_xfer.cmd.xfer_alltoallv.rdispls,
+                         NULL,NULL);
+          return &obj->_simpleExec;
+        }
+
+      virtual void metadata(xmi_metadata_t *mdata)
+          {
+            strcpy(mdata->name, "CCMIAlltoall");
+          }
 
       virtual unsigned generate (XMI_CollectiveRequest_t   * request,
                                  xmi_callback_t    cb_done,

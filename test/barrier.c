@@ -23,7 +23,7 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -74,7 +74,7 @@ int main (int argc, char ** argv)
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -109,8 +109,10 @@ int main (int argc, char ** argv)
                                           XMI_XFER_BARRIER,
                                           algorithm,
                                           metas,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -120,19 +122,17 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-  xmi_barrier_t barrier;
-  barrier.xfer_type = XMI_XFER_BARRIER;
+  xmi_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
 
   if(!task_id)
-    fprintf(stderr, "Test Barrier 1\n");
+    fprintf(stderr, "Test Barrier 1: %s\n", metas[0].name);
   _barrier(context, &barrier);
   if(!task_id)
     fprintf(stderr, "Test Barrier 2, then correctness\n");
-  barrier.algorithm = algorithm[1];
+  barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
   _barrier(context, &barrier);
 

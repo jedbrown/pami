@@ -7,6 +7,7 @@
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/interfaces/NativeInterface.h"
+#include "components/memory/MemoryAllocator.h"
 
 namespace CCMI
 {
@@ -15,16 +16,42 @@ namespace CCMI
     ///
     /// \brief choose if this protocol is supports the input geometry
     ///
-    typedef bool      (*AnalyzeFn)   (XMI_GEOMETRY_CLASS                  * g);
+    typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
 
-    template <class T, AnalyzeFn afn, class C>
+    template <class T, MetaDataFn get_metadata, class C>
       class CollectiveProtocolFactoryT: public CollectiveProtocolFactory
     {
-      C                                          * _cmgr;
-      Interfaces::NativeInterface                * _native;
+      class collObj
+      {
+      public:
+        collObj(Interfaces::NativeInterface             * native,
+               C                                        * cmgr,
+               xmi_geometry_t                             geometry,
+               xmi_xfer_t                               * cmd,
+               xmi_event_function                         fn,
+               void                                     * cookie,
+               CollectiveProtocolFactoryT               * factory):
+          _obj(native,cmgr,geometry,cmd,fn,cookie),
+          _factory(factory),
+          _user_done_fn(cmd->cb_done),
+          _user_cookie(cmd->cookie)
+          {
+
+          }
+        T                            _obj;
+        CollectiveProtocolFactoryT * _factory;
+        xmi_event_function           _user_done_fn;
+        void                       * _user_cookie;
+      };
+
 
     public:
-      CollectiveProtocolFactoryT (C *cmgr, Interfaces::NativeInterface *native, xmi_dispatch_multicast_fn cb_head=NULL): CollectiveProtocolFactory(), _cmgr(cmgr), _native(native)
+      CollectiveProtocolFactoryT (C                           *cmgr,
+                                  Interfaces::NativeInterface *native,
+                                  xmi_dispatch_multicast_fn    cb_head=NULL):
+        CollectiveProtocolFactory(),
+        _cmgr(cmgr),
+        _native(native)
       {
 	xmi_dispatch_callback_fn fn;
 	fn.multicast = (xmi_dispatch_multicast_fn) cb_head;
@@ -41,20 +68,38 @@ namespace CCMI
         CCMI_abort();
       }
 
-      /// \brief All protocols determine if a given geometry is adequate
-      virtual bool Analyze(XMI_GEOMETRY_CLASS *g) { return afn(g); }
+      static void done_fn(xmi_context_t  context,
+                          void          *clientdata,
+                          xmi_result_t   res)
+        {
+          collObj *cobj = (collObj *)clientdata;
+          cobj->_user_done_fn(context, cobj->_user_cookie, res);
+          cobj->_factory->_alloc.returnObject(cobj);
+        }
 
-      virtual Executor::Composite * generate(void                      * request_buf,
-					     size_t                      rsize,
-					     xmi_context_t               context,
-					     xmi_geometry_t              geometry,
+
+      virtual Executor::Composite * generate(xmi_geometry_t              geometry,
 					     void                      * cmd)
 	{
-	  CCMI_assert(rsize >= sizeof(T));
-	  T *t = new (request_buf) T(_native, _cmgr, geometry, cmd);
-	  return (Executor::Composite *)t;
+          collObj *cobj = (collObj*) _alloc.allocateObject();
+          new(cobj) collObj(_native,          // Native interface
+                            _cmgr,            // Connection Manager
+                            geometry,         // Geometry Object
+                            (xmi_xfer_t*)cmd, // Parameters
+                            done_fn,          // Intercept function
+                            this,             // Intercept cookie
+                            this);            // Factory
+          return (Executor::Composite *)&cobj->_obj;
 	}
 
+      virtual void metadata(xmi_metadata_t *mdata)
+        {
+          get_metadata(mdata);
+        }
+
+      C                                          * _cmgr;
+      Interfaces::NativeInterface                * _native;
+      XMI::MemoryAllocator<sizeof(collObj), 16>    _alloc;
     };
   };
 };

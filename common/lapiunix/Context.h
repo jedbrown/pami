@@ -5,39 +5,116 @@
 #ifndef __common_lapiunix_Context_h__
 #define __common_lapiunix_Context_h__
 
+// Standard includes
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <new>
+#include <map>
+
+// common includes
+#include "SysDep.h"
+#include "Mapping.h"
 #include "common/lapiunix/lapifunc.h"
+#include "lapi.h"
 #include "common/ContextInterface.h"
-#include "Geometry.h"
+
+// Geometry
+#include "algorithms/geometry/Geometry.h"
+
+// Components
 #include "components/devices/lapiunix/lapiunixdevice.h"
 #include "components/devices/lapiunix/lapiunixpacketmodel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
-#include "p2p/protocols/send/eager/Eager.h"
-#include "SysDep.h"
-#include "common/default/CollFactory.h"
-#include "common/default/CollRegistration.h"
+#include "components/devices/lapiunix/lapiunixmulticastmodel.h"
+#include "components/devices/lapiunix/lapiunixmultisyncmodel.h"
+#include "components/devices/lapiunix/lapiunixmulticombinemodel.h"
+#include "components/devices/lapiunix/lapiunixmanytomanymodel.h"
 #include "components/devices/generic/GenericDevice.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
-#include "Mapping.h"
-#include <new>
-#include <map>
+
+// P2P Protocols
+#include "p2p/protocols/send/eager/Eager.h"
+
+// Collective Protocols
+#include "algorithms/geometry/CCMICollRegistration.h"
+#include "algorithms/geometry/PGASCollRegistration.h"
+#include "algorithms/geometry/OldCCMICollRegistration.h"
 
 namespace XMI
 {
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
+
+  // Device Typedefs
+  typedef Device::LAPIDevice                                          LAPIDevice;
+
+  // P2P Message Typedefs
     typedef Device::LAPIMessage LAPIMessage;
-    typedef Device::LAPIDevice<SysDep> LAPIDevice;
+
+  // "Old" Collective Typedefs
+  typedef Device::OldLAPIMcastMessage                                 OldLAPIMcastMessage;
+  typedef Device::OldLAPIM2MMessage                                   OldLAPIM2MMessage;
+
+  // "New" Collective Message Typedefs
+  typedef Device::LAPIMsyncMessage                                    LAPIMsyncMessage;
+  typedef Device::LAPIMcastMessage                                    LAPIMcastMessage;
+  typedef Device::LAPIMcombineMessage                                 LAPIMcombineMessage;
+  typedef Device::LAPIM2MMessage                                      LAPIM2MMessage;
+
+  // P2P Model Classes
     typedef Device::LAPIPacketModel<LAPIDevice,LAPIMessage> LAPIPacketModel;
-    typedef Geometry::Common<XMI_MAPPING_CLASS> LAPIGeometry;
-    typedef CollFactory::Default<LAPIDevice, SysDep, LAPIMcastModel> LAPICollfactory;
-    typedef CollRegistration::Default<LAPIGeometry, LAPICollfactory, LAPIDevice, SysDep> LAPICollreg;
+
+  // "New" Collective Model typedefs
+  typedef Device::LAPIMultisyncModel<LAPIDevice,LAPIMsyncMessage>     LAPIMultisyncModel;
+  typedef Device::LAPIMulticastModel<LAPIDevice,LAPIMcastMessage>     LAPIMulticastModel;
+  typedef Device::LAPIMulticombineModel<LAPIDevice,
+                                       LAPIMcombineMessage>           LAPIMulticombineModel;
+  typedef Device::LAPIManytomanyModel<LAPIDevice,LAPIM2MMessage>      LAPIManytomanyModel;
+
+  // "Old" Collective Model Typedefs
+  typedef XMI::Device::LAPIOldmulticastModel<LAPIDevice,
+                                             OldLAPIMcastMessage>     LAPIOldMcastModel;
+  typedef XMI::Device::LAPIOldm2mModel<LAPIDevice,
+                                       OldLAPIM2MMessage,
+                                       size_t>                        LAPIOldM2MModel;
+
+  // Geometry Typedefs
+  typedef Geometry::Common                                            LAPIGeometry;
+
+  // Protocol Typedefs
     typedef XMI::Protocol::Send::Eager <LAPIPacketModel,LAPIDevice> EagerLAPI;
+
+  // "New" CCMI Protocol Typedefs
+  typedef XMI::LAPINativeInterface<LAPIDevice,
+                                   LAPIMulticastModel,
+                                   LAPIMultisyncModel,
+                                   LAPIMulticombineModel>              DefaultNativeInterface;
+  typedef CollRegistration::CCMIRegistration<LAPIGeometry,
+                                             DefaultNativeInterface,
+                                             LAPIDevice> CCMICollreg;
+
+  // PGAS RT Typedefs/Coll Registration
+  typedef XMI::Device::LAPIOldmulticastModel<LAPIDevice,
+                                             OldLAPIMcastMessage> LAPIOldMcastModel;
+  typedef TSPColl::NBCollManager<LAPIOldMcastModel> LAPINBCollManager;
+  typedef CollRegistration::PGASRegistration<LAPIGeometry,
+                                             LAPIOldMcastModel,
+                                             LAPIDevice,
+                                             LAPINBCollManager> PGASCollreg;
+
+  // "Old" CCMI Protocol Typedefs
+  typedef CollRegistration::OldCCMIRegistration<LAPIGeometry,
+                                                LAPIOldMcastModel,
+                                                LAPIOldM2MModel,
+                                                LAPIDevice,
+                                                SysDep> OldCCMICollreg;
+  // Memory Allocator Typedefs
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+
+
 
     class Context : public Interface::Context<XMI::Context>
     {
@@ -46,9 +123,15 @@ namespace XMI
 		context->_workAllocator.returnObject(cookie);
 	}
     public:
-      inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
+    inline Context (xmi_client_t                  client,
+                    size_t                        clientid,
+                    size_t                        id,
+                    size_t                        num,
 				XMI::Device::Generic::Device *generics,
-				void * addr, size_t bytes) :
+                    void                         *addr,
+                    size_t                        bytes,
+                    LAPIGeometry                 *world_geometry,
+                    lapi_handle_t                 lapi_handle) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
         _clientid (clientid),
@@ -58,100 +141,30 @@ namespace XMI
         _lock (),
         _empty_advance(0),
 	_workAllocator (),
-        _minterface(&_lapi_device,_client,this,_contextid),
-	_generic(generics[id])
-        {
-          lapi_info_t   * lapi_info;     /* used as argument to LAPI_Init */
-          lapi_extend_t * extend_info;   /* holds IP addresses and ports */
-          lapi_udp_t    * udp_info;      /* List of ip, port info to pass to LAPI */
-          int             num_tasks;     /* number of tasks (from LAPI_LIST_NAME) */
-          char          * list_name;     /* name of UDP host/port list file */
-          FILE          * fp;
-          int             i;
-
-          /* ------------------------------------------------------------ */
-          /*        initialize request allocation pool                    */
-          /* ------------------------------------------------------------ */
-//	    __pgasrt_lapi_pool_init();
-
-          /* ------------------------------------------------------------ */
-          /*       allocate and initialize lapi_info                      */
-          /* ------------------------------------------------------------ */
-
-          CheckNULL(lapi_info,(lapi_info_t *)malloc(sizeof(lapi_info_t)));
-          memset(lapi_info, 0, sizeof(lapi_info_t));
-
-          /* ------------------------------------------------------------ */
-          /* collect UDP hostnames and ports into udp_info data structure */
-          /* ------------------------------------------------------------ */
-
-          udp_info = NULL;
-          list_name=getenv("LAPI_LIST_NAME");
-          if (list_name)
-              {
-                if ((fp = fopen (list_name, "r")) == NULL) {
-                  printf ("Cannot find LAPI_LIST_NAME\n");
-                  abort();
-                }
-                fscanf(fp, "%u", &num_tasks);
-                CheckNULL(udp_info,(lapi_udp_t *) malloc(num_tasks*sizeof(lapi_udp_t)));
-                for (i = 0; i < num_tasks; i++)
-                    {
-                      char ip[256];
-                      unsigned port;
-                      fscanf(fp, "%s %u", ip, &port);
-                      udp_info[i].ip_addr = inet_addr(ip);
-                      udp_info[i].port_no = port;
-                    }
-                /* ------------------------------------------------------------ */
-                /*        link up udp_info, extend_info and lapi_info           */
-                /* ------------------------------------------------------------ */
-                CheckNULL(extend_info,(lapi_extend_t *)malloc(sizeof(lapi_extend_t)));
-                memset(extend_info, 0, sizeof(lapi_extend_t));
-                extend_info->add_udp_addrs = udp_info;
-                extend_info->num_udp_addr  = num_tasks;
-                extend_info->udp_hndlr     = 0;
-                lapi_info->add_info        = extend_info;
-              }
-          else
-              {
-                lapi_info->add_info        = NULL;
-              }
-          /* ------------------------------------------------------------ */
-          /*                call LAPI_Init                                */
-          /* ------------------------------------------------------------ */
-          int intval = 0;
-          lapi_info->protocol_name = "xmi";
-          CheckLapiRC(lapi_init(&_lapi_handle, lapi_info));
-          CheckLapiRC(lapi_senv(_lapi_handle,INTERRUPT_SET, intval));
-          CheckLapiRC(lapi_qenv(_lapi_handle,TASK_ID,
-                                       (int *)&_myrank));
-          CheckLapiRC(lapi_qenv(_lapi_handle,NUM_TASKS,
-                                (int *)&_mysize));
-          free(lapi_info);
+      _world_geometry(world_geometry),
+      _minterface(_lapi_device,_client,this,_contextid),
+      _generic(generics[id]),
+      _lapi_handle(lapi_handle)
+      {
 
           _lapi_device.init(&_sysdep, _context, _contextid);
           _lapi_device.setLapiHandle(_lapi_handle);
-          __global.mapping.init(_myrank, _mysize);
 
-          _world_geometry=(LAPIGeometry*) malloc(sizeof(*_world_geometry));
-          _world_range.lo=0;
-          _world_range.hi=_mysize-1;
-          new(_world_geometry) LAPIGeometry(&__global.mapping,0, 1,&_world_range);
+        _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
+        new(_pgas_collreg) PGASCollreg(client, (xmi_context_t *)this, id,_lapi_device);
+        _pgas_collreg->analyze(_contextid,_world_geometry);
 
-          _collreg=(LAPICollreg*) malloc(sizeof(*_collreg));
-          new(_collreg) LAPICollreg(&_lapi_device, &_sysdep,getClient(), (xmi_context_t)(void *)this, getId());
+        _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
+        new(_oldccmi_collreg) OldCCMICollreg(client, (xmi_context_t *)this, id,_sysdep,_lapi_device);
+        _oldccmi_collreg->analyze(_contextid, _world_geometry);
 
-          _world_collfactory=_collreg->analyze(_world_geometry);
-          _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
-
-          CheckLapiRC(lapi_gfence (_lapi_handle));
+        _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
+        new(_ccmi_collreg) CCMICollreg(client, (xmi_context_t *)this, id,_lapi_device);
+        _ccmi_collreg->analyze(_contextid, _world_geometry);
 
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
-
 	  _generic.init (_sysdep, (xmi_context_t)this, clientid, id, num, generics);
-
         }
 
       inline xmi_client_t getClient_impl ()
@@ -372,70 +385,50 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
-      inline xmi_result_t geometry_initialize_impl (xmi_geometry_t       * geometry,
-                                                    unsigned               id,
-                                                    xmi_geometry_range_t * rank_slices,
-                                                    size_t                 slice_count)
+
+    inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
         {
-	  LAPIGeometry              *new_geometry;
-	  LAPICollfactory           *new_collfactory;
-          new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
-          new(new_geometry) LAPIGeometry(&__global.mapping,id, slice_count,rank_slices);
-          new_collfactory=_collreg->analyze(new_geometry);
-	  new_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, new_collfactory);
-	  *geometry=(LAPIGeometry*) new_geometry;
-          return XMI_SUCCESS;
+        Geometry::Algorithm<LAPIGeometry> *algo = (Geometry::Algorithm<LAPIGeometry> *)parameters->algorithm;
+        return algo->generate(parameters);
         }
 
-
-      inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+    inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
+                                                    size_t                     dispatch,
+                                                    xmi_dispatch_callback_fn   fn,
+                                                    void                     * cookie,
+                                                    xmi_collective_hint_t      options)
         {
-	  *world_geometry = _world_geometry;
-          return XMI_SUCCESS;
+        Geometry::Algorithm<LAPIGeometry> *algo = (Geometry::Algorithm<LAPIGeometry> *)algorithm;
+        return algo->dispatch_set(dispatch, fn, cookie, options);
         }
 
-
-      inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
-        {
-          assert(0);
-          return XMI_UNIMPL;
-        }
-
-
-      inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
-        {
-	  LAPICollfactory           *collfactory;
-	  // This is ok...we can avoid a switch because all the xmi structs
-	  // have the same layout.let's just use barrier for now
-	  LAPIGeometry              *new_geometry = (LAPIGeometry*)parameters->xfer_barrier.geometry;
-	  collfactory =(LAPICollfactory*) new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
-          return collfactory->collective(parameters);
-        }
 
       inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                         xmi_xfer_type_t colltype,
                                                         int *lists_lengths)
         {
-          LAPIGeometry *new_geometry = (LAPIGeometry*) geometry;
-          LAPICollfactory  *collfactory =  (LAPICollfactory*)
-            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
-          return collfactory->algorithms_num(colltype, lists_lengths);
+        LAPIGeometry *_geometry = (LAPIGeometry*) geometry;
+        return _geometry->algorithms_num(colltype, lists_lengths, _contextid);
         }
 
       inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
                                                          xmi_xfer_type_t colltype,
-                                                         xmi_algorithm_t *algs,
-                                                         xmi_metadata_t *mdata,
-                                                         int algorithm_type,
-                                                         int num)
-        {
-          LAPIGeometry *new_geometry = (LAPIGeometry*) geometry;
-          LAPICollfactory  *collfactory;
-          collfactory = (LAPICollfactory*)
-            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
-          return collfactory->algorithms_info(colltype, algs,
-                                              mdata, algorithm_type, num);
-
+                                                       xmi_algorithm_t  *algs0,
+                                                       xmi_metadata_t   *mdata0,
+                                                       int               num0,
+                                                       xmi_algorithm_t  *algs1,
+                                                       xmi_metadata_t   *mdata1,
+                                                       int               num1)
+      {
+        LAPIGeometry *_geometry = (LAPIGeometry*) geometry;
+        return _geometry->algorithms_info(colltype,
+                                          algs0,
+                                          mdata0,
+                                          num0,
+                                          algs1,
+                                          mdata1,
+                                          num1,
+                                          _contextid);
         }
 
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
@@ -521,11 +514,13 @@ namespace XMI
       XMI::Device::Generic::Device         &_generic;
       MemoryAllocator<1024,16>              _request;
       LAPIDevice                            _lapi_device;
-      LAPICollreg                          *_collreg;
+  public:
+    CCMICollreg                          *_ccmi_collreg;
+    PGASCollreg                          *_pgas_collreg;
+    OldCCMICollreg                       *_oldccmi_collreg;
       LAPIGeometry                         *_world_geometry;
-      LAPICollfactory                      *_world_collfactory;
-      LAPINativeInterface<LAPIDevice>       _minterface;
-      xmi_geometry_range_t                  _world_range;
+  private:
+    DefaultNativeInterface                _minterface;
       unsigned                              _empty_advance;
       int                                   _myrank;
       int                                   _mysize;

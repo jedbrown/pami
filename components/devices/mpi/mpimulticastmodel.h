@@ -16,47 +16,75 @@
 
 #include "sys/xmi.h"
 #include "components/devices/MulticastModel.h"
-#include "components/devices/MessageModel.h"
+#include "components/devices/mpi/mpimessage.h"
 
 namespace XMI
 {
     namespace Device
     {
         template <class T_Device, class T_Message>
-        class MPIMulticastModel : public Interface::MessageModel<MPIMulticastModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
+    class MPIMulticastModel :
+      public Interface::AMMulticastModel<MPIMulticastModel<T_Device, T_Message>,sizeof(T_Message)>
         {
         public:
-            MPIMulticastModel (T_Device & device) :
-              Interface::MessageModel < MPIMulticastModel<T_Device, T_Message>, T_Device,sizeof(T_Message) > (device)
-                {};
-            inline void setConnectionId_impl (unsigned conn)
+      static const size_t mcast_model_state_bytes = sizeof(T_Message);
+      static const size_t sizeof_msg              = sizeof(T_Message);
+      static const bool   is_active_message       = true;
+
+
+      MPIMulticastModel (T_Device & device, xmi_result_t &status) :
+        Interface::AMMulticastModel < MPIMulticastModel<T_Device, T_Message>, sizeof(T_Message) > (status),
+        _device(device)
                 {
-                }
-            inline void setRoles_impl (unsigned roles)
+          status = XMI_SUCCESS;
+        };
+
+      inline xmi_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
+                                                          xmi_dispatch_multicast_fn  recv_func,
+                                                          void                      *async_arg)
                 {
+          _device.registerMcastRecvFunction (dispatch_id,recv_func, async_arg);
+          return XMI_SUCCESS;
                 }
-            inline void setSendData_impl (xmi_pipeworkqueue_t *src, size_t bytes)
+
+      inline xmi_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
+                                              xmi_multicast_t *mcast)
                 {
-                }
-            inline void setSendRanks_impl (xmi_topology_t *src_participants)
+          xmi_result_t      rc         = XMI_SUCCESS;
+          MPIMcastMessage  *msg        = (MPIMcastMessage *) state;
+          unsigned          myrank     = __global.mapping.task();
+          msg->_cb_done                = mcast->cb_done;
+          msg->_p2p_msg._connection_id = mcast->connection_id;
+          msg->_srcranks               = (XMI::Topology*)mcast->src_participants;
+          msg->_dstranks               = (XMI::Topology*)mcast->src_participants;
+          msg->_srcpwq                 = (XMI::PipeWorkQueue*)mcast->src;
+          msg->_dstpwq                 = (XMI::PipeWorkQueue*)mcast->dst;
+          msg->_root                   = msg->_srcranks->index2Rank(0);
+          msg->_bytes                  = mcast->bytes;
+
+
+          XMI_abort();
+
+          if(msg->_dstpwq)
                 {
+                msg->_dstranks->rankList(&msg->_ranks);
+                msg->_numRanks = msg->_dstranks->size();
                 }
-            inline void setRecvData_impl (xmi_pipeworkqueue_t *dst, size_t bytes)
+
+          if(msg->_srcpwq)
                 {
+                msg->_currBytes = msg->_srcpwq->bytesAvailableToConsume();
+                msg->_currBuf   = msg->_srcpwq->bufferToConsume();
                 }
-            inline void setRecvRanks_impl (xmi_topology_t *dst_participants)
+
+          if(msg->_root == myrank)
                 {
+
                 }
-            inline void setCallback_impl (xmi_event_function fn,  void *clientdata)
-                {
                 }
-            inline void setInfo_impl (xmi_quad_t *info, int count)
-                {
-                }
-            inline bool postMultiCast_impl (T_Message * obj)
-                {
-		  return false;
-                }
+      T_Device                  &_device;
+      xmi_dispatch_multicast_fn  _cb_async_head;
+      void                      *_async_arg;
         };
     };
 };

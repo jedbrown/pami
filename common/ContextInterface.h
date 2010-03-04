@@ -86,27 +86,20 @@ namespace XMI
                                         void               * cookie,
                                         size_t               task);
 
-        inline xmi_result_t geometry_initialize (xmi_geometry_t       * geometry,
-                                                 unsigned               id,
-                                                 xmi_geometry_range_t * rank_slices,
-                                                 size_t                 slice_count);
-
-        inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry);
-
-        inline xmi_result_t geometry_finalize (xmi_geometry_t geometry);
-
-        inline xmi_result_t collective (xmi_xfer_t * parameters);
-
       inline xmi_result_t geometry_algorithms_num (xmi_geometry_t geometry,
                                                    xmi_xfer_type_t ctype,
                                                    int *lists_lengths);
 
       inline xmi_result_t geometry_algorithms_info (xmi_geometry_t geometry,
-                                                    xmi_xfer_type_t type,
-                                                    xmi_algorithm_t *algs,
-                                                    xmi_metadata_t *mdata,
-                                                    int algorithm_type,
-                                                    int num);
+                                                     xmi_xfer_type_t   colltype,
+                                                     xmi_algorithm_t  *algs0,
+                                                     xmi_metadata_t   *mdata0,
+                                                     int               num0,
+                                                     xmi_algorithm_t  *algs1,
+                                                     xmi_metadata_t   *mdata1,
+                                                     int               num1);
+
+        inline xmi_result_t collective (xmi_xfer_t * parameters);
 
         inline xmi_result_t multisend_getroles(size_t          dispatch,
                                                int            *numRoles,
@@ -131,8 +124,11 @@ namespace XMI
                                           void                     * cookie,
                                           xmi_dispatch_hint_t        options);
 	//#endif
-
-
+        inline xmi_result_t amcollective_dispatch(xmi_algorithm_t            algorithm,
+                                                  size_t                     dispatch,
+                                                  xmi_dispatch_callback_fn   fn,
+                                                  void                     * cookie,
+                                                  xmi_collective_hint_t      options);
     }; // end class XMI::Context::Context
 
     template <class T_Context>
@@ -323,35 +319,6 @@ namespace XMI
     }
 
     template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_initialize (xmi_geometry_t       * geometry,
-                                                          unsigned               id,
-                                                          xmi_geometry_range_t * rank_slices,
-                                                          size_t                 slice_count)
-    {
-      return static_cast<T_Context*>(this)->geometry_initialize_impl(geometry, id,
-                                                                     rank_slices,
-                                                                     slice_count);
-    }
-
-    template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_world (xmi_geometry_t * world_geometry)
-    {
-      return static_cast<T_Context*>(this)->geometry_world_impl(world_geometry);
-    }
-
-    template <class T_Context>
-    xmi_result_t Context<T_Context>::geometry_finalize (xmi_geometry_t geometry)
-    {
-      return static_cast<T_Context*>(this)->geometry_finalize_impl(geometry);
-    }
-
-    template <class T_Context>
-    xmi_result_t Context<T_Context>::collective(xmi_xfer_t * parameters)
-    {
-      return static_cast<T_Context*>(this)->collective_impl(parameters);
-    }
-
-    template <class T_Context>
     xmi_result_t Context<T_Context>::geometry_algorithms_num (xmi_geometry_t geometry,
                                                               xmi_xfer_type_t coll_type,
                                                               int *lists_lengths)
@@ -361,17 +328,30 @@ namespace XMI
                                                                          lists_lengths);
     }
 
-
     template <class T_Context>
     xmi_result_t Context<T_Context>::geometry_algorithms_info (xmi_geometry_t geometry,
-                                                              xmi_xfer_type_t type,
-                                                              xmi_algorithm_t *algs,
-                                                              xmi_metadata_t *mdata,
-                                                              int algorithm_type,
-                                                              int num)
+                                                              xmi_xfer_type_t   colltype,
+                                                              xmi_algorithm_t  *algs0,
+                                                              xmi_metadata_t   *mdata0,
+                                                              int               num0,
+                                                              xmi_algorithm_t  *algs1,
+                                                              xmi_metadata_t   *mdata1,
+                                                              int               num1)
     {
-      return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(geometry, type, algs, mdata, algorithm_type, num);
+      return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(geometry,
+                                                                          colltype,
+                                                                          algs0,
+                                                                          mdata0,
+                                                                          num0,
+                                                                          algs1,
+                                                                          mdata1,
+                                                                          num1);
+    }
 
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::collective(xmi_xfer_t * parameters)
+    {
+      return static_cast<T_Context*>(this)->collective_impl(parameters);
     }
 
     template <class T_Context>
@@ -424,6 +404,19 @@ namespace XMI
         return static_cast<T_Context*>(this)->dispatch_new_impl(dispatch,fn,cookie,options);
     }
 //#endif
+    template <class T_Context>
+    xmi_result_t Context<T_Context>::amcollective_dispatch(xmi_algorithm_t            algorithm,
+                                                           size_t                     dispatch,
+                                                           xmi_dispatch_callback_fn   fn,
+                                                           void                     * cookie,
+                                                           xmi_collective_hint_t      options)
+    {
+      return static_cast<T_Context*>(this)->amcollective_dispatch_impl(algorithm,
+                                                                       dispatch,
+                                                                       fn,
+                                                                       cookie,
+                                                                       options);
+    }
   }; // end namespace Interface
 }; // end namespace XMI
 

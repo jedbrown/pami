@@ -27,19 +27,35 @@ namespace CCMI
         colors[0] = CCMI::Schedule::NO_COLOR;
       }
 
+      void binom_bcast_md(xmi_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"CCMIBinomBcast");
+      }
+
+      void ring_bcast_md(xmi_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"CCMIRingBcast");
+      }
+
       typedef BcastMultiColorCompositeT <1,
 	CCMI::Schedule::ListMultinomial,
 	CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS>,
 	get_colors> BinomialBcastComposite;
 
-      typedef CollectiveProtocolFactoryT<BinomialBcastComposite, true_analyze, CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > BinomialBcastFactory;
+      typedef CollectiveProtocolFactoryT<BinomialBcastComposite,
+                                         binom_bcast_md,
+                                         CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > BinomialBcastFactory;
 
       typedef BcastMultiColorCompositeT <1,
 	CCMI::Schedule::RingSchedule,
 	CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS>,
 	get_colors> RingBcastComposite;
 
-      typedef CollectiveProtocolFactoryT <RingBcastComposite, true_analyze, CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > RingBcastFactory;
+      typedef CollectiveProtocolFactoryT <RingBcastComposite,
+                                          ring_bcast_md,
+                                          CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > RingBcastFactory;
 
     };
   };

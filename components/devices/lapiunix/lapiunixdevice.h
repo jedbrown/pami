@@ -45,14 +45,13 @@ namespace XMI
 
     extern std::map<lapi_handle_t,void*> _g_context_to_device_table;
 
-    template <class T_SysDep>
-    class LAPIDevice : public Interface::BaseDevice<LAPIDevice<T_SysDep> >,
-                       public Interface::PacketDevice<LAPIDevice<T_SysDep> >
+    class LAPIDevice : public Interface::BaseDevice<LAPIDevice>,
+                       public Interface::PacketDevice<LAPIDevice>
     {
     public:
       inline LAPIDevice () :
-        Interface::BaseDevice<LAPIDevice<T_SysDep> > (),
-        Interface::PacketDevice<LAPIDevice<T_SysDep> >(),
+        Interface::BaseDevice<LAPIDevice> (),
+        Interface::PacketDevice<LAPIDevice>(),
         _dispatch_id(0)
         {
         };
@@ -125,7 +124,7 @@ namespace XMI
         }
 
       void registerM2MRecvFunction (int                           dispatch_id,
-                                    xmi_olddispatch_multicast_fn  recv_func,
+                                    xmi_olddispatch_manytomany_fn  recv_func,
                                     void                         *async_arg)
         {
           _m2m_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -133,11 +132,13 @@ namespace XMI
           _m2m_dispatch_lookup[dispatch_id]=_m2m_dispatch_table[dispatch_id];
         }
 
-      inline xmi_result_t init_impl (T_SysDep      * sysdep,
+      inline xmi_result_t init_impl (SysDep        * sysdep,
                                      xmi_context_t   context,
                                      size_t          offset)
         {
           _sysdep = sysdep;
+          _context=context;
+          _offset=offset;
 	  return XMI_SUCCESS;
         };
 
@@ -187,27 +188,27 @@ namespace XMI
           _sendQ.push_front(msg);
         }
 
-      inline void enqueue(LAPIMcastMessage* msg)
+      inline void enqueue(OldLAPIMcastMessage* msg)
         {
           _mcastsendQ.push_front(msg);
         }
 
-      inline void enqueue(LAPIMcastRecvMessage *msg)
+      inline void enqueue(OldLAPIMcastRecvMessage *msg)
         {
           _mcastrecvQ.push_front(msg);
         }
 
-      inline void enqueue(LAPIM2MRecvMessage<size_t> *msg)
+      inline void enqueue(OldLAPIM2MRecvMessage<size_t> *msg)
         {
           _m2mrecvQ.push_front(msg);
         }
 
-      inline void enqueue(LAPIM2MMessage *msg)
+      inline void enqueue(OldLAPIM2MMessage *msg)
         {
           _m2msendQ.push_front(msg);
         }
 
-      inline void enqueue(LAPIMSyncMessage *msg)
+      inline void enqueue(LAPIMsyncMessage *msg)
         {
           // Check for UE Message
           // If message is there, mark this phase complete
@@ -230,7 +231,7 @@ namespace XMI
 
       static void __xmi_lapi_m2m_done_fn(lapi_handle_t* handle, void *clientdata)
         {
-          LAPIM2MRecvMessage<size_t> *m2m = (LAPIM2MRecvMessage<size_t> *)clientdata;
+          OldLAPIM2MRecvMessage<size_t> *m2m = (OldLAPIM2MRecvMessage<size_t> *)clientdata;
           m2m->_num--;
           if(m2m->_num==0)
               {
@@ -250,17 +251,17 @@ namespace XMI
         {
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
-          LAPIM2MHeader      *hdr = (LAPIM2MHeader*) uhdr;
+          OldLAPIM2MHeader      *hdr = (OldLAPIM2MHeader*) uhdr;
           LAPIDevice         *dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
 
-          std::list<LAPIM2MRecvMessage<size_t>*>::iterator it;
+          std::list<OldLAPIM2MRecvMessage<size_t>*>::iterator it;
           for(it=dev->_m2mrecvQ.begin();it != dev->_m2mrecvQ.end(); it++)
               {
                 if((*it)->_conn == hdr->_conn) break;
               }
 
           lapi_m2m_dispatch_info_t mdi = dev->_m2m_dispatch_lookup[hdr->_dispatch_id];
-          LAPIM2MRecvMessage<size_t> * m2m;
+          OldLAPIM2MRecvMessage<size_t> * m2m;
           if(it == dev->_m2mrecvQ.end())
               {
                 xmi_callback_t    cb_done;
@@ -277,7 +278,7 @@ namespace XMI
                               &rcvcounters,
                               &nranks,
                               &cb_done);
-                m2m = (LAPIM2MRecvMessage<size_t> *)malloc(sizeof(LAPIM2MRecvMessage<size_t>) );
+                m2m = (OldLAPIM2MRecvMessage<size_t> *)malloc(sizeof(OldLAPIM2MRecvMessage<size_t>) );
                 XMI_assert ( m2m != NULL );
                 m2m->_conn    = hdr->_conn;
                 m2m->_done_fn = cb_done.function;
@@ -350,14 +351,14 @@ namespace XMI
         {
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
-          LAPIM2MHeader      *hdr = (LAPIM2MHeader*) uhdr;
+          OldLAPIM2MHeader      *hdr = (OldLAPIM2MHeader*) uhdr;
           LAPIDevice         *dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
           unsigned        conn_id = *((unsigned*)uhdr);
-          LAPIMSyncMessage     *m = dev->_msyncsendQ[conn_id];
+          LAPIMsyncMessage     *m = dev->_msyncsendQ[conn_id];
 
           if(m==NULL)
               {
-                m = (LAPIMSyncMessage*)malloc(sizeof(*m));
+                m = (LAPIMsyncMessage*)malloc(sizeof(*m));
                 m->_r_flag=1;
                 m->_total=2147483647;
                 dev->_msyncsendQ[conn_id] = m;
@@ -389,7 +390,7 @@ namespace XMI
 
       static void __xmi_lapi_mcast_done_fn(lapi_handle_t* handle, void *clientdata)
         {
-          LAPIMcastRecvReq *req = (LAPIMcastRecvReq *)clientdata;
+          OldLAPIMcastRecvReq *req = (OldLAPIMcastRecvReq *)clientdata;
           int bytes = req->_mcast._size - req->_mcast._counter;
           for(; bytes > 0; bytes -= req->_mcast._pwidth)
               {
@@ -410,7 +411,7 @@ namespace XMI
                                             void           ** uinfo)
         {
           lapi_return_info_t         *ri          = (lapi_return_info_t *) retinfo;
-          LAPIMcastMessage           *msg         = (LAPIMcastMessage *)   uhdr;
+          OldLAPIMcastMessage           *msg         = (OldLAPIMcastMessage *)   uhdr;
           size_t                      dispatch_id = msg->_dispatch_id;
           void                       *r           = NULL;
           unsigned                    rcvlen;
@@ -421,7 +422,7 @@ namespace XMI
           LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
           lapi_mcast_dispatch_info_t ldi = _dev->_mcast_dispatch_lookup[dispatch_id];
           _dev->lock();
-          std::list<LAPIMcastRecvMessage*>::iterator it;
+          std::list<OldLAPIMcastRecvMessage*>::iterator it;
           int found=0;
           for(it=_dev->_mcastrecvQ.begin();it != _dev->_mcastrecvQ.end(); it++)
               {
@@ -433,8 +434,8 @@ namespace XMI
                     }
               }
           XMI_assert(!(ldi.recv_func==NULL && found!=1));
-          LAPIMcastRecvMessage  m_store;
-          LAPIMcastRecvMessage *mcast = &m_store;
+          OldLAPIMcastRecvMessage  m_store;
+          OldLAPIMcastRecvMessage *mcast = &m_store;
           if(!found)
               {
                 ldi.recv_func (&msg->_info[0],
@@ -509,8 +510,8 @@ namespace XMI
               }
           else
               {
-                LAPIMcastRecvReq *req;
-                CheckNULL(req, (LAPIMcastRecvReq*)malloc(sizeof(LAPIMcastRecvReq)));
+                OldLAPIMcastRecvReq *req;
+                CheckNULL(req, (OldLAPIMcastRecvReq*)malloc(sizeof(OldLAPIMcastRecvReq)));
                 req->_mcastrecvQ        = &_dev->_mcastrecvQ;
                 req->_mcast             = *mcast;
                 req->_found             = found;
@@ -542,11 +543,11 @@ namespace XMI
           return 0;
         }
 
-
-
+      SysDep                                    *_sysdep;
+      xmi_context_t                              _context;
+      size_t                                     _offset;
       lapi_handle_t                              _lapi_handle;
       lapi_thread_func_t                         _tf;
-      T_SysDep                                  *_sysdep;
       size_t                                     _peers;
       size_t                                     _dispatch_id;
       size_t                                     _mcast_dispatch_id;
@@ -555,11 +556,11 @@ namespace XMI
       std::map<int, lapi_mcast_dispatch_info_t>  _mcast_dispatch_lookup;
       std::map<int, lapi_m2m_dispatch_info_t>    _m2m_dispatch_lookup;
       std::list<LAPIMessage*>                    _sendQ;
-      std::list<LAPIMcastMessage*>               _mcastsendQ;
-      std::list<LAPIM2MMessage*>                 _m2msendQ;
-      std::list<LAPIMcastRecvMessage*>           _mcastrecvQ;
-      std::list<LAPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
-      std::map<int,LAPIMSyncMessage*>            _msyncsendQ;
+      std::list<OldLAPIMcastMessage*>            _mcastsendQ;
+      std::list<OldLAPIM2MMessage*>                 _m2msendQ;
+      std::list<OldLAPIMcastRecvMessage*>        _mcastrecvQ;
+      std::list<OldLAPIM2MRecvMessage<size_t> *>    _m2mrecvQ;
+      std::map<int,LAPIMsyncMessage*>            _msyncsendQ;
       lapi_dispatch_info_t                       _dispatch_table[256];
       lapi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       lapi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];

@@ -200,7 +200,7 @@ void cb_allreduce (void *ctxt, void * clientdata, xmi_result_t err)
   (*active)--;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -215,7 +215,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 
 }
 
-void _allreduce (xmi_context_t context, xmi_allreduce_t *allreduce)
+void _allreduce (xmi_context_t context, xmi_xfer_t *allreduce)
 {
   _g_allreduce_active++;
   xmi_result_t result;
@@ -285,7 +285,7 @@ int main(int argc, char*argv[])
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -313,11 +313,13 @@ int main(int argc, char*argv[])
                 malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
     result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
-                                          XMI_XFER_BROADCAST,
+                                          XMI_XFER_BARRIER,
                                           algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -326,7 +328,7 @@ int main(int argc, char*argv[])
   int allreducenum_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,
-                                       XMI_XFER_BROADCAST,
+                                       XMI_XFER_ALLREDUCE,
                                        allreducenum_algorithm);
 
   if (result != XMI_SUCCESS)
@@ -349,8 +351,10 @@ int main(int argc, char*argv[])
                                           XMI_XFER_ALLREDUCE,
                                           allreducealgorithm,
                                           metas,
-                                          algorithm_type = 0,
-                                          allreducenum_algorithm[0]);
+                                          allreducenum_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
     if (result != XMI_SUCCESS)
     {
@@ -413,26 +417,22 @@ int main(int argc, char*argv[])
       printf("# -----------      -----------    -----------    ---------\n");
     }
 
-    xmi_barrier_t barrier;
-    barrier.xfer_type = XMI_XFER_BARRIER;
+    xmi_xfer_t barrier;
     barrier.cb_done   = cb_barrier;
     barrier.cookie    = (void*)&_g_barrier_active;
-    barrier.geometry  = world_geometry;
     barrier.algorithm = algorithm[0];
     _barrier(context, &barrier);
 
-    xmi_allreduce_t allreduce;
-    allreduce.xfer_type = XMI_XFER_ALLREDUCE;
+    xmi_xfer_t allreduce;
     allreduce.cb_done   = cb_allreduce;
     allreduce.cookie    = (void*)&_g_allreduce_active;
-    allreduce.geometry  = world_geometry;
     allreduce.algorithm = allreducealgorithm[nalg];
-    allreduce.sndbuf    = sbuf;
-    allreduce.stype     = XMI_BYTE;
-    allreduce.stypecount= 0;
-    allreduce.rcvbuf    = rbuf;
-    allreduce.rtype     = XMI_BYTE;
-    allreduce.rtypecount= 0;
+    allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
+    allreduce.cmd.xfer_allreduce.stype     = XMI_BYTE;
+    allreduce.cmd.xfer_allreduce.stypecount= 0;
+    allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
+    allreduce.cmd.xfer_allreduce.rtype     = XMI_BYTE;
+    allreduce.cmd.xfer_allreduce.rtypecount= 0;
 
 
 
@@ -456,10 +456,10 @@ int main(int argc, char*argv[])
             ti = timer();
             for (j=0; j<niter; j++)
             {
-              allreduce.stypecount=i;
-              allreduce.rtypecount=i;
-              allreduce.dt=dt_array[dt];
-              allreduce.op=op_array[op];
+              allreduce.cmd.xfer_allreduce.stypecount=i;
+              allreduce.cmd.xfer_allreduce.rtypecount=i;
+              allreduce.cmd.xfer_allreduce.dt=dt_array[dt];
+              allreduce.cmd.xfer_allreduce.op=op_array[op];
               _allreduce(context, &allreduce);
             }
             tf = timer();

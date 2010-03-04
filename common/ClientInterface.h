@@ -50,6 +50,27 @@ namespace XMI
 
         inline xmi_result_t queryConfiguration (xmi_configuration_t * configuration);
 
+        inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry);
+
+        inline xmi_result_t geometry_create_taskrange(xmi_geometry_t       * geometry,
+                                                      xmi_geometry_t         parent,
+                                                      unsigned               id,
+                                                      xmi_geometry_range_t * rank_slices,
+                                                      size_t                 slice_count,
+                                                      xmi_context_t          context,
+                                                      xmi_event_function     fn,
+                                                      void                 * cookie);
+
+        inline xmi_result_t geometry_create_tasklist(xmi_geometry_t       * geometry,
+                                                     xmi_geometry_t         parent,
+                                                     unsigned               id,
+                                                     xmi_task_t           * tasks,
+                                                     size_t                 task_count,
+                                                     xmi_context_t          context,
+                                                     xmi_event_function     fn,
+                                                     void                 * cookie);
+
+        inline xmi_result_t geometry_destroy(xmi_geometry_t geometry);
     }; // end class XMI::Client::Client
 
     template <class T_Client>
@@ -90,6 +111,59 @@ namespace XMI
     {
       return static_cast<T_Client*>(this)->queryConfiguration_impl(configuration);
     }
+
+    template <class T_Client>
+    xmi_result_t Client<T_Client>::geometry_world (xmi_geometry_t * world_geometry)
+    {
+      return static_cast<T_Client*>(this)->geometry_world_impl(world_geometry);
+    }
+
+    template <class T_Client>
+    xmi_result_t Client<T_Client>::geometry_create_taskrange (xmi_geometry_t       * geometry,
+                                                              xmi_geometry_t         parent,
+                                                              unsigned               id,
+                                                              xmi_geometry_range_t * task_slices,
+                                                              size_t                 slice_count,
+                                                              xmi_context_t          context,
+                                                              xmi_event_function     fn,
+                                                              void                 * cookie)
+    {
+      return static_cast<T_Client*>(this)->geometry_create_taskrange_impl(geometry,
+                                                                          parent,
+                                                                          id,
+                                                                          task_slices,
+                                                                          slice_count,
+                                                                          context,
+                                                                          fn,
+                                                                          cookie);
+    }
+
+    template <class T_Client>
+    xmi_result_t Client<T_Client>::geometry_create_tasklist (xmi_geometry_t       * geometry,
+                                                             xmi_geometry_t         parent,
+                                                             unsigned               id,
+                                                             xmi_task_t           * tasks,
+                                                             size_t                 task_count,
+                                                             xmi_context_t          context,
+                                                             xmi_event_function     fn,
+                                                             void                 * cookie)
+    {
+      return static_cast<T_Client*>(this)->geometry_create_tasklist_impl(geometry,
+                                                                          parent,
+                                                                          id,
+                                                                          tasks,
+                                                                          task_count,
+                                                                          context,
+                                                                          fn,
+                                                                          cookie);
+    }
+
+    template <class T_Client>
+    xmi_result_t Client<T_Client>::geometry_destroy (xmi_geometry_t geometry)
+    {
+      return static_cast<T_Client*>(this)->geometry_destroy_impl(geometry);
+    }
+
   }; // end namespace Interface
 }; // end namespace XMI
 #endif // __xmi_client_h__

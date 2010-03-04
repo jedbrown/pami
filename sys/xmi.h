@@ -246,6 +246,13 @@ extern "C"
     uint32_t reserved          :23; /**< Unused at this time                                     */
   } xmi_send_hint_t;
 
+  typedef struct
+  {
+    uint32_t reserved          :32; /**< Unused at this time                                     */
+  } xmi_collective_hint_t;
+
+
+
   /**
    * \brief Active message send common parameters structure
    */
@@ -1023,28 +1030,75 @@ extern "C"
 
   /**
    * \brief Initialize the geometry
+   *        A synchronizing operation will take place during geometry_initialize
+   *        on the parent geometry
+   *        If the output geometry "geometry" is NULL, then no geometry will be
+   *        created, however, all nodes in the parent must participate in the
+   *        geometry_initialize operation, even if they do not create a geometry
    *
+   * \param[in]  client         xmi client
    * \param[out] geometry        Opaque geometry object to initialize
-   * \param[in]  id              Unique identifier for this geometry
-   *                             which globally represents this geometry
+   * \param[in] parent          Parent geometry containing all the nodes in the task list
+   * \param[in]  id              Identifier for this geometry
+   *                             which uniquely represents this geometry(if tasks overlap)
    * \param[in]  task_slices     Array of node slices participating in the geometry
    *                             User must keep the array of slices in memory for the
    *                             duration of the geometry's existence
-   * \param[in]  slice_count     Number of nodes participating in the geometry
+   * \param[in]  slice_count     Number of task slices participating in the geometry
+   * \param[in]  context         context to deliver async callback to
+   * \param[in]  fn              event function to call when geometry has been created
+   * \param[in]  cookie          user cookie to deliver with the callback
    */
-  xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+
+  xmi_result_t XMI_Geometry_create_taskrange (xmi_client_t                client,
                                         xmi_geometry_t            * geometry,
+                                              xmi_geometry_t              parent,
                                         unsigned                    id,
                                         xmi_geometry_range_t      * task_slices,
-                                        size_t                      slice_count);
+                                              size_t                      slice_count,
+                                              xmi_context_t               context,
+                                              xmi_event_function          fn,
+                                              void                      * cookie);
+
+   /**
+   * \brief Initialize the geometry
+   *        A synchronizing operation will take place during geometry_initialize
+   *        on the parent geometry
+   *        If the output geometry "geometry" is NULL, then no geometry will be
+   *        created, however, all nodes in the parent must participate in the
+   *        geometry_initialize operation, even if they do not create a geometry
+   *
+   * \param[in]  client         xmi client
+   * \param[out] geometry        Opaque geometry object to initialize
+   * \param[in] parent          Parent geometry containing all the nodes in the task list
+   * \param[in]  id              Identifier for this geometry
+   *                             which uniquely represents this geometry(if tasks overlap)
+   * \param[in]  tasks           Array of tasks to build the geometry list
+   *                             User must keep the task list in memory
+   *                             duration of the geometry's existence
+   * \param[in]  task_count      Number of tasks participating in the geometry
+   * \param[in]  context         context to deliver async callback to
+   * \param[in]  fn              event function to call when geometry has been created
+   * \param[in]  cookie          user cookie to deliver with the callback
+   */
+
+  xmi_result_t XMI_Geometry_create_tasklist (xmi_client_t                client,
+                                             xmi_geometry_t            * geometry,
+                                             xmi_geometry_t              parent,
+                                             unsigned                    id,
+                                             xmi_task_t                * tasks,
+                                             size_t                      task_count,
+                                             xmi_context_t               context,
+                                             xmi_event_function          fn,
+                                             void                      * cookie);
 
   /**
    * \brief Initialize the geometry
    *
-   * \param[in]  context         xmi context
+   * \param[in]  client          xmi client
    * \param[in]  world_geometry  world geometry object
    */
-  xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+  xmi_result_t XMI_Geometry_world (xmi_client_t                client,
                                    xmi_geometry_t            * world_geometry);
 
   /**
@@ -1052,7 +1106,7 @@ extern "C"
    *        in the two different lists (always work list,
    *        under-cetain conditions list).
    *
-   * \param[in]     context       xmi context.
+   * \param[in]     context       xmi context
    * \param[in]     geometry      An input geometry to be analyzed.
    * \param[in]     coll_type     type of collective op.
    * \param[in/out] lists_lengths array of 2 numbers representing all valid
@@ -1063,37 +1117,44 @@ extern "C"
   xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
                                             xmi_geometry_t geometry,
                                             xmi_xfer_type_t coll_type,
-                                            int *lists_lengths);
+                                            int              *lists_lengths);
 
   /**
-   * \brief fills in the protocols and attributes for a given xfer type.
+   * \brief fills in the protocols and attributes for a set of algorithms
+   *        The first lists are used to populate collectives that work under
+   *        any condidtion.  The second lists are used to populate
+   *        collectives that the metadata must be checked before use
    *
-   * \param[in]     context        xmi context.
-   * \param[in]     geometry       An input geometry to be analyzed.
-   * \param[in]     type           type of collective op.
-   * \param[in]     algs           array of algorithm to be filled in.
-   * \param[out]    mdata          metadata array to be filled in if algorithms
+   * \param[in]     context        xmi context
+   * \param[in]     coll_type      type of collective op.
+   * \param[in/out] algs0          array of algorithms to query
+   * \param[in/out] mdata0         metadata array to be filled in if algorithms
    *                               are applicable, can be NULL.
-   * \param[in]     algorithm_type tells whether this an "always works"
-   *                               or "works under-condition"
-   * \param[in]     num            number of algorithms to fill in.
+   * \param[in]     num0           number of algorithms to fill in.
+   * \param[in/out] algs1          array of algorithms to query
+   * \param[in/out] mdata1         metadata array to be filled in if algorithms
+   *                               are applicable, can be NULL.
+   * \param[in]     num1           number of algorithms to fill in.
    * \retval        XMI_SUCCESS    algorithm is applicable to geometry.
    * \retval        ?????          Error in input arguments or not applicable.
    */
   xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
                                              xmi_geometry_t geometry,
-                                             xmi_xfer_type_t type,
-                                             xmi_algorithm_t *algs,
-                                             xmi_metadata_t *mdata,
-                                             int algorithm_type,
-                                             int num);
+                                             xmi_xfer_type_t  colltype,
+                                             xmi_algorithm_t *algs0,
+                                             xmi_metadata_t  *mdata0,
+                                             int              num0,
+                                             xmi_algorithm_t *algs1,
+                                             xmi_metadata_t  *mdata1,
+                                             int              num1);
 
   /**
    * \brief Free any memory allocated inside of a geometry.
+   * \param[in] client   xmi client
    * \param[in] geometry The geometry object to free
    * \retval XMI_SUCCESS Memory free didn't fail
    */
-  xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+  xmi_result_t XMI_Geometry_destroy(xmi_client_t    client,
                                      xmi_geometry_t  geometry);
 
   /**
@@ -1117,11 +1178,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                   * stypecounts;
@@ -1153,11 +1209,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t           xfer_type;
-    xmi_event_function        cb_done;
-    void                    * cookie;
-    xmi_geometry_t            geometry;
-    xmi_algorithm_t           algorithm;
     char                    * sndbuf;
     xmi_type_t              * stype;
     int                     * stypecounts;
@@ -1188,11 +1239,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     char                      * sndbuf;
     xmi_type_t                * stype;
     size_t                      stypecount;
@@ -1221,11 +1267,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     size_t                     root;
     char                     * sndbuf;
     xmi_type_t               * stype;
@@ -1259,11 +1300,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t           xfer_type;
-    xmi_event_function        cb_done;
-    void                    * cookie;
-    xmi_geometry_t            geometry;
-    xmi_algorithm_t           algorithm;
     char                    * sndbuf;
     xmi_type_t              * stype;
     size_t                    stypecount;
@@ -1292,11 +1328,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * buf;
     xmi_type_t                * type;
@@ -1323,11 +1354,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     char                      * sndbuf;
     xmi_type_t                * stype;
     size_t                      stypecount;
@@ -1358,11 +1384,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1395,11 +1416,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     size_t                     root;
     char                     * sndbuf;
     xmi_type_t               * stype;
@@ -1433,11 +1449,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     size_t                     root;
     char                     * sndbuf;
     xmi_type_t               * stype;
@@ -1470,11 +1481,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                     stypecount;
@@ -1505,11 +1511,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     int                        stypecount;
@@ -1541,11 +1542,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1576,11 +1572,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1612,11 +1603,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1651,11 +1637,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                     stypecount;
@@ -1691,11 +1672,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                     stypecount;
@@ -1720,11 +1696,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
   } xmi_barrier_t;
 
 
@@ -1740,8 +1711,7 @@ extern "C"
    * determines the address to which to deposit the data and sets the address
    * of a receive completion hander to be invoked once the data has arrived.
    *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  user_header  single metadata to send to destination in the header
    * \param[in]  headerlen    length of the metadata (can be 0)
    * \param[in]  src          Base source buffer to broadcast.
@@ -1754,11 +1724,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
+    size_t                      dispatch;
     void                      * user_header;
     size_t                      headerlen;
     void                      * sndbuf;
@@ -1801,8 +1767,7 @@ extern "C"
    * This is slightly more complicated than an AMBroadcast, because it allows
    * different headers and data buffers to be sent to everyone in the team.
    *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  headers      array of  metadata to send to destination
    * \param[in]  headerlength length of every header in the headers array
    * \param[in]  src          Base source buffer to scatter (size of geometry)
@@ -1815,10 +1780,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
+    size_t                      dispatch;
     void                      * headers;
     size_t                      headerlen;
     void                      * sndbuf;
@@ -1862,8 +1824,7 @@ extern "C"
    * and deposited in one of the buffers provided as part of the original call
    * (the "data" parameter).
    *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  headers      array of metadata to send to destination
    * \param[in]  headerlen    length of every header in headers array
    * \param[in]  rcvbuf       target buffer of the gather operation (size of geometry)
@@ -1877,10 +1838,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
+    size_t                      dispatch;
     void                      * headers;
     size_t                      headerlen;
     void                      * rcvbuf;
@@ -1925,9 +1883,7 @@ extern "C"
    * handler (this may avoid having the implementor allocate more memory for
    * internal buffering)
    *
-   * \param[in]  registration Protocol registration.
-   * \param[in]  request      Opaque memory to maintain internal message state.
-   * \param[in]  cb_done      Callback to invoke when message is complete.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  geometry     Geometry to use for this collective operation.
    *                          \c NULL indicates the global geometry.
    * \param[in]  headers      metadata to send to destinations in the header
@@ -1943,10 +1899,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
+    size_t                      dispatch;
     void                      * user_header;
     size_t                      headerlen;
     void                      * rcvbuf;
@@ -1990,9 +1943,9 @@ extern "C"
                                             size_t             * stypecount,
                                             xmi_event_function * const cb_info);
 
+
   typedef union
   {
-    xmi_xfer_type_t        xfer_type;
     xmi_allreduce_t        xfer_allreduce;
     xmi_broadcast_t        xfer_broadcast;
     xmi_reduce_t           xfer_reduce;
@@ -2014,6 +1967,14 @@ extern "C"
     xmi_amreduce_t         xfer_amreduce;
     xmi_scan_t             xfer_scan;
     xmi_barrier_t          xfer_barrier;
+    } xmi_collective_t;
+
+  typedef struct
+  {
+    xmi_event_function       cb_done;
+    void                   * cookie;
+    xmi_algorithm_t          algorithm;
+    xmi_collective_t         cmd;
   } xmi_xfer_t;
 
   xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
@@ -3322,6 +3283,27 @@ extern "C"
                                  xmi_dispatch_callback_fn   fn,
                                  void                     * cookie,
                                  xmi_send_hint_t            options);
+
+  /**
+   * \brief Initialize the dispatch functions for a dispatch id.
+   *
+   * This is a local, non-collective operation. There is no communication
+   * between tasks.
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] algorithm  The AM collective to set the dispatch
+   * \param[in] dispatch   Dispatch identifier to initialize
+   * \param[in] fn         Dispatch receive function
+   * \param[in] cookie     Dispatch function cookie
+   * \param[in] options    Dispatch registration assertions
+   *
+   */
+  xmi_result_t XMI_AMCollective_dispatch_set(xmi_context_t              context,
+                                             xmi_algorithm_t            algorithm,
+                                             size_t                     dispatch,
+                                             xmi_dispatch_callback_fn   fn,
+                                             void                     * cookie,
+                                             xmi_collective_hint_t      options);
   /** \} */ /* end of "dispatch" group */
 
 #include "xmi_ext.h"

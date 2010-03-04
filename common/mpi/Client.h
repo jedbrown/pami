@@ -12,7 +12,6 @@
 
 #include "common/ClientInterface.h"
 #include "Context.h"
-#include "Geometry.h"
 
 namespace XMI
 {
@@ -41,6 +40,16 @@ namespace XMI
 
           // Get some shared memory for this client
           initializeMemoryManager ();
+
+
+        // Initialize the world geometry
+        MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
+        MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
+        _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
+        assert(_world_geometry);
+        _world_range.lo=0;
+        _world_range.hi=_mysize-1;
+        new(_world_geometry) MPIGeometry(NULL, &__global.mapping,0, 1,&_world_range);
           result = XMI_SUCCESS;
         }
 
@@ -117,9 +126,10 @@ namespace XMI
 			_mm.memalign((void **)&base, 16, bytes);
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
 			new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
-							_generics, base, bytes);
+                                           _generics, base, bytes, _world_geometry);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
+          _ncontexts = n;
 		}
 		return XMI_SUCCESS;
         }
@@ -188,6 +198,69 @@ namespace XMI
 		return _clientid;
 	}
 
+    inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+      {
+        *world_geometry = _world_geometry;
+        return XMI_SUCCESS;
+      }
+
+    inline xmi_result_t geometry_create_taskrange_impl(xmi_geometry_t       * geometry,
+                                                       xmi_geometry_t         parent,
+                                                       unsigned               id,
+                                                       xmi_geometry_range_t * rank_slices,
+                                                       size_t                 slice_count,
+                                                       xmi_context_t          context,
+                                                       xmi_event_function     fn,
+                                                       void                 * cookie)
+      {
+        MPIGeometry              *new_geometry;
+
+        if(geometry != NULL)
+            {
+              new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
+              new(new_geometry) MPIGeometry((XMI::Geometry::Common*)parent,
+                                            &__global.mapping,
+                                            id,
+                                            slice_count,
+                                            rank_slices);
+              for(size_t n=0; n<_ncontexts; n++)
+                  {
+                    _contexts[n]._pgas_collreg->analyze(n,new_geometry);
+                    _contexts[n]._oldccmi_collreg->analyze(n,new_geometry);
+                    _contexts[n]._ccmi_collreg->analyze(n,new_geometry);
+                  }
+              *geometry=(MPIGeometry*) new_geometry;
+              // todo:  deliver completion to the appropriate context
+            }
+        MPIGeometry *bargeom = (MPIGeometry*)parent;
+        XMI::Context *ctxt = (XMI::Context *)context;
+        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        return XMI_SUCCESS;
+      }
+
+
+    inline xmi_result_t geometry_create_tasklist_impl(xmi_geometry_t       * geometry,
+                                                      xmi_geometry_t         parent,
+                                                      unsigned               id,
+                                                      xmi_task_t           * tasks,
+                                                      size_t                 task_count,
+                                                      xmi_context_t          context,
+                                                      xmi_event_function     fn,
+                                                      void                 * cookie)
+      {
+        // todo:  implement this routine
+        XMI_abort();
+
+        return XMI_SUCCESS;
+      }
+
+
+    inline xmi_result_t geometry_destroy_impl (xmi_geometry_t geometry)
+      {
+        XMI_abort();
+        return XMI_UNIMPL;
+      }
+
     protected:
 
       inline xmi_client_t getClient () const
@@ -202,8 +275,11 @@ namespace XMI
       size_t       _ncontexts;
 	XMI::Context *_contexts;
 	XMI::Device::Generic::Device *_generics;
-
         char         _name[256];
+    int                           _myrank;
+    int                           _mysize;
+    MPIGeometry                  *_world_geometry;
+    xmi_geometry_range_t          _world_range;
 
         Memory::MemoryManager _mm;
 
@@ -237,6 +313,7 @@ namespace XMI
 
           return;
         }
+
     }; // end class XMI::Client
 }; // end namespace XMI
 

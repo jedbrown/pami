@@ -225,7 +225,8 @@ namespace CCMI
       ///
       /// \brief Base factory class for broadcast factory implementations.
       ///
-      template <class B, AnalyzeFn afn, class T_Sysdep,class T_Mcast, class T_ConnectionManager>
+      typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
+      template <class B, MetaDataFn get_metadata, class T_Sysdep,class T_Mcast, class T_ConnectionManager>
       class OldMultiColorBroadcastFactoryT : public BroadcastFactory<T_Sysdep, T_Mcast, T_ConnectionManager>
       {
       public:
@@ -242,9 +243,56 @@ namespace CCMI
         {
         }
 
-        virtual bool Analyze(XMI_GEOMETRY_CLASS *geometry)
+        virtual void metadata(xmi_metadata_t *mdata)
         {
-          return  afn(geometry);
+            get_metadata(mdata);
+          }
+
+        class collObj
+         {
+        public:
+          collObj(xmi_xfer_t *xfer):
+            _rsize(sizeof(_req)),
+            _xfer(*xfer),
+            _user_done_fn(xfer->cb_done),
+            _user_cookie(xfer->cookie)
+            {
+              _xfer.cb_done = alloc_done_fn;
+              _xfer.cookie  = this;
+            }
+          XMI_Request_t                _req[5];
+          int                          _rsize;
+          xmi_xfer_t                   _xfer;
+          xmi_event_function           _user_done_fn;
+          void                       * _user_cookie;
+        };
+
+        static void alloc_done_fn( xmi_context_t   context,
+                                   void          * cookie,
+                                   xmi_result_t    result )
+          {
+            collObj *cObj = (collObj*)cookie;
+            cObj->_user_done_fn(context,cObj->_user_cookie,result);
+            free(cObj);
+          }
+
+        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+                                               void                      * cmd)
+
+          {
+            collObj *obj = (collObj*)malloc(sizeof(*obj));
+            new(obj) collObj((xmi_xfer_t*)cmd);
+            XMI_Callback_t cb_done;
+            cb_done.function   = obj->_xfer.cb_done;
+            cb_done.clientdata = obj->_xfer.cookie;
+            return this->generate(&obj->_req[0],
+                                  obj->_rsize,
+                                  cb_done,
+                                  XMI_MATCH_CONSISTENCY,
+                                  (XMI_GEOMETRY_CLASS *)geometry,
+                                  obj->_xfer.cmd.xfer_broadcast.root,
+                                  obj->_xfer.cmd.xfer_broadcast.buf,
+                                  obj->_xfer.cmd.xfer_broadcast.typecount);
         }
 
         ///
