@@ -12,47 +12,153 @@
 #include "components/devices/generic/Device.h"
 
 ////////////////////////////////////////////////////////////////////////
-///  \file components/devices/generic/SubDeviceSuppt.h
+///  \file components/devices/util/SubDeviceSuppt.h
 ///  \brief Generic Device Examples and Frequently-used sub-classes
 ///
 ///  Namespace:  XMI, the messaging namespace.
 ///
 ////////////////////////////////////////////////////////////////////////
+
+/// \page use_gendev
+///
+/// \section use_gendev_suppt How to use the Generic Device with SubDeviceSuppt.h
+///
+/// This chapter explains what is provided by the header file "SubDeviceSuppt.h"
+/// and how to use it.
+///
+/// \subsection use_gendev_suppt_syn SYNOPSIS
+///
+/// \#include "components/devices/util/SubDeviceSuppt.h"
+///
+/// \subsection use_gendev_suppt_thr THREAD SUPPORT
+///
+/// \ref GenericAdvanceThread "class GenericAdvanceThread"
+///
+/// \subsubsection use_gendev_suppt_thr_p Provides:
+///
+/// \ref GenericAdvanceThread::setMsg "void setMsg(GenericMessage *msg)"
+///
+/// \ref GenericAdvanceThread::getMsg "GenericMessage *getMsg()"
+///
+/// \ref GenericAdvanceThread::setAdv "void setAdv(xmi_work_function advThr)"
+///
+/// \ref SimpleAdvanceThread "class SimpleAdvanceThread"
+///
+/// Basic thread object for messages that move data. Adds a "bytes left" field.
+/// Inherits from GenericAdvanceThread (and, by definition, GenericThread).
+/// Ctor initializes "bytes left" to 0.
+///
+/// Provides:
+///
+/// \ref SimpleAdvanceThread::_bytesLeft "size_t _bytesLeft (public data member)"
+///
+/// \subsection use_gendev_suppt_msg MESSAGE SUPPORT
+///
+/// \ref DECL_ADVANCE_ROUTINE "DECL_ADVANCE_ROUTINE(method, message, thread)"
+///
+///  Declare a static advance function stub (e.g. that may be use in setAdv()) which
+///  calls an inlined function by the same name prepended with double-underscore.
+///  In this way, the inlined advance function can be used internally for such things
+///  as early advance, while the static function may be used for posting work.
+///
+/// \subsubsection use_gendev_suppt_msg_decl_c Creates:
+///
+/// \ref DECL_ADVANCE_ROUTINE::method "xmi_result_t method(xmi_context_t, void *)"
+///
+/// \subsubsection use_gendev_suppt_msg_decl_r Requires:
+///
+/// \ref DECL_ADVANCE_ROUTINE::__method "xmi_result_t __method(thread *)"
+///
+///
+/// \ref DECL_ADVANCE_ROUTINE2 "DECL_ADVANCE_ROUTINE2(method, message, thread)"
+///
+///   Declare a static advance function stub (e.g. that may be use in setAdv()) which
+///   calls an inlined function by the same name prepended with double-underscore.
+///   In this way, the inlined advance function can be used internally for such things
+///   as early advance, while the static function may be used for posting work.
+///
+/// \subsubsection use_gendev_suppt_msg_decl2_c Creates:
+///
+/// \ref DECL_ADVANCE_ROUTINE2::method "xmi_result_t method(xmi_context_t, void *)"
+///
+/// \subsubsection use_gendev_suppt_msg_decl2_r Requires:
+///
+/// \ref DECL_ADVANCE_ROUTINE2::__method "xmi_result_t __method(xmi_context_t, thread *)"
+///
+///
+/// \subsection use_gendev_suppt_dev DEVICE SUPPORT
+///
+/// \subsection use_gendev_suppt_dev_msq class MultiSendQSubDevice<thread, nthreads, usequeue>
+///
+///   A send-queue with an array of thread objects. Inherits from the typedef
+///   GenericDeviceMessageQueue which defines the type of queue needed by the
+///   generic device to support a message object being on two queues at once.
+///
+/// \subsubsection use_gendev_suppt_dev_msq_p Provides:
+///
+/// \subsubsection use_gendev_suppt_dev_msq_r Requires:
+///
+/// \ref T_Message::setThreads "int msg->setThreads(thread **t)"
+///
+///
+///  class CommonQueueSubDevice
+///  class SharedQueueSubDevice<commondevice, thread, nthreads>
+///
+///   A pair of classes that support a device model where there is a single
+///   hardware device (and send queue) that is used by multiple different
+///   message types. An example use of this is the BG/P Collective Network
+///   where a single hardware device is used by messages implementing
+///   broadcast, allreduce, allreduce with pre/post processing, and
+///   allreduce supporting double-sums (on hardware that does not directly
+///   support floating point operations).
+///
+///   Provides:
+///
+
 namespace XMI {
 namespace Device {
 namespace Generic {
 
-//////////////////////////////////////////////////////////////////////
-///  \brief A Generic Device implmentation of a thread.
-///  This class implements a base thread object.
-///  Normally, this class is not used directly by a sub-device
-/// as the device's thread, but all actual working threads inherit
-/// from this class.
-//////////////////////////////////////////////////////////////////////
+/// \brief A thread that may be associated with a Message.
+///
+/// A thread object that contains a pointer to the associated message object.
+/// Inherits from GenericThread. Ctor initializes message pointer to NULL.
+///
 class GenericAdvanceThread : public GenericThread {
 
 public:
 	GenericAdvanceThread() :
 	GenericThread(),
-	_msg(NULL),
-	_dev_wake(NULL)
+	_msg(NULL)
 	{
 	}
 
+	/// \brief Set message object that thread works on
+	///
+	/// \param[in] msg	Message object
 	inline void setMsg(GenericMessage *msg) { _msg = msg; }
-	inline void setAdv(xmi_work_function advThr) { _func = advThr; _cookie = this; }
-	inline GenericMessage *getMsg() { return _msg; }
 
-	inline void setWakeVec(void *v) { _dev_wake = v; }
-	inline void *getWakeVec() { return _dev_wake; }
+	/// \brief Set advance routine to be used
+	///
+	/// Default setup of work function as typically needed for thread advance.
+	/// Sets work function to 'advThr' and cookie (clientdata) to 'this'
+	/// (i.e. this thread object).
+	///
+	/// \param[in] advThr	Advance function
+	inline void setAdv(xmi_work_function advThr) { _func = advThr; _cookie = this; }
+
+	/// \brief Get message object that thread works on
+	///
+	/// \return	Message object
+	inline GenericMessage *getMsg() { return _msg; }
 
 protected:
 	GenericMessage *_msg;
-	void *_dev_wake;
 }; /* class GenericAdvanceThread */
 
 //////////////////////////////////////////////////////////////////////
 ///  \brief A Generic Device implmentation of a thread.
+///
 ///  This class implements a useable, simple, thread object.
 ///  Other, more complex, thread classes are implemented in specific
 ///  sub-devices.  For example, see bgp/collective_network/CollectiveNetworkLib.h
@@ -66,12 +172,13 @@ public:
 	{
 	}
 public:
+	/// \brief byte count used by message advance routine as needed
+	/// \ingroup use_gendev_suppt
 	size_t _bytesLeft;
 }; /* class SimpleAdvanceThread */
 
-// This is a bit klunky, but until templates allow methods as parameters...
-
 /// \brief Macro for declaring a routine as an advance routine for a thread
+/// \ingroup use_gendev_suppt
 ///
 /// Creates a static function named 'method' that may be used for a
 /// thread's advance routine (thr->setAdv('method')). Assumes there is
@@ -88,6 +195,38 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	message *msg = (message *)thr->getMsg();		\
 	return msg->__##method(thr);				\
 }
+
+/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE::method(xmi_context_t ctx, void *thr)
+/// \brief Static function used for advancing work on thread/message
+///
+/// The static advance function stub, suitable for use in setAdv().
+///
+/// \param[in] ctx	The context on which working is being done
+/// \param[in] thr	The thread object being worked
+/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+
+/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE::__method(thread *thr)
+/// \brief Inline function used for advancing work on thread/message
+///
+/// The actual advance function.
+///
+/// \param[in] thr	The thread object being worked
+/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+
+/// \brief Macro for declaring a routine as an advance routine for a thread
+/// \ingroup use_gendev_suppt
+///
+/// Passes context to advance routine, along with thread object.
+///
+/// Creates a static function named 'method' that may be used for a
+/// thread's advance routine (thr->setAdv('method')). Assumes there is
+/// also an inlined function named __'method' which contains the actual
+/// advance code for the thread(s).
+///
+/// \param[in] method	Basename of method used to advance thread(s)
+/// \param[in] message	Class of message
+/// \param[in] thread	Class of thread
+///
 #define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
 static xmi_result_t method(xmi_context_t context, void *t) {	\
 	thread *thr = (thread *)t;				\
@@ -95,20 +234,28 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	return msg->__##method(context, thr);			\
 }
 
+/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE2::method(xmi_context_t ctx, void *thr)
+/// \brief Static function used for advancing work on thread/message
+///
+/// The static advance function stub, suitable for use in setAdv().
+///
+/// \param[in] ctx	The context on which working is being done
+/// \param[in] thr	The thread object being worked
+/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+
+/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE2::__method(xmi_context_t ctx, thread *thr)
+/// \brief Inline function used for advancing work on thread/message
+///
+/// The actual advance function. Has access to context if needed.
+///
+/// \param[in] ctx	The context on which working is being done
+/// \param[in] thr	The thread object being worked
+/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+
 /// \brief Example sub-device for using multiple send queues
 ///
 /// This is typically what 'local' point-to-point devices do, to enforce
 /// ordering to a peer.
-///
-/// In this example, the actual Model/Message/Device would use
-/// getSendQDev(peer) to get the "QS" object to pass to the Message ctor.
-/// i.e. msg->getSQ() must return one of the _sendQs[] objects so that
-/// the generic device can run the __complete() method on it.
-///
-/// An alternative is that the actual device might simply add a
-/// GenericDeviceMessageQueue element to each of it's FIFO objects (instead of
-/// the simple sendQ). It would still need to ensure that the Message
-/// contained a reference to that GenericDeviceMessageQueue object in it's 'QS'.
 ///
 template <class T_Thread,int N_Threads,bool Use_Queue>
 class MultiSendQSubDevice : public GenericDeviceMessageQueue {
@@ -125,41 +272,49 @@ public:
 		}
 	}
 
-	// may be overridden by child class... Context calls using child class.
-	inline int advance(size_t client, size_t context) { return 0; }
-
-	/// \brief Initialization for the subdevice
+	/// \brief Initialization for the send-queue object
+	/// \ingroup use_gendev_suppt_dev_msq_p
 	///
+	/// \param[in] client		Id of current client
+	/// \param[in] contextId	Id of current context
+	/// \param[in] clt		Client
+	/// \param[in] ctx		Context
 	/// \param[in] sd		SysDep object (not used?)
 	/// \param[in] devices		Array of Generic::Device objects for client
-	/// \param[in] contextId	Id of current context (index into devices[])
-	/// \ingroup gendev_subdev_api
+	/// \return	error code
 	///
 	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
-		if (client == 0) {
-			_sd = sd;
-		}
 		if (contextId == 0) {
 			_generics[client] = devices;
 		}
 		return XMI_SUCCESS;
 	}
 
-	inline XMI::SysDep *getSysdep() {
-		return _sd;
-	}
-
+	/// \brief Accessor for arrays of generic devices
+	/// \ingroup use_gendev_suppt_dev_msq_p
+	///
+	/// \param[in] client		Id of current client
+	/// \return	Array of generic devices for client
+	///
 	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
 		return _generics[client];
 	}
 
+	/// \brief Accessor for QS pointer to use with this object
+	/// \ingroup use_gendev_suppt_dev_msq_p
+	///
+	/// \return	Array of generic devices for client
+	///
 	inline GenericDeviceMessageQueue *getQS() {
 		return this;
 	}
 
-// protected:
-//	friend class T_Message
-public:
+	/// \brief Acessor for thread objects for this send queue
+	/// \ingroup use_gendev_suppt_dev_msq_p
+	///
+	/// \param[out] t	Thread object array
+	/// \param[out] n	Size of thread object array (number of elements)
+	///
 	inline void __getThreads(T_Thread **t, int *n) {
 		if (N_Threads > 0) {
 			*t = &_threads[0];
@@ -170,9 +325,22 @@ public:
 		}
 	}
 
-// protected:
-//	friend class T_Model
 public:
+	/// \brief Start next message
+	/// \ingroup use_gendev_suppt_dev_msq_p
+	///
+	/// Starts a message, by setting up threads and posting all objects
+	/// to generic device slices. Places the first thread on a different
+	/// context than the message.
+	///
+	/// If message is completed during thread setup (early advance),
+	/// and it is not yet queued, then does not post anything to
+	/// the generic device.
+	///
+	/// \param[in] msg		Message to be completed or queued
+	/// \param[in] devQueued	Whether message is already on queue
+	/// \return	context for completion callback, or NULL if not completed
+	///
 	template <class T_Message>
 	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devQueued) {
 		XMI::Device::Generic::Device *g;
@@ -200,6 +368,31 @@ public:
 		return NULL;
 	}
 
+	/// \fn int T_Message::setThreads(thread **thr)
+	/// \brief Sets up threads and returns threads and number used
+	///
+	/// The Message must provide this routine which is called when a message
+	/// is being started. The routine must setup the thread objects and
+	/// return how many were setup. The thread objects may be advanced,
+	/// and if a thread completes it should set it's status to Complete.
+	///
+	/// \param[out] thr	Array of threads, initialized and possibly advanced
+	/// \return	Number of threads initialized
+
+	/// \brief Post message to device
+	/// \ingroup use_gendev_suppt_dev_msq_p
+	///
+	/// If queue is currently empty, then the message may be progressed
+	/// and completed without queueing. Otherwise message is queued
+	/// for later start.
+	///
+	/// If this object is instanciated with Use_Queue 'false', then the
+	/// message will always be progressed and never queued. This means that
+	/// work will have been posted to the generic device, so the message
+	/// should eventually complete.
+	///
+	/// \param[in] msg	Message to be posted
+	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
 		// GenericDeviceMessageQueue *qs = (GenericDeviceMessageQueue *)msg->getQS();
@@ -227,7 +420,6 @@ public:
 protected:
 	T_Thread _threads[N_Threads];
 	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
-	XMI::SysDep *_sd;
 }; // class MultiSendQSubDevice
 
 ///

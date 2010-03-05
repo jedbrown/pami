@@ -38,6 +38,9 @@ public:
 		static inline size_t advance_impl(WQRingReduceDev *devs, size_t client, size_t context);
 		static inline WQRingReduceDev & getDevice_impl(WQRingReduceDev *devs, size_t client, size_t context);
 	}; // class Factory
+	inline XMI::SysDep *getSysdep() { return _sd; }
+protected:
+	XMI::SysDep *_sd;
 }; // class WQRingReduceDev
 
 }; //-- Device
@@ -53,6 +56,9 @@ inline WQRingReduceDev *WQRingReduceDev::Factory::generate_impl(size_t client, s
 }
 
 inline xmi_result_t WQRingReduceDev::Factory::init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	if (client == 0 && contextId == 0) {
+		_g_wqreduce_dev._sd = sd;
+	}
 	return _g_wqreduce_dev.__init(client, contextId, clt, ctx, sd, devices);
 }
 

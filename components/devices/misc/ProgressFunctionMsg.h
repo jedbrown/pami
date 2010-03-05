@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/generic/ProgressFunctionMsg.h
+ * \file components/devices/misc/ProgressFunctionMsg.h
  * \brief Add a general function to the progress engine loop/queue
  */
 
@@ -122,7 +122,7 @@ inline bool XMI::Device::ProgressFunctionMdl::postWork(XMI_ProgressFunc_t *pf) {
 		return true;
 	}
 #endif
-	new (thr) XMI::Device::Generic::GenericThread(pf->func, pf->clientdata, pf->cb_done);
+	new (thr) XMI::Device::Generic::GenericThread(pf->func, pf->clientdata);
 	gd = _g_progfunc_dev.getGeneric(pf->client, pf->context);
 	thr->setStatus(XMI::Device::Ready);
 	gd->postThread(thr);

@@ -9,23 +9,64 @@
 #ifndef __components_devices_generic_Device_h__
 #define __components_devices_generic_Device_h__
 
-// The section of the Generic::Device implements the interfaces
-// used by the sub-devices. See GenericDevice.h for interfaces
-// used by messaging (advance).
-
-/// \defgroup gendev_internal_api Internal API for Generic::Device
+/// \page use_gendev How to use the Generic Device
 ///
-/// The internal API is the set of methods that are/may be called by
-/// sub-devices.
-/// SubDevice -> Generic::Device
-/// SubDeviceTemplate -> Generic::Device
+/// This chapter explains the basic requirements and features of the generic device.
 ///
-
-/// \defgroup gendev_private_api Private API for Generic::Device
+/// \section use_gendev_basic Basic requirements and features of the Generic Device
 ///
-/// The private API is the set of methods that are/may be called by
-/// by/from various parts of the Generic::Device.
-/// Generic::Device -> Generic::Device
+/// The generic device implements a pair of queues for each context.
+///
+/// One queue holds thread objects, which each represent a until of work.
+/// Each thread on the queue will have it's work function called when
+/// the generic device slice (context) is advanced. Depending on the
+/// thread status and work function return code, the thread may persist
+/// on the queue or be removed. Thread objects are posted using postThread().
+///
+/// The other queue holds message objects. These objects are queued only
+/// to be checked for completion. during advance, each object on this queue
+/// has it's status checked, and if Done will be dequeued and the completion
+/// callback invoked. Message are posted using postMsg().
+///
+/// A user of the generic device may employ both message and threads,
+/// or either one alone.
+///
+/// A typical usage is to create a message object with common data
+/// and the completion callback, and then create one or more thread objects
+/// with data members for the specific work assigned to the thread.
+/// As each thread completes it's work it updates the message and when
+/// last thread completes it will set the message status to Done.
+/// The thread objects are posted to different contexts thereby achieving
+/// parallelism.
+///
+/// All devices are given a pointer to the array of generic devices during
+/// init(). By saving the pointer, any device may later post work to
+/// any slice of the generic device.
+///
+/// \section use_gendev_syn SYNOPSIS
+///
+/// \#include "components/devices/generic/Device.h"
+///
+/// \section use_gendev_thr THREAD
+///
+/// All objects posted to the generic device via postThread() must
+/// inherit from GenericThread.
+///
+/// \ref XMI::Device::ThreadStatus "GenericThread status values"
+///
+/// \ref XMI::Device::Generic::GenericThread "class GenericThread"
+///
+/// \subsubsection use_gendev_genthr_p Provides:
+///
+/// \ref GenericThread::getStatus "ThreadStatus getStatus()"
+///
+/// \ref GenericThread::setStatus "void setStatus(ThreadStatus stat)"
+///
+/// \ref GenericThread::setFunc "void setFunc(xmi_work_function func, void *cookie)"
+///
+///
+///
+///
 ///
 
 #include "SysDep.h"
@@ -76,6 +117,7 @@ namespace Generic {
 class Device {
 
 public:
+	/// \brief standard Device::Factory API
 	class Factory : public Interface::FactoryInterface<Factory,Device,Device> {
 	public:
 		static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
@@ -125,8 +167,6 @@ public:
 	///
 	/// \return	number of events processed
 	///
-	/// \ingroup gendev_public_api
-	///
 	inline size_t advance() {
 		int events = 0;
 		//+ Need to ensure only one of these runs per core
@@ -147,7 +187,6 @@ public:
 				if (rc != XMI_EAGAIN) {
 					// thr->setStatus(XMI::Device::Complete);
 					__Threads.deleteElem(thr);
-					thr->executeCallback(__context, rc);
 					continue;
 				}
 			} else if (thr->getStatus() == XMI::Device::OneShot) {
@@ -160,7 +199,6 @@ public:
 			// This allows a thread to be "completed" by something else...
 			if (thr->getStatus() == XMI::Device::Complete) {
 				__Threads.deleteElem(thr);
-				thr->executeCallback(__context);
 				continue;
 			}
 		}
@@ -190,7 +228,6 @@ public:
 	/// Currently not used, since subdevices have to be polled for recvs.
 	///
 	/// \return	Boolean indicating if device needs advancing
-	/// \ingroup gendev_public_api
 	///
 	inline bool isAdvanceNeeded();
 
@@ -200,7 +237,6 @@ public:
 	/// without an associated message.
 	///
 	/// \param[in] thr	Thread object to post for advance work
-	/// \ingroup gendev_internal_api
 	///
 	inline void postThread(GenericThread *thr) {
 		__Threads.pushTail(thr);
@@ -216,17 +252,14 @@ public:
 
 	/// \brief accessor for the context-id associated with generic device slice
 	/// \return	context ID
-	/// \ingroup gendev_internal_api
 	inline size_t contextId() { return __contextId; }
 
 	/// \brief accessor for the total number of contexts in this client
 	/// \return	number of contexts/generic device slices
-	/// \ingroup gendev_internal_api
 	inline size_t nContexts() { return __nContexts; }
 
 	/// \brief accessor for the context associated with generic device slice
 	/// \return	context handle
-	/// \ingroup gendev_internal_api
 	inline xmi_context_t getContext() { return __context; }
 
 private:

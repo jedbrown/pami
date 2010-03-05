@@ -27,6 +27,8 @@ struct my_work {
 	unsigned long v;
 };
 
+unsigned done = 0;
+
 static xmi_result_t my_func(xmi_context_t ctx, void *cd) {
 	struct my_work *w = (struct my_work *)cd;
 	if (w->t0 == 0) {
@@ -38,20 +40,11 @@ static xmi_result_t my_func(xmi_context_t ctx, void *cd) {
 	unsigned long long t1 = __global.time.timebase();
 	if (t1 - w->t0 >= w->count) {
 		fprintf(stderr, "Finished at tick %llu (%ld calls)\n", t1, w->v);
+		done = 1;
 		return XMI_SUCCESS;
 	}
 	++w->v;
 	return XMI_EAGAIN;
-}
-
-void done_cb(xmi_context_t ctx, void *cd, xmi_result_t err) {
-	unsigned *done = (unsigned *)cd;
-	if (err != XMI_SUCCESS) {
-		fprintf(stderr, "Completion callback: done ERROR: %d\n", err);
-	} else {
-		fprintf(stderr, "Completion callback: done SUCCESS\n");
-	}
-	*done = 1;
 }
 
 int main(int argc, char **argv) {
@@ -94,7 +87,6 @@ int main(int argc, char **argv) {
 // END standard setup
 // ------------------------------------------------------------------------
 	struct my_work work;
-	unsigned done = 0;
 	XMI_ProgressFunc_t pf;
 
 	work.t0 = 0;
@@ -109,7 +101,6 @@ int main(int argc, char **argv) {
 	pf.request = &msgbuf[0];
 	pf.func = my_func;
 	pf.clientdata = &work;
-	pf.cb_done = (xmi_callback_t){ done_cb, &done };
 	bool rc = _model.postWork(&pf);
 	if (!rc) {
 		fprintf(stderr, "Failed to generateMessage on progress function\n");

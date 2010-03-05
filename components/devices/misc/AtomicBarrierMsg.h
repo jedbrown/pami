@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/generic/AtomicBarrierMsg.h
+ * \file components/devices/misc/AtomicBarrierMsg.h
  * \brief Barrier that uses whatever Atomic Barrier object  is specified
  */
 
@@ -62,6 +62,9 @@ public:
 		static inline size_t advance_impl(AtomicBarrierDev *devs, size_t client, size_t context);
 		static inline AtomicBarrierDev & getDevice_impl(AtomicBarrierDev *devs, size_t client, size_t context);
 	}; // class Factory
+	inline XMI::SysDep *getSysdep() { return _sd; }
+protected:
+	XMI::SysDep *_sd;
 }; // class AtomicBarrierDev
 
 }; //-- Device
@@ -77,6 +80,9 @@ inline AtomicBarrierDev *AtomicBarrierDev::Factory::generate_impl(size_t client,
 }
 
 inline xmi_result_t AtomicBarrierDev::Factory::init_impl(AtomicBarrierDev *devs, size_t client, size_t contextid, xmi_client_t clt, xmi_context_t context, SysDep *sd, XMI::Device::Generic::Device *devices) {
+	if (client == 0 && contextid == 0) {
+		_g_lmbarrier_dev._sd = sd;
+	}
 	return _g_lmbarrier_dev.__init(client, contextid, clt, context, sd, devices);
 }
 
