@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = send_to_self_perf send_to_self_immed 
 NOTBUILT        = 
-APPS            = send_to_self.${EXTENSION} long-header.${EXTENSION} default-send-1.${EXTENSION} 
+APPS            = send_to_self.${EXTENSION} long-header.${EXTENSION} default-send-1.${EXTENSION}  send_flood_perf.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
