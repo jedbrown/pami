@@ -29,266 +29,104 @@ namespace XMI
 {
   namespace Device
   {
-    class ShmemThread : public XMI::Device::Generic::GenericAdvanceThread
+    namespace Shmem
     {
-    public:
-        // tbd...
-    }; // class ShmemThread
+      // GenericDeviceMessageQueue defined in GenericDevicePlatform.h
+      class SendQueue : public GenericDeviceMessageQueue
+      {
+        public:
 
-    class ShmemMessage : public XMI::Device::Generic::GenericMessage
-    {
-      public:
+          class Message : public XMI::Device::Generic::GenericMessage
+          {
+            protected:
+              inline Message (xmi_work_function    work_func,
+                              void               * work_cookie,
+                              xmi_event_function   done_fn,
+                              void               * done_cookie,
+                              size_t               contextid) :
+                  XMI::Device::Generic::GenericMessage(NULL, (xmi_callback_t) {done_fn, done_cookie}, 0, contextid),
+              _work (work_func, work_cookie),
+              _genericdevice (NULL)
+              {
+                TRACE_ERR((stderr, "<> SendQueue::Message::Message()\n"));
+                _work.setStatus (Ready);
+              };
 
-        inline ShmemMessage (GenericDeviceMessageQueue *QS,
-			     xmi_event_function   fn,
-                             void               * cookie,
-			     size_t               contextid) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, contextid)
-        {
-#warning Need clientid (and contextid) for GenericMessage ctor (7 places in this file)
-        };
+            public:
 
-        virtual ~ShmemMessage () {};
+              virtual ~Message () {};
 
-        inline void invokeCompletionFunction (xmi_context_t context)
-        {
-	  executeCallback(context, XMI_SUCCESS);
-        };
+              void setup (XMI::Device::Generic::Device * device, SendQueue * sendQ)
+              {
+                TRACE_ERR((stderr, ">> SendQueue::Message::setup(%p, %p)\n", device, senQ));
+                _genericdevice = device;
+                this->_QS = sendQ;
+                TRACE_ERR((stderr, "<< SendQueue::Message::setup(%p, %p)\n", device, sendQ));
+              }
 
-#if 0
-        enum shmem_pkt_t
-        {
-          PTP,
-          RMA
-        };
+              ///
+              /// \brief virtual function implementation
+              /// \see XMI::Device::Generic::GenericMessage::postNext()
+              ///
+              /// Post this message to the appropriate generic device, this is the
+              /// completion message and the thread (work) message(s).
+              ///
+              /// \todo Figure out the input parameters and the return value
+              ///
+              inline xmi_context_t postNext (bool something)
+              {
+                TRACE_ERR((stderr, ">> SendQueue::Message::postNext(%d)\n", something));
+                XMI_assert_debug (_genericdevice != NULL);
 
-        static const size_t SHMEM_MESSAGE_METADATA_SIZE = 128;
+                _genericdevice->postMsg ((XMI::Device::Generic::GenericMessage *) this);
+                _genericdevice->postThread ((XMI::Device::Generic::GenericThread *) &_work);
 
-        inline ShmemMessage (GenericDeviceMessageQueue *QS,
-			     xmi_context_t        context,
-                             xmi_event_function   fn,
-                             void               * cookie,
-                             uint16_t             dispatch_id,
-                             void               * metadata,
-                             size_t               metasize,
-                             void               * src,
-                             size_t               bytes,
-                             bool                 packed) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
-            _context (context),
-            _iov (&__iov[0]),
-            _tiov (1),
-            _niov (0),
-            _nbytes (0),
-            _dispatch_id (dispatch_id),
-            _pkt_type(PTP)
-        {
-          TRACE_ERR((stderr, ">> ShmemMessage(1) .. src = %p, bytes = %zd\n", src, bytes));
-          __iov[0].iov_base = src;
-          __iov[0].iov_len  = bytes;
+                TRACE_ERR((stderr, "<< SendQueue::Message::postNext(%d), return NULL\n", something));
+                return NULL; // what should this be?
+              };
 
-          XMI_assert_debugf(metasize <= SHMEM_MESSAGE_METADATA_SIZE, "ShmemMessage metadata size too small: %zd ! <= %zd\n", metasize, SHMEM_MESSAGE_METADATA_SIZE);
+            protected:
 
-          memcpy(_metadata, metadata, metasize);
-          TRACE_ERR((stderr, "<< ShmemMessage(1) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len));
-        };
+              XMI::Device::Generic::GenericThread _work;
+              XMI::Device::Generic::Device * _genericdevice;
+          };
 
-        inline ShmemMessage (GenericDeviceMessageQueue *QS,
-			     xmi_context_t        context,
-                             xmi_event_function   fn,
-                             void               * cookie,
-                             uint16_t             dispatch_id,
-                             void               * metadata,
-                             size_t               metasize,
-                             void               * src0,
-                             size_t               bytes0,
-                             void               * src1,
-                             size_t               bytes1,
-                             bool                 packed) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
-            _context (context),
-            _iov (&__iov[0]),
-            _tiov (2),
-            _niov (0),
-            _nbytes (0),
-            _dispatch_id (dispatch_id),
-            _pkt_type(PTP)
-        {
-          TRACE_ERR((stderr, ">> ShmemMessage(2) .. src0 = %p, bytes0 = %zd, src1 = %p, bytes1 = %zd\n", src0, bytes0, src1, bytes1));
+          inline SendQueue (XMI::Device::Generic::Device * progress, size_t local) :
+              GenericDeviceMessageQueue (),
+              _progress (progress),
+              _local_progress_device (XMI::Device::Generic::Device::Factory::getDevice(progress, 0, local))
+          {
+          };
 
-          __iov[0].iov_base = src0;
-          __iov[0].iov_len  = bytes0;
-          __iov[1].iov_base = src1;
-          __iov[1].iov_len  = bytes1;
+          /// \brief post the message to be advanced later
+          ///
+          /// First, post to the "secondary" queue (owned by the shmem device),
+          /// then, if the secondary queue was empty, post to the "primary"
+          /// queue (owned by the generic device)
+          inline void post (SendQueue::Message * msg)
+          {
+            TRACE_ERR((stderr, ">> SendQueue::post(%m)\n", msg));
+            this->enqueue (msg);
+            TRACE_ERR((stderr, "<< SendQueue::post(%m)\n", msg));
+          };
 
-          memcpy(_metadata, metadata, metasize);
-          TRACE_ERR((stderr, "<< ShmemMessage(2) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len, _iov[1].iov_base, _iov[1].iov_len));
-        };
+          /// \brief virtual function implementation
+          /// \see XMI::Device::Generic::GenericMessage::postNext()
+          ///
+          /// Post this message to the appropriate generic device, this is the
+          /// completion message and the thread (work) message(s).
+          inline bool postNext (SendQueue::Message * msg)
+          {
+            TRACE_ERR((stderr, ">> SendQueue::postNext(%p)\n", msg));
+            _local_progress_device.postMsg((XMI::Device::Generic::GenericMessage *) msg);
+            TRACE_ERR((stderr, "<< SendQueue::postNext(%p), return true\n", msg));
+            return true; // huh?
+          };
 
-        inline ShmemMessage (GenericDeviceMessageQueue *QS,
-			     xmi_context_t        context,
-                             xmi_event_function   fn,
-                             void               * cookie,
-                             uint16_t             dispatch_id,
-                             void               * metadata,
-                             size_t               metasize,
-                             struct iovec       * iov,
-                             size_t               niov,
-                             bool                 packed) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
-            _context (context),
-            _iov (iov),
-            _tiov (niov),
-            _niov (0),
-            _nbytes (0),
-            _dispatch_id (dispatch_id),
-            _pkt_type(PTP)
-        {
-          TRACE_ERR((stderr, ">> ShmemMessage(niov) .. iov = %p, niov = %zd\n", iov, niov));
-          memcpy(_metadata, metadata, metasize);
-          TRACE_ERR((stderr, "<< ShmemMessage(niov) .. _tiov = %zd, _niov = %zd, _nbytes = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd, _iov[0].iov_base = %p, _iov[0].iov_len = %zd ...\n", _tiov, _niov, _nbytes, _iov[0].iov_base, _iov[0].iov_len, _iov[1].iov_base, _iov[1].iov_len));
-        };
-
-
-        inline ShmemMessage (GenericDeviceMessageQueue *QS,
-			     xmi_context_t        context,
-                             xmi_event_function   fn,
-                             void               * cookie,
-                             uint16_t             dispatch_id,
-                             void               * metadata,
-                             size_t               metasize) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
-            _context (context),
-            _iov (&__iov[0]),
-            _tiov (0),
-            _niov (0),
-            _nbytes (0),
-            _dispatch_id (dispatch_id),
-            _pkt_type(PTP)
-        {
-          TRACE_ERR((stderr, ">> ShmemMessage()\n"));
-          memcpy(_metadata, metadata, metasize);
-          TRACE_ERR((stderr, "<< ShmemMessage() .. _tiov = %zd, _niov = %zd, _nbytes = %zd\n", _tiov, _niov, _nbytes));
-        };
-
-        inline ShmemMessage (GenericDeviceMessageQueue *QS,
-			     xmi_event_function   fn,
-                             void               * cookie,
-                             Memregion          * local_memregion,
-                             size_t               local_offset,
-                             Memregion          * remote_memregion,
-                             size_t               remote_offset,
-                             size_t               bytes,
-                             bool                 is_put) :
-            XMI::Device::Generic::GenericMessage(QS, (xmi_callback_t){fn, cookie}, 0, 0),
-            _pkt_type(RMA),
-            _rma_local_memregion (local_memregion),
-            _rma_remote_memregion (remote_memregion),
-            _rma_local_offset (local_offset),
-            _rma_remote_offset (remote_offset),
-            _rma_bytes (bytes),
-            _rma_is_put (is_put)
-        {
-        };
-
-        inline int executeCallback (xmi_result_t status = XMI_SUCCESS)
-        {
-	  XMI::Device::Generic::GenericMessage::executeCallback(_context, status);
-          return 0;
-        };
-
-        inline void * next (size_t & bytes, size_t max)
-        {
-          TRACE_ERR((stderr, ">> ShmemMessage::next(), _iov = %p, _niov = %zd, _nbytes = %zd\n", _iov, _niov, _nbytes));
-          void * addr = (void *)(((uint8_t *)_iov[_niov].iov_base) + _nbytes);
-          // Return minimum of the bytes remaining in this iov and the
-          // maximum packet payload.
-          bytes = MIN((_iov[_niov].iov_len - _nbytes), max);
-          _nbytes += bytes;
-
-          if (_nbytes == _iov[_niov].iov_len)
-            {
-              _nbytes = 0;
-              _niov++;
-            }
-
-          TRACE_ERR((stderr, "<< ShmemMessage::next(), addr = %p, bytes = %zd\n", addr, bytes));
-          return addr;
-        };
-
-        inline bool done ()
-        {
-          return (_tiov == _niov) ? true : false;
-        };
-
-        inline uint16_t getDispatchId ()
-        {
-          return _dispatch_id;
-        }
-
-        inline void * getMetadata ()
-        {
-          return (void *) &_metadata;
-        }
-
-        inline size_t getSequenceId ()
-        {
-          return _sequence_id;
-        }
-
-        inline void setSequenceId (size_t sequence)
-        {
-          _sequence_id = sequence;
-        }
-
-        inline bool isRMAType()
-        {
-          return (_pkt_type == RMA);
-        }
-
-        inline bool getRMA (Memregion ** local_memregion,
-                            size_t     & local_offset,
-                            Memregion ** remote_memregion,
-                            size_t     & remote_offset,
-                            size_t     & bytes)
-        {
-          *local_memregion  = _rma_local_memregion;
-          *remote_memregion = _rma_remote_memregion;
-          local_offset      = _rma_local_offset;
-          remote_offset     = _rma_remote_offset;
-          bytes             = _rma_bytes;
-
-          return _rma_is_put;
-        }
-
-#endif
-
-      protected:
-
-        // Client callback information.
-        //xmi_context_t        _context;
-#if 0
-        struct iovec    * _iov;
-        size_t            _tiov;
-        size_t            _niov;
-        size_t            _nbytes;
-
-        uint16_t _dispatch_id;
-        size_t   _sequence_id;
-
-        shmem_pkt_t       _pkt_type;
-
-        Memregion * _rma_local_memregion;
-        Memregion * _rma_remote_memregion;
-        size_t _rma_local_offset;
-        size_t _rma_remote_offset;
-        size_t _rma_bytes;
-        bool   _rma_is_put;
-
-      private:
-        struct iovec      __iov[2];
-        uint8_t _metadata[SHMEM_MESSAGE_METADATA_SIZE] __attribute__ ((aligned (16)));
-#endif
+        private:
+          XMI::Device::Generic::Device * _progress;
+          XMI::Device::Generic::Device & _local_progress_device;
+      };
     };
   };
 };

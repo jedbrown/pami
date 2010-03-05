@@ -16,7 +16,7 @@
 #include "SysDep.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //  fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -25,8 +25,8 @@ namespace XMI
   {
     template <class T_Fifo>
     xmi_result_t ShmemDevice<T_Fifo>::init (size_t clientid,
-					    size_t contextid,
-					    xmi_client_t     client,
+                                            size_t contextid,
+                                            xmi_client_t     client,
                                             xmi_context_t    context,
                                             SysDep         * sysdep,
                                             XMI::Device::Generic::Device * progress)
@@ -46,8 +46,8 @@ namespace XMI
       _global_task = nodeaddr.global;
       _local_task  = nodeaddr.local;
 #ifdef __bgq__
-	  unsigned stride = 16/_num_procs; //hack
-	  _local_task = _local_task/stride;//hack
+      unsigned stride = 16 / _num_procs; //hack
+      _local_task = _local_task / stride;//hack
 #endif
 
       new (_rfifo) T_Fifo ();
@@ -57,17 +57,12 @@ namespace XMI
 
       // Allocate memory for and construct the queue objects,
       // one for each context on the local node
-      __sendQ = (MessageQueue *) malloc ((sizeof (MessageQueue) * _total_fifos));
+      __sendQ = (Shmem::SendQueue *) malloc ((sizeof (Shmem::SendQueue) * _total_fifos));
 
       for (i = 0; i < _total_fifos; i++)
         {
-          new (&__sendQ[i]) MessageQueue ();
-	  __sendQ[i].__init(clientid, contextid, client, context, sysdep, progress);
+          new (&__sendQ[i]) Shmem::SendQueue (_progress, _contextid);
         }
-
-
-      // Initialize the send queue mask to zero (empty).
-//      __sendQMask = 0;
 
       // Initialize the registered receive function array to noop().
       // The array is limited to 256 dispatch ids because of the size of the
@@ -100,13 +95,13 @@ namespace XMI
     size_t ShmemDevice<T_Fifo>::task2peer_impl (size_t task)
     {
       XMI::Interface::Mapping::nodeaddr_t address;
-      TRACE_ERR((stderr,">> ShmemDevice::task2peer_impl(%zu)\n",task));
+      TRACE_ERR((stderr, ">> ShmemDevice::task2peer_impl(%zu)\n", task));
       __global.mapping.task2node (task, address);
-      TRACE_ERR((stderr,"   ShmemDevice::task2peer_impl(%zu), address = {%zu, %zu}\n",task, address.global, address.local));
+      TRACE_ERR((stderr, "   ShmemDevice::task2peer_impl(%zu), address = {%zu, %zu}\n", task, address.global, address.local));
 
       size_t peer = 0;
       __global.mapping.node2peer (address, peer);
-      TRACE_ERR((stderr,"<< ShmemDevice::task2peer_impl(%zu), peer = %zu\n",task, peer));
+      TRACE_ERR((stderr, "<< ShmemDevice::task2peer_impl(%zu), peer = %zu\n", task, peer));
 
 #ifdef __bgq__
       return task; //hack
@@ -138,9 +133,11 @@ namespace XMI
       // Find the next available id for this dispatch set.
       bool found_free_slot = false;
       size_t n = set * DISPATCH_SET_SIZE + DISPATCH_SET_COUNT;
+
       for (id = set * DISPATCH_SET_SIZE; id < n; id++)
         {
           TRACE_ERR((stderr, "   (%zd) ShmemDevice::registerRecvFunction(), _dispatch[%d].function= %p\n", __global.mapping.task(), id, _dispatch[id].function));
+
           if (_dispatch[id].function == (Interface::RecvFunction_t) noop)
             {
               found_free_slot = true;
@@ -158,14 +155,14 @@ namespace XMI
     };
 
     template <class T_Fifo>
-    template <class T_Message>
-    xmi_result_t ShmemDevice<T_Fifo>::post (size_t fnum, T_Message * msg)
+    xmi_result_t ShmemDevice<T_Fifo>::post (size_t fnum, Shmem::SendQueue::Message * msg)
     {
-      __sendQ[fnum].template __post<T_Message> (msg);
+      TRACE_ERR((stderr, ">> (%zd) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
+      msg->setup (_progress, &__sendQ[fnum]);
+      msg->postNext(true);
+      TRACE_ERR((stderr, "<< (%zd) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
       return XMI_SUCCESS;
     };
-
-
 
     template <class T_Fifo>
     int ShmemDevice<T_Fifo>::noop (void   * metadata,
@@ -177,108 +174,6 @@ namespace XMI
       XMI_abort();
       return 0;
     }
-
-#if 0
-    template <class T_Fifo, class T_Progress>
-    int ShmemDevice<T_Fifo,T_Progress>::advance_sendQ ()
-    {
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ () >> _num_procs = %zd\n", __global.mapping.task(), _num_procs));
-      unsigned peer;
-
-      int events = 0;
-
-      for (peer = 0; peer < _num_procs; peer++)
-        events += advance_sendQ (peer);
-
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ () <<\n", __global.mapping.task()));
-      return events;
-    }
-
-    template <class T_Fifo, class T_Progress>
-    int ShmemDevice<T_Fifo,T_Progress>::advance_sendQ (size_t peer)
-    {
-      ShmemMessage * msg;
-      size_t sequence;
-      int events = 0;
-
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ (%zd) >>\n", __global.mapping.task(), peer));
-
-      while (!__sendQ[peer].isEmpty())
-        {
-          // There is a pending message on the send queue.
-          msg = (ShmemMessage *) __sendQ[peer].peekHead ();
-
-          if (Memregion::shared_address_read_supported ||
-              Memregion::shared_address_write_supported)
-            {
-              if (msg->isRMAType() == true)
-                {
-                  sequence = _fifo[peer].nextInjSequenceId();
-
-                  size_t last_rec_seq_id = _fifo[peer].lastRecSequenceId ();
-
-                  if (sequence - 1 <= last_rec_seq_id) //sequence id is carried by a pt-to-pt message before me
-                    {
-                      Memregion * local_memregion  = (Memregion *) NULL;
-                      Memregion * remote_memregion = (Memregion *) NULL;
-                      size_t local_offset, remote_offset, bytes;
-
-                      if (msg->getRMA (&local_memregion,
-                                       local_offset,
-                                       &remote_memregion,
-                                       remote_offset,
-                                       bytes))
-                        {
-                          local_memregion->write (local_offset, remote_memregion, remote_offset, bytes);
-                        }
-                      else
-                        {
-                          local_memregion->read (local_offset, remote_memregion, remote_offset, bytes);
-                        }
-
-                      popSendQueueHead (peer);
-                      msg->executeCallback ();
-                      continue;
-                    }
-                  else
-                    {
-                      break; //dont process any further elements until the RMA message is processed
-                    }
-                }
-            }
-
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ (%zd) .. before writeSinglePacket()\n", __global.mapping.task(), peer));
-          xmi_result_t result = writeSinglePacket (peer, msg, sequence);
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance_sendQ (%zd) ..  after writeSinglePacket(), result = %zd\n", __global.mapping.task(), peer, result));
-
-          if (result == XMI_SUCCESS)
-            {
-              if (msg->done())
-                {
-                  events++;
-
-                  // The message has completed processing the source data.
-                  // Remove from the send queue and advance next message
-                  // before invoking the message's done callback.
-                  popSendQueueHead (peer);
-
-                  // Invoke the send completion callback here.. may post
-                  // another message!
-                  msg->executeCallback ();
-                  break;
-                }
-            }
-          else
-            {
-              // Unable to write a packet .. ififo is full.
-              // Leave this message on the queue and break out of the loop.
-              break;
-            }
-        }
-
-      return events;
-    };
-#endif
   };
 };
 #undef TRACE_ERR

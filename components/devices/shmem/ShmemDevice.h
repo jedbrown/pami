@@ -79,7 +79,7 @@ namespace XMI
             {
               uint16_t * hdr = (uint16_t *) this->getHeader ();
               hdr[(T_Fifo::packet_header_size>>1)-1] = dispatch;
-		//printf("hdr:%p\n packet_header_size:%d\n", hdr, T_Fifo::packet_header_size);
+              //printf("hdr:%p\n packet_header_size:%d\n", hdr, T_Fifo::packet_header_size);
             };
 
             template <unsigned T_Bytes>
@@ -93,7 +93,8 @@ namespace XMI
             {
               unsigned i;
               uint8_t * hdr = (uint8_t *) this->getHeader ();
-              for (i=0; i<bytes; i++) hdr[i] = metadata[i];
+
+              for (i = 0; i < bytes; i++) hdr[i] = metadata[i];
             };
 
             ///
@@ -108,6 +109,7 @@ namespace XMI
             inline void writePayload (struct iovec (&iov)[T_Niov])
             {
               unsigned i, j, n;
+
 //fprintf (stderr, "PacketImpl::writePayload (iov[%zd])\n", T_Niov);
               if (T_Niov == 1)
                 {
@@ -127,7 +129,7 @@ namespace XMI
                   uint32_t * dst = (uint32_t *) this->getPayload ();
                   uint32_t * src = (uint32_t *) iov[0].iov_base;
                   n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
-		  //printf("iov[0] size:%d\n", iov[0].iov_len);
+                  //printf("iov[0] size:%d\n", iov[0].iov_len);
 
 //fprintf (stderr, "PacketImpl::writePayload (iov[%zd]), 1st, n = %zd, dst = %p, src = %p\n", T_Niov, n, dst, src);
                   for (i = 0; i < n; i++) dst[i] = src[i];
@@ -135,7 +137,7 @@ namespace XMI
                   dst = (uint32_t *)((uint8_t *) dst + iov[0].iov_len);
                   src = (uint32_t *) iov[1].iov_base;
                   n = (iov[1].iov_len >> 2) + ((iov[1].iov_len & 0x03) != 0);
-		  //printf("iov[1] size:%d\n", iov[1].iov_len);
+                  //printf("iov[1] size:%d\n", iov[1].iov_len);
 
 //fprintf (stderr, "PacketImpl::writePayload (iov[%zd]), 2nd, n = %zd, dst = %p, src = %p\n", T_Niov, n, dst, src);
                   for (i = 0; i < n; i++) dst[i] = src[i];
@@ -247,10 +249,8 @@ namespace XMI
 
       public:
 
-	typedef XMI::Device::Generic::MultiSendQSubDevice<ShmemThread,1,true> MessageQueue;
-
         // Inner factory class
-        class Factory : public Interface::FactoryInterface<Factory,ShmemDevice,XMI::Device::Generic::Device>
+        class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, XMI::Device::Generic::Device>
         {
           public:
             static inline ShmemDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
@@ -260,11 +260,11 @@ namespace XMI
 
               // Determine the number of contexts on the entire node, then
               // allocate shared memory for all contexts.
-              
+
               // Get the number of peer tasks on the node
               size_t npeers = 0;
               __global.mapping.nodePeers (npeers);
-              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() npeers = %zu\n", npeers));              
+              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() npeers = %zu\n", npeers));
 
               // Allocate a "context count" array and a peer fifo pointer
               // array from shared memory
@@ -275,7 +275,7 @@ namespace XMI
               TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));
 
               size_t * peer_fnum = ncontexts + npeers;
-              
+
               // Get the peer id for this task
               size_t me = 0;
               XMI::Interface::Mapping::nodeaddr_t address;
@@ -284,27 +284,30 @@ namespace XMI
               TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() after nodeAddr()\n"));
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() me = %zu\n", me));
-          
+
               // Set the number of contexts in this peer
               ncontexts[me] = n;
               TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() ncontexts = %p, ncontexts[%zu] = %zu\n", ncontexts, me, ncontexts[me]));
-              
+
               // Determine the total number of contexts on the node and the
               // number of contexts in each peer
               size_t done = 0;
               size_t total_fifos_on_node = 0;
+
               while (done != npeers)
-              {
-                // check to see if all peers have written a non-zero value
-                // in the "ncontexts" field
-                total_fifos_on_node = 0;
-                done = 0;
-                for (i=0; i<npeers; i++)
                 {
-                  total_fifos_on_node += ncontexts[i];
-                  if (ncontexts[i] > 0) done++;
+                  // check to see if all peers have written a non-zero value
+                  // in the "ncontexts" field
+                  total_fifos_on_node = 0;
+                  done = 0;
+
+                  for (i = 0; i < npeers; i++)
+                    {
+                      total_fifos_on_node += ncontexts[i];
+
+                      if (ncontexts[i] > 0) done++;
+                    }
                 }
-              }
 
               // Allocate a shared memory segment for _all_ of the fifos for
               // _all_ of the contexts
@@ -314,22 +317,23 @@ namespace XMI
 
               // Assign fifo indexes to the peer fnum cache
               peer_fnum[0] = 0;
-              for (i=1; i<npeers; i++)
-              {
-                peer_fnum[i] = peer_fnum[i-1] + ncontexts[i-1];
-              }
+
+              for (i = 1; i < npeers; i++)
+                {
+                  peer_fnum[i] = peer_fnum[i-1] + ncontexts[i-1];
+                }
 
               // Allocate an array of shared memory devices, one for each
               // context in this _task_ (from heap, not from shared memory)
               ShmemDevice * devices;
-              int rc = posix_memalign((void **)&devices, 16, sizeof(*devices) * n);
+              int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
               XMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%zu], errno=%d\n", n, errno);
 
               // Instantiate the shared memory devices
               for (i = 0; i < n; ++i)
-              {
-                new (&devices[i]) ShmemDevice (i, total_fifos_on_node, all_fifos, peer_fnum);
-              }
+                {
+                  new (&devices[i]) ShmemDevice (i, total_fifos_on_node, all_fifos, peer_fnum);
+                }
 
               TRACE_ERR((stderr, "<< ShmemDevice::Factory::generate_impl()\n"));
               return devices;
@@ -354,8 +358,8 @@ namespace XMI
             };
 
             static inline ShmemDevice & getDevice_impl (ShmemDevice * devices,
-                                               size_t        clientid,
-                                               size_t        contextid)
+                                                        size_t        clientid,
+                                                        size_t        contextid)
             {
               return devices[contextid];
             };
@@ -374,7 +378,6 @@ namespace XMI
 #endif
             __sendQ (NULL),
             _progress (NULL)
-//            __sendQMask (0)
         {
           TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
 
@@ -477,28 +480,20 @@ namespace XMI
                                                void           * payload,
                                                size_t           length,
                                                size_t         & sequence);
-#if 0
-        inline xmi_result_t writeSinglePacket (size_t        ififo,
-                                               ShmemMessage * msg,
-                                               size_t       & sequence);
-#endif
-	template <class T_Message>
-        xmi_result_t post (size_t ififo, T_Message * msg);
+
+        xmi_result_t post (size_t ififo, Shmem::SendQueue::Message * msg);
 
         ///
         /// \brief Check if the send queue to an injection fifo is empty
         ///
         ///
         inline bool isSendQueueEmpty (size_t fnum);
-        inline GenericDeviceMessageQueue *getQS (size_t fnum);
+
+        inline Shmem::SendQueue *getQS (size_t fnum);
 
         inline xmi_result_t init (size_t clientid, size_t contextid, xmi_client_t client, xmi_context_t context, SysDep * sysdep, XMI::Device::Generic::Device * progress);
 
         inline size_t advance ();
-
-//        inline void pushSendQueueTail (size_t peer, XMI::Queue::Element * element);
-
-//        inline XMI::Queue::Element * popSendQueueHead (size_t peer);
 
         inline size_t fnum (size_t peer, size_t offset);
 
@@ -529,9 +524,8 @@ namespace XMI
         MemoryAllocator < sizeof(UnexpectedPacket), 16 > __ndpkt;
 #endif
 
-        MessageQueue   * __sendQ;
+        Shmem::SendQueue   * __sendQ;
         XMI::Device::Generic::Device * _progress;
-//        unsigned          __sendQMask;
 
         size_t            _num_procs;
         size_t            _global_task;
@@ -563,7 +557,7 @@ namespace XMI
     template <class T_Fifo>
     inline size_t ShmemDevice<T_Fifo>::getContextOffset_impl()
     {
-	return getContextId_impl();
+      return getContextId_impl();
     }
 
     ///
@@ -577,10 +571,11 @@ namespace XMI
     {
       return (__sendQ[fnum].size() == 0);
     }
+
     template <class T_Fifo>
-    inline GenericDeviceMessageQueue * ShmemDevice<T_Fifo>::getQS (size_t fnum)
+    inline Shmem::SendQueue * ShmemDevice<T_Fifo>::getQS (size_t fnum)
     {
-      return __sendQ[fnum].getQS();
+      return &__sendQ[fnum];
     }
 
     /// \see XMI::Device::Interface::PacketDevice::read()
@@ -607,6 +602,7 @@ namespace XMI
       unsigned long long t = __global.time.timebase ();
 
       if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+
 #endif
 
       size_t pktid;
@@ -618,8 +614,8 @@ namespace XMI
         {
           TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before write(), metadata = %p, metasize = %zd\n", metadata, metasize));
           //if (likely(metadata!=NULL))
-		//printf("metasize:%d T_Niov:%d\n", metasize, T_Niov);
-            pkt->writeMetadata ((uint8_t *) metadata, metasize);
+          //printf("metasize:%d T_Niov:%d\n", metasize, T_Niov);
+          pkt->writeMetadata ((uint8_t *) metadata, metasize);
           pkt->writeDispatch (dispatch_id);
           pkt->writePayload (iov);
 
@@ -660,7 +656,7 @@ namespace XMI
       if (pkt != NULL)
         {
           //if (likely(metadata!=NULL))
-            pkt->writeMetadata ((uint8_t *)metadata, metasize);
+          pkt->writeMetadata ((uint8_t *)metadata, metasize);
           pkt->writeDispatch (dispatch_id);
           pkt->writePayload (iov, niov);
 
@@ -700,7 +696,7 @@ namespace XMI
       if (pkt != NULL)
         {
           //if (likely(metadata!=NULL))
-            pkt->writeMetadata ((uint8_t *) metadata, metasize);
+          pkt->writeMetadata ((uint8_t *) metadata, metasize);
           pkt->writeDispatch (dispatch_id);
           pkt->writePayload (payload, length);
 
@@ -714,38 +710,7 @@ namespace XMI
       TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
       return XMI_EAGAIN;
     };
-#if 0
-    template <class T_Fifo, class T_Progress>
-    xmi_result_t ShmemDevice<T_Fifo,T_Progress>::writeSinglePacket (
-      size_t         fnum,
-      ShmemMessage * msg,
-      size_t       & sequence)
-    {
-      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %p) >>\n", __global.mapping.task(), fnum, msg));
 
-      size_t pktid;
-      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
-
-      if (pkt != NULL)
-        {
-          struct iovec iov[1];
-          iov[0].iov_base = msg->next (iov[0].iov_len, T_Fifo::packet_payload_size);
-          //if (likely(metadata!=NULL))
-            pkt->writeMetadata ((uint8_t *) msg->getMetadata(), metadata_size);
-          pkt->writeDispatch (msg->getDispatchId());
-          pkt->writePayload (iov);
-
-          // "produce" the packet into the fifo.
-          _fifo[fnum].producePacket (pktid);
-
-          TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %p) << XMI_SUCCESS\n", __global.mapping.task(), fnum, msg));
-          return XMI_SUCCESS;
-        }
-
-      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %p) << XMI_EAGAIN\n", __global.mapping.task(), fnum, msg));
-      return XMI_EAGAIN;
-    };
-#endif
     template <class T_Fifo>
     size_t ShmemDevice<T_Fifo>::advance ()
     {
@@ -831,39 +796,12 @@ namespace XMI
 #endif
       return events;
     }
-#if 0
-    ///
-    /// \brief Check if the send queue to a local rank is empty
-    ///
-    /// \param[in] peer  \b Local rank
-    ///
-    template <class T_Fifo>
-    inline void ShmemDevice<T_Fifo>::pushSendQueueTail (size_t peer, XMI::Queue::Element * element)
-    {
-      TRACE_ERR ((stderr, "(%zd) pushSendQueueTail(%zd, %p), __sendQMask = %d -> %d\n", __global.mapping.task(), peer, element, __sendQMask, __sendQMask | (1 << peer)));
-      __sendQ[peer].pushTail (element);
-      __sendQMask |= (1 << peer);
-    }
 
-    ///
-    /// \brief Check if the send queue to a local rank is empty
-    ///
-    /// \param[in] peer  \b Local rank
-    ///
-    template <class T_Fifo>
-    inline XMI::Queue::Element * ShmemDevice<T_Fifo>::popSendQueueHead (size_t peer)
-    {
-      TRACE_ERR((stderr, "popping out from the sendQ\n"));
-      XMI::Queue::Element * tmp = __sendQ[peer].popHead();
-      __sendQMask = __sendQMask & ~(__sendQ[peer].isEmpty() << peer);
-      return tmp;
-    }
-#endif
     template <class T_Fifo>
     inline size_t ShmemDevice<T_Fifo>::fnum (size_t peer, size_t offset)
     {
-      TRACE_ERR((stderr,">> ShmemDevice::fnum(%zu, %zu), _fnum_hash = %p\n", peer, offset, _fnum_hash));
-      TRACE_ERR((stderr,"<< ShmemDevice::fnum(%zu, %zu), _fnum_hash[%zu] = %zu\n", peer, offset, peer, _fnum_hash[peer]));
+      TRACE_ERR((stderr, ">> ShmemDevice::fnum(%zu, %zu), _fnum_hash = %p\n", peer, offset, _fnum_hash));
+      TRACE_ERR((stderr, "<< ShmemDevice::fnum(%zu, %zu), _fnum_hash[%zu] = %zu\n", peer, offset, peer, _fnum_hash[peer]));
       return _fnum_hash[peer] + offset;
     }
   };

@@ -39,10 +39,11 @@
 
 
 #define MSGCOUNT 1024
+//#define MSGCOUNT 16
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 volatile unsigned _recv_active;

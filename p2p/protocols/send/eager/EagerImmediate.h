@@ -23,7 +23,7 @@
 #include "util/common.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -187,7 +187,7 @@ namespace XMI
               send->metadata.metabytes = metadata.metabytes;
 
               // Do the send!
-              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. post packet after failure, dest:%d \n",parameters->task));
+              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. post packet after failure, dest:0x%08x \n",parameters->dest));
 
               _send_model.postPacket (send->pkt,
                                       send_complete,
