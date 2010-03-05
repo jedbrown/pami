@@ -51,6 +51,7 @@
 #undef MU_COLL_DEVICE
 #undef MU_DEVICE
 
+
 #ifdef MU_COLL_DEVICE
 #include "components/devices/bgq/mu/MUCollDevice.h"
 #include "components/devices/bgq/mu/MUMulticastModel.h"
@@ -67,7 +68,6 @@ namespace XMI
                              Device::MU::MUMulticastModel,
                              Device::MU::MUMultisyncModel,
                              Device::MU::MUMulticombineModel> MUGlobalNI;
-
   #define MU_DEVICE
 #elif defined(MU_DEVICE)
   typedef Device::MU::MUDevice MUDevice;
@@ -233,6 +233,9 @@ mm);
           _mm (addr, bytes),
           _sysdep (_mm),
 	  _devices(devices)
+#ifdef MU_COLL_DEVICE
+        ,_global_mu_ni(NULL)// Can't construct NI until device is init()'d so lazy ctor
+#endif
       {
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -242,10 +245,9 @@ mm);
         // protocol classes.
         COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
         COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
-#ifdef MU_DEVICE
-        COMPILE_TIME_ASSERT(sizeof(EagerMu) <= ProtocolAllocator::objsize);
+#ifdef MU_COLL_DEVICE
+        COMPILE_TIME_ASSERT(sizeof(MUGlobalNI) <= ProtocolAllocator::objsize);
 #endif
-
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -254,6 +256,9 @@ mm);
         // Can't construct NI until device is init()'d.  Ctor into member storage.
         _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(getMu(), _contextid);
         xmi_result_t status;
+#endif
+#ifdef MU_DEVICE
+        _mu.init (&_sysdep, (xmi_context_t)this, id);
 #endif
 	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 
@@ -508,17 +513,30 @@ mm);
         return XMI_UNIMPL;
       }
 
-      inline
-      xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
-                                                  xmi_xfer_type_t colltype,
-                                                  xmi_algorithm_t *algs,
-                                                  xmi_metadata_t *mdata,
-                                                  int algorithm_type,
-                                                  int num)
-        {
-          return XMI_UNIMPL;
 
-        }
+      inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
+                                                           xmi_xfer_type_t colltype,
+                                                       xmi_algorithm_t  *algs0,
+                                                       xmi_metadata_t   *mdata0,
+                                                       int               num0,
+                                                       xmi_algorithm_t  *algs1,
+                                                       xmi_metadata_t   *mdata1,
+                                                       int               num1)
+      {
+	XMI_abort();
+	return XMI_SUCCESS;
+      }
+
+    inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
+                                                    size_t                     dispatch,
+                                                    xmi_dispatch_callback_fn   fn,
+                                                    void                     * cookie,
+                                                    xmi_collective_hint_t      options)
+      {
+	XMI_abort();
+	return XMI_SUCCESS;
+      }
+
 
       inline xmi_result_t dispatch_impl (size_t                     id,
                                          xmi_dispatch_callback_fn   fn,
@@ -557,6 +575,13 @@ mm);
       }
 #ifdef MU_COLL_DEVICE
       TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
+      if(_global_mu_ni == NULL) // lazy ctor
+      {
+        MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+        TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
+                   &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
+        _global_mu_ni = new (temp) MUGlobalNI(_mu, _client, _context, _contextid);
+      }
       if (_dispatch[id] == NULL)
       {
         _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
@@ -602,6 +627,13 @@ mm);
       inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
       {
 #ifdef MU_COLL_DEVICE
+        if(_global_mu_ni == NULL) // lazy ctor
+        {
+          MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+          TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
+                     &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
+          _global_mu_ni = new (temp) MUGlobalNI(_mu, _client, _context, _contextid);
+        }
         TRACE_ERR((stderr, ">> multisync_impl multisync %p\n", msyncinfo));
         return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
 
@@ -614,6 +646,13 @@ mm);
       inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
       {
 #ifdef MU_COLL_DEVICE
+        if(_global_mu_ni == NULL) // lazy ctor
+        {
+          MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+          TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
+                     &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
+          _global_mu_ni = new (temp) MUGlobalNI(_mu, _client, _context, _contextid);
+        }
         TRACE_ERR((stderr, ">> multicombine_impl multicombine %p\n", mcombineinfo));
         return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
 #else
@@ -636,6 +675,9 @@ mm);
 #ifdef MU_COLL_DEVICE
       MUGlobalNI * _global_mu_ni;
       uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)];
+#endif
+#ifdef MU_DEVICE
+      MUDevice _mu;
 #endif
 
       void * _dispatch[1024];

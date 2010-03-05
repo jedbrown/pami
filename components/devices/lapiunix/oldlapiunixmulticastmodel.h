@@ -42,7 +42,7 @@ namespace XMI
 
       static void __xmi_lapi_mcast_senddone_fn (lapi_handle_t * handle, void * param, lapi_sh_info_t * info)
         {
-          LAPIMcastSendReq * sreq = (LAPIMcastSendReq *) param;
+          OldLAPIMcastSendReq * sreq = (OldLAPIMcastSendReq *) param;
           sreq->_count++;
           if (sreq->_user_done.function && sreq->_count == sreq->_total)
             sreq->_user_done.function (NULL, sreq->_user_done.clientdata, XMI_SUCCESS);
@@ -64,7 +64,7 @@ namespace XMI
                                xmi_dt                      dtype = XMI_UNDEFINED_DT )
         {
           _device.lock();
-          LAPIMcastMessage msg;
+          OldLAPIMcastMessage msg;
           msg._info_count   = info_count;
           msg._size         = size;
           msg._peer         = __global.mapping.task();
@@ -80,7 +80,7 @@ namespace XMI
                 memcpy (&msg._info[0],& info[0], info_count *sizeof (xmi_quad_t));
               }
 
-          LAPIMcastSendReq *sreq    = (LAPIMcastSendReq*)request;
+          OldLAPIMcastSendReq *sreq    = (OldLAPIMcastSendReq*)request;
           sreq->_count              = 0;
           sreq->_total              = nranks;
           if(cb_done)
@@ -93,14 +93,14 @@ namespace XMI
                 sreq->_user_done.function    = NULL;
                 sreq->_user_done.clientdata  = NULL;
               }
-          if (sizeof(LAPIMcastMessage) + size < 128)
+          if (sizeof(OldLAPIMcastMessage) + size < 128)
               {
                 for (unsigned count = 0; count < nranks; count ++)
                     {
 #if 0
                       fprintf(stderr, "Sending Short Lapi Message to %d hsize=%d buf=%p sz=%d\n",
                               ranks[count],
-                              sizeof(LAPIMcastMessage),
+                              sizeof(OldLAPIMcastMessage),
                               buf,
                               size);
 #endif
@@ -111,7 +111,7 @@ namespace XMI
                       xfer_struct.Am.tgt       = ranks[count];
                       xfer_struct.Am.hdr_hdl   = (lapi_long_t)1L;
                       xfer_struct.Am.uhdr      = (void *) &msg;
-                      xfer_struct.Am.uhdr_len  = sizeof(LAPIMcastMessage);
+                      xfer_struct.Am.uhdr_len  = sizeof(OldLAPIMcastMessage);
                       xfer_struct.Am.udata     = (void *) buf;
                       xfer_struct.Am.udata_len = size;
                       CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
@@ -126,7 +126,7 @@ namespace XMI
 #if 0
                       fprintf(stderr, "Sending Long Lapi Message to %d hsize=%d buf=%p sz=%d\n",
                               ranks[count],
-                              sizeof(LAPIMcastMessage),
+                              sizeof(OldLAPIMcastMessage),
                               buf,
                               size);
 #endif
@@ -137,7 +137,7 @@ namespace XMI
                       xfer_struct.Am.tgt       = ranks[count];
                       xfer_struct.Am.hdr_hdl   = (lapi_long_t)1L;
                       xfer_struct.Am.uhdr      = (void *) &msg;
-                      xfer_struct.Am.uhdr_len  = sizeof(LAPIMcastMessage);
+                      xfer_struct.Am.uhdr_len  = sizeof(OldLAPIMcastMessage);
                       xfer_struct.Am.udata     = (void *) buf;
                       xfer_struct.Am.udata_len = size;
                       xfer_struct.Am.shdlr     = (scompl_hndlr_t*) __xmi_lapi_mcast_senddone_fn;
@@ -179,7 +179,7 @@ namespace XMI
                                 xmi_dt                   dtype  = XMI_UNDEFINED_DT)
         {
           _device.lock();
-          LAPIMcastRecvMessage *msg = (LAPIMcastRecvMessage*)malloc(sizeof(*msg));
+          OldLAPIMcastRecvMessage *msg = (OldLAPIMcastRecvMessage*)malloc(sizeof(*msg));
           msg->_dispatch_id = _dispatch_id;
           msg->_conn     = conn_id;
           msg->_done_fn  = cb_done->function;

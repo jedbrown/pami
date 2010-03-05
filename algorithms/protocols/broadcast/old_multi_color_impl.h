@@ -49,6 +49,19 @@ namespace CCMI
         pwidth = bytes;
       }
 
+      void old_binom_bcast_md(xmi_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"OldCCMIBinomBcast");
+      }
+
+      void old_ring_bcast_md(xmi_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"OldCCMIRingBcast");
+      }
+
+
 
       typedef OldMultiColorCompositeT <1,
                                     CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
@@ -87,13 +100,13 @@ namespace CCMI
 
 
       typedef OldMultiColorBroadcastFactoryT <OldBinomialBcastComposite,
-                                           true_analyze,
+                                           old_binom_bcast_md,
                                            XMI_SYSDEP_CLASS,
                                            XMI_COLL_MCAST_CLASS,
                                            CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > OldBinomialBcastFactory;
       //typedef MultiColorBroadcastFactoryT <RectangleBcastComposite, rectangle_analyze> RectBcastFactory;
       typedef OldMultiColorBroadcastFactoryT <OldRingBcastComposite,
-	                                   true_analyze,
+                                           old_ring_bcast_md,
 	                                   XMI_SYSDEP_CLASS,
                                            XMI_COLL_MCAST_CLASS,
                                            CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > OldRingBcastFactory;

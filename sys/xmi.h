@@ -236,7 +236,7 @@ extern "C"
   typedef struct
   {
     uint32_t consistency       : 1; /**< Force match ordering semantics                          */
-    uint32_t sync_send         : 1; /**< Assert that all sends will be synchronously received    */
+    uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
     uint32_t buffer_registered : 1; /**< ???                                                     */
     uint32_t use_rdma          : 1; /**< Assert/enable rdma operations                           */
     uint32_t no_rdma           : 1; /**< Disable rdma operations                                 */
@@ -248,23 +248,23 @@ extern "C"
     uint32_t reserved          :23; /**< Unused at this time                                     */
   } xmi_send_hint_t;
 
+  typedef struct
+  {
+    uint32_t reserved          :32; /**< Unused at this time                                     */
+  } xmi_collective_hint_t;
+
+
+
   /**
    * \brief Active message send common parameters structure
    */
   typedef struct
   {
+    struct iovec      header;   /**< Header buffer address and size in bytes */
+    struct iovec      data;     /**< Data buffer address and size in bytes */
     size_t            dispatch; /**< Dispatch identifier */
     xmi_send_hint_t   hints;    /**< Hints for sending the message */
     xmi_endpoint_t    dest;     /**< Destination endpoint */
-    union
-    {
-      struct iovec    iov[2];   /**< Raw transfer iovecs */
-      struct
-      {
-        struct iovec  header;   /**< Header buffer address and size in bytes */
-        struct iovec  data;     /**< Data buffer address and size in bytes */
-      };
-    };
   } xmi_send_immediate_t;
 
   typedef struct
@@ -300,6 +300,18 @@ extern "C"
   /**
    * \brief Non-blocking active message send for contiguous data
    *
+   * A low-latency send operation may be enhanced by using a dispatch id which
+   * was set with the \c recv_immediate hint bit enabled. This hint asserts
+   * that all receives with the dispatch id will not exceed a certain limit.
+   *
+   * The implementation configuration attribute \c XMI_RECV_IMMEDIATE_MAX
+   * defines the maximum size of data buffers that can be completely received
+   * with a single dispatch callback. Typically this limit is associated with
+   * a network resource attribute, such as a packet size.
+   *
+   * \see xmi_send_hint_t
+   * \see XMI_Configuration_query
+   *
    * \param[in] context    XMI communication context
    * \param[in] parameters Send simple parameter structure
    */
@@ -310,10 +322,10 @@ extern "C"
    * \brief Immediate active message send for small contiguous data
    *
    * The blocking send is only valid for small data buffers. The implementation
-   * configuration attribute \c IMMEDIATE_SEND_LIMIT defines the upper
+   * configuration attribute \c XMI_SEND_IMMEDIATE_MAX defines the upper
    * bounds for the size of data buffers, including header data, that can be
    * sent with this function. This function will return an error if a data
-   * buffer larger than the \c IMMEDIATE_SEND_LIMIT is attempted.
+   * buffer larger than the \c XMI_SEND_IMMEDIATE_MAX is attempted.
    *
    * This function provides a low-latency send that can be optimized by the
    * specific xmi implementation. If network resources are immediately
@@ -323,14 +335,17 @@ extern "C"
    * to complete the transfer. In either case the send will immediately return,
    * no doce callback is invoked, and is considered complete.
    *
-   * The low-latency send operation may be further enhanced by using a
-   * specially configured dispatch id which asserts that all dispatch receive
-   * callbacks will not exceed a certain limit. The implementation
-   * configuration attribute \c SYNC_SEND_LIMIT defines the upper bounds for
-   * the size of data buffers that can be completely received with a single
-   * dispatch callback. Typically this limit is associated with a network
-   * resource attribute, such as a packet size.
+   * The low-latency send operation may be further enhanced by using a dispatch
+   * id which was set with the \c recv_immediate hint bit enabled. This hint
+   * asserts that all receives with the dispatch id will not exceed a certain
+   * limit.
    *
+   * The implementation configuration attribute \c XMI_RECV_IMMEDIATE_MAX
+   * defines the maximum size of data buffers that can be completely received
+   * with a single dispatch callback. Typically this limit is associated with
+   * a network resource attribute, such as a packet size.
+   *
+   * \see xmi_send_hint_t
    * \see XMI_Configuration_query
    *
    * \todo Better define send parameter structure so done callback is not required
@@ -412,6 +427,29 @@ extern "C"
   /**
    * \brief Dispatch callback
    *
+   * This single dispatch function type supports two kinds of receives:
+   * "immediate" and "asynchronous".
+   *
+   * An immediate receive occurs when the dispatch function is invoked and all
+   * of the data sent is \em immediately available in the buffer. In this case
+   * \c pipe_addr will point to a valid memory location - even when the number
+   * of bytes sent is zero, and the \c recv output structure will be \c NULL.
+   *
+   * An asynchronous receive occurs when the dispatch function is invoked and
+   * all of the data sent is \b not immediately available. In this case the
+   * application must provide information to direct how the receive will
+   * complete. The \c recv output structure will point to a valid memory
+   * location for this purpose, and the \c pipe_addr pointer will be \c NULL.
+   * The \c data_size parameter will contain the number of bytes that are being
+   * sent from the remote endpoint.
+   *
+   * \note A zero-byte send will \b always result in an immediate receive.
+   *
+   * \note The maximum number of bytes that may be immediately received can be
+   *       queried with the \c XMI_RECV_IMMEDIATE configuration attribute.
+   *
+   * \see XMI_Configuration_query
+   *
    * "pipe" has nothing to do with "PipeWorkQueue"s
    */
   typedef void (*xmi_dispatch_p2p_fn) (
@@ -420,7 +458,7 @@ extern "C"
     void               * header_addr,  /**< IN:  header address  */
     size_t               header_size,  /**< IN:  header size     */
     void               * pipe_addr,    /**< IN:  address of XMI pipe  buffer, valid only if non-NULL        */
-    size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+    size_t               data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
     xmi_recv_t         * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /** \} */ /* end of "active message" group */
@@ -994,28 +1032,75 @@ extern "C"
 
   /**
    * \brief Initialize the geometry
+   *        A synchronizing operation will take place during geometry_initialize
+   *        on the parent geometry
+   *        If the output geometry "geometry" is NULL, then no geometry will be
+   *        created, however, all nodes in the parent must participate in the
+   *        geometry_initialize operation, even if they do not create a geometry
    *
+   * \param[in]  client         xmi client
    * \param[out] geometry        Opaque geometry object to initialize
-   * \param[in]  id              Unique identifier for this geometry
-   *                             which globally represents this geometry
+   * \param[in] parent          Parent geometry containing all the nodes in the task list
+   * \param[in]  id              Identifier for this geometry
+   *                             which uniquely represents this geometry(if tasks overlap)
    * \param[in]  task_slices     Array of node slices participating in the geometry
    *                             User must keep the array of slices in memory for the
    *                             duration of the geometry's existence
-   * \param[in]  slice_count     Number of nodes participating in the geometry
+   * \param[in]  slice_count     Number of task slices participating in the geometry
+   * \param[in]  context         context to deliver async callback to
+   * \param[in]  fn              event function to call when geometry has been created
+   * \param[in]  cookie          user cookie to deliver with the callback
    */
-  xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+
+  xmi_result_t XMI_Geometry_create_taskrange (xmi_client_t                client,
                                         xmi_geometry_t            * geometry,
+                                              xmi_geometry_t              parent,
                                         unsigned                    id,
                                         xmi_geometry_range_t      * task_slices,
-                                        size_t                      slice_count);
+                                              size_t                      slice_count,
+                                              xmi_context_t               context,
+                                              xmi_event_function          fn,
+                                              void                      * cookie);
+
+   /**
+   * \brief Initialize the geometry
+   *        A synchronizing operation will take place during geometry_initialize
+   *        on the parent geometry
+   *        If the output geometry "geometry" is NULL, then no geometry will be
+   *        created, however, all nodes in the parent must participate in the
+   *        geometry_initialize operation, even if they do not create a geometry
+   *
+   * \param[in]  client         xmi client
+   * \param[out] geometry        Opaque geometry object to initialize
+   * \param[in] parent          Parent geometry containing all the nodes in the task list
+   * \param[in]  id              Identifier for this geometry
+   *                             which uniquely represents this geometry(if tasks overlap)
+   * \param[in]  tasks           Array of tasks to build the geometry list
+   *                             User must keep the task list in memory
+   *                             duration of the geometry's existence
+   * \param[in]  task_count      Number of tasks participating in the geometry
+   * \param[in]  context         context to deliver async callback to
+   * \param[in]  fn              event function to call when geometry has been created
+   * \param[in]  cookie          user cookie to deliver with the callback
+   */
+
+  xmi_result_t XMI_Geometry_create_tasklist (xmi_client_t                client,
+                                             xmi_geometry_t            * geometry,
+                                             xmi_geometry_t              parent,
+                                             unsigned                    id,
+                                             xmi_task_t                * tasks,
+                                             size_t                      task_count,
+                                             xmi_context_t               context,
+                                             xmi_event_function          fn,
+                                             void                      * cookie);
 
   /**
    * \brief Initialize the geometry
    *
-   * \param[in]  context         xmi context
+   * \param[in]  client          xmi client
    * \param[in]  world_geometry  world geometry object
    */
-  xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+  xmi_result_t XMI_Geometry_world (xmi_client_t                client,
                                    xmi_geometry_t            * world_geometry);
 
   /**
@@ -1023,7 +1108,7 @@ extern "C"
    *        in the two different lists (always work list,
    *        under-cetain conditions list).
    *
-   * \param[in]     context       xmi context.
+   * \param[in]     context       xmi context
    * \param[in]     geometry      An input geometry to be analyzed.
    * \param[in]     coll_type     type of collective op.
    * \param[in/out] lists_lengths array of 2 numbers representing all valid
@@ -1034,37 +1119,44 @@ extern "C"
   xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
                                             xmi_geometry_t geometry,
                                             xmi_xfer_type_t coll_type,
-                                            int *lists_lengths);
+                                            int              *lists_lengths);
 
   /**
-   * \brief fills in the protocols and attributes for a given xfer type.
+   * \brief fills in the protocols and attributes for a set of algorithms
+   *        The first lists are used to populate collectives that work under
+   *        any condidtion.  The second lists are used to populate
+   *        collectives that the metadata must be checked before use
    *
-   * \param[in]     context        xmi context.
-   * \param[in]     geometry       An input geometry to be analyzed.
-   * \param[in]     type           type of collective op.
-   * \param[in]     algs           array of algorithm to be filled in.
-   * \param[out]    mdata          metadata array to be filled in if algorithms
+   * \param[in]     context        xmi context
+   * \param[in]     coll_type      type of collective op.
+   * \param[in/out] algs0          array of algorithms to query
+   * \param[in/out] mdata0         metadata array to be filled in if algorithms
    *                               are applicable, can be NULL.
-   * \param[in]     algorithm_type tells whether this an "always works"
-   *                               or "works under-condition"
-   * \param[in]     num            number of algorithms to fill in.
+   * \param[in]     num0           number of algorithms to fill in.
+   * \param[in/out] algs1          array of algorithms to query
+   * \param[in/out] mdata1         metadata array to be filled in if algorithms
+   *                               are applicable, can be NULL.
+   * \param[in]     num1           number of algorithms to fill in.
    * \retval        XMI_SUCCESS    algorithm is applicable to geometry.
    * \retval        ?????          Error in input arguments or not applicable.
    */
   xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
                                              xmi_geometry_t geometry,
-                                             xmi_xfer_type_t type,
-                                             xmi_algorithm_t *algs,
-                                             xmi_metadata_t *mdata,
-                                             int algorithm_type,
-                                             int num);
+                                             xmi_xfer_type_t  colltype,
+                                             xmi_algorithm_t *algs0,
+                                             xmi_metadata_t  *mdata0,
+                                             int              num0,
+                                             xmi_algorithm_t *algs1,
+                                             xmi_metadata_t  *mdata1,
+                                             int              num1);
 
   /**
    * \brief Free any memory allocated inside of a geometry.
+   * \param[in] client   xmi client
    * \param[in] geometry The geometry object to free
    * \retval XMI_SUCCESS Memory free didn't fail
    */
-  xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+  xmi_result_t XMI_Geometry_destroy(xmi_client_t    client,
                                      xmi_geometry_t  geometry);
 
   /**
@@ -1088,11 +1180,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                   * stypecounts;
@@ -1124,11 +1211,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t           xfer_type;
-    xmi_event_function        cb_done;
-    void                    * cookie;
-    xmi_geometry_t            geometry;
-    xmi_algorithm_t           algorithm;
     char                    * sndbuf;
     xmi_type_t              * stype;
     int                     * stypecounts;
@@ -1159,11 +1241,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     char                      * sndbuf;
     xmi_type_t                * stype;
     size_t                      stypecount;
@@ -1192,11 +1269,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     size_t                     root;
     char                     * sndbuf;
     xmi_type_t               * stype;
@@ -1230,11 +1302,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t           xfer_type;
-    xmi_event_function        cb_done;
-    void                    * cookie;
-    xmi_geometry_t            geometry;
-    xmi_algorithm_t           algorithm;
     char                    * sndbuf;
     xmi_type_t              * stype;
     size_t                    stypecount;
@@ -1263,11 +1330,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * buf;
     xmi_type_t                * type;
@@ -1294,11 +1356,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     char                      * sndbuf;
     xmi_type_t                * stype;
     size_t                      stypecount;
@@ -1329,11 +1386,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1366,11 +1418,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     size_t                     root;
     char                     * sndbuf;
     xmi_type_t               * stype;
@@ -1404,11 +1451,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     size_t                     root;
     char                     * sndbuf;
     xmi_type_t               * stype;
@@ -1441,11 +1483,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                     stypecount;
@@ -1476,11 +1513,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     int                        stypecount;
@@ -1512,11 +1544,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1547,11 +1574,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1583,11 +1605,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
     size_t                      root;
     char                      * sndbuf;
     xmi_type_t                * stype;
@@ -1622,11 +1639,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                     stypecount;
@@ -1662,11 +1674,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
     char                     * sndbuf;
     xmi_type_t               * stype;
     size_t                     stypecount;
@@ -1691,11 +1698,6 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t            xfer_type;
-    xmi_event_function         cb_done;
-    void                     * cookie;
-    xmi_geometry_t             geometry;
-    xmi_algorithm_t            algorithm;
   } xmi_barrier_t;
 
 
@@ -1711,8 +1713,7 @@ extern "C"
    * determines the address to which to deposit the data and sets the address
    * of a receive completion hander to be invoked once the data has arrived.
    *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  user_header  single metadata to send to destination in the header
    * \param[in]  headerlen    length of the metadata (can be 0)
    * \param[in]  src          Base source buffer to broadcast.
@@ -1725,11 +1726,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
-    xmi_algorithm_t             algorithm;
+    size_t                      dispatch;
     void                      * user_header;
     size_t                      headerlen;
     void                      * sndbuf;
@@ -1772,8 +1769,7 @@ extern "C"
    * This is slightly more complicated than an AMBroadcast, because it allows
    * different headers and data buffers to be sent to everyone in the team.
    *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  headers      array of  metadata to send to destination
    * \param[in]  headerlength length of every header in the headers array
    * \param[in]  src          Base source buffer to scatter (size of geometry)
@@ -1786,10 +1782,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
+    size_t                      dispatch;
     void                      * headers;
     size_t                      headerlen;
     void                      * sndbuf;
@@ -1833,8 +1826,7 @@ extern "C"
    * and deposited in one of the buffers provided as part of the original call
    * (the "data" parameter).
    *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  headers      array of metadata to send to destination
    * \param[in]  headerlen    length of every header in headers array
    * \param[in]  rcvbuf       target buffer of the gather operation (size of geometry)
@@ -1848,10 +1840,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
+    size_t                      dispatch;
     void                      * headers;
     size_t                      headerlen;
     void                      * rcvbuf;
@@ -1896,9 +1885,7 @@ extern "C"
    * handler (this may avoid having the implementor allocate more memory for
    * internal buffering)
    *
-   * \param[in]  registration Protocol registration.
-   * \param[in]  request      Opaque memory to maintain internal message state.
-   * \param[in]  cb_done      Callback to invoke when message is complete.
+   * \param[in]  dispatch     registered dispatch id to use
    * \param[in]  geometry     Geometry to use for this collective operation.
    *                          \c NULL indicates the global geometry.
    * \param[in]  headers      metadata to send to destinations in the header
@@ -1914,10 +1901,7 @@ extern "C"
    */
   typedef struct
   {
-    xmi_xfer_type_t             xfer_type;
-    xmi_event_function          cb_done;
-    void                      * cookie;
-    xmi_geometry_t              geometry;
+    size_t                      dispatch;
     void                      * user_header;
     size_t                      headerlen;
     void                      * rcvbuf;
@@ -1961,9 +1945,9 @@ extern "C"
                                             size_t             * stypecount,
                                             xmi_event_function * const cb_info);
 
+
   typedef union
   {
-    xmi_xfer_type_t        xfer_type;
     xmi_allreduce_t        xfer_allreduce;
     xmi_broadcast_t        xfer_broadcast;
     xmi_reduce_t           xfer_reduce;
@@ -1985,6 +1969,14 @@ extern "C"
     xmi_amreduce_t         xfer_amreduce;
     xmi_scan_t             xfer_scan;
     xmi_barrier_t          xfer_barrier;
+    } xmi_collective_t;
+
+  typedef struct
+  {
+    xmi_event_function       cb_done;
+    void                   * cookie;
+    xmi_algorithm_t          algorithm;
+    xmi_collective_t         cmd;
   } xmi_xfer_t;
 
   xmi_result_t XMI_Collective (xmi_context_t context, xmi_xfer_t *cmd);
@@ -2325,8 +2317,10 @@ extern "C"
     XMI_RANGE_TOPOLOGY,     /**< topology is a simple range of tasks    */
     XMI_LIST_TOPOLOGY,      /**< topology is an unordered list of tasks */
     XMI_COORD_TOPOLOGY,     /**< topology is a rectangular segment
-                               represented by coordinates           */
-    XMI_AXIAL_TOPOLOGY,
+                               represented by coordinates               */
+    XMI_AXIAL_TOPOLOGY,     /**< topology is a axial neighborhood --
+                               represented by a rectangular seqment, a
+                               reference task, and optional torus flags */
     XMI_TOPOLOGY_COUNT
   } xmi_topology_type_t;
 
@@ -2360,15 +2354,13 @@ extern "C"
    * \param[out] topo	Opaque memory for topology
    * \param[in] ll	lower-left coordinate
    * \param[in] ur	upper-right coordinate
-   * \param[in] ref	coordinates of the reference task where axises cross.
-   * \param[in] dir     axis direction flag (+ or -)
+   * \param[in] ref	coordinates of the reference task where axes cross.
    * \param[in] tl	optional, torus links flags
    */
   void XMI_Topology_create_axial(xmi_topology_t *topo,
                                  xmi_coord_t *ll,
                                  xmi_coord_t *ur,
                                  xmi_coord_t *ref,
-                                 unsigned char *dir,
                                  unsigned char *tl);
 
   /**
@@ -3273,6 +3265,11 @@ extern "C"
    * This is a local, non-collective operation. There is no communication
    * between tasks.
    *
+   * \note The maximum allowed dispatch id attribute, \c XMI_DISPATCH_ID_MAX,
+   *       can be queried with the configuration interface
+   *
+   * \see XMI_Configuration_query
+   *
    * \param[in] context    XMI communication context
    * \param[in] dispatch   Dispatch identifier to initialize
    * \param[in] fn         Dispatch receive function
@@ -3292,6 +3289,27 @@ extern "C"
                                  xmi_dispatch_callback_fn   fn,
                                  void                     * cookie,
                                  xmi_send_hint_t            options);
+
+  /**
+   * \brief Initialize the dispatch functions for a dispatch id.
+   *
+   * This is a local, non-collective operation. There is no communication
+   * between tasks.
+   *
+   * \param[in] context    XMI communication context
+   * \param[in] algorithm  The AM collective to set the dispatch
+   * \param[in] dispatch   Dispatch identifier to initialize
+   * \param[in] fn         Dispatch receive function
+   * \param[in] cookie     Dispatch function cookie
+   * \param[in] options    Dispatch registration assertions
+   *
+   */
+  xmi_result_t XMI_AMCollective_dispatch_set(xmi_context_t              context,
+                                             xmi_algorithm_t            algorithm,
+                                             size_t                     dispatch,
+                                             xmi_dispatch_callback_fn   fn,
+                                             void                     * cookie,
+                                             xmi_collective_hint_t      options);
   /** \} */ /* end of "dispatch" group */
 
 #include "xmi_ext.h"
@@ -3318,24 +3336,27 @@ extern "C"
    * This enum contains ALL possible attributes for all hardware
    */
   typedef enum {
-    /* Attribute            Init / Query / Update                                              */
-    XMI_TASK_ID,         /**<  Q  : size_t            : ID of this task (AKA "rank")           */
-    XMI_NUM_TASKS,       /**<  Q  : size_t            : Total number of tasks                  */
-    XMI_NUM_CONTEXTS,    /**<  Q  : size_t            : The maximum number of contexts allowed on this process */
-    XMI_CONST_CONTEXTS,  /**<  Q  : size_t            : All processes will return the same XMI_NUM_CONTEXTS */
-    XMI_CLOCK_MHZ,       /**<  Q  : size_t            : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
-    XMI_WTIMEBASE_MHZ,   /**<  Q  : size_t            : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
-    XMI_WTICK,           /**<  Q  : double            : This has the same definition as MPI_Wtick(). */
-    XMI_MEM_SIZE,        /**<  Q  : size_t            : Size of the core main memory, in units of 1024^2 Bytes    */
-    XMI_PROCESSOR_NAME,  /**<  Q  : char[]            : A unique name string for the calling node. */
-    XMI_PROCESSOR_NAME_SIZE/**<Q  : size_t            : The size of the unique name string     */
+    /* Attribute            Query / Update                                 */
+    XMI_TASK_ID,            /**< Q : size_t : ID of this task (AKA "rank") */
+    XMI_NUM_TASKS,          /**< Q : size_t : Total number of tasks        */
+    XMI_NUM_CONTEXTS,       /**< Q : size_t : The maximum number of contexts allowed on this process */
+    XMI_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same XMI_NUM_CONTEXTS */
+    XMI_CLOCK_MHZ,          /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
+    XMI_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from XMI_Wtimebase to XMI_Timer manually. */
+    XMI_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
+    XMI_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
+    XMI_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the XMI_Send_immediate() function. */
+    XMI_RECV_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
+    XMI_PROCESSOR_NAME,     /**< Q : char[] : A unique name string for the calling process, and should be suitable for use by
+                                              MPI_Get_processor_name(). The storage should *not* be freed by the caller. */
+    XMI_DISPATCH_ID_MAX,    /**< Q : size_t : Maximum allowed dispatch id, see XMI_Dispatch_set() */
   } xmi_attribute_name_t;
 
   typedef union
   {
-    size_t   intval;
-    double   doubleval;
-    char   * chararray;
+    size_t      intval;
+    double      doubleval;
+    const char* chararray;
   } xmi_attribute_value_t;
 
 #define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */

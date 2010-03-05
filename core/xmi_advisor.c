@@ -52,7 +52,8 @@ xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
 // we have to manually sit the hints in the protocols.
 // then here we also have to manually add each procotol to the list and
 // order them
-xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
+xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
+                                   xmi_context_t context,
                                    xmi_xfer_type_t xfer_type)
 {
   int alg_list[2] = {0};
@@ -84,9 +85,16 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
       metas = (xmi_metadata_t*)
         malloc(sizeof(xmi_metadata_t) * alg_list[algorithm_type]);
 
-      XMI_Geometry_algorithms_info(context, world_geometry, xfer_type,
-                                   algs, metas, algorithm_type,
-                                   alg_list[algorithm_type]);
+      XMI_Geometry_algorithms_info(client,
+                                   world_geometry,
+                                   algorithm_type,
+                                   algs,
+                                   metas,
+                                   alg_list[algorithm_type],
+                                   NULL,
+                                   NULL,
+                                   0);
+
     }
 #if 0
     coll_repos[xfer_type] = (xmi_alg_repo *)
@@ -98,7 +106,10 @@ xmi_result_t xmi_advisor_repo_fill(xmi_context_t context,
                                            xfer_type,
                                            algorithm_ids[xfer_type][i],
                                            algorithm_type,
-                                           &coll_repos[xfer_type][i].metadata);
+                                           &coll_repos[xfer_type][i].metadata,
+                                           NULL,
+                                           NULL,
+                                           0);
 
       if (result == XMI_SUCCESS)
       {

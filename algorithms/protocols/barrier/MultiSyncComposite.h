@@ -25,7 +25,9 @@ namespace CCMI
 	MultiSyncComposite (Interfaces::NativeInterface          * mInterface,
 			    ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS>     * cmgr,
 			    xmi_geometry_t                         g,
-			    void                                 * cmd) :
+			    void                                 * cmd,
+                            xmi_event_function                     fn,
+                            void                                 * cookie) :
 	Composite(), _native(mInterface), _geometry((XMI_GEOMETRY_CLASS*)g)
 	{
 	}

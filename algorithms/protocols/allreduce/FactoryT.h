@@ -28,7 +28,8 @@ namespace CCMI
       ///
       /// This factory will generate a CompositeT [all]reduce.
       ///
-      template <class T_ConnectionManager, class T_Composite, class T_Sysdep, class T_Mcast>
+      typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
+      template <class T_ConnectionManager, class T_Composite, class T_Sysdep, class T_Mcast, MetaDataFn get_metadata>
       class FactoryT : public CCMI::Adaptor::Allreduce::Factory<T_Sysdep, T_Mcast, T_ConnectionManager>
       {
       protected:
@@ -66,6 +67,61 @@ namespace CCMI
           CCMI_abort();
         }
 
+
+        class collObj
+         {
+        public:
+          collObj(xmi_xfer_t *xfer):
+            _xfer(*xfer),
+            _rsize(sizeof(_req)),
+            _user_done_fn(xfer->cb_done),
+            _user_cookie(xfer->cookie)
+            {
+              _xfer.cb_done = alloc_done_fn;
+              _xfer.cookie  = this;
+            }
+          XMI_CollectiveRequest_t      _req[1];
+          xmi_xfer_t                   _xfer;
+          int                          _rsize;
+          xmi_event_function           _user_done_fn;
+          void                       * _user_cookie;
+        };
+
+        static void alloc_done_fn( xmi_context_t   context,
+                                   void          * cookie,
+                                   xmi_result_t    result )
+          {
+            collObj *cObj = (collObj*)cookie;
+            cObj->_user_done_fn(context,cObj->_user_cookie,result);
+            free(cObj);
+          }
+
+        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+                                               void                      * cmd)
+
+          {
+            collObj *obj = (collObj*)malloc(sizeof(*obj));
+            new(obj) collObj((xmi_xfer_t*)cmd);
+            XMI_Callback_t cb_done;
+            cb_done.function   = obj->_xfer.cb_done;
+            cb_done.clientdata = obj->_xfer.cookie;
+            return this->generate(&obj->_req[0],
+                                  cb_done,
+                                  XMI_MATCH_CONSISTENCY,
+                                  (XMI_GEOMETRY_CLASS *)geometry,
+                                  obj->_xfer.cmd.xfer_allreduce.sndbuf,
+                                  obj->_xfer.cmd.xfer_allreduce.rcvbuf,
+                                  obj->_xfer.cmd.xfer_allreduce.stypecount,
+                                  obj->_xfer.cmd.xfer_allreduce.dt,
+                                  obj->_xfer.cmd.xfer_allreduce.op);
+          }
+
+
+        virtual void metadata(xmi_metadata_t *mdata)
+          {
+            get_metadata(mdata);
+          }
+
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
@@ -85,10 +141,26 @@ namespace CCMI
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::FactoryT::generate() %#X, geometry %#X comm %#X\n",this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm()));
 
+          T_Composite *arcomposite = (T_Composite*)geometry->getAllreduceComposite();
+          if(arcomposite != NULL && arcomposite->getFactory() == this)
+              {
+                xmi_result_t status = (xmi_result_t)
+                  arcomposite->restart(request,
+                                       cb_done,
+                                       XMI_MATCH_CONSISTENCY,
+                                       srcbuf,
+                                       dstbuf,
+                                       count,
+                                       dtype,
+                                       op);
+                if(status == XMI_SUCCESS) geometry->setAllreduceComposite(arcomposite);
+                return NULL;
+              }
+          else
+              {
           CCMI_Executor_t *c_request = (CCMI_Executor_t *)geometry->getAllreduceCompositeStorage();
-
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
-          T_Composite *allreduce = new (c_request)
+                arcomposite = new (c_request)
           T_Composite(request,
                     this->_mapping, &this->_sconnmgr, cb_done,
                     consistency, this->_moldinterface, geometry,
@@ -98,10 +170,10 @@ namespace CCMI
                     getOneColor(geometry)
                     );
 
-          geometry->setAllreduceComposite (allreduce);
-          allreduce->startBarrier (consistency);
-
-          return allreduce;
+                geometry->setAllreduceComposite (arcomposite);
+                arcomposite->startBarrier (consistency);
+              }
+          return NULL;
         }
 
         CCMI::Schedule::Color getOneColor(XMI_GEOMETRY_CLASS * geometry)

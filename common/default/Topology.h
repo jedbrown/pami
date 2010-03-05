@@ -70,20 +70,21 @@ namespace XMI {
 
     /// \brief how a topology represents each type
     union topology_u {
-      xmi_task_t _rank;	///< XMI_SINGLE_TOPOLOGY - the rank
-      struct {	///< XMI_RANGE_TOPOLOGY
-        xmi_task_t _first;	///< first rank in range
+      xmi_task_t _rank;   ///< XMI_SINGLE_TOPOLOGY - the rank
+
+      struct {            ///< XMI_RANGE_TOPOLOGY
+        xmi_task_t _first;///< first rank in range
         xmi_task_t _last;	///< last rank in range
       } _rankrange;
-      xmi_task_t *_ranklist; ///< XMI_LIST_TOPOLOGY - the rank array
 
-      rectseg _rectseg; ///< XMI_COORD_TOPOLOGY
+      xmi_task_t *_ranklist;  ///< XMI_LIST_TOPOLOGY - the rank array
 
-      struct
+      rectseg _rectseg;   ///< XMI_COORD_TOPOLOGY
+
+      struct              ///< XMI_AXIAL_TOPOLOGY
       {
-        rectseg _rect; ///< the rectangle segment containing the axial
-        unsigned char _dir[XMI_MAX_DIMS]; ///< direction of each axis(0:-,1:+)
-        xmi_coord_t _ref_task; ///< the task where axises cross
+        rectseg _rect;    ///< the rectangle segment containing the axial
+        xmi_coord_t _ref_task;///< the task where axes cross
       } _axial;
     };
     /// \brief these defines simplify access to above union, and
@@ -102,6 +103,12 @@ namespace XMI {
 #define topo_hastorus(n)  __topo._rectseg._istorus[n]
 #define topo_axial        __topo._axial
 #define topo_axial_center __topo._axial._ref_task
+#define topo_axial_llcoord	  __topo._axial._rect._llcorner
+#define topo_axial_urcoord	  __topo._axial._rect._urcorner
+#define topo_axial_istorus	  __topo._axial._rect._istorus
+#define topo_axial_lldim(n)	  __topo._axial._rect._llcorner.net_coord(n)
+#define topo_axial_urdim(n)	  __topo._axial._rect._urcorner.net_coord(n)
+#define topo_axial_hastorus(n)  __topo._axial._rect._istorus[n]
 
     /// \brief are the two coords located on the same node
     ///
@@ -526,40 +533,37 @@ namespace XMI {
       __size = __sizeRange(ll, ur, mapping->globalDims());
     }
 
-    /// \brief rank with axial neighbors (XMI_AXIAL_TOPOLOGY)
+    /// \brief Construct axial neighborhood (XMI_AXIAL_TOPOLOGY)
     ///
     /// Assumes no torus links if no 'tl' param.
     ///
     /// \param[in] ll	lower-left coordinate
     /// \param[in] ur	upper-right coordinate
-    /// \param[in] tl	optional, torus links flags
     /// \param[in] ref  reference rank
+    /// \param[in] tl	optional, torus links flags
     ///
     Topology(xmi_coord_t *ll, xmi_coord_t *ur, xmi_coord_t *ref,
-             unsigned char *dir, unsigned char *tl = NULL)
+             unsigned char *tl = NULL)
       {
         int i;
         __size = 1;
 
         __type = XMI_AXIAL_TOPOLOGY;
-        __topo._axial._ref_task = *ref;
-        __topo._axial._rect._llcorner = *ll;
-        __topo._axial._rect._urcorner = *ur;
+        topo_axial_center  = *ref;
+        topo_axial_llcoord = *ll;
+        topo_axial_urcoord = *ur;
 
-        __topo._axial._rect._llcorner.network =
-          __topo._axial._rect._urcorner.network = XMI_N_TORUS_NETWORK;
+        topo_axial_llcoord.network = topo_axial_urcoord.network = XMI_N_TORUS_NETWORK;
 
         if (tl) {
-          memcpy(__topo._axial._rect._istorus, tl, mapping->globalDims());
+          memcpy(topo_axial_istorus, tl, mapping->globalDims());
         } else {
-          memset(__topo._axial._rect._istorus, 0, mapping->globalDims());
+          memset(topo_axial_istorus,  0, mapping->globalDims());
         }
 
         for (i = 0; i < XMI_MAX_DIMS; i++)
         {
-          __size += (__topo._axial._rect._urcorner.net_coord(i) -
-                     __topo._axial._rect._llcorner.net_coord(i));
-          __topo._axial._dir[i] = dir[i]; // 0: +, 1: - direction
+          __size += topo_axial_urdim(i) - topo_axial_lldim(i);
         }
       }
     /// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
@@ -646,13 +650,13 @@ namespace XMI {
 
         for (x = 0; x < mapping->globalDims() && ix > 0; x++)
         {
-          unsigned ll = topo_lldim(x);
-          unsigned ur = topo_urdim(x);
+          unsigned ll = topo_axial_lldim(x);
+          unsigned ur = topo_axial_urdim(x);
           unsigned nn = ur - topo_axial_center.net_coord(x);
 
           if (ix <= nn)
           {
-            c0.net_coord(x) = topo_axial_center.net_coord(x) + ix;
+            c0.net_coord(x) += ix;
             break;
           }
           else
@@ -661,7 +665,7 @@ namespace XMI {
           nn = topo_axial_center.net_coord(x) - ll;
           if (ix <= nn)
           {
-            c0.net_coord(x) = topo_axial_center.net_coord(x) - ix;
+            c0.net_coord(x) -= ix;
             break;
           }
           else
@@ -732,8 +736,8 @@ namespace XMI {
         nn = 0;
         for (x = 0; x < mapping->globalDims(); x++)
         {
-          unsigned ll = topo_lldim(x);
-          unsigned ur = topo_urdim(x);
+          unsigned ll = topo_axial_lldim(x);
+          unsigned ur = topo_axial_urdim(x);
           if (c0.net_coord(x) == topo_axial_center.net_coord(x))
             ix += (ur - ll);
           else
@@ -802,6 +806,56 @@ namespace XMI {
       return XMI_SUCCESS;
     }
 
+    /// \brief return axial neighborhood
+    ///
+    /// Warning! This returns pointers to the Topology internals!
+    /// This can result in corruption of a topology if mis-used.
+    ///
+    /// \param[in] ll	lower-left coordinate
+    /// \param[in] ur	upper-right coordinate
+    /// \param[in] ref reference rank
+    /// \param[in] tl	 torus links flags
+    ///
+    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not an axial topology
+    ///
+    xmi_result_t axial_impl(xmi_coord_t **ll, xmi_coord_t **ur,
+                            xmi_coord_t **ref,
+                            unsigned char **tl) {
+      if (__type != XMI_AXIAL_TOPOLOGY) {
+        return XMI_UNIMPL;
+      }
+      *ll  = &topo_axial_llcoord;
+      *ur  = &topo_axial_urcoord;
+      *ref = &topo_axial_center;
+      *tl  = topo_axial_istorus;
+      return XMI_SUCCESS;
+    }
+
+    /// \brief return axial neighborhood
+    ///
+    /// This method copies data to callers buffers. It is safer
+    /// as the caller cannot directly modify the topology.
+    ///
+    /// \param[in] ll	lower-left coordinate
+    /// \param[in] ur	upper-right coordinate
+    /// \param[in] ref reference rank
+    /// \param[in] tl	 torus links flags
+    ///
+    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not an axial topology
+    ///
+    xmi_result_t axial_impl(xmi_coord_t *ll, xmi_coord_t *ur,
+                            xmi_coord_t *ref,
+                            unsigned char *tl) {
+      if (__type != XMI_AXIAL_TOPOLOGY) {
+        return XMI_UNIMPL;
+      }
+      *ll  = topo_axial_llcoord;
+      *ur  = topo_axial_urcoord;
+      *ref = topo_axial_center;
+      memcpy(tl, topo_axial_istorus, mapping->globalDims());
+      return XMI_SUCCESS;
+    }
+
     /// \brief return rectangular segment coordinates
     ///
     /// Warning! This returns pointers to the Topology internals!
@@ -813,7 +867,8 @@ namespace XMI {
     /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
     ///
     xmi_result_t rectSeg_impl(xmi_coord_t **ll, xmi_coord_t **ur,
-                              unsigned char **tl = NULL) {
+                              unsigned char **tl = NULL) 
+    {
       if (__type != XMI_COORD_TOPOLOGY) {
         return XMI_UNIMPL;
       }
@@ -847,99 +902,6 @@ namespace XMI {
       }
       return XMI_SUCCESS;
     }
-
-    /// \brief return direction of each axis (this is a hint to steer data) in
-    ///        an axial topology
-    ///
-    /// This method copies data to callers buffers. It is safer
-    /// as the caller cannot directly modify the topology.
-    ///
-    /// \param[out] dirs   axis directions
-    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
-    ///
-    xmi_result_t getAxialDirs_impl(unsigned char *dirs)
-      {
-        if (__type != XMI_AXIAL_TOPOLOGY)
-          return XMI_UNIMPL;
-
-        memcpy(dirs, topo_axial._dir, mapping->globalDims());
-        return XMI_SUCCESS;
-      }
-
-    /// \brief return torus orientation of each axis on anxial topology
-    ///
-    /// This method copies data to callers buffers. It is safer
-    /// as the caller cannot directly modify the topology.
-    ///
-    /// \param[out] tl   axis torus orientation
-    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
-    ///
-    xmi_result_t getAxialOrientation_impl(unsigned char *tl)
-      {
-        if (__type != XMI_AXIAL_TOPOLOGY)
-          return XMI_UNIMPL;
-
-         memcpy(tl, topo_istorus, mapping->globalDims());
-        return XMI_SUCCESS;
-      }
-
-    /// \brief return coordinates of end points on the axes crossing the center
-    ///        point in an axial topology.
-    ///
-    /// This method copies data to callers buffers. It is safer
-    /// as the caller cannot directly modify the topology. We assume there are
-    /// 2 x XMI_MAX_DIMS number of coords passed in. For each axis, the first
-    /// coord is for the low endpoint followed by the high endpoint.
-    ///
-    /// \param[out] axes_endpoints array of coords for the end points on axes
-    /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
-    inline xmi_result_t getAxialEndCoords_impl(xmi_coord_t *low,
-                                               xmi_coord_t *high,
-                                               int axis)
-      {
-        if (__type != XMI_AXIAL_TOPOLOGY)
-          return XMI_UNIMPL;
-
-        xmi_coord_t ll, ur, center;
-        ll = topo_axial._rect._llcorner;
-        ur = topo_axial._rect._urcorner;
-        center = topo_axial_center;
-
-        *low = ll;
-        *high = ur;
-
-        if (axis != -1)
-        {
-          *low = center;
-          *high = center;
-          (*low).net_coord(axis) = MIN(ll.net_coord(axis),
-                                       center.net_coord(axis));
-          (*high).net_coord(axis) = MAX(ur.net_coord(axis),
-                                        center.net_coord(axis));
-        }
-#if 0
-        int i;
-        xmi_coord_t ll, ur, center;
-        ll = topo_axial._rect._llcorner;
-        ur = topo_axial._rect._urcorner;
-        center = topo_axial_center;
-
-        for (i = 0; i < XMI_MAX_DIMS; i++)
-        {
-          if (axis == i)
-          {
-            (*low).net_coord(i) = center.net_coord(i);
-            (*high).net_coord(i) = center.net_coord(i);
-          }
-          else
-          {
-            (*low).net_coord(i) = MIN(ll.net_coord(i), center.net_coord(i));
-            (*high).net_coord(i) = MAX(ur.net_coord(i), center.net_coord(i));
-          }
-        }
-#endif
-        return XMI_SUCCESS;
-      }
 
     /// \brief does topology consist entirely of ranks local to eachother
     ///

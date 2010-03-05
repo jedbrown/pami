@@ -34,19 +34,23 @@ namespace XMI
       inline Topology(xmi_coord_t *ll, xmi_coord_t *ur,
                       unsigned char *tl = NULL) {}
 
-      /// \brief rank with axial neighbors (XMI_AXIAL_TOPOLOGY)
+      /// \brief axial neighborhood constructor(XMI_AXIAL_TOPOLOGY)
       ///
+      /// Define a set of axes from a reference task and the 
+      /// enclosing rectangular seqment.  The neighborhood is all
+      /// ranks on those axes.  Optionally, define each dimension 
+      /// as being a torus (and a direction) or not (default).
+      /// 
       /// Assumes no torus links if no 'tl' param.
       ///
       /// \param[in] ll	lower-left coordinate
       /// \param[in] ur	upper-right coordinate
+      /// \param[in] ref reference rank
       /// \param[in] tl	optional, torus links flags
-      /// \param[in] ref_rank reference rank
       ///
       inline Topology(xmi_coord_t *ll,
                       xmi_coord_t *ur,
                       xmi_coord_t *ref,
-                      unsigned char *dir,
                       unsigned char *tl = NULL) {}
 
       /// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
@@ -87,39 +91,6 @@ namespace XMI
 
 
 
-
-      /// \brief return coordinates of end points on the axes crossing the
-      ///        center point in an axial topology.
-      ///
-      /// This method copies data to callers buffers. It is safer
-      /// as the caller cannot directly modify the topology.
-      /// \param[out] low	coord of low point on axis
-      /// \param[out] high	coord of high point on axis
-      /// \param[in]  axis	a given axis
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
-      inline xmi_result_t getAxialEndCoords(xmi_coord_t *low,
-                                            xmi_coord_t *high,
-                                            int axis);
-
-      /// \brief return torus orientation of each axis on anxial topology
-      ///
-      /// This method copies data to callers buffers. It is safer
-      /// as the caller cannot directly modify the topology.
-      ///
-      /// \param[out] tl   axis torus orientation
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
-      ///
-      xmi_result_t getAxialOrientation(unsigned char *tl);
-
-      /// \brief return the direction on each axis of the axial topology.
-      ///
-      /// This method copies data to callers buffers. It is safer
-      /// as the caller cannot directly modify the topology.
-      ///
-      /// \param[out] dirs array of size XMI_MAX_DIM.
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
-      inline xmi_result_t getAxialDirs(unsigned char *);
-
       /// \brief Nth rank in topology
       ///
       /// \param[in] ix	Which rank to select
@@ -150,6 +121,38 @@ namespace XMI
       /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
       ///
       inline xmi_result_t rankList(xmi_task_t **list);
+
+      /// \brief return axial neighborhood
+      ///
+      /// Warning! This returns pointers to the Topology internals!
+      /// This can result in corruption of a topology if mis-used.
+      ///
+      /// \param[in] ll	lower-left coordinate
+      /// \param[in] ur	upper-right coordinate
+      /// \param[in] ref reference rank
+      /// \param[in] tl	 torus links flags
+      ///
+      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not an axial topology
+      ///
+      inline xmi_result_t axial(xmi_coord_t **ll, xmi_coord_t **ur,
+                                  xmi_coord_t **ref,
+                                  unsigned char **tl);
+
+      /// \brief return axial neighborhood
+      ///
+      /// This method copies data to callers buffers. It is safer
+      /// as the caller cannot directly modify the topology.
+      ///
+      /// \param[in] ll	lower-left coordinate
+      /// \param[in] ur	upper-right coordinate
+      /// \param[in] ref	reference rank
+      /// \param[in] tl	torus links flags
+      ///
+      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not an axial topology
+      ///
+      inline xmi_result_t axial(xmi_coord_t *ll, xmi_coord_t *ur,
+                                  xmi_coord_t *ref,
+                                  unsigned char *tl);
 
       /// \brief return rectangular segment coordinates
       ///
@@ -338,24 +341,6 @@ namespace XMI
       return static_cast<T_Topology*>(this)->type_impl();
     }
 
-    template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::getAxialDirs(unsigned char *dirs)
-    {
-      return static_cast<T_Topology*>(this)->getAxialDirs_impl(dirs);
-    }
-
-    template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::getAxialOrientation(unsigned char *tl)
-    {
-      return static_cast<T_Topology*>(this)->getAxialOrientation_impl(tl);
-    }
-
-    template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::getAxialEndCoords(xmi_coord_t *low, xmi_coord_t *high, int axis)
-    {
-      return static_cast<T_Topology*>(this)->getAxialEndCoords_impl(low, high, axis);
-    }
-
    template <class T_Topology>
       xmi_task_t Topology<T_Topology>::index2Rank(size_t ix)
     {
@@ -378,6 +363,22 @@ namespace XMI
       xmi_result_t Topology<T_Topology>::rankList(xmi_task_t **list)
     {
       return static_cast<T_Topology*>(this)->rankList_impl(list);
+    }
+
+    template <class T_Topology>
+      xmi_result_t Topology<T_Topology>::axial(xmi_coord_t **ll, xmi_coord_t **ur,
+                                               xmi_coord_t **ref,
+                                               unsigned char **tl)
+    {
+      return static_cast<T_Topology*>(this)->axial_impl(ll,ur,ref,tl);
+    }
+
+    template <class T_Topology>
+      xmi_result_t Topology<T_Topology>::axial(xmi_coord_t *ll, xmi_coord_t *ur,
+                                               xmi_coord_t *ref,
+                                               unsigned char *tl)
+    {
+      return static_cast<T_Topology*>(this)->axial_impl(ll,ur,ref,tl);
     }
 
     template <class T_Topology>

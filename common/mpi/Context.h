@@ -11,19 +11,16 @@
 #include <string.h>
 #include <mpi.h>
 #include "common/ContextInterface.h"
-#include "Geometry.h"
+#include "algorithms/geometry/Geometry.h"
 #include "WakeupManager.h"
 #include "components/devices/mpi/mpidevice.h"
 #include "components/devices/mpi/mpipacketmodel.h"
 #include "components/devices/mpi/mpimessage.h"
 
-#include "p2p/protocols/send/adaptive/Adaptive.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "SysDep.h"
-#include "common/default/CollFactory.h"
-#include "common/default/CollRegistration.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
@@ -36,6 +33,9 @@
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "components/devices/mpi/MPISyncMsg.h"
+#include "algorithms/geometry/CCMICollRegistration.h"
+#include "algorithms/geometry/PGASCollRegistration.h"
+#include "algorithms/geometry/OldCCMICollRegistration.h"
 #include "Mapping.h"
 #include <new>
 #include <map>
@@ -50,6 +50,11 @@
 #include "util/fifo/LinearFifo.h"
 #include "components/devices/mpi/mpimulticastprotocol.h"
 
+#include "components/devices/mpi/mpimulticastmodel.h"
+#include "components/devices/mpi/mpimultisyncmodel.h"
+#include "components/devices/mpi/mpimulticombinemodel.h"
+#include "components/devices/mpi/mpimanytomanymodel.h"
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
@@ -61,19 +66,58 @@ namespace XMI
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
-    typedef Geometry::Common<XMI_MAPPING_CLASS> MPIGeometry;
-    typedef CollFactory::Default<MPIDevice, SysDep, MPIMcastModel> MPICollfactory;
-    typedef CollRegistration::Default<MPIGeometry, MPICollfactory, MPIDevice, SysDep> MPICollreg;
     typedef XMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
 
     // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
-    typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,XMI::Device::MPIBcastMdl,XMI::Device::MPIBcastDev> P2PMcastProto;
+  typedef XMI::Protocol::MPI::P2PMcastProto<MPIDevice,
+                                            EagerMPI,
+                                            XMI::Device::MPIBcastMdl,
+					    XMI::Device::MPIBcastDev> P2PMcastProto;
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
     typedef Fifo::FifoPacket <32, 240> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
     typedef Device::ShmemPacketModel<ShmemDevice> ShmemModel;
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+
+  // Collective Types
+  typedef Geometry::Common                                           MPIGeometry;
+  typedef Device::MPIMsyncMessage                                    MPIMsyncMessage;
+  typedef Device::MPIMultisyncModel<MPIDevice,MPIMsyncMessage>       MPIMultisyncModel;
+  typedef Device::MPIMcastMessage                                    MPIMcastMessage;
+  typedef Device::MPIMulticastModel<MPIDevice,MPIMcastMessage>       MPIMulticastModel;
+  typedef Device::MPIMcombineMessage                                 MPIMcombineMessage;
+  typedef Device::MPIMulticombineModel<MPIDevice,
+                                       MPIMcombineMessage>           MPIMulticombineModel;
+  typedef Device::MPIM2MMessage                                      MPIM2MMessage;
+  typedef Device::MPIManytomanyModel<MPIDevice,MPIM2MMessage>        MPIManytomanyModel;
+  typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice,
+                                            XMI::Device::MPIMessage> MPIOldMcastModel;
+  typedef XMI::Device::MPIOldm2mModel<XMI::Device::MPIDevice,
+                                      XMI::Device::MPIMessage,
+                                      size_t>                        MPIOldM2MModel;
+  // "New" CCMI Typedefs/Coll Registration
+  typedef XMI::MPINativeInterface<MPIDevice,
+                                  MPIMulticastModel,
+                                  MPIMultisyncModel,
+                                  MPIMulticombineModel>              DefaultNativeInterface;
+  typedef CollRegistration::CCMIRegistration<MPIGeometry,
+                                             DefaultNativeInterface,
+                                             MPIDevice> CCMICollreg;
+  // PGAS RT Typedefs/Coll Registration
+  typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice,
+                                            XMI::Device::MPIMessage> MPIOldMcastModel;
+  typedef TSPColl::NBCollManager<MPIOldMcastModel> MPINBCollManager;
+  typedef CollRegistration::PGASRegistration<MPIGeometry,
+                                             MPIOldMcastModel,
+                                             MPIDevice,
+                                             MPINBCollManager> PGASCollreg;
+
+  typedef CollRegistration::OldCCMIRegistration<MPIGeometry,
+                                                MPIOldMcastModel,
+                                                MPIOldM2MModel,
+                                                MPIDevice,
+                                                SysDep> OldCCMICollreg;
 
 /**
  * \brief Class containing all devices used on this platform.
@@ -195,7 +239,8 @@ namespace XMI
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
 				PlatformDeviceList *devices,
-				void * addr, size_t bytes) :
+				void * addr, size_t bytes,
+				MPIGeometry *world_geometry) :
         Interface::Context<XMI::Context> (client, id),
         _client (client),
 	_clientid (clientid),
@@ -205,25 +250,25 @@ namespace XMI
         _lock (),
 #warning This needs to be done elsewhere - not per-context if in __global!
         _mpi(&__global.mpi_device),
-        _minterface(_mpi, this, _contextid, clientid),
+        _world_geometry(world_geometry),
+        _minterface(*_mpi, client, this, _contextid, clientid),
         _empty_advance(0),
 	_devices(devices)
         {
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
 
-          MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
-          MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
-          _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
-	  _world_range.lo=0;
-	  _world_range.hi=_mysize-1;
-          new(_world_geometry) MPIGeometry(&__global.mapping,0, 1,&_world_range);
+        _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
+        new(_pgas_collreg) PGASCollreg(client, (xmi_context_t)this, id,*_mpi);
+        _pgas_collreg->analyze(_contextid,_world_geometry);
 
-	  _collreg=(MPICollreg*) malloc(sizeof(*_collreg));
-	  new(_collreg) MPICollreg(_mpi, &_sysdep, getClient(), (xmi_context_t)(void *)this, getId(), clientid);
+        _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
+        new(_oldccmi_collreg) OldCCMICollreg(client, (xmi_context_t)this, id,_sysdep,*_mpi);
+        _oldccmi_collreg->analyze(_contextid, _world_geometry);
 
-          _world_collfactory=_collreg->analyze(_world_geometry);
-	  _world_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, _world_collfactory);
+        _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
+        new(_ccmi_collreg) CCMICollreg(client, (xmi_context_t)this, id,clientid,*_mpi);
+        _ccmi_collreg->analyze(_contextid, _world_geometry);
 
 #ifdef USE_WAKEUP_VECTORS
 	  _wakeupManager.init(1, 0x57550000 | id); // check errors?
@@ -506,70 +551,49 @@ namespace XMI
           return XMI_UNIMPL;
         }
 
-      inline xmi_result_t geometry_initialize_impl (xmi_geometry_t       * geometry,
-                                                    unsigned               id,
-                                                    xmi_geometry_range_t * rank_slices,
-                                                    size_t                 slice_count)
-        {
-	  MPIGeometry              *new_geometry;
-	  MPICollfactory           *new_collfactory;
-          new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
-          new(new_geometry) MPIGeometry(&__global.mapping,id, slice_count,rank_slices);
-          new_collfactory=_collreg->analyze(new_geometry);
-	  new_geometry->setKey(XMI::Geometry::XMI_GKEY_COLLFACTORY, new_collfactory);
-	  *geometry=(MPIGeometry*) new_geometry;
-          return XMI_SUCCESS;
-        }
-
-
-      inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
-        {
-	  *world_geometry = _world_geometry;
-          return XMI_SUCCESS;
-        }
-
-      inline xmi_result_t geometry_finalize_impl (xmi_geometry_t geometry)
-        {
-          XMI_abort();
-          return XMI_UNIMPL;
-        }
-
-
-      inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
-        {
-	  MPICollfactory           *collfactory;
-	  // This is ok...we can avoid a switch because all the xmi structs
-	  // have the same layout.let's just use barrier for now
-	  MPIGeometry              *new_geometry = (MPIGeometry*)parameters->xfer_barrier.geometry;
-	  collfactory =(MPICollfactory*) new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
-          return collfactory->collective(parameters);
-        }
         inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                           xmi_xfer_type_t colltype,
                                                           int *lists_lengths)
         {
-          MPIGeometry *new_geometry = (MPIGeometry*) geometry;
-          MPICollfactory  *collfactory =  (MPICollfactory*)
-            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
-          return collfactory->algorithms_num(colltype, lists_lengths);
+        MPIGeometry *_geometry = (MPIGeometry*) geometry;
+        return _geometry->algorithms_num(colltype, lists_lengths, _contextid);
         }
 
         inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
                                                            xmi_xfer_type_t colltype,
-                                                           xmi_algorithm_t *algs,
-                                                           xmi_metadata_t *mdata,
-                                                           int algorithm_type,
-                                                           int num)
-        {
-          MPIGeometry *new_geometry = (MPIGeometry*) geometry;
-          MPICollfactory  *collfactory;
-          collfactory = (MPICollfactory*)
-            new_geometry->getKey(XMI::Geometry::XMI_GKEY_COLLFACTORY);
-          return collfactory->algorithms_info(colltype, algs,
-                                              mdata, algorithm_type, num);
+                                                       xmi_algorithm_t  *algs0,
+                                                       xmi_metadata_t   *mdata0,
+                                                       int               num0,
+                                                       xmi_algorithm_t  *algs1,
+                                                       xmi_metadata_t   *mdata1,
+                                                       int               num1)
+      {
+        MPIGeometry *_geometry = (MPIGeometry*) geometry;
+        return _geometry->algorithms_info(colltype,
+                                          algs0,
+                                          mdata0,
+                                          num0,
+                                          algs1,
+                                          mdata1,
+                                          num1,
+                                          _contextid);
+      }
 
+    inline xmi_result_t collective_impl (xmi_xfer_t * parameters)
+      {
+        Geometry::Algorithm<MPIGeometry> *algo = (Geometry::Algorithm<MPIGeometry> *)parameters->algorithm;
+        return algo->generate(parameters);
         }
 
+    inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
+                                                    size_t                     dispatch,
+                                                    xmi_dispatch_callback_fn   fn,
+                                                    void                     * cookie,
+                                                    xmi_collective_hint_t      options)
+      {
+        Geometry::Algorithm<MPIGeometry> *algo = (Geometry::Algorithm<MPIGeometry> *)algorithm;
+        return algo->dispatch_set(dispatch, fn, cookie, options);
+      }
 
       inline xmi_result_t multisend_getroles_impl(size_t          dispatch,
                                                   int            *numRoles,
@@ -843,14 +867,14 @@ XMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _co
 #endif /* USE_WAKEUP_VECTORS */
       MemoryAllocator<2048,16>  _request;
       MPIDevice                *_mpi;
-      MPICollreg               *_collreg;
+  public:
+    CCMICollreg               *_ccmi_collreg;
+    PGASCollreg               *_pgas_collreg;
+    OldCCMICollreg            *_oldccmi_collreg;
       MPIGeometry              *_world_geometry;
-      MPICollfactory           *_world_collfactory;
-      MPINativeInterface<MPIDevice>  _minterface;
+  private:
+    DefaultNativeInterface    _minterface;
       unsigned                  _empty_advance;
-      xmi_geometry_range_t      _world_range;
-      int                       _myrank;
-      int                       _mysize;
       unsigned                 *_ranklist;
       PlatformDeviceList *_devices;
     }; // end XMI::Context

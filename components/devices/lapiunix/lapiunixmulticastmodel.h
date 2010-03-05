@@ -22,39 +22,31 @@ namespace XMI
     namespace Device
     {
         template <class T_Device, class T_Message>
-        class LAPIMulticastModel : public Interface::MessageModel<LAPIMulticastModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
+    class LAPIMulticastModel :
+      public Interface::AMMulticastModel<LAPIMulticastModel<T_Device, T_Message>,sizeof(T_Message)>
         {
         public:
-            LAPIMulticastModel (T_Device & device) :
-                Interface::MessageModel < LAPIMulticastModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device)
+      static const size_t mcast_model_state_bytes = sizeof(T_Message);
+      static const size_t sizeof_msg              = sizeof(T_Message);
+      static const bool   is_active_message       = true;
+
+
+      LAPIMulticastModel (T_Device & device, xmi_result_t &status) :
+        Interface::AMMulticastModel < LAPIMulticastModel<T_Device, T_Message>, sizeof(T_Message) > (status)
                 {};
-            inline void setConnectionId_impl (unsigned conn)
+
+      inline xmi_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
+                                                          xmi_dispatch_multicast_fn  recv_func,
+                                                          void                      *async_arg)
                 {
+              return XMI_SUCCESS;
                 }
-            inline void setRoles_impl (unsigned roles)
+
+
+      inline xmi_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
+                                              xmi_multicast_t *mcast)
                 {
-                }
-            inline void setSendData_impl (xmi_pipeworkqueue_t *src, size_t bytes)
-                {
-                }
-            inline void setSendRanks_impl (xmi_topology_t *src_participants)
-                {
-                }
-            inline void setRecvData_impl (xmi_pipeworkqueue_t *dst, size_t bytes)
-                {
-                }
-            inline void setRecvRanks_impl (xmi_topology_t *dst_participants)
-                {
-                }
-            inline void setCallback_impl (xmi_event_function fn,  void *clientdata)
-                {
-                }
-            inline void setInfo_impl (xmi_quad_t *info, int count)
-                {
-                }
-            inline bool postMultiCast_impl (T_Message * obj)
-                {
-		  return false;
+              return XMI_SUCCESS;
                 }
         };
     };

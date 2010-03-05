@@ -20,24 +20,23 @@ namespace XMI
 {
   namespace CollRegistration
   {
-    template <class T_Collregistration,class T_Geometry, class T_Collfactory>
+    template <class T_Collregistration, class T_Geometry>
     class CollRegistration
     {
     public:
       inline CollRegistration()
         {
         }
-      inline T_Collfactory * analyze(T_Geometry * geometry);
+      inline xmi_result_t analyze(size_t         context_id,
+                                  T_Geometry    *geometry);
+    };
 
-    }; // class CollRegistration
-
-    template <class T_Collregistration, class T_Geometry, class T_Collfactory>
-    inline T_Collfactory * CollRegistration<T_Collregistration,T_Geometry,T_Collfactory>::analyze(T_Geometry *geometry)
+    template <class T_Collregistration, class T_Geometry>
+    inline xmi_result_t CollRegistration<T_Collregistration,T_Geometry>::analyze(size_t      context_id,
+                                                                                 T_Geometry *geometry)
     {
-      return static_cast<T_Collregistration*>(this)->analyze_impl(geometry);
+      return static_cast<T_Collregistration*>(this)->analyze_impl(context_id, geometry);
     }
-
-
   }; // namespace CollRegistration
 }; // namespace XMI
 

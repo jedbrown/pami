@@ -33,12 +33,12 @@
 #endif
 #define TRACE(x) //fprintf x
 
-#define ENABLE_MAMBO_WORKAROUNDS
+//#define ENABLE_MAMBO_WORKAROUNDS
 
-// \brief Number of dispatch sets
-//
-// There are DISPATCH_SET_COUNT possible dispatch IDs.
-//
+/// \brief Number of dispatch sets
+///
+/// There are DISPATCH_SET_COUNT possible dispatch IDs.
+///
 #define DISPATCH_SET_COUNT 256
 
 // \brief Number of dispatch functions in a dispatch set
@@ -397,12 +397,18 @@ namespace XMI
           size_t        _contextid;
 
         protected:
-#warning Do not use thread local storage .. a device is associated with a context, not a thread.
+#if 0
+          // #warning Do not use thread local storage .. a device is associated with a context, not a thread.
           static __thread unsigned   _p2pSendChannelIndex;    /**< current P2P send channel */
           static __thread unsigned   _p2pRecvChannelIndex;    /**< current P2P recv channel */
           static __thread bool       _colSendChannelFlag;     /**< coll send channel flag   */
           static __thread bool       _colRecvChannelFlag;     /**< coll recv channel flag   */
-
+#else
+          unsigned   _p2pSendChannelIndex;    /**< current P2P send channel */
+          unsigned   _p2pRecvChannelIndex;    /**< current P2P recv channel */
+          bool       _colSendChannelFlag;     /**< coll send channel flag   */
+          bool       _colRecvChannelFlag;     /**< coll recv channel flag   */
+#endif
 
           P2PChannel    * _p2pChannel[ MAX_NUM_P2P_CHANNELS ]; /**< P2P channels       */
 

@@ -197,7 +197,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   volatile cacheAnchors_t * cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
 
-  size_t myRank;
+  //size_t myRank;
 
 
   size_t pCoord = personality.pCoord ();
@@ -221,7 +221,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   uint64_t participant =
     Fetch_and_Add ((uint64_t *) & (cacheAnchorsPtr->atomic.enter), 1);
 
-  myRank = personality.rank();
+  //myRank = personality.rank();
 
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant));
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize));
@@ -297,8 +297,18 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
        * Non-active ranks (-np) have x, y, z, and t equal to 255, such
        * that the entire 4 byte int is -1.
        */
-#warning Need ranks2coords syscall!
-//              int rc = Kernel_Ranks2Coords((bgq_coords_t *)mapcache->torus.task2coords, fullSize);
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// #warning Need ranks2coords syscall!
+// int rc = Kernel_Ranks2Coords((bgq_coords_t *)mapcache->torus.task2coords, fullSize);
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
       /* The above system call is new in V1R3M0.  If it works, obtain info
        * from the returned _mapcache.
@@ -334,7 +344,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
                 c = mapcache->torus.task2coords[i].c;
                 d = mapcache->torus.task2coords[i].d;
                 e = mapcache->torus.task2coords[i].e;
-                p = mapcache->torus.task2coords[i].core;
+                p = mapcache->torus.task2coords[i].core = 16/fullSize * i;
                 t = mapcache->torus.task2coords[i].thread;
 
  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a,b,c,d,e,p,t));

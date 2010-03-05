@@ -24,6 +24,12 @@ namespace CCMI
   {
     namespace Broadcast
     {
+      void am_bcast_md(xmi_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"CCMIAMBinomialBcast");
+      }
+
       typedef
       AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
                        XMI_SYSDEP_CLASS,
@@ -39,7 +45,7 @@ namespace CCMI
         new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>(map, g->nranks(), g->ranks());
       }
 
-      typedef AsyncCompositeFactoryT <AsyncBinomialComposite, true_analyze,XMI_SYSDEP_CLASS,XMI_COLL_MCAST_CLASS>
+      typedef AsyncCompositeFactoryT <AsyncBinomialComposite,am_bcast_md,XMI_SYSDEP_CLASS,XMI_COLL_MCAST_CLASS>
       AsyncBinomialFactory;
     };
   };

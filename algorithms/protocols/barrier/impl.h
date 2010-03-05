@@ -26,20 +26,30 @@ namespace CCMI
   {
     namespace Barrier
     {
-      extern inline bool binomial_analyze(XMI_GEOMETRY_CLASS *geometry)
+
+      void binom_barrier_md(xmi_metadata_t *m)
       {
-        return true;
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"CCMIBinomBarrier");
       }
 
-      extern inline bool global_analyze (XMI_GEOMETRY_CLASS *geometry)
+      void msync_barrier_md(xmi_metadata_t *m)
       {
-	//return geometry->isGlobalContext();
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"CCMIMsyncBarrier");
+      }
+
+      bool binomial_analyze (XMI_GEOMETRY_CLASS *geometry)
+      {
 	return true;
       }
 
+
       typedef BarrierT <CCMI::Schedule::ListMultinomial,
 	binomial_analyze> BinomialBarrier;
-      typedef CollectiveProtocolFactoryT <BinomialBarrier, binomial_analyze, ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > BinomialBarrierFactory;
+      typedef CollectiveProtocolFactoryT <BinomialBarrier,
+                                          binom_barrier_md,
+                                          ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > BinomialBarrierFactory;
 
       typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
                            binomial_analyze,
@@ -49,7 +59,9 @@ namespace CCMI
 	                          XMI_SYSDEP_CLASS,
 	                          XMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
 
-      typedef CollectiveProtocolFactoryT<MultiSyncComposite, global_analyze, ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > MultiSyncFactory;
+      typedef CollectiveProtocolFactoryT<MultiSyncComposite,
+                                         msync_barrier_md,
+                                         ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > MultiSyncFactory;
     };
   };
 };

@@ -52,7 +52,9 @@ namespace CCMI
         BarrierT  (Interfaces::NativeInterface          * mInterface,
 		   ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS>     * cmgr,
                    xmi_geometry_t                         geometry,
-		   void                                 * cmd) :
+		   void                                 * cmd,
+                   xmi_event_function                     fn,
+                   void                                 * cookie):
 	_myexecutor(((XMI_GEOMETRY_CLASS *)geometry)->nranks(),
 		    ((XMI_GEOMETRY_CLASS *)geometry)->ranks(),
 		    ((XMI_GEOMETRY_CLASS *)geometry)->comm(),

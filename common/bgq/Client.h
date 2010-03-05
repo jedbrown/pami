@@ -193,10 +193,6 @@ namespace XMI
                   result = XMI_SUCCESS;
               }
               break;
-            case XMI_PROCESSOR_NAME_SIZE:
-              configuration->value.intval = 128;
-              result = XMI_SUCCESS;
-              break;
             case XMI_MEM_SIZE:
             default:
               break;
@@ -227,6 +223,45 @@ namespace XMI
       inline size_t getClientId()
       {
         return _clientid;
+      }
+    inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+      {
+        XMI_abort();
+        return XMI_SUCCESS;
+      }
+
+    inline xmi_result_t geometry_create_taskrange_impl(xmi_geometry_t       * geometry,
+                                                       xmi_geometry_t         parent,
+                                                       unsigned               id,
+                                                       xmi_geometry_range_t * rank_slices,
+                                                       size_t                 slice_count,
+                                                       xmi_context_t          context,
+                                                       xmi_event_function     fn,
+                                                       void                 * cookie)
+      {
+        XMI_abort();
+        return XMI_SUCCESS;
+      }
+
+
+    inline xmi_result_t geometry_create_tasklist_impl(xmi_geometry_t       * geometry,
+                                                      xmi_geometry_t         parent,
+                                                      unsigned               id,
+                                                      xmi_task_t           * tasks,
+                                                      size_t                 task_count,
+                                                      xmi_context_t          context,
+                                                      xmi_event_function     fn,
+                                                      void                 * cookie)
+      {
+        // todo:  implement this routine
+        XMI_abort();
+        return XMI_SUCCESS;
+      }
+
+    inline xmi_result_t geometry_destroy_impl (xmi_geometry_t geometry)
+      {
+        XMI_abort();
+        return XMI_UNIMPL;
       }
 
     protected:

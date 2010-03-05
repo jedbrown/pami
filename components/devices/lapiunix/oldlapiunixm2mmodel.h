@@ -36,7 +36,7 @@ namespace XMI
 
       static void __xmi_lapi_m2m_senddone_fn (lapi_handle_t * handle, void * param, lapi_sh_info_t * info)
         {
-          LAPIM2MMessage * sreq = (LAPIM2MMessage *) param;
+          OldLAPIM2MMessage * sreq = (OldLAPIM2MMessage *) param;
           sreq->_numdone++;
           if(sreq->_numdone == sreq->_num)
               {
@@ -64,7 +64,7 @@ namespace XMI
                                unsigned                nranks)
         {
           unsigned i;
-          LAPIM2MMessage * m2m = (LAPIM2MMessage *)malloc(sizeof(LAPIM2MMessage));
+          OldLAPIM2MMessage * m2m = (OldLAPIM2MMessage *)malloc(sizeof(OldLAPIM2MMessage));
           XMI_assert( m2m != NULL );
 
           m2m->_context     = NULL;
@@ -94,9 +94,9 @@ namespace XMI
             return ;
           }
 
-          m2m->_send_headers = (LAPIM2MHeader*)malloc(m2m->_num*sizeof(LAPIM2MHeader));
+          m2m->_send_headers = (OldLAPIM2MHeader*)malloc(m2m->_num*sizeof(OldLAPIM2MHeader));
           XMI_assert ( m2m->_send_headers != NULL );
-          LAPIM2MHeader *hdr = (LAPIM2MHeader *) m2m->_send_headers;
+          OldLAPIM2MHeader *hdr = (OldLAPIM2MHeader *) m2m->_send_headers;
           for( i = 0; i < nranks; i++)
               {
                 lapi_xfer_t xfer_struct;
@@ -108,7 +108,7 @@ namespace XMI
                 hdr->_conn        = connid;
                 hdr->_peer        = __global.mapping.task();
                 int          done = 0;
-                if (sizeof(LAPIM2MHeader) + hdr->_size < 128)
+                if (sizeof(OldLAPIM2MHeader) + hdr->_size < 128)
                     {
                       lapi_xfer_t xfer_struct;
                       xfer_struct.Am.Xfer_type = LAPI_AM_LW_XFER;
@@ -116,7 +116,7 @@ namespace XMI
                       xfer_struct.Am.tgt       = ranks[index];
                       xfer_struct.Am.hdr_hdl   = (lapi_long_t)2L;
                       xfer_struct.Am.uhdr      = (void *) hdr;
-                      xfer_struct.Am.uhdr_len  = sizeof(LAPIM2MHeader);
+                      xfer_struct.Am.uhdr_len  = sizeof(OldLAPIM2MHeader);
                       xfer_struct.Am.udata     = (void *) ((char*)buf+offsets[index]);
                       xfer_struct.Am.udata_len = sizes[index];
                       CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
@@ -129,7 +129,7 @@ namespace XMI
                       xfer_struct.Am.tgt       = ranks[index];
                       xfer_struct.Am.hdr_hdl   = (lapi_long_t)2L;
                       xfer_struct.Am.uhdr      = (void *) hdr;
-                      xfer_struct.Am.uhdr_len  = sizeof(LAPIM2MHeader);
+                      xfer_struct.Am.uhdr_len  = sizeof(OldLAPIM2MHeader);
                       xfer_struct.Am.udata     = (void *) ((char*)buf+offsets[index]);
                       xfer_struct.Am.udata_len = sizes[index];
                       xfer_struct.Am.shdlr     = (scompl_hndlr_t*) __xmi_lapi_m2m_senddone_fn;
@@ -154,7 +154,7 @@ namespace XMI
                                  unsigned                 nranks,
                                  unsigned                 myindex)
         {
-          LAPIM2MRecvMessage<T_Counter> *msg = (LAPIM2MRecvMessage<T_Counter>*)malloc(sizeof(*msg));
+          OldLAPIM2MRecvMessage<T_Counter> *msg = (OldLAPIM2MRecvMessage<T_Counter>*)malloc(sizeof(*msg));
           msg->_dispatch_id = _dispatch_id;
           msg->_conn        = connid;
           msg->_done_fn     = cb_done->function;

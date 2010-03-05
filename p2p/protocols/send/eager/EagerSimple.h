@@ -528,34 +528,7 @@ namespace XMI
           {
             _recv_allocator.returnObject ((void *) object);
           }
-#if 0
-          inline void setConnection (xmi_task_t task, void * arg)
-          {
-            size_t peer = _device.task2peer (task);
-            TRACE_ERR((stderr, ">> EagerSimple::setConnection(%zd, %p) .. _connection      = %p\n", (size_t)task, arg, _connection));
-            TRACE_ERR((stderr, "   EagerSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", (size_t)task, arg, peer, _connection[peer]));
-            XMI_assert_debug(_connection[peer] == NULL);
-            _connection[peer] = arg;
-            TRACE_ERR((stderr, "<< EagerSimple::setConnection(%zd, %p)\n", (size_t)task, arg));
-          }
 
-          inline void * getConnection (xmi_task_t task)
-          {
-            size_t peer = _device.task2peer (task);
-            TRACE_ERR((stderr, ">> EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
-            XMI_assert_debug(_connection[peer] != NULL);
-            TRACE_ERR((stderr, "<< EagerSimple::getConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
-            return _connection[peer];
-          }
-
-          inline void clearConnection (xmi_task_t task)
-          {
-            size_t peer = _device.task2peer (task);
-            TRACE_ERR((stderr, ">> EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
-            _connection[peer] = NULL;
-            TRACE_ERR((stderr, "<< EagerSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", (size_t)task, peer, _connection[peer]));
-          }
-#endif
           inline void process_envelope (protcol_metadata_t * metadata,
                                         uint8_t            * header,
                                         recv_state_t       * state)

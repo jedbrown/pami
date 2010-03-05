@@ -40,7 +40,7 @@ namespace XMI
                                   xmi_multisync_t *msync)
         {
           xmi_result_t      rc     = XMI_SUCCESS;
-	  MPIMSyncMessage *msg     = (MPIMSyncMessage *) state;
+	  MPIMsyncMessage *msg     = (MPIMsyncMessage *) state;
           XMI::Topology   *topo    = (XMI::Topology *)msync->participants;
           xmi_task_t      *ranks_h = NULL;
           xmi_task_t      *ranks   = NULL;

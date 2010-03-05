@@ -171,7 +171,7 @@ static xmi_result_t SendLongHandoff(xmi_context_t   context,
   size_t remote_context = (task+LONG_DISPATCH)&(num_contexts-1);
   xmi_endpoint_t dest = XMI_Client_endpoint(client, remote_task, remote_context);
 
-  xmi_send_t parameters = { {0}, {0} };
+  xmi_send_t parameters = { {{0,0}, {0,0}}, {0} };
   parameters.send.dispatch        = LONG_DISPATCH;
 /*parameters.send.hints           = {0}; */
   parameters.send.dest            = dest;
@@ -227,7 +227,7 @@ static xmi_result_t SendShortHandoff(xmi_context_t   context,
   size_t remote_context = (task+SHORT_DISPATCH)&(num_contexts-1);
   xmi_endpoint_t dest = XMI_Client_endpoint(client, remote_task, remote_context);
 
-  xmi_send_immediate_t parameters = {0};
+  xmi_send_immediate_t parameters = { {0,0}, {0,0}, 0 };
   parameters.dispatch        = SHORT_DISPATCH;
 /*parameters.hints           = {0}; */
   parameters.dest            = dest;

@@ -97,7 +97,7 @@ void cb_alltoallv (xmi_context_t ctxt, void * clientdata, xmi_result_t res)
 }
 
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -114,7 +114,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 
 
 void _alltoallv (xmi_context_t    context,
-                 xmi_alltoallv_t *xfer,
+                 xmi_xfer_t *xfer,
                  char            *sndbuf,
                  size_t          *sndlens,
                  size_t          *sdispls,
@@ -124,14 +124,14 @@ void _alltoallv (xmi_context_t    context,
 {
   xmi_result_t result;
   _g_alltoallv_active++;
-  xfer->sndbuf        = sndbuf;
-  xfer->stype         = XMI_BYTE;
-  xfer->stypecounts   = sndlens;
-  xfer->sdispls       = sdispls;
-  xfer->rcvbuf        = rcvbuf;
-  xfer->rtype         = XMI_BYTE;
-  xfer->rtypecounts   = rcvlens;
-  xfer->rdispls       = rdispls;
+  xfer->cmd.xfer_alltoallv.sndbuf        = sndbuf;
+  xfer->cmd.xfer_alltoallv.stype         = XMI_BYTE;
+  xfer->cmd.xfer_alltoallv.stypecounts   = sndlens;
+  xfer->cmd.xfer_alltoallv.sdispls       = sdispls;
+  xfer->cmd.xfer_alltoallv.rcvbuf        = rcvbuf;
+  xfer->cmd.xfer_alltoallv.rtype         = XMI_BYTE;
+  xfer->cmd.xfer_alltoallv.rtypecounts   = rcvlens;
+  xfer->cmd.xfer_alltoallv.rdispls       = rdispls;
   result = XMI_Collective (NULL, (xmi_xfer_t*)xfer);
   while (_g_alltoallv_active)
     result = XMI_Context_advance (context, 1);
@@ -182,7 +182,7 @@ int main(int argc, char*argv[])
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -213,8 +213,10 @@ int main(int argc, char*argv[])
                                           XMI_XFER_BARRIER,
                                           algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -241,25 +243,23 @@ int main(int argc, char*argv[])
                                           XMI_XFER_ALLTOALLV,
                                           alltoallvalgorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          alltoallvnum_algorithm[0]);
+                                          alltoallvnum_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
   assert ( sz < MAX_COMM_SIZE );
 
-  xmi_barrier_t barrier;
-  barrier.xfer_type = XMI_XFER_BARRIER;
+  xmi_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
 
-  xmi_alltoallv_t alltoallv;
-  alltoallv.xfer_type  = XMI_XFER_ALLTOALLV;
+  xmi_xfer_t alltoallv;
   alltoallv.cb_done    = cb_alltoallv;
   alltoallv.cookie     = (void*)&_g_alltoallv_active;
-  alltoallv.geometry   = world_geometry;
   alltoallv.algorithm  = alltoallvalgorithm[0];
 
 

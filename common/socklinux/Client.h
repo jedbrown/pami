@@ -160,7 +160,6 @@ namespace XMI
 			break;
 		case XMI_MEM_SIZE:
 		case XMI_PROCESSOR_NAME:
-		case XMI_PROCESSOR_NAME_SIZE:
 		default:
 			break;
 		}

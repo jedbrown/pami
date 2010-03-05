@@ -64,7 +64,7 @@ namespace XMI
     };
 
 
-    class LAPIMcastSendReq
+    class OldLAPIMcastSendReq
     {
     public:
       int                   _count;
@@ -74,7 +74,7 @@ namespace XMI
 
 
 
-    class LAPIMcastMessage
+    class OldLAPIMcastMessage
     {
     public:
       xmi_quad_t     _info[2];
@@ -90,7 +90,7 @@ namespace XMI
       inline int  totalsize () { return _size + sizeof (*this); }
     }__attribute__((__aligned__(16)));;
 
-    class LAPIMcastRecvMessage
+    class OldLAPIMcastRecvMessage
     {
     public:
       size_t              _dispatch_id;
@@ -107,28 +107,28 @@ namespace XMI
       size_t              _counter;
     };
 
-    class LAPIMcastRecvReq
+    class OldLAPIMcastRecvReq
     {
     public:
-      LAPIMcastRecvMessage              _mcast;
+      OldLAPIMcastRecvMessage              _mcast;
       int                               _found;
-      std::list<LAPIMcastRecvMessage*> *_mcastrecvQ;
+      std::list<OldLAPIMcastRecvMessage*> *_mcastrecvQ;
     };
 
-    class LAPIM2MHeader
+    class OldLAPIM2MHeader
     {
     public:
       size_t      _dispatch_id;
       unsigned    _peer;
       unsigned    _size;
       unsigned    _conn;
-      inline void *buffer() { return ((char *)this + sizeof (LAPIM2MHeader)); }
-      inline int  totalsize () { return _size + sizeof (LAPIM2MHeader); }
+      inline void *buffer() { return ((char *)this + sizeof (OldLAPIM2MHeader)); }
+      inline int  totalsize () { return _size + sizeof (OldLAPIM2MHeader); }
     };
 
 
 
-    class LAPIM2MMessage
+    class OldLAPIM2MMessage
     {
     public:
       xmi_context_t       _context;
@@ -137,11 +137,11 @@ namespace XMI
       void               *_cookie;
       int                 _num;
       int                 _numdone;
-      LAPIM2MHeader      *_send_headers;
+      OldLAPIM2MHeader      *_send_headers;
     };
 
     template <class T_Counter>
-    class LAPIM2MRecvMessage
+    class OldLAPIM2MRecvMessage
     {
     public:
       size_t              _dispatch_id;
@@ -153,11 +153,18 @@ namespace XMI
       T_Counter          *_sizes;
       T_Counter          *_offsets;
       unsigned            _nranks;
-      std::list<LAPIM2MRecvMessage*> *_m2mrecvQ;
+      std::list<OldLAPIM2MRecvMessage*> *_m2mrecvQ;
     };
 
 
-    class LAPIMSyncMessage
+
+    class LAPIMcastMessage
+    {
+    public:
+      unsigned toimpl;
+    };
+
+    class LAPIMsyncMessage
     {
     public:
       xmi_callback_t _cb_done;
@@ -167,6 +174,18 @@ namespace XMI
       {
         unsigned       _connection_id;
       }_p2p_msg;
+    };
+
+    class LAPIMcombineMessage
+    {
+    public:
+      unsigned toimpl;
+    };
+
+    class LAPIM2MMessage
+    {
+    public:
+      unsigned toimpl;
     };
 
   };

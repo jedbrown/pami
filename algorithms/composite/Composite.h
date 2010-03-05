@@ -41,7 +41,7 @@ namespace CCMI
 
       virtual void start() {
 	//Currently not all composites implement this method
-	CCMI_abort();
+//	CCMI_abort();
       }
 
     protected:

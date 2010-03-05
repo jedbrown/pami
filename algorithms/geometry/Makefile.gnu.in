@@ -12,6 +12,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		=
 NOTBUILT        =
-# @LIBNAME@-""-DEFAULT_SOURCES=
-# DEVICENAME     = @LIBNAME@-""-DEFAULT
+@LIBNAME@-""-GEOMETRY_SOURCES=GeometryTable.cc
+DEVICENAME     = @LIBNAME@-""-GEOMETRY
 include @abs_top_builddir@/Build.rules

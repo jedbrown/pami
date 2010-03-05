@@ -14,10 +14,12 @@ namespace CCMI
   {
     namespace Barrier
     {
+
       // Old, deprecated interfaces for transition from OldMulticast to Multisync
       ///
       /// \brief Binomial barrier
       ///
+      typedef bool (*AnalyzeFn) (XMI_GEOMETRY_CLASS *g);
       template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Mcast>
       class OldBarrierT : public CCMI::Executor::Composite
       {
@@ -70,7 +72,7 @@ namespace CCMI
       /// \brief Barrier Factory Base class.
       ///
       template <class T, class T_Sysdep, class T_Mcast>
-      class OldBarrierFactoryT : private CollectiveProtocolFactory
+      class OldBarrierFactoryT : public CollectiveProtocolFactory
       {
       protected:
         T_Mcast                * _mcastInterface;
@@ -98,10 +100,20 @@ namespace CCMI
 	  setMapIdToGeometry (cb_geometry);
         }
 
-        bool Analyze(XMI_GEOMETRY_CLASS *geometry)
+        virtual void metadata(xmi_metadata_t *mdata)
         {
-          return T::analyze (geometry);
+            strcpy(mdata->name, "OldCCMIBarrier");
         }
+
+        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+                                               void                      * cmd)
+
+          {
+            XMI_GEOMETRY_CLASS  *g = ( XMI_GEOMETRY_CLASS *)geometry;
+            return (Executor::Composite *) g->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+          }
+
+
 
         ///
         /// \brief Generate a non-blocking barrier message.
@@ -145,6 +157,7 @@ namespace CCMI
             XMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
           }
           assert(geometry != NULL);
+
           T *composite = (T*) geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
           CCMI_assert (composite != NULL);
           TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",

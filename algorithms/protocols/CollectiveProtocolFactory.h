@@ -14,10 +14,16 @@
 #ifndef __algorithms_protocols_CollectiveProtocolFactory_h__
 #define __algorithms_protocols_CollectiveProtocolFactory_h__
 
+//#include "TypeDefs.h"
+#include "algorithms/interfaces/Executor.h"
+#include "algorithms/composite/Composite.h"
+
 namespace CCMI
 {
   namespace Adaptor
   {
+
+
     class CollectiveProtocolFactory
     {
     public:
@@ -45,19 +51,17 @@ namespace CCMI
         CCMI_abort();
       }
 
-      /// \brief All protocols determine if a given geometry is adequate
-      virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest) = 0;
+      virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+					     void                      * cmd) = 0;
 
-      virtual Executor::Composite * generate(void                      * request_buf,
-					     size_t                      rsize,
-					     xmi_context_t               context,
-					     xmi_geometry_t              geometry,
-					     void                      * cmd)
+      virtual void metadata(xmi_metadata_t *mdata) = 0;
+
+      virtual void setAsyncInfo (bool                          is_buffered,
+                                 xmi_dispatch_callback_fn      cb_async,
+                                 xmi_mapidtogeometry_fn        cb_geometry)
 	{
-	  //The main all protocol generate function
-	  CCMI_abort();
-    return((Executor::Composite *)NULL);
-	}
+          XMI_abort();
+        };
 
     protected:
       xmi_mapidtogeometry_fn     _cb_geometry;

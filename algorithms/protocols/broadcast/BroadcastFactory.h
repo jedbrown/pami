@@ -29,8 +29,6 @@ namespace CCMI
       ///
       /// \brief choose if this protocol is supports the input geometry
       ///
-      typedef bool      (*AnalyzeFn)   (XMI_GEOMETRY_CLASS                  * g);
-
       bool true_analyze (XMI_GEOMETRY_CLASS *geometry)
       {
         return true;
@@ -171,15 +169,15 @@ namespace CCMI
         /// \brief Utility functions
         ///
         void setAsyncInfo (bool                          is_buffered,
-                           xmi_olddispatch_multicast_fn  cb_async,
+                           xmi_dispatch_callback_fn   cb_async,
                            xmi_mapidtogeometry_fn          cb_geometry)
         {
           _isBuffered = is_buffered;
 
           if(!_isBuffered)
           {
-            CCMI_assert (cb_async != NULL);
-            _cb_async    =  cb_async;
+            CCMI_assert (cb_async.ambroadcast != NULL);
+            _cb_async    =  cb_async.ambroadcast;
             _minterface->setCallback (_cb_head, this);
           }
           else

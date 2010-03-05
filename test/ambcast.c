@@ -36,7 +36,7 @@ void cb_ambcast_done (void *context, void * clientdata, xmi_result_t err)
 
 
 void cb_bcast_recv  (xmi_context_t         context,
-                     unsigned              root,
+                     size_t                root,
                      xmi_geometry_t        geometry,
                      const size_t          sndlen,
                      void                * user_header,
@@ -47,11 +47,12 @@ void cb_bcast_recv  (xmi_context_t         context,
                      xmi_event_function  * const cb_info,
                      void                ** cookie)
 {
+
   *rcvbuf                        = malloc(sndlen);
   *rtype                         = XMI_BYTE;
   *rtypecount                    = sndlen;
   *cb_info                       = cb_ambcast_done;
-  *cookie                        = (void*)rcvbuf;
+  *cookie                        = (void*)*rcvbuf;
 }
 
 static double timer()
@@ -73,7 +74,7 @@ void cb_broadcast (void *context, void * clientdata, xmi_result_t res)
     (*active)--;
 }
 
-void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
+void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
 {
   _g_barrier_active++;
   xmi_result_t result;
@@ -89,7 +90,7 @@ void _barrier (xmi_context_t context, xmi_barrier_t *barrier)
 }
 
 
-void _broadcast (xmi_context_t context, xmi_ambroadcast_t *broadcast)
+void _broadcast (xmi_context_t context, xmi_xfer_t *broadcast)
 {
   _g_broadcast_active++;
   xmi_result_t result;
@@ -138,7 +139,7 @@ int main(int argc, char*argv[])
 
 
   xmi_geometry_t  world_geometry;
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -169,8 +170,10 @@ int main(int argc, char*argv[])
                                           XMI_XFER_BARRIER,
                                           algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -178,27 +181,18 @@ int main(int argc, char*argv[])
   unsigned i,j,root = 0;
   _g_recv_buffer = rbuf;
 
-
-  if (rank == root)
-      {
-        printf("# Broadcast Bandwidth Test -- root = %d\n", root);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-        printf("# -----------      -----------    -----------    ---------\n");
-      }
-
-  xmi_barrier_t barrier;
-  barrier.xfer_type = XMI_XFER_BARRIER;
+  xmi_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
   _barrier(context, &barrier);
 
   xmi_algorithm_t *bcastalgorithm=NULL;
+  xmi_metadata_t *metas=NULL;
   int bcastnum_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(context,
                                        world_geometry,
-                                       XMI_XFER_BROADCAST,
+                                       XMI_XFER_AMBROADCAST,
                                        bcastnum_algorithm);
 
   if (result != XMI_SUCCESS)
@@ -213,27 +207,44 @@ int main(int argc, char*argv[])
   {
     bcastalgorithm = (xmi_algorithm_t*)
       malloc(sizeof(xmi_algorithm_t) * bcastnum_algorithm[0]);
-
+   metas = (xmi_metadata_t*)
+      malloc(sizeof(xmi_metadata_t) * bcastnum_algorithm[0]);
     result = XMI_Geometry_algorithms_info(context,
                                           world_geometry,
-                                          XMI_XFER_BROADCAST,
+                                          XMI_XFER_AMBROADCAST,
                                           bcastalgorithm,
-                                          (xmi_metadata_t*)NULL,
-                                          algorithm_type = 0,
-                                          bcastnum_algorithm[0]);
+                                          metas,
+                                          bcastnum_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
   }
-  xmi_ambroadcast_t broadcast;
-  broadcast.xfer_type = XMI_XFER_AMBROADCAST;
+  xmi_xfer_t broadcast;
   broadcast.cb_done   = cb_broadcast;
   broadcast.cookie    = (void*)&_g_broadcast_active;
-  broadcast.geometry  = world_geometry;
   broadcast.algorithm = bcastalgorithm[0];
-  broadcast.user_header  = NULL;
-  broadcast.headerlen    = 0;
-  broadcast.sndbuf       = buf;
-  broadcast.stype        = XMI_BYTE;
-  broadcast.stypecount   = 0;
+  broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
+  broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
+  broadcast.cmd.xfer_ambroadcast.sndbuf       = buf;
+  broadcast.cmd.xfer_ambroadcast.stype        = XMI_BYTE;
+  broadcast.cmd.xfer_ambroadcast.stypecount   = 0;
 
+  if (rank == root)
+      {
+        printf("# Broadcast Bandwidth Test -- root = %d, %s\n", root, metas[0].name);
+        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# -----------      -----------    -----------    ---------\n");
+      }
+
+  xmi_collective_hint_t h;
+  xmi_dispatch_callback_fn fn;
+  fn.ambroadcast = cb_bcast_recv;
+  XMI_AMCollective_dispatch_set(context,
+                                bcastalgorithm[0],
+                                0,
+                                fn,
+                                NULL,
+                                h);
 
     _barrier (context, &barrier);
   for(i=1; i<=BUFSIZE; i*=2)
@@ -245,12 +256,11 @@ int main(int argc, char*argv[])
               ti = timer();
               for (j=0; j<niter; j++)
                   {
-                    broadcast.stypecount = 0;
+                    broadcast.cmd.xfer_ambroadcast.stypecount = i;
                     _broadcast (context,&broadcast);
                   }
               while (_g_broadcast_active)
                 result = XMI_Context_advance (context, 1);
-
               _barrier(context, &barrier);
               tf = timer();
               usec = (tf - ti)/(double)niter;
@@ -265,6 +275,7 @@ int main(int argc, char*argv[])
             {
               while(_g_total_broadcasts < niter)
                 result = XMI_Context_advance (context, 1);
+
               _g_total_broadcasts = 0;
               _barrier(context, &barrier);
 

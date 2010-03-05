@@ -182,7 +182,7 @@ int main(int argc, char*argv[])
 
   xmi_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (context, &world_geometry);
+  result = XMI_Geometry_world (client, &world_geometry);
   if (result != XMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
@@ -209,12 +209,12 @@ int main(int argc, char*argv[])
     algorithm = (xmi_algorithm_t*)
                 malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
     result = XMI_Geometry_algorithms_info(context,
-                                          world_geometry,
-                                          XMI_XFER_BARRIER,
                                           algorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          num_algorithm[0]);
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
@@ -237,29 +237,25 @@ int main(int argc, char*argv[])
     algorithm = (xmi_algorithm_t*)
                 malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
     result = XMI_Geometry_algorithms_info(context,
-                                          world_geometry,
-                                          XMI_XFER_ALLTOALLV,
                                           alltoallvalgorithm,
                                           (xmi_metadata_t*)NULL,
-                                          algorithm_type,
-                                          alltoallvnum_algorithm[0]);
+                                          alltoallvnum_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
 
   }
 
   assert ( sz < MAX_COMM_SIZE );
 
   xmi_barrier_t barrier;
-  barrier.xfer_type = XMI_XFER_BARRIER;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.geometry  = world_geometry;
   barrier.algorithm = algorithm[0];
 
   xmi_alltoallv_t alltoallv;
-  alltoallv.xfer_type  = XMI_XFER_ALLTOALLV;
   alltoallv.cb_done    = cb_alltoallv;
   alltoallv.cookie     = (void*)&_g_alltoallv_active;
-  alltoallv.geometry   = world_geometry;
   alltoallv.algorithm  = alltoallvalgorithm[0];
 
 

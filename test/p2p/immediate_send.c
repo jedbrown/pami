@@ -16,7 +16,7 @@ static void test_dispatch (
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called dispatch function.  cookie = %p (active: %zu -> %zu), header_size = %zu, pipe_size = %zu\n", cookie, *active, *active-1, header_size, pipe_size);
+  fprintf (stderr, "Called dispatch function.  cookie = %p (active: %zu -> %zu), header_size = %zu, pipe_size = %zu, recv = %p\n", cookie, *active, *active-1, header_size, pipe_size, recv);
   (*active)--;
   fprintf (stderr, ">>> [%zu] %s\n", header_size, (char *) header_addr);
   fprintf (stderr, ">>> [%zu] %s\n", pipe_size, (char *) pipe_addr);

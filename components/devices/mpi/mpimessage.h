@@ -17,6 +17,7 @@
 #include "sys/xmi.h"
 #include "util/common.h"
 #include "util/queue/Queue.h"
+#include "PipeWorkQueue.h"
 #include <mpi.h>
 
 //#define EMULATE_NONDETERMINISTIC_DEVICE
@@ -84,7 +85,7 @@ namespace XMI
     };
 
 
-    class MPIMcastMessage
+    class OldMPIMcastMessage
     {
     public:
       xmi_client_t  _client;
@@ -101,7 +102,7 @@ namespace XMI
       inline int  totalsize () { return _size + sizeof (*this); }
     };
 
-    class MPIMcastRecvMessage
+    class OldMPIMcastRecvMessage
     {
     public:
       size_t              _dispatch_id;
@@ -159,7 +160,7 @@ namespace XMI
     };
 
 
-    class MPIMSyncMessage
+    class MPIMsyncMessage
     {
     public:
       xmi_callback_t _cb_done;
@@ -178,6 +179,42 @@ namespace XMI
       }_p2p_msg;
     };
 
+    class MPIMcastMessage
+    {
+    public:
+      xmi_callback_t      _cb_done;
+      XMI::Topology      *_srcranks;
+      XMI::Topology      *_dstranks;
+      XMI::PipeWorkQueue *_srcpwq;
+      XMI::PipeWorkQueue *_dstpwq;
+      size_t              _root;
+      size_t              _bytes;
+      size_t              _currBytes;
+      char               *_currBuf;
+      xmi_task_t         *_ranks;
+      size_t              _numRanks;
+      size_t              _dests[64];
+      size_t              _srcs[64];
+      MPI_Request         _reqs[64];
+      struct _p2p_msg
+      {
+        unsigned       _connection_id;
+      }_p2p_msg;
+    };
+
+    class MPIMcastRecvMessage
+    {
+    public:
+
+
+    };
+
+
+    class MPIMcombineMessage
+    {
+    public:
+      unsigned toimpl;
+    };
 
   };
 };

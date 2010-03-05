@@ -31,13 +31,13 @@ namespace XMI
         Interface::OldmulticastModel<MPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message> (device),
 	  _device(device)
 	  {
-            _dispatch_id = _device.initMcast();
+            _dispatch_id = _device.initOldMcast();
           TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel() %d\n",this, _dispatch_id));
           };
 
 	inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
         {
-          _device.registerMcastRecvFunction (_dispatch_id, cb_recv, arg);
+          _device.registerOldMcastRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
 	inline unsigned  send   (XMI_Request_t             * request,
@@ -55,7 +55,7 @@ namespace XMI
 				 xmi_dt                      dtype = XMI_UNDEFINED_DT )
         {
 
-	  MPIMcastMessage *hdr = (MPIMcastMessage *) malloc (sizeof (MPIMcastMessage) + size);
+	  OldMPIMcastMessage *hdr = (OldMPIMcastMessage *) malloc (sizeof (OldMPIMcastMessage) + size);
           XMI_assert( hdr != NULL );
           hdr->_dispatch_id = _dispatch_id;
           hdr->_info_count  = info_count;
@@ -129,7 +129,7 @@ namespace XMI
                                   xmi_dt                   dtype  = XMI_UNDEFINED_DT)
         {
 
-          MPIMcastRecvMessage *msg = (MPIMcastRecvMessage*)malloc(sizeof(*msg));
+          OldMPIMcastRecvMessage *msg = (OldMPIMcastRecvMessage*)malloc(sizeof(*msg));
           msg->_dispatch_id = _dispatch_id;
           msg->_conn     = conn_id;
           msg->_done_fn  = cb_done->function;

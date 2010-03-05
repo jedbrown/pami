@@ -21,6 +21,8 @@ namespace XMI
   {
     namespace Mapping
     {
+      static const unsigned char TorusPositive = 0x01; /// positive torus direction flag
+      static const unsigned char TorusNegative = 0x02; /// negative torus direction flag
       ///
       /// \param T_Mapping Torus mapping template class
       ///

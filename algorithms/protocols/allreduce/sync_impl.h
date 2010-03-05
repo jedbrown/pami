@@ -39,6 +39,13 @@ namespace CCMI
       ///
       namespace Binomial
       {
+
+        void binomial_ar_md(xmi_metadata_t *m)
+         {
+           // \todo:  fill in other metadata
+           strcpy(&m->name[0],"OldCCMIBinomialAllreduce");
+         }
+
         typedef CompositeT
         <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
          CCMI::Executor::Allreduce<XMI_COLL_MCAST_CLASS,XMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS> >,
@@ -50,7 +57,8 @@ namespace CCMI
         <CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS>,
          CCMI::Adaptor::Allreduce::Binomial::Composite,
          XMI_SYSDEP_CLASS,
-         XMI_COLL_MCAST_CLASS>
+         XMI_COLL_MCAST_CLASS,
+         binomial_ar_md>
         Factory;
       };
       // Specializations for Binomial templates.
@@ -74,6 +82,12 @@ namespace CCMI
       ///
       namespace ShortBinomial
       {
+        void short_ar_md(xmi_metadata_t *m)
+         {
+           // \todo:  fill in other metadata
+           strcpy(&m->name[0],"OldCCMIShortAllreduce");
+         }
+
         typedef CompositeT
         <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
          CCMI::Executor::AllreduceBase<XMI_COLL_MCAST_CLASS,XMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS> >,
@@ -86,7 +100,8 @@ namespace CCMI
         <CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS>,
          CCMI::Adaptor::Allreduce::ShortBinomial::Composite,
          XMI_SYSDEP_CLASS,
-         XMI_COLL_MCAST_CLASS>
+         XMI_COLL_MCAST_CLASS,
+         short_ar_md>
         Factory;
       };
       // Specializations for Binomial templates.
@@ -110,6 +125,13 @@ namespace CCMI
       ///
       namespace Ring
       {
+
+         void ring_ar_md(xmi_metadata_t *m)
+         {
+           // \todo:  fill in other metadata
+           strcpy(&m->name[0],"OldCCMIRingAllreduce");
+         }
+
         typedef CompositeT
         <CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>,
          CCMI::Executor::PipelinedAllreduce<XMI_COLL_MCAST_CLASS,XMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS> >,
@@ -122,7 +144,8 @@ namespace CCMI
         <CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS>,
          CCMI::Adaptor::Allreduce::Ring::Composite,
          XMI_SYSDEP_CLASS,
-         XMI_COLL_MCAST_CLASS>
+         XMI_COLL_MCAST_CLASS,
+         ring_ar_md>
         Factory;
       };
       // Specializations for Ring templates.
@@ -147,6 +170,12 @@ namespace CCMI
       ///
       namespace RingReduce
       {
+         void ring_r_md(xmi_metadata_t *m)
+         {
+           // \todo:  fill in other metadata
+           strcpy(&m->name[0],"OldCCMIRingReduce");
+         }
+
         typedef CompositeT
         <CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>,
          CCMI::Executor::Allreduce<XMI_COLL_MCAST_CLASS,XMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS> >,
@@ -159,7 +188,8 @@ namespace CCMI
         <CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS>,
          CCMI::Adaptor::Allreduce::RingReduce::Composite,
          XMI_SYSDEP_CLASS,
-         XMI_COLL_MCAST_CLASS> Factory;
+         XMI_COLL_MCAST_CLASS,
+         ring_r_md> Factory;
       };
       // Specializations for Ring templates.
       ///

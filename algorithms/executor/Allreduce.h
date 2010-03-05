@@ -351,7 +351,9 @@ CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecvHea
                                           unsigned        * pipewidth,
                                           XMI_Callback_t * cb_done)
 {
-  CCMI_assert(!_delayAdvance); /// \todo Don't expect to receive within send() processing but
+  // Removed this assert...
+//  CCMI_assert(!_delayAdvance); /// \todo Don't expect to receive within send() processing but
+
   /// this could change in the future
 
   CCMI_assert(count == 1);

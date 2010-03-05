@@ -439,36 +439,72 @@ extern "C" xmi_result_t XMI_Fence_task (xmi_context_t        context,
 
 
 ///
-/// \copydoc XMI_Geometry_initialize
+/// \copydoc XMI_Geometry_create_taskrange
 ///
-extern "C" xmi_result_t XMI_Geometry_initialize (xmi_context_t               context,
+extern "C" xmi_result_t XMI_Geometry_create_taskrange (xmi_client_t                client,
                                       xmi_geometry_t            * geometry,
+                                                       xmi_geometry_t              parent,
                                       unsigned                    id,
-                                      xmi_geometry_range_t      * rank_slices,
-                                      size_t                      slice_count)
+                                                       xmi_geometry_range_t      * task_slices,
+                                                       size_t                      slice_count,
+                                                       xmi_context_t               context,
+                                                       xmi_event_function          fn,
+                                                       void                      * cookie)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
-  return ctx->geometry_initialize (geometry,id,rank_slices,slice_count);
+  XMI::Client * _client = (XMI::Client *) client;
+  return _client->geometry_create_taskrange (geometry,
+                                             parent,
+                                             id,
+                                             task_slices,
+                                             slice_count,
+                                             context,
+                                             fn,
+                                             cookie);
 }
+
+///
+/// \copydoc XMI_Geometry_create_taskrange
+///
+extern "C" xmi_result_t XMI_Geometry_create_tasklist (xmi_client_t                client,
+                                                      xmi_geometry_t            * geometry,
+                                                      xmi_geometry_t              parent,
+                                                      unsigned                    id,
+                                                      xmi_task_t                * tasks,
+                                                      size_t                      task_count,
+                                                      xmi_context_t               context,
+                                                      xmi_event_function          fn,
+                                                      void                      * cookie)
+{
+  XMI::Client * _client = (XMI::Client *) client;
+  return _client->geometry_create_tasklist (geometry,
+                                            parent,
+                                            id,
+                                            tasks,
+                                            task_count,
+                                            context,
+                                            fn,
+                                            cookie);
+}
+
 
 ///
 /// \copydoc XMI_Geometry_world
 ///
-extern "C" xmi_result_t XMI_Geometry_world (xmi_context_t               context,
+extern "C" xmi_result_t XMI_Geometry_world (xmi_client_t                client,
                                  xmi_geometry_t            * world_geometry)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
-  return ctx->geometry_world (world_geometry);
+  XMI::Client * _client = (XMI::Client *) client;
+  return _client->geometry_world (world_geometry);
 }
 
 ///
-/// \copydoc XMI_Geometry_finalize
+/// \copydoc XMI_Geometry_destroy
 ///
-extern "C" xmi_result_t XMI_Geometry_finalize(xmi_context_t   context,
+extern "C" xmi_result_t XMI_Geometry_destroy(xmi_client_t    client,
                                    xmi_geometry_t  geometry)
 {
-  XMI::Context * ctx = (XMI::Context *) context;
-  return ctx->geometry_finalize (geometry);
+  XMI::Client * _client = (XMI::Client *) client;
+  return _client->geometry_destroy (geometry);
 }
 
 ///
@@ -486,7 +522,7 @@ extern "C" xmi_result_t XMI_Collective (xmi_context_t   context,
 extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
                                                      xmi_geometry_t geometry,
                                                      xmi_xfer_type_t coll_type,
-                                                     int *lists_lengths)
+                                                     int              lists_lengths[2])
 {
   XMI::Context * ctx = (XMI::Context *) context;
   return ctx->geometry_algorithms_num (geometry,
@@ -498,19 +534,23 @@ extern "C" xmi_result_t XMI_Geometry_algorithms_num (xmi_context_t context,
 ///
 extern "C"  xmi_result_t XMI_Geometry_algorithms_info (xmi_context_t context,
                                                        xmi_geometry_t geometry,
-                                                       xmi_xfer_type_t type,
-                                                       xmi_algorithm_t *algs,
-                                                       xmi_metadata_t *mdata,
-                                                       int algorithm_type,
-                                                       int num)
+                                                       xmi_xfer_type_t   colltype,
+                                                       xmi_algorithm_t  *algs0,
+                                                       xmi_metadata_t   *mdata0,
+                                                       int               num0,
+                                                       xmi_algorithm_t  *algs1,
+                                                       xmi_metadata_t   *mdata1,
+                                                       int               num1)
 {
   XMI::Context * ctx = (XMI::Context *) context;
   return ctx->geometry_algorithms_info (geometry,
-                                        type,
-                                        algs,
-                                        mdata,
-                                        algorithm_type,
-                                        num);
+                                        colltype,
+                                        algs0,
+                                        mdata0,
+                                        num0,
+                                        algs1,
+                                        mdata1,
+                                        num1);
 }
 ///
 
@@ -600,6 +640,19 @@ extern "C" xmi_result_t XMI_Dispatch_set_new(xmi_context_t  context,
   }
 //#endif
 
+///
+/// \copydoc XMI_AMCollective_dispatch_set
+///
+extern "C" xmi_result_t XMI_AMCollective_dispatch_set(xmi_context_t              context,
+                                                      xmi_algorithm_t            algorithm,
+                                                      size_t                     dispatch,
+                                                      xmi_dispatch_callback_fn   fn,
+                                                      void                     * cookie,
+                                                      xmi_collective_hint_t      options)
+{
+  XMI::Context * ctx = (XMI::Context *) context;
+  return ctx->amcollective_dispatch (algorithm, dispatch, fn, cookie, options);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from xmi_datatypes.h                                             //

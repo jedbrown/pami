@@ -52,7 +52,8 @@ namespace XMI
         ///
         /// \brief Retreives the rank of the task in this job.
         ///
-        size_t rank() const { return Network_Config.Rank; }
+	// Rank is not part of the personality
+        //size_t rank() const { return Network_Config.Rank; }
 
 
         ///
