@@ -89,6 +89,7 @@ namespace XMI
           if (_device->writeSinglePacket (_fifo, _dispatch_id, _metadata, _metasize,
                                           _iov, _niov, sequence) == XMI_SUCCESS)
             {
+              this->setStatus(XMI::Device::Done);
               invokeCompletionFunction (context);
               return XMI_SUCCESS;
             }
@@ -165,6 +166,7 @@ namespace XMI
               if (this->__iov.iov_len <= bytes)
                 {
                   TRACE_ERR((stderr, "   ShmemMultiPacketMessage::advance() .. before this->invokeCompletionFunction()\n"));
+                  this->setStatus(XMI::Device::Done);
                   this->invokeCompletionFunction (context);
                   TRACE_ERR((stderr, "<< ShmemMultiPacketMessage::advance() .. return true (== \"done\")\n"));
                   return XMI_SUCCESS;
