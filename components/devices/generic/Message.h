@@ -81,12 +81,10 @@ public:
 
 	/// \brief get client associated with message
 	/// \return	client for message posting/completion
-	/// \ingroup gendev_subdev_api
 	size_t getClientId() { return _client; }
 
 	/// \brief get context ID associated with message
 	/// \return	Context ID for message posting/completion
-	/// \ingroup gendev_subdev_api
 	size_t getContextId() { return _context; }
 
 	///  \brief Query function to determine message state
@@ -103,7 +101,6 @@ public:
 	/// \brief     Returns the done status of the message
 	///
 	/// \return	true is message is Done
-	/// \ingroup gendev_subdev_api
 	///
 	inline bool isDone() {return (getStatus() == Done);}
 
@@ -117,7 +114,6 @@ public:
 	///
 	/// \param[in] ctx	The context object on which completion is called
 	/// \param[in] err	Optional error status (default is success)
-	/// \ingroup gendev_subdev_api
 	///
 	void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS) {
 		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
@@ -129,7 +125,6 @@ public:
 	/// This may not be the actual sub-device paired with the message.
 	///
 	/// \return	Reference to sub-device
-	/// \ingroup gendev_subdev_api
 	///
 	inline GenericDeviceMessageQueue *getQS() { return _QS; }
 
@@ -139,16 +134,15 @@ public:
 	///
 	/// \param[in] devQueued	was msg was previously posted to sub-device?
 	/// \return	bool whether message is complete
-	/// \ingroup gendev_subdev_api
 	///
 	virtual xmi_context_t postNext(bool devQueued) = 0;
 
 protected:
-	MessageStatus _status;
-	GenericDeviceMessageQueue *_QS;
-	size_t _client;
-	size_t _context;
-	xmi_callback_t _cb;
+	MessageStatus _status;		///< current message status
+	GenericDeviceMessageQueue *_QS; ///< send queue associated with message
+	size_t _client;			///< client ID for message
+	size_t _context;		///< context ID for message
+	xmi_callback_t _cb;		///< completion callback
 }; /* class GenericMessage */
 
 }; /* namespace Generic */

@@ -32,17 +32,17 @@
 ///
 /// \subsection use_gendev_suppt_thr THREAD SUPPORT
 ///
-/// \ref GenericAdvanceThread "class GenericAdvanceThread"
+/// \ref XMI::Device::Generic::GenericAdvanceThread "class GenericAdvanceThread"
 ///
 /// \subsubsection use_gendev_suppt_thr_p Provides:
 ///
-/// \ref GenericAdvanceThread::setMsg "void setMsg(GenericMessage *msg)"
+/// \ref XMI::Device::Generic::GenericAdvanceThread::setMsg "void setMsg(GenericMessage *msg)"
 ///
-/// \ref GenericAdvanceThread::getMsg "GenericMessage *getMsg()"
+/// \ref XMI::Device::Generic::GenericAdvanceThread::getMsg "GenericMessage *getMsg()"
 ///
-/// \ref GenericAdvanceThread::setAdv "void setAdv(xmi_work_function advThr)"
+/// \ref XMI::Device::Generic::GenericAdvanceThread::setAdv "void setAdv(xmi_work_function advThr)"
 ///
-/// \ref SimpleAdvanceThread "class SimpleAdvanceThread"
+/// \ref XMI::Device::Generic::SimpleAdvanceThread "class SimpleAdvanceThread"
 ///
 /// Basic thread object for messages that move data. Adds a "bytes left" field.
 /// Inherits from GenericAdvanceThread (and, by definition, GenericThread).
@@ -50,11 +50,11 @@
 ///
 /// Provides:
 ///
-/// \ref SimpleAdvanceThread::_bytesLeft "size_t _bytesLeft (public data member)"
+/// \ref XMI::Device::Generic::SimpleAdvanceThread::_bytesLeft "size_t _bytesLeft (public data member)"
 ///
 /// \subsection use_gendev_suppt_msg MESSAGE SUPPORT
 ///
-/// \ref DECL_ADVANCE_ROUTINE "DECL_ADVANCE_ROUTINE(method, message, thread)"
+/// \ref XMI::Device::Generic::DECL_ADVANCE_ROUTINE "DECL_ADVANCE_ROUTINE(method, message, thread)"
 ///
 ///  Declare a static advance function stub (e.g. that may be use in setAdv()) which
 ///  calls an inlined function by the same name prepended with double-underscore.
@@ -63,14 +63,14 @@
 ///
 /// \subsubsection use_gendev_suppt_msg_decl_c Creates:
 ///
-/// \ref DECL_ADVANCE_ROUTINE::method "xmi_result_t method(xmi_context_t, void *)"
+/// \ref XMI::Device::Generic::method "xmi_result_t method(xmi_context_t, void *)"
 ///
 /// \subsubsection use_gendev_suppt_msg_decl_r Requires:
 ///
-/// \ref DECL_ADVANCE_ROUTINE::__method "xmi_result_t __method(thread *)"
+/// \ref XMI::Device::Generic::__method "xmi_result_t __method(thread *)"
 ///
 ///
-/// \ref DECL_ADVANCE_ROUTINE2 "DECL_ADVANCE_ROUTINE2(method, message, thread)"
+/// \ref XMI::Device::Generic::DECL_ADVANCE_ROUTINE2 "DECL_ADVANCE_ROUTINE2(method, message, thread)"
 ///
 ///   Declare a static advance function stub (e.g. that may be use in setAdv()) which
 ///   calls an inlined function by the same name prepended with double-underscore.
@@ -79,11 +79,11 @@
 ///
 /// \subsubsection use_gendev_suppt_msg_decl2_c Creates:
 ///
-/// \ref DECL_ADVANCE_ROUTINE2::method "xmi_result_t method(xmi_context_t, void *)"
+/// \ref XMI::Device::Generic::method "xmi_result_t method(xmi_context_t, void *)"
 ///
 /// \subsubsection use_gendev_suppt_msg_decl2_r Requires:
 ///
-/// \ref DECL_ADVANCE_ROUTINE2::__method "xmi_result_t __method(xmi_context_t, thread *)"
+/// \ref XMI::Device::Generic::__method "xmi_result_t __method(xmi_context_t, thread *)"
 ///
 ///
 /// \subsection use_gendev_suppt_dev DEVICE SUPPORT
@@ -101,8 +101,10 @@
 /// \ref T_Message::setThreads "int msg->setThreads(thread **t)"
 ///
 ///
-///  class CommonQueueSubDevice
-///  class SharedQueueSubDevice<commondevice, thread, nthreads>
+/// \subsection use_gendev_suppt_dev_comshr Single Global Device with multiple Message types
+///
+/// \ref XMI::Device::Generic::CommonQueueSubDevice "class CommonQueueSubDevice"
+/// \ref XMI::Device::Generic::SharedQueueSubDevice "class SharedQueueSubDevice<commondevice, thread, nthreads>"
 ///
 ///   A pair of classes that support a device model where there is a single
 ///   hardware device (and send queue) that is used by multiple different
@@ -112,7 +114,7 @@
 ///   allreduce supporting double-sums (on hardware that does not directly
 ///   support floating point operations).
 ///
-///   Provides:
+/// \subsubsection use_gendev_suppt_dev_comshr_p Provides:
 ///
 
 namespace XMI {
@@ -153,7 +155,7 @@ public:
 	inline GenericMessage *getMsg() { return _msg; }
 
 protected:
-	GenericMessage *_msg;
+	GenericMessage *_msg;	///< the message on which thread is working
 }; /* class GenericAdvanceThread */
 
 //////////////////////////////////////////////////////////////////////
@@ -196,7 +198,7 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	return msg->__##method(thr);				\
 }
 
-/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE::method(xmi_context_t ctx, void *thr)
+/// \fn static xmi_result_t method(xmi_context_t ctx, void *thr)
 /// \brief Static function used for advancing work on thread/message
 ///
 /// The static advance function stub, suitable for use in setAdv().
@@ -205,7 +207,7 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 /// \param[in] thr	The thread object being worked
 /// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
 
-/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE::__method(thread *thr)
+/// \fn static xmi_result_t __method(thread *thr)
 /// \brief Inline function used for advancing work on thread/message
 ///
 /// The actual advance function.
@@ -234,16 +236,7 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	return msg->__##method(context, thr);			\
 }
 
-/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE2::method(xmi_context_t ctx, void *thr)
-/// \brief Static function used for advancing work on thread/message
-///
-/// The static advance function stub, suitable for use in setAdv().
-///
-/// \param[in] ctx	The context on which working is being done
-/// \param[in] thr	The thread object being worked
-/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
-
-/// \fn static xmi_result_t DECL_ADVANCE_ROUTINE2::__method(xmi_context_t ctx, thread *thr)
+/// \fn static xmi_result_t __method(xmi_context_t ctx, thread *thr)
 /// \brief Inline function used for advancing work on thread/message
 ///
 /// The actual advance function. Has access to context if needed.
@@ -418,8 +411,8 @@ public:
 	}
 
 protected:
-	T_Thread _threads[N_Threads];
-	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
+	T_Thread _threads[N_Threads];	///< Threads for current message on device
+	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS]; ///< generic device arrays
 }; // class MultiSendQSubDevice
 
 ///
@@ -428,13 +421,14 @@ protected:
 /// would each refer to a common instance of this class object when doing their
 /// init. The Device class of each set would inherit from SharedQueueSubDevice.
 ///
-/// Supports only one active message at a time.
+/// Supports only one message active at a time.
 ///
 class CommonQueueSubDevice : public GenericDeviceMessageQueue {
 	#define ATOMIC_BUF_SIZE	16
 
 public:
 
+	/// \brief Default constructor for CommonQueueSubDevice
 	CommonQueueSubDevice() :
 	GenericDeviceMessageQueue(),
 	_dispatch_id(0)
@@ -446,7 +440,6 @@ public:
 	/// \brief returns a unique ID relative to this common sub-device
 	///
 	/// \return integer ID unique to this CommonQueueSubDevice
-	/// \ingroup gendev_subdev_api
 	///
 	inline unsigned newDispID() {
 		// caller must ensure number os valid for their hardware,
@@ -462,10 +455,11 @@ public:
 	/// All classes that inherit from this must implement init(), and that
 	/// must callback to __init().
 	///
-	/// \param[in] sd	SysDep object
-	/// \param[in] device	Generic::Device to be used.
-	/// \ingroup gendev_subdev_api
-	///
+	/// \param[in] sd		SysDep object
+	/// \param[in] client		Client ID
+	/// \param[in] contextId	Context ID
+	/// \param[in] ctx		Context
+	/// \return	Error code
 	virtual xmi_result_t init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
@@ -473,9 +467,12 @@ public:
 	/// All classes that inherit from this must implement init(), and that
 	/// must callback to __init().
 	///
-	/// \param[in] sd	SysDep object
-	/// \param[in] device	Generic::Device to be used.
-	/// \ingroup gendev_subdev_api
+	/// \param[in] client		Client ID
+	/// \param[in] contextId	Context ID
+	/// \param[in] clt		Client
+	/// \param[in] ctx		Context
+	/// \param[in] sd		SysDep object
+	/// \param[in] devices		Array of generic devices for client
 	///
 	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
@@ -491,7 +488,6 @@ public:
 	}
 
 	/// \brief Reset for threads prior to being re-used.
-	/// \ingroup gendev_subdev_internal_api
 	///
 	inline void __resetThreads() {
 		_doneThreads.fetch_and_clear();
@@ -501,7 +497,6 @@ public:
 	///
 	/// \param[in] t	Thread being completed
 	/// \return	Total number of threads completed for message
-	/// \ingroup gendev_subdev_internal_api
 	///
 	inline unsigned __completeThread(GenericAdvanceThread *t) {
 		// fetchIncr() returns value *before* increment,
@@ -510,15 +505,20 @@ public:
 		return _doneThreads.fetch_and_inc() + 1;
 	}
 
+	/// \brief Get SysDep object
+	/// \return	SysDep object
 	inline XMI::SysDep *getSysdep() { return _sd; }
 
+	/// \brief Get array of generic devices for client
+	/// \param[in] client	Client ID (offset)
+	/// \return	Array of generic devices
 	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
 		return _generics[client];
 	}
 
-// protected:
-//	friend class T_Model
-public:
+	/// \brief Start new message and post to generic device
+	/// \param[in] msg		Message to start
+	/// \param[in] devQueued	Whether message is already on device send queue
 	template <class T_Message, class T_Thread>
 	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devQueued) {
 		XMI::Device::Generic::Device *g;
@@ -552,7 +552,6 @@ public:
 	/// also complete it. This is tested and appropriate action taken.
 	///
 	/// \param[in] msg	Message to start and/or enqueue
-	/// \ingroup gendev_subdev_internal_api
 	///
 	template <class T_Message, class T_Thread>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
@@ -593,8 +592,8 @@ template <class T_CommonDevice, class T_Thread, int N_Threads>
 class SharedQueueSubDevice {
 	static const int NUM_THREADS = N_Threads;
 public:
-	// Note, 'common' must have been constructed but otherwised untouched.
-	// The first SharedQueueSubDevice to encounter it will initialize it.
+	/// \brief Constructor for SharedQueueSubDevice
+	/// \param[in] common	Pointer to the common device object
 	SharedQueueSubDevice(T_CommonDevice *common) :
 	_common(common)
 	{
@@ -610,7 +609,6 @@ public:
 
 	/// \brief accessor for the common device for this sub-device
 	/// \return	CommonQueueSubDevice
-	/// \ingroup gendev_subdev_internal_api
 	inline T_CommonDevice *common() { return _common; }
 
 	/// \brief Inform caller of where the threads array is
@@ -620,19 +618,27 @@ public:
 	///
 	/// \param[out] t	Pointer to threads array
 	/// \param[out] n	Pointer to number of threads in array
-	/// \ingroup gendev_subdev_internal_api
 	///
 	inline void getThreads(T_Thread **t, int *n) {
 		*t = _threads;
 		*n = NUM_THREADS;
 	}
 
+	/// \brief Get pointer to generic device array for client
+	/// \param[in] client	The client ID (offset)
+	/// \return	Array of generic devices
 	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
 		return _common->getGenerics(client);
 	}
 
-	inline int advance(size_t client, size_t context) { return 0; }
-
+	/// \brief Initialization of shared-queue device
+	/// \param[in] client		Client ID
+	/// \param[in] contextId	Context ID
+	/// \param[in] clt		Client
+	/// \param[in] ctx		Context
+	/// \param[in] sd		SysDep
+	/// \param[in] devices		Array of generic devices for client
+	/// \return	Error code
 	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
@@ -644,17 +650,13 @@ public:
 		return _common->init(sd, client, contextId, ctx);
 	}
 
-	inline void __getThreads(T_Thread **t, int *n, int sendq = 0) {
-		*t = &_threads[sendq];
+	/// \brief Get threads array to use
+	/// \param[out] t	Threads array
+	/// \param[out] n	Size of threads array
+	inline void __getThreads(T_Thread **t, int *n) {
+		*t = &_threads[0];
 		*n = N_Threads;
 	}
-
-private:
-	// For some reason, we can't declare friends like this.
-	//friend class T_Message;
-	//friend class T_Model;
-	// So, need to make it public for now...
-public:	// temporary?
 
 	/// \brief Internal posting of message to sub-device
 	///
@@ -662,7 +664,6 @@ public:	// temporary?
 	/// also complete it. This is tested and appropriate action taken.
 	///
 	/// \param[in] msg	Message to start and/or enqueue
-	/// \ingroup gendev_subdev_internal_api
 	///
 	template <class T_Message>
 	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
@@ -673,9 +674,8 @@ public:	// temporary?
 	///
 	/// Must at least call CommonQueueSubDevice __completeThread().
 	///
-	/// \param[in] t	Thread being completed
+	/// \param[in] thr	Thread being completed
 	/// \return	Total number of threads completed for message
-	/// \ingroup gendev_subdev_internal_api
 	///
 	inline unsigned __completeThread(T_Thread *thr) {
 		return _common->__completeThread(thr);

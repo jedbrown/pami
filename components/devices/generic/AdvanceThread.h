@@ -23,8 +23,7 @@
 namespace XMI {
 namespace Device {
 
-	/// \brief Thread status
-	/// @{
+	/// \enum ThreadStatus Thread Status
 	enum ThreadStatus {
 		New = 0,	///< Thread has only been constructed (do not call)
 		Idle,		///< Thread has no work (do not call)
@@ -32,7 +31,6 @@ namespace Device {
 		OneShot,	///< Thread is run only once then dequeued
 		Complete	///< Thread should be dequeued (do not call)
 	};
-	/// }@
 
 namespace Generic {
 
@@ -111,9 +109,9 @@ public:
 		_cookie = cookie;
 	}
 protected:
-	xmi_work_function _func;
-	void *_cookie;
-	ThreadStatus _status;
+	xmi_work_function _func; ///< work function to call
+	void *_cookie;		 ///< opaque value to pass to work function
+	ThreadStatus _status;	 ///< current thread status
 }; // class GenericThread
 
 }; /* namespace Generic */

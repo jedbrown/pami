@@ -43,14 +43,18 @@
 /// init(). By saving the pointer, any device may later post work to
 /// any slice of the generic device.
 ///
-/// \section use_gendev_syn SYNOPSIS
+/// \subsection use_gendev_syn SYNOPSIS
 ///
 /// \#include "components/devices/generic/Device.h"
 ///
-/// \section use_gendev_thr THREAD
+/// \subsection use_gendev_thr THREAD
 ///
 /// All objects posted to the generic device via postThread() must
-/// inherit from GenericThread.
+/// inherit from GenericThread. Each thread has a status which determines
+/// how it is handled when on a generic device queue. The thread status
+/// may change as a result of calling the work fuinction, but also may
+/// be changed by third-parties, for example to terminate a thread without
+/// the work function being called (again).
 ///
 /// \ref XMI::Device::ThreadStatus "GenericThread status values"
 ///
@@ -58,16 +62,18 @@
 ///
 /// \subsubsection use_gendev_genthr_p Provides:
 ///
-/// \ref GenericThread::getStatus "ThreadStatus getStatus()"
+/// \ref XMI::Device::Generic::GenericThread::getStatus "ThreadStatus getStatus()"
 ///
-/// \ref GenericThread::setStatus "void setStatus(ThreadStatus stat)"
+/// \ref XMI::Device::Generic::GenericThread::setStatus "void setStatus(ThreadStatus stat)"
 ///
-/// \ref GenericThread::setFunc "void setFunc(xmi_work_function func, void *cookie)"
+/// \ref XMI::Device::Generic::GenericThread::setFunc "void setFunc(xmi_work_function func, void *cookie)"
+///
+/// \subsection use_gendev_use HOW TO
 ///
 ///
 ///
 ///
-///
+/// <HR>
 
 #include "SysDep.h"
 #include "WakeupManager.h"
@@ -120,6 +126,11 @@ public:
 	/// \brief standard Device::Factory API
 	class Factory : public Interface::FactoryInterface<Factory,Device,Device> {
 	public:
+		/// \brief Generate an array of devices for a client
+		/// \param[in] client	Client ID
+		/// \param[in] num_ctx	Number of contexts being created in client
+		/// \param[in] mm	Memory manager (for shmem alloc, if needed)
+		/// \return	Array of devices
 		static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
 			size_t x;
 			Device *gds;
@@ -130,20 +141,41 @@ public:
 			}
 			return gds;
 		}
+		/// \brief Initialize a specific device for client/context
+		/// \param[in] devs		Device array returned by generate call
+		/// \param[in] client		Client ID
+		/// \param[in] contextId	Context ID
+		/// \param[in] clt		Client
+		/// \param[in] ctx		Context
+		/// \param[in] sd		SysDep
+		/// \param[in] devices		Generic Device array (same as devs in this case)
+		/// \return	Error code
 		static inline xmi_result_t init_impl(Device *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 			return getDevice_impl(devs, client, contextId).init(ctx, client, contextId);
 		}
+		/// \brief Advance this device for client/context
+		/// \param[in] devs	Device array returned by generate call
+		/// \param[in] client	Client ID
+		/// \param[in] context	Context ID
+		/// \return	Events processed
 		static inline size_t advance_impl(Device *devs, size_t client, size_t context) {
 			return getDevice_impl(devs, client, context).advance();
 		}
+		/// \brief Get reference to specific device given client and context
+		/// \param[in] devs	Device array returned by generate call
+		/// \param[in] client	Client ID
+		/// \param[in] context	Context ID
+		/// \return	Reference to a device
 		static inline Device & getDevice_impl(Device *devs, size_t client, size_t context) {
 			return devs[context];
 		}
 	}; // class Factory
 
-	/// \brief  A generic device (wrapper for sub-devices)
+	/// \brief  Constructor for generic device
 	///
-	/// The first generic device of a client
+	/// \param[in] client		Client ID
+	/// \param[in] contextId	Context ID
+	/// \param[in] num_ctx		Number of contexts for client
 	///
 	inline Device(size_t client, size_t contextId, size_t num_ctx) :
 	__GenericQueue(),
@@ -154,6 +186,11 @@ public:
 	{
 	}
 
+	/// \brief Initialize the generic device slice
+	/// \param[in] ctx	Context
+	/// \param[in] client	Client ID
+	/// \param[in] context	Context ID
+	/// \return	Error code
 	inline xmi_result_t init(xmi_context_t ctx, size_t client, size_t context) {
 		__context = ctx;
 		return XMI_SUCCESS;
