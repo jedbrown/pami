@@ -224,40 +224,10 @@ namespace XMI
         for ( i=0; i<_size; i++) {
           _udpConnTable[i].send_fd = 0;
         }
-#if 0
-        udp_config = getenv ("XMI_UDP_CONFIG");
-        if (udp_config == NULL ) {
-          std::cout << "Environment variable XMI_UDP_CONFIG must be set" << std::endl;
-          abort();
-        }
-        TRACE_COUTMAP("The current UDP configuration file is: " << udp_config);
 
-        // Now open the configuration file
-        inFile.open(udp_config);
-        if (!inFile )
-        {
-          std::cout << "Unable to open UDP configuration file: " << udp_config << std::endl;
-          abort();
-        }
-        {
-          char     host[128];
-          unsigned peers;
-        } node_table_t;
-        node_table_t * tmpnodetable = (node_table_t *) malloc (_size * sizeof(node_table_t));
-        for (i=0; i<_size; i++)
-        {
-          tmpnodetable[i].host[0] = NULL;
-          tmpnodetable[i].peers   = 0;
-        }
-        size_t num_global_nodes = 0;
-#endif
         // Read in the configuration file: rank host port
         for ( i=0; i<_size; i++ )
         {
-          
-        //  inFile >> tmp_task >> tmp_host_in >> tmp_port;
-          //TRACE_COUTMAP("  Entry: " << tmp_task << " " << tmp_host_in << " " << tmp_port);
-
           // Make sure we can locate the host
           struct hostent *tmp_host;
           tmp_host = gethostbyname(_nodetable[i].host);
@@ -268,7 +238,7 @@ namespace XMI
           }
 
           char tmp_port_str[128];
-          snprintf(tmp_port_str, 127, "%zu", _nodetable[i].udpport);
+          snprintf(tmp_port_str, 127, "%d", _nodetable[i].udpport);
 
           if ( (rc = getaddrinfo( _nodetable[i].host, tmp_port_str, &hints, &servinfo ) ) != 0 )
           {
@@ -278,32 +248,6 @@ namespace XMI
           {
             std::cout << "socket call failed" << std::endl;
           }
-          //TRACE_COUTMAP( "addr " << servinfo->ai_addr << " len  " << servinfo->ai_addrlen );
-          //TRACE_COUTMAP( "ai_canonname " << servinfo->ai_canonname );
-#if 0
-          unsigned j;
-          for (j=0; j<_size; j++)
-          {
-            if ( strcmp( tmpnodetable[j].host, tmp_host->h_name ) == 0 )
-            {
-              // Found a previous host entry
-              _udpConnTable[tmp_task].node_addr.global = j;
-              _udpConnTable[tmp_task].node_addr.local  = tmpnodetable[j].peers;
-              tmpnodetable[j].peers++;
-              break;
-            }
-          }
-          if (j == _size)
-          {
-            // Did not find a previous host entry
-            _udpConnTable[tmp_task].node_addr.global = num_global_nodes;
-            _udpConnTable[tmp_task].node_addr.local  = 0;
-            tmpnodetable[num_global_nodes].peers = 1;
-            strncpy (tmpnodetable[num_global_nodes].host, tmp_host->h_name, 127);
-            num_global_nodes++;
-          }
-#endif
-
 
           if (_task == i)
           {
@@ -333,19 +277,7 @@ namespace XMI
           _udpConnTable[i].send_addr_len = servinfo->ai_addrlen;
           }
         }
-      //  inFile.close();
-#if 0
-        TRACE_COUTMAP("num_global_nodes: " << num_global_nodes);
-        for (i=0; i<num_global_nodes; i++)
-        {
-          TRACE_COUTMAP("node[" << i << "].host:  " << tmpnodetable[i].host);
-          TRACE_COUTMAP("node[" << i << "].peers: " << tmpnodetable[i].peers);
-        }
 
-        _peers = tmpnodetable[_udpConnTable[_task].node_addr.global].peers;
-
-        free (tmpnodetable);
-#endif
         return 0;
       }
 

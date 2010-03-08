@@ -15,6 +15,7 @@
 #define __components_devices_udp_UdpDevice_h__
 
 #include "components/devices/BaseDevice.h"
+#include "components/devices/FactoryInterface.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/udp/UdpMessage.h"
 #include "components/devices/udp/UdpSndConnection.h"
@@ -44,9 +45,64 @@ namespace XMI
     {
     public:
       static const size_t packet_payload_size = 224;
-      inline UdpDevice () :
+
+        // Inner factory class
+        class Factory : public Interface::FactoryInterface<Factory, UdpDevice, XMI::Device::Generic::Device>
+        {
+          public:
+            static inline UdpDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
+            {
+              // Allocate an array of udp devices, one for each context in this
+              // _task_ (from heap, not from shared memory)
+              UdpDevice * devices;
+              int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
+              XMI_assertf(rc == 0, "posix_memalign failed for UdpDevice[%zu], errno=%d\n", n, errno);
+
+              // Instantiate the shared memory devices
+              size_t i;
+              for (i = 0; i < n; ++i)
+                {
+                  new (&devices[i]) UdpDevice (clientid, n, i);
+                }
+
+              TRACE_ERR((stderr, "<< UdpDevice::Factory::generate_impl()\n"));
+              return devices;
+            };
+
+            static inline xmi_result_t init_impl (UdpDevice    * devices,
+                                                  size_t         clientid,
+                                                  size_t         contextid,
+                                                  xmi_client_t   client,
+                                                  xmi_context_t  context,
+                                                  SysDep         * sysdep,
+                                                  XMI::Device::Generic::Device * progress)
+            {
+              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
+            };
+
+            static inline size_t advance_impl (UdpDevice * devices,
+                                               size_t      clientid,
+                                               size_t      contextid)
+            {
+              return getDevice_impl(devices, clientid, contextid).advance ();
+            };
+
+            static inline UdpDevice & getDevice_impl (UdpDevice * devices,
+                                                      size_t        clientid,
+                                                      size_t        contextid)
+            {
+              return devices[contextid];
+            };
+         };
+
+
+
+      inline UdpDevice (size_t clientid, size_t ncontexts, size_t contextid) :
       Interface::BaseDevice<UdpDevice<T_SysDep> > (),
-      Interface::PacketDevice<UdpDevice<T_SysDep> >()
+      Interface::PacketDevice<UdpDevice<T_SysDep> >(),
+      _clientid (clientid),
+      _ncontexts (ncontexts),
+      _contextid (contextid)
       {
         TRACE_ADAPTOR((stderr,"<%#.8X>UdpDevice()\n",(int)this));
       };
@@ -82,16 +138,23 @@ namespace XMI
           return XMI_NERROR;
       }
 
+      inline xmi_result_t init (size_t          clientid,
+                                size_t          contextid,
+                                xmi_client_t    client,
+                                xmi_context_t   context,
+                                SysDep        * sysdep,
+                                XMI::Device::Generic::Device * progress)
+      {
+        init_impl (sysdep, context);
+        return XMI_SUCCESS;
+      };
+
       inline int init_impl (SysDep        * sysdep,
-			    size_t clientid,
-			    size_t num_ctx,
-                            xmi_context_t   context,
-                            size_t          offset)
+                            xmi_context_t   context)
       {
         if ( __global.mapping.activateUdp() != XMI_SUCCESS ) abort();
 
         _context   = context;
-        _contextid = offset;
 
         _sndConnections = (UdpSndConnection**)malloc(__global.mapping.size()*sizeof(UdpSndConnection*));
         // setup the connections
@@ -106,17 +169,6 @@ namespace XMI
 
         return XMI_SUCCESS;
       };
-
-	static UdpDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
-		size_t x;
-		UdpDevice *devs;
-		int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-		XMI_assertf(rc == 0, "posix_memalign failed for UdpDevice[%d], errno=%d\n", num_ctx, errno);
-		for (x = 0; x < num_ctx; ++x) {
-			new (&devs[x]) UdpDevice();
-		}
-		return devs;
-	}
 
       inline xmi_context_t getContext_impl ()
       {
@@ -133,13 +185,7 @@ namespace XMI
         return __global.mapping.isUdpActive();
       };
 
-#warning This poly-morphic advance needs to be cleaned up
-inline size_t advance(size_t clientid, size_t contextid) {
-	UdpDevice *dev = &this[contextid];
-	return dev->advance_impl();
-}
-
-      inline int advance_impl ()
+      inline int advance ()
       {
         static int dbg = 1;
 
@@ -209,8 +255,9 @@ inline size_t advance(size_t clientid, size_t contextid) {
       std::map<int, udp_dispatch_info_t>        _dispatch_lookup;
       udp_dispatch_info_t                       _dispatch_table[256*DISPATCH_SET_SIZE];
       xmi_context_t _context;
+      size_t _clientid;
+      size_t _ncontexts;
       size_t _contextid;
-
     };
   };
    };

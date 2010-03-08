@@ -5,8 +5,8 @@
 #ifndef __common_socklinux_Context_h__
 #define __common_socklinux_Context_h__
 
-#define ENABLE_SHMEM_DEVICE
-//#define ENABLE_UDP_DEVICE
+//#define ENABLE_SHMEM_DEVICE
+#define ENABLE_UDP_DEVICE
 
 #include <stdlib.h>
 #include <string.h>
@@ -106,7 +106,7 @@ namespace XMI
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
 #ifdef ENABLE_UDP_DEVICE
-        _udp = UdpDevice::generate(clientid, num_ctx, mm);
+        _udp = UdpDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
 	_progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
 	_atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
@@ -168,7 +168,7 @@ namespace XMI
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
 #endif
 #ifdef ENABLE_UDP_DEVICE
-        events += UdpDevice::Factory::advance(_shmem, clientid, contextid);
+        events += UdpDevice::Factory::advance(_udp, clientid, contextid);
 #endif
         events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
 	events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
