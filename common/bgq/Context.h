@@ -83,7 +83,7 @@ namespace XMI
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
 
   typedef XMI::Device::ShmemDevice<ShmemFifo> ShmemDevice;
-  typedef XMI::Device::ShmemPacketModel<ShmemDevice> ShmemModel;
+  typedef XMI::Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.

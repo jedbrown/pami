@@ -19,7 +19,9 @@
 #include <spi/include/mu/RecFifo.h>
 
 #include "components/devices/BaseDevice.h"
+#include "components/devices/FactoryInterface.h"
 #include "components/devices/PacketInterface.h"
+#include "components/devices/generic/Device.h"
 #include "components/devices/bgq/mu/InjFifoSubGroup.h"
 #include "components/devices/bgq/mu/MUChannel.h"
 #include "components/devices/bgq/mu/Dispatch.h"
@@ -52,16 +54,66 @@ namespace XMI
     {
       typedef   MUSPI_RecvFunction_t  MUDevice_DispatchFn_t;
 
-      class MUDevice : public Interface::BaseDevice<MUDevice>, public Interface::PacketDevice<MUDevice>//, public CDI::Dma::Device<MUDevice>
-          //class MUDevice : public BaseDevice, public CDI::Base::Device<MUDevice>, public CDI::Message::Device<MUDevice>//, public CDI::Dma::Device<MUDevice>
+      class MUDevice : public Interface::BaseDevice<MUDevice>, public Interface::PacketDevice<MUDevice>
       {
-
           static const unsigned MAX_NUM_P2P_CHANNELS = 64;
 
           static const unsigned NULL_P2P_CHANNEL = MAX_NUM_P2P_CHANNELS;
 
         public:
-          MUDevice ();
+          
+        // Inner factory class
+        class Factory : public Interface::FactoryInterface<Factory, MUDevice, XMI::Device::Generic::Device>
+        {
+          public:
+            static inline MUDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
+            {
+              size_t i;
+              TRACE((stderr, ">> MUDevice::Factory::generate_impl() n = %zu\n", n));
+
+              // Allocate an array of mu devices, one for each
+              // context in this _task_ (from heap, not from shared memory)
+              MUDevice * devices;
+              int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
+              XMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zu], errno=%d\n", n, errno);
+
+              // Instantiate the shared memory devices
+              for (i = 0; i < n; ++i)
+                {
+                  new (&devices[i]) MUDevice (clientid, n, i);
+                }
+
+              TRACE((stderr, "<< MUDevice::Factory::generate_impl()\n"));
+              return devices;
+            };
+
+            static inline xmi_result_t init_impl (MUDevice       * devices,
+                                                  size_t           clientid,
+                                                  size_t           contextid,
+                                                  xmi_client_t     client,
+                                                  xmi_context_t    context,
+                                                  SysDep         * sysdep,
+                                                  XMI::Device::Generic::Device * progress)
+            {
+              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
+            };
+
+            static inline size_t advance_impl (MUDevice * devices,
+                                               size_t     clientid,
+                                               size_t     contextid)
+            {
+              return getDevice_impl(devices, clientid, contextid).advance ();
+            };
+
+            static inline MUDevice & getDevice_impl (MUDevice * devices,
+                                                     size_t     clientid,
+                                                     size_t     contextid)
+            {
+              return devices[contextid];
+            };
+        };
+
+          MUDevice (size_t clientid, size_t ncontexts, size_t contextid);
           ~MUDevice();
 
           // ----------------------------------------------------------------------
@@ -72,25 +124,12 @@ namespace XMI
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::init
-          int init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid);
-
-#warning Clean these up
-      static inline MUDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
-	size_t x;
-	MUDevice *devs;
-	int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-	XMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zd], errno=%d\n", num_ctx, errno);
-	for (x = 0; x < num_ctx; ++x) {
-		new (&devs[x]) MUDevice();
-	}
-	return devs;
-      }
-
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		MUDevice *dev = &this[contextid];
-		dev->init_impl(sd, context, contextid);
-	}
+          xmi_result_t init (size_t           clientid,
+                             size_t           contextid,
+                             xmi_client_t     client,
+                             xmi_context_t    context,
+                             SysDep         * sysdep,
+                             XMI::Device::Generic::Device * progress);
 
           /// \copydoc XMI::Device::Interface::BaseDevice::getContext
           xmi_context_t getContext_impl ();
@@ -107,9 +146,7 @@ namespace XMI
           /// \copydoc XMI::Device::Interface::BaseDevice::task2peer
           inline size_t task2peer_impl (size_t task);
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::advance
-	  inline size_t advance(size_t clientid, size_t contextid);
-          inline int advance_impl ();
+          inline int advance ();
 
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
@@ -395,6 +432,9 @@ namespace XMI
           SysDep * sysdep;                         /**< sysdep pointer     */
           xmi_context_t _context;
           size_t        _contextid;
+          size_t        _ncontexts;
+          xmi_client_t  _client;
+          size_t        _clientid;
 
         protected:
 #if 0
@@ -459,13 +499,7 @@ size_t XMI::Device::MU::MUDevice::task2peer_impl (size_t task)
   return task;
 }
 
-#warning This poly-morphic advance needs to be cleaned up
-inline size_t XMI::Device::MU::MUDevice::advance(size_t clientid, size_t contextid) {
-	XMI::Device::MU::MUDevice *dev = &this[contextid];
-	return dev->advance_impl();
-}
-
-int XMI::Device::MU::MUDevice::advance_impl()
+int XMI::Device::MU::MUDevice::advance()
 {
   int events = 0;
 

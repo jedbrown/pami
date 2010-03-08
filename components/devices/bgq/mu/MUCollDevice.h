@@ -46,7 +46,61 @@ namespace XMI
               {
 
                 public:
-                  MUCollDevice() : MUDevice (),
+
+        // Inner factory class
+        class Factory : public Interface::FactoryInterface<Factory, MUCollDevice, XMI::Device::Generic::Device>
+        {
+          public:
+            static inline MUCollDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
+            {
+              size_t i;
+              TRACE((stderr, ">> MUCollDevice::Factory::generate_impl() n = %zu\n", n));
+
+              // Allocate an array of mu devices, one for each
+              // context in this _task_ (from heap, not from shared memory)
+              MUCollDevice * devices;
+              int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
+              XMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zu], errno=%d\n", n, errno);
+
+              // Instantiate the shared memory devices
+              for (i = 0; i < n; ++i)
+                {
+                  new (&devices[i]) MUCollDevice (clientid, n, i);
+                }
+
+              TRACE((stderr, "<< MUCollDevice::Factory::generate_impl()\n"));
+              return devices;
+            };
+
+            static inline xmi_result_t init_impl (MUCollDevice   * devices,
+                                                  size_t           clientid,
+                                                  size_t           contextid,
+                                                  xmi_client_t     client,
+                                                  xmi_context_t    context,
+                                                  SysDep         * sysdep,
+                                                  XMI::Device::Generic::Device * progress)
+            {
+              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
+            };
+
+            static inline size_t advance_impl (MUCollDevice * devices,
+                                               size_t         clientid,
+                                               size_t         contextid)
+            {
+              return getDevice_impl(devices, clientid, contextid).advance ();
+            };
+
+            static inline MUCollDevice & getDevice_impl (MUCollDevice * devices,
+                                                         size_t         clientid,
+                                                         size_t         contextid)
+            {
+              return devices[contextid];
+            };
+        };
+
+
+                  MUCollDevice(size_t clientid, size_t ncontexts, size_t contextid) :
+                    MUDevice (clientid, ncontexts, contextid),
                       //Interface::BaseDevice<MUCollDevice, SysDep> (),
                     _injFifoSubGroup(NULL),
                     _fnum(0),
@@ -59,7 +113,7 @@ namespace XMI
                   {
                     TRACE((stderr, "<%p>MUCollDevice::dtor \n", this));
                   };
-
+#if 0
                   ///
                   /// \see init
                   ///
@@ -71,7 +125,7 @@ namespace XMI
                     TRACE((stderr, "<%p>MUCollDevice::init() \n", this));
                     return MUCollDevice::init_impl(sysdep, context, offset);
                   };
-
+#endif
 //////////////////////////////////////////////////////
 //  Uggh alternative to above Uggh.
 //  One way to hook into init_impl is multi-inheritence but then I have to hide these BaseDevice functions and explicitly call the parent that I want.
@@ -92,23 +146,6 @@ namespace XMI
 //        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::task2peer(task);
 //      }
 //////////////////////////////////////////////////////
-
-#warning Clean these up
-      static inline MUCollDevice *create(size_t clientid, size_t num_ctx, void *not_used_yet) {
-	size_t x;
-	MUCollDevice *devs;
-	int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-	XMI_assertf(rc == 0, "posix_memalign failed for MUCollDevice[%zd], errno=%d\n", num_ctx, errno);
-	for (x = 0; x < num_ctx; ++x) {
-		new (&devs[x]) MUCollDevice();
-	}
-	return devs;
-      }
-
-	inline void init(SysDep *sd, size_t client, size_t num_ctx, xmi_context_t context, size_t contextid) {
-		MUDevice *dev = &this[contextid];
-		dev->init_impl(sd, context, contextid);
-	}
 
                   ///
                   /// \see advanceInjectionFifoDescriptorTail
@@ -162,10 +199,16 @@ namespace XMI
 //                  return _colChannel->getRgetInjFifoId (target_rank);
 //                }
 
-                  int init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid)
+                  xmi_result_t init (size_t           clientid,
+                                     size_t           contextid,
+                                     xmi_client_t     client,
+                                     xmi_context_t    context,
+                                     SysDep         * sysdep,
+                                     XMI::Device::Generic::Device * progress)
                   {
-                    TRACE((stderr, "<%p>MUCollDevice::init_impl() \n", this));
-                    int rc = MUDevice::init_impl(sysdep, context, contextid);
+                    TRACE((stderr, "<%p>MUCollDevice::init() \n", this));
+                    int rc = 0;
+                    rc = MUDevice::init(clientid, contextid, client, context, sysdep, progress);
 
                     XMI_assert(_initialized);
 
@@ -192,7 +235,7 @@ namespace XMI
                       }
 
 #endif
-                    return rc;
+                    return XMI_SUCCESS;
                   }
 
                 protected:

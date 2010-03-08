@@ -94,6 +94,7 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 #warning Major hack: no call to client init or context create or official advance
 int main(int argc, char ** argv)
 {
+  xmi_client_t client = NULL;
   xmi_context_t context = NULL;
   xmi_result_t status = XMI_ERROR;
 
@@ -108,9 +109,8 @@ int main(int argc, char ** argv)
 
   fn.multicast = &dispatch_multicast_fn;
 
-  XMI::Device::MU::MUCollDevice mu;
-  mu.init (NULL, //Sysdep*
-           context, 0);
+  XMI::Device::MU::MUCollDevice mu (0,1,0);
+  mu.init (0, 0, client, context, NULL /*sysdep*/, NULL /*progress*/);
 
   XMI::BGQNativeInterface<XMI::Device::MU::MUCollDevice,
                           XMI::Device::MU::MUMulticastModel,
@@ -185,7 +185,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance_impl();
+    mu.advance();
 
   }
 
@@ -238,7 +238,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance_impl();
+    mu.advance();
   }
 
 
@@ -296,7 +296,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance_impl();
+    mu.advance();
   }
   if (_countNoData != 1)
   {
@@ -327,7 +327,7 @@ int main(int argc, char ** argv)
 
   while (_doneCountdown)
   {
-    mu.advance_impl();
+    mu.advance();
   }
   if (_countNoData != 1)
   {
@@ -364,7 +364,7 @@ int main(int argc, char ** argv)
 
   while(_doneCountdown)
   {
-    mu.advance_impl();
+    mu.advance();
   }
 
   /// \todo Validate the msync test passed?
@@ -406,7 +406,7 @@ int main(int argc, char ** argv)
 
   while(_doneCountdown)
   {
-    mu.advance_impl();
+    mu.advance();
   }
 
   bytesConsumed = 0,
@@ -444,7 +444,7 @@ int main(int argc, char ** argv)
 
   while(_doneCountdown)
   {
-    mu.advance_impl();
+    mu.advance();
   }
 
   bytesConsumed = 0,

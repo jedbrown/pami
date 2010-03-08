@@ -26,11 +26,14 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 #endif
 #define TRACE(x) //fprintf x
 
-XMI::Device::MU::MUDevice::MUDevice () :
+XMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t contextid) :
     //BaseDevice (),
     Interface::BaseDevice<MUDevice> (),
     Interface::PacketDevice<MUDevice> (),
     sysdep (NULL),
+    _contextid (contextid),
+    _ncontexts (ncontexts),
+    _clientid (clientid),
     _colChannel (NULL),
     _initialized (false)
 {
@@ -41,13 +44,18 @@ XMI::Device::MU::MUDevice::MUDevice () :
 
 XMI::Device::MU::MUDevice::~MUDevice() {};
 
-int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep, xmi_context_t context, size_t contextid)
+xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
+                                     size_t           contextid,
+                                     xmi_client_t     client,
+                                     xmi_context_t    context,
+                                     SysDep         * sysdep,
+                                     XMI::Device::Generic::Device * progress)
 {
   int rc = 0;
 
   this->sysdep  = sysdep;
+  _client    = client;
   _context   = context;
-  _contextid = contextid;
 
   bool isChannelMapped[ MAX_NUM_P2P_CHANNELS ];
   unsigned i;
@@ -86,7 +94,7 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep, xmi_context_t context
           rc = _p2pChannel[i]->init( sysdep, _dispatch );
           XMI_assert( rc == 0 );
 
-          if ( rc ) return rc;
+          if ( rc ) return XMI_ERROR;
         }
     }
 
@@ -112,7 +120,7 @@ int XMI::Device::MU::MUDevice::init_impl (SysDep * sysdep, xmi_context_t context
 #endif
   _initialized = true;
 
-  return rc;
+  return XMI_SUCCESS;
 };
 
 xmi_context_t XMI::Device::MU::MUDevice::getContext_impl ()
