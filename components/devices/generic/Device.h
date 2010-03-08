@@ -30,12 +30,14 @@
 /// Each thread on the queue will have it's work function called when
 /// the generic device slice (context) is advanced. Depending on the
 /// thread status and work function return code, the thread may persist
-/// on the queue or be removed. Thread objects are posted using postThread().
+/// on the queue or be removed. Thread objects are posted using
+/// \ref XMI::Device::Generic::Device::postThread "postThread()".
 ///
 /// The other queue holds message objects. These objects are queued only
 /// to be checked for completion. during advance, each object on this queue
 /// has it's status checked, and if Done will be dequeued and the completion
-/// callback invoked. Message are posted using postMsg().
+/// callback invoked. Message are posted using
+/// \ref XMI::Device::Generic::Device::postMsg "postMsg()".
 ///
 /// A user of the generic device may employ both message and threads,
 /// or either one alone.
@@ -53,10 +55,13 @@
 /// any slice of the generic device.
 ///
 /// \subsection use_gendev_syn SYNOPSIS
+/// <div style="margin-left: 3em">
 ///
 /// \#include "components/devices/generic/Device.h"
 ///
+/// </div>
 /// \subsection use_gendev_thr THREAD
+/// <div style="margin-left: 3em">
 ///
 /// All objects posted to the generic device via postThread() must
 /// inherit from GenericThread. Each thread has a status which determines
@@ -69,7 +74,8 @@
 ///
 /// \ref XMI::Device::Generic::GenericThread "class GenericThread"
 ///
-/// \subsubsection use_gendev_genthr_p Provides:
+/// \b Provides:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::GenericThread::getStatus "ThreadStatus getStatus()"
 ///
@@ -77,34 +83,78 @@
 ///
 /// \ref XMI::Device::Generic::GenericThread::setFunc "void setFunc(xmi_work_function func, void *cookie)"
 ///
+/// </div>
+/// </div>
 /// \subsection use_gendev_msg MESSAGE
+/// <div style="margin-left: 3em">
 ///
-/// The message has a private interface known by the model and thread,
-/// and possibly device. The generic device does require that the message
-/// inherit from
-///
-/// \ref XMI::Device::Generic::GenericMessage "class GenericMessage"
+/// All objects posted to the generic device via postMsg() must
+/// inherit from GenericMessage.
 ///
 /// \ref XMI::Device::MessageStatus "GenericMessage status values"
 ///
+/// \ref XMI::Device::Generic::GenericMessage "class GenericMessage"
+///
 /// The generic device will check the status of each message on it's queue
 /// and if a status is Done then will dequeue the message and call the
-/// message completion callback. This also require that the message support
+/// message completion callback. This also requires that the message support
 /// the getQS() method to return the send queue on which the message is
 /// (may be) queued. Note, this queue may never be used (always empty) but
 /// it must be a valid queue. If the generic device finds another message
 /// on this queue, then it will start that message using the postNext() method.
 ///
+/// The message has a private interface known by the model and thread,
+/// and possibly device.
+///
+/// \b Requires:
+/// <div style="margin-left: 3em">
+///
+/// \ref GenericDeviceMessageQueue "typedef GenericDeviceMessageQueue"
+///
+/// \ref XMI::Device::Generic::GenericMessage::postNext "virtual xmi_context_t postNext(bool devQueued)"
+///
+/// </div>
+/// \b Provides:
+/// <div style="margin-left: 3em">
+///
+/// \ref XMI::Device::Generic::GenericMessage::setStatus "void setStatus(MessageStatus status)"
+///
+/// \ref XMI::Device::Generic::GenericMessage::getStatus "MessageStatus getStatus()"
+///
+/// \ref XMI::Device::Generic::GenericMessage::getQS "GenericDeviceMessageQueue *getQS()"
+///
+/// \ref XMI::Device::Generic::GenericMessage::getClientId "size_t getClientId()"
+///
+/// \ref XMI::Device::Generic::GenericMessage::getContextId "size_t getContextId()"
+///
+/// \ref XMI::Device::Generic::GenericMessage::executeCallback "void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS)"
+///
+/// </div>
+/// </div>
 /// \subsection use_gendev_dev DEVICE
+/// <div style="margin-left: 3em">
+///
+/// All devices that post work to the generic device must ensure that the
+/// messages posted have a QS pointer (in GenericMessage ctor) which
+/// points to a valid send queue. The send queue may never be used (always empty)
+/// but it must exist.
 ///
 /// The device has a private interface known by the model and message
 /// (and possibly thread). The device must, however, implement the
 /// \ref XMI::Device::Interface::FactoryInterface "FactoryInterface"
 /// and be instanciated in the
 /// \ref XMI::PlatformDeviceList "PlatformDeviceList"
-/// of the client.
+/// of the client (defined in the context).
 ///
+/// \b Requires:
+/// <div style="margin-left: 3em">
+///
+/// \ref GenericDeviceMessageQueue "typedef GenericDeviceMessageQueue"
+///
+/// </div>
+/// </div>
 /// \subsection use_gendev_mdl MODEL
+/// <div style="margin-left: 3em">
 ///
 /// The model is typically driven by the defined interface for the model type.
 /// For example, a multicombine model will implement the postMulticombine()
@@ -119,11 +169,15 @@
 /// to the model ctor, and the model must expose an integer constant "sizeof_msg"
 /// which is the number of bytes required for the Message object.
 ///
+/// </div>
 /// \subsection use_gendev_use HOW TO
+/// <div style="margin-left: 3em">
 ///
 /// Steps to create a new Model/Device/Message/Thread set.
 ///
+/// TBD...
 ///
+/// </div>
 /// <HR>
 
 #include "SysDep.h"
@@ -301,8 +355,7 @@ public:
 
 	/// \brief     Post a thread object on a generic device slice's queue
 	///
-	/// Not normally used. ProgressFuncionDev uses this to post a thread
-	/// without an associated message.
+	/// Used this to post a thread of work.
 	///
 	/// \param[in] thr	Thread object to post for advance work
 	///

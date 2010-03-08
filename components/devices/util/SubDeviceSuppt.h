@@ -27,14 +27,18 @@
 /// and how to use it.
 ///
 /// \subsection use_gendev_suppt_syn SYNOPSIS
+/// <div style="margin-left: 3em">
 ///
 /// \#include "components/devices/util/SubDeviceSuppt.h"
 ///
+/// </div>
 /// \subsection use_gendev_suppt_thr THREAD SUPPORT
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::GenericAdvanceThread "class GenericAdvanceThread"
 ///
-/// \subsubsection use_gendev_suppt_thr_p Provides:
+/// \b Provides:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::GenericAdvanceThread::setMsg "void setMsg(GenericMessage *msg)"
 ///
@@ -42,17 +46,22 @@
 ///
 /// \ref XMI::Device::Generic::GenericAdvanceThread::setAdv "void setAdv(xmi_work_function advThr)"
 ///
+/// </div>
 /// \ref XMI::Device::Generic::SimpleAdvanceThread "class SimpleAdvanceThread"
 ///
 /// Basic thread object for messages that move data. Adds a "bytes left" field.
 /// Inherits from GenericAdvanceThread (and, by definition, GenericThread).
 /// Ctor initializes "bytes left" to 0.
 ///
-/// Provides:
+/// \b Provides:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::SimpleAdvanceThread::_bytesLeft "size_t _bytesLeft (public data member)"
 ///
+/// </div>
+/// </div>
 /// \subsection use_gendev_suppt_msg MESSAGE SUPPORT
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::DECL_ADVANCE_ROUTINE "DECL_ADVANCE_ROUTINE(method, message, thread)"
 ///
@@ -61,15 +70,18 @@
 ///  In this way, the inlined advance function can be used internally for such things
 ///  as early advance, while the static function may be used for posting work.
 ///
-/// \subsubsection use_gendev_suppt_msg_decl_c Creates:
+/// \b Creates:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::method "xmi_result_t method(xmi_context_t, void *)"
 ///
-/// \subsubsection use_gendev_suppt_msg_decl_r Requires:
+/// </div>
+/// \b Requires:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::__method "xmi_result_t __method(thread *)"
 ///
-///
+/// </div>
 /// \ref XMI::Device::Generic::DECL_ADVANCE_ROUTINE2 "DECL_ADVANCE_ROUTINE2(method, message, thread)"
 ///
 ///   Declare a static advance function stub (e.g. that may be use in setAdv()) which
@@ -77,47 +89,73 @@
 ///   In this way, the inlined advance function can be used internally for such things
 ///   as early advance, while the static function may be used for posting work.
 ///
-/// \subsubsection use_gendev_suppt_msg_decl2_c Creates:
+/// \b Creates:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::method "xmi_result_t method(xmi_context_t, void *)"
 ///
-/// \subsubsection use_gendev_suppt_msg_decl2_r Requires:
+/// </div>
+/// \b Requires:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::__method "xmi_result_t __method(xmi_context_t, thread *)"
 ///
 ///
+/// </div>
+/// </div>
 /// \subsection use_gendev_suppt_dev DEVICE SUPPORT
+/// <div style="margin-left: 3em">
 ///
-/// \subsection use_gendev_suppt_dev_msq class MultiSendQSubDevice<thread, nthreads, usequeue>
+/// \ref XMI::Device::Generic::MultiSendQSubDevice "class MultiSendQSubDevice<thread, nthreads, usequeue>"
 ///
-///   A send-queue with an array of thread objects. Inherits from the typedef
-///   GenericDeviceMessageQueue which defines the type of queue needed by the
-///   generic device to support a message object being on two queues at once.
+/// A send-queue with an array of thread objects. Inherits from the typedef
+/// GenericDeviceMessageQueue which defines the type of queue needed by the
+/// generic device to support a message object being on two queues at once.
 ///
-/// \subsubsection use_gendev_suppt_dev_msq_p Provides:
+/// \b Provides:
+/// <div style="margin-left: 3em">
 ///
-/// \subsubsection use_gendev_suppt_dev_msq_r Requires:
+/// \ref XMI::Device::Generic::MultiSendQSubDevice::getGenerics "Device *getGenerics(size_t client)"
+///
+/// \ref XMI::Device::Generic::MultiSendQSubDevice::getQS "GenericDeviceMessageQueue *getQS()"
+///
+/// \ref XMI::Device::Generic::MultiSendQSubDevice::__getThreads "void __getThreads(T_Thread **t, int *n)"
+///
+/// \ref XMI::Device::Generic::MultiSendQSubDevice::__postNext "xmi_context_t __postNext(GenericMessage *msg, bool devQueued)"
+///
+/// \ref XMI::Device::Generic::MultiSendQSubDevice::__post "void __post(GenericMessage *msg)"
+///
+/// </div>
+/// \b Requires:
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::T_Message::setThreads "int msg->setThreads(thread **t)"
 ///
 ///
-/// \subsection use_gendev_suppt_dev_comshr Single Global Device with multiple Message types
+/// </div>
+/// </div>
+/// \ref XMI::Device::Generic::CommonQueueSubDevice "Single Global Device with multiple Message types"
+/// <div style="margin-left: 3em">
 ///
 /// \ref XMI::Device::Generic::CommonQueueSubDevice "class CommonQueueSubDevice"
 /// \n
 /// \ref XMI::Device::Generic::SharedQueueSubDevice "class SharedQueueSubDevice<commondevice, thread, nthreads>"
 ///
-///   A pair of classes that support a device model where there is a single
-///   hardware device (and send queue) that is used by multiple different
-///   message types. An example use of this is the BG/P Collective Network
-///   where a single hardware device is used by messages implementing
-///   broadcast, allreduce, allreduce with pre/post processing, and
-///   allreduce supporting double-sums (on hardware that does not directly
-///   support floating point operations).
+/// A pair of classes that support a device model where there is a single
+/// hardware device (and send queue) that is used by multiple different
+/// message types. An example use of this is the BG/P Collective Network
+/// where a single hardware device is used by messages implementing
+/// broadcast, allreduce, allreduce with pre/post processing, and
+/// allreduce supporting double-sums (on hardware that does not directly
+/// support floating point operations).
 ///
-/// \subsubsection use_gendev_suppt_dev_comshr_p Provides:
+/// \b Provides:
+/// <div style="margin-left: 3em">
 ///
+/// TBD...
 ///
+/// </div>
+/// </div>
 /// <HR>
 
 namespace XMI {
@@ -281,7 +319,6 @@ extern int setThreads(T_Thread **t);	// happy doxygen
 ///
 template <class T_Thread,int N_Threads,bool Use_Queue>
 class MultiSendQSubDevice : public GenericDeviceMessageQueue {
-	static const int NUM_THREADS = N_Threads;
 public:
 	MultiSendQSubDevice() :
 	GenericDeviceMessageQueue() {
@@ -588,11 +625,11 @@ public:
 	}
 
 private:
-	int _init;
-	GenericDeviceCounter _doneThreads;
-	unsigned _dispatch_id;
-	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS];
-	XMI::SysDep *_sd;
+	int _init;				///< detect first call to init()
+	GenericDeviceCounter _doneThreads;	///< counter used to track message complete
+	unsigned _dispatch_id;			///< unique id for sub-devices/messages
+	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS]; ///< save generic device array
+	XMI::SysDep *_sd;	///< saved SysDep
 }; // class CommonQueueSubDevice
 
 /// \brief class for a Model/Device/Message/Thread tuple that shares hardware with others
@@ -608,7 +645,6 @@ private:
 ///
 template <class T_CommonDevice, class T_Thread, int N_Threads>
 class SharedQueueSubDevice {
-	static const int NUM_THREADS = N_Threads;
 public:
 	/// \brief Constructor for SharedQueueSubDevice
 	/// \param[in] common	Pointer to the common device object
@@ -639,7 +675,7 @@ public:
 	///
 	inline void getThreads(T_Thread **t, int *n) {
 		*t = _threads;
-		*n = NUM_THREADS;
+		*n = N_Threads;
 	}
 
 	/// \brief Get pointer to generic device array for client
@@ -660,7 +696,7 @@ public:
 	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
-//			for (int x = 0; x < NUM_THREADS; ++x)
+//			for (int x = 0; x < N_Threads; ++x)
 //				//_threads[x].setPolled(true);
 //			}
 		}
@@ -701,7 +737,7 @@ public:
 
 private:
 	T_CommonDevice *_common;
-	T_Thread _threads[NUM_THREADS];
+	T_Thread _threads[N_Threads];
 	int _nActiveThreads;
 }; // class SharedQueueSubDevice
 

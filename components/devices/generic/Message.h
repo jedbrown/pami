@@ -115,12 +115,17 @@ public:
 	///
 	inline GenericDeviceMessageQueue *getQS() { return _QS; }
 
-	/// \brief virtual wrapper for __postNext() method
+	/// \brief virtual wrapper starting the next message.
 	///
-	/// Used during message complete to post the next message.
+	/// Used during message complete to start the next message.
+	/// Each message class must implement the appropriate wrapper.
+	/// This must be virtual since the actual implementation is specific
+	/// to the device and message. Certain device base classes
+	/// (SubDeviceSuppt.h) provide a __postNext() which this function
+	/// may call directly.
 	///
-	/// \param[in] devQueued	was msg was previously posted to sub-device?
-	/// \return	bool whether message is complete
+	/// \param[in] devQueued	msg is already queued on device send queue
+	/// \return	context on which message completed, or NULL
 	///
 	virtual xmi_context_t postNext(bool devQueued) = 0;
 
