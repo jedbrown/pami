@@ -98,7 +98,7 @@
 ///
 /// \subsubsection use_gendev_suppt_dev_msq_r Requires:
 ///
-/// \ref T_Message::setThreads "int msg->setThreads(thread **t)"
+/// \ref XMI::Device::Generic::T_Message::setThreads "int msg->setThreads(thread **t)"
 ///
 ///
 /// \subsection use_gendev_suppt_dev_comshr Single Global Device with multiple Message types
@@ -190,6 +190,7 @@ public:
 /// \param[in] method	Basename of method used to advance thread(s)
 /// \param[in] message	Class of message
 /// \param[in] thread	Class of thread
+/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
 ///
 #define DECL_ADVANCE_ROUTINE(method,message,thread)			\
 static xmi_result_t method(xmi_context_t context, void *t) {	\
@@ -197,23 +198,27 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	message *msg = (message *)thr->getMsg();		\
 	return msg->__##method(thr);				\
 }
+class T_Thread;	// happy doxygen
 
 /// \fn static xmi_result_t method(xmi_context_t ctx, void *thr)
 /// \brief Static function used for advancing work on thread/message
 ///
 /// The static advance function stub, suitable for use in setAdv().
+/// Actual advance code is in __method function of the Message.
 ///
 /// \param[in] ctx	The context on which working is being done
 /// \param[in] thr	The thread object being worked
 /// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+extern xmi_result_t method(xmi_context_t ctx, void *thr);	// happy doxygen
 
-/// \fn static xmi_result_t __method(thread *thr)
+/// \fn static xmi_result_t __method(T_Thread *thr)
 /// \brief Inline function used for advancing work on thread/message
 ///
 /// The actual advance function.
 ///
 /// \param[in] thr	The thread object being worked
 /// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+extern xmi_result_t __method(T_Thread *thr);	// happy doxygen
 
 /// \brief Macro for declaring a routine as an advance routine for a thread
 /// \ingroup use_gendev_suppt
@@ -228,6 +233,7 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 /// \param[in] method	Basename of method used to advance thread(s)
 /// \param[in] message	Class of message
 /// \param[in] thread	Class of thread
+/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
 ///
 #define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
 static xmi_result_t method(xmi_context_t context, void *t) {	\
@@ -236,7 +242,7 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 	return msg->__##method(context, thr);			\
 }
 
-/// \fn static xmi_result_t __method(xmi_context_t ctx, thread *thr)
+/// \fn xmi_result_t __method(xmi_context_t ctx, T_Thread *thr)
 /// \brief Inline function used for advancing work on thread/message
 ///
 /// The actual advance function. Has access to context if needed.
@@ -244,6 +250,21 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 /// \param[in] ctx	The context on which working is being done
 /// \param[in] thr	The thread object being worked
 /// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+extern xmi_result_t __method(xmi_context_t ctx, T_Thread *thr);	// happy doxygen
+
+/// \fn int T_Message::setThreads(T_Thread **t)
+/// \brief inline function for setting up threads on a message
+///
+/// Sets up one or more threads for message, possibly advancing
+/// threads. This means that threads might be complete before they
+/// can be posted, and so typically this is checked and the postThread()
+/// is skipped.
+///
+/// \param[out] t	Array of threads
+/// \return	Number of threads setup in array
+namespace T_Message { // This helps doxygen understand
+extern int setThreads(T_Thread **t);	// happy doxygen
+};
 
 /// \brief Example sub-device for using multiple send queues
 ///
@@ -360,17 +381,6 @@ public:
 		}
 		return NULL;
 	}
-
-	/// \fn int T_Message::setThreads(thread **thr)
-	/// \brief Sets up threads and returns threads and number used
-	///
-	/// The Message must provide this routine which is called when a message
-	/// is being started. The routine must setup the thread objects and
-	/// return how many were setup. The thread objects may be advanced,
-	/// and if a thread completes it should set it's status to Complete.
-	///
-	/// \param[out] thr	Array of threads, initialized and possibly advanced
-	/// \return	Number of threads initialized
 
 	/// \brief Post message to device
 	/// \ingroup use_gendev_suppt_dev_msq_p

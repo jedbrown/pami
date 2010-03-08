@@ -23,12 +23,21 @@
 namespace XMI {
 namespace Device {
 
-	/// \enum ThreadStatus Thread Status
+	/// \brief Thread Status
+	///
+	/// The work function of a thread will only be called if the
+	/// status is Ready or OneShot. In the case of OneShot, the
+	/// thread will be dequeued first. In the case of Ready, the
+	/// return value of the function determines whether the thread
+	/// is dequeued. XMI_EAGAIN keeps the thread on the queue for
+	/// subsequent advance calls. Any other value causes the thread
+	/// to be dequeue, and XMI_SUCCESS indicates successful completion.
+	///
 	enum ThreadStatus {
 		New = 0,	///< Thread has only been constructed (do not call)
 		Idle,		///< Thread has no work (do not call)
 		Ready,		///< Thread has work, make call to func
-		OneShot,	///< Thread is run only once then dequeued
+		OneShot,	///< Thread is dequeued before calling func
 		Complete	///< Thread should be dequeued (do not call)
 	};
 

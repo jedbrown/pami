@@ -68,9 +68,51 @@
 ///
 /// \ref XMI::Device::Generic::GenericThread::setFunc "void setFunc(xmi_work_function func, void *cookie)"
 ///
+/// \subsection use_gendev_msg MESSAGE
+///
+/// The message has a private interface known by the model and thread,
+/// and possibly device. The generic device does require that the message
+/// inherit from
+///
+/// \ref XMI::Device::Generic::GenericMessage "class GenericMessage"
+///
+/// \ref XMI::Device::MessageStatus "GenericMessage status values"
+///
+/// The generic device will check the status of each message on it's queue
+/// and if a status is Done then will dequeue the message and call the
+/// message completion callback. This also require that the message support
+/// the getQS() method to return the send queue on which the message is
+/// (may be) queued. Note, this queue may never be used (always empty) but
+/// it must be a valid queue. If the generic device finds another message
+/// on this queue, then it will start that message using the postNext() method.
+///
+/// \subsection use_gendev_dev DEVICE
+///
+/// The device has a private interface known by the model and message
+/// (and possibly thread). The device must, however, implement the
+/// \ref XMI::Device::Interface::FactoryInterface "FactoryInterface"
+/// and be instanciated in the
+/// \ref XMI::PlatformDeviceList "PlatformDeviceList"
+/// of the client.
+///
+/// \subsection use_gendev_mdl MODEL
+///
+/// The model is typically driven by the defined interface for the model type.
+/// For example, a multicombine model will implement the postMulticombine()
+/// interface. The model constructor takes a device reference, client ID, and
+/// context ID. The device reference may be for a single global device, a
+/// device specific to the context, or some other arangement. Since the model
+/// is intimately tied to the device, the model knows how to interact with
+/// the device.
+///
+/// All details of the Message, Device, and Thread are hidden from the user of
+/// the model, except that a reference to a (meaningful) device must be passed
+/// to the model ctor, and the model must expose an integer constant "sizeof_msg"
+/// which is the number of bytes required for the Message object.
+///
 /// \subsection use_gendev_use HOW TO
 ///
-///
+/// Steps to create a new Model/Device/Message/Thread set.
 ///
 ///
 /// <HR>
