@@ -104,6 +104,7 @@
 /// \subsection use_gendev_suppt_dev_comshr Single Global Device with multiple Message types
 ///
 /// \ref XMI::Device::Generic::CommonQueueSubDevice "class CommonQueueSubDevice"
+/// \n
 /// \ref XMI::Device::Generic::SharedQueueSubDevice "class SharedQueueSubDevice<commondevice, thread, nthreads>"
 ///
 ///   A pair of classes that support a device model where there is a single
@@ -116,6 +117,8 @@
 ///
 /// \subsubsection use_gendev_suppt_dev_comshr_p Provides:
 ///
+///
+/// <HR>
 
 namespace XMI {
 namespace Device {
@@ -214,7 +217,9 @@ extern xmi_result_t method(xmi_context_t ctx, void *thr);	// happy doxygen
 /// \fn static xmi_result_t __method(T_Thread *thr)
 /// \brief Inline function used for advancing work on thread/message
 ///
-/// The actual advance function.
+/// The actual advance function. A message class that uses DECL_ADVANCE_ROUTINE()
+/// to declare the advance routine(s) must implement one of these for each
+/// advance routine.
 ///
 /// \param[in] thr	The thread object being worked
 /// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
@@ -246,8 +251,11 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 /// \brief Inline function used for advancing work on thread/message
 ///
 /// The actual advance function. Has access to context if needed.
+/// A message class that uses DECL_ADVANCE_ROUTINE2()
+/// to declare the advance routine(s) must implement one of these for each
+/// advance routine.
 ///
-/// \param[in] ctx	The context on which working is being done
+/// \param[in] ctx	The context on which work is being done
 /// \param[in] thr	The thread object being worked
 /// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
 extern xmi_result_t __method(xmi_context_t ctx, T_Thread *thr);	// happy doxygen

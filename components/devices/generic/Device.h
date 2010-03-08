@@ -9,6 +9,15 @@
 #ifndef __components_devices_generic_Device_h__
 #define __components_devices_generic_Device_h__
 
+///  \file components/devices/generic/Device.h
+///  \brief Generic Device
+///
+///  The Generic classes implement a BaseDevice and a Message object
+///  to post into the queueing system.  The GI device is currently
+///  used to implement barriers, so the Generic device posts a message
+///  and uses a interprocess communication sysdep to signal the Generic wire
+///
+
 /// \page use_gendev How to use the Generic Device
 ///
 /// This chapter explains the basic requirements and features of the generic device.
@@ -133,35 +142,15 @@
 
 #include "GenericDevicePlatform.h"
 
-////////////////////////////////////////////////////////////////////////
-///  \file components/devices/generic/Device.h
-///  \brief Generic Device
-///
-///  The Generic classes implement a BaseDevice and a Message object
-///  to post into the queueing system.  The GI device is currently
-///  used to implement barriers, so the Generic device posts a message
-///  and uses a interprocess communication sysdep to signal the Generic wire
-///  This is used to implement
-///  -
-///  - Barriers
-///
-///  Definitions:
-///  - GenericMessage:  An Generic message
-///  - Device:      Queue System for messages
-///
-///  Namespace:  XMI, the messaging namespace.
-///
-////////////////////////////////////////////////////////////////////////
 namespace XMI {
 namespace Device {
 namespace Generic {
 
-//////////////////////////////////////////////////////////////////////
-///  \brief A Device implmentation of a Queuesystem
-///  This class implements a queue system. The user posts to the queue
-///  and the interprocess communications are called in order until all of them
-///  have been executed.
-//////////////////////////////////////////////////////////////////////
+///  \brief A Device implmentation of a Generic Work Queuesystem
+///
+///  This class implements a queue system. The user posts work to the queue
+///  and calls to advance will execute the work.
+///
 class Device {
 
 public:

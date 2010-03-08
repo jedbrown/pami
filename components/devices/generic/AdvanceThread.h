@@ -52,7 +52,7 @@ namespace Generic {
 /// during advance. Ctors allow thread to be created empty/idle or
 /// with a function and ready to run.
 ///
-class GenericThread : public GenericDeviceWorkQueueElem {
+class GenericThread : public GenericDeviceWorkQueue::Element {
 public:
 	/// \brief Default constructor for thread
 	/// \ingroup use_gendev
@@ -60,7 +60,7 @@ public:
 	/// Constructs a thread object that is not ready to run.
 	///
 	GenericThread() :
-	GenericDeviceWorkQueueElem(),
+	GenericDeviceWorkQueue::Element(),
 	_func(NULL),
 	_cookie(NULL),
 	_status(New)
@@ -76,7 +76,7 @@ public:
 	/// \param[in] cookie	Opaque data for work function
 	///
 	GenericThread(xmi_work_function func, void *cookie) :
-	GenericDeviceWorkQueueElem(),
+	GenericDeviceWorkQueue::Element(),
 	_func(func),
 	_cookie(cookie),
 	_status(Ready)

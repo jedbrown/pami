@@ -10,41 +10,24 @@
 #ifndef __components_devices_generic_Message_h__
 #define __components_devices_generic_Message_h__
 
+///  \file components/devices/generic/Message.h
+///  \brief Generic Device base class for Messages
+///
+
 #include "sys/xmi.h"
 #include "GenericDevicePlatform.h"
 
-////////////////////////////////////////////////////////////////////////
-///  \file components/devices/generic/Message.h
-///  \brief Generic Device
-///
-///  The Generic classes implement a QueueSystem and a Message object
-///  to post into the queueing system.  The GI device is currently
-///  used to implement barriers, so the Generic device posts a message
-///  and uses a interprocess communication sysdep to signal the Generic wire
-///  This is used to implement
-///  -
-///  - Barriers
-///
-///  Definitions:
-///  - GenericMessage:  An Generic message
-///  - Device:      Queue System for messages
-///
-///  Namespace:  XMI, the messaging namespace.
-///
-////////////////////////////////////////////////////////////////////////
 namespace XMI {
 namespace Device {
 
-////////////////////////////////////////////////////////////////////////
-///  \brief Message Class for insertion into queues
+/// \brief Message Status
 ///
-///  These classes implement a message class for insertion into queues
+/// The only required status value is Done (and of course !Done).
+/// When the message status is found to be Done (in advance), the
+/// message will be dequeued and the completion callback invoked.
+/// Also, the message's QS will be examined to see if another message
+/// should be started.
 ///
-///  Definitions:
-///  - Message:    A communication object that can be inserted into a q
-///
-////////////////////////////////////////////////////////////////////////
-
 enum MessageStatus {
 	Uninitialized = 0,	///< status for uninitialized message
 	Initialized,		///< status for initialized message
@@ -61,14 +44,18 @@ namespace Generic {
 /// In fact, this class is templatized by number of queue elements and thus
 /// is general for any number of queues.
 ///
-class GenericMessage : public GenericDeviceMessageQueueElem {
+/// Requires the typedef GenericDeviceMessageQueue for the queue
+/// used to hold messages. This is a two-piece queue such that an
+/// object may be queued two places at the same time.
+///
+class GenericMessage : public GenericDeviceMessageQueue::Element {
 public:
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
 	GenericMessage(GenericDeviceMessageQueue *QS, xmi_callback_t cb,
 						size_t client, size_t context) :
-	GenericDeviceMessageQueueElem(),
+	GenericDeviceMessageQueue::Element(),
 	_status(Uninitialized),
 	_QS(QS),
 	_client(client),

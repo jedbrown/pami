@@ -97,7 +97,8 @@ namespace XMI
      * elements each has).
      *
      * \param[in] clientid	Client ID (index)
-     * \param[in] contextid	Context ID (index)
+     * \param[in] num_ctx	Number of contexts being created
+     * \param[in] mm		MemeoryManager for use in generating devices
      */
     inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
 	// these calls create (allocate and construct) each element.
@@ -130,11 +131,11 @@ namespace XMI
      * the 'this' pointer actually points to the array - each device knows whether
      * that is truly an array and how many elements it contains.
      *
-     * \param[in] sd		SysDep object
      * \param[in] clientid	Client ID (index)
-     * \param[in] num_ctx	Number of contexts in this client
-     * \param[in] ctx		Context opaque entity
      * \param[in] contextid	Context ID (index)
+     * \param[in] clt		Client opaque entity
+     * \param[in] ctx		Context opaque entity
+     * \param[in] sd		SysDep object
      */
     inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
 	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);

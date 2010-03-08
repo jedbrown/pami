@@ -29,10 +29,8 @@ typedef XMI::Counter::LockBoxProcCounter GenericDeviceCounter;
 #define GENDEVMSG_NUM_QUEUES	2
 typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDeviceCompletionQueue;
 typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
-typedef XMI::MultiQueueElement<GENDEVMSG_NUM_QUEUES>			GenericDeviceMessageQueueElem;
 
 /// \brief Queue type to use for threads (work)
 typedef XMI::Queue		GenericDeviceWorkQueue;
-typedef XMI::Queue::Element		GenericDeviceWorkQueueElem;
 
 #endif // __common_bgp_GenericDevicePlatform_h__

@@ -25,9 +25,9 @@ namespace XMI
     namespace Interface
     {
       ///
-      /// \tparam T_Factory factory template class
-      /// \tparam T_Device  device template class
-      /// \tparam T_Device  progress template class
+      /// \param T_Factory factory template class
+      /// \param T_Device  device template class
+      /// \param T_Device  progress template class
       ///
       template <class T_Factory, class T_Device, class T_Progress>
       class FactoryInterface
