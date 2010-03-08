@@ -34,7 +34,7 @@
 #include "Topology.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)//  fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 namespace XMI
@@ -340,14 +340,37 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
             //if ( (int)_mapcache[i] != -1 )
             //  {
                 //bgq_coords_t mapCacheElement = *((bgq_coords_t*) & _mapcache[i]);
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  if (personality._is_mambo) 
+  {  
+                a = mapcache->torus.task2coords[i].a = (i/peerSize)%aSize;
+                b = mapcache->torus.task2coords[i].b = (i/(peerSize*aSize))%bSize;
+                c = mapcache->torus.task2coords[i].c = (i/(peerSize*aSize*bSize))%cSize;
+                d = mapcache->torus.task2coords[i].d = (i/(peerSize*aSize*bSize*cSize))%dSize;
+                e = mapcache->torus.task2coords[i].e = (i/(peerSize*aSize*bSize*cSize*dSize))%eSize;
+                p = mapcache->torus.task2coords[i].core = (16/peerSize) * (i%peerSize); /// \todo numCores == 16?
+                t = mapcache->torus.task2coords[i].thread;
+  }
+  else
+  {
                 a = mapcache->torus.task2coords[i].a;
                 b = mapcache->torus.task2coords[i].b;
                 c = mapcache->torus.task2coords[i].c;
                 d = mapcache->torus.task2coords[i].d;
                 e = mapcache->torus.task2coords[i].e;
-                p = mapcache->torus.task2coords[i].core = 16/fullSize * i;
+                p = mapcache->torus.task2coords[i].core;
                 t = mapcache->torus.task2coords[i].thread;
-
+  }
+#else
+                a = mapcache->torus.task2coords[i].a;
+                b = mapcache->torus.task2coords[i].b;
+                c = mapcache->torus.task2coords[i].c;
+                d = mapcache->torus.task2coords[i].d;
+                e = mapcache->torus.task2coords[i].e;
+                p = mapcache->torus.task2coords[i].core;
+                t = mapcache->torus.task2coords[i].thread;
+#endif
  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a,b,c,d,e,p,t));
 
                 // Set the bit corresponding to the physical node of this rank,
@@ -362,6 +385,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 		  {
 		    cacheAnchorsPtr->numActiveNodesGlobal++;
 		    narray[narrayIndex] |= bitNumberMask;
+                  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. bitNumberMask = %#.16lX, narray[%#.16lX]=%#.8X\n", bitNumberMask, narrayIndex,narray[narrayIndex]));
 		  }
 
                 // Increment the number of global ranks.

@@ -36,14 +36,6 @@
   #undef TRACE
 #endif
 #define TRACE(x) //fprintf x
-#ifdef DUMP_DESCRIPTOR
-  #undef DUMP_DESCRIPTOR
-#endif
-#define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
-#ifdef DUMP_HEXDATA
-  #undef DUMP_HEXDATA
-#endif
-#define DUMP_HEXDATA(x,d,s) //dumpHexData(x,d,s)
 
 
 //#define OPTIMIZE_AGGREGATE_LATENCY
@@ -285,8 +277,6 @@ namespace XMI
 };       // XMI namespace
 
 #undef TRACE
-#undef DUMP_DESCRIPTOR
-#undef DUMP_HEXDATA
 
 #endif
 //

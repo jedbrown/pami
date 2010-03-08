@@ -38,3 +38,10 @@ else
 endif
 
 default: ${APPS}
+
+#hack to run multi-mambo.  First runmambo and runmulti-mambo will find/cp the elf and pers files
+runmulti-mambo:
+	find ./ -name "send_latency.cnk.t1.pers"  -exec cp {} ./send_latency.cnk.pers \;
+	find ./ -name "bgq_firmware.elf" -exec cp {} ./firmware.elf \;
+	cp $(VPATH)/mmambo.tcl .
+	mpirun -np 2 -x MAMBO_BGQ_MAPFILE=$(VPATH)/map.txt /bgsys/bgq/drivers/x86_64.multi-mambo/bin/systemsim-bgq -n -f mmambo.tcl

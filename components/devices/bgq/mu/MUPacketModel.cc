@@ -71,7 +71,7 @@ xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (size_t                  
                                                         Interface::RecvFunction_t   read_recv_func,
                                                         void                      * read_recv_func_parm)
 {
-  TRACE((stderr, ">> MUPacketModel::init_impl(%d, %p, %p, %p, %p)\n", dispatch, direct_recv_func, direct_recv_func_parm, read_recv_func, read_recv_func_parm));
+  TRACE((stderr, ">> MUPacketModel::init_impl(%zd, %p, %p, %p, %p)\n", dispatch, direct_recv_func, direct_recv_func_parm, read_recv_func, read_recv_func_parm));
   MemoryFifoPacketHeader * hdr =
     (MemoryFifoPacketHeader *) & _desc_model.PacketHeader;
 

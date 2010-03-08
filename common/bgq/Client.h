@@ -11,6 +11,11 @@
 
 #include "Context.h"
 
+#undef TRACE_ERR
+#ifndef TRACE_ERR
+#define TRACE_ERR(x)  //fprintf x
+#endif
+
 namespace XMI
 {
   class Client : public Interface::Client<XMI::Client>
@@ -93,6 +98,7 @@ namespace XMI
                                               xmi_context_t       * context,
                                               size_t                ncontexts)
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         //_context_list->lock ();
         int n = ncontexts;
 
@@ -118,6 +124,7 @@ namespace XMI
         XMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
 
+        TRACE_ERR((stderr,  "%s init generics\n", __PRETTY_FUNCTION__));
         for (x = 0; x < n; ++x)
           {
             new (&_generics[x]) XMI::Device::Generic::Device();
@@ -141,6 +148,7 @@ namespace XMI
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
+        TRACE_ERR((stderr,  "%s exit\n", __PRETTY_FUNCTION__));
 
         return XMI_SUCCESS;
       }

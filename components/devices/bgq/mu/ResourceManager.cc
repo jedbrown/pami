@@ -58,8 +58,8 @@ getInfo()
         XMI_assert ( _injFifoInfo != NULL );
         _injFifoInfo->numSubGroups = MINIMAL_INJ_NUM_SUBGROUPS;
 
-        TRACE(("My Coords are: A=%d, B=%d, C=%d, D=%d, E=%d, T=%d, P=%d, aSize=%d, bSize=%d, cSize=%d, dSize=%d, eSize=%d, tSize=%d, pSize=%d\n",
-               _mapping->a(), _mapping->b(), _mapping->c(), _mapping->d(), _mapping->e(), _mapping->t(), _mapping->p(), _mapping->aSize(), _mapping->bSize(), _mapping->cSize(), _mapping->dSize(), _mapping->eSize(), _mapping->tSize(), _mapping->pSize()))
+        TRACE(("My Coords are: A=%zd, B=%zd, C=%zd, D=%zd, E=%zd, T=%zd, P=%zd, aSize=%zd, bSize=%zd, cSize=%zd, dSize=%zd, eSize=%zd, tSize=%zd, pSize=%zd\n",
+               __global.mapping.a(), __global.mapping.b(), __global.mapping.c(), __global.mapping.d(), __global.mapping.e(), __global.mapping.t(), __global.mapping.p(), __global.personality.aSize(), __global.personality.bSize(), __global.personality.cSize(), __global.personality.dSize(), __global.personality.eSize(), __global.personality.tSize(), __global.personality.pSize()))
         ;
 
         for (i = 0; i < MINIMAL_INJ_NUM_SUBGROUPS; i++)

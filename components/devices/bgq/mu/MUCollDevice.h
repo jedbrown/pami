@@ -38,10 +38,6 @@ namespace XMI
         namespace MU
           {
 
-            void dumpDescriptor(const char * pstring, const MUHWI_Descriptor_t *desc);
-            void dumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
-
-
             class MUCollDevice : public MUDevice//, public Interface::BaseDevice<MUCollDevice, SysDep>
               {
 

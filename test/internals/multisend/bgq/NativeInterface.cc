@@ -11,6 +11,7 @@
  * \brief Simple multicast tests.
  */
 
+#include "../../../util.h"
 #include "Buffer.h"
 
 #include "Global.h"
@@ -22,7 +23,6 @@
 
 #include <hwi/include/bqc/nd_500_dcr.h>
 
-#include <unistd.h>
 #ifndef TEST_BUF_SIZE
   #define TEST_BUF_SIZE	32
 #endif // TEST_BUF_SIZE
@@ -41,25 +41,6 @@ XMI::Topology dst_subtopology;
 
 size_t task_id;
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-#define mamboSleep(x) _mamboSleep(x, __LINE__)
-unsigned _mamboSleep(unsigned seconds, unsigned from)
-{
-  double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
-  if (__global.personality._is_mambo)
-  {
-    double start = XMI_Wtime (), d=0;
-    while (XMI_Wtime() < (start+dseconds))
-    {
-      for (int i=0; i<200000; ++i) ++d;
-      DBGv_FPRINTF((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,XMI_Wtime(),start+dseconds));
-    }
-  }
-  else
-    sleep(5);
-  return 0;
-}
-#endif
 
 void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
                            unsigned              msgcount,
@@ -236,11 +217,7 @@ int main(int argc, char ** argv)
   if (dst_subtopology.isRankMember(task_id)) ;
   else
   {
-#ifdef ENABLE_MAMBO_WORKAROUNDS
     mamboSleep(10);
-#else
-    sleep(1);
-#endif
 
   }
 
@@ -284,11 +261,7 @@ int main(int argc, char ** argv)
       fprintf(stderr, "<%3.3d>PASS bytesConsumed = %zu, bytesProduced = %zu\n",__LINE__, bytesConsumed, bytesProduced);
   }
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
   mamboSleep(5);
-#else
-  sleep(5);
-#endif
   DBG_FPRINTF((stderr, "%s:%s: task %zd exiting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
   return 0;
 // ------------------------------------------------------------------------
