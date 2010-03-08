@@ -32,7 +32,7 @@
 #include "Topology.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)   fprintf x
+#define TRACE_ERR(x)  // fprintf x
 #endif
 
 namespace XMI
@@ -51,9 +51,10 @@ namespace XMI
 	  xmi_coord_t ll, ur;
 	  size_t min, max, num;
           size_t *ranks;
-          const char   * shmemfile = "/unique-xmi-global-shmem-file";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
+
+          snprintf (_shmemfile, 1023, "/unique-xmi-global-shmem-file");
 
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
@@ -63,7 +64,7 @@ namespace XMI
 
 	  // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
-          rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          rc = shm_open (_shmemfile, O_CREAT | O_RDWR, 0600);
           TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", fd));
           if ( rc != -1 )
           {
@@ -109,15 +110,15 @@ namespace XMI
 	  topology_global.subTopologyLocalToMe(&topology_local);
           TRACE_ERR((stderr, "<< Global::Global()\n"));
 
-
-//          mapping.activateUdp();
-
           return;
         };
 
 
 
-        inline ~Global () {};
+        inline ~Global ()
+        {
+          shm_unlink (_shmemfile);
+        };
 
         inline size_t size ()
         {
@@ -131,6 +132,7 @@ namespace XMI
 	XMI::Mapping         mapping;
 
       private:
+        char _shmemfile[1024];
 
         void           * _memptr;
         size_t           _memsize;

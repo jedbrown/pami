@@ -42,6 +42,8 @@ namespace XMI
 
         inline ~Client ()
         {
+          TRACE_ERR((stderr, ">> Client::~Client()\n"));
+          TRACE_ERR((stderr, "<< Client::~Client()\n"));
         }
 
         static xmi_result_t generate_impl (const char * name, xmi_client_t * client)
@@ -83,6 +85,9 @@ namespace XMI
           //if (client->getReferenceCount () == 0)
           //{
             //__client_list->remove (client);
+            Client * c = (Client *) c;
+            shm_unlink (c->_shmemfile);
+
             free ((void *) client);
           //}
           //__client_list->unlock ();
@@ -276,18 +281,18 @@ namespace XMI
         char         _name[256];
 
         Memory::MemoryManager _mm;
+        char   _shmemfile[1024];
 
         inline void initializeMemoryManager ()
         {
-          char   shmemfile[1024];
           size_t bytes     = 1024*1024;
           size_t pagesize  = 4096;
 
           char * jobstr = getenv ("XMI_JOB_ID");
           if (jobstr)
-            snprintf (shmemfile, 1023, "/xmi-client-%s-%s", _name, jobstr);
+            snprintf (_shmemfile, 1023, "/xmi-client-%s-%s", _name, jobstr);
           else
-            snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
+            snprintf (_shmemfile, 1023, "/xmi-client-%s", _name);
 
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
@@ -296,7 +301,7 @@ namespace XMI
           size_t n = bytes;
 
           // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-          rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+          rc = shm_open (_shmemfile, O_CREAT | O_RDWR, 0600);
 //fprintf (stderr, "initializeMemoryManager() .. shmemfile = \"%s\", rc = %d\n", shmemfile, rc);
           if ( rc != -1 )
           {
