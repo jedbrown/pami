@@ -1,0 +1,220 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+
+/**
+ * \file test/p2p/send/eager_concurrency.cc
+ *
+ * \brief Multpiple processes send and recveive to/from all the rest.
+ */
+#include <unistd.h>
+
+#define ITERATIONS	-1	// Use our variable
+#define MINBUFSIZE	-1
+#define BUFSIZE		-1
+#include "send_concurrency.h" // includes send_general.h
+
+int ITERATIONS = 100;
+size_t MINBUFSIZE = 128;
+size_t BUFSIZE = 128;
+
+int main(int argc, char **argv) {
+	int e = 0, x, y, n;
+	size_t z;
+	unsigned *results;
+	int *nets;
+	size_t *protocol;
+	bool verify = false;
+	bool graph = false;
+	bool local = false;
+	const char *dflt = "DEFAULT_NETWORK";
+	xmi_result_t result;
+
+	extern int optind;
+	extern char *optarg;
+
+	while ((x = getopt(argc, argv, "d:e:gi:ls:v")) != EOF) {
+		switch(x) {
+		case 'd':
+			dflt = optarg;
+			break;
+		case 'e':
+			BUFSIZE = strtoul(optarg, NULL, 0);
+			break;
+		case 'g':
+			graph = true;
+			break;
+		case 'i':
+			ITERATIONS = strtoul(optarg, NULL, 0);
+			break;
+		case 'l':
+			local = true;
+			break;
+		case 's':
+			MINBUFSIZE = strtoul(optarg, NULL, 0);
+			break;
+		case 'v':
+			verify = true;
+			break;
+		default:
+usage:
+			fprintf(stderr, "Usage: %s [-v][-i iter][-s start][-e end] [network...]\n", argv[0]);
+			exit(1);
+			break;
+		}
+	}
+	
+	optind -= 1;
+	argc -= optind;
+	if (argc < 1) goto usage;
+	if (MINBUFSIZE > BUFSIZE) {
+		fprintf(stderr, "-s value (%zd) must be less than (or equal) -e value (%zd)\n", MINBUFSIZE, BUFSIZE);
+		goto usage;
+	}
+	nets = (int *)malloc(argc * sizeof(*nets));
+	protocol = (size_t *)malloc(argc * sizeof(*protocol));
+	assert(nets);
+	assert(protocol);
+
+	xmi_client_t client;
+	xmi_context_t context;
+
+	result = XMI_Client_initialize ("test", &client);
+	if (result != XMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+		return 1;
+	}
+
+	result = XMI_Context_createv(client, NULL, 0, &context, 1);
+	if (result != XMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+		return 1;
+	}
+	xmi_configuration_t configuration;
+	configuration.name = XMI_TASK_ID;
+	result = XMI_Configuration_query(client, &configuration);
+	if (result != XMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+		return 1;
+	}
+	size_t task_id = configuration.value.intval;
+	configuration.name = XMI_NUM_TASKS;
+	result = XMI_Configuration_query(client, &configuration);
+	if (result != XMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+		return 1;
+	}
+	size_t num_tasks = configuration.value.intval;
+
+	send_concurrency_init(BUFSIZE, num_tasks);
+	xmi_task_t ranks[64];
+	size_t nranks;
+	xmi_task_t me;
+	if (local) {
+		//nranks = setup_localpeers(ranks, 64, &me);
+		// assume all local...
+		for (nranks = 0; nranks < num_tasks; ++nranks) ranks[nranks] = nranks;
+		me = task_id;
+	} else {
+		nranks = num_tasks;
+		me = task_id;
+	}
+
+	for (x = 0; x < argc; ++x) {
+		const char *net = x ? argv[x + optind] : dflt;
+		nets[x] = find_netw(net);
+		if (nets[x] < 0) {
+			fprintf(stderr, "Invalid network: %s\n", net);
+			abort();
+		}
+		con_setup_netw(nets[x], context, &protocol[x]);
+	}
+
+	// Count number of buffer sizes being tested
+	for (z = MINBUFSIZE, n = 0; z <= BUFSIZE; z = NEXT_BUFSIZE(z)) ++n;
+
+	results = (unsigned *)malloc(argc * n * sizeof(unsigned));
+	if (me == 0) {
+		//XMI_Coord_t addr;
+		//DCMF_Hardware_t hw;
+		//DCMF_Hardware(&hw);
+		size_t orig, *_orig;
+
+		fprintf(stdout, "#\n");
+		fprintf(stdout, "# XMI_Send() eager concurrency test\n");
+		for (orig = 0; orig < nranks; ++orig) {
+			if (local) {
+				_orig = &ranks[orig];
+			} else {
+				_orig = &orig;
+			}
+			//DCMF_Messager_rank2network(*_orig, XMI_TORUS_NETWORK, &addr);
+			//fprintf(stdout, "# Rank %zd (%zd,%zd,%zd,%zd)\n", *_orig,
+			        //addr.torus.x, addr.torus.y, addr.torus.z, addr.torus.t);
+			fprintf(stdout, "# Rank %zd\n", *_orig);
+		}
+		//fprintf(stdout, "# Clock MHz = %d, Iterations = %d\n", hw.clockMHz, ITERATIONS);
+		fprintf(stdout, "# Clock MHz = %d, Iterations = %d\n", 0, ITERATIONS);
+		if (verify) {
+			fprintf(stdout, "# WARNING! Data verification is ON. Performance numbers are not realistic!\n");
+		}
+		fprintf(stdout, "#\n");
+		fflush(stdout);
+	}
+
+	for (x = 0; x < argc; ++x) {
+		if (0 && task_id == 0) {
+			fprintf(stdout, "# Running test on %s network...\n", name_netw(nets[x]));
+			fflush(stdout);
+		}
+		e |= con_test(protocol[x], client, context, me, (local ? ranks : NULL), nranks,
+				results + (x * n), (x == 0 && argc > 1 ? false : verify));
+	}
+	if (me == 0) {
+		if (!graph) {
+			fprintf(stdout, "#         ");
+			for (x = 0; x < argc; ++x) {
+				fprintf(stdout, "%*s", 20 + (x ? 4 : 0), name_netw(nets[x]));
+			}
+			fprintf(stdout, "\n#    bytes");
+			for (x = 0; x < argc; ++x) {
+				fprintf(stdout, "    cycles  bytes/cy");
+				if (x) {
+					fprintf(stdout, "   %%");
+				}
+			}
+			fprintf(stdout, "\n");
+		}
+		for (z = MINBUFSIZE, y = 0; z <= BUFSIZE; z = NEXT_BUFSIZE(z), ++y) {
+			fprintf(stdout, "%10zd", z);
+			for (x = 0; x < argc; ++x) {
+				int t = *(results + x * n + y);
+				if (graph) {
+					printf(" %10d", t);
+				} else {
+					double BW = (double)z / t;
+					printf("%10d%10.6f", t, BW);
+					if (x) {
+						int t0 = *(results + 0 * n + y);
+						double pct = (double)(t - t0) / t0;
+						printf("%4.0f", pct * 100.0);
+					}
+				}
+			}
+			fprintf(stdout, "\n");
+		}
+		fflush(stdout);
+	}
+
+	result = XMI_Client_finalize(client);
+	if (result != XMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+		return 1;
+	}
+	return e;
+}
