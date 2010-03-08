@@ -8,12 +8,15 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "algorithms/schedule/TorusRect.cc"
 
+#ifndef __xmi_target_socklinux__
+#include "algorithms/schedule/TorusRect.cc"
 #define net_coord(n)	u.n_torus.coords[n]
+#endif
 
 int main (int argc, char ** argv)
 {
+#ifndef __xmi_target_socklinux__
   xmi_client_t  client;
   xmi_context_t context;
   xmi_result_t  result = XMI_ERROR;
@@ -74,5 +77,6 @@ int main (int argc, char ** argv)
            high.net_coord(1),high.net_coord(2),high.net_coord(3),
            utl[0], utl[1], utl[2]);
   }
+#endif // __xmi_target_socklinux__
   return 0;
 };

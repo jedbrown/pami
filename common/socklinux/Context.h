@@ -5,6 +5,9 @@
 #ifndef __common_socklinux_Context_h__
 #define __common_socklinux_Context_h__
 
+#define ENABLE_SHMEM_DEVICE
+//#define ENABLE_UDP_DEVICE
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,13 +23,18 @@
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
+#ifdef ENABLE_UDP_DEVICE
 #include "components/devices/udp/UdpDevice.h"
 #include "components/devices/udp/UdpModel.h"
 #include "components/devices/udp/UdpMessage.h"
+#endif
 
+#ifdef ENABLE_SHMEM_DEVICE
 #include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemPacketModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
+#endif
 
 #include "components/atomic/gcc/GccBuiltin.h"
 //#include "components/atomic/pthread/Pthread.h"
@@ -47,18 +55,18 @@
 namespace XMI
 {
   //typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
-
+#ifdef ENABLE_UDP_DEVICE
   typedef Device::UDP::UdpDevice<SysDep> UdpDevice;
   typedef Device::UDP::UdpModel<UdpDevice,Device::UDP::UdpSendMessage> UdpModel;
+  typedef XMI::Protocol::Send::Datagram < UdpModel, UdpDevice > DatagramUdp;
+#endif
 
+#ifdef ENABLE_SHMEM_DEVICE
   typedef Fifo::FifoPacket <16, 240> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-  typedef Device::ShmemModel<ShmemDevice> ShmemModel;
-
-  //
-  // >> Point-to-point protocol typedefs and dispatch registration.
-  typedef XMI::Protocol::Send::Datagram < UdpModel, UdpDevice > DatagramUdp;
+  typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
+#endif
 
   typedef MemoryAllocator<1152, 16> ProtocolAllocator;
 
@@ -90,19 +98,23 @@ namespace XMI
      * \param[in] clientid     Client ID (index)
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t init(size_t clientid, size_t num_ctx) {
+    inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
        // these calls create (allocate and construct) each element.
        // We don't know how these relate to contexts, they are semi-opaque.
-       _generics = XMI::Device::Generic::Device::create(clientid, num_ctx);
-       _shmem = ShmemDevice::create(clientid, num_ctx, _generics);
-       _udp = UdpDevice::create(clientid, num_ctx, _generics);
-       _progfunc = XMI::Device::ProgressFunctionDev::create(clientid, num_ctx, _generics);
-       _atombarr = XMI::Device::AtomicBarrierDev::create(clientid, num_ctx, _generics);
-       _wqringreduce = XMI::Device::WQRingReduceDev::create(clientid, num_ctx, _generics);
-       _wqringbcast = XMI::Device::WQRingBcastDev::create(clientid, num_ctx, _generics);
-       _localallreduce = XMI::Device::LocalAllreduceWQDevice::create(clientid, num_ctx, _generics);
-       _localbcast = XMI::Device::LocalBcastWQDevice::create(clientid, num_ctx, _generics);
-       _localreduce = XMI::Device::LocalReduceWQDevice::create(clientid, num_ctx, _generics);
+        _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+#ifdef ENABLE_SHMEM_DEVICE
+        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
+#endif
+#ifdef ENABLE_UDP_DEVICE
+        _udp = UdpDevice::generate(clientid, num_ctx, mm);
+#endif
+	_progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+	_atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringbcast = XMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+	_localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
        return XMI_SUCCESS;
     }
 
@@ -122,18 +134,22 @@ namespace XMI
      * \param[in] ctx          Context opaque entity
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t dev_init(XMI::SysDep *sd, size_t clientid, size_t num_ctx, xmi_context_t ctx, size_t contextid) {
-       _generics->init(ctx, clientid, contextid, num_ctx);
-       _shmem->init(sd, clientid, num_ctx, ctx, contextid);
-       _udp->init(sd, clientid, num_ctx, ctx, contextid);
-       _progfunc->init(sd, clientid, num_ctx, ctx, contextid);
-       _atombarr->init(sd, clientid, num_ctx, ctx, contextid);
-       _wqringreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       _wqringbcast->init(sd, clientid, num_ctx, ctx, contextid);
-       _localallreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       _localbcast->init(sd, clientid, num_ctx, ctx, contextid);
-       _localreduce->init(sd, clientid, num_ctx, ctx, contextid);
-       return XMI_SUCCESS;
+    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
+	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);
+#ifdef ENABLE_SHMEM_DEVICE
+	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, sd, _generics);
+#endif
+#ifdef ENABLE_UDP_DEVICE
+	UdpDevice::Factory::init(_udp, clientid, contextid, clt, ctx, sd, _generics);
+#endif
+	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, sd, _generics);
+	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, sd, _generics);
+	return XMI_SUCCESS;
     }
 
     /**
@@ -146,23 +162,31 @@ namespace XMI
      * \param[in] contextid    Context ID (index)
      */
     inline size_t advance(size_t clientid, size_t contextid) {
-       size_t events = 0;
-       events += _generics->advance(clientid, contextid);
-       events += _shmem->advance(clientid, contextid);
-       events += _udp->advance(clientid, contextid);
-       events += _progfunc->advance(clientid, contextid);
-       events += _atombarr->advance(clientid, contextid);
-       events += _wqringreduce->advance(clientid, contextid);
-       events += _wqringbcast->advance(clientid, contextid);
-       events += _localallreduce->advance(clientid, contextid);
-       events += _localbcast->advance(clientid, contextid);
-       events += _localreduce->advance(clientid, contextid);
-       return events;
+	size_t events = 0;
+        events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+#ifdef ENABLE_SHMEM_DEVICE
+        events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+#endif
+#ifdef ENABLE_UDP_DEVICE
+        events += UdpDevice::Factory::advance(_shmem, clientid, contextid);
+#endif
+        events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
+	events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
+	events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+	events += XMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
+	events += XMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+	events += XMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+	events += XMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+	return events;
     }
 
     XMI::Device::Generic::Device *_generics; // need better name...
+#ifdef ENABLE_SHMEM_DEVICE
     ShmemDevice *_shmem;
+#endif
+#ifdef ENABLE_UDP_DEVICE
     UdpDevice *_udp;
+#endif
     XMI::Device::ProgressFunctionDev *_progfunc;
     XMI::Device::AtomicBarrierDev *_atombarr;
     XMI::Device::WQRingReduceDev *_wqringreduce;
@@ -186,18 +210,16 @@ namespace XMI
           _sysdep (_mm),
 	  _devices(devices)
       {
+        TRACE_ERR((stderr, ">> Context::Context()\n"));
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
 
-        // Make sure the memory allocator is large enough for all
-        // protocol classes.
-        COMPILE_TIME_ASSERT(sizeof(DatagramUdp) <= ProtocolAllocator::objsize);
-
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
-	_devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
+	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
+        TRACE_ERR((stderr, "<< Context::Context()\n"));
       }
 
       inline xmi_client_t getClient_impl ()
@@ -218,9 +240,9 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_t *state, xmi_work_function work_fn, void * cookie)
       {
-	XMI::Device::Generic::GenericThread *work;
+        XMI::Device::Generic::GenericThread *work;
 	COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-	work = new (work) XMI::Device::Generic::GenericThread(work_fn, cookie);
+	work = new (state) XMI::Device::Generic::GenericThread(work_fn, cookie);
 	work->setStatus(XMI::Device::OneShot);
 	_devices->_generics[_contextid].postThread(work);
 	return XMI_SUCCESS;
@@ -421,6 +443,16 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
+    inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
+                                                    size_t                     dispatch,
+                                                    xmi_dispatch_callback_fn   fn,
+                                                    void                     * cookie,
+                                                    xmi_collective_hint_t      options)
+      {
+	XMI_abort();
+	return XMI_SUCCESS;
+      }
+
       inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
                                                         xmi_xfer_type_t ctype,
                                                         int *lists_lengths)
@@ -428,17 +460,18 @@ namespace XMI
         return XMI_UNIMPL;
       }
 
-      inline
-      xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
-                                                  xmi_xfer_type_t colltype,
-                                                  xmi_algorithm_t *algs,
-                                                  xmi_metadata_t *mdata,
-                                                  int algorithm_type,
-                                                  int num)
-        {
-          return XMI_UNIMPL;
-
-        }
+      inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
+                                                           xmi_xfer_type_t colltype,
+                                                       xmi_algorithm_t  *algs0,
+                                                       xmi_metadata_t   *mdata0,
+                                                       int               num0,
+                                                       xmi_algorithm_t  *algs1,
+                                                       xmi_metadata_t   *mdata1,
+                                                       int               num1)
+      {
+	XMI_abort();
+	return XMI_SUCCESS;
+      }
 
       inline xmi_result_t dispatch_impl (size_t                     id,
                                          xmi_dispatch_callback_fn   fn,
@@ -452,15 +485,18 @@ TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result =
           {
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
-#warning UDP and Shmem device models need to take array of devices
-#if 1
+#ifdef ENABLE_UDP_DEVICE
+            COMPILE_TIME_ASSERT(sizeof(DatagramUdp) <= ProtocolAllocator::objsize);
             new ((void *)_dispatch[id])
               DatagramUdp
                 (id, fn, cookie, _devices->_udp[_contextid], result);
 #else
+#ifdef ENABLE_SHMEM_DEVICE
+            COMPILE_TIME_ASSERT(sizeof(Protocol::Send::Eager <ShmemModel, ShmemDevice, true>) <= ProtocolAllocator::objsize);
             new ((void *)_dispatch[id])
               Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
                 (id, fn, cookie, _devices->_shmem[_contextid], result);
+#endif
 #endif
             if (result != XMI_SUCCESS)
               {

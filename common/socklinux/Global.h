@@ -32,7 +32,7 @@
 #include "Topology.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  // fprintf x
+#define TRACE_ERR(x)   fprintf x
 #endif
 
 namespace XMI
@@ -45,6 +45,8 @@ namespace XMI
           _memptr (NULL),
           _memsize (0)
         {
+          TRACE_ERR((stderr, ">> Global::Global()\n"));
+
           Interface::Global<XMI::Global>::time.init(0);
 	  xmi_coord_t ll, ur;
 	  size_t min, max, num;
@@ -105,7 +107,7 @@ namespace XMI
 	  XMI::Topology::static_init(&mapping);
           new (&topology_global) XMI::Topology(min, max);
 	  topology_global.subTopologyLocalToMe(&topology_local);
-          TRACE_ERR((stderr, "Global() <<\n"));
+          TRACE_ERR((stderr, "<< Global::Global()\n"));
 
           return;
         };

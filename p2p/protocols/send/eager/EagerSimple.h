@@ -53,8 +53,8 @@ namespace XMI
           // connection hash id on the origin side.
           typedef struct __attribute__((__packed__)) protocol_match
           {
-            size_t             offset;
             xmi_task_t         task;
+            uint16_t           offset;
           } protocol_match_t;
 
           typedef struct __attribute__((__packed__)) protcol_metadata

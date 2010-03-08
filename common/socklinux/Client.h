@@ -23,6 +23,7 @@ namespace XMI
           _ncontexts (0),
           _mm ()
         {
+          TRACE_ERR((stderr, ">> Client::Client()\n"));
 	  static size_t next_client_id = 0;
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
@@ -33,6 +34,7 @@ namespace XMI
           initializeMemoryManager ();
 
           result = XMI_SUCCESS;
+          TRACE_ERR((stderr, "<< Client::Client()\n"));
         }
 
         inline ~Client ()
@@ -41,6 +43,8 @@ namespace XMI
 
         static xmi_result_t generate_impl (const char * name, xmi_client_t * client)
         {
+          TRACE_ERR((stderr, ">> Client::generate_impl(\"%s\", %p)\n", name, client));
+
           xmi_result_t result;
           int rc = 0;
 
@@ -63,6 +67,8 @@ namespace XMI
           //}
 
           //__client_list->unlock();
+
+          TRACE_ERR((stderr, "<< Client::generate_impl(\"%s\", %p), result = %d\n", name, client, result));
 
           return result;
         }
@@ -89,34 +95,52 @@ namespace XMI
                                                 xmi_context_t       * context,
                                                 size_t                ncontexts)
         {
-		//_context_list->lock ();
-		int n = ncontexts;
-		if (_ncontexts != 0) {
-			return XMI_ERROR;
-		}
-		if (_ncontexts + n > 4) {
-			n = 4 - _ncontexts;
-		}
-		if (n <= 0) { // impossible?
-			return XMI_ERROR;
-		}
+          TRACE_ERR((stderr, ">> Client::createContext_impl()\n"));
+        //_context_list->lock ();
+        int n = ncontexts;
 
-		int rc = posix_memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
-		XMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
-		int x;
-		_platdevs.init(_clientid, n);
-		memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
-		size_t bytes = _mm.size() / n;
-		for (x = 0; x < n; ++x) {
-			context[x] = (xmi_context_t)&_contexts[x];
-			void *base = NULL;
-			_mm.memalign((void **)&base, 16, bytes);
-			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,&_platdevs, base, bytes);
-			//_context_list->pushHead((QueueElem *)&context[x]);
-			//_context_list->unlock();
-		}
-		return XMI_SUCCESS;
+        if (_ncontexts != 0)
+          {
+            return XMI_ERROR;
+          }
+
+        if (_ncontexts + n > 4)
+          {
+            n = 4 - _ncontexts;
+          }
+
+        if (n <= 0)   // impossible?
+          {
+            return XMI_ERROR;
+          }
+
+        int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
+        XMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+        int x;
+
+	_platdevs.generate(_clientid, n, _mm);
+
+        // This memset has been removed due to the amount of cycles it takes
+        // on simulators.  Lower level initializers should be setting the
+        // relevant fields of the context, so this memset should not be
+        // needed anyway.
+        //memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
+        size_t bytes = _mm.available() / n - 16;
+
+        for (x = 0; x < n; ++x)
+          {
+            context[x] = (xmi_context_t) & _contexts[x];
+            void *base = NULL;
+            _mm.memalign((void **)&base, 16, bytes);
+            XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
+            new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
+                                             &_platdevs, base, bytes);
+            //_context_list->pushHead((QueueElem *)&context[x]);
+            //_context_list->unlock();
+          }
+
+          TRACE_ERR((stderr, "<< Client::createContext_impl()\n"));
+        return XMI_SUCCESS;
         }
 
         inline xmi_result_t destroyContext_impl (xmi_context_t context)
@@ -189,6 +213,47 @@ namespace XMI
 	{
 		return _clientid;
 	}
+
+    inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+      {
+        XMI_abort();
+        return XMI_SUCCESS;
+      }
+
+    inline xmi_result_t geometry_create_taskrange_impl(xmi_geometry_t       * geometry,
+                                                       xmi_geometry_t         parent,
+                                                       unsigned               id,
+                                                       xmi_geometry_range_t * rank_slices,
+                                                       size_t                 slice_count,
+                                                       xmi_context_t          context,
+                                                       xmi_event_function     fn,
+                                                       void                 * cookie)
+      {
+        XMI_abort();
+        return XMI_SUCCESS;
+      }
+
+
+    inline xmi_result_t geometry_create_tasklist_impl(xmi_geometry_t       * geometry,
+                                                      xmi_geometry_t         parent,
+                                                      unsigned               id,
+                                                      xmi_task_t           * tasks,
+                                                      size_t                 task_count,
+                                                      xmi_context_t          context,
+                                                      xmi_event_function     fn,
+                                                      void                 * cookie)
+      {
+        // todo:  implement this routine
+        XMI_abort();
+        return XMI_SUCCESS;
+      }
+
+
+    inline xmi_result_t geometry_destroy_impl (xmi_geometry_t geometry)
+      {
+        XMI_abort();
+        return XMI_UNIMPL;
+      }
 
       protected:
 

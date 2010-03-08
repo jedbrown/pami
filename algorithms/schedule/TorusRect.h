@@ -13,6 +13,7 @@
 
 #ifndef __algorithms_schedule_TorusRect_h__
 #define __algorithms_schedule_TorusRect_h__
+#ifndef __xmi_target_socklinux__
 
 /*-------------------------------------------------*/
 /*     Basic utility classes collectives           */
@@ -458,5 +459,6 @@ namespace CCMI
         }
         return XMI_ERROR;
       }
+#endif // __xmi_target_socklinux__
 #endif
 
