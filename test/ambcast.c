@@ -146,7 +146,6 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  int algorithm_type = 0;
   xmi_algorithm_t *algorithm=NULL;
   int num_algorithm[2] = {0};
   result = XMI_Geometry_algorithms_num(context,
@@ -236,7 +235,7 @@ int main(int argc, char*argv[])
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-  xmi_collective_hint_t h;
+  xmi_collective_hint_t h={0};
   xmi_dispatch_callback_fn fn;
   fn.ambroadcast = cb_bcast_recv;
   XMI_AMCollective_dispatch_set(context,
