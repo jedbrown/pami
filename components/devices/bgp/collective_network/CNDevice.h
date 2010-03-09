@@ -101,6 +101,9 @@ public:
 
 	virtual ~CNDevice() {}
 
+        /// \note This is required to make "C" programs link successfully with virtual destructors
+        inline void operator delete(void * p) { XMI_abort(); }
+
 	/**
 	 * \brief Tree Device Initialization
 	 *

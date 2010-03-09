@@ -492,6 +492,9 @@ public:
 
 	virtual ~CommonQueueSubDevice() {}
 
+        /// \note This is required to make "C" programs link successfully with virtual destructors
+        inline void operator delete(void * p) { XMI_abort(); }
+
 	/// \brief returns a unique ID relative to this common sub-device
 	///
 	/// \return integer ID unique to this CommonQueueSubDevice
