@@ -34,7 +34,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 volatile unsigned _send_active;
@@ -115,7 +115,7 @@ void recv_once (xmi_context_t context)
 
 unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, xmi_task_t myrank, xmi_endpoint_t origin, xmi_endpoint_t target)
 {
-  TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen));
+  TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", myrank, sndlen));
   _recv_active = 1;
   _recv_iteration = 0;
   _send_active = 1;
@@ -145,7 +145,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
     parameters.send.dest = target;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       send_once (context, &parameters);
       recv_once (context);
 
@@ -158,7 +158,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
     parameters.send.dest = origin;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       recv_once (context);
       send_once (context, &parameters);
 
@@ -208,7 +208,7 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zu\n", &_recv_active, _recv_active));
+  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
   xmi_result_t result = XMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
                                           fn,

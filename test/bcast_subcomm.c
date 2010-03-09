@@ -133,7 +133,6 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  int algorithm_type = 0;
   xmi_algorithm_t *world_algorithm=NULL;
   int num_algorithm[2] = {0, 0};
   result = XMI_Geometry_algorithms_num(context,

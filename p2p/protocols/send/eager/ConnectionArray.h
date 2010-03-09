@@ -67,7 +67,7 @@ namespace XMI
           }
 
           // All connection arrays are allocated? abort.
-          XMI_abort();
+          XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
           return;
         };
 

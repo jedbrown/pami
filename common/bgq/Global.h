@@ -66,7 +66,7 @@ namespace XMI
 	  // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
           rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-          TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", fd));
+          TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", rc));
           if ( rc != -1 )
           {
 	    fd = rc;
@@ -83,7 +83,7 @@ namespace XMI
 
                 TRACE_ERR((stderr, "Global() .. _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
                 size_t bytes_used =
-                  initializeMapCache (personality, ll, ur, min, max);
+                  initializeMapCache (personality, ll, ur, min, max, true);
 
                 // Round up to the page size
                 size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
@@ -105,7 +105,7 @@ namespace XMI
           	memset (_memptr, 0, bytes);
           	_memsize = bytes;
           	TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
-          	//size_t bytes_used = initializeMapCache (personality, ll, ur, min, max);
+          	initializeMapCache (personality, ll, ur, min, max, false);
 	  }
 
 	  mapping.init(_mapcache, personality);
@@ -114,6 +114,7 @@ namespace XMI
 	  for (unsigned d = 0; d < mapping.globalDims(); ++d) {
 		rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
 	  }
+    TRACE_ERR((stderr,  "Global() mapping.size %zd, rectsize %zd,mapping.globalDims %zd, min %zd, max %zd\n", mapping.size(), rectsize, mapping.globalDims(), min, max));
 	  if (mapping.size() == rectsize) {
 		new (&topology_global) XMI::Topology(&ll, &ur);
 	  } else if (mapping.size() == max - min + 1) {
@@ -149,7 +150,7 @@ namespace XMI
      private:
 
         inline size_t initializeMapCache (BgqPersonality  & personality,
-				xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max);
+				xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max, bool shared);
 
       public:
 
@@ -166,7 +167,7 @@ namespace XMI
 };     // XMI
 
 size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
-				xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max)
+				xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max, bool shared)
 {
   void            * ptr      = _memptr;
   //size_t            bytes    = _memsize;
@@ -223,7 +224,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   //myRank = personality.rank();
 
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. myRank=%zd, participant=%ld\n", myRank, participant));
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. participant=%ld\n", participant));
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. {%zd %zd %zd %zd %zd %zd %zd}\n", aSize, bSize, cSize, dSize, eSize, pSize, tSize));
 
 
@@ -258,7 +259,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   // If we are the master (participant 0), then initialize the caches.
   // Then, set the cache pointers into the shared memory area for the other
   // ranks on this node to see, and wait for them to see it.
-  if (participant == 0)
+  if ((participant == 0) || !shared)
     {
       // Allocate storage for an array to be used in the loop below to track
       // the number of physical nodes in the partition.  The loop goes through
@@ -478,8 +479,6 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
       max_rank = cacheAnchorsPtr->maxRank;
       min_rank = cacheAnchorsPtr->minRank;
 
-      min = min_rank;
-      max = max_rank;
       memcpy(&ll, (void *)&cacheAnchorsPtr->activeLLCorner, sizeof(ll));
       memcpy(&ur, (void *)&cacheAnchorsPtr->activeURCorner, sizeof(ur));
 
@@ -488,6 +487,9 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
       //cacheAnchorsPtr->done[personality.tCoord()] = 1;  // Indicate we have seen the info.
       Fetch_and_Add ((uint64_t *)&(cacheAnchorsPtr->atomic.exit), 1);
     }
+
+  min = min_rank;
+  max = max_rank;
 
   mapcache->size = cacheAnchorsPtr->numActiveRanksGlobal;
   mapcache->local_size = cacheAnchorsPtr->numActiveRanksLocal; //hack

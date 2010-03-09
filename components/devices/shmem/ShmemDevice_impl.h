@@ -171,7 +171,7 @@ namespace XMI
                                    void   * recv_func_parm,
                                    void   * cookie)
     {
-      XMI_abort();
+      XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
       return 0;
     }
   };

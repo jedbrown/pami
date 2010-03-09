@@ -11,17 +11,93 @@
  * \brief ???
  */
 
+
 #include "BgqPersonality.h"
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  #include <hwi/include/bqc/nd_500_dcr.h>
+#endif
 
 XMI::BgqPersonality::BgqPersonality ()
 {
   Personality_t * p = (Personality_t *) this;
 
-#ifndef FAKE_PERSONALITY
-  //if (Kernel_GetPersonality(p, sizeof(Personality_t))) != 0)
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+#warning ENABLE MAMBO WORKAROUNDS
+#undef TRACE_MAMBO
+#define TRACE_MAMBO(x) fprintf x
+
+  Kernel_GetPersonality(p, sizeof(Personality_t));
+
+  _is_mambo = false; // Indicates whether mambo is being used
+
+  TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.NodeConfig %#llX\n",(unsigned long long)(Kernel_Config.NodeConfig)));
+  TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.TraceConfig %#llX\n",(unsigned long long)(Kernel_Config.TraceConfig)));
+  TRACE_MAMBO((stderr, "BGQPersonality Network_Config.MuFlags %#llX\n",(unsigned long long)(Network_Config.MuFlags)));
+  TRACE_MAMBO((stderr, "BGQPersonality Network_Config.NetFlags %#llX\n",(unsigned long long)(Network_Config.NetFlags)));
+
+  uint64_t p1 = Kernel_Config.NodeConfig & PERS_ENABLE_Mambo;
+  if (p1) _is_mambo = true;
+  TRACE_MAMBO((stderr, "BGQPersonality is mambo enabled: %s\n",_is_mambo? "true":"false"));
+
+  TRACE_MAMBO((stderr,"Network_Config Coord A = %#x\n", Network_Config.Acoord));
+  TRACE_MAMBO((stderr,"Network_Config Coord B = %#x\n", Network_Config.Bcoord));
+  TRACE_MAMBO((stderr,"Network_Config Coord C = %#x\n", Network_Config.Ccoord));
+  TRACE_MAMBO((stderr,"Network_Config Coord D = %#x\n", Network_Config.Dcoord));
+  TRACE_MAMBO((stderr,"Network_Config Coord E = %#x\n", Network_Config.Ecoord));
+
+  TRACE_MAMBO((stderr,"Network_Config Nodes A = %#x\n", Network_Config.Anodes));
+  TRACE_MAMBO((stderr,"Network_Config Nodes B = %#x\n", Network_Config.Bnodes));
+  TRACE_MAMBO((stderr,"Network_Config Nodes C = %#x\n", Network_Config.Cnodes));
+  TRACE_MAMBO((stderr,"Network_Config Nodes D = %#x\n", Network_Config.Dnodes));
+  TRACE_MAMBO((stderr,"Network_Config Nodes E = %#x\n", Network_Config.Enodes));
+
+  if (_is_mambo)
+  {
+    unsigned dcr_num = ND_500_DCR_base + ND_500_DCR__CTRL_COORDS_offset;
+
+    unsigned long long dcr = DCRReadUser(dcr_num);
+
+    TRACE_MAMBO((stderr,"BGQPersonality() NODE_COORDINATES DCR = 0x%016llx\n", dcr));
+
+    Network_Config.Acoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr);
+    Network_Config.Bcoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr);
+    Network_Config.Ccoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr);
+    Network_Config.Dcoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr);
+    Network_Config.Ecoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr);
+
+    TRACE_MAMBO((stderr,"BGQPersonality() Coord A = %#x\n", Network_Config.Acoord));
+    TRACE_MAMBO((stderr,"BGQPersonality() Coord B = %#x\n", Network_Config.Bcoord));
+    TRACE_MAMBO((stderr,"BGQPersonality() Coord C = %#x\n", Network_Config.Ccoord));
+    TRACE_MAMBO((stderr,"BGQPersonality() Coord D = %#x\n", Network_Config.Dcoord));
+    TRACE_MAMBO((stderr,"BGQPersonality() Coord E = %#x\n", Network_Config.Ecoord));
+
+    Network_Config.Anodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr)+1;
+    Network_Config.Bnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr)+1;
+    Network_Config.Cnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr)+1;
+    Network_Config.Dnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr)+1;
+    Network_Config.Enodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr)+1;
+
+    TRACE_MAMBO((stderr,"BGQPersonality() Nodes A = %#x\n", Network_Config.Anodes));
+    TRACE_MAMBO((stderr,"BGQPersonality() Nodes B = %#x\n", Network_Config.Bnodes));
+    TRACE_MAMBO((stderr,"BGQPersonality() Nodes C = %#x\n", Network_Config.Cnodes));
+    TRACE_MAMBO((stderr,"BGQPersonality() Nodes D = %#x\n", Network_Config.Dnodes));
+    TRACE_MAMBO((stderr,"BGQPersonality() Nodes E = %#x\n", Network_Config.Enodes));
+
+    XMI_assertf(Network_Config.Acoord < Network_Config.Anodes, "assert Network_Config.Acoord(%#X) < Network_Config.Anodes(%#X)\n", Network_Config.Acoord,Network_Config.Anodes);
+    XMI_assertf(Network_Config.Bcoord < Network_Config.Bnodes, "assert Network_Config.Bcoord(%#X) < Network_Config.Bnodes(%#X)\n", Network_Config.Bcoord,Network_Config.Bnodes);
+    XMI_assertf(Network_Config.Ccoord < Network_Config.Cnodes, "assert Network_Config.Ccoord(%#X) < Network_Config.Cnodes(%#X)\n", Network_Config.Ccoord,Network_Config.Cnodes);
+    XMI_assertf(Network_Config.Dcoord < Network_Config.Dnodes, "assert Network_Config.Dcoord(%#X) < Network_Config.Dnodes(%#X)\n", Network_Config.Dcoord,Network_Config.Dnodes);
+    XMI_assertf(Network_Config.Ecoord < Network_Config.Enodes, "assert Network_Config.Ecoord(%#X) < Network_Config.Enodes(%#X)\n", Network_Config.Ecoord,Network_Config.Enodes);
+  }
+
+#else // no mambo workarounds..
   if (Kernel_GetPersonality(p, sizeof(Personality_t)) != 0)
-    XMI_abort();
-#else
+    XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+#endif
+
+#ifdef FAKE_PERSONALITY
+#warning FAKE PERSONALITY ?
   Kernel_GetPersonality(p, sizeof(Personality_t));
 
   Network_Config.Anodes = 1;
@@ -78,30 +154,30 @@ XMI::BgqPersonality::BgqPersonality ()
   _rankpset = BGP_Personality_rankInPset(p);
 
   switch (BGP_Personality_processConfig(p))
+  {
+  case _BGP_PERS_PROCESSCONFIG_SMP:
     {
-      case _BGP_PERS_PROCESSCONFIG_SMP:
-        {
-          _Tnodes = 1;
-          _maxThreads = 4;
-          _t = 0;
-          break;
-        }
-      case _BGP_PERS_PROCESSCONFIG_VNM:
-        {
-          _Tnodes = 4;
-          _maxThreads = 1;                   // 1 thread per virtual node
-          _t = Kernel_PhysicalProcessorID(); // T is either 0, 1, 2, or 3
-          break;
-        }
-      case _BGP_PERS_PROCESSCONFIG_2x2:
-        {
-          _Tnodes = 2;
-          _maxThreads = 2;                       // 2 threads per virtual node
-          _t = Kernel_PhysicalProcessorID() / 2; // Processor ID is either 0 or 2
-          // T is either 0 or 1
-          break;
-        }
+      _Tnodes = 1;
+      _maxThreads = 4;
+      _t = 0;
+      break;
     }
+  case _BGP_PERS_PROCESSCONFIG_VNM:
+    {
+      _Tnodes = 4;
+      _maxThreads = 1;                   // 1 thread per virtual node
+      _t = Kernel_PhysicalProcessorID(); // T is either 0, 1, 2, or 3
+      break;
+    }
+  case _BGP_PERS_PROCESSCONFIG_2x2:
+    {
+      _Tnodes = 2;
+      _maxThreads = 2;                       // 2 threads per virtual node
+      _t = Kernel_PhysicalProcessorID() / 2; // Processor ID is either 0 or 2
+      // T is either 0 or 1
+      break;
+    }
+  }
 
   _isTorusX = BGP_Personality_isTorusX(p);
   _isTorusY = BGP_Personality_isTorusY(p);
@@ -162,16 +238,16 @@ void XMI::BgqPersonality::dumpPersonality ()
 
   printf(" IOnodes:         %d\n", p->Network_Config.IOnodes );
   printf(" Rank:         %d\n", p->Network_Config.Rank );
-  for ( i = 0, tmp = 0 ; i < 16 ; i++ )
+  for (i = 0, tmp = 0 ; i < 16 ; i++)
+  {
+    if (p->Network_Config.TreeRoutes[i])
     {
-      if ( p->Network_Config.TreeRoutes[i] )
-        {
-          tmp++;
-          printf(" TreeRoutes[%d]: 0x %04x\n",
-                 i, p->Network_Config.TreeRoutes[i] );
-        }
+      tmp++;
+      printf(" TreeRoutes[%d]: 0x %04x\n",
+             i, p->Network_Config.TreeRoutes[i] );
     }
-  if ( !tmp )
+  }
+  if (!tmp)
     printf(" TreeRoutes:           (none defined)\n" );
 
 

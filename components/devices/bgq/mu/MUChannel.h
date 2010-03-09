@@ -224,9 +224,9 @@ inline int XMI::Device::MU::Channel::advanceRecv()
 {
   int events = 0;
 
-  TRACE((stderr, ">> MU::Channel::advanceRecv()\n"));
+  //TRACE((stderr, ">> MU::Channel::advanceRecv()\n"));
   events += _resMgr.advanceReceptionFifos();
-  TRACE((stderr, "<< MU::Channel::advanceRecv() .. events = %d\n", events));
+  //TRACE((stderr, "<< MU::Channel::advanceRecv() .. events = %d\n", events));
 
   //Counter advance for rzv messages
   return events;

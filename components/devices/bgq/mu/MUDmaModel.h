@@ -195,7 +195,7 @@ namespace XMI
           }
         else
           {
-            XMI_abort();
+            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
           }
 
         return true;
@@ -317,7 +317,7 @@ namespace XMI
           }
         else
           {
-            XMI_abort();
+            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
 #if 0
             // Construct a message and post to the device to be processed later.
             new (obj) MUInjFifoMessage (cb);

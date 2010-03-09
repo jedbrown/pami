@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = 
+SUBDIRS         =
 NOTBUILT        = 
-APPS            = create.${EXTENSION} advance.${EXTENSION} multi-create.${EXTENSION} multi-advance.${EXTENSION} post.${EXTENSION} lock.${EXTENSION} post-multithreaded.${EXTENSION} post-multithreaded-perf.${EXTENSION}
+APPS            = personality.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
@@ -29,12 +29,29 @@ ifeq (@BUILDENV@,ade)
 else
 
 %.${EXTENSION}: %.c
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cc
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cpp
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 
 endif
 
 default: ${APPS}
+
+runmambo:
+	BG_SHAREDMEMSIZE=1 BG_PROCESSESPERNODE=4 @BGFLOOR@/scripts/runfctest.sh \
+	--ttype cnk \
+	--parmstest ${VPATH}/test.parms \
+	--program personality.cnk \
+	--svchost ${VPATH}/pers.svchost \
+	--numcores 16 \
+	--script runMambo \
+	$(parms)
+
+#hack to run multi-mambo.  First runmambo and runmulti-mambo will find/cp the elf and pers files
+runmulti-mambo:
+	find ./ -name "personality.cnk.t1.pers"  -exec cp {} ./personality.cnk.pers \;
+	find ./ -name "bgq_firmware.elf" -exec cp {} ./firmware.elf \;
+	cp $(VPATH)/mmambo.tcl .
+	mpirun -np 2 -x MAMBO_BGQ_MAPFILE=$(VPATH)/map.txt /bgsys/bgq/drivers/x86_64.multi-mambo/bin/systemsim-bgq -n -f mmambo.tcl

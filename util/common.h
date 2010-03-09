@@ -64,7 +64,7 @@
 
 /// abort macros defined for all assertion levels
 #define XMI_abort()                       abort()
-#define XMI_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: ", __LINE__); fprintf(stderr, fmt); abort(); }
+#define XMI_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); fprintf(stderr, fmt); abort(); }
 
 #ifndef ASSERT_LEVEL
 #define ASSERT_LEVEL 2

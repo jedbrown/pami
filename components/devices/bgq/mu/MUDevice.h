@@ -506,31 +506,31 @@ int XMI::Device::MU::MUDevice::advance()
 #if 1
   static size_t loopcount = 0;
 
-  if (loopcount++ > 1000) XMI_abort();
+  if (loopcount++ > 100000) XMI_abortf("Lots of advancing going on.\n");
 
 #endif
 
-  TRACE((stderr, ">> MUDevice::advance_impl() .. _p2pSendChannelIndex = %d (%d)\n", _p2pSendChannelIndex, NULL_P2P_CHANNEL));
+  //TRACE((stderr, ">> MUDevice::advance_impl() .. _p2pSendChannelIndex = %d (%d)\n", _p2pSendChannelIndex, NULL_P2P_CHANNEL));
 
   if ( _p2pSendChannelIndex != NULL_P2P_CHANNEL )
     events += _p2pChannel[_p2pSendChannelIndex]->advanceSend();
 
-  TRACE((stderr, "   MUDevice::advance_impl() .. _p2pRecvChannelIndex = %d (%d)\n", _p2pRecvChannelIndex, NULL_P2P_CHANNEL));
+  //ACE((stderr, "   MUDevice::advance_impl() .. _p2pRecvChannelIndex = %d (%d)\n", _p2pRecvChannelIndex, NULL_P2P_CHANNEL));
 
   if ( _p2pRecvChannelIndex != NULL_P2P_CHANNEL )
     events += _p2pChannel[_p2pRecvChannelIndex]->advanceRecv();
 
-  TRACE((stderr, "   MUDevice::advance_impl() .. _colSendChannelFlag = %d\n", _colSendChannelFlag));
+  //TRACE((stderr, "   MUDevice::advance_impl() .. _colSendChannelFlag = %d\n", _colSendChannelFlag));
 
   if ( _colSendChannelFlag )
     events += _colChannel->advanceSend();
 
-  TRACE((stderr, "   MUDevice::advance_impl() .. _colRecvChannelFlag = %d\n", _colRecvChannelFlag));
+  //TRACE((stderr, "   MUDevice::advance_impl() .. _colRecvChannelFlag = %d\n", _colRecvChannelFlag));
 
   if ( _colRecvChannelFlag )
     events += _colChannel->advanceRecv();
 
-  TRACE((stderr, "<< MUDevice::advance_impl() .. events = %d\n", events));
+  //TRACE((stderr, "<< MUDevice::advance_impl() .. events = %d\n", events));
   return events;
 }
 

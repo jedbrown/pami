@@ -181,7 +181,7 @@ int XMI::Device::MU::MUDevice::noop (void   * metadata,
                                      void   * cookie)
 {
   fprintf (stderr, "Error. Dispatch to unregistered id (%zd).\n", (size_t) recv_func_parm);
-  XMI_abort();
+  XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
   return 0;
 };
 
