@@ -51,7 +51,7 @@ unsigned _mamboSleep(unsigned seconds, unsigned from)
   return 0;
 }
 #else 
-mamboSleep(x) sleep(x)
+#define mamboSleep(x) 
 #endif
 
 
