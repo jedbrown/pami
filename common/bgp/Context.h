@@ -232,6 +232,8 @@ namespace XMI
 
         _lock.init(&_sysdep);
 	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
+	_local_generic_device = & XMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
+					     
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -254,11 +256,17 @@ namespace XMI
 
       inline xmi_result_t post_impl (xmi_work_t *state, xmi_work_function work_fn, void * cookie)
       {
+        TRACE_ERR((stderr, ">> Context::post_impl(%p, %p, %p)\n", state, work_fn, cookie));
         XMI::Device::Generic::GenericThread *work;
 	COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
+        TRACE_ERR((stderr, "   Context::post_impl(%p, %p, %p) .. 0\n", state, work_fn, cookie));
 	work = new (state) XMI::Device::Generic::GenericThread(work_fn, cookie);
+        TRACE_ERR((stderr, "   Context::post_impl(%p, %p, %p) .. 1\n", state, work_fn, cookie));
 	work->setStatus(XMI::Device::OneShot);
-	_devices->_generics[_contextid].postThread(work);
+        TRACE_ERR((stderr, "   Context::post_impl(%p, %p, %p) .. 2\n", state, work_fn, cookie));
+	//_devices->_generics[_contextid].postThread(work);
+	_local_generic_device->postThread(work);
+        TRACE_ERR((stderr, "<< Context::post_impl(%p, %p, %p)\n", state, work_fn, cookie));
         return XMI_SUCCESS;
       }
 
@@ -553,7 +561,7 @@ namespace XMI
                                 cookie,
                                 options.hint.send);
         }
-          TRACE_ERR((stderr, "<< dispatch_new_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index]));
+          //TRACE_ERR((stderr, "<< dispatch_new_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index]));
           return result;
       }
 
@@ -606,6 +614,7 @@ namespace XMI
       ProtocolAllocator _protocol;
       PlatformDeviceList *_devices;
 
+      XMI::Device::Generic::Device * _local_generic_device;
   }; // end XMI::Context
 }; // end namespace XMI
 

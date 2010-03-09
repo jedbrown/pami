@@ -65,7 +65,7 @@ extern "C"
    */
   typedef xmi_result_t (*xmi_work_function)(xmi_context_t context, void *cookie);
 
-  typedef uint32_t xmi_work_t[8 * (sizeof(void *)/sizeof(uint32_t))];
+  typedef uintptr_t xmi_work_t[8];
 
   typedef struct
   {

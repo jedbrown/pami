@@ -41,6 +41,6 @@ typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDevice
 typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
 
 /// \brief Queue type to use for generic device threads (work) queue(s)
-typedef XMI::Queue	GenericDeviceWorkQueue;
+typedef XMI::AtomicQueue<GenericDeviceMutex>	GenericDeviceWorkQueue;
 
 #endif // __common_bgp_GenericDevicePlatform_h__
