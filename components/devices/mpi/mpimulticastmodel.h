@@ -81,6 +81,7 @@ namespace XMI
                 {
 
                 }
+	  return rc;
                 }
       T_Device                  &_device;
       xmi_dispatch_multicast_fn  _cb_async_head;
