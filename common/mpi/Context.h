@@ -74,10 +74,10 @@ namespace XMI
                                             XMI::Device::MPIBcastMdl,
 					    XMI::Device::MPIBcastDev> P2PMcastProto;
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
-    typedef Fifo::FifoPacket <32, 240> ShmemPacket;
+    typedef Fifo::FifoPacket <32, 512> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-    typedef Device::ShmemPacketModel<ShmemDevice> ShmemModel;
+    typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
   // Collective Types

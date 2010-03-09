@@ -111,7 +111,7 @@ namespace XMI
 		// relevant fields of the context, so this memset should not be
 		// needed anyway.
 		//memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
-		size_t bytes = _mm.size() / n;
+		size_t bytes = _mm.available() / n - 16;
 		int x;
 		for (x = 0; x < n; ++x) {
 			context[x] = (xmi_context_t)&_contexts[x];
