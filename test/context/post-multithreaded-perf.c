@@ -95,7 +95,6 @@ void * thread_main (void * arg)
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
-  xmi_context_t context[2];
   //xmi_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
@@ -182,7 +181,7 @@ int main (int argc, char ** argv)
               for (t = 0; t < num_threads; t++)
                 {
   TRACE((stderr, "   main () .. 7, %zu %zu\n", i, t));
-                  result = XMI_Context_post (context[t], &_work[t], do_work, (void *) & _value[t]);
+                  result = XMI_Context_post (_context[t], &_work[t], do_work, (void *) & _value[t]);
 #ifdef TRACE
 
                   if (result != XMI_SUCCESS)

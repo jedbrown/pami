@@ -113,6 +113,10 @@ namespace XMI
           _size (0)
       {};
 
+      inline void init(XMI::SysDep *sd)
+      {
+      }
+
       inline void enqueue_impl (Element * element)
       {
         element->set (_tail, NULL, T_ElemNum);
