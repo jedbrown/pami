@@ -56,6 +56,12 @@ namespace XMI
 
               virtual ~Message () {};
 
+              /// \note This is required to make "C" programs link successfully with virtual destructors
+              inline void operator delete (void * p)
+              {
+                XMI_abort();
+              }
+
               void setup (XMI::Device::Generic::Device * device, SendQueue * sendQ)
               {
                 TRACE_ERR((stderr, ">> SendQueue::Message::setup(%p, %p)\n", device, senQ));

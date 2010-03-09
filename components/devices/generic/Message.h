@@ -66,6 +66,9 @@ public:
 
 	virtual ~GenericMessage() {}
 
+        /// \note This is required to make "C" programs link successfully with virtual destructors
+        inline void operator delete(void * p) { XMI_abort(); }
+
 	/// \brief get client associated with message
 	/// \return	client for message posting/completion
 	size_t getClientId() { return _client; }
