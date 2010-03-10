@@ -5,12 +5,45 @@
 
 #include "sys/xmi.h"
 #include <stdio.h>
+
+#define TEST_REMOTE_CALLBACK
+
+
+uint8_t __recv_buffer[2048];
+size_t __recv_size;
+size_t __data_errors;
+
+unsigned validate (void * addr, size_t bytes)
+{
+  unsigned status = 1;
+  uint8_t * byte = (uint8_t *) addr;
+  size_t i;
+  for (i=0; i<bytes; i++)
+  {
+    if (byte[i] != (uint8_t)i)
+    {
+      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%d] != %d (&byte[%d] = %p, value is %d)\n", addr, bytes, i, (uint8_t)i, i, &byte[i], byte[i]);
+      status = 0;
+    }
+  }
+  
+  return status;
+}
+
+
 static void recv_done (xmi_context_t   context,
                        void          * cookie,
                        xmi_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called recv_done function.  active: %zu -> %zu\n", *active, *active-1);
+  fprintf (stderr, "Called recv_done function.  active(%p): %zu -> %zu, __recv_size = %zu\n", active, *active, *active-1, __recv_size);
+
+  if (!validate(__recv_buffer, __recv_size))
+  {
+    __data_errors++;
+    fprintf (stderr, "validate data ERROR!\n");
+  }
+
   (*active)--;
 }
 
@@ -24,16 +57,28 @@ static void test_dispatch (
     xmi_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu\n", cookie, *active);
+  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_size = %zu, pipe_size = %zu\n", cookie, *active, header_size, pipe_size);
   //(*active)--;
   //fprintf (stderr, "... dispatch function.  active = %zu\n", *active);
 
-  recv->local_fn = recv_done;
-  recv->cookie   = cookie;
-  recv->kind = XMI_AM_KIND_SIMPLE;
-  recv->data.simple.addr  = NULL;
-  recv->data.simple.bytes = 0;
-  fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
+  if (!validate(header_addr, header_size))
+    fprintf (stderr, "validate header ERROR!\n");
+
+  if (pipe_size == 0)
+  {
+    (*active)--;
+  }
+  else
+  {
+    __recv_size = pipe_size;
+
+    recv->local_fn = recv_done;
+    recv->cookie   = cookie;
+    recv->kind = XMI_AM_KIND_SIMPLE;
+    recv->data.simple.addr  = __recv_buffer;
+    recv->data.simple.bytes = pipe_size;
+    //fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
+  }
 
   return;
 }
@@ -43,7 +88,7 @@ static void send_done_local (xmi_context_t   context,
                              xmi_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called send_done_local function.  active: %zu -> %zu\n", *active, *active-1);
+  fprintf (stderr, "Called send_done_local function.  active(%p): %zu -> %zu\n", active, *active, *active-1);
   (*active)--;
 }
 
@@ -52,16 +97,20 @@ static void send_done_remote (xmi_context_t   context,
                               xmi_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called send_done_remote function.  active: %zu -> %zu\n", *active, *active-1);
+  fprintf (stderr, "Called send_done_remote function.  active(%p): %zu -> %zu\n", active, *active, *active-1);
   (*active)--;
-  fprintf (stderr, "... send_done_remote function.  active = %zu\n", *active);
+  //fprintf (stderr, "... send_done_remote function.  active = %zu\n", *active);
 }
 
 int main (int argc, char ** argv)
 {
-  volatile size_t send_active = 2;
+  volatile size_t send_active = 1;
+#ifdef TEST_REMOTE_CALLBACK
+  send_active++;
+#endif
   volatile size_t recv_active = 1;
 
+  __data_errors = 0;
 
   xmi_client_t client;
   xmi_context_t context;
@@ -126,65 +175,126 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+  uint8_t header[1024];
+  uint8_t data[1024];
+  size_t i;
+  for (i=0; i<1024; i++)
+  {
+    header[i] = (uint8_t)i;
+    data[i]   = (uint8_t)i;
+  }
+
+  size_t h, hsize = 0;
+  size_t header_bytes[16];
+  header_bytes[hsize++] = 0;
+  header_bytes[hsize++] = 16;
+  header_bytes[hsize++] = 32;
+  
+  size_t p, psize = 0;
+  size_t data_bytes[16];
+  //data_bytes[psize++] = 0;
+  //data_bytes[psize++] = 16;
+  //data_bytes[psize++] = 32;
+  //data_bytes[psize++] = 64;
+  data_bytes[psize++] = 128;
+  data_bytes[psize++] = 256;
+  data_bytes[psize++] = 512;
+  data_bytes[psize++] = 1024;
+
   xmi_send_t parameters;
   parameters.send.dispatch        = dispatch;
-  parameters.send.header.iov_base = NULL;
-  parameters.send.header.iov_len  = 0;
-  parameters.send.data.iov_base   = NULL;
-  parameters.send.data.iov_len    = 0;
+  parameters.send.header.iov_base = header;
+  parameters.send.data.iov_base   = data;
   parameters.events.cookie        = (void *) &send_active;
   parameters.events.local_fn      = send_done_local;
+#ifdef TEST_REMOTE_CALLBACK
   parameters.events.remote_fn     = send_done_remote;
-
+#else
+  parameters.events.remote_fn     = NULL;
+#endif
   if (task_id == 0)
   {
-    fprintf (stderr, "before send ...\n");
     parameters.send.dest = XMI_Client_endpoint (client, 1, 0);
-    result = XMI_Send (context, &parameters);
-    fprintf (stderr, "... after send.\n");
-
-    fprintf (stderr, "before send-recv advance loop ...\n");
-    while (send_active || recv_active)
+    
+    for (h=0; h<hsize; h++)
     {
-      result = XMI_Context_advance (context, 100);
-      if (result != XMI_SUCCESS)
+      parameters.send.header.iov_len = header_bytes[h];
+      for (p=0; p<psize; p++)
       {
-        fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-        return 1;
+        parameters.send.data.iov_len = data_bytes[p];
+      
+        fprintf (stderr, "################################### %zu %zu\n", header_bytes[h], data_bytes[p]);
+        fprintf (stderr, "before send ...\n");
+        result = XMI_Send (context, &parameters);
+        fprintf (stderr, "... after send.\n");
+
+        fprintf (stderr, "before send-recv advance loop ... &send_active = %p, &recv_active = %p\n", &send_active, &recv_active);
+        while (send_active || recv_active)
+        {
+          result = XMI_Context_advance (context, 100);
+          if (result != XMI_SUCCESS)
+          {
+            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            return 1;
+          }
+        }
+        send_active = 1;
+#ifdef TEST_REMOTE_CALLBACK
+        send_active++;
+#endif
+        recv_active = 1;
+        fprintf (stderr, "... after send-recv advance loop\n");
       }
     }
-    fprintf (stderr, "... after send-recv advance loop\n");
   }
   else
   {
-    fprintf (stderr, "before recv advance loop ...\n");
-    while (recv_active != 0)
-    {
-      result = XMI_Context_advance (context, 100);
-      if (result != XMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-        return 1;
-      }
-    }
-    fprintf (stderr, "... after recv advance loop\n");
-
-    fprintf (stderr, "before send ...\n");
     parameters.send.dest = XMI_Client_endpoint (client, 0, 0);
-    result = XMI_Send (context, &parameters);
-    fprintf (stderr, "... after send.\n");
-
-    fprintf (stderr, "before send advance loop ...\n");
-    while (send_active)
+    
+    for (h=0; h<hsize; h++)
     {
-      result = XMI_Context_advance (context, 100);
-      if (result != XMI_SUCCESS)
+      parameters.send.header.iov_len = header_bytes[h];
+      for (p=0; p<psize; p++)
       {
-        fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-        return 1;
+        parameters.send.data.iov_len = data_bytes[p];
+      
+        fprintf (stderr, "################################### %zu %zu\n", header_bytes[h], data_bytes[p]);
+        fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
+        while (recv_active != 0)
+        {
+          result = XMI_Context_advance (context, 100);
+          if (result != XMI_SUCCESS)
+          {
+            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            return 1;
+          }
+          fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);
+        }
+        recv_active = 1;
+        fprintf (stderr, "... after recv advance loop\n");
+
+        fprintf (stderr, "before send ...\n");
+        result = XMI_Send (context, &parameters);
+        fprintf (stderr, "... after send.\n");
+
+        fprintf (stderr, "before send advance loop ... &send_active = %p\n", &send_active);
+        while (send_active)
+        {
+          result = XMI_Context_advance (context, 100);
+          if (result != XMI_SUCCESS)
+          {
+            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            return 1;
+          }
+          fprintf (stderr, "------ send advance loop ... &send_active = %p\n", &send_active);
+        }
+        send_active = 1;
+#ifdef TEST_REMOTE_CALLBACK
+        send_active++;
+#endif
+        fprintf (stderr, "... after send advance loop\n");
       }
     }
-    fprintf (stderr, "... after send advance loop\n");
   }
 
 
@@ -202,6 +312,20 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
     return 1;
   }
+
+  if (__data_errors > 0)
+  {
+    fprintf (stdout, "\n");
+    fprintf (stdout, "Error. %zu data errors on task %d\n", __data_errors, task_id);
+    fprintf (stdout, "\n");
+  }
+  else
+  {
+    fprintf (stdout, "\n");
+    fprintf (stdout, "Success (%d)\n", task_id);
+    fprintf (stdout, "\n");
+  }
+
 
   return 0;
 };

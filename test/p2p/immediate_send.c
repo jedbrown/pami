@@ -6,6 +6,25 @@
 #include "sys/xmi.h"
 #include <stdio.h>
 
+
+unsigned validate (void * addr, size_t bytes)
+{
+  unsigned status = 1;
+  uint8_t * byte = (uint8_t *) addr;
+  uint8_t i;
+  for (i=0; i<bytes; i++)
+  {
+    if (byte[i] != i)
+    {
+      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%d] != %d (value is %d)\n", addr, bytes, i, i, byte[i]);
+      status = 0;
+    }
+  }
+  
+  return status;
+}
+
+
 static void test_dispatch (
     xmi_context_t        context,      /**< IN: XMI context */
     void               * cookie,       /**< IN: dispatch cookie */
@@ -20,6 +39,18 @@ static void test_dispatch (
   (*active)--;
   fprintf (stderr, ">>> [%zu] %s\n", header_size, (char *) header_addr);
   fprintf (stderr, ">>> [%zu] %s\n", pipe_size, (char *) pipe_addr);
+  
+  if (validate (header_addr, header_size))
+    fprintf (stderr, ">>> header validated.\n");
+  else
+    fprintf (stderr, ">>> header ERROR !!\n");
+
+  if (validate (pipe_addr, pipe_size))
+    fprintf (stderr, ">>> payload validated.\n");
+  else
+    fprintf (stderr, ">>> payload ERROR !!\n");
+
+
   fprintf (stderr, "... dispatch function.\n");
 
   return;
@@ -96,62 +127,97 @@ int main (int argc, char ** argv)
 
   char header_string[1024];
   char data_string[1024];
-  size_t header_bytes = 1 + snprintf (header_string, 1024, "Header: This message is from task: %zu", task_id);
-  size_t data_bytes   = 1 + snprintf (data_string, 1024, "Data: Hello!");
+  
+  size_t i;
+  for (i=0; i<1024; i++)
+  {
+    header_string[i] = (char)i;
+    data_string[i]   = (char)i;
+  }
+  
+  size_t h, hsize = 0;
+  size_t header_bytes[16];
+  header_bytes[hsize++] = 0;
+  header_bytes[hsize++] = 16;
+  header_bytes[hsize++] = 32;
+  
+  size_t p, psize = 0;
+  size_t data_bytes[16];
+  data_bytes[psize++] = 0;
+  data_bytes[psize++] = 16;
+  data_bytes[psize++] = 32;
 
   xmi_send_immediate_t parameters;
   parameters.dispatch        = dispatch;
   parameters.header.iov_base = header_string;
-  parameters.header.iov_len  = header_bytes;
   parameters.data.iov_base   = data_string;
-  parameters.data.iov_len    = data_bytes;
 
   if (task_id == 0)
   {
     fprintf (stderr, "before send immediate ...\n");
     parameters.dest = XMI_Client_endpoint (client, 1, 0);
-    result = XMI_Send_immediate (context, &parameters);
-    fprintf (stderr, "... after send immediate.\n");
-
-    fprintf (stderr, "before advance loop ...\n");
-    while (recv_active != 0)
+    
+    for (h=0; h<hsize; h++)
     {
-      result = XMI_Context_advance (context, 100);
-      if (result != XMI_SUCCESS)
+      parameters.header.iov_len = header_bytes[h];
+      for (p=0; p<psize; p++)
       {
-        fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-        return 1;
+        parameters.data.iov_len = data_bytes[p];
+      
+        result = XMI_Send_immediate (context, &parameters);
+        fprintf (stderr, "... after send immediate.\n");
+
+        fprintf (stderr, "before advance loop ...\n");
+        while (recv_active != 0)
+        {
+          result = XMI_Context_advance (context, 100);
+          if (result != XMI_SUCCESS)
+          {
+            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            return 1;
+          }
+        }
+        recv_active = 1;
       }
     }
     fprintf (stderr, "... after advance loop\n");
   }
   else
   {
-    fprintf (stderr, "before recv advance loop ...\n");
-    while (recv_active != 0)
+    parameters.dest = XMI_Client_endpoint (client, 0, 0);
+    for (h=0; h<hsize; h++)
     {
-      result = XMI_Context_advance (context, 100);
-      if (result != XMI_SUCCESS)
+      parameters.header.iov_len = header_bytes[h];
+      for (p=0; p<psize; p++)
       {
-        fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-        return 1;
+        parameters.data.iov_len = data_bytes[p];
+        fprintf (stderr, "before recv advance loop ...\n");
+        while (recv_active != 0)
+        {
+          result = XMI_Context_advance (context, 100);
+          if (result != XMI_SUCCESS)
+          {
+            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            return 1;
+          }
+        }
+        recv_active = 1;
+        fprintf (stderr, "... after recv advance loop\n");
+
+        fprintf (stderr, "before send ...\n");
+        result = XMI_Send_immediate (context, &parameters);
+        fprintf (stderr, "... after send.\n");
+
+        fprintf (stderr, "before send advance loop ...\n");
+        result = XMI_Context_advance (context, 100);
+        if (result != XMI_SUCCESS)
+        {
+          fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+          return 1;
+        }
+        fprintf (stderr, "... after send advance loop\n");
       }
     }
-    fprintf (stderr, "... after recv advance loop\n");
-
-    fprintf (stderr, "before send ...\n");
-    parameters.dest = XMI_Client_endpoint (client, 0, 0);
-    result = XMI_Send_immediate (context, &parameters);
-    fprintf (stderr, "... after send.\n");
-
-    fprintf (stderr, "before send advance loop ...\n");
-    result = XMI_Context_advance (context, 100);
-    if (result != XMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
-      return 1;
-    }
-    fprintf (stderr, "... after send advance loop\n");
   }
 
 

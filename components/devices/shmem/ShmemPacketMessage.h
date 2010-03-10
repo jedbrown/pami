@@ -162,6 +162,7 @@ namespace XMI
                                                      this->__iov.iov_base, bytes,
                                                      sequence) == XMI_SUCCESS)
               {
+                TRACE_ERR((stderr, "   MultiPacketMessage::advance() .. this->__iov.iov_base = %p, this->__iov.iov_len = %zu, bytes = %zu\n", this->__iov.iov_base, this->__iov.iov_len, bytes));
                 if (this->__iov.iov_len <= bytes)
                   {
                     this->setStatus (XMI::Device::Done);
@@ -170,9 +171,10 @@ namespace XMI
                   }
 
                 uint8_t * tmp = (uint8_t *) this->__iov.iov_base;
-                this->__iov.iov_base = (void *)(tmp + this->__iov.iov_len);
+                this->__iov.iov_base = (void *)(tmp + bytes);
                 this->__iov.iov_len -= bytes;
-                TRACE_ERR((stderr, "   MultiPacketMessage::advance() .. update state, __iov.iov_base = %p, __iov.iov_len = %zu\n", this->__iov.iov_base, this->__iov.iov_len));
+                bytes = MIN(this->__iov.iov_len, T_Device::payload_size);
+                TRACE_ERR((stderr, "   MultiPacketMessage::advance() .. update state, __iov.iov_base = %p, __iov.iov_len = %zu, bytes = %zu\n", this->__iov.iov_base, this->__iov.iov_len, bytes));
               }
 
             TRACE_ERR((stderr, "<< MultiPacketMessage::advance() .. return XMI_EAGAIN (== \"not done\")\n"));
