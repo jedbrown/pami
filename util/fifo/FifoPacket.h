@@ -21,7 +21,7 @@
 #include "util/fifo/Packet.h"
 
 #ifndef TRACE
-#define TRACE(x)
+#define TRACE(x) // fprintf x
 #endif
 
 namespace XMI
@@ -134,10 +134,32 @@ namespace XMI
 
           inline void copyPayload_impl (void * addr)
           {
+            TRACE((stderr, "FifoPacket::copyPayload_impl(%p), sizeof(size_t) = %zu, T_PacketSize = %zu, T_HeaderSize = %zu, &_data[T_HeaderSize/sizeof(xmi_quad_t)] = %p\n", addr, sizeof(size_t), T_PacketSize, T_HeaderSize, &_data[T_HeaderSize/sizeof(xmi_quad_t)]));
+#if 0
             if(likely((size_t)addr & 0x0f == 0))
               Type<xmi_quad_t>::copy<T_PacketSize-T_HeaderSize> ((xmi_quad_t *) addr, &_data[T_HeaderSize]);
             else
               Type<size_t>::copy<T_PacketSize-T_HeaderSize> ((size_t *) addr, (size_t *) &_data[T_HeaderSize]);
+#else
+            if (sizeof(size_t) == 4)
+            {
+              size_t * src = (size_t *) addr;
+              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(xmi_quad_t)];
+              size_t i, n = (T_PacketSize-T_HeaderSize) >> 2;
+              for (i=0; i<n; i++) dst[i] = src[i];
+            }
+            else if (sizeof(size_t) == 8)
+            {
+              size_t * src = (size_t *) addr;
+              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(xmi_quad_t)];
+              size_t i, n = (T_PacketSize-T_HeaderSize) >> 3;
+              for (i=0; i<n; i++) dst[i] = src[i];
+            }
+            else
+            {
+              memcpy ((void *) &_data[T_HeaderSize/sizeof(xmi_quad_t)], addr, T_PacketSize-T_HeaderSize);
+            }
+#endif
           };
 
           static const size_t headerSize_impl  = T_HeaderSize;

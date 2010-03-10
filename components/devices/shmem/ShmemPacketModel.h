@@ -26,7 +26,7 @@
 #include "components/devices/shmem/ShmemPacketMessage.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //  fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -243,16 +243,87 @@ namespace XMI
                                             size_t               length)
           {
             TRACE_ERR((stderr, ">> PacketModel::postMultiPacket_impl()\n"));
-            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t sequence, fnum = _device.fnum (_device.task2peer(target_task), target_offset);
 
-            TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before constructor\n"));
-            MultiPacketMessage<T_Device> * obj = (MultiPacketMessage<T_Device> *) & state[0];
-            new (obj) MultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
-            obj->setHeader (_dispatch_id, metadata, metasize);
-            obj->setPayload (payload, length);
+            uint8_t * src = (uint8_t *) payload;
+            size_t bytes_to_write = length;
+
+            if (likely(_device.isSendQueueEmpty (fnum)))
+              {
+                TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), send queue is empty, bytes_to_write = %zu\n", bytes_to_write));
+
+                // write as many full packets as possible
+                while (bytes_to_write >= packet_model_payload_bytes)
+                {
+                  TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), write a full packet, src = %p, bytes_to_write = %zu\n", src, bytes_to_write));
+                  if (_device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
+                                                 (void *) src,
+                                                 //packet_model_payload_bytes,
+                                                 sequence) == XMI_SUCCESS)
+                  {
+                    src += packet_model_payload_bytes;
+                    bytes_to_write -= packet_model_payload_bytes;
+                  }
+                  else
+                  {
+                    // no space in fifo, construct message and post to device
+                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), not able to write all of the full packets to the fifo\n"));
+                    MultiPacketMessage<T_Device> * msg = (MultiPacketMessage<T_Device> *) & state[0];
+                    new (msg) MultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
+                    msg->setHeader (_dispatch_id, metadata, metasize);
+                    msg->setPayload ((void *) src, bytes_to_write);
+
+                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
+                    _device.post (fnum, msg);
+                    
+                    TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
+                    return false;
+                  }
+                }
+                
+                TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), after writing all full packets, src = %p, bytes_to_write = %zu\n", src, bytes_to_write));
+                // write the "tail" packet
+                if (bytes_to_write > 0)
+                {
+                  if (_device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
+                                                 src, bytes_to_write, sequence) == XMI_SUCCESS)
+                  {
+                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), all packets were written\n"));
+
+                    // all packets were written to the fifo, invoke callback function
+                    if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
+
+                    TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return true\n"));
+                    return true;
+                  }
+                  else
+                  {
+                    // no space in fifo, construct message and post to device
+                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), not able to write the tail packet to the fifo\n"));
+                    MultiPacketMessage<T_Device> * msg = (MultiPacketMessage<T_Device> *) & state[0];
+                    new (msg) MultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
+                    msg->setHeader (_dispatch_id, metadata, metasize);
+                    msg->setPayload ((void *) src, bytes_to_write);
+
+                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
+                    _device.post (fnum, msg);
+                    
+                    TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
+                    return false;
+                  }
+                }
+              }
+
+            // send queue is not empty, construct a message and post to device
+            TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), send queue is not empty\n"));
+
+            MultiPacketMessage<T_Device> * msg = (MultiPacketMessage<T_Device> *) & state[0];
+            new (msg) MultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
+            msg->setHeader (_dispatch_id, metadata, metasize);
+            msg->setPayload (payload, length);
 
             TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
-            _device.post (fnum, obj);
+            _device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
             return false;

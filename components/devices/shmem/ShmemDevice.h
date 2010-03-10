@@ -164,11 +164,8 @@ namespace XMI
             ///
             /// \brief Write a single contiguous payload data buffer to the packet
             ///
-            /// This method allows for template specialization via the T_Niov
-            /// template parameter.
-            ///
             /// \param[in] payload       Address of the buffer to write to the packet payload
-            /// \param[in] length        Number of bytes to write
+            /// \param[in] bytes         Number of bytes to write
             ///
             inline void writePayload (void * payload, size_t bytes)
             {
@@ -181,6 +178,18 @@ namespace XMI
               for (i = 0; i < n; i++) dst[i] = src[i];
 
               return;
+            }
+
+            ///
+            /// \brief Write a "full packet" payload data buffer to the packet
+            ///
+            /// \param[in] payload       Address of the buffer to write to the packet payload
+            ///
+            inline void writePayload (void * payload)
+            {
+              TRACE_ERR((stderr, ">> PacketImpl::writePayload(%p)\n", payload));
+              this->copyPayload (payload);
+              TRACE_ERR((stderr, "<< PacketImpl::writePayload(%p)\n", payload));
             }
 
             ///
@@ -481,6 +490,13 @@ namespace XMI
                                                size_t           length,
                                                size_t         & sequence);
 
+        inline xmi_result_t writeSinglePacket (size_t           fnum,
+                                               uint16_t         dispatch_id,
+                                               void           * metadata,
+                                               size_t           metasize,
+                                               void           * payload,
+                                               size_t         & sequence);
+
         xmi_result_t post (size_t ififo, Shmem::SendQueue::Message * msg);
 
         ///
@@ -710,6 +726,46 @@ namespace XMI
       TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
       return XMI_EAGAIN;
     };
+
+    template <class T_Fifo>
+    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+      size_t         fnum,
+      uint16_t       dispatch_id,
+      void         * metadata,
+      size_t         metasize,
+      void         * payload,
+      size_t       & sequence)
+    {
+      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+
+#ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
+      unsigned long long t = __global.time.timebase ();
+
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+
+#endif
+
+      size_t pktid;
+      PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
+
+      if (pkt != NULL)
+        {
+          //if (likely(metadata!=NULL))
+          pkt->writeMetadata ((uint8_t *) metadata, metasize);
+          pkt->writeDispatch (dispatch_id);
+          pkt->writePayload (payload);
+
+          // "produce" the packet into the fifo.
+          _fifo[fnum].producePacket (pktid);
+
+          TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << XMI_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+          return XMI_SUCCESS;
+        }
+
+      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << XMI_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+      return XMI_EAGAIN;
+    };
+
 
     template <class T_Fifo>
     size_t ShmemDevice<T_Fifo>::advance ()
