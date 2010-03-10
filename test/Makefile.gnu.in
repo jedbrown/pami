@@ -33,7 +33,7 @@ ifeq (@BUILDENV@,ade)
 else
 
 %.${EXTENSION}: %.c
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cc
 	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cpp

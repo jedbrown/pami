@@ -299,5 +299,5 @@ int main ()
       fprintf (stdout, "%s\n", str);
     }
   }
-
+  return 0;
 }
