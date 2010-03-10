@@ -21,8 +21,10 @@
 #include "sys/xmi.h"
 //#include "util/common.h"
 
+#ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   #include "Global.h"
+#endif
 #endif
 
 #include <unistd.h>
@@ -31,6 +33,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
+#ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 // sleep() doesn't appear to work in mambo right now.  A hackey simulation...
 #define mamboSleep(x) _mamboSleep(x, __LINE__)
@@ -51,7 +54,7 @@ unsigned _mamboSleep(unsigned seconds, unsigned from)
   return 0;
 }
 #endif
-
+#endif
 
 unsigned __barrier_active[2];
 size_t __barrier_phase;
@@ -159,6 +162,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
     abort();
   }
+#ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   // Give other tasks a chance to init the MU device by sleeping
   if (__global.personality._is_mambo) /// \todo mambo hack
@@ -167,7 +171,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
     mamboSleep(15);
   }
 #endif
-
+#endif
   barrier();
   TRACE_ERR((stderr, "... exit barrier_init()\n"));
 }

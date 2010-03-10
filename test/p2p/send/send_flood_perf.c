@@ -233,7 +233,8 @@ int main (int argc, char ** argv)
     index[0] += sprintf (&str[0][index[0]], "#          ");
     index[1] += sprintf (&str[1][index[1]], "#    bytes ");
 
-    fprintf (stdout, "# XMI_Send_immediate() nearest-neighor half-pingpong blocking latency performance test\n");
+    fprintf (stdout, "# send flood performance test\n");
+    fprintf (stdout, "#   Number of tasks 'flooding' task 0: %zu\n", num_tasks-1);
     fprintf (stdout, "#\n");
 
     unsigned i;
