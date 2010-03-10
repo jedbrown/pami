@@ -237,6 +237,7 @@ mm);
         ,_global_mu_ni(NULL)// Can't construct NI until device is init()'d so lazy ctor
 #endif
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -272,6 +273,7 @@ mm);
         memset(_dispatch, 0x00, sizeof(_dispatch));
 #endif
 
+        TRACE_ERR((stderr,  "%s exit\n", __PRETTY_FUNCTION__));
       }
 #ifdef MU_COLL_DEVICE
       // \brief For testing NativeInterface.

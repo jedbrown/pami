@@ -104,6 +104,10 @@ namespace XMI
       {
       };
 
+      inline void init (XMI::SysDep *sd)
+      {
+      }
+
       /// \copydoc XMI::Interface::QueueInterface::enqueue
       inline void enqueue_impl (Queue::Element * element)
       {

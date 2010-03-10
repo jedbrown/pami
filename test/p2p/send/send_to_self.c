@@ -135,7 +135,8 @@ int main (int argc, char ** argv)
   //parameters.events.remote_fn = send_done_remote;
   parameters.events.remote_fn = NULL;
 #if 1
-  for (int iter=0; iter < 100; iter++)
+  int iter;
+  for (iter=0; iter < 100; iter++)
   {
     fprintf (stderr, "before send ...\n");
     parameters.send.dest = XMI_Client_endpoint (client, task_id, 0);

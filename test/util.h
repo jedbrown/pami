@@ -21,10 +21,36 @@
 #include "sys/xmi.h"
 //#include "util/common.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  #include "Global.h"
 #endif
 
+#include <unistd.h>
+
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+#endif
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+// sleep() doesn't appear to work in mambo right now.  A hackey simulation...
+#define mamboSleep(x) _mamboSleep(x, __LINE__)
+unsigned _mamboSleep(unsigned seconds, unsigned from)
+{
+  if (__global.personality._is_mambo)
+  {
+    double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
+    double start = XMI_Wtime (), d=0;
+    while (XMI_Wtime() < (start+dseconds))
+    {
+      for (int i=0; i<200000; ++i) ++d;
+      TRACE_ERR((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,XMI_Wtime(),start+dseconds));
+    }
+  }
+  else
+    sleep(seconds);
+  return 0;
+}
+#endif
 
 
 unsigned __barrier_active[2];
@@ -52,7 +78,7 @@ static void barrier_dispatch_function (
 {
   size_t phase = *((size_t *) header_addr);
 
-  TRACE_ERR((stderr, ">>> barrier_dispatch_function(), __barrier_active[%zu] = %zu\n", phase, __barrier_active[phase]));
+  TRACE_ERR((stderr, ">>> barrier_dispatch_function(), __barrier_active[%zu] = %u\n", phase, __barrier_active[phase]));
 
   --__barrier_active[phase];
 
@@ -79,7 +105,7 @@ void barrier ()
   parameters.data.iov_len    = 0;
   parameters.dest            = __barrier_next_endpoint;
 
-  TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %zu, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
+  TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %u, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
   //xmi_result_t result =
     XMI_Send_immediate (__barrier_context, &parameters);
 
@@ -109,7 +135,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
   __barrier_next_task = (__barrier_task + 1) % __barrier_size;
   __barrier_next_endpoint = XMI_Client_endpoint (client, __barrier_next_task, 0);
 
-   TRACE_ERR((stderr,"__barrier_size:%d __barrier_task:%d\n",__barrier_size, __barrier_task));
+   TRACE_ERR((stderr,"__barrier_size:%zd __barrier_task:%zd\n",__barrier_size, __barrier_task));
 
   __barrier_context  = context;
   __barrier_dispatch = dispatch;
@@ -133,10 +159,20 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
     abort();
   }
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  // Give other tasks a chance to init the MU device by sleeping
+  if (__global.personality._is_mambo) /// \todo mambo hack
+  {
+    fprintf(stderr, "%s:%s sleep(15) hack to allow mambo to init the MU\n",__FILE__,__PRETTY_FUNCTION__);
+    mamboSleep(15);
+  }
+#endif
 
   barrier();
   TRACE_ERR((stderr, "... exit barrier_init()\n"));
 }
+
+
 
 #undef TRACE_ERR
 #endif // __tests_util_h__

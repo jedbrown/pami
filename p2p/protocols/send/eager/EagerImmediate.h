@@ -149,6 +149,7 @@ namespace XMI
             xmi_task_t task;
             size_t offset;
             XMI_ENDPOINT_INFO(parameters->dest,task,offset);
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. task %d,offset %zd\n", task, offset));
 
             // This shadow pointer allows template specialization on the iovecs
             parameters_iov_t * const p = (parameters_iov_t *) parameters;

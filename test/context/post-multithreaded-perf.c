@@ -153,7 +153,7 @@ int main (int argc, char ** argv)
           fprintf (stdout, "XMI_Context_post() multi-threaded performance test\n");
           fprintf (stdout, "\n");
           fprintf (stdout, "  Number of 'receiver' threads:           %8zu\n", num_threads);
-          fprintf (stdout, "  Number of posts to each thread:         %8zu\n", ITERATIONS);
+          fprintf (stdout, "  Number of posts to each thread:         %8u\n", ITERATIONS);
           fprintf (stdout, "\n");
 
           /* wait a bit to give threads time to start */

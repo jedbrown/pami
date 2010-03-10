@@ -16,10 +16,6 @@
 #undef TRACE
 #endif
 #define TRACE(x) //fprintf x
-#ifdef DUMP_DESCRIPTOR
-#undef DUMP_DESCRIPTOR
-#endif
-#define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
 /// \see MUMultisyncModel
 XMI::Device::MU::MUMultisyncModel::MUMultisyncModel (MUCollDevice & device, xmi_result_t &status) :
@@ -132,7 +128,6 @@ XMI::Device::MU::MUMultisyncModel::~MUMultisyncModel ()
 };
 
 #undef TRACE
-#undef DUMP_DESCRIPTOR
 //
 // astyle info    http://astyle.sourceforge.net
 //

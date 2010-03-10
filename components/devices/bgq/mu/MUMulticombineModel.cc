@@ -16,10 +16,6 @@
 #undef TRACE
 #endif
 #define TRACE(x) //fprintf x
-#ifdef DUMP_DESCRIPTOR
-#undef DUMP_DESCRIPTOR
-#endif
-#define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 const bool   XMI::Device::MU::MUMulticombineModel::multicombine_model_op_support(xmi_dt dt, xmi_op op)
 {
   const bool support[XMI_DT_COUNT][XMI_OP_COUNT] =
@@ -163,7 +159,6 @@ XMI::Device::MU::MUMulticombineModel::~MUMulticombineModel ()
 };
 
 #undef TRACE
-#undef DUMP_DESCRIPTOR
 //
 // astyle info    http://astyle.sourceforge.net
 //

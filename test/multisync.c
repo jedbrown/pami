@@ -87,7 +87,8 @@ int main (int argc, char ** argv)
 
       xmi_topology_t    topo;
       xmi_task_t       *tasklist = (xmi_task_t*)malloc(sz*sizeof(xmi_task_t));
-      for(size_t i=0; i<sz; i++)tasklist[i]=i;
+      size_t i;
+      for(i=0; i<sz; i++)tasklist[i]=i;
       //XMI_Topology_create_range(&topo,0,sz-1);
       XMI_Topology_create_list(&topo,tasklist,sz);
 
@@ -134,7 +135,6 @@ int main (int argc, char ** argv)
       _multisync(context, &multisync);
 
       ti=timer();
-      int i;
       for(i=0; i<niter; i++)
         multisync.connection_id++;
         _multisync(context, &multisync);

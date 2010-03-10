@@ -167,10 +167,11 @@ namespace XMI
         dst.Destination.C_Destination = addr[2];
         dst.Destination.D_Destination = addr[3];
         dst.Destination.E_Destination = addr[4];
+        TRACE((stderr, "MUPacketModel::initializeDescriptor() .. setDestination %zd,%zd,%zd,%zd,%zd\n", addr[0],addr[1],addr[2],addr[3],addr[4]));
         desc->setDestination (dst);
 
         // Assuming t is the recv grp id ... what about 'p' coordintate?
-        //TRACE((stderr, "MUPacketModel::initializeDescriptor() .. _device.getRecFifoIdForDescriptor(%zd) = %d\n", network.n_torus.coords[5], _device.getRecFifoIdForDescriptor(network.n_torus.coords[5])));
+        TRACE((stderr, "MUPacketModel::initializeDescriptor() .. _device.getRecFifoIdForDescriptor(%zd) = %d\n", addr[5], _device.getRecFifoIdForDescriptor(addr[5])));
         desc->setRecFIFOId (_device.getRecFifoIdForDescriptor(addr[5]));
 
         // TODO - Calculate the best torusInjectionFifoMap.
@@ -278,7 +279,8 @@ namespace XMI
             // Advance the injection fifo descriptor tail which actually enables
             // the MU hardware to process the descriptor and send the packet
             // on the torus.
-            uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
+           DUMP_DESCRIPTOR("Before MUSPI_InjFifoAdvanceDesc", desc);
+           uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", T_Niov, sequenceNum));
             sequenceNum = 0; // just to stop warnings
@@ -323,6 +325,7 @@ namespace XMI
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
             // #warning send queue must be based on task+offset
+            DUMP_DESCRIPTOR("Before addToSendQ", desc);
             _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -392,6 +395,7 @@ namespace XMI
             // Advance the injection fifo descriptor tail which actually enables
             // the MU hardware to process the descriptor and send the packet
             // on the torus.
+            DUMP_DESCRIPTOR("Before MUSPI_InjFifoAdvanceDesc", desc);
             uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", sequenceNum));
@@ -431,6 +435,7 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
+            DUMP_DESCRIPTOR("Before addToSendQ", desc);
             _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
           }
 
@@ -500,6 +505,7 @@ namespace XMI
           // Advance the injection fifo descriptor tail which actually enables
           // the MU hardware to process the descriptor and send the packet
           // on the torus.
+          DUMP_DESCRIPTOR("Before MUSPI_InjFifoAdvanceDesc", desc);
           uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
           TRACE((stderr, "MUPacketModel::postPacketImmediate_impl(%d) .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld\n", T_Niov, sequenceNum));
@@ -574,6 +580,7 @@ namespace XMI
             // Advance the injection fifo descriptor tail which actually enables
             // the MU hardware to process the descriptor and send the packet
             // on the torus.
+            DUMP_DESCRIPTOR("Before MUSPI_InjFifoAdvanceDesc", desc);
             uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (injfifo);
 
             TRACE((stderr, "MUPacketModel::postMultiPacket_impl() .. after MUSPI_InjFifoAdvanceDesc(), sequenceNum = %ld, fn = %p\n", sequenceNum, fn));
@@ -629,6 +636,7 @@ namespace XMI
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
+            DUMP_DESCRIPTOR("Before addToSendQ", desc);
             _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
           }
 

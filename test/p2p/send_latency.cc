@@ -273,8 +273,12 @@ int main (int argc, char ** argv)
   xmi_endpoint_t origin = XMI_Client_endpoint (client, 0, 0);
   xmi_endpoint_t target = XMI_Client_endpoint (client, 1, 0);
 
-  size_t sndlen;
-  for (sndlen = 0; sndlen < BUFSIZE; sndlen = sndlen*3/2+1)
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  size_t sndlen = 1;
+#else
+  size_t sndlen = 0;
+#endif
+  for (; sndlen < BUFSIZE; sndlen = sndlen*3/2+1)
   {
     int index = 0;
     index += sprintf (&str[index], "%10zd ", sndlen);
