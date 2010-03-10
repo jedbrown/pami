@@ -22,7 +22,7 @@ unsigned validate (void * addr, size_t bytes)
   {
     if (byte[i] != (uint8_t)i)
     {
-      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%d] != %d (&byte[%d] = %p, value is %d)\n", addr, bytes, i, (uint8_t)i, i, &byte[i], byte[i]);
+      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, bytes, i, (uint8_t)i, i, &byte[i], byte[i]);
       status = 0;
     }
   }
@@ -145,8 +145,8 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
-  size_t task_id = configuration.value.intval;
-  fprintf (stderr, "My task id = %zu\n", task_id);
+  xmi_task_t task_id = configuration.value.intval;
+  fprintf (stderr, "My task id = %d\n", task_id);
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);

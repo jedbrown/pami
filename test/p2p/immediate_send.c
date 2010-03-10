@@ -96,8 +96,8 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
-  size_t task_id = configuration.value.intval;
-  fprintf (stderr, "My task id = %zu\n", task_id);
+  xmi_task_t task_id = configuration.value.intval;
+  fprintf (stderr, "My task id = %d\n", task_id);
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);

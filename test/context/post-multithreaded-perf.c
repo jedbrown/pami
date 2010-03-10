@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
       if (task == 0)
         {
           fprintf (stdout, "\n");
-          fprintf (stdout, "  Error: Number of peer threads must be [1..%zu], got %lld\n", MAXTHREADS, max_threads);
+          fprintf (stdout, "  Error: Number of peer threads must be [1..%d], got %lld\n", MAXTHREADS, max_threads);
           fprintf (stdout, "\n");
           fprintf (stdout, "  Usage: %s threads\n", argv[0]);
           fprintf (stdout, "\n");
@@ -240,9 +240,9 @@ int main (int argc, char ** argv)
       else
         {
           fprintf (stdout, "\n");
-          fprintf (stdout, "  Number of 'sender' threads:          %8zu\n", 1);
+          fprintf (stdout, "  Number of 'sender' threads:          %8d\n", 1);
           fprintf (stdout, "  Number of 'receiver' threads:        %8zu\n", num_threads);
-          fprintf (stdout, "  Number of posts to each thread:      %8zu\n", ITERATIONS);
+          fprintf (stdout, "  Number of posts to each thread:      %8d\n", ITERATIONS);
 
           /* wait a bit to give threads time to start */
           usleep (1000);
@@ -289,7 +289,7 @@ int main (int argc, char ** argv)
 
           fprintf (stdout, "\n");
           fprintf (stdout, "  Number of 'sender' threads:          %8zu\n", num_threads);
-          fprintf (stdout, "  Number of 'receiver' threads:        %8zu\n", 1);
+          fprintf (stdout, "  Number of 'receiver' threads:        %8d\n", 1);
           fprintf (stdout, "  Number of posts from all threads:    %8zu\n", ITERATIONS*num_threads);
 
 
