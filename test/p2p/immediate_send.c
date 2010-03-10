@@ -6,6 +6,7 @@
 #include "sys/xmi.h"
 #include <stdio.h>
 
+#define TEST_CROSSTALK
 
 unsigned validate (void * addr, size_t bytes)
 {
@@ -63,7 +64,7 @@ int main (int argc, char ** argv)
 
 
   xmi_client_t client;
-  xmi_context_t context;
+  xmi_context_t context[2];
 
   char                  cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
@@ -75,10 +76,14 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, _n); }
+#ifdef TEST_CROSSTALK
+  result = XMI_Context_createv(client, NULL, 0, context, 2);
+#else
+  result = XMI_Context_createv(client, NULL, 0, context, 1);
+#endif
   if (result != XMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to create xmi context(s). result = %d\n", result);
     return 1;
   }
 
@@ -113,22 +118,28 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
-  fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
-  result = XMI_Dispatch_set (context,
-                             dispatch,
-                             fn,
-                             (void *)&recv_active,
-                             options);
-  if (result != XMI_SUCCESS)
+
+  size_t i = 0;
+#ifdef TEST_CROSSTALK
+  for (i=0; i<2; i++)
+#endif
   {
-    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
-    return 1;
+    fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
+    result = XMI_Dispatch_set (context[i],
+                               dispatch,
+                               fn,
+                               (void *)&recv_active,
+                               options);
+    if (result != XMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+      return 1;
+    }
   }
 
   char header_string[1024];
   char data_string[1024];
   
-  size_t i;
   for (i=0; i<1024; i++)
   {
     header_string[i] = (char)i;
@@ -154,8 +165,15 @@ int main (int argc, char ** argv)
 
   if (task_id == 0)
   {
-    fprintf (stderr, "before send immediate ...\n");
+#ifdef TEST_CROSSTALK
+    fprintf (stdout, "XMI_Send_immediate() functional test [crosstalk]\n");
+    fprintf (stdout, "\n");
+    parameters.dest = XMI_Client_endpoint (client, 1, 1);
+#else
+    fprintf (stdout, "XMI_Send_immediate() functional test\n");
+    fprintf (stdout, "\n");
     parameters.dest = XMI_Client_endpoint (client, 1, 0);
+#endif
     
     for (h=0; h<hsize; h++)
     {
@@ -164,13 +182,14 @@ int main (int argc, char ** argv)
       {
         parameters.data.iov_len = data_bytes[p];
       
-        result = XMI_Send_immediate (context, &parameters);
+        fprintf (stderr, "before send immediate, {%zu, %zu}, endpoint destination: 0x%08x ...\n", h, p, parameters.dest);
+        result = XMI_Send_immediate (context[0], &parameters);
         fprintf (stderr, "... after send immediate.\n");
 
         fprintf (stderr, "before advance loop ...\n");
         while (recv_active != 0)
         {
-          result = XMI_Context_advance (context, 100);
+          result = XMI_Context_advance (context[0], 100);
           if (result != XMI_SUCCESS)
           {
             fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -178,12 +197,18 @@ int main (int argc, char ** argv)
           }
         }
         recv_active = 1;
+        fprintf (stderr, "... after advance loop\n");
       }
     }
-    fprintf (stderr, "... after advance loop\n");
   }
   else
   {
+#ifdef TEST_CROSSTALK
+    size_t contextid = 1;
+#else
+    size_t contextid = 0;
+#endif
+
     parameters.dest = XMI_Client_endpoint (client, 0, 0);
     for (h=0; h<hsize; h++)
     {
@@ -191,10 +216,10 @@ int main (int argc, char ** argv)
       for (p=0; p<psize; p++)
       {
         parameters.data.iov_len = data_bytes[p];
-        fprintf (stderr, "before recv advance loop ...\n");
+        fprintf (stderr, "before recv advance loop, context id = %zu ...\n", contextid);
         while (recv_active != 0)
         {
-          result = XMI_Context_advance (context, 100);
+          result = XMI_Context_advance (context[contextid], 100);
           if (result != XMI_SUCCESS)
           {
             fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -204,12 +229,12 @@ int main (int argc, char ** argv)
         recv_active = 1;
         fprintf (stderr, "... after recv advance loop\n");
 
-        fprintf (stderr, "before send ...\n");
-        result = XMI_Send_immediate (context, &parameters);
+        fprintf (stderr, "before send, context id = %zu ...\n", contextid);
+        result = XMI_Send_immediate (context[contextid], &parameters);
         fprintf (stderr, "... after send.\n");
 
-        fprintf (stderr, "before send advance loop ...\n");
-        result = XMI_Context_advance (context, 100);
+        fprintf (stderr, "before send advance loop, context id = %zu ...\n", contextid);
+        result = XMI_Context_advance (context[contextid], 100);
         if (result != XMI_SUCCESS)
         {
           fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
@@ -222,12 +247,20 @@ int main (int argc, char ** argv)
 
 
 
-  result = XMI_Context_destroy (context);
+  result = XMI_Context_destroy (context[0]);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
     return 1;
   }
+#ifdef TEST_CROSSTALK
+  result = XMI_Context_destroy (context[1]);
+  if (result != XMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+    return 1;
+  }
+#endif
 
   result = XMI_Client_finalize (client);
   if (result != XMI_SUCCESS)
@@ -236,7 +269,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  fprintf (stderr, "\nTest Completed Successfully.\n");
+  fprintf (stdout, "Success (%d)\n", task_id);
 
   return 0;
 };
