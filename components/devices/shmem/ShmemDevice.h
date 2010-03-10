@@ -46,7 +46,7 @@
 
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 namespace XMI
@@ -273,38 +273,41 @@ namespace XMI
               // Get the number of peer tasks on the node
               size_t npeers = 0;
               __global.mapping.nodePeers (npeers);
-              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() npeers = %zu\n", npeers));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() npeers = %zu\n", npeers));
 
               // Allocate a "context count" array and a peer fifo pointer
               // array from shared memory
-              size_t * ncontexts = NULL;
+              volatile size_t * ncontexts = NULL;
               size_t size = sizeof(size_t) * 2 * npeers;
-              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() size = %zu\n", size));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() size = %zu\n", size));
               mm.memalign ((void **)&ncontexts, 16, size);
-              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));
 
-              size_t * peer_fnum = ncontexts + npeers;
+              size_t * peer_fnum = (size_t *)ncontexts + npeers;
 
               // Get the peer id for this task
               size_t me = 0;
               XMI::Interface::Mapping::nodeaddr_t address;
 
               __global.mapping.nodeAddr (address);
-              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() after nodeAddr()\n"));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after nodeAddr() global %zd, local %zd\n",address.global,address.local));
               __global.mapping.node2peer (address, me);
-              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() me = %zu\n", me));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() me = %zu\n", me));
 
               // Set the number of contexts in this peer
               ncontexts[me] = n;
-              TRACE_ERR((stderr, "   ShmemDevice::Factory::generate_impl() ncontexts = %p, ncontexts[%zu] = %zu\n", ncontexts, me, ncontexts[me]));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p, ncontexts[%zu] = %zu\n", ncontexts, me, ncontexts[me]));
 
               // Determine the total number of contexts on the node and the
               // number of contexts in each peer
               size_t done = 0;
               size_t total_fifos_on_node = 0;
-
+              int countdown=10000;
               while (done != npeers)
                 {
+                  mbar();       /// \todo doesn't seem to help mambo
+                  ppc_msync();  /// \todo doesn't seem to help mambo
+                  mm.sync();    /// \todo doesn't seem to help mambo - msync() errno 38: Function not implemented
                   // check to see if all peers have written a non-zero value
                   // in the "ncontexts" field
                   total_fifos_on_node = 0;
@@ -315,8 +318,12 @@ namespace XMI
                       total_fifos_on_node += ncontexts[i];
 
                       if (ncontexts[i] > 0) done++;
+                      if(countdown==1) fprintf(stderr, "ShmemDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zd\n", i, ncontexts[i],ncontexts,mm.available());
                     }
+                  XMI_assertf(countdown--, "I give up\n");
                 }
+
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p sync'd\n", ncontexts));
 
               // Allocate a shared memory segment for _all_ of the fifos for
               // _all_ of the contexts
@@ -622,13 +629,13 @@ namespace XMI
 #endif
 
       size_t pktid;
-      TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before nextInjPacket(), fnum = %zu\n", fnum));
+      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before nextInjPacket(), fnum = %zu\n", fnum));
       PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
-      TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. pkt = %p, pktid = %zd\n", pkt, pktid));
+      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. pkt = %p, pktid = %zd\n", pkt, pktid));
 
       if (pkt != NULL)
         {
-          TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before write(), metadata = %p, metasize = %zd\n", metadata, metasize));
+          TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before write(), metadata = %p, metasize = %zd\n", metadata, metasize));
           //if (likely(metadata!=NULL))
           //printf("metasize:%d T_Niov:%d\n", metasize, T_Niov);
           pkt->writeMetadata ((uint8_t *) metadata, metasize);
@@ -636,7 +643,7 @@ namespace XMI
           pkt->writePayload (iov);
 
           // "produce" the packet into the fifo.
-          TRACE_ERR((stderr, "   ShmemDevice<>::writeSinglePacket () .. before producePacket()\n"));
+          TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before producePacket()\n"));
           _fifo[fnum].producePacket (pktid);
 
           TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. XMI_SUCCESS\n"));

@@ -41,14 +41,17 @@ int main(int argc, char ** argv)
   fprintf(stderr,"MAX_COORD E = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr));
 
 
-  var = getenv("LAMRANK");
-  fprintf(stderr,"LAMRANK %s\n",var? var: "NULL");
-
-  var = getenv("LAMSIZE");
-  fprintf(stderr,"LAMSIZE %s\n",var? var: "NULL");
-
   var = getenv("BG_PROCESSESPERNODE");
   fprintf(stderr,"BG_PROCESSESPERNODE %s\n",var? var: "NULL");
+
+  var = getenv("BG_SHAREDMEMSIZE");
+  fprintf(stderr,"BG_SHAREDMEMSIZE %s\n",var? var: "NULL");
+
+  var = getenv("USER");
+  fprintf(stderr,"USER %s\n",var? var: "NULL");
+
+  var = getenv("PATH");
+  fprintf(stderr,"PATH %s\n",var? var: "NULL");
 
   fprintf(stderr,"BGQ Personality A coord %zd\n",__global.personality.aCoord());
   fprintf(stderr,"BGQ Personality B coord %zd\n",__global.personality.bCoord());
@@ -63,7 +66,35 @@ int main(int argc, char ** argv)
   fprintf(stderr,"BGQ Personality E size %zd\n",__global.personality.eSize());
 
   size_t task_id = __global.mapping.task();
-  fprintf(stderr,"HELLO/GOODBYE from task %zd\n",task_id);
+  fprintf(stderr,"HELLO from task %zd\n",task_id);
+
+  char clientname[] = "XMI";
+  xmi_client_t client;
+  fprintf(stderr, "XMI_Client_initialize()\n");
+  XMI_Client_initialize (clientname, &client);
+  xmi_context_t context;
+  fprintf(stderr, "XMI_Context_create()\n");
+  { size_t _n = 1; XMI_Context_createv (client, NULL, 0, &context, _n); }
+
+  xmi_configuration_t configuration;
+  xmi_result_t result;
+
+  configuration.name = XMI_TASK_ID;
+  result = XMI_Configuration_query(client, &configuration);
+  size_t my_rank = configuration.value.intval;
+  fprintf(stderr, "XMI_TASK_ID %zd\n",my_rank);
+
+  configuration.name = XMI_NUM_TASKS;
+  result = XMI_Configuration_query(client, &configuration);
+  size_t num_tasks = configuration.value.intval;
+  fprintf(stderr, "XMI_NUM_TASKS %zd\n",num_tasks);
+
+  configuration.name = XMI_WTICK;
+  result = XMI_Configuration_query(client, &configuration);
+  double tick = configuration.value.doubleval;
+  fprintf(stderr, "XMI_WTICK %f\n",tick);
+
+  fprintf(stderr,"GOODBYE from task %zd/%zd\n",task_id,my_rank);
 
   return 0;
 }

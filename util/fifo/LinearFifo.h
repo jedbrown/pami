@@ -26,7 +26,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 namespace XMI
@@ -43,6 +43,7 @@ namespace XMI
             inline LinearFifoPacket () :
                 T_Packet ()
             {
+              TRACE_ERR((stderr, "%s: size %zd, fifosize %d, sizeof(LinearFifoPacket) %zd, sizeof(T_Atomic) %zd\n", __PRETTY_FUNCTION__,  sizeof(*this),  T_FifoSize, sizeof(LinearFifoPacket),sizeof(T_Atomic)));
               setActive (false);
             };
 
@@ -64,7 +65,7 @@ namespace XMI
               TRACE_ERR((stderr, "(%zd) >> LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
               size_t * header = (size_t *) T_Packet::getHeader ();
               header[(T_Packet::headerSize_impl / sizeof(size_t))-1] = active;
-              TRACE_ERR((stderr, "(%zd)    LinearFifoPacket::setActive(%d), header = %p, header[%d] = %d\n", __global.mapping.task(), active, header, (T_Packet::headerSize_impl / sizeof(size_t)) - 1, header[(T_Packet::headerSize_impl / sizeof(size_t))-1]));
+              TRACE_ERR((stderr, "(%zd)    LinearFifoPacket::setActive(%d), header = %p, header[%zd] = %zd\n", __global.mapping.task(), active, header, (T_Packet::headerSize_impl / sizeof(size_t)) - 1, header[(T_Packet::headerSize_impl / sizeof(size_t))-1]));
               TRACE_ERR((stderr, "(%zd) << LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
             };
 

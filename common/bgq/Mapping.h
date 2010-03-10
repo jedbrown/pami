@@ -81,7 +81,27 @@ namespace XMI
 
       coord2node (_a, _b, _c, _d, _e, _p,_t,      //fix?
                   _nodeaddr.global, _nodeaddr.local);
-      TRACE_ERR((stderr, "Mapping() .. coords(a,b,c,d,e,p,t):(%zd %zd %zd %zd %zd %zd %zd), node: (%#llX %#llX)\n", _a, _b, _c, _d, _e, _p, _t, (unsigned long long)_nodeaddr.global, (unsigned long long)_nodeaddr.local));
+      TRACE_MAMBO((stderr, "Mapping() coords(a,b,c,d,e,p,t):(%zd %zd %zd %zd %zd %zd %zd), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _p, _t, _nodeaddr.global, _nodeaddr.local));
+      size_t 
+        asize =_pers.aSize(),
+        bsize =_pers.bSize(),
+        csize =_pers.cSize(),
+        dsize =_pers.dSize(),
+      //  esize =_pers.eSize(),
+        psize =_pers.pSize(),
+        tsize =_pers.tSize();
+
+      TRACE_MAMBO((stderr,"Mapping() size a/b/c/d/e/p/t = %zd/%zd/%zd/%zd/%zd/%zd/%zd\n", asize, bsize, csize, dsize, _pers.eSize(), psize, tsize));
+
+      _task = _e * dsize * csize * bsize * asize * psize * tsize +
+              _d * csize * bsize * asize * psize * tsize +
+              _c * bsize * asize * psize * tsize +
+              _b * asize * psize * tsize +
+              _a * psize * tsize +
+              _p * tsize +
+              _t;
+
+      TRACE_MAMBO((stderr,"Mapping() task %zd\n", _task));
     };
 
     inline ~Mapping ()
@@ -120,6 +140,7 @@ namespace XMI
     {
       global = e | (d << 1) | (c << 7) | (b << 13) | (a << 19);
       local  = p | (t << 4);
+      TRACE_ERR((stderr, "Mapping() coords2node((%zd %zd %zd %zd %zd %zd %zd),(%#lX %#lX)\n", a, b, c, d, e, p, t, global, local));
     };
 
     inline void node2coord (size_t & a,
@@ -140,6 +161,9 @@ namespace XMI
 
       p = local & 0x0000000f;
       t = local >> 4;
+
+      TRACE_ERR((stderr, "Mapping() node2coord((%zd %zd %zd %zd %zd %zd %zd),(%#lX %#lX)\n", a, b, c, d, e, p, t, global, local));
+
     };
 
   public:
@@ -215,8 +239,9 @@ namespace XMI
       addr[2] = _c;
       addr[3] = _d;
       addr[4] = _e;
-      addr[6] = _t;
       addr[5] = _p;
+      addr[6] = _t;
+      TRACE_ERR((stderr, "Mapping::torusAddr_impl(%zd, %zd, %zd, %zd, %zd, %zd, %zd} <<\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
     }
 
     ///
@@ -235,6 +260,7 @@ namespace XMI
       addr[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
       addr[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
 
+      TRACE_ERR((stderr, "Mapping::task2torus(%zd, {%zd, %zd, %zd, %zd, %zd}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4]));
       return XMI_SUCCESS;
     }
 
@@ -256,6 +282,7 @@ namespace XMI
       addr[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
       addr[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
 
+      TRACE_ERR((stderr, "Mapping::task2global(%zd, {%zd, %zd, %zd, %zd, %zd, %zd, %zd}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
       return XMI_SUCCESS;
     }
 
@@ -267,7 +294,6 @@ namespace XMI
     ///
     inline xmi_result_t torus2task_impl (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS], size_t & task)
     {
-      TRACE_ERR((stderr, "Mapping::torus2task_impl({%zd, %zd, %zd, %zd, %zd, %zd, %zd}, ...) >>\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
 
       size_t aSize = _pers.aSize();
       size_t bSize = _pers.bSize();
@@ -326,6 +352,7 @@ namespace XMI
       addr->u.n_torus.coords[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
       addr->u.n_torus.coords[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
       addr->u.n_torus.coords[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
+      TRACE_ERR((stderr, "Mapping::task2network_impl(%d, {%zd, %zd, %zd, %zd, %zd, %zd, %zd}, %d) <<\n", task, addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->u.n_torus.coords[6], addr->network));
       return XMI_SUCCESS;
     }
 
@@ -375,6 +402,7 @@ namespace XMI
       }
       *task = _mapcache.torus.coords2task[hash];
       *type = XMI_N_TORUS_NETWORK;
+      TRACE_ERR((stderr, "Mapping::network2task_impl({%zd, %zd, %zd, %zd, %zd, %zd, %zd}, %d, %d) <<\n", addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->u.n_torus.coords[6], *task, addr->network));
       return XMI_SUCCESS;
     }
 
@@ -504,8 +532,9 @@ namespace XMI
     {
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 
-      size_t tSize = _pers.pSize();
-      size_t pSize = _pers.tSize();
+      size_t tSize = _pers.tSize();
+      //size_t pSize = _pers.pSize(); // psize isn't currently used in ESTIMATED_TASK. 
+      //size_t peerSize = tSize * pSize;
 
       // local coordinate is the thread id (t) in the most significant
       // position followed by the core id (p) in the least significant
@@ -514,14 +543,16 @@ namespace XMI
       size_t pCoord = address.local & 0x0000000f;
 
       // Verify that the local node address is valid.
-      if (unlikely((pCoord >= pSize) || (tCoord >= tSize)))
-      {
-        return XMI_INVAL;
-      }
+//    if (unlikely((pCoord >= pSize) || (tCoord >= tSize)))
+//    {
+//      return XMI_INVAL;
+//    }
+      TRACE_ERR((stderr, "Mapping::node2peer pSize %zd, peerSize %zd, pCoord=%zd/%zd\n", pSize,tSize * pSize,pCoord,(16/(tSize * pSize)) * (pCoord%(tSize * pSize))));
+      //pCoord = (16/peerSize) * (pCoord%peerSize); /// \todo numCores == 16?
 
       // Estimate the task id based on the bgq coordinates.
       size_t hash = ESTIMATED_TASK(0,0,0,0,0,tCoord,pCoord,
-                                   1,1,1,1,1,tSize,pSize);
+                                   1,1,1,1,1,tSize,((size_t)abort())); // pSize isn't currently used
 
       // Verify that the address hash is valid.
       if (unlikely(_mapcache.node.local2peer[hash] == (unsigned) - 1))
@@ -530,6 +561,7 @@ namespace XMI
       }
 
       peer = _mapcache.node.local2peer[hash];
+      TRACE_ERR((stderr, "local2peer[%zd]=%zd\n",hash,_mapcache.node.local2peer[peer]));
 
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zd, %zd}, %zd) <<\n", address.global, address.local, peer));
       return XMI_SUCCESS;
@@ -587,14 +619,6 @@ xmi_result_t XMI::Mapping::init(bgq_mapcache_t &mapcache,
                                 esize =_pers.eSize(),
                                        psize =_pers.pSize(),
                                               tsize =_pers.tSize();
-    TRACE_ERR((stderr,"Mapping::init() torus size a/b/c/d/e/p/t = %zd/%zd/%zd/%zd/%zd/%zd/%zd\n", asize, bsize, csize, dsize, esize, psize, tsize));
-    _task = _e * dsize * csize * bsize * asize * psize * tsize +
-            _d * csize * bsize * asize * psize * tsize +
-            _c * bsize * asize * psize * tsize +
-            _b * asize * psize * tsize +
-            _a * psize * tsize +
-            _p/(16/psize) //_mapcache.local_size) /// local piece based on _p only, ignoring _t
-            ; /// \todo hack
 
     _mapcache.size = asize*bsize*csize*dsize*esize*psize*tsize;//_mapcache.local_size; /// \todo hack
   }
@@ -605,7 +629,7 @@ xmi_result_t XMI::Mapping::init(bgq_mapcache_t &mapcache,
 #endif
   _peers = _mapcache.local_size;         /// \todo hack
 
-  TRACE_ERR((stderr,"Mapping::init() task %zd, size %zd, peers %zd\n", _task, _mapcache.size, _peers));
+  TRACE_MAMBO((stderr,"Mapping::init() task %zd, size %zd, peers %zd\n", _task, _mapcache.size, _peers));
   return XMI_SUCCESS;
 }
 #undef TRACE_ERR

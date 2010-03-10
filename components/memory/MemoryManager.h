@@ -17,6 +17,12 @@
 #define __components_memory_MemoryManager_h__
 
 #include "sys/xmi.h"
+#include <sys/mman.h>
+#include <errno.h>
+
+#ifndef TRACE_ERR
+#define TRACE_ERR(x)  //fprintf x
+#endif
 
 namespace XMI
 {
@@ -27,21 +33,32 @@ namespace XMI
       public:
         inline MemoryManager ()
         {
+          TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
           init (NULL, 0);
         };
 
         inline MemoryManager (void * addr, size_t bytes)
         {
+          TRACE_ERR((stderr, "%s(%p, %zd)\n", __PRETTY_FUNCTION__,addr,bytes));
           init (addr, bytes);
         };
 
         inline void init (void * addr, size_t bytes)
         {
+          TRACE_ERR((stderr, "%s(%p, %zd)\n", __PRETTY_FUNCTION__,addr,bytes));
           _base   = (uint8_t *) addr;
           _size   = bytes;
           _offset = 0;
         };
-
+        void sync()
+        {
+          static bool perr = false;
+          int rc = msync((void*)_base, _size, MS_SYNC);
+          if(!perr && rc) {
+            perr=true;
+            fprintf(stderr,  "MemoryManager::msync failed with %d, errno %d: %s\n", rc, errno, strerror(errno));
+          }
+        }
         ///
         /// \brief Allocate an aligned buffer of the memory.
         ///
@@ -51,6 +68,7 @@ namespace XMI
         ///
         inline xmi_result_t memalign (void ** memptr, size_t alignment, size_t bytes)
         {
+          TRACE_ERR((stderr, "%s(%p, %zd, %zd)\n", __PRETTY_FUNCTION__,memptr,alignment,bytes));
           XMI_assert_debug(_base != NULL);
           XMI_assert((alignment & (alignment - 1)) == 0);
 
@@ -69,18 +87,21 @@ namespace XMI
             _offset += bytes;
             return XMI_SUCCESS;
           }
+          TRACE_ERR((stderr, "%s XMI_ERROR !((%zd + %zd + %zd) <= %zd)\n",__PRETTY_FUNCTION__,_offset,pad,bytes,_size));
           return XMI_ERROR;
 
         };
 
         inline size_t available (size_t alignment = 1)
         {
+          TRACE_ERR((stderr, "%s(%zd) _size %zd, _offset %zd\n", __PRETTY_FUNCTION__,alignment, _size, _offset));
           XMI_assert_debug((alignment & (alignment - 1)) == 0);
           return _size - _offset - alignment;
         };
 
         inline size_t size ()
         {
+          TRACE_ERR((stderr, "%s %zd\n", __PRETTY_FUNCTION__,_size));
           XMI_assert_debug(_base != NULL);
           return _size;
         };

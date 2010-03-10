@@ -24,12 +24,17 @@ XMI::BgqPersonality::BgqPersonality ()
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 #warning ENABLE MAMBO WORKAROUNDS
-#undef TRACE_MAMBO
-#define TRACE_MAMBO(x) fprintf x
 
   Kernel_GetPersonality(p, sizeof(Personality_t));
 
   _is_mambo = false; // Indicates whether mambo is being used
+
+  char* var = getenv("BG_PROCESSESPERNODE");
+  TRACE_MAMBO((stderr,"BG_PROCESSESPERNODE %s\n",var? var: "NULL"));
+
+  var = getenv("BG_SHAREDMEMSIZE");
+  TRACE_MAMBO((stderr,"BG_SHAREDMEMSIZE %s\n",var? var: "NULL"));
+
 
   TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.NodeConfig %#llX\n",(unsigned long long)(Kernel_Config.NodeConfig)));
   TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.TraceConfig %#llX\n",(unsigned long long)(Kernel_Config.TraceConfig)));
@@ -115,19 +120,30 @@ XMI::BgqPersonality::BgqPersonality ()
 
   //size_t num_local_processes = Kernel_ProcessCount();
 
-  // Set the core id of this process [0..16]
+  // Set the hw core id of this process [0..16]
   _core = Kernel_PhysicalProcessorID();
 
-  // Set the number of active process cores on this node [0..16]
-  _cores = Kernel_ProcessCount();
+  // get the number of active processes (peers) on this node [0..(p x t)]
+  size_t pCount = Kernel_ProcessCount();
 
-  // Set the hardware thread id of this process [0..3]
+  // Set the number of active hardware threads on this node [0..3]
+  //_hwthreads = Kernel_PhysicalHWThreadID();
+  //_hwthreads = 1;
+  _hwthreads = (pCount+maxCores()-1)/maxCores();
+
+  // Set the hardware thread id of this process [0..hwthreads]
   _hwthread = Kernel_PhysicalHWThreadID();
 
-  // Set the number of active process hardware threads on this node [0..3]
-  //_hwthreads = Kernel_PhysicalHWThreadID();
-  _hwthreads = 1;
+  // Set the number of active cores on this node [0..16]
+  _cores = pCount > maxCores()? maxCores() : pCount;
 
+  // Set the id of this process [0..cores]
+  _pCoord = core()/(maxCores()/pSize());
+
+  // Set the id of this thread [0..tSize]
+  _tCoord = _hwthread/(maxThreads()/_hwthreads);
+
+  TRACE_MAMBO((stderr,"BGQPersonality() tid %zd, p %zd, t %zd, core %zd, thread %zd, pSize %zd, tSize %zd\n", tid(),  pCoord(),  tCoord(),  core(), thread(), pSize(), tSize()));
 
   _torusA = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);
   _torusB = (bool) (ND_ENABLE_TORUS_DIM_B & Network_Config.NetFlags);
@@ -135,60 +151,8 @@ XMI::BgqPersonality::BgqPersonality ()
   _torusD = (bool) (ND_ENABLE_TORUS_DIM_D & Network_Config.NetFlags);
   _torusE = (bool) (ND_ENABLE_TORUS_DIM_E & Network_Config.NetFlags);
 
+  TRACE_MAMBO((stderr,"BGQPersonality() _torusA %d, _torusB %d, _torusC %d, _torusD %d, _torusE %d\n", _torusA, _torusB, _torusC, _torusD, _torusE));
 
-#if 0
-  _BGP_Personality_t * p = (_BGP_Personality_t *) this;
-  int err = Kernel_GetPersonality(p, sizeof(_BGP_Personality_t));
-  if (err != 0) abort();
-
-  _x = BGP_Personality_xCoord(p);
-  _y = BGP_Personality_yCoord(p);
-  _z = BGP_Personality_zCoord(p);
-
-  _Xnodes = BGP_Personality_xSize(p);
-  _Ynodes = BGP_Personality_ySize(p);
-  _Znodes = BGP_Personality_zSize(p);
-
-  _numpset  = BGP_Personality_psetNum(p);
-  _sizepset = BGP_Personality_psetSize(p);
-  _rankpset = BGP_Personality_rankInPset(p);
-
-  switch (BGP_Personality_processConfig(p))
-  {
-  case _BGP_PERS_PROCESSCONFIG_SMP:
-    {
-      _Tnodes = 1;
-      _maxThreads = 4;
-      _t = 0;
-      break;
-    }
-  case _BGP_PERS_PROCESSCONFIG_VNM:
-    {
-      _Tnodes = 4;
-      _maxThreads = 1;                   // 1 thread per virtual node
-      _t = Kernel_PhysicalProcessorID(); // T is either 0, 1, 2, or 3
-      break;
-    }
-  case _BGP_PERS_PROCESSCONFIG_2x2:
-    {
-      _Tnodes = 2;
-      _maxThreads = 2;                       // 2 threads per virtual node
-      _t = Kernel_PhysicalProcessorID() / 2; // Processor ID is either 0 or 2
-      // T is either 0 or 1
-      break;
-    }
-  }
-
-  _isTorusX = BGP_Personality_isTorusX(p);
-  _isTorusY = BGP_Personality_isTorusY(p);
-  _isTorusZ = BGP_Personality_isTorusZ(p);
-  _isTorus  = (_isTorusX && _isTorusY && _isTorusZ);
-
-  _memSize  = BGP_Personality_DDRSizeMB(p);
-  _clockMHz = BGP_Personality_clockMHz(p);
-
-  _isHTCmode = (p->Kernel_Config.NodeConfig & _BGP_PERS_ENABLE_HighThroughput);
-#endif
 };
 
 void XMI::BgqPersonality::location (char location[], size_t size)

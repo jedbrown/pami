@@ -51,7 +51,7 @@ namespace XMI
       public:
         inline QueueElement ()
         {
-          TRACE_ERR((stderr, "template specialization\n"));
+          //TRACE_ERR((stderr, "template specialization\n"));
         };
 
         inline void set (QueueElement * previous, QueueElement * next)

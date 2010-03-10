@@ -10,6 +10,7 @@
 #include "common/ClientInterface.h"
 
 #include "Context.h"
+#include <errno.h>
 
 #undef USE_COMMTHREADS // define/undef
 #ifdef USE_COMMTHREADS
@@ -131,7 +132,7 @@ namespace XMI
 	XMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;
-
+        TRACE_ERR((stderr, "%d:mm available %zd\n",__LINE__,_mm.available()));
 	_platdevs.generate(_clientid, n, _mm);
 
         // This memset has been removed due to the amount of cycles it takes
@@ -139,6 +140,7 @@ namespace XMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
+        TRACE_ERR((stderr, "%d:mm available %zd\n",__LINE__,_mm.available()));
         size_t bytes = _mm.available() / n - 16;
 
         for (x = 0; x < n; ++x)
@@ -146,7 +148,7 @@ namespace XMI
             context[x] = (xmi_context_t) & _contexts[x];
             void *base = NULL;
             _mm.memalign((void **)&base, 16, bytes);
-            XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
+            XMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zd,mm.size=%zd,mm.available=%zd\n",x,n,bytes,_mm.size(),_mm.available());
             new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
                                              &_platdevs, base, bytes);
 #ifdef USE_COMMTHREADS
@@ -314,7 +316,7 @@ namespace XMI
       {
         char   shmemfile[1024];
         //size_t bytes     = 1024*1024;
-        size_t bytes     = 32 * 1024;
+        size_t bytes     = 768 * 1024;
         //size_t pagesize  = 4096;
 
         snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
@@ -328,7 +330,17 @@ namespace XMI
 #if 1
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
         rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+        if(rc==-1)
+          fprintf(stderr, "shm_open(<%s>,O_CREAT | O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+        else
+          close(rc);
+        Delay(100000);
+        rc = shm_open (shmemfile, O_RDWR, 0600);
+        if(rc==-1)
+          fprintf(stderr, "shm_open(<%s>,O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+#endif
+        void * ptr = NULL;
         if ( rc != -1 )
           {
             fd = rc;
@@ -336,15 +348,26 @@ namespace XMI
 
             if ( rc != -1 )
               {
-                void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
+              ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                while(ptr==MAP_FAILED)
+                {
+                  fprintf(stderr,"%s:%d Failed to mmap (rc=%d, ptr=%p, n=%zd) errno %d %s\n",__FILE__,__LINE__, rc, ptr, n, errno, strerror(errno));
+                  n/=2; if(n<(32*1024)) break;
+                  ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                }
                 if ( ptr != MAP_FAILED )
                   {
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+                    fprintf(stderr, "Client:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, n, ptr);
+#endif
+                    TRACE_ERR((stderr, "Client:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, n, ptr));
                     _mm.init (ptr, n);
                     return;
                   }
               }
           }
+        fprintf(stderr,"%s:%d Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zd) errno %d %s\n",__FILE__,__LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
+        //XMI_abortf(stderr,"Failed to create shared memory (rc=%d, ptr=%p, n=%zd)\n", rc, ptr, n);
 
         // Failed to create shared memory .. fake it using the heap ??
         _mm.init (malloc (n), n);

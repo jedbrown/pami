@@ -21,6 +21,7 @@
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
 
+#undef TRACE_ERR
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 #endif
@@ -64,7 +65,7 @@ namespace XMI
 
               void setup (XMI::Device::Generic::Device * device, SendQueue * sendQ)
               {
-                TRACE_ERR((stderr, ">> SendQueue::Message::setup(%p, %p)\n", device, senQ));
+                TRACE_ERR((stderr, ">> SendQueue::Message::setup(%p, %p)\n", device, sendQ));
                 _genericdevice = device;
                 this->_QS = sendQ;
                 TRACE_ERR((stderr, "<< SendQueue::Message::setup(%p, %p)\n", device, sendQ));
@@ -111,9 +112,9 @@ namespace XMI
           /// queue (owned by the generic device)
           inline void post (SendQueue::Message * msg)
           {
-            TRACE_ERR((stderr, ">> SendQueue::post(%m)\n", msg));
+            TRACE_ERR((stderr, ">> SendQueue::post(%p)\n", msg));
             this->enqueue (msg);
-            TRACE_ERR((stderr, "<< SendQueue::post(%m)\n", msg));
+            TRACE_ERR((stderr, "<< SendQueue::post(%p)\n", msg));
           };
 
           /// \brief virtual function implementation
