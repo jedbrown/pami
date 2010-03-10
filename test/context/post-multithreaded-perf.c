@@ -2,12 +2,17 @@
 /// \file test/context/post-multithreaded-perf.c
 /// \brief Multithreaded XMI_Context_post() performance test
 ///
+/// \todo There is a slight difference in the reported post times in the case
+///       where the number of 'helper' threads == 1. For this test to be
+///       completely accurate the times should be nearly equal.
+///
 
 #include "sys/xmi.h"
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 //#define ENABLE_TRACE
 
@@ -17,13 +22,17 @@
 #define TRACE(x)
 #endif
 
-#define MAXTHREADS 4
-#define ITERATIONS 1000
+#define MAXTHREADS 64
+#define ITERATIONS 10000
 //#define ITERATIONS 10
 
 xmi_context_t   _context[MAXTHREADS];
 volatile size_t _value[MAXTHREADS];
 xmi_work_t      _work[ITERATIONS*MAXTHREADS];
+
+volatile size_t _recv;
+volatile size_t _thread_state[MAXTHREADS];
+volatile size_t _main_state;
 
 xmi_result_t do_work (xmi_context_t   context,
                       void          * cookie)
@@ -58,6 +67,12 @@ void * thread_main (void * arg)
       exit(1);
     }
 
+  /* signal thread is ready */
+  _thread_state[id] = 1;
+
+  /* wait until main thread is ready */
+  while (_main_state == 0);
+
   TRACE((stderr, "   thread_main (%zu) .. 2, _value[id] = %zu\n", id, _value[id]));
 
   while (_value[id] > 0)
@@ -74,10 +89,40 @@ void * thread_main (void * arg)
 
 #endif
     }
+
   TRACE((stderr, "   thread_main (%zu) .. 4\n", id));
 
   /* Unlock this context */
   result = XMI_Context_unlock (context);
+
+  /* *********************************************************************** */
+  /* post work to context 0                                                  */
+  /* *********************************************************************** */
+
+  /* signal thread is ready */
+  _thread_state[id] = 0;
+
+  /* wait until main thread is ready */
+  while (_main_state == 1);
+
+  TRACE((stderr, "   thread_main (%zu) .. post work to context 0, _recv = %zu ###############################\n", id, _recv));
+  size_t i;
+
+  for (i = 0; i < ITERATIONS; i++)
+    {
+      TRACE((stderr, "   thread_main (%zu), i = %zu, work index = %zu\n", id, i, id*ITERATIONS + i));
+      result = XMI_Context_post (_context[0], &_work[id*ITERATIONS+i], do_work, (void *) & _recv);
+#ifdef TRACE
+
+      if (result != XMI_SUCCESS)
+        {
+          fprintf (stderr, "   thread_main (%zu): Error. Unable to post work to context[0]. result = %d\n", id, result);
+          exit(1);
+        }
+
+#endif
+    }
+
 
   TRACE((stderr, "   thread_main (%zu) .. 5\n", id));
 
@@ -95,12 +140,18 @@ void * thread_main (void * arg)
 int main (int argc, char ** argv)
 {
   xmi_client_t client;
-  //xmi_configuration_t * configuration = NULL;
-  char                  cl_string[] = "TEST";
+  char         cl_string[] = "TEST";
   xmi_result_t result = XMI_ERROR;
   size_t i;
+  long long int max_threads = 0;
 
-  TRACE((stderr, ">> main ()\n"));
+  TRACE((stderr, ">> main (), max_threads = %lld\n", max_threads));
+
+  if (argc > 1)
+    {
+      max_threads = strtoll (argv[1], NULL, 10);
+    }
+
 
   result = XMI_Client_initialize (cl_string, &client);
 
@@ -116,8 +167,37 @@ int main (int argc, char ** argv)
   result = XMI_Configuration_query(client, &configuration);
   xmi_task_t task = configuration.value.intval;
 
+  if (task == 0)
+    {
+      fprintf (stdout, "XMI_Context_post() multi-threaded performance test\n");
+    }
+
+  if (max_threads == 0 || max_threads > MAXTHREADS)
+    {
+      if (task == 0)
+        {
+          fprintf (stdout, "\n");
+          fprintf (stdout, "  Error: Number of peer threads must be [1..%zu], got %lld\n", MAXTHREADS, max_threads);
+          fprintf (stdout, "\n");
+          fprintf (stdout, "  Usage: %s threads\n", argv[0]);
+          fprintf (stdout, "\n");
+        }
+
+      result = XMI_Client_finalize (client);
+
+      if (result != XMI_SUCCESS)
+        {
+          fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+          return 1;
+        }
+
+      TRACE((stderr, "<< main ()\n"));
+
+      return 1;
+    }
+
   /* Initialize the contexts */
-  result = XMI_Context_createv (client, NULL, 0, &_context[0], MAXTHREADS);
+  result = XMI_Context_createv (client, NULL, 0, &_context[0], max_threads);
 
   if (result != XMI_SUCCESS)
     {
@@ -128,20 +208,29 @@ int main (int argc, char ** argv)
   if (task == 0)
     {
       /* Initialize the post counters */
-      for (i = 0; i < MAXTHREADS; i++)
+      _main_state = 0;
+      _recv = 0;
+
+      for (i = 0; i < max_threads; i++)
         {
           _value[i] = ITERATIONS;
+          _thread_state[i] = 0;
         }
 
       /* Create the "helper" or "endpoint" threads */
-      pthread_t thread[MAXTHREADS];
+      pthread_t thread[max_threads];
       int rc = 0;
       size_t t, num_threads = 0;
 
-      for (i = 0; i < MAXTHREADS && rc == 0; i++)
+      for (i = 0; i < max_threads && rc == 0; i++)
         {
           rc = pthread_create (&thread[i], NULL, thread_main, (void *)(i));
-          if (rc == 0) num_threads++;
+
+          if (rc == 0)
+            {
+              num_threads++;
+              _recv += ITERATIONS;
+            }
         }
 
       if (num_threads == 0)
@@ -155,9 +244,21 @@ int main (int argc, char ** argv)
           fprintf (stdout, "  Number of 'receiver' threads:           %8zu\n", num_threads);
           fprintf (stdout, "  Number of posts to each thread:         %8u\n", ITERATIONS);
           fprintf (stdout, "\n");
+          fprintf (stdout, "  Number of 'sender' threads:          %8zu\n", 1);
+          fprintf (stdout, "  Number of 'receiver' threads:        %8zu\n", num_threads);
+          fprintf (stdout, "  Number of posts to each thread:      %8zu\n", ITERATIONS);
 
           /* wait a bit to give threads time to start */
           usleep (1000);
+
+          /* wait until all threads are ready */
+          for (t = 0; t < num_threads; t++)
+            {
+              while (_thread_state[t] == 0);
+            }
+
+          /* signal main thread is ready */
+          _main_state = 1;
 
           unsigned long long t0 = XMI_Wtimebase();
 
@@ -166,7 +267,8 @@ int main (int argc, char ** argv)
             {
               for (t = 0; t < num_threads; t++)
                 {
-                  result = XMI_Context_post (_context[t], &_work[i*ITERATIONS+t], do_work, (void *) & _value[t]);
+                  TRACE((stderr, "   main (), i = %zu, t = %zu, work index = %zu\n", i, t, t*ITERATIONS + i));
+                  result = XMI_Context_post (_context[t], &_work[t*ITERATIONS+i], do_work, (void *) & _value[t]);
 #ifdef TRACE
 
                   if (result != XMI_SUCCESS)
@@ -186,11 +288,56 @@ int main (int argc, char ** argv)
             }
 
           unsigned long long t1 = XMI_Wtimebase();
-
           unsigned long long cycles = ((t1 - t0) / ITERATIONS) / num_threads;
+          fprintf (stdout, "  Average number of cycles to post:    %8lld\n", cycles);
 
-          fprintf (stdout, "  Average number of cycles for each post: %8lld\n", cycles);
           fprintf (stdout, "\n");
+          fprintf (stdout, "  Number of 'sender' threads:          %8zu\n", num_threads);
+          fprintf (stdout, "  Number of 'receiver' threads:        %8zu\n", 1);
+          fprintf (stdout, "  Number of posts from all threads:    %8zu\n", ITERATIONS*num_threads);
+
+
+          /* Lock this context */
+          result = XMI_Context_lock (_context[0]);
+
+          /* wait until all threads are ready */
+          for (t = 0; t < num_threads; t++)
+            {
+              while (_thread_state[t] == 1);
+            }
+
+          /* signal main thread is ready */
+          _main_state = 0;
+
+
+          /* wait until all of the work is done */
+          TRACE((stderr, "   main (), wait for all work to be received, _recv = %zu\n", _recv));
+          t0 = XMI_Wtimebase();
+
+          while (_recv > 0)
+            {
+              TRACE((stderr, "   main () .. recv advance loop, _recv = %zu\n", _recv));
+              result = XMI_Context_advance (_context[0], 100);
+#ifdef TRACE
+
+              if (result != XMI_SUCCESS)
+                {
+                  fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
+                  exit(1);
+                }
+
+#endif
+            }
+
+          t1 = XMI_Wtimebase();
+
+          /* Unlock this context */
+          result = XMI_Context_unlock (_context[0]);
+
+          cycles = ((t1 - t0) / ITERATIONS) / num_threads;
+          fprintf (stdout, "  Average number of cycles to receive: %8lld\n", cycles);
+          fprintf (stdout, "\n");
+
         }
     }
 
