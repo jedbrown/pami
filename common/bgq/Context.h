@@ -48,8 +48,8 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#undef MU_COLL_DEVICE
-#undef MU_DEVICE
+#define MU_COLL_DEVICE
+//#define MU_DEVICE
 
 
 #ifdef MU_COLL_DEVICE
@@ -255,11 +255,8 @@ mm);
 
 #ifdef MU_COLL_DEVICE
         // Can't construct NI until device is init()'d.  Ctor into member storage.
-        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(getMu(), _contextid);
-        xmi_result_t status;
-#endif
-#ifdef MU_DEVICE
-        _mu.init (&_sysdep, (xmi_context_t)this, id);
+        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
+        //xmi_result_t status;
 #endif
 	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 
@@ -275,9 +272,11 @@ mm);
 
         TRACE_ERR((stderr,  "%s exit\n", __PRETTY_FUNCTION__));
       }
+#if 0
 #ifdef MU_COLL_DEVICE
       // \brief For testing NativeInterface.
       inline MUDevice* getMu(){ return MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid); }
+#endif
 #endif
       inline xmi_client_t getClient_impl ()
       {
@@ -553,7 +552,7 @@ mm);
             _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
 #ifdef MU_DEVICE
-            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, getMu(), result);
+            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
 #else
             new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
 #endif
@@ -582,7 +581,7 @@ mm);
         MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
         TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
                    &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
-        _global_mu_ni = new (temp) MUGlobalNI(_mu, _client, _context, _contextid);
+        _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
       }
       if (_dispatch[id] == NULL)
       {
@@ -593,7 +592,7 @@ mm);
         // Allocate memory for the protocol object.
         _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
-        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(result, getMu());
+        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
         model->registerMcastRecvFunction(id, fn.multicast, cookie);
 
       }
@@ -634,7 +633,7 @@ mm);
           MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
           TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
                      &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
-          _global_mu_ni = new (temp) MUGlobalNI(_mu, _client, _context, _contextid);
+          _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
         }
         TRACE_ERR((stderr, ">> multisync_impl multisync %p\n", msyncinfo));
         return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
@@ -653,7 +652,7 @@ mm);
           MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
           TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
                      &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
-          _global_mu_ni = new (temp) MUGlobalNI(_mu, _client, _context, _contextid);
+          _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
         }
         TRACE_ERR((stderr, ">> multicombine_impl multicombine %p\n", mcombineinfo));
         return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
@@ -674,20 +673,16 @@ mm);
       XMI::Memory::MemoryManager _mm;
       SysDep _sysdep;
 
-#ifdef MU_COLL_DEVICE
-      MUGlobalNI * _global_mu_ni;
-      uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)];
-#endif
-#ifdef MU_DEVICE
-      MUDevice _mu;
-#endif
-
       void * _dispatch[1024];
       void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
       ContextLock _lock;
       ProtocolAllocator _protocolAllocator;
       PlatformDeviceList *_devices;
+#ifdef MU_COLL_DEVICE
+      MUGlobalNI * _global_mu_ni;
+      uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)];
+#endif
   }; // end XMI::Context
 }; // end namespace XMI
 
